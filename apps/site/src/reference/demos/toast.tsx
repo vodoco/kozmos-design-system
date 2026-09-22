@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Box,
   Button,
   Stack,
   Text,
@@ -11,22 +12,31 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@kozmos/react";
+import { Screen } from "../Screen";
 import type { DemoModule } from "../types";
 
 function Saved() {
   const [open, setOpen] = useState(false);
   return (
     <ToastProvider>
-      <Stack gap={3} align="start">
+      <Box className="site-demo-column">
+        <Screen>
+          <ToastViewport />
+        </Screen>
         <Text size="sm" color="muted">
           A toast appears at the viewport’s edge and leaves after a while. The
           provider and viewport wrap the app once; Toast is opened where the
-          event happens.
+          event happens. The viewport pins itself to the window (GAP-36), so the
+          screen above is its window and the toast stays in the app — and there
+          the toast shows that it draws no fill of its own (GAP-58): the page
+          reads through it. Over a plain white page it passes for solid.
         </Text>
-        <Button variant="outline" onClick={() => setOpen(true)}>
-          Save the bookshop
-        </Button>
-      </Stack>
+        <Box className="site-demo-row">
+          <Button variant="outline" onClick={() => setOpen(true)}>
+            Save the bookshop
+          </Button>
+        </Box>
+      </Box>
       <Toast open={open} onOpenChange={setOpen}>
         <Stack gap={1}>
           <ToastTitle>Saved</ToastTitle>
@@ -42,7 +52,6 @@ function Saved() {
         </ToastAction>
         <ToastClose />
       </Toast>
-      <ToastViewport />
     </ToastProvider>
   );
 }
@@ -53,5 +62,6 @@ export const demos: DemoModule["demos"] = [
     description:
       "Title, description, an action with an altText for assistive technology, and a close button.",
     Component: Saved,
+    tall: true,
   },
 ];

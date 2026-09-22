@@ -484,16 +484,23 @@ description, parts, props, snippets — nothing to write) and its demo file.
   `src/reference/sample-data.ts` has the venue, places, categories, floors,
   routes and an itinerary, all invented, so demos agree with one another; a
   glass part sits on `GlassBackdrop` (`src/reference/GlassBackdrop.tsx`).
+- **A part that pins itself to the window goes in a `Screen`**
+  (`src/reference/Screen.tsx`): `DynamicIsland`, `BottomNavigation`,
+  `Backdrop`, `ToastViewport` and a `FloatingActionButton` with
+  `placement="fixed"` are all `position: fixed` and take no placement from
+  their host (GAP-24, 29, 34, 36). The screen has paint containment, which
+  makes it the containing block for its fixed children, so the part sits
+  where it would on a phone instead of over this site's header or across the
+  whole window. It brings its own page for the part to cover.
 - **A description says only what the component does.** The copy review of
   2026-09-22 found demos claiming a stroke that stays 2px, a spinner that
   stops for reduced motion and a loading button that keeps its width — none
   true. Check the component's source before writing a claim.
 - **The first demo is also the preview** on `/components`: it mounts inside
   an `aria-hidden`, `inert` frame as the card scrolls into view. So the first
-  demo must not mount anything fixed to the viewport (a toast viewport, a
-  fixed action button, `DynamicIsland`), must not need a click to show
-  something, and should be the plainest state — put the interactive or
-  fixed things in a later demo, behind a button.
+  demo must not mount anything fixed to the viewport unless a `Screen` holds
+  it, must not need a click to show something, and should be the plainest
+  state — put the interactive states in a later demo.
 - **Several of one landmark on a page** need different names: three
   `AdaptiveMapShell`s each name their map region and their panel with the
   demo's name, or axe's `landmark-unique` fails the page (the tests run axe
@@ -606,17 +613,20 @@ a known one that disappears, which is the signal to close its gap. The same
 holds for GAP-20: the search-field test is marked `test.fail` in WebKit
 only, so Playwright reports it the day Kozmos fixes the field.
 
-**Design-system gaps, measured.** Fourteen tests pin what Kozmos draws today
+**Design-system gaps, measured.** Seventeen tests pin what Kozmos draws today
 — the sheet handle's 4px (GAP-38), the preflight zeroing a caller's border
 (GAP-52), the sheet's square corners on a rounded screen (GAP-53), the button
 link's underline (GAP-09), the icon touching its label (GAP-56), the label
 that cannot wrap (GAP-57), the `Listbox` column as wide as its widest option
-(GAP-55), MapView's missing isolation (GAP-40), CardTitle's 1.0 line height
-(GAP-42), where a touch 20px from the slider's thumb lands (GAP-43), the
-header's white first paint for a dark-mode visitor with the scripts blocked
-(GAP-03), the two-row header at 320px (GAP-41), brand variant 1's 4.20:1
-(GAP-45) and SearchBar's second clear button, by display or appearance
-(GAP-37). Each measures what a visitor gets, so any honest fix flips it;
+(GAP-55), the toast with no fill (GAP-58), the island that is black on a black
+page (GAP-59), the four parts that pin themselves to the window and are held
+by a screen (GAP-24, 29, 34, 36), MapView's
+missing isolation (GAP-40), CardTitle's 1.0 line height (GAP-42), where a
+touch 20px from the slider's thumb lands (GAP-43), the header's white first
+paint for a dark-mode visitor with the scripts blocked (GAP-03), the two-row
+header at 320px (GAP-41), brand variant 1's 4.20:1 (GAP-45) and SearchBar's
+second clear button, by display or appearance (GAP-37). Each measures what a
+visitor gets, so any honest fix flips it;
 [`DS-HANDOFF.md`](./DS-HANDOFF.md) says what to flip it to.
 
 **In CI, once merged:** the workflow runs `pnpm lint`, `pnpm build` and

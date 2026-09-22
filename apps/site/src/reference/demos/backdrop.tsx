@@ -1,25 +1,29 @@
-import { useEffect, useState } from "react";
-import { Backdrop, Button, Stack, Text } from "@kozmos/react";
+import { useState } from "react";
+import { Backdrop, Box, Button, Text } from "@kozmos/react";
+import { Screen } from "../Screen";
 import type { DemoModule } from "../types";
 
-function ForTwoSeconds() {
+function OverTheScreen() {
   const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (!visible) return;
-    const timer = window.setTimeout(() => setVisible(false), 2000);
-    return () => window.clearTimeout(timer);
-  }, [visible]);
   return (
-    <Stack gap={3} align="start">
+    <Box className="site-demo-column">
+      <Screen>
+        <Backdrop visible={visible} aria-hidden="true" />
+      </Screen>
       <Text size="sm" color="muted">
-        The backdrop covers the whole viewport with the overlay scrim; it is
-        what a dialog or sheet sits on. Press to show it for two seconds.
+        The scrim covers the whole window and takes no placement from the page
+        around it (GAP-34); it is what a dialog or a sheet sits on. The screen
+        above is its window, so the scrim covers that page alone.
       </Text>
-      <Button variant="outline" onClick={() => setVisible(true)}>
-        Show the backdrop
-      </Button>
-      <Backdrop visible={visible} aria-hidden="true" />
-    </Stack>
+      <Box className="site-demo-row">
+        <Button
+          variant={visible ? "outline" : "default"}
+          onClick={() => setVisible((shown) => !shown)}
+        >
+          {visible ? "Clear the backdrop" : "Show the backdrop"}
+        </Button>
+      </Box>
+    </Box>
   );
 }
 
@@ -27,6 +31,7 @@ export const demos: DemoModule["demos"] = [
   {
     title: "Over the page",
     description: "visible mounts it; nothing renders otherwise.",
-    Component: ForTwoSeconds,
+    Component: OverTheScreen,
+    tall: true,
   },
 ];

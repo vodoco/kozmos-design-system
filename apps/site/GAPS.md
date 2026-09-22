@@ -7,7 +7,7 @@ component and the part, what was tried, the lane, and the evidence. Entries
 up to GAP-36 were measured on `claude/pointr-browse-repairs` at `ef1b68b`
 (2026-09-21), the branch the site is built on; the rest, and every revision
 since, on the same packages at `f30c0f9`, the site's current base, on
-2026-09-22. GAP-54 to GAP-57, and the revisions the home page's new cover made to
+2026-09-22. GAP-54 to GAP-59, and the revisions the home page's new cover made to
 GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
 the same day.
 
@@ -83,6 +83,8 @@ keep the table's four columns and its statuses as they are.
 | GAP-55 | A `Listbox`'s column is as wide as its widest option           | Core                   | composed     |
 | GAP-56 | `Button` puts no space between an icon and its label           | Core                   | composed     |
 | GAP-57 | A `Button`'s label cannot wrap                                 | Core                   | composed     |
+| GAP-58 | `Toast` draws no background of its own                         | Core                   | left visible |
+| GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it | Platform / form factor | left visible |
 
 ---
 
@@ -443,11 +445,13 @@ keep the table's four columns and its statuses as they are.
 - **What:** `DynamicIsland` renders `position: fixed; top: 1rem; left: 50%`,
   so it can only ever sit at the top of the browser window. It cannot be
   placed in a map scene, a card or an example's frame.
-- **Now:** the DynamicIsland page shows the island on request, fixed to the
-  top of the window, behind a button; the wayfinding example shows its
-  manoeuvres in `ManoeuvreCard`. (Until the cover took the home page's
-  first screen on 2026-09-22, the hero's map scene showed a manoeuvre in a
-  glass `Surface` around `DirectionStep` instead.)
+- **Now:** the DynamicIsland page holds the island in a screen — a box with
+  paint containment, which is the containing block for its fixed children, so
+  the island sits at the screen's top as it would at a phone's
+  (`src/reference/Screen.tsx`). The wayfinding example shows its manoeuvres in
+  `ManoeuvreCard`. (Until the cover took the home page's first screen on
+  2026-09-22, the hero's map scene showed a manoeuvre in a glass `Surface`
+  around `DirectionStep` instead.)
 - **Lane:** Platform / form factor.
 - **Fix in Kozmos:** let the host decide: a `placement` prop in
   `FloatingActionButton`'s words (`"fixed" | "inline"`), fixed by default
@@ -505,8 +509,9 @@ keep the table's four columns and its statuses as they are.
 - **What:** `BottomNavigation` renders `fixed bottom-0 left-0 right-0`, as
   `DynamicIsland` does at the top (GAP-24). It cannot sit in a phone frame,
   a card or an example, and two of them overlap.
-- **Now:** its demo mounts one bar on request, over the site's footer, and
-  says so.
+- **Now:** its demo puts the bar in a screen that contains it
+  (`src/reference/Screen.tsx`, as for GAP-24), so it is as wide as the app it
+  belongs to instead of the browser.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `placement` prop in `FloatingActionButton`'s words
   (`"fixed" | "inline"`; `FloatingActionButton` itself defaults to inline),
@@ -586,8 +591,10 @@ keep the table's four columns and its statuses as they are.
   panel while it loads, a card while a dialog inside it is open — cannot use
   it; like `DynamicIsland` (GAP-24) and `BottomNavigation` (GAP-29), the host
   cannot decide where it goes.
-- **Now:** the kiosk directory's attract screen is a glass `Surface` laid over
-  the directory by the example's own CSS.
+- **Now:** the Backdrop page shows the scrim over a screen that contains it
+  (`src/reference/Screen.tsx`, as for GAP-24), which is the demo a module
+  wants; the kiosk directory's attract screen is still a glass `Surface` laid
+  over the directory by the example's own CSS.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `placement` prop (`"fixed" | "inline"`, as for
   GAP-24), fixed by default, with the scrim colour and blur unchanged.
@@ -611,8 +618,11 @@ keep the table's four columns and its statuses as they are.
   A page shown in a frame — an example on this site, a module in a larger
   product, a preview — cannot keep its toasts inside itself: they appear
   outside it, over whatever the host is showing.
-- **Now:** the dashboard, the inbox and saved places confirm with an inline
-  `Alert` in a status region, with the undo beside it (GAP-51).
+- **Now:** the Toast page's viewport sits in a screen that contains it
+  (`src/reference/Screen.tsx`, as for GAP-24), so the toast stays in the app
+  it belongs to; the dashboard, the inbox and saved places still confirm with
+  an inline `Alert` in a status region, with the undo beside it (GAP-51),
+  because an example's own frame does not contain one yet.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `placement` prop (`"fixed" | "inline"`), as for
   `Backdrop` (GAP-34), `BottomNavigation` (GAP-29) and `DynamicIsland`
@@ -993,3 +1003,46 @@ Text"])`) and the Get started page shows — touches it.
   with `overflow-wrap: anywhere` on `.kozmos-button`, or a `wrap` prop for
   the callers that want it. The short labels Kozmos draws today are
   unaffected: they fit on their line either way.
+
+## GAP-58 · `Toast` draws no background of its own
+
+- **What:** `Toast`'s root carries a border, a radius, padding and
+  `shadow-floating`, but no fill
+  (`packages/react/src/components/Toast/Toast.tsx:38`): its computed
+  background is `rgba(0, 0, 0, 0)`. Over a white page it passes for solid;
+  over anything else — a map, a photograph, a list — the page reads straight
+  through the words. `ToastAction` is deliberately `bg-transparent`; the root
+  is not deliberate, and no variant supplies one.
+- **Evidence:** "GAP-58: a Toast draws no background" measures the alpha of
+  the toast's background on the Toast page. The site only saw it once the
+  toast stopped floating over an empty page: the screen that contains the
+  viewport (GAP-36) puts the app's own list behind it.
+- **Now:** left visible on the Toast page, whose demo shows the component as
+  it draws and says what to look at. Nothing else on the site shows a toast
+  (GAP-36).
+- **Lane:** Core.
+- **Fix in Kozmos:** `bg-background` on the toast's root, beside its border
+  and shadow, as `Card`, `Dialog` and `Menu` have. A `destructive` variant, if
+  one comes, takes its own fill.
+
+## GAP-59 · `DynamicIsland` is its own dark theme, so a dark page hides it
+
+- **What:** the island wraps itself in a provider pinned to the dark theme
+  (`data-kozmos-root data-theme="dark"`, `display: contents`) and paints
+  `bg-background text-foreground` inside it: black with white letters,
+  whatever the page. On the light theme that is the look it is named for. On
+  the dark theme the capsule is `#000000` on a `#000000` page — 1:1 — so
+  only its letters and icons show, floating with no shape around them, and
+  `shadow-overlay` cannot be seen on black either.
+- **Evidence:** "GAP-59: the island's capsule disappears into a dark page"
+  measures the capsule's background against the screen behind it on the
+  DynamicIsland page in the dark theme.
+- **Now:** left visible on the DynamicIsland page, whose demo shows the part
+  as it draws and says what to look at; the page is walked in both themes by
+  the tests.
+- **Lane:** Platform / form factor.
+- **Fix in Kozmos:** on a phone the island is drawn on the bezel, where black
+  on black is the point; in a page it needs a shape of its own. A hairline in
+  `--semantics-border-subtle` inside the island's own dark scope, or a fill a
+  step off the background (`background-25` there), would keep it an island on
+  any page. Its inverted colours are not the gap.

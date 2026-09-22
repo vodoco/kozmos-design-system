@@ -1,12 +1,6 @@
 import { useState } from "react";
-import {
-  BottomNavigation,
-  Box,
-  Button,
-  Icon,
-  Switch,
-  Text,
-} from "@kozmos/react";
+import { BottomNavigation, Box, Icon, Switch, Text } from "@kozmos/react";
+import { Screen } from "../Screen";
 import type { DemoModule } from "../types";
 
 const tabs = [
@@ -17,36 +11,12 @@ const tabs = [
 ] as const;
 
 function Summon() {
-  const [shown, setShown] = useState(false);
   // Kozmos's default is compact; switching it off asks for the taller items.
   const [compact, setCompact] = useState(true);
   const [active, setActive] = useState("explore");
   return (
     <Box className="site-demo-column">
-      <Text size="sm" color="muted">
-        The bar is fixed to the bottom of the viewport (GAP-29), so this stage
-        cannot hold it. Show it, switch tabs, then hide it; it sits over the
-        site’s footer while shown.
-      </Text>
-      <Box className="site-demo-row">
-        <Button
-          variant={shown ? "outline" : "default"}
-          onClick={() => setShown((value) => !value)}
-        >
-          {shown ? "Hide the bar" : "Show the bar"}
-        </Button>
-        <Switch
-          label="Compact"
-          checked={compact}
-          onCheckedChange={setCompact}
-        />
-      </Box>
-      <Text size="sm" color="muted" aria-live="polite">
-        {shown
-          ? `${tabs.find((tab) => tab.id === active)?.label} is the current tab.`
-          : "Hidden."}
-      </Text>
-      {shown ? (
+      <Screen>
         <BottomNavigation
           aria-label="App sections"
           density={compact ? "compact" : "default"}
@@ -58,7 +28,22 @@ function Summon() {
             badge: tab.id === "saved" ? 2 : undefined,
           }))}
         />
-      ) : null}
+      </Screen>
+      <Text size="sm" color="muted">
+        The bar pins itself to the bottom of the window and takes no placement
+        from the page around it (GAP-29). The screen above is its window, so the
+        bar is as wide as the app it belongs to, not as the browser.
+      </Text>
+      <Box className="site-demo-row">
+        <Switch
+          label="Compact"
+          checked={compact}
+          onCheckedChange={setCompact}
+        />
+        <Text size="sm" color="muted" aria-live="polite">
+          {tabs.find((tab) => tab.id === active)?.label} is the current tab.
+        </Text>
+      </Box>
     </Box>
   );
 }
@@ -69,5 +54,6 @@ export const demos: DemoModule["demos"] = [
     description:
       'A phone app’s bottom bar: four tabs, active marks the current one, badge counts what is waiting. It is compact unless density="default" asks for taller items.',
     Component: Summon,
+    tall: true,
   },
 ];

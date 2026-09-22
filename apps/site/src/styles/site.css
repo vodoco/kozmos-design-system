@@ -1784,6 +1784,44 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   inline-size: 100%;
 }
 
+/* ---- A screen, for the parts that pin themselves ---------------------- */
+
+/* GAP-24, 29, 34 and 36: DynamicIsland, BottomNavigation, Backdrop and the
+   toast viewport are `position: fixed` and take no placement from their host,
+   so on a page they leave whatever holds them — the island draws over this
+   site's header, the bar stretches across the whole window. A page cannot ask
+   them to stay in the flow, but it can give them a smaller window: a box with
+   paint containment is the containing block for its fixed children (CSS
+   Containment; measured in Chromium, WebKit and Firefox), so inside this one
+   the screen is the whole viewport. The island then sits at the screen's top
+   edge, a bar on its bottom, a scrim over its page — where each would sit on
+   a phone. A phone's width, as the phone example's frame uses; the fill and
+   the edge are the `Surface`'s own, since site CSS cannot draw a border
+   inside the provider (GAP-52). */
+.site-screen {
+  contain: layout paint;
+  position: relative;
+  inline-size: min(100%, 24.375rem);
+  block-size: 22rem;
+  border-radius: var(--site-radius-container);
+}
+
+/* What the part covers: the screen's own page, in its own scale. Its first
+   and last lines keep clear of where the parts sit — the island's 60px at the
+   top, a bar's 64 at the bottom — as a phone's app pads for them. */
+.site-screen-page {
+  block-size: 100%;
+  display: grid;
+  align-content: start;
+  gap: var(--site-space-200);
+  padding: var(--site-space-700) var(--site-space-300);
+}
+
+.site-screen-line {
+  display: grid;
+  gap: var(--site-space-50);
+}
+
 /* The index's preview: a component's first example, small and inert. */
 .site-preview {
   isolation: isolate;

@@ -444,16 +444,23 @@ async function clippedEdges(page: Page) {
     type Side = "Top" | "Right" | "Bottom" | "Left";
     const width = (style: CSSStyleDeclaration, side: Side) =>
       parseFloat(style.getPropertyValue(`border-${side.toLowerCase()}-width`));
+    // A colour is see-through only when it carries an alpha of 0: four
+    // numbers with a last of 0. Reading the last number alone called every
+    // black border (`rgb(0, 0, 0)`) invisible, and with it every edge a black
+    // border drew.
+    const seeThrough = (colour: string) => {
+      if (colour === "transparent") return true;
+      const parts = colour.match(/[\d.]+/g);
+      return parts?.length === 4 && parseFloat(parts[3]) === 0;
+    };
     const edged = (style: CSSStyleDeclaration, side: Side) => {
       const name = side.toLowerCase();
-      const colour = style.getPropertyValue(`border-${name}-color`);
       return (
         width(style, side) > 0 &&
         !["none", "hidden"].includes(
           style.getPropertyValue(`border-${name}-style`),
         ) &&
-        colour !== "transparent" &&
-        !/,\s*0\)$/.test(colour)
+        !seeThrough(style.getPropertyValue(`border-${name}-color`))
       );
     };
     const radius = (style: CSSStyleDeclaration, corner: string) =>
@@ -473,7 +480,17 @@ async function clippedEdges(page: Page) {
     for (const box of Array.from(document.querySelectorAll("body *"))) {
       if (box.closest("[inert]")) continue;
       const style = getComputedStyle(box);
-      if (style.overflowX === "visible" && style.overflowY === "visible")
+      // A box cuts its corners when its overflow is not visible — or when
+      // paint containment cuts them for it, which leaves `overflow` visible:
+      // the screens that hold the parts pinned to the viewport are contained,
+      // not overflowing (site.css, "A screen, for the parts that pin
+      // themselves").
+      const contained = /\b(paint|strict|content)\b/.test(style.contain);
+      if (
+        !contained &&
+        style.overflowX === "visible" &&
+        style.overflowY === "visible"
+      )
         continue;
       const rect = box.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) continue;
@@ -1781,6 +1798,98 @@ test.describe("design-system gaps, measured", () => {
       return over;
     });
     expect(sideways).toBeGreaterThan(0);
+  });
+
+  test("GAP-58: a Toast draws no background", async ({ page }) => {
+    await page.goto("/components/toast");
+    await hydrated(page);
+    await page
+      .locator(".site-demos")
+      .getByRole("button", { name: "Save the bookshop" })
+      .click();
+    // The toast itself, in the viewport inside the screen — not Radix's
+    // hidden announcer, which also carries role="status" and no fill of its
+    // own to speak of.
+    const toast = page
+      .locator(".site-screen li")
+      .filter({ hasText: "The bookshop is in your favourites." })
+      .first();
+    await expect(toast).toBeVisible();
+    const fill = await toast.evaluate(
+      (node) => getComputedStyle(node).backgroundColor,
+    );
+    // Nothing is painted behind the words: the page reads through them.
+    // A colour with no fourth number is opaque, which is the fixed state.
+    const alpha = fill.match(/[\d.]+/g)?.[3] ?? "1";
+    expect({ fill, alpha }).toEqual({ fill, alpha: "0" });
+  });
+
+  test("GAP-59: the island's capsule disappears into a dark page", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/components/dynamic-island");
+    await hydrated(page);
+    const shades = await page
+      .locator(".site-screen")
+      .first()
+      .evaluate((screen) => {
+        const capsule = screen.querySelector("[class*='bg-background']");
+        const own = capsule ? getComputedStyle(capsule) : null;
+        return {
+          capsule: own?.backgroundColor ?? null,
+          behind: getComputedStyle(screen).backgroundColor,
+          edge: own?.borderTopWidth ?? null,
+        };
+      });
+    // The island keeps its own dark theme, so on a dark page it is black on
+    // black, with no edge to tell it from what is behind it.
+    expect(shades.capsule).toBe(shades.behind);
+    expect(shades.edge).toBe("0px");
+  });
+
+  test("GAP-24, 29, 34, 36: the parts that pin themselves, held by a screen", async ({
+    page,
+  }) => {
+    const screens = [
+      { path: "/components/dynamic-island", show: null },
+      { path: "/components/bottom-navigation", show: null },
+      { path: "/components/backdrop", show: "Show the backdrop" },
+      { path: "/components/toast", show: "Save the bookshop" },
+      { path: "/components/floating-action-button", show: null },
+    ];
+    for (const { path, show } of screens) {
+      await page.goto(path);
+      await hydrated(page);
+      if (show) await page.getByRole("button", { name: show }).first().click();
+      const screen = page.locator(".site-screen").first();
+      await expect(screen).toBeVisible();
+      const held = await screen.evaluate((box) => {
+        const edge = box.getBoundingClientRect();
+        const pinned = Array.from(box.querySelectorAll("*")).filter(
+          (node) => getComputedStyle(node).position === "fixed",
+        );
+        return {
+          pinned: pinned.length,
+          outside: pinned
+            .filter((node) => {
+              const at = node.getBoundingClientRect();
+              return (
+                at.top < edge.top - 1 ||
+                at.bottom > edge.bottom + 1 ||
+                at.left < edge.left - 1 ||
+                at.right > edge.right + 1
+              );
+            })
+            .map((node) => String(node.className) || node.localName),
+        };
+      });
+      // The part is still fixed — that is the gap. When Kozmos takes a
+      // placement from its host, nothing here is pinned and this flips.
+      expect({ path, pinned: held.pinned > 0 }).toEqual({ path, pinned: true });
+      // And the screen's paint containment holds it.
+      expect({ path, outside: held.outside }).toEqual({ path, outside: [] });
+    }
   });
 
   test("GAP-55: a Listbox's column is as wide as its widest option", async ({
@@ -3095,7 +3204,7 @@ test.describe("component reference", () => {
     await expect(modal).toContainText("@radix-ui/react-dialog");
   });
 
-  test("the demos respond: the tree selects, the gallery turns, the island appears on request", async ({
+  test("the demos respond: the tree selects, the gallery turns, the island changes state", async ({
     page,
   }) => {
     // The demos' source is on the page too (the "Examples" code tab), so the
@@ -3117,11 +3226,13 @@ test.describe("component reference", () => {
 
     await page.goto("/components/dynamic-island");
     await hydrated(page);
+    // The island lives in a screen that holds it (GAP-24), and the control
+    // changes its state rather than mounting and unmounting it.
     const island = page.getByText("3 min to the bookshop", { exact: true });
-    await expect(island).toHaveCount(0);
-    await demos().getByRole("button", { name: "Show the island" }).click();
     await expect(island).toBeVisible();
-    await demos().getByRole("button", { name: "Hide the island" }).click();
+    await demos().getByRole("radio", { name: "expanded" }).click();
+    await expect(demos().getByText("Turn left at the pharmacy")).toBeVisible();
+    await demos().getByRole("radio", { name: "minimal" }).click();
     await expect(island).toHaveCount(0);
   });
 });
