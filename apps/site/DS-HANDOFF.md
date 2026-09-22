@@ -4,9 +4,23 @@
 **From:** the Kozmos website, `apps/site` on the local branch `claude/kozmos-site`
 (worktree `/Volumes/4TB Depo/development/K/kozmos-design-system-site`).
 **Written:** 2026-09-22, after a design critique of the site; revised the same
-day after an audit of the site, its copy and its tests, and again when the
-home page's first screen became the Figma file's cover (GAP-54). Every number
-below was measured on the site's production build.
+day after an audit of the site, its copy and its tests, again when the home
+page's first screen became the Figma file's cover (GAP-54), and again when the
+parts that pin themselves to the window were put in a screen that holds them
+(GAP-58, 59, 60). Every number below was measured on the site's production
+build.
+
+**Newest, and none of it touched `packages/`** — the site's branch changes
+`apps/site` only, and these six are waiting for you:
+
+| Gap    | Part            | Size of the change                                                   |
+| ------ | --------------- | -------------------------------------------------------------------- |
+| GAP-55 | `Listbox`       | One declaration: a column template.                                  |
+| GAP-56 | `Button`        | One declaration: a gap, and the loader's margin off.                 |
+| GAP-57 | `Button`        | Two declarations: let a label that cannot fit wrap.                  |
+| GAP-58 | `Toast`         | One class: the root has no fill.                                     |
+| GAP-59 | `DynamicIsland` | Give the capsule an edge, so a dark page does not eat it.            |
+| GAP-60 | `DynamicIsland` | Lay the three presentations out around the camera, at Apple's sizes. |
 
 The site is built from Kozmos components and tokens only. Where Kozmos fell
 short, the site did not work around it: the gap is recorded in
