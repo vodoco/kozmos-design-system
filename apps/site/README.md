@@ -606,14 +606,17 @@ a known one that disappears, which is the signal to close its gap. The same
 holds for GAP-20: the search-field test is marked `test.fail` in WebKit
 only, so Playwright reports it the day Kozmos fixes the field.
 
-**Design-system gaps, measured.** Nine tests pin what Kozmos draws today —
-the sheet handle's 4px (GAP-38), the button link's underline (GAP-09),
-MapView's missing isolation (GAP-40), CardTitle's 1.0 line height (GAP-42),
-where a touch 20px from the slider's thumb lands (GAP-43), the header's white
-first paint for a dark-mode visitor with the scripts blocked (GAP-03), the
-two-row header at 320px (GAP-41), brand variant 1's 4.20:1 (GAP-45) and
-SearchBar's second clear button, by display or appearance (GAP-37). Each
-measures what a visitor gets, so any honest fix flips it;
+**Design-system gaps, measured.** Fourteen tests pin what Kozmos draws today
+— the sheet handle's 4px (GAP-38), the preflight zeroing a caller's border
+(GAP-52), the sheet's square corners on a rounded screen (GAP-53), the button
+link's underline (GAP-09), the icon touching its label (GAP-56), the label
+that cannot wrap (GAP-57), the `Listbox` column as wide as its widest option
+(GAP-55), MapView's missing isolation (GAP-40), CardTitle's 1.0 line height
+(GAP-42), where a touch 20px from the slider's thumb lands (GAP-43), the
+header's white first paint for a dark-mode visitor with the scripts blocked
+(GAP-03), the two-row header at 320px (GAP-41), brand variant 1's 4.20:1
+(GAP-45) and SearchBar's second clear button, by display or appearance
+(GAP-37). Each measures what a visitor gets, so any honest fix flips it;
 [`DS-HANDOFF.md`](./DS-HANDOFF.md) says what to flip it to.
 
 **In CI, once merged:** the workflow runs `pnpm lint`, `pnpm build` and
@@ -782,7 +785,9 @@ Measured while building the site; none of it is the site's to fix.
   paints nothing; put a `Surface` inside it.
 - **A phone scrolls sideways** — a grid's implicit column grew to a wide
   child (`minmax(0, 1fr)`), or a frame with `aspect-ratio` also has a minimum
-  height. `pnpm --filter @kozmos/site test:e2e` checks every page at 320px.
+  height, or a long word sits inside a `Button`, which keeps everything on
+  one line (GAP-57: the wrapping goes on the text inside, not on the button).
+  `pnpm --filter @kozmos/site test:e2e` checks every page at 320px.
 - **An e2e test times out waiting for animations** — something on the page
   animates forever; `hydrated()` in `tests/site.spec.ts` ignores infinite
   animations, so a new one needs that check, not a longer timeout.

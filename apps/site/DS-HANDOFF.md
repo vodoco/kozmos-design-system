@@ -10,7 +10,7 @@ below was measured on the site's production build.
 
 The site is built from Kozmos components and tokens only. Where Kozmos fell
 short, the site did not work around it: the gap is recorded in
-[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-56, with the evidence), and the site
+[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-57, with the evidence), and the site
 either composed an honest stand-in from Kozmos parts or left the defect
 visible. This document turns those gaps into work for `packages/`, in
 priority order, with the file and line, the change, and the site check that
@@ -65,6 +65,7 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 | P0       | GAP-40                         | MapView, MapOverlay, Navbar                              | Map overlays draw over the sticky header: equal z-index, and MapView does not isolate.           |
 | P1       | GAP-52                         | The provider's preflight                                 | A caller's `border` inside the provider never draws: one selector test in the CSS plugin.        |
 | P1       | GAP-56                         | Button                                                   | No gap between an icon and its label: every header's "Theme ⌄" touches.                          |
+| P1       | GAP-57                         | Button                                                   | Its label cannot wrap: the longest icon name scrolls the icons page sideways at 320px.           |
 | P1       | GAP-55                         | Listbox                                                  | Its column grows to the widest option: the site search scrolls sideways, and nothing truncates.  |
 | P1       | GAP-45                         | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page, as text and as a fill.                          |
 | P1       | GAP-31                         | Tokens (alert, success)                                  | Emotion text passes on white only: 4.29:1 on background-25, 3.59:1 on muted.                     |
@@ -160,6 +161,23 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 - **Proof:** "GAP-56: a Button's icon touches its label" fails; flip it to
   expect 8. The site's `site-button-icon` class and the dashboard's and
   inbox's `ex-dash-add`, `ex-inbox-prefs` can then go.
+
+### GAP-57 · A `Button`'s label cannot wrap
+
+- **Where:** `styles/owned-components.css:263` (`.kozmos-button`:
+  `white-space: nowrap`), which everything inside the button inherits.
+- **Why it breaks:** a label wider than the button cannot break, so it
+  overflows and takes the page with it: the icons page's longest name,
+  `taxonomy-transportation-space-boarding-gate`, asks for 372px inside a
+  288px button and scrolls a 320px phone sideways — WCAG 1.4.10. There is no
+  prop for it, and a class on the Button would overturn a property the
+  component sets.
+- **Change:** `white-space: normal` with `overflow-wrap: anywhere` on
+  `.kozmos-button` (the short labels Kozmos draws today are unaffected: they
+  fit on their line), or a `wrap` prop for the callers that need it.
+- **Proof:** "GAP-57: a Button's label cannot wrap" fails (the page no longer
+  scrolls sideways without the site's class); remove that expectation and the
+  site's `site-icon-name` class.
 
 ### GAP-55 · A `Listbox`'s column is as wide as its widest option
 

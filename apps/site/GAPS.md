@@ -7,7 +7,7 @@ component and the part, what was tried, the lane, and the evidence. Entries
 up to GAP-36 were measured on `claude/pointr-browse-repairs` at `ef1b68b`
 (2026-09-21), the branch the site is built on; the rest, and every revision
 since, on the same packages at `f30c0f9`, the site's current base, on
-2026-09-22. GAP-54 to GAP-56, and the revisions the home page's new cover made to
+2026-09-22. GAP-54 to GAP-57, and the revisions the home page's new cover made to
 GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
 the same day.
 
@@ -82,6 +82,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-54 | No light: glow, gradient, blur or ambient motion               | Core                   | composed     |
 | GAP-55 | A `Listbox`'s column is as wide as its widest option           | Core                   | composed     |
 | GAP-56 | `Button` puts no space between an icon and its label           | Core                   | composed     |
+| GAP-57 | A `Button`'s label cannot wrap                                 | Core                   | composed     |
 
 ---
 
@@ -967,3 +968,28 @@ Text"])`) and the Get started page shows — touches it.
 - **Lane:** Core.
 - **Fix in Kozmos:** a gap of the spacing scale's 100 on `.kozmos-button`,
   and the loader's `mr-2` taken off.
+
+## GAP-57 · A `Button`'s label cannot wrap
+
+- **What:** `.kozmos-button` sets `white-space: nowrap`
+  (`packages/react/src/styles/owned-components.css:263`), which everything
+  inside it inherits. A label wider than the button cannot break: it
+  overflows, and the page scrolls sideways. There is no prop for it. A class
+  on the Button does win here (measured), but it would overturn a property
+  the component sets itself, which this site does not do (README, "Put layout
+  classes on Box"), so the class goes on the text inside, where `white-space`
+  is only inherited.
+- **Evidence:** "GAP-57: a Button's label cannot wrap" takes the site's class
+  off the icons page at 320px and measures the page scrolling sideways. The
+  icon set's longest name, `taxonomy-transportation-space-boarding-gate`,
+  asks for 372px inside a 288px button — a WCAG 1.4.10 reflow failure the
+  page has had since that icon was added (`1221183`).
+- **Now:** composed on the icons page: the name takes `site-icon-name`
+  (`white-space: normal; overflow-wrap: anywhere`), properties `Text` does
+  not set. `anywhere` also lets the box shrink below its longest word, so the
+  copy button fits a phone.
+- **Lane:** Core.
+- **Fix in Kozmos:** let a label that cannot fit wrap — `white-space: normal`
+  with `overflow-wrap: anywhere` on `.kozmos-button`, or a `wrap` prop for
+  the callers that want it. The short labels Kozmos draws today are
+  unaffected: they fit on their line either way.

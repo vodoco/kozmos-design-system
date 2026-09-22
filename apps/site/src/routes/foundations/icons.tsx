@@ -153,7 +153,7 @@ export default function Icons() {
                     as="span"
                     size="sm"
                     weight="medium"
-                    className="site-mono"
+                    className="site-mono site-icon-name"
                   >
                     {entry.name}
                   </Text>

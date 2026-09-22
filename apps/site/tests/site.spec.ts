@@ -1761,6 +1761,28 @@ test.describe("design-system gaps, measured", () => {
     expect(await iconGap(directions)).toBe(0);
   });
 
+  test("GAP-57: a Button's label cannot wrap", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto("/foundations/icons");
+    await hydrated(page);
+    const name = page
+      .locator(".site-icon-name")
+      .filter({ hasText: "taxonomy-transportation-space-boarding-gate" })
+      .first();
+    await expect(name).toBeVisible();
+    // Without the site's class the Button's nowrap reaches the name, the
+    // longest in the icon set, and it takes a phone's page sideways.
+    const sideways = await name.evaluate((element) => {
+      element.classList.remove("site-icon-name");
+      const over =
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth;
+      element.classList.add("site-icon-name");
+      return over;
+    });
+    expect(sideways).toBeGreaterThan(0);
+  });
+
   test("GAP-55: a Listbox's column is as wide as its widest option", async ({
     page,
   }) => {

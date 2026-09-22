@@ -1472,6 +1472,17 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   background: var(--primitives-colors-background-25);
 }
 
+/* GAP-57: `.kozmos-button` sets `white-space: nowrap`, which every child
+   inherits, so a long name cannot wrap and pushes the page sideways at
+   320px — `taxonomy-transportation-space-boarding-gate` wants 372px inside
+   a 288px button. The name takes this class (properties `Text` does not
+   set): it wraps, and `anywhere` also lets the box shrink below the longest
+   word, so the copy button still fits a phone. */
+.site-icon-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 /* ---- Home: make it yours --------------------------------------------- */
 
 .site-brand {
