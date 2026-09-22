@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Box, Surface, Text } from "@kozmos/react";
-import { places } from "./sample-data";
+import { categories, places } from "./sample-data";
 
 /**
  * A screen for the parts that pin themselves to the browser window:
@@ -19,9 +19,11 @@ import { places } from "./sample-data";
  * as one.
  *
  * The screen itself is a `Surface`, whose edge and fill are Kozmos's own
- * (site CSS cannot draw a border inside the provider — GAP-52). The page
- * behind is decoration: the demo's subject is the part over it, and assistive
- * technology is told to skip it.
+ * (site CSS cannot draw a border inside the provider — GAP-52). It is a
+ * phone's shape and not a phone: no bezel, notch or status bar, which belong
+ * to a device rather than to Kozmos. The page behind is decoration — the
+ * venue and categories the other demos share — so the demo's subject is the
+ * part over it, and assistive technology is told to skip it.
  */
 export function Screen({ children }: { children: ReactNode }) {
   return (
@@ -35,6 +37,17 @@ export function Screen({ children }: { children: ReactNode }) {
             <Text size="sm">{place.name}</Text>
             <Text size="xs" color="muted">
               {place.floorLabel} · {place.availabilityLabel}
+            </Text>
+          </Box>
+        ))}
+        <Text size="sm" weight="medium">
+          Browse
+        </Text>
+        {categories.map((category) => (
+          <Box key={category.id} className="site-screen-line">
+            <Text size="sm">{category.label}</Text>
+            <Text size="xs" color="muted">
+              {category.resultCountLabel}
             </Text>
           </Box>
         ))}

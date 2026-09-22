@@ -1795,14 +1795,19 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
    Containment; measured in Chromium, WebKit and Firefox), so inside this one
    the screen is the whole viewport. The island then sits at the screen's top
    edge, a bar on its bottom, a scrim over its page — where each would sit on
-   a phone. A phone's width, as the phone example's frame uses; the fill and
-   the edge are the `Surface`'s own, since site CSS cannot draw a border
+   a phone.
+
+   It is a phone's shape, not a phone: a portrait screen a little narrower
+   than the phone example's frame, and no bezel, notch or status bar. Those
+   are a device's, not Kozmos's, and the parts here are components of a page —
+   `DynamicIsland` is a capsule that mirrors iOS's, not iOS's own. The fill
+   and the edge are the `Surface`'s, since site CSS cannot draw a border
    inside the provider (GAP-52). */
 .site-screen {
   contain: layout paint;
   position: relative;
-  inline-size: min(100%, 24.375rem);
-  block-size: 22rem;
+  inline-size: min(100%, 21rem);
+  aspect-ratio: 9 / 16;
   border-radius: var(--site-radius-container);
 }
 

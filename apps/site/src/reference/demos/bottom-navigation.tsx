@@ -32,7 +32,9 @@ function Summon() {
       <Text size="sm" color="muted">
         The bar pins itself to the bottom of the window and takes no placement
         from the page around it (GAP-29). The screen above is its window, so the
-        bar is as wide as the app it belongs to, not as the browser.
+        bar is as wide as the app it belongs to, not as the browser. Its items
+        sit 8px from the edges, which a rounded screen’s corner cuts into: the
+        first and last fills are sliced, as they would be on a phone (GAP-53).
       </Text>
       <Box className="site-demo-row">
         <Switch

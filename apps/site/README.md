@@ -492,6 +492,11 @@ description, parts, props, snippets — nothing to write) and its demo file.
   makes it the containing block for its fixed children, so the part sits
   where it would on a phone instead of over this site's header or across the
   whole window. It brings its own page for the part to cover.
+  It is a phone's **shape** — portrait, 9:16 — and not a phone: no bezel,
+  notch or status bar. Those belong to a device, not to Kozmos, and could
+  only be drawn by hand; and `DynamicIsland` is a capsule that mirrors iOS's
+  island, not iOS's own, which its page says in as many words. Decided with
+  Olcay on 2026-09-22, when he asked whether an iPhone mockup would fit.
 - **A description says only what the component does.** The copy review of
   2026-09-22 found demos claiming a stroke that stays 2px, a spinner that
   stops for reduced motion and a loading button that keeps its width — none

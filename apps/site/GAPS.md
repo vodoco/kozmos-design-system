@@ -898,15 +898,23 @@ keep the table's four columns and its statuses as they are.
   On a phone, the shell fills a screen whose corners are round: the screen
   cuts the sheet's bottom corners, and the sheet's side and bottom borders
   stop short of the curve. There is no edge-to-edge form.
+- **What, again:** `BottomNavigation` is the same shape of problem. It pads
+  its items by 8px (`px-2`) and the active item's fill runs to that padding,
+  so in a screen with the container radius (20px) the corner arc slices the
+  first and last items' fills. The demo's screen shows it.
 - **Now (left visible):** the phone search example's screen takes the map's
   own corner radius, so the map's edge is the screen's outline; the sheet's
   cut corners show, and the example lists this gap. The home page's adaptive
-  tile does not round its host, so its sheet keeps square corners there.
+  tile does not round its host, so its sheet keeps square corners there. The
+  BottomNavigation demo's screen keeps its radius, so the sliced corner shows
+  there too.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** an edge-to-edge form of the shell: the map without a
   border or radius, and a sheet with only its top edge, its sides and bottom
   at the screen's edges as a native sheet's are — or a sheet that takes its
-  container's bottom radius.
+  container's bottom radius. For `BottomNavigation`, side padding that clears
+  a screen's corner (or an item fill that takes the container's radius), as
+  iOS and Android both keep their tab bars' indicators inside the curve.
 
 ## GAP-54 · No light: glow, gradient, blur or ambient motion
 
