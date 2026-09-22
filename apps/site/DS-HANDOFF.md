@@ -10,7 +10,7 @@ below was measured on the site's production build.
 
 The site is built from Kozmos components and tokens only. Where Kozmos fell
 short, the site did not work around it: the gap is recorded in
-[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-59, with the evidence), and the site
+[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-60, with the evidence), and the site
 either composed an honest stand-in from Kozmos parts or left the defect
 visible. This document turns those gaps into work for `packages/`, in
 priority order, with the file and line, the change, and the site check that
@@ -68,6 +68,7 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 | P1       | GAP-57                         | Button                                                   | Its label cannot wrap: the longest icon name scrolls the icons page sideways at 320px.           |
 | P1       | GAP-58                         | Toast                                                    | It draws no fill: over anything but a white page the words read through the toast.               |
 | P2       | GAP-59                         | DynamicIsland                                            | Pinned to its own dark theme: on the dark page the capsule is black on black, 1:1.               |
+| P2       | GAP-60                         | DynamicIsland                                            | No room kept for the camera: Apple leaves 54% of the island's width, the component 12%.          |
 | P1       | GAP-55                         | Listbox                                                  | Its column grows to the widest option: the site search scrolls sideways, and nothing truncates.  |
 | P1       | GAP-45                         | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page, as text and as a fill.                          |
 | P1       | GAP-31                         | Tokens (alert, success)                                  | Emotion text passes on white only: 4.29:1 on background-25, 3.59:1 on muted.                     |
@@ -418,6 +419,36 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 - **Proof:** "GAP-59: the island's capsule disappears into a dark page"
   measures the capsule against the screen behind it in the dark theme; flip
   it to expect a shape once there is one.
+
+### GAP-60 · `DynamicIsland` keeps no room for the camera it wraps
+
+- **Where:** `DynamicIsland/DynamicIsland.tsx` — the animated sizes (240×44
+  compact, 56×56 minimal, `calc(100vw - 32px)`×160 expanded, radius 100/32)
+  and the three layouts: compact is `justify-between px-4`, expanded is
+  `absolute inset-0 p-4`, minimal is centred.
+- **Why it breaks:** on the device the island is the TrueDepth camera's
+  housing and every presentation is laid out around the camera. Apple's
+  specification for a 393×852 screen: island 230×36.67, corner radius 44;
+  compact two elements of 52.33×36.67 either side of the camera, leaving
+  125.3pt — 54% of the width — for it; minimal 36.67–45×36.67; expanded
+  371×84–160, height following content, content wrapped tightly around the
+  camera. Measured here: 30px clear in the middle of a 240px capsule (12%),
+  the trailing slot running across the camera's place, expanded content from
+  16 to 344 of 360 starting at the top edge, and a height fixed at 160.
+  A layout that fits here and not on the phone teaches the wrong thing, and
+  the component's own MDX says it is meant to map onto ActivityKit.
+- **Change:** lay the presentations out around a sensor region — compact as
+  leading and trailing slots with the camera's share between them, expanded
+  with leading, trailing, centre and bottom regions as
+  `DynamicIslandExpandedRegion` has, minimal at the camera's height — and
+  take the sizes from
+  [Live Activities](https://developer.apple.com/design/human-interface-guidelines/live-activities)
+  (Specifications) rather than round numbers. Height should follow content
+  between 84 and 160.
+- **Proof:** "GAP-60: the island keeps no room for the camera" measures the
+  clear middle of the compact capsule (under 40% of its width today) and the
+  expanded content's share of the capsule (over 90%); flip both once there is
+  a sensor region, and take the sentence out of the demo's note.
 
 ## P3 — additions
 

@@ -38,7 +38,11 @@ function Summon() {
         from the page around it (GAP-24). The screen above is its window: it
         holds the island where a phone would, over the page it belongs to. The
         island carries its own dark theme, so on this site’s dark theme its
-        capsule is black on a black page and only the letters show (GAP-59).
+        capsule is black on a black page and only the letters show (GAP-59). On
+        a phone the island is the camera’s housing, and each presentation is
+        laid out around the camera: Apple keeps 54% of the island’s width for
+        it, this one keeps 12%, so the trailing slot and the expanded content
+        run over where the camera would be (GAP-60).
       </Text>
       <SegmentedControl
         label="Island state"

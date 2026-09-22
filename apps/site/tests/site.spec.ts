@@ -1848,6 +1848,65 @@ test.describe("design-system gaps, measured", () => {
     expect(shades.edge).toBe("0px");
   });
 
+  test("GAP-60: the island keeps no room for the camera", async ({ page }) => {
+    await page.goto("/components/dynamic-island");
+    await hydrated(page);
+    const capsule = () => page.locator(".site-screen [class*='bg-background']");
+    // Compact: Apple keeps 125.3pt of a 230pt island for the TrueDepth
+    // camera — 54% of its width — with a 52.33pt slot each side. Here the
+    // slots run to 30px apart in a 240px capsule: 12%.
+    const compact = await capsule().evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const slots = Array.from(node.querySelectorAll("div > div"))
+        .map((child) => child.getBoundingClientRect())
+        .filter((rect) => rect.width > 0 && rect.width < box.width)
+        .sort((a, b) => a.left - b.left);
+      const first = slots[0];
+      const last = slots[slots.length - 1];
+      return {
+        width: box.width,
+        clear: slots.length > 1 ? last.left - first.right : 0,
+      };
+    });
+    expect(compact.clear / compact.width).toBeLessThan(0.4);
+
+    // Expanded: its content fills the capsule from the top edge, over where
+    // the camera sits, rather than wrapping around it. The capsule springs
+    // open while the compact layer scales away, so the measurement waits for
+    // that layer to go and for the capsule and the new one to stop moving.
+    await page.getByRole("radio", { name: "expanded" }).click();
+    await expect(
+      capsule().getByText("3 min to the bookshop", { exact: true }),
+    ).toHaveCount(0);
+    await page.waitForFunction(() => {
+      const node = document.querySelector<HTMLElement>(
+        ".site-screen [class*='bg-background']",
+      );
+      if (!node) return false;
+      const layer = Array.from(
+        node.querySelectorAll<HTMLElement>("div > div"),
+      ).find((child) => (child.textContent ?? "").includes("Turn left at the"));
+      if (!layer) return false;
+      const mark = `${node.getBoundingClientRect().width}:${layer.getBoundingClientRect().top}`;
+      const before = node.dataset.settledAt;
+      node.dataset.settledAt = mark;
+      return before === mark;
+    });
+    const expanded = await capsule().evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const layer = Array.from(node.querySelectorAll("div > div")).find(
+        (child) => (child.textContent ?? "").includes("Turn left at the"),
+      );
+      const content = layer?.getBoundingClientRect();
+      return {
+        share: content ? content.width / box.width : 0,
+        fromTop: content ? content.top - box.top : 0,
+      };
+    });
+    expect(expanded.share).toBeGreaterThan(0.9);
+    expect(expanded.fromTop).toBeLessThan(24);
+  });
+
   test("GAP-24, 29, 34, 36: the parts that pin themselves, held by a screen", async ({
     page,
   }) => {

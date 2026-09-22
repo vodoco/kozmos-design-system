@@ -7,7 +7,7 @@ component and the part, what was tried, the lane, and the evidence. Entries
 up to GAP-36 were measured on `claude/pointr-browse-repairs` at `ef1b68b`
 (2026-09-21), the branch the site is built on; the rest, and every revision
 since, on the same packages at `f30c0f9`, the site's current base, on
-2026-09-22. GAP-54 to GAP-59, and the revisions the home page's new cover made to
+2026-09-22. GAP-54 to GAP-60, and the revisions the home page's new cover made to
 GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
 the same day.
 
@@ -85,6 +85,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-57 | A `Button`'s label cannot wrap                                 | Core                   | composed     |
 | GAP-58 | `Toast` draws no background of its own                         | Core                   | left visible |
 | GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it | Platform / form factor | left visible |
+| GAP-60 | `DynamicIsland` keeps no room for the camera it wraps          | Platform / form factor | left visible |
 
 ---
 
@@ -1054,3 +1055,39 @@ Text"])`) and the Get started page shows — touches it.
   `--semantics-border-subtle` inside the island's own dark scope, or a fill a
   step off the background (`background-25` there), would keep it an island on
   any page. Its inverted colours are not the gap.
+
+## GAP-60 · `DynamicIsland` keeps no room for the camera it wraps
+
+- **What:** on a phone the island is the TrueDepth camera's housing, and every
+  presentation is laid out around the camera. Apple's specification, for a
+  393×852 screen: the island is 230pt wide and 36.67 tall with a 44pt corner
+  radius; the compact presentation is two elements of 52.33×36.67, one each
+  side of the camera, which leaves 125.3pt — 54% of the island's width — for
+  the camera itself; the minimal presentation is 36.67–45 wide by 36.67 and
+  appears only when two activities run, one attached and one detached; the
+  expanded presentation is 371 wide by 84–160 tall, its height following its
+  content, and its content wraps tightly around the camera
+  ([Live Activities](https://developer.apple.com/design/human-interface-guidelines/live-activities),
+  Compact, Minimal, Expanded and Specifications).
+  Kozmos's `DynamicIsland` keeps none of that room. Measured on its page: the
+  compact capsule is 240×44 with the leading icon at 16–32 and the trailing
+  text at 62–224, so 30px — 12% of its width — is clear in the middle and the
+  trailing slot runs across where the camera would be. The expanded capsule is
+  360×160 whatever it holds, and its content fills 16 to 344 from the top
+  edge, straight over the camera. The minimal capsule is 56×56, centred.
+- **Evidence:** "GAP-60: the island keeps no room for the camera" measures the
+  clear middle of the compact capsule and the width of the expanded content on
+  the DynamicIsland page.
+- **Now:** left visible on the DynamicIsland page, whose demo shows the part as
+  it draws and says what to look at. The site's screen is deliberately a
+  phone's shape and not a phone (README), so it draws no camera of its own:
+  the room belongs inside the component, as it does on the device.
+- **Lane:** Platform / form factor.
+- **Fix in Kozmos:** lay the presentations out around a sensor region, as
+  ActivityKit does — compact as leading and trailing slots with the camera's
+  share between them, expanded with leading, trailing, centre and bottom
+  regions, minimal at the camera's own height — and take the sizes from the
+  specification above rather than round numbers. The React island is a
+  fallback for pseudo-fullscreen web apps (its own MDX), so it needs the same
+  geometry: a layout that fits here but not on the phone teaches the wrong
+  thing.

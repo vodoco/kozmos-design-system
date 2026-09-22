@@ -1806,7 +1806,11 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
 .site-screen {
   contain: layout paint;
   position: relative;
-  inline-size: min(100%, 21rem);
+  /* A phone's width, as the phone example's frame uses. It has to be at
+     least the widest part it holds: the island's expanded capsule stops at
+     360px, which would be cut by a narrower screen — on a phone that
+     capsule is 371pt inside a 393pt screen. */
+  inline-size: min(100%, 24.375rem);
   aspect-ratio: 9 / 16;
   border-radius: var(--site-radius-container);
 }
