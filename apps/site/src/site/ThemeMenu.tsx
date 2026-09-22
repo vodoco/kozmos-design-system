@@ -33,10 +33,12 @@ export function ThemeMenu() {
   return (
     <Menu>
       <MenuTrigger asChild>
+        {/* The icon's space from the word is the site's (GAP-56). */}
         <Button
           variant="ghost"
           size="sm"
           aria-label={`Theme: ${current?.label ?? "System"}`}
+          className="site-button-icon"
         >
           Theme
           <Icon name="chevron-down" size="sm" />

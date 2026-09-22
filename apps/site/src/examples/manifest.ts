@@ -14,7 +14,8 @@ export interface ExampleEntry {
   summary: string;
   /**
    * Where the example differs from what a product would draw, because Kozmos
-   * cannot express it yet. Each names its entry in GAPS.md.
+   * cannot express it yet. Each names its entry in GAPS.md; the roadmap
+   * lists the examples each item shows in from these.
    */
   gaps: readonly string[];
   /** Shown small on the home page; the index shows every example. */
@@ -105,6 +106,7 @@ export const examples: readonly ExampleEntry[] = [
       'GAP-32 · ChipGroup carries no role, so the status filter passes role="group" for its label to count.',
       "GAP-36 · Toasts pin themselves to the browser’s corner, outside the page, so confirmations are an inline Alert instead.",
       'GAP-12 · Alert is always role="alert"; the confirmations pass role="status".',
+      "GAP-56 · A Button puts no space between its icon and its label, so “Add venue” is given the 8px Figma’s Button keeps.",
     ],
   },
   {
@@ -127,6 +129,7 @@ export const examples: readonly ExampleEntry[] = [
     gaps: [
       "GAP-36 · Toasts pin themselves to the browser’s corner, outside the page, so the undo sits in an inline Alert instead.",
       'GAP-12 · Alert is always role="alert"; the confirmation passes role="status".',
+      "GAP-56 · A Button puts no space between its icon and its label, so “Preferences” is given the 8px Figma’s Button keeps.",
     ],
   },
   {

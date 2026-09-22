@@ -3,6 +3,12 @@ import { PACKAGES_PUBLISHED } from "../lib/site";
 import { SiteLink } from "./links";
 import { primaryNavigation } from "./SiteHeader";
 
+/** The header's pages, and the roadmap, which the header has no room for. */
+const footerNavigation = [
+  ...primaryNavigation,
+  { to: "/roadmap", label: "Roadmap" },
+] as const;
+
 /** GAP-08: Kozmos has no footer, so this one is composed from its parts. */
 export function SiteFooter() {
   return (
@@ -22,7 +28,7 @@ export function SiteFooter() {
               {PACKAGES_PUBLISHED ? null : " Pre-release."}
             </Text>
             <nav aria-label="Footer" className="site-footer-nav">
-              {primaryNavigation.map((item) => (
+              {footerNavigation.map((item) => (
                 <Text key={item.to} as="span" size="sm">
                   <SiteLink to={item.to} variant="subtle">
                     {item.label}

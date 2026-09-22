@@ -5,7 +5,7 @@
   "description": "The Kozmos design system's website: what it is, how to start, and page and app examples built from Kozmos components only.",
   "type": "module",
   "scripts": {
-    "generate": "node scripts/generate-reference.mjs",
+    "generate": "node scripts/generate-reference.mjs && node scripts/generate-roadmap.mjs",
     "brand": "node scripts/generate-brand.mjs",
     "dev": "pnpm generate && react-router dev",
     "build": "pnpm generate && react-router typegen && tsc && react-router build",

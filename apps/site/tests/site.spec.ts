@@ -26,6 +26,7 @@ const pages = [
   { path: "/", title: "The design system for the Pointr SDK" },
   { path: "/get-started", title: "Get started" },
   { path: "/examples", title: "Examples" },
+  { path: "/roadmap", title: "Roadmap" },
   { path: "/examples/account-settings", title: "Account settings" },
   { path: "/examples/venue-explorer", title: "Venue explorer" },
   { path: "/examples/wayfinding", title: "Wayfinding" },
@@ -241,7 +242,10 @@ async function axeViolations(page: Page) {
  * var(--c)` — is measured through its longhands, which the CSSOM leaves empty
  * in the rule. Rules for states (:hover, :focus…) are left out. A loss can
  * move the layout, and then a percentage size elsewhere reads differently
- * too: the first line of a failure is the cause.
+ * too: the first line of a failure is the cause. A property a running
+ * animation drives reads as the animation's value at that moment, not the
+ * cascade's — and WebKit moves it on between the two reads — so it is left
+ * out for the element it animates (the home page's cover loops).
  */
 async function overriddenSiteCss(page: Page) {
   return page.evaluate(() => {
@@ -372,6 +376,30 @@ async function overriddenSiteCss(page: Page) {
         if (animation instanceof CSSTransition) animation.finish();
       }
     };
+    const animated = new Map<Element, Map<string | null, Set<string>>>();
+    for (const animation of document.getAnimations()) {
+      const effect = animation.effect;
+      if (
+        animation.playState !== "running" ||
+        !(effect instanceof KeyframeEffect) ||
+        !effect.target
+      )
+        continue;
+      const byPseudo =
+        animated.get(effect.target) ?? new Map<string | null, Set<string>>();
+      const names = byPseudo.get(effect.pseudoElement) ?? new Set<string>();
+      for (const frame of effect.getKeyframes()) {
+        for (const key of Object.keys(frame)) {
+          if (["offset", "computedOffset", "easing", "composite"].includes(key))
+            continue;
+          names.add(
+            key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`),
+          );
+        }
+      }
+      byPseudo.set(effect.pseudoElement, names);
+      animated.set(effect.target, byPseudo);
+    }
     const before = read();
     const raised = document.createElement("style");
     raised.textContent = text.join("\n");
@@ -381,9 +409,11 @@ async function overriddenSiteCss(page: Page) {
     raised.remove();
     settle();
     const lost = new Map<string, string>();
-    measured.forEach(({ selector, declared }, index) => {
+    measured.forEach(({ element, pseudo, selector, declared }, index) => {
+      const moving = animated.get(element)?.get(pseudo);
       declared.forEach(({ property, value, longhands: names }, at) => {
         names.forEach((name, position) => {
+          if (moving?.has(name)) return;
           const was = before[index]?.[at]?.[position];
           const meant = after[index]?.[at]?.[position];
           const key = `${selector} { ${property}: ${value} }`;
@@ -762,6 +792,30 @@ test("the skip link shows over the header on a phone too", async ({
   expect(await drawnOnTop(skip)).toBe(true);
 });
 
+/**
+ * The space between a button's icon and its words: from the icon's edge to
+ * the nearest edge of the text beside it, whichever side the icon is on.
+ */
+async function iconGap(button: Locator) {
+  return button.evaluate((element) => {
+    const icon = element.querySelector("svg")!.getBoundingClientRect();
+    const range = document.createRange();
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    let left = Infinity;
+    let right = -Infinity;
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.textContent?.trim()) continue;
+      range.selectNodeContents(node);
+      const box = range.getBoundingClientRect();
+      left = Math.min(left, box.left);
+      right = Math.max(right, box.right);
+    }
+    return Math.round(
+      icon.right <= left ? left - icon.right : icon.left - right,
+    );
+  });
+}
+
 /** Whether an element is what the page paints at its own centre. */
 async function drawnOnTop(element: Locator) {
   return element.evaluate((node) => {
@@ -786,69 +840,225 @@ async function focusStaysOnContent(page: Page) {
 }
 
 test.describe("home", () => {
-  test("the hero scene themes and mirrors only itself, and its controls work", async ({
+  test("the cover is drawn in the dark theme whatever the site's, and shows assistive technology only its words", async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/");
     await hydrated(page);
-    const scene = page
-      .locator("section[aria-labelledby='home-title'] [data-kozmos-root]")
-      .first();
-    await expect(scene).toHaveAttribute("data-theme", "dark");
-    // The scene's own switches sit in a strip inside its frame.
-    const settings = page.getByRole("group", { name: "Scene settings" });
-    await expect(settings.getByRole("switch", { name: "Dark" })).toBeChecked();
-    await settings.getByRole("switch", { name: "Dark" }).click();
-    await expect(scene).toHaveAttribute("data-theme", "light");
-    await settings.getByRole("switch", { name: "Right to left" }).click();
-    await expect(scene).toHaveAttribute("dir", "rtl");
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-    await expect(
-      page.locator("body > [data-kozmos-root]").first(),
-    ).toHaveAttribute("dir", "ltr");
-
-    const map = page.getByRole("region", { name: "Illustrative terminal map" });
-    await expect(map.getByRole("button", { name: /Gate B12/ })).toBeVisible();
-    await expect(map.getByRole("img", { name: "User location" })).toBeVisible();
-    await map.getByRole("button", { name: "Show my location" }).click();
-    await expect(map.getByRole("img", { name: "User location" })).toHaveCount(
-      0,
+    const cover = page.locator("section[aria-labelledby='home-title']");
+    await expect(cover.locator("[data-kozmos-root]").first()).toHaveAttribute(
+      "data-theme",
+      "dark",
     );
-    await expect(map.getByText("Turn left at the pharmacy")).toBeVisible();
-    await expect(map.getByText("Gate B12")).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    // The picture is hidden; the logo is an image named by its words.
+    for (const layer of [
+      ".site-cosmos-stars",
+      ".site-cosmos-art",
+      ".site-cosmos-nebula",
+    ]) {
+      await expect(cover.locator(layer)).toHaveAttribute("aria-hidden", "true");
+    }
+    const logo = cover.getByRole("img", { name: LOGO });
+    await expect(logo).toBeVisible();
+    const shape = await drawnShape(logo);
+    expect(shape.decoded).toBe(true);
+    expect(shape.ratio).toBeCloseTo(1605.6736 / 442.27, 1);
+    // The ring and the orbits are drawn through SVG strokes; one that does
+    // not decode paints nothing, and says nothing.
+    for (const line of [
+      ".site-cosmos-ring:not(.site-cosmos-ring-glow)",
+      ".site-cosmos-orbit",
+    ]) {
+      expect(
+        (await drawnShape(cover.locator(line).first())).decoded,
+        line,
+      ).toBe(true);
+    }
+    // Painted from the dark theme's ramps on a light page: the ring's
+    // palest violet is the second brand ramp's 900 as the cover's provider
+    // resolves it, not as the page's light theme does.
+    const paint = await cover.evaluate((band) => {
+      const resolve = (host: Element, name: string) => {
+        const probe = document.createElement("div");
+        probe.style.color = `var(${name})`;
+        host.append(probe);
+        const colour = getComputedStyle(probe).color;
+        probe.remove();
+        return colour;
+      };
+      const provider = band.querySelector("[data-kozmos-root]")!;
+      const ring = band.querySelector(
+        ".site-cosmos-ring:not(.site-cosmos-ring-glow)",
+      )!;
+      return {
+        ring: getComputedStyle(ring).backgroundImage,
+        cover: resolve(provider, "--primitives-colors-theme-variant-2-900"),
+        page: resolve(document.body, "--primitives-colors-theme-variant-2-900"),
+      };
+    });
+    expect(paint.cover).not.toBe(paint.page);
+    expect(paint.ring).toContain(paint.cover);
+    expect(paint.ring).not.toContain(paint.page);
   });
 
-  test("the scene's frame keeps the map's corners, and its bar is edged round them", async ({
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 1280, height: 800 },
+    { width: 1366, height: 768 },
+    { width: 1440, height: 900 },
+  ]) {
+    test(`the claim and both next steps are on the first screen at ${viewport.width} by ${viewport.height}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+      await hydrated(page);
+      const bottom = await page
+        .locator("section[aria-labelledby='home-title'] .site-actions")
+        .evaluate((actions) => actions.getBoundingClientRect().bottom);
+      expect(bottom).toBeLessThanOrEqual(viewport.height);
+    });
+  }
+
+  for (const viewport of [
+    { width: 1280, height: 800 },
+    { width: 390, height: 844 },
+  ]) {
+    test(`the words sit on the page's black at ${viewport.width}px: nothing of the cover is drawn behind a letter`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+      await hydrated(page);
+      const words = page.locator(
+        "section[aria-labelledby='home-title'] .site-cosmos-words",
+      );
+      // By element, not by role: hidden, a heading leaves the tree.
+      for (const text of [words.locator("h1"), words.locator("p")]) {
+        const box = await text.boundingBox();
+        expect(box).not.toBeNull();
+        if (!box) return;
+        const colour = await text.evaluate(
+          (element) => getComputedStyle(element).color,
+        );
+        // The letters hidden, their box shows what is drawn behind them.
+        await text.evaluate((element) => {
+          (element as HTMLElement).style.visibility = "hidden";
+        });
+        const picture = await page.screenshot({ clip: box });
+        await text.evaluate((element) => {
+          (element as HTMLElement).style.visibility = "";
+        });
+        const brightest = await page.evaluate(async (png) => {
+          const image = new Image();
+          image.src = `data:image/png;base64,${png}`;
+          await image.decode();
+          const canvas = document.createElement("canvas");
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          const context = canvas.getContext("2d")!;
+          context.drawImage(image, 0, 0);
+          const { data } = context.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+          );
+          const linear = (channel: number) => {
+            const value = channel / 255;
+            return value <= 0.04045
+              ? value / 12.92
+              : ((value + 0.055) / 1.055) ** 2.4;
+          };
+          let best = { r: 0, g: 0, b: 0, a: 1 };
+          let most = -1;
+          for (let index = 0; index < data.length; index += 4) {
+            const [r, g, b] = [
+              data[index]!,
+              data[index + 1]!,
+              data[index + 2]!,
+            ];
+            const luminance =
+              0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+            if (luminance > most) {
+              most = luminance;
+              best = { r, g, b, a: 1 };
+            }
+          }
+          return best;
+        }, picture.toString("base64"));
+        const ink = parseColour(colour);
+        expect(ink).toBeTruthy();
+        if (!ink) return;
+        // Against the brightest pixel behind the words, not an average.
+        expect(contrastRatio(ink, brightest)).toBeGreaterThanOrEqual(4.5);
+      }
+    });
+  }
+
+  test("some of the cover moves, until it is paused, scrolled away or reduced", async ({
     page,
   }) => {
     await page.goto("/");
     await hydrated(page);
-    const edges = await page
-      .getByRole("group", { name: "Scene settings" })
-      .evaluate((bar) => {
-        const frame = bar.parentElement!;
-        const map = frame.querySelector('[role="region"]')!;
-        const own = getComputedStyle(bar);
-        return {
-          last: frame.lastElementChild === bar,
-          frame: getComputedStyle(frame).borderStartStartRadius,
-          map: getComputedStyle(map).borderStartStartRadius,
-          border: own.borderBlockEndWidth,
-          start: own.borderEndStartRadius,
-          end: own.borderEndEndRadius,
-        };
+    const cover = page.locator("section[aria-labelledby='home-title']");
+    const loops = () =>
+      cover.evaluate((band) =>
+        document
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation.effect instanceof KeyframeEffect &&
+              animation.effect.target !== null &&
+              band.contains(animation.effect.target) &&
+              animation.effect.getTiming().iterations === Infinity,
+          )
+          .map((animation) => animation.playState),
+      );
+    const states = await loops();
+    // Travellers, stars, panes, the galaxy and the ring.
+    expect(states.length).toBeGreaterThanOrEqual(10);
+    expect(new Set(states)).toEqual(new Set(["running"]));
+    const rider = cover.locator(".site-cosmos-rider").first();
+    const place = () =>
+      rider.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return { x: box.left, y: box.top, round: box.width - box.height };
       });
-    // The frame clips its corners round. A wider curve than the map's own
-    // takes the map's edge off at the top; a square-cornered bar's border
-    // stops where the curve starts at the bottom. Both leave a corner
-    // unedged, plain on a dark page, where the frame's shadow does not show.
-    expect(edges.frame).not.toBe("0px");
-    expect(edges.frame).toBe(edges.map);
-    expect(edges.last).toBe(true);
-    expect(edges.border).not.toBe("0px");
-    expect(edges.start).toBe(edges.frame);
-    expect(edges.end).toBe(edges.frame);
+    const before = await place();
+    await page.waitForTimeout(600);
+    const after = await place();
+    expect(after.x !== before.x || after.y !== before.y).toBe(true);
+    // Upright and round wherever the orbit carries it.
+    expect(Math.abs(after.round)).toBeLessThan(1);
+
+    // WCAG 2.2.2: it moves for longer than five seconds, so it can be stopped.
+    const pause = cover.getByRole("button", { name: "Pause motion" });
+    await pause.click();
+    await expect(pause).toHaveAttribute("aria-pressed", "true");
+    await expect(cover).toHaveAttribute("data-motion", "paused");
+    expect(new Set(await loops())).toEqual(new Set(["paused"]));
+    await pause.click();
+    await expect(cover).toHaveAttribute("data-motion", "running");
+    expect(new Set(await loops())).toEqual(new Set(["running"]));
+
+    // Out of view, it rests; back in view, it moves again.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await expect(cover).toHaveAttribute("data-motion", "paused");
+    expect(new Set(await loops())).toEqual(new Set(["paused"]));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(cover).toHaveAttribute("data-motion", "running");
+
+    // Under reduced motion nothing moves, and there is nothing to pause.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.reload();
+    await hydrated(page);
+    expect(await loops()).toEqual([]);
+    await expect(pause).toBeHidden();
+    // The travellers rest where their laps start, still round.
+    expect(Math.abs((await place()).round)).toBeLessThan(1);
   });
 
   test("the live tiles respond", async ({ page }) => {
@@ -1109,6 +1319,71 @@ test.describe("the header", () => {
     expect(decoded).toEqual([true, true, true]);
   });
 
+  /** Where the logo, the page links and the tools sit in the header's row. */
+  const headerRow = (page: Page) =>
+    page.getByRole("banner").evaluate((banner) => {
+      const box = (selector: string) =>
+        banner.querySelector(selector)!.getBoundingClientRect();
+      const [logo, links, tools] = [
+        box(".site-logo"),
+        box(".site-header-links"),
+        box(".site-header-tools"),
+      ];
+      const apart = (a: DOMRect, b: DOMRect) =>
+        a.right <= b.left ||
+        b.right <= a.left ||
+        a.bottom <= b.top ||
+        b.bottom <= a.top;
+      return {
+        centred:
+          Math.abs(
+            (links.left + links.right) / 2 -
+              document.documentElement.clientWidth / 2,
+          ) <= 1,
+        clear: apart(logo, links) && apart(links, tools) && apart(logo, tools),
+        afterLogo: links.left > logo.right,
+      };
+    });
+
+  for (const width of [768, 1024, 1280, 1440]) {
+    test(`centres the page links on the page at ${width}px, clear of the logo and the tools`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto("/components");
+      await hydrated(page);
+      expect(await headerRow(page)).toEqual({
+        centred: true,
+        clear: true,
+        afterLogo: true,
+      });
+    });
+  }
+
+  test("keeps the page links in the row, after the logo, where enlarged text leaves the centre no room", async ({
+    page,
+  }) => {
+    // WCAG 1.4.4: with the text a half or twice its size the centred row no
+    // longer fits, so the links go back into the row, and the row wraps
+    // rather than letting them run into the logo or the tools.
+    for (const [width, text] of [
+      [1024, "150%"],
+      [1280, "200%"],
+    ] as const) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto("/components");
+      await hydrated(page);
+      await page.evaluate((size) => {
+        document.documentElement.style.fontSize = size;
+      }, text);
+      expect(await headerRow(page), `${width}px, text at ${text}`).toEqual({
+        centred: false,
+        clear: true,
+        afterLogo: true,
+      });
+    }
+  });
+
   for (const viewport of [
     { width: 1280, height: 800 },
     { width: 1024, height: 768 },
@@ -1330,13 +1605,31 @@ test.describe("home layout", () => {
       [...document.querySelectorAll("main .site-section-header h2")]
         .map((heading) => {
           const top = heading.getBoundingClientRect().top;
-          const above = [...document.querySelectorAll("main *")]
-            .map((element) => element.getBoundingClientRect())
-            .filter(
-              (box) => box.height > 0 && box.width > 0 && box.bottom <= top + 1,
-            )
-            .reduce((bottom, box) => Math.max(bottom, box.bottom), 0);
-          return { title: heading.textContent, space: Math.round(top - above) };
+          // The lowest thing above the heading, and what it is, so a
+          // failure names it. A miniature is a picture, clipped to its
+          // frame: what runs past the frame inside it is not drawn (the
+          // Wayfinding miniature's list reaches 18px under its band).
+          let bottom = 0;
+          let from = "";
+          for (const element of document.querySelectorAll("main *")) {
+            if (element.closest("[inert]")) continue;
+            const box = element.getBoundingClientRect();
+            if (box.height > 0 && box.width > 0 && box.bottom <= top + 1) {
+              if (box.bottom > bottom) {
+                bottom = box.bottom;
+                const classes = [...element.classList]
+                  .slice(0, 3)
+                  .map((name) => `.${name}`)
+                  .join("");
+                from = `${element.localName}${classes}`;
+              }
+            }
+          }
+          return {
+            title: heading.textContent,
+            space: Math.round(top - bottom),
+            from,
+          };
         })
         .filter((section) => section.space < 48),
     );
@@ -1456,11 +1749,44 @@ test.describe("design-system gaps, measured", () => {
     expect(line).toBe("underline");
   });
 
-  test("GAP-40: MapView does not isolate its overlays", async ({ page }) => {
+  test("GAP-56: a Button's icon touches its label", async ({ page }) => {
+    await page.goto("/components/button");
+    await hydrated(page);
+    // The Button page shows the component as it draws: the icon and the
+    // word with nothing between them.
+    const directions = page
+      .locator(".site-demos")
+      .getByRole("button", { name: "Directions" })
+      .first();
+    expect(await iconGap(directions)).toBe(0);
+  });
+
+  test("GAP-55: a Listbox's column is as wide as its widest option", async ({
+    page,
+  }) => {
     await page.goto("/");
     await hydrated(page);
+    await page.getByRole("button", { name: "Search the site" }).click();
+    const list = page
+      .getByRole("dialog", { name: "Search the site" })
+      .getByRole("listbox", { name: "Results" });
+    await expect(list).toBeVisible();
+    // Without the site's column the options outgrow the list.
+    const overflow = await list.evaluate((element) => {
+      element.classList.remove("site-search-list");
+      const sideways = element.scrollWidth - element.clientWidth;
+      element.classList.add("site-search-list");
+      return sideways;
+    });
+    expect(overflow).toBeGreaterThan(0);
+  });
+
+  test("GAP-40: MapView does not isolate its overlays", async ({ page }) => {
+    await page.goto("/components/map-overlay");
+    await hydrated(page);
     const isolation = await page
-      .getByRole("region", { name: "Illustrative terminal map" })
+      .getByRole("region", { name: "Illustrative map" })
+      .first()
       .evaluate((map) => getComputedStyle(map).isolation);
     expect(isolation).toBe("auto");
   });
@@ -2406,6 +2732,94 @@ test.describe("saved places example", () => {
   });
 });
 
+test.describe("roadmap", () => {
+  /**
+   * The roadmap as GAPS.md and DS-HANDOFF.md say it, read at build time
+   * (scripts/generate-roadmap.mjs, whose own tests read the documents).
+   */
+  const expected = JSON.parse(
+    readFileSync(
+      new URL("../src/generated/roadmap.json", import.meta.url),
+      "utf8",
+    ),
+  ) as {
+    total: number;
+    groups: {
+      id: string | null;
+      title: string;
+      items: { id: string; title: string; status: string }[];
+    }[];
+  };
+  const label: Record<string, string> = {
+    open: "Open",
+    composed: "Worked around",
+    "left visible": "Shown as is",
+    fixed: "Fixed",
+  };
+
+  test("lists every item in GAPS.md, by the handoff's priority, with its status", async ({
+    page,
+  }) => {
+    await page.goto("/roadmap");
+    await hydrated(page);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Roadmap");
+    let rows = 0;
+    for (const group of expected.groups) {
+      const heading = group.id ? `${group.id} · ${group.title}` : group.title;
+      await expect(
+        page.getByRole("heading", { level: 2, name: heading }),
+      ).toBeVisible();
+      const table = page.getByRole("table", { name: group.id ?? group.title });
+      const body = table.locator("tbody tr");
+      await expect(body).toHaveCount(group.items.length);
+      for (const [index, item] of group.items.entries()) {
+        const row = body.nth(index);
+        // The title as GAPS.md writes it, less its code marks.
+        await expect(row).toContainText(item.title.replace(/`/g, ""));
+        await expect(row).toContainText(item.id);
+        await expect(
+          row.getByText(label[item.status]!, { exact: true }),
+        ).toBeVisible();
+        rows += 1;
+      }
+    }
+    expect(rows).toBe(expected.total);
+  });
+
+  test("links an item to the examples it shows in, and the examples to it", async ({
+    page,
+  }) => {
+    await page.goto("/roadmap");
+    await hydrated(page);
+    const row = page.getByRole("row").filter({ hasText: "GAP-56" });
+    await expect(row.getByRole("link")).toHaveText([
+      "Operations dashboard",
+      "Notifications inbox",
+    ]);
+    await row.getByRole("link", { name: "Operations dashboard" }).click();
+    await expect(page).toHaveURL(/\/examples\/dashboard$/);
+    // The example no longer lists its gaps: it points at the roadmap.
+    await expect(
+      page.getByRole("heading", { name: "Where Kozmos falls short" }),
+    ).toHaveCount(0);
+    await page.getByRole("link", { name: "roadmap", exact: true }).click();
+    await expect(page).toHaveURL(/\/roadmap$/);
+    await expect(page.locator("main#main")).toBeFocused();
+    // The footer and the search reach it too.
+    await expect(
+      page.getByRole("contentinfo").getByRole("link", { name: "Roadmap" }),
+    ).toHaveAttribute("href", "/roadmap");
+    await page.keyboard.press("Control+k");
+    const dialog = page.getByRole("dialog", { name: "Search the site" });
+    await dialog
+      .getByRole("searchbox", { name: "Search the site" })
+      .fill("roadmap");
+    await expect(
+      dialog.getByRole("option", { name: /^Roadmap/ }),
+    ).toBeVisible();
+  });
+});
+
 test("the search opens from the keyboard or the header and takes you there", async ({
   page,
 }) => {
@@ -2450,6 +2864,93 @@ test("the search opens from the keyboard or the header and takes you there", asy
   await expect(dialog.getByText(/Nothing has “zzzz”/)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
+});
+
+test("a button that holds an icon and words keeps them 8px apart", async ({
+  page,
+}) => {
+  // GAP-56: Kozmos's Button sets no gap; the site's buttons carry the 8px
+  // Figma's Button keeps between its indicator and its label.
+  const cases: [string, (page: Page) => Locator, number?][] = [
+    ["/", (p) => p.getByRole("banner").getByRole("button", { name: /^Theme/ })],
+    [
+      "/",
+      (p) =>
+        p
+          .getByRole("region", { name: "Make it yours" })
+          .getByRole("button", { name: "Directions" }),
+    ],
+    [
+      "/foundations/icons",
+      (p) => p.getByRole("button", { name: "Copy search-md" }),
+    ],
+    ["/foundations/theming", (p) => p.getByRole("button", { name: "Back" })],
+    [
+      "/examples/dashboard",
+      (p) => p.getByRole("button", { name: "Add venue" }),
+    ],
+    [
+      "/examples/notifications",
+      (p) => p.getByRole("button", { name: "Preferences" }),
+    ],
+    [
+      "/components/navbar",
+      (p) => p.getByRole("button", { name: "New venue" }).first(),
+    ],
+    [
+      "/components/menu",
+      (p) => p.getByRole("button", { name: "Actions" }).first(),
+    ],
+    // The reference's drawer button, below 64rem.
+    [
+      "/components/button",
+      (p) => p.getByRole("button", { name: "Components" }),
+      900,
+    ],
+  ];
+  for (const [path, find, width] of cases) {
+    await page.setViewportSize({ width: width ?? 1280, height: 800 });
+    await page.goto(path);
+    await scrolled(page);
+    const button = find(page);
+    await button.scrollIntoViewIfNeeded();
+    expect(await iconGap(button), path).toBe(8);
+  }
+});
+
+test("the search's results never scroll sideways: a long description ends in an ellipsis", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await hydrated(page);
+  await page.getByRole("button", { name: "Search the site" }).click();
+  const list = page
+    .getByRole("dialog", { name: "Search the site" })
+    .getByRole("listbox", { name: "Results" });
+  await expect(list).toBeVisible();
+  const fit = await list.evaluate((element) => {
+    const width = element.getBoundingClientRect().width;
+    const options = [...element.querySelectorAll('[role="option"]')];
+    const descriptions = options
+      .map((option) => option.querySelector("span span:last-child"))
+      .filter((line): line is HTMLElement => line instanceof HTMLElement);
+    return {
+      sideways: element.scrollWidth - element.clientWidth,
+      widest: Math.max(
+        ...options.map((option) => option.getBoundingClientRect().width),
+      ),
+      width,
+      cut: descriptions.some(
+        (line) =>
+          line.scrollWidth > line.clientWidth &&
+          getComputedStyle(line).textOverflow === "ellipsis",
+      ),
+    };
+  });
+  expect(fit.sideways).toBeLessThanOrEqual(0);
+  expect(fit.widest).toBeLessThanOrEqual(fit.width);
+  // The contents list holds descriptions longer than a line: they are cut.
+  expect(fit.cut).toBe(true);
 });
 
 test.describe("component reference", () => {

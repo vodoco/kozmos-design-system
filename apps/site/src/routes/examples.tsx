@@ -26,7 +26,7 @@ export function meta() {
     {
       name: "description",
       content:
-        "Pages and apps built from Kozmos components only, each with its source and the places Kozmos fell short.",
+        "Pages and apps built from Kozmos components only, each with its source; where they found Kozmos short is on the roadmap.",
     },
   ];
 }
@@ -53,7 +53,13 @@ export default function Examples() {
     <Container className="site-page">
       <PageHeader
         title="Examples"
-        lead="Pages and apps built from Kozmos components and nothing else. Each shows its source, and says where Kozmos could not express what a product would draw."
+        lead={
+          <>
+            Pages and apps built from Kozmos components and nothing else, each
+            with its source. Where they found Kozmos short is on the{" "}
+            <SiteLink to="/roadmap">roadmap</SiteLink>.
+          </>
+        }
       />
       {/* CardTitle is always an h3 (GAPS.md, GAP-14), so the cards sit under
           an h2 of their own. */}

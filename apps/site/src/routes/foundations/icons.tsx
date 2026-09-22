@@ -145,6 +145,7 @@ export default function Icons() {
                 size="lg"
                 aria-label={`Copy ${entry.name}`}
                 onClick={() => copy(entry.name)}
+                className="site-button-icon"
               >
                 <Icon name={entry.name} size="lg" />
                 <Stack gap={0} align="start">

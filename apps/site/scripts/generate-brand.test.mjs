@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   OUTPUTS,
   K_BOUNDS,
+  STAR_BOUNDS,
   boundsOf,
   brandSvgs,
   icoOf,
@@ -56,6 +57,18 @@ test("the logo's K is its first three shapes, where it has always been", () => {
   assert.throws(() => readLogo('<svg><path d="M0 0Z"/></svg>'), /four paths/);
 });
 
+test("the logo's first star is its third path, a square four-pointed star", () => {
+  const logo = readLogo(
+    fs.readFileSync(path.join(SITE_ROOT, "src/brand/kozmos-logo.svg"), "utf8"),
+  );
+  assert.deepEqual(logo.starBounds, STAR_BOUNDS);
+  // As wide as it is tall: the page sizes it by one side.
+  assert.equal(
+    STAR_BOUNDS.right - STAR_BOUNDS.x,
+    STAR_BOUNDS.bottom - STAR_BOUNDS.y,
+  );
+});
+
 test("a token's value is read from the tokens' stylesheet", () => {
   const css =
     "[data-theme='dark'] {\n  --primitives-colors-background-0: #000000;\n}";
@@ -74,6 +87,7 @@ test("an .ico holds its PNGs and reads back their sizes", () => {
 test("the committed brand files are what the logo and the tokens make now", () => {
   const svgs = brandSvgs();
   assert.equal(fs.readFileSync(OUTPUTS.mark, "utf8"), svgs.mark);
+  assert.equal(fs.readFileSync(OUTPUTS.star, "utf8"), svgs.star);
   assert.equal(fs.readFileSync(OUTPUTS.favicon, "utf8"), svgs.favicon);
   assert.deepEqual(icoSizes(fs.readFileSync(OUTPUTS.ico)), [
     { width: 16, height: 16 },
@@ -91,6 +105,7 @@ test("every brand SVG is well-formed where a browser is strict", () => {
   for (const file of [
     path.join(SITE_ROOT, "src/brand/kozmos-logo.svg"),
     OUTPUTS.mark,
+    OUTPUTS.star,
     OUTPUTS.favicon,
   ]) {
     const source = fs.readFileSync(file, "utf8");

@@ -52,11 +52,12 @@ export function DirectionSample() {
             <Chip size="sm">Step-free</Chip>
           </ChipGroup>
           <Stack direction="row" gap={2}>
-            <Button>
+            {/* The icons' space from the words is the site's (GAP-56). */}
+            <Button className="site-button-icon">
               <Icon name="arrow-left" size="sm" />
               Back
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" className="site-button-icon">
               Next
               <Icon name="arrow-right" size="sm" />
             </Button>

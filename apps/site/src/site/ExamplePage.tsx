@@ -9,8 +9,6 @@ import {
   BreadcrumbSeparator,
   Container,
   Heading,
-  List,
-  ListItem,
   ScrollArea,
   Separator,
   Stack,
@@ -24,6 +22,7 @@ import {
 import { exampleKindLabel, type ExampleEntry } from "../examples/manifest";
 import { kozmosImports } from "../lib/kozmos-imports";
 import { CodeBlock } from "./CodeBlock";
+import { SiteLink } from "./links";
 import { Section } from "./Section";
 
 export interface ExampleFile {
@@ -33,8 +32,8 @@ export interface ExampleFile {
 
 /**
  * The frame every example is shown in: where it sits, what it is, the
- * example itself edge to edge, then the Kozmos parts it uses, where Kozmos
- * fell short, and its source.
+ * example itself edge to edge, then the Kozmos parts it uses, a link to the
+ * roadmap where it found Kozmos short, and its source.
  */
 export function ExamplePage({
   example,
@@ -99,22 +98,17 @@ export function ExamplePage({
               </Tag>
             ))}
           </Stack>
+          {/* What the example found Kozmos cannot do is on the roadmap,
+              with where each item stands; the example's notes
+              (manifest.ts) say where it shows. */}
+          {example.gaps.length > 0 ? (
+            <Text color="muted">
+              Where Kozmos fell short here is on the{" "}
+              <SiteLink to="/roadmap">roadmap</SiteLink>, with where each fix
+              stands.
+            </Text>
+          ) : null}
         </Section>
-
-        {example.gaps.length > 0 ? (
-          <Section
-            title="Where Kozmos falls short"
-            lead="What a product would draw here that Kozmos cannot express yet. Each is in the site’s GAPS.md."
-          >
-            <List aria-label="Gaps this example found">
-              {example.gaps.map((gap) => (
-                <ListItem key={gap}>
-                  <Text as="span">{gap}</Text>
-                </ListItem>
-              ))}
-            </List>
-          </Section>
-        ) : null}
 
         <Section title="Source" lead="The example’s own files, as they are.">
           <Tabs defaultValue={files[0]?.name}>

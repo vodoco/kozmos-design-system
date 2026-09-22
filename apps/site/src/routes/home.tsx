@@ -5,14 +5,13 @@ import {
   CardHeader,
   CardTitle,
   Container,
-  Heading,
   Stack,
   Tag,
   Text,
 } from "@kozmos/react";
 import { examples, exampleKindLabel } from "../examples/manifest";
 import { exampleComponents } from "../examples/registry";
-import { HeroScene } from "../home/HeroScene";
+import { Cosmos } from "../home/Cosmos";
 import { MakeItYours } from "../home/MakeItYours";
 import { Checklist } from "../home/Pipeline";
 import {
@@ -25,7 +24,7 @@ import {
 import { PACKAGES_PUBLISHED, pageTitle } from "../lib/site";
 import { Band } from "../site/Band";
 import { ExampleMiniature } from "../site/ExampleMiniature";
-import { ButtonLink, SiteLink } from "../site/links";
+import { SiteLink } from "../site/links";
 import { Reveal } from "../site/Reveal";
 import { Section } from "../site/Section";
 
@@ -76,49 +75,29 @@ const platforms = [
 const featured = examples.filter((example) => example.featured);
 
 /**
- * The home page, in the order a visitor asks: what is it (the hero), what
- * has been built with it (the examples), what can it do (five live tiles),
- * can it be ours (a brand module), where does it run, and how is it kept
- * honest. Bands alternate plain and muted, each with the same padding.
+ * The home page, in the order a visitor asks: what is it (the hero, the
+ * Figma file's cover drawn with Kozmos), what has been built with it (the
+ * examples), what can it do (five live tiles), can it be ours (a brand
+ * module), where does it run, and how is it kept honest. Bands alternate
+ * plain and muted, each with the same padding.
  */
 export default function Home() {
   return (
     <>
-      <Container>
-        <section className="site-hero" aria-labelledby="home-title">
-          <Box className="site-hero-copy">
-            {PACKAGES_PUBLISHED ? null : (
-              <Tag variant="outline" emotion="informative">
-                Pre-release
-              </Tag>
-            )}
-            <Heading level={1} id="home-title" className="site-display">
-              The design system for the Pointr SDK
-            </Heading>
-            <Text size="lg" color="muted">
-              Maps, places and wayfinding, from one set of parts: core controls
-              and product components drawn from the same tokens on the web, iOS
-              and Android. Everything on this page is the real thing, running.
-            </Text>
-            <Box className="site-actions">
-              <ButtonLink to="/get-started" size="lg">
-                Get started
-              </ButtonLink>
-              <ButtonLink to="/components" variant="outline" size="lg">
-                Browse components
-              </ButtonLink>
-            </Box>
-          </Box>
-          <HeroScene />
-        </section>
-      </Container>
+      <Cosmos />
 
       <Band muted>
         <Container>
           <Reveal>
             <Section
               title="Built from it"
-              lead="Pages and apps made of Kozmos components and nothing else, shown here live and small. Each one records where Kozmos fell short."
+              lead={
+                <>
+                  Pages and apps made of Kozmos components and nothing else,
+                  shown here live and small. Where they found Kozmos short is on
+                  the <SiteLink to="/roadmap">roadmap</SiteLink>.
+                </>
+              }
               actions={
                 <Text size="sm">
                   <SiteLink to="/examples">
@@ -203,7 +182,7 @@ export default function Home() {
           <Reveal>
             <Section
               title="Make it yours"
-              lead="A product re-points tokens through the provider, per module, without a rebuild. The tokens carry two variant brand ramps; try them, dark, and right to left."
+              lead="A product re-points tokens through the provider, per module, without a rebuild. The tokens carry two variant brand ramps — the cover at the top of this page is painted from the second; try them, dark, and right to left."
             >
               <MakeItYours />
             </Section>

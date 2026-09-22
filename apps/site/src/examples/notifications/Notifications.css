@@ -23,3 +23,9 @@
 .ex-inbox-live:empty {
   position: absolute;
 }
+
+/* GAP-56: a Button puts nothing between an icon and its label; this is the
+   8px Figma's Button keeps, the spacing scale's 100. */
+.ex-inbox-prefs {
+  gap: calc(var(--primitives-layout-spacing-100) * 1px);
+}

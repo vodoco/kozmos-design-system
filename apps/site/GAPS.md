@@ -7,7 +7,9 @@ component and the part, what was tried, the lane, and the evidence. Entries
 up to GAP-36 were measured on `claude/pointr-browse-repairs` at `ef1b68b`
 (2026-09-21), the branch the site is built on; the rest, and every revision
 since, on the same packages at `f30c0f9`, the site's current base, on
-2026-09-22.
+2026-09-22. GAP-54 to GAP-56, and the revisions the home page's new cover made to
+GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
+the same day.
 
 **Lanes** are the handoff's: Core (domain-neutral components), Product / SDK,
 Platform / form factor, or Site (a need of this website, not of a product).
@@ -18,6 +20,9 @@ purpose, because hiding it would hide the evidence), _fixed_ (Kozmos changed,
 and the site check that pinned the defect was flipped).
 
 `DS-HANDOFF.md` turns these into work for `packages/`, in priority order.
+The site's roadmap page (`/roadmap`) is this table under the handoff's
+priorities, read at build time, so a row changed here changes the page;
+keep the table's four columns and its statuses as they are.
 
 | ID     | What                                                           | Lane                   | Status       |
 | ------ | -------------------------------------------------------------- | ---------------------- | ------------ |
@@ -64,7 +69,7 @@ and the site check that pinned the defect was flipped).
 | GAP-41 | `Navbar` has no narrow-screen pattern                          | Core                   | composed     |
 | GAP-42 | `CardTitle`'s line height is 1.0                               | Core                   | left visible |
 | GAP-43 | Controls with touch targets under 44px                         | Core                   | left visible |
-| GAP-44 | `Switch` is always as wide as its container                    | Core                   | composed     |
+| GAP-44 | `Switch` is always as wide as its container                    | Core                   | left visible |
 | GAP-45 | The first brand variant's 600 fails in the dark theme          | Core                   | left visible |
 | GAP-46 | `Stepper` has no narrow form                                   | Core                   | composed     |
 | GAP-47 | `Sidebar` has no narrow-screen form                            | Core                   | composed     |
@@ -74,6 +79,9 @@ and the site check that pinned the defect was flipped).
 | GAP-51 | No polite announcer                                            | Core                   | composed     |
 | GAP-52 | The provider's preflight zeroes a caller's border              | Core                   | composed     |
 | GAP-53 | A map shell cannot fill a rounded screen                       | Product / SDK          | left visible |
+| GAP-54 | No light: glow, gradient, blur or ambient motion               | Core                   | composed     |
+| GAP-55 | A `Listbox`'s column is as wide as its widest option           | Core                   | composed     |
+| GAP-56 | `Button` puts no space between an icon and its label           | Core                   | composed     |
 
 ---
 
@@ -194,8 +202,10 @@ and the site check that pinned the defect was flipped).
 ## GAP-07 · Icons a website needs: theme, copy, external link
 
 - **What:** the 56 icons have no sun, moon or display (a theme switch), no copy
-  (a code block) and no external-link glyph.
-- **Now:** the theme switch and the copy button use words.
+  (a code block), no external-link glyph, and no pause or play (the control
+  that stops a page's motion).
+- **Now:** the theme switch, the copy button and the home page's "Pause
+  motion" use words.
 - **Lane:** Core (icons).
 
 ## GAP-08 · No footer
@@ -232,6 +242,18 @@ and the site check that pinned the defect was flipped).
   follows the theme; forced-colours mode gets the system text colour. Below
   48rem it shows the logo's K alone (GAP-41). The favicons and the K are
   generated from the logo and the tokens (`scripts/generate-brand.mjs`).
+- **The cover (2026-09-22):** the home page's first screen is the Figma
+  file's cover (Core Library, node `143:13175`). There it is one raster
+  image with the logo laid over it, and Kozmos cannot show an image, so the
+  site draws it again from its parts (`src/home/Cosmos.tsx`): the logo
+  painted through its shape as the header's is, and again in lavender,
+  blurred, for its glow; the logo's own star, cut out of the logo by the
+  brand script (`src/brand/kozmos-star.svg`), scattered as stars; orbits,
+  planets, diamonds, the ring and the galaxy as `Box`es painted with the
+  colour ramps (GAP-54); the cover's glass cubes as Kozmos's glass
+  `Surface`, each holding an `Icon`. Composed: close to the cover, not the
+  cover — the picture's texture, its nebula's detail and its cubes' depth
+  are not there.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `Logo` part for the `Navbar` slot that draws a
   product's SVG in a colour role, or let `Icon` take a product's own glyphs.
@@ -420,8 +442,11 @@ and the site check that pinned the defect was flipped).
 - **What:** `DynamicIsland` renders `position: fixed; top: 1rem; left: 50%`,
   so it can only ever sit at the top of the browser window. It cannot be
   placed in a map scene, a card or an example's frame.
-- **Now:** the hero scene shows the manoeuvre in a glass `Surface` around
-  `DirectionStep` instead.
+- **Now:** the DynamicIsland page shows the island on request, fixed to the
+  top of the window, behind a button; the wayfinding example shows its
+  manoeuvres in `ManoeuvreCard`. (Until the cover took the home page's
+  first screen on 2026-09-22, the hero's map scene showed a manoeuvre in a
+  glass `Surface` around `DirectionStep` instead.)
 - **Lane:** Platform / form factor.
 - **Fix in Kozmos:** let the host decide: a `placement` prop in
   `FloatingActionButton`'s words (`"fixed" | "inline"`), fixed by default
@@ -432,8 +457,8 @@ and the site check that pinned the defect was flipped).
 - **What:** `MapView` carries `min-h-[400px]` in its own classes, and a
   caller's class cannot lower it (GAP-04). A small map — a tile, a thumbnail,
   a phone in landscape — is not possible.
-- **Now:** the hero scene and the adaptive tile give their frames 400px or
-  more.
+- **Now:** the adaptive tile and the examples' canvases give their maps
+  400px or more.
 - **Lane:** Product / SDK.
 
 ## GAP-26 · `Text` cannot inherit its colour
@@ -631,10 +656,13 @@ and the site check that pinned the defect was flipped).
 ## GAP-39 · `RouteSummary`'s title is always an `h2`
 
 - **What:** `RouteSummary` renders its destination in an `h2`, whatever the
-  page around it. On the home page the hero scene's summary ("Gate B12")
-  becomes the first section of the page's outline, before any real
+  page around it. On the home page the hero's map scene made its summary
+  ("Gate B12") the first section of the page's outline, before any real
   section. `POIDetailPanel` has `titleLevel` for exactly this.
-- **Now:** left visible.
+- **Now:** left visible where it still shows. The home page's scene has
+  given way to the cover (2026-09-22); in the wayfinding example, walking a
+  route, the summary's `h2` ("Bookshop") is the only heading of that view
+  and happens to fit.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** a `titleLevel` prop like `POIDetailPanel`'s (`2 | 3`),
   and a way to render no heading at all, for a scene or a preview.
@@ -645,12 +673,14 @@ and the site check that pinned the defect was flipped).
   `MapView` does not create a stacking context. Any map drawn from
   `MapView` and `MapOverlay` outside `AdaptiveMapShell` (which isolates
   itself) paints its overlays over the header as the page scrolls, because
-  it comes later in the document. Measured on the home page, the
-  MapOverlay reference page and the kiosk example.
+  it comes later in the document. Measured on the MapOverlay reference
+  page and the kiosk example (and on the home page's map scene, until the
+  cover replaced it on 2026-09-22).
 - **Now:** the site isolates every frame that hosts a map
-  (`isolation: isolate` on the scene frame, demo stages, index previews and
-  example canvases), and a test scrolls each stacked element under the
-  header and checks nothing draws over it.
+  (`isolation: isolate` on demo stages, index previews and example
+  canvases), and a test scrolls each stacked element under the header and
+  checks nothing draws over it. The test that pins the gap reads a map on
+  the MapOverlay page.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** `isolate` on `MapView`'s root, as `AdaptiveMapShell`'s
   has; and a layer scale in which the page's navigation sits above a map's
@@ -706,8 +736,10 @@ and the site check that pinned the defect was flipped).
 - **What:** `Switch` wraps itself in `flex flex-col gap-1.5 w-full`, so two
   switches in a row each take the whole row; a caller's class cannot narrow
   it (GAP-04). `Checkbox` has the same wrapper.
-- **Now:** the hero's "Try the scene" strip gives each switch a box of its
-  own size (`flex: none`), and the two share a row.
+- **Now:** left visible. "Make it yours" puts its two switches in a row
+  that wraps, and each takes the whole row, so they stack. (The hero's "Try
+  the scene" strip gave each of its switches a box of its own size, and the
+  two shared a row, until the cover replaced the scene on 2026-09-22.)
 - **Lane:** Core.
 - **Fix in Kozmos:** size the wrapper to its content (`inline-flex`), and
   let a form stretch it where it wants a full-width row.
@@ -864,3 +896,74 @@ and the site check that pinned the defect was flipped).
   border or radius, and a sheet with only its top edge, its sides and bottom
   at the screen's edges as a native sheet's are — or a sheet that takes its
   container's bottom radius.
+
+## GAP-54 · No light: glow, gradient, blur or ambient motion
+
+- **What:** the Figma file's cover — the design system's own picture of
+  itself — is made of light: a glowing ring, a lavender glow round the
+  logo, gradients of violet into amber, a galaxy's blur, bodies drifting on
+  their orbits. The tokens have none of it. Their effects are three
+  elevation shadows, all dark (`--semantics-elevation-*`, black at 30–50%),
+  and the glass surface; there is no glow or light token, no gradient, no
+  blur scale but glass's one number (20), and no duration longer than 460ms
+  (`--semantics-motion-duration-deliberate`) for motion that loops.
+- **Now:** composed on the home page's cover (`src/home/Cosmos.tsx`,
+  `site.css` "Home: the cover"). Every colour is a token: the violet is the
+  second brand ramp (`--primitives-colors-theme-variant-2-*`), the glow the
+  first ramp's 700 (`#867ef6`, the cover's is `#8d84f7`), the amber and
+  rose the alert and danger ramps, and the stars the inverted transparent
+  ramp. The light itself is the site's: radial and conic gradients of those
+  colours, blurred by a spacing token (a glow's reach is a distance), thin
+  lines painted through an SVG circle's stroke as a mask (WebKit draws a
+  gradient's thin edge in steps), and
+  loops timed in multiples of the deliberate duration, times the design
+  config's duration scale. The loops pause from a button (WCAG 2.2.2), when
+  the cover is off screen, and never run under reduced motion.
+- **Lane:** Core (tokens).
+- **Fix in Kozmos:** a glow role, in the colour ramps and a spread, as
+  elevation has for shadow; gradient tokens where the brand has them; a
+  blur scale; and an ambient duration with guidance for the pause that
+  motion longer than five seconds needs.
+
+## GAP-55 · A `Listbox`'s column is as wide as its widest option
+
+- **What:** `Listbox` is a grid with no column template
+  (`packages/react/src/styles/owned-selection.css:3`, `@apply grid …`), so
+  its one implicit column is as wide as its widest option's content. An
+  option's label and description are single lines that cut off with an
+  ellipsis (`truncate`), but only when their box is narrower than they are:
+  a long description widens its option, the column follows, and every
+  option runs past the list, which then scrolls sideways with the text cut
+  at its edge and no ellipsis.
+- **Evidence:** the site's search dialog, on the packages at `7622daf`: 676px
+  options in a 462px list. "GAP-55: a Listbox's column is as wide as its
+  widest option" measures it with the site's fix taken off.
+- **Now:** composed. The search's `Listbox` takes a site class that sets
+  `grid-template-columns: minmax(0, 1fr)` — a property the Listbox does not
+  set — so its options take the list's width and their text ends in an
+  ellipsis. Other Listboxes on the site hold short options.
+- **Lane:** Core.
+- **Fix in Kozmos:** `grid-template-columns: minmax(0, 1fr)` in
+  `.kozmos-listbox`, as the site's own single-column grids have.
+
+## GAP-56 · `Button` puts no space between an icon and its label
+
+- **What:** `Button` lays out its children in a row (`inline-flex`,
+  `packages/react/src/styles/owned-components.css:263`) with no gap. Only
+  its own loading spinner is spaced from the label (`.kozmos-button-loader`,
+  `mr-2`: 8px, as Figma's Button keeps 8px between its loading indicator and
+  its label, node `77:857`). An `Icon` a caller puts beside the label — the
+  way Code Connect maps Figma's Button (`figma.children(["Icon", "Label
+Text"])`) and the Get started page shows — touches it.
+- **Evidence:** "GAP-56: a Button's icon touches its label" measures 0px on
+  the Button page's "Directions" demo.
+- **Now:** composed where a Button is part of something else: the header's
+  "Theme" menu, the reference's drawer button, "Make it yours", the
+  direction sample, the icons page's copy buttons, the Navbar and Menu
+  demos, and two examples (listed there) add the 8px through a class — a
+  property the Button does not set. Left visible on the Button page, whose
+  demos show the component as it draws, and in the Get started code, which
+  is Kozmos's own usage.
+- **Lane:** Core.
+- **Fix in Kozmos:** a gap of the spacing scale's 100 on `.kozmos-button`,
+  and the loader's `mr-2` taken off.

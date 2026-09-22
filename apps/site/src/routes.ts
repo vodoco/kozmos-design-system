@@ -14,6 +14,7 @@ export default [
   layout("routes/site-layout.tsx", [
     index("routes/home.tsx"),
     route("get-started", "routes/get-started.tsx"),
+    route("roadmap", "routes/roadmap.tsx"),
     route("examples", "routes/examples.tsx"),
     // Each example is its own route and chunk, pre-rendered like every page.
     ...examples.map((example) =>

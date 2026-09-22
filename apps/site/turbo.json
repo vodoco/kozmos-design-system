@@ -13,12 +13,21 @@
         "tsconfig.json",
         "vite.config.ts",
         "playwright.config.ts",
-        "$TURBO_ROOT$/scripts/skills/check-completion.ts"
+        "$TURBO_ROOT$/scripts/skills/check-completion.ts",
+        "GAPS.md",
+        "DS-HANDOFF.md"
       ],
       "outputs": ["build/**"]
     },
     "test": {
-      "inputs": ["src/**", "scripts/**", "public/**", "package.json"],
+      "inputs": [
+        "src/**",
+        "scripts/**",
+        "public/**",
+        "package.json",
+        "GAPS.md",
+        "DS-HANDOFF.md"
+      ],
       "outputs": []
     }
   }

@@ -53,6 +53,12 @@ const entries: readonly Entry[] = [
     description: "Pages and apps built from Kozmos and nothing else.",
     group: "Pages",
   },
+  {
+    to: "/roadmap",
+    label: "Roadmap",
+    description: "What Kozmos cannot do yet, in the order it should be fixed.",
+    group: "Pages",
+  },
   ...foundationPages.map(
     (page): Entry => ({
       to: `/foundations/${page.slug}`,
@@ -221,6 +227,7 @@ export function SiteSearch() {
             {options.length > 0 ? (
               <Listbox
                 aria-label="Results"
+                className="site-search-list"
                 options={options}
                 onValueChange={(value) => {
                   if (typeof value === "string") go(value);

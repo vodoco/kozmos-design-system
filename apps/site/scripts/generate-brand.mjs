@@ -5,6 +5,9 @@
  *
  *  - src/brand/kozmos-mark.svg — the logo's own K, alone: the header shows it
  *    where the full logo has no room (below 48rem);
+ *  - src/brand/kozmos-star.svg — the four-pointed star from the logo's first
+ *    O, alone: the home page's sky is scattered with it, as the Figma file's
+ *    cover is;
  *  - public/favicon.svg — that K on a rounded tile, for the browser tab;
  *  - public/favicon.ico — the same at 16 and 32 pixels, for anything that
  *    asks for /favicon.ico or cannot draw an SVG icon;
@@ -37,6 +40,7 @@ const DARK_TOKENS = fileURLToPath(
 
 export const OUTPUTS = {
   mark: path.join(SITE_ROOT, "src/brand/kozmos-mark.svg"),
+  star: path.join(SITE_ROOT, "src/brand/kozmos-star.svg"),
   favicon: path.join(SITE_ROOT, "public/favicon.svg"),
   ico: path.join(SITE_ROOT, "public/favicon.ico"),
   touchIcon: path.join(SITE_ROOT, "public/apple-touch-icon.png"),
@@ -44,6 +48,9 @@ export const OUTPUTS = {
 
 /** The K's measured bounds in the logo's coordinates; a changed logo fails here. */
 export const K_BOUNDS = { x: 36.8564, y: 123.46, right: 309.429, bottom: 417 };
+
+/** The first star's bounds (the logo's third path, inside the first O). */
+export const STAR_BOUNDS = { x: 370, y: 226, right: 448, bottom: 304 };
 
 /** The K's share of its tile's height: room around it, like an app icon's. */
 const TILE_SHARE = 0.62;
@@ -104,7 +111,10 @@ export function boundsOf(d) {
   };
 }
 
-/** The logo's paths, and the K: the first three shapes of the wordmark. */
+/**
+ * The logo's paths; the K, the first three shapes of the wordmark; and the
+ * first of its two stars.
+ */
 export function readLogo(source) {
   const paths = [...source.matchAll(/<path d="([^"]+)"/g)].map(
     (match) => match[1],
@@ -125,7 +135,14 @@ export function readLogo(source) {
       `The logo's first three shapes are not the K it had (${JSON.stringify(bounds)}); update K_BOUNDS and check the mark.`,
     );
   }
-  return { paths, k, bounds };
+  const star = paths[2];
+  const starBounds = boundsOf(star);
+  if (JSON.stringify(starBounds) !== JSON.stringify(STAR_BOUNDS)) {
+    throw new Error(
+      `The logo's third path is not the star it had (${JSON.stringify(starBounds)}); update STAR_BOUNDS and check the star.`,
+    );
+  }
+  return { paths, k, bounds, star, starBounds };
 }
 
 /** A token's value from a tokens stylesheet. */
@@ -149,6 +166,19 @@ export function markSvg({ k, bounds }) {
     `<svg width="${width}" height="${height}" viewBox="${bounds.x} ${bounds.y} ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg">`,
     HEADER,
     `<path d="${k}" fill="white"/>`,
+    "</svg>",
+    "",
+  ].join("\n");
+}
+
+/** The first star alone, on a canvas trimmed to it: the home page's stars. */
+export function starSvg({ star, starBounds }) {
+  const width = round(starBounds.right - starBounds.x);
+  const height = round(starBounds.bottom - starBounds.y);
+  return [
+    `<svg width="${width}" height="${height}" viewBox="${starBounds.x} ${starBounds.y} ${width} ${height}" fill="none" xmlns="http://www.w3.org/2000/svg">`,
+    HEADER,
+    `<path d="${star}" fill="white"/>`,
     "</svg>",
     "",
   ].join("\n");
@@ -186,6 +216,7 @@ export function brandSvgs(
   };
   return {
     mark: markSvg(logo),
+    star: starSvg(logo),
     favicon: tileSvg(logo, colours, { share: TILE_SHARE, radius: TILE_RADIUS }),
     touchIcon: tileSvg(logo, colours, { share: SQUARE_SHARE, radius: 0 }),
   };
@@ -246,7 +277,7 @@ async function rasterise(page, svg, size) {
 async function main() {
   const svgs = brandSvgs();
   if (process.argv.includes("--check")) {
-    const stale = ["mark", "favicon"].filter(
+    const stale = ["mark", "star", "favicon"].filter(
       (name) =>
         !fs.existsSync(OUTPUTS[name]) ||
         fs.readFileSync(OUTPUTS[name], "utf8") !== svgs[name],
@@ -263,6 +294,7 @@ async function main() {
     return;
   }
   fs.writeFileSync(OUTPUTS.mark, svgs.mark);
+  fs.writeFileSync(OUTPUTS.star, svgs.star);
   fs.writeFileSync(OUTPUTS.favicon, svgs.favicon);
   const { chromium } = await import("@playwright/test");
   const browser = await chromium.launch();

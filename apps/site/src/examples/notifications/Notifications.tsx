@@ -131,7 +131,8 @@ export default function Notifications() {
             </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm">
+                {/* The icon's space from the word is the example's (GAP-56). */}
+                <Button variant="ghost" size="sm" className="ex-inbox-prefs">
                   <Icon name="settings-01" size="sm" />
                   Preferences
                 </Button>

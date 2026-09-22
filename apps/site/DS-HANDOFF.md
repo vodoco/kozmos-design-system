@@ -4,16 +4,22 @@
 **From:** the Kozmos website, `apps/site` on the local branch `claude/kozmos-site`
 (worktree `/Volumes/4TB Depo/development/K/kozmos-design-system-site`).
 **Written:** 2026-09-22, after a design critique of the site; revised the same
-day after an audit of the site, its copy and its tests. Every number below was
-measured on the site's production build.
+day after an audit of the site, its copy and its tests, and again when the
+home page's first screen became the Figma file's cover (GAP-54). Every number
+below was measured on the site's production build.
 
 The site is built from Kozmos components and tokens only. Where Kozmos fell
 short, the site did not work around it: the gap is recorded in
-[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-53, with the evidence), and the site
+[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-56, with the evidence), and the site
 either composed an honest stand-in from Kozmos parts or left the defect
 visible. This document turns those gaps into work for `packages/`, in
 priority order, with the file and line, the change, and the site check that
 proves it.
+
+**The roadmap:** the site's `/roadmap` page reads each gap's priority from
+this file: the `## Pn — …` sections, the `### GAP-nn` headings in them and
+the first cell of their tables' rows. Keep those shapes, and a gap in one
+priority only.
 
 **Paths:** a bare path such as `Card/Card.tsx:38` is under
 `packages/react/src/components/`; `styles/…` is under `packages/react/src/`.
@@ -58,6 +64,8 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 | P0       | GAP-38                         | AdaptiveMapShell sheet                                   | The drag handle is 4 px tall and its grip 0 px wide: three rules use unitless tokens as lengths. |
 | P0       | GAP-40                         | MapView, MapOverlay, Navbar                              | Map overlays draw over the sticky header: equal z-index, and MapView does not isolate.           |
 | P1       | GAP-52                         | The provider's preflight                                 | A caller's `border` inside the provider never draws: one selector test in the CSS plugin.        |
+| P1       | GAP-56                         | Button                                                   | No gap between an icon and its label: every header's "Theme ⌄" touches.                          |
+| P1       | GAP-55                         | Listbox                                                  | Its column grows to the widest option: the site search scrolls sideways, and nothing truncates.  |
 | P1       | GAP-45                         | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page, as text and as a fill.                          |
 | P1       | GAP-31                         | Tokens (alert, success)                                  | Emotion text passes on white only: 4.29:1 on background-25, 3.59:1 on muted.                     |
 | P1       | GAP-09                         | Button (as a link)                                       | `buttonVariants` on an anchor keeps its underline.                                               |
@@ -76,6 +84,7 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 | P2       | GAP-49                         | SearchBar                                                | A caller's `onKeyDown` silently drops the component's analytics.                                 |
 | P2       | GAP-44 and the rest            | see the table below                                      | API and structure.                                                                               |
 | P3       | GAP-05, 06, 07, 08, 10, 15, 33 | new parts, icons, tokens                                 | Additions.                                                                                       |
+| P3       | GAP-54                         | Tokens (effects, motion)                                 | No glow, gradient, blur scale or ambient duration: the cover's light is the site's own.          |
 
 ## P0 — broken for people using it
 
@@ -108,13 +117,14 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
   `MapView/MapView.tsx:19`, whose root creates no stacking context.
 - **Why it breaks:** equal z-index, and the map comes later in the document,
   so its overlays paint over the header as the page scrolls. Seen on the
-  site's hero scene, the MapOverlay reference page and the kiosk example;
-  `AdaptiveMapShell` is safe because its root is `isolate`.
+  MapOverlay reference page and the kiosk example (and on the home page's
+  map scene, before the cover replaced it); `AdaptiveMapShell` is safe
+  because its root is `isolate`.
 - **Change:** `isolate` on `MapView`'s root. Then give the layers an order
   in the tokens (`--primitives-layer-*`) in which a page's sticky
   navigation sits above a map's own overlays.
-- **Proof:** "GAP-40: MapView does not isolate its overlays" fails; flip it
-  to expect `isolate`. The site's own `isolation: isolate` on its frames can
+- **Proof:** "GAP-40: MapView does not isolate its overlays" (it reads a map
+  on the MapOverlay page) fails; flip it to expect `isolate`. The site's own `isolation: isolate` on its frames can
   then go (`src/styles/site.css`, the comments name GAP-40).
 
 ## P1 — visible on the site's first screens, or failing WCAG AA
@@ -135,6 +145,33 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
   (0px and 1px today); flip it to expect 1px in both. The site's
   `Separator` hairlines and `Surface` specimens can stay: they are the
   intended parts, not workarounds.
+
+### GAP-56 · `Button` puts no space between an icon and its label
+
+- **Where:** `styles/owned-components.css:263` (`.kozmos-button`:
+  `inline-flex`, no gap) and `:361` (`.kozmos-button-loader`, `mr-2`, the
+  only spaced child).
+- **Why it breaks:** a caller's `Icon` beside the label — as Code Connect maps
+  Figma's Button (`Icon`, `Label Text`) and as Get started shows — touches
+  the word. Figma keeps 8px between its loading indicator and its label
+  (node `77:857`); the code keeps it for the spinner alone.
+- **Change:** `gap` of the spacing scale's 100 on `.kozmos-button`; take the
+  loader's `mr-2` off.
+- **Proof:** "GAP-56: a Button's icon touches its label" fails; flip it to
+  expect 8. The site's `site-button-icon` class and the dashboard's and
+  inbox's `ex-dash-add`, `ex-inbox-prefs` can then go.
+
+### GAP-55 · A `Listbox`'s column is as wide as its widest option
+
+- **Where:** `styles/owned-selection.css:3` (`.kozmos-listbox`: `grid`, no
+  column template).
+- **Why it breaks:** the implicit column sizes to the widest option's
+  content; `truncate` on the label and description never engages, and the
+  list scrolls sideways (676px options in the site search's 462px list).
+- **Change:** `grid-template-columns: minmax(0, 1fr)`.
+- **Proof:** "GAP-55: a Listbox's column is as wide as its widest option"
+  fails (the list no longer overflows without the site's class); remove
+  that test's expectation and the site's `site-search-list` class.
 
 ### GAP-45 · Brand variant 1's dark 600 fails contrast
 
@@ -274,8 +311,9 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 - **Change:** a `titleLevel` prop like `POIDetailPanel`'s (`2 | 3`), with a
   way to render no heading at all (for a scene or a preview, where the
   summary is not a section of the page).
-- **Proof:** none automatic; the site then passes it in
-  `src/home/HeroScene.tsx`.
+- **Proof:** none automatic. The home page's map scene, where the `h2` came
+  first in the outline, has given way to the cover; the wayfinding example
+  would pass the level its walking view needs.
 
 ### The React package is not tree-shaken
 
@@ -307,7 +345,7 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 | GAP-30 Sidebar navigation unnamed           | `Sidebar/Sidebar.tsx:57`                                                                   | `navigationLabel`, as `Navbar` has.                                                                                                 | `knownViolations` for `/components/sidebar`.                                                                      |
 | GAP-32 ChipGroup has no role                | `Chip/Chip.tsx:177`                                                                        | `role="group"` on the wrapper.                                                                                                      | The site's seven `role="group"` props can go.                                                                     |
 | GAP-35 categories grid fixed at 4           | `BrowseCategoriesPanel/BrowseCategoriesPanel.tsx:63`                                       | `repeat(auto-fill, minmax(5.5rem, 1fr))` or a `columns` prop.                                                                       | The kiosk's directory column can narrow.                                                                          |
-| GAP-44 Switch and Checkbox full width       | `Switch/Switch.tsx:27`, `Checkbox/Checkbox.tsx:28`                                         | Size the wrapper to its content.                                                                                                    | The hero's `.site-scene-toggle` boxes can go.                                                                     |
+| GAP-44 Switch and Checkbox full width       | `Switch/Switch.tsx:27`, `Checkbox/Checkbox.tsx:28`                                         | Size the wrapper to its content.                                                                                                    | "Make it yours"'s two switches then share their row.                                                              |
 | GAP-46 Stepper has no narrow form           | `Stepper/Stepper.tsx`                                                                      | A vertical orientation, or labels that give way to the current step's.                                                              | The onboarding example's `.ex-onboarding-steps` wrapper can go.                                                   |
 | GAP-47 Sidebar has no narrow-screen form    | `Sidebar/Sidebar.tsx:44–46`                                                                | Turn into a rail or a drawer by its container's width.                                                                              | The dashboard's drawer and `.ex-dash-aside` wrapper can go.                                                       |
 | GAP-48 Tree row meta never shrinks          | `Tree/Tree.tsx:532–541`                                                                    | Let the meta shrink and truncate before the name; a `<div>` for the slot.                                                           | Saved places' `.ex-saved-note` rule can go.                                                                       |
@@ -333,16 +371,17 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 
 ## P3 — additions
 
-| Gap    | What Kozmos lacks                                                                                                                                                                                                | Suggested                                                                                                       |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| GAP-05 | A code block; `Text` has no monospace                                                                                                                                                                            | `CodeBlock` with copy, and `Text font="mono"`.                                                                  |
-| GAP-06 | A skip link and visually hidden text                                                                                                                                                                             | `SkipLink` (drawn above the sticky header) and `VisuallyHidden`.                                                |
-| GAP-07 | Icons: sun, moon, display, copy, external link                                                                                                                                                                   | Add them; the site's theme menu then gets an icon.                                                              |
-| GAP-08 | A footer                                                                                                                                                                                                         | `Footer`.                                                                                                       |
-| GAP-10 | A way to draw a product's logo in the `Navbar`'s `logo` slot                                                                                                                                                     | A `Logo` part that draws a product's SVG in a colour role, or product glyphs in `Icon`.                         |
-| GAP-15 | Venue icons: food and drink, toilets, accessible facilities, parking, first aid                                                                                                                                  | Add them; three examples leave those categories out today.                                                      |
-| GAP-33 | A token for the route line on a map                                                                                                                                                                              | `semantics-map-route` (line, casing, walked part), both themes, in the contrast contract.                       |
-| —      | Docs: 37 component `.mdx` files open with the placeholder "Displays the X interface topology natively" (and DatePicker and TimePicker repeat it as a second paragraph); 11 components' docs carry no code at all | Write one real sentence and the missing code; the site picks them up on `pnpm generate`. The README lists them. |
+| Gap    | What Kozmos lacks                                                                                                                                                                                                | Suggested                                                                                                        |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| GAP-05 | A code block; `Text` has no monospace                                                                                                                                                                            | `CodeBlock` with copy, and `Text font="mono"`.                                                                   |
+| GAP-06 | A skip link and visually hidden text                                                                                                                                                                             | `SkipLink` (drawn above the sticky header) and `VisuallyHidden`.                                                 |
+| GAP-07 | Icons: sun, moon, display, copy, external link, pause, play                                                                                                                                                      | Add them; the site's theme menu and the cover's "Pause motion" then get an icon.                                 |
+| GAP-08 | A footer                                                                                                                                                                                                         | `Footer`.                                                                                                        |
+| GAP-10 | A way to draw a product's logo in the `Navbar`'s `logo` slot                                                                                                                                                     | A `Logo` part that draws a product's SVG in a colour role, or product glyphs in `Icon`.                          |
+| GAP-15 | Venue icons: food and drink, toilets, accessible facilities, parking, first aid                                                                                                                                  | Add them; three examples leave those categories out today.                                                       |
+| GAP-33 | A token for the route line on a map                                                                                                                                                                              | `semantics-map-route` (line, casing, walked part), both themes, in the contrast contract.                        |
+| GAP-54 | Light: a glow, gradients, a blur scale, and a duration for motion that loops (the effects are three dark shadows and glass; the longest duration is 460 ms)                                                      | A glow role from the ramps with a spread, gradient tokens, a blur scale, an ambient duration and pause guidance. |
+| —      | Docs: 37 component `.mdx` files open with the placeholder "Displays the X interface topology natively" (and DatePicker and TimePicker repeat it as a second paragraph); 11 components' docs carry no code at all | Write one real sentence and the missing code; the site picks them up on `pnpm generate`. The README lists them.  |
 
 ## Also found, outside the components
 
