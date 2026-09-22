@@ -54,7 +54,7 @@ export const demos: DemoModule["demos"] = [
   {
     title: "Summon the bar",
     description:
-      'A phone app’s bottom bar: four tabs, active marks the current one, badge counts what is waiting. It is compact unless density="default" asks for taller items.',
+      'A phone app’s bottom bar: four tabs, active marks the current one, badge counts what is waiting. Compact is the default; switching it off sets density="default", which makes each item 72px tall and pads it by 8 — and the bar stays 64px, so the items spill out of it (GAP-68). Nothing else changes: the icons, labels and badges are the same size in both.',
     Component: Summon,
     tall: true,
   },

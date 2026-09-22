@@ -1,10 +1,10 @@
 import {
   Box,
   Chip,
-  ChipGroup,
   List,
   ListItem,
   ScrollArea,
+  Stack,
   Text,
 } from "@kozmos/react";
 import type { DemoModule } from "../types";
@@ -29,13 +29,16 @@ function Sideways() {
         orientation="horizontal"
         viewportProps={{ "aria-label": "Quick access" }}
       >
-        <ChipGroup>
+        {/* A ChipGroup is what a quick-access row is made of, but it always
+            wraps (GAP-64), so inside a horizontal ScrollArea it makes a
+            second line instead of scrolling. A Stack keeps them on one. */}
+        <Stack direction="row" gap={2} wrap="nowrap">
           {quickAccess.map((label) => (
             <Chip key={label} size="sm">
               {label}
             </Chip>
           ))}
-        </ChipGroup>
+        </Stack>
       </ScrollArea>
       <Text size="sm" color="muted">
         The scrollbar is hidden by default; the viewport is focusable and

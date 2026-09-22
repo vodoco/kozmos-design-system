@@ -53,7 +53,11 @@ function WithAnError() {
   const id = useId();
   return (
     <Box className="site-demo-column">
-      <FieldWrapper label="Venue" inputId={id} error="Choose a venue.">
+      {/* The label needs the outer FieldWrapper (GAP-13), and SelectTrigger
+          wraps itself in one of its own, which is what `aria-describedby`
+          points at. Giving both the error printed the message twice
+          (GAP-71), so the error goes to the trigger alone. */}
+      <FieldWrapper label="Venue" inputId={id}>
         <Select>
           <SelectTrigger id={id} error="Choose a venue.">
             <SelectValue placeholder="Choose a venue" />

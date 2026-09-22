@@ -7,7 +7,7 @@ component and the part, what was tried, the lane, and the evidence. Entries
 up to GAP-36 were measured on `claude/pointr-browse-repairs` at `ef1b68b`
 (2026-09-21), the branch the site is built on; the rest, and every revision
 since, on the same packages at `f30c0f9`, the site's current base, on
-2026-09-22. GAP-54 to GAP-61, and the revisions the home page's new cover made to
+2026-09-22. GAP-54 to GAP-82, and the revisions the home page's new cover made to
 GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
 the same day.
 
@@ -87,6 +87,27 @@ keep the table's four columns and its statuses as they are.
 | GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it | Platform / form factor | left visible |
 | GAP-60 | `DynamicIsland` keeps no room for the camera it wraps          | Platform / form factor | left visible |
 | GAP-61 | No glyph mirrors for right to left                             | Core                   | left visible |
+| GAP-62 | `Combobox` and `MultiSelect` draw their list in the page       | Core                   | left visible |
+| GAP-63 | `ColorPicker`'s swatch is a circle around a rectangle          | Core                   | left visible |
+| GAP-64 | `ChipGroup` always wraps, and never centres its chips          | Core                   | left visible |
+| GAP-65 | `Textarea`'s resize grip paints outside its rounded corner     | Core                   | left visible |
+| GAP-66 | `EmptyState`'s words are left-aligned in a centred block       | Core                   | left visible |
+| GAP-67 | `Menu` opens centred on its trigger                            | Core                   | left visible |
+| GAP-68 | `BottomNavigation`'s taller density overflows its own bar      | Core                   | left visible |
+| GAP-69 | Lift, escalator and stairs share one arrow                     | Product / SDK          | left visible |
+| GAP-70 | `SelectTrigger` hides a second `FieldWrapper`                  | Core                   | composed     |
+| GAP-71 | `AISearchButton` has no hover state                            | Core                   | left visible |
+| GAP-72 | `MapOverlay` clips what floats on it                           | Product / SDK          | left visible |
+| GAP-73 | `SplitButton`'s outline variant loses its border               | Core                   | left visible |
+| GAP-74 | `Tooltip` draws a line across its tail                         | Core                   | left visible |
+| GAP-75 | `ToggleButton` puts no space between icon and label            | Core                   | left visible |
+| GAP-76 | Dates and times are the browser's controls                     | Core                   | left visible |
+| GAP-77 | No drag and drop: no handle, no dragging state, no target      | Core                   | open         |
+| GAP-78 | `Switch` cannot lead with its label                            | Core                   | open         |
+| GAP-79 | The icon set is 64 glyphs, 8 of them the taxonomy's            | Product / SDK          | open         |
+| GAP-80 | No row actions: nothing shows on hover outside `Tree`          | Core                   | open         |
+| GAP-81 | 37 of 104 components carry placeholder documentation           | Core                   | left visible |
+| GAP-82 | A category pill's fill is 2.52:1 on its own field              | Product / SDK          | left visible |
 
 ---
 
@@ -1137,3 +1158,363 @@ Text"])`) and the Get started page shows — touches it.
   pagination's pair — and leave the manoeuvre icons alone. Returning `dir`
   from `useTheme()` (GAP-27) would let a component choose a glyph rather than
   rotate one, for the cases where a mirrored glyph is not the same glyph.
+
+## GAP-62 · `Combobox` and `MultiSelect` draw their list in the page
+
+- **What:** both render their open list as `absolute z-50` inside their own
+  box (`Combobox.tsx:326`, `MultiSelect.tsx:406`) rather than through a
+  portal, so any ancestor that scrolls or clips cuts it off. `Dialog`,
+  `Drawer`, `Menu`, `Popover`, `Select` and `Tooltip` all portal through
+  `createThemePortal`; these two are the exception, and they offer no
+  `portalContainer` escape hatch.
+- **Evidence:** measured on the Combobox page at 1280×900 — the list is 256px
+  tall (592 → 848) inside a demo card that ends at 674, so **174px of it, and
+  every option after the first, is cut**. Nothing in the site's demo clips:
+  the card and its stage are ordinary host chrome, which is what any product
+  card would be.
+- **Now:** left visible on both pages. The site will not pull the demos out of
+  their cards to hide it.
+- **Lane:** Core.
+- **Fix in Kozmos:** portal the list as the other six do, with the same
+  provider-aware portal, and keep it positioned against the field.
+
+## GAP-63 · `ColorPicker`'s swatch is a circle around a rectangle
+
+- **What:** the swatch is a 32×32 box carrying `rounded-control`
+  (`ColorPicker.tsx:362`). `--semantics-radius-control` is 16, and 16px on a
+  32px box is a full circle — so the swatch no longer echoes the field's
+  corner. Inside it, the browser paints the colour itself
+  (`::-webkit-color-swatch`) as a 24×20 rounded rectangle, which leaves white
+  crescents left and right and grazes the ring: a rectangle inside a circle.
+- **Evidence:** measured on the ColorPicker page — swatch 32×32, computed
+  `border-radius: 16px` on all four corners, 1px `#747b8b` ring; the ink
+  spans x 4→28, y 6→26 inside it.
+- **Now:** left visible on the page.
+- **Lane:** Core.
+- **Fix in Kozmos:** decide the shape and draw all of it — either a round
+  swatch with the native fill styled round and filling the ring, or a square
+  one whose radius is a fraction of its size rather than the control token,
+  which is sized for a 44px field.
+
+## GAP-64 · `ChipGroup` always wraps, and never centres its chips
+
+- **What:** `ChipGroup` is `cn("flex flex-wrap gap-2", className)`
+  (`Chip.tsx:179`) — no `wrap` option, as `Stack` has (`Stack.tsx:29`), and no
+  `items-center`. Two things follow. A `ChipGroup` inside a horizontal
+  `ScrollArea` wraps onto a second line instead of scrolling, so the pairing
+  the ScrollArea page documents cannot work. And a chip whose height differs
+  from its neighbours sits at the top of the line instead of on its centre.
+- **Evidence:** measured on the ScrollArea page — the horizontal viewport has
+  `clientWidth` 448 and `scrollWidth` 448, `scrollLeft` cannot leave 0, and
+  the ten chips sit on two rows (tops 518 and 554). Setting only
+  `flex-wrap: nowrap` on the group takes `scrollWidth` to 816, and the row
+  scrolls. On the MultiSelect page, the `sm` chip inside the field is 28px in
+  a 32px line and sits **2px above** the field's centre, while the input, the
+  clear button and the caret are exact.
+- **Now:** left visible in MultiSelect. The ScrollArea page's sideways demo
+  uses a `Stack` with `wrap="nowrap"` instead, and says why.
+- **Lane:** Core.
+- **Fix in Kozmos:** a `wrap` prop on `ChipGroup` in `Stack`'s words, and
+  `items-center` on the line.
+
+## GAP-65 · `Textarea`'s resize grip paints outside its rounded corner
+
+- **What:** `.kozmos-textarea` carries `rounded-control` (16px) with
+  `resize: vertical` (`styles/owned-components.css:53`). The browser anchors
+  the resize grip to the square padding-box corner and ignores the radius, so
+  the grip is drawn across and beyond the rounded edge.
+- **Evidence:** measured on the Textarea page at dpr 8 — the grip's ink is
+  7.5×7.5px, starting 1.75px in from the right edge; **27% of its pixels land
+  on the 1px border stroke and 31% fall outside the field's visible shape**,
+  overshooting the outline by up to 2.16px. Forcing `border-radius: 0` in the
+  browser leaves the ink identical, which proves the grip is not clipped —
+  the corner simply is not where the grip is.
+- **Now:** left visible on the page.
+- **Lane:** Core.
+- **Fix in Kozmos:** either reserve the corner (padding at the end, so the
+  grip sits inside the rounded shape), draw a grip of Kozmos's own, or square
+  that corner while `resize` is on.
+
+## GAP-66 · `EmptyState`'s words are left-aligned in a centred block
+
+- **What:** `EmptyState` puts `text-center` on its root (`EmptyState.tsx:17`)
+  and then renders its title and description through `Text` with no `align`
+  (`:27`, `:31`). `Text` defaults to `align: "left"` (`Text.tsx:45`), which
+  puts `kozmos-text-left` on the paragraph itself, and a declaration on the
+  element beats the parent's inherited `center`.
+- **Evidence:** measured on the EmptyState page — both demos' roots compute
+  `text-align: center`, both titles and descriptions compute `left`. It shows
+  only when the text wraps: the second demo's description hits its 280px cap,
+  so its second line ends 144px short of the right edge, ragged under a
+  centred icon and title.
+- **Now:** left visible on the page.
+- **Lane:** Core.
+- **Fix in Kozmos:** pass `align="center"` from `EmptyState`, or let a
+  `Text` inherit alignment when its caller does not name one.
+
+## GAP-67 · `Menu` opens centred on its trigger
+
+- **What:** `MenuContent` defaults `sideOffset` and nothing else
+  (`Menu.tsx:58`), so Radix's `align="center"` applies: a menu wider than its
+  trigger hangs off both sides. `SplitButton` (`:67`) is the only place in
+  the system that sets an alignment.
+- **Evidence:** measured on the Menu page — trigger 313→420 (108 wide),
+  content 282→452 (170 wide), `data-align="center"`, so the menu starts
+  **31px left of the button that opened it**.
+- **Now:** left visible on the page and in the site's own header menu.
+- **Lane:** Core.
+- **Fix in Kozmos:** default `align="start"` on `MenuContent`, which is what a
+  dropdown under a trigger means, and leave the prop open for the rest.
+
+## GAP-68 · `BottomNavigation`'s taller density overflows its own bar
+
+- **What:** the bar is `h-16` — a fixed 64px (`BottomNavigation.tsx:40`) —
+  while an item at `density="default"` is `min-h-[72px]`
+  (`NavigationItem.tsx:57`). The items cannot fit, so they spill out of the
+  bar. The same line (`:49`) passes `w-auto`, which cancels the density's own
+  width classes, so they never apply either.
+- **Evidence:** measured on the BottomNavigation page in both states of the
+  demo's switch. `compact`: item 64px, padding 6. `default`: item 72px,
+  padding 8 — 3.5px above the bar's top border and 4.5px below it, with the
+  selected item's fill crossing the border. Nothing else changes: icon 24,
+  label 12/16, gap 4, badge 12, bar 64 in both.
+- **Now:** left visible on the page, whose demo says what the switch does.
+- **Lane:** Core.
+- **Fix in Kozmos:** let the bar take its height from its items (`min-h-16`
+  rather than `h-16`), and stop overriding the density's width.
+
+## GAP-69 · Lift, escalator and stairs share one arrow
+
+- **What:** `DIRECTION_ICONS` (`DirectionStep.tsx:61`) maps fourteen
+  manoeuvre types onto eight glyphs: `lift-up`, `escalator-up`, `stairs-up`
+  and `level-up` are all `ArrowUpFromLine`, and the four "down" types are all
+  `ArrowDownToLine`. A traveller cannot tell a lift from an escalator from a
+  staircase, which is the one distinction a step-free route turns on.
+  `straight`, `left` and `right` use the heavy `ArrowBig*` glyphs, which do
+  not match the rest of the set's weight.
+- **Evidence:** read from the map itself; the fourteen manoeuvres are shown
+  on the DirectionStep page, where the three up arrows are identical.
+- **Now:** left visible on the DirectionStep and Itinerary pages.
+- **Lane:** Product / SDK.
+- **Fix in Kozmos:** a glyph per manoeuvre — lift, escalator, stairs, ramp,
+  level change — drawn in the set's own weight. The taxonomy sprites already
+  carry most of them (GAP-79).
+
+## GAP-70 · `SelectTrigger` hides a second `FieldWrapper`
+
+- **What:** `SelectTrigger` wraps itself in a `FieldWrapper` and forwards
+  `error` to it (`Select.tsx:53`). A caller who also needs the outer
+  `FieldWrapper` for a label — which is the documented way, since
+  `SelectTrigger` has no `label` prop (GAP-13) — has two wrappers, and an
+  error passed to both prints twice. `aria-describedby` points at the inner
+  one only; the outer message is unreferenced but still `role="alert"`, so it
+  is announced anyway.
+- **Evidence:** measured on the Select page before the site's own fix: two
+  `p[role=alert]` reading "Choose a venue.", at y 877 and y 903.
+- **Now:** composed — the site's demo passes the error to the trigger alone,
+  and says why. The nesting itself is unchanged.
+- **Lane:** Core.
+- **Fix in Kozmos:** give `SelectTrigger` a `label` so one wrapper does, or
+  have it inherit the wrapper it is already inside instead of making another.
+
+## GAP-71 · `AISearchButton` has no hover state
+
+- **What:** the button's class string carries a focus ring
+  (`focus-visible:ring-2`) and a disabled state, and nothing for hover
+  (`AISearchButton.tsx:24`); no rule for `.kozmos-ai-search:hover` exists in
+  the package's stylesheet either. A pointer gets no feedback before it
+  presses the assistant.
+- **Evidence:** read from the source and the built stylesheet; the only
+  `kozmos-ai-search` rules are the ring's animation.
+- **Now:** left visible on the page.
+- **Lane:** Core.
+- **Fix in Kozmos:** a hover state in the system's own idiom — the ring
+  brightening, or the surface a step warmer — and the same on the ring's
+  animation so it does not read as the only affordance.
+
+## GAP-72 · `MapOverlay` clips what floats on it
+
+- **What:** `MapOverlay` scrolls its own content (`overflow-auto`,
+  `MapOverlay.tsx:74`), and its box is exactly its child's size, so anything
+  the child paints outside its border box is cut. `AdaptiveMapShell` does the
+  same in two places (`:659`, `:674`). A floating `SearchBar` carries
+  `shadow-floating` — the shadow that makes it read as floating over a map.
+- **Evidence:** measured on the SearchBar, MapOverlay and AdaptiveMapShell
+  pages: the overlay's box is byte-for-byte the search bar's own 384×44, and
+  **the whole shadow is cut** — 4px each side, 8px below. Sampled at dpr 2
+  under the bar, the next row is the plain map fill; the same bar outside an
+  overlay fades over about 11px.
+- **Now:** left visible on the three pages.
+- **Lane:** Product / SDK.
+- **Fix in Kozmos:** scroll only when there is something to scroll
+  (`overflow: visible` until a max height is reached), or pad the overlay by
+  the elevation tokens' spread so a shadow has room.
+
+## GAP-73 · `SplitButton`'s outline variant loses its border
+
+- **What:** the main part carries `border-r border-primary-foreground/20`
+  (`SplitButton.tsx:44`) to tint the seam. `border-r` sets a width on one
+  side, but `border-primary-foreground/20` sets `border-color` on **all
+  four**, and it outranks `.kozmos-button-outline`'s own colour. On the
+  filled variant the tint is invisible against blue; on the outline variant it
+  paints white at 20% over white — the button's whole outline disappears.
+- **Evidence:** measured on the SplitButton page — the outline variant's main
+  part has 1px borders on all four sides at `color(srgb 1 1 1 / 0.2)`,
+  **1.00:1** against its own white fill, while the chevron keeps its blue
+  border. A pixel scan across the middle finds no edge at the left of "Save"
+  and a blue line only at the seam.
+- **Now:** left visible on the page.
+- **Lane:** Core.
+- **Fix in Kozmos:** tint the seam with a side-specific colour
+  (`border-r-primary-foreground/20`) so the rest of the border survives.
+
+## GAP-74 · `Tooltip` draws a line across its tail
+
+- **What:** the content has a 1px border on all four sides
+  (`Tooltip.tsx:71`) and the arrow is a filled polygon with no stroke and no
+  offset (`:77`). The arrow is placed flush against the content's edge, so
+  the border runs straight across the join, and the arrow's own two slanted
+  edges carry no outline: the tooltip is outlined everywhere except its tail,
+  with a line where the two meet.
+- **Evidence:** measured on the Tooltip page — content bottom 538.0, arrow
+  top 538.0, zero overlap; a pixel column down the arrow's centre reads a
+  solid 1px `#c7cad1` band at the join, 12.8:1 against the white either side.
+- **Now:** left visible on the page.
+- **Lane:** Core.
+- **Fix in Kozmos:** draw the arrow with the body's border — an outlined
+  polygon pulled 1px into the content so the two outlines join — or take the
+  border off the content and let the shadow carry the edge.
+
+## GAP-75 · `ToggleButton` puts no space between icon and label
+
+- **What:** `ToggleButton`'s base class string has no `gap`
+  (`ToggleButton.tsx:32`), so an icon beside a label touches it — the same
+  defect as GAP-56, in a component that shares none of `Button`'s CSS. It is
+  a Radix Toggle styled on its own, so fixing `.kozmos-button` leaves it as
+  it is.
+- **Evidence:** measured on the ToggleButton page — the check icon's box ends
+  at 394.00 and the label's text box starts at 394.00: **0px**, with 2px of
+  apparent space that is only the glyph's ink inset. `column-gap` computes
+  `normal`.
+- **Now:** left visible on the page. The site's own toggles carry
+  `site-button-icon` where a ToggleButton holds both (the cover's pause
+  button).
+- **Lane:** Core.
+- **Fix in Kozmos:** the spacing scale's 100, as GAP-56 asks for `Button`.
+  Fix both together, and check `Chip`, `Tag` and `SegmentedControl` for the
+  same.
+
+## GAP-76 · Dates and times are the browser's controls
+
+- **What:** `DatePicker`, `DateRangePicker` and `TimePicker` render native
+  `<input type="date">` / `type="time"` fields in a Kozmos frame
+  (`DatePicker.tsx:133`, `:264`, `TimePicker.tsx`). The frame is ours; the
+  calendar and the clock are the browser's. They ignore the theme and the
+  tokens, differ on every platform, cannot be a single field carrying a range,
+  cannot show two months at once, and cannot be driven from a product's own
+  data (available days, opening hours, a venue's time zone).
+- **Evidence:** on the DateRangePicker page in the light theme, opening a
+  field brings up the browser's dark panel, which also overlaps the demo
+  below it. Nothing in the DOM belongs to Kozmos.
+- **Now:** left visible on the three pages; the site does not hand-build a
+  calendar.
+- **Lane:** Core.
+- **Fix in Kozmos:** a calendar and a clock of Kozmos's own, in the tokens,
+  with the shapes a product needs: a range in one field, a two-month panel,
+  a single date, a time range, and days or hours a product can disable.
+
+## GAP-77 · No drag and drop: no handle, no dragging state, no target
+
+- **What:** nothing in the library draws or handles a drag — no drag handle,
+  no grabbed state, no drop target, no reorderable list. A product that lets
+  someone reorder saved places, stops on a route, or floors in a list has to
+  build all of it.
+- **Evidence:** no `draggable`, `onDragStart`, drag handle or sortable list
+  anywhere in `packages/react/src/components`.
+- **Now:** open. No example on the site needs one yet.
+- **Lane:** Core.
+- **Fix in Kozmos:** a drag handle part, the states (grabbed, over a target,
+  refused), and a reorderable list built on them — with keyboard reordering,
+  which is where hand-built drag and drop usually fails.
+
+## GAP-78 · `Switch` cannot lead with its label
+
+- **What:** `Switch` renders the control and then its `label`
+  (`Switch.tsx:52`), always in that order, and takes no prop for the other
+  arrangement. A settings row — the label at the start of the line, the
+  control at its end — cannot be built from it without a caller laying the
+  two out and naming the control itself.
+- **Evidence:** read from the component; its only label prop is a string
+  rendered after the input.
+- **Now:** open.
+- **Lane:** Core.
+- **Fix in Kozmos:** a `labelPlacement` (`"end"` by default, `"start"` for a
+  settings row), keeping the label bound to the control either way.
+
+## GAP-79 · The icon set is 64 glyphs, 8 of them the taxonomy's
+
+- **What:** `@kozmos/icons` exports 64 icons, of which 8 are Taxonomy ones;
+  the rest are general-purpose. The Pointr taxonomy carries hundreds of place
+  types, and the package already has the plumbing to take them
+  (`icons/src/pointr/`, `icons/src/taxonomy/`, both generated).
+- **Evidence:** counted from the package: 64 definitions, categories General
+  20, Arrows 10, Maps & travel 7, Time 4, Taxonomy 8, and a tail of ones and
+  twos.
+- **Now:** open. GAP-07 and GAP-15 list the particular glyphs the site and the
+  examples went without.
+- **Lane:** Product / SDK.
+- **Fix in Kozmos:** generate the taxonomy set from the Pointr library rather
+  than by hand, so a venue's categories, its manoeuvres (GAP-69) and its
+  amenities all come from one source.
+
+## GAP-80 · No row actions: nothing shows on hover outside `Tree`
+
+- **What:** `Tree` fades a row's actions in on hover, focus and selection
+  (`Tree.tsx:548`). Nothing else does, and there is no part for the pattern:
+  no overflow ("…") button, no row-actions slot on `Table`, `List` or the POI
+  rows. A product that wants "hide", "lock" or "more" on a row builds the
+  affordance, the timing and the keyboard path itself.
+- **Evidence:** `group-hover` appears in three components only — `POICard`
+  (an image zoom), `Toast` (its close button) and `Tree` (its actions).
+- **Now:** open.
+- **Lane:** Core.
+- **Fix in Kozmos:** lift `Tree`'s pattern into a part every row can use — an
+  actions slot that appears on hover and focus, stays for the selected row,
+  and is reachable from the keyboard — with an overflow button among the
+  icons.
+
+## GAP-81 · 37 of 104 components carry placeholder documentation
+
+- **What:** 37 components describe themselves as "Displays the X interface
+  topology natively" — a placeholder that says nothing about what the part is
+  for or when to reach for it. `SegmentedControl` shows what the others could
+  be: it says to use it for one choice from a short visible set, to prefer
+  `Radio` for longer lists and `Tabs` when the selection changes which
+  content is visible. `Tabs` itself carries the placeholder, so the pair
+  cannot be told apart from the documentation.
+- **Evidence:** counted from the generated component data the site reads:
+  37 of 104.
+- **Now:** left visible — every component page prints the description it is
+  given, placeholder and all.
+- **Lane:** Core.
+- **Fix in Kozmos:** a sentence per component saying what it is for and when
+  to choose it over its neighbour, in `SegmentedControl`'s manner. The site's
+  pages will show them the day they land.
+
+## GAP-82 · A category pill's fill is 2.52:1 on its own field
+
+- **What:** a category's count pill is painted in
+  `--semantics-category-fill-*` on a field washed with the same category's
+  colour. The ink inside the pill passes — the tokens hold it to 4.5:1 — but
+  the pill's own silhouette against the field behind it does not. WCAG 1.4.11
+  asks 3:1 of a graphic that carries meaning, and the count's shape is what
+  separates it from the label beside it.
+- **Evidence:** measured on the CategoryField page in the light theme: the
+  turquoise pill reads **2.52:1** against its field, green 3.02:1, blue
+  3.74:1. Their text passes throughout (4.57, 4.82 and 5.88:1 at 12px/600).
+- **Now:** left visible on the page. The site paints nothing here: the tints
+  are the tokens', through the shared `tint()` helper.
+- **Lane:** Product / SDK.
+- **Fix in Kozmos:** hold a category's fill to 3:1 against the wash it sits
+  on, the way `pnpm tokens:contrast:check` already holds its ink to 4.5:1 —
+  or give the pill an edge so its shape survives whatever the fills do.
