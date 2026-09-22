@@ -52,14 +52,17 @@ export function DirectionSample() {
             <Chip size="sm">Step-free</Chip>
           </ChipGroup>
           <Stack direction="row" gap={2}>
-            {/* The icons' space from the words is the site's (GAP-56). */}
+            {/* The provider does not mirror a glyph that points along the
+                reading direction (GAP-61), so the page picks it: back points
+                the way the reader came from, next the way they are going.
+                The icons' space from the words is the site's too (GAP-56). */}
             <Button className="site-button-icon">
-              <Icon name="arrow-left" size="sm" />
+              <Icon name={rtl ? "arrow-right" : "arrow-left"} size="sm" />
               Back
             </Button>
             <Button variant="outline" className="site-button-icon">
               Next
-              <Icon name="arrow-right" size="sm" />
+              <Icon name={rtl ? "arrow-left" : "arrow-right"} size="sm" />
             </Button>
           </Stack>
         </Surface>

@@ -65,7 +65,7 @@ export default function Theming() {
 
       <Section
         title="Right to left"
-        lead="Set dir on a provider. Layout flips, the keyboard navigation inside Radix parts follows, and nested providers inherit it. Icons that point along the reading direction — back, next — are not mirrored by the provider; a product chooses the glyph."
+        lead="Set dir on a provider. Layout flips, the keyboard navigation inside Radix parts follows, and nested providers inherit it. Nothing mirrors a glyph that points along the reading direction (GAP-61): the buttons below pick their own arrow from the direction this page set, while the breadcrumb's separator is the component's and keeps pointing right, against the trail. A manoeuvre's arrow is a real direction and stays as it is."
       >
         <DirectionSample />
       </Section>

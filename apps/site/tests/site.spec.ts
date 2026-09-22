@@ -1907,6 +1907,45 @@ test.describe("design-system gaps, measured", () => {
     expect(expanded.fromTop).toBeLessThan(24);
   });
 
+  test("GAP-61: the breadcrumb's separator does not mirror in right to left", async ({
+    page,
+  }) => {
+    await page.goto("/foundations/theming");
+    await hydrated(page);
+    const sample = page
+      .getByRole("region", { name: "Right to left" })
+      .locator(".site-theme-sample");
+    await sample
+      .page()
+      .getByRole("region", { name: "Right to left" })
+      .getByRole("switch")
+      .click();
+    await expect(sample).toHaveCSS("direction", "rtl");
+    const trail = await sample.evaluate((node) => {
+      const items = Array.from(node.querySelectorAll("nav li"));
+      const separators = items.filter(
+        (item) => item.getAttribute("role") === "presentation",
+      );
+      const named = items.filter(
+        (item) => item.getAttribute("role") !== "presentation",
+      );
+      const glyph = separators[0]?.querySelector("svg");
+      return {
+        // The trail itself flips: the root sits at the right edge.
+        rootIsRightmost:
+          named.length > 1 &&
+          named[0].getBoundingClientRect().left >
+            named[named.length - 1].getBoundingClientRect().left,
+        separatorGlyph: glyph ? String(glyph.getAttribute("class")) : null,
+        separatorTransform: glyph ? getComputedStyle(glyph).transform : null,
+      };
+    });
+    expect(trail.rootIsRightmost).toBe(true);
+    // And the separator still points the way it was drawn.
+    expect(trail.separatorGlyph).toContain("chevron-right");
+    expect(trail.separatorTransform).toBe("none");
+  });
+
   test("GAP-24, 29, 34, 36: the parts that pin themselves, held by a screen", async ({
     page,
   }) => {

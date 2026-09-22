@@ -13,18 +13,19 @@ build.
 **Newest, and none of it touched `packages/`** — the site's branch changes
 `apps/site` only, and these six are waiting for you:
 
-| Gap    | Part            | Size of the change                                                   |
-| ------ | --------------- | -------------------------------------------------------------------- |
-| GAP-55 | `Listbox`       | One declaration: a column template.                                  |
-| GAP-56 | `Button`        | One declaration: a gap, and the loader's margin off.                 |
-| GAP-57 | `Button`        | Two declarations: let a label that cannot fit wrap.                  |
-| GAP-58 | `Toast`         | One class: the root has no fill.                                     |
-| GAP-59 | `DynamicIsland` | Give the capsule an edge, so a dark page does not eat it.            |
-| GAP-60 | `DynamicIsland` | Lay the three presentations out around the camera, at Apple's sizes. |
+| Gap    | Part                               | Size of the change                                                                          |
+| ------ | ---------------------------------- | ------------------------------------------------------------------------------------------- |
+| GAP-55 | `Listbox`                          | One declaration: a column template.                                                         |
+| GAP-56 | `Button`                           | One declaration: a gap, and the loader's margin off.                                        |
+| GAP-57 | `Button`                           | Two declarations: let a label that cannot fit wrap.                                         |
+| GAP-58 | `Toast`                            | One class: the root has no fill.                                                            |
+| GAP-59 | `DynamicIsland`                    | Give the capsule an edge, so a dark page does not eat it.                                   |
+| GAP-60 | `DynamicIsland`                    | Lay the three presentations out around the camera, at Apple's sizes.                        |
+| GAP-61 | Breadcrumb, Menu, Tree, Pagination | Mirror the reading-direction glyphs for right to left, as the gallery's arrows already are. |
 
 The site is built from Kozmos components and tokens only. Where Kozmos fell
 short, the site did not work around it: the gap is recorded in
-[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-60, with the evidence), and the site
+[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-61, with the evidence), and the site
 either composed an honest stand-in from Kozmos parts or left the defect
 visible. This document turns those gaps into work for `packages/`, in
 priority order, with the file and line, the change, and the site check that
@@ -94,6 +95,7 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
 | P1       | —                              | The React package                                        | Not tree-shaken: about 155 kB gzipped in the site's bundle, whatever it imports.                 |
 | P2       | GAP-59                         | DynamicIsland                                            | Pinned to its own dark theme: on the dark page the capsule is black on black, 1:1.               |
 | P2       | GAP-60                         | DynamicIsland                                            | No room kept for the camera: Apple leaves 54% of the island's width, the component 12%.          |
+| P2       | GAP-61                         | Breadcrumb, Menu, Tree, Pagination                       | No glyph mirrors in right to left; one rule in the package does it, for the gallery's arrows.    |
 | P2       | GAP-24, 29, 34, 36             | DynamicIsland, BottomNavigation, Backdrop, ToastViewport | Always fixed to the viewport.                                                                    |
 | P2       | GAP-17, 28, 30, 32             | AdaptiveMapShell, SearchBar, Sidebar, ChipGroup          | Landmarks and groups that cannot be named or placed.                                             |
 | P2       | GAP-53                         | AdaptiveMapShell, MapView                                | No edge-to-edge form: on a phone's rounded screen the sheet's bordered corners are cut.          |
@@ -463,6 +465,31 @@ pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
   clear middle of the compact capsule (under 40% of its width today) and the
   expanded content's share of the capsule (over 90%); flip both once there is
   a sensor region, and take the sentence out of the demo's note.
+
+### GAP-61 · No glyph mirrors for right to left
+
+- **Where:** `Breadcrumb/Breadcrumb.tsx:84` (the separator's `ChevronRight`),
+  `Menu/Menu.tsx:31` (the submenu chevron, with `ml-auto`), `Tree/Tree.tsx`
+  (a closed row's `ChevronRight`), `Pagination/Pagination.tsx:83` and `:100`
+  (previous and next), `RoutePreviewPanel/RoutePreviewPanel.tsx:136` (back).
+- **Why it breaks:** `dir` flips the layout and the keyboard order, but each
+  of those glyphs keeps pointing the way it was drawn. Measured in the site's
+  direction sample: the trail runs right to left correctly and both
+  separators still point right, back up the trail. The package already has
+  the technique —
+  `.kozmos-poi-gallery:dir(rtl) .kozmos-poi-gallery-arrow { transform: rotate(180deg) }`
+  — used once.
+- **Change:** mirror those glyphs with `:dir(rtl)` (or an `rtl:` variant), and
+  leave `DirectionStep` and `DirectionIcon` alone: a manoeuvre is a real
+  direction, not a reading one. While you are there, 40 of the 106 component
+  files use physical `ml-`/`pl-`/`left-`/`text-left` utilities instead of
+  logical ones; each wants a look under `dir="rtl"`. Returning `dir` from
+  `useTheme()` (GAP-27) would also let a component pick a different glyph
+  rather than rotate one.
+- **Proof:** "GAP-61: the breadcrumb's separator does not mirror in right to
+  left" measures the glyph and its transform in the theming page's sample;
+  flip it once the separators turn, and take the sentence about the
+  breadcrumb out of that page's lead.
 
 ## P3 — additions
 

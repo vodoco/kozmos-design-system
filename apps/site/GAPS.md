@@ -7,7 +7,7 @@ component and the part, what was tried, the lane, and the evidence. Entries
 up to GAP-36 were measured on `claude/pointr-browse-repairs` at `ef1b68b`
 (2026-09-21), the branch the site is built on; the rest, and every revision
 since, on the same packages at `f30c0f9`, the site's current base, on
-2026-09-22. GAP-54 to GAP-60, and the revisions the home page's new cover made to
+2026-09-22. GAP-54 to GAP-61, and the revisions the home page's new cover made to
 GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
 the same day.
 
@@ -86,6 +86,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-58 | `Toast` draws no background of its own                         | Core                   | left visible |
 | GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it | Platform / form factor | left visible |
 | GAP-60 | `DynamicIsland` keeps no room for the camera it wraps          | Platform / form factor | left visible |
+| GAP-61 | No glyph mirrors for right to left                             | Core                   | left visible |
 
 ---
 
@@ -1091,3 +1092,48 @@ Text"])`) and the Get started page shows — touches it.
   fallback for pseudo-fullscreen web apps (its own MDX), so it needs the same
   geometry: a layout that fits here but not on the phone teaches the wrong
   thing.
+
+## GAP-61 · No glyph mirrors for right to left
+
+- **What:** `ThemeProvider`'s `dir` flips the layout and Radix's keyboard
+  order, but a glyph that points along the reading direction keeps pointing
+  the way it was drawn. Measured on the theming page's direction sample with
+  the provider in `rtl`: the trail runs right to left correctly — Venues at
+  the right edge, Bookshop at the left — while both `BreadcrumbSeparator`s
+  draw `chevron-right` with no transform, so the separators point back up the
+  trail instead of along it.
+- **The same code, elsewhere (read, not measured):** the package carries
+  exactly one right-to-left rule —
+  `.kozmos-poi-gallery:dir(rtl) .kozmos-poi-gallery-arrow { transform: rotate(180deg) }`
+  — so the technique is already in the system, used once. The components that
+  draw a reading-direction glyph with nothing of the kind are `Breadcrumb`
+  (the separator, `Breadcrumb.tsx:84`), `Menu` (the submenu chevron,
+  `Menu.tsx:31`), `Tree` (a closed row, `Tree.tsx`), `Pagination` (previous
+  and next, `Pagination.tsx:83` and `:100`) and `RoutePreviewPanel` (its back
+  arrow, `:136`). No component reads the direction to choose a glyph;
+  `POIMediaGallery` and `AdaptiveMapShell` read it, but for scrolling and for
+  panel placement.
+- **What must not mirror:** a manoeuvre is a real direction. `DirectionStep`
+  and `DirectionIcon` draw turns and must keep drawing them the same way in
+  either direction — a right turn stays a right turn.
+- **Worth an audit at the same time:** 40 of the 106 component files use
+  physical utilities (`ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-`,
+  `border-l`, `rounded-r`, `text-left` …) rather than their logical
+  equivalents; `Menu.tsx` alone has `pl-8`, `ml-auto` and `left-2`/`right-2`.
+  Each needs a look under `dir="rtl"`: some flip correctly through flexbox,
+  some will not.
+- **Evidence:** "GAP-61: the breadcrumb's separator does not mirror in right
+  to left" measures the separator's glyph and transform in the direction
+  sample.
+- **Now:** left visible on the theming page, whose sample says which arrow is
+  the page's choice and which is the component's. The site picks its own
+  glyphs there — back and next follow the direction it sets — because a page
+  can, and because the sample's point is what the provider does and does not
+  do. The site has no other right-to-left surface.
+- **Lane:** Core.
+- **Fix in Kozmos:** mirror the reading-direction glyphs the way the gallery's
+  arrows already are — `:dir(rtl)` (or an `rtl:` variant) with a 180° rotation
+  on the separator, the submenu chevron, the tree's closed row and
+  pagination's pair — and leave the manoeuvre icons alone. Returning `dir`
+  from `useTheme()` (GAP-27) would let a component choose a glyph rather than
+  rotate one, for the cases where a mirrored glyph is not the same glyph.

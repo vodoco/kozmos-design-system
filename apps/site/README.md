@@ -618,15 +618,16 @@ a known one that disappears, which is the signal to close its gap. The same
 holds for GAP-20: the search-field test is marked `test.fail` in WebKit
 only, so Playwright reports it the day Kozmos fixes the field.
 
-**Design-system gaps, measured.** Eighteen tests pin what Kozmos draws today
+**Design-system gaps, measured.** Nineteen tests pin what Kozmos draws today
 — the sheet handle's 4px (GAP-38), the preflight zeroing a caller's border
 (GAP-52), the sheet's square corners on a rounded screen (GAP-53), the button
 link's underline (GAP-09), the icon touching its label (GAP-56), the label
 that cannot wrap (GAP-57), the `Listbox` column as wide as its widest option
 (GAP-55), the toast with no fill (GAP-58), the island that is black on a black
-page (GAP-59) and keeps no room for the camera (GAP-60), the four parts that
-pin themselves to the window and are held by a screen (GAP-24, 29, 34, 36),
-MapView's
+page (GAP-59) and keeps no room for the camera (GAP-60), the breadcrumb's
+separator pointing back up its own trail in right to left (GAP-61), the four
+parts that pin themselves to the window and are held by a screen (GAP-24, 29,
+34, 36), MapView's
 missing isolation (GAP-40), CardTitle's 1.0 line height (GAP-42), where a
 touch 20px from the slider's thumb lands (GAP-43), the header's white first
 paint for a dark-mode visitor with the scripts blocked (GAP-03), the two-row
