@@ -20,7 +20,16 @@ const kozmosDependencies = Object.keys(kozmosReact.dependencies ?? {})
   .filter((name) => !name.startsWith("@kozmos/"))
   .map((name) => `@kozmos/react > ${name}`);
 
+/**
+ * Where the site will be served from. Empty (the default) means the root,
+ * which is what the dev server, the tests and a static host with an index
+ * document all use. A blob container has no index document, so a deploy
+ * there passes its own prefix: `BASE_PATH=/kozmos-ds/ pnpm build`.
+ */
+const base = process.env.BASE_PATH ?? "/";
+
 export default defineConfig({
+  base,
   plugins: [reactRouter()],
   resolve: {
     // @kozmos/react is linked from the workspace and carries its own React for

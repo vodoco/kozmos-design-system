@@ -13,7 +13,8 @@
     "typecheck": "pnpm generate && react-router typegen && tsc",
     "lint": "eslint . && node scripts/check-ds-only.mjs",
     "test": "tsx --test src/lib/*.test.ts && node --test scripts/*.test.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "deploy": "node scripts/deploy-azure.mjs"
   },
   "dependencies": {
     "@kozmos/icons": "workspace:*",
