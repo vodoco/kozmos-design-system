@@ -54,7 +54,7 @@ const Switch = React.forwardRef<
             htmlFor={inputId}
             className={cn(
               "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-              hasError && "text-destructive",
+              hasError && "text-destructive-text",
             )}
           >
             {label}
@@ -62,7 +62,7 @@ const Switch = React.forwardRef<
         )}
       </div>
       {isStringError && (
-        <p id={errorId} className="text-sm text-destructive">
+        <p id={errorId} className="text-sm text-destructive-text">
           {error}
         </p>
       )}

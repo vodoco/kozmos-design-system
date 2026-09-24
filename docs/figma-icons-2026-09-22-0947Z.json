@@ -1,0 +1,711 @@
+{
+  "lastModified": "2026-09-22T09:47:15Z",
+  "page": "44:1698",
+  "readAt": "2026-09-22T14:05:28.401Z",
+  "icons": [
+    {
+      "name": "Icon / activity",
+      "id": "44:1702",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14005"
+        }
+      ]
+    },
+    {
+      "name": "Icon / alert-circle",
+      "id": "44:1707",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14007"
+        }
+      ]
+    },
+    {
+      "name": "Icon / alert-triangle",
+      "id": "44:1712",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14009"
+        }
+      ]
+    },
+    {
+      "name": "Icon / arrow-left",
+      "id": "44:1717",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14013"
+        }
+      ]
+    },
+    {
+      "name": "Icon / arrow-right",
+      "id": "44:1722",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14015"
+        }
+      ]
+    },
+    {
+      "name": "Icon / bell-01",
+      "id": "44:1727",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14019"
+        }
+      ]
+    },
+    {
+      "name": "Icon / building-01",
+      "id": "44:1732",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14021"
+        }
+      ]
+    },
+    {
+      "name": "Icon / bus",
+      "id": "44:1737",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14023"
+        }
+      ]
+    },
+    {
+      "name": "Icon / calendar",
+      "id": "44:1742",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14025"
+        }
+      ]
+    },
+    {
+      "name": "Icon / check",
+      "id": "44:1747",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14027"
+        }
+      ]
+    },
+    {
+      "name": "Icon / chevron-down",
+      "id": "44:1752",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14029"
+        }
+      ]
+    },
+    {
+      "name": "Icon / chevron-left",
+      "id": "44:1757",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14031"
+        }
+      ]
+    },
+    {
+      "name": "Icon / chevron-right",
+      "id": "44:1762",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14033"
+        }
+      ]
+    },
+    {
+      "name": "Icon / chevron-up",
+      "id": "44:1767",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14035"
+        }
+      ]
+    },
+    {
+      "name": "Icon / clock",
+      "id": "44:1772",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14037"
+        }
+      ]
+    },
+    {
+      "name": "Icon / compass-01",
+      "id": "44:1777",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14039"
+        }
+      ]
+    },
+    {
+      "name": "Icon / download-01",
+      "id": "44:1782",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14041"
+        }
+      ]
+    },
+    {
+      "name": "Icon / edit-01",
+      "id": "44:1787",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14043"
+        }
+      ]
+    },
+    {
+      "name": "Icon / home-line",
+      "id": "44:1792",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14047"
+        }
+      ]
+    },
+    {
+      "name": "Icon / info-circle",
+      "id": "44:1797",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14049"
+        }
+      ]
+    },
+    {
+      "name": "Icon / lock-01",
+      "id": "44:1802",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14051"
+        }
+      ]
+    },
+    {
+      "name": "Icon / map-01",
+      "id": "44:1807",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14053"
+        }
+      ]
+    },
+    {
+      "name": "Icon / marker-pin-01",
+      "id": "44:1812",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14055"
+        }
+      ]
+    },
+    {
+      "name": "Icon / menu-01",
+      "id": "44:1817",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14057"
+        }
+      ]
+    },
+    {
+      "name": "Icon / minus",
+      "id": "44:1822",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14059"
+        }
+      ]
+    },
+    {
+      "name": "Icon / navigation-pointer-01",
+      "id": "44:1827",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14061"
+        }
+      ]
+    },
+    {
+      "name": "Icon / plus",
+      "id": "44:1832",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14063"
+        }
+      ]
+    },
+    {
+      "name": "Icon / qr-code-01",
+      "id": "44:1837",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14065"
+        }
+      ]
+    },
+    {
+      "name": "Icon / route",
+      "id": "44:1842",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14067"
+        }
+      ]
+    },
+    {
+      "name": "Icon / scan",
+      "id": "44:1847",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14069"
+        }
+      ]
+    },
+    {
+      "name": "Icon / search-md",
+      "id": "44:1852",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14071"
+        }
+      ]
+    },
+    {
+      "name": "Icon / settings-01",
+      "id": "44:1857",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14073"
+        }
+      ]
+    },
+    {
+      "name": "Icon / trash-01",
+      "id": "44:1862",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14079"
+        }
+      ]
+    },
+    {
+      "name": "Icon / upload-01",
+      "id": "44:1867",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14081"
+        }
+      ]
+    },
+    {
+      "name": "Icon / user-01",
+      "id": "44:1872",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14083"
+        }
+      ]
+    },
+    {
+      "name": "Icon / users-01",
+      "id": "44:1877",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14085"
+        }
+      ]
+    },
+    {
+      "name": "Icon / wifi",
+      "id": "44:1882",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14087"
+        }
+      ]
+    },
+    {
+      "name": "Icon / x-close",
+      "id": "44:1887",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14089"
+        }
+      ]
+    },
+    {
+      "name": "Icon / arrow-down",
+      "id": "1923:8850",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14011"
+        }
+      ]
+    },
+    {
+      "name": "Icon / arrow-up",
+      "id": "1923:8859",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14017"
+        }
+      ]
+    },
+    {
+      "name": "Icon / flip-backward",
+      "id": "1923:9784",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14045"
+        }
+      ]
+    },
+    {
+      "name": "Icon / stars-01",
+      "id": "1923:10629",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14075"
+        }
+      ]
+    },
+    {
+      "name": "Icon / switch-vertical-01",
+      "id": "1923:10974",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14077"
+        }
+      ]
+    },
+    {
+      "name": "Icon / bookmark",
+      "id": "1923:11411",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14091"
+        }
+      ]
+    },
+    {
+      "name": "Icon / calendar-check-01",
+      "id": "1923:11744",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14093"
+        }
+      ]
+    },
+    {
+      "name": "Icon / clock-plus",
+      "id": "1923:11869",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14095"
+        }
+      ]
+    },
+    {
+      "name": "Icon / eye",
+      "id": "1923:12232",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14097"
+        }
+      ]
+    },
+    {
+      "name": "Icon / feather",
+      "id": "1923:12555",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14099"
+        }
+      ]
+    },
+    {
+      "name": "Icon / globe-02",
+      "id": "1923:12890",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14101"
+        }
+      ]
+    },
+    {
+      "name": "Icon / heart",
+      "id": "1923:13389",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14103"
+        }
+      ]
+    },
+    {
+      "name": "Icon / layout-alt-02",
+      "id": "1923:13862",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14105"
+        }
+      ]
+    },
+    {
+      "name": "Icon / loading-01",
+      "id": "1923:13949",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14107"
+        }
+      ]
+    },
+    {
+      "name": "Icon / mail-01",
+      "id": "1923:13954",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14109"
+        }
+      ]
+    },
+    {
+      "name": "Icon / phone",
+      "id": "1923:13959",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14111"
+        }
+      ]
+    },
+    {
+      "name": "Icon / share-01",
+      "id": "1923:13964",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14113"
+        }
+      ]
+    },
+    {
+      "name": "Icon / shopping-bag-02",
+      "id": "1923:13969",
+      "sources": [
+        {
+          "name": "Pointr Source",
+          "type": "INSTANCE",
+          "id": "1968:14115"
+        }
+      ]
+    },
+    {
+      "name": "Icon / taxonomy-amenity-space-desk",
+      "id": "1968:13974",
+      "sources": [
+        {
+          "name": "Taxonomy Source",
+          "type": "FRAME",
+          "id": "1968:13975"
+        }
+      ]
+    },
+    {
+      "name": "Icon / taxonomy-entrance-exit",
+      "id": "1968:13980",
+      "sources": [
+        {
+          "name": "Taxonomy Source",
+          "type": "FRAME",
+          "id": "1968:13981"
+        }
+      ]
+    },
+    {
+      "name": "Icon / taxonomy-food-beverage-space",
+      "id": "1968:13983",
+      "sources": [
+        {
+          "name": "Taxonomy Source",
+          "type": "FRAME",
+          "id": "1968:13984"
+        }
+      ]
+    },
+    {
+      "name": "Icon / taxonomy-parking-space",
+      "id": "1968:13986",
+      "sources": [
+        {
+          "name": "Taxonomy Source",
+          "type": "FRAME",
+          "id": "1968:13987"
+        }
+      ]
+    },
+    {
+      "name": "Icon / taxonomy-retail-space",
+      "id": "1968:13989",
+      "sources": [
+        {
+          "name": "Taxonomy Source",
+          "type": "FRAME",
+          "id": "1968:13990"
+        }
+      ]
+    },
+    {
+      "name": "Icon / taxonomy-security-space",
+      "id": "1968:13996",
+      "sources": [
+        {
+          "name": "Taxonomy Source",
+          "type": "FRAME",
+          "id": "1968:13997"
+        }
+      ]
+    },
+    {
+      "name": "Icon / taxonomy-service-space-office",
+      "id": "1968:13999",
+      "sources": [
+        {
+          "name": "Taxonomy Source",
+          "type": "FRAME",
+          "id": "1968:14000"
+        }
+      ]
+    },
+    {
+      "name": "Icon / taxonomy-transportation-space-boarding-gate",
+      "id": "1968:14002",
+      "sources": [
+        {
+          "name": "Taxonomy Source",
+          "type": "FRAME",
+          "id": "1968:14003"
+        }
+      ]
+    }
+  ]
+}

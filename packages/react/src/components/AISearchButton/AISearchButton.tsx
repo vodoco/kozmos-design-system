@@ -20,8 +20,12 @@ const AISearchButton = React.forwardRef<HTMLButtonElement, AISearchButtonProps>(
       ref={ref}
       type={type}
       aria-label={label}
+      // overflow-clip: the ring turns as a square whose corners are round, and
+      // layout counts the turned square — 68 wide at 45° — so a button at the
+      // end of a row widened the page for part of every turn. Clipped to the
+      // button it draws the same; the focus ring is a shadow and is not clipped.
       className={cn(
-        "kozmos-reset kozmos-ai-search relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-pill bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "kozmos-reset kozmos-ai-search relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-clip rounded-pill bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}

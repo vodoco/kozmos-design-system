@@ -115,7 +115,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                 className={cn(
                   "mt-1 block text-xs font-semibold",
                   poi.availability === "open"
-                    ? "text-success"
+                    ? "text-success-text"
                     : "text-muted-foreground",
                 )}
               >

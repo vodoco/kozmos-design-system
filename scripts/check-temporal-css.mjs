@@ -22,7 +22,7 @@ try {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.setContent(
-      '<style>body{margin:0} input{padding:0;border-radius:2px;background:orange} label{font-size:30px} svg{width:70px;height:70px}</style><div id="fixture"></div>',
+      '<!doctype html><style>body{margin:0} input{padding:0;border-radius:2px;background:orange} label{font-size:30px} svg{width:70px;height:70px}</style><div id="fixture"></div>',
     );
     await page.addStyleTag({ content: stylesheet });
     await page.addScriptTag({ content: code });

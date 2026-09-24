@@ -14,7 +14,7 @@ try {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setContent(
-    `<html data-theme="host"><head><style>${css}</style></head><body><div id="fixture"></div></body></html>`,
+    `<!doctype html><html data-theme="host"><head><style>${css}</style></head><body><div id="fixture"></div></body></html>`,
   );
   await page.addScriptTag({ content: code });
   await page.getByTestId("right-glass").waitFor();

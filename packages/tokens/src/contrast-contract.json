@@ -38,6 +38,30 @@
       "file": "packages/react/tailwind.config.js",
       "path": ["theme", "extend", "colors", "info", "foreground"],
       "value": "var(--primitives-colors-foreground-1000)"
+    },
+    {
+      "name": "Tailwind destructive text",
+      "file": "packages/react/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "destructive", "text"],
+      "value": "var(--semantics-emotion-danger-text)"
+    },
+    {
+      "name": "Tailwind success text",
+      "file": "packages/react/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "success", "text"],
+      "value": "var(--semantics-emotion-success-text)"
+    },
+    {
+      "name": "Tailwind warning text",
+      "file": "packages/react/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "warning", "text"],
+      "value": "var(--semantics-emotion-alert-text)"
+    },
+    {
+      "name": "Tailwind info text",
+      "file": "packages/react/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "info", "text"],
+      "value": "var(--semantics-emotion-informative-text)"
     }
   ],
   "pairs": [

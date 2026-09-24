@@ -187,7 +187,7 @@ export const SegmentedControl = React.forwardRef<
               key={item.value}
               className={cn(
                 segmentedControlItemVariants({ fullWidth, size }),
-                hasError && "data-[state=on]:text-destructive",
+                hasError && "data-[state=on]:text-destructive-text",
               )}
               disabled={disabled || item.disabled}
               value={item.value}

@@ -1755,3 +1755,29 @@ share. Each change has a test that fails on the old code, and nine painter asser
 previous build. Two findings: over REST a bound paint in this file renders its stored colour, not
 its variable's, so a REST render cannot confirm a binding; and the branch's first CI runs (PR #56)
 fail five checks `main` passes — handoff §8.
+
+On the afternoon of the 22nd the handoff for the next chat was written:
+[claude-code-handoff-2026-09-22.md](claude-code-handoff-2026-09-22.md). Writing it turned up two
+things. The live Figma file had been written at 09:47:15Z by a Curated Icons → Update that drew
+all 56 icon sources anew, although its sync keeps a source whose main component carries the
+definition's key; the tints laid through the old sources are gone from 2,325 of the library's
+2,415 icons, in 52 sets. No audit, `figma:verify` or CI step reads icon paints; the new
+`scripts/figma-rest/icon-tints.mjs` does. Olcay's run on `b3257790f931` therefore takes Update All
+Core and Update All Product / SDK after the icon sync (`figma-drift-2026-09-21.md` §9, the last
+section). And CI's steps after the story audit, never run on the branch, were run locally: one
+was red, the governance check, because `STATUS.md` had not been regenerated for the branch's new
+components; it is, and the check no longer counts Compose's `Motion` folder as a component. The
+session's Figma read tools are kept in `scripts/figma-rest/`.
+
+On the evening of the 22nd Olcay's run on `b3257790f931` was made, with the icon sync last: every
+set carries the build, but the sync drew the 56 sources anew once more and orphaned the tints the
+Updates had just laid, 2,310 of 2,416 icons. The sync's keep fails in the live runtime although
+REST reads the stored keys on the sources; it is fixed in the next build, after Olcay's second
+pass — Update All Core, then Update All Product / SDK, without the icon sync
+(`figma-drift-2026-09-21.md` §9, the last section). As recommended the same evening: the emotion
+text roles went one step darker, so status text holds 4.5:1 on every neutral surface in both
+themes; the natives' stepper labels took React's; and the React bundle was measured, 62.8 % core
+components and 29.0 % Product / SDK, so the split gets its own PR after #56. The worktree moved
+off `/private/tmp` to `/Volumes/4TB Depo/development/K/kozmos-design-system-pointr`, and
+`QAConfig.json`, reported lost that morning, turned out never to have been: the check had read a
+wrong path. The handoff of the 22nd, §0a, has each of these.

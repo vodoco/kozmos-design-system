@@ -118,7 +118,7 @@ const RoutingInputGroup = React.forwardRef<
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-10 h-10 shrink-0 text-muted-foreground hover:text-destructive"
+                    className="w-10 h-10 shrink-0 text-muted-foreground hover:text-destructive-text"
                     onClick={() => handleRemove(point.id)}
                     aria-label={`Remove ${point.placeholder || point.value || "route point"}`}
                   >

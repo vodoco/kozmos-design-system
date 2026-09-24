@@ -13,7 +13,7 @@ this worktree on this Mac. The reports it summarises: the Pointr passes
 
 | What                                                      | Where                                                                                                                                                                                                                                  |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The worktree with all of the work                         | `/private/tmp/kozmos-browser-compat.uqPMBD`, branch `claude/pointr-browse-repairs`, **unpushed**, no upstream                                                                                                                          |
+| The worktree with all of the work                         | `/Volumes/4TB Depo/development/K/kozmos-design-system-pointr`, branch `claude/pointr-browse-repairs`, pushed (PR #56); off `/private/tmp` since the 22nd                                                                               |
 | The main checkout                                         | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev` on `main`, holds none of it; one untracked pointer file, `docs/claude-code-handoff-2026-09-19.md`                                                                           |
 | The QA app (real PointrKit, Design-QA Cloud)              | `apps/PointrPlayground` — `Sources/App`, `Tests`, `UITests`, `Tools`, `project.yml`                                                                                                                                                    |
 | Ignored, unrecoverable from Git, **only in the worktree** | `apps/PointrPlayground/.local/` (PointrKit 10.3.0, MapLibre 6.27 xcframeworks, `Info.plist`), `apps/PointrPlayground/Sources/App/Resources/QAConfig.json` (mode 0600, never print or commit), the generated `KozmosPointrQA.xcodeproj` |
@@ -22,8 +22,9 @@ this worktree on this Mac. The reports it summarises: the Pointr passes
 | Storybook                                                 | `apps/docs`; the static build in `apps/docs/storybook-static` (ignored)                                                                                                                                                                |
 | The product reference                                     | `https://agentic-search-zeta.vercel.app` (Mobile SDK and WebSDK tabs); the older Figma file `Pointr Maps - Express` (`BwtG2COVRqUWGPrIvP4jxr`) is superseded                                                                           |
 
-macOS clears `/private/tmp`. Before any cleanup or machine change: commit, and copy `.local/` and
-`QAConfig.json` somewhere safe first. Decision 5 (push, and move those files) is still open.
+The worktree moved off `/private/tmp`, which macOS clears, on the 22nd, and `.local/` and
+`QAConfig.json` moved with it. They are still only in the worktree: before any machine change,
+copy them somewhere safe. Decision 5 (push, and move those files) is answered (§7).
 
 ## 2. Git rules that held
 
@@ -48,19 +49,19 @@ blaming a backend for the language it answers in:
 Regenerate the project after any `project.yml` change (it is ignored):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/apps/PointrPlayground && xcodegen generate
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/apps/PointrPlayground" && xcodegen generate
 ```
 
 Build, install, launch:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/apps/PointrPlayground && xcodebuild -project KozmosPointrQA.xcodeproj -scheme KozmosPointrQA -destination "platform=iOS Simulator,id=51937B59-CEAE-4BC7-BC34-FEB17E28FAE7" -derivedDataPath /private/tmp/kozmos-pointr-qa-xcode CODE_SIGNING_ALLOWED=NO build && xcrun simctl install 51937B59-CEAE-4BC7-BC34-FEB17E28FAE7 /private/tmp/kozmos-pointr-qa-xcode/Build/Products/Debug-iphonesimulator/KozmosPointrQA.app && xcrun simctl launch --terminate-running-process 51937B59-CEAE-4BC7-BC34-FEB17E28FAE7 com.kozmos.pointrqa
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/apps/PointrPlayground" && xcodebuild -project KozmosPointrQA.xcodeproj -scheme KozmosPointrQA -destination "platform=iOS Simulator,id=51937B59-CEAE-4BC7-BC34-FEB17E28FAE7" -derivedDataPath /private/tmp/kozmos-pointr-qa-xcode CODE_SIGNING_ALLOWED=NO build && xcrun simctl install 51937B59-CEAE-4BC7-BC34-FEB17E28FAE7 /private/tmp/kozmos-pointr-qa-xcode/Build/Products/Debug-iphonesimulator/KozmosPointrQA.app && xcrun simctl launch --terminate-running-process 51937B59-CEAE-4BC7-BC34-FEB17E28FAE7 com.kozmos.pointrqa
 ```
 
 Unit tests (the iPad, so a live run on the iPhone is not disturbed):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/apps/PointrPlayground && xcodebuild -project KozmosPointrQA.xcodeproj -scheme KozmosPointrQA -destination "platform=iOS Simulator,id=1CB35135-48B2-407B-8515-C8C6EFC1D963" -derivedDataPath /private/tmp/kozmos-pointr-qa-xcode CODE_SIGNING_ALLOWED=NO test 2>&1 | grep -E "Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|error:"
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/apps/PointrPlayground" && xcodebuild -project KozmosPointrQA.xcodeproj -scheme KozmosPointrQA -destination "platform=iOS Simulator,id=1CB35135-48B2-407B-8515-C8C6EFC1D963" -derivedDataPath /private/tmp/kozmos-pointr-qa-xcode CODE_SIGNING_ALLOWED=NO test 2>&1 | grep -E "Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|error:"
 ```
 
 The routing flow as a UI test (any simulator, no device grant needed; live against Design-QA;
@@ -68,7 +69,7 @@ not in CI). Environment is **exported before** the command — a `KEY=value` aft
 is a build setting, not environment:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/apps/PointrPlayground && TEST_RUNNER_KOZMOS_QA_DESTINATION="Airport Shuttles" TEST_RUNNER_KOZMOS_QA_ORIGIN="Dunkin" xcodebuild -project KozmosPointrQA.xcodeproj -scheme KozmosPointrQAUI -destination "platform=iOS Simulator,id=51937B59-CEAE-4BC7-BC34-FEB17E28FAE7" -derivedDataPath /private/tmp/kozmos-pointr-qa-xcode -resultBundlePath /private/tmp/kozmos-pointr-ui.xcresult CODE_SIGNING_ALLOWED=NO test 2>&1 | grep -E "QA-FLOW|Test Case .* (passed|failed)|TEST (SUCCEEDED|FAILED)"
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/apps/PointrPlayground" && TEST_RUNNER_KOZMOS_QA_DESTINATION="Airport Shuttles" TEST_RUNNER_KOZMOS_QA_ORIGIN="Dunkin" xcodebuild -project KozmosPointrQA.xcodeproj -scheme KozmosPointrQAUI -destination "platform=iOS Simulator,id=51937B59-CEAE-4BC7-BC34-FEB17E28FAE7" -derivedDataPath /private/tmp/kozmos-pointr-qa-xcode -resultBundlePath /private/tmp/kozmos-pointr-ui.xcresult CODE_SIGNING_ALLOWED=NO test 2>&1 | grep -E "QA-FLOW|Test Case .* (passed|failed)|TEST (SUCCEEDED|FAILED)"
 ```
 
 **Adding a colour token, end to end.** Edit `packages/tokens/src/tokens.json`, `tokens-light.json`
@@ -76,7 +77,7 @@ and `tokens-dark.json` alike (a DTCG group: `{"$value": "#F9AC17", "$type": "col
 "…"}`), then:
 
 ```bash
-cd /private/tmp/kozmos-browser-compat.uqPMBD && pnpm tokens:build && pnpm tokens:native:copy && pnpm tokens:copies:check && pnpm tokens:theme:check && pnpm tokens:contrast:check && pnpm tokens:raw:check && pnpm tokens:motion:check
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && pnpm tokens:build && pnpm tokens:native:copy && pnpm tokens:copies:check && pnpm tokens:theme:check && pnpm tokens:contrast:check && pnpm tokens:raw:check && pnpm tokens:motion:check
 ```
 
 The web reads `packages/tokens/dist/css/variables-*.css` at build; nothing to copy. A group named
@@ -166,19 +167,19 @@ desktop simulator tool takes device points (402 × 874 on the 17 Pro), not pixel
 After a change under `packages/ios`:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/packages/ios && swift test
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/packages/ios" && swift test
 ```
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/packages/ios && xcodebuild -scheme Kozmos -destination "platform=iOS Simulator,id=51937B59-CEAE-4BC7-BC34-FEB17E28FAE7" -derivedDataPath /tmp/kozmos-ios-poi-tests CODE_SIGNING_ALLOWED=NO -skip-testing:KozmosTests/KozmosButtonImageSnapshotTests test 2>&1 | grep -E "Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|error:"
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/packages/ios" && xcodebuild -scheme Kozmos -destination "platform=iOS Simulator,id=51937B59-CEAE-4BC7-BC34-FEB17E28FAE7" -derivedDataPath /tmp/kozmos-ios-poi-tests CODE_SIGNING_ALLOWED=NO -skip-testing:KozmosTests/KozmosButtonImageSnapshotTests test 2>&1 | grep -E "Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|error:"
 ```
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/packages/ios && xcodebuild -scheme Kozmos -destination "platform=iOS Simulator,name=iPhone 16,OS=18.4" -derivedDataPath /tmp/kozmos-ios-poi-tests CODE_SIGNING_ALLOWED=NO test 2>&1 | grep -E "Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|error:"
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/packages/ios" && xcodebuild -scheme Kozmos -destination "platform=iOS Simulator,name=iPhone 16,OS=18.4" -derivedDataPath /tmp/kozmos-ios-poi-tests CODE_SIGNING_ALLOWED=NO test 2>&1 | grep -E "Executed [0-9]+ tests|TEST (SUCCEEDED|FAILED)|error:"
 ```
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && node scripts/check-ios-poi.mjs
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && node scripts/check-ios-poi.mjs
 ```
 
 The button image baselines are pinned on iOS 18.4 and skipped on 26.5; never re-record them to
@@ -189,22 +190,22 @@ After a change under `packages/react` or its styles (build first; the browser su
 built package and a built Storybook):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && pnpm --filter '@kozmos/react...' build && pnpm --filter @kozmos/docs build-storybook
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && pnpm --filter '@kozmos/react...' build && pnpm --filter @kozmos/docs build-storybook
 ```
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && python3 -m http.server 6012 --bind 127.0.0.1 --directory apps/docs/storybook-static
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && python3 -m http.server 6012 --bind 127.0.0.1 --directory apps/docs/storybook-static
 ```
 
 Then, in another terminal, each of these on chromium (default), firefox and webkit
 (`ADAPTIVE_BROWSER=firefox`, `ADAPTIVE_BROWSER=webkit`):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:poi-details
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:poi-details
 ```
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:owned-css
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:owned-css
 ```
 
 And without Storybook: `pnpm --filter @kozmos/react test`, `pnpm --filter @kozmos/react lint`,
@@ -216,21 +217,21 @@ an old `*-failed.png`.
 After a change to the shared POI fixtures (`packages/react/src/components/POIDetailPanel/POIDetailPanel.fixtures.ts`):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && node --import tsx scripts/sync-ios-poi-examples.mjs --write && node --import tsx scripts/sync-ios-poi-examples.mjs
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && node --import tsx scripts/sync-ios-poi-examples.mjs --write && node --import tsx scripts/sync-ios-poi-examples.mjs
 ```
 
 The examples that reach the native playground are named in that script (`names`, plus the
 two pushed by hand). Then build the playground:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/apps/Playground.swiftpm && xcodebuild -scheme Playground -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5" -derivedDataPath /tmp/kozmos-ios-poi-build CODE_SIGNING_ALLOWED=NO build 2>&1 | grep -E "BUILD (SUCCEEDED|FAILED)|error:"
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/apps/Playground.swiftpm" && xcodebuild -scheme Playground -destination "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5" -derivedDataPath /tmp/kozmos-ios-poi-build CODE_SIGNING_ALLOWED=NO build 2>&1 | grep -E "BUILD (SUCCEEDED|FAILED)|error:"
 ```
 
 After a change under `packages/android` (JDK 21 and the SDK at `~/Library/Android/sdk` are on
 this Mac; no `local.properties`, so pass the SDK in the environment):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD/packages/android && ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew --no-daemon -q verifyPaparazziDebug
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/packages/android" && ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew --no-daemon -q verifyPaparazziDebug
 ```
 
 Re-record a golden only for an intended change:
@@ -250,7 +251,7 @@ layout — have their own browser check on the same served build
 engine:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:navigation
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:navigation
 ```
 
 The map shell's bottom sheet — its three detents, a drag anywhere on it, the scroll handoff, the
@@ -258,25 +259,25 @@ handle, the anchored peek — is driven on the same served build, as the prototy
 ([initial-sheet-2026-09-20.md](initial-sheet-2026-09-20.md) §4; chromium adds a touch scenario):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:map-sheet
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:map-sheet
 ```
 
 The search sheet's parts on the web — the tiles' shared top edge, the AI search button's 48
 footprint and 66 ring, the ring's turn and its rest under reduced motion — on the same build:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:search-sheet
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && STORYBOOK_URL=http://127.0.0.1:6012 pnpm test:search-sheet
 ```
 
 The motion tokens — three durations, two easings — and their native files, the shells' snaps and
 the parts' entrances on them; and the quick-access search words derived from the taxonomy:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && pnpm tokens:motion:check
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && pnpm tokens:motion:check
 ```
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && node scripts/sync-ios-quick-access.mjs
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && node scripts/sync-ios-quick-access.mjs
 ```
 
 (`--fetch` re-reads the pinned taxonomy and rewrites the vendored terms; `--write` rewrites the
@@ -285,14 +286,14 @@ Swift literal.)
 The prototype itself can be re-driven and re-measured at any time:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && node scripts/measure-prototype-sheet.cjs /tmp/prototype-sheet
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && node scripts/measure-prototype-sheet.cjs /tmp/prototype-sheet
 ```
 
 The glass surface role has a parity check of its own, and the owned-CSS suite above measures it
 in both themes ([glass-surface-2026-09-20.md](glass-surface-2026-09-20.md)):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && pnpm tokens:glass:check
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && pnpm tokens:glass:check
 ```
 
 The Figma importer's painters are measured without Figma
@@ -301,14 +302,14 @@ each painter and asserts the contract's numbers and the variable bindings. After
 `figma/foundations-importer/`:
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && pnpm figma:painters:check && pnpm figma:plugin:check && pnpm components:contract:check
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && pnpm figma:painters:check && pnpm figma:plugin:check && pnpm components:contract:check
 ```
 
 The live file is read over REST with the main checkout's token, exported and never printed
 (the worktree has no `.env`):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && FIGMA_ACCESS_TOKEN="$(grep '^FIGMA_ACCESS_TOKEN=' "/Volumes/4TB Depo/development/K/kozmos-design-system-dev/.env" | cut -d= -f2- | tr -d '"')" node scripts/verify-figma-library.mjs
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && FIGMA_ACCESS_TOKEN="$(grep '^FIGMA_ACCESS_TOKEN=' "/Volumes/4TB Depo/development/K/kozmos-design-system-dev/.env" | cut -d= -f2- | tr -d '"')" node scripts/verify-figma-library.mjs
 ```
 
 The same export runs `pnpm figma:publish:linked:dry`, `figma:publish:ios:linked:dry` and
@@ -326,7 +327,7 @@ fails on one left out. Then read Dev Mode back, with Figma desktop open on the C
 its Dev Mode MCP server on (Preferences):
 
 ```sh
-cd /private/tmp/kozmos-browser-compat.uqPMBD && pnpm figma:connect:readback
+cd "/Volumes/4TB Depo/development/K/kozmos-design-system-pointr" && pnpm figma:connect:readback
 ```
 
 It asks the server, read-only, for every linked node on React, SwiftUI and Compose, and fails on
@@ -419,7 +420,7 @@ the category field in `CategoryField/` on each platform; the quick-access words 
   descendant with text, an `aria-label`, a button or a surface (a background with a radius or a
   shadow) print tag, label, position and size relative to the frame, `fontSize/fontWeight`,
   family, `color`, `backgroundColor`, `borderRadius`, `border`. Headless, with the repo's
-  Playwright: `NODE_PATH=/private/tmp/kozmos-browser-compat.uqPMBD/node_modules node script.cjs`
+  Playwright: `NODE_PATH="/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/node_modules" node script.cjs`
   (`require` resolves from the script's directory, not the working directory); wait for `load`,
   click the tab you need, then `page.screenshot({ clip })` around the frame.
 - **The SDK's map layers.** MapLibre's public style API: `mapLibreView.style?.layers`, a
@@ -470,6 +471,12 @@ technology and reported by the Figma audit as advisories; React's pin solid, hol
 floor. The CategoryField clear became a 32 circle in a 44 target, as the search bar's (`701f919`).
 Code Connect was published on his word the same night, on all three platforms
 ([figma-drift-2026-09-21.md](figma-drift-2026-09-21.md) §9)._
+
+_On the 22nd, at 17:00, Olcay ruled on two: splitting the React bundle is its own PR after #56,
+which merges with `analyze-bundle` knowingly red; and the worktree moved off `/private/tmp` to
+`/Volumes/4TB Depo/development/K/kozmos-design-system-pointr`. The old copy's `.git` is renamed
+and it is his to delete, after he re-imports the Figma plugin from the new path. The rest went
+as recommended ([claude-code-handoff-2026-09-22.md](claude-code-handoff-2026-09-22.md) §0a)._
 
 ## 8. What the design system still lacks, from the prototype
 
@@ -757,3 +764,29 @@ _Added on the 22nd, from the five decisions:_
   only a few pixels are more than two levels off (OffByTwo counts nothing else), the class may
   take `CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE` (0.0001 %, calibrated in its KDoc); anything
   larger is a real difference.
+
+_Added on the 22nd, from the handoff's checks (`docs/claude-code-handoff-2026-09-22.md` §9):_
+
+- A Curated Icons → Update that draws an icon's source again orphans every tint laid through it,
+  in every set but the four it repaints (Button, IconButton, FloatingActionButton, Badge); at
+  09:47:15Z on the 22nd that was 2,325 icons in 52 sets. No audit, `figma:verify` or CI step reads
+  icon paints: `scripts/figma-rest/icon-tints.mjs` does, and exits 1 while any is untinted. Read
+  the file's `lastModified` before trusting any baseline recorded from it.
+- A failing CI step skips every step after it, so a branch "one ruling from green" can hide more
+  reds. Run the later `run:` blocks locally with `bash -e`; on the 22nd one of them was red.
+- `STATUS.md` is generated by `scripts/skills/check-completion.ts` from the three platforms'
+  component folders, and CI's governance step fails while it is stale: after adding a component
+  folder, run it with `--write`. A folder that holds no component (Compose's `Motion`) is listed
+  in `NON_COMPONENT_DIRECTORIES`.
+- Port 6006 may belong to another worktree's Storybook: on the 22nd, one from
+  `/private/tmp/kozmos-owned-css-verify.dV1etM`, running since the 18th. Eight check scripts
+  default `STORYBOOK_URL` to 6006, so set it every time, to the server this worktree built.
+- CI's Linux draws text in DejaVu Sans, as wide as Verdana and wider than SF; the story audit
+  fails a 320 page whose document is wider than the window. Hold narrow rows in Verdana
+  (`NarrowRows.spec.tsx`). A turning element's layout box is its rotated square (a 48 square at
+  45° is 68 wide): clip it at its owner.
+- Chromatic's "Build passed. Welcome to Chromatic! … continue setup" means the project has no
+  accepted baselines; its UI Tests check stays pending until they are accepted.
+- This machine's `gh` has no `--json` on `gh pr checks`: the fourth tab-separated column is the
+  job's URL; read a job with `gh api repos/vodoco/kozmos-design-system-/actions/jobs/<id>` and its
+  log with `…/logs`. macOS has no `timeout`.

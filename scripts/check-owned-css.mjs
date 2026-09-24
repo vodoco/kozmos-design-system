@@ -24,7 +24,7 @@ try {
     });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.setContent(`<html><head><style>
+    await page.setContent(`<!doctype html><html><head><style>
       html {font-size:16px} body {margin:13px}
       input,textarea,button {background:orange;border:3px solid purple;border-radius:3px}
       label {font-size:30px} p {margin:20px}
@@ -311,10 +311,12 @@ try {
         .locator("..")
         .getByRole("button");
       assert.equal(await disabledToggle.isDisabled(), true);
-      for (const [status, token] of [
-        ["error", "danger-600"],
-        ["warning", "alert-800"],
-        ["success", "success-800"],
+      // The edge and the ring keep the emotion's fill step; the glyph is text,
+      // the emotion's Text role, one step darker (2026-09-22).
+      for (const [status, token, emotion] of [
+        ["error", "danger-600", "danger"],
+        ["warning", "alert-800", "alert"],
+        ["success", "success-800", "success"],
       ]) {
         const control = page.getByTestId(`${id}-number-${status}`);
         const tone = await value(
@@ -331,7 +333,13 @@ try {
         );
         const action = control.locator("..").getByRole("button").first();
         assert.equal((await measure(action)).borderTopColor, tone);
-        assert.equal((await measure(action)).color, tone);
+        assert.equal(
+          (await measure(action)).color,
+          await value(
+            `${id}-number-${status}`,
+            `--semantics-emotion-${emotion}-text`,
+          ),
+        );
         await control.focus();
         assert.notEqual((await measure(control)).boxShadow, "none");
       }
@@ -362,6 +370,40 @@ try {
       assert.equal(loader.width, "16px");
       assert.match(loader.animationName, /^kozmos-/);
       assert.notEqual(loader.animationDuration, "0s");
+      // GAP-56: a Button keeps 8px between its icon and its label, as Figma's Button
+      // (itemSpacing 8, bound) and iOS's (HStack spacing 100) do: a caller's icon, and the
+      // loading spinner, without a margin of either's own. Measured on the spinner's layout box
+      // (mid-turn a rotating square's bounding box is up to 41% wider), and in both directions:
+      // the fixture is right-to-left, and a physical margin spaced only one of them.
+      for (const testId of [`${id}-icon-label`, `${id}-loading`]) {
+        const gaps = await page.getByTestId(testId).evaluate((node) => {
+          const measure = () => {
+            const svg = node.querySelector("svg");
+            svg.style.animation = "none";
+            const icon = svg.getBoundingClientRect();
+            svg.style.animation = "";
+            const label = [...node.childNodes].find(
+              (child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
+            );
+            const range = document.createRange();
+            range.selectNodeContents(label);
+            const text = range.getBoundingClientRect();
+            return Math.round(Math.max(text.left - icon.right, icon.left - text.right));
+          };
+          const own = node.getAttribute("dir");
+          const rendered = measure();
+          node.setAttribute("dir", getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl");
+          const flipped = measure();
+          if (own === null) node.removeAttribute("dir");
+          else node.setAttribute("dir", own);
+          return [rendered, flipped];
+        });
+        assert.deepEqual(
+          gaps,
+          [8, 8],
+          `${testId}: 8px between the icon and the label in both directions (GAP-56)`,
+        );
+      }
       const button = page.getByTestId(`${id}-button`);
       await button.hover();
       await page.mouse.down();

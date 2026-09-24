@@ -85,7 +85,7 @@
     @apply text-xs font-semibold;
   }
   .kozmos-poi-availability[data-availability="open"] {
-    @apply text-success;
+    @apply text-success-text;
   }
   .kozmos-poi-intro {
     margin: 0;
@@ -183,13 +183,13 @@
     color: inherit;
   }
   .kozmos-poi-summary-item[data-tone="success"] {
-    @apply text-success;
+    @apply text-success-text;
   }
   .kozmos-poi-summary-item[data-tone="warning"] {
-    @apply text-warning;
+    @apply text-warning-text;
   }
   .kozmos-poi-summary-item[data-tone="danger"] {
-    @apply text-destructive;
+    @apply text-destructive-text;
   }
   .kozmos-poi-summary-item[data-tone="brand"] {
     @apply text-primary;
@@ -311,6 +311,6 @@
     padding: 0.75rem;
   }
   .kozmos-poi-action-message[role="alert"] {
-    @apply text-destructive bg-background;
+    @apply text-destructive-text bg-background;
   }
 }

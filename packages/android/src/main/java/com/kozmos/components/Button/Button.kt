@@ -15,7 +15,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
@@ -185,12 +188,19 @@ private fun RowScope.ButtonContent(
     isLoading: Boolean,
     content: @Composable RowScope.() -> Unit
 ) {
-    if (isLoading) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(14.dp),
-            color = LocalContentColor.current,
-            strokeWidth = 2.dp
-        )
+    // GAP-56: the loader and the caller's children keep 8 apart, as Figma's Button (itemSpacing
+    // 8) and iOS's (HStack spacing 100) do. Both used to touch the label.
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(14.dp),
+                color = LocalContentColor.current,
+                strokeWidth = 2.dp
+            )
+        }
+        content()
     }
-    content()
 }

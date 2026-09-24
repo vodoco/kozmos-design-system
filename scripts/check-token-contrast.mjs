@@ -37,6 +37,27 @@ for (const emotion of [
   }
 }
 
+// An emotion's Text role is the emotion as text or a glyph on the page itself,
+// and the page is any neutral surface a panel, card or sheet paints: white, and
+// the two greys (a sheet is background/100). The steps were once measured on
+// white alone, and four of six failed on the sheet's grey.
+for (const emotion of [
+  "themed",
+  "neutral",
+  "success",
+  "danger",
+  "informative",
+  "alert",
+]) {
+  for (const surface of [0, 50, 100])
+    contract.pairs.push({
+      name: `${emotion} text on background ${surface}`,
+      background: `primitives-colors-background-${surface}`,
+      foreground: `semantics-emotion-${emotion}-text`,
+      minimum: 4.5,
+    });
+}
+
 function readCssVariables(mode) {
   const filePath = path.join(
     root,

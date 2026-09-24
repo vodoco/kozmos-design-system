@@ -72,7 +72,7 @@ const Checkbox = React.forwardRef<
         )}
       </div>
       {isStringError && (
-        <p id={errorId} className="text-sm text-destructive">
+        <p id={errorId} className="text-sm text-destructive-text">
           {error}
         </p>
       )}

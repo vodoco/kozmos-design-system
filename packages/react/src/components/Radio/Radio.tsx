@@ -69,7 +69,7 @@ const RadioGroupItem = React.forwardRef<
         className={cn(
           "peer aspect-square h-5 w-5 shrink-0 rounded-pill border border-input text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary data-[state=checked]:text-primary",
           error &&
-            "border-destructive text-destructive focus-visible:ring-destructive data-[state=checked]:border-destructive data-[state=checked]:text-destructive",
+            "border-destructive text-destructive-text focus-visible:ring-destructive data-[state=checked]:border-destructive data-[state=checked]:text-destructive-text",
           className,
         )}
         aria-invalid={error || undefined}
@@ -84,7 +84,7 @@ const RadioGroupItem = React.forwardRef<
           htmlFor={inputId}
           className={cn(
             "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-            error && "text-destructive",
+            error && "text-destructive-text",
           )}
         >
           {label}

@@ -34,7 +34,7 @@ try {
   });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.setContent(`<html><head><style>
+  await page.setContent(`<!doctype html><html><head><style>
     html { font-size:16px; }
     input, textarea { border-radius:3px; border:3px solid purple; background:orange; }
   </style></head><body><input id="host-input" aria-label="Host input"><textarea id="host-textarea" aria-label="Host textarea"></textarea><div id="fixture"></div></body></html>`);

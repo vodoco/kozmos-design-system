@@ -17,6 +17,10 @@ const ROOT_DIR = path.resolve(__dirname, "../../");
 const STATUS_PATH = path.join(ROOT_DIR, "STATUS.md");
 const args = new Set(process.argv.slice(2));
 const INTERNAL_COMPONENT_NAMES = new Set(["GlassSettingsPanel"]);
+// Folders under a platform's components root that hold no component. Compose
+// keeps KozmosTransitions in components/Motion; iOS keeps it beside the
+// components (Sources/KozmosTransitions.swift), and React has none.
+const NON_COMPONENT_DIRECTORIES = new Set(["Motion"]);
 const PRODUCT_SDK_COMPONENT_NAMES = new Set([
   "AdaptiveMapShell",
   "BrowseCategoriesPanel",
@@ -212,6 +216,7 @@ function readComponentDirectories(repoPath: string): string[] {
     .readdirSync(absPath)
     .filter((name) => fs.statSync(path.join(absPath, name)).isDirectory())
     .filter((name) => !INTERNAL_COMPONENT_NAMES.has(name))
+    .filter((name) => !NON_COMPONENT_DIRECTORIES.has(name))
     .sort((a, b) => a.localeCompare(b));
 }
 
@@ -401,6 +406,12 @@ function generateMarkdown(statuses: ComponentStatus[]): string {
   md +=
     "Internal-only component directories are excluded from the table. Current exclusions: " +
     [...INTERNAL_COMPONENT_NAMES]
+      .sort((a, b) => a.localeCompare(b))
+      .join(", ") +
+    ".\n\n";
+  md +=
+    "Folders in a platform's component directory that hold no component are skipped too: " +
+    [...NON_COMPONENT_DIRECTORIES]
       .sort((a, b) => a.localeCompare(b))
       .join(", ") +
     ".\n\n";

@@ -95,6 +95,7 @@
     "tokens:glass:check": "node scripts/check-glass-parity.mjs",
     "tokens:motion:check": "node scripts/check-motion-parity.mjs",
     "tokens:raw:check": "node scripts/check-raw-values.mjs",
+    "tokens:unitless:check": "node scripts/check-unitless-tokens.mjs",
     "components:classes:check": "node scripts/check-compiled-classes.mjs",
     "packages:install:check": "node scripts/check-package-install.mjs",
     "product:consumer:check": "node scripts/check-product-consumer.mjs",

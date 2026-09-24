@@ -9,7 +9,7 @@ const { code, css } = await buildReactFixture("token-alpha-host.tsx");
 const browser = await launchFixtureBrowser();
 try {
   const page = await browser.newPage();
-  await page.setContent('<div id="fixture"></div>');
+  await page.setContent('<!doctype html><div id="fixture"></div>');
   await page.addStyleTag({ content: css });
   await page.addScriptTag({ content: code });
   await page.getByTestId("outer-alpha").waitFor();

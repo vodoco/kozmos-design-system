@@ -27,7 +27,7 @@ try {
         page.on("pageerror", (e) => errors.push(e.message));
         try {
           await page.setContent(
-            '<html><body style="margin:0"><div id="fixture"></div></body></html>',
+            '<!doctype html><html><body style="margin:0"><div id="fixture"></div></body></html>',
           );
           await page.addStyleTag({ content: stylesheet });
           await page.addScriptTag({ content: code });

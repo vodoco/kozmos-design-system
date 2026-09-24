@@ -12,7 +12,7 @@ try {
   const page = await browser.newPage({ colorScheme: "light" });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.setContent(`<html data-theme="host"><head><style>
+  await page.setContent(`<!doctype html><html data-theme="host"><head><style>
     body { margin: 13px; font-family: serif; }
     h1 { font-size: 37px; margin: 19px; }
     button { border: 3px solid purple; background: orange; }

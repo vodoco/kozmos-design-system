@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T07:20:31.963Z",
+  "generatedAt": "2026-09-22T15:42:03.085Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -6917,11 +6917,11 @@
       "values": {
         "light": {
           "kind": "alias",
-          "path": "Primitives/Colors/emotional/success/800"
+          "path": "Primitives/Colors/emotional/success/900"
         },
         "dark": {
           "kind": "alias",
-          "path": "Primitives/Colors/emotional/success/800"
+          "path": "Primitives/Colors/emotional/success/900"
         }
       }
     },
@@ -6989,11 +6989,11 @@
       "values": {
         "light": {
           "kind": "alias",
-          "path": "Primitives/Colors/emotional/danger/600"
+          "path": "Primitives/Colors/emotional/danger/700"
         },
         "dark": {
           "kind": "alias",
-          "path": "Primitives/Colors/emotional/danger/600"
+          "path": "Primitives/Colors/emotional/danger/700"
         }
       }
     },
@@ -7061,11 +7061,11 @@
       "values": {
         "light": {
           "kind": "alias",
-          "path": "Primitives/Colors/emotional/alert/800"
+          "path": "Primitives/Colors/emotional/alert/900"
         },
         "dark": {
           "kind": "alias",
-          "path": "Primitives/Colors/emotional/alert/800"
+          "path": "Primitives/Colors/emotional/alert/900"
         }
       }
     },
@@ -7133,11 +7133,11 @@
       "values": {
         "light": {
           "kind": "alias",
-          "path": "Primitives/Colors/emotional/info/700"
+          "path": "Primitives/Colors/emotional/info/800"
         },
         "dark": {
           "kind": "alias",
-          "path": "Primitives/Colors/emotional/info/700"
+          "path": "Primitives/Colors/emotional/info/800"
         }
       }
     },

@@ -41,7 +41,7 @@ describe("Switch", () => {
     render(<Switch label="Enable notifications" error />);
     expect(screen.getByRole("switch")).toHaveClass("border-destructive");
     expect(screen.getByText("Enable notifications")).toHaveClass(
-      "text-destructive",
+      "text-destructive-text",
     );
   });
 });

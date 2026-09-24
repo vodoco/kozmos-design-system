@@ -38,9 +38,14 @@ public struct KozmosStepper: View {
                         }
                     }
                     
+                    // React's label: the current step's in the foreground at medium
+                    // weight, every other in the muted foreground, foreground/400
+                    // (4.8:1 even on a sheet's grey). It was foreground/100 and /500
+                    // until 2026-09-22.
                     Text(steps[index])
                         .font(KozmosTypography.caption)
-                        .foregroundColor(index == currentStep ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
+                        .fontWeight(index == currentStep ? .medium : .regular)
+                        .foregroundColor(index == currentStep ? KozmosColors.primitivesColorsForeground0 : KozmosColors.primitivesColorsForeground400)
                 }
                 
                 if index < steps.count - 1 {

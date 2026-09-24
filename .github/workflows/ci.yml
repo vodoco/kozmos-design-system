@@ -97,6 +97,13 @@ jobs:
       - name: Verify No New Raw Values
         run: node --test scripts/lib/raw-value-patterns.test.mjs && pnpm tokens:raw:check
 
+      # A layout token is a bare number, and a bare number is not a length: the
+      # browser drops `height: var(--primitives-layout-spacing-200)` without a
+      # word. The map sheet's handle was 4px tall from the day it shipped.
+      # Reads the token values the build step above emits.
+      - name: Verify Owned Lengths Convert Their Tokens
+        run: node --test scripts/lib/unitless-tokens.test.mjs && pnpm tokens:unitless:check
+
       # A Tailwind class the build cannot generate is dropped without a word, and
       # a toHaveClass assertion still passes. bg-background/90 left
       # MapControlButton transparent over the map that way. This reads the
@@ -240,6 +247,17 @@ jobs:
           pnpm --filter @kozmos/docs exec concurrently -k -s first -n "POI,TEST" \
             "python3 -m http.server 6008 --bind 127.0.0.1 --directory storybook-static" \
             "bash -lc 'until curl -sf http://127.0.0.1:6008/index.json >/dev/null; do sleep 2; done; STORYBOOK_URL=http://127.0.0.1:6008 pnpm -w test:poi-details && STORYBOOK_URL=http://127.0.0.1:6008 ADAPTIVE_BROWSER=firefox pnpm -w test:poi-details && STORYBOOK_URL=http://127.0.0.1:6008 ADAPTIVE_BROWSER=webkit pnpm -w test:poi-details'"
+
+      # These three suites existed and no workflow ran them. The search sheet's
+      # had been red since 2026-09-21, asking CategoryField's name to be the
+      # category colour that Olcay's own ruling had just removed for failing
+      # 4.5:1, and asking the clear to be 32 when the ruling made it a 44
+      # target around a 32 circle. A suite nobody runs is a suite nobody keeps.
+      - name: Verify Map Sheet, Search Sheet and Navigation Screens
+        run: |
+          pnpm --filter @kozmos/docs exec concurrently -k -s first -n "SB,TEST" \
+            "python3 -m http.server 6009 --bind 127.0.0.1 --directory storybook-static" \
+            "bash -lc 'until curl -sf http://127.0.0.1:6009/index.json >/dev/null; do sleep 2; done; STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:map-sheet && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=firefox pnpm -w test:map-sheet && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:search-sheet && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=firefox pnpm -w test:search-sheet && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:navigation && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=firefox pnpm -w test:navigation && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=webkit pnpm -w test:navigation'"
 
       - name: Preserve POI Reference Evidence
         if: always()

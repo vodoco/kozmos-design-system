@@ -149,6 +149,7 @@ try {
       const s = getComputedStyle(node);
       const pill = node.querySelector("[aria-label='2 places']");
       const clear = node.querySelector("button");
+      const clearCircle = clear ? clear.firstElementChild : null;
       const icon = node.querySelector("span[aria-hidden]");
       return {
         border: s.borderTopWidth + " " + s.borderTopColor,
@@ -157,13 +158,21 @@ try {
         radius: s.borderTopLeftRadius,
         pill: pill ? { height: pill.offsetHeight, background: getComputedStyle(pill).backgroundColor, color: getComputedStyle(pill).color } : null,
         clear: clear ? clear.offsetWidth + "x" + clear.offsetHeight : null,
+        clearCircle: clearCircle ? clearCircle.offsetWidth + "x" + clearCircle.offsetHeight : null,
         icon: icon ? icon.offsetWidth : null,
       };
     });
     // The taxonomy's yellow, #f9ac17, as the border and the pill; a 12 % tint as the fill;
     // the dark ink, #17191c, on the pill, where white would read at 1.92:1.
+    //
+    // The NAME is foreground/0, not the colour: Olcay ruled on 2026-09-21
+    // (ce6e807) that the category colour on its own 12 % wash fails 4.5:1 for
+    // seven of the eight tints, this yellow at 1.77. The border, the wash, the
+    // icon and the count pill keep the colour; the name and the clear's cross
+    // do not. This check asked for the yellow until 2026-09-22 and was never
+    // run by CI, so it stayed red for a day asking for a contrast failure.
     assert.equal(styles.border, "1px rgb(249, 172, 23)", `the border is not the category's colour: ${styles.border}`);
-    assert.equal(styles.color, "rgb(249, 172, 23)", `the text is not the category's colour: ${styles.color}`);
+    assert.equal(styles.color, "rgb(0, 0, 0)", `the name is not foreground/0: ${styles.color}`);
     // color-mix resolves to rgba() on some engines and color(srgb …) on others.
     const fill = /rgba\((\d+), (\d+), (\d+), ([\d.]+)\)/.exec(styles.background) ?? (() => {
       const m = /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+) \/ ([\d.]+)\)/.exec(styles.background);
@@ -176,7 +185,12 @@ try {
     assert.equal(styles.pill?.height, 22, `the pill is not 22 tall: ${JSON.stringify(styles.pill)}`);
     assert.equal(styles.pill?.background, "rgb(249, 172, 23)", `the pill is not filled with the colour: ${JSON.stringify(styles.pill)}`);
     assert.equal(styles.pill?.color, "rgb(23, 25, 28)", `the pill's digits are not the fill's ink: ${JSON.stringify(styles.pill)}`);
-    assert.equal(styles.clear, "32x32", `the clear is not 32: ${styles.clear}`);
+    // A 32 circle to see inside a 44 target to hit, as the search bar's clear
+    // beside it (Olcay, 2026-09-21, 701f919). This check measured the button
+    // alone and asked it to be 32, which would have been a target under the
+    // minimum; CI never ran it, so the ruling and the check never met.
+    assert.equal(styles.clear, "44x44", `the clear's target is not 44: ${styles.clear}`);
+    assert.equal(styles.clearCircle, "32x32", `the clear's circle is not 32: ${styles.clearCircle}`);
     assert.equal(styles.icon, 28, `the icon is not 28: ${styles.icon}`);
     // The row: the field, Filters at 48 and the AI search at 48, all one height band.
     const filters = await page.getByRole("button", { name: "Filters" }).boundingBox();

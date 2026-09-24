@@ -33,7 +33,7 @@ export const Default: Story = {
     actions: (
       <>
         <Button className="flex-1" size="sm">
-          <Navigation className="w-4 h-4 mr-2" /> Navigate
+          <Navigation className="w-4 h-4" /> Navigate
         </Button>
         <Button variant="outline" size="sm" aria-label="Share location">
           <Share2 className="w-4 h-4" />

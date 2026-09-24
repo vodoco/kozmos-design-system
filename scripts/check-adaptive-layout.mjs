@@ -10,6 +10,9 @@ import {
 const { code, css } = await buildReactFixture("adaptive-host.tsx");
 const browser = await launchFixtureBrowser();
 let failures = 0;
+// GAP-38 is only measurable where the panel is a sheet; count the scenarios
+// that got there, so a run in which none did fails rather than passes empty.
+let sheetsMeasured = 0;
 try {
   for (const scenario of [
     {
@@ -96,7 +99,11 @@ try {
     page.on("pageerror", (error) => errors.push(error.message));
     try {
       await page.setContent(
-        `<html dir="${scenario.direction}"><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture" style="width:${scenario.width}px;height:${scenario.height}px"></div></body></html>`,
+        // The doctype is not decoration: without it the page is in quirks mode,
+        // where a unitless number is accepted as a length. Every real page has
+        // one, so a fixture without one passes CSS that a visitor's browser
+        // drops (GAP-38 was invisible here for exactly that reason).
+        `<!doctype html><html dir="${scenario.direction}"><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture" style="width:${scenario.width}px;height:${scenario.height}px"></div></body></html>`,
       );
       await page.addScriptTag({
         content: `window.adaptiveOptions = ${JSON.stringify(scenario.options ?? {})};`,
@@ -138,6 +145,31 @@ try {
         { timeout: 1500 },
       );
       const layout = await page.evaluate(() => window.adaptiveSnapshot);
+      // GAP-38: the sheet's drag handle is a 16px row holding a 40 x 4 grip
+      // 6px down, as iOS's grabber row and Android's SheetHandle are. Its three
+      // declarations read layout tokens, and those are unitless numbers
+      // (16, 6, 40): a unitless number is not a length, so without
+      // `calc(… * 1px)` the browser drops all three and the handle collapses to
+      // the grip's own 4px, with no width at all.
+      if (layout.presentation === "bottom") {
+        const handle = await page
+          .getByRole("slider", { name: "Panel height" })
+          .boundingBox();
+        const grip = await page
+          .locator(".kozmos-map-sheet-grip")
+          .boundingBox();
+        sheetsMeasured++;
+        assert.deepEqual(
+          [
+            Math.round(handle.height),
+            Math.round(grip.width),
+            Math.round(grip.height),
+            Math.round(grip.y - handle.y),
+          ],
+          [16, 40, 4, 6],
+          "the handle is a 16px row and the grip a 40 x 4 capsule 6px down (GAP-38)",
+        );
+      }
       const map = await page
         .getByRole("region", { name: "Map", exact: true })
         .boundingBox();
@@ -343,5 +375,11 @@ try {
   }
 } finally {
   await browser.close();
+}
+if (!sheetsMeasured) {
+  failures++;
+  console.error(
+    "FAIL no scenario presented the panel as a sheet, so GAP-38's handle was never measured",
+  );
 }
 process.exitCode = failures ? 1 : 0;

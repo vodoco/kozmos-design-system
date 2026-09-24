@@ -71,18 +71,30 @@ module.exports = {
         destructive: {
           DEFAULT: "var(--primitives-colors-emotional-danger-600)",
           foreground: "var(--primitives-colors-foreground-1000)",
+          // The emotion as text or a glyph on a page, card or sheet: DEFAULT is the
+          // fill, one step lighter, and fails 4.5:1 as text on the greys.
+          text: "var(--semantics-emotion-danger-text)",
         },
         success: {
           DEFAULT: "var(--primitives-colors-emotional-success-800)",
           foreground: "var(--primitives-colors-foreground-1000)",
+          // The emotion as text or a glyph on a page, card or sheet: DEFAULT is the
+          // fill, one step lighter, and fails 4.5:1 as text on the greys.
+          text: "var(--semantics-emotion-success-text)",
         },
         warning: {
           DEFAULT: "var(--primitives-colors-emotional-alert-800)",
           foreground: "var(--primitives-colors-foreground-1000)",
+          // The emotion as text or a glyph on a page, card or sheet: DEFAULT is the
+          // fill, one step lighter, and fails 4.5:1 as text on the greys.
+          text: "var(--semantics-emotion-alert-text)",
         },
         info: {
           DEFAULT: "var(--primitives-colors-emotional-info-700)",
           foreground: "var(--primitives-colors-foreground-1000)",
+          // The emotion as text or a glyph on a page, card or sheet: DEFAULT is the
+          // fill, one step lighter, and fails 4.5:1 as text on the greys.
+          text: "var(--semantics-emotion-informative-text)",
         },
         // Border roles. `border` is the container edge, `border-input` the
         // boundary of a control; both live in Semantics.Border in

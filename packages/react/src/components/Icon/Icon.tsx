@@ -17,7 +17,7 @@ const iconVariants = cva("", {
       default: "text-current",
       muted: "text-muted-foreground",
       primary: "text-primary",
-      destructive: "text-destructive",
+      destructive: "text-destructive-text",
     },
   },
   defaultVariants: {

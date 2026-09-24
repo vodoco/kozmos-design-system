@@ -2476,7 +2476,7 @@
         "text": {
           "$value": "{Primitives.Colors.foreground.400}",
           "$type": "color",
-          "$description": "The emotion as text or a glyph on the page itself. The step differs per emotion because the ramps do not reach 4.5:1 at the same place — success and alert need 800, informative 700, danger and themed 600. The product draws success at 600, which is 2.74:1 and fails."
+          "$description": "The emotion as text or a glyph on the page itself — white or either grey a panel, card or sheet paints (background/0, /50, /100). The step differs per emotion because the ramps reach 4.5:1 on background/100 at different places: success and alert 900, informative 800, danger 700, themed 600. Measured on white alone they were one step lighter, and four of six failed on a sheet's grey. The product draws success at 600, which is 2.74:1 even on white."
         }
       },
       "themed": {
@@ -2493,7 +2493,7 @@
         "text": {
           "$value": "{Primitives.Colors.theme.600}",
           "$type": "color",
-          "$description": "The emotion as text or a glyph on the page itself. The step differs per emotion because the ramps do not reach 4.5:1 at the same place — success and alert need 800, informative 700, danger and themed 600. The product draws success at 600, which is 2.74:1 and fails."
+          "$description": "The emotion as text or a glyph on the page itself — white or either grey a panel, card or sheet paints (background/0, /50, /100). The step differs per emotion because the ramps reach 4.5:1 on background/100 at different places: success and alert 900, informative 800, danger 700, themed 600. Measured on white alone they were one step lighter, and four of six failed on a sheet's grey. The product draws success at 600, which is 2.74:1 even on white."
         }
       },
       "success": {
@@ -2508,9 +2508,9 @@
           "$description": "Ink on the matching surface. Never on the page: on white it is the wrong end of the ramp."
         },
         "text": {
-          "$value": "{Primitives.Colors.emotional.success.800}",
+          "$value": "{Primitives.Colors.emotional.success.900}",
           "$type": "color",
-          "$description": "The emotion as text or a glyph on the page itself. The step differs per emotion because the ramps do not reach 4.5:1 at the same place — success and alert need 800, informative 700, danger and themed 600. The product draws success at 600, which is 2.74:1 and fails."
+          "$description": "The emotion as text or a glyph on the page itself — white or either grey a panel, card or sheet paints (background/0, /50, /100). The step differs per emotion because the ramps reach 4.5:1 on background/100 at different places: success and alert 900, informative 800, danger 700, themed 600. Measured on white alone they were one step lighter, and four of six failed on a sheet's grey. The product draws success at 600, which is 2.74:1 even on white."
         }
       },
       "danger": {
@@ -2525,9 +2525,9 @@
           "$description": "Ink on the matching surface. Never on the page: on white it is the wrong end of the ramp."
         },
         "text": {
-          "$value": "{Primitives.Colors.emotional.danger.600}",
+          "$value": "{Primitives.Colors.emotional.danger.700}",
           "$type": "color",
-          "$description": "The emotion as text or a glyph on the page itself. The step differs per emotion because the ramps do not reach 4.5:1 at the same place — success and alert need 800, informative 700, danger and themed 600. The product draws success at 600, which is 2.74:1 and fails."
+          "$description": "The emotion as text or a glyph on the page itself — white or either grey a panel, card or sheet paints (background/0, /50, /100). The step differs per emotion because the ramps reach 4.5:1 on background/100 at different places: success and alert 900, informative 800, danger 700, themed 600. Measured on white alone they were one step lighter, and four of six failed on a sheet's grey. The product draws success at 600, which is 2.74:1 even on white."
         }
       },
       "alert": {
@@ -2542,9 +2542,9 @@
           "$description": "Ink on the matching surface. Never on the page: on white it is the wrong end of the ramp."
         },
         "text": {
-          "$value": "{Primitives.Colors.emotional.alert.800}",
+          "$value": "{Primitives.Colors.emotional.alert.900}",
           "$type": "color",
-          "$description": "The emotion as text or a glyph on the page itself. The step differs per emotion because the ramps do not reach 4.5:1 at the same place — success and alert need 800, informative 700, danger and themed 600. The product draws success at 600, which is 2.74:1 and fails."
+          "$description": "The emotion as text or a glyph on the page itself — white or either grey a panel, card or sheet paints (background/0, /50, /100). The step differs per emotion because the ramps reach 4.5:1 on background/100 at different places: success and alert 900, informative 800, danger 700, themed 600. Measured on white alone they were one step lighter, and four of six failed on a sheet's grey. The product draws success at 600, which is 2.74:1 even on white."
         }
       },
       "informative": {
@@ -2559,9 +2559,9 @@
           "$description": "Ink on the matching surface. Never on the page: on white it is the wrong end of the ramp."
         },
         "text": {
-          "$value": "{Primitives.Colors.emotional.info.700}",
+          "$value": "{Primitives.Colors.emotional.info.800}",
           "$type": "color",
-          "$description": "The emotion as text or a glyph on the page itself. The step differs per emotion because the ramps do not reach 4.5:1 at the same place — success and alert need 800, informative 700, danger and themed 600. The product draws success at 600, which is 2.74:1 and fails."
+          "$description": "The emotion as text or a glyph on the page itself — white or either grey a panel, card or sheet paints (background/0, /50, /100). The step differs per emotion because the ramps reach 4.5:1 on background/100 at different places: success and alert 900, informative 800, danger 700, themed 600. Measured on white alone they were one step lighter, and four of six failed on a sheet's grey. The product draws success at 600, which is 2.74:1 even on white."
         }
       }
     },

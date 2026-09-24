@@ -13,7 +13,7 @@ try {
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.setContent(
-      `<html lang="en"><head><title>Overlay test</title><style>${css}</style></head><body><button id="host">Host action</button><div id="preexisting" inert="existing"><button>Inert host</button></div><div id="fixture"></div><div id="custom-portal" data-kozmos-root data-theme="light"></div><div aria-live="polite">Live announcement</div></body></html>`,
+      `<!doctype html><html lang="en"><head><title>Overlay test</title><style>${css}</style></head><body><button id="host">Host action</button><div id="preexisting" inert="existing"><button>Inert host</button></div><div id="fixture"></div><div id="custom-portal" data-kozmos-root data-theme="light"></div><div aria-live="polite">Live announcement</div></body></html>`,
     );
     await page.addScriptTag({ content: code });
     if (name === "Nested")

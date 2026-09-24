@@ -61,6 +61,6 @@ describe("RadioGroup", () => {
     const radio = screen.getByRole("radio");
     expect(radio).toHaveAttribute("aria-invalid", "true");
     expect(radio).toHaveClass("h-5", "w-5", "border-destructive");
-    expect(screen.getByText("Option A")).toHaveClass("text-destructive");
+    expect(screen.getByText("Option A")).toHaveClass("text-destructive-text");
   });
 });

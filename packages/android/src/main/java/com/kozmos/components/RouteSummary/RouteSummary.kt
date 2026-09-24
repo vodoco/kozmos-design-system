@@ -119,7 +119,6 @@ fun KozmosRouteSummary(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Default.Navigation, contentDescription = null)
-                    Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSpacing100))
                     Text("Start Navigation")
                 }
             }

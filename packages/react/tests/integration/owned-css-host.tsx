@@ -84,6 +84,10 @@ function Controls({ id }: { id: string }) {
       <Button isLoading data-testid={`${id}-loading`}>
         Loading
       </Button>
+      <Button data-testid={`${id}-icon-label`}>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" />
+        Navigate
+      </Button>
       <Button variant="glass" data-testid={`${id}-glass`}>
         Glass
       </Button>

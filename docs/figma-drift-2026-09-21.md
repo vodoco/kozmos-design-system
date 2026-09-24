@@ -779,7 +779,8 @@ reads its size back into the log.
   library component's now, a taxonomy source while its artwork stamp matches, and names in its
   warnings any source it had to draw again. In the harness, a second run keeps all 64 ids; the
   sync of `7241e855b611` changed all 56. The live ids were recorded before the run
-  (`icons-baseline-before-run.json` in the session's scratchpad) to prove it after.
+  (`docs/figma-icons-2026-09-22-0810Z.json`) to prove it after — and were all drawn anew at
+  09:47:15Z (the last section).
 - **The contract check paired names with keys across entries** (`name: …[\s\S]*?componentKey`):
   a taxonomy entry without a key would have borrowed its neighbour's. It reads entry by entry and
   runs the generator's `--check`.
@@ -860,6 +861,9 @@ resolves to: read the binding's id, and the variable in Figma.
 
 ### The run, with build `b3257790f931`
 
+Superseded by the last section, which adds Update All Core and Update All Product / SDK after
+the file's icon sources were drawn anew at 09:47:15Z.
+
 It supersedes the run above; `c35a625c8160` was never run.
 
 1. Run the plugin; the header must read **Build b3257790f931**.
@@ -878,3 +882,92 @@ It supersedes the run above; `c35a625c8160` was never run.
    (the three republished Compose snippets; the Dev Mode server answers only while Figma is
    frontmost).
 7. Then the library can be published.
+
+### The Icons page at 09:47:15Z, and the run revised (the 22nd, afternoon)
+
+Read over REST on the afternoon of the 22nd with `scripts/figma-rest/` (the session's read tools,
+kept in the repository since; the handoff of the 22nd, §5, has every number).
+
+- **The file was last written at 09:47:15Z, by a Curated Icons → Update.** No set carries a build
+  newer than `7241e855b611`, but the Icons page went from 56 icons to 64: the eight
+  `Icon / taxonomy-*` were added, and **every one of the 56 Pointr Sources was drawn again** under
+  a new id (`Icon / bus`: `1923:8924` → `1968:14023`), though the build that ran carries the
+  sync that keeps a source whose main component has the definition's key — only builds from
+  `0b64d5867d71` on draw the taxonomy icons, and their sync is identical to `b3257790f931`'s. Why
+  it kept none is not known (no version history for this token, no report pasted). Today's 56
+  sources are instances of the remote components with the stored keys, and the eight artworks'
+  stamps match the build, so a run on `b3257790f931` should keep all 64. The two states:
+  `docs/figma-icons-2026-09-22-0810Z.json` and `docs/figma-icons-2026-09-22-0947Z.json`.
+- **It orphaned the tints laid through the old sources**, as the section on the three decisions
+  foresaw: `scripts/figma-rest/icon-tints.mjs` reads 2,415 icons in 57 sets, 90 tinted (Button,
+  IconButton, FloatingActionButton and Badge, which the sync repaints, and WayfindingCard's one)
+  and 2,325 untinted in 52 sets — each an importer icon slot painting unbound `#000000`. The
+  Audit Library never compares a slot's paint with its `foreground-token`
+  (`iconSlotPaintIsExpected` runs only inside an Update), and `figma:verify` does not read icon
+  paints; the tool exits 1 while any icon is untinted.
+- **What the Updates change, replayed** (`scripts/figma-rest/replay-diff.mjs`, each set's live
+  build against `b3257790f931`): of the 41 Core sets the harness reaches, nothing; of the 26
+  Product / SDK sets, BrowseCategoriesPanel, RouteSummary, RoutingInputGroup, SaveLocationCard,
+  DynamicIsland and FeedbackCard. Stepper, Dialog and Drawer paint their own variants and change
+  as the decisions and `fc1adcc` meant.
+
+**The run, revised.** From the file as it stands at 09:47:15Z (check `lastModified` first with
+`figma-state.mjs`; if it moved, record the icons again):
+
+1. Run the plugin; the header must read **Build b3257790f931**.
+2. **Curated Icons → Update.** Expected: `planned` 64, `imported` 56, `drawn` 8, `created` 0,
+   `refreshed` 64, **`sourcesKept` 64, `sourcesReplaced` 0**, `failed` 0, no warning that a
+   source was drawn anew. If any source is replaced, paste the report: the keep is failing in the
+   live runtime, and the Updates below still re-tint through whatever sources exist.
+3. **Update All Core**, never Rebuild — it re-tints 37 Core sets (TreeItem, TreeParentItem and
+   TreeChildItem hold 1,044 icons) and carries Dialog, Drawer and Stepper.
+4. **Update All Product / SDK**, never Rebuild — it re-tints fifteen sets and carries CategoryTile
+   before BrowseCategoriesPanel, CategoryField, DynamicIsland and the four map cards.
+5. **Audit Library**, and paste it: no warning, icons 64 of 64, `pluginBuild` `b3257790f931`, the
+   advisories near 54.
+6. From the terminal: `pnpm figma:verify`; `pnpm tokens:radius:nesting --strict`;
+   `scripts/figma-rest/with-figma-token.sh node scripts/figma-rest/icon-tints.mjs`, which must
+   exit 0; the sources compared with `docs/figma-icons-2026-09-22-0947Z.json`, every id kept; and
+   the REST checks of the section above.
+7. With Figma in front: `pnpm figma:connect:readback -- --node 1933-9257 --node 280-1157 --node 170-1002`.
+8. Then the library can be published. Do not run Apply Text Styles.
+
+### Olcay's run of the afternoon, and what is left of it (the 22nd, evening)
+
+At 15:24Z Olcay pasted an Audit Library on `b3257790f931`: 22 warnings, 54 advisories. Read over
+REST with `scripts/figma-rest/`:
+
+- **All 97 sets carry `b3257790f931`, and 2,310 of the 2,416 icons are untinted.** The node ids
+  give the order the run took: Update All Core, then Update All Product / SDK, then Curated Icons →
+  Update last — its new sources, `1978:37173…37283`, were created after the last Product / SDK
+  icon. That sync drew the 56 Pointr Sources anew once more and orphaned the tints the Updates had
+  just laid; the eight taxonomy sources were kept. Each of the 22 warnings is an untinted icon,
+  black in dark mode at ratio 1: the audit's contrast pass does catch a lost tint, but names
+  contrast, not the tint.
+- **The keep fails in the live runtime.** A REST read at 14:03Z, of the file as the 09:47Z sync
+  left it, found all 56 sources to be instances of remote components whose keys equal the stored
+  `source-component-key`, and the sync still replaced every one. The code path is the same from
+  `0b64d5867d71` on. The fix goes in the next build, after this pass, so the build does not change
+  under Olcay: replace a source only when its main component's key is read and differs, keep it
+  with a warning when the key cannot be read, and name both keys in every replacement's warning.
+
+**What is left of the run** (it replaces the steps above; from the file as it stood at 15:26:16Z —
+check `lastModified` first with `figma-state.mjs`):
+
+1. Re-import the plugin from the worktree's new home — Plugins → Development → Import plugin from
+   manifest…,
+   `/Volumes/4TB Depo/development/K/kozmos-design-system-pointr/figma/foundations-importer/manifest.json`
+   — and run it; the header must read **Build b3257790f931**.
+2. **Do not run Curated Icons → Update.** The sources as they stand are the ones to tint through.
+3. **Update All Core**, never Rebuild.
+4. **Update All Product / SDK**, never Rebuild.
+5. **Audit Library**, and paste it: 0 warnings, `pluginBuild` `b3257790f931`, the advisories near 54.
+6. From the terminal: `scripts/figma-rest/with-figma-token.sh node scripts/figma-rest/icon-tints.mjs`,
+   which must exit 0; `pnpm figma:verify`; `pnpm tokens:radius:nesting --strict`; and the REST
+   checks of the sections above.
+7. **Import Foundations**, with the payload file loaded from the new worktree's
+   `docs/figma-foundations-payload.json` (the emotion text roles one step darker, `42fbe70`); then
+   Audit Library again.
+8. With Figma in front: `pnpm figma:connect:readback -- --node 1933-9257 --node 280-1157 --node 170-1002`.
+9. Then the library can be published. Do not run Apply Text Styles. After step 1 has worked, the
+   old folder, `/private/tmp/kozmos-browser-compat.uqPMBD`, is Olcay's to delete.

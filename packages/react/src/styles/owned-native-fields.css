@@ -44,12 +44,12 @@
     @apply rounded-e-control border-s-0;
   }
   .kozmos-number-step-error {
-    @apply border-destructive text-destructive focus-visible:ring-destructive;
+    @apply border-destructive text-destructive-text focus-visible:ring-destructive;
   }
   .kozmos-number-step-warning {
-    @apply border-warning text-warning focus-visible:ring-warning;
+    @apply border-warning text-warning-text focus-visible:ring-warning;
   }
   .kozmos-number-step-success {
-    @apply border-success text-success focus-visible:ring-success;
+    @apply border-success text-success-text focus-visible:ring-success;
   }
 }

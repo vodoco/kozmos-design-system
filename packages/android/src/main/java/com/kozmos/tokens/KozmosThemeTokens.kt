@@ -859,10 +859,13 @@ object KozmosThemeTokens {
         )
 
     /**
-     * The emotion as text or a glyph on the page itself. The step differs per
-     * emotion because the ramps do not reach 4.5:1 at the same place — success
-     * and alert need 800, informative 700, danger and themed 600. The product
-     * draws success at 600, which is 2.74:1 and fails.
+     * The emotion as text or a glyph on the page itself — white or either grey
+     * a panel, card or sheet paints (background/0, /50, /100). The step
+     * differs per emotion because the ramps reach 4.5:1 on background/100 at
+     * different places: success and alert 900, informative 800, danger 700,
+     * themed 600. Measured on white alone they were one step lighter, and four
+     * of six failed on a sheet's grey. The product draws success at 600, which
+     * is 2.74:1 even on white.
      */
     val semanticsEmotionNeutralText: Color
         @Composable @ReadOnlyComposable get() = themed(
@@ -892,10 +895,13 @@ object KozmosThemeTokens {
         )
 
     /**
-     * The emotion as text or a glyph on the page itself. The step differs per
-     * emotion because the ramps do not reach 4.5:1 at the same place — success
-     * and alert need 800, informative 700, danger and themed 600. The product
-     * draws success at 600, which is 2.74:1 and fails.
+     * The emotion as text or a glyph on the page itself — white or either grey
+     * a panel, card or sheet paints (background/0, /50, /100). The step
+     * differs per emotion because the ramps reach 4.5:1 on background/100 at
+     * different places: success and alert 900, informative 800, danger 700,
+     * themed 600. Measured on white alone they were one step lighter, and four
+     * of six failed on a sheet's grey. The product draws success at 600, which
+     * is 2.74:1 even on white.
      */
     val semanticsEmotionThemedText: Color
         @Composable @ReadOnlyComposable get() = themed(
@@ -925,10 +931,13 @@ object KozmosThemeTokens {
         )
 
     /**
-     * The emotion as text or a glyph on the page itself. The step differs per
-     * emotion because the ramps do not reach 4.5:1 at the same place — success
-     * and alert need 800, informative 700, danger and themed 600. The product
-     * draws success at 600, which is 2.74:1 and fails.
+     * The emotion as text or a glyph on the page itself — white or either grey
+     * a panel, card or sheet paints (background/0, /50, /100). The step
+     * differs per emotion because the ramps reach 4.5:1 on background/100 at
+     * different places: success and alert 900, informative 800, danger 700,
+     * themed 600. Measured on white alone they were one step lighter, and four
+     * of six failed on a sheet's grey. The product draws success at 600, which
+     * is 2.74:1 even on white.
      */
     val semanticsEmotionSuccessText: Color
         @Composable @ReadOnlyComposable get() = themed(
@@ -958,10 +967,13 @@ object KozmosThemeTokens {
         )
 
     /**
-     * The emotion as text or a glyph on the page itself. The step differs per
-     * emotion because the ramps do not reach 4.5:1 at the same place — success
-     * and alert need 800, informative 700, danger and themed 600. The product
-     * draws success at 600, which is 2.74:1 and fails.
+     * The emotion as text or a glyph on the page itself — white or either grey
+     * a panel, card or sheet paints (background/0, /50, /100). The step
+     * differs per emotion because the ramps reach 4.5:1 on background/100 at
+     * different places: success and alert 900, informative 800, danger 700,
+     * themed 600. Measured on white alone they were one step lighter, and four
+     * of six failed on a sheet's grey. The product draws success at 600, which
+     * is 2.74:1 even on white.
      */
     val semanticsEmotionDangerText: Color
         @Composable @ReadOnlyComposable get() = themed(
@@ -991,10 +1003,13 @@ object KozmosThemeTokens {
         )
 
     /**
-     * The emotion as text or a glyph on the page itself. The step differs per
-     * emotion because the ramps do not reach 4.5:1 at the same place — success
-     * and alert need 800, informative 700, danger and themed 600. The product
-     * draws success at 600, which is 2.74:1 and fails.
+     * The emotion as text or a glyph on the page itself — white or either grey
+     * a panel, card or sheet paints (background/0, /50, /100). The step
+     * differs per emotion because the ramps reach 4.5:1 on background/100 at
+     * different places: success and alert 900, informative 800, danger 700,
+     * themed 600. Measured on white alone they were one step lighter, and four
+     * of six failed on a sheet's grey. The product draws success at 600, which
+     * is 2.74:1 even on white.
      */
     val semanticsEmotionAlertText: Color
         @Composable @ReadOnlyComposable get() = themed(
@@ -1024,10 +1039,13 @@ object KozmosThemeTokens {
         )
 
     /**
-     * The emotion as text or a glyph on the page itself. The step differs per
-     * emotion because the ramps do not reach 4.5:1 at the same place — success
-     * and alert need 800, informative 700, danger and themed 600. The product
-     * draws success at 600, which is 2.74:1 and fails.
+     * The emotion as text or a glyph on the page itself — white or either grey
+     * a panel, card or sheet paints (background/0, /50, /100). The step
+     * differs per emotion because the ramps reach 4.5:1 on background/100 at
+     * different places: success and alert 900, informative 800, danger 700,
+     * themed 600. Measured on white alone they were one step lighter, and four
+     * of six failed on a sheet's grey. The product draws success at 600, which
+     * is 2.74:1 even on white.
      */
     val semanticsEmotionInformativeText: Color
         @Composable @ReadOnlyComposable get() = themed(

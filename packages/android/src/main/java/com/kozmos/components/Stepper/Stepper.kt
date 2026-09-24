@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -78,10 +79,15 @@ fun KozmosStepper(
                     }
                 }
                 
+                // React's label: the current step's in the foreground at medium
+                // weight, every other in the muted foreground, foreground/400
+                // (4.8:1 even on a sheet's grey). It was foreground/100 and /500
+                // until 2026-09-22.
                 Text(
                     text = step,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isCurrent) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.primitivesColorsForeground500
+                    fontWeight = if (isCurrent) FontWeight.Medium else FontWeight.Normal,
+                    color = if (isCurrent) KozmosThemeTokens.primitivesColorsForeground0 else KozmosThemeTokens.primitivesColorsForeground400
                 )
             }
             

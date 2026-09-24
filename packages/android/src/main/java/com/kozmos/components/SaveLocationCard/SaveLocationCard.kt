@@ -133,7 +133,6 @@ fun KozmosSaveLocationCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.LocationOn, contentDescription = null)
-                        Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSpacing100))
                         Text("Save Location")
                     }
                 }
@@ -147,7 +146,6 @@ fun KozmosSaveLocationCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.Navigation, contentDescription = null)
-                        Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSpacing100))
                         Text("Guide Me")
                     }
                 }

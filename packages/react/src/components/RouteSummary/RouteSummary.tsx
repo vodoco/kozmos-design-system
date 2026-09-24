@@ -152,7 +152,7 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
             className="w-full h-12 rounded-pill font-semibold text-base shadow-raised"
             onClick={onStartNavigation}
           >
-            <Navigation aria-hidden="true" className="w-5 h-5 mr-2" />
+            <Navigation aria-hidden="true" className="w-5 h-5" />
             {startNavigationLabel}
           </Button>
         )}

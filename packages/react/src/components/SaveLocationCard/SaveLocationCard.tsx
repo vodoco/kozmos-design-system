@@ -90,7 +90,7 @@ const SaveLocationCard = React.forwardRef<
               onSaveToggle?.();
             }}
           >
-            <MapPin className="w-4 h-4 mr-2" />
+            <MapPin className="w-4 h-4" />
             {isSaved ? "Remove Location" : "Save Location"}
           </Button>
 
@@ -105,7 +105,7 @@ const SaveLocationCard = React.forwardRef<
                 onRouteToLocation();
               }}
             >
-              <Navigation className="w-4 h-4 mr-2" />
+              <Navigation className="w-4 h-4" />
               Guide Me
             </Button>
           )}

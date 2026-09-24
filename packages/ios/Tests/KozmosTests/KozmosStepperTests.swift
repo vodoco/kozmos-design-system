@@ -81,5 +81,43 @@ final class KozmosStepperTests: XCTestCase {
             }
         }
     }
+
+    /// The labels are React's: the current step's in the foreground, black on
+    /// light, every other in the muted foreground, foreground/400 #5D626F. They
+    /// were foreground/100 #17191C and /500 #747B8B until 2026-09-22. An
+    /// anti-aliased glyph's darkest pixel is its colour: a stem covers whole
+    /// pixels at this scale.
+    @MainActor func testTheLabelsAreReactsForegroundAndMutedForeground() async throws {
+        let size = CGSize(width: 320, height: 90)
+        let view = ZStack(alignment: .topLeading) {
+            KozmosColors.semanticsSurface0
+            KozmosStepper(steps: ["Search", "Route", "Go"], currentStep: 1)
+                .frame(width: 300)
+                .padding(10)
+        }
+        .environment(\.colorScheme, .light)
+        let pixels = try await RenderedPixels.render(view, size: size)
+        func darkest(in region: CGRect) -> (r: Int, g: Int, b: Int) {
+            var best = (r: 255, g: 255, b: 255)
+            var y = region.minY
+            while y < region.maxY {
+                var x = region.minX
+                while x < region.maxX {
+                    let c = pixels.color(at: CGPoint(x: x, y: y))
+                    if Int(c.r) + Int(c.g) + Int(c.b) < best.r + best.g + best.b { best = (Int(c.r), Int(c.g), Int(c.b)) }
+                    x += 1 / pixels.scale
+                }
+                y += 1 / pixels.scale
+            }
+            return best
+        }
+        // Below the 32 circles and their connectors: the labels' band only.
+        let current = darkest(in: CGRect(x: 110, y: 44, width: 100, height: 26))
+        let pending = darkest(in: CGRect(x: 250, y: 44, width: 70, height: 26))
+        XCTAssertLessThanOrEqual(max(current.r, current.g, current.b), 12, "the current label is \(current)")
+        for (channel, got, want) in [("r", pending.r, 0x5D), ("g", pending.g, 0x62), ("b", pending.b, 0x6F)] {
+            XCTAssertEqual(got, want, accuracy: 10, "the pending label is \(pending) (\(channel))")
+        }
+    }
     #endif
 }

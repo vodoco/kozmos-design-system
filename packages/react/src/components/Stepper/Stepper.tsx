@@ -22,7 +22,11 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
 
           return (
             <React.Fragment key={step}>
-              <div className="flex flex-col items-center gap-2">
+              {/* A step can shrink below its label, which then truncates: the
+                  row fits any width without widening the page. The label's
+                  text stays whole for assistive technology, and the title
+                  shows it on hover. */}
+              <div className="flex min-w-0 flex-col items-center gap-2">
                 <div
                   className={cn(
                     "flex h-8 w-8 items-center justify-center rounded-pill border text-sm font-medium transition-colors",
@@ -42,8 +46,9 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
                   {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
                 </div>
                 <span
+                  title={step}
                   className={cn(
-                    "text-xs",
+                    "max-w-full truncate text-xs",
                     isCurrent
                       ? "font-medium text-foreground"
                       : "text-muted-foreground",
@@ -55,7 +60,9 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
               {!isLast && (
                 <div
                   className={cn(
-                    "mx-4 h-[1px] flex-1",
+                    // 8 a side on a phone, 16 from sm: three connectors at 16
+                    // took 96 of a 288-wide row.
+                    "mx-2 h-[1px] flex-1 sm:mx-4",
                     index < currentStep ? "bg-primary" : "bg-border",
                   )}
                 />

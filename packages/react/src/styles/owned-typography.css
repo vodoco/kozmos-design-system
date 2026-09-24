@@ -58,7 +58,7 @@
     @apply text-primary;
   }
   .kozmos-text-destructive {
-    @apply text-destructive;
+    @apply text-destructive-text;
   }
   .kozmos-text-white {
     @apply text-white;

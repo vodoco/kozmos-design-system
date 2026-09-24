@@ -29,7 +29,7 @@ try {
     page.on("pageerror", (error) => errors.push(error.message));
     try {
       await page.setContent(
-        `<html data-theme="light"><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture"></div><div id="owned-portal" data-theme="dark" dir="rtl" style="--primitives-colors-background-0:rgb(12, 34, 56)"></div></body></html>`,
+        `<!doctype html><html data-theme="light"><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture"></div><div id="owned-portal" data-theme="dark" dir="rtl" style="--primitives-colors-background-0:rgb(12, 34, 56)"></div></body></html>`,
       );
       await page.addScriptTag({
         content: `window.overlayUseDefault = ${!owned}; window.overlayUseProvider = ${!!provider};`,
