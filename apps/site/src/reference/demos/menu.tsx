@@ -23,7 +23,7 @@ function Actions() {
   return (
     <Menu>
       <MenuTrigger asChild>
-        <Button variant="outline" className="site-button-icon">
+        <Button variant="outline">
           Actions
           <Icon name="chevron-down" size="sm" />
         </Button>
@@ -65,7 +65,7 @@ function Choices() {
   return (
     <Menu>
       <MenuTrigger asChild>
-        <Button variant="outline" className="site-button-icon">
+        <Button variant="outline">
           View
           <Icon name="chevron-down" size="sm" />
         </Button>

@@ -54,13 +54,12 @@ export function DirectionSample() {
           <Stack direction="row" gap={2}>
             {/* The provider does not mirror a glyph that points along the
                 reading direction (GAP-61), so the page picks it: back points
-                the way the reader came from, next the way they are going.
-                The icons' space from the words is the site's too (GAP-56). */}
-            <Button className="site-button-icon">
+                the way the reader came from, next the way they are going. */}
+            <Button>
               <Icon name={rtl ? "arrow-right" : "arrow-left"} size="sm" />
               Back
             </Button>
-            <Button variant="outline" className="site-button-icon">
+            <Button variant="outline">
               Next
               <Icon name={rtl ? "arrow-left" : "arrow-right"} size="sm" />
             </Button>

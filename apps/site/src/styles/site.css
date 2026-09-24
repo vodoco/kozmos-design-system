@@ -116,15 +116,6 @@ body {
   font-family: var(--semantics-typography-family-mono);
 }
 
-/* GAP-56: a Button lays out its children in a row with no gap between them;
-   only its own loading spinner is spaced from the label, and a caller's
-   icon touches it. A Button that holds an icon and a label takes this class
-   (a property the Button does not set): the 8px Figma's Button keeps
-   between its indicator and its label, the spacing scale's 100. */
-.site-button-icon {
-  gap: var(--site-space-100);
-}
-
 /* ---- Shell ------------------------------------------------------------ */
 
 .site-shell {

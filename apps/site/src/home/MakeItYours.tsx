@@ -183,8 +183,7 @@ export function MakeItYours() {
                   onCheckedChange={setStepFree}
                 />
                 <Stack direction="row" wrap="wrap" gap={2}>
-                  {/* The icon's space from the word is the site's (GAP-56). */}
-                  <Button emotion="themed" className="site-button-icon">
+                  <Button emotion="themed">
                     <Icon name="navigation-pointer-01" size="sm" />
                     Directions
                   </Button>

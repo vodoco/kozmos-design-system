@@ -112,12 +112,7 @@ export function DocsShell({
           <Box className="site-docs-toolbar">
             <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
               <DrawerTrigger asChild>
-                {/* The icon's space from the words is the site's (GAP-56). */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="site-button-icon"
-                >
+                <Button variant="outline" size="sm">
                   <Icon name="menu-01" size="sm" />
                   {section.title}
                 </Button>

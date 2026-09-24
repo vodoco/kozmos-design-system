@@ -56,14 +56,14 @@ keep the table's four columns and its statuses as they are.
 | GAP-28 | `SearchBar`'s search landmark cannot be named                  | Product / SDK          | left visible |
 | GAP-29 | `BottomNavigation` is always fixed to the viewport             | Core                   | composed     |
 | GAP-30 | `Sidebar`'s navigation landmark cannot be named                | Core                   | left visible |
-| GAP-31 | Emotion text is under 4.5:1 on every surface but white         | Core                   | left visible |
+| GAP-31 | Emotion text is under 4.5:1 on every surface but white         | Core                   | fixed        |
 | GAP-32 | `ChipGroup` carries no role                                    | Core                   | composed     |
 | GAP-33 | No token for the route line on the map                         | Product / SDK          | composed     |
 | GAP-34 | `Backdrop` pins itself to the viewport                         | Core                   | composed     |
 | GAP-35 | `BrowseCategoriesPanel` is four columns at any width           | Product / SDK          | composed     |
 | GAP-36 | `ToastViewport` pins itself to the viewport                    | Core                   | composed     |
 | GAP-37 | `SearchBar` shows the browser's clear button beside its own    | Product / SDK          | left visible |
-| GAP-38 | The map sheet's handle is 4px tall and its grip invisible      | Product / SDK          | left visible |
+| GAP-38 | The map sheet's handle is 4px tall and its grip invisible      | Product / SDK          | fixed        |
 | GAP-39 | `RouteSummary`'s title is always an `h2`                       | Product / SDK          | left visible |
 | GAP-40 | Map overlays draw over the sticky `Navbar`                     | Product / SDK          | composed     |
 | GAP-41 | `Navbar` has no narrow-screen pattern                          | Core                   | composed     |
@@ -81,7 +81,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-53 | A map shell cannot fill a rounded screen                       | Product / SDK          | left visible |
 | GAP-54 | No light: glow, gradient, blur or ambient motion               | Core                   | composed     |
 | GAP-55 | A `Listbox`'s column is as wide as its widest option           | Core                   | composed     |
-| GAP-56 | `Button` puts no space between an icon and its label           | Core                   | composed     |
+| GAP-56 | `Button` puts no space between an icon and its label           | Core                   | fixed        |
 | GAP-57 | A `Button`'s label cannot wrap                                 | Core                   | composed     |
 | GAP-58 | `Toast` draws no background of its own                         | Core                   | left visible |
 | GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it | Platform / form factor | left visible |
@@ -571,7 +571,11 @@ keep the table's four columns and its statuses as they are.
   solid surface because its canvas is `background-50`. A Kozmos `Card` is
   white, so a warning inside one passes: the states example's offline notice
   does (a test checks it).
-- **Now:** left visible, in the light theme only (dark passes); the
+- **Fixed** in the design system on 2026-09-22 (`42fbe70`): the emotion text
+  roles went a step darker, so emotion text reads on every neutral surface.
+  The site's four known-violation allowances — Alert, Input, Tag, DatePicker
+  — are gone, and every page's axe run is clean without them.
+- **Was:** left visible, in the light theme only (dark passes); the
   `knownViolations` entries are marked `theme: "light"`, and their failures
   print the colours and the ratio.
 - **Lane:** Core (tokens).
@@ -679,7 +683,11 @@ keep the table's four columns and its statuses as they are.
   unitless (`16`, `6`, `40`), so the browser drops all three. Measured on
   2026-09-22: the handle is 388 × 4 px, the grip 0 px wide. The sheet has no
   visible grip and a 4px target to drag.
-- **Now:** left as Kozmos draws it, on the phone search example and the
+- **Fixed** in the design system on 2026-09-22 (`de7a409`): the handle's three
+  declarations convert their unitless layout tokens, so the row is 16px and
+  the grip 40 × 4 again. "GAP-38 is fixed: the map sheet's handle draws its
+  grip" now measures that.
+- **Was:** left as Kozmos draws it, on the phone search example and the
   adaptive tile; measured by a test in `tests/site.spec.ts`.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** `calc(var(…) * 1px)`, the conversion the owned blur and
@@ -999,7 +1007,11 @@ keep the table's four columns and its statuses as they are.
 Text"])`) and the Get started page shows — touches it.
 - **Evidence:** "GAP-56: a Button's icon touches its label" measures 0px on
   the Button page's "Directions" demo.
-- **Now:** composed where a Button is part of something else: the header's
+- **Fixed** in the design system on 2026-09-22 (`7775c73`): `.kozmos-button`
+  takes the spacing scale's 100 — the 8px Figma and iOS keep — and the
+  loader's physical `mr-2` went with it. The site's `site-button-icon` class,
+  its nine usages and the dashboard's and inbox's own classes are deleted.
+- **Was:** composed where a Button is part of something else: the header's
   "Theme" menu, the reference's drawer button, "Make it yours", the
   direction sample, the icons page's copy buttons, the Navbar and Menu
   demos, and two examples (listed there) add the 8px through a class — a

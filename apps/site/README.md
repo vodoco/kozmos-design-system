@@ -618,8 +618,13 @@ a known one that disappears, which is the signal to close its gap. The same
 holds for GAP-20: the search-field test is marked `test.fail` in WebKit
 only, so Playwright reports it the day Kozmos fixes the field.
 
-**Design-system gaps, measured.** Nineteen tests pin what Kozmos draws today
-— the sheet handle's 4px (GAP-38), the preflight zeroing a caller's border
+**Design-system gaps, measured.** Nineteen tests measure what Kozmos draws
+today. Three of them now measure a fix rather than a defect, after the
+2026-09-24 merge of the component branch: the sheet handle's 16px row and
+40 × 4 grip (GAP-38), the Button's 8px between icon and label (GAP-56), and
+emotion text that reads on every neutral surface (GAP-31, whose four
+known-violation allowances are deleted). The rest still pin defects — the
+preflight zeroing a caller's border
 (GAP-52), the sheet's square corners on a rounded screen (GAP-53), the button
 link's underline (GAP-09), the icon touching its label (GAP-56), the label
 that cannot wrap (GAP-57), the `Listbox` column as wide as its widest option

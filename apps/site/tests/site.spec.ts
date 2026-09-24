@@ -144,20 +144,8 @@ const knownViolations: Record<string, readonly KnownViolation[]> = {
     { id: "landmark-unique", only: /sidebar-navigation/ },
   ],
   "/components/alert": [
-    // GAP-31: the warning text reads 4.29:1 on the card, in the light theme.
-    { id: "color-contrast", only: /border-warning/, theme: "light" },
     // GAP-12: AlertTitle is always an h5, under the demo card's h3.
     { id: "heading-order", only: /<h5/ },
-  ],
-  "/components/input": [
-    { id: "color-contrast", only: /kozmos-field-warning/, theme: "light" },
-  ],
-  // GAP-31 again: the alert emotion as an outlined Tag's text.
-  "/components/tag": [
-    { id: "color-contrast", only: /kz-emotion-text/, theme: "light" },
-  ],
-  "/components/date-picker": [
-    { id: "color-contrast", only: /kozmos-field-warning/, theme: "light" },
   ],
   // GAP-45: the first brand variant's 600 reads 4.21:1 on the dark page, and
   // the token-override example re-points the theme's 600 to it.
@@ -1682,7 +1670,7 @@ test.describe("home layout", () => {
  * lists each fix and the test it flips.
  */
 test.describe("design-system gaps, measured", () => {
-  test("GAP-38: the map sheet's handle is 4px tall and its grip has no width", async ({
+  test("GAP-38 is fixed: the map sheet's handle draws its grip", async ({
     page,
   }) => {
     await page.goto("/examples/phone-search");
@@ -1698,7 +1686,10 @@ test.describe("design-system gaps, measured", () => {
           gripWidth: grip ? Math.round(grip.width) : null,
         };
       });
-    expect(size).toEqual({ height: 4, gripWidth: 0 });
+    // Fixed in the design system on 2026-09-22 (`de7a409`): the handle's
+    // three declarations convert their unitless layout tokens, so the row is
+    // 16px again and the grip 40 × 4, as it was drawn.
+    expect(size).toEqual({ height: 16, gripWidth: 40 });
   });
 
   test("GAP-52: the provider's preflight zeroes a caller's border on its own box", async ({
@@ -1766,16 +1757,20 @@ test.describe("design-system gaps, measured", () => {
     expect(line).toBe("underline");
   });
 
-  test("GAP-56: a Button's icon touches its label", async ({ page }) => {
+  test("GAP-56 is fixed: a Button spaces its icon from its label", async ({
+    page,
+  }) => {
     await page.goto("/components/button");
     await hydrated(page);
-    // The Button page shows the component as it draws: the icon and the
-    // word with nothing between them.
+    // Fixed in the design system on 2026-09-22 (`7775c73`): `.kozmos-button`
+    // takes the spacing scale's 100, the 8px Figma and iOS keep, and the
+    // loader's physical margin went with it. The site's `site-button-icon`
+    // class and the two examples' own are gone.
     const directions = page
       .locator(".site-demos")
       .getByRole("button", { name: "Directions" })
       .first();
-    expect(await iconGap(directions)).toBe(0);
+    expect(await iconGap(directions)).toBe(8);
   });
 
   test("GAP-57: a Button's label cannot wrap", async ({ page }) => {
@@ -3020,13 +3015,18 @@ test.describe("roadmap", () => {
   }) => {
     await page.goto("/roadmap");
     await hydrated(page);
-    const row = page.getByRole("row").filter({ hasText: "GAP-56" });
+    // GAP-33 is shown in two examples; GAP-56's were deleted when the design
+    // system fixed it and the workarounds went with it.
+    const row = page.getByRole("row").filter({ hasText: "GAP-33" });
     await expect(row.getByRole("link")).toHaveText([
-      "Operations dashboard",
-      "Notifications inbox",
+      "Wayfinding",
+      "Kiosk directory",
     ]);
-    await row.getByRole("link", { name: "Operations dashboard" }).click();
-    await expect(page).toHaveURL(/\/examples\/dashboard$/);
+    await expect(
+      page.getByRole("row").filter({ hasText: "GAP-56" }).getByRole("link"),
+    ).toHaveCount(0);
+    await row.getByRole("link", { name: "Wayfinding" }).click();
+    await expect(page).toHaveURL(/\/examples\/wayfinding$/);
     // The example no longer lists its gaps: it points at the roadmap.
     await expect(
       page.getByRole("heading", { name: "Where Kozmos falls short" }),

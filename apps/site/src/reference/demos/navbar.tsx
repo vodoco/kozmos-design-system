@@ -42,8 +42,8 @@ function Full() {
           </Box>
         }
         primaryAction={
-          // The icon's space from the words is the site's (GAP-56).
-          <Button size="sm" className="site-button-icon">
+          // The icon's space from the words is the site's.
+          <Button size="sm">
             <Icon name="plus" size="sm" />
             New venue
           </Button>

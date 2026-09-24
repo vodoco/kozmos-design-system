@@ -106,7 +106,6 @@ export const examples: readonly ExampleEntry[] = [
       'GAP-32 · ChipGroup carries no role, so the status filter passes role="group" for its label to count.',
       "GAP-36 · Toasts pin themselves to the browser’s corner, outside the page, so confirmations are an inline Alert instead.",
       'GAP-12 · Alert is always role="alert"; the confirmations pass role="status".',
-      "GAP-56 · A Button puts no space between its icon and its label, so “Add venue” is given the 8px Figma’s Button keeps.",
     ],
   },
   {
@@ -129,7 +128,6 @@ export const examples: readonly ExampleEntry[] = [
     gaps: [
       "GAP-36 · Toasts pin themselves to the browser’s corner, outside the page, so the undo sits in an inline Alert instead.",
       'GAP-12 · Alert is always role="alert"; the confirmation passes role="status".',
-      "GAP-56 · A Button puts no space between its icon and its label, so “Preferences” is given the 8px Figma’s Button keeps.",
     ],
   },
   {

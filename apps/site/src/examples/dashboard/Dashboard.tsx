@@ -208,12 +208,8 @@ export default function Dashboard() {
         }
         context={<Tag variant="secondary">Pointr operations</Tag>}
         primaryAction={
-          // The icon's space from the words is the example's (GAP-56).
-          <Button
-            size="sm"
-            onClick={() => setAdding(true)}
-            className="ex-dash-add"
-          >
+          // The icon's space from the words is the example's.
+          <Button size="sm" onClick={() => setAdding(true)}>
             <Icon name="plus" size="sm" />
             Add venue
           </Button>
