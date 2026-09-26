@@ -227,12 +227,68 @@
     animation: reveal var(--semantics-motion-duration-quick)
       var(--semantics-motion-easing-standard) both;
   }
+  /* The result card has two moments, and they are not the same kind of move.
+
+     Selection recolours the card in place, so it is a transition: the card is
+     always in the tree and the change runs both ways, into selected and back
+     out of it.
+
+     The action row opens, so it is an animation — the same way every other
+     part of this system enters (see .kozmos-reveal). A transition cannot run
+     on something that has only just been mounted, and the row is deliberately
+     absent until it is asked for: on an unselected result its buttons are not
+     in the document at all, so nothing has to load for them to stay out of the
+     tab order and out of the accessibility tree. The cost of that choice is
+     that the row has no closing move; it goes when the selection goes.
+
+     Owned CSS rather than utilities, because the utility layer does not reach
+     a browser without @scope, and a card that eases in one build and snaps in
+     another is worse than one that snaps in both. */
+  @media (prefers-reduced-motion: no-preference) {
+    .kozmos-poi-result-card {
+      transition:
+        border-color var(--semantics-motion-duration-quick)
+          var(--semantics-motion-easing-standard),
+        background-color var(--semantics-motion-duration-quick)
+          var(--semantics-motion-easing-standard),
+        box-shadow var(--semantics-motion-duration-quick)
+          var(--semantics-motion-easing-standard);
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-poi-result-card {
+    transition: none;
+  }
+  /* The row grows its one grid track from nothing to the height its content
+     asks for: nothing is measured, and there is no max-height to guess wrong.
+     Where fr units do not interpolate, `both` still lands the row on 1fr, so
+     it opens as a plain fade rather than not at all. */
+  .kozmos-poi-result-actions {
+    display: grid;
+    grid-template-rows: 1fr;
+    overflow: hidden;
+    animation: result-actions var(--semantics-motion-duration-standard)
+      var(--semantics-motion-easing-standard) both;
+  }
+  .kozmos-poi-result-actions > * {
+    min-height: 0;
+  }
+  @keyframes result-actions {
+    from {
+      grid-template-rows: 0fr;
+      opacity: 0;
+    }
+    to {
+      grid-template-rows: 1fr;
+      opacity: 1;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .kozmos-pop,
     .kozmos-reveal,
     .kozmos-crossfade,
     .kozmos-category-field,
-    .kozmos-search-clear {
+    .kozmos-search-clear,
+    .kozmos-poi-result-actions {
       animation: none;
     }
   }
@@ -441,7 +497,8 @@
   }
   [data-kozmos-motion="reduced"] .kozmos-ai-search-ring,
   [data-kozmos-motion="reduced"] .kozmos-spinner-arc,
-  [data-kozmos-motion="reduced"] .kozmos-skeleton {
+  [data-kozmos-motion="reduced"] .kozmos-skeleton,
+  [data-kozmos-motion="reduced"] .kozmos-poi-result-actions {
     animation: none;
   }
 }

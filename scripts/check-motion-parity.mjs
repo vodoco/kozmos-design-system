@@ -69,13 +69,20 @@ else {
   }
 }
 const owned = read("packages/react/src/styles/owned-components.css");
+// Match what a rule says, not how it is laid out. Prettier wraps a long `transition` across lines,
+// and a needle written on one line then stops matching a rule nobody touched: that is why this
+// reported the sheet as reading no motion tokens while the sheet read them perfectly well.
+const flattenCss = (text) => text.replace(/\s+/g, " ");
+const ownedFlat = flattenCss(owned);
 for (const [rule, needle] of [
   ["the sheet", "top var(--semantics-motion-duration-standard) var(--semantics-motion-easing-standard)"],
   ["the pop", "animation: pop var(--semantics-motion-duration-standard)"],
   ["the reveal", "animation: reveal var(--semantics-motion-duration-standard)"],
-  ["the category field", ".kozmos-category-field {\n    animation: pop var(--semantics-motion-duration-standard)"],
+  ["the category field", ".kozmos-category-field { animation: pop var(--semantics-motion-duration-standard)"],
+  ["the result card", "transition: border-color var(--semantics-motion-duration-quick)"],
+  ["the result action row", "animation: result-actions var(--semantics-motion-duration-standard)"],
 ]) {
-  if (owned.includes(needle)) ok(`web: ${rule} reads the motion tokens`);
+  if (ownedFlat.includes(flattenCss(needle))) ok(`web: ${rule} reads the motion tokens`);
   else fail(`web: ${rule} does not read the motion tokens`);
 }
 if (/transition:[^;]*0\.\d+s/.test(owned.replace(/\/\*[\s\S]*?\*\//g, ""))) fail("web: an owned transition carries its own seconds instead of a motion token");
