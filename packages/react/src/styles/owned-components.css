@@ -444,4 +444,39 @@
   [data-kozmos-motion="reduced"] .kozmos-skeleton {
     animation: none;
   }
+  /* Two controls whose drawn size is deliberately small and whose target must
+     not be. The mark stays the size the design asks for; a pseudo-element
+     carries the target, so nothing moves and no row grows.
+
+     Owned CSS, not a utility: a touch target is exactly the kind of promise
+     that must not depend on the utility layer reaching a browser without
+     @scope. If this file loads, the target is there; if this file is the one
+     that failed, the control is still its drawn size and still clickable.
+
+     Chip's remove: 24px drawn (it was 20, under WCAG 2.5.8's 24), in a chip
+     28 to 36px tall. The target is 44 tall but only as wide as the mark —
+     44 wide would reach past the 8px gap into the chip alongside and start
+     taking its clicks, which trades one 2.5.8 failure for a worse bug. Tall
+     is free: it lands in the gap between wrapped rows, where nothing sits. */
+  .kozmos-chip-remove,
+  .kozmos-notice-more {
+    position: relative;
+  }
+  .kozmos-chip-remove::after,
+  .kozmos-notice-more::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+  .kozmos-chip-remove::after {
+    width: 100%;
+  }
+  /* The notice's "More" sits at the end of its row with free space beside it,
+     so here the target can be square. */
+  .kozmos-notice-more::after {
+    width: max(100%, 44px);
+  }
 }
