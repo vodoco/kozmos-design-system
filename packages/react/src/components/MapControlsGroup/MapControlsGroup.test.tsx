@@ -296,6 +296,36 @@ describe("MapControlsGroup", () => {
       expect(onStepFreeChange).toHaveBeenCalledWith(false);
     });
 
+    it("arrives as a control of its own, which does not announce itself", () => {
+      // The location control and the step-free control are two controls. When
+      // they shared one button, the swap as a route began was read as that
+      // button changing state: it widened to shout "Step-free, Off" that
+      // nobody had set, and kept the location control's focus and DOM node.
+      vi.useFakeTimers();
+      try {
+        const props = {
+          locationLabel: "Focus",
+          locationRevealOnChange: true,
+          onMyLocation: () => undefined,
+        } as const;
+        const { rerender } = render(<MapControlsGroup {...props} />);
+        const location = screen.getByRole("button", { name: "Focus" });
+
+        rerender(
+          <MapControlsGroup {...props} onStepFreeChange={() => undefined} />,
+        );
+        act(() => {
+          vi.advanceTimersByTime(10);
+        });
+
+        const stepFree = screen.getByRole("button", { name: "Step-free, Off" });
+        expect(stepFree).not.toBe(location);
+        expect(stepFree).toHaveAttribute("data-presentation", "icon-only");
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it("reveals and stacks as the location control it replaces is set to", () => {
       vi.useFakeTimers();
       try {

@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
@@ -43,7 +44,17 @@ export interface ChipProps
   onRemove?: () => void;
   removeLabel?: string;
   selected?: boolean;
+  /**
+   * In a single-choice `ChipGroup`, what choosing this chip picks. The group
+   * then decides whether it is selected, so `selected` and `active` are not
+   * read, and a chip that is one of a choice offers no remove control — a
+   * second stop inside a radio group is not one the arrow keys can reach.
+   */
+  value?: string;
 }
+
+/** The chosen value of the single-choice ChipGroup a chip is in, if any. */
+const ChipChoiceContext = React.createContext<{ value?: string } | null>(null);
 
 function selectedChipClasses(variant: ChipProps["variant"]) {
   if (variant === "destructive") {
@@ -73,13 +84,18 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
       removeLabel,
       selected,
       size,
+      value,
       variant,
       ...props
     },
     ref,
   ) => {
-    const isSelected = selected ?? active ?? false;
-    const isInteractive = Boolean(onClick);
+    const choice = React.useContext(ChipChoiceContext);
+    const isChoice = choice !== null && value !== undefined;
+    const isSelected = isChoice
+      ? choice.value === value
+      : (selected ?? active ?? false);
+    const isInteractive = isChoice || Boolean(onClick);
     const label = chipLabel(children);
     const contentClassName = cn(
       "inline-flex min-h-[inherit] items-center justify-center gap-1.5 rounded-pill text-inherit",
@@ -117,7 +133,29 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
         data-slot="chip"
         {...props}
       >
-        {isInteractive ? (
+        {isChoice ? (
+          // A radio of the group's radio group: Radix gives it the checked
+          // state, the one Tab stop and the arrow keys, in the direction the
+          // ThemeProvider sets.
+          <RadioGroupPrimitive.Item
+            className={cn(
+              contentClassName,
+              "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            )}
+            disabled={disabled}
+            onClick={(event) => {
+              onClick?.(event as unknown as React.MouseEvent<HTMLSpanElement>);
+            }}
+            onKeyDown={(event) => {
+              onKeyDown?.(
+                event as unknown as React.KeyboardEvent<HTMLSpanElement>,
+              );
+            }}
+            value={value}
+          >
+            {content}
+          </RadioGroupPrimitive.Item>
+        ) : isInteractive ? (
           <button
             aria-pressed={isSelected}
             className={cn(
@@ -146,7 +184,7 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
             {content}
           </span>
         )}
-        {onRemove ? (
+        {onRemove && !isChoice ? (
           <button
             aria-label={removeLabel ?? `Remove ${label}`}
             className={cn(
@@ -170,17 +208,75 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
 
 Chip.displayName = "Chip";
 
-export type ChipGroupProps = React.HTMLAttributes<HTMLDivElement>;
+export interface ChipGroupProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  "defaultValue" | "dir"
+> {
+  /**
+   * `multiple`, the default: each chip is its own toggle, as it always was.
+   * `single`: the chips are one choice — a radio group, with one Tab stop and
+   * the arrow keys moving the choice — for a one-of-several such as "Whole
+   * airport / Terminal 2" (row 37). Give each chip a `value`, and the group
+   * an `aria-label` that names the choice.
+   */
+  selectionMode?: "multiple" | "single";
+  /** The chosen chip's value, with `selectionMode="single"`: controlled. */
+  value?: string;
+  /** The chip chosen at first, when the group holds its own choice. */
+  defaultValue?: string;
+  /** Called with the chosen chip's value. A choice cannot be emptied. */
+  onValueChange?: (value: string) => void;
+  /** Reading direction for the arrow keys; the ThemeProvider's otherwise. */
+  dir?: "ltr" | "rtl";
+}
 
 export const ChipGroup = React.forwardRef<HTMLDivElement, ChipGroupProps>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("flex flex-wrap gap-2", className)}
-      data-slot="chip-group"
-      {...props}
-    />
-  ),
+  (
+    {
+      className,
+      defaultValue,
+      dir,
+      onValueChange,
+      selectionMode = "multiple",
+      value,
+      ...props
+    },
+    ref,
+  ) => {
+    const [held, setHeld] = React.useState(defaultValue);
+    const chosen = value !== undefined ? value : held;
+    const classes = cn("flex flex-wrap gap-2", className);
+
+    if (selectionMode !== "single")
+      return (
+        <div
+          ref={ref}
+          className={classes}
+          data-slot="chip-group"
+          dir={dir}
+          {...props}
+        />
+      );
+
+    return (
+      <ChipChoiceContext.Provider value={{ value: chosen }}>
+        <RadioGroupPrimitive.Root
+          ref={ref}
+          className={classes}
+          data-slot="chip-group"
+          dir={dir}
+          // Always a string, so Radix never takes an empty choice for an
+          // uncontrolled group and starts keeping a value of its own.
+          value={chosen ?? ""}
+          onValueChange={(next) => {
+            if (value === undefined) setHeld(next);
+            onValueChange?.(next);
+          }}
+          {...props}
+        />
+      </ChipChoiceContext.Provider>
+    );
+  },
 );
 
 ChipGroup.displayName = "ChipGroup";
