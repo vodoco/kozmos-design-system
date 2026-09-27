@@ -70,12 +70,12 @@ is out of scope). Added today, each learned the hard way:
 
 ## 3. Open pull requests
 
-| PR      | Rows                  | State            | What it needs                                         |
-| ------- | --------------------- | ---------------- | ----------------------------------------------------- |
-| #109    | 73 (web)              | CI running       | green CI, then merge; Chromatic baselines             |
-| #108    | 73 (iOS, Android)     | agent finishing  | my review, green CI (iOS is local-only on PRs), merge |
-| (agent) | 56, 69 (iOS, Android) | agent working    | its PR, my review, merge                              |
-| #55     | website               | open since 09-22 | Olcay's; out of this scope                            |
+| PR      | Rows                  | State            | What it needs                            |
+| ------- | --------------------- | ---------------- | ---------------------------------------- |
+| #109    | 73 (web)              | CI running       | green CI, then merge                     |
+| #108    | 73 (iOS, Android)     | reviewed         | independent iOS/Android runs, then merge |
+| (agent) | 56, 69 (iOS, Android) | agent working    | its PR, my review, merge                 |
+| #55     | website               | open since 09-22 | Olcay's; out of this scope               |
 
 ## 4. Decisions Olcay made today
 
@@ -110,7 +110,11 @@ controls-side change** (closest to row 78 / GAP-079); the review fixes (#105, #1
    hyphenated, so the tile grows. Three lines, a wider tile, or smaller text?
 3. **Floor stepper wording**: React says "Previous floor" / "Next floor"; iOS and Android "Floor up" /
    "Floor down" (the same buttons — previous is the up chevron). Pick one for all three.
-4. **Chromatic**: accept the new baselines (#100, #102, #103, #106, and the open ones as they land).
+4. **Chromatic is not testing anything.** Every PR's "UI Tests" status reads "Update your plan to
+   resume testing" — back to #60 on 2026-09-23 at least. "Run Chromatic" succeeds (it uploads), but
+   no snapshot has been compared for four days, so there are no baselines to accept: #60 onwards
+   has had no visual review. Upgrade the plan (or wait for the quota to reset) and review the
+   backlog, or dispatch the Playwright visual workflow (`visual.yml`, manual only).
 5. **AICompanionPanel takes focus when it mounts** — a product rendering it open at page load sees
    focus move in unless it calls `preventDefault()` in `onOpenAutoFocus`. Intended?
 6. **The grab handle's target**: a panel header now keeps 4 px under the 16 px handle (WCAG 2.5.8
@@ -149,6 +153,13 @@ controls-side change** (closest to row 78 / GAP-079); the review fixes (#105, #1
 overflow-wrap: break-word; text-wrap: balance`, `lang="ja"`; read each line from the
     per-character `Range.getClientRects()` tops, in Chromium, Firefox and WebKit.
 - **Rows 58, 62, 63** (assistant polish) and the P3 dashboard batch (23–32) — not started.
+- **Known differences between the platforms' sheets** (deliberate or pre-existing, recorded in #108):
+  a drag that starts in a text field in the header moves the sheet on iOS (as Apple Maps does) but
+  is left to the field on the web; native side panels add no top padding (the web's has 16); the
+  web keeps a header's first control 4 px under the handle (WCAG 2.5.8 — no native equivalent);
+  iOS measures a peek anchor in a scrolled list where it has scrolled to, where the web adds the
+  scroll back; and when two offered detents resolve to one height, iOS and Android still draw a
+  handle (they count the detents offered) where the web does not (it counts distinct heights).
 - Other agents' suggested tasks, pending in the app: focus-ring offsets in dark theme; Android sheet
   easing only between detents; Android sheet content overhanging by the handle; iOS shell render
   tests on CI.
