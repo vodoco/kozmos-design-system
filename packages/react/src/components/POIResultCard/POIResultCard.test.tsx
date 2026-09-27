@@ -85,8 +85,13 @@ describe("POIResultCard", () => {
     );
     // Unselected: the actions are not merely hidden, they are not rendered.
     expect(screen.queryByRole("group")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Go" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByRole("button", { name: "Go" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
 
     rerender(
       <POIResultCard
@@ -105,6 +110,58 @@ describe("POIResultCard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
     expect(onAction).toHaveBeenCalledWith("details", poi.id);
+  });
+
+  it("moves through its states on owned rules, not on utilities", () => {
+    // The card recolours as selection changes, so the rule that times that
+    // change has to reach every browser — including one without @scope, which
+    // the utility layer does not reach. A class the component owns does.
+    const { container, rerender } = render(
+      <POIResultCard
+        poi={poi}
+        result={{ ...result, selected: false }}
+        onSelect={vi.fn()}
+      />,
+    );
+    const card = container.querySelector("article");
+    expect(card).toHaveClass("kozmos-poi-result-card");
+    // The old rule was `transition-shadow`, a utility, and it only ever timed
+    // the shadow: the border and the fill that also change snapped.
+    expect(card).not.toHaveClass("transition-shadow");
+    expect(container.querySelector(".kozmos-poi-result-actions")).toBeNull();
+  });
+
+  it("opens its action row inside the element that owns the move", () => {
+    // Splitting this from the card's own transition is deliberate: if the two
+    // shared a test, the first failing assertion would hide whether the second
+    // still held.
+    const { container, rerender } = render(
+      <POIResultCard
+        poi={poi}
+        result={{ ...result, selected: false }}
+        onSelect={vi.fn()}
+      />,
+    );
+    rerender(
+      <POIResultCard
+        poi={poi}
+        result={{
+          ...result,
+          selected: true,
+          actions: [{ action: "navigate" as const, label: "Go" }],
+        }}
+        onSelect={vi.fn()}
+      />,
+    );
+    // The row opens inside a wrapper that owns the move, so the group keeps
+    // its own role, its label and its id — the button still points at it.
+    const opener = container.querySelector(".kozmos-poi-result-actions");
+    expect(opener).not.toBeNull();
+    const row = screen.getByRole("group", { name: "Actions for this result" });
+    expect(opener).toContainElement(row);
+    expect(
+      container.querySelector(`button[aria-controls="${row.id}"]`),
+    ).not.toBeNull();
   });
 
   it("never nests a button inside the select button", () => {
@@ -204,7 +261,11 @@ describe("POIResultCard", () => {
 
   it("shows no attribute row when a result has none", () => {
     render(
-      <POIResultCard poi={poi} result={{ ...result, selected: false }} onSelect={vi.fn()} />,
+      <POIResultCard
+        poi={poi}
+        result={{ ...result, selected: false }}
+        onSelect={vi.fn()}
+      />,
     );
     expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
   });
