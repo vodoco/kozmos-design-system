@@ -602,14 +602,20 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   justify-items: center;
 }
 
-/* The ring's square. Its side is the smallest of 26rem, the column, and
-   about half the screen's height, so on a laptop (1366 by 768, 1280 by 800)
-   the claim and both buttons are on the first screen under it. */
+/* The ring's square. Its side is the smallest of 26rem, the column, and a
+   part of the screen's height, so on a laptop (1280 by 720, 1366 by 768,
+   1280 by 800) the claim and both buttons are on the first screen under it.
+   The height share is 44%, not the half it once was: the claim takes one
+   line in macOS's system font and two in a wider one — nothing loads a
+   brand font, so which sans the host resolves decides where it wraps — and
+   the fit has to hold either way. 52% left 7px under the buttons here and
+   34px of overflow on Linux. Above about 945px tall the 26rem cap binds
+   instead and none of this applies. */
 .site-cosmos-stage {
   position: relative;
   display: grid;
   place-items: center;
-  inline-size: min(26rem, 100%, 52svh);
+  inline-size: min(26rem, 100%, 44svh);
   aspect-ratio: 1;
 }
 
@@ -1471,6 +1477,15 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
    word, so the copy button still fits a phone. */
 .site-icon-name {
   white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* A heading that is one long identifier — BottomSheetDescription,
+   SelectScrollDownButton — has nowhere to wrap. At 24px in a 288px column
+   it runs off a 320px screen in a wide system font, which is a sideways
+   scroll the whole page pays for (WCAG 1.4.10), so it may break inside the
+   word. Nothing in Kozmos sets overflow-wrap on a heading (GAP-04). */
+.site-part-name {
   overflow-wrap: anywhere;
 }
 

@@ -267,7 +267,9 @@ export default function ComponentPage({
           {component.parts.map((part) => (
             <Stack key={part.name} gap={3}>
               <Stack gap={1}>
-                <Heading level={3}>{part.name}</Heading>
+                <Heading level={3} className="site-part-name">
+                  {part.name}
+                </Heading>
                 {part.description ? (
                   <Text size="sm" color="muted">
                     {withCode(part.description)}

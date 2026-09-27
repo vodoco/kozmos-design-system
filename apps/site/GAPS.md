@@ -114,6 +114,8 @@ keep the table's four columns and its statuses as they are.
 | GAP-86 | No microphone or speaker glyph for the assistant's controls      | Core                   | composed     |
 | GAP-87 | `AIInputBar`'s `disabled` does not reach its `trailing` slot     | Core                   | left visible |
 | GAP-88 | `ActionCard`'s title is a paragraph, not a heading               | Core                   | left visible |
+| GAP-89 | `BrowseCategoriesPanel`'s tiles overlap below about 360px        | Product / SDK          | left visible |
+| GAP-90 | The brand family is named but no font is shipped                 | Core                   | composed     |
 
 ---
 
@@ -1614,3 +1616,39 @@ Text"])`) and the Get started page shows — touches it.
 - **Now:** left visible on the page.
 - **Lane:** Core.
 - **Fix in Kozmos:** a heading level, as `AlertTitle` now takes (GAP-12).
+
+## GAP-89 · `BrowseCategoriesPanel`'s tiles overlap below about 360px
+
+- **What:** the panel lays its categories in four fixed columns
+  (`grid-cols-4`) while each tile's icon box is a fixed `h-16 w-16` that
+  cannot shrink. Under about 361px of viewport a column is narrower than
+  64px and the icons run over each other: measured at 320px the column is
+  45.5px, the icon 64px, and neighbouring icons overlap by 10.5px, badges
+  clipped and labels broken mid-word ("Transp / ort"). At 360px they touch
+  (-0.5px); at 390px there is 7px between them.
+- **Now:** left visible on the page — a phone at 320px is the narrowest
+  screen WCAG 1.4.10 asks for, and the panel is a phone component.
+- **Lane:** Product / SDK.
+- **Fix in Kozmos:** size the track from the tile, not the count —
+  `repeat(auto-fit, minmax(4rem, 1fr))` — so the row rewraps instead of
+  overrunning.
+
+## GAP-90 · The brand family is named but no font is shipped
+
+- **What:** `--semantics-typography-family-brand: Readex Pro` carries no
+  fallback and no `@font-face`, webfont link or font file exists in the
+  repository; the tokens' own description says so. Every surface therefore
+  renders in `--semantics-typography-family-system`, which ends in the
+  host's `system-ui` — SF Pro on macOS, a much wider DejaVu Sans on the
+  Linux the CI runs. The same page wraps in different places on the two: the
+  home page's claim takes one line here and two there, which put the hero's
+  buttons 34px below the fold on a 1280 by 720 laptop, and a part's name ran
+  a component page off a 320px screen. Both were invisible to a macOS run.
+- **Now:** every layout the site measures is measured twice, in the host's
+  sans and in a deliberately wide one (`WIDE_SANS` in `tests/site.spec.ts`),
+  and the hero's ring is sized for the wider.
+- **Lane:** Core.
+- **Fix in Kozmos:** ship the file and measure its metrics
+  (`packages/tokens` names `scripts/measure-font-metrics.mjs` for this), or
+  give the family a metric-compatible fallback stack so the type is the same
+  everywhere it is not installed.
