@@ -140,6 +140,7 @@ import Kozmos
 
 struct MapControls: View {
     let bearing: Double
+    let locationState: KozmosUserLocationState
 
     var body: some View {
         KozmosMapControlsGroup(
@@ -148,8 +149,28 @@ struct MapControls: View {
             onZoomOut: { zoomOut() },
             onCompassReset: { resetBearing() },
             onMyLocation: { recenter() },
+            // Every name is the product's to translate.
+            zoomInLabel: String(localized: "Zoom in"),
+            zoomOutLabel: String(localized: "Zoom out"),
+            compassResetLabel: String(localized: "Reset bearing"),
+            locationState: locationState,
             locationPresentation: .iconOnly,
-            locationLabel: "My location"
+            locationLabel: String(localized: "My location")
+        )
+    }
+}
+
+// While a route is shown, step-free takes the location control's place.
+struct WayfindingControls: View {
+    @Binding var stepFree: Bool
+
+    var body: some View {
+        KozmosMapControlsGroup(
+            locationRevealOnChange: true,
+            locationLabelPlacement: .stacked,
+            onStepFreeChange: { stepFree = $0 },
+            stepFree: stepFree,
+            stepFreeLabel: String(localized: "Step-free")
         )
     }
 }
@@ -158,17 +179,36 @@ struct MapControls: View {
 package com.kozmos.example
 
 import androidx.compose.runtime.Composable
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlacement
 import com.kozmos.components.mapcontrolsgroup.KozmosMapControlsGroup
+import com.kozmos.contracts.KozmosUserLocationState
 
 @Composable
-fun MapControls(bearing: Float) {
+fun MapControls(bearing: Float, locationState: KozmosUserLocationState) {
     KozmosMapControlsGroup(
         compassBearing = bearing,
         onZoomIn = { zoomIn() },
         onZoomOut = { zoomOut() },
         onCompassReset = { resetBearing() },
         onMyLocation = { recenter() },
-        locationLabel = "My location"
+        locationLabel = "My location",
+        // Every name is the product's to translate.
+        zoomInLabel = "Zoom in",
+        zoomOutLabel = "Zoom out",
+        compassResetLabel = "Reset bearing",
+        locationState = locationState
+    )
+}
+
+// While a route is shown, step-free takes the location control's place.
+@Composable
+fun WayfindingControls(stepFree: Boolean, onStepFreeChange: (Boolean) -> Unit) {
+    KozmosMapControlsGroup(
+        locationRevealOnChange = true,
+        locationLabelPlacement = KozmosMapControlButtonLabelPlacement.Stacked,
+        onStepFreeChange = onStepFreeChange,
+        stepFree = stepFree,
+        stepFreeLabel = "Step-free"
     )
 }
   `}
