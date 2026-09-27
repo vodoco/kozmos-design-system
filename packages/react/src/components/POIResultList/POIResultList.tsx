@@ -29,6 +29,12 @@ export interface POIResultListGroup {
   /** How many show while collapsed. */
   collapsedCount?: number;
   defaultExpanded?: boolean;
+  /**
+   * Whether the group is open. Give it to hold the group open yourself —
+   * uncontrolled expansion lives in the group's own state, so it cannot
+   * survive anything that unmounts the list, such as the panel closing.
+   */
+  expanded?: boolean;
 }
 
 export type POIResultListEntry = POIResultListItem | POIResultListGroup;
@@ -57,6 +63,22 @@ export interface POIResultListProps extends Omit<
   actionsLabel?: string;
   /** The floor the map shows: a result on it carries a dot before its floor. */
   currentFloorId?: string;
+  /**
+   * Drawn above the results, inside the list's own region: a notice belongs
+   * to the results it qualifies, so it is withheld with them rather than
+   * left behind as a sibling when the list cannot render.
+   */
+  header?: React.ReactNode;
+  /**
+   * A group's two words, in the visitor's language. They are the same words
+   * for every group, so the list carries them once rather than each entry
+   * repeating them. Left alone, a grouped list reads "Show 1 more" and
+   * "Hide" in English whatever the device says.
+   */
+  showMoreLabel?: (hidden: number) => string;
+  hideLabel?: string;
+  /** Told which group, so one handler can hold several open. */
+  onGroupExpandedChange?: (groupId: string, expanded: boolean) => void;
 }
 
 const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
@@ -73,6 +95,10 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       featuredLabel,
       actionsLabel,
       currentFloorId,
+      header,
+      showMoreLabel,
+      hideLabel,
+      onGroupExpandedChange,
       ...props
     },
     ref,
@@ -87,6 +113,9 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
         <p aria-live="polite" className="sr-only">
           {resultCountLabel}
         </p>
+        {header !== undefined && header !== null && (
+          <div className="mb-3">{header}</div>
+        )}
         {items.length === 0 ? (
           // Pad a string; never pad a component.
           //
@@ -135,14 +164,21 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                       collapsedCount={entry.collapsedCount}
                       currentFloorId={currentFloorId}
                       defaultExpanded={entry.defaultExpanded}
+                      expanded={entry.expanded}
                       featuredLabel={featuredLabel}
+                      hideLabel={hideLabel}
                       items={entry.items.map((item) => ({
                         poi: item.poi,
                         result: select(item),
                       }))}
                       label={entry.label}
                       onAction={onAction}
+                      onExpandedChange={
+                        onGroupExpandedChange &&
+                        ((open) => onGroupExpandedChange(entry.id, open))
+                      }
                       onSelect={onSelect}
+                      showMoreLabel={showMoreLabel}
                     />
                   </li>
                 );

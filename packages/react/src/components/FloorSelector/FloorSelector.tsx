@@ -13,6 +13,15 @@ export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement>
   selectedFloor: string;
   onFloorSelect: (floor: string) => void;
   label?: string;
+  /**
+   * What the compact stepper's two buttons are called, for a visitor who
+   * cannot see them. Hard-coded English until row 67, so a German or Japanese
+   * device announced "Previous floor" whatever else the product had
+   * translated. Only the stepper draws them; the two list variants name each
+   * floor by its own label.
+   */
+  previousFloorLabel?: string;
+  nextFloorLabel?: string;
   variant?: "vertical-list" | "horizontal-list" | "compact-stepper";
 }
 
@@ -31,6 +40,8 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
       selectedFloor,
       onFloorSelect,
       label = "Floor selector",
+      previousFloorLabel = "Previous floor",
+      nextFloorLabel = "Next floor",
       variant = "vertical-list",
       ...props
     },
@@ -81,7 +92,7 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
           </span>
           <span className="flex border-l border-border/70">
             <IconButton
-              aria-label="Previous floor"
+              aria-label={previousFloorLabel}
               className="h-11 w-11 rounded-none border-r border-border/70 bg-transparent p-0 shadow-none"
               disabled={!previousOption}
               onClick={() =>
@@ -93,7 +104,7 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
               <ChevronUp aria-hidden="true" className="h-3.5 w-3.5" />
             </IconButton>
             <IconButton
-              aria-label="Next floor"
+              aria-label={nextFloorLabel}
               className="h-11 w-11 rounded-none bg-transparent p-0 shadow-none"
               disabled={!nextOption}
               onClick={() => nextOption && handleFloorSelect(nextOption.id)}

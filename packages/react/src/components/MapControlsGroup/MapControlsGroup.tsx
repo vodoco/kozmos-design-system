@@ -17,6 +17,17 @@ export interface MapControlsGroupProps extends React.HTMLAttributes<HTMLDivEleme
   onMyLocation?: () => void;
   compassBearing?: number;
   label?: string;
+  /**
+   * What each control is called, for a visitor who cannot see it.
+   *
+   * Hard-coded English until row 67: a German or Japanese device announced
+   * "Zoom in" whatever else the product had translated. The defaults stay
+   * English because a design system has no locale of its own — the product
+   * has one, and now has somewhere to put it.
+   */
+  zoomInLabel?: string;
+  zoomOutLabel?: string;
+  compassResetLabel?: string;
   locationState?: UserLocationState;
   locationLabel?: string;
   locationStateLabel?: string;
@@ -36,6 +47,9 @@ const MapControlsGroup = React.forwardRef<
       onMyLocation,
       compassBearing = 0,
       label = "Map controls",
+      zoomInLabel = "Zoom in",
+      zoomOutLabel = "Zoom out",
+      compassResetLabel = "Reset bearing",
       locationState = "off",
       locationLabel = "Focus location",
       locationStateLabel,
@@ -73,7 +87,7 @@ const MapControlsGroup = React.forwardRef<
             {onZoomIn && (
               <MapControlButton
                 icon={<Plus className="h-5 w-5" />}
-                label="Zoom in"
+                label={zoomInLabel}
                 variant="ghost"
                 className={cn(
                   "w-full rounded-none",
@@ -85,7 +99,7 @@ const MapControlsGroup = React.forwardRef<
             {onZoomOut && (
               <MapControlButton
                 icon={<Minus className="h-5 w-5" />}
-                label="Zoom out"
+                label={zoomOutLabel}
                 variant="ghost"
                 className="w-full rounded-none"
                 onClick={handleZoomOut}
@@ -103,7 +117,7 @@ const MapControlsGroup = React.forwardRef<
                 style={{ transform: `rotate(${compassBearing}deg)` }}
               />
             }
-            label="Reset bearing"
+            label={compassResetLabel}
             variant="ghost"
             onClick={() => {
               trackEvent("MapControls", "compass_reset", {});

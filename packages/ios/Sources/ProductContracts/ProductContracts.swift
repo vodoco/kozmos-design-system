@@ -305,6 +305,14 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
     /// to be shown exactly as authored, and VoiceOver needs the tag to say it
     /// correctly.
     public let nameLanguage: String?
+    /// A short generated line about this result, already in the device's
+    /// language: why it answers the query, or what marks it out from the
+    /// results around it. One sentence, not a description — POIDetailPanel
+    /// owns the long form.
+    ///
+    /// Optional because most results do not have one. A card that is given
+    /// nothing draws nothing.
+    public let summary: String?
     /// Revealed when the result is selected. The product decides what a POI
     /// offers - a restaurant may book where a shop does not - so the card draws
     /// what it is given and never assumes a fixed pair.
@@ -323,6 +331,7 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         match: KozmosPOIResultMatch? = nil,
         unitLabel: String? = nil,
         nameLanguage: String? = nil,
+        summary: String? = nil,
         actions: [KozmosPOIResultActionPresentation] = []
     ) {
         self.poiId = poiId
@@ -337,6 +346,7 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         self.match = match
         self.unitLabel = unitLabel
         self.nameLanguage = nameLanguage
+        self.summary = summary
         self.actions = actions
     }
 

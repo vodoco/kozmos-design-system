@@ -87,6 +87,17 @@ try {
       options: { safeAreaInsets: { bottom: 200 } },
     },
     {
+      // GAP-077: env() reads zero here, as it does inside a device frame on a
+      // canvas or a web view whose host paints its own bar. Without a way to
+      // say so, the controls sit under the status bar.
+      name: "device chrome the page cannot see",
+      viewport: { width: 390, height: 844 },
+      width: 390,
+      height: 844,
+      direction: "ltr",
+      options: { deviceSafeAreaInsets: { top: 44 } },
+    },
+    {
       name: "short host on a wide page",
       viewport: { width: 1440, height: 900 },
       width: 844,
@@ -246,6 +257,61 @@ try {
       assert(
         layout.collisionInsets.top >= topBar.y + topBar.height - map.y - 1,
         "top bar must contribute camera padding",
+      );
+      // Which side the controls take. Against a docked side panel they sit
+      // clear of it; against a bottom sheet, which spans the full width, there
+      // is nothing to sit clear of and they belong at the inline end — where
+      // every map app puts them, and where a thumb reaches. Read from the same
+      // measured direction the shell uses, so this holds in RTL too.
+      const rtl = (await page.evaluate(
+        () => getComputedStyle(document.documentElement).direction,
+      )) === "rtl";
+      const mapMid = map.x + map.width / 2;
+      const controlsAtInlineEnd =
+        controls.x + controls.width / 2 > mapMid ? !rtl : rtl;
+      if (layout.presentation === "bottom") {
+        assert(
+          controlsAtInlineEnd,
+          `a sheet leaves no side to avoid, so the controls belong at the inline end (${scenario.name})`,
+        );
+      }
+      // The side-panel case needs no assertion here: "controls overlap panel"
+      // above already says the only thing that matters, and says it better.
+
+      // GAP-079: the controls must not pad the camera.
+      //
+      // Collision insets are four edge bands, so a 44px control column used to
+      // hand the camera the whole edge it sits on at every height — a map
+      // following the visitor centred them ~80px off on a phone. The band the
+      // controls WOULD have claimed is measured here, and the reported inset
+      // on that side has to be smaller than it.
+      // GAP-077: chrome the page cannot see keeps the controls out of it.
+      const deviceTop = scenario.options?.deviceSafeAreaInsets?.top ?? 0;
+      if (deviceTop) {
+        assert(
+          topBar.y >= map.y + deviceTop - 1,
+          `the top bar must clear the device chrome it was told about: ${topBar.y} against ${map.y + deviceTop} (${scenario.name})`,
+        );
+        assert(
+          controls.y >= map.y + deviceTop - 1,
+          `the controls must clear it too: ${controls.y} against ${map.y + deviceTop} (${scenario.name})`,
+        );
+      }
+
+      const controlsSideIsRight = controls.x + controls.width / 2 > mapMid;
+      const bandTheControlsWouldClaim = controlsSideIsRight
+        ? map.x + map.width - controls.x
+        : controls.x + controls.width - map.x;
+      const reportedOnThatSide = controlsSideIsRight
+        ? layout.collisionInsets.right
+        : layout.collisionInsets.left;
+      assert(
+        bandTheControlsWouldClaim > 1,
+        `the controls should sit inside the map for this to mean anything (${scenario.name})`,
+      );
+      assert(
+        reportedOnThatSide < bandTheControlsWouldClaim - 1,
+        `the controls must not pad the camera by their whole edge: reported ${reportedOnThatSide}, their band ${bandTheControlsWouldClaim} (${scenario.name})`,
       );
       if (process.env.ADAPTIVE_SCREENSHOTS) {
         fs.mkdirSync(process.env.ADAPTIVE_SCREENSHOTS, { recursive: true });

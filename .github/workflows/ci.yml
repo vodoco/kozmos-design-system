@@ -186,6 +186,13 @@ jobs:
       - name: Verify Typography Parity
         run: pnpm tokens:typography:check
 
+      # Nothing ran this until 2026-09-27, so its matcher had been reporting
+      # the sheet as reading no motion tokens — against a rule that read them
+      # perfectly well — for as long as the file had been prettier-wrapped.
+      # A gate nobody runs is a gate that is always green and never true.
+      - name: Verify Motion Parity
+        run: pnpm tokens:motion:check
+
       - name: Verify Documentation Snippets
         run: pnpm docs:snippets:check
 

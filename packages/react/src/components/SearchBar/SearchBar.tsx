@@ -93,7 +93,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
         <input
           ref={ref}
           className={cn(
-            "min-w-0 flex-1 bg-transparent border-none outline-none text-[15px] placeholder:text-muted-foreground",
+            "kozmos-search-input min-w-0 flex-1 bg-transparent border-none outline-none text-[15px] placeholder:text-muted-foreground",
             className,
           )}
           aria-label={ariaLabel ?? placeholder}

@@ -97,7 +97,11 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
     const { trackEvent } = useKozmosAnalytics();
     const available = result.available !== false;
     const unavailableId = `${id}-unavailable`;
-    const locationLabel = poiLocationLabel(poi);
+    // A unit is narrower than a floor and a visitor is told both, so it leads
+    // the line: "Unit 214 · Level 2 · Terminal 2" (GAP-022).
+    const locationLabel = [result.unitLabel, poiLocationLabel(poi)]
+      .filter(Boolean)
+      .join(" · ");
     const onCurrentFloor =
       currentFloorId !== undefined && result.floorId === currentFloorId;
 
@@ -145,7 +149,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       <article
         ref={ref}
         className={cn(
-          "relative bg-card text-card-foreground transition-shadow",
+          "kozmos-poi-result-card relative bg-card text-card-foreground",
           appearance === "card" && "rounded-control border",
           appearance === "card" &&
             (result.selected
@@ -205,7 +209,14 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           type="button"
         >
           <span className="min-w-0">
-            <span className="block truncate text-lg font-normal leading-tight text-foreground">
+            <span
+              className="block truncate text-lg font-normal leading-tight text-foreground"
+              // Story 2 shows an authored name exactly as authored, which
+              // leaves a screen reader saying a Japanese name in the voice of
+              // the interface language. The tag tells it which voice to use,
+              // and is set only when the two differ (GAP-004).
+              lang={result.nameLanguage}
+            >
               {poi.name}
             </span>
             {poi.categoryLabel && (
@@ -222,6 +233,14 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
               )}
               <span className="truncate">{locationLabel}</span>
             </span>
+            {result.summary && (
+              // One generated line about this result, already localized.
+              // Two lines at most: a result card is scanned, and a summary
+              // that grows makes the cards below it move (GAP-029).
+              <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
+                {result.summary}
+              </span>
+            )}
             {attributes.length > 0 && (
               <ul className="mt-1.5 flex list-none flex-wrap gap-1 p-0">
                 {attributes.map((attribute) => (
@@ -281,28 +300,30 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
             markup says. This is why the whole card could not simply gain two
             more buttons. */}
         {showActions && (
-          <div
-            aria-label={actionsLabel}
-            className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3"
-            id={actionsId}
-            role="group"
-          >
-            {actions.map((entry, index) => (
-              <button
-                className={cn(
-                  "inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-control px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
-                  entry.primary
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "border border-border bg-card text-foreground hover:bg-muted",
-                )}
-                disabled={entry.disabled}
-                key={`${entry.action}-${index}`}
-                onClick={() => handleAction(entry.action)}
-                type="button"
-              >
-                <span className="truncate">{entry.label}</span>
-              </button>
-            ))}
+          <div className="kozmos-poi-result-actions">
+            <div
+              aria-label={actionsLabel}
+              className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3"
+              id={actionsId}
+              role="group"
+            >
+              {actions.map((entry, index) => (
+                <button
+                  className={cn(
+                    "inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-control px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+                    entry.primary
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "border border-border bg-card text-foreground hover:bg-muted",
+                  )}
+                  disabled={entry.disabled}
+                  key={`${entry.action}-${index}`}
+                  onClick={() => handleAction(entry.action)}
+                  type="button"
+                >
+                  <span className="truncate">{entry.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

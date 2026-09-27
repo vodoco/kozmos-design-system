@@ -85,8 +85,13 @@ describe("POIResultCard", () => {
     );
     // Unselected: the actions are not merely hidden, they are not rendered.
     expect(screen.queryByRole("group")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Go" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByRole("button", { name: "Go" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button")).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
 
     rerender(
       <POIResultCard
@@ -105,6 +110,58 @@ describe("POIResultCard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
     expect(onAction).toHaveBeenCalledWith("details", poi.id);
+  });
+
+  it("moves through its states on owned rules, not on utilities", () => {
+    // The card recolours as selection changes, so the rule that times that
+    // change has to reach every browser — including one without @scope, which
+    // the utility layer does not reach. A class the component owns does.
+    const { container, rerender } = render(
+      <POIResultCard
+        poi={poi}
+        result={{ ...result, selected: false }}
+        onSelect={vi.fn()}
+      />,
+    );
+    const card = container.querySelector("article");
+    expect(card).toHaveClass("kozmos-poi-result-card");
+    // The old rule was `transition-shadow`, a utility, and it only ever timed
+    // the shadow: the border and the fill that also change snapped.
+    expect(card).not.toHaveClass("transition-shadow");
+    expect(container.querySelector(".kozmos-poi-result-actions")).toBeNull();
+  });
+
+  it("opens its action row inside the element that owns the move", () => {
+    // Splitting this from the card's own transition is deliberate: if the two
+    // shared a test, the first failing assertion would hide whether the second
+    // still held.
+    const { container, rerender } = render(
+      <POIResultCard
+        poi={poi}
+        result={{ ...result, selected: false }}
+        onSelect={vi.fn()}
+      />,
+    );
+    rerender(
+      <POIResultCard
+        poi={poi}
+        result={{
+          ...result,
+          selected: true,
+          actions: [{ action: "navigate" as const, label: "Go" }],
+        }}
+        onSelect={vi.fn()}
+      />,
+    );
+    // The row opens inside a wrapper that owns the move, so the group keeps
+    // its own role, its label and its id — the button still points at it.
+    const opener = container.querySelector(".kozmos-poi-result-actions");
+    expect(opener).not.toBeNull();
+    const row = screen.getByRole("group", { name: "Actions for this result" });
+    expect(opener).toContainElement(row);
+    expect(
+      container.querySelector(`button[aria-controls="${row.id}"]`),
+    ).not.toBeNull();
   });
 
   it("never nests a button inside the select button", () => {
@@ -204,7 +261,11 @@ describe("POIResultCard", () => {
 
   it("shows no attribute row when a result has none", () => {
     render(
-      <POIResultCard poi={poi} result={{ ...result, selected: false }} onSelect={vi.fn()} />,
+      <POIResultCard
+        poi={poi}
+        result={{ ...result, selected: false }}
+        onSelect={vi.fn()}
+      />,
     );
     expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
   });
@@ -273,5 +334,45 @@ describe("POIResultCard", () => {
       />,
     );
     expect(container.querySelector("[data-current-floor='true']")).toBeNull();
+  });
+
+  it("says what the contract already knew: the unit, the name's language, and the summary", () => {
+    // Three fields shipped in the contract for 0.4.0 and were drawn by
+    // nothing. GAP-022, GAP-004 and GAP-029.
+    const { container } = render(
+      <POIResultCard
+        poi={{ ...poi, name: "空港ラウンジ", floorLabel: "Level 2" }}
+        result={{
+          ...result,
+          nameLanguage: "ja",
+          summary: "Quietest of the three lounges before security.",
+          unitLabel: "Unit 214",
+        }}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    // The unit leads the line, because it is narrower than the floor and the
+    // visitor is told both.
+    expect(screen.getByText("Unit 214 · Level 2 · Building A")).toBeVisible();
+
+    // The tag rides on the name itself, not the card: a screen reader has to
+    // change voice for those words and no others.
+    const name = screen.getByText("空港ラウンジ");
+    expect(name).toHaveAttribute("lang", "ja");
+    expect(container.firstElementChild).not.toHaveAttribute("lang");
+
+    expect(
+      screen.getByText("Quietest of the three lounges before security."),
+    ).toBeVisible();
+  });
+
+  it("draws nothing for the three when it is given nothing", () => {
+    // Most results have no unit, no foreign name and no summary. The card
+    // must not leave a separator, an empty line, or a lang="" behind.
+    render(<POIResultCard poi={poi} result={result} onSelect={vi.fn()} />);
+    const name = screen.getByText(poi.name);
+    expect(name).not.toHaveAttribute("lang");
+    expect(screen.queryByText(/·\s*$/)).toBeNull();
   });
 });

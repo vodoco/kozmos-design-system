@@ -132,4 +132,20 @@ describe("LocationPin", () => {
     marker = screen.getByRole("img").querySelector("svg") as SVGElement;
     expect(marker).toHaveClass("fill-current");
   });
+
+  it("anchors to a physical origin, so a right-to-left map does not shift every pin", () => {
+    // GAP-076. The pin is absolute with a physical -50% translate and had no
+    // inset, so it fell back to its static position: the container's left edge
+    // in LTR — which the translate expects — and its RIGHT edge in Arabic, one
+    // pin-width away from the place it marks.
+    const { container } = render(
+      <LocationPin label="Harbour Coffee Co." onClick={() => undefined} />,
+    );
+    const pin = container.firstElementChild as HTMLElement;
+    expect(pin).toHaveClass("absolute", "left-0", "top-0");
+    // Physical, not logical: `start-0` would flip the origin in RTL while the
+    // translate beside it stayed physical — the same bug with more steps.
+    expect(pin.className).not.toMatch(/\bstart-0\b/);
+    expect(pin).toHaveClass("-translate-x-1/2", "-translate-y-full");
+  });
 });
