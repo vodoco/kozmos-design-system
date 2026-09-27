@@ -106,7 +106,9 @@ export const SelectionComesIntoView: Story = {
     const [selected, setSelected] = React.useState<string>();
     return (
       <div className="flex w-full max-w-[26rem] flex-col gap-3">
-        <div className="flex gap-2">
+        {/* Wraps: at 320px, in a font as wide as CI's DejaVu Sans, the two
+            buttons do not fit on one line and the page scrolled sideways. */}
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => setSelected("gate-11")}>
             Tap the pin for B11
           </Button>
