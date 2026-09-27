@@ -1,0 +1,78 @@
+# The website's own checks. A separate workflow rather than a job in ci.yml:
+# it gates one app, runs a browser suite of its own, and should not widen the
+# matrix everyone else waits on.
+#
+# The site is built from Kozmos components and tokens only, so these checks are
+# also a consumer test of the packages: check-ds-only.mjs fails a raw element
+# or a colour literal, and the Playwright suite measures what a visitor gets —
+# axe on every page in both themes, no site CSS the components outrank, no
+# clipped edges, no sideways scroll at 320px, and the design-system gaps the
+# site pins on purpose (apps/site/GAPS.md).
+#
+# Nothing here reads event data, so there is no untrusted input to quote.
+name: Site
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/site/**"
+      - "packages/**"
+      - ".github/workflows/site.yml"
+      - "pnpm-lock.yaml"
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "apps/site/**"
+      - "packages/**"
+      - ".github/workflows/site.yml"
+      - "pnpm-lock.yaml"
+
+jobs:
+  site:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # The site reads each package's built dist, not its source.
+      - name: Build the packages the site uses
+        run: pnpm turbo run build --filter=@kozmos-ds/site^...
+
+      - name: Lint, and the one rule
+        run: pnpm --filter @kozmos-ds/site lint
+
+      - name: Typecheck
+        run: pnpm --filter @kozmos-ds/site typecheck
+
+      - name: Unit tests
+        run: pnpm --filter @kozmos-ds/site test
+
+      - name: Build
+        run: pnpm --filter @kozmos-ds/site build
+
+      - name: Install the browsers
+        run: pnpm --filter @kozmos-ds/site exec playwright install --with-deps chromium firefox webkit
+
+      - name: End to end, in three engines
+        run: pnpm --filter @kozmos-ds/site test:e2e
+
+      - name: Keep the failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-test-results
+          path: apps/site/test-results/
+          retention-days: 7
