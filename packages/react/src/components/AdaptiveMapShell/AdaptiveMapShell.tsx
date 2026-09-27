@@ -919,6 +919,11 @@ const AdaptiveMapShell = React.forwardRef<
             )}
             <div
               ref={panelContent}
+              // A scroller even while it hides its overflow below the largest
+              // detent: a finger cannot scroll it there, but POIResultList
+              // brings a selected result into it (row 70), and a box that
+              // hides its overflow is otherwise only clipping.
+              data-kozmos-scroller=""
               className={cn(
                 "min-h-0 flex-1 overscroll-contain",
                 // A side panel has no grip, so nothing was making the space
