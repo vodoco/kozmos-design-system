@@ -59,7 +59,9 @@ const AIMessage = React.forwardRef<HTMLDivElement, AIMessageProps>(
               streams "••• Looking through this building…", where the
               acknowledgement is the thing that arrives within 2.5s. */}
           {status === "streaming" && (
-            <span className="mr-2 inline-flex items-center gap-1 align-middle">
+            // `me-2`, not `mr-2`: right to left the dots sit on the right,
+            // and a physical margin put the gap on their far side.
+            <span className="me-2 inline-flex items-center gap-1 align-middle">
               <span className="sr-only">{streamingLabel}</span>
               <span
                 aria-hidden="true"

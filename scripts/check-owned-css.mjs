@@ -362,6 +362,67 @@ try {
             "--components-primary-buttons-themed-button-background-idle",
           ),
         );
+        // A labelled map control keeps its gap between the mark and the
+        // words in both directions. It was `ml-2` and `text-left`: right to
+        // left the mark sits at the start, on the right, and the margin went
+        // to the far side of the words, so the two touched.
+        const labelGap = (testId) =>
+          page.getByTestId(testId).evaluate(async (button) => {
+            const [mark, words] = button.children;
+            // The words animate their margin, so a flip of direction is read
+            // once that settles, not on its first frame.
+            await Promise.all(words.getAnimations().map((a) => a.finished));
+            const a = mark.getBoundingClientRect();
+            const b = words.getBoundingClientRect();
+            const rtl = getComputedStyle(button).direction === "rtl";
+            return {
+              rtl,
+              gap: rtl ? a.left - b.right : b.left - a.right,
+              align: getComputedStyle(words).textAlign,
+            };
+          });
+        const labelled = `${id}-map-control-labelled`;
+        const inRtl = await labelGap(labelled);
+        assert.equal(inRtl.rtl, true, "the fixture draws right to left");
+        assert(
+          inRtl.gap >= 7.5,
+          `right to left the words sit ${inRtl.gap}px from the mark`,
+        );
+        assert.equal(inRtl.align, "start");
+        await page
+          .getByTestId(labelled)
+          .evaluate((node) => node.setAttribute("dir", "ltr"));
+        const inLtr = await labelGap(labelled);
+        assert(
+          !inLtr.rtl && inLtr.gap >= 7.5,
+          `left to right the words sit ${inLtr.gap}px from the mark`,
+        );
+        await page
+          .getByTestId(labelled)
+          .evaluate((node) => node.removeAttribute("dir"));
+        // The assistant's "replying" dots keep their gap before the words
+        // right to left too: they were `mr-2`, on the far side of the dots.
+        const dotsGap = await page
+          .getByTestId(`${id}-ai-streaming`)
+          .evaluate((message) => {
+            const dots = message.querySelector(
+              "[aria-hidden='true']",
+            ).parentElement;
+            const bubble = dots.parentElement;
+            const text = [...bubble.childNodes].find(
+              (node) => node.nodeType === 3 && node.textContent.trim(),
+            );
+            const range = document.createRange();
+            range.selectNodeContents(text);
+            const a = dots.getBoundingClientRect();
+            const words = range.getClientRects()[0];
+            const rtl = getComputedStyle(bubble).direction === "rtl";
+            return rtl ? a.left - words.right : words.left - a.right;
+          });
+        assert(
+          dotsGap >= 7.5,
+          `right to left the replying dots sit ${dotsGap}px from the words`,
+        );
       }
       // The search row: the field and what follows it on one line, in a
       // container that puts them on two when the pair is composed by hand.
@@ -380,8 +441,7 @@ try {
           return {
             // Centres, not tops: the assistant is 48 and the field 44, so on
             // one line their top edges are two apart by design.
-            sameLine:
-              Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) < 2,
+            sameLine: Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) < 2,
             drop: Math.round(b.y - a.y),
             rowHeight: Math.round(node.getBoundingClientRect().height),
             fieldHeight: Math.round(a.height),
@@ -424,25 +484,28 @@ try {
       // arc is three quarters of a circle of radius 9 in the icons' own 24 box,
       // stroke 2, round caps, so it scales as every Kozmos icon does.
       const arc = (testId) =>
-        page.getByTestId(testId).locator("svg").evaluate((node) => {
-          const path = node.querySelector("path");
-          return {
-            viewBox: node.getAttribute("viewBox"),
-            d: path && path.getAttribute("d"),
-            width: path && path.getAttribute("stroke-width"),
-            cap: path && path.getAttribute("stroke-linecap"),
-            paths: node.querySelectorAll("path").length,
-            // With the turn running the box is the rotated square's, up to 41 %
-            // wider mid-turn; stop it to measure the layout box it occupies.
-            box: (() => {
-              const own = node.style.animation;
-              node.style.animation = "none";
-              const width = node.getBoundingClientRect().width;
-              node.style.animation = own;
-              return width;
-            })(),
-          };
-        });
+        page
+          .getByTestId(testId)
+          .locator("svg")
+          .evaluate((node) => {
+            const path = node.querySelector("path");
+            return {
+              viewBox: node.getAttribute("viewBox"),
+              d: path && path.getAttribute("d"),
+              width: path && path.getAttribute("stroke-width"),
+              cap: path && path.getAttribute("stroke-linecap"),
+              paths: node.querySelectorAll("path").length,
+              // With the turn running the box is the rotated square's, up to 41 %
+              // wider mid-turn; stop it to measure the layout box it occupies.
+              box: (() => {
+                const own = node.style.animation;
+                node.style.animation = "none";
+                const width = node.getBoundingClientRect().width;
+                node.style.animation = own;
+                return width;
+              })(),
+            };
+          });
       const buttonArc = await arc(`${id}-loading`);
       const spinnerArc = await arc(`${id}-spinner`);
       for (const [where, drawn] of [
@@ -485,16 +548,22 @@ try {
             const icon = svg.getBoundingClientRect();
             svg.style.animation = "";
             const label = [...node.childNodes].find(
-              (child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
+              (child) =>
+                child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
             );
             const range = document.createRange();
             range.selectNodeContents(label);
             const text = range.getBoundingClientRect();
-            return Math.round(Math.max(text.left - icon.right, icon.left - text.right));
+            return Math.round(
+              Math.max(text.left - icon.right, icon.left - text.right),
+            );
           };
           const own = node.getAttribute("dir");
           const rendered = measure();
-          node.setAttribute("dir", getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl");
+          node.setAttribute(
+            "dir",
+            getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl",
+          );
           const flipped = measure();
           if (own === null) node.removeAttribute("dir");
           else node.setAttribute("dir", own);
@@ -537,16 +606,22 @@ try {
             const mark = node.querySelector("svg");
             const box = mark.getBoundingClientRect();
             const label = [...node.childNodes].find(
-              (child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
+              (child) =>
+                child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
             );
             const range = document.createRange();
             range.selectNodeContents(label);
             const text = range.getBoundingClientRect();
-            return Math.round(Math.max(text.left - box.right, box.left - text.right));
+            return Math.round(
+              Math.max(text.left - box.right, box.left - text.right),
+            );
           };
           const own = node.getAttribute("dir");
           const rendered = measure();
-          node.setAttribute("dir", getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl");
+          node.setAttribute(
+            "dir",
+            getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl",
+          );
           const flipped = measure();
           if (own === null) node.removeAttribute("dir");
           else node.setAttribute("dir", own);
@@ -576,7 +651,9 @@ try {
               const range = document.createRange();
               range.selectNodeContents(label);
               const text = range.getBoundingClientRect();
-              const cross = node.querySelector("button").getBoundingClientRect();
+              const cross = node
+                .querySelector("button")
+                .getBoundingClientRect();
               return Math.round(
                 Math.max(cross.left - text.right, text.left - cross.right),
               );
@@ -697,13 +774,27 @@ try {
       (await measure(page.getByTestId("nested-glass"))).backgroundColor,
     );
     // The glass button is the glass surface: the token's filter and tint.
-    const glassButton = await page.getByTestId("nested-glass").evaluate((node) => {
-      const s = getComputedStyle(node);
-      return { background: s.backgroundColor, filter: s.backdropFilter || s.webkitBackdropFilter };
-    });
-    assert.match(glassButton.filter, /blur\(20px\) saturate\(1\.8\)/, `${mode}: the glass button's filter: ${glassButton.filter}`);
-    const buttonTint = /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(glassButton.background);
-    assert(buttonTint && Math.abs(Number(buttonTint[1]) - 0.7) < 0.01, `${mode}: the glass button's tint: ${glassButton.background}`);
+    const glassButton = await page
+      .getByTestId("nested-glass")
+      .evaluate((node) => {
+        const s = getComputedStyle(node);
+        return {
+          background: s.backgroundColor,
+          filter: s.backdropFilter || s.webkitBackdropFilter,
+        };
+      });
+    assert.match(
+      glassButton.filter,
+      /blur\(20px\) saturate\(1\.8\)/,
+      `${mode}: the glass button's filter: ${glassButton.filter}`,
+    );
+    const buttonTint = /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(
+      glassButton.background,
+    );
+    assert(
+      buttonTint && Math.abs(Number(buttonTint[1]) - 0.7) < 0.01,
+      `${mode}: the glass button's tint: ${glassButton.background}`,
+    );
     // The glass surface role reads Semantics.Effect.glass: the theme's glass
     // colour at 0.7, blur 20 and saturation 1.8 on what shows through, a
     // light edge at 0.2; the two themes' tints differ.
@@ -716,22 +807,56 @@ try {
           edge: s.borderTopColor,
           edgeWidth: s.borderTopWidth,
           edgeStyle: s.borderTopStyle,
-          edgeOpacityVar: s.getPropertyValue("--semantics-effect-glass-border-opacity"),
+          edgeOpacityVar: s.getPropertyValue(
+            "--semantics-effect-glass-border-opacity",
+          ),
         };
       });
     const nestedSurface = await surface("nested");
     // A browser keeps eight bits of alpha: 0.7 reads back as 0.698 or 0.7.
-    const tint = /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(nestedSurface.background);
-    assert(tint && Math.abs(Number(tint[1]) - 0.7) < 0.01, `${mode}: the light glass surface's tint: ${nestedSurface.background}`);
-    assert.match(nestedSurface.filter, /blur\(20px\) saturate\(1\.8\)/, `${mode}: the glass surface's filter: ${nestedSurface.filter}`);
-    assert.equal(nestedSurface.edge, "rgba(255, 255, 255, 0.2)", `${mode}: the glass surface's edge: ${JSON.stringify(nestedSurface)}`);
-    assert.notEqual((await surface("outer")).background, nestedSurface.background, `${mode}: the two themes' glass tints are the same`);
+    const tint = /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(
+      nestedSurface.background,
+    );
+    assert(
+      tint && Math.abs(Number(tint[1]) - 0.7) < 0.01,
+      `${mode}: the light glass surface's tint: ${nestedSurface.background}`,
+    );
+    assert.match(
+      nestedSurface.filter,
+      /blur\(20px\) saturate\(1\.8\)/,
+      `${mode}: the glass surface's filter: ${nestedSurface.filter}`,
+    );
+    assert.equal(
+      nestedSurface.edge,
+      "rgba(255, 255, 255, 0.2)",
+      `${mode}: the glass surface's edge: ${JSON.stringify(nestedSurface)}`,
+    );
+    assert.notEqual(
+      (await surface("outer")).background,
+      nestedSurface.background,
+      `${mode}: the two themes' glass tints are the same`,
+    );
     // Solid, the default: the background colour whole, with the subtle border.
     const solidSurface = await surface("nested", "solid");
-    assert.equal(solidSurface.background, await value("nested-solid-surface", "--primitives-colors-background-0"), `${mode}: the solid surface is not the background colour: ${solidSurface.background}`);
-    assert(!solidSurface.background.startsWith("rgba("), `${mode}: the solid surface is translucent: ${solidSurface.background}`);
-    assert.equal(solidSurface.edge, await value("nested-solid-surface", "--semantics-border-subtle"), `${mode}: the solid surface's edge: ${solidSurface.edge}`);
-    assert.equal(solidSurface.edgeWidth, "1px", `${mode}: the solid surface has no edge`);
+    assert.equal(
+      solidSurface.background,
+      await value("nested-solid-surface", "--primitives-colors-background-0"),
+      `${mode}: the solid surface is not the background colour: ${solidSurface.background}`,
+    );
+    assert(
+      !solidSurface.background.startsWith("rgba("),
+      `${mode}: the solid surface is translucent: ${solidSurface.background}`,
+    );
+    assert.equal(
+      solidSurface.edge,
+      await value("nested-solid-surface", "--semantics-border-subtle"),
+      `${mode}: the solid surface's edge: ${solidSurface.edge}`,
+    );
+    assert.equal(
+      solidSurface.edgeWidth,
+      "1px",
+      `${mode}: the solid surface has no edge`,
+    );
     // Rotate/reflow a narrow host and switch direction without remounting. This
     // checks composition geometry, not certification of physical foldable devices.
     const outer = page.getByTestId("outer");
@@ -814,9 +939,8 @@ try {
   await still.getByTestId("outer-spinner").waitFor();
   for (const testId of ["outer-spinner", "outer-loading", "outer-skeleton"]) {
     const target = still.getByTestId(testId);
-    const animation = await (testId.endsWith("-skeleton")
-      ? target
-      : target.locator("svg")
+    const animation = await (
+      testId.endsWith("-skeleton") ? target : target.locator("svg")
     ).evaluate((node) => getComputedStyle(node).animationName);
     assert.equal(
       animation,
@@ -852,9 +976,9 @@ try {
     ["config-reduced-skeleton", null],
   ]) {
     const target = moving.getByTestId(testId);
-    const animation = await (selector ? target.locator(selector) : target).evaluate(
-      (node) => getComputedStyle(node).animationName,
-    );
+    const animation = await (
+      selector ? target.locator(selector) : target
+    ).evaluate((node) => getComputedStyle(node).animationName);
     assert.equal(
       animation,
       "none",
@@ -915,7 +1039,9 @@ try {
     content: ".kozmos-ai-search-ring{animation:none !important}",
   });
   await ring.scrollIntoViewIfNeeded();
-  const laidOut = await ring.evaluate((node) => node.getBoundingClientRect().width);
+  const laidOut = await ring.evaluate(
+    (node) => node.getBoundingClientRect().width,
+  );
   assert.equal(laidOut, 48, `the AI search button is not 48: ${laidOut}`);
   // The element's own screenshot, which is exactly the element once the turn is
   // stopped. While it turns it is the rotated square's bounding box — 49 CSS
@@ -930,7 +1056,12 @@ try {
     canvas.height = image.height;
     const context = canvas.getContext("2d", { willReadFrequently: true });
     context.drawImage(image, 0, 0);
-    const { data, width } = context.getImageData(0, 0, image.width, image.height);
+    const { data, width } = context.getImageData(
+      0,
+      0,
+      image.width,
+      image.height,
+    );
     const at = (x, y) => {
       const i = (Math.round(y) * width + Math.round(x)) * 4;
       return [data[i], data[i + 1], data[i + 2], data[i + 3]];
@@ -940,7 +1071,8 @@ try {
     // neutral. A near-white test only works in the light theme, and the
     // fixture's outer tree is dark.
     const plain = (p) =>
-      p[3] < 100 || Math.max(p[0], p[1], p[2]) - Math.min(p[0], p[1], p[2]) < 40;
+      p[3] < 100 ||
+      Math.max(p[0], p[1], p[2]) - Math.min(p[0], p[1], p[2]) < 40;
     const perPixel = width / 48;
     const centre = width / 2;
     const widths = [];
@@ -949,20 +1081,36 @@ try {
       let outer = null;
       let inner = null;
       for (let r = centre - 1; r > 0; r -= 0.05) {
-        const sample = at(centre + Math.cos(angle) * r, centre + Math.sin(angle) * r);
+        const sample = at(
+          centre + Math.cos(angle) * r,
+          centre + Math.sin(angle) * r,
+        );
         if (outer === null && !plain(sample)) outer = r;
-        if (outer !== null && plain(sample)) { inner = r; break; }
+        if (outer !== null && plain(sample)) {
+          inner = r;
+          break;
+        }
       }
-      if (outer !== null && inner !== null) widths.push((outer - inner) / perPixel);
+      if (outer !== null && inner !== null)
+        widths.push((outer - inner) / perPixel);
     }
-    return { min: Math.min(...widths), max: Math.max(...widths), rays: widths.length, width };
+    return {
+      min: Math.min(...widths),
+      max: Math.max(...widths),
+      rays: widths.length,
+      width,
+    };
   }, shot.toString("base64"));
   assert.equal(
     measured.width,
     48 * 8,
     `the shot is not the button at eight device pixels to the CSS pixel: ${measured.width}`,
   );
-  assert.equal(measured.rays, 36, `the ring was not found all the way round: ${JSON.stringify(measured)}`);
+  assert.equal(
+    measured.rays,
+    36,
+    `the ring was not found all the way round: ${JSON.stringify(measured)}`,
+  );
   // Evenness is the claim, and evenness is what the defect broke. The absolute
   // figure carries the classifier's own bias — saturation falls off across the
   // antialiased inner edge, so the band reads a shade under 2.5 in every engine
