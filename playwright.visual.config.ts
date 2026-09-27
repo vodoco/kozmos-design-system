@@ -31,7 +31,19 @@ export default defineConfig({
   ],
   outputDir: "visual-results",
   expect: {
-    toHaveScreenshot: { animations: "disabled", caret: "hide", scale: "css" },
+    toHaveScreenshot: {
+      animations: "disabled",
+      caret: "hide",
+      scale: "css",
+      // Exact colours. Playwright's default tolerance (0.2 in pixelmatch's
+      // YIQ space, a delta of 1,409) passed the Skeleton's move from
+      // background/100 to /200 (#E3E4E8 to #C7CAD1, a delta of 351) as
+      // unchanged: a whole token step, the change a design system most
+      // needs to see. The image draws the same pixels every run (608 of 630
+      // baselines came out byte-identical from two runs), and pixelmatch
+      // still sets anti-aliased edges aside.
+      threshold: 0,
+    },
   },
   use: {
     ...devices["Desktop Chrome"],
