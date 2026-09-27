@@ -5,11 +5,13 @@ import {
   Button,
   Input,
   POIDetailPanel,
+  POIResultList,
   Stack,
 } from "@kozmos-ds/react";
 import type {
   AdaptiveMapShellProps,
   AdaptiveMapLayoutSnapshot,
+  POIResultListItem,
 } from "@kozmos-ds/react";
 
 declare global {
@@ -20,6 +22,8 @@ declare global {
     adaptiveNotifications: number;
     mapMounts: number;
     panelMounts: number;
+    /** Swap the panel for a list of results, with this one selected. */
+    showResults: (selectedPoiId?: string) => void;
   }
 }
 
@@ -69,14 +73,49 @@ function Panel() {
   );
 }
 
+// Twelve results: far taller than the sheet at any detent but its largest.
+const results: POIResultListItem[] = Array.from({ length: 12 }, (_, index) => ({
+  poi: {
+    id: `result-${index}`,
+    name: `Result ${index + 1}`,
+    floorId: "1",
+    floorLabel: "Level one",
+    media: [],
+    actions: ["navigate"],
+  },
+  result: {
+    poiId: `result-${index}`,
+    resultIndex: index,
+    selected: false,
+    featured: false,
+    floorId: "1",
+    actions: [{ action: "navigate", label: "Go" }],
+  },
+}));
+
 function Host() {
   const [options, setOptions] = useState(window.adaptiveOptions ?? {});
+  const [shownResults, setShownResults] = useState<{
+    selectedPoiId?: string;
+  } | null>(null);
   window.setAdaptiveOptions = setOptions;
+  window.showResults = (selectedPoiId) => setShownResults({ selectedPoiId });
   return (
     <AdaptiveMapShell
       style={{ height: "100%" }}
       map={<MapSlot />}
-      panel={<Panel />}
+      panel={
+        shownResults ? (
+          <POIResultList
+            items={results}
+            onSelect={(poiId) => setShownResults({ selectedPoiId: poiId })}
+            resultCountLabel="12 results"
+            selectedPoiId={shownResults.selectedPoiId}
+          />
+        ) : (
+          <Panel />
+        )
+      }
       panelPlacement="end"
       topBar={<Button style={{ width: "100%" }}>Search this floor</Button>}
       controls={<Button>Focus map</Button>}

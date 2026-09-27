@@ -170,6 +170,83 @@ const cases = [
       assert(controls.y >= topBar.y + topBar.height - 1);
     },
   ],
+  [
+    "a selected result comes into a sheet below its largest detent, and nothing else moves",
+    async (page) => {
+      // Row 70: below the largest detent the sheet's content hides its
+      // overflow and every touch moves the sheet, so nobody can scroll to a
+      // result by hand. A pin's tap still selects one, anywhere in the list.
+      const measure = () =>
+        page.evaluate(() => {
+          const list = document.querySelector(
+            'section[aria-label="Points of interest"]',
+          );
+          const scroller = list.parentElement;
+          const aside = document.querySelector("aside");
+          const frame = scroller.getBoundingClientRect();
+          const style = getComputedStyle(scroller);
+          const card = (id) =>
+            document
+              .querySelector(`[data-poi-id="${id}"]`)
+              .getBoundingClientRect();
+          return {
+            overflow: style.overflowY,
+            scrollTop: scroller.scrollTop,
+            viewTop: frame.top + scroller.clientTop,
+            viewBottom:
+              frame.top +
+              scroller.clientTop +
+              scroller.clientHeight -
+              parseFloat(style.paddingBottom),
+            last: card("result-10"),
+            first: card("result-0"),
+            asideTop: aside.getBoundingClientRect().top,
+            asideScroll: aside.scrollTop,
+            shellScroll: aside.parentElement.scrollTop,
+            page: window.scrollY,
+          };
+        });
+      const inView = (box, at) =>
+        box.top >= at.viewTop - 0.5 && box.bottom <= at.viewBottom + 0.5;
+
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => window.showResults());
+      await settleLayout(page);
+      const before = await measure();
+      assert.equal(
+        before.overflow,
+        "hidden",
+        "the sheet rests below its largest detent",
+      );
+      assert(!inView(before.last, before), "the result starts out of sight");
+
+      await page.evaluate(() => window.showResults("result-10"));
+      await settleLayout(page);
+      const after = await measure();
+      assert(
+        inView(after.last, after),
+        `result at ${after.last.top}–${after.last.bottom}, view ${after.viewTop}–${after.viewBottom}`,
+      );
+      assert.equal(
+        after.asideTop,
+        before.asideTop,
+        "the sheet itself stays put",
+      );
+      assert.equal(after.asideScroll, 0, "the sheet's frame does not scroll");
+      assert.equal(after.shellScroll, 0, "the shell does not scroll");
+      assert.equal(after.page, 0, "the page does not scroll");
+
+      // And back up, gliding this time: motion is the default.
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      await page.evaluate(() => window.showResults("result-0"));
+      await page.waitForTimeout(1500);
+      const back = await measure();
+      assert(
+        inView(back.first, back),
+        `result at ${back.first.top}–${back.first.bottom}, view ${back.viewTop}–${back.viewBottom}`,
+      );
+    },
+  ],
 ];
 try {
   for (const [name, test] of cases) {
