@@ -4,12 +4,17 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.NearMe
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.NearMe
+import androidx.compose.material.icons.outlined.NearMeDisabled
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,10 +29,42 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlacement
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonPresentation
+import com.kozmos.contracts.KozmosUserLocationState
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
+/**
+ * The stacked zoom, compass and locate controls that sit over a map.
+ *
+ * [zoomInLabel], [zoomOutLabel] and [compassResetLabel] are what each control
+ * is called, for a visitor who cannot see it. Hard-coded English until row 67:
+ * a German or Japanese device announced "Zoom in" whatever else the product
+ * had translated. The defaults stay English because a design system has no
+ * locale of its own — the product has one, and now has somewhere to put it.
+ *
+ * [locationState] is the mode the location control shows (row 77): a mark for
+ * each, selected only while the map follows the visitor, and the system's arc
+ * while it is locating. Pair it with a localized [locationStateLabel] — the
+ * mark alone tells TalkBack nothing. [locationIcons] replaces the mark for any
+ * mode it names; the others keep the group's own.
+ *
+ * [locationRevealOnChange] lets the location control widen to say its new mode
+ * whenever it changes, then collapse — [KozmosMapControlButton]'s
+ * `revealOnChange`. With [locationLabelPlacement] stacked this is how the SDK's
+ * control reads: icon-only over the map, "Focus / On" for a moment. Both are
+ * off by default, so a product that relies on a fixed presentation sees
+ * nothing move.
+ *
+ * While a route is shown, a step-free toggle takes the location control's
+ * place: passing [onStepFreeChange] draws it, and the location control is not
+ * drawn. It is called with the setting the visitor asked for (Olcay,
+ * 2026-09-27). It follows the location control's presentation, reveal and
+ * label placement, so the corner reads the same either way. Set [stepFree]
+ * once the route it describes is the one on the map — a control that says
+ * "On" over a route with stairs is worse than one that is a moment late.
+ */
 @Composable
 fun KozmosMapControlsGroup(
     modifier: Modifier = Modifier,
@@ -39,7 +76,21 @@ fun KozmosMapControlsGroup(
     locationPresentation: KozmosMapControlButtonPresentation =
         KozmosMapControlButtonPresentation.IconOnly,
     locationLabel: String = "Locate me",
-    locationStateLabel: String? = null
+    locationStateLabel: String? = null,
+    zoomInLabel: String = "Zoom in",
+    zoomOutLabel: String = "Zoom out",
+    compassResetLabel: String = "Reset bearing",
+    locationState: KozmosUserLocationState = KozmosUserLocationState.Off,
+    locationIcons: Map<KozmosUserLocationState, ImageVector> = emptyMap(),
+    locationRevealOnChange: Boolean = false,
+    locationLabelPlacement: KozmosMapControlButtonLabelPlacement =
+        KozmosMapControlButtonLabelPlacement.Inline,
+    onStepFreeChange: ((Boolean) -> Unit)? = null,
+    stepFree: Boolean = false,
+    stepFreeLabel: String = "Step-free",
+    stepFreeOnLabel: String = "On",
+    stepFreeOffLabel: String = "Off",
+    stepFreeIcon: ImageVector? = null
 ) {
     val trackEvent = LocalKozmosAnalytics.current
 
@@ -57,16 +108,23 @@ fun KozmosMapControlsGroup(
             Column {
                 MapControlIconButton(
                     icon = Icons.Default.Add,
-                    contentDescription = "Zoom in",
+                    contentDescription = zoomInLabel,
                     onClick = {
                         trackEvent(KozmosAnalyticsEvent(component = "MapControlsGroup", eventName = "zoom_in"))
                         onZoomIn()
                     }
                 )
-                Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
+                // As wide as a control, not the width on offer: a Divider
+                // fills it, and in the shell's corner it is offered the whole
+                // map. SwiftUI's rule is drawn to the control's width for the
+                // same reason.
+                Divider(
+                    modifier = Modifier.width(44.dp),
+                    color = KozmosThemeTokens.semanticsBorderSubtle
+                )
                 MapControlIconButton(
                     icon = Icons.Default.Remove,
-                    contentDescription = "Zoom out",
+                    contentDescription = zoomOutLabel,
                     onClick = {
                         trackEvent(KozmosAnalyticsEvent(component = "MapControlsGroup", eventName = "zoom_out"))
                         onZoomOut()
@@ -86,7 +144,7 @@ fun KozmosMapControlsGroup(
                 MapControlIconButton(
                     modifier = Modifier.rotate(compassBearing),
                     icon = Icons.Default.Explore,
-                    contentDescription = "Reset bearing",
+                    contentDescription = compassResetLabel,
                     onClick = {
                         trackEvent(KozmosAnalyticsEvent(component = "MapControlsGroup", eventName = "compass_reset"))
                         reset()
@@ -95,33 +153,96 @@ fun KozmosMapControlsGroup(
             }
         }
 
-        // Composes the shared MapControlButton so the labelled presentation and
-        // its accessible name stay consistent with standalone map controls.
-        onMyLocation?.let { locate ->
+        // Both compose the shared MapControlButton so the labelled
+        // presentation and its accessible name stay consistent with standalone
+        // map controls.
+        if (onStepFreeChange != null) {
             KozmosMapControlButton(
-                label = locationLabel,
+                label = stepFreeLabel,
                 onClick = {
                     trackEvent(
                         KozmosAnalyticsEvent(
                             component = "MapControlsGroup",
-                            eventName = "my_location_triggered"
+                            eventName = "step_free_toggled",
+                            properties = mapOf("stepFree" to (!stepFree).toString())
                         )
                     )
-                    locate()
+                    onStepFreeChange(!stepFree)
                 },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.MyLocation,
-                        contentDescription = null
-                    )
-                },
-                stateLabel = locationStateLabel,
+                icon = { Icon(imageVector = stepFreeMark(stepFreeIcon), contentDescription = null) },
+                stateLabel = if (stepFree) stepFreeOnLabel else stepFreeOffLabel,
                 presentation = locationPresentation,
-                pressed = true
+                labelPlacement = locationLabelPlacement,
+                pressed = stepFree,
+                revealOnChange = locationRevealOnChange
             )
+        } else {
+            onMyLocation?.let { locate ->
+                KozmosMapControlButton(
+                    label = locationLabel,
+                    onClick = {
+                        trackEvent(
+                            KozmosAnalyticsEvent(
+                                component = "MapControlsGroup",
+                                eventName = "my_location_triggered"
+                            )
+                        )
+                        locate()
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = locationMark(locationState, locationIcons),
+                            contentDescription = null
+                        )
+                    },
+                    stateLabel = locationStateLabel,
+                    presentation = locationPresentation,
+                    labelPlacement = locationLabelPlacement,
+                    // Selected whatever the state until row 77, so a map that
+                    // was not following at all drew a control that said it was.
+                    pressed = locationState == KozmosUserLocationState.Following ||
+                        locationState == KozmosUserLocationState.Heading,
+                    revealOnChange = locationRevealOnChange,
+                    isLoading = locationState == KozmosUserLocationState.Locating
+                )
+            }
         }
     }
 }
+
+/**
+ * The location control's mark for each mode, in Material's own glyphs — native
+ * draws the platform's icons, as KozmosIcon does, not Pointr's artwork. Each is
+ * the nearest material-icons-extended has to the Location Tracking Buttons
+ * revamp (Figma `ce7phRJR1sCkH6zT8EMH8I`, `1:237`):
+ *
+ * | Mode                          | Mark                            | The revamp's                        |
+ * | ----------------------------- | ------------------------------- | ----------------------------------- |
+ * | Off, Stale, Locating          | `Icons.Outlined.NearMe`         | outline pointer                     |
+ * | Following                     | `Icons.Filled.NearMe`           | solid pointer and its cone          |
+ * | Heading                       | `Icons.Filled.Navigation`       | upright pointer and the turning arc |
+ * | PermissionDenied, Unavailable | `Icons.Outlined.NearMeDisabled` | pointer struck through              |
+ *
+ * Stale keeps the outline because a last-known fix is not following anything;
+ * Locating keeps it under the button's spinner. [icons] replaces any mode's
+ * mark.
+ */
+internal fun locationMark(
+    state: KozmosUserLocationState,
+    icons: Map<KozmosUserLocationState, ImageVector>
+): ImageVector = icons[state] ?: when (state) {
+    KozmosUserLocationState.Following -> Icons.Filled.NearMe
+    KozmosUserLocationState.Heading -> Icons.Filled.Navigation
+    KozmosUserLocationState.PermissionDenied,
+    KozmosUserLocationState.Unavailable -> Icons.Outlined.NearMeDisabled
+    KozmosUserLocationState.Off,
+    KozmosUserLocationState.Locating,
+    KozmosUserLocationState.Stale -> Icons.Outlined.NearMe
+}
+
+/** The wheelchair KozmosRouteOptionCard draws for a step-free route, unless [icon] replaces it. */
+internal fun stepFreeMark(icon: ImageVector?): ImageVector =
+    icon ?: Icons.AutoMirrored.Filled.Accessible
 
 @Composable
 private fun MapControlIconButton(

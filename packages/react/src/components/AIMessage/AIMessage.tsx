@@ -26,6 +26,14 @@ export interface AIMessageProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Announced while streaming, in place of the dots. */
   streamingLabel?: string;
   timedOutLabel?: string;
+  /**
+   * Who is speaking, for a screen reader: read before the words, never
+   * drawn. Side and fill tell the assistant's turn from the visitor's, and a
+   * screen reader hears neither (row 61). English by default — the product
+   * has the language. An empty string leaves it out, for a product that
+   * names the speaker in words everyone can see.
+   */
+  speakerLabel?: string;
 }
 
 const AIMessage = React.forwardRef<HTMLDivElement, AIMessageProps>(
@@ -38,6 +46,7 @@ const AIMessage = React.forwardRef<HTMLDivElement, AIMessageProps>(
       trailing,
       streamingLabel = "Assistant is replying",
       timedOutLabel = "The assistant did not reply in time.",
+      speakerLabel = "Assistant said",
       ...props
     },
     ref,
@@ -55,6 +64,17 @@ const AIMessage = React.forwardRef<HTMLDivElement, AIMessageProps>(
             status === "timedOut" && "text-muted-foreground",
           )}
         >
+          {/* First, and on every turn: a label added only once a reply
+              completed would be announced by the thread's log on its own.
+              The space after it is what keeps it a word of its own: WebKit
+              runs a hidden span into the text that follows it ("Assistant
+              saidThe assistant…"), where Chromium and Firefox break the
+              line. It sits at the start of the line, so it is never drawn. */}
+          {speakerLabel && (
+            <>
+              <span className="sr-only">{speakerLabel}</span>{" "}
+            </>
+          )}
           {/* The dots sit BESIDE the text, not instead of it: the prototype
               streams "••• Looking through this building…", where the
               acknowledgement is the thing that arrives within 2.5s. */}

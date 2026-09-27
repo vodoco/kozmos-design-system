@@ -20,4 +20,52 @@ thread, for a `Notice` or an offline `EmptyState`.
 <Canvas of={Stories.Conversation} />
 <Canvas of={Stories.Streaming} />
 <Canvas of={Stories.TimedOut} />
+
+## Finding it, and focus
+
+The panel is a **region** named by its title, and the title is a heading.
+`titleLevel` — 2 by default — follows whatever heading sits above the panel;
+it looks the same at every level.
+
+It moves focus itself. As it **opens**, which is when it mounts, it takes
+focus: a screen reader announces it, and Escape works at once. Focus left on
+the button beneath would be on something the visitor can no longer see. As it
+**closes**, which is when it unmounts, it hands focus back to whatever had it
+when it opened — usually `AISearchButton`, which the panel covered rather than
+replaced.
+
+Either can be redirected with the two callbacks Kozmos's `Dialog` and `Drawer`
+already take. Each is called first; `event.preventDefault()` and put focus
+where it should go yourself — the field, for a product that wants the keyboard
+up at once:
+
+```tsx
+const field = useRef<HTMLInputElement>(null);
+
+<AICompanionPanel
+  onClose={close}
+  onOpenAutoFocus={(event) => {
+    event.preventDefault();
+    field.current?.focus();
+  }}
+>
+  <AIMessageList>{turns}</AIMessageList>
+  <AIInputBar
+    inputRef={field}
+    onSubmit={ask}
+    onValueChange={setValue}
+    value={value}
+  />
+</AICompanionPanel>;
+```
+
+`onCloseAutoFocus` works the same way at the close. Focus the product has
+already moved out of the panel — to the details of a place picked from the
+thread — is never taken back, and the callback is not called. A panel that is
+on screen from the start, rather than opened, can decline the first:
+`onOpenAutoFocus={(event) => event.preventDefault()}`.
+
+Close is drawn at 36px, as the header was drawn round it, with a 44px target.
+
+<Canvas of={Stories.OpenAndClose} />
 <Controls />

@@ -18,6 +18,15 @@ stops reads exactly like one still thinking.
 `actionCard` carries rich content under the bubble, and `trailing` sits beside
 it — a read-aloud control, for example.
 
+Side and fill tell an answer from a question, and a screen reader hears
+neither. So every turn starts with a visually hidden `speakerLabel` —
+"Assistant said" here, "You said" on `UserMessage` — read before the words,
+as the turn arrives in the thread and as a visitor moves back through it. Pass
+it in the product's language; an empty string leaves it out, for a product
+that names the speaker where everyone can see it. It is there on a streaming
+turn too, before "Assistant is replying": added only once the reply
+completed, it would be announced on its own.
+
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.Streaming} />
 <Canvas of={Stories.TimedOut} />
