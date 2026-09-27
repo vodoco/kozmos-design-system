@@ -29,6 +29,7 @@
  *      that declare one, so a prose example of a component without variants
  *      is never flagged.
  *   3. `import { X } from "@kozmos-ds/react"` must name a real export.
+ *   4. Chromatic must not be named: it is not the visual review (decision 11).
  *
  * Vue's `:prop="expr"` bindings are skipped: the quotes hold an expression,
  * not a value, and matching them reported `variant="variant"` as a defect.
@@ -65,7 +66,8 @@ for (const dir of ["packages", "apps"]) {
  * union given a name as well sees most of the library.
  */
 const axes = new Map();
-const ALIAS_RE = /^(?:export )?type (\w+)\s*=\s*((?:\s*\|?\s*["'][^"']+["'])+)\s*;/gm;
+const ALIAS_RE =
+  /^(?:export )?type (\w+)\s*=\s*((?:\s*\|?\s*["'][^"']+["'])+)\s*;/gm;
 for (const name of fs.readdirSync(REACT)) {
   const file = path.join(REACT, name, `${name}.tsx`);
   if (!fs.existsSync(file)) continue;
@@ -95,7 +97,9 @@ for (const name of fs.readdirSync(REACT)) {
     source.match(new RegExp(`export interface ${name}Props[\\s\\S]*?\\n\\}`)) ??
     source.match(new RegExp(`interface ${name}Props[\\s\\S]*?\\n\\}`));
   if (props)
-    for (const m of props[0].matchAll(/^\s+([a-zA-Z][a-zA-Z0-9]*)\??:\s*(.+?);$/gm)) {
+    for (const m of props[0].matchAll(
+      /^\s+([a-zA-Z][a-zA-Z0-9]*)\??:\s*(.+?);$/gm,
+    )) {
       const inline = [...m[2].matchAll(/["']([^"']+)["']/g)].map((v) => v[1]);
       if (inline.length > 1) found[m[1]] = inline;
       else if (aliases[m[2].trim()]) found[m[1]] = aliases[m[2].trim()];
@@ -139,6 +143,17 @@ for (const file of files) {
   lines.forEach((line, index) => {
     const at = index + 1;
 
+    // Chromatic is not the visual review (Olcay's decision 11, #115): the
+    // repository draws and compares every story itself. Ten documents still
+    // sent an assistant to a service, a secret and a workflow this project
+    // had left, and one told it to loosen the threshold to fix a flaky diff.
+    if (/chromatic/i.test(line))
+      fail(
+        full,
+        at,
+        'names Chromatic; the visual review is tests/visual and the "Visual Review" check (docs/visual-review.md)',
+      );
+
     // Only where the name is presented as something to INSTALL or IMPORT.
     // Prose that mentions a package in order to say it is private — which the
     // generated inventory does — is not a defect, and flagging it made the
@@ -178,15 +193,21 @@ for (const file of files) {
       }
     }
 
-    const imports = /import\s*\{([^}]+)\}\s*from\s*["']@kozmos-ds\/react["']/.exec(
-      line,
-    );
+    const imports =
+      /import\s*\{([^}]+)\}\s*from\s*["']@kozmos-ds\/react["']/.exec(line);
     if (imports) {
       for (const raw of imports[1].split(",")) {
-        const name = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0];
+        const name = raw
+          .trim()
+          .replace(/^type\s+/, "")
+          .split(/\s+as\s+/)[0];
         if (!name || !/^[A-Z]/.test(name)) continue;
         if (!exportsOfReact.has(name))
-          fail(full, at, `imports ${name} from @kozmos-ds/react, which does not export it`);
+          fail(
+            full,
+            at,
+            `imports ${name} from @kozmos-ds/react, which does not export it`,
+          );
       }
     }
   });

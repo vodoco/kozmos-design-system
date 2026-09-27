@@ -85,7 +85,6 @@ cp .env.example .env.local
 # Edit with your values
 # Required variables:
 # - FIGMA_ACCESS_TOKEN (for Code Connect)
-# - CHROMATIC_PROJECT_TOKEN (for visual regression)
 # - NPM_TOKEN (for publishing)
 ```
 
@@ -94,9 +93,6 @@ cp .env.example .env.local
 ```bash
 # Figma Integration
 FIGMA_ACCESS_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
-
-# Visual Regression (Chromatic)
-CHROMATIC_PROJECT_TOKEN=chpt_xxxxxxxxxxxxxxxxxxxx
 
 # npm Publishing
 NPM_TOKEN=npm_xxxxxxxxxxxxxxxxxxxx
@@ -122,7 +118,7 @@ kozmos-design-system/
 │   ├── workflows/
 │   │   ├── ci.yml                 # Main CI pipeline
 │   │   ├── publish.yml            # Package publishing
-│   │   ├── chromatic.yml          # Visual regression
+│   │   ├── visual.yml             # Visual Review
 │   │   └── codeql.yml             # Security scanning
 │   ├── ISSUE_TEMPLATE/
 │   ├── PULL_REQUEST_TEMPLATE.md
@@ -302,7 +298,7 @@ mkdir -p .changeset
     "new-component": "tsx scripts/new-component.ts",
     "storybook": "pnpm --filter @kozmos-ds/react storybook",
     "build-storybook": "pnpm --filter @kozmos-ds/react build-storybook",
-    "chromatic": "pnpm --filter @kozmos-ds/react chromatic",
+    "test:visual": "bash scripts/visual/docker.sh",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish",
@@ -579,8 +575,8 @@ pnpm storybook
 # Build static Storybook
 pnpm build-storybook
 
-# Run Chromatic visual tests
-pnpm chromatic
+# Compare every story with its baseline (needs Docker)
+pnpm test:visual
 ```
 
 ### Figma Code Connect Commands

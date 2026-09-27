@@ -79,7 +79,7 @@ Kozmos is a multi-platform design system for **Pointr's indoor navigation SDK**.
 | Monorepo          | Turborepo + pnpm                     |
 | Build (React)     | tsup (ESM + CJS)                     |
 | Testing           | Vitest + Testing Library + axe-core  |
-| Visual Regression | Chromatic                            |
+| Visual Regression | Own visual review (`tests/visual`)   |
 | Figma             | Code Connect for 5 platforms         |
 | i18n              | 13+ languages including RTL (Arabic) |
 

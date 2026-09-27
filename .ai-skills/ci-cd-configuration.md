@@ -39,8 +39,8 @@
           ┌──────────────────┼──────────────────┐
           ▼                  ▼                  ▼
     ┌──────────┐       ┌──────────┐       ┌──────────┐
-    │ Chromatic│       │ Bundle   │       │ Security │
-    │  Visual  │       │  Size    │       │   Scan   │
+    │  Visual  │       │ Bundle   │       │ Security │
+    │  Review  │       │  Size    │       │   Scan   │
     └────┬─────┘       └────┬─────┘       └────┬─────┘
          │                  │                  │
          └──────────────────┼──────────────────┘
@@ -71,7 +71,7 @@
 │   ├── ci.yml              # Main CI pipeline
 │   ├── test.yml            # Comprehensive testing
 │   ├── publish.yml         # Package publishing
-│   ├── chromatic.yml       # Visual regression
+│   ├── visual.yml          # Visual Review: every story × light/dark
 │   ├── codeql.yml          # Security scanning
 │   ├── release.yml         # Release automation
 │   ├── tokens-sync.yml     # Figma token sync
@@ -95,17 +95,17 @@
 
 ```yaml
 # .github/actions/setup/action.yml
-name: 'Setup'
-description: 'Setup Node.js, pnpm, and dependencies'
+name: "Setup"
+description: "Setup Node.js, pnpm, and dependencies"
 
 inputs:
   node-version:
-    description: 'Node.js version'
+    description: "Node.js version"
     required: false
-    default: '20'
+    default: "20"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Setup pnpm
       uses: pnpm/action-setup@v2
@@ -116,7 +116,7 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
-        cache: 'pnpm'
+        cache: "pnpm"
 
     - name: Install dependencies
       shell: bash
@@ -257,8 +257,8 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -290,8 +290,8 @@ jobs:
         uses: preactjs/compressed-size-action@v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: 'packages/*/dist/**/*.js'
-          exclude: '{**/*.map,**/node_modules/**}'
+          pattern: "packages/*/dist/**/*.js"
+          exclude: "{**/*.map,**/node_modules/**}"
 
   # =========================================================================
   # Accessibility
@@ -315,7 +315,16 @@ jobs:
   ci-ok:
     name: CI OK
     runs-on: ubuntu-latest
-    needs: [build, lint, test-react, test-ios, test-android, bundle-size, accessibility]
+    needs:
+      [
+        build,
+        lint,
+        test-react,
+        test-ios,
+        test-android,
+        bundle-size,
+        accessibility,
+      ]
     if: always()
     steps:
       - name: Check all jobs
@@ -339,13 +348,12 @@ jobs:
 
 ### Required Secrets
 
-| Secret | Purpose | How to Get |
-|--------|---------|------------|
-| `NPM_TOKEN` | npm publishing | npm.com → Access Tokens |
-| `FIGMA_ACCESS_TOKEN` | Figma API access | Figma → Account Settings |
-| `CHROMATIC_PROJECT_TOKEN` | Visual regression | chromatic.com → Project Settings |
-| `CODECOV_TOKEN` | Code coverage | codecov.io → Settings |
-| `SLACK_WEBHOOK_URL` | Notifications | Slack → Incoming Webhooks |
+| Secret               | Purpose          | How to Get                |
+| -------------------- | ---------------- | ------------------------- |
+| `NPM_TOKEN`          | npm publishing   | npm.com → Access Tokens   |
+| `FIGMA_ACCESS_TOKEN` | Figma API access | Figma → Account Settings  |
+| `CODECOV_TOKEN`      | Code coverage    | codecov.io → Settings     |
+| `SLACK_WEBHOOK_URL`  | Notifications    | Slack → Incoming Webhooks |
 
 ### Setting Up Secrets
 
@@ -353,7 +361,6 @@ jobs:
 # Using GitHub CLI
 gh secret set NPM_TOKEN --body "npm_xxxxxxxxxxxx"
 gh secret set FIGMA_ACCESS_TOKEN --body "figd_xxxxxxxxxxxx"
-gh secret set CHROMATIC_PROJECT_TOKEN --body "chpt_xxxxxxxxxxxx"
 gh secret set CODECOV_TOKEN --body "xxxxxxxxxxxx"
 gh secret set SLACK_WEBHOOK_URL --body "https://hooks.slack.com/services/xxx"
 ```
@@ -383,14 +390,14 @@ name: Tokens
 on:
   push:
     paths:
-      - 'packages/tokens/**'
+      - "packages/tokens/**"
   pull_request:
     paths:
-      - 'packages/tokens/**'
+      - "packages/tokens/**"
   workflow_dispatch:
     inputs:
       sync-from-figma:
-        description: 'Sync tokens from Figma'
+        description: "Sync tokens from Figma"
         type: boolean
         default: false
 
@@ -440,10 +447,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/react/**'
+      - "packages/react/**"
   pull_request:
     paths:
-      - 'packages/react/**'
+      - "packages/react/**"
 
 jobs:
   build:
@@ -505,15 +512,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - package: '@kozmos/react'
+          - package: "@kozmos/react"
             runner: ubuntu-latest
-          - package: '@kozmos/vue'
+          - package: "@kozmos/vue"
             runner: ubuntu-latest
-          - package: '@kozmos/react-native'
+          - package: "@kozmos/react-native"
             runner: ubuntu-latest
-          - package: 'ios'
+          - package: "ios"
             runner: macos-14
-          - package: 'android'
+          - package: "android"
             runner: ubuntu-latest
 
     name: Test ${{ matrix.package }}
@@ -547,8 +554,8 @@ jobs:
         if: matrix.package == 'android'
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Run Android tests
         if: matrix.package == 'android'
@@ -619,8 +626,8 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - '**.md'
-      - '.github/**'
+      - "**.md"
+      - ".github/**"
 
 jobs:
   publish:
@@ -647,8 +654,8 @@ jobs:
         with:
           version: pnpm changeset version
           publish: pnpm release
-          commit: 'chore: release packages'
-          title: 'chore: release packages'
+          commit: "chore: release packages"
+          title: "chore: release packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -693,7 +700,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish'
+        description: "Version to publish"
         required: true
 
 jobs:
@@ -736,7 +743,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish'
+        description: "Version to publish"
         required: true
 
 jobs:
@@ -748,8 +755,8 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -770,54 +777,16 @@ jobs:
 
 ## 7. Visual Regression
 
-### Chromatic Workflow
+### Visual Review
 
-```yaml
-# .github/workflows/chromatic.yml
-name: Chromatic
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  chromatic:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Publish to Chromatic
-        uses: chromaui/action@latest
-        with:
-          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
-          workingDir: packages/react
-          buildScriptName: build-storybook
-          onlyChanged: true
-          exitZeroOnChanges: true
-          autoAcceptChanges: main
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🎨 [View Chromatic build](${{ steps.chromatic.outputs.buildUrl }})'
-            })
-```
+`.github/workflows/visual.yml` runs the repository's own visual review. Every story in the built
+Storybook is drawn in light and dark by Chromium in the Playwright image
+(`mcr.microsoft.com/playwright:v1.58.2-noble`) and compared with its baseline in
+`tests/visual/baselines`. The `compare` job is the required "Visual Review" check on pull requests.
+The `record` job (Actions → Visual Regression → Run workflow on the branch, with `record`) commits
+new baselines for the drawings that changed on purpose; push again afterwards, since a workflow's
+commit starts no checks. Locally, `pnpm test:visual` compares and `pnpm test:visual:update` records,
+both in Docker. `docs/visual-review.md` explains how to read a difference.
 
 ---
 
@@ -835,7 +804,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
+    - cron: "0 0 * * 0" # Weekly on Sunday
 
 jobs:
   analyze:
@@ -846,7 +815,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript-typescript', 'swift', 'java-kotlin']
+        language: ["javascript-typescript", "swift", "java-kotlin"]
 
     steps:
       - uses: actions/checkout@v4
@@ -862,7 +831,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: '/language:${{ matrix.language }}'
+          category: "/language:${{ matrix.language }}"
 ```
 
 ### Dependency Scanning
@@ -934,7 +903,7 @@ jobs:
             chore: release
 
             [skip ci]
-          title: 'chore: version packages'
+          title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -1012,10 +981,10 @@ notify:
 # Branch protection rules (configure in repo settings)
 # Settings → Branches → Add rule
 
-# Required status checks:
-# - CI OK
-# - Chromatic
-# - CodeQL
+# Required status checks (GitHub Actions only): every check a pull request runs —
+# Web Build & Test, Core Pipeline & POI Gallery, Android Build, the twelve browser
+# shards, analyze-bundle, lighthouse and Visual Review. They are matched by name:
+# renaming a job or shard means updating this list in the same change.
 
 # Additional settings:
 # - Require pull request reviews: 1
@@ -1078,9 +1047,9 @@ gh secret delete SECRET_NAME
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial CI/CD configuration guide |
+| Version | Date       | Changes                           |
+| ------- | ---------- | --------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial CI/CD configuration guide |
 
 ---
 
