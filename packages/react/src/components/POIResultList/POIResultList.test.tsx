@@ -1,7 +1,12 @@
+import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import { describe, expect, it, vi } from "vitest";
-import { POIResultList, type POIResultListItem } from "./POIResultList";
+import {
+  POIResultList,
+  type POIResultListEntry,
+  type POIResultListItem,
+} from "./POIResultList";
 
 const createItem = (id: string, index: number): POIResultListItem => {
   const poi: POIPresentation = {
@@ -181,5 +186,247 @@ describe("POIResultList", () => {
     );
 
     expect(screen.getByText("Try removing a filter.")).toBeVisible();
+  });
+
+  describe("bringing the selected result into view (row 70)", () => {
+    // jsdom lays nothing out, so the geometry is stated: a 200px tall view
+    // at y=100 over a list that is 1000px tall.
+    const view = { top: 100, height: 200 };
+    const rect = (top: number, height: number) =>
+      new DOMRect(0, top, 320, height);
+
+    function Scroller({
+      children,
+      overflowY = "hidden",
+      ...props
+    }: React.HTMLAttributes<HTMLDivElement> & {
+      overflowY?: React.CSSProperties["overflowY"];
+    }) {
+      return (
+        <div data-testid="scroller" style={{ overflowY }} {...props}>
+          {children}
+        </div>
+      );
+    }
+
+    const results = Array.from({ length: 10 }, (_, index) =>
+      createItem(`poi-${index}`, index),
+    );
+
+    /** Lay the scroller out, place one card, and spy on every way to scroll. */
+    function stage(cardId: string, cardTop: number) {
+      const scroller = screen.getByTestId("scroller");
+      Object.defineProperty(scroller, "clientHeight", {
+        configurable: true,
+        value: view.height,
+      });
+      Object.defineProperty(scroller, "scrollHeight", {
+        configurable: true,
+        value: 1000,
+      });
+      scroller.getBoundingClientRect = () => rect(view.top, view.height);
+      const scrollBy = vi.fn();
+      scroller.scrollBy = scrollBy as typeof scroller.scrollBy;
+      const card = document.querySelector<HTMLElement>(
+        `[data-poi-id="${cardId}"]`,
+      )!;
+      card.getBoundingClientRect = () => rect(cardTop, 80);
+      const page = vi.spyOn(window, "scrollBy").mockImplementation(() => {});
+      return { scrollBy, page };
+    }
+
+    function List(
+      props: Partial<React.ComponentProps<typeof POIResultList>> & {
+        items?: readonly POIResultListEntry[];
+      },
+    ) {
+      return (
+        <POIResultList
+          items={results}
+          onSelect={() => undefined}
+          resultCountLabel="10 results"
+          {...props}
+        />
+      );
+    }
+
+    it("scrolls its scroller, and only its scroller, to a result below the view", () => {
+      const { rerender } = render(
+        <Scroller>
+          <List />
+        </Scroller>,
+      );
+      const { scrollBy, page } = stage("poi-8", 500);
+
+      rerender(
+        <Scroller>
+          <List selectedPoiId="poi-8" />
+        </Scroller>,
+      );
+
+      // The card's bottom (580) to the view's (300), and 12px of the next.
+      expect(scrollBy).toHaveBeenCalledWith({ top: 292, behavior: "smooth" });
+      expect(page).not.toHaveBeenCalled();
+      page.mockRestore();
+    });
+
+    it("scrolls back up to a result above the view", () => {
+      const { rerender } = render(
+        <Scroller>
+          <List selectedPoiId="poi-8" />
+        </Scroller>,
+      );
+      const { scrollBy, page } = stage("poi-1", 20);
+
+      rerender(
+        <Scroller>
+          <List selectedPoiId="poi-1" />
+        </Scroller>,
+      );
+
+      expect(scrollBy).toHaveBeenCalledWith({ top: -92, behavior: "smooth" });
+      page.mockRestore();
+    });
+
+    it("scrolls a sheet that hides its overflow, where a finger cannot", () => {
+      // Below its largest detent AdaptiveMapShell's sheet is overflow: hidden
+      // and every touch moves the sheet: the product had to scroll it itself.
+      const { rerender } = render(
+        <Scroller overflowY="hidden">
+          <List />
+        </Scroller>,
+      );
+      const { scrollBy, page } = stage("poi-8", 500);
+      rerender(
+        <Scroller overflowY="hidden">
+          <List selectedPoiId="poi-8" />
+        </Scroller>,
+      );
+      expect(scrollBy).toHaveBeenCalledTimes(1);
+      page.mockRestore();
+    });
+
+    it("leaves a result that is already in view where it is", () => {
+      const { rerender } = render(
+        <Scroller overflowY="auto">
+          <List />
+        </Scroller>,
+      );
+      const { scrollBy, page } = stage("poi-2", 150);
+      rerender(
+        <Scroller overflowY="auto">
+          <List selectedPoiId="poi-2" />
+        </Scroller>,
+      );
+      expect(scrollBy).not.toHaveBeenCalled();
+      page.mockRestore();
+    });
+
+    it("jumps rather than glides when motion is reduced", () => {
+      const { rerender } = render(
+        <div data-kozmos-motion="reduced">
+          <Scroller>
+            <List />
+          </Scroller>
+        </div>,
+      );
+      const { scrollBy, page } = stage("poi-8", 500);
+      rerender(
+        <div data-kozmos-motion="reduced">
+          <Scroller>
+            <List selectedPoiId="poi-8" />
+          </Scroller>
+        </div>,
+      );
+      expect(scrollBy).toHaveBeenCalledWith({ top: 292, behavior: "auto" });
+      page.mockRestore();
+    });
+
+    it("stays put when told to, for a product that scrolls the panel itself", () => {
+      const { rerender } = render(
+        <Scroller>
+          <List scrollSelectedIntoView={false} />
+        </Scroller>,
+      );
+      const { scrollBy, page } = stage("poi-8", 500);
+      rerender(
+        <Scroller>
+          <List scrollSelectedIntoView={false} selectedPoiId="poi-8" />
+        </Scroller>,
+      );
+      expect(scrollBy).not.toHaveBeenCalled();
+      page.mockRestore();
+    });
+
+    it("brings the card in again once its action row has opened, whatever the product re-renders meanwhile", () => {
+      const { rerender } = render(
+        <Scroller>
+          <List items={[...results]} />
+        </Scroller>,
+      );
+      const { scrollBy, page } = stage("poi-8", 500);
+      rerender(
+        <Scroller>
+          <List items={[...results]} selectedPoiId="poi-8" />
+        </Scroller>,
+      );
+      // A product building its items in render hands over a new array.
+      rerender(
+        <Scroller>
+          <List items={[...results]} selectedPoiId="poi-8" />
+        </Scroller>,
+      );
+      expect(scrollBy).toHaveBeenCalledTimes(1);
+
+      // The action row has opened: the card is 140px now, and still low.
+      const card = document.querySelector<HTMLElement>(
+        '[data-poi-id="poi-8"]',
+      )!;
+      card.getBoundingClientRect = () => rect(208, 140);
+      const row = card.querySelector(".kozmos-poi-result-actions") ?? card;
+      fireEvent.animationEnd(row);
+
+      expect(scrollBy).toHaveBeenCalledTimes(2);
+      expect(scrollBy).toHaveBeenLastCalledWith({
+        top: 60,
+        behavior: "smooth",
+      });
+      page.mockRestore();
+    });
+
+    it("brings in the group that holds a result it has not drawn", () => {
+      // A collapsed group draws only its first member, so a pin on the third
+      // has no card to scroll to: the group is the nearest thing that is.
+      const group: POIResultListEntry = {
+        id: "starbucks",
+        label: "Starbucks, 3 results",
+        items: [
+          createItem("s-1", 0),
+          createItem("s-2", 1),
+          createItem("s-3", 2),
+        ],
+      };
+      const items = [...results, group];
+      const { rerender } = render(
+        <Scroller>
+          <List items={items} />
+        </Scroller>,
+      );
+      const { scrollBy, page } = stage("poi-2", 150);
+      const groupEntry = document.querySelector<HTMLElement>(
+        '[data-result-group="starbucks"]',
+      );
+      expect(groupEntry).not.toBeNull();
+      groupEntry!.getBoundingClientRect = () => rect(900, 120);
+
+      rerender(
+        <Scroller>
+          <List items={items} selectedPoiId="s-3" />
+        </Scroller>,
+      );
+
+      expect(scrollBy).toHaveBeenCalledWith({ top: 732, behavior: "smooth" });
+      page.mockRestore();
+    });
   });
 });

@@ -42,6 +42,76 @@ export type POIResultListEntry = POIResultListItem | POIResultListGroup;
 const isGroup = (entry: POIResultListEntry): entry is POIResultListGroup =>
   Array.isArray((entry as POIResultListGroup).items);
 
+/** Room left beside a result brought into view: the gap between two results. */
+const REVEAL_MARGIN = 12;
+
+/**
+ * The nearest ancestor that scrolls, including one that hides its overflow.
+ *
+ * AdaptiveMapShell's sheet is `overflow: hidden` below its largest detent —
+ * every touch there moves the sheet, so a finger cannot scroll it — yet it is
+ * still a scroller, and only script can bring a result into it. A box that
+ * hides overflow it does not have is not one, and neither is the page: the
+ * list moves what it sits in, never the document around it.
+ */
+function scrollerOf(element: HTMLElement): HTMLElement | null {
+  const document = element.ownerDocument;
+  const view = document.defaultView;
+  if (!view) return null;
+  for (
+    let node = element.parentElement;
+    node && node !== document.body && node !== document.documentElement;
+    node = node.parentElement
+  ) {
+    const { overflowY } = view.getComputedStyle(node);
+    if (
+      /^(auto|scroll|hidden|overlay)$/.test(overflowY) &&
+      node.scrollHeight > node.clientHeight
+    )
+      return node;
+  }
+  return null;
+}
+
+/**
+ * Scroll `target` into its scroller's view by the least distance, and only
+ * that scroller: `scrollIntoView` would also move every scrolling ancestor,
+ * the sheet and the page included. A result taller than the view keeps its
+ * top in view, where its name is.
+ */
+function revealWithin(target: HTMLElement) {
+  const scroller = scrollerOf(target);
+  if (!scroller) return;
+  const view = target.ownerDocument.defaultView!;
+  const style = view.getComputedStyle(scroller);
+  const frame = scroller.getBoundingClientRect();
+  // The scroller's padding is not somewhere a result can be read: the
+  // sheet's bottom padding is the device's home indicator.
+  const top =
+    frame.top + scroller.clientTop + (parseFloat(style.paddingTop) || 0);
+  const bottom =
+    frame.top +
+    scroller.clientTop +
+    scroller.clientHeight -
+    (parseFloat(style.paddingBottom) || 0);
+  const box = target.getBoundingClientRect();
+  let distance = 0;
+  if (box.top < top) distance = box.top - top - REVEAL_MARGIN;
+  else if (box.bottom > bottom)
+    distance = Math.min(
+      box.bottom - bottom + REVEAL_MARGIN,
+      box.top - top - REVEAL_MARGIN,
+    );
+  if (Math.abs(distance) < 1) return;
+  const reduced =
+    target.closest('[data-kozmos-motion="reduced"]') !== null ||
+    view.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+  const behavior: ScrollBehavior = reduced ? "auto" : "smooth";
+  if (typeof scroller.scrollBy === "function")
+    scroller.scrollBy({ top: distance, behavior });
+  else scroller.scrollTop += distance;
+}
+
 export interface POIResultListProps extends Omit<
   React.HTMLAttributes<HTMLElement>,
   "onSelect"
@@ -79,6 +149,20 @@ export interface POIResultListProps extends Omit<
   hideLabel?: string;
   /** Told which group, so one handler can hold several open. */
   onGroupExpandedChange?: (groupId: string, expanded: boolean) => void;
+  /**
+   * Bring the selected result into view when `selectedPoiId` changes — by
+   * scrolling whatever the list sits in, and nothing further out. On by
+   * default (row 70).
+   *
+   * A pin's tap selects its result, and the result can be anywhere in the
+   * list; in AdaptiveMapShell's sheet below its largest detent it cannot even
+   * be scrolled to by hand. The first render never scrolls: a list opened
+   * with a selection has not had one made. A result in a collapsed group
+   * brings in its group.
+   *
+   * Turn it off for a product that already scrolls the panel itself.
+   */
+  scrollSelectedIntoView?: boolean;
 }
 
 const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
@@ -99,13 +183,71 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       showMoreLabel,
       hideLabel,
       onGroupExpandedChange,
+      scrollSelectedIntoView = true,
       ...props
     },
     ref,
   ) => {
+    const section = React.useRef<HTMLElement | null>(null);
+    const setSection = React.useCallback(
+      (node: HTMLElement | null) => {
+        section.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref],
+    );
+    const shownSelection = React.useRef(selectedPoiId);
+    // Read through a ref, not the effect's dependencies: a product that
+    // builds `items` during its render passes a new array every time, and
+    // each re-run would drop the listener still waiting for the selected
+    // card's action row to open. Synced in an effect, which runs before the
+    // one below reads it.
+    const latestItems = React.useRef(items);
+    React.useEffect(() => {
+      latestItems.current = items;
+    });
+
+    React.useEffect(() => {
+      const previous = shownSelection.current;
+      shownSelection.current = selectedPoiId;
+      if (
+        !scrollSelectedIntoView ||
+        selectedPoiId === undefined ||
+        selectedPoiId === previous ||
+        !section.current
+      )
+        return;
+      const cards = Array.from(
+        section.current.querySelectorAll<HTMLElement>("[data-poi-id]"),
+      );
+      const group = latestItems.current.find(
+        (entry) =>
+          isGroup(entry) &&
+          entry.items.some((item) => item.poi.id === selectedPoiId),
+      ) as POIResultListGroup | undefined;
+      const target =
+        cards.find((card) => card.dataset.poiId === selectedPoiId) ??
+        Array.from(
+          section.current.querySelectorAll<HTMLElement>("[data-result-group]"),
+        ).find((entry) => entry.dataset.resultGroup === group?.id);
+      if (!target) return;
+
+      revealWithin(target);
+      // A selected card opens its action row as it animates, so it is only
+      // its full height once that ends; bring it in again then, or a card
+      // tapped near the bottom opens its actions out of sight.
+      const reveal = (event: AnimationEvent) => {
+        if (event.target instanceof Node && target.contains(event.target))
+          revealWithin(target);
+      };
+      target.addEventListener("animationend", reveal, { once: true });
+      return () => target.removeEventListener("animationend", reveal);
+    }, [scrollSelectedIntoView, selectedPoiId]);
+
     return (
       <section
-        ref={ref}
+        ref={setSection}
         aria-label={label}
         className={cn("min-w-0", className)}
         {...props}
@@ -158,7 +300,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
 
               if (isGroup(entry)) {
                 return (
-                  <li key={entry.id}>
+                  <li data-result-group={entry.id} key={entry.id}>
                     <POIResultGroup
                       actionsLabel={actionsLabel}
                       collapsedCount={entry.collapsedCount}
