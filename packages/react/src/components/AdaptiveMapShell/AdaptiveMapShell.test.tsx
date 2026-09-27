@@ -177,6 +177,59 @@ describe("AdaptiveMapShell sheet detents", () => {
     expect(scroller.style.touchAction).toBe("none");
   });
 
+  describe("a panel header (row 73)", () => {
+    // The sheet scrolled as one piece, so the search field and the assistant
+    // button scrolled away with the results they were searching.
+    it("draws it under the grip and outside the content that scrolls", () => {
+      const aside = sheet({
+        panelHeader: <input aria-label="Search places" />,
+      });
+      const header = screen.getByRole("textbox", { name: "Search places" });
+      const scroller = aside.querySelector<HTMLElement>("p")!.parentElement!;
+      const handle = screen.getByRole("slider", { name: "Panel height" });
+
+      expect(scroller.contains(header)).toBe(false);
+      expect(aside.contains(header)).toBe(true);
+      const order = Array.from(aside.children);
+      const headerRow = order.find((child) => child.contains(header))!;
+      expect(order.indexOf(handle)).toBeLessThan(order.indexOf(headerRow));
+      expect(order.indexOf(headerRow)).toBeLessThan(order.indexOf(scroller));
+    });
+
+    it("gives vertical drags on it to the sheet and keeps sideways ones for a row that scrolls", () => {
+      const aside = sheet({
+        panelHeader: <input aria-label="Search places" />,
+      });
+      const header = aside.querySelector<HTMLElement>(
+        "[data-kozmos-panel-header]",
+      );
+      expect(header).not.toBeNull();
+      expect(header!.style.touchAction).toBe("pan-x");
+    });
+
+    it("counts it in a sheet fitted to its content", () => {
+      const heights = [
+        vi
+          .spyOn(HTMLElement.prototype, "scrollHeight", "get")
+          .mockReturnValue(120),
+        vi
+          .spyOn(HTMLElement.prototype, "offsetHeight", "get")
+          .mockImplementation(function (this: HTMLElement) {
+            return this.hasAttribute("data-kozmos-panel-header") ? 56 : 0;
+          }),
+      ];
+      try {
+        const aside = sheet({
+          panelHeader: <input aria-label="Search places" />,
+          panelSizing: "content",
+        });
+        expect(aside.style.height).toBe("176px");
+      } finally {
+        heights.forEach((spy) => spy.mockRestore());
+      }
+    });
+  });
+
   it("frees the content's scroll at the largest detent", () => {
     const aside = sheet({ panelDetent: "large" });
     const scroller = aside.querySelector<HTMLElement>("p")!.parentElement!;

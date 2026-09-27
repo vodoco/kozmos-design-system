@@ -18,6 +18,15 @@ its content scrolls only at the largest detent. `panelFraction` and `panelSizing
 are single-detent shorthands. Read the resolved
 panel bounds from `onLayoutChange`. `panelPlacement` is logical and follows inherited RTL direction.
 
+`panelHeader` sits under the sheet's grip and above the panel's content, and does not
+scroll with it, so a search field or a chosen category stays put while the results under
+it scroll. Every detent counts it: a sheet fitted to its content includes it, and a
+collapsed sheet with no peek anchor rests on its bottom edge. A vertical drag on it always
+moves the sheet, however far the content has scrolled; a sideways one stays with the
+header, for a row of chips that scrolls. In a side panel it is the panel's first row.
+
+<Canvas of={Stories.SheetPanelHeader} />
+
 `usableRegions` accepts host-provided hinge-free rectangles in shell-local CSS pixels.
 Auto mode can separate map and panel across those regions without remounting either.
 This is a geometry input, not automatic foldable-device detection.

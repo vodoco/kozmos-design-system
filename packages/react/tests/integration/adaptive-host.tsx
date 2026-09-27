@@ -20,6 +20,8 @@ declare global {
     adaptiveNotifications: number;
     mapMounts: number;
     panelMounts: number;
+    /** Give the sheet a panel header: a search field and two buttons. */
+    showPanelHeader: () => void;
   }
 }
 
@@ -69,14 +71,29 @@ function Panel() {
   );
 }
 
+// Taller than the collapsed detent's fifth of the shell, so a sheet that
+// ignored it would cut it off.
+function PanelHeader() {
+  return (
+    <Stack gap={2}>
+      <Input aria-label="Search this sheet" />
+      <Button>Filters</Button>
+      <Button>Sort</Button>
+    </Stack>
+  );
+}
+
 function Host() {
   const [options, setOptions] = useState(window.adaptiveOptions ?? {});
+  const [header, setHeader] = useState(false);
   window.setAdaptiveOptions = setOptions;
+  window.showPanelHeader = () => setHeader(true);
   return (
     <AdaptiveMapShell
       style={{ height: "100%" }}
       map={<MapSlot />}
       panel={<Panel />}
+      panelHeader={header ? <PanelHeader /> : undefined}
       panelPlacement="end"
       topBar={<Button style={{ width: "100%" }}>Search this floor</Button>}
       controls={<Button>Focus map</Button>}
