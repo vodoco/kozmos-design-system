@@ -116,6 +116,35 @@ final class ProductContractsTests: XCTestCase {
         XCTAssertEqual(response.languageFallback, "en")
     }
 
+    // MARK: - what a search was held to (GAP-023)
+
+    func testTheScopeKindEnumerationCarriesTheWireValues() {
+        XCTAssertEqual(KozmosSearchScopeKind.allCases.map(\.rawValue), ["building", "area"])
+    }
+
+    func testASearchResponseSaysWhatPartOfTheVenueItWasHeldTo() {
+        // "coffee in this terminal": one chip says Terminal 2, and its x
+        // searches the whole venue with "coffee".
+        let response = KozmosSearchResponsePresentation(
+            appliedScope: KozmosSearchScopePresentation(
+                kind: .building,
+                id: "terminal-2",
+                label: "Terminal 2",
+                queryWithoutScope: "coffee"
+            )
+        )
+        XCTAssertEqual(response.appliedScope?.kind, .building)
+        XCTAssertEqual(response.appliedScope?.label, "Terminal 2")
+        XCTAssertEqual(response.appliedScope?.queryWithoutScope, "coffee")
+        // A scope the host chose has no query words to take away.
+        XCTAssertNil(
+            KozmosSearchScopePresentation(kind: .area, id: "airside", label: "After security")
+                .queryWithoutScope
+        )
+        // The whole venue is the default, and says so by saying nothing.
+        XCTAssertNil(KozmosSearchResponsePresentation().appliedScope)
+    }
+
     // MARK: - a category's own artwork
 
     func testACategoryCarriesTheTaxonomysArtworkUrl() {
