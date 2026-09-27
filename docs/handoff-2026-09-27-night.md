@@ -9,21 +9,21 @@ built today, where things live, and the traps. The evening handoff,
 
 ## 0. In one screen
 
-| What              | Where / how                                                         | State                                                                                                          |
-| ----------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `d6d17cc1` (#118) when written                                                                       |
-| Main checkout     | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`          | shared with other sessions — stage by file, never `git add -A`                                                 |
-| Open PRs (mine)   | #120 (GAP-083 web) and #119 (this handoff)                          | §3 says exactly what each needs                                                                                |
-| Open PRs (others) | #55 website (the site session's, `claude/kozmos-site`)              | **conflicts with `main`**; merging main in fixes that and brings the workflow the required check now needs     |
-| Required checks   | branch protection on `main`                                         | **"Visual Review"** (GitHub Actions only); nothing else required. Chromatic's workflow **disabled**            |
-| Visual review     | `pnpm test:visual` (Docker) · CI "Visual Review"                    | every story × light/dark (630 drawings; 632 with GAP-083's new story), `tests/visual/baselines`                |
-| CI on `main`      | GitHub; `node scripts/ci-local.mjs --job web\|ios\|android` locally | green through #117 (`71d1bcaa`, iOS included); `d6d17cc1`'s CI running when written                            |
-| React unit suite  | `cd packages/react && npx vitest run`                               | 706 tests at #113; GAP-083 web adds 8                                                                          |
-| Bundle budget     | `pnpm tsx scripts/performance/bundle-analyzer.ts`                   | 61.97 of 64 KB (CI, `9df17777`)                                                                                |
-| Contract parity   | `pnpm contracts:parity:check`                                       | 25 types, 121 fields, 14 enumerations                                                                          |
-| npm               | react 0.4.0, icons 0.3.0, product-contracts 0.3.0, tokens 0.1.0     | nothing published since; **no changesets since 0.4.0** but #120's; react pins its siblings exactly (§8)        |
-| Change list       | `~/Downloads/Kozmos requests from the MAP-474 prototypes (4).md`    | rows 1–78: 38 Done / 11 In progress / 29 To do. Row 82 (GAP-083) and rows 79–81 live in another session's list |
-| Figma library     | `Yj4O8p6Y9h2Sa9zJVoAiVY`                                            | 2,430 / 2,430 icons tinted (morning); today's rows not yet in Figma (task)                                     |
+| What              | Where / how                                                         | State                                                                                                                |
+| ----------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `be350c0a` (#119) when written                                                                             |
+| Main checkout     | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`          | shared with other sessions — stage by file, never `git add -A`                                                       |
+| Open PRs (mine)   | none — #118, #120 and #119 merged                                   | nothing in flight (§3)                                                                                               |
+| Open PRs (others) | #55 website (the site session's, `claude/kozmos-site`)              | **conflicts with `main`**; once main is merged in, all 18 required checks must pass                                  |
+| Required checks   | branch protection on `main`                                         | **all 18 PR checks** (decision 13), GitHub Actions only; auto-merge allowed. Chromatic's workflow **disabled**       |
+| Visual review     | `pnpm test:visual` (Docker) · CI "Visual Review"                    | every story × light/dark (632 drawings), `tests/visual/baselines`                                                    |
+| CI on `main`      | GitHub; `node scripts/ci-local.mjs --job web\|ios\|android` locally | green through #118 (`d6d17cc1`, iOS included); #120's (`407d59df`) running when written                              |
+| React unit suite  | `cd packages/react && npx vitest run`                               | 714 on `main` after #120, measured (706 at #113)                                                                     |
+| Bundle budget     | `pnpm tsx scripts/performance/bundle-analyzer.ts`                   | 61.97 of 64 KB (CI, `9df17777`)                                                                                      |
+| Contract parity   | `pnpm contracts:parity:check`                                       | 25 types, 121 fields, 14 enumerations                                                                                |
+| npm               | react 0.4.0, icons 0.3.0, product-contracts 0.3.0, tokens 0.1.0     | nothing published since; **no changesets since 0.4.0** but #120's; react pins its siblings exactly (§8)              |
+| Change list       | `~/Downloads/Kozmos requests from the MAP-474 prototypes (4).md`    | rows 1–78: 38 Done / 11 In progress / 29 To do. Row 82 (GAP-083, done) and rows 79–81 live in another session's list |
+| Figma library     | `Yj4O8p6Y9h2Sa9zJVoAiVY`                                            | 2,430 / 2,430 icons tinted (morning); today's rows not yet in Figma (task)                                           |
 
 ## 1. Scope, and how Olcay works
 
@@ -66,60 +66,42 @@ are out of scope.
 
 ## 2. What merged today
 
-| PR   | Rows / topic     | What                                                                                                   |
-| ---- | ---------------- | ------------------------------------------------------------------------------------------------------ |
-| #99  | —                | the morning handoff                                                                                    |
-| #100 | 77, step-free    | a mark per location mode; step-free replaces the location control on a route; bundle budget 60 → 64 KB |
-| #101 | 70 (web)         | the selected result comes into view (`data-kozmos-scroller`)                                           |
-| #102 | 37 (web)         | `ChipGroup selectionMode="single"`, a Radix radio group                                                |
-| #103 | 59, 60, 61       | the AI parts: named, focusable, told apart                                                             |
-| #104 | 67, 77 (native)  | iOS/Android map controls: labels, location marks, step-free                                            |
-| #105 | —                | docs icons from `@kozmos-ds/icons`, not lucide-react                                                   |
-| #106 | review fixes     | step-free keyed apart; logical spacing right to left                                                   |
-| #107 | 8                | `appliedScope` on the search response, three platforms                                                 |
-| #108 | 73 (native)      | iOS/Android `panelHeader`                                                                              |
-| #109 | 73 (web)         | `panelHeader`; the fitted sheet counts its handle; 4px under the handle for WCAG 2.5.8                 |
-| #110 | —                | the evening handoff                                                                                    |
-| #111 | 56, 69 (native)  | native Skeleton shape/size; floor result markers                                                       |
-| #112 | 73 (docs)        | the sheet's docs page gains React/SwiftUI/Compose examples                                             |
-| #113 | 69, review fixes | React says "1 result"; Android's category tile keeps "Selected"                                        |
-| #114 | Skeleton grey    | `background/200` on every platform (decision 10); Android's shimmer became iOS's sheen                 |
-| #115 | visual review    | Kozmos's own visual review replaces Chromatic (decision 11) — §7                                       |
-| #116 | 82 (native)      | GAP-083 on iOS/Android: the shell publishes its top space and the grip's clearance                     |
-| #117 | 82 (native)      | …only the surfaceless `sheet` card tops up; bordered `panel`/`inline` keep their 16                    |
-| #118 | visual review    | a record run redraws only the drawings that fail, then prunes baselines of stories that went           |
+| PR   | Rows / topic     | What                                                                                                                   |
+| ---- | ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| #99  | —                | the morning handoff                                                                                                    |
+| #100 | 77, step-free    | a mark per location mode; step-free replaces the location control on a route; bundle budget 60 → 64 KB                 |
+| #101 | 70 (web)         | the selected result comes into view (`data-kozmos-scroller`)                                                           |
+| #102 | 37 (web)         | `ChipGroup selectionMode="single"`, a Radix radio group                                                                |
+| #103 | 59, 60, 61       | the AI parts: named, focusable, told apart                                                                             |
+| #104 | 67, 77 (native)  | iOS/Android map controls: labels, location marks, step-free                                                            |
+| #105 | —                | docs icons from `@kozmos-ds/icons`, not lucide-react                                                                   |
+| #106 | review fixes     | step-free keyed apart; logical spacing right to left                                                                   |
+| #107 | 8                | `appliedScope` on the search response, three platforms                                                                 |
+| #108 | 73 (native)      | iOS/Android `panelHeader`                                                                                              |
+| #109 | 73 (web)         | `panelHeader`; the fitted sheet counts its handle; 4px under the handle for WCAG 2.5.8                                 |
+| #110 | —                | the evening handoff                                                                                                    |
+| #111 | 56, 69 (native)  | native Skeleton shape/size; floor result markers                                                                       |
+| #112 | 73 (docs)        | the sheet's docs page gains React/SwiftUI/Compose examples                                                             |
+| #113 | 69, review fixes | React says "1 result"; Android's category tile keeps "Selected"                                                        |
+| #114 | Skeleton grey    | `background/200` on every platform (decision 10); Android's shimmer became iOS's sheen                                 |
+| #115 | visual review    | Kozmos's own visual review replaces Chromatic (decision 11) — §7                                                       |
+| #116 | 82 (native)      | GAP-083 on iOS/Android: the shell publishes its top space and the grip's clearance                                     |
+| #117 | 82 (native)      | …only the surfaceless `sheet` card tops up; bordered `panel`/`inline` keep their 16                                    |
+| #118 | visual review    | a record run redraws only the drawings that fail, then prunes baselines of stories that went                           |
+| #120 | 82 (web)         | GAP-083 on the web: the shell's two custom properties; the hosted `sheet` card tops up to them; first per-PR changeset |
+| #119 | —                | this handoff                                                                                                           |
 
-## 3. In flight — exactly what to do next
+## 3. In flight — nothing
 
-Check each first: `gh pr view <n> --repo vodoco/kozmos-design-system --json state,statusCheckRollup`.
+Everything this session started has merged: #118 (`d6d17cc1`), #120 (`407d59df`, GAP-083 web, with
+`.changeset/panel-inset-contract.md`) and #119 (this handoff, `be350c0a`); then all 18 PR checks were
+made required (decision 13). #120's record run changed exactly its four drawings, measured from their
+pixels: the new `SheetWithPlaceDetails` story at 21 / 17 under the grip, and the on-map example from
+34 / 18 (a bordered card nested in the side panel, a double top edge) to 17 / 17. #120's description
+lists its full verification.
 
-1. **#120 — GAP-083 web** (branch `claude/poi-detail-hosted-inset`, worktree
-   `/Volumes/4TB Depo/development/K/kozmos-design-system-fixes`). Done so far:
-   - main (with #118) merged in;
-   - the record run (`36349425251`) committed exactly the four expected baselines;
-   - I measured both sets of images from their pixels:
-     - `product-sdk-adaptivemapshell--sheet-with-place-details--{light,dark}` is the new story, at
-       21 / 17 under the grip;
-     - `product-sdk-poi-detail-examples--on-map--{light,dark}` went from 34 / 18 to 17 / 17. It had
-       nested a bordered card in the side panel, with a double top edge.
-   - the changeset `.changeset/panel-inset-contract.md` (react minor) is committed.
-
-   **Merge when green** (`gh pr merge 120 --repo vodoco/kozmos-design-system --merge`). Its local
-   verification:
-   - 17 of 17 adaptive edge cases in Chromium, WebKit and Firefox; the first version's failures
-     were reproduced first.
-   - 77 unit tests; the 8 contract tests fail against main's shell.
-   - `check-owned-css`.
-   - The Storybook audit: 100 shell and details variants, the new story at 320 and 1280 in both
-     themes, axe target-size.
-   - 320px with a wide font.
-   - `check-poi-detail-examples` 66 of 66.
-
-2. **This handoff's PR, #119** — merge last, after #120. The memory pointer
-   (`kozmos-session-handoff-pointer`) already names this file.
-3. **#118** merged (`d6d17cc1`). Its first real use was #120's record run, which changed nothing
-   beyond the four drawings above.
-4. Optionally re-number: GAP-083 is row 82 in the MAP-474 session's list, not in `(4).md`.
+Start at §5 (ask Olcay what is still open), then the queue in §6. Optionally re-number: GAP-083 is
+row 82 in the MAP-474 session's list, not in `(4).md`.
 
 **GAP-083, the numbers** (close button from the hosted panel's top / side):
 
@@ -149,6 +131,13 @@ Check each first: `gh pr view <n> --repo vodoco/kozmos-design-system --json stat
 12. **Repository settings done by `gh`:** "Visual Review" required on `main` (GitHub Actions only;
     everything else unchanged); Chromatic's workflow disabled (`gh workflow enable 279749689` undoes
     it); `CHROMATIC_PROJECT_TOKEN` kept (deleting a secret is Olcay's to do).
+13. **All 18 PR checks are required** (late on 2026-09-27, replacing "Visual Review only"), so
+    auto-merge — now allowed on the repository — waits for all of them: CI's `Web Build & Test`,
+    `Core Pipeline & POI Gallery`, `Android Build` and twelve browser shards, `analyze-bundle`,
+    `lighthouse` and `Visual Review`, each pinned to GitHub Actions (app 15368). All run on every
+    pull request into `main`, docs-only ones too (#119 and #120 got the same 18); iOS builds only on
+    `main`, so it is not required. Undo: PATCH `…/branches/main/protection/required_status_checks`
+    with `{"strict": false, "checks": [{"context": "Visual Review", "app_id": 15368}]}`.
 
 ## 5. Questions still open for Olcay
 
@@ -174,7 +163,7 @@ Check each first: `gh pr view <n> --repo vodoco/kozmos-design-system --json stat
 | now                           | Triage the 135 Dependabot alerts                  | none reach consumers; the only task touching the lockfile                                          |
 | now                           | Fix the docs' iOS and Android snippets            | 72 native tabs are stale implementation copies; 8 don't compile                                    |
 | now, one after the other      | Android sheet: content overhangs; easing          | same file                                                                                          |
-| after #120 merges             | Browse panel: stop doubling the grip's space      | reuse the panel inset contract (§7)                                                                |
+| now                           | Browse panel: stop doubling the grip's space      | reuse the panel inset contract (§7)                                                                |
 | any time                      | Android: favourite and save in the details header | parity gap found today                                                                             |
 | any time, one after the other | Focus-ring offsets in dark theme; RTL sweep       | visual changes — Visual Review shows them now                                                      |
 | with Olcay                    | Bring today's map and chip changes to Figma       | Olcay runs the plugin                                                                              |
@@ -229,12 +218,12 @@ the frame's own size.
 
 ## 9. Worktrees and branches
 
-| Worktree                                                      | Branch                                        | Keep?                                 |
-| ------------------------------------------------------------- | --------------------------------------------- | ------------------------------------- |
-| `/Volumes/4TB Depo/development/K/kozmos-design-system-fixes`  | `claude/poi-detail-hosted-inset` (#120)       | until #120 merges                     |
-| `/Volumes/4TB Depo/development/K/kozmos-design-system-rows`   | `claude/visual-record-changed` (#118, merged) | reusable                              |
-| `/Volumes/4TB Depo/development/K/kozmos-design-system-verify` | `claude/handoff-2026-09-27-night`             | reusable for independent native runs  |
-| `…-dev/.claude/worktrees/agent-*`                             | merged agent branches                         | ask Olcay; `git worktree remove` only |
+| Worktree                                                      | Branch                                          | Keep?                                 |
+| ------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------- |
+| `/Volumes/4TB Depo/development/K/kozmos-design-system-fixes`  | `claude/poi-detail-hosted-inset` (#120, merged) | reusable                              |
+| `/Volumes/4TB Depo/development/K/kozmos-design-system-rows`   | `claude/visual-record-changed` (#118, merged)   | reusable                              |
+| `/Volumes/4TB Depo/development/K/kozmos-design-system-verify` | `claude/required-checks` (decision 13's docs)   | reusable for independent native runs  |
+| `…-dev/.claude/worktrees/agent-*`                             | merged agent branches                           | ask Olcay; `git worktree remove` only |
 
 Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` once, and
 `packages/android/local.properties` with `sdk.dir=/Users/olcaykurtulus/Library/Android/sdk`.
@@ -249,7 +238,10 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
 - `gh pr edit` fails silently here — `gh api -X PATCH …/pulls/<n> -F body=@file`, then read back.
 - The Figma token cannot read variables (403); read bindings with `scripts/figma-rest/bindings.mjs`
   and the importer's painter source.
-- A required check blocks branches that predate it; a bot commit (GITHUB_TOKEN) starts no checks.
+- A required check blocks branches that predate it; a bot commit (GITHUB_TOKEN) starts no checks, so
+  after a record run all 18 are missing until you push again.
+- A pull request retargeted to `main` from another base has no `analyze-bundle` or `lighthouse` run
+  (both run only for pull requests into `main`) until a push, or a close and reopen.
 - `npx changeset status` prints `/bin/sh: /Volumes/4TB: No such file or directory` (the space in the
   path) and still runs; `--since=origin/main` counts only committed changesets.
 
@@ -257,12 +249,12 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
 
 ```bash
 cd "/Volumes/4TB Depo/development/K/kozmos-design-system-dev"
-git checkout main && git pull --ff-only && git log --oneline -1   # expect d6d17cc1 or later
-gh pr list --repo vodoco/kozmos-design-system --state open         # #120, #119 (this handoff), #55
+git checkout main && git pull --ff-only && git log --oneline -1   # expect be350c0a or later
+gh pr list --repo vodoco/kozmos-design-system --state open         # #55, and anything newer
 pnpm install && pnpm exec turbo run build --filter=@kozmos-ds/react...
 ```
 
-Then §3 in order, then §5 (ask Olcay what is still open), then the queue in §6.
+Then §5 (ask Olcay what is still open), then the queue in §6.
 
 **Memory** (auto-loaded through `MEMORY.md`) holds the traps as one-fact notes. Today's:
 `kozmos-visual-review`, `kozmos-panel-inset-contract`, `paparazzi-frames-are-scaled`,
