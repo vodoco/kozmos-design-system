@@ -112,7 +112,7 @@ fun KozmosFloorSelector(
  * marker, joined to the level's own label: "Level 2, 3 results". A function
  * because a count needs a plural rule, and the design system has no locale to
  * pick one with — the product does. The default is English, singular for one,
- * where React's reads "1 results".
+ * as React's and SwiftUI's are.
  */
 @JvmName("KozmosFloorSelectorOfLevels")
 @Composable

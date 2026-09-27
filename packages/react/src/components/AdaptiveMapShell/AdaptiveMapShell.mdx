@@ -1,5 +1,6 @@
 import { Meta, Canvas } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
+import { PlatformSnippets } from "../PlatformSnippets";
 import * as Stories from "./AdaptiveMapShell.stories";
 
 <Meta of={Stories} />
@@ -29,6 +30,97 @@ header, for a row of chips that scrolls. Under a grab handle it keeps its first 
 clear of the handle's target (WCAG 2.5.8). In a side panel it is the panel's first row.
 
 <Canvas of={Stories.SheetPanelHeader} />
+
+iOS and Android take the same header: `panelHeader:` on `KozmosAdaptiveMapShell` in
+SwiftUI, and `panelHeader =` in Compose. On iOS, put the content that scrolls in a
+`KozmosPanelScrollView`, so the sheet can take a drag from it.
+
+<PlatformSnippets
+  react={`
+import { useState, type ReactNode } from "react";
+import { AdaptiveMapShell, SearchBar } from "@kozmos-ds/react";
+
+// The search field stays under the sheet's grip while the results scroll.
+export function PlacesSheet({
+  map,
+  results,
+}: {
+  map: ReactNode;
+  results: ReactNode;
+}) {
+  const [query, setQuery] = useState("");
+  return (
+    <AdaptiveMapShell
+      map={map}
+      panelLabel="Places"
+      panelHeader={
+        <div style={{ padding: "0 16px 8px" }}>
+          <SearchBar
+            aria-label="Search places"
+            placeholder="Search"
+            value={query}
+            onChange={setQuery}
+            variant="inline"
+          />
+        </div>
+      }
+      panel={results}
+    />
+  );
+}
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+// The search field stays under the sheet's grip while the results scroll.
+struct PlacesSheet: View {
+    @State private var query = ""
+
+    var body: some View {
+        KozmosAdaptiveMapShell(panelLabel: String(localized: "Places")) {
+            VenueMap()
+        } panel: {
+            KozmosPanelScrollView { PlaceResults(query: query) }
+        } panelHeader: {
+            KozmosSearchBar(text: $query, placeholder: String(localized: "Search"))
+                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+        }
+    }
+}
+  `}
+  kotlin={`
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.kozmos.components.adaptivemapshell.KozmosAdaptiveMapShell
+import com.kozmos.components.searchbar.KozmosSearchBar
+import com.kozmos.tokens.KozmosDimensions
+
+// The search field stays under the sheet's grip while the results scroll.
+@Composable
+fun PlacesSheet(map: @Composable () -> Unit, results: @Composable () -> Unit) {
+    var query by remember { mutableStateOf("") }
+    KozmosAdaptiveMapShell(
+        map = map,
+        panelLabel = "Places",
+        panelHeader = {
+            KozmosSearchBar(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = "Search",
+                modifier = Modifier.padding(horizontal = KozmosDimensions.primitivesLayoutSpacing200)
+            )
+        },
+        panel = results
+    )
+}
+  `}
+/>
 
 `usableRegions` accepts host-provided hinge-free rectangles in shell-local CSS pixels.
 Auto mode can separate map and panel across those regions without remounting either.

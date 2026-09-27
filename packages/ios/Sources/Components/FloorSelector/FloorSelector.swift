@@ -44,7 +44,7 @@ public struct KozmosFloorSelector: View {
     /// marker. Joined to the level's own label: "Level 2, 3 results". A
     /// function because a count needs a plural rule, and the design system has
     /// no locale to pick one with — the product does. The default is English,
-    /// singular for one, where React's reads "1 results".
+    /// singular for one, as React's and Compose's are.
     let resultCountLabel: (Int) -> String
     @Environment(\.kozmosAnalytics) private var trackEvent
 

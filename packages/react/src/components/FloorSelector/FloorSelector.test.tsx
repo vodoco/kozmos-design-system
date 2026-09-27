@@ -117,4 +117,41 @@ describe("FloorSelector", () => {
       "true",
     );
   });
+
+  it("says one result in the singular until the product says otherwise", () => {
+    // The default read "1 results". iOS and Android say "1 result".
+    render(
+      <FloorSelector
+        floors={[
+          { id: "1", label: "Level 1", shortLabel: "1", resultCount: 1 },
+          { id: "2", label: "Level 2", shortLabel: "2", resultCount: 2 },
+        ]}
+        onFloorSelect={() => undefined}
+        selectedFloor="1"
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Level 1, 1 result" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Level 2, 2 results" }),
+    ).toBeVisible();
+  });
+
+  it("marks and says only a count above zero", () => {
+    // A negative count is no count: it was drawn as "-2" and said as
+    // "-2 results". iOS and Android mark only a count above zero.
+    render(
+      <FloorSelector
+        floors={[
+          { id: "1", label: "Level 1", shortLabel: "1", resultCount: -2 },
+          { id: "2", label: "Level 2", shortLabel: "2" },
+        ]}
+        onFloorSelect={() => undefined}
+        selectedFloor="2"
+      />,
+    );
+    const level1 = screen.getByRole("button", { name: "Level 1" });
+    expect(within(level1).queryByText("-2")).toBeNull();
+  });
 });
