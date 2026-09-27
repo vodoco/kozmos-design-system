@@ -30,6 +30,7 @@ header, for a row of chips that scrolls. Under a grab handle it keeps its first 
 clear of the handle's target (WCAG 2.5.8). In a side panel it is the panel's first row.
 
 <Canvas of={Stories.SheetPanelHeader} />
+<Canvas of={Stories.SheetWithPlaceDetails} />
 
 The panel tells its content how much space it already leaves above it, so a part that brings its
 own top padding can top it up rather than add to it:
@@ -40,8 +41,8 @@ own top padding can top it up rather than add to it:
   so the grip's 16px target keeps its WCAG 2.5.8 spacing: 4px under a grip, `0px` elsewhere. A
   panel header keeps the same clearance itself.
 
-`POIDetailPanel` in its `sheet` and `panel` presentations uses both, so its close button sits as far
-from the panel's top as from its side (GAP-083).
+`POIDetailPanel` in its `sheet` presentation, which paints no surface of its own, uses both, so its
+close button sits as far from the panel's top as from its side (GAP-083).
 
 iOS and Android take the same header: `panelHeader:` on `KozmosAdaptiveMapShell` in
 SwiftUI, and `panelHeader =` in Compose. On iOS, put the content that scrolls in a

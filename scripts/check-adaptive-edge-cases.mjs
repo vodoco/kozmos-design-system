@@ -492,9 +492,11 @@ const cases = [
   [
     "a hosted details card's close button is as far from the side panel's top as from its side",
     async (page) => {
+      // The sheet presentation paints no surface, so the card sits on the side
+      // panel as on a sheet (the MAP-474 boards measured 33 and 17 there too).
       await page.emulateMedia({ reducedMotion: "reduce" });
       await widen(page);
-      await page.evaluate(() => window.showDetails("panel"));
+      await page.evaluate(() => window.showDetails("sheet"));
       await settleLayout(page);
       const at = await closeInsets(page);
       assert(
@@ -511,12 +513,30 @@ const cases = [
         document.getElementById("fixture").dir = "rtl";
       });
       await widen(page);
-      await page.evaluate(() => window.showDetails("panel"));
+      await page.evaluate(() => window.showDetails("sheet"));
       await settleLayout(page);
       const at = await closeInsets(page);
       assert(
         Math.abs(at.top - at.end) <= 1,
         `close button ${at.top} from the top and ${at.end} from the left`,
+      );
+    },
+  ],
+  [
+    "a bordered panel-presentation card keeps its header's 16 inside its border",
+    async (page) => {
+      // The guard for this fix's first version: the panel presentation draws
+      // its own bordered card, and the side panel's 16 lies outside that
+      // border. Topped up to nothing, the header met the border.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await widen(page);
+      await page.evaluate(() => window.showDetails("panel"));
+      await settleLayout(page);
+      const at = await closeInsets(page);
+      assert.equal(
+        at.headerTop,
+        16,
+        "the header keeps its 16 inside the card's border",
       );
     },
   ],

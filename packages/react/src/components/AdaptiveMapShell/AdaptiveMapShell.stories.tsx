@@ -3,6 +3,7 @@ import { InfoCircle as Info } from "@kozmos-ds/icons";
 import { AdaptiveMapShell, panelPeekAnchorProps } from "./AdaptiveMapShell";
 import { MapControlButton } from "../MapControlButton";
 import { Input } from "../Input";
+import { POIDetailPanel } from "../POIDetailPanel";
 
 const meta = {
   title: "Product SDK/AdaptiveMapShell",
@@ -177,6 +178,45 @@ export const SheetPanelHeader: Story = {
           </li>
         ))}
       </ul>
+    ),
+  },
+};
+
+/**
+ * A place's details hosted in the sheet, as a product shows a tapped pin:
+ * the card paints no surface of its own (`presentation="sheet"`), so it sits
+ * on the sheet's, and its header tops its padding up to what the grip's row
+ * already leaves. The close button sits as far from the sheet's side as from
+ * its top, plus the 4px that keeps the grip's target clear (GAP-083).
+ */
+export const SheetWithPlaceDetails: Story = {
+  args: {
+    className: "h-[42rem] max-w-[402px]",
+    panelPresentation: "bottom",
+    panelLabel: "Place details",
+    panel: (
+      <POIDetailPanel
+        presentation="sheet"
+        poi={{
+          id: "harbour-coffee",
+          name: "Harbour Coffee Co.",
+          floorId: "2",
+          floorLabel: "Level 2",
+          buildingLabel: "Terminal 2",
+          description: "Speciality coffee, pastries and breakfast to go.",
+          media: [],
+          services: [],
+          actions: ["favourite", "bookmark", "navigate", "share"],
+        }}
+        actionLabels={{
+          favourite: "Favourite",
+          bookmark: "Save",
+          navigate: "Go",
+          share: "Share",
+        }}
+        onAction={() => undefined}
+        onClose={() => undefined}
+      />
     ),
   },
 };
