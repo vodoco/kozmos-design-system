@@ -263,8 +263,12 @@ fun KozmosMapControlButton(
 
             AnimatedVisibility(
                 visibleState = labelState,
-                enter = expandHorizontally(KozmosTransitions.standard()) + fadeIn(KozmosTransitions.standard()),
-                exit = shrinkHorizontally(KozmosTransitions.standard()) + fadeOut(KozmosTransitions.standard())
+                // Uncovered from its start, as React's max-width reveals it: the
+                // name is read first, not the tail of the state.
+                enter = expandHorizontally(KozmosTransitions.standard(), expandFrom = Alignment.Start) +
+                    fadeIn(KozmosTransitions.standard()),
+                exit = shrinkHorizontally(KozmosTransitions.standard(), shrinkTowards = Alignment.Start) +
+                    fadeOut(KozmosTransitions.standard())
             ) {
                 // The gap from the icon travels with the label, so nothing
                 // jumps when it arrives or leaves.
