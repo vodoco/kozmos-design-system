@@ -52,4 +52,10 @@ describe("UserLocationMarker", () => {
       ),
     ).toBe(true);
   });
+
+  it("lets the product name the marker", () => {
+    render(<UserLocationMarker label="Ihr Standort" />);
+    expect(screen.getByRole("img", { name: "Ihr Standort" })).toBeVisible();
+    expect(screen.queryByRole("img", { name: "User location" })).toBeNull();
+  });
 });

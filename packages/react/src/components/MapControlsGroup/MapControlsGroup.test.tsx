@@ -95,4 +95,27 @@ describe("MapControlsGroup", () => {
     expect(buttons[3]).toHaveClass("shadow-raised");
     expect(buttons[3]).not.toHaveClass("shadow-floating");
   });
+
+  it("lets the product name every control, in its own language", () => {
+    // Hard-coded English until row 67: a German device announced "Zoom in"
+    // whatever else the product had translated.
+    render(
+      <MapControlsGroup
+        compassResetLabel="Nach Norden ausrichten"
+        onCompassReset={() => undefined}
+        onMyLocation={() => undefined}
+        onZoomIn={() => undefined}
+        onZoomOut={() => undefined}
+        zoomInLabel="Vergrößern"
+        zoomOutLabel="Verkleinern"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Vergrößern" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Verkleinern" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Nach Norden ausrichten" }),
+    ).toBeVisible();
+    // No English left behind for a translated product.
+    expect(screen.queryByRole("button", { name: "Zoom in" })).toBeNull();
+  });
 });
