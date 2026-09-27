@@ -11,17 +11,17 @@ built today, where things live, and the traps. The evening handoff,
 
 | What              | Where / how                                                         | State                                                                                                          |
 | ----------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `71d1bcaa` when written                                                                              |
+| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `d6d17cc1` (#118) when written                                                                       |
 | Main checkout     | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`          | shared with other sessions — stage by file, never `git add -A`                                                 |
-| Open PRs (mine)   | #118, and GAP-083 web (branch, no PR yet), and this handoff         | §3 says exactly what each needs                                                                                |
+| Open PRs (mine)   | #120 (GAP-083 web) and #119 (this handoff)                          | §3 says exactly what each needs                                                                                |
 | Open PRs (others) | #55 website (the site session's, `claude/kozmos-site`)              | **conflicts with `main`**; merging main in fixes that and brings the workflow the required check now needs     |
 | Required checks   | branch protection on `main`                                         | **"Visual Review"** (GitHub Actions only); nothing else required. Chromatic's workflow **disabled**            |
 | Visual review     | `pnpm test:visual` (Docker) · CI "Visual Review"                    | every story × light/dark (630 drawings; 632 with GAP-083's new story), `tests/visual/baselines`                |
-| CI on `main`      | GitHub; `node scripts/ci-local.mjs --job web\|ios\|android` locally | green through #115 (`5535c404`, iOS included); `71d1bcaa`'s CI and Visual Regression running when written      |
+| CI on `main`      | GitHub; `node scripts/ci-local.mjs --job web\|ios\|android` locally | green through #117 (`71d1bcaa`, iOS included); `d6d17cc1`'s CI running when written                            |
 | React unit suite  | `cd packages/react && npx vitest run`                               | 706 tests at #113; GAP-083 web adds 8                                                                          |
 | Bundle budget     | `pnpm tsx scripts/performance/bundle-analyzer.ts`                   | 61.97 of 64 KB (CI, `9df17777`)                                                                                |
 | Contract parity   | `pnpm contracts:parity:check`                                       | 25 types, 121 fields, 14 enumerations                                                                          |
-| npm               | react 0.4.0, icons 0.3.0, product-contracts 0.3.0, tokens 0.1.0     | nothing published since; **no changesets since 0.4.0**; react pins its siblings exactly (§8)                   |
+| npm               | react 0.4.0, icons 0.3.0, product-contracts 0.3.0, tokens 0.1.0     | nothing published since; **no changesets since 0.4.0** but #120's; react pins its siblings exactly (§8)        |
 | Change list       | `~/Downloads/Kozmos requests from the MAP-474 prototypes (4).md`    | rows 1–78: 38 Done / 11 In progress / 29 To do. Row 82 (GAP-083) and rows 79–81 live in another session's list |
 | Figma library     | `Yj4O8p6Y9h2Sa9zJVoAiVY`                                            | 2,430 / 2,430 icons tinted (morning); today's rows not yet in Figma (task)                                     |
 
@@ -87,39 +87,38 @@ are out of scope.
 | #115 | visual review    | Kozmos's own visual review replaces Chromatic (decision 11) — §7                                       |
 | #116 | 82 (native)      | GAP-083 on iOS/Android: the shell publishes its top space and the grip's clearance                     |
 | #117 | 82 (native)      | …only the surfaceless `sheet` card tops up; bordered `panel`/`inline` keep their 16                    |
+| #118 | visual review    | a record run redraws only the drawings that fail, then prunes baselines of stories that went           |
 
 ## 3. In flight — exactly what to do next
 
 Check each first: `gh pr view <n> --repo vodoco/kozmos-design-system --json state,statusCheckRollup`.
 
-1. **#118 — "visual: record only the drawings that changed".** The record job had redrawn every
-   baseline and committed anti-aliasing noise; it now uses `--update-snapshots=changed` plus
-   `scripts/visual/prune-baselines.mjs` (refuses more than 20 removals unless `VISUAL_PRUNE_MANY=1`).
-   Proved: a record run on its branch committed nothing (630/630, "No baseline outlived its story").
-   **Merge when its checks are green** (`gh pr merge 118 --repo vodoco/kozmos-design-system --merge`).
-2. **GAP-083 web — branch `claude/poi-detail-hosted-inset`** (worktree
-   `/Volumes/4TB Depo/development/K/kozmos-design-system-fixes`, head `0ee529cc`, pushed; its first,
-   reverted version's baselines are taken back in `1fe576cd`). **After #118 merges** (so its record
-   uses the new mode):
-   ```bash
-   cd "/Volumes/4TB Depo/development/K/kozmos-design-system-fixes"
-   git fetch origin && git merge --no-edit origin/main
-   git push origin claude/poi-detail-hosted-inset
-   gh workflow run visual.yml --repo vodoco/kozmos-design-system --ref claude/poi-detail-hosted-inset -f record=true
-   # when the run finishes: git pull; the bot's commit should add/change ONLY
-   #   product-sdk-adaptivemapshell--sheet-with-place-details--{light,dark}.png  (new story)
-   #   product-sdk-poi-detail-examples--on-map--{light,dark}.png  (card surfaceless in the side panel)
-   ```
-   Look at both on-map images before opening the PR (the side panel should show no inner card
-   border; the close button 17 from the top and the side). Then open the PR — title "A hosted
-   details card's close button sits as far in as it sits down (GAP-083, web)" — with the numbers
-   below, and merge when green. Its local verification is done: 17 of 17 adaptive edge cases in
-   Chromium, WebKit and Firefox (the first version's failures reproduced first), 77 unit tests
-   (8 contract tests fail against main's shell), `check-owned-css`, the Storybook audit (100 shell
-   and details variants, the new story at 320/1280 both themes, axe target-size), 320px with a wide
-   font, and `check-poi-detail-examples` 66 of 66.
-3. **This handoff's PR** — merge last. The memory pointer (`kozmos-session-handoff-pointer`) already
-   names this file.
+1. **#120 — GAP-083 web** (branch `claude/poi-detail-hosted-inset`, worktree
+   `/Volumes/4TB Depo/development/K/kozmos-design-system-fixes`). Done so far:
+   - main (with #118) merged in;
+   - the record run (`36349425251`) committed exactly the four expected baselines;
+   - I measured both sets of images from their pixels:
+     - `product-sdk-adaptivemapshell--sheet-with-place-details--{light,dark}` is the new story, at
+       21 / 17 under the grip;
+     - `product-sdk-poi-detail-examples--on-map--{light,dark}` went from 34 / 18 to 17 / 17. It had
+       nested a bordered card in the side panel, with a double top edge.
+   - the changeset `.changeset/panel-inset-contract.md` (react minor) is committed.
+
+   **Merge when green** (`gh pr merge 120 --repo vodoco/kozmos-design-system --merge`). Its local
+   verification:
+   - 17 of 17 adaptive edge cases in Chromium, WebKit and Firefox; the first version's failures
+     were reproduced first.
+   - 77 unit tests; the 8 contract tests fail against main's shell.
+   - `check-owned-css`.
+   - The Storybook audit: 100 shell and details variants, the new story at 320 and 1280 in both
+     themes, axe target-size.
+   - 320px with a wide font.
+   - `check-poi-detail-examples` 66 of 66.
+
+2. **This handoff's PR, #119** — merge last, after #120. The memory pointer
+   (`kozmos-session-handoff-pointer`) already names this file.
+3. **#118** merged (`d6d17cc1`). Its first real use was #120's record run, which changed nothing
+   beyond the four drawings above.
 4. Optionally re-number: GAP-083 is row 82 in the MAP-474 session's list, not in `(4).md`.
 
 **GAP-083, the numbers** (close button from the hosted panel's top / side):
@@ -169,17 +168,17 @@ Check each first: `gh pr view <n> --repo vodoco/kozmos-design-system --json stat
 
 ## 6. The queue: suggested tasks (chips in the app), in order
 
-| When                          | Task                                              | Note                                                            |
-| ----------------------------- | ------------------------------------------------- | --------------------------------------------------------------- |
-| now                           | Write changesets for everything since 0.4.0       | release blocker: react pins icons/contracts exactly (§8)        |
-| now                           | Triage the 135 Dependabot alerts                  | none reach consumers; the only task touching the lockfile       |
-| now                           | Fix the docs' iOS and Android snippets            | 72 native tabs are stale implementation copies; 8 don't compile |
-| now, one after the other      | Android sheet: content overhangs; easing          | same file                                                       |
-| after GAP-083 web merges      | Browse panel: stop doubling the grip's space      | reuse the panel inset contract (§7)                             |
-| any time                      | Android: favourite and save in the details header | parity gap found today                                          |
-| any time, one after the other | Focus-ring offsets in dark theme; RTL sweep       | visual changes — Visual Review shows them now                   |
-| with Olcay                    | Bring today's map and chip changes to Figma       | Olcay runs the plugin                                           |
-| check first                   | Run the iOS shell render tests on CI              | mostly covered by #108/#111/#116                                |
+| When                          | Task                                              | Note                                                                                               |
+| ----------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| now                           | Write changesets for everything since 0.4.0       | release blocker: react pins icons/contracts exactly (§8); #120 has its own — leave GAP-083 web out |
+| now                           | Triage the 135 Dependabot alerts                  | none reach consumers; the only task touching the lockfile                                          |
+| now                           | Fix the docs' iOS and Android snippets            | 72 native tabs are stale implementation copies; 8 don't compile                                    |
+| now, one after the other      | Android sheet: content overhangs; easing          | same file                                                                                          |
+| after #120 merges             | Browse panel: stop doubling the grip's space      | reuse the panel inset contract (§7)                                                                |
+| any time                      | Android: favourite and save in the details header | parity gap found today                                                                             |
+| any time, one after the other | Focus-ring offsets in dark theme; RTL sweep       | visual changes — Visual Review shows them now                                                      |
+| with Olcay                    | Bring today's map and chip changes to Figma       | Olcay runs the plugin                                                                              |
+| check first                   | Run the iOS shell render tests on CI              | mostly covered by #108/#111/#116                                                                   |
 
 Any task that changes how a story looks must record baselines (§7) or its PR stays red.
 
@@ -230,12 +229,12 @@ the frame's own size.
 
 ## 9. Worktrees and branches
 
-| Worktree                                                      | Branch                                  | Keep?                                 |
-| ------------------------------------------------------------- | --------------------------------------- | ------------------------------------- |
-| `/Volumes/4TB Depo/development/K/kozmos-design-system-fixes`  | `claude/poi-detail-hosted-inset` (§3.2) | until GAP-083 web merges              |
-| `/Volumes/4TB Depo/development/K/kozmos-design-system-rows`   | `claude/visual-record-changed` (#118)   | until #118 merges; reusable           |
-| `/Volumes/4TB Depo/development/K/kozmos-design-system-verify` | `claude/handoff-2026-09-27-night`       | reusable for independent native runs  |
-| `…-dev/.claude/worktrees/agent-*`                             | merged agent branches                   | ask Olcay; `git worktree remove` only |
+| Worktree                                                      | Branch                                        | Keep?                                 |
+| ------------------------------------------------------------- | --------------------------------------------- | ------------------------------------- |
+| `/Volumes/4TB Depo/development/K/kozmos-design-system-fixes`  | `claude/poi-detail-hosted-inset` (#120)       | until #120 merges                     |
+| `/Volumes/4TB Depo/development/K/kozmos-design-system-rows`   | `claude/visual-record-changed` (#118, merged) | reusable                              |
+| `/Volumes/4TB Depo/development/K/kozmos-design-system-verify` | `claude/handoff-2026-09-27-night`             | reusable for independent native runs  |
+| `…-dev/.claude/worktrees/agent-*`                             | merged agent branches                         | ask Olcay; `git worktree remove` only |
 
 Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` once, and
 `packages/android/local.properties` with `sdk.dir=/Users/olcaykurtulus/Library/Android/sdk`.
@@ -251,13 +250,15 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
 - The Figma token cannot read variables (403); read bindings with `scripts/figma-rest/bindings.mjs`
   and the importer's painter source.
 - A required check blocks branches that predate it; a bot commit (GITHUB_TOKEN) starts no checks.
+- `npx changeset status` prints `/bin/sh: /Volumes/4TB: No such file or directory` (the space in the
+  path) and still runs; `--since=origin/main` counts only committed changesets.
 
 ## 11. How to resume
 
 ```bash
 cd "/Volumes/4TB Depo/development/K/kozmos-design-system-dev"
-git checkout main && git pull --ff-only && git log --oneline -1   # expect 71d1bcaa or later
-gh pr list --repo vodoco/kozmos-design-system --state open         # #118, GAP-083 web, this handoff, #55
+git checkout main && git pull --ff-only && git log --oneline -1   # expect d6d17cc1 or later
+gh pr list --repo vodoco/kozmos-design-system --state open         # #120, #119 (this handoff), #55
 pnpm install && pnpm exec turbo run build --filter=@kozmos-ds/react...
 ```
 
