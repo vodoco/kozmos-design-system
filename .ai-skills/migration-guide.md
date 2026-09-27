@@ -134,10 +134,12 @@ pnpm test
 #### Step 7: Visual Regression Check
 
 ```bash
-# Compare screenshots before/after
-pnpm chromatic --exit-zero-on-changes
+# Compare every story with its baseline, in light and dark (needs Docker)
+pnpm test:visual
 
-# Review changes in Chromatic dashboard
+# Read each difference in the report; record the intended ones
+pnpm test:visual:report
+pnpm test:visual:update
 ```
 
 ### Post-Migration Verification

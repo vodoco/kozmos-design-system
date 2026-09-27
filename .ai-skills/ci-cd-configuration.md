@@ -39,8 +39,8 @@
           ┌──────────────────┼──────────────────┐
           ▼                  ▼                  ▼
     ┌──────────┐       ┌──────────┐       ┌──────────┐
-    │ Chromatic│       │ Bundle   │       │ Security │
-    │  Visual  │       │  Size    │       │   Scan   │
+    │  Visual  │       │ Bundle   │       │ Security │
+    │  Review  │       │  Size    │       │   Scan   │
     └────┬─────┘       └────┬─────┘       └────┬─────┘
          │                  │                  │
          └──────────────────┼──────────────────┘
@@ -71,7 +71,7 @@
 │   ├── ci.yml              # Main CI pipeline
 │   ├── test.yml            # Comprehensive testing
 │   ├── publish.yml         # Package publishing
-│   ├── chromatic.yml       # Visual regression
+│   ├── visual.yml          # Visual Review: every story × light/dark
 │   ├── codeql.yml          # Security scanning
 │   ├── release.yml         # Release automation
 │   ├── tokens-sync.yml     # Figma token sync
@@ -348,13 +348,12 @@ jobs:
 
 ### Required Secrets
 
-| Secret                    | Purpose           | How to Get                       |
-| ------------------------- | ----------------- | -------------------------------- |
-| `NPM_TOKEN`               | npm publishing    | npm.com → Access Tokens          |
-| `FIGMA_ACCESS_TOKEN`      | Figma API access  | Figma → Account Settings         |
-| `CHROMATIC_PROJECT_TOKEN` | Visual regression | chromatic.com → Project Settings |
-| `CODECOV_TOKEN`           | Code coverage     | codecov.io → Settings            |
-| `SLACK_WEBHOOK_URL`       | Notifications     | Slack → Incoming Webhooks        |
+| Secret               | Purpose          | How to Get                |
+| -------------------- | ---------------- | ------------------------- |
+| `NPM_TOKEN`          | npm publishing   | npm.com → Access Tokens   |
+| `FIGMA_ACCESS_TOKEN` | Figma API access | Figma → Account Settings  |
+| `CODECOV_TOKEN`      | Code coverage    | codecov.io → Settings     |
+| `SLACK_WEBHOOK_URL`  | Notifications    | Slack → Incoming Webhooks |
 
 ### Setting Up Secrets
 
@@ -362,7 +361,6 @@ jobs:
 # Using GitHub CLI
 gh secret set NPM_TOKEN --body "npm_xxxxxxxxxxxx"
 gh secret set FIGMA_ACCESS_TOKEN --body "figd_xxxxxxxxxxxx"
-gh secret set CHROMATIC_PROJECT_TOKEN --body "chpt_xxxxxxxxxxxx"
 gh secret set CODECOV_TOKEN --body "xxxxxxxxxxxx"
 gh secret set SLACK_WEBHOOK_URL --body "https://hooks.slack.com/services/xxx"
 ```
@@ -779,54 +777,16 @@ jobs:
 
 ## 7. Visual Regression
 
-### Chromatic Workflow
+### Visual Review
 
-```yaml
-# .github/workflows/chromatic.yml
-name: Chromatic
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  chromatic:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Publish to Chromatic
-        uses: chromaui/action@latest
-        with:
-          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
-          workingDir: packages/react
-          buildScriptName: build-storybook
-          onlyChanged: true
-          exitZeroOnChanges: true
-          autoAcceptChanges: main
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🎨 [View Chromatic build](${{ steps.chromatic.outputs.buildUrl }})'
-            })
-```
+`.github/workflows/visual.yml` runs the repository's own visual review. Every story in the built
+Storybook is drawn in light and dark by Chromium in the Playwright image
+(`mcr.microsoft.com/playwright:v1.58.2-noble`) and compared with its baseline in
+`tests/visual/baselines`. The `compare` job is the required "Visual Review" check on pull requests.
+The `record` job (Actions → Visual Regression → Run workflow on the branch, with `record`) commits
+new baselines for the drawings that changed on purpose; push again afterwards, since a workflow's
+commit starts no checks. Locally, `pnpm test:visual` compares and `pnpm test:visual:update` records,
+both in Docker. `docs/visual-review.md` explains how to read a difference.
 
 ---
 
@@ -1021,10 +981,10 @@ notify:
 # Branch protection rules (configure in repo settings)
 # Settings → Branches → Add rule
 
-# Required status checks:
-# - CI OK
-# - Chromatic
-# - CodeQL
+# Required status checks (GitHub Actions only): every check a pull request runs —
+# Web Build & Test, Core Pipeline & POI Gallery, Android Build, the twelve browser
+# shards, analyze-bundle, lighthouse and Visual Review. They are matched by name:
+# renaming a job or shard means updating this list in the same change.
 
 # Additional settings:
 # - Require pull request reviews: 1

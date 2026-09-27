@@ -1037,7 +1037,7 @@ jobs:
 
 - [ ] axe-core tests passing
 - [ ] Lighthouse accessibility score ≥ 90
-- [ ] No regressions in Chromatic
+- [ ] No unintended changes in Visual Review (`pnpm test:visual`)
 
 ### Manual Testing
 

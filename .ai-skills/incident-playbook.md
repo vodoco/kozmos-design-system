@@ -171,8 +171,8 @@ pnpm typecheck
 For P0/P1 incidents, normal PR process is abbreviated:
 
 - Single reviewer approval (any core team member)
-- Skip visual regression if not UI-related
-- Skip Chromatic approval if blocking
+- Visual Review stays required: a hotfix that changes how a story looks records its baselines
+  (docs/visual-review.md) rather than skipping the check
 
 ```bash
 # Create PR with hotfix label

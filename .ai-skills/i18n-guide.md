@@ -1024,7 +1024,7 @@ export const RTL = {
   decorators: [(Story) => <div dir="rtl"><Story /></div>],
 };
 
-// Chromatic will capture both variants
+// Visual Review draws both stories, in light and dark
 ```
 
 ### 9.3 Pseudo-localization

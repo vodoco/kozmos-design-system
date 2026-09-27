@@ -1246,61 +1246,19 @@ describe("kozmos-button", () => {
 
 ## 7. Visual Regression Testing
 
-### Chromatic Setup
+### The visual review
 
-```typescript
-// packages/react/.storybook/main.ts
-import type { StorybookConfig } from "@storybook/react-vite";
+The repository's own visual review draws every story in light and dark with Chromium in the
+Playwright image and compares it with the baseline committed in `tests/visual/baselines`
+(`.github/workflows/visual.yml`; the "Visual Review" check is required on every pull request).
+Locally, `pnpm test:visual` compares and `pnpm test:visual:update` records, both in Docker, never on a
+bare Mac, whose fonts draw differently. `docs/visual-review.md` explains how to read a difference and
+how to accept one.
 
-const config: StorybookConfig = {
-  stories: ["../src/**/*.stories.@(ts|tsx)"],
-  addons: [
-    "@storybook/addon-essentials",
-    "@storybook/addon-a11y",
-    "@chromatic-com/storybook",
-  ],
-  framework: "@storybook/react-vite",
-};
-
-export default config;
-```
-
-### Chromatic CI Integration
-
-```yaml
-# .github/workflows/chromatic.yml
-name: Chromatic
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  chromatic:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install
-      - run: pnpm build
-
-      - uses: chromaui/action@latest
-        with:
-          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
-          workingDir: packages/react
-          buildScriptName: build-storybook
-          exitOnceUploaded: true
-```
+A story that cannot draw the same way every time (live data, a running animation with no reduced
+state) opts out with `tags: ["no-visual"]`; everything else must be deterministic, and the suite
+helps: a fixed clock, seeded `Math.random`, reduced motion, outside requests refused, map canvases
+masked.
 
 ---
 

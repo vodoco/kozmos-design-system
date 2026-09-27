@@ -431,7 +431,7 @@ jobs:
 
       - name: Core Pipeline - Storybook E2E & A11y Verification
         run: |
-          # Chromatic is the required visual-regression gate. Keep local screenshot baselines manual until repaired.
+          # How the stories look is the Visual Review workflow's job (visual.yml); this step checks behaviour and accessibility.
           pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "SB,TEST" \
             "pnpm --filter @kozmos-ds/docs storybook:react --ci --host 127.0.0.1" \
             "bash -lc 'until curl -sf http://127.0.0.1:6006 >/dev/null; do sleep 2; done; pnpm --filter @kozmos-ds/react exec playwright test && pnpm -w exec tsx scripts/skills/check-a11y.ts && pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-regressions'"

@@ -1168,38 +1168,20 @@ Unable to find an element with the role "button"
 
 **Solutions:**
 
-1. **Increase threshold:**
+A difference is an answer, not bad luck: the suite runs with no retries on purpose.
 
-   ```javascript
-   // Chromatic config
-   {
-     "diffThreshold": 0.3 // Allow 0.3% difference
-   }
-   ```
-
-2. **Disable animations:**
-
-   ```tsx
-   // In test setup
-   document.body.style.setProperty("--kozmos-motion-duration-fast", "0ms");
-   ```
-
-3. **Use consistent fonts:**
-
-   ```css
-   /* Force system fonts in tests */
-   * {
-     font-family: sans-serif !important;
-   }
-   ```
-
-4. **Pin browser version:**
-   ```yaml
-   # CI config
-   - uses: browser-actions/setup-chrome@latest
-     with:
-       chrome-version: 120.0.6099.109
-   ```
+1. **Don't raise the threshold.** `threshold: 0.02` in `playwright.visual.config.ts` is calibrated:
+   the default 0.2 passed a whole token step (a delta of 351) as unchanged, while anti-aliasing
+   noise is a delta under 1. Loosen it only after re-running a control that proves a token step
+   still fails.
+2. **Draw where CI draws.** Run `pnpm test:visual` (the Playwright image in Docker), never on a bare
+   Mac: its fonts and rendering differ. The browser version is pinned by the image tag.
+3. **Make the story deterministic.** The suite already fixes the clock, seeds `Math.random`,
+   prefers reduced motion and refuses outside requests; a story that still moves between runs has
+   its own timer, random or network dependency to remove. A story that genuinely cannot hold still
+   takes `tags: ["no-visual"]`.
+4. **Masked areas** (map canvases, Pointr taxonomy symbols) are deliberate; see
+   `docs/visual-review.md`, "When it fails for no reason".
 
 ---
 

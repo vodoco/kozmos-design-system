@@ -34,7 +34,7 @@
 
 - **Component isolation** — Develop components in isolation
 - **Documentation** — Auto-generated docs from props
-- **Visual testing** — Chromatic integration
+- **Visual testing** — every story is compared with its baseline in light and dark (the Kozmos visual review (`tests/visual`, the "Visual Review" check))
 - **Accessibility** — Built-in a11y addon
 - **Theming** — Light/dark mode preview
 - **Responsive** — Viewport addon for mobile testing
@@ -56,8 +56,7 @@ pnpm dlx storybook@latest init --builder vite
 pnpm add -D @storybook/addon-a11y \
   @storybook/addon-designs \
   @storybook/addon-storysource \
-  @storybook/test \
-  @chromatic-com/storybook
+  @storybook/test
 ```
 
 ### 2.2 Directory Structure
@@ -101,7 +100,6 @@ const config: StorybookConfig = {
     "@storybook/addon-onboarding",
     "@storybook/addon-links",
     "@storybook/addon-essentials",
-    "@chromatic-com/storybook",
     "@storybook/addon-interactions",
     "@storybook/addon-a11y",
     "@storybook/addon-designs",
@@ -404,28 +402,21 @@ parameters: {
 },
 ```
 
-### 4.4 Chromatic (Visual Testing)
+### 4.4 Visual Review (Visual Testing)
+
+Every story is drawn in light and dark by the repository's own visual review (`tests/visual`) and
+compared with its committed baseline; a pull request that changes how a story looks shows the new
+drawing in "Files changed". Stories must draw the same way every time: the suite fixes the clock,
+seeds `Math.random`, prefers reduced motion and masks map canvases. A story that cannot be drawn
+deterministically opts out with a tag:
 
 ```typescript
-// .storybook/main.ts
-addons: [
-  '@chromatic-com/storybook',
-],
-
-// In stories
-export const Primary: Story = {
-  parameters: {
-    chromatic: {
-      // Capture at multiple viewports
-      viewports: [375, 768, 1280],
-      // Delay before snapshot
-      delay: 300,
-      // Disable for specific stories
-      // disableSnapshot: true,
-    },
-  },
+export const LiveFeed: Story = {
+  tags: ["no-visual"],
 };
 ```
+
+See `docs/visual-review.md` for recording baselines and reading a difference.
 
 ### 4.5 Pseudo States Addon
 
@@ -1038,33 +1029,14 @@ const config: TestRunnerConfig = {
 export default config;
 ```
 
-### 8.3 Visual Regression with Chromatic
+### 8.3 Visual Regression
 
-```yaml
-# .github/workflows/chromatic.yml
-name: Chromatic
-
-on: push
-
-jobs:
-  chromatic:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Publish to Chromatic
-        uses: chromaui/action@latest
-        with:
-          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
-          buildScriptName: storybook:build
-          onlyChanged: true
-          exitZeroOnChanges: true
-```
+The repository's own visual review draws every story in light and dark with Chromium in the
+Playwright image and compares it with the baseline committed in `tests/visual/baselines`
+(`.github/workflows/visual.yml`; the "Visual Review" check is required on every pull request).
+Locally, `pnpm test:visual` compares and `pnpm test:visual:update` records, both in Docker, never on a
+bare Mac, whose fonts draw differently. `docs/visual-review.md` explains how to read a difference and
+how to accept one.
 
 ---
 
@@ -1220,11 +1192,9 @@ export const ComplexVisualization: Story = {
   ),
 };
 
-// Skip heavy stories in Chromatic
+// Leave a story that cannot draw the same way twice out of the visual review
 export const HeavyAnimation: Story = {
-  parameters: {
-    chromatic: { disableSnapshot: true },
-  },
+  tags: ["no-visual"],
 };
 ```
 
@@ -1234,7 +1204,7 @@ export const HeavyAnimation: Story = {
 
 - [Component Creation Guide](./component-creation-guide.md) — Story templates
 - [Testing Patterns](./testing-patterns.md) — Integration with tests
-- [CI/CD Configuration](./ci-cd-configuration.md) — Chromatic setup
+- [CI/CD Configuration](./ci-cd-configuration.md) — the Visual Review workflow
 
 ---
 
