@@ -21,7 +21,9 @@ panel bounds from `onLayoutChange`. `panelPlacement` is logical and follows inhe
 `panelHeader` sits under the sheet's grip and above the panel's content, and does not
 scroll with it, so a search field or a chosen category stays put while the results under
 it scroll. Every detent counts it: a sheet fitted to its content includes it, and a
-collapsed sheet with no peek anchor rests on its bottom edge. A vertical drag on it always
+collapsed sheet is always tall enough to show all of it (a header that fits leaves the
+collapsed detent where it was; a taller one raises it). A peek anchor, in the header or the
+content, still decides where a collapsed sheet rests. A vertical drag on it always
 moves the sheet, however far the content has scrolled; a sideways one stays with the
 header, for a row of chips that scrolls. In a side panel it is the panel's first row.
 

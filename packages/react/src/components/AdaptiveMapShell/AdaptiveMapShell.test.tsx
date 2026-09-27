@@ -207,6 +207,37 @@ describe("AdaptiveMapShell sheet detents", () => {
       expect(header!.style.touchAction).toBe("pan-x");
     });
 
+    it("counts the grab handle too, when a fitted sheet offers another detent", () => {
+      // iOS measures its fitted sheet with the grabber in it; the web counted
+      // only the content, so a sheet offering `content` and `large` was the
+      // handle's 16px short and clipped its last line.
+      const heights = [
+        vi
+          .spyOn(HTMLElement.prototype, "scrollHeight", "get")
+          .mockReturnValue(120),
+        vi
+          .spyOn(HTMLElement.prototype, "offsetHeight", "get")
+          .mockImplementation(function (this: HTMLElement) {
+            if (this.hasAttribute("data-kozmos-panel-header")) return 56;
+            if (this.classList.contains("kozmos-map-sheet-handle")) return 16;
+            return 0;
+          }),
+      ];
+      try {
+        const aside = sheet({
+          panelHeader: <input aria-label="Search places" />,
+          panelDetents: ["content", "large"],
+          panelDetent: "content",
+        });
+        expect(
+          screen.getByRole("slider", { name: "Panel height" }),
+        ).toBeInTheDocument();
+        expect(aside.style.height).toBe("192px");
+      } finally {
+        heights.forEach((spy) => spy.mockRestore());
+      }
+    });
+
     it("counts it in a sheet fitted to its content", () => {
       const heights = [
         vi

@@ -209,7 +209,7 @@ const cases = [
     },
   ],
   [
-    "a collapsed sheet rests on its panel header",
+    "a collapsed sheet shows the whole of a panel header taller than it",
     async (page) => {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.evaluate(() => {

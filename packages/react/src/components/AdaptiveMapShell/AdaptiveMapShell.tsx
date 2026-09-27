@@ -52,8 +52,11 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
    * Drawn under the sheet's grip and above the panel's content, and not
    * scrolled with it: a search field, the assistant button, or a chosen
    * category stays put while the results under it scroll (row 73). Every
-   * detent counts it — a sheet fitted to its content includes it, and a
-   * collapsed sheet with no peek anchor rests on its bottom edge.
+   * detent counts it: a sheet fitted to its content includes it, and a
+   * collapsed sheet is always tall enough to show all of it — a header that
+   * fits leaves the collapsed detent where it was, and a taller one raises
+   * it. A peek anchor, in the header or the content, still decides where a
+   * collapsed sheet rests.
    *
    * A vertical drag on it moves the sheet, whatever the content has
    * scrolled; a sideways one stays with the header, for a row of chips
@@ -142,11 +145,8 @@ const mergeSafeInset = (css: number, supplied = 0) =>
 /**
  * The peek anchor's bottom edge from the sheet's top, by layout position:
  * the anchor's box against the sheet's, with the content's scroll added back
- * so a scrolled sheet reports the same edge as one at its top.
- *
- * An anchor in the panel header counts as one in the content does, and
- * without any anchor the header is the peek: a collapsed sheet shows what
- * stays put, not a slice of what scrolls under it.
+ * so a scrolled sheet reports the same edge as one at its top. An anchor in
+ * the panel header counts as one in the content does, and does not scroll.
  */
 function measurePeekBottom(
   content: HTMLElement | null,
@@ -165,9 +165,16 @@ function measurePeekBottom(
     ? inHeader.getBoundingClientRect().bottom - top
     : inContent && content
       ? inContent.getBoundingClientRect().bottom - top + content.scrollTop
-      : header
-        ? header.getBoundingClientRect().bottom - top
-        : 0;
+      : 0;
+  return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
+}
+
+/** The panel header's bottom edge from the sheet's top; 0 when there is none. */
+function measureHeaderBottom(header: HTMLElement | null): number {
+  const sheet = header?.parentElement;
+  if (!header || !sheet) return 0;
+  const bottom =
+    header.getBoundingClientRect().bottom - sheet.getBoundingClientRect().top;
   return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
 }
 const position = (rect: MapLayoutRect): React.CSSProperties => ({
@@ -222,6 +229,7 @@ const AdaptiveMapShell = React.forwardRef<
     const buttons = React.useRef<HTMLDivElement>(null);
     const panelContent = React.useRef<HTMLDivElement>(null);
     const panelHeaderElement = React.useRef<HTMLDivElement>(null);
+    const handleElement = React.useRef<HTMLDivElement>(null);
     const hasPanelHeader = panelHeader !== undefined && panelHeader !== null;
     const panelElement = React.useRef<HTMLElement>(null);
     const [measured, setMeasured] = React.useState({
@@ -234,6 +242,10 @@ const AdaptiveMapShell = React.forwardRef<
       controlsHeight: 0,
       panelContentHeight: 0,
       panelHeaderHeight: 0,
+      /** The panel header's bottom edge from the sheet's top; 0 when none. */
+      headerBottom: 0,
+      /** The grab handle's row, when the sheet draws one; 0 otherwise. */
+      handleHeight: 0,
       /** The peek anchor's bottom edge from the sheet's top; 0 when none. */
       peekBottom: 0,
       safe: { top: 0, right: 0, bottom: 0, left: 0 },
@@ -288,6 +300,8 @@ const AdaptiveMapShell = React.forwardRef<
           // What the panel holds, not what it was given: the scroll height.
           panelContentHeight: panelContent.current?.scrollHeight ?? 0,
           panelHeaderHeight: panelHeaderElement.current?.offsetHeight ?? 0,
+          headerBottom: measureHeaderBottom(panelHeaderElement.current),
+          handleHeight: handleElement.current?.offsetHeight ?? 0,
           peekBottom: measurePeekBottom(
             panelContent.current,
             panelHeaderElement.current,
@@ -370,11 +384,6 @@ const AdaptiveMapShell = React.forwardRef<
     // its safe areas, as the layout resolves it. The content detent and the
     // peek anchor are measured a render late, as the chrome is.
     const sheetHeight = Math.max(0, measured.height - safe.top - safe.bottom);
-    const measures = {
-      // The header is part of what a sheet fitted to its content holds.
-      contentHeight: measured.panelHeaderHeight + measured.panelContentHeight,
-      peekBottom: measured.peekBottom,
-    };
     const detents: readonly PanelDetent[] =
       panelDetents ??
       (panelSizing === "content"
@@ -382,6 +391,24 @@ const AdaptiveMapShell = React.forwardRef<
         : panelFraction !== undefined && Number.isFinite(panelFraction)
           ? [{ fraction: panelFraction }]
           : DEFAULT_PANEL_DETENTS);
+    // What the sheet holds, the header included. Whether it draws a handle is
+    // decided on this, without the handle, so the handle's own height can
+    // never fold two detents into one and take the handle away again.
+    const held = measured.panelHeaderHeight + measured.panelContentHeight;
+    const showsHandle =
+      orderPanelDetents(detents, sheetHeight, {
+        contentHeight: held,
+        peekBottom: measured.peekBottom,
+        headerBottom: measured.headerBottom,
+      }).length > 1;
+    const measures = {
+      // A sheet fitted to its content holds its handle too, when it draws one:
+      // iOS measures its fitted sheet with the grabber in it, and without it
+      // the web's was the handle's height short and clipped its last line.
+      contentHeight: held + (showsHandle ? measured.handleHeight : 0),
+      peekBottom: measured.peekBottom,
+      headerBottom: measured.headerBottom,
+    };
     const ordered = orderPanelDetents(detents, sheetHeight, measures);
     const activeDetent: PanelDetent =
       panelDetent ??
@@ -560,6 +587,18 @@ const AdaptiveMapShell = React.forwardRef<
 
     const isSheet = layout.presentation === "bottom";
     const panelHidden = unavailable || (measured.ready && !layout.panelBounds);
+    const drawsHandle = isSheet && showsHandle;
+    // The handle is drawn only once the shell knows it is a sheet, a render
+    // after its first measurement, so its row is measured when it appears
+    // rather than whenever something else happens to resize.
+    useLayoutEffect(() => {
+      const handleHeight = handleElement.current?.offsetHeight ?? 0;
+      setMeasured((previous) =>
+        previous.handleHeight === handleHeight
+          ? previous
+          : { ...previous, handleHeight },
+      );
+    }, [drawsHandle]);
     // A newly requested detent — from a drag, the handle, the keyboard or
     // the host — marks the sheet settling in the same render as its new
     // height, so the transition is in place when the height changes. The
@@ -834,8 +873,9 @@ const AdaptiveMapShell = React.forwardRef<
             onPointerCancel={isSheet ? onSheetPointerUp : undefined}
             onClickCapture={isSheet ? onSheetClickCapture : undefined}
           >
-            {isSheet && ordered.length > 1 && (
+            {drawsHandle && (
               <div
+                ref={handleElement}
                 className="kozmos-map-sheet-handle"
                 role="slider"
                 tabIndex={0}

@@ -153,8 +153,8 @@ export const SheetPeekAnchor: Story = {
 
 /**
  * A search field in the panel header: under the grip, above the results, and
- * not scrolled with them (row 73). The collapsed detent rests on the header,
- * and a drag that starts on it always moves the sheet.
+ * not scrolled with them (row 73). A collapsed sheet always shows the whole
+ * header, and a drag that starts on it always moves the sheet.
  */
 export const SheetPanelHeader: Story = {
   args: {
