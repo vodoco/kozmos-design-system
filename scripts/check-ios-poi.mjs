@@ -45,6 +45,9 @@ const run = spawnSync(
     "-only-testing:KozmosTests/KozmosPOIDetailTests",
     "-only-testing:KozmosTests/KozmosPOIMediaGalleryTests",
     "-only-testing:KozmosTests/KozmosAdaptiveMapShellTests",
+    // The sheet's panel header (row 73): rendered and dragged, so the
+    // simulator is the only place it runs.
+    "-only-testing:KozmosTests/KozmosMapShellPanelHeaderTests",
     "-only-testing:KozmosTests/ProductContractsTests",
     "CODE_SIGNING_ALLOWED=NO",
     "test",
