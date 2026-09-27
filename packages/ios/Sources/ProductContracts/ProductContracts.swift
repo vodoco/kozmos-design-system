@@ -385,12 +385,26 @@ public struct KozmosFloorPresentation: Sendable, Hashable, Identifiable {
     public let label: String
     public let shortLabel: String
     public let disabled: Bool
+    /// How many results sit on this level. Drawn as a small marker on the
+    /// floor's button, so a visitor can see that the answer is upstairs
+    /// without changing level to find out.
+    ///
+    /// `nil` means unknown, which is not the same as zero: a selector given
+    /// no counts marks nothing, rather than marking every level as empty.
+    public let resultCount: Int?
 
-    public init(id: String, label: String, shortLabel: String, disabled: Bool = false) {
+    public init(
+        id: String,
+        label: String,
+        shortLabel: String,
+        disabled: Bool = false,
+        resultCount: Int? = nil
+    ) {
         self.id = id
         self.label = label
         self.shortLabel = shortLabel
         self.disabled = disabled
+        self.resultCount = resultCount
     }
 }
 

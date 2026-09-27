@@ -290,6 +290,16 @@ export interface FloorPresentation {
   label: string;
   shortLabel: string;
   disabled?: boolean;
+  /**
+   * How many results sit on this level. Drawn as a small marker on the
+   * floor's button, so a visitor can see that the answer is upstairs without
+   * changing level to find out — today only the hollow pins say so, and only
+   * once the map is looked at (GAP-070).
+   *
+   * Absent means unknown, which is not the same as zero: a selector given no
+   * counts marks nothing, rather than marking every level as empty.
+   */
+  resultCount?: number;
 }
 
 export interface CategoryPresentation {
