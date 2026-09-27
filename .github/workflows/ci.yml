@@ -46,6 +46,17 @@ jobs:
       - name: Verify Release Safeguards
         run: pnpm test:release
 
+      # A pull request that changes what a published package ships says how it
+      # is released: a changeset naming the package, or an empty one when it
+      # needs none (Olcay's decision 8). Only the four npm packages' shipped
+      # files count, not tests, stories, docs or the private apps. Pull
+      # requests only; on main the changesets are what a release consumes.
+      - name: Require A Changeset For Published Changes
+        if: github.event_name == 'pull_request'
+        env:
+          CHANGESET_BASE: origin/${{ github.base_ref }}
+        run: node scripts/release/changeset-required.mjs
+
       # The design system gates on its own lint. apps/mapscale-review is a
       # consumer of the library — a place to use the components for real — and
       # its in-flight work should not block a packages/ change. It is still

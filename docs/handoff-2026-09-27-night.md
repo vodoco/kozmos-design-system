@@ -9,21 +9,21 @@ built today, where things live, and the traps. The evening handoff,
 
 ## 0. In one screen
 
-| What              | Where / how                                                         | State                                                                                                          |
-| ----------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `8a5fb43c` (#122) when written                                                                       |
-| Main checkout     | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`          | shared with other sessions — stage by file, never `git add -A`                                                 |
-| Open PRs (mine)   | none — #118–#122 merged                                             | nothing in flight (§3)                                                                                         |
-| Open PRs (others) | #55 website (the site session's, `claude/kozmos-site`)              | **conflicts with `main`**; once main is merged in, all 18 required checks must pass                            |
-| Required checks   | branch protection on `main`                                         | **all 18 PR checks** (decision 13), GitHub Actions only; auto-merge allowed. Chromatic's workflow **disabled** |
-| Visual review     | `pnpm test:visual` (Docker) · CI "Visual Review"                    | every story × light/dark (632 drawings), `tests/visual/baselines`                                              |
-| CI on `main`      | GitHub; `node scripts/ci-local.mjs --job web\|ios\|android` locally | green through #120 (`407d59df`, iOS included); #119 and #121 are docs, which CI skips on `main`                |
-| React unit suite  | `cd packages/react && npx vitest run`                               | 714 on `main` after #120, measured (706 at #113)                                                               |
-| Bundle budget     | `pnpm tsx scripts/performance/bundle-analyzer.ts`                   | 61.97 of 64 KB (CI, `9df17777`)                                                                                |
-| Contract parity   | `pnpm contracts:parity:check`                                       | 25 types, 121 fields, 14 enumerations                                                                          |
-| npm               | react 0.4.0, icons 0.3.0, product-contracts 0.3.0, tokens 0.1.0     | nothing published since; **no changesets since 0.4.0** but #120's; react pins its siblings exactly (§8)        |
-| Change list       | `~/Downloads/Kozmos requests from the MAP-474 prototypes (5).md`    | rows 1–82 (23:23 export). Row 82 (GAP-083) is done but still says To do there; rows 79–81 are decision 23      |
-| Figma library     | `Yj4O8p6Y9h2Sa9zJVoAiVY`                                            | 2,430 / 2,430 icons tinted (morning); today's rows not yet in Figma (task)                                     |
+| What              | Where / how                                                         | State                                                                                                                   |
+| ----------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `ad570f63` (#123) when written                                                                                |
+| Main checkout     | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`          | shared with other sessions — stage by file, never `git add -A`                                                          |
+| Open PRs (mine)   | #124 (changesets, auto-merge on); #118–#123 merged                  | §3; the agents' floor-label and MapOverlay PRs follow                                                                   |
+| Open PRs (others) | #55 website (the site session's, `claude/kozmos-site`)              | **conflicts with `main`**; once main is merged in, all 18 required checks must pass                                     |
+| Required checks   | branch protection on `main`                                         | **all 18 PR checks** (decision 13), GitHub Actions only; auto-merge allowed. Chromatic's workflow **disabled**          |
+| Visual review     | `pnpm test:visual` (Docker) · CI "Visual Review"                    | every story × light/dark (632 drawings), `tests/visual/baselines`                                                       |
+| CI on `main`      | GitHub; `node scripts/ci-local.mjs --job web\|ios\|android` locally | green through #120 (`407d59df`, iOS included); #119 and #121 are docs, which CI skips on `main`                         |
+| React unit suite  | `cd packages/react && npx vitest run`                               | 714 on `main` after #120, measured (706 at #113)                                                                        |
+| Bundle budget     | `pnpm tsx scripts/performance/bundle-analyzer.ts`                   | 61.97 of 64 KB (CI, `9df17777`)                                                                                         |
+| Contract parity   | `pnpm contracts:parity:check`                                       | 25 types, 121 fields, 14 enumerations                                                                                   |
+| npm               | react 0.4.0, icons 0.3.0, product-contracts 0.3.0, tokens 0.1.0     | nothing published since; changesets for everything since 0.4.0 → react 0.5.0, icons 0.4.0, product-contracts 0.4.0 (§8) |
+| Change list       | `~/Downloads/Kozmos requests from the MAP-474 prototypes (5).md`    | rows 1–82 (23:23 export). Row 82 (GAP-083) is done but still says To do there; rows 79–81 are decision 23               |
+| Figma library     | `Yj4O8p6Y9h2Sa9zJVoAiVY`                                            | 2,430 / 2,430 icons tinted (morning); today's rows not yet in Figma (task)                                              |
 
 ## 1. Scope, and how Olcay works
 
@@ -92,6 +92,8 @@ are out of scope.
 | #119 | —                | this handoff                                                                                                           |
 | #121 | decision 13      | every PR check required; CONTRIBUTING names them; this handoff's final state                                           |
 | #122 | decisions 14–20  | Olcay's answers to the open questions                                                                                  |
+| #123 | decisions 21–23  | voice (SearchBar no, AI chat product-gated), rows 79–81                                                                |
+| #124 | changesets       | the catch-up since 0.4.0, and `changeset-required.mjs` in every PR                                                     |
 
 ## 3. In flight — nothing
 
@@ -184,26 +186,25 @@ list and numbers the unnumbered items (decision 20).
 
 ## 6. The queue: suggested tasks (chips in the app), in order
 
-| When                          | Task                                                     | Note                                                                                               |
-| ----------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| now                           | Write changesets for everything since 0.4.0              | release blocker: react pins icons/contracts exactly (§8); #120 has its own — leave GAP-083 web out |
-| now                           | Triage the 135 Dependabot alerts                         | none reach consumers; the only task touching the lockfile                                          |
-| now                           | Fix the docs' iOS and Android snippets                   | 72 native tabs are stale implementation copies; 8 don't compile                                    |
-| now, one after the other      | Android sheet: content overhangs; easing                 | same file                                                                                          |
-| now                           | Keep the grip's 4px above every hosted panel part        | decision 14; the browse panel first                                                                |
-| now                           | Floor stepper: "Floor up" / "Floor down" in React        | decision 15; docs and tests say the new names                                                      |
-| now                           | AICompanionPanel: focus in only when opened              | decision 16                                                                                        |
-| now, then ask Olcay           | Rail tile: one smaller label size                        | decision 17; measure first, change after Olcay sees it                                             |
-| any time                      | Japanese break-hint request for the taxonomy             | decision 18; list the names that need hints, measured in the tile                                  |
-| now                           | MapOverlay: stop clipping the controls' shadows (row 81) | decision 23; P3, small                                                                             |
-| now                           | AdaptiveMapShell: bottom-corner controls (row 80)        | decision 23; P2; collision insets (GAP-079's band model)                                           |
-| after the floor labels        | FloorSelector: collapsed level switcher (row 79)         | decision 23; P2; uses "Floor up"/"Floor down"                                                      |
-| now                           | AI chat: a microphone for a spoken conversation          | decision 22; off unless the product turns it on; never in App Clips                                |
-| any time                      | Android: favourite and save in the details header        | parity gap found today                                                                             |
-| any time, one after the other | Focus-ring offsets in dark theme; RTL sweep              | visual changes — Visual Review shows them now                                                      |
-| with Olcay                    | Bring today's map and chip changes to Figma              | Olcay runs the plugin                                                                              |
-| check first                   | Run the iOS shell render tests on CI                     | mostly covered by #108/#111/#116                                                                   |
-| any time                      | Fix CONTRIBUTING's stale merge and release steps         | it says squash-merge and a Changesets release PR; the repo merges and releases by hand             |
+| When                          | Task                                                     | Note                                                                                   |
+| ----------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| now                           | Triage the 135 Dependabot alerts                         | none reach consumers; the only task touching the lockfile                              |
+| now                           | Fix the docs' iOS and Android snippets                   | 72 native tabs are stale implementation copies; 8 don't compile                        |
+| now, one after the other      | Android sheet: content overhangs; easing                 | same file                                                                              |
+| now                           | Keep the grip's 4px above every hosted panel part        | decision 14; the browse panel first                                                    |
+| now                           | Floor stepper: "Floor up" / "Floor down" in React        | decision 15; docs and tests say the new names                                          |
+| now                           | AICompanionPanel: focus in only when opened              | decision 16                                                                            |
+| now, then ask Olcay           | Rail tile: one smaller label size                        | decision 17; measure first, change after Olcay sees it                                 |
+| any time                      | Japanese break-hint request for the taxonomy             | decision 18; list the names that need hints, measured in the tile                      |
+| now                           | MapOverlay: stop clipping the controls' shadows (row 81) | decision 23; P3, small                                                                 |
+| now                           | AdaptiveMapShell: bottom-corner controls (row 80)        | decision 23; P2; collision insets (GAP-079's band model)                               |
+| after the floor labels        | FloorSelector: collapsed level switcher (row 79)         | decision 23; P2; uses "Floor up"/"Floor down"                                          |
+| now                           | AI chat: a microphone for a spoken conversation          | decision 22; off unless the product turns it on; never in App Clips                    |
+| any time                      | Android: favourite and save in the details header        | parity gap found today                                                                 |
+| any time, one after the other | Focus-ring offsets in dark theme; RTL sweep              | visual changes — Visual Review shows them now                                          |
+| with Olcay                    | Bring today's map and chip changes to Figma              | Olcay runs the plugin                                                                  |
+| check first                   | Run the iOS shell render tests on CI                     | mostly covered by #108/#111/#116                                                       |
+| any time                      | Fix CONTRIBUTING's stale merge and release steps         | it says squash-merge and a Changesets release PR; the repo merges and releases by hand |
 
 Any task that changes how a story looks must record baselines (§7) or its PR stays red.
 
@@ -239,6 +240,11 @@ the frame's own size.
 
 ## 8. Facts a release or a review must not miss
 
+- **Every PR that changes what a published package ships carries a changeset naming it** (an empty
+  one, `pnpm changeset --empty`, when it needs no release); CI's "Web Build & Test" enforces it with
+  `scripts/release/changeset-required.mjs`. The catch-up for everything since 0.4.0 is in: a release
+  now would be react 0.5.0, icons 0.4.0 and product-contracts 0.4.0, and the packed react pins
+  exactly those (proved with a throwaway `changeset version` and `pnpm pack`).
 - **Published react pins its siblings exactly** (`workspace:*` → `"@kozmos-ds/icons": "0.3.0"`).
   Main's react imports `LocationFollowing`/`LocationHeading` (icons, #100) and types with
   `summary`/`resultCount`/`appliedScope` (contracts) — none in the pinned versions. A release needs
@@ -278,6 +284,13 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
   after a record run all 18 are missing until you push again.
 - A pull request retargeted to `main` from another base has no `analyze-bundle` or `lighthouse` run
   (both run only for pull requests into `main`) until a push, or a close and reopen.
+- **Required checks are matched by name.** Renaming a CI job or a browser shard (`name:` or
+  `matrix.shard.name`) leaves the old name required and never reported, so every PR blocks: update
+  branch protection in the same change (`gh api -X PATCH …/branches/main/protection/required_status_checks`
+  with the full list, `app_id` 15368), and add any new always-running check to it.
+- A Dependabot PR that bumps a published package's runtime `dependencies` fails "Web Build & Test"
+  until it carries a changeset (`dependencies` is consumer-facing): push a patch changeset to its
+  branch. Dev-dependency bumps need none.
 - `npx changeset status` prints `/bin/sh: /Volumes/4TB: No such file or directory` (the space in the
   path) and still runs; `--since=origin/main` counts only committed changesets.
 
@@ -285,7 +298,7 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
 
 ```bash
 cd "/Volumes/4TB Depo/development/K/kozmos-design-system-dev"
-git checkout main && git pull --ff-only && git log --oneline -1   # expect 8a5fb43c or later
+git checkout main && git pull --ff-only && git log --oneline -1   # expect ad570f63 or later
 gh pr list --repo vodoco/kozmos-design-system --state open         # #55, and anything newer
 pnpm install && pnpm exec turbo run build --filter=@kozmos-ds/react...
 ```
