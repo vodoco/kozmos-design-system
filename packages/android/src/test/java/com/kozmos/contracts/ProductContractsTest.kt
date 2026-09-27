@@ -111,6 +111,45 @@ class ProductContractsTest {
 
     // endregion
 
+    // region what a search was held to (GAP-023)
+
+    @Test
+    fun theScopeKindEnumerationCarriesTheWireValues() {
+        assertEquals(
+            listOf("building", "area"),
+            KozmosSearchScopeKind.entries.map { it.value }
+        )
+    }
+
+    @Test
+    fun aSearchResponseSaysWhatPartOfTheVenueItWasHeldTo() {
+        // "coffee in this terminal": one chip says Terminal 2, and its x
+        // searches the whole venue with "coffee".
+        val response = KozmosSearchResponsePresentation(
+            appliedScope = KozmosSearchScopePresentation(
+                kind = KozmosSearchScopeKind.Building,
+                id = "terminal-2",
+                label = "Terminal 2",
+                queryWithoutScope = "coffee"
+            )
+        )
+        assertEquals(KozmosSearchScopeKind.Building, response.appliedScope?.kind)
+        assertEquals("Terminal 2", response.appliedScope?.label)
+        assertEquals("coffee", response.appliedScope?.queryWithoutScope)
+        // A scope the host chose has no query words to take away.
+        assertNull(
+            KozmosSearchScopePresentation(
+                kind = KozmosSearchScopeKind.Area,
+                id = "airside",
+                label = "After security"
+            ).queryWithoutScope
+        )
+        // The whole venue is the default, and says so by saying nothing.
+        assertNull(KozmosSearchResponsePresentation().appliedScope)
+    }
+
+    // endregion
+
     // region a result carries why it is here, its unit and its language
 
     @Test
