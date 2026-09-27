@@ -88,6 +88,34 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
    * runs under them and the chrome keeps them.
    */
   safeAreaInsets?: Partial<MapCollisionInsets>;
+  /**
+   * The device's own safe areas, which the chrome keeps out of and the map
+   * runs under. Defaults to CSS `env(safe-area-inset-*)`, and the larger of
+   * the two wins, so passing them can only ever add room.
+   *
+   * A prop because `env()` is not always the truth: inside a device frame on a
+   * canvas, in a web view whose host draws its own bar, or anywhere system
+   * chrome is painted over a page that reports zero, the controls end up under
+   * the status bar with nothing able to say so (GAP-077).
+   */
+  deviceSafeAreaInsets?: Partial<MapCollisionInsets>;
+  /**
+   * Whether the floating controls pad the camera through
+   * `onCollisionInsetsChange`. Off by default.
+   *
+   * Collision insets are four edge bands, so a 44px control column asked the
+   * camera to give up the whole edge it sat on, at every height — measured at
+   * 120px on a phone. A map following the visitor put them well off centre,
+   * and the map shifted whenever the location button widened to show its mode
+   * (GAP-079). A panel or a top bar really does span its edge; a small
+   * floating cluster does not.
+   *
+   * The controls stay in the snapshot's `occlusions` with their true bounds,
+   * so a product that wants to fit around them still can — and this stays a
+   * boolean rather than a variant because it is camera behaviour, which no
+   * Figma axis could ever carry.
+   */
+  controlsPadCamera?: boolean;
   /** Hinge-free physical rectangles in shell-local CSS pixels. Omit for a continuous host. */
   usableRegions?: readonly MapLayoutRect[];
   onCollisionInsetsChange?: (insets: MapCollisionInsets) => void;
@@ -151,6 +179,8 @@ const AdaptiveMapShell = React.forwardRef<
       panelHandleLabel = "Panel height",
       collisionInsets,
       safeAreaInsets,
+      deviceSafeAreaInsets,
+      controlsPadCamera = false,
       usableRegions,
       onCollisionInsetsChange,
       onLayoutChange,
@@ -280,7 +310,17 @@ const AdaptiveMapShell = React.forwardRef<
     // The device's safe areas (CSS env()) are the chrome's: the map runs
     // under them, as the prototype's does. What the host supplies — a
     // keyboard — is an exclusion the map and the panel both keep out of.
-    const chrome = measured.safe;
+    // `env()` is the floor, not the answer: a host that knows better can only
+    // widen it.
+    const chrome = {
+      top: mergeSafeInset(measured.safe.top, deviceSafeAreaInsets?.top),
+      right: mergeSafeInset(measured.safe.right, deviceSafeAreaInsets?.right),
+      bottom: mergeSafeInset(
+        measured.safe.bottom,
+        deviceSafeAreaInsets?.bottom,
+      ),
+      left: mergeSafeInset(measured.safe.left, deviceSafeAreaInsets?.left),
+    };
     const safe = {
       top: mergeSafeInset(0, safeAreaInsets?.top),
       right: mergeSafeInset(0, safeAreaInsets?.right),
@@ -429,21 +469,27 @@ const AdaptiveMapShell = React.forwardRef<
     ];
     const insets = resolveMapInsets(
       layout.mapBounds,
-      occlusions.map((occlusion) => ({
-        bounds: occlusion.bounds,
-        edge:
-          occlusion.kind === "top-bar"
-            ? "top"
-            : occlusion.kind === "controls"
-              ? controlsOnLeft
-                ? "left"
-                : "right"
-              : layout.presentation === "bottom"
-                ? "bottom"
-                : onRight
-                  ? "right"
-                  : "left",
-      })),
+      // The controls stay in `occlusions` whatever this says; what changes is
+      // only whether they are allowed to pad the camera.
+      occlusions
+        .filter(
+          (occlusion) => controlsPadCamera || occlusion.kind !== "controls",
+        )
+        .map((occlusion) => ({
+          bounds: occlusion.bounds,
+          edge:
+            occlusion.kind === "top-bar"
+              ? "top"
+              : occlusion.kind === "controls"
+                ? controlsOnLeft
+                  ? "left"
+                  : "right"
+                : layout.presentation === "bottom"
+                  ? "bottom"
+                  : onRight
+                    ? "right"
+                    : "left",
+        })),
       {
         top: Math.max(collisionInsets?.top ?? 0, chrome.top),
         right: Math.max(collisionInsets?.right ?? 0, chrome.right),
