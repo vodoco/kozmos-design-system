@@ -26,7 +26,13 @@ const UserMessage = React.forwardRef<HTMLDivElement, UserMessageProps>(
       {...props}
     >
       <div className="max-w-[85%] rounded-container bg-primary px-4 py-3 text-sm text-primary-foreground">
-        {speakerLabel && <span className="sr-only">{speakerLabel}</span>}
+        {/* The space keeps the label a word of its own in WebKit, which runs
+            a hidden span into the text after it; it is never drawn. */}
+        {speakerLabel && (
+          <>
+            <span className="sr-only">{speakerLabel}</span>{" "}
+          </>
+        )}
         {children}
       </div>
     </div>

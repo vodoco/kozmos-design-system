@@ -65,8 +65,16 @@ const AIMessage = React.forwardRef<HTMLDivElement, AIMessageProps>(
           )}
         >
           {/* First, and on every turn: a label added only once a reply
-              completed would be announced by the thread's log on its own. */}
-          {speakerLabel && <span className="sr-only">{speakerLabel}</span>}
+              completed would be announced by the thread's log on its own.
+              The space after it is what keeps it a word of its own: WebKit
+              runs a hidden span into the text that follows it ("Assistant
+              saidThe assistant…"), where Chromium and Firefox break the
+              line. It sits at the start of the line, so it is never drawn. */}
+          {speakerLabel && (
+            <>
+              <span className="sr-only">{speakerLabel}</span>{" "}
+            </>
+          )}
           {/* The dots sit BESIDE the text, not instead of it: the prototype
               streams "••• Looking through this building…", where the
               acknowledgement is the thing that arrives within 2.5s. */}

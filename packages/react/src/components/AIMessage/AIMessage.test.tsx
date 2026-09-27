@@ -60,14 +60,14 @@ describe("AIMessage", () => {
     expect(
       screen.getByText("Looking through this building…"),
     ).toHaveTextContent(
-      /^Assistant saidAssistant is replyingLooking through this building…$/,
+      /^Assistant said Assistant is replyingLooking through this building…$/,
     );
 
     rerender(<AIMessage status="timedOut" />);
     expect(
       screen.getByText("The assistant did not reply in time."),
     ).toHaveTextContent(
-      /^Assistant saidThe assistant did not reply in time\.$/,
+      /^Assistant said The assistant did not reply in time\.$/,
     );
   });
 });

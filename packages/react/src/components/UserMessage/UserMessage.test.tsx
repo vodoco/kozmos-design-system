@@ -30,4 +30,13 @@ describe("UserMessage", () => {
     );
     expect(container.querySelector(".sr-only")).toBeNull();
   });
+
+  it("keeps the speaker a word of its own, before the words", () => {
+    // WebKit runs a hidden span into the text after it: measured in its
+    // innerText, "You saidWo ist der Aufzug?", where Chromium and Firefox
+    // break the line. A space between them is a word boundary in all three.
+    render(<UserMessage>Wo ist der Aufzug?</UserMessage>);
+    const bubble = screen.getByText("You said").parentElement!;
+    expect(bubble.textContent).toBe("You said Wo ist der Aufzug?");
+  });
 });
