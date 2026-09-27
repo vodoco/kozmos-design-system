@@ -60,7 +60,9 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
    *
    * A vertical drag on it moves the sheet, whatever the content has
    * scrolled; a sideways one stays with the header, for a row of chips
-   * that scrolls. In a side panel it is the panel's first row.
+   * that scrolls. Under a grab handle it keeps its first control clear of
+   * the handle's target (WCAG 2.5.8). In a side panel it is the panel's
+   * first row.
    */
   panelHeader?: React.ReactNode;
   panelLabel?: string;
@@ -899,6 +901,14 @@ const AdaptiveMapShell = React.forwardRef<
                 style={{
                   paddingLeft: isSheet ? chrome.left : undefined,
                   paddingRight: isSheet ? chrome.right : undefined,
+                  // The handle is a 16px row, and a control directly under it
+                  // - the search field a header usually starts with - leaves
+                  // the handle's target a 16px clear space where WCAG 2.5.8
+                  // asks 24. Half the shortfall keeps it clear, from the
+                  // handle's own height token.
+                  paddingTop: drawsHandle
+                    ? "calc((24px - var(--primitives-layout-spacing-200) * 1px) / 2)"
+                    : undefined,
                   // A vertical drag here is the sheet's; a sideways one stays
                   // with the header, for a row of chips that scrolls.
                   touchAction: isSheet ? "pan-x" : undefined,

@@ -196,6 +196,25 @@ describe("AdaptiveMapShell sheet detents", () => {
       expect(order.indexOf(headerRow)).toBeLessThan(order.indexOf(scroller));
     });
 
+    it("keeps its first control clear of the grab handle's target", () => {
+      // WCAG 2.5.8: the handle is a 16px row, so a control directly under it
+      // leaves its target a 16px clear space, not 24 - the Storybook audit's
+      // target-size failure on the header story. Half the shortfall below it,
+      // derived from the handle's own height token.
+      const aside = sheet({
+        panelHeader: <input aria-label="Search places" />,
+      });
+      expect(
+        screen.getByRole("slider", { name: "Panel height" }),
+      ).toBeVisible();
+      const header = aside.querySelector<HTMLElement>(
+        "[data-kozmos-panel-header]",
+      )!;
+      expect(header.style.paddingTop).toBe(
+        "calc((24px - var(--primitives-layout-spacing-200) * 1px) / 2)",
+      );
+    });
+
     it("gives vertical drags on it to the sheet and keeps sideways ones for a row that scrolls", () => {
       const aside = sheet({
         panelHeader: <input aria-label="Search places" />,
