@@ -89,3 +89,24 @@ export const Variants: Story = {
     </ChipGroup>
   ),
 };
+
+/**
+ * One choice of several: a radio group, so it is announced as one choice
+ * with one Tab stop, and the arrow keys move it (row 37).
+ */
+export const OneChoice: Story = {
+  render: function OneChoiceStory() {
+    const [scope, setScope] = useState("airport");
+    return (
+      <ChipGroup
+        aria-label="Search in"
+        selectionMode="single"
+        value={scope}
+        onValueChange={setScope}
+      >
+        <Chip value="airport">Whole airport</Chip>
+        <Chip value="t2">Terminal 2</Chip>
+      </ChipGroup>
+    );
+  },
+};
