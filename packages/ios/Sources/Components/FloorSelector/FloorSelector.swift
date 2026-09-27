@@ -26,6 +26,14 @@ public struct KozmosFloorSelector: View {
     @Binding var selectedFloor: String
     let variant: KozmosFloorSelectorVariant
     let label: String
+    /// What the compact stepper's two buttons are called, for a visitor who
+    /// cannot see them: the previous level in list order is on the up chevron,
+    /// the next on the down. Hard-coded English until row 67. Only the stepper
+    /// draws them; the lists name each level by its own label. The defaults
+    /// are the words these buttons always said — React's read "Previous floor"
+    /// and "Next floor".
+    let previousFloorLabel: String
+    let nextFloorLabel: String
     @Environment(\.kozmosAnalytics) private var trackEvent
 
     /// A fixed 40pt button truncates every level to an ellipsis once Dynamic
@@ -41,12 +49,16 @@ public struct KozmosFloorSelector: View {
         floors: [KozmosFloorPresentation],
         selectedFloor: Binding<String>,
         variant: KozmosFloorSelectorVariant = .verticalList,
-        label: String = "Floor selector"
+        label: String = "Floor selector",
+        previousFloorLabel: String = "Floor up",
+        nextFloorLabel: String = "Floor down"
     ) {
         self.floors = floors
         self._selectedFloor = selectedFloor
         self.variant = variant
         self.label = label
+        self.previousFloorLabel = previousFloorLabel
+        self.nextFloorLabel = nextFloorLabel
     }
 
     /// For tests and previews: the collapsible list already open.
@@ -66,7 +78,9 @@ public struct KozmosFloorSelector: View {
         floors: [String],
         selectedFloor: Binding<String>,
         variant: KozmosFloorSelectorVariant = .verticalList,
-        label: String = "Floor selector"
+        label: String = "Floor selector",
+        previousFloorLabel: String = "Floor up",
+        nextFloorLabel: String = "Floor down"
     ) {
         self.init(
             floors: floors.map {
@@ -74,7 +88,9 @@ public struct KozmosFloorSelector: View {
             },
             selectedFloor: selectedFloor,
             variant: variant,
-            label: label
+            label: label,
+            previousFloorLabel: previousFloorLabel,
+            nextFloorLabel: nextFloorLabel
         )
     }
 
@@ -175,11 +191,11 @@ public struct KozmosFloorSelector: View {
             }
         case .compactStepper:
             VStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                stepperButton(systemImage: "chevron.up", step: -1, label: "Floor up")
+                stepperButton(systemImage: "chevron.up", step: -1)
                 if let selectedPresentation {
                     floorButton(selectedPresentation)
                 }
-                stepperButton(systemImage: "chevron.down", step: 1, label: "Floor down")
+                stepperButton(systemImage: "chevron.down", step: 1)
             }
         case .collapsible:
             // Only ever the current level. The list that opens is an overlay,
@@ -316,9 +332,15 @@ public struct KozmosFloorSelector: View {
         return nil
     }
 
+    /// What a stepper button is called: `previousFloorLabel` for a step back
+    /// through the list, `nextFloorLabel` for a step on.
+    func stepperLabel(step: Int) -> String {
+        step < 0 ? previousFloorLabel : nextFloorLabel
+    }
+
     /// Steps through the floor list. `step` is in list order, so -1 is the
     /// entry above the current one.
-    private func stepperButton(systemImage: String, step: Int, label: String) -> some View {
+    private func stepperButton(systemImage: String, step: Int) -> some View {
         let target = reachableIndex(step: step)
 
         return Button {
@@ -333,6 +355,6 @@ public struct KozmosFloorSelector: View {
         .buttonStyle(.plain)
         .disabled(target == nil)
         .opacity(target == nil ? 0.4 : 1)
-        .accessibilityLabel(label)
+        .accessibilityLabel(stepperLabel(step: step))
     }
 }
