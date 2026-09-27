@@ -197,13 +197,21 @@ describe("POIResultList", () => {
 
     function Scroller({
       children,
-      overflowY = "hidden",
+      overflowY = "auto",
+      declares = false,
       ...props
     }: React.HTMLAttributes<HTMLDivElement> & {
       overflowY?: React.CSSProperties["overflowY"];
+      /** Says it scrolls although it hides its overflow, as the sheet does. */
+      declares?: boolean;
     }) {
       return (
-        <div data-testid="scroller" style={{ overflowY }} {...props}>
+        <div
+          data-kozmos-scroller={declares ? "" : undefined}
+          data-testid="scroller"
+          style={{ overflowY }}
+          {...props}
+        >
           {children}
         </div>
       );
@@ -291,6 +299,25 @@ describe("POIResultList", () => {
     it("scrolls a sheet that hides its overflow, where a finger cannot", () => {
       // Below its largest detent AdaptiveMapShell's sheet is overflow: hidden
       // and every touch moves the sheet: the product had to scroll it itself.
+      // It says so with data-kozmos-scroller.
+      const { rerender } = render(
+        <Scroller declares overflowY="hidden">
+          <List />
+        </Scroller>,
+      );
+      const { scrollBy, page } = stage("poi-8", 500);
+      rerender(
+        <Scroller declares overflowY="hidden">
+          <List selectedPoiId="poi-8" />
+        </Scroller>,
+      );
+      expect(scrollBy).toHaveBeenCalledTimes(1);
+      page.mockRestore();
+    });
+
+    it("leaves a box that only clips alone", () => {
+      // A box that hides its overflow to clip - a group's rounded corners -
+      // is not a scroller, even when rounding leaves it a pixel of overflow.
       const { rerender } = render(
         <Scroller overflowY="hidden">
           <List />
@@ -302,8 +329,71 @@ describe("POIResultList", () => {
           <List selectedPoiId="poi-8" />
         </Scroller>,
       );
-      expect(scrollBy).toHaveBeenCalledTimes(1);
+      expect(scrollBy).not.toHaveBeenCalled();
       page.mockRestore();
+    });
+
+    it("brings in a result that is already selected as the list appears", () => {
+      // A pin's tap can open the results with its result selected: the list
+      // mounts with the selection, and nothing changes after that.
+      const scrollBy = vi.fn();
+      const spies = [
+        vi
+          .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+          .mockImplementation(function (this: HTMLElement) {
+            if (this.dataset.testid === "scroller")
+              return rect(view.top, view.height);
+            if (this.dataset.poiId === "poi-8") return rect(500, 80);
+            return rect(0, 0);
+          }),
+        vi
+          .spyOn(HTMLElement.prototype, "clientHeight", "get")
+          .mockImplementation(function (this: HTMLElement) {
+            return this.dataset.testid === "scroller" ? view.height : 0;
+          }),
+        vi
+          .spyOn(HTMLElement.prototype, "scrollHeight", "get")
+          .mockImplementation(function (this: HTMLElement) {
+            return this.dataset.testid === "scroller" ? 1000 : 0;
+          }),
+      ];
+      const original = HTMLElement.prototype.scrollBy;
+      HTMLElement.prototype.scrollBy = scrollBy as typeof original;
+      try {
+        render(
+          <Scroller>
+            <List selectedPoiId="poi-8" />
+          </Scroller>,
+        );
+        expect(scrollBy).toHaveBeenCalledWith({ top: 292, behavior: "smooth" });
+        expect(scrollBy.mock.instances[0]).toBe(screen.getByTestId("scroller"));
+      } finally {
+        HTMLElement.prototype.scrollBy = original;
+        spies.forEach((spy) => spy.mockRestore());
+      }
+    });
+
+    it("scrolls the page when nothing around the list does", () => {
+      // A list in the page's own flow: the page is its scroller.
+      const { rerender } = render(<List />);
+      const html = document.documentElement;
+      const sizes = [
+        vi.spyOn(html, "clientHeight", "get").mockReturnValue(600),
+        vi.spyOn(html, "scrollHeight", "get").mockReturnValue(2000),
+      ];
+      const card = document.querySelector<HTMLElement>(
+        '[data-poi-id="poi-8"]',
+      )!;
+      card.getBoundingClientRect = () => rect(900, 80);
+      const page = vi.spyOn(window, "scrollBy").mockImplementation(() => {});
+      try {
+        rerender(<List selectedPoiId="poi-8" />);
+        // The card's bottom (980) to the viewport's (600), and 12px more.
+        expect(page).toHaveBeenCalledWith({ top: 392, behavior: "smooth" });
+      } finally {
+        page.mockRestore();
+        sizes.forEach((spy) => spy.mockRestore());
+      }
     });
 
     it("leaves a result that is already in view where it is", () => {

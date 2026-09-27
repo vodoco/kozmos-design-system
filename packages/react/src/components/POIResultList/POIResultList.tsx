@@ -46,15 +46,19 @@ const isGroup = (entry: POIResultListEntry): entry is POIResultListGroup =>
 const REVEAL_MARGIN = 12;
 
 /**
- * The nearest ancestor that scrolls, including one that hides its overflow.
+ * What the list scrolls to bring a result into view: the nearest ancestor
+ * that scrolls, or, when nothing around the list does, the page.
  *
- * AdaptiveMapShell's sheet is `overflow: hidden` below its largest detent —
- * every touch there moves the sheet, so a finger cannot scroll it — yet it is
- * still a scroller, and only script can bring a result into it. A box that
- * hides overflow it does not have is not one, and neither is the page: the
- * list moves what it sits in, never the document around it.
+ * A box that hides its overflow scrolls only when it says so with
+ * `data-kozmos-scroller`. AdaptiveMapShell's sheet does: below its largest
+ * detent it hides its overflow and every touch moves the sheet, so a finger
+ * cannot scroll it, yet only script can bring a result into it. Any other box
+ * that hides its overflow is clipping — a group's rounded corners — and a
+ * pixel of rounding must not make it the one that moves.
  */
-function scrollerOf(element: HTMLElement): HTMLElement | null {
+function scrollerOf(
+  element: HTMLElement,
+): { node: HTMLElement; page: boolean } | null {
   const document = element.ownerDocument;
   const view = document.defaultView;
   if (!view) return null;
@@ -63,13 +67,25 @@ function scrollerOf(element: HTMLElement): HTMLElement | null {
     node && node !== document.body && node !== document.documentElement;
     node = node.parentElement
   ) {
+    if (node.scrollHeight <= node.clientHeight) continue;
     const { overflowY } = view.getComputedStyle(node);
     if (
-      /^(auto|scroll|hidden|overlay)$/.test(overflowY) &&
-      node.scrollHeight > node.clientHeight
+      /^(auto|scroll|overlay)$/.test(overflowY) ||
+      (overflowY === "hidden" && node.hasAttribute("data-kozmos-scroller"))
     )
-      return node;
+      return { node, page: false };
   }
+  // A page that hides its overflow is an app frame, not a document to scroll.
+  const page = document.scrollingElement ?? document.documentElement;
+  if (
+    page instanceof view.HTMLElement &&
+    page.scrollHeight > page.clientHeight &&
+    ![document.documentElement, document.body].some(
+      (node) =>
+        node && /^(hidden|clip)$/.test(view.getComputedStyle(node).overflowY),
+    )
+  )
+    return { node: page, page: true };
   return null;
 }
 
@@ -83,17 +99,21 @@ function revealWithin(target: HTMLElement) {
   const scroller = scrollerOf(target);
   if (!scroller) return;
   const view = target.ownerDocument.defaultView!;
-  const style = view.getComputedStyle(scroller);
-  const frame = scroller.getBoundingClientRect();
-  // The scroller's padding is not somewhere a result can be read: the
-  // sheet's bottom padding is the device's home indicator.
-  const top =
-    frame.top + scroller.clientTop + (parseFloat(style.paddingTop) || 0);
-  const bottom =
-    frame.top +
-    scroller.clientTop +
-    scroller.clientHeight -
-    (parseFloat(style.paddingBottom) || 0);
+  let top = 0;
+  let bottom = scroller.node.clientHeight;
+  if (!scroller.page) {
+    const style = view.getComputedStyle(scroller.node);
+    const frame = scroller.node.getBoundingClientRect();
+    // The scroller's padding is not somewhere a result can be read: the
+    // sheet's bottom padding is the device's home indicator.
+    top =
+      frame.top + scroller.node.clientTop + (parseFloat(style.paddingTop) || 0);
+    bottom =
+      frame.top +
+      scroller.node.clientTop +
+      scroller.node.clientHeight -
+      (parseFloat(style.paddingBottom) || 0);
+  }
   const box = target.getBoundingClientRect();
   let distance = 0;
   if (box.top < top) distance = box.top - top - REVEAL_MARGIN;
@@ -107,9 +127,10 @@ function revealWithin(target: HTMLElement) {
     target.closest('[data-kozmos-motion="reduced"]') !== null ||
     view.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
   const behavior: ScrollBehavior = reduced ? "auto" : "smooth";
-  if (typeof scroller.scrollBy === "function")
-    scroller.scrollBy({ top: distance, behavior });
-  else scroller.scrollTop += distance;
+  if (scroller.page) view.scrollBy({ top: distance, behavior });
+  else if (typeof scroller.node.scrollBy === "function")
+    scroller.node.scrollBy({ top: distance, behavior });
+  else scroller.node.scrollTop += distance;
 }
 
 export interface POIResultListProps extends Omit<
@@ -156,9 +177,12 @@ export interface POIResultListProps extends Omit<
    *
    * A pin's tap selects its result, and the result can be anywhere in the
    * list; in AdaptiveMapShell's sheet below its largest detent it cannot even
-   * be scrolled to by hand. The first render never scrolls: a list opened
-   * with a selection has not had one made. A result in a collapsed group
-   * brings in its group.
+   * be scrolled to by hand. A list that appears with a result already
+   * selected — the pin's tap that opened it — brings that one in too. A
+   * result in a collapsed group brings in its group. A box that hides its
+   * overflow is scrolled only when it says it scrolls, with
+   * `data-kozmos-scroller`, as AdaptiveMapShell's sheet does; with nothing
+   * around the list that scrolls, the page does.
    *
    * Turn it off for a product that already scrolls the panel itself.
    */
@@ -197,7 +221,9 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       },
       [ref],
     );
-    const shownSelection = React.useRef(selectedPoiId);
+    // Nothing has been shown yet, so a list that mounts with a selection
+    // brings it in as it appears.
+    const shownSelection = React.useRef<string | undefined>(undefined);
     // Read through a ref, not the effect's dependencies: a product that
     // builds `items` during its render passes a new array every time, and
     // each re-run would drop the listener still waiting for the selected

@@ -120,6 +120,9 @@ export const SelectionComesIntoView: Story = {
         </div>
         <div
           className="rounded-container bg-muted p-3"
+          // A box that hides its overflow is clipping unless it says it
+          // scrolls, as the map sheet's content does.
+          data-kozmos-scroller=""
           style={{ height: 320, overflowY: "hidden" }}
         >
           <POIResultList

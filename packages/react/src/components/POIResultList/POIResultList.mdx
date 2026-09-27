@@ -16,14 +16,18 @@ change. The empty state should tell the person how to recover.
 ## The selected result comes into view
 
 When `selectedPoiId` changes, the list brings that result into view: a pin's
-tap selects a result that may be anywhere in the list. It scrolls whatever the
-list sits in, by the least distance, and nothing further out — never the map
-sheet itself or the page. That includes a scroller that hides its overflow, as
-`AdaptiveMapShell`'s sheet does below its largest detent, where a finger cannot
-scroll it.
+tap selects a result that may be anywhere in the list. It scrolls the nearest
+thing around it that scrolls, by the least distance, and nothing further out —
+never the map sheet's frame, the shell, or the page when something closer
+scrolls. With nothing around the list that scrolls, it scrolls the page.
 
-- The first render never scrolls: a list opened with a selection has not had
-  one made.
+A box that hides its overflow counts only when it says it scrolls, with
+`data-kozmos-scroller`. `AdaptiveMapShell`'s sheet does: below its largest
+detent it hides its overflow and a finger cannot scroll it, but the list can.
+Any other box that hides its overflow is clipping, and is left alone.
+
+- A list that appears with a result already selected, as when a pin's tap
+  opens it, brings that result in too.
 - A selected card opens its action row as it animates, so the list brings it in
   again once the row is open.
 - A result inside a collapsed group brings in its group.
