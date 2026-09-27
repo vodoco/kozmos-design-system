@@ -26,8 +26,8 @@ cannot".
 | Components scanned                        | 112    |
 | Declaring at least one React variant axis | 47     |
 | Variations that are compositional only    | 65     |
-| Components with variant gaps — iOS        | 13/47  |
-| Components with variant gaps — Android    | 13/47  |
+| Components with variant gaps — iOS        | 12/47  |
+| Components with variant gaps — Android    | 12/47  |
 | Components with variant gaps — Figma      | 11/47  |
 | Components with variant gaps — Vue        | 3/47   |
 | Components absent entirely — iOS          | 9/112  |
@@ -96,9 +96,6 @@ Notice
 POIResultCard
   - ios missing axes -> appearance (card, row)
   - android missing axes -> appearance (card, row)
-Skeleton
-  - ios missing axes -> shape (line, block, circle)
-  - android missing axes -> shape (line, block, circle)
 Surface
   - ios: component/set absent
   - figma: component/set absent
