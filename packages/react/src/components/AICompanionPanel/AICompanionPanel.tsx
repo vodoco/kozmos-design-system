@@ -1,18 +1,41 @@
 import React from "react";
 import { Stars01, XClose } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { Text } from "../Text";
 
 export interface AICompanionPanelProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
   "title"
 > {
   title?: React.ReactNode;
+  /**
+   * The heading level the title takes. It follows whatever heading sits above
+   * the panel: 2 where it covers the frame, as in the SDK's sheet; deeper
+   * where a product puts it inside a section. It looks the same at every
+   * level — the level is the document's, not the type's.
+   */
+  titleLevel?: 2 | 3 | 4 | 5 | 6;
   onClose?: () => void;
   closeLabel?: string;
   /** The thread and its input, in that order. */
   children?: React.ReactNode;
   /** Above the thread: the Story 14 notice, an offline EmptyState. */
   banner?: React.ReactNode;
+  /**
+   * The panel opens when it mounts, and takes focus then. Called first:
+   * `event.preventDefault()` keeps focus where you put it instead — in the
+   * field, through AIInputBar's `inputRef`. Focus that a part inside has
+   * already taken is left alone.
+   */
+  onOpenAutoFocus?: (event: Event) => void;
+  /**
+   * The panel closes when it unmounts, and hands focus back to whatever had
+   * it when it opened: AISearchButton, usually. Called first:
+   * `event.preventDefault()`, then focus what should have it. Not called at
+   * all when the product has already put focus somewhere outside the panel —
+   * that choice stands.
+   */
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 /**
@@ -26,6 +49,11 @@ export interface AICompanionPanelProps extends Omit<
  * assistant off, and Story 5 AC1 says the panel must tolerate AISearchButton
  * being absent — a panel that cannot be opened from a button it does not have
  * must still be closable by whatever did open it, or by nothing at all.
+ *
+ * It is a region named by its title, and it moves focus in and out itself
+ * (row 60). Opening left focus on the button beneath, which is focus on
+ * something the visitor can no longer see; closing removed whatever held it,
+ * and focus fell to the page.
  */
 const AICompanionPanel = React.forwardRef<
   HTMLDivElement,
@@ -35,14 +63,76 @@ const AICompanionPanel = React.forwardRef<
     {
       className,
       title = "Assistant",
+      titleLevel = 2,
       onClose,
       closeLabel = "Close assistant",
       banner,
       children,
+      onOpenAutoFocus,
+      onCloseAutoFocus,
+      "aria-label": ariaLabel,
+      "aria-labelledby": ariaLabelledBy,
       ...props
     },
     ref,
   ) => {
+    const titleId = React.useId();
+    const root = React.useRef<HTMLDivElement>(null);
+    React.useImperativeHandle(ref, () => root.current!, []);
+
+    // What had focus as the panel opened, read while it first renders: after
+    // that, a part inside may already have taken focus as it mounted.
+    const [opener] = React.useState(() =>
+      typeof document === "undefined" ? null : document.activeElement,
+    );
+    // The close comes renders after the open, so it calls the handler the
+    // panel has by then, not the one it opened with.
+    const closeAutoFocus = React.useRef(onCloseAutoFocus);
+    React.useEffect(() => {
+      closeAutoFocus.current = onCloseAutoFocus;
+    }, [onCloseAutoFocus]);
+
+    // Mount and unmount only: they are the panel's open and close.
+    React.useEffect(() => {
+      const node = root.current;
+      if (!node) return;
+      const doc = node.ownerDocument;
+      if (!node.contains(doc.activeElement)) {
+        const opening = new Event("kozmos.aiCompanionPanel.openAutoFocus", {
+          cancelable: true,
+        });
+        onOpenAutoFocus?.(opening);
+        if (!opening.defaultPrevented) node.focus({ preventScroll: true });
+      }
+      return () => {
+        // StrictMode's rehearsal runs this with the panel still in the
+        // document. A real close has already taken it out.
+        if (node.isConnected) return;
+        // Only focus that went down with the panel is handed back. A product
+        // that has already put it somewhere — the details of a place picked
+        // from the thread — keeps it there. Radix's Dialog hands focus back
+        // after its exit animation whatever happened meanwhile, and undoes
+        // exactly that.
+        const active = doc.activeElement;
+        const lost =
+          !active ||
+          active === doc.body ||
+          !active.isConnected ||
+          node.contains(active);
+        if (!lost) return;
+        const closing = new Event("kozmos.aiCompanionPanel.closeAutoFocus", {
+          cancelable: true,
+        });
+        closeAutoFocus.current?.(closing);
+        if (closing.defaultPrevented) return;
+        const target = opener as HTMLElement | null;
+        if (target && target !== doc.body && target.isConnected)
+          target.focus?.({ preventScroll: true });
+      };
+      // Deliberately empty. `onOpenAutoFocus` is read once, at the open; the
+      // close reads its handler through the ref above.
+    }, []);
+
     // A surface that covers the frame has to be dismissible from the
     // keyboard, or it is a trap for anyone not using a pointer. Bound on the
     // panel rather than the document so a host that renders two of these does
@@ -55,12 +145,20 @@ const AICompanionPanel = React.forwardRef<
 
     return (
       <div
+        aria-label={ariaLabel}
+        // Named by its title, so a product that translates the title has
+        // translated the region. A name the product gives it outright wins.
+        aria-labelledby={ariaLabelledBy ?? (ariaLabel ? undefined : titleId)}
         className={cn(
-          "flex h-full min-h-0 w-full flex-col bg-background text-foreground",
+          // Focused as it opens so a screen reader announces it, but it is a
+          // region, not a control: no ring round the whole frame.
+          "flex h-full min-h-0 w-full flex-col bg-background text-foreground outline-none",
           className,
         )}
         onKeyDown={handleKeyDown}
-        ref={ref}
+        ref={root}
+        role="region"
+        tabIndex={-1}
         {...props}
       >
         <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
@@ -70,13 +168,25 @@ const AICompanionPanel = React.forwardRef<
           >
             <Stars01 className="h-4 w-4" />
           </span>
-          <p className="min-w-0 flex-1 truncate text-base font-semibold">
+          {/* A heading, so a screen reader moving by headings finds the
+              assistant; it was a <p>. Text, not Heading: the size is the
+              header's, whatever the level. */}
+          <Text
+            as={`h${titleLevel}`}
+            className="min-w-0 flex-1"
+            id={titleId}
+            size="base"
+            truncate
+            weight="semibold"
+          >
             {title}
-          </p>
+          </Text>
           {onClose && (
             <button
               aria-label={closeLabel}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-border text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              // The mark stays 36; `kozmos-ai-companion-close` carries the
+              // 44px target in the owned stylesheet.
+              className="kozmos-ai-companion-close inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-border text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               onClick={onClose}
               type="button"
             >

@@ -80,6 +80,40 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertNil(view.reachableIndex(step: -1))
     }
 
+    /// Row 67: the stepper's two buttons carry the product's names, the
+    /// previous level in list order on the up chevron and the next on the down.
+    /// Hard-coded English until then. Only the stepper draws them; the lists
+    /// name each level by its own label.
+    func testTheStepperTakesTheProductsNames() {
+        let view = KozmosFloorSelector(
+            floors: levels,
+            selectedFloor: .constant("level-1"),
+            variant: .compactStepper,
+            previousFloorLabel: "Vorherige Etage",
+            nextFloorLabel: "Nächste Etage"
+        )
+        XCTAssertEqual(view.stepperLabel(step: -1), "Vorherige Etage")
+        XCTAssertEqual(view.stepperLabel(step: 1), "Nächste Etage")
+
+        let strings = KozmosFloorSelector(
+            floors: ["2", "1", "G"],
+            selectedFloor: .constant("1"),
+            variant: .compactStepper,
+            previousFloorLabel: "前の階",
+            nextFloorLabel: "次の階"
+        )
+        XCTAssertEqual(strings.stepperLabel(step: -1), "前の階")
+        XCTAssertEqual(strings.stepperLabel(step: 1), "次の階")
+    }
+
+    /// The defaults stay the words they were — React's read "Previous floor"
+    /// and "Next floor", and a product that passes none hears nothing new here.
+    func testTheStepperNamesDefaultToTheEnglishTheyWere() {
+        let view = KozmosFloorSelector(floors: levels, selectedFloor: .constant("level-1"), variant: .compactStepper)
+        XCTAssertEqual(view.stepperLabel(step: -1), "Floor up")
+        XCTAssertEqual(view.stepperLabel(step: 1), "Floor down")
+    }
+
     #if os(iOS)
     /// The open list names every level: "L2" alone told a visitor nothing the
     /// closed pill did not. Rendered: the list is wider than the pill, and

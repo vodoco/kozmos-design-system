@@ -1,7 +1,16 @@
 import React from "react";
 import { cn } from "../../utils";
 
-export type UserMessageProps = React.HTMLAttributes<HTMLDivElement>;
+export interface UserMessageProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Who is speaking, for a screen reader: read before the words, never
+   * drawn. Side and fill tell the visitor's turn from the assistant's, and a
+   * screen reader hears neither (row 61). English by default — the product
+   * has the language. An empty string leaves it out, for a product that
+   * names the speaker in words everyone can see.
+   */
+  speakerLabel?: string;
+}
 
 /**
  * The visitor's turn. Filled and right-aligned against the assistant's
@@ -10,9 +19,20 @@ export type UserMessageProps = React.HTMLAttributes<HTMLDivElement>;
  * colour alone.
  */
 const UserMessage = React.forwardRef<HTMLDivElement, UserMessageProps>(
-  ({ className, children, ...props }, ref) => (
-    <div className={cn("flex w-full justify-end", className)} ref={ref} {...props}>
+  ({ className, children, speakerLabel = "You said", ...props }, ref) => (
+    <div
+      className={cn("flex w-full justify-end", className)}
+      ref={ref}
+      {...props}
+    >
       <div className="max-w-[85%] rounded-container bg-primary px-4 py-3 text-sm text-primary-foreground">
+        {/* The space keeps the label a word of its own in WebKit, which runs
+            a hidden span into the text after it; it is never drawn. */}
+        {speakerLabel && (
+          <>
+            <span className="sr-only">{speakerLabel}</span>{" "}
+          </>
+        )}
         {children}
       </div>
     </div>
