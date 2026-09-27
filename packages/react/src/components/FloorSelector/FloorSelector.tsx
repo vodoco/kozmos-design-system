@@ -171,7 +171,12 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
             {floor.resultCount ? (
               <span
                 aria-hidden="true"
-                className="absolute -top-0.5 end-[-2px] min-w-4 rounded-pill bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground"
+                // Inside the button, not hanging off it. The horizontal list
+                // scrolls on one axis, and CSS will not let the other stay
+                // visible beside it — `overflow-x: auto` computes `overflow-y`
+                // to `auto` too, so a badge two pixels proud of the button
+                // would be clipped there, or would raise a scrollbar.
+                className="absolute end-0.5 top-0.5 min-w-4 rounded-pill bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground"
               >
                 {floor.resultCount}
               </span>
