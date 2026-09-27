@@ -35,9 +35,11 @@ public extension EnvironmentValues {
     /// grabber's 16-point row on a sheet that draws one; nothing on a sheet
     /// with a single detent, which draws no grabber, under a `panelHeader`,
     /// which sits there instead, or beside the map, where a side panel starts
-    /// its content at its top edge. A part with its own top padding tops it
-    /// up to what it needs rather than adding to it, as `KozmosPOIDetailPanel`
-    /// does in its sheet and panel presentations. Zero outside a shell.
+    /// its content at its top edge. A part with its own top padding and no
+    /// surface of its own tops it up to what it needs rather than adding to
+    /// it, as `KozmosPOIDetailPanel` does in its sheet presentation; a part
+    /// that draws its own bordered surface keeps its padding inside the
+    /// border, since this space lies outside it. Zero outside a shell.
     var kozmosPanelInsetTop: CGFloat {
         get { self[KozmosPanelInsetTopKey.self] }
         set { self[KozmosPanelInsetTopKey.self] = newValue }

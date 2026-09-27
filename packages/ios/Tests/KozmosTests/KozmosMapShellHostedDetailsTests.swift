@@ -109,15 +109,26 @@ final class KozmosMapShellHostedDetailsTests: XCTestCase {
         pixels.boundingBox(in: CGRect(x: panel.midX - 30, y: panel.minY + 2, width: 60, height: 12), where: RenderedPixels.isInk) != nil
     }
 
+    /// Where a bordered card's top edge is drawn under the grabber's row: its
+    /// 1-point border, down a column clear of its rounded corners, where
+    /// nothing else is drawn between the row and the card's header.
+    private func cardTopBorder(in pixels: RenderedPixels, on panel: CGRect) throws -> CGFloat {
+        let border = try XCTUnwrap(
+            pixels.boundingBox(in: CGRect(x: 40, y: panel.minY + 2, width: 1, height: 16), where: RenderedPixels.isInk),
+            "no card border drawn under the grabber's row")
+        return border.midY
+    }
+
     /// The close button's frame: everything drawn in the panel's top trailing
     /// corner, from `top` down, is its outline and its cross. The outline is
     /// a 1-point stroke on the frame's edge, so half of it falls outside.
-    /// Callers start 10 below the panel's top edge and the search stops 8
-    /// short of its end edge: that clears the edge's border and the panel's
-    /// rounded corner, where the map shows through.
+    /// Callers start 10 below the panel's top edge — or 2 below a card's own
+    /// top border — and the search stops 12 short of the end edge: that clears
+    /// the edge's border and the rounded corners of the panel, where the map
+    /// shows through, and of a bordered card.
     private func closeButton(in pixels: RenderedPixels, from top: CGFloat, end: CGFloat,
                              rightToLeft: Bool = false) throws -> CGRect {
-        let region = CGRect(x: rightToLeft ? end + 8 : end - 62, y: top, width: 54, height: 70)
+        let region = CGRect(x: rightToLeft ? end + 12 : end - 62, y: top, width: 50, height: 70)
         let box = try XCTUnwrap(pixels.boundingBox(in: region, where: RenderedPixels.isInk),
                                 "nothing drawn in the panel's top \(rightToLeft ? "left" : "right") corner")
         let frame = box.insetBy(dx: 0.5, dy: 0.5)
@@ -221,30 +232,57 @@ final class KozmosMapShellHostedDetailsTests: XCTestCase {
         XCTAssertEqual(inward, 16, accuracy: 1, "the inline card's close button is \(inward) from the sheet's side")
     }
 
+    /// A card in its panel presentation draws its own bordered surface, so
+    /// the grabber's row lies outside its border, not inside it. Topped up
+    /// to the row, its header met its own top border — the buttons 4 under
+    /// the line; the web's visual review caught the same at 0, in a side
+    /// panel. It keeps its 16 inside the border, as the inline card does:
+    /// the button 16 under the card's top edge, which is under the row.
+    @MainActor func testUnderAGrabberABorderedPanelCardKeepsItsPaddingInsideItsBorder() async throws {
+        let pixels = try await RenderedPixels.render(sheet(presentation: .panel), size: phone)
+        let attachment = XCTAttachment(image: pixels.image)
+        attachment.name = "gap-083-panel-card-under-grabber"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        let panel = try sheetPanel(in: pixels, size: phone)
+        XCTAssertTrue(drawsInGrabberRow(pixels, on: panel), "the sheet draws no grabber")
+        let border = try cardTopBorder(in: pixels, on: panel)
+        XCTAssertEqual(border - panel.minY, 16, accuracy: 1, "the card's top border is not under the grabber's row: \(border - panel.minY)")
+        let close = try closeButton(in: pixels, from: border + 2, end: panel.maxX)
+        let down = close.minY - border, inward = panel.maxX - close.maxX
+        print("GAP-083 iOS, panel card under a grabber: the close button \(down) under the card's top border, \(inward) from the side")
+        XCTAssertEqual(down, 16, accuracy: 1, "the panel card's close button is \(down) under its own top border")
+        XCTAssertEqual(inward, 16, accuracy: 1, "the panel card's close button is \(inward) from the sheet's side")
+    }
+
     // MARK: Beside the map
 
     /// A native side panel leaves nothing above its content — the web's
     /// keeps 16 there — so the card keeps its own 16: the button 16 from the
-    /// panel's top and 16 from its end, the left right to left.
+    /// panel's top and 16 from its end, the left right to left. Both the
+    /// bordered card and the surfaceless one, which products host there too.
     @MainActor func testInASidePanelTheCloseButtonSitsAsFarDownAsIn() async throws {
         let wide = CGSize(width: 1024, height: 700)
-        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
-            let view = KozmosAdaptiveMapShell(map: { Color.red }, panel: { card(.panel) })
-                .environment(\.horizontalSizeClass, .regular)
-                .environment(\.layoutDirection, direction)
-                .environment(\.colorScheme, .light)
-            let pixels = try await RenderedPixels.render(view, size: wide)
-            let rightToLeft = direction == .rightToLeft
-            // Somewhere inside the 416-point panel on the shell's end.
-            let panel = try panel(in: pixels, size: wide, through: CGPoint(x: rightToLeft ? 224 : 800, y: 350))
-            XCTAssertEqual(panel.width, 416, accuracy: 1.5, "\(direction): not the side panel: \(panel)")
-            let close = try closeButton(in: pixels, from: panel.minY + 10, end: rightToLeft ? panel.minX : panel.maxX,
-                                        rightToLeft: rightToLeft)
-            let down = close.minY - panel.minY
-            let inward = rightToLeft ? close.minX - panel.minX : panel.maxX - close.maxX
-            print("GAP-083 iOS, side panel \(direction): the close button \(down) from the top, \(inward) from the end")
-            XCTAssertEqual(down, inward, accuracy: 1, "\(direction): the close button is \(down) from the panel's top and \(inward) from its end")
-            XCTAssertEqual(inward, 16, accuracy: 1, "\(direction): the close button is \(inward) from the panel's end")
+        for presentation in [KozmosPOIDetailPanel.Presentation.panel, .sheet] {
+            for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+                let view = KozmosAdaptiveMapShell(map: { Color.red }, panel: { card(presentation) })
+                    .environment(\.horizontalSizeClass, .regular)
+                    .environment(\.layoutDirection, direction)
+                    .environment(\.colorScheme, .light)
+                let pixels = try await RenderedPixels.render(view, size: wide)
+                let rightToLeft = direction == .rightToLeft
+                let name = "\(presentation) card, \(direction)"
+                // Somewhere inside the 416-point panel on the shell's end.
+                let panel = try panel(in: pixels, size: wide, through: CGPoint(x: rightToLeft ? 224 : 800, y: 350))
+                XCTAssertEqual(panel.width, 416, accuracy: 1.5, "\(name): not the side panel: \(panel)")
+                let close = try closeButton(in: pixels, from: panel.minY + 10, end: rightToLeft ? panel.minX : panel.maxX,
+                                            rightToLeft: rightToLeft)
+                let down = close.minY - panel.minY
+                let inward = rightToLeft ? close.minX - panel.minX : panel.maxX - close.maxX
+                print("GAP-083 iOS, side panel, \(name): the close button \(down) from the top, \(inward) from the end")
+                XCTAssertEqual(down, inward, accuracy: 1, "\(name): the close button is \(down) from the panel's top and \(inward) from its end")
+                XCTAssertEqual(inward, 16, accuracy: 1, "\(name): the close button is \(inward) from the panel's end")
+            }
         }
     }
 }

@@ -87,13 +87,13 @@ enum class KozmosPOIDetailPanelPresentation {
  * [KozmosPOIPresentation.actions] are rendered, and every label is supplied
  * already localized.
  *
- * In its sheet and panel presentations the card is the top of the map shell's
- * panel: its header tops its top padding up to what the panel already leaves
- * above it ([LocalKozmosPanelInsetTop], [LocalKozmosPanelClearanceTop]) rather
- * than adding to it, so its close button sits as far from the panel's top as
- * from its side (GAP-083). A card placed lower in the panel than its top
- * should use [KozmosPOIDetailPanelPresentation.Inline], which keeps its own
- * padding.
+ * In its sheet presentation, which paints no surface of its own, the card is
+ * the top of the map shell's panel: its header tops its top padding up to what
+ * the panel already leaves above it ([LocalKozmosPanelInsetTop],
+ * [LocalKozmosPanelClearanceTop]) rather than adding to it, so its close
+ * button sits as far from the panel's top as from its side (GAP-083). The
+ * panel and inline presentations draw their own bordered card and keep their
+ * padding inside it.
  *
  * The web component's `titleLevel` prop has no counterpart here: Compose
  * semantics expose `heading()` as a boolean with no rank, so TalkBack cannot
@@ -126,16 +126,19 @@ fun KozmosPOIDetailPanel(
         RoundedCornerShape(radius)
     }
 
-    // The header's top padding. Inline, its own 16. Hosted in the map shell's
-    // panel — the sheet and panel presentations — it tops up to 16 what the
-    // panel already leaves above it, rather than adding 16 to it, and keeps
-    // the clearance the panel asks for under a handle: the close button sat
-    // 32 from the sheet's top and 16 from its side (GAP-083).
+    // The header's top padding. In the sheet presentation the card paints no
+    // surface of its own, so the space the shell's panel leaves above it is
+    // the card's own top: the header tops it up to 16 rather than adding 16
+    // to it, and keeps the clearance the panel asks for under a handle — the
+    // close button sat 32 from the sheet's top and 16 from its side
+    // (GAP-083). The panel and inline presentations draw their own bordered
+    // card, and that space lies outside the border: they keep their 16
+    // inside it, or the header meets the card's own top edge.
     val headerPadding = KozmosDimensions.primitivesLayoutSpacing200
-    val headerTop = if (presentation == KozmosPOIDetailPanelPresentation.Inline) {
-        headerPadding
-    } else {
+    val headerTop = if (presentation == KozmosPOIDetailPanelPresentation.Sheet) {
         maxOf(LocalKozmosPanelClearanceTop.current, headerPadding - LocalKozmosPanelInsetTop.current)
+    } else {
+        headerPadding
     }
 
     val showsAccessRestrictions = poi.accessRestrictions != null &&
