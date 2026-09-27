@@ -31,6 +31,18 @@ clear of the handle's target (WCAG 2.5.8). In a side panel it is the panel's fir
 
 <Canvas of={Stories.SheetPanelHeader} />
 
+The panel tells its content how much space it already leaves above it, so a part that brings its
+own top padding can top it up rather than add to it:
+
+- `--kozmos-panel-inset-top` is the empty space above the content: the grip's row on a sheet that
+  draws one, `1rem` in a side panel, and `0px` with no grip or under a `panelHeader`.
+- `--kozmos-panel-clearance-top` is how far the content's first control must still sit below that
+  so the grip's 16px target keeps its WCAG 2.5.8 spacing: 4px under a grip, `0px` elsewhere. A
+  panel header keeps the same clearance itself.
+
+`POIDetailPanel` in its `sheet` and `panel` presentations uses both, so its close button sits as far
+from the panel's top as from its side (GAP-083).
+
 iOS and Android take the same header: `panelHeader:` on `KozmosAdaptiveMapShell` in
 SwiftUI, and `panelHeader =` in Compose. On iOS, put the content that scrolls in a
 `KozmosPanelScrollView`, so the sheet can take a drag from it.

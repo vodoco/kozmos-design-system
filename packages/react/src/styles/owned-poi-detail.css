@@ -38,6 +38,24 @@
     gap: 0.75rem;
     padding: 1rem 1rem 0.75rem;
   }
+  /* Hosted in the map shell's panel, the header tops its top padding up to
+     16 rather than adding 16 to what the panel already leaves above it — the
+     grip's row on a sheet, the side panel's 16 — so the close button sits as
+     far from the panel's top as from its side (GAP-083: it sat 33 and 17).
+     Under a grip it keeps the grip's clearance too, 4px, so the grip's
+     target keeps its WCAG 2.5.8 spacing: at 320 wide the favourite button
+     would otherwise sit inside it. With no grip, or under a panel header,
+     the panel leaves nothing and the header keeps its 16. */
+  .kozmos-poi-detail:is(
+      [data-presentation="sheet"],
+      [data-presentation="panel"]
+    )
+    .kozmos-poi-header {
+    padding-top: max(
+      var(--kozmos-panel-clearance-top, 0px),
+      calc(1rem - var(--kozmos-panel-inset-top, 0px))
+    );
+  }
   .kozmos-poi-identity {
     display: flex;
     flex: 1 1 10rem;

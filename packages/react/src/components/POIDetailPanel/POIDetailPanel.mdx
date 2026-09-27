@@ -90,3 +90,17 @@ Screenshots, failures and incomplete accessibility checks are saved under
 ## In a sheet
 
 `presentation="sheet"` paints no surface, border or shadow of its own: the panel sits on the sheet's, as the browse panel does, and its inset blocks (restrictions, action messages) turn white on that grey.
+
+## Hosted in the map shell
+
+With `presentation="sheet"` or `"panel"` the card is hosted in `AdaptiveMapShell`'s panel, which
+already leaves space above its content: the grip's 16px row on a sheet, 16px at the top of a side
+panel. The header tops its top padding up to 16 instead of adding another 16, so the close button
+sits as far from the panel's top as from its side (GAP-083: it sat 33px down and 17px in). Under a
+grip it keeps 4px more, so the grip's 16px target keeps its WCAG 2.5.8 spacing: at 320px wide the
+favourite button would otherwise sit inside it. With a single detent there is no grip, and under a
+`panelHeader` the header sits above the card; in both the card keeps its own 16.
+
+The shell says what it leaves through two custom properties on its panel's content,
+`--kozmos-panel-inset-top` and `--kozmos-panel-clearance-top` (see AdaptiveMapShell). A card placed
+lower in the panel than its top should use `presentation="inline"`.

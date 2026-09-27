@@ -154,6 +154,60 @@ describe("AdaptiveMapShell sheet detents", () => {
     expect(screen.queryByRole("slider")).toBeNull();
   });
 
+  // GAP-083: what the panel leaves empty above its content, so a part with
+  // its own top padding tops it up rather than adding to it.
+  const insetTop = (aside: HTMLElement) =>
+    aside
+      .querySelector<HTMLElement>("[data-kozmos-scroller]")!
+      .style.getPropertyValue("--kozmos-panel-inset-top");
+
+  it("tells its content it leaves the grip's row above it", () => {
+    expect(insetTop(sheet())).toBe(
+      "calc(var(--primitives-layout-spacing-200) * 1px)",
+    );
+  });
+
+  it("tells its content it leaves nothing above it without a grip", () => {
+    expect(insetTop(sheet({ panelFraction: 0.3 }))).toBe("0px");
+  });
+
+  it("tells its content it leaves nothing above it under a panel header", () => {
+    expect(
+      insetTop(sheet({ panelHeader: <input aria-label="Search" /> })),
+    ).toBe("0px");
+  });
+
+  it("tells a side panel's content it leaves 16 above it", () => {
+    expect(insetTop(sheet({ panelPresentation: "side" }))).toBe("1rem");
+  });
+
+  // And how far the content's first control must still keep below that, so
+  // the grip's 16px target keeps its WCAG 2.5.8 spacing.
+  const clearanceTop = (aside: HTMLElement) =>
+    aside
+      .querySelector<HTMLElement>("[data-kozmos-scroller]")!
+      .style.getPropertyValue("--kozmos-panel-clearance-top");
+
+  it("asks its content to keep the grip's target clear", () => {
+    expect(clearanceTop(sheet())).toBe(
+      "calc((24px - var(--primitives-layout-spacing-200) * 1px) / 2)",
+    );
+  });
+
+  it("asks no clearance with no grip", () => {
+    expect(clearanceTop(sheet({ panelFraction: 0.3 }))).toBe("0px");
+  });
+
+  it("asks no clearance under a panel header, which keeps it itself", () => {
+    expect(
+      clearanceTop(sheet({ panelHeader: <input aria-label="Search" /> })),
+    ).toBe("0px");
+  });
+
+  it("asks no clearance in a side panel, which has no grip", () => {
+    expect(clearanceTop(sheet({ panelPresentation: "side" }))).toBe("0px");
+  });
+
   it("steps the detents from the keyboard and cycles them on a tap", () => {
     const onPanelDetentChange = vi.fn();
     sheet({ onPanelDetentChange });

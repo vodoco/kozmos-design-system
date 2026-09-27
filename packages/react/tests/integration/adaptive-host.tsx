@@ -26,6 +26,11 @@ declare global {
     showPanelHeader: () => void;
     /** Swap the panel for a list of results, with this one selected. */
     showResults: (selectedPoiId?: string) => void;
+    /**
+     * Swap the panel for a place's details, hosted as a product hosts them:
+     * the card alone, with its close button, in this presentation.
+     */
+    showDetails: (presentation: "sheet" | "panel") => void;
   }
 }
 
@@ -113,15 +118,32 @@ function Host() {
   const [shownResults, setShownResults] = useState<{
     selectedPoiId?: string;
   } | null>(null);
+  const [details, setDetails] = useState<"sheet" | "panel" | null>(null);
   window.setAdaptiveOptions = setOptions;
   window.showPanelHeader = () => setHeader(true);
   window.showResults = (selectedPoiId) => setShownResults({ selectedPoiId });
+  window.showDetails = (presentation) => setDetails(presentation);
   return (
     <AdaptiveMapShell
       style={{ height: "100%" }}
       map={<MapSlot />}
       panel={
-        shownResults ? (
+        details ? (
+          <POIDetailPanel
+            poi={{
+              id: "harbour-coffee",
+              name: "Harbour Coffee Co.",
+              floorId: "2",
+              floorLabel: "Level 2",
+              media: [],
+              services: [],
+              actions: ["favourite", "bookmark"],
+            }}
+            actionLabels={{ favourite: "Favourite", bookmark: "Save" }}
+            presentation={details}
+            onClose={() => setDetails(null)}
+          />
+        ) : shownResults ? (
           <POIResultList
             items={results}
             onSelect={(poiId) => setShownResults({ selectedPoiId: poiId })}
