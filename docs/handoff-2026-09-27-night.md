@@ -11,13 +11,13 @@ built today, where things live, and the traps. The evening handoff,
 
 | What              | Where / how                                                         | State                                                                                                                |
 | ----------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `be350c0a` (#119) when written                                                                             |
+| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `7d89cb51` (#121) when written                                                                             |
 | Main checkout     | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`          | shared with other sessions — stage by file, never `git add -A`                                                       |
-| Open PRs (mine)   | none — #118, #120 and #119 merged                                   | nothing in flight (§3)                                                                                               |
+| Open PRs (mine)   | none — #118–#121 merged                                             | nothing in flight (§3)                                                                                               |
 | Open PRs (others) | #55 website (the site session's, `claude/kozmos-site`)              | **conflicts with `main`**; once main is merged in, all 18 required checks must pass                                  |
 | Required checks   | branch protection on `main`                                         | **all 18 PR checks** (decision 13), GitHub Actions only; auto-merge allowed. Chromatic's workflow **disabled**       |
 | Visual review     | `pnpm test:visual` (Docker) · CI "Visual Review"                    | every story × light/dark (632 drawings), `tests/visual/baselines`                                                    |
-| CI on `main`      | GitHub; `node scripts/ci-local.mjs --job web\|ios\|android` locally | green through #118 (`d6d17cc1`, iOS included); #120's (`407d59df`) running when written                              |
+| CI on `main`      | GitHub; `node scripts/ci-local.mjs --job web\|ios\|android` locally | green through #120 (`407d59df`, iOS included); #119 and #121 are docs, which CI skips on `main`                      |
 | React unit suite  | `cd packages/react && npx vitest run`                               | 714 on `main` after #120, measured (706 at #113)                                                                     |
 | Bundle budget     | `pnpm tsx scripts/performance/bundle-analyzer.ts`                   | 61.97 of 64 KB (CI, `9df17777`)                                                                                      |
 | Contract parity   | `pnpm contracts:parity:check`                                       | 25 types, 121 fields, 14 enumerations                                                                                |
@@ -90,15 +90,17 @@ are out of scope.
 | #118 | visual review    | a record run redraws only the drawings that fail, then prunes baselines of stories that went                           |
 | #120 | 82 (web)         | GAP-083 on the web: the shell's two custom properties; the hosted `sheet` card tops up to them; first per-PR changeset |
 | #119 | —                | this handoff                                                                                                           |
+| #121 | decision 13      | every PR check required; CONTRIBUTING names them; this handoff's final state                                           |
 
 ## 3. In flight — nothing
 
 Everything this session started has merged: #118 (`d6d17cc1`), #120 (`407d59df`, GAP-083 web, with
-`.changeset/panel-inset-contract.md`) and #119 (this handoff, `be350c0a`); then all 18 PR checks were
-made required (decision 13). #120's record run changed exactly its four drawings, measured from their
-pixels: the new `SheetWithPlaceDetails` story at 21 / 17 under the grip, and the on-map example from
-34 / 18 (a bordered card nested in the side panel, a double top edge) to 17 / 17. #120's description
-lists its full verification.
+`.changeset/panel-inset-contract.md`) and #119 (this handoff, `be350c0a`); then all 18 PR checks
+were made required (decision 13, #121 — the first PR auto-merge landed, 19 seconds after its last
+check). #120's record run changed exactly its four drawings, measured from their pixels: the new
+`SheetWithPlaceDetails` story at 21 / 17 under the grip, and the on-map example from 34 / 18 (a
+bordered card nested in the side panel, a double top edge) to 17 / 17. #120's description lists its
+full verification.
 
 Start at §5 (ask Olcay what is still open), then the queue in §6. Optionally re-number: GAP-083 is
 row 82 in the MAP-474 session's list, not in `(4).md`.
@@ -139,21 +141,37 @@ row 82 in the MAP-474 session's list, not in `(4).md`.
     `main`, so it is not required. Undo: PATCH `…/branches/main/protection/required_status_checks`
     with `{"strict": false, "checks": [{"context": "Visual Review", "app_id": 15368}]}`.
 
+Olcay's answers to the open questions, the same night (each is a task in §6 unless it is Olcay's):
+
+14. **Every part at the top of the shell's panel keeps the grip's 4px**, not only the panel header
+    and the details card: it reads `--kozmos-panel-clearance-top` (iOS `kozmosPanelClearanceTop`,
+    Android `LocalKozmosPanelClearanceTop`), so no first control sits in the grip's 24px circle.
+    The browse panel is first.
+15. **The floor stepper says "Floor up" / "Floor down"** on all three platforms; React changes from
+    "Previous floor" / "Next floor" (previous is the up chevron).
+16. **AICompanionPanel takes focus only when the user opens it**, not when it mounts already open.
+17. **Rail tile labels (row 25): one smaller size for every tile** — "smaller font but for all of
+    them. Not some small some large." Measure the largest size at which "SDK Configuration" and
+    "User Management" fit two lines in the 72px tile, and show Olcay before changing it.
+18. **Row 15, Japanese names: break hints only** — zero-width spaces in the taxonomy's Japanese
+    names (a data request to the taxonomy's owners). Kozmos keeps its two-line clamp; a name that
+    still needs three lines stays cut.
+19. **Chromatic's leftovers:** Olcay removes the `CHROMATIC_PROJECT_TOKEN` secret and the Chromatic
+    GitHub app.
+20. **Register numbers:** Olcay numbers the unnumbered items (the step-free control, the
+    bottom-centre map toast, #90's controls-side change, the review fixes) in the list.
+
 ## 5. Questions still open for Olcay
 
-1. Register numbers for the unnumbered items: the step-free control, the bottom-centre map toast,
-   #90's controls-side change, the review fixes (#105, #106, #113's tile).
-2. Row 25: the 72px rail tile needs three lines for "SDK Configuration" — three lines, a wider tile
-   or smaller text?
-3. Floor stepper wording: React "Previous/Next floor", native "Floor up/down" — one for all.
-4. AICompanionPanel takes focus when it mounts — intended for a panel open at page load?
-5. The grab handle's target: panel _content_ starting with a control (no header) has always had
-   16px clear under the handle; move it down 4px too?
-6. Row 15 (Japanese names): zero-width-space break hints in the taxonomy and/or a third line?
-7. Delete `CHROMATIC_PROJECT_TOKEN` if Chromatic is gone for good (it also published a hosted
-   Storybook).
-8. Rows 79–81 of the MAP-474 list never reached this session; if they are Kozmos work, share them.
-   (The Gaps register artifact `5a730e7c…` is not readable from Claude Code's account.)
+Answered the same night (decisions 14–20), except one:
+
+1. **Rows 79–81 (GAP-080 to GAP-082).** Row N is GAP-(N+1). The last export,
+   `~/Downloads/Kozmos requests from the MAP-474 prototypes (4).md` (18:37), stops at row 78, and
+   the MAP-474 prototype chat called the close-button gap "GAP-083 (row 82)", so it logged three
+   more after that export. They are in no Claude Code transcript, so they were logged in the
+   claude.ai chat. Its Gaps register artifact (`5a730e7c-2e5a-4e3b-b178-44ddd4b4f015`) is not
+   shared with Claude Code's account. To triage them: a fresh export (`(5).md`), the artifact
+   shared, or rows 79–82 pasted.
 
 ## 6. The queue: suggested tasks (chips in the app), in order
 
@@ -163,11 +181,16 @@ row 82 in the MAP-474 session's list, not in `(4).md`.
 | now                           | Triage the 135 Dependabot alerts                  | none reach consumers; the only task touching the lockfile                                          |
 | now                           | Fix the docs' iOS and Android snippets            | 72 native tabs are stale implementation copies; 8 don't compile                                    |
 | now, one after the other      | Android sheet: content overhangs; easing          | same file                                                                                          |
-| now                           | Browse panel: stop doubling the grip's space      | reuse the panel inset contract (§7)                                                                |
+| now                           | Browse panel: stop doubling the grip's space      | decision 14 — then every part hosted at the panel's top                                            |
+| now                           | Floor stepper: "Floor up" / "Floor down" in React | decision 15; docs and tests say the new names                                                      |
+| now                           | AICompanionPanel: focus in only when opened       | decision 16                                                                                        |
+| now, then ask Olcay           | Rail tile: one smaller label size                 | decision 17; measure first, change after Olcay sees it                                             |
+| any time                      | Japanese break-hint request for the taxonomy      | decision 18; list the names that need hints, measured in the tile                                  |
 | any time                      | Android: favourite and save in the details header | parity gap found today                                                                             |
 | any time, one after the other | Focus-ring offsets in dark theme; RTL sweep       | visual changes — Visual Review shows them now                                                      |
 | with Olcay                    | Bring today's map and chip changes to Figma       | Olcay runs the plugin                                                                              |
 | check first                   | Run the iOS shell render tests on CI              | mostly covered by #108/#111/#116                                                                   |
+| any time                      | Fix CONTRIBUTING's stale merge and release steps  | it says squash-merge and a Changesets release PR; the repo merges and releases by hand             |
 
 Any task that changes how a story looks must record baselines (§7) or its PR stays red.
 
@@ -249,7 +272,7 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
 
 ```bash
 cd "/Volumes/4TB Depo/development/K/kozmos-design-system-dev"
-git checkout main && git pull --ff-only && git log --oneline -1   # expect be350c0a or later
+git checkout main && git pull --ff-only && git log --oneline -1   # expect 7d89cb51 or later
 gh pr list --repo vodoco/kozmos-design-system --state open         # #55, and anything newer
 pnpm install && pnpm exec turbo run build --filter=@kozmos-ds/react...
 ```
