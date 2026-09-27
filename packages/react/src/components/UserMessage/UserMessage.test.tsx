@@ -8,4 +8,26 @@ describe("UserMessage", () => {
     expect(container.querySelector(".justify-end")).not.toBeNull();
     expect(screen.getByText("Visitor turn")).toHaveClass("bg-primary");
   });
+
+  it("tells a screen reader who is speaking, in the product's language", () => {
+    // Row 61: side and fill tell a question from an answer, and a screen
+    // reader hears neither. The label is read first, as the turn arrives in
+    // the thread's live region and as a visitor moves back through it.
+    const { rerender } = render(<UserMessage>Where is the lift?</UserMessage>);
+    const bubble = screen.getByText("Where is the lift?");
+    expect(bubble.firstChild).toBe(screen.getByText("You said"));
+    expect(screen.getByText("You said")).toHaveClass("sr-only");
+
+    rerender(
+      <UserMessage speakerLabel="Sie sagten">Wo ist der Aufzug?</UserMessage>,
+    );
+    expect(screen.getByText("Sie sagten")).toHaveClass("sr-only");
+    expect(screen.queryByText("You said")).toBeNull();
+
+    // A product that names the speaker where everyone can see it opts out.
+    const { container } = render(
+      <UserMessage speakerLabel="">Wo ist der Aufzug?</UserMessage>,
+    );
+    expect(container.querySelector(".sr-only")).toBeNull();
+  });
 });
