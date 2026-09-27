@@ -89,7 +89,7 @@ value it accepts — these are the only values that compile.
 | **Alert**    | ✅  |   ✅    | `live`: off \| polite \| assertive |
 | **Backdrop** | ✅  |   ✅    | —                                  |
 | **Progress** | ✅  |   ✅    | —                                  |
-| **Skeleton** | ✅  |   ✅    | —                                  |
+| **Skeleton** | ✅  |   ✅    | `shape`: line \| block \| circle   |
 | **Spinner**  | ✅  |   ✅    | `size`: sm \| md \| lg \| xl       |
 | **Toast**    | ✅  |   ✅    | —                                  |
 
