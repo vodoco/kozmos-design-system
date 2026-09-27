@@ -172,12 +172,32 @@ for (const story of stories) {
         };
       });
 
+      // A taxonomy symbol is Pointr's artwork, drawn through a CSS mask from
+      // an outside image. Scaled into its slot it rasterised a pixel or two
+      // differently from run to run (a different story and theme each time,
+      // measured on 2026-09-27), so its slot is masked like a map: its size
+      // and place are compared, its pixels are not.
+      await page.evaluate((origin) => {
+        for (const element of document.body.querySelectorAll("*")) {
+          const style = getComputedStyle(element);
+          const image = style.maskImage || style.webkitMaskImage;
+          const outside = [...image.matchAll(/url\("?([^")]+)"?\)/g)].some(
+            ([, url]) => !new URL(url, location.href).href.startsWith(origin),
+          );
+          if (outside) element.setAttribute("data-visual-outside-mask", "");
+        }
+      }, baseURL ?? "");
+
       await expect(page).toHaveScreenshot(`${story.id}--${theme}.png`, {
         clip,
         fullPage: true,
         // A map draws with WebGL from tiles this run refused; what it would
-        // draw is not the design system's, and not reproducible.
-        mask: [page.locator("canvas")],
+        // draw is not the design system's, and not reproducible. Nor is an
+        // outside symbol's rasterising, above.
+        mask: [
+          page.locator("canvas"),
+          page.locator("[data-visual-outside-mask]"),
+        ],
       });
     });
   }

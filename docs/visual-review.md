@@ -18,9 +18,12 @@ official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and com
   with a fill, border, shadow or outline, portals included), so a button's baseline is about 94×60 px
   and 1 KB.
 - **Nothing from outside.** The suite refuses every request that is not to its own Storybook: remote
-  photos become one grey pixel, Pointr's taxonomy symbols a filled circle (drawn through the
-  component's mask, so the slot's size and colour still show), and Google Fonts are refused, so text is drawn in the image's own
-  fonts, which never update underneath a baseline. Map canvases (WebGL, from tiles) are masked.
+  photos become one grey pixel, and Pointr's taxonomy symbols a filled circle, and Google Fonts are refused, so text is drawn in the image's own
+  fonts, which never update underneath a baseline. Map canvases (WebGL, from tiles) and the slots of
+  outside symbols are **masked** (drawn as solid magenta): their size and place are compared, their
+  pixels are not. A symbol scaled into its slot rasterised a pixel or two differently from run to run.
+- **Exact.** Colours are compared exactly (`threshold: 0`): Playwright's default tolerance passed a
+  whole token step (the Skeleton's move from background/100 to /200) as unchanged.
 - **Still.** The clock is fixed (2026-01-15 10:30 UTC), `Math.random` is seeded, animations and
   transitions are stopped, the caret is hidden, and the page asks for reduced motion.
 - **Opting out.** Give a story the tag `no-visual`, with a comment saying why.
