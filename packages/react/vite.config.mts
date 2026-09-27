@@ -77,6 +77,8 @@ export default defineConfig(async () => {
           // eslint-disable-next-line @typescript-eslint/no-require-imports
           require("autoprefixer"),
           // eslint-disable-next-line @typescript-eslint/no-require-imports
+          require("./postcss/shadow-reach.cjs")(),
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           require("./postcss/scoped-css.cjs")(),
         ],
       },

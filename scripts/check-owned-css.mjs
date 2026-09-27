@@ -1052,6 +1052,309 @@ try {
   );
   await greys.close();
 
+  // GAP-082 (row 81): MapOverlay does not cut what floats in it. Its stack is
+  // a scroll box, and a scroll box clips at its own edges. It had no room of
+  // its own, so it sat exactly on its controls and cut away their floating
+  // shadow on every side, and with it the one-pixel ring that is a map
+  // control's edge: every engine read 0px of shadow beyond a control in an
+  // overlay, where the same control placed by hand showed 4 above, 8 at the
+  // sides and 12 below (Chromium, light theme).
+  //
+  // So: a map board with its controls in MapOverlays, and the same board
+  // with the same controls placed by hand at the overlay's insets. They must
+  // draw alike, pixel for pixel — in the dark theme (`outer`) and the light
+  // (`nested`), right to left and left to right, at rest and with a
+  // control's focus ring showing. A third board's overlay is shorter than
+  // its stack, so it scrolls: its controls keep their sides and top, and
+  // scrolled to the end, the last one keeps its shadow below.
+  const boards = await browser.newPage({
+    viewport: { width: 1100, height: 1100 },
+  });
+  await boards.setContent(
+    `<!doctype html><html><head><style>${css}</style></head><body data-kozmos-root data-theme="light" style="margin:0"><div id="fixture"></div></body></html>`,
+  );
+  await boards.addScriptTag({ content: code });
+  // Where a scrollbar takes room of its own (a classic one, as some Linux
+  // engines draw), the scrolling board's would stand in its stack's inline
+  // room and narrow it. That is the platform's, and not what this measures.
+  await boards.addStyleTag({
+    content:
+      "[data-testid$='-map-overlay-scrolling'] > div {scrollbar-width: none}",
+  });
+  await boards.getByTestId("outer-map-board-overlay").waitFor();
+  await settleLayout(boards);
+  const board = (id, layout) => boards.getByTestId(`${id}-map-board-${layout}`);
+  const shoot = async (locator) =>
+    (await locator.screenshot()).toString("base64");
+  // The boards' own transitions only: the page's spinners turn for ever.
+  const settleBoards = () =>
+    boards.evaluate(() =>
+      Promise.all(
+        [...document.querySelectorAll("[data-testid*='-map-board-']")]
+          .flatMap((node) => node.getAnimations({ subtree: true }))
+          .map((animation) => animation.finished),
+      ),
+    );
+  // Where each control sits in its board, in CSS pixels of the board's
+  // drawing: the map buttons, and the floor selector as one part.
+  const partsOf = (locator) =>
+    locator.evaluate((node) => {
+      const origin = node.getBoundingClientRect();
+      return [...node.querySelectorAll("button, [role=group]")]
+        .filter(
+          (part) =>
+            part.getAttribute("role") === "group" ||
+            !part.closest("[role=group]"),
+        )
+        .map((part) => {
+          const r = part.getBoundingClientRect();
+          return {
+            name: part.getAttribute("aria-label"),
+            left: r.left - origin.left,
+            top: r.top - origin.top,
+            right: r.right - origin.left,
+            bottom: r.bottom - origin.top,
+          };
+        });
+    });
+  // Two drawings compared inside a region of each (the whole drawing unless
+  // given): how many pixels differ, by how much at most, the first that
+  // does; and how far chosen pixels of the second stand off the bare board.
+  const compareShots = (
+    shotA,
+    shotB,
+    { regionA, regionB, samples = [] } = {},
+  ) =>
+    boards.evaluate(
+      async ({ shotA, shotB, regionA, regionB, samples }) => {
+        const decode = async (b64) => {
+          const image = new Image();
+          image.src = "data:image/png;base64," + b64;
+          await image.decode();
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const context = canvas.getContext("2d", { willReadFrequently: true });
+          context.drawImage(image, 0, 0);
+          return context.getImageData(0, 0, image.width, image.height);
+        };
+        const [A, B] = [await decode(shotA), await decode(shotB)];
+        const at = (image, x, y) => {
+          const i = (y * image.width + x) * 4;
+          return [image.data[i], image.data[i + 1], image.data[i + 2]];
+        };
+        const whole = { x: 0, y: 0, width: A.width, height: A.height };
+        const ra = regionA ?? whole;
+        const rb = regionB ?? ra;
+        let differing = 0;
+        let maxDelta = 0;
+        let first = null;
+        for (let y = 0; y < ra.height; y++)
+          for (let x = 0; x < ra.width; x++) {
+            const p = at(A, ra.x + x, ra.y + y);
+            const q = at(B, rb.x + x, rb.y + y);
+            const delta = Math.max(...p.map((v, k) => Math.abs(v - q[k])));
+            if (delta === 0) continue;
+            differing++;
+            maxDelta = Math.max(maxDelta, delta);
+            first ??= { x: ra.x + x, y: ra.y + y, a: p, b: q };
+          }
+        // The bare board, from a corner nothing is drawn near.
+        const ground = at(B, 1, 1);
+        return {
+          sizes: [A.width, A.height, B.width, B.height],
+          compared: ra.width * ra.height,
+          differing,
+          maxDelta,
+          first,
+          ground,
+          samples: samples.map(([x, y]) =>
+            Math.max(...at(B, x, y).map((v, k) => Math.abs(v - ground[k]))),
+          ),
+        };
+      },
+      { shotA, shotB, regionA, regionB, samples },
+    );
+  const alike = [];
+  const reads = [];
+  for (const [id, theme] of [
+    ["outer", "dark"],
+    ["nested", "light"],
+  ]) {
+    const overlay = board(id, "overlay");
+    const byHand = board(id, "by-hand");
+    for (const dir of ["rtl", "ltr"]) {
+      for (const layout of ["overlay", "by-hand"])
+        await board(id, layout).evaluate((node, value) => {
+          node.setAttribute("dir", value);
+        }, dir);
+      await settleBoards();
+      const placedByHand = await partsOf(byHand);
+      assert.deepEqual(
+        await partsOf(overlay),
+        placedByHand.map((part) => ({
+          ...part,
+          name: part.name.replace("by-hand", "overlay"),
+        })),
+        `${theme} ${dir}: the overlay no longer puts its controls at the insets a hand places them at`,
+      );
+      // Just outside each control in the drawing by hand: its edge beside
+      // it, its shadow below it. Both must be there, or two blank boards
+      // would compare equal and prove nothing.
+      const samples = placedByHand.flatMap((part) => [
+        [Math.floor(part.left) - 1, Math.round((part.top + part.bottom) / 2)],
+        [Math.round((part.left + part.right) / 2), Math.ceil(part.bottom) + 3],
+      ]);
+      const atRest = await compareShots(
+        await shoot(overlay),
+        await shoot(byHand),
+        { samples },
+      );
+      assert(
+        atRest.samples.every((level) => level >= 2),
+        `${theme} ${dir}: the controls placed by hand draw no edge or shadow to compare: ${JSON.stringify(atRest)}`,
+      );
+      assert.equal(
+        atRest.differing,
+        0,
+        `${theme} ${dir}: controls in a MapOverlay draw differently from the same controls placed by hand — ${atRest.differing} of ${atRest.compared} pixels, by up to ${atRest.maxDelta} levels; the first at ${JSON.stringify(atRest.first)}, on a board of ${JSON.stringify(atRest.ground)}. The overlay cuts what floats in it.`,
+      );
+      // With the zoom control's focus ring showing, one board at a time. A
+      // key first, so the focus is a keyboard's and the ring shows.
+      const focused = {};
+      for (const layout of ["overlay", "by-hand"]) {
+        const control = board(id, layout).locator("button").first();
+        await boards.keyboard.press("Shift");
+        await control.focus();
+        assert.equal(
+          await control.evaluate((node) => node.matches(":focus-visible")),
+          true,
+          `${theme} ${dir}: the ${layout} zoom control shows no focus ring`,
+        );
+        await settleBoards();
+        focused[layout] = await shoot(board(id, layout));
+        await control.blur();
+        await settleBoards();
+      }
+      const ringShows = await compareShots(
+        focused["by-hand"],
+        await shoot(byHand),
+      );
+      assert(
+        ringShows.differing > 0,
+        `${theme} ${dir}: focusing the control placed by hand draws nothing, so there is no ring to compare`,
+      );
+      const withRing = await compareShots(focused.overlay, focused["by-hand"]);
+      assert.equal(
+        withRing.differing,
+        0,
+        `${theme} ${dir}: a focused control in a MapOverlay draws its focus ring differently from the same control placed by hand — ${withRing.differing} pixels, by up to ${withRing.maxDelta} levels; the first at ${JSON.stringify(withRing.first)}. The overlay cuts the ring.`,
+      );
+      alike.push(`${theme} ${dir}`);
+      reads.push(atRest.samples.join("/"));
+    }
+    for (const layout of ["overlay", "by-hand"])
+      await board(id, layout).evaluate((node) => node.removeAttribute("dir"));
+    await settleBoards();
+    // The scrolling board. Its overlay is 120 tall and its stack of three
+    // controls is not, so the stack scrolls; its first control sits where the
+    // board by hand places its one.
+    const scrolling = board(id, "scrolling");
+    const scrollingOverlay = boards.getByTestId(`${id}-map-overlay-scrolling`);
+    const stack = scrollingOverlay.locator(":scope > div");
+    const scroll = await stack.evaluate((node) => ({
+      overflowY: getComputedStyle(node).overflowY,
+      scrollable: node.scrollHeight - node.clientHeight,
+    }));
+    assert.equal(
+      scroll.overflowY,
+      "auto",
+      `${theme}: the overlay's stack no longer scrolls`,
+    );
+    assert(
+      scroll.scrollable > 0,
+      `${theme}: the scrolling board's stack fits, so it tests nothing: ${JSON.stringify(scroll)}`,
+    );
+    assert.deepEqual(
+      await scrollingOverlay.evaluate((node) => {
+        const r = node.getBoundingClientRect();
+        const o = node.parentElement.getBoundingClientRect();
+        return [r.left - o.left, r.top - o.top, r.width, r.height];
+      }),
+      [16, 16, 44, 120],
+      `${theme}: the scrolling overlay is no longer where, or as large as, it was`,
+    );
+    const [one] = await partsOf(byHand);
+    // Beside and above the first control, down to its bottom edge: below it
+    // the next control's shadow begins.
+    const sides = await compareShots(
+      await shoot(scrolling),
+      await shoot(byHand),
+      {
+        regionA: {
+          x: 0,
+          y: 0,
+          width: Math.ceil(one.right) + 16,
+          height: Math.floor(one.bottom),
+        },
+        samples: [
+          [Math.floor(one.left) - 1, Math.round((one.top + one.bottom) / 2)],
+        ],
+      },
+    );
+    assert(
+      sides.samples[0] >= 2,
+      `${theme}: nothing is drawn beside the control placed by hand: ${JSON.stringify(sides)}`,
+    );
+    assert.equal(
+      sides.differing,
+      0,
+      `${theme}: while its stack scrolls, a MapOverlay cuts its controls' sides and top — ${sides.differing} of ${sides.compared} pixels differ from the control placed by hand, by up to ${sides.maxDelta} levels; the first at ${JSON.stringify(sides.first)}`,
+    );
+    // Scrolled to its end, the last control's shadow below it against the
+    // shadow below the control placed by hand.
+    await stack.evaluate((node) => {
+      node.scrollTop = node.scrollHeight;
+    });
+    const last = await scrolling.evaluate((node) => {
+      const origin = node.getBoundingClientRect();
+      const buttons = node.querySelectorAll("button");
+      const r = buttons[buttons.length - 1].getBoundingClientRect();
+      return { left: r.left - origin.left, bottom: r.bottom - origin.top };
+    });
+    const below = (part) => ({
+      x: Math.floor(part.left) - 12,
+      y: Math.ceil(part.bottom),
+      width: 44 + 24,
+      height: 13,
+    });
+    const end = await compareShots(
+      await shoot(scrolling),
+      await shoot(byHand),
+      {
+        regionA: below(last),
+        regionB: below(one),
+        samples: [[Math.round(one.left) + 22, Math.ceil(one.bottom) + 3]],
+      },
+    );
+    assert(
+      end.samples[0] >= 2,
+      `${theme}: no shadow below the control placed by hand: ${JSON.stringify(end)}`,
+    );
+    assert.equal(
+      end.differing,
+      0,
+      `${theme}: scrolled to its end, a MapOverlay cuts the shadow below its last control — ${end.differing} of ${end.compared} pixels differ, by up to ${end.maxDelta} levels; the first at ${JSON.stringify(end.first)}`,
+    );
+    await stack.evaluate((node) => {
+      node.scrollTop = 0;
+    });
+  }
+  console.log(
+    `PASS GAP-082: controls in a MapOverlay draw exactly as placed by hand (${alike.join(", ")}; at rest and focused; edge and shadow ${reads.join(", ")} levels off the board), and a scrolling overlay keeps its controls' sides, top and last shadow`,
+  );
+  await boards.close();
+
   // The AI search button's gradient ring: a band two and a half wide, all the
   // way round, MEASURED IN THE PAINT.
   //

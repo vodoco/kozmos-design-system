@@ -71,9 +71,11 @@ const MapOverlay = React.forwardRef<HTMLDivElement, MapOverlayProps>(
         style={insetStyle}
         {...props}
       >
-        <div className="pointer-events-auto flex max-h-[calc(100dvh-var(--map-overlay-top)-var(--map-overlay-bottom))] w-full flex-col gap-4 overflow-y-auto overscroll-contain">
-          {children}
-        </div>
+        {/* The stack scrolls when it is taller than the map leaves room for.
+            Its rule keeps the floating shadow's reach clear around what it
+            holds, so the scroll box's clip no longer cuts a control's shadow
+            and edge (GAP-082); see .kozmos-map-overlay-stack. */}
+        <div className="kozmos-reset kozmos-map-overlay-stack">{children}</div>
       </div>
     );
   },
