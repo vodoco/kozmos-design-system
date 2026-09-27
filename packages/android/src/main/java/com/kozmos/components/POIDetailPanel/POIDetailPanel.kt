@@ -43,8 +43,11 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.components.iconbutton.KozmosIconButton
@@ -84,6 +87,14 @@ enum class KozmosPOIDetailPanelPresentation {
  * [KozmosPOIPresentation.actions] are rendered, and every label is supplied
  * already localized.
  *
+ * In its sheet and panel presentations the card is the top of the map shell's
+ * panel: its header tops its top padding up to what the panel already leaves
+ * above it ([LocalKozmosPanelInsetTop], [LocalKozmosPanelClearanceTop]) rather
+ * than adding to it, so its close button sits as far from the panel's top as
+ * from its side (GAP-083). A card placed lower in the panel than its top
+ * should use [KozmosPOIDetailPanelPresentation.Inline], which keeps its own
+ * padding.
+ *
  * The web component's `titleLevel` prop has no counterpart here: Compose
  * semantics expose `heading()` as a boolean with no rank, so TalkBack cannot
  * distinguish an h2 from an h3. SwiftUI does support ranks and mirrors the prop
@@ -113,6 +124,18 @@ fun KozmosPOIDetailPanel(
         RoundedCornerShape(topStart = radius, topEnd = radius)
     } else {
         RoundedCornerShape(radius)
+    }
+
+    // The header's top padding. Inline, its own 16. Hosted in the map shell's
+    // panel — the sheet and panel presentations — it tops up to 16 what the
+    // panel already leaves above it, rather than adding 16 to it, and keeps
+    // the clearance the panel asks for under a handle: the close button sat
+    // 32 from the sheet's top and 16 from its side (GAP-083).
+    val headerPadding = KozmosDimensions.primitivesLayoutSpacing200
+    val headerTop = if (presentation == KozmosPOIDetailPanelPresentation.Inline) {
+        headerPadding
+    } else {
+        maxOf(LocalKozmosPanelClearanceTop.current, headerPadding - LocalKozmosPanelInsetTop.current)
     }
 
     val showsAccessRestrictions = poi.accessRestrictions != null &&
@@ -147,7 +170,7 @@ fun KozmosPOIDetailPanel(
         val bodyScrollState = rememberScrollState()
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            Header(poi = poi, onClose = onClose, closeLabel = closeLabel, surface = insetSurface)
+            Header(poi = poi, onClose = onClose, closeLabel = closeLabel, surface = insetSurface, top = headerTop)
 
             Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
@@ -291,12 +314,18 @@ private fun Header(
     poi: KozmosPOIPresentation,
     onClose: (() -> Unit)?,
     closeLabel: String,
-    surface: Color = KozmosThemeTokens.primitivesColorsBackground100
+    surface: Color = KozmosThemeTokens.primitivesColorsBackground100,
+    top: Dp = KozmosDimensions.primitivesLayoutSpacing200
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(KozmosDimensions.primitivesLayoutSpacing200),
+            .padding(
+                start = KozmosDimensions.primitivesLayoutSpacing200,
+                top = top,
+                end = KozmosDimensions.primitivesLayoutSpacing200,
+                bottom = KozmosDimensions.primitivesLayoutSpacing200
+            ),
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
     ) {

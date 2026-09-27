@@ -122,6 +122,17 @@ fun PlacesSheet(map: @Composable () -> Unit, results: @Composable () -> Unit) {
   `}
 />
 
+On iOS and Android the shell tells its panel's content how much space it already leaves
+above it, so a part that brings its own top padding tops it up rather than adding to it
+(GAP-083): `kozmosPanelInsetTop` and `kozmosPanelClearanceTop` in the SwiftUI environment,
+`LocalKozmosPanelInsetTop` and `LocalKozmosPanelClearanceTop` in Compose. Under a grab
+handle they are its 16-point row and 4 points of clearance, so the handle's target keeps
+its WCAG 2.5.8 spacing; with no handle (a single detent), under a `panelHeader`, and in a
+side panel, which starts its content at its top edge, both are zero. `KozmosPOIDetailPanel`
+in its sheet and panel presentations uses both, so its close button sits as far from the
+panel's top as from its side; a card placed lower in the panel than its top should use the
+inline presentation, which keeps its own padding.
+
 `usableRegions` accepts host-provided hinge-free rectangles in shell-local CSS pixels.
 Auto mode can separate map and panel across those regions without remounting either.
 This is a geometry input, not automatic foldable-device detection.

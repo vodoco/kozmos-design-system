@@ -1,11 +1,12 @@
 import SwiftUI
 
-// The sheet's content and the shell that holds it share three things here: whether
-// the content may scroll, how far it has scrolled, and where its peek ends. The
-// prototype's rule, driven and measured (docs/pointr-prototype-initial-sheet-
-// 2026-09-20.md §2): the content scrolls under a finger only at the largest
-// detent; below it an upward drag grows the sheet first; at the largest detent
-// a downward drag empties the scroll before the sheet moves.
+// The sheet's content and the shell that holds it share four things here: whether
+// the content may scroll, how far it has scrolled, where its peek ends, and what
+// the panel leaves above the content. The prototype's rule, driven and measured
+// (docs/pointr-prototype-initial-sheet-2026-09-20.md §2): the content scrolls
+// under a finger only at the largest detent; below it an upward drag grows the
+// sheet first; at the largest detent a downward drag empties the scroll before
+// the sheet moves.
 
 /// Whether the sheet's content may scroll. The shell sets it false below the
 /// largest detent and while the sheet is being dragged; outside a shell it is
@@ -18,6 +19,37 @@ public extension EnvironmentValues {
     var kozmosPanelScrollEnabled: Bool {
         get { self[KozmosPanelScrollEnabledKey.self] }
         set { self[KozmosPanelScrollEnabledKey.self] = newValue }
+    }
+}
+
+struct KozmosPanelInsetTopKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+struct KozmosPanelClearanceTopKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+public extension EnvironmentValues {
+    /// What the shell's panel leaves empty above its content (GAP-083): the
+    /// grabber's 16-point row on a sheet that draws one; nothing on a sheet
+    /// with a single detent, which draws no grabber, under a `panelHeader`,
+    /// which sits there instead, or beside the map, where a side panel starts
+    /// its content at its top edge. A part with its own top padding tops it
+    /// up to what it needs rather than adding to it, as `KozmosPOIDetailPanel`
+    /// does in its sheet and panel presentations. Zero outside a shell.
+    var kozmosPanelInsetTop: CGFloat {
+        get { self[KozmosPanelInsetTopKey.self] }
+        set { self[KozmosPanelInsetTopKey.self] = newValue }
+    }
+
+    /// How far the panel content's first control must still sit below
+    /// `kozmosPanelInsetTop` (GAP-083): 4 points under a grabber — half of
+    /// what its 16-point row falls short of 24 — so the grabber's target keeps
+    /// its WCAG 2.5.8 spacing; zero everywhere else.
+    var kozmosPanelClearanceTop: CGFloat {
+        get { self[KozmosPanelClearanceTopKey.self] }
+        set { self[KozmosPanelClearanceTopKey.self] = newValue }
     }
 }
 
