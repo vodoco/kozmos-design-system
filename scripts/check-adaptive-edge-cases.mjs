@@ -170,6 +170,188 @@ const cases = [
       assert(controls.y >= topBar.y + topBar.height - 1);
     },
   ],
+  [
+    "a panel header stays put while the content under it scrolls",
+    async (page) => {
+      // Row 73: the sheet scrolled as one piece, so the search field went up
+      // and out of sight with the results it was searching. Reduced motion:
+      // a sheet easing to its detent moves everything in it.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        window.setAdaptiveOptions({ panelDetent: "large" });
+      });
+      await settleLayout(page);
+      const field = page.getByRole("textbox", { name: "Search this sheet" });
+      // Counted first: a missing header would otherwise read null twice and
+      // "stay put", or time out rather than fail.
+      assert.equal(await field.count(), 1, "the panel header is drawn");
+      assert(
+        await page.evaluate(
+          () => !!document.querySelector("[data-kozmos-panel-header]"),
+        ),
+        "the panel header has its own row",
+      );
+      const before = await field.boundingBox();
+      const scrolled = await page.evaluate(() => {
+        const header = document.querySelector("[data-kozmos-panel-header]");
+        const content = header.nextElementSibling;
+        content.scrollTop = 300;
+        return content.scrollTop;
+      });
+      await settleLayout(page);
+      assert(scrolled > 0, "the content under the header scrolls");
+      assert.deepEqual(
+        await field.boundingBox(),
+        before,
+        "the header stays put",
+      );
+    },
+  ],
+  [
+    "a collapsed sheet shows the whole of a panel header taller than it",
+    async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        window.setAdaptiveOptions({ panelDetent: "collapsed" });
+      });
+      await settleLayout(page);
+      const sortButton = page.getByRole("button", { name: "Sort" });
+      assert.equal(await sortButton.count(), 1, "the panel header is drawn");
+      const sort = await sortButton.boundingBox();
+      const sheet = await page.locator("aside").boundingBox();
+      assert(
+        sort.y + sort.height <= sheet.y + sheet.height,
+        `the header ends at ${sort.y + sort.height}, the sheet at ${sheet.y + sheet.height}`,
+      );
+    },
+  ],
+  [
+    "a drag that starts on the panel header moves the sheet, however far its content has scrolled",
+    async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      // The detent follows the drag, as a product holding it would.
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        const hold = (detent) =>
+          window.setAdaptiveOptions({
+            panelDetent: detent,
+            onPanelDetentChange: hold,
+          });
+        hold("large");
+      });
+      await settleLayout(page);
+      const scrolled = await page.evaluate(() => {
+        const content = document.querySelector(
+          "[data-kozmos-panel-header]",
+        )?.nextElementSibling;
+        if (!content) return 0;
+        content.scrollTop = 300;
+        return content.scrollTop;
+      });
+      assert(
+        scrolled > 0,
+        "the panel header is drawn over content that has scrolled",
+      );
+      await settleLayout(page);
+      const sheetBefore = await page.locator("aside").boundingBox();
+      const filters = await page
+        .getByRole("button", { name: "Filters" })
+        .boundingBox();
+      const x = filters.x + filters.width / 2;
+      const y = filters.y + filters.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      for (let step = 1; step <= 10; step++)
+        await page.mouse.move(x, y + step * 25);
+      await page.mouse.up();
+      await page.waitForTimeout(600);
+      await settleLayout(page);
+      const sheetAfter = await page.locator("aside").boundingBox();
+      assert(
+        sheetAfter.height < sheetBefore.height - 50,
+        `the sheet stayed ${sheetBefore.height}px, now ${sheetAfter.height}px`,
+      );
+    },
+  ],
+  [
+    "a selected result comes into a sheet below its largest detent, and nothing else moves",
+    async (page) => {
+      // Row 70: below the largest detent the sheet's content hides its
+      // overflow and every touch moves the sheet, so nobody can scroll to a
+      // result by hand. A pin's tap still selects one, anywhere in the list.
+      const measure = () =>
+        page.evaluate(() => {
+          const list = document.querySelector(
+            'section[aria-label="Points of interest"]',
+          );
+          const scroller = list.parentElement;
+          const aside = document.querySelector("aside");
+          const frame = scroller.getBoundingClientRect();
+          const style = getComputedStyle(scroller);
+          const card = (id) =>
+            document
+              .querySelector(`[data-poi-id="${id}"]`)
+              .getBoundingClientRect();
+          return {
+            overflow: style.overflowY,
+            scrollTop: scroller.scrollTop,
+            viewTop: frame.top + scroller.clientTop,
+            viewBottom:
+              frame.top +
+              scroller.clientTop +
+              scroller.clientHeight -
+              parseFloat(style.paddingBottom),
+            last: card("result-10"),
+            first: card("result-0"),
+            asideTop: aside.getBoundingClientRect().top,
+            asideScroll: aside.scrollTop,
+            shellScroll: aside.parentElement.scrollTop,
+            page: window.scrollY,
+          };
+        });
+      const inView = (box, at) =>
+        box.top >= at.viewTop - 0.5 && box.bottom <= at.viewBottom + 0.5;
+
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => window.showResults());
+      await settleLayout(page);
+      const before = await measure();
+      assert.equal(
+        before.overflow,
+        "hidden",
+        "the sheet rests below its largest detent",
+      );
+      assert(!inView(before.last, before), "the result starts out of sight");
+
+      await page.evaluate(() => window.showResults("result-10"));
+      await settleLayout(page);
+      const after = await measure();
+      assert(
+        inView(after.last, after),
+        `result at ${after.last.top}–${after.last.bottom}, view ${after.viewTop}–${after.viewBottom}`,
+      );
+      assert.equal(
+        after.asideTop,
+        before.asideTop,
+        "the sheet itself stays put",
+      );
+      assert.equal(after.asideScroll, 0, "the sheet's frame does not scroll");
+      assert.equal(after.shellScroll, 0, "the shell does not scroll");
+      assert.equal(after.page, 0, "the page does not scroll");
+
+      // And back up, gliding this time: motion is the default.
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      await page.evaluate(() => window.showResults("result-0"));
+      await page.waitForTimeout(1500);
+      const back = await measure();
+      assert(
+        inView(back.first, back),
+        `result at ${back.first.top}–${back.first.bottom}, view ${back.viewTop}–${back.viewBottom}`,
+      );
+    },
+  ],
 ];
 try {
   for (const [name, test] of cases) {

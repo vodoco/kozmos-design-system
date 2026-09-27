@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { InfoCircle as Info } from "@kozmos-ds/icons";
 import { AdaptiveMapShell, panelPeekAnchorProps } from "./AdaptiveMapShell";
 import { MapControlButton } from "../MapControlButton";
+import { Input } from "../Input";
 
 const meta = {
   title: "Product SDK/AdaptiveMapShell",
@@ -146,6 +147,36 @@ export const SheetPeekAnchor: Story = {
           ).join("")}
         </p>
       </div>
+    ),
+  },
+};
+
+/**
+ * A search field in the panel header: under the grip, above the results, and
+ * not scrolled with them (row 73). A collapsed sheet always shows the whole
+ * header, and a drag that starts on it always moves the sheet.
+ */
+export const SheetPanelHeader: Story = {
+  args: {
+    className: "h-[42rem] max-w-[402px]",
+    panelPresentation: "bottom",
+    panelLabel: "Places",
+    panelHeader: (
+      <div className="px-4 pb-2">
+        <Input aria-label="Search places" placeholder="Search" />
+      </div>
+    ),
+    panel: (
+      <ul className="m-0 list-none p-0">
+        {Array.from({ length: 30 }, (_, index) => (
+          <li
+            key={index}
+            className="h-20 border-t border-border px-4 py-3 text-sm"
+          >
+            Place {index + 1}
+          </li>
+        ))}
+      </ul>
     ),
   },
 };

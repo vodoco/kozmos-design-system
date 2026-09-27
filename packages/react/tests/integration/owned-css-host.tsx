@@ -16,6 +16,7 @@ import {
   PasswordInput,
   NumberInput,
   MapControlButton,
+  AIMessage,
   Listbox,
   Text,
   Heading,
@@ -242,6 +243,16 @@ function Controls({ id }: { id: string }) {
         pressed
         data-testid={`${id}-map-control`}
       />
+      <MapControlButton
+        icon={<span aria-hidden="true">+</span>}
+        label={`${id} labelled control`}
+        presentation="labelled"
+        stateLabel="On"
+        data-testid={`${id}-map-control-labelled`}
+      />
+      <AIMessage status="streaming" data-testid={`${id}-ai-streaming`}>
+        Looking through this building…
+      </AIMessage>
       <Popover>
         <PopoverTrigger asChild>
           <Button>Open {id}</Button>

@@ -1,7 +1,9 @@
+import * as React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
-import { POIResultList } from "./POIResultList";
+import { Button } from "../Button";
+import { POIResultList, type POIResultListItem } from "./POIResultList";
 
 const pois: POIPresentation[] = [
   {
@@ -66,5 +68,72 @@ export const Empty: Story = {
     emptyState: "No places match these filters. Remove a filter to see more.",
     items: [],
     resultCountLabel: "No results",
+  },
+};
+
+const manyResults: POIResultListItem[] = Array.from(
+  { length: 12 },
+  (_, index) => ({
+    poi: {
+      id: `gate-${index + 1}`,
+      name: `Gate B${index + 1}`,
+      categoryLabel: "Gates",
+      floorId: "1",
+      floorLabel: "Departures",
+      media: [],
+      actions: ["navigate"],
+    },
+    result: {
+      poiId: `gate-${index + 1}`,
+      resultIndex: index + 1,
+      selected: false,
+      featured: false,
+      floorId: "1",
+      actions: [{ action: "navigate", label: "Go", primary: true }],
+    },
+  }),
+);
+
+/**
+ * A pin's tap selects a result that may be anywhere in the list. The list
+ * scrolls what it sits in — here a box that hides its overflow, as a map
+ * sheet does below its largest detent, so it cannot be scrolled by hand —
+ * and nothing further out (row 70).
+ */
+export const SelectionComesIntoView: Story = {
+  args: { items: manyResults, resultCountLabel: "12 results" },
+  render: function SelectionComesIntoViewStory(args) {
+    const [selected, setSelected] = React.useState<string>();
+    return (
+      <div className="flex w-full max-w-[26rem] flex-col gap-3">
+        {/* Wraps: at 320px, in a font as wide as CI's DejaVu Sans, the two
+            buttons do not fit on one line and the page scrolled sideways. */}
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => setSelected("gate-11")}>
+            Tap the pin for B11
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setSelected("gate-2")}
+          >
+            Tap the pin for B2
+          </Button>
+        </div>
+        <div
+          className="rounded-container bg-muted p-3"
+          // A box that hides its overflow is clipping unless it says it
+          // scrolls, as the map sheet's content does.
+          data-kozmos-scroller=""
+          style={{ height: 320, overflowY: "hidden" }}
+        >
+          <POIResultList
+            {...args}
+            onSelect={setSelected}
+            selectedPoiId={selected}
+          />
+        </div>
+      </div>
+    );
   },
 };

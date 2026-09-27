@@ -15,11 +15,11 @@ simulated navigation content; native system integration is a separate concern.
 
 ```tsx
 import { DynamicIsland } from "@kozmos-ds/react";
-import { ArrowRight, Navigation } from "lucide-react";
+import { ArrowRight, NavigationPointer01 } from "@kozmos-ds/icons";
 
 <DynamicIsland
   islandState="expanded"
-  compactLeading={<Navigation className="w-4 h-4 text-green-400" />}
+  compactLeading={<NavigationPointer01 className="w-4 h-4 text-green-400" />}
   compactTrailing={<span className="text-sm font-semibold">1.2m</span>}
   expandedContent={
     <div className="flex flex-col gap-2 p-2">

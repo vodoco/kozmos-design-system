@@ -14,13 +14,13 @@ The `RouteSummary` serves as the primary bottom-anchored modal sheet during acti
 
 ```tsx
 import { RouteSummary } from '@kozmos-ds/react';
-import { PersonStanding } from 'lucide-react';
+import { NavigationPointer01 } from '@kozmos-ds/icons';
 
 <RouteSummary
     etaText="7 min"
     distanceText="500 ft"
     state="active"
-    transportModeIcon={<PersonStanding />}
+    transportModeIcon={<NavigationPointer01 />}
     onEndRoute={() => prompt("End Route Confirmation")}
 />
 ```

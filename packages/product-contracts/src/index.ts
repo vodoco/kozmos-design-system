@@ -267,6 +267,31 @@ export type SearchEmptyKind =
   /** The venue has no data for this at all — a category nobody has mapped. */
   | "unavailable";
 
+/** What part of the venue a search was held to. */
+export type SearchScopeKind = "building" | "area";
+
+/**
+ * The part of the venue a search was held to.
+ *
+ * NH-D: a visitor types "coffee in this terminal" or "coffee after security",
+ * and the list is limited to Terminal 2, or to the airside area. One chip says
+ * which, and its × searches the whole venue again. Without this the chip was
+ * hand-written (GAP-023).
+ */
+export interface SearchScopePresentation {
+  kind: SearchScopeKind;
+  /** The building's or the area's id, as the venue's data names it. */
+  id: string;
+  /** Already localized: "Terminal 2", "After security". The chip's text. */
+  label: string;
+  /**
+   * The query without the words that set the scope — "coffee" for "coffee in
+   * this terminal" — for the chip's × to search the whole venue with. Absent
+   * when nothing in the query set the scope, as when the host app chose it.
+   */
+  queryWithoutScope?: string;
+}
+
 export interface SearchResponsePresentation {
   results: readonly POIResultPresentation[];
   /** Present only when `results` is empty. */
@@ -283,6 +308,12 @@ export interface SearchResponsePresentation {
    * wonder.
    */
   languageFallback?: string;
+  /**
+   * The part of the venue the results were limited to. Absent means the whole
+   * venue, which is the default (US9-AC1): a scope is something a query or the
+   * host app asked for, never something the list assumes.
+   */
+  appliedScope?: SearchScopePresentation;
 }
 
 export interface FloorPresentation {

@@ -14,18 +14,44 @@ when the item can be selected or dismissed; use `Badge` for passive metadata.
 
 ```tsx
 import { Chip, ChipGroup } from "@kozmos-ds/react";
-import { Coffee } from "lucide-react";
+import { Utensils } from "@kozmos-ds/icons";
 
 <ChipGroup>
   <Chip selected onClick={() => setCategory("all")}>
     All
   </Chip>
-  <Chip icon={<Coffee />} onClick={() => setCategory("coffee")}>
+  <Chip icon={<Utensils />} onClick={() => setCategory("coffee")}>
     Coffee
   </Chip>
   <Chip onRemove={() => clearFilter("open")}>Open now</Chip>
 </ChipGroup>;
 ```
+
+### One choice of several
+
+When the chips are one choice — "Whole airport / Terminal 2" — say so: give the
+group `selectionMode="single"` and an `aria-label` that names the choice, and
+each chip a `value`. The group is then a radio group: it is announced as one
+choice, it has one Tab stop, and the arrow keys move the choice, in the
+direction the ThemeProvider sets. A choice cannot be emptied by a second tap.
+
+```tsx
+<ChipGroup
+  aria-label="Search in"
+  selectionMode="single"
+  value={scope}
+  onValueChange={setScope}
+>
+  <Chip value="airport">Whole airport</Chip>
+  <Chip value="t2">Terminal 2</Chip>
+</ChipGroup>
+```
+
+Without it, each chip is its own toggle, which is right for filters that combine
+("Vegan", "Halal") and wrong for a choice: two toggles read as two unrelated
+buttons, each pressed or not.
+
+<Canvas of={ChipStories.OneChoice} />
 
 ## Android Jetpack Compose
 

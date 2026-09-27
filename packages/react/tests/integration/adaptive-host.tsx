@@ -5,11 +5,13 @@ import {
   Button,
   Input,
   POIDetailPanel,
+  POIResultList,
   Stack,
 } from "@kozmos-ds/react";
 import type {
   AdaptiveMapShellProps,
   AdaptiveMapLayoutSnapshot,
+  POIResultListItem,
 } from "@kozmos-ds/react";
 
 declare global {
@@ -20,6 +22,10 @@ declare global {
     adaptiveNotifications: number;
     mapMounts: number;
     panelMounts: number;
+    /** Give the sheet a panel header: a search field and two buttons. */
+    showPanelHeader: () => void;
+    /** Swap the panel for a list of results, with this one selected. */
+    showResults: (selectedPoiId?: string) => void;
   }
 }
 
@@ -69,14 +75,64 @@ function Panel() {
   );
 }
 
+// Taller than the collapsed detent's fifth of the shell, so a sheet that
+// ignored it would cut it off.
+function PanelHeader() {
+  return (
+    <Stack gap={2}>
+      <Input aria-label="Search this sheet" />
+      <Button>Filters</Button>
+      <Button>Sort</Button>
+    </Stack>
+  );
+}
+
+// Twelve results: far taller than the sheet at any detent but its largest.
+const results: POIResultListItem[] = Array.from({ length: 12 }, (_, index) => ({
+  poi: {
+    id: `result-${index}`,
+    name: `Result ${index + 1}`,
+    floorId: "1",
+    floorLabel: "Level one",
+    media: [],
+    actions: ["navigate"],
+  },
+  result: {
+    poiId: `result-${index}`,
+    resultIndex: index,
+    selected: false,
+    featured: false,
+    floorId: "1",
+    actions: [{ action: "navigate", label: "Go" }],
+  },
+}));
+
 function Host() {
   const [options, setOptions] = useState(window.adaptiveOptions ?? {});
+  const [header, setHeader] = useState(false);
+  const [shownResults, setShownResults] = useState<{
+    selectedPoiId?: string;
+  } | null>(null);
   window.setAdaptiveOptions = setOptions;
+  window.showPanelHeader = () => setHeader(true);
+  window.showResults = (selectedPoiId) => setShownResults({ selectedPoiId });
   return (
     <AdaptiveMapShell
       style={{ height: "100%" }}
       map={<MapSlot />}
-      panel={<Panel />}
+      panel={
+        shownResults ? (
+          <POIResultList
+            items={results}
+            onSelect={(poiId) => setShownResults({ selectedPoiId: poiId })}
+            resultCountLabel="12 results"
+            selectedPoiId={shownResults.selectedPoiId}
+          />
+        ) : (
+          <Panel />
+        )
+      }
+      panelHeader={header ? <PanelHeader /> : undefined}
       panelPlacement="end"
       topBar={<Button style={{ width: "100%" }}>Search this floor</Button>}
       controls={<Button>Focus map</Button>}
