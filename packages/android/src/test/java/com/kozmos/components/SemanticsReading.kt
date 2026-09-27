@@ -51,6 +51,8 @@ data class ReadNode(
     val description: String?,
     val texts: List<String>,
     val selected: Boolean?,
+    /** Set, it replaces the "Selected" / "Not selected" TalkBack would say. */
+    val stateDescription: String?,
     val enabled: Boolean,
     val role: Role?,
     val bounds: Rect,
@@ -104,6 +106,7 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     description = node.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString(),
     texts = node.config.getOrNull(SemanticsProperties.Text)?.map { it.text }.orEmpty(),
     selected = node.config.getOrNull(SemanticsProperties.Selected),
+    stateDescription = node.config.getOrNull(SemanticsProperties.StateDescription),
     enabled = !node.config.contains(SemanticsProperties.Disabled),
     role = node.config.getOrNull(SemanticsProperties.Role),
     bounds = node.boundsInRoot,
