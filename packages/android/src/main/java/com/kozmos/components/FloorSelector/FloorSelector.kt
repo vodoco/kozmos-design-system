@@ -58,8 +58,8 @@ enum class KozmosFloorSelectorVariant(val value: String) {
  * buttons are called, for a visitor who cannot see them: the previous level in
  * list order is on the up chevron, the next on the down. Hard-coded English
  * until row 67. Only the stepper draws them; the lists name each level by its
- * own label. The defaults are the words these buttons always said — React's
- * read "Previous floor" and "Next floor".
+ * own label. The defaults are the words these buttons always said, "Floor up"
+ * and "Floor down", which React and SwiftUI say too.
  *
  * This overload is for venues whose IDs are already the labels: each entry is
  * shown and said as-is. Pass [KozmosFloorPresentation]s for a short label on

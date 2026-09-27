@@ -36,8 +36,8 @@ public struct KozmosFloorSelector: View {
     /// cannot see them: the previous level in list order is on the up chevron,
     /// the next on the down. Hard-coded English until row 67. Only the stepper
     /// draws them; the lists name each level by its own label. The defaults
-    /// are the words these buttons always said — React's read "Previous floor"
-    /// and "Next floor".
+    /// are the words these buttons always said, "Floor up" and "Floor down",
+    /// which React and Compose say too.
     let previousFloorLabel: String
     let nextFloorLabel: String
     /// How a level's result count is said, for a visitor who cannot see the
