@@ -8,6 +8,45 @@ import {
 const { code, css } = await buildReactFixture("adaptive-host.tsx");
 const browser = await launchFixtureBrowser();
 let failures = 0;
+// GAP-083: where a hosted details card's close button sits in the panel —
+// from the panel's top edge, and from its end edge (the left, right to left).
+// Counted first, so a missing card fails on an assertion, not a timeout.
+async function closeInsets(page) {
+  const close = page.getByRole("button", { name: "Close details" });
+  assert.equal(
+    await close.count(),
+    1,
+    "the details card and its close button are drawn",
+  );
+  return close.evaluate((button) => {
+    const panel = button.closest("aside");
+    const b = button.getBoundingClientRect();
+    const p = panel.getBoundingClientRect();
+    const rtl = getComputedStyle(panel).direction === "rtl";
+    return {
+      top: Math.round((b.top - p.top) * 10) / 10,
+      end: Math.round((rtl ? b.left - p.left : p.right - b.right) * 10) / 10,
+      headerTop: parseFloat(
+        getComputedStyle(button.closest(".kozmos-poi-header")).paddingTop,
+      ),
+      grip: !!panel.querySelector('[role="slider"]'),
+    };
+  });
+}
+
+// The side panel, as a wide host lays it out: the fixture made 1024 wide.
+async function widen(page) {
+  await page.evaluate(() => {
+    document.getElementById("fixture").style.width = "1024px";
+  });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("[data-panel-presentation]")?.dataset
+        .panelPresentation === "side",
+  );
+  await settleLayout(page);
+}
+
 const cases = [
   [
     "layout callback cannot mutate padding callback payload",
@@ -349,6 +388,175 @@ const cases = [
       assert(
         inView(back.first, back),
         `result at ${back.first.top}–${back.first.bottom}, view ${back.viewTop}–${back.viewBottom}`,
+      );
+    },
+  ],
+  [
+    "under a grip, a hosted details card's close button is as far from the sheet's top as from its side, plus the grip's clearance",
+    async (page) => {
+      // GAP-083: the card's header padded 16 on every side, and the sheet's
+      // grip row added 16 above it — the close button sat 33 from the top
+      // and 17 from the side. The shell now says what it leaves above its
+      // content, and the card tops its header up to 16 rather than adding.
+      // Under a grip it keeps 4 more, the grip's target clearance (WCAG
+      // 2.5.8, the next case): 21 against 17.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showDetails("sheet");
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await settleLayout(page);
+      const at = await closeInsets(page);
+      assert(at.grip, "this sheet draws its grip");
+      assert(
+        Math.abs(at.top - (at.end + 4)) <= 1,
+        `close button ${at.top} from the top and ${at.end} from the side`,
+      );
+    },
+  ],
+  [
+    "at 320 wide, a hosted details card keeps the grip's target clear (WCAG 2.5.8)",
+    async (page) => {
+      // The grip is a 16px row: an undersized target, so a 24px circle on
+      // its centre must meet no other target. With the card's header flush
+      // under the grip, at 320 wide the favourite button sat inside that
+      // circle (axe target-size). The card keeps the grip's clearance, as a
+      // panel header does (#109).
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        document.getElementById("fixture").style.width = "320px";
+        window.showDetails("sheet");
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await page.waitForFunction(
+        () => window.adaptiveSnapshot?.mapBounds.width === 320,
+      );
+      await settleLayout(page);
+      assert.equal(
+        await page.getByRole("button", { name: "Close details" }).count(),
+        1,
+        "the details card is drawn",
+      );
+      const inside = await page.evaluate(() => {
+        const grip = document.querySelector(".kozmos-map-sheet-handle");
+        const g = grip.getBoundingClientRect();
+        const cx = g.left + g.width / 2;
+        const cy = g.top + g.height / 2;
+        const targets = [
+          ...grip
+            .closest("aside")
+            .querySelectorAll("button, a[href], input, [role='slider']"),
+        ].filter((target) => target !== grip);
+        return targets
+          .map((target) => {
+            const r = target.getBoundingClientRect();
+            const dx = Math.max(r.left - cx, 0, cx - r.right);
+            const dy = Math.max(r.top - cy, 0, cy - r.bottom);
+            return {
+              name: target.getAttribute("aria-label") ?? target.textContent,
+              d: Math.hypot(dx, dy),
+            };
+          })
+          .filter(({ d }) => d < 12);
+      });
+      assert.deepEqual(
+        inside,
+        [],
+        `inside the grip's 24px circle: ${JSON.stringify(inside)}`,
+      );
+    },
+  ],
+  [
+    "a single-detent sheet draws no grip, and the card keeps its own top padding",
+    async (page) => {
+      // The guard: with no grip the shell leaves nothing above the content,
+      // so the card's header must keep its 16 or the button meets the edge.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showDetails("sheet");
+        window.setAdaptiveOptions({
+          panelDetents: ["medium"],
+          panelDetent: "medium",
+        });
+      });
+      await settleLayout(page);
+      const at = await closeInsets(page);
+      assert(!at.grip, "a single detent draws no grip");
+      assert.equal(at.headerTop, 16, "the header keeps its own 16");
+      assert(
+        Math.abs(at.top - at.end) <= 1,
+        `close button ${at.top} from the top and ${at.end} from the side`,
+      );
+    },
+  ],
+  [
+    "a hosted details card's close button is as far from the side panel's top as from its side",
+    async (page) => {
+      // The sheet presentation paints no surface, so the card sits on the side
+      // panel as on a sheet (the MAP-474 boards measured 33 and 17 there too).
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await widen(page);
+      await page.evaluate(() => window.showDetails("sheet"));
+      await settleLayout(page);
+      const at = await closeInsets(page);
+      assert(
+        Math.abs(at.top - at.end) <= 1,
+        `close button ${at.top} from the top and ${at.end} from the side`,
+      );
+    },
+  ],
+  [
+    "right to left, the side panel's close button is as far from the top as from the left",
+    async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        document.getElementById("fixture").dir = "rtl";
+      });
+      await widen(page);
+      await page.evaluate(() => window.showDetails("sheet"));
+      await settleLayout(page);
+      const at = await closeInsets(page);
+      assert(
+        Math.abs(at.top - at.end) <= 1,
+        `close button ${at.top} from the top and ${at.end} from the left`,
+      );
+    },
+  ],
+  [
+    "a bordered panel-presentation card keeps its header's 16 inside its border",
+    async (page) => {
+      // The guard for this fix's first version: the panel presentation draws
+      // its own bordered card, and the side panel's 16 lies outside that
+      // border. Topped up to nothing, the header met the border.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await widen(page);
+      await page.evaluate(() => window.showDetails("panel"));
+      await settleLayout(page);
+      const at = await closeInsets(page);
+      assert.equal(
+        at.headerTop,
+        16,
+        "the header keeps its 16 inside the card's border",
+      );
+    },
+  ],
+  [
+    "under a panel header, the details card keeps its own top padding",
+    async (page) => {
+      // A header sits between the grip and the content: the space above the
+      // card is the header, not empty, so the card's 16 separates them.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        window.showDetails("sheet");
+        window.setAdaptiveOptions({ panelDetent: "large" });
+      });
+      await settleLayout(page);
+      const at = await closeInsets(page);
+      assert.equal(
+        at.headerTop,
+        16,
+        "the header keeps its own 16 under a panel header",
       );
     },
   ],

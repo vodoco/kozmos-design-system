@@ -590,6 +590,13 @@ const AdaptiveMapShell = React.forwardRef<
     const isSheet = layout.presentation === "bottom";
     const panelHidden = unavailable || (measured.ready && !layout.panelBounds);
     const drawsHandle = isSheet && showsHandle;
+    // The handle is a 16px row, and a control directly under it leaves the
+    // handle's target a 16px clear space where WCAG 2.5.8 asks 24. Half the
+    // shortfall keeps it clear, from the handle's own height token: a panel
+    // header starts this far down, and so does a hosted card's first control.
+    const gripClearance = drawsHandle
+      ? "calc((24px - var(--primitives-layout-spacing-200) * 1px) / 2)"
+      : "0px";
     // The handle is drawn only once the shell knows it is a sheet, a render
     // after its first measurement, so its row is measured when it appears
     // rather than whenever something else happens to resize.
@@ -901,14 +908,9 @@ const AdaptiveMapShell = React.forwardRef<
                 style={{
                   paddingLeft: isSheet ? chrome.left : undefined,
                   paddingRight: isSheet ? chrome.right : undefined,
-                  // The handle is a 16px row, and a control directly under it
-                  // - the search field a header usually starts with - leaves
-                  // the handle's target a 16px clear space where WCAG 2.5.8
-                  // asks 24. Half the shortfall keeps it clear, from the
-                  // handle's own height token.
-                  paddingTop: drawsHandle
-                    ? "calc((24px - var(--primitives-layout-spacing-200) * 1px) / 2)"
-                    : undefined,
+                  // The search field a header usually starts with keeps the
+                  // handle's target clear (WCAG 2.5.8).
+                  paddingTop: drawsHandle ? gripClearance : undefined,
                   // A vertical drag here is the sheet's; a sideways one stays
                   // with the header, for a row of chips that scrolls.
                   touchAction: isSheet ? "pan-x" : undefined,
@@ -937,20 +939,40 @@ const AdaptiveMapShell = React.forwardRef<
               // native, so a finger pulling the other way reaches the sheet
               // as pointer events. Below the largest detent every touch is
               // the sheet's.
-              style={{
-                // The content keeps the device's safe areas inside the
-                // sheet's edge-to-edge surface; scrolling content runs under
-                // them to this padding.
-                paddingBottom: isSheet ? chrome.bottom : undefined,
-                paddingLeft: isSheet ? chrome.left : undefined,
-                paddingRight: isSheet ? chrome.right : undefined,
-                overflowY: scrollEnabled ? "auto" : "hidden",
-                touchAction: scrollEnabled
-                  ? scrolled
-                    ? "pan-y"
-                    : "pan-down"
-                  : "none",
-              }}
+              style={
+                {
+                  // The content keeps the device's safe areas inside the
+                  // sheet's edge-to-edge surface; scrolling content runs under
+                  // them to this padding.
+                  paddingBottom: isSheet ? chrome.bottom : undefined,
+                  paddingLeft: isSheet ? chrome.left : undefined,
+                  paddingRight: isSheet ? chrome.right : undefined,
+                  overflowY: scrollEnabled ? "auto" : "hidden",
+                  touchAction: scrollEnabled
+                    ? scrolled
+                      ? "pan-y"
+                      : "pan-down"
+                    : "none",
+                  // What the panel leaves empty above its content: the grip's
+                  // row on a sheet, the side panel's 16, nothing when a
+                  // header sits there or a single detent draws no grip. A part
+                  // with its own top padding tops it up to what it needs
+                  // rather than adding to it: the details card's close button
+                  // sat 33 from the top and 17 from the side (GAP-083).
+                  "--kozmos-panel-inset-top": hasPanelHeader
+                    ? "0px"
+                    : isSheet
+                      ? drawsHandle
+                        ? "calc(var(--primitives-layout-spacing-200) * 1px)"
+                        : "0px"
+                      : "1rem",
+                  // And how far its first control must still sit below that,
+                  // so the grip's target keeps its clear space.
+                  "--kozmos-panel-clearance-top": hasPanelHeader
+                    ? "0px"
+                    : gripClearance,
+                } as React.CSSProperties
+              }
               onScroll={onContentScroll}
             >
               {panel}

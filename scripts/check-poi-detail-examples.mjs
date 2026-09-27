@@ -481,14 +481,20 @@ try {
               name: "Favourite",
               exact: true,
             });
-            // Its state lives above the adaptive layout and survives rotation.
+            // Its state lives above the adaptive layout and survives rotation:
+            // the shell turns its sheet into a side panel, and the card stays
+            // the surfaceless one it is in the sheet (GAP-083).
             await favourite.click();
             await page.setViewportSize({ width: 844, height: 390 });
             await page.waitForFunction(
               () =>
-                document
-                  .querySelector(".kozmos-poi-detail")
-                  ?.getAttribute("data-presentation") === "panel",
+                document.querySelector("[data-panel-presentation]")?.dataset
+                  .panelPresentation === "side",
+            );
+            assert.equal(
+              await panel.getAttribute("data-presentation"),
+              "sheet",
+              "hosted in the side panel, the card paints no surface of its own",
             );
             assert.equal(await favourite.getAttribute("aria-pressed"), "true");
             assert.equal(
@@ -500,9 +506,8 @@ try {
             await page.setViewportSize(viewport);
             await page.waitForFunction(
               () =>
-                document
-                  .querySelector(".kozmos-poi-detail")
-                  ?.getAttribute("data-presentation") === "sheet",
+                document.querySelector("[data-panel-presentation]")?.dataset
+                  .panelPresentation === "bottom",
             );
             assert.equal(await favourite.getAttribute("aria-pressed"), "true");
           }
