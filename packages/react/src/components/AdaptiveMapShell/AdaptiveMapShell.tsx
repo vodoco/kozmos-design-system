@@ -48,6 +48,23 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
   controls?: React.ReactNode;
   topBar?: React.ReactNode;
   panel?: React.ReactNode;
+  /**
+   * Drawn under the sheet's grip and above the panel's content, and not
+   * scrolled with it: a search field, the assistant button, or a chosen
+   * category stays put while the results under it scroll (row 73). Every
+   * detent counts it: a sheet fitted to its content includes it, and a
+   * collapsed sheet is always tall enough to show all of it — a header that
+   * fits leaves the collapsed detent where it was, and a taller one raises
+   * it. A peek anchor, in the header or the content, still decides where a
+   * collapsed sheet rests.
+   *
+   * A vertical drag on it moves the sheet, whatever the content has
+   * scrolled; a sideways one stays with the header, for a row of chips
+   * that scrolls. Under a grab handle it keeps its first control clear of
+   * the handle's target (WCAG 2.5.8). In a side panel it is the panel's
+   * first row.
+   */
+  panelHeader?: React.ReactNode;
   panelLabel?: string;
   /**
    * The sheet handle's accessible name. It is a slider, and "Panel height" is
@@ -130,18 +147,36 @@ const mergeSafeInset = (css: number, supplied = 0) =>
 /**
  * The peek anchor's bottom edge from the sheet's top, by layout position:
  * the anchor's box against the sheet's, with the content's scroll added back
- * so a scrolled sheet reports the same edge as one at its top.
+ * so a scrolled sheet reports the same edge as one at its top. An anchor in
+ * the panel header counts as one in the content does, and does not scroll.
  */
-function measurePeekBottom(content: HTMLElement | null): number {
-  const anchor = content?.querySelector<HTMLElement>(
+function measurePeekBottom(
+  content: HTMLElement | null,
+  header: HTMLElement | null,
+): number {
+  const sheet = content?.parentElement ?? header?.parentElement;
+  if (!sheet) return 0;
+  const top = sheet.getBoundingClientRect().top;
+  const inHeader = header?.querySelector<HTMLElement>(
     "[data-kozmos-peek-anchor]",
   );
-  const sheet = content?.parentElement;
-  if (!content || !anchor || !sheet) return 0;
+  const inContent = content?.querySelector<HTMLElement>(
+    "[data-kozmos-peek-anchor]",
+  );
+  const bottom = inHeader
+    ? inHeader.getBoundingClientRect().bottom - top
+    : inContent && content
+      ? inContent.getBoundingClientRect().bottom - top + content.scrollTop
+      : 0;
+  return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
+}
+
+/** The panel header's bottom edge from the sheet's top; 0 when there is none. */
+function measureHeaderBottom(header: HTMLElement | null): number {
+  const sheet = header?.parentElement;
+  if (!header || !sheet) return 0;
   const bottom =
-    anchor.getBoundingClientRect().bottom -
-    sheet.getBoundingClientRect().top +
-    content.scrollTop;
+    header.getBoundingClientRect().bottom - sheet.getBoundingClientRect().top;
   return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
 }
 const position = (rect: MapLayoutRect): React.CSSProperties => ({
@@ -166,6 +201,7 @@ const AdaptiveMapShell = React.forwardRef<
       controls,
       topBar,
       panel,
+      panelHeader,
       panelLabel = "Map details",
       panelPlacement = "end",
       panelPresentation = "auto",
@@ -194,6 +230,9 @@ const AdaptiveMapShell = React.forwardRef<
     const bar = React.useRef<HTMLDivElement>(null);
     const buttons = React.useRef<HTMLDivElement>(null);
     const panelContent = React.useRef<HTMLDivElement>(null);
+    const panelHeaderElement = React.useRef<HTMLDivElement>(null);
+    const handleElement = React.useRef<HTMLDivElement>(null);
+    const hasPanelHeader = panelHeader !== undefined && panelHeader !== null;
     const panelElement = React.useRef<HTMLElement>(null);
     const [measured, setMeasured] = React.useState({
       ready: false,
@@ -204,6 +243,11 @@ const AdaptiveMapShell = React.forwardRef<
       controlsWidth: 0,
       controlsHeight: 0,
       panelContentHeight: 0,
+      panelHeaderHeight: 0,
+      /** The panel header's bottom edge from the sheet's top; 0 when none. */
+      headerBottom: 0,
+      /** The grab handle's row, when the sheet draws one; 0 otherwise. */
+      handleHeight: 0,
       /** The peek anchor's bottom edge from the sheet's top; 0 when none. */
       peekBottom: 0,
       safe: { top: 0, right: 0, bottom: 0, left: 0 },
@@ -257,7 +301,13 @@ const AdaptiveMapShell = React.forwardRef<
           ),
           // What the panel holds, not what it was given: the scroll height.
           panelContentHeight: panelContent.current?.scrollHeight ?? 0,
-          peekBottom: measurePeekBottom(panelContent.current),
+          panelHeaderHeight: panelHeaderElement.current?.offsetHeight ?? 0,
+          headerBottom: measureHeaderBottom(panelHeaderElement.current),
+          handleHeight: handleElement.current?.offsetHeight ?? 0,
+          peekBottom: measurePeekBottom(
+            panelContent.current,
+            panelHeaderElement.current,
+          ),
           safe: {
             top: parseFloat(safeStyle.paddingTop) || 0,
             right: parseFloat(safeStyle.paddingRight) || 0,
@@ -271,20 +321,25 @@ const AdaptiveMapShell = React.forwardRef<
       };
       measure();
       const observer = new ResizeObserver(measure);
-      [element, bar.current, buttons.current, panelContent.current].forEach(
-        (node) => {
-          if (node) observer.observe(node);
-        },
-      );
+      [
+        element,
+        bar.current,
+        buttons.current,
+        panelContent.current,
+        panelHeaderElement.current,
+      ].forEach((node) => {
+        if (node) observer.observe(node);
+      });
       // The peek anchor moves when the sheet's content changes shape.
       const contentObserver = new MutationObserver(measure);
-      if (panelContent.current)
-        contentObserver.observe(panelContent.current, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-          attributeFilter: ["data-kozmos-peek-anchor", "style", "class"],
-        });
+      for (const node of [panelContent.current, panelHeaderElement.current])
+        if (node)
+          contentObserver.observe(node, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ["data-kozmos-peek-anchor", "style", "class"],
+          });
       observer.observe(safeArea.current!, { box: "border-box" });
       // Inherited direction can change without a resize (including a host locale switch).
       const directionObserver = new MutationObserver(measure);
@@ -305,7 +360,7 @@ const AdaptiveMapShell = React.forwardRef<
         directionObserver.disconnect();
         window.removeEventListener("resize", measure);
       };
-    }, [Boolean(topBar), Boolean(controls), Boolean(panel)]);
+    }, [Boolean(topBar), Boolean(controls), Boolean(panel), hasPanelHeader]);
 
     // The device's safe areas (CSS env()) are the chrome's: the map runs
     // under them, as the prototype's does. What the host supplies — a
@@ -331,10 +386,6 @@ const AdaptiveMapShell = React.forwardRef<
     // its safe areas, as the layout resolves it. The content detent and the
     // peek anchor are measured a render late, as the chrome is.
     const sheetHeight = Math.max(0, measured.height - safe.top - safe.bottom);
-    const measures = {
-      contentHeight: measured.panelContentHeight,
-      peekBottom: measured.peekBottom,
-    };
     const detents: readonly PanelDetent[] =
       panelDetents ??
       (panelSizing === "content"
@@ -342,6 +393,24 @@ const AdaptiveMapShell = React.forwardRef<
         : panelFraction !== undefined && Number.isFinite(panelFraction)
           ? [{ fraction: panelFraction }]
           : DEFAULT_PANEL_DETENTS);
+    // What the sheet holds, the header included. Whether it draws a handle is
+    // decided on this, without the handle, so the handle's own height can
+    // never fold two detents into one and take the handle away again.
+    const held = measured.panelHeaderHeight + measured.panelContentHeight;
+    const showsHandle =
+      orderPanelDetents(detents, sheetHeight, {
+        contentHeight: held,
+        peekBottom: measured.peekBottom,
+        headerBottom: measured.headerBottom,
+      }).length > 1;
+    const measures = {
+      // A sheet fitted to its content holds its handle too, when it draws one:
+      // iOS measures its fitted sheet with the grabber in it, and without it
+      // the web's was the handle's height short and clipped its last line.
+      contentHeight: held + (showsHandle ? measured.handleHeight : 0),
+      peekBottom: measured.peekBottom,
+      headerBottom: measured.headerBottom,
+    };
     const ordered = orderPanelDetents(detents, sheetHeight, measures);
     const activeDetent: PanelDetent =
       panelDetent ??
@@ -520,6 +589,18 @@ const AdaptiveMapShell = React.forwardRef<
 
     const isSheet = layout.presentation === "bottom";
     const panelHidden = unavailable || (measured.ready && !layout.panelBounds);
+    const drawsHandle = isSheet && showsHandle;
+    // The handle is drawn only once the shell knows it is a sheet, a render
+    // after its first measurement, so its row is measured when it appears
+    // rather than whenever something else happens to resize.
+    useLayoutEffect(() => {
+      const handleHeight = handleElement.current?.offsetHeight ?? 0;
+      setMeasured((previous) =>
+        previous.handleHeight === handleHeight
+          ? previous
+          : { ...previous, handleHeight },
+      );
+    }, [drawsHandle]);
     // A newly requested detent — from a drag, the handle, the keyboard or
     // the host — marks the sheet settling in the same render as its new
     // height, so the transition is in place when the height changes. The
@@ -585,7 +666,13 @@ const AdaptiveMapShell = React.forwardRef<
         startX: event.clientX,
         startY: event.clientY,
         startHeight: settledHeight,
-        startScrollTop: panelContent.current?.scrollTop ?? 0,
+        // The header does not scroll, so a drag that starts on it is the
+        // sheet's whatever the content under it has scrolled.
+        startScrollTop: panelHeaderElement.current?.contains(
+          event.target as Node,
+        )
+          ? 0
+          : (panelContent.current?.scrollTop ?? 0),
         kind: null,
         samples: [[event.timeStamp, event.clientY]],
       };
@@ -788,8 +875,9 @@ const AdaptiveMapShell = React.forwardRef<
             onPointerCancel={isSheet ? onSheetPointerUp : undefined}
             onClickCapture={isSheet ? onSheetClickCapture : undefined}
           >
-            {isSheet && ordered.length > 1 && (
+            {drawsHandle && (
               <div
+                ref={handleElement}
                 className="kozmos-map-sheet-handle"
                 role="slider"
                 tabIndex={0}
@@ -805,6 +893,30 @@ const AdaptiveMapShell = React.forwardRef<
                 <span aria-hidden="true" className="kozmos-map-sheet-grip" />
               </div>
             )}
+            {hasPanelHeader && (
+              <div
+                ref={panelHeaderElement}
+                className={cn("flex-none", !isSheet && "pt-4")}
+                data-kozmos-panel-header=""
+                style={{
+                  paddingLeft: isSheet ? chrome.left : undefined,
+                  paddingRight: isSheet ? chrome.right : undefined,
+                  // The handle is a 16px row, and a control directly under it
+                  // - the search field a header usually starts with - leaves
+                  // the handle's target a 16px clear space where WCAG 2.5.8
+                  // asks 24. Half the shortfall keeps it clear, from the
+                  // handle's own height token.
+                  paddingTop: drawsHandle
+                    ? "calc((24px - var(--primitives-layout-spacing-200) * 1px) / 2)"
+                    : undefined,
+                  // A vertical drag here is the sheet's; a sideways one stays
+                  // with the header, for a row of chips that scrolls.
+                  touchAction: isSheet ? "pan-x" : undefined,
+                }}
+              >
+                {panelHeader}
+              </div>
+            )}
             <div
               ref={panelContent}
               // A scroller even while it hides its overflow below the largest
@@ -817,8 +929,8 @@ const AdaptiveMapShell = React.forwardRef<
                 // A side panel has no grip, so nothing was making the space
                 // the sheet's grip makes: the search field sat 1px under the
                 // panel's top edge. 16 matches where the field starts below
-                // the sheet's grip.
-                !isSheet && "pt-4",
+                // the sheet's grip. A header takes that row when there is one.
+                !isSheet && !hasPanelHeader && "pt-4",
               )}
               // A finger scrolls the list natively at the largest detent;
               // at the list's top only downward panning (into the list) is

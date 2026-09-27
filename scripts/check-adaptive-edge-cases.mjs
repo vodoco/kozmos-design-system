@@ -171,6 +171,111 @@ const cases = [
     },
   ],
   [
+    "a panel header stays put while the content under it scrolls",
+    async (page) => {
+      // Row 73: the sheet scrolled as one piece, so the search field went up
+      // and out of sight with the results it was searching. Reduced motion:
+      // a sheet easing to its detent moves everything in it.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        window.setAdaptiveOptions({ panelDetent: "large" });
+      });
+      await settleLayout(page);
+      const field = page.getByRole("textbox", { name: "Search this sheet" });
+      // Counted first: a missing header would otherwise read null twice and
+      // "stay put", or time out rather than fail.
+      assert.equal(await field.count(), 1, "the panel header is drawn");
+      assert(
+        await page.evaluate(
+          () => !!document.querySelector("[data-kozmos-panel-header]"),
+        ),
+        "the panel header has its own row",
+      );
+      const before = await field.boundingBox();
+      const scrolled = await page.evaluate(() => {
+        const header = document.querySelector("[data-kozmos-panel-header]");
+        const content = header.nextElementSibling;
+        content.scrollTop = 300;
+        return content.scrollTop;
+      });
+      await settleLayout(page);
+      assert(scrolled > 0, "the content under the header scrolls");
+      assert.deepEqual(
+        await field.boundingBox(),
+        before,
+        "the header stays put",
+      );
+    },
+  ],
+  [
+    "a collapsed sheet shows the whole of a panel header taller than it",
+    async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        window.setAdaptiveOptions({ panelDetent: "collapsed" });
+      });
+      await settleLayout(page);
+      const sortButton = page.getByRole("button", { name: "Sort" });
+      assert.equal(await sortButton.count(), 1, "the panel header is drawn");
+      const sort = await sortButton.boundingBox();
+      const sheet = await page.locator("aside").boundingBox();
+      assert(
+        sort.y + sort.height <= sheet.y + sheet.height,
+        `the header ends at ${sort.y + sort.height}, the sheet at ${sheet.y + sheet.height}`,
+      );
+    },
+  ],
+  [
+    "a drag that starts on the panel header moves the sheet, however far its content has scrolled",
+    async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      // The detent follows the drag, as a product holding it would.
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        const hold = (detent) =>
+          window.setAdaptiveOptions({
+            panelDetent: detent,
+            onPanelDetentChange: hold,
+          });
+        hold("large");
+      });
+      await settleLayout(page);
+      const scrolled = await page.evaluate(() => {
+        const content = document.querySelector(
+          "[data-kozmos-panel-header]",
+        )?.nextElementSibling;
+        if (!content) return 0;
+        content.scrollTop = 300;
+        return content.scrollTop;
+      });
+      assert(
+        scrolled > 0,
+        "the panel header is drawn over content that has scrolled",
+      );
+      await settleLayout(page);
+      const sheetBefore = await page.locator("aside").boundingBox();
+      const filters = await page
+        .getByRole("button", { name: "Filters" })
+        .boundingBox();
+      const x = filters.x + filters.width / 2;
+      const y = filters.y + filters.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      for (let step = 1; step <= 10; step++)
+        await page.mouse.move(x, y + step * 25);
+      await page.mouse.up();
+      await page.waitForTimeout(600);
+      await settleLayout(page);
+      const sheetAfter = await page.locator("aside").boundingBox();
+      assert(
+        sheetAfter.height < sheetBefore.height - 50,
+        `the sheet stayed ${sheetBefore.height}px, now ${sheetAfter.height}px`,
+      );
+    },
+  ],
+  [
     "a selected result comes into a sheet below its largest detent, and nothing else moves",
     async (page) => {
       // Row 70: below the largest detent the sheet's content hides its
