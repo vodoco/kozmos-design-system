@@ -229,9 +229,13 @@ const MapControlsGroup = React.forwardRef<
           />
         )}
 
-        {/* Step-free, in the location control's place while a route is active */}
+        {/* Step-free, in the location control's place while a route is
+            active. Two controls, keyed apart: sharing one button, the swap
+            read as that button changing state, revealed a label nobody had
+            set, and handed the location control's focus to the new one. */}
         {onStepFreeChange ? (
           <MapControlButton
+            key="step-free"
             data-map-control="step-free"
             icon={
               <LocationMarkBox>
@@ -255,6 +259,7 @@ const MapControlsGroup = React.forwardRef<
           /* My Location */
           onMyLocation && (
             <MapControlButton
+              key="location"
               data-location-state={locationState}
               icon={
                 <LocationMarkBox>
