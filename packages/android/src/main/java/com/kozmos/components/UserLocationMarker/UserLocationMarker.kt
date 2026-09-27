@@ -21,14 +21,27 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
 
+/**
+ * The visitor's position on the map, with an optional heading cone.
+ *
+ * [label] is what the marker is called, for a visitor who cannot see it. It
+ * had no name until row 67, so TalkBack passed over the visitor's own
+ * position; React's was "User location" in English whatever the device's
+ * language.
+ */
 @Composable
 fun KozmosUserLocationMarker(
     heading: Float = 0f,
     showHeading: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    label: String = "User location"
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     
@@ -56,7 +69,14 @@ fun KozmosUserLocationMarker(
     val dataBlue = KozmosThemeTokens.semanticsDataBlue
 
     Box(
-        modifier = modifier.size(64.dp),
+        modifier = modifier
+            .size(64.dp)
+            // One node, an image, as React's `role="img"` is: the rings and the
+            // cone are drawing, and the name is the whole of what it says.
+            .clearAndSetSemantics {
+                contentDescription = label
+                role = Role.Image
+            },
         contentAlignment = Alignment.Center
     ) {
         // The halo: 64 at 14 %, still.
