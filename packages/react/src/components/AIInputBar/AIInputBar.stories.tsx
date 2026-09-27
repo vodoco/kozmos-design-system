@@ -30,3 +30,13 @@ export const Default: Story = {
 export const Empty: Story = {
   args: { onSubmit: fn(), onValueChange: fn(), value: "" },
 };
+
+/** Offline (Story 3 AC1): the field says so, not only the send button. */
+export const Disabled: Story = {
+  args: { disabled: true, onSubmit: fn(), onValueChange: fn(), value: "" },
+  render: (args) => (
+    <div className="w-80 rounded-container border border-border">
+      <AIInputBar {...args} />
+    </div>
+  ),
+};
