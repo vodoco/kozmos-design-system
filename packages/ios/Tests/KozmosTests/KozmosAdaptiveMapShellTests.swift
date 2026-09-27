@@ -853,23 +853,28 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
     // MARK: Beside the map
 
     /// In a side panel the header is the panel's first row: 416 wide, 16 in
-    /// from the trailing edge and the top, the content under it.
+    /// from the top and from the panel's end — the right, or in a
+    /// right-to-left layout the left — the content under it.
     @MainActor func testInASidePanelTheHeaderIsTheFirstRow() async throws {
         let wide = CGSize(width: 1024, height: 700)
-        let view = KozmosAdaptiveMapShell(
-            map: { Color.red }, mapStatusContent: { EmptyView() }, controls: { EmptyView() },
-            topBar: { EmptyView() }, panel: { Color.blue }, panelHeader: { Color.green.frame(height: 72) }
-        )
-        .environment(\.horizontalSizeClass, .regular)
-        let pixels = try await RenderedPixels.render(view, size: wide)
         let region = CGRect(origin: .zero, size: wide)
-        let header = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isGreen), "the header is not drawn")
-        XCTAssertEqual(header.minY, 16, accuracy: 1.5, "the header is not the panel's first row: \(header)")
-        XCTAssertEqual(header.height, 72, accuracy: 1.5)
-        XCTAssertEqual(header.minX, 1024 - 16 - 416, accuracy: 1.5, "the header is not in the panel: \(header)")
-        let content = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isBlue), "no content drawn")
-        XCTAssertEqual(content.minY, header.maxY, accuracy: 1.5, "the content does not follow the header: \(content)")
-        XCTAssertEqual(content.maxY, wide.height - 16, accuracy: 1.5, "the content does not fill the panel under the header: \(content)")
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let view = KozmosAdaptiveMapShell(
+                map: { Color.red }, mapStatusContent: { EmptyView() }, controls: { EmptyView() },
+                topBar: { EmptyView() }, panel: { Color.blue }, panelHeader: { Color.green.frame(height: 72) }
+            )
+            .environment(\.horizontalSizeClass, .regular)
+            .environment(\.layoutDirection, direction)
+            let pixels = try await RenderedPixels.render(view, size: wide)
+            let header = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isGreen), "\(direction): the header is not drawn")
+            XCTAssertEqual(header.minY, 16, accuracy: 1.5, "\(direction): the header is not the panel's first row: \(header)")
+            XCTAssertEqual(header.height, 72, accuracy: 1.5)
+            XCTAssertEqual(header.minX, direction == .leftToRight ? 1024 - 16 - 416 : 16, accuracy: 1.5,
+                           "\(direction): the header is not in the panel: \(header)")
+            let content = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isBlue), "\(direction): no content drawn")
+            XCTAssertEqual(content.minY, header.maxY, accuracy: 1.5, "\(direction): the content does not follow the header: \(content)")
+            XCTAssertEqual(content.maxY, wide.height - 16, accuracy: 1.5, "\(direction): the content does not fill the panel under the header: \(content)")
+        }
     }
     #endif
 }
