@@ -13,6 +13,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  // The render holds its own state; the args only satisfy the required props,
+  // which `StoryObj<typeof meta>` asks every story to state.
+  args: { onSubmit: fn(), onValueChange: fn(), value: "" },
   render: () => {
     const Demo = () => {
       const [value, setValue] = useState("");
