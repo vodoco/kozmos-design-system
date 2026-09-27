@@ -38,6 +38,10 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    # The subpath the project site is served from, named once: the build takes
+    # it as Vite's base, and the assembly reads the folder name back out of it.
+    env:
+      BASE_PATH: /kozmos-design-system/
     steps:
       - uses: actions/checkout@v4
 
@@ -57,8 +61,6 @@ jobs:
         run: pnpm turbo run build --filter=@kozmos-ds/site^...
 
       - name: Build the site for its subpath
-        env:
-          BASE_PATH: /kozmos-design-system/
         run: pnpm --filter @kozmos-ds/site build
 
       # The pages sit under the prefix; the assets do not. The artifact is the
@@ -68,9 +70,14 @@ jobs:
           set -euo pipefail
           client="apps/site/build/client"
           out="apps/site/build/pages"
+          # The folder React Router wrote the pages into is the prefix itself,
+          # so it is read from BASE_PATH rather than spelled twice.
+          prefix="${BASE_PATH#/}"
+          prefix="${prefix%/}"
           rm -rf "$out"
           mkdir -p "$out"
-          cp -R "$client/kozmos-design-system/." "$out/"
+          test -d "$client/$prefix"
+          cp -R "$client/$prefix/." "$out/"
           for item in assets media favicon.ico favicon.svg apple-touch-icon.png __spa-fallback.html; do
             if [ -e "$client/$item" ]; then cp -R "$client/$item" "$out/"; fi
           done

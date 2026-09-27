@@ -7,6 +7,10 @@
  * end-to-end tests and `pnpm preview` use this instead.
  *
  *   node scripts/serve-static.mjs [port]   (default 5181)
+ *
+ * SERVE_ROOT points it at another directory — the Pages artifact nested under
+ * its subpath, say — so a subpath deploy can be served exactly as the host
+ * will serve it. The 404 page is then that root's own.
  */
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
@@ -14,12 +18,14 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "build",
-  "client",
-);
+const ROOT = process.env.SERVE_ROOT
+  ? path.resolve(process.env.SERVE_ROOT)
+  : path.resolve(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "..",
+      "build",
+      "client",
+    );
 const PORT = Number(process.argv[2] ?? process.env.PORT ?? 5181);
 
 const TYPES = {

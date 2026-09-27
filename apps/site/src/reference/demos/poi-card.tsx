@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Box, Button, POICard, Tag, Text } from "@kozmos-ds/react";
+import { asset } from "../../lib/asset";
 import type { DemoModule } from "../types";
 
 function Selectable() {
@@ -44,7 +45,7 @@ function WithAnImage() {
       <POICard
         title="Bookshop"
         subtitle="First floor"
-        imageUrl="/media/bookshop-window.svg"
+        imageUrl={asset("/media/bookshop-window.svg")}
         imageAlt="The reading corner by the window"
         description="An image above the text when imageUrl is given; imageAlt names it, and defaults to the title."
       />

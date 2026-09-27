@@ -23,6 +23,10 @@ import { SiteShell } from "./site/SiteShell";
 import { StatusPage } from "./site/StatusPage";
 import { SITE_INDEXABLE, THEME_STORAGE_KEY } from "./lib/site";
 
+// Vite's base, always with its trailing slash: "/" in development, the
+// project's path on Pages.
+const base = import.meta.env.BASE_URL;
+
 export function Layout({ children }: { children: ReactNode }) {
   return (
     <html lang="en-GB">
@@ -31,10 +35,13 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* The logo's K on a tile (scripts/generate-brand.mjs): the .ico for
             anything that cannot draw an SVG icon, the SVG for the rest, and
-            a square for a phone's home screen. */}
-        <link rel="icon" href="/favicon.ico" sizes="32x32" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+            a square for a phone's home screen. Through BASE_URL, so they are
+            still found when the site is served from a subpath: on Pages the
+            document lives under /kozmos-design-system/ and a root-absolute
+            href would ask the domain's root for a file that is not there. */}
+        <link rel="icon" href={`${base}favicon.ico`} sizes="32x32" />
+        <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+        <link rel="apple-touch-icon" href={`${base}apple-touch-icon.png`} />
         {SITE_INDEXABLE ? null : <meta name="robots" content="noindex" />}
         <Meta />
         <Links />

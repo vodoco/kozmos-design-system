@@ -1,22 +1,23 @@
 import { useState } from "react";
 import { Box, POIMediaGallery, Text } from "@kozmos-ds/react";
 import type { POIMediaPresentation } from "@kozmos-ds/product-contracts";
+import { asset } from "../../lib/asset";
 import type { DemoModule } from "../types";
 
 export const bookshopMedia: readonly POIMediaPresentation[] = [
   {
     id: "shelves",
-    src: "/media/bookshop-shelves.svg",
+    src: asset("/media/bookshop-shelves.svg"),
     alt: "Shelves of books on two levels",
   },
   {
     id: "counter",
-    src: "/media/bookshop-counter.svg",
+    src: asset("/media/bookshop-counter.svg"),
     alt: "The counter with a stack of books",
   },
   {
     id: "window",
-    src: "/media/bookshop-window.svg",
+    src: asset("/media/bookshop-window.svg"),
     alt: "The reading corner by the window",
   },
 ];
@@ -47,7 +48,7 @@ function Broken() {
         media={[
           {
             id: "missing",
-            src: "/media/does-not-exist.svg",
+            src: asset("/media/does-not-exist.svg"),
             alt: "A photo that failed to load",
           },
           bookshopMedia[0],

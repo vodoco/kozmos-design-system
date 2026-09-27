@@ -7,6 +7,7 @@ import type {
   POIMediaPresentation,
   POIPresentation,
 } from "@kozmos-ds/product-contracts";
+import { asset } from "../../lib/asset";
 import { places as venuePlaces, type Place } from "../venue-explorer/data";
 
 export {
@@ -22,17 +23,17 @@ export {
 const bookshopMedia: readonly POIMediaPresentation[] = [
   {
     id: "shelves",
-    src: "/media/bookshop-shelves.svg",
+    src: asset("/media/bookshop-shelves.svg"),
     alt: "Shelves of books on two levels",
   },
   {
     id: "counter",
-    src: "/media/bookshop-counter.svg",
+    src: asset("/media/bookshop-counter.svg"),
     alt: "The counter with a stack of books",
   },
   {
     id: "window",
-    src: "/media/bookshop-window.svg",
+    src: asset("/media/bookshop-window.svg"),
     alt: "The reading corner by the window",
   },
 ];
