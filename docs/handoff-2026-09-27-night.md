@@ -11,9 +11,9 @@ built today, where things live, and the traps. The evening handoff,
 
 | What              | Where / how                                                         | State                                                                                                                   |
 | ----------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `8a5fb43c` (#122) when written                                                                                |
+| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `ad570f63` (#123) when written                                                                                |
 | Main checkout     | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`          | shared with other sessions — stage by file, never `git add -A`                                                          |
-| Open PRs (mine)   | none — #118–#122 merged                                             | nothing in flight (§3)                                                                                                  |
+| Open PRs (mine)   | #124 (changesets, auto-merge on); #118–#123 merged                  | §3; the agents' floor-label and MapOverlay PRs follow                                                                   |
 | Open PRs (others) | #55 website (the site session's, `claude/kozmos-site`)              | **conflicts with `main`**; once main is merged in, all 18 required checks must pass                                     |
 | Required checks   | branch protection on `main`                                         | **all 18 PR checks** (decision 13), GitHub Actions only; auto-merge allowed. Chromatic's workflow **disabled**          |
 | Visual review     | `pnpm test:visual` (Docker) · CI "Visual Review"                    | every story × light/dark (632 drawings), `tests/visual/baselines`                                                       |
@@ -92,6 +92,8 @@ are out of scope.
 | #119 | —                | this handoff                                                                                                           |
 | #121 | decision 13      | every PR check required; CONTRIBUTING names them; this handoff's final state                                           |
 | #122 | decisions 14–20  | Olcay's answers to the open questions                                                                                  |
+| #123 | decisions 21–23  | voice (SearchBar no, AI chat product-gated), rows 79–81                                                                |
+| #124 | changesets       | the catch-up since 0.4.0, and `changeset-required.mjs` in every PR                                                     |
 
 ## 3. In flight — nothing
 
@@ -282,6 +284,13 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
   after a record run all 18 are missing until you push again.
 - A pull request retargeted to `main` from another base has no `analyze-bundle` or `lighthouse` run
   (both run only for pull requests into `main`) until a push, or a close and reopen.
+- **Required checks are matched by name.** Renaming a CI job or a browser shard (`name:` or
+  `matrix.shard.name`) leaves the old name required and never reported, so every PR blocks: update
+  branch protection in the same change (`gh api -X PATCH …/branches/main/protection/required_status_checks`
+  with the full list, `app_id` 15368), and add any new always-running check to it.
+- A Dependabot PR that bumps a published package's runtime `dependencies` fails "Web Build & Test"
+  until it carries a changeset (`dependencies` is consumer-facing): push a patch changeset to its
+  branch. Dev-dependency bumps need none.
 - `npx changeset status` prints `/bin/sh: /Volumes/4TB: No such file or directory` (the space in the
   path) and still runs; `--since=origin/main` counts only committed changesets.
 
@@ -289,7 +298,7 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
 
 ```bash
 cd "/Volumes/4TB Depo/development/K/kozmos-design-system-dev"
-git checkout main && git pull --ff-only && git log --oneline -1   # expect 8a5fb43c or later
+git checkout main && git pull --ff-only && git log --oneline -1   # expect ad570f63 or later
 gh pr list --repo vodoco/kozmos-design-system --state open         # #55, and anything newer
 pnpm install && pnpm exec turbo run build --filter=@kozmos-ds/react...
 ```

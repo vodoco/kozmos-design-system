@@ -18,8 +18,15 @@ test("what a published package ships counts, and nothing else does", () => {
     "packages/react/src/components/Chip/Chip.tsx",
     "packages/react/src/styles/owned-components.css",
     "packages/react/tsconfig.json",
-    "packages/react/vite.config.ts",
+    "packages/react/vite.config.mts",
+    "packages/icons/vite.config.mts",
+    "packages/react/tailwind.config.js",
+    "packages/react/postcss.config.cjs",
+    // react's build runs these PostCSS plugins over every rule it ships
+    "packages/react/postcss/scoped-css.cjs",
+    "packages/react/postcss/token-alpha.cjs",
     "packages/tokens/build.mjs",
+    "packages/tokens/config.json",
   ])
     assert.equal(shippedPackage(file)?.startsWith("@kozmos-ds/"), true, file);
   for (const file of [
@@ -30,6 +37,12 @@ test("what a published package ships counts, and nothing else does", () => {
     "packages/react/src/__tests__/a11y.tsx",
     "packages/react/tests/integration/adaptive-host.tsx",
     "packages/react/README.md",
+    "packages/react/postcss/scoped-css.test.cjs",
+    "packages/react/tsconfig.node.json",
+    "packages/react/vitest.config.ts",
+    "packages/react/playwright.config.ts",
+    "packages/react/e2e/Button.spec.tsx",
+    "packages/react/figma.config.json",
     "packages/ios/Sources/Components/Chip/Chip.swift",
     "packages/android/src/main/java/com/kozmos/components/Chip.kt",
     "apps/docs/src/Intro.mdx",

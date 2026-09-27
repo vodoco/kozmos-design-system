@@ -25,10 +25,13 @@ export const PUBLISHED = {
 // Connect files and snapshots.
 const NOT_SHIPPED =
   /(^|\/)(__tests__|tests?)\/|\.(test|spec|stories)\.[cm]?[jt]sx?$|\.figma\.tsx?$|\.mdx?$|\.snap$/;
-// Beside src/, the files that decide what dist holds. tsconfig counts because
-// its `exclude` is what vite-plugin-dts publishes.
+// Beside src/, the files that decide what dist holds: the build configs, the
+// PostCSS plugins react's build runs over every rule it ships
+// (postcss/scoped-css.cjs, postcss/token-alpha.cjs), and tsconfig, whose
+// `exclude` is what vite-plugin-dts publishes. tsconfig.node.json only types
+// the build config itself.
 const BUILD_FILES =
-  /^(tsconfig[^/]*\.json|vite\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|build\.mjs|config\.json)$/;
+  /^(tsconfig(\.build)?\.json|vite\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|postcss\.config\.[cm]?[jt]s|postcss\/(?![^/]*\.test\.)[^/]+\.[cm]?js|build\.mjs|config\.json)$/;
 // package.json fields a consumer resolves or installs; a version bump alone is
 // the release itself, not a change to release.
 const CONSUMER_FIELDS = [

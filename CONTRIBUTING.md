@@ -487,6 +487,10 @@ one (`scripts/release/changeset-required.mjs`; run it yourself with
 an empty changeset: `pnpm changeset --empty`. React pins its siblings exactly, so a react change that
 needs a new icon or contract field needs their changesets too.
 
+A Dependabot pull request that bumps a published package's runtime `dependencies` needs one too
+(consumers install the new version): push a patch changeset to its branch. Bumps of
+`devDependencies` need none.
+
 ### Version Bumps
 
 | Type    | When to Use                        |
