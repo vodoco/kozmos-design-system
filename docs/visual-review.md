@@ -18,7 +18,8 @@ official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and com
   with a fill, border, shadow or outline, portals included), so a button's baseline is about 94×60 px
   and 1 KB.
 - **Nothing from outside.** The suite refuses every request that is not to its own Storybook: remote
-  photos become one grey pixel, and Google Fonts are refused, so text is drawn in the image's own
+  photos become one grey pixel, Pointr's taxonomy symbols a filled circle (drawn through the
+  component's mask, so the slot's size and colour still show), and Google Fonts are refused, so text is drawn in the image's own
   fonts, which never update underneath a baseline. Map canvases (WebGL, from tiles) are masked.
 - **Still.** The clock is fixed (2026-01-15 10:30 UTC), `Math.random` is seeded, animations and
   transitions are stopped, the caret is hidden, and the page asks for reduced motion.

@@ -23,22 +23,34 @@ const outsideImage = Buffer.from(
   "base64",
 );
 
+// A filled circle on transparent, 48 px, for a taxonomy symbol from Pointr's
+// CDN. Kozmos draws those symbols through a CSS mask in the text's colour, so
+// the circle shows the slot's size, place and colour — what is Kozmos's — as
+// an icon would, where an opaque pixel drew a black square that looked
+// broken. The artwork itself is the taxonomy's, not the design system's.
+const taxonomySymbol = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAiElEQVR42u2YwQGAMAgDIfvvjDNYtQR79zckiA8TAQAAAH3kR7q1a2ZuMv3ZfDWaf/Lcaxuo7muQifllPZmYX9ZVDEdG21/Sl5n523OOPKGxAWqzt+INEIAABPhXgAzDv0VOaFqAdCsbZNRkLOkf+w2kS08lo1IsO01U1yLU3PDl8d0oAADAaC6m4BE2HCrOxQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
 for (const story of stories) {
   for (const theme of ["light", "dark"] as const) {
     test(`${story.id} ${theme}`, async ({ page, baseURL }) => {
       // Nothing from outside this Storybook. A remote photo becomes one grey
-      // pixel and anything else is refused — Google Fonts included, so text
-      // is drawn in the image's own fonts, which never update underneath a
-      // baseline. A run then depends on no CDN and no map server.
+      // pixel, a taxonomy symbol a circle, and anything else is refused —
+      // Google Fonts included, so text is drawn in the image's own fonts,
+      // which never update underneath a baseline. A run then depends on no
+      // CDN and no map server.
       await page.route("**/*", (route) => {
         const request = route.request();
         if (baseURL && request.url().startsWith(baseURL)) {
           return route.continue();
         }
         if (request.resourceType() === "image") {
+          const symbol = /\/taxonomy\/[^/]+\/symbols\//.test(request.url());
           return route.fulfill({
             contentType: "image/png",
-            body: outsideImage,
+            body: symbol ? taxonomySymbol : outsideImage,
           });
         }
         return route.abort();
