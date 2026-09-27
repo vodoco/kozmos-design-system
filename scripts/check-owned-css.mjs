@@ -1010,6 +1010,48 @@ try {
   await still.close();
   await moving.close();
 
+  // One grey on every surface: the Skeleton is Figma's Colors/background/200,
+  // as iOS and Android draw it (Olcay, 2026-09-27). React drew `bg-muted`,
+  // which is background/100. `outer` is the dark theme and `nested` the light
+  // one. The token is read through a probe beside each placeholder, so the
+  // page resolves it exactly as it resolves the placeholder's own colour.
+  const greys = await browser.newPage({
+    viewport: { width: 600, height: 600 },
+  });
+  await greys.setContent(
+    `<!doctype html><html><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture"></div></body></html>`,
+  );
+  await greys.addScriptTag({ content: code });
+  await greys.getByTestId("outer-skeleton").waitFor();
+  const tokens = [];
+  for (const testId of ["outer-skeleton", "nested-skeleton"]) {
+    const [drawn, token] = await greys.getByTestId(testId).evaluate((node) => {
+      const probe = document.createElement("div");
+      probe.style.backgroundColor = "var(--primitives-colors-background-200)";
+      node.after(probe);
+      const resolved = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return [getComputedStyle(node).backgroundColor, resolved];
+    });
+    assert.notEqual(
+      token,
+      "rgba(0, 0, 0, 0)",
+      `${testId}: background/200 did not resolve beside it`,
+    );
+    assert.equal(
+      drawn,
+      token,
+      `${testId} is not background/200: drew ${drawn}, the token is ${token}`,
+    );
+    tokens.push(token);
+  }
+  // The two themes' greys differ, so both were really compared.
+  assert.notEqual(tokens[0], tokens[1], "both placeholders sat in one theme");
+  console.log(
+    `PASS the Skeleton is background/200 in the dark (${tokens[0]}) and the light (${tokens[1]}) theme`,
+  );
+  await greys.close();
+
   // The AI search button's gradient ring: a band two and a half wide, all the
   // way round, MEASURED IN THE PAINT.
   //

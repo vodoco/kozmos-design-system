@@ -375,8 +375,10 @@
       transform: rotate(360deg);
     }
   }
+  /* Figma's Colors/background/200, as iOS and Android draw it: one grey on
+     every surface (Olcay, 2026-09-27). It was bg-muted, background/100. */
   .kozmos-skeleton {
-    @apply animate-pulse;
+    @apply animate-pulse bg-[var(--primitives-colors-background-200)];
   }
   .kozmos-button {
     @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control bg-transparent text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98];

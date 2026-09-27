@@ -36,9 +36,9 @@ const SkeletonComponent = React.forwardRef<HTMLDivElement, SkeletonProps>(
         // The pulse is `.kozmos-skeleton` rather than `animate-pulse` so one
         // owned rule can rest it under the reduced-motion preference and under
         // the design config's `motion: reduced`, together with the spinner and
-        // the assistant's ring (GAP-50).
+        // the assistant's ring (GAP-50). The grey is in that rule too.
         className={cn(
-          "kozmos-skeleton bg-muted",
+          "kozmos-skeleton",
           shape === "circle"
             ? "shrink-0 rounded-pill"
             : "w-full rounded-control",
