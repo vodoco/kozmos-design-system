@@ -22,7 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawWithContent
 import android.provider.Settings
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -35,31 +35,29 @@ import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import com.kozmos.tokens.KozmosThemeTokens
 
+/**
+ * The sheen that passes across a placeholder: a band of white at 40 %, as wide
+ * as the placeholder, from beyond its start to beyond its end every 1.5 s —
+ * iOS's sheen, so a loading state reads the same on both. Between passes, and
+ * held still when the system's animations are off (GAP-50), the band lies off
+ * the placeholder, which shows its own grey.
+ *
+ * It was a diagonal of `background/300` at 20–60 % laid over the whole
+ * placeholder and never off it, so at rest it darkened the grey it sat on:
+ * `background/100` showed as about `#C1C4CC`, and no base colour was the
+ * colour seen.
+ */
 fun Modifier.shimmer(): Modifier = composed {
     val transition = rememberInfiniteTransition(label = "shimmer")
-    val translateAnimation = transition.animateFloat(
+    val passing = transition.animateFloat(
         initialValue = 0f,
-        targetValue = 1000f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1000,
-                easing = LinearEasing
-            ),
+            animation = tween(durationMillis = 1500, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "shimmer"
     )
-    
-    val shimmerColors = listOf(
-        KozmosThemeTokens.primitivesColorsBackground300.copy(alpha = 0.6f),
-        KozmosThemeTokens.primitivesColorsBackground300.copy(alpha = 0.2f),
-        KozmosThemeTokens.primitivesColorsBackground300.copy(alpha = 0.6f),
-    )
-    
-    // Held still when the system's animations are off, as the assistant's ring
-    // and the spinner are: the sheen ran whatever the preference said, which is
-    // GAP-50's third part. Stopped it rests at the sweep's start, which is the
-    // surface's own grey with the sheen off the end.
     val context = LocalContext.current
     val animationsOn = remember(context) {
         Settings.Global.getFloat(
@@ -68,15 +66,23 @@ fun Modifier.shimmer(): Modifier = composed {
             1f
         ) > 0f
     }
-    val sweep = if (animationsOn) translateAnimation.value else 1000f
+    sheen(if (animationsOn) passing.value else 0f)
+}
 
-    val brush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset.Zero,
-        end = Offset(x = sweep, y = sweep)
+/**
+ * The band at [phase]: 0 is just before the placeholder's start and 1 just
+ * past its end, so at either it draws nothing on the placeholder.
+ */
+internal fun Modifier.sheen(phase: Float): Modifier = drawWithContent {
+    drawContent()
+    val start = -size.width + size.width * 2 * phase
+    drawRect(
+        brush = Brush.horizontalGradient(
+            colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.4f), Color.Transparent),
+            startX = start,
+            endX = start + size.width
+        )
     )
-    
-    background(brush)
 }
 
 /**
@@ -130,7 +136,9 @@ fun KozmosSkeleton(
             modifier = modifier
                 .then(if (width.isSpecified) Modifier.width(width) else Modifier)
                 .then(if (height.isSpecified) Modifier.height(height) else Modifier)
-                .background(KozmosThemeTokens.primitivesColorsBackground100, RoundedCornerShape(KozmosDimensions.semanticsRadiusMarker))
+                // Clipped, so the sheen keeps to the Marker radius's corners.
+                .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusMarker))
+                .background(Grey)
                 .shimmer()
         )
         return
@@ -161,7 +169,14 @@ fun KozmosSkeleton(
         modifier = modifier
             .then(extent)
             .clip(outline)
-            .background(KozmosThemeTokens.primitivesColorsBackground100)
+            .background(Grey)
             .shimmer()
     )
 }
+
+/**
+ * Figma's `Colors/background/200`, as React and iOS draw it. Android and React
+ * drew 100, iOS 300, until Olcay chose Figma's on 2026-09-27.
+ */
+private val Grey: Color
+    @Composable get() = KozmosThemeTokens.primitivesColorsBackground200

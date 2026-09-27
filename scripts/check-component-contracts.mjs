@@ -3493,18 +3493,36 @@ assertContains(
   "Select **Skeleton**",
   "Skeleton importer documentation",
 );
+// One grey on every surface: Figma's Colors/background/200, which Olcay chose
+// on 2026-09-27 when React and Android drew 100 and iOS 300. On the web the
+// grey and the pulse live in the owned rule, so they survive the build
+// without @scope; natively they are the token.
 assertContains(
   files.reactSkeleton,
   source.reactSkeleton,
-  "animate-pulse",
-  "React Skeleton loading animation",
+  '"kozmos-skeleton"',
+  "React Skeleton owned class",
 );
 assertContains(
-  files.reactSkeleton,
-  source.reactSkeleton,
-  "bg-muted",
-  "React Skeleton muted surface",
+  ownedCssPath,
+  ownedCss,
+  /\.kozmos-skeleton\s*\{\s*@apply animate-pulse bg-\[var\(--primitives-colors-background-200\)\];/,
+  "React Skeleton pulse and background/200",
 );
+for (const [path, platform] of [
+  ["packages/ios/Sources/Components/Skeleton/Skeleton.swift", "iOS"],
+  [
+    "packages/android/src/main/java/com/kozmos/components/Skeleton/Skeleton.kt",
+    "Android",
+  ],
+]) {
+  assertContains(
+    path,
+    read(path),
+    "primitivesColorsBackground200",
+    `${platform} Skeleton background/200`,
+  );
+}
 assertContains(
   files.figma,
   source.figma,
