@@ -151,11 +151,14 @@ const MapControlButton = React.forwardRef<
         */}
         <span
           className={cn(
-            "flex min-w-0 overflow-hidden text-left transition-[max-width,opacity,margin] duration-300 ease-in-out motion-reduce:transition-none",
+            // Logical, not physical: `ml-2` and `text-left` put the gap on the
+            // far side of the words right to left, where the mark sits on the
+            // right, and the two touched.
+            "flex min-w-0 overflow-hidden text-start transition-[max-width,opacity,margin] duration-300 ease-in-out motion-reduce:transition-none",
             labelPlacement === "stacked"
               ? "flex-col items-start leading-tight"
               : "flex-row items-center gap-2",
-            isLabelled ? "ml-2 max-w-56 opacity-100" : "max-w-0 opacity-0",
+            isLabelled ? "ms-2 max-w-56 opacity-100" : "max-w-0 opacity-0",
           )}
         >
           {labelPlacement === "stacked" ? (
