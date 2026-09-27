@@ -5,10 +5,13 @@ foundations, drawn from the tokens; a reference of every component with live
 examples, props and three-platform code; thirteen page and app examples built
 from Kozmos components and nothing else; and a search across all of it.
 
-**Status, 2026-09-22:** pre-release and private. Not deployed anywhere. It
-lives on its own branch, `claude/kozmos-site`, based on
-`claude/pointr-browse-repairs` (where the latest components are), and
-touches nothing outside `apps/site` except `pnpm-lock.yaml`.
+**Status, 2026-09-27:** pre-release, in a public repository. It lives on
+`claude/kozmos-site`, based on `main`, and is open as pull request #55. It
+touches nothing outside `apps/site` except `pnpm-lock.yaml`, the two
+workflows that test and publish it, and the repository's own front door
+(`README.md`, `SECURITY.md`, `CONTRIBUTING.md`). Merging it publishes the
+site to <https://vodoco.github.io/kozmos-design-system/>; every page still
+says `noindex` until the launch.
 
 - [Where it lives](#where-it-lives)
 - [Run it](#run-it)
@@ -35,8 +38,8 @@ touches nothing outside `apps/site` except `pnpm-lock.yaml`.
 | What              | Where                                                               |
 | ----------------- | ------------------------------------------------------------------- |
 | Working copy      | `/Volumes/4TB Depo/development/K/kozmos-design-system-site`         |
-| Branch            | `claude/kozmos-site` (local; not pushed)                            |
-| Based on          | `claude/pointr-browse-repairs` at `f30c0f9`                         |
+| Branch            | `claude/kozmos-site`, pushed; pull request #55 against `main`       |
+| Based on          | `main`                                                              |
 | The site          | `apps/site` in that working copy                                    |
 | Gaps it found     | [`GAPS.md`](./GAPS.md)                                              |
 | Fixes for Kozmos  | [`DS-HANDOFF.md`](./DS-HANDOFF.md), for whoever changes `packages/` |
@@ -618,113 +621,144 @@ a known one that disappears, which is the signal to close its gap. The same
 holds for GAP-20: the search-field test is marked `test.fail` in WebKit
 only, so Playwright reports it the day Kozmos fixes the field.
 
-**Design-system gaps, measured.** Nineteen tests measure what Kozmos draws
-today. Three of them now measure a fix rather than a defect, after the
-2026-09-24 merge of the component branch: the sheet handle's 16px row and
-40 × 4 grip (GAP-38), the Button's 8px between icon and label (GAP-56), and
-emotion text that reads on every neutral surface (GAP-31, whose four
-known-violation allowances are deleted). The rest still pin defects — the
-preflight zeroing a caller's border
-(GAP-52), the sheet's square corners on a rounded screen (GAP-53), the button
-link's underline (GAP-09), the icon touching its label (GAP-56), the label
-that cannot wrap (GAP-57), the `Listbox` column as wide as its widest option
-(GAP-55), the toast with no fill (GAP-58), the island that is black on a black
-page (GAP-59) and keeps no room for the camera (GAP-60), the breadcrumb's
-separator pointing back up its own trail in right to left (GAP-61), the four
-parts that pin themselves to the window and are held by a screen (GAP-24, 29,
-34, 36), MapView's
-missing isolation (GAP-40), CardTitle's 1.0 line height (GAP-42), where a
-touch 20px from the slider's thumb lands (GAP-43), the header's white first
-paint for a dark-mode visitor with the scripts blocked (GAP-03), the two-row
-header at 320px (GAP-41), brand variant 1's 4.20:1 (GAP-45) and SearchBar's
-second clear button, by display or appearance (GAP-37). Each measures what a
-visitor gets, so any honest fix flips it;
-[`DS-HANDOFF.md`](./DS-HANDOFF.md) says what to flip it to.
+**Design-system gaps, measured.** Twenty tests measure what Kozmos draws
+today. Four of them now measure a fix rather than a defect: the sheet
+handle's 16px row and 40 × 4 grip (GAP-38), the Button's 8px between icon
+and label (GAP-56), the spinner and the skeleton resting under the
+reduced-motion preference (GAP-50) and SearchBar hiding the browser's own
+clear (GAP-37). Beside them, emotion text now reads on every neutral surface
+(GAP-31), whose four known-violation allowances are deleted. The rest still
+pin defects — the preflight zeroing a caller's border (GAP-52), the sheet's
+square corners on a rounded screen (GAP-53), the button link's underline
+(GAP-09), the label that cannot wrap (GAP-57), the `Listbox` column as wide
+as its widest option (GAP-55), the toast with no fill (GAP-58), the island
+that is black on a black page (GAP-59) and keeps no room for the camera
+(GAP-60), the breadcrumb's separator pointing back up its own trail in right
+to left (GAP-61), the four parts that pin themselves to the window and are
+held by a screen (GAP-24, 29, 34, 36), MapView's missing isolation (GAP-40),
+CardTitle's 1.0 line height (GAP-42), where a touch 20px from the slider's
+thumb lands (GAP-43), the header's white first paint for a dark-mode visitor
+with the scripts blocked (GAP-03), the two-row header at 320px (GAP-41) and
+brand variant 1's 4.20:1 (GAP-45). Each measures what a visitor gets, so any
+honest fix flips it; [`DS-HANDOFF.md`](./DS-HANDOFF.md) says what to flip it
+to.
 
-**In CI, once merged:** the workflow runs `pnpm lint`, `pnpm build` and
-`pnpm test` across the workspace, so the site's lint (with the rule), build
-(with the generator) and unit tests become blocking checks without editing
-`ci.yml`. The e2e suite is not in CI yet — a decision for the workflow's
-owner.
+**A tripwire must be able to trip.** GAP-37's first test read
+`getComputedStyle(field, "::-webkit-search-cancel-button")`, which answers
+with the host element's own values, so it could only ever report the button
+as drawn — and did, for five days after Kozmos hid it. GAP-50 had no test at
+all, and its fix went unnoticed too. When a gap lives in CSS a browser will
+not hand back, read the rule out of the stylesheet; when it lives in a
+preference, measure both states. Either way, take the fix out again and
+watch the test fail before trusting it.
 
-## Keeping up with the component branch
+**The host picks the font.** Nothing loads a brand font (GAP-90), so text
+wraps where the host's `system-ui` decides: SF Pro on macOS, a wider DejaVu
+Sans on the Linux the CI runs. A layout measured only on a laptop can
+overflow there, and did. The first-screen fit and every component page's
+320px reflow are therefore measured twice, the second time in `WIDE_SANS`
+(`tests/site.spec.ts`). A number that depends on where text wraps — the
+page's height budget — is written with that slack and says so.
 
-The site is built on `claude/pointr-browse-repairs`, which another session is
-still changing. The site never commits to that branch. To take its latest
-work, from the working copy:
+**In CI:** `.github/workflows/site.yml` runs lint (with the rule),
+typecheck, unit tests, the build and the e2e suite in all three engines on
+every pull request that touches `apps/site`, `packages` or the lockfile, and
+then builds the site again for its subpath and reads the pages back for any
+address that points at the domain's root.
+
+## Keeping up with `main`
+
+The components live in the same repository and other sessions change them.
+The site never commits to `packages/`. To take the latest, from the working
+copy:
 
 ```sh
 git fetch origin
-git rebase claude/pointr-browse-repairs     # the site's commits only touch apps/site and the lockfile
+git merge origin/main
 ```
 
-If the lockfile conflicts, take the component branch's version and let pnpm
-add the site back:
+If the lockfile conflicts, take `main`'s version and let pnpm add the site
+back:
 
 ```sh
-git checkout --ours pnpm-lock.yaml         # in a rebase, "ours" is the branch being rebased onto
+git checkout --theirs pnpm-lock.yaml
 pnpm install
 npx prettier --write pnpm-lock.yaml        # the repository commits the lockfile prettier-formatted
-git add pnpm-lock.yaml && git rebase --continue
+git add pnpm-lock.yaml
 ```
 
-Then rebuild the packages, run `generate` (a component's docs or props may
-have changed), and run `lint`, `build`, `test:e2e`: a component change can
-break an example or a tile, and that breakage is the point.
+Then rebuild the packages the site uses
+(`pnpm turbo run build --filter=@kozmos-ds/site^...` from the repository
+root), run `generate` — a component's docs or props may have changed — and
+run `lint`, `typecheck`, `build`, `test`, `test:e2e`. A component change can
+break an example or a tile, and a gap the site pins can be fixed upstream;
+both are the point. A gap test that starts failing with "no longer occurs"
+means the gap is fixed: change the expectation and mark it fixed in
+`GAPS.md`.
 
-**When the component branch merges into `main`:** rebase onto `main`
-(`git rebase --onto origin/main claude/pointr-browse-repairs claude/kozmos-site`),
-push the branch, and open the site's pull request against `main`.
+## The packages on npm
 
-## The day the packages are published
+Published since 2026-09-24 under the `@kozmos-ds` scope: `react` 0.4.0,
+`icons` 0.3.0, `product-contracts` 0.3.0, `tokens` 0.1.0.
+`PACKAGES_PUBLISHED` in `src/lib/site.ts` is `true`, which is what the home
+page's status tags and the Get started install note read.
 
-1. In `src/lib/site.ts`, set `PACKAGES_PUBLISHED = true`. Every "not yet on
-   npm" note, the home page's status tags and the Get started install note
-   follow from it.
-2. Keep `workspace:*`: the site lives in the repository and builds from its
-   source. Deploy it from the release commit, so what it shows is what was
-   published.
-3. Check the install command on Get started against a clean project, as
-   `pnpm packages:install:check` does for the packages.
+The site keeps `workspace:*`: it lives in the repository and builds from its
+source, so what it shows is what the repository holds. Deploy it from a
+release commit if you want the page to match a published version exactly.
+Still to do: check the install command on Get started against a clean
+project, as `pnpm packages:install:check` does for the packages.
 
 ## Deploying
 
-Nothing is deployed, on purpose: a public page telling people to install a
-package that does not exist yet would be worse than no page. When it is
-time, the build is plain static files:
+GitHub Pages, from `main`, by `.github/workflows/pages.yml`. A project site
+is served from a subpath, so the build takes `BASE_PATH=/kozmos-design-system/`
+as Vite's base and React Router's basename; the pages come out under a folder
+of that name and the assets at the build's root, and the workflow merges the
+two into the artifact it publishes. Everything the document addresses goes
+through `asset()` (`src/lib/asset.ts`), which hangs it off that base.
 
 - **Output:** `apps/site/build/client` — one `index.html` per route, assets
-  under `assets/`, and `404.html` for unknown addresses.
-- **Vercel:** like `apps/mapscale-review` (which deploys prebuilt because its
-  workspace dependencies cannot be installed on their own): build locally or
-  in CI with the commands above, then deploy `build/client` as a static site.
-  Vercel serves `404.html` for misses by itself.
+  under `assets/`, and `404.html` for unknown addresses. Pages resolves a
+  directory to its index and serves `404.html` for a miss, which is what the
+  prerendered build expects. (A plain blob container does neither.)
+- **To see the subpath build as the host will serve it:**
+
+  ```sh
+  BASE_PATH=/kozmos-design-system/ pnpm build
+  # assemble as the workflow does, then:
+  SERVE_ROOT=build/pages-root node scripts/serve-static.mjs 5199
+  ```
+
 - **Until the launch** every page says `noindex` (`SITE_INDEXABLE` in
-  `src/lib/site.ts`), so a preview deploy is not found by search engines.
-- **Before it is public:** the canonical domain; a sitemap and `robots.txt`;
-  an Open Graph image and `og:` tags (they need absolute addresses, so the
-  domain first — the logo on the dark theme's black, like the icons, is the
-  obvious image); a `theme-color`; then `SITE_INDEXABLE = true`.
+  `src/lib/site.ts`), so the published site is not found by search engines.
+- **Before it is public:** a canonical domain if it is not to stay on
+  github.io; a sitemap and `robots.txt`; an Open Graph image and `og:` tags
+  (they need absolute addresses, so the domain first — the logo on the dark
+  theme's black, like the icons, is the obvious image); a `theme-color`;
+  then `SITE_INDEXABLE = true`.
 
 ## Decisions still open
 
 These need someone to decide; the site does not guess:
 
-1. **The public address**, and where it is hosted (Vercel, like
-   mapscale-review, is the obvious choice).
+1. **The public address.** It is on GitHub Pages at
+   <https://vodoco.github.io/kozmos-design-system/> for now; a domain of its
+   own is still a decision, and the launch checklist under Deploying waits
+   on it.
 2. **The logo's small forms.** The header shows the full logo from 48rem
    and the logo's own K below it; the favicons are that K, white on the dark
    theme's black. Both are derived from the supplied logo, not designed:
    confirm them, or supply a dedicated mark (then `pnpm brand` and the
    tests' proportions).
-3. **Linking the source.** The repository is private; the site links to no
-   GitHub page.
+3. **Linking the source.** The repository is public now, and the site still
+   links to no GitHub page — a "view the source" link from a component page
+   to its file would be a small, useful addition.
 4. **Whether each gap is fixed in Kozmos** (the fixes are in `GAPS.md`), and
    whether GAP-09's underline may be hidden meanwhile.
 5. **Figma counterparts** for the examples, as the SDK examples have on the
    `Examples` page — out of this site's scope so far.
-6. **Running the e2e suite in CI.**
-7. **The cover's buttons.** The cover paints the Figma file's violet from
+6. **The cover’s buttons.** The cover paints the Figma file's violet from
    the second brand ramp; its buttons and tag keep Kozmos's own blue, like
    every other page. Re-pointing the band's ramp to the variant (as "Make it
    yours" does for its module) would make them violet too.

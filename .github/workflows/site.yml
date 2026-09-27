@@ -69,6 +69,31 @@ jobs:
       - name: End to end, in three engines
         run: pnpm --filter @kozmos-ds/site test:e2e
 
+      # The site is published under a project path, and a root-absolute asset
+      # is invisible until it is: it resolves at "/" and 404s there. So the
+      # subpath build is made here, on the pull request, and read back.
+      - name: The subpath build, as Pages will serve it
+        env:
+          BASE_PATH: /kozmos-design-system/
+        run: |
+          set -euo pipefail
+          pnpm --filter @kozmos-ds/site build
+          client="apps/site/build/client"
+          prefix="${BASE_PATH#/}"
+          prefix="${prefix%/}"
+          test -f "$client/$prefix/index.html"
+          test -f "$client/$prefix/404.html"
+          test -d "$client/assets"
+          test -f "$client/favicon.ico"
+          stray=$(grep -rho -E '(href|src)="/[^"]*"' "$client/$prefix" --include='*.html' \
+            | grep -v "\"/$prefix/" | sort -u || true)
+          if [ -n "$stray" ]; then
+            echo "These address the domain's root, not the site's:"
+            echo "$stray"
+            exit 1
+          fi
+          echo "subpath build: no page addresses the domain's root"
+
       - name: Keep the failures
         if: failure()
         uses: actions/upload-artifact@v4
