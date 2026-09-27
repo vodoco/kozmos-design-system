@@ -36,7 +36,9 @@ describe("POIResultList", () => {
       />,
     );
 
-    expect(screen.getAllByRole("button", { pressed: true })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { current: "location" })).toHaveLength(
+      1,
+    );
     fireEvent.click(screen.getByRole("button", { name: /Baskin-Robbins/i }));
     expect(onSelect).toHaveBeenCalledWith("one");
     expect(screen.getByText("2 results")).toHaveClass("sr-only");
@@ -97,7 +99,9 @@ describe("POIResultList", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Show 1 more/ }));
     // The selected member is the one the list was told about, inside the group.
-    expect(screen.getAllByRole("button", { pressed: true })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { current: "location" })).toHaveLength(
+      1,
+    );
   });
 
   it("holds a notice inside the list, above the results it qualifies", () => {

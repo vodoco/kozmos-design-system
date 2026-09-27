@@ -40,7 +40,7 @@ describe("POIResultCard", () => {
     expect(screen.getByText("First floor · Building A")).toBeVisible();
     expect(screen.getByText("3 min")).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { pressed: true }));
+    fireEvent.click(screen.getByRole("button", { current: "location" }));
     expect(onSelect).toHaveBeenCalledWith(poi.id);
   });
 
@@ -374,5 +374,34 @@ describe("POIResultCard", () => {
     const name = screen.getByText(poi.name);
     expect(name).not.toHaveAttribute("lang");
     expect(screen.queryByText(/·\s*$/)).toBeNull();
+  });
+
+  it("is the current result, not a button stuck unpressed", () => {
+    // GAP-049. `handleSelect` always selects — a second tap never releases —
+    // so `aria-pressed` claimed a toggle the card does not implement, and
+    // every unselected result announced itself as "not pressed": a state the
+    // visitor could not reach and the card could not leave.
+    const { container, rerender } = render(
+      <POIResultCard
+        poi={poi}
+        result={{ ...result, selected: false }}
+        onSelect={vi.fn()}
+      />,
+    );
+    const button = () => container.querySelector("button") as HTMLElement;
+    expect(button()).not.toHaveAttribute("aria-pressed");
+    expect(button()).not.toHaveAttribute("aria-current");
+
+    rerender(
+      <POIResultCard
+        poi={poi}
+        result={{ ...result, selected: true }}
+        onSelect={vi.fn()}
+      />,
+    );
+    // The same word LocationPin uses for the same state, so the pin and the
+    // row are announced as one thing.
+    expect(button()).toHaveAttribute("aria-current", "location");
+    expect(button()).not.toHaveAttribute("aria-pressed");
   });
 });
