@@ -259,7 +259,16 @@ data class KozmosFloorPresentation(
     val id: String,
     val label: String,
     val shortLabel: String,
-    val disabled: Boolean = false
+    val disabled: Boolean = false,
+    /**
+     * How many results sit on this level. Drawn as a small marker on the
+     * floor's button, so a visitor can see that the answer is upstairs
+     * without changing level to find out.
+     *
+     * `null` means unknown, which is not the same as zero: a selector given
+     * no counts marks nothing, rather than marking every level as empty.
+     */
+    val resultCount: Int? = null
 )
 
 data class KozmosCategoryPresentation(

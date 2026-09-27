@@ -22,6 +22,14 @@ export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement>
    */
   previousFloorLabel?: string;
   nextFloorLabel?: string;
+  /**
+   * How a level's result count is said, for a visitor who cannot see the
+   * marker. Joined to the floor's own label: "Level 2, 3 results".
+   *
+   * A function because a count needs a plural rule, and the design system has
+   * no locale to pick one with — the product does.
+   */
+  resultCountLabel?: (count: number) => string;
   variant?: "vertical-list" | "horizontal-list" | "compact-stepper";
 }
 
@@ -42,6 +50,7 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
       label = "Floor selector",
       previousFloorLabel = "Previous floor",
       nextFloorLabel = "Next floor",
+      resultCountLabel = (count) => `${count} results`,
       variant = "vertical-list",
       ...props
     },
@@ -137,10 +146,14 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
             key={floor.id}
             variant={selectedFloor === floor.id ? "default" : "ghost"}
             size="sm"
-            aria-label={floor.label}
+            aria-label={
+              floor.resultCount
+                ? `${floor.label}, ${resultCountLabel(floor.resultCount)}`
+                : floor.label
+            }
             aria-pressed={selectedFloor === floor.id}
             className={cn(
-              "h-11 w-11 p-0 font-medium",
+              "relative h-11 w-11 p-0 font-medium",
               variant === "horizontal-list" && "w-auto min-w-11 px-3",
               selectedFloor === floor.id && "shadow-raised",
             )}
@@ -149,6 +162,20 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
             type="button"
           >
             {floor.shortLabel}
+            {/* The count, drawn once and said once: the marker is hidden from
+                assistive technology because the button's own label already
+                carries it, and hearing "3" after "Level 2, 3 results" is
+                noise. Logical inset so it mirrors in Arabic. Only where the
+                product gave a count above zero — absent is unknown, which is
+                not the same as none. */}
+            {floor.resultCount ? (
+              <span
+                aria-hidden="true"
+                className="absolute -top-0.5 end-[-2px] min-w-4 rounded-pill bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground"
+              >
+                {floor.resultCount}
+              </span>
+            ) : null}
           </Button>
         ))}
       </div>

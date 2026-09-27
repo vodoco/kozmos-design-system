@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { FloorSelector } from "./FloorSelector";
 import { describe, it, expect, vi } from "vitest";
 
@@ -81,5 +81,40 @@ describe("FloorSelector", () => {
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Nächste Etage" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Previous floor" })).toBeNull();
+  });
+
+  it("marks the levels that hold results, and says how many", () => {
+    // GAP-070. Only the hollow pins said the answer was upstairs, and only
+    // once the map was looked at.
+    render(
+      <FloorSelector
+        floors={[
+          { id: "1", label: "Level 1", shortLabel: "1" },
+          { id: "2", label: "Level 2", shortLabel: "2", resultCount: 3 },
+          { id: "3", label: "Level 3", shortLabel: "3", resultCount: 0 },
+        ]}
+        onFloorSelect={() => undefined}
+        resultCountLabel={(count) => `${count} Ergebnisse`}
+        selectedFloor="1"
+      />,
+    );
+    // The count joins the floor's own label, in the product's words.
+    expect(
+      screen.getByRole("button", { name: "Level 2, 3 Ergebnisse" }),
+    ).toBeVisible();
+    // Zero is not "unknown", and neither is marked: a level with no results
+    // reads as itself.
+    expect(screen.getByRole("button", { name: "Level 3" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Level 1" })).toBeVisible();
+    // Said once, not twice: the marker is hidden from assistive technology.
+    // Scoped to its own button: Level 3's short label is also "3", which is
+    // exactly the collision a badge on a numbered control invites.
+    const level2 = screen.getByRole("button", {
+      name: "Level 2, 3 Ergebnisse",
+    });
+    expect(within(level2).getByText("3")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
   });
 });
