@@ -692,7 +692,8 @@ keep the table's four columns and its statuses as they are.
   `getComputedStyle(field, "::-webkit-search-cancel-button")`, which answers
   with the host element's own values — measured, `display`, `appearance` and
   `width` all came back as the input's 348px box — so it could only ever say
-  "drawn", and did for five days after the fix landed. It now reads the
+  "drawn", and did until it was read by hand today, ninety minutes after
+  the fix landed. It now reads the
   promise where it is made, in the stylesheet, and fails when that rule is
   taken out of the document.
 
@@ -898,7 +899,7 @@ keep the table's four columns and its statuses as they are.
   (`animate-pulse`) and the `Button`'s loader keep moving, and the design
   config's `motion: reduced` only scales the Tailwind durations, which these
   animations do not read.
-- **Fixed** in the design system on 2026-09-27: one owned rule rests
+- **Fixed** in the design system on 2026-09-23 (`550b561`): one owned rule rests
   `.kozmos-spinner-arc`, `.kozmos-skeleton` and `.kozmos-ai-search-ring`
   under `@media (prefers-reduced-motion: reduce)` and again under
   `[data-kozmos-motion=reduced]`, so the design config's `motion: reduced`
@@ -910,7 +911,7 @@ keep the table's four columns and its statuses as they are.
 - **Evidence:** "GAP-50 is fixed: the spinner and the skeleton rest under
   reduced motion" reads each animation with the preference and without it,
   so it cannot pass on an animation that was never there. There was no test
-  before, which is why the fix went unnoticed for a day.
+  before, which is why the fix went unnoticed for four days.
 
 ## GAP-51 · No polite announcer
 

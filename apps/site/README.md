@@ -646,8 +646,9 @@ to.
 **A tripwire must be able to trip.** GAP-37's first test read
 `getComputedStyle(field, "::-webkit-search-cancel-button")`, which answers
 with the host element's own values, so it could only ever report the button
-as drawn — and did, for five days after Kozmos hid it. GAP-50 had no test at
-all, and its fix went unnoticed too. When a gap lives in CSS a browser will
+as drawn — so it could never have caught the fix, whenever it landed; it
+was found by reading the upstream commit. GAP-50 had no test at all, and its
+fix sat unnoticed for four days. When a gap lives in CSS a browser will
 not hand back, read the rule out of the stylesheet; when it lives in a
 preference, measure both states. Either way, take the fix out again and
 watch the test fail before trusting it.

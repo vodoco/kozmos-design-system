@@ -2197,9 +2197,9 @@ test.describe("design-system gaps, measured", () => {
     // -webkit- shadow pseudo-element answers with the host's own values —
     // measured on 2026-09-27, display, appearance and width all came back
     // as the input's 348px box — so the version of this test that read the
-    // pseudo-element could only ever say "drawn", and said it for five days
-    // after Kozmos hid the button. The promise is made in owned CSS; that
-    // is where it is read.
+    // pseudo-element could only ever say "drawn": it never could have
+    // caught the fix, whenever it landed. The promise is made in owned CSS;
+    // that is where it is read.
     const hidden = await field.evaluate((input) => {
       const rules: CSSStyleRule[] = [];
       const walk = (list: CSSRuleList) => {

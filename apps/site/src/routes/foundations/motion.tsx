@@ -39,7 +39,7 @@ export default function Motion() {
             Under the system’s reduced-motion preference the location marker’s
             pulse stops, the sheet, pops, reveals and cross-fades become cuts,
             and the spinner, the skeleton’s pulse, the button’s loader and the
-            assistant’s ring rest too (GAP-50, fixed on 2026-09-27). The design
+            assistant’s ring rest too (GAP-50, fixed on 2026-09-23). The design
             config’s{" "}
             <Text as="span" className="site-mono">
               motion: reduced
