@@ -12,7 +12,10 @@ import kotlin.math.roundToInt
 
 /** Where the bottom sheet can rest. */
 sealed class KozmosMapPanelDetent {
-    /** A peek: a fifth of the shell, or the content's peek anchor (`Modifier.kozmosPanelPeekAnchor()`). */
+    /**
+     * A peek: a fifth of the shell, or the row marked with `Modifier.kozmosPanelPeekAnchor()`; with no
+     * row marked, tall enough for the whole panel header.
+     */
     data object Collapsed : KozmosMapPanelDetent()
 
     /** The resting height, where the map and the sheet share the shell. */
@@ -65,6 +68,17 @@ sealed class KozmosMapPanelDetent {
         /** The collapsed detent when the sheet's content marks a peek anchor. */
         fun anchoredCollapsedHeight(peekBottom: Dp, shellHeight: Dp): Dp =
             (peekBottom + peekMargin).coerceIn(shellHeight * PEEK_FLOOR, shellHeight * PEEK_CAP)
+
+        /**
+         * The collapsed detent when the sheet has a panel header and no peek
+         * anchor: the plain collapsed height, grown only as far as the
+         * header's bottom edge and the peek margin need, and never over three
+         * quarters of the shell (row 73). A header is not an anchor: an
+         * anchored peek's quarter-of-the-shell floor would grow the
+         * prototype's fifth under a search row that already fits in it.
+         */
+        fun headerCollapsedHeight(headerBottom: Dp, shellHeight: Dp): Dp =
+            maxOf(Collapsed.height(shellHeight), minOf(headerBottom + peekMargin, shellHeight * PEEK_CAP))
     }
 }
 
@@ -72,8 +86,10 @@ sealed class KozmosMapPanelDetent {
 data class KozmosPanelMeasures(
     /** The content's own height, for the content detent; zero until measured. */
     val contentHeight: Dp = 0.dp,
-    /** The bottom edge of the content's peek anchor from the sheet's top; zero when none. */
-    val peekBottom: Dp = 0.dp
+    /** The bottom edge of the peek anchor — the panel header's, else the content's — from the sheet's top; zero when none. */
+    val peekBottom: Dp = 0.dp,
+    /** The panel header's bottom edge from the sheet's top, the handle's row included; zero without one. */
+    val headerBottom: Dp = 0.dp
 )
 
 /** A detent's height in a shell of [shellHeight]. */
@@ -83,6 +99,8 @@ fun KozmosMapPanelDetent.height(shellHeight: Dp, measures: KozmosPanelMeasures =
         KozmosMapPanelDetent.Collapsed ->
             if (measures.peekBottom > 0.dp) {
                 KozmosMapPanelDetent.anchoredCollapsedHeight(measures.peekBottom, shellHeight)
+            } else if (measures.headerBottom > 0.dp) {
+                KozmosMapPanelDetent.headerCollapsedHeight(measures.headerBottom, shellHeight)
             } else {
                 // Proportional on a tall phone, but never so short on a
                 // landscape shell that the handle and header stop fitting.

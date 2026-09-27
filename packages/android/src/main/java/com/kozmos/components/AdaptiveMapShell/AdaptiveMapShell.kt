@@ -42,6 +42,7 @@ import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -110,6 +111,19 @@ fun KozmosAdaptiveMapShell(
     controls: (@Composable () -> Unit)? = null,
     topBar: (@Composable () -> Unit)? = null,
     panel: (@Composable () -> Unit)? = null,
+    /**
+     * Drawn under the sheet's handle and above [panel], and not scrolled with
+     * it: a search field, the assistant button, or a chosen category stays put
+     * while the results under it scroll (row 73). Every detent counts it — a
+     * sheet fitted to its content includes it, an anchor in it
+     * (`Modifier.kozmosPanelPeekAnchor()`) is honoured, and with no anchor a
+     * collapsed sheet is tall enough to show all of it. A vertical drag on it
+     * moves the sheet whatever the content has scrolled — nothing in it
+     * scrolls vertically, so the sheet's own drag takes it — and a sideways
+     * one stays with it, for a row of chips that scrolls. In a side panel it
+     * is the panel's first row.
+     */
+    panelHeader: (@Composable () -> Unit)? = null,
     panelLabel: String = "Map details",
     panelPlacement: KozmosMapPanelPlacement = KozmosMapPanelPlacement.End,
     collisionInsets: KozmosMapCollisionInsets = KozmosMapCollisionInsets.Zero,
@@ -227,11 +241,19 @@ fun KozmosAdaptiveMapShell(
                     border = KozmosSurfaceDefaults.border(panelSurface),
                     shadowElevation = 24.dp
                 ) {
-                    panel()
+                    // Beside the map the header is the panel's first row, and
+                    // the panel takes the rest at the size it always had.
+                    Column {
+                        if (panelHeader != null) {
+                            Box(modifier = Modifier.fillMaxWidth()) { panelHeader() }
+                        }
+                        Box(modifier = Modifier.fillMaxWidth().weight(1f), propagateMinConstraints = true) { panel() }
+                    }
                 }
             } else {
                 BottomSheet(
                     panel = panel,
+                    panelHeader = panelHeader,
                     panelLabel = panelLabel,
                     panelSurface = panelSurface,
                     panelDetents = panelDetents,
@@ -257,6 +279,7 @@ fun KozmosAdaptiveMapShell(
 @Composable
 private fun BottomSheet(
     panel: @Composable () -> Unit,
+    panelHeader: (@Composable () -> Unit)?,
     panelLabel: String,
     panelSurface: KozmosSurfaceStyle,
     panelDetents: List<KozmosMapPanelDetent>,
@@ -349,7 +372,12 @@ private fun BottomSheet(
         border = KozmosSurfaceDefaults.border(panelSurface),
         shadowElevation = 24.dp
     ) {
-        val showsHandle = ordered.size > 1
+        // By the detents on offer, as the iOS shell decides, not by their
+        // measured heights: those count the handle, so a handle that came and
+        // went with them measured again every frame — a sheet fitted to
+        // content within 16 of the largest detent folded the two, lost its
+        // handle, unfolded and drew it again.
+        val showsHandle = offered.distinct().size > 1
         Layout(
             content = {
                 if (showsHandle) {
@@ -358,11 +386,24 @@ private fun BottomSheet(
                         index = index,
                         count = ordered.size,
                         onCycle = { setDetent(ordered[(index + 1) % ordered.size]) },
-                        onStep = { step -> setDetent(ordered[(index + step).coerceIn(0, ordered.size - 1)]) }
+                        onStep = { step -> setDetent(ordered[(index + step).coerceIn(0, ordered.size - 1)]) },
+                        modifier = Modifier.layoutId(SheetPart.Handle)
                     )
+                }
+                if (panelHeader != null) {
+                    // Outside whatever the panel scrolls: a vertical drag on
+                    // it reaches the sheet's own drag, however far the list
+                    // under it has scrolled.
+                    Box(
+                        modifier = Modifier
+                            .layoutId(SheetPart.Header)
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                    ) { panelHeader() }
                 }
                 Box(
                     modifier = Modifier
+                        .layoutId(SheetPart.Content)
                         .fillMaxWidth()
                         // The sheet's surface reaches the bottom edge; what it
                         // holds keeps above the navigation bar.
@@ -373,17 +414,31 @@ private fun BottomSheet(
             // The content keeps its own size at every detent: measured as tall
             // as the largest detent allows and clipped to the sheet, so a peek
             // anchor row is never squashed by a collapsed sheet and a list
-            // inside has a bounded height.
+            // inside has a bounded height. The header keeps its own height as
+            // well, and the content is measured in what it leaves.
             val handleHeight = KozmosDimensions.primitivesLayoutSpacing200.roundToPx()
             val loose = constraints.copy(minWidth = 0, minHeight = 0)
-            val handle = if (showsHandle) measurables[0].measure(loose.copy(maxHeight = handleHeight)) else null
-            val contentMeasurable = measurables.last()
-            val largestNow = orderPanelDetents(offered, shellHeight, measures).last().height(shellHeight, measures)
-            val content = contentMeasurable.measure(loose.copy(maxHeight = largestNow.roundToPx()))
-            val line = content[KozmosPanelPeekAnchorLine]
+            fun part(id: SheetPart) = measurables.firstOrNull { it.layoutId == id }
+            val handle = part(SheetPart.Handle)?.measure(loose.copy(maxHeight = handleHeight))
+            val largestNow = orderPanelDetents(offered, shellHeight, measures).last().height(shellHeight, measures).roundToPx()
+            val header = part(SheetPart.Header)?.measure(loose.copy(maxHeight = largestNow))
+            val content = part(SheetPart.Content)!!.measure(loose.copy(maxHeight = (largestNow - (header?.height ?: 0)).coerceAtLeast(0)))
+            val headerTop = handle?.height ?: 0
+            val contentTop = headerTop + (header?.height ?: 0)
+            // An anchor in the header outranks one in the content, as React's
+            // `measurePeekBottom` has it. The header's own bottom edge is not
+            // an anchor: it sets the least the collapsed detent may be
+            // (`headerCollapsedHeight`); a header that draws nothing is none.
+            val headerLine = header?.get(KozmosPanelPeekAnchorLine) ?: AlignmentLine.Unspecified
+            val contentLine = content[KozmosPanelPeekAnchorLine]
             val fresh = KozmosPanelMeasures(
-                contentHeight = (content.height + (handle?.height ?: 0)).toDp(),
-                peekBottom = if (line != AlignmentLine.Unspecified) (line + (handle?.height ?: 0)).toDp() else 0.dp
+                contentHeight = (contentTop + content.height).toDp(),
+                peekBottom = when {
+                    headerLine != AlignmentLine.Unspecified -> (headerTop + headerLine).toDp()
+                    contentLine != AlignmentLine.Unspecified -> (contentTop + contentLine).toDp()
+                    else -> 0.dp
+                },
+                headerBottom = if (header != null && header.height > 0) contentTop.toDp() else 0.dp
             )
             if (fresh != measures) measures = fresh
             val (freshSmallest, freshLargest, freshSettled) = heights(fresh)
@@ -395,11 +450,15 @@ private fun BottomSheet(
             }
             layout(constraints.maxWidth, height.roundToPx().coerceIn(constraints.minHeight, constraints.maxHeight)) {
                 handle?.place(0, 0)
-                content.place(0, handle?.height ?: 0)
+                header?.place(0, headerTop)
+                content.place(0, contentTop)
             }
         }
     }
 }
+
+/** The sheet's parts, in the order they stack. */
+private enum class SheetPart { Handle, Header, Content }
 
 /** The grab handle's row: 16 tall, a 40 x 4 capsule; a tap cycles the detents, accessibility adjusts them. */
 @Composable
@@ -408,10 +467,11 @@ private fun SheetHandle(
     index: Int,
     count: Int,
     onCycle: () -> Unit,
-    onStep: (Int) -> Unit
+    onStep: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(KozmosDimensions.primitivesLayoutSpacing200)
             .clickable(onClick = onCycle)
