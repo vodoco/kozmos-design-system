@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "5a392fe1c512";
+const PLUGIN_BUILD = "637f9fb3747e";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -9852,6 +9852,7 @@ let lastSetProgressAt = 0;
 const SETS_THAT_OVERRIDE_INSIDE = {
   Counter: ["CategoryTile"],
   CategoryTile: ["BrowseCategoriesPanel"],
+  NavigationItem: ["Navbar", "Sidebar"],
 };
 
 /** The sets an Update of `names` leaves behind, in the order to run them. */
@@ -40441,6 +40442,53 @@ async function createNavbarNavigationItem({
   });
 }
 
+// A swap replaces the layer the tint was laid on, so the row's icon comes back
+// the icon source's plain black. That is how Sidebar's four Selected rows sat
+// black through every Update: `repairIconSlotTints` will not write inside a
+// nested instance — Figma owns those children and the harness asserts it says
+// so rather than trying — and this painter is the one that can.
+//
+// Safe to write here in a way a hand override is not: the painter lays it again
+// on every run, and CORE_UPDATE_SEQUENCE puts NavigationItem before both shells
+// that compose it, so the tint is refreshed in the same run that could break it.
+// The same move BrowseCategoriesPanel makes after swapping a tile's Icon.
+function retintNavigationItemLeadingIcon(
+  instance,
+  state,
+  variableByName,
+  stats,
+) {
+  // The layer the Leading Icon property drives, whatever the swap made of its
+  // name.
+  const icon =
+    instance.findOne(
+      (node) =>
+        node.type === "INSTANCE" &&
+        node.componentPropertyReferences &&
+        typeof node.componentPropertyReferences.mainComponent === "string" &&
+        node.componentPropertyReferences.mainComponent.split("#")[0] ===
+          "Leading Icon",
+    ) ||
+    instance.findOne(
+      (node) => node.type === "INSTANCE" && node.name === "Leading Icon",
+    );
+  if (!icon) {
+    stats.warnings.push(
+      `${instance.name}: no Leading Icon layer to tint after the swap.`,
+    );
+    return;
+  }
+  // The tokens the fallback row below paints with, so a live row and a drawn
+  // one cannot disagree about what Selected looks like.
+  applyIconColorOverrides(
+    icon,
+    state === "Selected" ? "Colors/theme/500" : "Colors/foreground/400",
+    state === "Selected" ? "#135BEC" : "#5E6575",
+    variableByName,
+    stats,
+  );
+}
+
 async function createNavigationItemNestedInstance({
   content,
   density,
@@ -40486,6 +40534,7 @@ async function createNavigationItemNestedInstance({
         iconComponent ? iconComponent.id : null,
         stats,
       );
+      retintNavigationItemLeadingIcon(instance, state, variableByName, stats);
     }
     markNestedComponentInstance(instance, "NavigationItem", role);
     return instance;
