@@ -33,8 +33,21 @@
     -webkit-appearance: textfield;
     outline-offset: -2px;
   }
-  .kozmos-input::-webkit-search-decoration {
+  /* The browser's own clear, hidden.
+     A `type="search"` input draws a second × in Chrome, Edge and Safari
+     whenever it holds text and is hovered or focused — unlabelled, beside the
+     clear the component already draws, and it wipes the field through the
+     browser rather than through `onClear`. So the DOM empties, the product's
+     state does not, and the next render puts the text back. Two buttons, one
+     of which lies.
+     `search-decoration` was already reset here; the cancel button, the one a
+     visitor actually sees, was not. */
+  .kozmos-input::-webkit-search-cancel-button,
+  .kozmos-input::-webkit-search-decoration,
+  .kozmos-search-input::-webkit-search-cancel-button,
+  .kozmos-search-input::-webkit-search-decoration {
     -webkit-appearance: none;
+    appearance: none;
   }
   .kozmos-input {
     @apply flex h-11 w-full rounded-control border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-[color:var(--primitives-colors-foreground-400)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:placeholder:text-muted-foreground disabled:opacity-100;
