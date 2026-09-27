@@ -74,6 +74,28 @@ final class KozmosSkeletonTests: XCTestCase {
         XCTAssertTrue(block.isDrawn(at: CGPoint(x: 60, y: 40)), "the block is not drawn")
     }
 
+    /// One grey on every surface: Figma's `Colors/background/200`, in both
+    /// themes, set or unset. iOS drew `background/300`, and React and Android
+    /// `100`, until Olcay chose Figma's on 2026-09-27. The sheen starts off the
+    /// placeholder, so what is drawn is the grey itself.
+    @MainActor func testItIsFigmasGreyInBothThemes() throws {
+        for scheme in [ColorScheme.light, .dark] {
+            let grey = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground200, in: scheme)
+            let placeholders: [(String, AnyView)] = [
+                ("unset", AnyView(KozmosSkeleton().frame(width: 40, height: 40))),
+                ("block", AnyView(KozmosSkeleton(shape: .block, width: 40, height: 40))),
+            ]
+            for (name, placeholder) in placeholders {
+                let drawn = try DrawnPixels.draw(placeholder.environment(\.colorScheme, scheme))
+                let centre = drawn.pixel(at: CGPoint(x: 20, y: 20))
+                XCTAssertTrue(
+                    DrawnPixels.matches(grey)(centre.r, centre.g, centre.b, centre.a),
+                    "\(scheme) \(name): drew \(centre), not background/200 \(grey)"
+                )
+            }
+        }
+    }
+
     #if os(iOS)
     /// A line stands in for text, so it grows with the text size, as React's
     /// `h-4` — 1rem — follows the browser's. A height the product gives is
