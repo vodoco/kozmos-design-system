@@ -36,6 +36,26 @@ Names are stable keys such as `arrow-left`, `bell-01` and `calendar`.
 `back`, `close`, `delete` — into its key. Icons with their own outlines are also
 named exports, for example `import { Heart } from "@kozmos-ds/icons"`.
 
+## Location symbols
+
+`LocationFollowing` and `LocationHeading` are the marks the map's location
+control draws while it follows the visitor, and while the map turns with them.
+They come from Pointr's Location Tracking Buttons revamp rather than the icon
+library, which has no heading mark.
+
+They are symbols, not outlines: several tones of one colour on a 36-unit canvas,
+with the pointer in the middle 24. Render one at one and a half times the size
+of the icons beside it and its pointer lines up with theirs.
+
+```tsx
+import { LocationHeading, NavigationPointer01 } from "@kozmos-ds/icons";
+
+<NavigationPointer01 size={20} />;
+<LocationHeading size={30} />; // the same 20px pointer, with its cone and arc
+```
+
+They draw in `currentColor`, so they take the colour of the text around them.
+
 ## Category symbols are not here
 
 A venue's quick-access category artwork is the taxonomy's, not the design
