@@ -1,19 +1,22 @@
 name: Visual Regression
 
-# Kozmos's own visual regression, run here rather than bought. Playwright
-# compares each story against a committed baseline; the baselines live in the
-# same commit as the code that changed them, which a hosted service cannot do.
+# Kozmos's own visual review, run here rather than bought. Every story, in the
+# light theme and the dark, is drawn by the Playwright image and compared with
+# a baseline committed in the same commit as the code that changed it
+# (tests/visual/baselines). A change shows in the pull request's own image
+# diff; an unexpected one fails `compare`, whose report shows the baseline,
+# the new drawing and the difference. docs/visual-review.md has the whole story.
 #
-# **Seeding.** Playwright names a baseline after the platform that recorded it,
-# so a macOS one and a Linux one coexist and neither is wrong. This job records
-# Linux baselines, because CI is Linux. Until they exist the job is manual: run
-# it once from the Actions tab with `record` set, download the `visual-baselines`
-# artifact, commit its contents, then move this workflow onto `pull_request`.
+# `record`, run from the Actions tab on a branch, draws new baselines and
+# commits them to that branch: the way to accept a change without Docker.
 on:
+  pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       record:
-        description: "Record the baselines instead of checking them"
+        description: "Record new baselines and commit them to this branch"
         type: boolean
         default: false
 
@@ -21,11 +24,22 @@ concurrency:
   group: visual-${{ github.ref }}
   cancel-in-progress: true
 
+# Read-only unless a job says otherwise: `compare` runs a pull request's own
+# code, and has no business with a token that can push.
+permissions:
+  contents: read
+
 jobs:
-  visual:
-    name: Visual Regression
+  compare:
+    name: Visual Review
+    if: ${{ !inputs.record }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    # The same image `pnpm test:visual` runs locally: one Chromium, one set
+    # of fonts, so a baseline drawn in either place matches the other.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -38,29 +52,66 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter '@kozmos-ds/react...' build
       - run: pnpm --filter @kozmos-ds/docs build-storybook
-      - name: Install the browsers Playwright drives
-        run: pnpm exec playwright install --with-deps chromium firefox webkit
-      - name: Compare every story against its baseline
-        # The Storybook is served here and named explicitly: the suite must
-        # measure this build and not whatever is listening on 6006.
-        run: |
-          pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "SB,VISUAL" \
-            "python3 -m http.server 6010 --bind 127.0.0.1 --directory storybook-static" \
-            "bash -lc 'until curl -sf http://127.0.0.1:6010/index.json >/dev/null; do sleep 2; done; \
-              STORYBOOK_URL=http://127.0.0.1:6010 pnpm -w exec playwright test visual-regression.spec.ts ${{ inputs.record && '--update-snapshots' || '' }}'"
-      - name: Keep the baselines this run recorded
-        if: ${{ inputs.record }}
+      - name: Compare every story with its baseline
+        run: pnpm exec playwright test -c playwright.visual.config.ts
+      - name: Say which stories changed
+        if: ${{ failure() }}
+        run: node scripts/visual/summary.mjs >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the report
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: visual-baselines
-          path: tests/e2e/visual-regression.spec.ts-snapshots
-          retention-days: 7
-      - name: Keep the differences this run found
-        if: ${{ failure() && !inputs.record }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: visual-differences
+          name: visual-report
           path: |
-            test-results
-            playwright-report
-          retention-days: 7
+            visual-report
+            visual-results
+          retention-days: 14
+
+  record:
+    name: Record visual baselines
+    if: ${{ inputs.record && github.ref != 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      options: --ipc=host
+    # Run only by hand, on a branch someone chose: it commits the baselines
+    # it draws to that branch.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter '@kozmos-ds/react...' build
+      - run: pnpm --filter @kozmos-ds/docs build-storybook
+      # Every baseline is drawn afresh, so one whose story is gone goes with
+      # it; one that draws the same is the same bytes, and git shows nothing.
+      - name: Record new baselines
+        run: |
+          rm -rf tests/visual/baselines
+          pnpm exec playwright test -c playwright.visual.config.ts --update-snapshots=all
+      - name: Commit the new baselines to this branch
+        env:
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/baselines
+          if git diff --cached --quiet; then
+            echo "Every baseline was already current." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git commit -m "visual: record baselines (run $RUN_ID)"
+          git push
+          {
+            echo "Committed the new baselines: $(git show --stat --format= HEAD | tail -1)."
+            echo "A commit pushed by a workflow starts no checks: push again, or re-run them, to see the pull request's checks on it."
+          } >> "$GITHUB_STEP_SUMMARY"
