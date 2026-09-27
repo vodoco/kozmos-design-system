@@ -264,7 +264,12 @@
      it opens as a plain fade rather than not at all. */
   .kozmos-poi-result-actions {
     display: grid;
-    grid-template-rows: 1fr;
+    /* `minmax(0, 1fr)`, never a bare `1fr`: an fr track keeps an automatic
+       minimum of its content, so animating from `0fr` starts at the row's
+       min-content height, not at nothing. Measured in Chromium on 2026-09-27 —
+       the row jumped to 25px and grew from there, so the card's height moved
+       before the reveal had begun. The explicit zero minimum removes it. */
+    grid-template-rows: minmax(0, 1fr);
     overflow: hidden;
     animation: result-actions var(--semantics-motion-duration-standard)
       var(--semantics-motion-easing-standard) both;
@@ -274,11 +279,11 @@
   }
   @keyframes result-actions {
     from {
-      grid-template-rows: 0fr;
+      grid-template-rows: minmax(0, 0fr);
       opacity: 0;
     }
     to {
-      grid-template-rows: 1fr;
+      grid-template-rows: minmax(0, 1fr);
       opacity: 1;
     }
   }
