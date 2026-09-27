@@ -127,7 +127,7 @@ value it accepts — these are the only values that compile.
 | **ManoeuvreCard**     | ✅  |   ✅    | —                                                                                                                                                                                           |
 | **MapControlsGroup**  | ✅  |   ✅    | `locationPresentation`: icon-only \| labelled                                                                                                                                               |
 | **MapOverlay**        | ✅  |   ✅    | `width`: auto \| sm \| md \| lg \| full                                                                                                                                                     |
-| **MapView**           | ✅  |   ✅    | —                                                                                                                                                                                           |
+| **MapView**           | ✅  |   ✅    | `variant`: framed \| fill                                                                                                                                                                   |
 | **RouteProgressRail** | ✅  |   ✅    | —                                                                                                                                                                                           |
 | **RouteSummary**      | ✅  |   ✅    | —                                                                                                                                                                                           |
 | **RoutingInputGroup** | ✅  |   ✅    | —                                                                                                                                                                                           |
@@ -180,7 +180,7 @@ value it accepts — these are the only values that compile.
 | **FloorSelector**         | ✅  |   ✅    | `variant`: vertical-list \| horizontal-list \| compact-stepper                                                                     |
 | **LocationPin**           | ✅  |   ✅    | `variant`: default \| primary \| secondary \| accent<br>`size`: sm \| md \| lg<br>`labelPlacement`: top \| right \| bottom \| left |
 | **MapControlButton**      | ✅  |   ✅    | `presentation`: icon-only \| labelled<br>`emphasis`: tinted \| filled<br>`labelPlacement`: inline \| stacked                       |
-| **Notice**                |  —  |    —    | `tone`: warning \| info \| critical                                                                                                |
+| **Notice**                |  —  |    —    | `tone`: warning \| info \| critical<br>`live`: off \| polite \| assertive                                                          |
 | **POIDetailPanel**        | ✅  |   ✅    | `presentation`: inline \| sheet \| panel                                                                                           |
 | **POIMediaGallery**       | ✅  |   ✅    | —                                                                                                                                  |
 | **POIResultCard**         | ✅  |   ✅    | `appearance`: card \| row                                                                                                          |

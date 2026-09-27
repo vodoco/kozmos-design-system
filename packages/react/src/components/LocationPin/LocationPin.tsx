@@ -117,7 +117,19 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
         aria-disabled={isInteractive && disabled ? true : undefined}
         aria-label={label}
         className={cn(
-          "absolute flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-full items-center justify-center transition-transform",
+          // `left-0 top-0` physical, not `start-0`, and not omitted.
+          //
+          // The pin is positioned absolutely with no inset, so it fell back to
+          // its static position — where it would have sat in flow. In a
+          // left-to-right map that is the container's left edge, which is what
+          // the -50% translate expects. In Arabic it is the container's RIGHT
+          // edge, so every pin drew one pin-width to the left of its place.
+          //
+          // Physical because the translate beside it is physical: a logical
+          // `start-0` would flip the origin in RTL and leave the translate
+          // pulling the wrong way, which is the same bug with more steps. The
+          // renderer gives a physical point; the pin honours it.
+          "absolute left-0 top-0 flex min-h-11 min-w-11 -translate-x-1/2 -translate-y-full items-center justify-center transition-transform",
           isInteractive &&
             "cursor-pointer hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           selected && "scale-110",

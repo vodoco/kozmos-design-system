@@ -1140,6 +1140,9 @@ section("A set runs after the sets it reaches into");
     browseCategoriesPanelTile: ["CategoryTile", "BrowseCategoriesPanel"],
     setBrowseCategoriesPanelTileIcon: ["CategoryTile", "BrowseCategoriesPanel"],
     updateCategoryTileVariant: ["Counter", "CategoryTile"],
+    // One helper, every shell that composes a navigation row: the writer is a
+    // list, not a name.
+    retintNavigationItemLeadingIcon: ["NavigationItem", ["Navbar", "Sidebar"]],
   };
   ok(
     [...writersFound].sort().join(",") ===
@@ -1147,10 +1150,12 @@ section("A set runs after the sets it reaches into");
     `the painters that write inside a nested instance are the ones named here (found: ${[...writersFound].join(", ")})`,
   );
   for (const [painter, [inside, writer]] of Object.entries(reaches)) {
-    ok(
-      Boolean(map) && (map[inside] || []).includes(writer),
-      `${writer} is listed as writing inside ${inside} (${painter})`,
-    );
+    for (const one of Array.isArray(writer) ? writer : [writer]) {
+      ok(
+        Boolean(map) && (map[inside] || []).includes(one),
+        `${one} is listed as writing inside ${inside} (${painter})`,
+      );
+    }
   }
   for (const [inside, writers] of Object.entries(map || {})) {
     for (const writer of writers) {
@@ -3596,6 +3601,95 @@ section("Icon slots repaired from what they record");
     nestedStats.warnings.some((warning) => /nested instance/.test(warning)),
     "and the run warns which slots it could not reach",
   );
+}
+
+section("A navigation row keeps its tint through the icon swap");
+// Sidebar's four Selected rows — Item 1 in each Side variant, Item 2 in Rail —
+// sat flat #000000 through Update All Core on 2026-09-27, while its other
+// fourteen icons were fine. Setting the Leading Icon property replaces the
+// layer the tint was laid on, and repairIconSlotTints will not follow into a
+// nested instance (the section above asserts it says so instead). The painter
+// that made the swap is the one that has to lay the tint again.
+{
+  const makeRow = (name) => {
+    const row = new MockNode("INSTANCE", name);
+    const frame = new MockNode("FRAME", "Leading Icon Frame");
+    const icon = new MockNode("INSTANCE", "Leading Icon");
+    const glyph = new MockNode("VECTOR", "glyph");
+    glyph.fills = [
+      { type: "SOLID", visible: true, color: { r: 0, g: 0, b: 0 } },
+    ];
+    icon.appendChild(glyph);
+    frame.appendChild(icon);
+    row.appendChild(frame);
+    return { row, glyph };
+  };
+
+  const hasRetint =
+    typeof plugin.retintNavigationItemLeadingIcon === "function";
+  ok(
+    hasRetint,
+    "the plugin exposes the re-tint the row painter calls after a swap",
+  );
+
+  // Guarded, so this section reports four failures against a build without the
+  // fix rather than throwing on the first call and taking the rest of the run
+  // with it — a control that crashes proves nothing about what it was testing.
+  if (!hasRetint) {
+    ok(false, "a Selected row's icon binds the theme tint (not run: no re-tint)");
+    ok(false, "a Default row's icon binds the foreground tint (not run: no re-tint)");
+    ok(false, "a row with no icon layer warns (not run: no re-tint)");
+  }
+
+  if (hasRetint) {
+  const selected = makeRow("Item 1 Text Row");
+  const selectedStats = freshStats();
+  plugin.retintNavigationItemLeadingIcon(
+    selected.row,
+    "Selected",
+    variableByName,
+    selectedStats,
+  );
+  ok(
+    boundVariableName(selected.glyph.fills[0]) === "Colors/theme/500",
+    "a Selected row's icon binds the theme tint, not the source's black",
+  );
+
+  const plain = makeRow("Item 2 Text Row");
+  const plainStats = freshStats();
+  plugin.retintNavigationItemLeadingIcon(
+    plain.row,
+    "Default",
+    variableByName,
+    plainStats,
+  );
+  ok(
+    boundVariableName(plain.glyph.fills[0]) === "Colors/foreground/400",
+    "a Default row's icon binds the foreground tint",
+  );
+
+  // The two paths of one function must agree about what Selected looks like:
+  // a live row and the frame drawn when NavigationItem is missing.
+  const source = fs.readFileSync(PLUGIN, "utf8");
+  ok(
+    source.includes('state === "Selected" ? "Colors/theme/500" : "Colors/foreground/400"'),
+    "the fallback row paints the same two tokens the re-tint does",
+  );
+
+  // A row whose icon layer is gone must say so, not throw mid-update.
+  const bare = new MockNode("INSTANCE", "Item 3 Text Row");
+  const bareStats = freshStats();
+  plugin.retintNavigationItemLeadingIcon(
+    bare,
+    "Selected",
+    variableByName,
+    bareStats,
+  );
+  ok(
+    bareStats.warnings.some((warning) => /no Leading Icon layer/.test(warning)),
+    "a row with no icon layer warns instead of failing",
+  );
+  }
 }
 
 // --- Rating's two scales -------------------------------------------------------------

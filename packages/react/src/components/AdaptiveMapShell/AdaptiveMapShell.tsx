@@ -351,8 +351,29 @@ const AdaptiveMapShell = React.forwardRef<
     });
     const unavailable =
       measured.ready && (!layout.mapBounds.width || !layout.mapBounds.height);
-    const onRight =
-      (panelPlacement === "end") === (measured.direction !== "rtl");
+    const rtl = measured.direction === "rtl";
+    // Controls sit clear of a docked side panel. A bottom sheet spans the full
+    // width, so there is nothing to sit clear of — and the rule, read from
+    // panelPlacement alone, still fired and pushed them to the inline start:
+    // the opposite side from every map app, and the wrong side for a thumb
+    // (Olcay, on the US1 boards, 2026-09-27).
+    const onRight = (panelPlacement === "end") !== rtl;
+    // Two different questions, and only one of them is logical.
+    //
+    // Against a docked side panel the answer is physical: the far side from
+    // wherever the panel actually is. Routing that through an inline side and
+    // back inverts it in RTL, which is how a first cut put the panel and the
+    // controls on the same edge there.
+    //
+    // Against a sheet it is logical, and mirrors: inline end, where a thumb
+    // reaches — the same place iOS's `.bottom` placement already puts them.
+    //
+    // No prop to override it, deliberately. iOS already has a
+    // `ControlsPlacement`, and it answers a different question (`.top` corner
+    // versus `.bottom` band); a React prop of that name meaning "which side"
+    // would be a worse bug than the one this fixes. An override, if it is ever
+    // wanted, gets designed across the three platforms at once.
+    const controlsOnLeft = layout.presentation === "bottom" ? rtl : onRight;
     const available = {
       x: layout.mapBounds.x + chrome.left,
       y: layout.mapBounds.y + chrome.top,
@@ -390,7 +411,7 @@ const AdaptiveMapShell = React.forwardRef<
     );
     const controlsOutOfRoom = measured.ready && controlsBand === 0;
     const controlsBounds = {
-      x: onRight
+      x: controlsOnLeft
         ? available.x + gap
         : available.x + available.width - gap - measured.controlsWidth,
       y: controlsY,
@@ -414,7 +435,7 @@ const AdaptiveMapShell = React.forwardRef<
           occlusion.kind === "top-bar"
             ? "top"
             : occlusion.kind === "controls"
-              ? onRight
+              ? controlsOnLeft
                 ? "left"
                 : "right"
               : layout.presentation === "bottom"
@@ -680,8 +701,8 @@ const AdaptiveMapShell = React.forwardRef<
             hidden={unavailable || controlsOutOfRoom}
             className="absolute z-30 overflow-auto"
             style={{
-              left: onRight ? available.x + gap : undefined,
-              right: onRight
+              left: controlsOnLeft ? available.x + gap : undefined,
+              right: controlsOnLeft
                 ? undefined
                 : measured.width - available.x - available.width + gap,
               top: controlsY,

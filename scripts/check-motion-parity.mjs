@@ -69,15 +69,31 @@ else {
   }
 }
 const owned = read("packages/react/src/styles/owned-components.css");
+// Match what a rule says, not how it is laid out. Prettier wraps a long `transition` across lines,
+// and a needle written on one line then stops matching a rule nobody touched: that is why this
+// reported the sheet as reading no motion tokens while the sheet read them perfectly well.
+const flattenCss = (text) => text.replace(/\s+/g, " ");
+const ownedFlat = flattenCss(owned);
 for (const [rule, needle] of [
   ["the sheet", "top var(--semantics-motion-duration-standard) var(--semantics-motion-easing-standard)"],
   ["the pop", "animation: pop var(--semantics-motion-duration-standard)"],
   ["the reveal", "animation: reveal var(--semantics-motion-duration-standard)"],
-  ["the category field", ".kozmos-category-field {\n    animation: pop var(--semantics-motion-duration-standard)"],
+  ["the category field", ".kozmos-category-field { animation: pop var(--semantics-motion-duration-standard)"],
+  ["the result card", "transition: border-color var(--semantics-motion-duration-quick)"],
+  ["the result action row", "animation: result-actions var(--semantics-motion-duration-standard)"],
 ]) {
-  if (owned.includes(needle)) ok(`web: ${rule} reads the motion tokens`);
+  if (ownedFlat.includes(flattenCss(needle))) ok(`web: ${rule} reads the motion tokens`);
   else fail(`web: ${rule} does not read the motion tokens`);
 }
+// A bare `0fr` looks like it animates from nothing and does not: an fr track
+// keeps an automatic minimum of its content, so the row starts at its
+// min-content height and the card's height jumps before the reveal begins.
+// Cheap to write, invisible without measuring, so assert the explicit zero.
+const frTracks = flattenCss(owned).match(/grid-template-rows: [^;}]+/g) || [];
+const bareFr = frTracks.filter((t) => /\dfr/.test(t) && !/minmax\(\s*0/.test(t));
+if (bareFr.length) fail(`web: ${bareFr.length} fr grid track(s) without an explicit zero minimum, so they cannot animate from nothing (${bareFr[0]})`);
+else ok("web: every fr grid track states its zero minimum");
+
 if (/transition:[^;]*0\.\d+s/.test(owned.replace(/\/\*[\s\S]*?\*\//g, ""))) fail("web: an owned transition carries its own seconds instead of a motion token");
 else ok("web: no owned transition carries its own seconds");
 

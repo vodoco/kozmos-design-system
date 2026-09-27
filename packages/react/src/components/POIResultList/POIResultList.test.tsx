@@ -100,6 +100,72 @@ describe("POIResultList", () => {
     expect(screen.getAllByRole("button", { pressed: true })).toHaveLength(1);
   });
 
+  it("holds a notice inside the list, above the results it qualifies", () => {
+    // The allergen notice belongs to the results: as a sibling it could
+    // outlive a list that failed to render, and be read as qualifying
+    // whatever came next.
+    render(
+      <POIResultList
+        header={<p>Check allergens with the venue.</p>}
+        items={[createItem("one", 0)]}
+        onSelect={vi.fn()}
+        resultCountLabel="1 result"
+      />,
+    );
+
+    const notice = screen.getByText("Check allergens with the venue.");
+    const region = screen.getByRole("region", { name: "Points of interest" });
+    expect(region).toContainElement(notice);
+    // Above the results, not after them.
+    const results = screen.getByRole("article");
+    expect(
+      notice.compareDocumentPosition(results) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("says a group's two words in the visitor's language, and reports which group opened", () => {
+    const onGroupExpandedChange = vi.fn();
+    const a = createItem("one", 0);
+    const b = createItem("two", 1);
+    const { rerender } = render(
+      <POIResultList
+        hideLabel="閉じる"
+        items={[{ id: "starbucks", label: "Starbucks", items: [a, b] }]}
+        onGroupExpandedChange={onGroupExpandedChange}
+        onSelect={vi.fn()}
+        resultCountLabel="2 results"
+        showMoreLabel={(hidden) => `他${hidden}件を表示`}
+      />,
+    );
+
+    const more = screen.getByRole("button", { name: "他1件を表示" });
+    fireEvent.click(more);
+    // The id travels with the change, so one handler can hold several groups.
+    expect(onGroupExpandedChange).toHaveBeenCalledWith("starbucks", true);
+
+    // Held open by the product, the group survives a redraw of the list.
+    rerender(
+      <POIResultList
+        hideLabel="閉じる"
+        items={[
+          {
+            expanded: true,
+            id: "starbucks",
+            label: "Starbucks",
+            items: [a, b],
+          },
+        ]}
+        onGroupExpandedChange={onGroupExpandedChange}
+        onSelect={vi.fn()}
+        resultCountLabel="2 results"
+        showMoreLabel={(hidden) => `他${hidden}件を表示`}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "閉じる" })).toBeVisible();
+    expect(screen.getAllByRole("article")).toHaveLength(2);
+  });
+
   it("renders a directed empty state", () => {
     render(
       <POIResultList

@@ -64,4 +64,22 @@ describe("FloorSelector", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next floor" }));
     expect(onSelect).toHaveBeenCalledWith("2");
   });
+
+  it("lets the product name the stepper's two buttons", () => {
+    render(
+      <FloorSelector
+        floors={["1", "2", "3"]}
+        nextFloorLabel="Nächste Etage"
+        onFloorSelect={() => undefined}
+        previousFloorLabel="Vorherige Etage"
+        selectedFloor="2"
+        variant="compact-stepper"
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Vorherige Etage" }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Nächste Etage" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Previous floor" })).toBeNull();
+  });
 });

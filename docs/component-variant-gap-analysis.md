@@ -24,12 +24,12 @@ cannot".
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 112    |
-| Declaring at least one React variant axis | 46     |
-| Variations that are compositional only    | 66     |
-| Components with variant gaps — iOS        | 12/46  |
-| Components with variant gaps — Android    | 12/46  |
-| Components with variant gaps — Figma      | 9/46   |
-| Components with variant gaps — Vue        | 3/46   |
+| Declaring at least one React variant axis | 47     |
+| Variations that are compositional only    | 65     |
+| Components with variant gaps — iOS        | 13/47  |
+| Components with variant gaps — Android    | 13/47  |
+| Components with variant gaps — Figma      | 10/47  |
+| Components with variant gaps — Vue        | 3/47   |
 | Components absent entirely — iOS          | 9/112  |
 | Components absent entirely — Android      | 8/112  |
 | Components absent entirely — Figma        | 16/112 |
@@ -82,6 +82,10 @@ List
   - android missing axes -> density (default, compact)
 MapControlButton
   - figma missing axes -> emphasis (tinted, filled); labelPlacement (inline, stacked)
+MapView
+  - ios missing axes -> variant (framed, fill)
+  - android missing axes -> variant (framed, fill)
+  - figma missing axes -> variant (framed, fill)
 Notice
   - ios: component/set absent
   - android: component/set absent

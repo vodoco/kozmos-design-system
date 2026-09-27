@@ -70,4 +70,21 @@ describe("Chip", () => {
     expect(onRemove).toHaveBeenCalledTimes(1);
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  it("gives remove a mark that meets 2.5.8 and a target that clears it", () => {
+    // 20px drawn (h-5 w-5) at every chip size, under WCAG 2.5.8's 24px
+    // minimum. The mark is now 24; the target the owned rule adds is taller
+    // still, and deliberately no wider — see the rule for why.
+    render(
+      <Chip
+        label="Open now"
+        onRemove={() => undefined}
+        removeLabel="Remove open now"
+      />,
+    );
+    const remove = screen.getByRole("button", { name: /remove open now/i });
+    expect(remove).toHaveClass("kozmos-chip-remove");
+    expect(remove).toHaveClass("h-6", "w-6");
+    expect(remove).not.toHaveClass("h-5");
+  });
 });

@@ -247,6 +247,25 @@ try {
         layout.collisionInsets.top >= topBar.y + topBar.height - map.y - 1,
         "top bar must contribute camera padding",
       );
+      // Which side the controls take. Against a docked side panel they sit
+      // clear of it; against a bottom sheet, which spans the full width, there
+      // is nothing to sit clear of and they belong at the inline end — where
+      // every map app puts them, and where a thumb reaches. Read from the same
+      // measured direction the shell uses, so this holds in RTL too.
+      const rtl = (await page.evaluate(
+        () => getComputedStyle(document.documentElement).direction,
+      )) === "rtl";
+      const mapMid = map.x + map.width / 2;
+      const controlsAtInlineEnd =
+        controls.x + controls.width / 2 > mapMid ? !rtl : rtl;
+      if (layout.presentation === "bottom") {
+        assert(
+          controlsAtInlineEnd,
+          `a sheet leaves no side to avoid, so the controls belong at the inline end (${scenario.name})`,
+        );
+      }
+      // The side-panel case needs no assertion here: "controls overlap panel"
+      // above already says the only thing that matters, and says it better.
       if (process.env.ADAPTIVE_SCREENSHOTS) {
         fs.mkdirSync(process.env.ADAPTIVE_SCREENSHOTS, { recursive: true });
         await page.screenshot({

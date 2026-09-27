@@ -31,7 +31,7 @@ const Search = React.forwardRef<HTMLInputElement, SearchProps>(
             id={inputId}
             className={cn(
               inputVariants({ error: hasError }),
-              "pl-9",
+              "kozmos-search-input pl-9",
               className,
             )}
             type="search"
