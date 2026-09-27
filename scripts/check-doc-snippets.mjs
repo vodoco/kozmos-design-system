@@ -94,6 +94,16 @@ for (const file of mdxFiles) {
   const relative = path.relative(ROOT, file);
   const source = fs.readFileSync(file, "utf8");
 
+  // Every example on the page, fenced blocks included, not only the platform
+  // snippets: lucide-react left @kozmos-ds/icons on 2026-09-23, and four pages
+  // went on importing their icons from it, where a reader could not follow.
+  for (const match of source.matchAll(/from\s+["']lucide-react["']/g)) {
+    const line = source.slice(0, match.index).split("\n").length;
+    problems.push(
+      `${relative}:${line}: imports from lucide-react, which Kozmos no longer uses; draw the icon from @kozmos-ds/icons`,
+    );
+  }
+
   for (const { platform, code } of extractSnippets(source, relative)) {
     snippetCount += 1;
     const known = knownSymbols(platform);
