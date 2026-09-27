@@ -335,4 +335,44 @@ describe("POIResultCard", () => {
     );
     expect(container.querySelector("[data-current-floor='true']")).toBeNull();
   });
+
+  it("says what the contract already knew: the unit, the name's language, and the summary", () => {
+    // Three fields shipped in the contract for 0.4.0 and were drawn by
+    // nothing. GAP-022, GAP-004 and GAP-029.
+    const { container } = render(
+      <POIResultCard
+        poi={{ ...poi, name: "空港ラウンジ", floorLabel: "Level 2" }}
+        result={{
+          ...result,
+          nameLanguage: "ja",
+          summary: "Quietest of the three lounges before security.",
+          unitLabel: "Unit 214",
+        }}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    // The unit leads the line, because it is narrower than the floor and the
+    // visitor is told both.
+    expect(screen.getByText("Unit 214 · Level 2 · Building A")).toBeVisible();
+
+    // The tag rides on the name itself, not the card: a screen reader has to
+    // change voice for those words and no others.
+    const name = screen.getByText("空港ラウンジ");
+    expect(name).toHaveAttribute("lang", "ja");
+    expect(container.firstElementChild).not.toHaveAttribute("lang");
+
+    expect(
+      screen.getByText("Quietest of the three lounges before security."),
+    ).toBeVisible();
+  });
+
+  it("draws nothing for the three when it is given nothing", () => {
+    // Most results have no unit, no foreign name and no summary. The card
+    // must not leave a separator, an empty line, or a lang="" behind.
+    render(<POIResultCard poi={poi} result={result} onSelect={vi.fn()} />);
+    const name = screen.getByText(poi.name);
+    expect(name).not.toHaveAttribute("lang");
+    expect(screen.queryByText(/·\s*$/)).toBeNull();
+  });
 });
