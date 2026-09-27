@@ -1,6 +1,9 @@
 # Session handoff — 2026-09-27 evening: the map rows on three platforms, and a review that found eighteen defects
 
-For the next agent session, and for Olcay if he changes things by hand. **This is the door in.**
+> **Superseded as the door in by [handoff-2026-09-27-night.md](handoff-2026-09-27-night.md).** Read
+> that first; this one keeps the evidence and history it points back to.
+
+For the next agent session, and for Olcay when changing things by hand.
 The morning's [handoff-2026-09-27.md](handoff-2026-09-27.md) keeps the Figma and gate detail whose
 rules still stand; [ds-handoff.md](ds-handoff.md) is the long record. Times BST.
 
