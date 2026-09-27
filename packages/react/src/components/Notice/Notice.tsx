@@ -4,8 +4,30 @@ import { cn } from "../../utils";
 
 export type NoticeTone = "warning" | "info" | "critical";
 
-export interface NoticeProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onToggle"> {
+/**
+ * How loudly the notice announces itself. The same three values Alert takes,
+ * so a product does not learn two vocabularies for one idea.
+ *
+ * `polite` is `role="status"`, the default and right for almost everything: a
+ * dietary notice must be read when the results arrive, but must not cut across
+ * whatever the visitor is already being told.
+ *
+ * `assertive` is `role="alert"`, which interrupts. It is for the emergency
+ * notice and nothing else — the case the notice previously could not express,
+ * because the role was fixed.
+ */
+export type NoticeLiveness = "off" | "polite" | "assertive";
+
+const LIVE_ROLE: Record<NoticeLiveness, string | undefined> = {
+  off: undefined,
+  polite: "status",
+  assertive: "alert",
+};
+
+export interface NoticeProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  "onToggle"
+> {
   /**
    * The one line that is always visible. Keep it informative on its own: a
    * collapsed notice that only says "Important" tells the reader nothing, and
@@ -41,6 +63,8 @@ export interface NoticeProps
    * Nobody in an emergency should have to discover a "More" link.
    */
   collapsible?: boolean;
+  /** Defaults to `polite`. Use `assertive` only for an emergency. */
+  live?: NoticeLiveness;
 }
 
 const toneStyles: Record<NoticeTone, string> = {
@@ -83,6 +107,8 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
       expandLabel = "More",
       action,
       collapsible,
+      live = "polite",
+      role,
       ...props
     },
     ref,
@@ -110,7 +136,10 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
           className,
         )}
         ref={ref}
-        role="status"
+        // Fixed at `status` until row 54: a notice could be read politely or
+        // not at all, and an emergency had no way to interrupt. A caller's own
+        // `role` still wins.
+        role={role ?? LIVE_ROLE[live]}
         {...props}
       >
         <div className="flex items-start gap-2">
@@ -124,7 +153,7 @@ const Notice = React.forwardRef<HTMLDivElement, NoticeProps>(
             <button
               aria-controls={detailId}
               aria-expanded={open}
-              className="-mr-1 inline-flex shrink-0 items-center gap-1 rounded-control px-1 py-0.5 text-xs font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="kozmos-notice-more -mr-1 inline-flex shrink-0 items-center gap-1 rounded-control px-1 py-0.5 text-xs font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               onClick={toggle}
               type="button"
             >

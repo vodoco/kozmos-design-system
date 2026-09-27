@@ -55,7 +55,11 @@ describe("Notice", () => {
   it("lets a product own the expanded state, to remember it for the session", () => {
     const onExpandedChange = vi.fn();
     render(
-      <Notice expanded={false} onExpandedChange={onExpandedChange} summary="Short">
+      <Notice
+        expanded={false}
+        onExpandedChange={onExpandedChange}
+        summary="Short"
+      >
         Long
       </Notice>,
     );
@@ -63,5 +67,35 @@ describe("Notice", () => {
     expect(onExpandedChange).toHaveBeenCalledWith(true);
     // Controlled: it does not move on its own.
     expect(screen.getByText("Long")).not.toBeVisible();
+  });
+
+  it("can be urgent, and is polite unless told otherwise", () => {
+    // Fixed at role="status" before row 54: the dietary notice needs to be
+    // read when results arrive, and the emergency notice needs to interrupt.
+    // One component, two jobs, and no way to say which.
+    const { rerender, container } = render(
+      <Notice summary="Check allergens." />,
+    );
+    expect(container.firstChild).toHaveAttribute("role", "status");
+
+    rerender(<Notice live="assertive" summary="Evacuate by the north exit." />);
+    expect(container.firstChild).toHaveAttribute("role", "alert");
+
+    rerender(<Notice live="off" summary="Shown in English." />);
+    expect(container.firstChild).not.toHaveAttribute("role");
+
+    // A caller's own role still wins, as Alert's does.
+    rerender(<Notice live="assertive" role="note" summary="Anything." />);
+    expect(container.firstChild).toHaveAttribute("role", "note");
+  });
+
+  it("gives More a target the stylesheet owns", () => {
+    // The drawn control is ~60x20 and should stay that size: the whole point
+    // of Notice is that collapsed it is one line. The target is carried by an
+    // owned rule instead, so it cannot vanish with the utility layer.
+    render(<Notice summary="Short">Long</Notice>);
+    expect(screen.getByRole("button", { name: /More/ })).toHaveClass(
+      "kozmos-notice-more",
+    );
   });
 });
