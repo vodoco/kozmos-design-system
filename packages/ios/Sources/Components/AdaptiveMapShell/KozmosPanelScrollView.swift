@@ -29,17 +29,38 @@ struct KozmosPanelScrollOffsetKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
-/// The bottom edge of the row the sheet's smallest detent rests on, as an
-/// anchor the shell resolves in the sheet's own space.
+/// What the sheet's smallest detent reads, as anchors the shell resolves in
+/// the sheet's own space: the row the content marks, the row the panel header
+/// marks, and the panel header's own box (row 73).
+struct KozmosPanelPeekAnchors {
+    var content: Anchor<CGRect>?
+    var header: Anchor<CGRect>?
+    var headerBounds: Anchor<CGRect>?
+}
+
+/// The rows the sheet's smallest detent rests on. Of two rows in one part,
+/// the later wins.
 struct KozmosMapShellPeekAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        value = nextValue() ?? value
+    static var defaultValue = KozmosPanelPeekAnchors()
+    static func reduce(value: inout KozmosPanelPeekAnchors, nextValue: () -> KozmosPanelPeekAnchors) {
+        let next = nextValue()
+        value = KozmosPanelPeekAnchors(
+            content: next.content ?? value.content,
+            header: next.header ?? value.header,
+            headerBounds: next.headerBounds ?? value.headerBounds
+        )
     }
 }
 
 /// The resolved peek edge, in points from the sheet's top.
 struct KozmosMapShellPeekBottomKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+/// The panel header's bottom edge, in points from the sheet's top; zero with
+/// no header, or one that draws nothing.
+struct KozmosMapShellPanelHeaderBottomKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
@@ -90,9 +111,11 @@ public extension View {
     /// Marks the row the sheet's smallest detent rests on: `.collapsed` then
     /// resolves to this view's bottom edge plus a margin, within a quarter and
     /// three quarters of the shell — the prototype's place card peeks at its
-    /// Go row. Without an anchor `.collapsed` is a fifth of the shell.
+    /// Go row. Without an anchor `.collapsed` is a fifth of the shell, or as
+    /// much more as the whole panel header needs. A row in the panel header
+    /// counts as one in the content does, and outranks it.
     func kozmosPanelPeekAnchor() -> some View {
-        anchorPreference(key: KozmosMapShellPeekAnchorKey.self, value: .bounds) { $0 }
+        anchorPreference(key: KozmosMapShellPeekAnchorKey.self, value: .bounds) { KozmosPanelPeekAnchors(content: $0) }
     }
 }
 

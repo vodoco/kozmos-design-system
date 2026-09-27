@@ -21,6 +21,12 @@ public enum KozmosFloorSelectorVariant: String, CaseIterable, Sendable {
 /// `shortLabel` while selection and analytics stay keyed on its `id`, and so
 /// assistive technology hears the full `label`. The `[String]` initializer is
 /// for venues whose IDs are already the labels — it shows each ID as-is.
+///
+/// A presentation's `resultCount` marks the level with a small count at its
+/// button's trailing top, so a visitor can see the answer is upstairs without
+/// changing level to find out (row 69, GAP-070). Only a count above zero is
+/// marked: `nil` is unknown, which is not the same as none, and a level with a
+/// real zero reads as itself.
 public struct KozmosFloorSelector: View {
     let floors: [KozmosFloorPresentation]
     @Binding var selectedFloor: String
@@ -34,6 +40,12 @@ public struct KozmosFloorSelector: View {
     /// and "Next floor".
     let previousFloorLabel: String
     let nextFloorLabel: String
+    /// How a level's result count is said, for a visitor who cannot see the
+    /// marker. Joined to the level's own label: "Level 2, 3 results". A
+    /// function because a count needs a plural rule, and the design system has
+    /// no locale to pick one with — the product does. The default is English,
+    /// singular for one, where React's reads "1 results".
+    let resultCountLabel: (Int) -> String
     @Environment(\.kozmosAnalytics) private var trackEvent
 
     /// A fixed 40pt button truncates every level to an ellipsis once Dynamic
@@ -43,6 +55,16 @@ public struct KozmosFloorSelector: View {
     @ScaledMetric(relativeTo: .subheadline)
     private var controlSize: CGFloat = KozmosDimensions.primitivesLayoutSizing500
 
+    /// The result marker, React's 16 with a 10pt count and 4 either side of
+    /// it, scaling with the button it sits in so that it keeps its share of
+    /// the square.
+    @ScaledMetric(relativeTo: .subheadline)
+    private var markerSize: CGFloat = KozmosDimensions.primitivesLayoutSizing200
+    @ScaledMetric(relativeTo: .subheadline)
+    private var markerTextSize: CGFloat = 10
+    @ScaledMetric(relativeTo: .subheadline)
+    private var markerPadding: CGFloat = KozmosDimensions.primitivesLayoutSpacing50
+
     @State private var isExpanded = false
 
     public init(
@@ -51,7 +73,8 @@ public struct KozmosFloorSelector: View {
         variant: KozmosFloorSelectorVariant = .verticalList,
         label: String = "Floor selector",
         previousFloorLabel: String = "Floor up",
-        nextFloorLabel: String = "Floor down"
+        nextFloorLabel: String = "Floor down",
+        resultCountLabel: @escaping (Int) -> String = { $0 == 1 ? "1 result" : "\($0) results" }
     ) {
         self.floors = floors
         self._selectedFloor = selectedFloor
@@ -59,6 +82,7 @@ public struct KozmosFloorSelector: View {
         self.label = label
         self.previousFloorLabel = previousFloorLabel
         self.nextFloorLabel = nextFloorLabel
+        self.resultCountLabel = resultCountLabel
     }
 
     /// For tests and previews: the collapsible list already open.
@@ -224,6 +248,7 @@ public struct KozmosFloorSelector: View {
                         : KozmosColors.primitivesColorsForeground100
                 )
                 .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
+                .overlay(alignment: .topTrailing) { resultMarker(for: floor) }
                 // An unselected button is transparent, so without an explicit
                 // hit shape only the glyph itself would accept a tap.
                 .contentShape(
@@ -237,8 +262,9 @@ public struct KozmosFloorSelector: View {
         .disabled(floor.disabled)
         .opacity(floor.disabled ? 0.4 : 1)
         // The button shows the short label; assistive technology gets the full
-        // one, which is the only place the level is spelled out.
-        .accessibilityLabel(floor.label)
+        // one, which is the only place the level is spelled out — and the
+        // result count with it, where the button marks one.
+        .accessibilityLabel(spokenLabel(floor))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
@@ -264,6 +290,7 @@ public struct KozmosFloorSelector: View {
                             : KozmosColors.primitivesColorsForeground100
                     )
                     .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
+                    .overlay(alignment: .topTrailing) { resultMarker(for: floor) }
                 if floor.label != floor.shortLabel {
                     Text(floor.label)
                         .font(KozmosTypography.subheadline)
@@ -283,7 +310,7 @@ public struct KozmosFloorSelector: View {
         .buttonStyle(.plain)
         .disabled(floor.disabled)
         .opacity(floor.disabled ? 0.4 : 1)
-        .accessibilityLabel(floor.label)
+        .accessibilityLabel(spokenLabel(floor))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
@@ -330,6 +357,51 @@ public struct KozmosFloorSelector: View {
             candidate += step
         }
         return nil
+    }
+
+    /// The count a level's button marks, or nil for none (row 69, GAP-070).
+    ///
+    /// Only a count above zero: `nil` is unknown, which is not the same as
+    /// none, and a level with a real zero reads as itself. Only where the
+    /// levels are listed — the two lists and the collapsible's open list. The
+    /// stepper shows one level at a time, so a marker on the level already in
+    /// view says nothing; the collapsible's closed pill shows that level too,
+    /// and is drawn without one.
+    func markedResultCount(_ floor: KozmosFloorPresentation) -> Int? {
+        guard variant != .compactStepper, let count = floor.resultCount, count > 0 else { return nil }
+        return count
+    }
+
+    /// What assistive technology hears for a level: its label, and the count
+    /// its button marks in the product's words — "Level 2, 3 results". Said
+    /// here, on the button, so the marker itself is hidden: hearing "3" after
+    /// that is noise.
+    func spokenLabel(_ floor: KozmosFloorPresentation) -> String {
+        guard let count = markedResultCount(floor) else { return floor.label }
+        return "\(floor.label), \(resultCountLabel(count))"
+    }
+
+    /// The count, drawn once and said once: a pill in the theme's primary in
+    /// the square's trailing top corner, which mirrors in Arabic. Inside the
+    /// square, not proud of it, as React's is since c36a970d — here the
+    /// control's rounded clip would take the corner off a marker hanging over
+    /// the end levels' squares. Flush with the corner rather than React's 2px
+    /// in: that inset is on a 44px button, and on a 40pt square it lays the
+    /// marker over the top of the level's label. A plain number, as the
+    /// category tile's counter is.
+    @ViewBuilder
+    private func resultMarker(for floor: KozmosFloorPresentation) -> some View {
+        if let count = markedResultCount(floor) {
+            Text(verbatim: String(count))
+                .font(.system(size: markerTextSize, weight: .semibold))
+                .monospacedDigit()
+                .lineLimit(1)
+                .padding(.horizontal, markerPadding)
+                .frame(minWidth: markerSize, minHeight: markerSize)
+                .background(KozmosColors.primitivesColorsTheme600, in: Capsule())
+                .foregroundColor(KozmosColors.primitivesColorsForeground1000)
+                .accessibilityHidden(true)
+        }
     }
 
     /// What a stepper button is called: `previousFloorLabel` for a step back

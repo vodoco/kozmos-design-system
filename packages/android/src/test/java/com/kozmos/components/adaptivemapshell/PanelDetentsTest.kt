@@ -29,6 +29,22 @@ class PanelDetentsTest {
         assertEquals(266f, KozmosMapPanelDetent.Collapsed.height(shell, KozmosPanelMeasures(peekBottom = 250.dp)).value, 0.001f)
     }
 
+    /**
+     * A panel header is not a peek anchor (row 73): collapsed grows only to
+     * show the whole header, never under the default nor over three quarters.
+     * A search row's 60 leaves the prototype's fifth where it was; an anchor
+     * still rules.
+     */
+    @Test
+    fun collapsedGrowsOnlyToShowTheWholePanelHeader() {
+        assertEquals(160f, KozmosMapPanelDetent.headerCollapsedHeight(60.dp, shell).value, 0.001f)
+        assertEquals(232f, KozmosMapPanelDetent.headerCollapsedHeight(216.dp, shell).value, 0.001f)
+        assertEquals(576f, KozmosMapPanelDetent.headerCollapsedHeight(716.dp, shell).value, 0.001f)
+        assertEquals(112f, KozmosMapPanelDetent.headerCollapsedHeight(60.dp, 400.dp).value, 0.001f)
+        assertEquals(232f, KozmosMapPanelDetent.Collapsed.height(shell, KozmosPanelMeasures(headerBottom = 216.dp)).value, 0.001f)
+        assertEquals(266f, KozmosMapPanelDetent.Collapsed.height(shell, KozmosPanelMeasures(peekBottom = 250.dp, headerBottom = 400.dp)).value, 0.001f)
+    }
+
     @Test
     fun contentFitsBetweenCollapsedAndLargeAndReadsAsMediumUntilMeasured() {
         assertEquals(432f, KozmosMapPanelDetent.Content.height(shell).value, 0.001f)
