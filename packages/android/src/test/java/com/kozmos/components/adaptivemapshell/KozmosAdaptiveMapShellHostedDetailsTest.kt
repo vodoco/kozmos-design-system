@@ -172,7 +172,42 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
         assertEquals("the inline card's close button is ${at.inward} from the sheet's side", 16f, at.inward, 0.5f)
     }
 
+    /**
+     * A card in its panel presentation draws its own bordered surface, so the
+     * handle's row lies outside its border, not inside it. Topped up to the
+     * row, its header met its own top border — the close button 4 under the
+     * line; the web's visual review caught the same at 0, in a side panel. It
+     * keeps its 16 inside the border, as the inline card does: the button 16
+     * under the card's top edge, which is under the row.
+     */
+    @Test
+    fun underAHandleABorderedPanelCardKeepsItsPaddingInsideItsBorder() {
+        val tree = read(presentation = KozmosPOIDetailPanelPresentation.Panel)
+        tree.assertSheet()
+        assertEquals("the sheet draws no handle", true, tree.drawsHandle())
+        val card = tree.named(poi.name).bounds
+        val sheet = tree.named("Map details").bounds
+        assertEquals("the card does not start under the handle's row", 16f, (card.top - sheet.top) / density, 0.5f)
+        val under = (tree.named("Close details").bounds.top - card.top) / density
+        val at = tree.closeButton()
+        println("GAP-083 Android, panel card under a handle: the close button $under under the card's top edge, ${at.inward} from the side")
+        assertEquals("the panel card's close button is $under under its own top edge", 16f, under, 0.5f)
+        assertEquals("the panel card's close button is ${at.inward} from the sheet's side", 16f, at.inward, 0.5f)
+    }
+
     // Beside the map
+
+    /** The surfaceless card, which products host beside the map too, keeps its 16 there as well. */
+    @Test
+    fun inASidePanelTheSurfacelessCardSitsAsFarDownAsIn() {
+        paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_C)
+        val tree = read(presentation = KozmosPOIDetailPanelPresentation.Sheet)
+        tree.assertSidePanel()
+        val at = tree.closeButton()
+        println("GAP-083 Android, side panel, surfaceless card: the close button ${at.down} from the top, ${at.inward} from the end")
+        assertEquals("the close button is ${at.down} from the panel's top and ${at.inward} from its end", at.inward, at.down, 0.5f)
+        assertEquals("the close button is ${at.inward} from the panel's end", 16f, at.inward, 0.5f)
+    }
 
     /**
      * A native side panel leaves nothing above its content — the web's keeps
