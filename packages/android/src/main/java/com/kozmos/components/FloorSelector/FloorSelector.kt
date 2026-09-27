@@ -46,6 +46,13 @@ enum class KozmosFloorSelectorVariant(val value: String) {
  * Mirrors the React `FloorSelector` API. [selectedFloor] is the canonical floor
  * ID, never a display label, and the component reports selection rather than
  * deriving it.
+ *
+ * [previousFloorLabel] and [nextFloorLabel] are what the compact stepper's two
+ * buttons are called, for a visitor who cannot see them: the previous level in
+ * list order is on the up chevron, the next on the down. Hard-coded English
+ * until row 67. Only the stepper draws them; the lists name each level by its
+ * own label. The defaults are the words these buttons always said — React's
+ * read "Previous floor" and "Next floor".
  */
 @Composable
 fun KozmosFloorSelector(
@@ -54,7 +61,9 @@ fun KozmosFloorSelector(
     onFloorSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
     variant: KozmosFloorSelectorVariant = KozmosFloorSelectorVariant.VerticalList,
-    label: String = "Floor selector"
+    label: String = "Floor selector",
+    previousFloorLabel: String = "Floor up",
+    nextFloorLabel: String = "Floor down"
 ) {
     val trackEvent = LocalKozmosAnalytics.current
     val selectedIndex = floors.indexOf(selectedFloor).takeIf { it >= 0 } ?: 0
@@ -156,9 +165,9 @@ fun KozmosFloorSelector(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = spacing
         ) {
-            stepperButton(-1, "Floor up")
+            stepperButton(-1, previousFloorLabel)
             floorButton(selectedFloor)
-            stepperButton(1, "Floor down")
+            stepperButton(1, nextFloorLabel)
         }
     }
 }

@@ -57,6 +57,15 @@ KozmosFloorSelector(
 floors: ["B2", "B1", "G", "1", "2"],
 selectedFloor: .constant("G")
 )
+
+// The stepper's two buttons carry the product's names.
+KozmosFloorSelector(
+floors: ["2", "1", "G", "B1", "B2"],
+selectedFloor: .constant("G"),
+variant: .compactStepper,
+previousFloorLabel: String(localized: "Floor up"),
+nextFloorLabel: String(localized: "Floor down")
+)
 `}
     kotlin={`
 package com.kozmos.components.floorselector
