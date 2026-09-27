@@ -16,6 +16,18 @@ Voice is out of scope here: `trailing` is a slot inside the field that a
 product fills with its own microphone control, rather than a control this
 owns.
 
+The field draws a focus ring round the whole pill, as `SearchBar` does: the
+input inside is `outline-none`, and without the ring a keyboard visitor had no
+sign of where they were. `disabled` gives the field the Input family's muted
+look as well as disabling send — offline, it should not look ready to type
+into. A control in `trailing` is the product's, so disable it with the same
+flag.
+
+`inputRef` reaches the text field, for a product that has to put focus there:
+when the assistant opens, after a send, after an error. The component's own
+`ref` is the form's. Send is the SDK's 44px, and the field grows to match it.
+
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.Empty} />
+<Canvas of={Stories.Disabled} />
 <Controls />

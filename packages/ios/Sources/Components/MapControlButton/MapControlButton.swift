@@ -71,6 +71,17 @@ struct KozmosMapControlButtonAppearance: Equatable {
     }
 }
 
+/// The part of a control's state a reveal watches.
+///
+/// Either half can be what changed: a toggle flips `pressed`, while a control
+/// that cycles through modes changes only its state label — following and
+/// heading are both pressed. The mark is not part of it; a new drawing alone
+/// says nothing new.
+struct KozmosMapControlButtonRevealValue: Hashable {
+    let pressed: Bool
+    let stateLabel: String?
+}
+
 /// A single floating map control.
 ///
 /// Mirrors the React `MapControlButton`. `label` is the localized action name
@@ -83,22 +94,47 @@ public struct KozmosMapControlButton<Icon: View>: View {
     private let presentation: KozmosMapControlButtonPresentation
     private let emphasis: KozmosMapControlButtonEmphasis
     private let labelPlacement: KozmosMapControlButtonLabelPlacement
+    let revealOnChange: Bool
+    let revealDuration: TimeInterval
+    let revealDelay: TimeInterval
     private let pressed: Bool
     private let isDisabled: Bool
+    let isLoading: Bool
     private let action: () -> Void
 
     /// Someone who has asked iOS to reduce motion still needs to read the new
     /// state; they just should not watch the control grow to show it.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @StateObject private var reveal = KozmosRevealOnChange()
+
+    /// - Parameters:
+    ///   - revealOnChange: Let the control resolve its own presentation:
+    ///     icon-only at rest, widening to `labelled` for `revealDuration`
+    ///     whenever `pressed` or `stateLabel` changes, then collapsing so it
+    ///     stops covering the map — the SDK's map toggles, and React's
+    ///     `revealOnChange`. While it is set, `presentation` is ignored. Off by
+    ///     default (row 77).
+    ///   - revealDuration: How long the label stays, in seconds. React's
+    ///     2500ms.
+    ///   - revealDelay: How long to wait before revealing. A change that takes
+    ///     time to settle — a route being recalculated — reveals its new state
+    ///     once the work is done rather than while it is still wrong.
+    ///   - isLoading: The system's arc turns in the icon's place, and the
+    ///     control waits: React's Button disables itself while it loads, and
+    ///     so does this. The name still says what is happening.
     public init(
         label: String,
         stateLabel: String? = nil,
         presentation: KozmosMapControlButtonPresentation = .iconOnly,
         emphasis: KozmosMapControlButtonEmphasis = .tinted,
         labelPlacement: KozmosMapControlButtonLabelPlacement = .inline,
+        revealOnChange: Bool = false,
+        revealDuration: TimeInterval = 2.5,
+        revealDelay: TimeInterval = 0,
         pressed: Bool = false,
         isDisabled: Bool = false,
+        isLoading: Bool = false,
         action: @escaping () -> Void,
         @ViewBuilder icon: () -> Icon
     ) {
@@ -107,8 +143,12 @@ public struct KozmosMapControlButton<Icon: View>: View {
         self.presentation = presentation
         self.emphasis = emphasis
         self.labelPlacement = labelPlacement
+        self.revealOnChange = revealOnChange
+        self.revealDuration = revealDuration
+        self.revealDelay = revealDelay
         self.pressed = pressed
         self.isDisabled = isDisabled
+        self.isLoading = isLoading
         self.action = action
         self.icon = icon()
     }
@@ -120,6 +160,29 @@ public struct KozmosMapControlButton<Icon: View>: View {
 
     var appearance: KozmosMapControlButtonAppearance {
         KozmosMapControlButtonAppearance(pressed: pressed, emphasis: emphasis)
+    }
+
+    var revealValue: KozmosMapControlButtonRevealValue {
+        KozmosMapControlButtonRevealValue(pressed: pressed, stateLabel: stateLabel)
+    }
+
+    /// While the control reveals on change it decides: icon-only at rest,
+    /// labelled while it says its new state, whatever `presentation` says.
+    static func resolvedPresentation(
+        _ presentation: KozmosMapControlButtonPresentation,
+        revealOnChange: Bool,
+        isRevealed: Bool
+    ) -> KozmosMapControlButtonPresentation {
+        guard revealOnChange else { return presentation }
+        return isRevealed ? .labelled : .iconOnly
+    }
+
+    private var shownPresentation: KozmosMapControlButtonPresentation {
+        Self.resolvedPresentation(presentation, revealOnChange: revealOnChange, isRevealed: reveal.isRevealed)
+    }
+
+    private func observeReveal(_ value: KozmosMapControlButtonRevealValue, enabled: Bool) {
+        reveal.observe(value, enabled: enabled, duration: revealDuration, delay: revealDelay)
     }
 
     private func color(_ tone: KozmosMapControlButtonAppearance.Tone) -> Color {
@@ -149,7 +212,7 @@ public struct KozmosMapControlButton<Icon: View>: View {
 
     @ViewBuilder
     private var labelContent: some View {
-        if presentation == .labelled {
+        if shownPresentation == .labelled {
             if labelPlacement == .stacked {
                 VStack(alignment: .leading, spacing: 0) {
                     // The SDK sets these at 11pt over 13pt semibold. The type
@@ -187,9 +250,21 @@ public struct KozmosMapControlButton<Icon: View>: View {
     }
 
     public var body: some View {
+        let shown = shownPresentation
+
         Button(action: action) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 icon
+                    // Kept in place, unseen, under the spinner, so a labelled
+                    // control's text does not move while it waits.
+                    .opacity(isLoading ? 0 : 1)
+                    .overlay {
+                        if isLoading {
+                            // The system's arc, as a loading Button draws it:
+                            // one drawing on all four platforms.
+                            KozmosSpinner(size: .sm, color: color(appearance.icon))
+                        }
+                    }
                     .foregroundColor(color(appearance.icon))
                     .accessibilityHidden(true)
 
@@ -197,11 +272,11 @@ public struct KozmosMapControlButton<Icon: View>: View {
             }
             .foregroundColor(color(appearance.label))
             .frame(
-                width: presentation == .iconOnly ? 44 : nil,
+                width: shown == .iconOnly ? 44 : nil,
                 height: 44
             )
-            .frame(maxWidth: presentation == .labelled ? 256 : nil)
-            .padding(.horizontal, presentation == .labelled ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
+            .frame(maxWidth: shown == .labelled ? 256 : nil)
+            .padding(.horizontal, shown == .labelled ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
             .overlay(
@@ -215,11 +290,17 @@ public struct KozmosMapControlButton<Icon: View>: View {
             )
         }
         .buttonStyle(.plain)
-        .disabled(isDisabled)
+        .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.5 : 1)
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: presentation == .labelled)
+        // Reduce Motion stops the control growing, not the reveal: the new
+        // state is still said, and still said for as long.
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: shown == .labelled)
         .accessibilityLabel(accessibleLabel)
         .accessibilityAddTraits(pressed ? [.isButton, .isSelected] : .isButton)
+        // The first value only sets the baseline; see `KozmosRevealOnChange`.
+        .onAppear { observeReveal(revealValue, enabled: revealOnChange) }
+        .onChange(of: revealValue) { observeReveal($0, enabled: revealOnChange) }
+        .onChange(of: revealOnChange) { observeReveal(revealValue, enabled: $0) }
     }
 }
 
@@ -232,8 +313,12 @@ public extension KozmosMapControlButton where Icon == Image {
         presentation: KozmosMapControlButtonPresentation = .iconOnly,
         emphasis: KozmosMapControlButtonEmphasis = .tinted,
         labelPlacement: KozmosMapControlButtonLabelPlacement = .inline,
+        revealOnChange: Bool = false,
+        revealDuration: TimeInterval = 2.5,
+        revealDelay: TimeInterval = 0,
         pressed: Bool = false,
         isDisabled: Bool = false,
+        isLoading: Bool = false,
         action: @escaping () -> Void
     ) {
         self.init(
@@ -242,8 +327,12 @@ public extension KozmosMapControlButton where Icon == Image {
             presentation: presentation,
             emphasis: emphasis,
             labelPlacement: labelPlacement,
+            revealOnChange: revealOnChange,
+            revealDuration: revealDuration,
+            revealDelay: revealDelay,
             pressed: pressed,
             isDisabled: isDisabled,
+            isLoading: isLoading,
             action: action
         ) {
             Image(systemName: systemImage)

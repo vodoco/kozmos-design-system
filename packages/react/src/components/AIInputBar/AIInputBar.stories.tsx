@@ -13,6 +13,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  // The render holds its own state; the args only satisfy the required props,
+  // which `StoryObj<typeof meta>` asks every story to state.
+  args: { onSubmit: fn(), onValueChange: fn(), value: "" },
   render: () => {
     const Demo = () => {
       const [value, setValue] = useState("");
@@ -29,4 +32,14 @@ export const Default: Story = {
 /** Send stays disabled until there is something to ask. */
 export const Empty: Story = {
   args: { onSubmit: fn(), onValueChange: fn(), value: "" },
+};
+
+/** Offline (Story 3 AC1): the field says so, not only the send button. */
+export const Disabled: Story = {
+  args: { disabled: true, onSubmit: fn(), onValueChange: fn(), value: "" },
+  render: (args) => (
+    <div className="w-80 rounded-container border border-border">
+      <AIInputBar {...args} />
+    </div>
+  ),
 };
