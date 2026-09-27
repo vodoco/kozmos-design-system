@@ -156,14 +156,13 @@ export default function States() {
                 {/* One skeleton per expected row: the shape of a result card. */}
                 {[0, 1, 2].map((row) => (
                   <Box key={row} className="ex-states-row">
-                    {/* Skeleton keeps its own corners (GAPS.md, GAP-04): a
-                        round Box clips it into a disc. */}
-                    <Box className="ex-states-disc">
-                      <Skeleton className="ex-states-fill" />
-                    </Box>
+                    <Skeleton
+                      shape="circle"
+                      width="calc(var(--primitives-layout-sizing-600) * 1px)"
+                    />
                     <Stack gap={2}>
-                      <Skeleton className="ex-states-line" />
-                      <Skeleton className="ex-states-line ex-states-line-short" />
+                      <Skeleton shape="line" />
+                      <Skeleton shape="line" width="55%" />
                     </Stack>
                   </Box>
                 ))}

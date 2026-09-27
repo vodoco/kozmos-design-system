@@ -1893,38 +1893,11 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   block-size: 12rem;
 }
 
-/* Shapes for the skeleton demo, and a row tall enough for a vertical rule.
-   Skeleton's corners are its own (a scoped utility, GAP-04): a disc is a
-   round box that clips it, and the lines and the block keep Kozmos's
-   rounding. */
-.site-skeleton-disc {
-  inline-size: calc(var(--primitives-layout-sizing-600) * 1px);
-  block-size: calc(var(--primitives-layout-sizing-600) * 1px);
-  border-radius: var(--site-radius-pill);
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.site-skeleton-fill {
-  block-size: 100%;
-}
-
+/* The lines' column in the skeleton demo. Their shape and size are
+   Skeleton's own since it took a `shape` and a size; all that is left for
+   the site is how much of the row the column may have. */
 .site-skeleton-lines {
   flex: 1;
-}
-
-.site-skeleton-line {
-  block-size: calc(var(--primitives-layout-sizing-200) * 1px);
-  inline-size: 100%;
-}
-
-.site-skeleton-line-short {
-  inline-size: 60%;
-}
-
-.site-skeleton-block {
-  block-size: calc(var(--primitives-layout-sizing-800) * 2px);
-  inline-size: 100%;
 }
 
 .site-demo-scroll-row {

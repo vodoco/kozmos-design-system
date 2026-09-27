@@ -22,7 +22,7 @@ export const demos: DemoModule["demos"] = [
   {
     title: "Four sizes",
     description:
-      "An indeterminate wait. Give it a label. It keeps turning under the reduced-motion preference.",
+      "An indeterminate wait. Give it a label. It rests under the reduced-motion preference, and under the design config’s motion: reduced.",
     Component: Sizes,
   },
 ];

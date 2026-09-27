@@ -2146,7 +2146,42 @@ test.describe("design-system gaps, measured", () => {
     expect(formatRatio(contrastRatio(foreground, ground))).toBe("4.20:1");
   });
 
-  test("GAP-37: SearchBar keeps the browser's own clear button", async ({
+  test("GAP-50 is fixed: the spinner and the skeleton rest under reduced motion", async ({
+    page,
+  }) => {
+    // Both states, so a pass cannot come from an animation that was never
+    // there: with no preference each must move, with the preference each
+    // must stop. The design config's `motion: reduced` is the same rule
+    // under [data-kozmos-motion=reduced].
+    const moving = async (path: string, selector: string) => {
+      await page.goto(path);
+      await hydrated(page);
+      return page
+        .locator(selector)
+        .first()
+        .evaluate((element) => {
+          const style = getComputedStyle(element);
+          return style.animationName !== "none" && style.animationName !== "";
+        });
+    };
+    for (const [path, selector] of [
+      ["/components/skeleton", ".kozmos-skeleton"],
+      ["/components/spinner", ".kozmos-spinner-arc"],
+    ] as const) {
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      expect(
+        await moving(path, selector),
+        `${selector} with no preference`,
+      ).toBe(true);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      expect(await moving(path, selector), `${selector} under reduce`).toBe(
+        false,
+      );
+    }
+    await page.emulateMedia({ reducedMotion: null });
+  });
+
+  test("GAP-37 is fixed: SearchBar hides the browser's own clear button", async ({
     page,
     browserName,
   }) => {
@@ -2158,12 +2193,48 @@ test.describe("design-system gaps, measured", () => {
     await hydrated(page);
     const field = page.locator(".site-demos").getByRole("searchbox").first();
     await field.fill("bookshop");
-    // Hidden either way a stylesheet can hide it: display or appearance.
-    const drawn = await field.evaluate((input) => {
-      const style = getComputedStyle(input, "::-webkit-search-cancel-button");
-      return style.display !== "none" && style.appearance !== "none";
+    // Read in the stylesheet, not off the element. getComputedStyle on a
+    // -webkit- shadow pseudo-element answers with the host's own values —
+    // measured on 2026-09-27, display, appearance and width all came back
+    // as the input's 348px box — so the version of this test that read the
+    // pseudo-element could only ever say "drawn", and said it for five days
+    // after Kozmos hid the button. The promise is made in owned CSS; that
+    // is where it is read.
+    const hidden = await field.evaluate((input) => {
+      const rules: CSSStyleRule[] = [];
+      const walk = (list: CSSRuleList) => {
+        for (const rule of Array.from(list)) {
+          if (
+            rule instanceof CSSStyleRule &&
+            rule.selectorText.includes("::-webkit-search-cancel-button")
+          ) {
+            rules.push(rule);
+          } else if ("cssRules" in rule) {
+            walk((rule as CSSGroupingRule).cssRules);
+          }
+        }
+      };
+      for (const sheet of Array.from(document.styleSheets)) {
+        try {
+          walk(sheet.cssRules);
+        } catch {
+          // A sheet from another origin cannot be read; the site has none.
+        }
+      }
+      return rules.some(
+        (rule) =>
+          rule.selectorText
+            .split(",")
+            .some((selector) =>
+              input.matches(
+                selector.trim().replace("::-webkit-search-cancel-button", ""),
+              ),
+            ) &&
+          (rule.style.getPropertyValue("appearance") === "none" ||
+            rule.style.getPropertyValue("display") === "none"),
+      );
     });
-    expect(drawn).toBe(true);
+    expect(hidden).toBe(true);
   });
 });
 

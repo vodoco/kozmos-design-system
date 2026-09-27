@@ -102,7 +102,7 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 | P1       | GAP-09                         | Button (as a link)                                       | `buttonVariants` on an anchor keeps its underline.                                               |
 | P1       | GAP-03                         | ThemeProvider                                            | A dark-mode visitor sees a white page until the scripts run (1.9 s on fast 3G, 4× CPU).          |
 | P1       | GAP-41                         | Navbar                                                   | No narrow-screen pattern; two rows at 320px whatever the content.                                |
-| P1       | GAP-37, GAP-20                 | SearchBar                                                | Two clear buttons; unstyled in WebKit.                                                           |
+| P1       | GAP-20, GAP-37 (fixed)         | SearchBar                                                | Unstyled in WebKit; the browser's second clear is hidden now.                                    |
 | P1       | GAP-42                         | CardTitle                                                | Line height 1.0: wrapped titles touch.                                                           |
 | P1       | GAP-43                         | Slider, Tabs, Rating, SearchBar, Chip, ToggleButton      | Targets under 44 px; the slider thumb is 20 × 20.                                                |
 | P1       | GAP-39                         | RouteSummary                                             | Its title is always an `h2`.                                                                     |
@@ -114,7 +114,7 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 | P2       | GAP-17, 28, 30, 32             | AdaptiveMapShell, SearchBar, Sidebar, ChipGroup          | Landmarks and groups that cannot be named or placed.                                             |
 | P2       | GAP-53                         | AdaptiveMapShell, MapView                                | No edge-to-edge form: on a phone's rounded screen the sheet's bordered corners are cut.          |
 | P2       | GAP-46, 47, 48                 | Stepper, Sidebar, Tree                                   | No narrow form: they overflow or lose content on a phone.                                        |
-| P2       | GAP-50, 51                     | Spinner, Skeleton, Button; announcements                 | Motion that ignores the preference; no polite live region.                                       |
+| P2       | GAP-50 (fixed), 51             | Spinner, Skeleton, Button; announcements                 | Motion rests under the preference now; no polite live region.                                    |
 | P2       | GAP-49                         | SearchBar                                                | A caller's `onKeyDown` silently drops the component's analytics.                                 |
 | P2       | GAP-44 and the rest            | see the table below                                      | API and structure.                                                                               |
 | P3       | GAP-05, 06, 07, 08, 10, 15, 33 | new parts, icons, tokens                                 | Additions.                                                                                       |
@@ -385,16 +385,15 @@ border-primary-foreground/20`.
   passing links as `navigation` and tools as `utilities`
   (`src/site/SiteHeader.tsx` explains the current arrangement).
 
-### GAP-37 and GAP-20 · SearchBar
+### GAP-20 and GAP-37 · SearchBar
 
 - **Where:** `SearchBar/SearchBar.tsx:43`, `type = "search"` by default,
   passed to the input at `:68`.
-- **GAP-37:** the browser's own cancel button shows beside Kozmos's 44 px
-  clear. Hide `::-webkit-search-cancel-button` (and
-  `::-webkit-search-decoration`) in the field's owned CSS, with
-  `appearance: none` or `display: none`. **Proof:** "GAP-37: SearchBar keeps
-  the browser's own clear button" fails (Chromium; it reads both
-  properties); flip it to expect the button hidden.
+- **GAP-37 is fixed** (2026-09-27, `d89e405`): one owned rule gives
+  `::-webkit-search-cancel-button` and `::-webkit-search-decoration`
+  `appearance: none` on `.kozmos-input` and `.kozmos-search-input`. The
+  site's test now reads that rule out of the stylesheet, because reading the
+  pseudo-element answers with the host's values and so could never fail.
 - **GAP-20:** WebKit (Safari, iOS) does not apply the `@scope`d utilities to
   the input, so the field is drawn unstyled. Move its styling to owned CSS,
   as `Input` did. **Proof:** the `test.fail` in "the search field is drawn
@@ -469,7 +468,7 @@ border-primary-foreground/20`.
 | GAP-47 Sidebar has no narrow-screen form     | `Sidebar/Sidebar.tsx:44–46`                                                                | Turn into a rail or a drawer by its container's width.                                                                                                                        | The dashboard's drawer and `.ex-dash-aside` wrapper can go.                                                                  |
 | GAP-48 Tree row meta never shrinks           | `Tree/Tree.tsx:532–541`                                                                    | Let the meta shrink and truncate before the name; a `<div>` for the slot.                                                                                                     | Saved places' `.ex-saved-note` rule can go.                                                                                  |
 | GAP-49 SearchBar analytics lost              | `SearchBar/SearchBar.tsx:70–77`                                                            | Spread the props first and compose `onKeyDown`, as `onChange` is.                                                                                                             | — (the site has no analytics provider).                                                                                      |
-| GAP-50 motion ignores reduced motion         | `Spinner/Spinner.tsx:25`, `Skeleton/Skeleton.tsx:10`, the Button's `.kozmos-button-loader` | `motion-reduce:` variants; let `motion: reduced` reach them.                                                                                                                  | The motion page, the Spinner demo and the Button demo say so; change their words.                                            |
+| GAP-50 motion ignores reduced motion         | `Spinner/Spinner.tsx:25`, `Skeleton/Skeleton.tsx:10`, the Button's `.kozmos-button-loader` | Done: one owned rule rests the spinner, the skeleton and the assistant's ring under the preference and under `motion: reduced`.                                               | The motion page, the Spinner demo and the Button demo say so; change their words.                                            |
 | GAP-51 no polite announcer                   | `NavigationAnnouncer/NavigationAnnouncer.tsx:39–46` (assertive only)                       | A polite announcer, or an `Alert` whose `live` prop keeps its region mounted.                                                                                                 | The examples' persistent status regions (`.ex-*-live`) can go.                                                               |
 | GAP-26 Text cannot inherit colour            | `Text/Text.tsx:46`                                                                         | `color="inherit"`, or no colour class unless asked.                                                                                                                           | The DynamicIsland demo can use `Text`.                                                                                       |
 | GAP-27 useTheme has no direction             | `ThemeProvider/ThemeProvider.tsx:140`                                                      | Return `dir`.                                                                                                                                                                 | —                                                                                                                            |

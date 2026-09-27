@@ -37,15 +37,16 @@ export default function Motion() {
         <Alert variant="info" role="note">
           <AlertDescription>
             Under the system’s reduced-motion preference the location marker’s
-            pulse stops, and the sheet, pops, reveals and cross-fades become
-            cuts. The spinner, the skeleton’s pulse and the button’s loader keep
-            moving. The design config’s{" "}
+            pulse stops, the sheet, pops, reveals and cross-fades become cuts,
+            and the spinner, the skeleton’s pulse, the button’s loader and the
+            assistant’s ring rest too (GAP-50, fixed on 2026-09-27). The design
+            config’s{" "}
             <Text as="span" className="site-mono">
               motion: reduced
             </Text>{" "}
-            and the duration scale token shorten the Tailwind transitions most
-            components use, not those animations. This page’s race still runs
-            under reduced motion, because it is the thing being demonstrated.
+            reaches the same four, and shortens the Tailwind transitions most
+            components use. This page’s race still runs under reduced motion,
+            because it is the thing being demonstrated.
           </AlertDescription>
         </Alert>
       </Section>

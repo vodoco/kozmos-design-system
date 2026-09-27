@@ -62,7 +62,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-34 | `Backdrop` pins itself to the viewport                           | Core                   | composed     |
 | GAP-35 | `BrowseCategoriesPanel` is four columns at any width             | Product / SDK          | composed     |
 | GAP-36 | `ToastViewport` pins itself to the viewport                      | Core                   | composed     |
-| GAP-37 | `SearchBar` shows the browser's clear button beside its own      | Product / SDK          | left visible |
+| GAP-37 | `SearchBar` shows the browser's clear button beside its own      | Product / SDK          | fixed        |
 | GAP-38 | The map sheet's handle is 4px tall and its grip invisible        | Product / SDK          | fixed        |
 | GAP-39 | `RouteSummary`'s title is always an `h2`                         | Product / SDK          | left visible |
 | GAP-40 | Map overlays draw over the sticky `Navbar`                       | Product / SDK          | composed     |
@@ -75,7 +75,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-47 | `Sidebar` has no narrow-screen form                              | Core                   | composed     |
 | GAP-48 | A `Tree` row's meta never shrinks                                | Core                   | composed     |
 | GAP-49 | `SearchBar` drops its analytics when a caller handles keys       | Product / SDK          | open         |
-| GAP-50 | Spinner, Skeleton and the loading Button ignore reduced motion   | Core                   | left visible |
+| GAP-50 | Spinner, Skeleton and the loading Button ignore reduced motion   | Core                   | fixed        |
 | GAP-51 | No polite announcer                                              | Core                   | composed     |
 | GAP-52 | The provider's preflight zeroes a caller's border                | Core                   | composed     |
 | GAP-53 | A map shell cannot fill a rounded screen                         | Product / SDK          | left visible |
@@ -194,11 +194,15 @@ keep the table's four columns and its statuses as they are.
   accept overrides.
 - **Now:** the site's card grids are a `Box` laid out in `site.css`, with
   auto-fit or auto-fill columns of a minimum width. The same rule met the site
-  elsewhere, each time answered with a wrapper `Box`: `Skeleton`'s corners
-  (a disc is a round box that clips it), `Sidebar`'s display (the dashboard
-  hides a wrapper), `ListItem`'s flex row (the layout page's scales sit in a
-  box inside it), `Stack`'s display and a vertical `ScrollArea`'s height
-  (its parent bounds it). `DialogContent`'s gap is left as Kozmos sets it.
+  elsewhere, each time answered with a wrapper `Box`: `Sidebar`'s display
+  (the dashboard hides a wrapper), `ListItem`'s flex row (the layout page's
+  scales sit in a box inside it), `Stack`'s display and a vertical
+  `ScrollArea`'s height (its parent bounds it). `Skeleton` was one of them
+  until it took a `shape` and a size of its own (2026-09-27): the disc that
+  was a round `Box` clipping a square is now `shape="circle"`, and the site's
+  six sizing rules went with it — which is what the check below is for, since
+  a rule the component has taken over fails rather than quietly doing
+  nothing. `DialogContent`'s gap is left as Kozmos sets it.
   Every page's tests now check that each site rule applies
   (`overriddenSiteCss` in `tests/site.spec.ts`): each is added again with an
   ID's more weight, and whatever that changes was losing. A rule Kozmos
@@ -676,12 +680,21 @@ keep the table's four columns and its statuses as they are.
   it — the browser's small cross inside the field, in the accent colour, and
   Kozmos's own 44px clear button after it. Measured on the site's search
   and the components index on 2026-09-22.
-- **Now:** left as Kozmos draws it, on every search field on the site.
+- **Fixed** in the design system on 2026-09-27 (`d89e405`): one owned rule
+  gives `::-webkit-search-cancel-button` and `::-webkit-search-decoration`
+  `appearance: none` on both `.kozmos-input` and `.kozmos-search-input`, so
+  it reaches WebKit too (GAP-20). It was not only cosmetic: the browser's
+  cross empties the field through the browser rather than through `onClear`,
+  so the DOM emptied and the product's state did not.
+- **Was:** left as Kozmos drew it, on every search field on the site.
 - **Lane:** Product / SDK.
-- **Fix in Kozmos:** hide `::-webkit-search-cancel-button` in the field's own
-  CSS — `appearance: none` or `display: none` — as an owned rule, not a
-  scoped utility, so it reaches WebKit too (GAP-20). The site's test reads
-  both properties, so either fix flips it.
+- **The test that missed it:** the first version read
+  `getComputedStyle(field, "::-webkit-search-cancel-button")`, which answers
+  with the host element's own values — measured, `display`, `appearance` and
+  `width` all came back as the input's 348px box — so it could only ever say
+  "drawn", and did for five days after the fix landed. It now reads the
+  promise where it is made, in the stylesheet, and fails when that rule is
+  taken out of the document.
 
 ## GAP-38 · The map sheet's handle is 4px tall and its grip invisible
 
@@ -781,6 +794,10 @@ keep the table's four columns and its statuses as they are.
 - **Now:** left visible. The test reads what a touch 20px from the thumb's
   centre lands on (the track, today), so a hit area made of padding or of a
   pseudo-element flips it alike.
+- **Partly done:** on 2026-09-27 the `Chip`'s remove mark and the `Notice`'s
+  "More" each got a 44px target from an owned `::after`. Neither is one of
+  the controls measured above, so this stays open — but it is the shape of
+  the fix the rest want.
 - **Lane:** Core.
 - **Fix in Kozmos:** a 44px hit area around each (padding or a
   pseudo-element), keeping the drawn size; the input filling its bar.
@@ -881,11 +898,19 @@ keep the table's four columns and its statuses as they are.
   (`animate-pulse`) and the `Button`'s loader keep moving, and the design
   config's `motion: reduced` only scales the Tailwind durations, which these
   animations do not read.
-- **Now:** left visible; the motion page, the Spinner demo and the Button
-  demo say so.
+- **Fixed** in the design system on 2026-09-27: one owned rule rests
+  `.kozmos-spinner-arc`, `.kozmos-skeleton` and `.kozmos-ai-search-ring`
+  under `@media (prefers-reduced-motion: reduce)` and again under
+  `[data-kozmos-motion=reduced]`, so the design config's `motion: reduced`
+  reaches them too. The `Button`'s loader is a `SpinnerArc` and carries the
+  same class, so it rests with them.
+- **Was:** left visible; the motion page and the Spinner demo said so, and
+  both now say it rests.
 - **Lane:** Core (accessibility).
-- **Fix in Kozmos:** `motion-reduce:` variants on the three (a slower spin
-  or a still state), and let `motion: reduced` reach them.
+- **Evidence:** "GAP-50 is fixed: the spinner and the skeleton rest under
+  reduced motion" reads each animation with the preference and without it,
+  so it cannot pass on an animation that was never there. There was no test
+  before, which is why the fix went unnoticed for a day.
 
 ## GAP-51 · No polite announcer
 
