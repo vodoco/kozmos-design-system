@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, OTPInput, Text } from "@kozmos/react";
+import { Box, OTPInput, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function SixDigits() {

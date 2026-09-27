@@ -6,7 +6,7 @@ import {
   TimelineDescription,
   TimelineItem,
   TimelineTitle,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { ciGates } from "../lib/ci-gates";
 
 /** The pull-request pipeline in full, as a Timeline: what each check does. */

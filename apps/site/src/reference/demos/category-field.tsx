@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, CategoryField, Icon, SearchBar } from "@kozmos/react";
+import { Box, Button, CategoryField, Icon, SearchBar } from "@kozmos-ds/react";
 import { tint } from "../sample-data";
 import type { DemoModule } from "../types";
 

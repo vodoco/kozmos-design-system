@@ -6,7 +6,7 @@ import {
   List,
   ListItem,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { Pipeline } from "../home/Pipeline";
 import { PACKAGES_PUBLISHED, PUBLIC_PACKAGES, pageTitle } from "../lib/site";
 import { CodeBlock } from "../site/CodeBlock";
@@ -31,7 +31,7 @@ export function meta() {
 }
 
 const repositorySteps = `pnpm install
-pnpm --filter "@kozmos/react..." build`;
+pnpm --filter "@kozmos-ds/react..." build`;
 
 /**
  * A static note. Alert is always role="alert" and its title is always an h5
@@ -74,7 +74,7 @@ export default function GetStarted() {
       >
         <CodeBlock
           label="Install command"
-          code="npm install @kozmos/react react react-dom"
+          code="npm install @kozmos-ds/react react react-dom"
         />
         <List aria-label="The public packages">
           {PUBLIC_PACKAGES.map((pkg) => (

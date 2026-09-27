@@ -1,4 +1,4 @@
-import { ScrollArea, Separator, Stack, Surface, Text } from "@kozmos/react";
+import { ScrollArea, Separator, Stack, Surface, Text } from "@kozmos-ds/react";
 import { CopyButton } from "./CopyButton";
 
 /**

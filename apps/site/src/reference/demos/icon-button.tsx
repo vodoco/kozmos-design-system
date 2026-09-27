@@ -1,4 +1,4 @@
-import { Box, Icon, IconButton } from "@kozmos/react";
+import { Box, Icon, IconButton } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Variants() {

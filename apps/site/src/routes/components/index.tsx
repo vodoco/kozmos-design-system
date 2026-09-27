@@ -14,7 +14,7 @@ import {
   Stack,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { pageTitle } from "../../lib/site";
 import { componentIndex, laneOrder, laneTitle } from "../../reference/nav";
 import { hasDemos, lazyDemos } from "../../reference/registry";

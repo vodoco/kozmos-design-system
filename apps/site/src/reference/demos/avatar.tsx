@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, Box, Stack, Text } from "@kozmos/react";
+import { Avatar, AvatarFallback, Box, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const people = [

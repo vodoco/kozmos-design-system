@@ -13,7 +13,7 @@ import {
   Link,
   NavigationItem,
   type LinkProps,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 /**
  * Client-side navigation for Kozmos's own anchors.

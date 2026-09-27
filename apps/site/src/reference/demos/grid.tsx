@@ -1,4 +1,4 @@
-import { Grid, Surface, Text } from "@kozmos/react";
+import { Grid, Surface, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Cell({ children }: { children: string }) {

@@ -10,7 +10,7 @@ import {
   ThemeProvider,
   ToggleButton,
   type IconProps,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { LOGO_TEXT, PACKAGES_PUBLISHED } from "../lib/site";
 import { ButtonLink } from "../site/links";
 

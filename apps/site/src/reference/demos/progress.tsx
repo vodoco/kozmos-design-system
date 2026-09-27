@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Progress, Stack, Text } from "@kozmos/react";
+import { Box, Button, Progress, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Determinate() {

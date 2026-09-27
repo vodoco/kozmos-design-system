@@ -8,7 +8,7 @@ import {
   Stack,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { examples, exampleKindLabel } from "../examples/manifest";
 import { exampleComponents } from "../examples/registry";
 import { Cosmos } from "../home/Cosmos";
@@ -45,8 +45,8 @@ const platforms = [
     technology: "React 18.2 and later, and 19",
     status: PACKAGES_PUBLISHED ? "On npm" : "npm soon",
     description: PACKAGES_PUBLISHED
-      ? "@kozmos/react, with its tokens, icons and contracts."
-      : "@kozmos/react is packaged for npm and not yet published: release waits on an approved browser support matrix. Apps inside the repository use it today.",
+      ? "@kozmos-ds/react, with its tokens, icons and contracts."
+      : "@kozmos-ds/react is packaged for npm and not yet published: release waits on an approved browser support matrix. Apps inside the repository use it today.",
   },
   {
     title: "iOS",

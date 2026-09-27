@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Chip, ChipGroup, Icon } from "@kozmos/react";
+import { Box, Chip, ChipGroup, Icon } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const filters = ["Open now", "Step-free", "Food and drink", "Shops"];

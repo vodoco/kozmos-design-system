@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Box } from "@kozmos/react";
+import { Box } from "@kozmos-ds/react";
 
 /**
  * Reveals its content when it scrolls into view, with the motion tokens

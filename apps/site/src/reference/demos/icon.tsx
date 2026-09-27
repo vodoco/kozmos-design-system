@@ -1,4 +1,4 @@
-import { Box, Icon, Stack, Text } from "@kozmos/react";
+import { Box, Icon, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const sizes = ["xs", "sm", "md", "lg", "xl"] as const;

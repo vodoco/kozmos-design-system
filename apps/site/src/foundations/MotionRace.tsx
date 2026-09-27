@@ -6,7 +6,7 @@ import {
   SegmentedControl,
   Stack,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 const durations = ["quick", "standard", "deliberate"] as const;
 const easings = [

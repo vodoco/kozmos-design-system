@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AISearchButton, Box, SearchBar, Text } from "@kozmos/react";
+import { AISearchButton, Box, SearchBar, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Alone() {

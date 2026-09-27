@@ -22,7 +22,7 @@ import {
   Stepper,
   Switch,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 
 const steps = ["Welcome", "Preferences", "Interests", "Location", "Ready"];

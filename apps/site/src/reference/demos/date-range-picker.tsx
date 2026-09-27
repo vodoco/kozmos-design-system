@@ -1,4 +1,4 @@
-import { Box, DateRangePicker } from "@kozmos/react";
+import { Box, DateRangePicker } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function ARange() {

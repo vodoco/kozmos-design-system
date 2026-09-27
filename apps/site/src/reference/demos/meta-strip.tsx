@@ -1,4 +1,4 @@
-import { Box, Icon, MetaStrip, MetaStripItem } from "@kozmos/react";
+import { Box, Icon, MetaStrip, MetaStripItem } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Facts() {

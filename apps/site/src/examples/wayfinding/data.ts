@@ -4,8 +4,8 @@
  * place is on another floor, a turn, and the arrival. A product gets these
  * from a routing service; the shapes are the SDK's.
  */
-import type { DirectionType } from "@kozmos/react";
-import type { RouteOptionPresentation } from "@kozmos/product-contracts";
+import type { DirectionType } from "@kozmos-ds/react";
+import type { RouteOptionPresentation } from "@kozmos-ds/product-contracts";
 import { floorLabel, floors, places, type Place } from "../venue-explorer/data";
 
 export { floorLabel, floors, places, type Place };
@@ -49,7 +49,9 @@ function floorIndex(id: string) {
 /** The steps from the entrance to a place, by the quickest way or step-free. */
 export function stepsTo(place: Place, preference: Preference): RouteStep[] {
   const ground = floors[floors.length - 1].id;
-  const target = place.poi.floorId;
+  // A place without a floor is on the level the route starts from: this
+  // venue has levels, so the contracts' optional floor means "no change".
+  const target = place.poi.floorId ?? ground;
   const levels = floorIndex(target) - floorIndex(ground);
   const steps: RouteStep[] = [
     {

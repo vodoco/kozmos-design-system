@@ -5,7 +5,7 @@ import {
   ManoeuvreCard,
   MapOverlay,
   MapView,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { itinerary } from "../sample-data";
 import type { DemoModule } from "../types";
 

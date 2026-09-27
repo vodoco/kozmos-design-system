@@ -1,4 +1,4 @@
-import { Box, PasswordInput } from "@kozmos/react";
+import { Box, PasswordInput } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function WithToggle() {

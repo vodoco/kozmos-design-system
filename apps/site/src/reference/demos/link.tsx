@@ -1,4 +1,4 @@
-import { Link, Stack, Text } from "@kozmos/react";
+import { Link, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function InText() {

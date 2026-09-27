@@ -16,12 +16,12 @@ import {
   SegmentedControl,
   Text,
   type POIActionState,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 import type {
   CategoryPresentation,
   POIAction,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import {
   categories,
   categoryFor,
@@ -106,7 +106,8 @@ export default function PhoneSearch() {
     const place = places.find((entry) => entry.poi.id === poiId);
     if (!place) return;
     setSelectedId(poiId);
-    setFloorId(place.poi.floorId);
+    // A place need not be on a floor (contracts: no levels, no floor).
+    if (place.poi.floorId) setFloorId(place.poi.floorId);
     setNotice(undefined);
     // A place's details deserve the room: the sheet opens to half at least.
     if (detent === "collapsed") setDetent("medium");

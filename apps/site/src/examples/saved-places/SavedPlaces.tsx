@@ -24,7 +24,7 @@ import {
   Textarea,
   Tree,
   type TreeItem,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 
 interface Saved {

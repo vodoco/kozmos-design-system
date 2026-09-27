@@ -15,13 +15,13 @@ import {
   SearchBar,
   UserLocationMarker,
   type POIActionState,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 import type {
   CategoryPresentation,
   POIAction,
   UserLocationState,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import {
   categories,
   categoryFor,
@@ -113,7 +113,8 @@ export default function VenueExplorer() {
     const place = places.find((entry) => entry.poi.id === poiId);
     if (!place) return;
     setSelectedId(poiId);
-    setFloorId(place.poi.floorId);
+    // A place need not be on a floor (contracts: no levels, no floor).
+    if (place.poi.floorId) setFloorId(place.poi.floorId);
     setNotice(undefined);
   }
 

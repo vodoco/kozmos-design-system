@@ -16,8 +16,8 @@ import {
   TableRow,
   Text,
   type IconProps,
-} from "@kozmos/react";
-import { kozmosIconAliases, kozmosIconDefinitions } from "@kozmos/icons";
+} from "@kozmos-ds/react";
+import { kozmosIconAliases, kozmosIconDefinitions } from "@kozmos-ds/icons";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
 import { foundationPage } from "../../foundations/nav";
 import { Section } from "../../site/Section";

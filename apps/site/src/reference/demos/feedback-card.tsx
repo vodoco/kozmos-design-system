@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, FeedbackCard, Text } from "@kozmos/react";
+import { Box, FeedbackCard, Text } from "@kozmos-ds/react";
 import { GlassBackdrop } from "../GlassBackdrop";
 import type { DemoModule } from "../types";
 

@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { ramp, shortName, type TokenEntry } from "../lib/tokens";
 import { CopyButton } from "../site/CopyButton";
 

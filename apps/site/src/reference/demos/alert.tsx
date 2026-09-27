@@ -1,4 +1,10 @@
-import { Alert, AlertDescription, AlertTitle, Box, Icon } from "@kozmos/react";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Box,
+  Icon,
+} from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const variants = [

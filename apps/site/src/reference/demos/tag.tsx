@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Tag } from "@kozmos/react";
+import { Box, Tag } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const emotions = [

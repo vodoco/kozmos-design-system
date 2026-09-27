@@ -60,7 +60,7 @@ import {
   TableRow,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 import {
   cities,

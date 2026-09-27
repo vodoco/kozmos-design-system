@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AnalyticsProvider } from "@kozmos/react";
+import { AnalyticsProvider } from "@kozmos-ds/react";
 
 declare function send(events: readonly unknown[]): void;
 

@@ -9,8 +9,8 @@ import type {
   POIPresentation,
   POIResultPresentation,
   RouteOptionPresentation,
-} from "@kozmos/product-contracts";
-import type { CategoryTint } from "@kozmos/react";
+} from "@kozmos-ds/product-contracts";
+import type { CategoryTint } from "@kozmos-ds/react";
 
 export function tint(name: string): CategoryTint {
   return {

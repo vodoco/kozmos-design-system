@@ -1,4 +1,4 @@
-import { Container, Surface, Text } from "@kozmos/react";
+import { Container, Surface, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Centred() {

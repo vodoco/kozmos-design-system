@@ -5,7 +5,7 @@ import {
   TimelineItem,
   TimelineTime,
   TimelineTitle,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const events = [

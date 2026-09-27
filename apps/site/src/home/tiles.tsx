@@ -19,7 +19,7 @@ import {
   Tag,
   Text,
   ThemeProvider,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import button from "../generated/components/button.json";
 import contract from "../generated/contrast-contract.json";
 import { contrastRatio, formatRatio, parseColour } from "../lib/contrast";

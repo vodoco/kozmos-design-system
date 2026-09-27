@@ -1,4 +1,4 @@
-import { Box, Search } from "@kozmos/react";
+import { Box, Search } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Field() {

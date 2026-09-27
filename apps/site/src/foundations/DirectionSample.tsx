@@ -15,7 +15,7 @@ import {
   Surface,
   Switch,
   ThemeProvider,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 /** The same parts under a left-to-right and a right-to-left provider. */
 export function DirectionSample() {

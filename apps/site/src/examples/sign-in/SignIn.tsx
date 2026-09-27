@@ -16,7 +16,7 @@ import {
   PasswordInput,
   Stack,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 
 type Step = "credentials" | "code" | "done";

@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { useLocation } from "react-router";
-import { Box } from "@kozmos/react";
+import { Box } from "@kozmos-ds/react";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 

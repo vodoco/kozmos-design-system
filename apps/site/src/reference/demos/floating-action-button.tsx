@@ -1,4 +1,4 @@
-import { Box, FloatingActionButton, Icon, Text } from "@kozmos/react";
+import { Box, FloatingActionButton, Icon, Text } from "@kozmos-ds/react";
 import { Screen } from "../Screen";
 import type { DemoModule } from "../types";
 

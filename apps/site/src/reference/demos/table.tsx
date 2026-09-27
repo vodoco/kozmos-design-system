@@ -9,7 +9,7 @@ import {
   TableRow,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { tableRows } from "../sample-data";
 import type { DemoModule } from "../types";
 

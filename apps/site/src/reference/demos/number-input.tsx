@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, NumberInput, Text } from "@kozmos/react";
+import { Box, NumberInput, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Guests() {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Icon, NavigationItem, Stack } from "@kozmos/react";
+import { Box, Icon, NavigationItem, Stack } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const items = [

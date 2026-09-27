@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, MapOverlay, MapView, SearchBar, Text } from "@kozmos/react";
+import { Box, MapOverlay, MapView, SearchBar, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Inline() {

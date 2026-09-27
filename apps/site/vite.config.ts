@@ -3,7 +3,7 @@ import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
 
 /**
- * What @kozmos/react brings with it, pre-bundled when the dev server starts.
+ * What @kozmos-ds/react brings with it, pre-bundled when the dev server starts.
  * The package is linked from the workspace, so Vite only finds its imports
  * (the Radix primitives, framer-motion, lucide…) on the first request, then
  * optimises them and reloads the page mid-visit: for a few seconds the page
@@ -17,8 +17,8 @@ const kozmosReact = JSON.parse(
   ),
 ) as { dependencies?: Record<string, string> };
 const kozmosDependencies = Object.keys(kozmosReact.dependencies ?? {})
-  .filter((name) => !name.startsWith("@kozmos/"))
-  .map((name) => `@kozmos/react > ${name}`);
+  .filter((name) => !name.startsWith("@kozmos-ds/"))
+  .map((name) => `@kozmos-ds/react > ${name}`);
 
 /**
  * Where the site will be served from. Empty (the default) means the root,
@@ -32,7 +32,7 @@ export default defineConfig({
   base,
   plugins: [reactRouter()],
   resolve: {
-    // @kozmos/react is linked from the workspace and carries its own React for
+    // @kozmos-ds/react is linked from the workspace and carries its own React for
     // its tests; one React instance must serve both, or hooks throw.
     dedupe: ["react", "react-dom"],
   },

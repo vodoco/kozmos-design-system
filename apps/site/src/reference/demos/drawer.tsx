@@ -9,7 +9,7 @@ import {
   DrawerTrigger,
   NavigationItem,
   Stack,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const sides = ["left", "right", "top", "bottom"] as const;

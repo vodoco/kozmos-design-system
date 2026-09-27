@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import { Box, Skeleton } from "@kozmos/react";
+import { Box, Skeleton } from "@kozmos-ds/react";
 
 /**
  * The canvas an example is drawn on when shown small: wide enough for a

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Icon, Text, Tree, type TreeItem } from "@kozmos/react";
+import { Box, Icon, Text, Tree, type TreeItem } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const venue: TreeItem[] = [

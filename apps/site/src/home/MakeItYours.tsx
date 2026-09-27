@@ -23,7 +23,7 @@ import {
   Tag,
   Text,
   ThemeProvider,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { brandOverrides, brands, type Brand } from "../lib/brand";
 import { tokens } from "../lib/tokens";
 import { CodeBlock } from "../site/CodeBlock";

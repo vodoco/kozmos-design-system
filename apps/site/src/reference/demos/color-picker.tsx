@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, ColorPicker, Text } from "@kozmos/react";
+import { Box, ColorPicker, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Picker() {

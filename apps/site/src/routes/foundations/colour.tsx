@@ -14,7 +14,7 @@ import {
   TableRow,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
 import { Ramp, SwatchList, TokenTable } from "../../foundations/parts";
 import { foundationPage } from "../../foundations/nav";

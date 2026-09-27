@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Slider, Text } from "@kozmos/react";
+import { Box, Slider, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Radius() {

@@ -1,4 +1,4 @@
-import { Container, Separator, Stack, Text } from "@kozmos/react";
+import { Container, Separator, Stack, Text } from "@kozmos-ds/react";
 import { PACKAGES_PUBLISHED } from "../lib/site";
 import { SiteLink } from "./links";
 import { primaryNavigation } from "./SiteHeader";

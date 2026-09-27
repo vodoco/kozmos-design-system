@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, NavigationAnnouncer, Stack, Text } from "@kozmos/react";
+import { Button, NavigationAnnouncer, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const steps = [

@@ -20,7 +20,7 @@ import {
   Switch,
   Text,
   Textarea,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 
 type Stage = "quick" | "more" | "thanks";

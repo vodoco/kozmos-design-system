@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button, ThemeProvider, useTheme } from "@kozmos/react";
+import { Button, ThemeProvider, useTheme } from "@kozmos-ds/react";
 
 export function App({ children }: { children: ReactNode }) {
   // Follows the system until someone chooses; the choice is kept under a

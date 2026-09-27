@@ -25,7 +25,7 @@ test("raw elements that Kozmos has a component for are refused", () => {
 
 test("sectioning elements, pre and code, and components are allowed", () => {
   const findings = checkScript(
-    `import { Box } from "@kozmos/react";
+    `import { Box } from "@kozmos-ds/react";
      export const A = () => <main><section><pre><code>x</code></pre><Box /><Foo.Bar /></section></main>;`,
     "a.tsx",
   );
@@ -37,10 +37,10 @@ test("imports from other UI libraries are refused; the Kozmos packages pass", ()
     `import { X } from "lucide-react";
      import * as Dialog from "@radix-ui/react-dialog";
      import clsx from "clsx";
-     import { Button } from "@kozmos/react";
-     import { kozmosIconNames } from "@kozmos/icons";
-     import "@kozmos/react/style.css";
-     import light from "@kozmos/tokens/dist/css/variables-light.css?raw";
+     import { Button } from "@kozmos-ds/react";
+     import { kozmosIconNames } from "@kozmos-ds/icons";
+     import "@kozmos-ds/react/style.css";
+     import light from "@kozmos-ds/tokens/dist/css/variables-light.css?raw";
      import { Link } from "react-router";`,
     "a.tsx",
   );

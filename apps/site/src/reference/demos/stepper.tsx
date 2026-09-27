@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Button, Stack, Stepper } from "@kozmos/react";
+import { Box, Button, Stack, Stepper } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const steps = ["Details", "Floors", "Places", "Review"];

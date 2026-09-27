@@ -1,4 +1,4 @@
-import { Box, Stack, Surface, Text } from "@kozmos/react";
+import { Box, Stack, Surface, Text } from "@kozmos-ds/react";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
 import { GlassStage } from "../../foundations/GlassStage";
 import { SwatchList, TokenTable } from "../../foundations/parts";

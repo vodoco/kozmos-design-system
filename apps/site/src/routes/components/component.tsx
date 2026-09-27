@@ -26,7 +26,7 @@ import {
   TabsTrigger,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import type { Route } from "./+types/component";
 import { pageTitle } from "../../lib/site";
 import { loadComponentData } from "../../reference/data";

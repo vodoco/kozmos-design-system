@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Combobox, Text } from "@kozmos/react";
+import { Box, Combobox, Text } from "@kozmos-ds/react";
 import { comboboxOptions } from "../sample-data";
 import type { DemoModule } from "../types";
 

@@ -1,4 +1,4 @@
-import { Box, TimePicker } from "@kozmos/react";
+import { Box, TimePicker } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function ATime() {

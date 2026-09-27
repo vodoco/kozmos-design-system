@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, RouteOptionCard, Text } from "@kozmos/react";
+import { Box, RouteOptionCard, Text } from "@kozmos-ds/react";
 import { routeOptions } from "../sample-data";
 import type { DemoModule } from "../types";
 

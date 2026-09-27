@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Stack, Text } from "@kozmos/react";
+import { Button, Stack, Text } from "@kozmos-ds/react";
 
 type CopyStatus = "idle" | "copied" | "failed";
 

@@ -5,8 +5,8 @@
  * they cannot drift from what the components use.
  */
 // The package's documented exports, the same files root.tsx loads as CSS.
-import light from "@kozmos/tokens/css/light.css?raw";
-import dark from "@kozmos/tokens/css/dark.css?raw";
+import light from "@kozmos-ds/tokens/css/light.css?raw";
+import dark from "@kozmos-ds/tokens/css/dark.css?raw";
 import { mergeThemes, rampOf, type TokenEntry } from "./tokens-core";
 
 export type { TokenEntry } from "./tokens-core";

@@ -1,8 +1,8 @@
 /**
  * Put the built site in front of people, on Azure Storage's static website.
  *
- *   pnpm --filter @kozmos/site build
- *   pnpm --filter @kozmos/site deploy
+ *   pnpm --filter @kozmos-ds/site build
+ *   pnpm --filter @kozmos-ds/site deploy
  *
  * In order: check the build is there, check the account's static website is
  * on and pointed at index.html and 404.html, mirror `build/client` into

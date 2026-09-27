@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, POIResultCard, Text } from "@kozmos/react";
+import { Box, POIResultCard, Text } from "@kozmos-ds/react";
 import { results } from "../sample-data";
 import type { DemoModule } from "../types";
 

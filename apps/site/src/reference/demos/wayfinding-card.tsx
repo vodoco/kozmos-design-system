@@ -5,7 +5,7 @@ import {
   Text,
   WayfindingCard,
   WayfindingInputRow,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Directions() {

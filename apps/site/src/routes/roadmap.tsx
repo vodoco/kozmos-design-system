@@ -10,7 +10,7 @@ import {
   Tag,
   Text,
   type TagProps,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { examples } from "../examples/manifest";
 import roadmap from "../generated/roadmap.json";
 import { pageTitle } from "../lib/site";

@@ -21,7 +21,7 @@ import {
   Text,
   UserLocationMarker,
   type RoutePoint,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 import { categoryFor, tint, venueName } from "../venue-explorer/data";
 import {

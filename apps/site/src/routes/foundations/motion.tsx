@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, Text } from "@kozmos/react";
+import { Alert, AlertDescription, Text } from "@kozmos-ds/react";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
 import { MotionRace } from "../../foundations/MotionRace";
 import { TokenTable } from "../../foundations/parts";

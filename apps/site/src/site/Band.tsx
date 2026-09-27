@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Box, Separator } from "@kozmos/react";
+import { Box, Separator } from "@kozmos-ds/react";
 
 /**
  * One of the home page's full-width bands, plain or muted. A muted band is

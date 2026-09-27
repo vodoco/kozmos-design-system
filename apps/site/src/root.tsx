@@ -1,11 +1,11 @@
-import "@kozmos/react/style.css";
+import "@kozmos-ds/react/style.css";
 // The tokens' own stylesheet puts the same variables on :root and switches
 // them with <html data-theme>, which is how the page outside every
 // ThemeProvider — the canvas behind overscroll, the scrollbars — follows the
 // theme too. The package's README keeps this out of embedded modules; this
 // site is the whole document, so it is the host.
-import "@kozmos/tokens/css/light.css";
-import "@kozmos/tokens/css/dark.css";
+import "@kozmos-ds/tokens/css/light.css";
+import "@kozmos-ds/tokens/css/dark.css";
 import "./styles/site.css";
 
 import { useLayoutEffect, type ReactNode } from "react";
@@ -17,7 +17,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { Spinner, ThemeProvider, useTheme } from "@kozmos/react";
+import { Spinner, ThemeProvider, useTheme } from "@kozmos-ds/react";
 import type { Route } from "./+types/root";
 import { SiteShell } from "./site/SiteShell";
 import { StatusPage } from "./site/StatusPage";

@@ -13,7 +13,7 @@ import {
   SearchBar,
   Text,
   type ComboboxOption,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { examples } from "../examples/manifest";
 import { foundationPages } from "../foundations/nav";
 import { componentIndex, laneTitle } from "../reference/nav";

@@ -1,4 +1,4 @@
-import { Box, Counter, Stack, Text } from "@kozmos/react";
+import { Box, Counter, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const emotions = [

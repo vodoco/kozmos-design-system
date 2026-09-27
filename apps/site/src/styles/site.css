@@ -9,7 +9,7 @@
  * arranges them on the page. Typography appears only where a heading needs a
  * size the token scale has and the Heading component does not (GAPS.md,
  * GAP-21), and then only through the typography tokens.
- * `pnpm --filter @kozmos/site lint` enforces the rest
+ * `pnpm --filter @kozmos-ds/site lint` enforces the rest
  * (scripts/check-ds-only.mjs).
  */
 

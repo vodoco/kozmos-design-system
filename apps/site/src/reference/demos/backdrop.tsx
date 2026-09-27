@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Backdrop, Box, Button, Text } from "@kozmos/react";
+import { Backdrop, Box, Button, Text } from "@kozmos-ds/react";
 import { Screen } from "../Screen";
 import type { DemoModule } from "../types";
 

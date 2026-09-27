@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, RouteProgressRail, Slider } from "@kozmos/react";
+import { Box, RouteProgressRail, Slider } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function AlongTheRoute() {

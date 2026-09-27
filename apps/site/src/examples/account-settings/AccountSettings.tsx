@@ -36,7 +36,7 @@ import {
   TabsTrigger,
   Text,
   Textarea,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 const languages = [
   { value: "en-GB", label: "English (United Kingdom)" },

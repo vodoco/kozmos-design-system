@@ -1,4 +1,4 @@
-import { Box, Skeleton, Stack } from "@kozmos/react";
+import { Box, Skeleton, Stack } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function APlaceLoading() {

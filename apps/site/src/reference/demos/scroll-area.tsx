@@ -6,7 +6,7 @@ import {
   ScrollArea,
   Stack,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const quickAccess = [

@@ -80,9 +80,9 @@ To run the site against your packages:
 ```sh
 cd "/Volumes/4TB Depo/development/K/kozmos-design-system-site"
 pnpm install
-pnpm turbo run build --filter=@kozmos/site^...     # rebuild the Kozmos packages
-pnpm --filter @kozmos/site build
-pnpm --filter @kozmos/site test:e2e                 # Chromium, Firefox, WebKit
+pnpm turbo run build --filter=@kozmos-ds/site^...     # rebuild the Kozmos packages
+pnpm --filter @kozmos-ds/site build
+pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebKit
 ```
 
 ## At a glance
@@ -591,7 +591,7 @@ border-primary-foreground/20`.
 
 ## Also found, outside the components
 
-- **`@kozmos/react` develops against React 19 with `@types/react` 18**, so a
+- **`@kozmos-ds/react` develops against React 19 with `@types/react` 18**, so a
   React 19 app's `ReactNode` does not fit its props inside the workspace; the
   site maps the types to its own (its `tsconfig.json`). Move the package's
   dev types to 19.

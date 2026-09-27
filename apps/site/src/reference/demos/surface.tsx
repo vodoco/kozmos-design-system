@@ -1,4 +1,4 @@
-import { Box, Surface, Text } from "@kozmos/react";
+import { Box, Surface, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Solid() {

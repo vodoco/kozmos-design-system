@@ -1,6 +1,6 @@
 # What the site found Kozmos cannot do yet
 
-The site is built from `@kozmos/react` and its tokens only (see README.md,
+The site is built from `@kozmos-ds/react` and its tokens only (see README.md,
 "The one rule"). Where that was not enough, the gap is written here instead of
 being worked around, following the method in `docs/ds-handoff.md` §11: the
 component and the part, what was tried, the lane, and the evidence. Entries
@@ -104,7 +104,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-76 | Dates and times are the browser's controls                     | Core                   | left visible |
 | GAP-77 | No drag and drop: no handle, no dragging state, no target      | Core                   | open         |
 | GAP-78 | `Switch` cannot lead with its label                            | Core                   | open         |
-| GAP-79 | The icon set is 64 glyphs, 8 of them the taxonomy's            | Product / SDK          | open         |
+| GAP-79 | The Pointr icons ship, but cannot be asked for by name         | Product / SDK          | open         |
 | GAP-80 | No row actions: nothing shows on hover outside `Tree`          | Core                   | open         |
 | GAP-81 | 37 of 104 components carry placeholder documentation           | Core                   | left visible |
 | GAP-82 | A category pill's fill is 2.52:1 on its own field              | Product / SDK          | left visible |
@@ -131,7 +131,7 @@ keep the table's four columns and its statuses as they are.
 
 ## GAP-02 · `reset.css` ships raw Tailwind `theme()` calls
 
-- **What:** `@kozmos/react/reset.css`, the documented opt-in global reset, is
+- **What:** `@kozmos-ds/react/reset.css`, the documented opt-in global reset, is
   Tailwind's `preflight.css` copied verbatim by the `kozmos-opt-in-reset` plugin
   in `packages/react/vite.config.mts`. It still holds eight `theme(…)` calls —
   the base font family, font features and variations, the default border
@@ -1032,11 +1032,13 @@ Text"])`) and the Get started page shows — touches it.
   the component sets itself, which this site does not do (README, "Put layout
   classes on Box"), so the class goes on the text inside, where `white-space`
   is only inherited.
-- **Evidence:** "GAP-57: a Button's label cannot wrap" takes the site's class
-  off the icons page at 320px and measures the page scrolling sideways. The
-  icon set's longest name, `taxonomy-transportation-space-boarding-gate`,
-  asks for 372px inside a 288px button — a WCAG 1.4.10 reflow failure the
-  page has had since that icon was added (`1221183`).
+- **Evidence:** "GAP-57: a Button's label cannot wrap" measures `white-space`
+  on a Button: `nowrap`, on 2026-09-27's packages. Until then it measured the
+  icons page, where the set's longest name,
+  `taxonomy-transportation-space-boarding-gate`, asked for 372px inside a
+  288px button and scrolled a phone sideways. The icon set has since lost its
+  taxonomy names — 56 icons, the longest 21 characters — so that page no
+  longer shows the defect, which is itself unchanged.
 - **Now:** composed on the icons page: the name takes `site-icon-name`
   (`white-space: normal; overflow-wrap: anywhere`), properties `Text` does
   not set. `anywhere` also lets the box shrink below its longest word, so the
@@ -1156,8 +1158,10 @@ Text"])`) and the Get started page shows — touches it.
   Each needs a look under `dir="rtl"`: some flip correctly through flexbox,
   some will not.
 - **Evidence:** "GAP-61: the breadcrumb's separator does not mirror in right
-  to left" measures the separator's glyph and transform in the direction
-  sample.
+  to left" measures the separator's path and transform in the direction
+  sample: lucide's right-pointing chevron, `transform: none`. The built
+  package stopped emitting the glyph's class name on 2026-09-27, so the path
+  is the anchor.
 - **Now:** left visible on the theming page, whose sample says which arrow is
   the page's choice and which is the component's. The site picks its own
   glyphs there — back and next follow the direction it sets — because a page
@@ -1463,21 +1467,26 @@ Text"])`) and the Get started page shows — touches it.
 - **Fix in Kozmos:** a `labelPlacement` (`"end"` by default, `"start"` for a
   settings row), keeping the label bound to the control either way.
 
-## GAP-79 · The icon set is 64 glyphs, 8 of them the taxonomy's
+## GAP-79 · The Pointr icons ship, but cannot be asked for by name
 
-- **What:** `@kozmos/icons` exports 64 icons, of which 8 are Taxonomy ones;
-  the rest are general-purpose. The Pointr taxonomy carries hundreds of place
-  types, and the package already has the plumbing to take them
-  (`icons/src/pointr/`, `icons/src/taxonomy/`, both generated).
-- **Evidence:** counted from the package: 64 definitions, categories General
-  20, Arrows 10, Maps & travel 7, Time 4, Taxonomy 8, and a tail of ones and
-  twos.
+- **What:** the Pointr library has been generated into the package —
+  `icons/src/pointr/icons.generated.ts` exports **1,174** icon components and
+  `index.ts` re-exports them all. The registry did not follow: the named set
+  that `Icon name="…"` resolves, which is also what the site's icons page and
+  its search read, is **56**. The outlines ship and cannot be asked for by
+  name, so a product that wants a venue's categories imports each component
+  directly and loses the registry's names, aliases and categories.
+- **Evidence:** counted from the package on 2026-09-27: 56 registry
+  definitions (General 20, Arrows 10, Maps & travel 7, Time 4, and a tail of
+  ones and twos — no Taxonomy category any more) against 1,174 generated
+  Pointr components.
 - **Now:** open. GAP-07 and GAP-15 list the particular glyphs the site and the
   examples went without.
 - **Lane:** Product / SDK.
-- **Fix in Kozmos:** generate the taxonomy set from the Pointr library rather
-  than by hand, so a venue's categories, its manoeuvres (GAP-69) and its
-  amenities all come from one source.
+- **Fix in Kozmos:** put the generated Pointr icons in the registry with
+  their names, categories and aliases, so `Icon name="…"` reaches them and one
+  source serves a venue's categories, its manoeuvres (GAP-69) and its
+  amenities. The generation is done; the naming is what is missing.
 
 ## GAP-80 · No row actions: nothing shows on hover outside `Tree`
 

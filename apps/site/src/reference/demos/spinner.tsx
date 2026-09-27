@@ -1,4 +1,4 @@
-import { Box, Spinner, Stack, Text } from "@kozmos/react";
+import { Box, Spinner, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const sizes = ["sm", "md", "lg", "xl"] as const;

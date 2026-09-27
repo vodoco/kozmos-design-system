@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Icon, LocationPin, Text } from "@kozmos/react";
+import { Box, Icon, LocationPin, Text } from "@kozmos-ds/react";
 import { tint } from "../sample-data";
 import type { DemoModule } from "../types";
 

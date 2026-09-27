@@ -5,7 +5,7 @@ import {
   RouteProgressRail,
   RouteSummary,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { GlassBackdrop } from "../GlassBackdrop";
 import type { DemoModule } from "../types";
 

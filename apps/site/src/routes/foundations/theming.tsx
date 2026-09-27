@@ -8,7 +8,7 @@ import {
   Tag,
   Text,
   ThemeProvider,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { DirectionSample } from "../../foundations/DirectionSample";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
 import { foundationPage } from "../../foundations/nav";

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Box } from "@kozmos/react";
+import { Box } from "@kozmos-ds/react";
 
 /** The category fills a backdrop can use. */
 type Fill =

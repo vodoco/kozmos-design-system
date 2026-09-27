@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Box, POIDetailPanel, Text } from "@kozmos/react";
+import { Box, POIDetailPanel, Text } from "@kozmos-ds/react";
 import type {
   POIAction,
   POISupplementaryAction,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import { bookshop, bookshopDetails } from "../sample-data";
 import type { DemoModule } from "../types";
 import { bookshopMedia } from "./poi-media-gallery";

@@ -1,4 +1,4 @@
-import { Box, MapView, Stack, Text } from "@kozmos/react";
+import { Box, MapView, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Slot() {

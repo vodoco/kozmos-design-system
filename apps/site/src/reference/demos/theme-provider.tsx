@@ -9,7 +9,7 @@ import {
   Text,
   ThemeProvider,
   useTheme,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Sample({ dir }: { dir: "ltr" | "rtl" }) {

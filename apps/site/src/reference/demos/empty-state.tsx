@@ -1,4 +1,4 @@
-import { Box, Button, EmptyState, Icon } from "@kozmos/react";
+import { Box, Button, EmptyState, Icon } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function NoResults() {

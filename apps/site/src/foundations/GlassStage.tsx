@@ -6,7 +6,7 @@ import {
   Surface,
   Switch,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 const blobs = [
   { colour: "blue", x: "22%", y: "35%" },

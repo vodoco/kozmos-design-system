@@ -10,7 +10,7 @@ import {
   Text,
   ThemeProvider,
   type IconProps,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { foundationPages, foundationsSection } from "../../foundations/nav";
 import { Specimen } from "../../foundations/parts";
 import { pageTitle } from "../../lib/site";

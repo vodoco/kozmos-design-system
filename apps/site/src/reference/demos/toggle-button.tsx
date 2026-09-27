@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Icon, Text, ToggleButton } from "@kozmos/react";
+import { Box, Icon, Text, ToggleButton } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Favourite() {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Text, Textarea } from "@kozmos/react";
+import { Box, Text, Textarea } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const LIMIT = 160;

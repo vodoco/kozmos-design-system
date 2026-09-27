@@ -1,4 +1,4 @@
-# @kozmos/site
+# @kozmos-ds/site
 
 The Kozmos design system's website: what Kozmos is, shown live; the
 foundations, drawn from the tokens; a reference of every component with live
@@ -61,25 +61,25 @@ From the working copy's root:
 
 ```sh
 pnpm install
-pnpm turbo run build --filter=@kozmos/site^...   # the four Kozmos packages the site uses
-pnpm --filter @kozmos/site dev                   # http://localhost:5180
+pnpm turbo run build --filter=@kozmos-ds/site^...   # the four Kozmos packages the site uses
+pnpm --filter @kozmos-ds/site dev                   # http://localhost:5180
 ```
 
 The site reads each Kozmos package's built `dist`, so rebuild them (the
 second line) after pulling component changes. Turbo only rebuilds what
 changed.
 
-| Script (`pnpm --filter @kozmos/site …`) | What it does                                                                                         |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `generate`                              | Rebuilds `src/generated/` from the design system's sources (below). Run by dev, build and typecheck. |
-| `dev`                                   | Dev server with hot reload on port 5180.                                                             |
-| `build`                                 | Generate, route types, `tsc`, then the static build into `build/client`.                             |
-| `preview`                               | Serves `build/client` on 5181 the way a static host does (404s included).                            |
-| `typecheck`                             | Generate, route types and `tsc` only.                                                                |
-| `lint`                                  | ESLint, then `scripts/check-ds-only.mjs` (the one rule).                                             |
-| `test`                                  | Unit tests: the token parser, contrast, the brand override, the generators, the rule's checker.      |
-| `test:e2e`                              | Playwright in Chromium, Firefox and WebKit against the build. Build first.                           |
-| `brand`                                 | Rewrites the K mark and the favicons from the logo and the tokens (needs Playwright's Chromium).     |
+| Script (`pnpm --filter @kozmos-ds/site …`) | What it does                                                                                         |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `generate`                                 | Rebuilds `src/generated/` from the design system's sources (below). Run by dev, build and typecheck. |
+| `dev`                                      | Dev server with hot reload on port 5180.                                                             |
+| `build`                                    | Generate, route types, `tsc`, then the static build into `build/client`.                             |
+| `preview`                                  | Serves `build/client` on 5181 the way a static host does (404s included).                            |
+| `typecheck`                                | Generate, route types and `tsc` only.                                                                |
+| `lint`                                     | ESLint, then `scripts/check-ds-only.mjs` (the one rule).                                             |
+| `test`                                     | Unit tests: the token parser, contrast, the brand override, the generators, the rule's checker.      |
+| `test:e2e`                                 | Playwright in Chromium, Firefox and WebKit against the build. Build first.                           |
+| `brand`                                    | Rewrites the K mark and the favicons from the logo and the tokens (needs Playwright's Chromium).     |
 
 Screenshots of 23 pages — home, get started, the examples and each example,
 a foundations page, five component pages, the 404 — light and dark, desktop
@@ -87,7 +87,7 @@ and phone, into `apps/site/screenshots/` (not committed; the list is in
 `tests/screenshots.spec.ts`):
 
 ```sh
-SCREENSHOTS=1 pnpm --filter @kozmos/site test:e2e --project=chromium tests/screenshots.spec.ts
+SCREENSHOTS=1 pnpm --filter @kozmos-ds/site test:e2e --project=chromium tests/screenshots.spec.ts
 ```
 
 Ports: Storybook holds 6006, mapscale-review 5173; the site takes 5180 (Vite,
@@ -99,7 +99,7 @@ server after rebuilding if it predates a change to `serve-static.mjs`.
 ## The one rule
 
 **What is on the page is Kozmos.** Every visible part is a component from
-`@kozmos/react`; every colour, radius, shadow, size and spacing value is a
+`@kozmos-ds/react`; every colour, radius, shadow, size and spacing value is a
 Kozmos token. It is the rule `docs/ds-handoff.md` §11 set for examples,
 applied to the whole site, for the same reason: the site is the best test the
 system gets before it is published, and a workaround destroys the evidence.
@@ -122,7 +122,7 @@ When Kozmos cannot express something:
    _open_.
 4. A gap parks **that** example or part, not the site.
 
-`pnpm --filter @kozmos/site lint` enforces the mechanical half of this with
+`pnpm --filter @kozmos-ds/site lint` enforces the mechanical half of this with
 `scripts/check-ds-only.mjs`, which reads every file in `src` (except the
 generated data):
 
@@ -178,7 +178,7 @@ sits in its corner.
   the browser; nothing runs on a server afterwards. Output: `build/client`.
   React Router 8 needs Node 22, and CI runs Node 20; all five `v8_` future
   flags are already on, so the upgrade is small.
-- **React 19** with `@kozmos/react` from the workspace (`workspace:*`).
+- **React 19** with `@kozmos-ds/react` from the workspace (`workspace:*`).
 - **`@react-router/node` and `isbot`** are dependencies even though nothing
   serves the site from Node: the pre-render step needs them, and React Router
   only looks in `dependencies`.
@@ -350,7 +350,7 @@ Below 48rem it shows `kozmos-mark.svg`, the logo's own K. The K, the star
 the home page's cover scatters (`kozmos-star.svg`, the logo's first star)
 and the favicons (`public/favicon.svg`, `.ico`, `apple-touch-icon.png`: the
 K on the dark theme's black, as the logo was supplied in white) are
-generated by `pnpm --filter @kozmos/site brand` from the logo and the
+generated by `pnpm --filter @kozmos-ds/site brand` from the logo and the
 tokens; a unit test fails if they drift from either. To change the logo: replace the file (keep
 its four paths — wordmark, subline, two stars — or update
 `scripts/generate-brand.mjs`), trim its canvas to the artwork, update the two
@@ -457,7 +457,7 @@ canvas with its source, the components it uses and the gaps it hit.
    `"GAP-nn · what differs"`. The example page links to the roadmap, and the
    roadmap lists the example against the item. Claim only what a test or a
    measurement shows.
-8. **Check:** `pnpm --filter @kozmos/site lint`, `build`, then `test:e2e`.
+8. **Check:** `pnpm --filter @kozmos-ds/site lint`, `build`, then `test:e2e`.
    Add the new path to `pages` in `tests/site.spec.ts` (axe in both themes,
    no sideways scroll at 320px) and a test for what the example does.
 
@@ -733,12 +733,12 @@ These need someone to decide; the site does not guess:
 
 Measured while building the site; none of it is the site's to fix.
 
-- **`@kozmos/react` is not tree-shaken.** Components the site never uses ship
+- **`@kozmos-ds/react` is not tree-shaken.** Components the site never uses ship
   in its bundle: the shared chunk is 523 kB minified, about 155 kB gzipped,
   plus 38 kB of gzipped CSS. The package's 185 `displayName` writes (184 at
   the top level) are the likely cause (unverified). This is also why Vite
   warns about a chunk over 500 kB.
-- **`@kozmos/react` develops against React 19 but `@types/react` 18.** In the
+- **`@kozmos-ds/react` develops against React 19 but `@types/react` 18.** In the
   workspace, a React 19 app's `ReactNode` does not fit Kozmos's props; the
   site maps the types to its own (tsconfig `paths`). Installed from npm, the
   declarations would read the consumer's types and this does not arise.
@@ -762,7 +762,7 @@ Measured while building the site; none of it is the site's to fix.
   has no such export (7.1.1 still declares the same range). The site uses the
   5.x line. mapscale-review and playground-web list 7.0.1 but never load it.
 - **CI runs Node 20,** which reached end of life on 2026-04-30.
-- **`@kozmos/vue` is private**, an internal harness, so the site presents the
+- **`@kozmos-ds/vue` is private**, an internal harness, so the site presents the
   web, iOS and Android only.
 - **iOS and Android are not distributable yet.** The Swift package sits in
   `packages/ios`, not at the repository root, so it cannot be added by URL,
@@ -787,10 +787,10 @@ Measured while building the site; none of it is the site's to fix.
 
 ## Troubleshooting
 
-- **`Cannot find module '@kozmos/react'` or stale components** — build the
-  packages: `pnpm turbo run build --filter=@kozmos/site^...`.
+- **`Cannot find module '@kozmos-ds/react'` or stale components** — build the
+  packages: `pnpm turbo run build --filter=@kozmos-ds/site^...`.
 - **`Cannot find module '../generated/…'`** — run
-  `pnpm --filter @kozmos/site generate` (dev, build and typecheck do it
+  `pnpm --filter @kozmos-ds/site generate` (dev, build and typecheck do it
   themselves).
 - **`Type 'React.ReactNode' is not assignable to type 'ReactNode'`
   (`bigint`)** — the `paths` mapping in `tsconfig.json` is missing or its
@@ -809,7 +809,7 @@ Measured while building the site; none of it is the site's to fix.
   child (`minmax(0, 1fr)`), or a frame with `aspect-ratio` also has a minimum
   height, or a long word sits inside a `Button`, which keeps everything on
   one line (GAP-57: the wrapping goes on the text inside, not on the button).
-  `pnpm --filter @kozmos/site test:e2e` checks every page at 320px.
+  `pnpm --filter @kozmos-ds/site test:e2e` checks every page at 320px.
 - **An e2e test times out waiting for animations** — something on the page
   animates forever; `hydrated()` in `tests/site.spec.ts` ignores infinite
   animations, so a new one needs that check, not a longer timeout.

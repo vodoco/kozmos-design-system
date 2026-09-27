@@ -18,7 +18,7 @@ import {
   TabsTrigger,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { exampleKindLabel, type ExampleEntry } from "../examples/manifest";
 import { kozmosImports } from "../lib/kozmos-imports";
 import { CodeBlock } from "./CodeBlock";

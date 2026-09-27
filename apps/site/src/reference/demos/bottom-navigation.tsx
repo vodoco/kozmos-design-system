@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BottomNavigation, Box, Icon, Switch, Text } from "@kozmos/react";
+import { BottomNavigation, Box, Icon, Switch, Text } from "@kozmos-ds/react";
 import { Screen } from "../Screen";
 import type { DemoModule } from "../types";
 

@@ -12,7 +12,7 @@ import {
   Link,
   Navbar,
   Stack,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { LOGO_TEXT, SITE_NAME } from "../lib/site";
 import { SiteLink, SiteNavItem, useNavigateAfterClose } from "./links";
 import { SiteSearch } from "./SiteSearch";

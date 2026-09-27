@@ -63,7 +63,7 @@ test("snippets come from the PlatformSnippets block, dedented, first of each pla
   const mdx = `
 <PlatformSnippets
     react={\`
-import { Button } from "@kozmos/react";
+import { Button } from "@kozmos-ds/react";
 export function Example() {
   return <Button>Go</Button>;
 }
@@ -83,7 +83,7 @@ KozmosButton(text = "Go")
   assert.deepEqual(Object.keys(snippets).sort(), ["kotlin", "react", "swift"]);
   assert.equal(
     snippets.react,
-    `import { Button } from "@kozmos/react";\nexport function Example() {\n  return <Button>Go</Button>;\n}`,
+    `import { Button } from "@kozmos-ds/react";\nexport function Example() {\n  return <Button>Go</Button>;\n}`,
   );
   assert.equal(snippets.swift, 'import SwiftUI\n\nKozmosButton("Go")');
 });

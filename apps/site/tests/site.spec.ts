@@ -1774,25 +1774,19 @@ test.describe("design-system gaps, measured", () => {
   });
 
   test("GAP-57: a Button's label cannot wrap", async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 700 });
-    await page.goto("/foundations/icons");
+    await page.goto("/components/button");
     await hydrated(page);
-    const name = page
-      .locator(".site-icon-name")
-      .filter({ hasText: "taxonomy-transportation-space-boarding-gate" })
-      .first();
-    await expect(name).toBeVisible();
-    // Without the site's class the Button's nowrap reaches the name, the
-    // longest in the icon set, and it takes a phone's page sideways.
-    const sideways = await name.evaluate((element) => {
-      element.classList.remove("site-icon-name");
-      const over =
-        document.documentElement.scrollWidth -
-        document.documentElement.clientWidth;
-      element.classList.add("site-icon-name");
-      return over;
-    });
-    expect(sideways).toBeGreaterThan(0);
+    // `.kozmos-button` sets `white-space: nowrap`, which everything inside
+    // inherits, so a label wider than the button cannot break. Measured on
+    // the component itself: until 2026-09-24 this was measured through the
+    // icons page, where the longest name overflowed a phone — the icon set
+    // has since lost its taxonomy names (56 icons, longest 21 characters),
+    // so that page no longer shows it while the defect is unchanged.
+    const wrapping = await page
+      .locator(".site-demos button")
+      .first()
+      .evaluate((button) => getComputedStyle(button).whiteSpace);
+    expect(wrapping).toBe("nowrap");
   });
 
   test("GAP-58: a Toast draws no background", async ({ page }) => {
@@ -1931,13 +1925,17 @@ test.describe("design-system gaps, measured", () => {
           named.length > 1 &&
           named[0].getBoundingClientRect().left >
             named[named.length - 1].getBoundingClientRect().left,
-        separatorGlyph: glyph ? String(glyph.getAttribute("class")) : null,
+        separatorPath:
+          glyph?.querySelector("path")?.getAttribute("d")?.toLowerCase() ??
+          null,
         separatorTransform: glyph ? getComputedStyle(glyph).transform : null,
       };
     });
     expect(trail.rootIsRightmost).toBe(true);
-    // And the separator still points the way it was drawn.
-    expect(trail.separatorGlyph).toContain("chevron-right");
+    // And the separator still points the way it was drawn: lucide's
+    // chevron-right path, with nothing mirroring it. (The built package
+    // stopped emitting the glyph's class name, so the path is the anchor.)
+    expect(trail.separatorPath).toBe("m9 18l15 12l9 6");
     expect(trail.separatorTransform).toBe("none");
   });
 

@@ -1,4 +1,4 @@
-import { Box, Itinerary } from "@kozmos/react";
+import { Box, Itinerary } from "@kozmos-ds/react";
 import { itinerary } from "../sample-data";
 import type { DemoModule } from "../types";
 

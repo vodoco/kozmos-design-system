@@ -1,4 +1,4 @@
-import { Box, DatePicker } from "@kozmos/react";
+import { Box, DatePicker } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function ADate() {

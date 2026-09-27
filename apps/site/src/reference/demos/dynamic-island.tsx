@@ -7,7 +7,7 @@ import {
   SegmentedControl,
   Stack,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { Screen } from "../Screen";
 import type { DemoModule } from "../types";
 

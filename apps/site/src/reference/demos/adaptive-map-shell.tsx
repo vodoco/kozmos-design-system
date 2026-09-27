@@ -9,7 +9,7 @@ import {
   POIResultList,
   SearchBar,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { categoryTints, floors, results, tint } from "../sample-data";
 import type { DemoModule } from "../types";
 
@@ -94,7 +94,8 @@ function useVenue(variant: string) {
         onSelect={(id) => {
           setSelectedId(id);
           const place = results.find(({ poi }) => poi.id === id);
-          if (place) setFloorId(place.poi.floorId);
+          // A place need not be on a floor (contracts: no levels, no floor).
+          if (place?.poi.floorId) setFloorId(place.poi.floorId);
         }}
       />
     </Box>

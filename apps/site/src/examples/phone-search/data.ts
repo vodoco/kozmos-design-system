@@ -6,7 +6,7 @@
 import type {
   POIMediaPresentation,
   POIPresentation,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import { places as venuePlaces, type Place } from "../venue-explorer/data";
 
 export {

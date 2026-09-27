@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { Heading, Text } from "@kozmos/react";
+import { Heading, Text } from "@kozmos-ds/react";
 
 /** A titled section of a page: an h2, an optional lead, and its content. */
 export function Section({

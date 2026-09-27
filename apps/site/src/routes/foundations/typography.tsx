@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
 import { Specimen, TokenTable } from "../../foundations/parts";
 import { foundationPage } from "../../foundations/nav";

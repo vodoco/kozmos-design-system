@@ -2,12 +2,12 @@
  * An invented shopping centre: its floors, the categories Kozmos can draw an
  * icon for, and its places. Positions are percentages of the illustrative map.
  */
-import type { CategoryTint, IconProps } from "@kozmos/react";
+import type { CategoryTint, IconProps } from "@kozmos-ds/react";
 import type {
   FloorPresentation,
   POIDetailsPresentation,
   POIPresentation,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 
 type IconName = NonNullable<IconProps["name"]>;
 

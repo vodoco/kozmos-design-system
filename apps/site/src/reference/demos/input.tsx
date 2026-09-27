@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Input } from "@kozmos/react";
+import { Box, Input } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Basics() {

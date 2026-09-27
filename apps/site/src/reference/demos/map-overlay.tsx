@@ -7,7 +7,7 @@ import {
   MapView,
   SaveLocationCard,
   SearchBar,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { floors } from "../sample-data";
 import type { DemoModule } from "../types";
 

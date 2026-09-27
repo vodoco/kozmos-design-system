@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Box, RoutePreviewPanel, SegmentedControl, Text } from "@kozmos/react";
+import {
+  Box,
+  RoutePreviewPanel,
+  SegmentedControl,
+  Text,
+} from "@kozmos-ds/react";
 import { routeOptions } from "../sample-data";
 import type { DemoModule } from "../types";
 

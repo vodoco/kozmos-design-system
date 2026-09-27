@@ -3,7 +3,7 @@
  * imports are left out: they name shapes, not parts on the page.
  */
 const importStatement =
-  /import\s+(type\s+)?\{([^}]*)\}\s+from\s+["']@kozmos\/react["']/g;
+  /import\s+(type\s+)?\{([^}]*)\}\s+from\s+["']@kozmos-ds\/react["']/g;
 
 export function kozmosImports(source: string): string[] {
   const names = new Set<string>();

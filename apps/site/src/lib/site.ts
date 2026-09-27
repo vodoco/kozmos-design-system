@@ -4,12 +4,11 @@
  */
 
 /**
- * Whether the four public packages are on npm. While false, every install
- * instruction says so and points at the repository instead; flip it in the
- * commit that follows the first `changeset publish`, once
- * `npm view @kozmos/react version` answers.
+ * Whether the four public packages are on npm. True since 2026-09-24:
+ * `npm view @kozmos-ds/react version` answers 0.4.0, and tokens, icons and
+ * product-contracts are published beside it.
  */
-export const PACKAGES_PUBLISHED = false;
+export const PACKAGES_PUBLISHED = true;
 
 /**
  * Whether search engines may index the site. False until the public launch:
@@ -21,20 +20,20 @@ export const SITE_INDEXABLE = false;
 /** The packages a web consumer installs, in the order the README lists them. */
 export const PUBLIC_PACKAGES = [
   {
-    name: "@kozmos/react",
+    name: "@kozmos-ds/react",
     summary: "The React components, their stylesheet and the ThemeProvider.",
   },
   {
-    name: "@kozmos/tokens",
+    name: "@kozmos-ds/tokens",
     summary:
       "Every token as CSS variables for both themes and as JavaScript (the light values), and the Swift and Kotlin sources the native libraries build from.",
   },
   {
-    name: "@kozmos/icons",
+    name: "@kozmos-ds/icons",
     summary: "The icon registry and the outlines Kozmos owns.",
   },
   {
-    name: "@kozmos/product-contracts",
+    name: "@kozmos-ds/product-contracts",
     summary: "Platform-neutral shapes for POI, floor, route and map data.",
   },
 ] as const;

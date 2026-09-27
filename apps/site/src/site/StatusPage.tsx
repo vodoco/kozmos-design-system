@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Container, Heading, Stack, Text } from "@kozmos/react";
+import { Container, Heading, Stack, Text } from "@kozmos-ds/react";
 import { ButtonLink } from "./links";
 
 /**

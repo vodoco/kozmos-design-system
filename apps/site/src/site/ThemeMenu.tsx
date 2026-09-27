@@ -9,7 +9,7 @@ import {
   MenuTrigger,
   useTheme,
   type Theme,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 const options: { value: Theme; label: string }[] = [
   { value: "light", label: "Light" },

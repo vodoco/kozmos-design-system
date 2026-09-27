@@ -1,4 +1,4 @@
-import { Box, Icon, List, ListItem, Stack, Tag, Text } from "@kozmos/react";
+import { Box, Icon, List, ListItem, Stack, Tag, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const rows = [

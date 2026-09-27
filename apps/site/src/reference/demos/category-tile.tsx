@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, CategoryTile, Icon, Text } from "@kozmos/react";
+import { Box, CategoryTile, Icon, Text } from "@kozmos-ds/react";
 import type { ComponentProps } from "react";
 import { categories, categoryTints, tint } from "../sample-data";
 import type { DemoModule } from "../types";

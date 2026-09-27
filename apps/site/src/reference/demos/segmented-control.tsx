@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, SegmentedControl, Text } from "@kozmos/react";
+import { Box, SegmentedControl, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 const views = [

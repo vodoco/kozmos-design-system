@@ -1,5 +1,5 @@
 {
-  "name": "@kozmos/site",
+  "name": "@kozmos-ds/site",
   "private": true,
   "version": "0.0.0",
   "description": "The Kozmos design system's website: what it is, how to start, and page and app examples built from Kozmos components only.",
@@ -17,9 +17,9 @@
     "deploy": "node scripts/deploy-azure.mjs"
   },
   "dependencies": {
-    "@kozmos/icons": "workspace:*",
-    "@kozmos/react": "workspace:*",
-    "@kozmos/tokens": "workspace:*",
+    "@kozmos-ds/icons": "workspace:*",
+    "@kozmos-ds/react": "workspace:*",
+    "@kozmos-ds/tokens": "workspace:*",
     "@react-router/node": "^7.18.4",
     "isbot": "^5.1.0",
     "react": "^19.2.4",
@@ -29,7 +29,7 @@
   "devDependencies": {
     "@axe-core/playwright": "4.11.1",
     "@eslint/js": "^9.39.4",
-    "@kozmos/product-contracts": "workspace:*",
+    "@kozmos-ds/product-contracts": "workspace:*",
     "@playwright/test": "1.58.2",
     "@react-router/dev": "^7.18.4",
     "@types/node": "^24.12.0",

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, FloorSelector, Text } from "@kozmos/react";
+import { Box, FloorSelector, Text } from "@kozmos-ds/react";
 import { floors } from "../sample-data";
 import type { DemoModule } from "../types";
 

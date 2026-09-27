@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Container } from "@kozmos/react";
+import { Container } from "@kozmos-ds/react";
 import { pageTitle } from "../lib/site";
 import { PageHeader } from "../site/Section";
 import type { FoundationPage } from "./nav";

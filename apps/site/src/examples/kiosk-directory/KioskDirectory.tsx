@@ -26,12 +26,12 @@ import {
   Surface,
   Text,
   UserLocationMarker,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 import type {
   CategoryPresentation,
   POIAction,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import {
   categories,
   categoryFor,
@@ -139,7 +139,8 @@ export default function KioskDirectory() {
     const place = places.find((entry) => entry.poi.id === poiId);
     if (!place) return;
     setSelectedId(poiId);
-    setFloorId(place.poi.floorId);
+    // A place need not be on a floor (contracts: no levels, no floor).
+    if (place.poi.floorId) setFloorId(place.poi.floorId);
     setRouting(false);
   }
 

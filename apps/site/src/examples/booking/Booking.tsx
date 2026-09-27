@@ -26,7 +26,7 @@ import {
   Text,
   Textarea,
   TimePicker,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
 
 const steps = ["When", "Details", "Confirm"];

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Box, Surface, Text } from "@kozmos/react";
+import { Box, Surface, Text } from "@kozmos-ds/react";
 import { categories, places } from "./sample-data";
 
 /**

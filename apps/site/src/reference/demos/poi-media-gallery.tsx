@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Box, POIMediaGallery, Text } from "@kozmos/react";
-import type { POIMediaPresentation } from "@kozmos/product-contracts";
+import { Box, POIMediaGallery, Text } from "@kozmos-ds/react";
+import type { POIMediaPresentation } from "@kozmos-ds/product-contracts";
 import type { DemoModule } from "../types";
 
 export const bookshopMedia: readonly POIMediaPresentation[] = [

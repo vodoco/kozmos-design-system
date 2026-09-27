@@ -12,7 +12,7 @@ import {
   Sidebar,
   Stack,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { SiteNavItem, useNavigateAfterClose } from "./links";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";

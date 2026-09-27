@@ -35,7 +35,7 @@ const SITE_ROOT = path.resolve(
 );
 const LOGO = path.join(SITE_ROOT, "src/brand/kozmos-logo.svg");
 const DARK_TOKENS = fileURLToPath(
-  import.meta.resolve("@kozmos/tokens/css/dark.css"),
+  import.meta.resolve("@kozmos-ds/tokens/css/dark.css"),
 );
 
 export const OUTPUTS = {
@@ -284,7 +284,7 @@ async function main() {
     );
     if (stale.length > 0) {
       console.error(
-        `Out of date: ${stale.map((name) => path.relative(SITE_ROOT, OUTPUTS[name])).join(", ")}. Run pnpm --filter @kozmos/site brand.`,
+        `Out of date: ${stale.map((name) => path.relative(SITE_ROOT, OUTPUTS[name])).join(", ")}. Run pnpm --filter @kozmos-ds/site brand.`,
       );
       process.exit(1);
     }

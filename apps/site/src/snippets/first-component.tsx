@@ -1,4 +1,4 @@
-import { Button, Icon } from "@kozmos/react";
+import { Button, Icon } from "@kozmos-ds/react";
 
 export function SaveButton() {
   return (

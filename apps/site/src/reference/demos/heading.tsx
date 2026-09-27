@@ -1,4 +1,4 @@
-import { Heading, Stack, Text } from "@kozmos/react";
+import { Heading, Stack, Text } from "@kozmos-ds/react";
 import type { DemoModule } from "../types";
 
 function Levels() {
