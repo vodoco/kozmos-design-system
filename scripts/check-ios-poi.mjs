@@ -48,6 +48,9 @@ const run = spawnSync(
     // The sheet's panel header (row 73): rendered and dragged, so the
     // simulator is the only place it runs.
     "-only-testing:KozmosTests/KozmosMapShellPanelHeaderTests",
+    // A details card hosted in the shell's panel (GAP-083): drawn and
+    // measured, so it runs only here too.
+    "-only-testing:KozmosTests/KozmosMapShellHostedDetailsTests",
     // Skeleton's and FloorSelector's (rows 56 and 69): most of each runs in
     // `swift test` too, but their Dynamic Type cases and the open list's
     // render only run here — a Mac does not scale @ScaledMetric.
