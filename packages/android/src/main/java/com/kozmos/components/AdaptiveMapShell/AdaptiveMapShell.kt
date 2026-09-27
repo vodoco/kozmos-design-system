@@ -100,9 +100,11 @@ val KozmosDefaultPanelDetents: List<KozmosMapPanelDetent> =
  * handle's 16dp row on a sheet that draws one; nothing on a sheet with a
  * single detent, which draws no handle, under a `panelHeader`, which sits
  * there instead, or beside the map, where a side panel starts its content at
- * its top edge. A part with its own top padding tops it up to what it needs
- * rather than adding to it, as `KozmosPOIDetailPanel` does in its sheet and
- * panel presentations. 0 outside a shell.
+ * its top edge. A part with its own top padding and no surface of its own tops
+ * it up to what it needs rather than adding to it, as `KozmosPOIDetailPanel`
+ * does in its sheet presentation; a part that draws its own bordered surface
+ * keeps its padding inside the border, since this space lies outside it. 0
+ * outside a shell.
  */
 val LocalKozmosPanelInsetTop = compositionLocalOf { 0.dp }
 
@@ -133,8 +135,9 @@ private val MinimumTargetSpacing = 24.dp
  *
  * The [panel]'s content is told what the panel leaves empty above it, and how
  * far its first control must keep below that — [LocalKozmosPanelInsetTop] and
- * [LocalKozmosPanelClearanceTop] — so a part with its own top padding, as
- * `KozmosPOIDetailPanel` has, tops it up rather than adding to it (GAP-083).
+ * [LocalKozmosPanelClearanceTop] — so a part with its own top padding and no
+ * surface of its own, as `KozmosPOIDetailPanel` is in its sheet presentation,
+ * tops it up rather than adding to it (GAP-083).
  */
 @Composable
 fun KozmosAdaptiveMapShell(
