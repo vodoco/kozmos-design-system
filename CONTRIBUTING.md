@@ -209,7 +209,12 @@ Fixes #123
 
 ### Review Process
 
-1. **Automated checks** must pass (CI, tests, linting)
+1. **Automated checks** must pass. Branch protection on `main` requires all 18 checks a pull
+   request runs: CI's web build and tests, its twelve browser shards and the Android build, the
+   bundle budget (`analyze-bundle`), Lighthouse's accessibility audit (`lighthouse`) and "Visual
+   Review". (iOS builds only on `main`.) Auto-merge waits for all of them. A pull request opened
+   against another branch and then retargeted to `main` has no `analyze-bundle` or `lighthouse`
+   run, because both run only for pull requests into `main`: push to it, or close and reopen it.
 2. **Code review** by at least one maintainer
 3. **Visual review** for component changes: the "Visual Review" check compares every story with
    its committed baseline, and intended changes show in "Files changed" (see
