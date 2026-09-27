@@ -35,14 +35,15 @@ export default defineConfig({
       animations: "disabled",
       caret: "hide",
       scale: "css",
-      // Exact colours. Playwright's default tolerance (0.2 in pixelmatch's
-      // YIQ space, a delta of 1,409) passed the Skeleton's move from
-      // background/100 to /200 (#E3E4E8 to #C7CAD1, a delta of 351) as
-      // unchanged: a whole token step, the change a design system most
-      // needs to see. The image draws the same pixels every run (608 of 630
-      // baselines came out byte-identical from two runs), and pixelmatch
-      // still sets anti-aliased edges aside.
-      threshold: 0,
+      // Colours to within rounding. Playwright's default tolerance (0.2 in
+      // pixelmatch's YIQ space, a delta of 1,409) passed the Skeleton's move
+      // from background/100 to /200 (#E3E4E8 to #C7CAD1, a delta of 351) as
+      // unchanged: a whole token step, the change a design system most needs
+      // to see. Exact (0) failed on noise instead: the image redraws a few
+      // anti-aliased edge pixels one unit off in one channel from run to run
+      // (an OTP field's border, measured), a delta under 1. 0.02 allows a
+      // delta of 14: rounding passes, a token step fails 25 times over.
+      threshold: 0.02,
     },
   },
   use: {
