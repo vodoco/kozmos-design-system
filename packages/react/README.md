@@ -1,4 +1,4 @@
-# @kozmos/react
+# @kozmos-ds/react
 
 React components for the Kozmos design system — core controls, plus map, POI
 and wayfinding compositions — styled entirely from Kozmos tokens.
@@ -6,22 +6,22 @@ and wayfinding compositions — styled entirely from Kozmos tokens.
 ## Install
 
 ```sh
-npm install @kozmos/react react react-dom
+npm install @kozmos-ds/react react react-dom
 ```
 
-React 18 and 19 are both supported. `@kozmos/tokens`, `@kozmos/icons` and
-`@kozmos/product-contracts` are installed with it.
+React 18 and 19 are both supported. `@kozmos-ds/tokens`, `@kozmos-ds/icons` and
+`@kozmos-ds/product-contracts` are installed with it.
 
 ## Set up
 
 Import the stylesheet once and put a `ThemeProvider` around each module (or the whole app):
 
 ```ts
-import "@kozmos/react/style.css";
+import "@kozmos-ds/react/style.css";
 ```
 
 It holds the token variables for both themes and the styles the components
-use, so there is no Tailwind configuration to add. `@kozmos/react/dist/style.css`
+use, so there is no Tailwind configuration to add. `@kozmos-ds/react/dist/style.css`
 resolves to the same file, for code that already imports that path.
 
 Token definitions belong to provider boundaries. Input, Textarea, Button, Popover,
@@ -49,7 +49,7 @@ the styling helper does not implement disabled/loading behavior for an anchor.
 This is separate from Radix's working `PopoverTrigger asChild`.
 
 ```tsx
-import { buttonVariants } from "@kozmos/react";
+import { buttonVariants } from "@kozmos-ds/react";
 
 <a href="/locations" className={buttonVariants({ variant: "link" })}>
   Browse locations
@@ -57,16 +57,40 @@ import { buttonVariants } from "@kozmos/react";
 ```
 
 For an application that deliberately wants Tailwind's **global** reset, optionally
-import `@kozmos/react/reset.css` before its own host styles. It is never imported
+import `@kozmos-ds/react/reset.css` before its own host styles. It is never imported
 automatically. Do not also import the token package's global CSS into an embedded
 module. Ordinary host resets/utilities are covered; this is not Shadow DOM isolation
 against arbitrary high-specificity or `!important` host rules. `rem` units still
 follow the host document's root font size.
 
+## Browsers
+
+|                 |      |
+| --------------- | ---- |
+| Chrome, Edge    | 118  |
+| Safari, iOS     | 17.4 |
+| Firefox         | 128  |
+| Android WebView | 118  |
+
+The floor is `@scope`, which fences the component styles off from a host page so
+a product's own CSS and Kozmos's cannot overwrite each other. It landed in those
+versions, and a browser below one of them **discards the whole block** rather
+than ignoring the rule: 955 of the stylesheet's 1,227 rules live inside one.
+
+What that costs below the floor is not all or nothing. Measured across 43
+elements, 30 render identically without `@scope` and 13 do not: the 31
+components that carry their own CSS are unaffected, the 73 styled by utilities
+lose their layout and colour. `Button`, `Input` and `Heading` are in the first
+group; `AISearchButton`, `Tag` and `Skeleton` are in the second.
+
+Lowering this floor is the work of moving the remaining components to their own
+CSS, and every one of them moved lowers it a little. Raising it would be a
+breaking change, so it starts where the code actually is.
+
 ## Use
 
 ```tsx
-import { Button, Icon, ThemeProvider } from "@kozmos/react";
+import { Button, Icon, ThemeProvider } from "@kozmos-ds/react";
 
 export function SaveButton() {
   return (
@@ -91,7 +115,7 @@ is opt-in: supply a product-owned `storageKey`; the old `vite-ui-theme` default
 is no longer read or written. Storage errors do not disable theme changes.
 
 ```tsx
-import { ThemeProvider } from "@kozmos/react";
+import { ThemeProvider } from "@kozmos-ds/react";
 
 <ThemeProvider defaultTheme="system">{app}</ThemeProvider>;
 ```
@@ -116,7 +140,7 @@ name for this implementation, not a separate token injector.
 
 ```tsx
 import type { ReactNode } from "react";
-import { DesignConfigProvider } from "@kozmos/react";
+import { DesignConfigProvider } from "@kozmos-ds/react";
 
 export function GlassModule({ children }: { children: ReactNode }) {
   return (
@@ -175,8 +199,8 @@ preserve state and the renderer instance across those changes.
 
 ```tsx
 import type { ReactNode } from "react";
-import { AdaptiveMapShell } from "@kozmos/react";
-import type { AdaptiveMapLayoutSnapshot } from "@kozmos/react";
+import { AdaptiveMapShell } from "@kozmos-ds/react";
+import type { AdaptiveMapLayoutSnapshot } from "@kozmos-ds/react";
 
 export function MapHost({
   renderer,
@@ -209,7 +233,12 @@ inheritance and must sit inside an appropriate styled Kozmos scope. Keep them
 stable while an overlay is open.
 
 ```tsx
-import { Button, Popover, PopoverTrigger, PopoverContent } from "@kozmos/react";
+import {
+  Button,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@kozmos-ds/react";
 
 export function HelpPopover({ overlayLayer }: { overlayLayer: HTMLElement }) {
   return (
@@ -242,7 +271,7 @@ provider those events are dropped, and a warning is logged once. To receive
 them, in batches:
 
 ```tsx
-import { AnalyticsProvider } from "@kozmos/react";
+import { AnalyticsProvider } from "@kozmos-ds/react";
 
 <AnalyticsProvider onDispatch={(events) => send(events)}>
   {app}

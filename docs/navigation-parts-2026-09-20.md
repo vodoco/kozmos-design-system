@@ -1,6 +1,6 @@
 # The navigation parts — manoeuvre card, itinerary, progress rail, 20 September 2026
 
-Claude Code, proceeding on its own recommendation after the
+The coding agent, proceeding on its own recommendation after the
 [audit](kozmos-pointr-operators-guide-2026-09-20.md) of the day's work: build the three
 navigation parts the [prototype](pointr-prototype-screen-states-2026-09-20.md) has and the design
 system lacked, on iOS, React and Android, with tests, stories, docs and examples, then put the

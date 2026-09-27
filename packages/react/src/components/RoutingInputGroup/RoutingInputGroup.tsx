@@ -3,7 +3,13 @@ import { cn } from "../../utils";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import { Input } from "../Input";
 import { Button } from "../Button";
-import { ArrowDownUp, Plus, X, Circle, MapPin } from "lucide-react";
+import {
+  ArrowDown as ArrowDownUp,
+  Plus,
+  X,
+  Circle,
+  MarkerPin01 as MapPin,
+} from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export interface RoutePoint {

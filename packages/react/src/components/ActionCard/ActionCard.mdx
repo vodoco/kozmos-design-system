@@ -1,0 +1,17 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./ActionCard.stories";
+
+<Meta of={Stories} />
+
+# ActionCard
+
+Rich content inside an assistant turn — a `POIResultList`, a
+`POIResultCard`, a hand-off.
+
+It holds them and adds nothing. Results in the assistant must open the same
+details and start the same wayfinding as results in search, and that only stays
+true while this does not reimplement a row.
+
+<Canvas of={Stories.Default} />
+<Controls />

@@ -19,7 +19,7 @@ remain gates; the baseline findings below should not be mistaken for its current
 
 ## Scope and evidence
 
-Olcay wants to continue development across Claude and Codex, support landscape and foldable devices, eventually publish to npm, and rebuild Pointr product modules using the design system.
+Olcay wants to continue development across the coding agent and Codex, support landscape and foldable devices, eventually publish to npm, and rebuild Pointr product modules using the design system.
 
 The specifically requested `kozmos-agent-switch-astra.md` was found in `/Users/olcaykurtulus/.claude/projects/-Volumes-4TB-Depo-development-K-kozmos-design-system-dev/memory/`. It points to `docs/agent-switch-2026-09-17.md` in commit `c274b06` on `claude/agent-switch-handoff`, currently open PR #52. Both were read, together with the corrected `ds-handoff.md` on that branch, the scope/SDK/gap records, current implementation and current platform documentation. The handoff is not yet on the reviewed `main`.
 
@@ -156,7 +156,7 @@ Minimum acceptance scenarios for the adaptive foundations:
 
 Existing shell minimum sizes, the inert-class baseline and type-resolution debt must not be accepted as “done” because a ratchet check is green. Conversely, every pending product pattern or cosmetic Figma cleanup need not block a deliberately limited core prerelease. Publish a documented support surface with evidence for the promises it makes.
 
-## Continuation note for Claude or Codex
+## Continuation note for the coding agent or Codex
 
 Olcay requested analysis and reporting. This document's architectural proposals are recommendations, not accepted decisions or implemented work. The requested memory note and its actual handoff at `c274b06` were read. No implementation, account configuration, Figma write, commit, push or publish was performed in this review. The report is uncommitted in its own worktree; the shared main checkout is clean. No full handback is due yet because Olcay is continuing here.
 

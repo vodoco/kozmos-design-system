@@ -1,7 +1,7 @@
 import React from "react";
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { cn } from "../../utils";
-import { X } from "lucide-react";
+import { X } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 const ToastProvider = ToastPrimitive.Provider;

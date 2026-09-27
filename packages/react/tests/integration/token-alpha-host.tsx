@@ -6,7 +6,7 @@ import {
   PopoverTrigger,
   PopoverContent,
   Button,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 function Samples({ prefix }: { prefix: string }) {
   return (

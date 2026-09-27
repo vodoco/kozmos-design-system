@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { TooltipProvider } from "@kozmos/react";
+import { TooltipProvider } from "@kozmos-ds/react";
 import { TopBar, LeftRail } from "./ui/Chrome";
 import { MapContent, type LevelRef } from "./screens/MapContent";
 import type { MapSection } from "./mock/taxonomy";

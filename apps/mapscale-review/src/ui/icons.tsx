@@ -2,7 +2,7 @@
  * The app's symbols, taken from the **Pointr Icon Library**
  * (Figma `PpbQbvpNTMvwqCx9dD4efJ`, page `181:128951` *Line icons*, 1,175 icons at 24×24).
  *
- * ⚠️ **Why these live here and not in `@kozmos/icons`.** The DS package exposes **38 of the
+ * ⚠️ **Why these live here and not in `@kozmos-ds/icons`.** The DS package exposes **38 of the
  * 1,175** — and each of its entries records the library's own `figmaName` and `figmaNodeId` while
  * rendering a **`lucide-react`** component, so code and Figma ship *different drawings under the
  * same names*. Until that is resolved at the DS (`KOZMOS_DS_IMPROVEMENTS.md` §P3), this module is

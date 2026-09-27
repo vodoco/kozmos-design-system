@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock } from "lucide-react";
+import { Clock } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { FieldWrapper } from "../FieldWrapper";

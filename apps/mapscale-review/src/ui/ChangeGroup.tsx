@@ -5,7 +5,7 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { ChangeReviewRow, DecisionGlyph } from "./ChangeReviewRow";
 import {
   CHANGE_COLORS,

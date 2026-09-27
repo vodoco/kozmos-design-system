@@ -1,6 +1,13 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { Button, Icon, MapView, POICard, SearchBar, Tag } from "@kozmos/react";
+import {
+  Button,
+  Icon,
+  MapView,
+  POICard,
+  SearchBar,
+  Tag,
+} from "@kozmos-ds/react";
 import "./MapSearch.css";
 
 const places = [

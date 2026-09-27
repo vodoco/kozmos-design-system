@@ -23,7 +23,7 @@ const platforms = [
     value: "vue",
     label: "Vue 3 · Internal",
     language: "html",
-    note: "Internal only: @kozmos/vue is a private React-wrapper package, not a native Vue library or a published npm package. It requires React and React DOM and does not support server rendering. This reference snippet is not independently compiled.",
+    note: "Internal only: @kozmos-ds/vue is a private React-wrapper package, not a native Vue library or a published npm package. It requires React and React DOM and does not support server rendering. This reference snippet is not independently compiled.",
   },
   {
     value: "swift",

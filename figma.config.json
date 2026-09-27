@@ -2,7 +2,7 @@
   "codeConnect": {
     "parser": "react",
     "importPaths": {
-      "src/components/*": "@kozmos/react"
+      "src/components/*": "@kozmos-ds/react"
     },
     "include": [
       "packages/react/src/**/*.figma.tsx",

@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import path from "node:path";
 import dts from "vite-plugin-dts";
 
-const externals = ["lucide-react", "react", "react/jsx-runtime"];
+const externals = ["react", "react/jsx-runtime"];
 
 export default defineConfig({
   plugins: [dts({ insertTypesEntry: true, rollupTypes: true })],
@@ -18,7 +18,6 @@ export default defineConfig({
       external: externals,
       output: {
         globals: {
-          "lucide-react": "LucideReact",
           react: "React",
           "react/jsx-runtime": "ReactJsxRuntime",
         },

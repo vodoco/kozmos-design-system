@@ -67,7 +67,74 @@ try {
       const shell = node.parentElement.getBoundingClientRect();
       return { top: r.top, height: r.height, shellHeight: shell.height, shellTop: shell.top, x: r.left + r.width / 2 };
     });
-  const settle = (page) => page.waitForTimeout(400);
+  // Wait for the sheet to stop moving, not for a fixed 400ms.
+  //
+  // CI run 36030288431 read 462.875 where it wanted 362.88 on webkit — a
+  // difference of 100, which is exactly the drag that had just been made. The
+  // sheet had not snapped back to its detent yet: the spring outlived a fixed
+  // waitForTimeout(400) on a cold runner that had just downloaded the browser.
+  //
+  // "Stopped" here means BOTH of the sheet's moving parts have stopped: its
+  // height, which a drag or a key changes, and its scroller's scrollTop, which
+  // a wheel changes while the height stands still. Watching only the height
+  // was not enough — run 36046003995 then failed on "the list is not back at
+  // its top", because settle returned the instant a wheel began and the scroll
+  // was still running when scrollTop was read.
+  //
+  // Readings are a frame apart on purpose: WebKit reports a running
+  // animation's values as they move, so two reads inside one task can differ
+  // for a sheet that is not moving at all.
+  const settle = async (page, timeout = 4000) => {
+    const stopped = await page
+      .locator("aside")
+      .first()
+      .evaluate(
+        (node, limit) =>
+          new Promise((resolve) => {
+            const started = performance.now();
+            // Two equal frames are not proof on their own: settle can be
+            // called before a wheel has begun, and would then read the value
+            // it is waiting to see change. So require the reading to hold for
+            // three frames AND for at least 120ms to have passed, which is
+            // still a third of the fixed wait this replaces.
+            const HOLD = 3;
+            const FLOOR = 120;
+            let steady = 0;
+            const read = () => {
+              const scroller = node.querySelector(":scope > div:last-of-type");
+              return [
+                node.getBoundingClientRect().height,
+                scroller ? scroller.scrollTop : 0,
+              ];
+            };
+            let last = null;
+            const tick = () => {
+              const now = read();
+              const still =
+                last &&
+                Math.abs(now[0] - last[0]) < 0.05 &&
+                Math.abs(now[1] - last[1]) < 0.05;
+              steady = still ? steady + 1 : 0;
+              if (steady >= HOLD && performance.now() - started >= FLOOR) {
+                resolve(true);
+                return;
+              }
+              if (performance.now() - started > limit) {
+                resolve(false);
+                return;
+              }
+              last = now;
+              requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+          }),
+        timeout,
+      );
+    // Still moving after four seconds is a defect worth failing on, not a slow
+    // machine worth waiting longer for.
+    assert.ok(stopped, `the sheet was still moving after ${timeout}ms`);
+  };
+
   // A drag that starts with two small moves, so the sheet decides and takes
   // the pointer before it leaves the sheet — a finger's first move is small.
   const drag = async (page, x, y, dy) => {

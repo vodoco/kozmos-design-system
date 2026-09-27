@@ -105,7 +105,7 @@ import {
   PasswordInput,
   RouteOptionCard,
   RoutePreviewPanel,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 // Core Translation Engine
 export * from "./react-adapter";

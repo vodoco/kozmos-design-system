@@ -1,6 +1,6 @@
 # The glass surface role, 20 September 2026
 
-Claude Code, on Olcay's answer to the navigation stage's second decision
+The coding agent, on Olcay's answer to the navigation stage's second decision
 ([navigation-parts-2026-09-20.md](navigation-parts-2026-09-20.md) §5): not white at 90 %, not
 opaque, but "glass-like material for each platform" — which the design system had ruled and not
 built ([ds-handoff.md](ds-handoff.md) §5.13, "a glass surface role is added, composed from the

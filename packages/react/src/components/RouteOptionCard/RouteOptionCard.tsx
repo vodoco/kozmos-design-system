@@ -1,6 +1,10 @@
 import React from "react";
-import type { RouteOptionPresentation } from "@kozmos/product-contracts";
-import { Accessibility, Clock3, SlidersHorizontal } from "lucide-react";
+import type { RouteOptionPresentation } from "@kozmos-ds/product-contracts";
+import {
+  Clock as Clock3,
+  Sliders01 as SlidersHorizontal,
+} from "@kozmos-ds/icons";
+import { Accessibility } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
 export interface RouteOptionCardProps extends Omit<

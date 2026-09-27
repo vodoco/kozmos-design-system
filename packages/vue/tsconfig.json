@@ -9,8 +9,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@kozmos/react": ["../react/src/index.ts"],
-      "@kozmos/react/*": ["../react/src/*"]
+      "@kozmos-ds/react": ["../react/src/index.ts"],
+      "@kozmos-ds/react/*": ["../react/src/*"]
     },
     "declaration": true,
     "emitDeclarationOnly": true,

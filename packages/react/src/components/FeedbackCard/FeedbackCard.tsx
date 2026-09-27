@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { cn } from "../../utils";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import { Button } from "../Button";
-import { Rating } from "../Rating";
+import { CheckCircle } from "@kozmos-ds/icons";
+import { Rating, type RatingVariant } from "../Rating";
 import { Textarea } from "../Textarea";
+import type { CharacterCount } from "../FieldWrapper/characterCount";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export interface FeedbackCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -14,6 +16,27 @@ export interface FeedbackCardProps extends React.HTMLAttributes<HTMLDivElement> 
   onSubmitFeedback?: (rating: number, comment: string) => void;
   isSubmitting?: boolean;
   successMessage?: string;
+  /**
+   * The scale. `thumbs` is the two-option form the Express Maps prompt uses —
+   * "Are you enjoying this?" is a yes or a no, not a mark out of five.
+   */
+  variant?: RatingVariant;
+  /** A character count on the comment, with the product's own limits. */
+  count?: CharacterCount;
+  /**
+   * The words on the controls. They were fixed English inside the component,
+   * so a visitor reading Arabic or Japanese got "Submit Feedback" whatever
+   * the interface language — the same defect the search row had.
+   */
+  submitLabel?: string;
+  submittingLabel?: string;
+  commentPlaceholder?: string;
+  /**
+   * The heading level the card's title takes. A card can be a section of a
+   * page or the whole of a dialog, and the level has to follow whatever
+   * heading sits above it.
+   */
+  titleLevel?: 2 | 3 | 4 | 5 | 6;
 }
 
 const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
@@ -26,6 +49,12 @@ const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
       onSubmitFeedback,
       isSubmitting = false,
       successMessage = "Thank you for the feedback!",
+      variant = "stars",
+      count,
+      submitLabel = "Submit Feedback",
+      submittingLabel = "Submitting...",
+      commentPlaceholder = "Tell us more about your experience...",
+      titleLevel = 3,
       ...props
     },
     ref,
@@ -34,6 +63,7 @@ const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
     const [rating, setRating] = useState<number>(0);
     const [comment, setComment] = useState("");
     const [submitted, setSubmitted] = useState(false);
+    const Heading = `h${titleLevel}` as "h3";
 
     const handleSubmit = () => {
       trackEvent("FeedbackCard", "feedback_submitted", { rating });
@@ -52,24 +82,34 @@ const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
       >
         {submitted ? (
           <div className="flex flex-col items-center justify-center py-6 gap-2 text-center animate-in fade-in zoom-in duration-300">
-            <div className="w-12 h-12 rounded-pill bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-2">
-              <span className="text-2xl">🎉</span>
+            {/* The success tokens, not Tailwind's palette. This was
+                bg-green-100 / dark:bg-green-900-30, which compile to a fixed
+                rgb(220 252 231): a product that re-themed Kozmos got Tailwind
+                green here and nowhere else. The mark was the emoji 🎉, which
+                a screen reader reads as "party popper" and which renders as
+                whatever the platform's font decides. */}
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-pill bg-success/10 text-success-text">
+              <CheckCircle aria-hidden="true" className="h-6 w-6" />
             </div>
-            <h4 className="font-semibold text-foreground text-lg">
+            <Heading className="font-semibold text-foreground text-lg">
               {successMessage}
-            </h4>
+            </Heading>
           </div>
         ) : (
           <>
             <div className="flex flex-col gap-1.5 text-center">
-              <h3 className="font-semibold text-lg text-foreground tracking-tight">
+              <Heading className="font-semibold text-lg text-foreground tracking-tight">
                 {title}
-              </h3>
+              </Heading>
               <p className="text-sm text-muted-foreground">{description}</p>
             </div>
 
             <div className="flex justify-center py-4">
-              <Rating value={rating} onChange={(val) => setRating(val)} />
+              <Rating
+                onChange={(val) => setRating(val)}
+                value={rating}
+                variant={variant}
+              />
             </div>
 
             <div className="flex flex-col gap-3">
@@ -77,7 +117,8 @@ const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
                   field has. Until 2026-09-22 this was rounded-panel (24) with
                   ring-0, as the routing fields were: no visible focus. */}
               <Textarea
-                placeholder="Tell us more about your experience..."
+                count={count}
+                placeholder={commentPlaceholder}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 className="min-h-[80px] resize-none bg-black/5 dark:bg-white/10 border-transparent focus-visible:bg-black/10 dark:focus-visible:bg-white/20 transition-all duration-300"
@@ -87,7 +128,7 @@ const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
                 disabled={rating === 0 || isSubmitting}
                 onClick={handleSubmit}
               >
-                {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                {isSubmitting ? submittingLabel : submitLabel}
               </Button>
             </div>
           </>

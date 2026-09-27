@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, CalendarRange } from "lucide-react";
+import { Calendar } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { FieldWrapper } from "../FieldWrapper";
@@ -257,7 +257,7 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
           >
             <span className="kozmos-reset">{startLabel}</span>
             <div className="kozmos-reset kozmos-temporal-field">
-              <CalendarRange
+              <Calendar
                 aria-hidden="true"
                 className="kozmos-reset kozmos-temporal-icon"
               />
@@ -297,7 +297,7 @@ const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>(
           >
             <span className="kozmos-reset">{endLabel}</span>
             <div className="kozmos-reset kozmos-temporal-field">
-              <CalendarRange
+              <Calendar
                 aria-hidden="true"
                 className="kozmos-reset kozmos-temporal-icon"
               />

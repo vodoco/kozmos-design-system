@@ -1,5 +1,11 @@
 import figma from "@figma/code-connect";
-import { Bell, Home, MoreHorizontal, Route, Search } from "lucide-react";
+import {
+  Bell01 as Bell,
+  Home01 as Home,
+  DotsHorizontal as MoreHorizontal,
+  Route,
+  SearchMd as Search,
+} from "@kozmos-ds/icons";
 import { BottomNavigation } from "./BottomNavigation";
 
 const bottomNavigationUrl =

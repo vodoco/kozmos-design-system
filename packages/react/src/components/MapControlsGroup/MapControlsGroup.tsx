@@ -1,8 +1,13 @@
 import React from "react";
-import type { UserLocationState } from "@kozmos/product-contracts";
+import type { UserLocationState } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
 import { MapControlButton } from "../MapControlButton";
-import { Plus, Minus, Compass, Focus } from "lucide-react";
+import {
+  Plus,
+  Minus,
+  Compass01 as Compass,
+  NavigationPointer01 as Focus,
+} from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export interface MapControlsGroupProps extends React.HTMLAttributes<HTMLDivElement> {

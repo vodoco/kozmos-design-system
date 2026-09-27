@@ -21,21 +21,21 @@
 
 ### Required Software
 
-| Tool | Version | Purpose | Installation |
-|------|---------|---------|--------------|
-| **Node.js** | 20.x LTS | JavaScript runtime | `brew install node@20` or [nodejs.org](https://nodejs.org) |
-| **pnpm** | 9.x | Package manager | `npm install -g pnpm` |
-| **Git** | 2.40+ | Version control | `brew install git` |
-| **Xcode** | 15+ | iOS development | App Store |
+| Tool               | Version   | Purpose             | Installation                                                  |
+| ------------------ | --------- | ------------------- | ------------------------------------------------------------- |
+| **Node.js**        | 20.x LTS  | JavaScript runtime  | `brew install node@20` or [nodejs.org](https://nodejs.org)    |
+| **pnpm**           | 9.x       | Package manager     | `npm install -g pnpm`                                         |
+| **Git**            | 2.40+     | Version control     | `brew install git`                                            |
+| **Xcode**          | 15+       | iOS development     | App Store                                                     |
 | **Android Studio** | Hedgehog+ | Android development | [developer.android.com](https://developer.android.com/studio) |
 
 ### Optional but Recommended
 
-| Tool | Purpose | Installation |
-|------|---------|--------------|
-| **VS Code** / **Cursor** | Primary IDE | [code.visualstudio.com](https://code.visualstudio.com) |
-| **Figma Desktop** | Design integration | [figma.com/downloads](https://figma.com/downloads) |
-| **Docker** | Consistent environments | `brew install docker` |
+| Tool                     | Purpose                 | Installation                                           |
+| ------------------------ | ----------------------- | ------------------------------------------------------ |
+| **VS Code** / **Cursor** | Primary IDE             | [code.visualstudio.com](https://code.visualstudio.com) |
+| **Figma Desktop**        | Design integration      | [figma.com/downloads](https://figma.com/downloads)     |
+| **Docker**               | Consistent environments | `brew install docker`                                  |
 
 ### Verify Prerequisites
 
@@ -160,7 +160,7 @@ kozmos-design-system/
 │   │   │   ├── hooks/
 │   │   │   ├── utils/
 │   │   │   ├── styles/
-│   │   │   │   └── tokens.css      # Generated from @kozmos/tokens
+│   │   │   │   └── tokens.css      # Generated from @kozmos-ds/tokens
 │   │   │   └── index.ts            # Barrel export
 │   │   ├── .storybook/
 │   │   ├── tsconfig.json
@@ -296,13 +296,13 @@ mkdir -p .changeset
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",
-    "tokens:build": "pnpm --filter @kozmos/tokens build",
+    "tokens:build": "pnpm --filter @kozmos-ds/tokens build",
     "tokens:sync": "tsx scripts/sync-figma.ts",
     "icons:generate": "tsx scripts/generate-icons.ts",
     "new-component": "tsx scripts/new-component.ts",
-    "storybook": "pnpm --filter @kozmos/react storybook",
-    "build-storybook": "pnpm --filter @kozmos/react build-storybook",
-    "chromatic": "pnpm --filter @kozmos/react chromatic",
+    "storybook": "pnpm --filter @kozmos-ds/react storybook",
+    "build-storybook": "pnpm --filter @kozmos-ds/react build-storybook",
+    "chromatic": "pnpm --filter @kozmos-ds/react chromatic",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish",
@@ -450,36 +450,42 @@ module.exports = {
     node: true,
   },
   extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
-    'plugin:jsx-a11y/recommended',
-    'prettier',
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:jsx-a11y/recommended",
+    "prettier",
   ],
-  parser: '@typescript-eslint/parser',
+  parser: "@typescript-eslint/parser",
   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
+    ecmaVersion: "latest",
+    sourceType: "module",
     ecmaFeatures: {
       jsx: true,
     },
   },
-  plugins: ['@typescript-eslint', 'react', 'react-hooks', 'jsx-a11y'],
+  plugins: ["@typescript-eslint", "react", "react-hooks", "jsx-a11y"],
   settings: {
     react: {
-      version: 'detect',
+      version: "detect",
     },
   },
   rules: {
-    'react/react-in-jsx-scope': 'off',
-    'react/prop-types': 'off',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    'jsx-a11y/anchor-is-valid': 'off',
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "jsx-a11y/anchor-is-valid": "off",
   },
-  ignorePatterns: ['dist', 'build', 'node_modules', '*.config.js', '*.config.ts'],
+  ignorePatterns: [
+    "dist",
+    "build",
+    "node_modules",
+    "*.config.js",
+    "*.config.ts",
+  ],
 };
 ```
 
@@ -491,9 +497,7 @@ module.exports = {
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
-  "linked": [
-    ["@kozmos/tokens", "@kozmos/react", "@kozmos/vue", "@kozmos/react-native", "@kozmos/icons"]
-  ],
+  "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
@@ -541,10 +545,10 @@ pnpm tokens:build          # Build token outputs
 pnpm tokens:sync           # Sync from Figma
 
 # React
-pnpm --filter @kozmos/react dev           # Dev mode
-pnpm --filter @kozmos/react build         # Build
-pnpm --filter @kozmos/react test          # Run tests
-pnpm --filter @kozmos/react storybook     # Start Storybook
+pnpm --filter @kozmos-ds/react dev           # Dev mode
+pnpm --filter @kozmos-ds/react build         # Build
+pnpm --filter @kozmos-ds/react test          # Run tests
+pnpm --filter @kozmos-ds/react storybook     # Start Storybook
 
 # iOS
 cd packages/ios
@@ -718,7 +722,7 @@ fi
 
 # Check if React builds
 echo -n "React build: "
-if pnpm --filter @kozmos/react build > /dev/null 2>&1; then
+if pnpm --filter @kozmos-ds/react build > /dev/null 2>&1; then
   echo "✅ Success"
 else
   echo "❌ Failed"
@@ -779,7 +783,7 @@ cd packages/react
 
 # package.json essentials
 {
-  "name": "@kozmos/react",
+  "name": "@kozmos-ds/react",
   "version": "0.0.0",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -810,7 +814,7 @@ cd packages/react
     "react-dom": "^18.0.0"
   },
   "dependencies": {
-    "@kozmos/tokens": "workspace:*",
+    "@kozmos-ds/tokens": "workspace:*",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0"
   },
@@ -944,9 +948,9 @@ After setup is complete:
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial getting started guide |
+| Version | Date       | Changes                       |
+| ------- | ---------- | ----------------------------- |
+| 1.0.0   | 2026-02-07 | Initial getting started guide |
 
 ---
 

@@ -1,4 +1,4 @@
-# @kozmos/product-contracts
+# @kozmos-ds/product-contracts
 
 Platform-neutral presentation contracts for Kozmos map, POI, floor and routing
 components: TypeScript types describing what a POI card, a result row or a
@@ -14,7 +14,7 @@ region-aware behavior is not yet implemented.
 ## Install
 
 ```sh
-npm install @kozmos/product-contracts
+npm install @kozmos-ds/product-contracts
 ```
 
 ## Use
@@ -23,7 +23,7 @@ npm install @kozmos/product-contracts
 import type {
   POIPresentation,
   UserLocationState,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 ```
 
 The package is types only — it has no runtime code, so `import type` is all it

@@ -156,7 +156,7 @@ export function writeSnippetNegativeControl(app) {
   fs.writeFileSync(
     path.join(dir, "invalid.tsx"),
     `
-import { Button, DefinitelyNotAKozmosExport } from "@kozmos/react";
+import { Button, DefinitelyNotAKozmosExport } from "@kozmos-ds/react";
 export const invalidProps = <Button emotion="not-a-supported-emotion">Save</Button>;
 export const missingState = undocumentedApplicationState;
 `,

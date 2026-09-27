@@ -4,8 +4,8 @@
  */
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ThemeProvider, TooltipProvider } from "@kozmos/react";
-import "@kozmos/react/dist/style.css";
+import { ThemeProvider, TooltipProvider } from "@kozmos-ds/react";
+import "@kozmos-ds/react/dist/style.css";
 import "../src/index.css";
 import { ChangeReviewRow } from "../src/ui/ChangeReviewRow";
 import type { Change, Decision, Override } from "../src/mock/diff";

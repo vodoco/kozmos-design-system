@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Icon } from "@kozmos/react";
+import { Icon } from "@kozmos-ds/react";
 import { EXPERT_HOLD, HOLD_TONE } from "../mock/diff";
 
 /**
@@ -38,7 +38,14 @@ export function ExpertHoldBanner() {
       }}
     >
       <span style={DOT(10)} />
-      <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.3, color: HOLD_TONE.ink }}>
+      <span
+        style={{
+          fontSize: 12.5,
+          fontWeight: 600,
+          lineHeight: 1.3,
+          color: HOLD_TONE.ink,
+        }}
+      >
         {EXPERT_HOLD.banner}
       </span>
     </div>
@@ -120,7 +127,14 @@ export function ExpertHoldChip() {
         zIndex: 4,
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          minWidth: 0,
+        }}
+      >
         <span style={{ fontSize: 12.5, fontWeight: 700, color: HOLD_TONE.ink }}>
           {EXPERT_HOLD.mapTitle}
         </span>
@@ -145,7 +159,14 @@ export function ExpertHoldChip() {
           Dismiss
         </button>
       </div>
-      <span style={{ color: HOLD_TONE.dot, display: "grid", placeItems: "center", flex: "0 0 auto" }}>
+      <span
+        style={{
+          color: HOLD_TONE.dot,
+          display: "grid",
+          placeItems: "center",
+          flex: "0 0 auto",
+        }}
+      >
         <Icon name="alert-triangle" size="lg" />
       </span>
     </div>

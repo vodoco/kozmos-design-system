@@ -127,6 +127,13 @@ function pages() {
     "compass-01",
     "loading-01",
     "switch-vertical-01",
+    "route",
+    "qr-code-01",
+    "lock-01",
+    "info-circle",
+    "bus",
+    "heart",
+    "shopping-bag-02",
   ]) {
     icons.appendChild(mockIconComponent(name));
   }
@@ -850,14 +857,14 @@ section("CategoryField");
 
 section("BrowseCategoriesPanel");
 {
-  const taxonomy = [
-    ["Entrances & Exits", "Green", "6"],
-    ["Check-in & Baggage", "Turquoise", "14"],
-    ["Security & Immigration", "Red", "5"],
-    ["Gates", "Yellow", "88"],
-    ["Customer Service", "Blue", "9"],
+  const categories = [
+    ["Wayfinding", "Green", "6"],
+    ["Check-in", "Turquoise", "14"],
+    ["Secure Areas", "Red", "5"],
+    ["Nearby", "Yellow", "88"],
+    ["Information", "Blue", "9"],
     ["Parking & Ground Transport", "Navy", "22"],
-    ["Dining", "Orange", "37"],
+    ["Favourites", "Orange", "37"],
     ["Shopping", "Pink", "41"],
   ];
   // A CategoryTile set for the panel to instance, painted by the plugin itself.
@@ -889,27 +896,6 @@ section("BrowseCategoriesPanel");
     await plugin.configureCategoryTileProperties(tileSet, freshStats());
   }
 
-  // The taxonomy's symbols on the Icons page, drawn by the plugin's own sync.
-  const iconsPage = figma.root.children.find((page) => page.name === "Icons");
-  const symbols = (plugin.KOSMOS_ICON_DEFINITIONS || []).filter(
-    (definition) => definition.source === "taxonomy",
-  );
-  ok(
-    symbols.length === 8 &&
-      typeof plugin.syncTaxonomyIconSourceComponent === "function",
-    `eight taxonomy symbols to draw (${symbols.length})`,
-  );
-  for (const [index, definition] of symbols.entries()) {
-    const symbol = new MockNode("COMPONENT", `Icon / ${definition.name}`);
-    iconsPage.appendChild(symbol);
-    figma.currentPage = iconsPage;
-    await plugin.syncTaxonomyIconSourceComponent(
-      symbol,
-      definition,
-      index,
-      freshStats(),
-    );
-  }
   figma.currentPage = figma.root.children[0];
 
   const component = figma.createComponent();
@@ -943,7 +929,7 @@ section("BrowseCategoriesPanel");
       instances.every((tile) => tile.type === "INSTANCE"),
     "eight live CategoryTile instances",
   );
-  taxonomy.forEach(([label, tint, count], index) => {
+  categories.forEach(([label, tint, count], index) => {
     const tile = instances[index];
     const labelNode =
       tile && tile.findOne((node) => node.name === "Label Text");
@@ -959,35 +945,39 @@ section("BrowseCategoriesPanel");
       `tile ${index + 1} is ${label} in ${tint} with its count ${count} (got ${digits && digits.characters})`,
     );
   });
-  // renderIcon's symbol: the taxonomy's own, in the category's accent.
+  // renderIcon's symbol: a curated Pointr icon, in the category's accent.
   const symbolNames = [
-    "taxonomy-entrance-exit",
-    "taxonomy-service-space-office",
-    "taxonomy-security-space",
-    "taxonomy-transportation-space-boarding-gate",
-    "taxonomy-amenity-space-desk",
-    "taxonomy-parking-space",
-    "taxonomy-food-beverage-space",
-    "taxonomy-retail-space",
+    "route",
+    "qr-code-01",
+    "lock-01",
+    "navigation-pointer-01",
+    "info-circle",
+    "bus",
+    "heart",
+    "shopping-bag-02",
   ];
-  taxonomy.forEach(([label, tint], index) => {
+  categories.forEach(([label, tint], index) => {
     const icon =
       instances[index] &&
       instances[index].findOne(
         (node) => node.type === "INSTANCE" && node.name === "Icon",
       );
     const shapes = icon ? icon.findAll((node) => node.type === "VECTOR") : [];
+    const tintOf = (shape) => {
+      const paints = [];
+      if (Array.isArray(shape.fills)) paints.push(...shape.fills);
+      if (Array.isArray(shape.strokes)) paints.push(...shape.strokes);
+      return paints.map(boundVariableName).filter(Boolean);
+    };
     ok(
       icon &&
         icon.mainComponent &&
         icon.mainComponent.name === `Icon / ${symbolNames[index]}` &&
         shapes.length > 0 &&
-        shapes.every(
-          (shape) =>
-            shape.fills.length === 1 &&
-            boundVariableName(shape.fills[0]) === `Category/Accent/${tint}`,
+        shapes.every((shape) =>
+          tintOf(shape).includes(`Category/Accent/${tint}`),
         ),
-      `${label}: the ${symbolNames[index]} symbol, filled in Category/Accent/${tint} (${icon && icon.mainComponent && icon.mainComponent.name}; ${shapes.map((shape) => boundVariableName(shape.fills[0])).join(", ")})`,
+      `${label}: the ${symbolNames[index]} symbol in Category/Accent/${tint} (${icon && icon.mainComponent && icon.mainComponent.name}; ${shapes.length} shape(s); ${shapes.map((shape) => tintOf(shape).join("+") || "untinted").join(", ")})`,
     );
   });
   const parking =
@@ -1440,7 +1430,10 @@ section("Map cards on the panel radius");
   const tokens = payloadVariables([...variableByName.keys()]);
   const panel = plugin.KOZMOS_RADIUS.panel;
   const slotRadius = plugin.nestedRadius(panel, plugin.PRODUCT_SDK_CARD_INSET);
-  const stale = plugin.nestedRadius(plugin.KOZMOS_RADIUS.container, plugin.PRODUCT_SDK_CARD_INSET);
+  const stale = plugin.nestedRadius(
+    plugin.KOZMOS_RADIUS.container,
+    plugin.PRODUCT_SDK_CARD_INSET,
+  );
   for (const [name, painter, value] of cards) {
     const component = figma.createComponent();
     await plugin[painter](component, {
@@ -1449,7 +1442,9 @@ section("Map cards on the panel radius");
       fonts: FONTS,
       stats: freshStats(),
     });
-    const radii = component.findAll((node) => node !== component && node.cornerRadius > 0).map((node) => node.cornerRadius);
+    const radii = component
+      .findAll((node) => node !== component && node.cornerRadius > 0)
+      .map((node) => node.cornerRadius);
     ok(
       component.cornerRadius === panel && !radii.includes(stale),
       `${name}: the card at ${component.cornerRadius} (panel ${panel}), no slot left at the container's ${stale}${radii.includes(slotRadius) ? `; slots at ${slotRadius}` : ""}`,
@@ -1464,8 +1459,15 @@ section("Map cards on the panel radius");
 section("DynamicIsland's own theme");
 {
   const tokens = payloadVariables([...variableByName.keys()]);
-  const product = { id: "Primitive Tokens", name: "Primitive Tokens", modes: [{ modeId: "product-dark", name: "Dark" }] };
-  const themedFigma = createFigmaMock({ pages: pages(), collections: [...tokens.collections, product] });
+  const product = {
+    id: "Primitive Tokens",
+    name: "Primitive Tokens",
+    modes: [{ modeId: "product-dark", name: "Dark" }],
+  };
+  const themedFigma = createFigmaMock({
+    pages: pages(),
+    collections: [...tokens.collections, product],
+  });
   const themed = loadPlugin({ pluginPath: PLUGIN, figma: themedFigma });
   const island = themedFigma.createComponent();
   await themed.updateDynamicIslandVariant(island, {
@@ -1501,23 +1503,35 @@ section("Stepper accent");
       fonts: FONTS,
       stats: freshStats(),
     });
-  const indicator = (item) => item.findOne((node) => node.name.endsWith("Indicator"));
-  const [completed, current, pending] = [await step(0), await step(1), await step(2)].map(indicator);
+  const indicator = (item) =>
+    item.findOne((node) => node.name.endsWith("Indicator"));
+  const [completed, current, pending] = [
+    await step(0),
+    await step(1),
+    await step(2),
+  ].map(indicator);
   ok(
     boundVariableName(completed.fills[0]) === "Colors/theme/600" &&
       boundVariableName(completed.strokes[0]) === "Colors/theme/600",
     `a completed step is theme/600, ring and fill (${boundVariableName(completed.fills[0])}, ${boundVariableName(completed.strokes[0])})`,
   );
   ok(
-    boundVariableName(current.strokes[0]) === "Colors/theme/600" && current.strokeWeight === 2,
+    boundVariableName(current.strokes[0]) === "Colors/theme/600" &&
+      current.strokeWeight === 2,
     `the current step's ring is theme/600 at 2 (${boundVariableName(current.strokes[0])} at ${current.strokeWeight})`,
   );
   ok(
-    boundVariableName(pending.strokes[0]) === "Colors/foreground/500" && pending.strokeWeight === 1,
+    boundVariableName(pending.strokes[0]) === "Colors/foreground/500" &&
+      pending.strokeWeight === 1,
     `a pending step's ring is foreground/500 at 1 (${boundVariableName(pending.strokes[0])} at ${pending.strokeWeight})`,
   );
   const connector = (active) =>
-    plugin.createStepperConnector({ index: 0, active, variableByName: tokens.variableByName, stats: freshStats() });
+    plugin.createStepperConnector({
+      index: 0,
+      active,
+      variableByName: tokens.variableByName,
+      stats: freshStats(),
+    });
   const [done, ahead] = [connector(true), connector(false)];
   ok(
     boundVariableName(done.fills[0]) === "Colors/theme/600" &&
@@ -1650,6 +1664,66 @@ section("Every frame keeps the size it was drawn at");
   );
 }
 
+// --- POIResultCard's action row ------------------------------------------------------
+
+// A selected result offers what the product gave it, and the card has to have
+// somewhere to put that. The row is drawn on EVERY variant and hidden, because
+// an Actions boolean toggles a layer: one that existed only on Selected could
+// not be turned on anywhere else.
+section("POIResultCard actions");
+{
+  const component = figma.createComponent();
+  const stats = freshStats();
+  await plugin.updatePOIResultCardVariant(component, {
+    value: "Selected",
+    variableByName,
+    fonts: FONTS,
+    stats,
+  });
+
+  const resultRow = named(component, "Result Row");
+  const actionsRow = named(component, "Actions Row");
+  ok(
+    resultRow && actionsRow,
+    `a Result Row and an Actions Row (${component.children.map((child) => child.name).join(", ")})`,
+  );
+  ok(
+    component.layoutMode === "VERTICAL",
+    `the card stacks them (${component.layoutMode})`,
+  );
+  ok(
+    actionsRow && actionsRow.visible === false,
+    "the action row is hidden until the Actions property asks for it",
+  );
+  const buttons = actionsRow
+    ? actionsRow.children.filter((child) => child.name.endsWith("Action"))
+    : [];
+  ok(
+    buttons.length === 2 &&
+      buttons[0].name === "Primary Action" &&
+      buttons[1].name === "Secondary Action",
+    `two actions, primary first (${buttons.map((b) => b.name).join(", ")})`,
+  );
+  ok(
+    buttons.length === 2 &&
+      boundVariableName(buttons[0].fills[0]) === "Colors/theme/500" &&
+      boundVariableName(buttons[1].fills[0]) === "Surface/0" &&
+      buttons[1].strokeWeight === 1,
+    `the primary is filled and the secondary is outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+  );
+  // The logo and copy must have moved WITH the row, not been left on the card.
+  ok(
+    resultRow && named(resultRow, "Logo Slot") && named(resultRow, "Result Copy"),
+    "the logo and copy live in the result row",
+  );
+  // named() is findOne, so it reaches descendants: the card must not hold the
+  // logo as its OWN child, which is what moving it into the row means.
+  ok(
+    !component.children.some((child) => child.name === "Logo Slot"),
+    `and the card holds only the two rows (${component.children.map((c) => c.name).join(", ")})`,
+  );
+}
+
 // --- Curated Icons ------------------------------------------------------------------
 
 // Every tint an icon slot carries is an override keyed through its icon
@@ -1667,9 +1741,6 @@ section("Curated Icons");
     figma: createFigmaMock({ pages: [iconsPage], library }),
   });
   const definitions = icons.KOSMOS_ICON_DEFINITIONS;
-  const taxonomy = definitions.filter(
-    (definition) => definition.source === "taxonomy",
-  );
   for (const definition of definitions) {
     if (!definition.componentKey) continue;
     const source = mockIconComponent(definition.name);
@@ -1689,10 +1760,9 @@ section("Curated Icons");
   const first = await icons.syncIconSourceLibrary();
   ok(
     first.created === definitions.length &&
-      first.drawn === taxonomy.length &&
-      taxonomy.length === 8 &&
+      first.drawn === 0 &&
       first.failed === 0,
-    `a first run makes all ${definitions.length}, drawing the ${taxonomy.length} taxonomy symbols (${JSON.stringify({ created: first.created, drawn: first.drawn, failed: first.failed })}; ${first.warnings.slice(0, 2).join(" | ")})`,
+    `a first run makes all ${definitions.length}, importing every one and drawing none (${JSON.stringify({ created: first.created, drawn: first.drawn, failed: first.failed })}; ${first.warnings.slice(0, 2).join(" | ")})`,
   );
   const before = sourceIds();
   const second = await icons.syncIconSourceLibrary();
@@ -1725,43 +1795,7 @@ section("Curated Icons");
     `a source that is not the icon's is drawn again, and named (${third.warnings.join(" | ")})`,
   );
 
-  for (const definition of taxonomy) {
-    const component = components().find(
-      (node) => node.name === `Icon / ${definition.name}`,
-    );
-    const source = component && component.children[0];
-    const shapes = source
-      ? source.findAll((node) => node.type === "VECTOR")
-      : [];
-    const audit =
-      component && icons.auditIconSourceComponent(component, definition.name);
-    ok(
-      Boolean(
-        source &&
-        component.children.length === 1 &&
-        source.type === "FRAME" &&
-        source.name === "Taxonomy Source" &&
-        source.width === 24 &&
-        source.height === 24 &&
-        source.constraints.horizontal === "STRETCH" &&
-        source.constraints.vertical === "STRETCH" &&
-        shapes.length > 0 &&
-        shapes.every(
-          (shape) =>
-            shape.fills.length === 1 &&
-            hexOf(shape.fills[0]) === "#000000" &&
-            shape.strokes.length === 0 &&
-            shape.constraints.horizontal === "SCALE",
-        ) &&
-        audit &&
-        audit.issues.length === 0,
-      ),
-      `${definition.name}: a 24 Taxonomy Source of ${shapes.length} black filled shape(s) that scale, and the audit finds nothing (${audit && audit.issues.map((issue) => issue.message || issue.kind).join(", ")})`,
-    );
-  }
-  const pointr = components().filter(
-    (component) => !/taxonomy-/.test(component.name),
-  );
+  const pointr = components();
   ok(
     pointr.every(
       (component) =>
@@ -1773,16 +1807,14 @@ section("Curated Icons");
     `the ${pointr.length} Pointr icons audit clean`,
   );
 
-  // Offered where a painter tints fills — a category's icon — and nowhere else.
+  // Every source is a Pointr outline now, so every slot is offered all of them:
+  // the taxonomy's filled symbols, which a stroke tint could not reach, are
+  // gone from the package and from here.
   const general = await icons.findKozmosIconSourceComponents();
-  const categories = await icons.findKozmosIconSourceComponents({
-    withTaxonomy: true,
-  });
   ok(
-    general.length === definitions.length - taxonomy.length &&
-      !general.some((component) => /taxonomy-/.test(component.name)) &&
-      categories.length === definitions.length,
-    `a general icon slot is offered the ${general.length} Pointr icons, a category's all ${categories.length}`,
+    general.length === definitions.length &&
+      !general.some((component) => /taxonomy-/.test(component.name)),
+    `every slot is offered all ${general.length} Pointr icons`,
   );
 }
 
@@ -3462,6 +3494,430 @@ ok(
     .map((drop) => `${drop.node}: ${drop.token} at ${drop.opacity}`)
     .join(", ")})`,
 );
+
+section("Icon slots repaired from what they record");
+// Navbar sat at 0 of 5 tinted and Sidebar at 8 of 18 through repeated Updates
+// on 2026-09-23: every slot named Colors/foreground/400 in its own plugin data
+// and was painted plain black, because the three generic updaters never looked
+// at an icon's paint. repairIconSlotTints reads the record back.
+{
+  const NS = "kozmos_ds_importer";
+  const makeSlot = () => {
+    const slot = new MockNode("INSTANCE", "Icon");
+    slot.setSharedPluginData(NS, "kind", "icon-slot-instance");
+    slot.setSharedPluginData(NS, "foreground-token", "Colors/foreground/400");
+    slot.setSharedPluginData(NS, "foreground-fallback", "#000000");
+    const glyph = new MockNode("VECTOR", "glyph");
+    glyph.fills = [
+      { type: "SOLID", visible: true, color: { r: 0, g: 0, b: 0 } },
+    ];
+    slot.appendChild(glyph);
+    return { slot, glyph };
+  };
+
+  ok(
+    typeof plugin.repairIconSlotTints === "function",
+    "the plugin exposes a tint repair the generic updaters can call",
+  );
+
+  const set = new MockNode("COMPONENT_SET", "Navbar");
+  const variant = new MockNode("COMPONENT", "Size=Md");
+  set.appendChild(variant);
+  const orphan = makeSlot();
+  variant.appendChild(orphan.slot);
+
+  const stats = freshStats();
+  const first = plugin.repairIconSlotTints(set, variableByName, stats);
+  ok(first.repaired === 1, "an orphaned slot that records a token is repaired");
+  ok(
+    boundVariableName(orphan.glyph.fills[0]) === "Colors/foreground/400",
+    "the repaired paint binds the token the slot recorded",
+  );
+  const again = plugin.repairIconSlotTints(set, variableByName, stats);
+  ok(again.repaired === 0, "a second run writes nothing");
+
+  // A slot with no visible paint cannot be re-tinted, and the predicate cannot
+  // say so: it returns `seen && expected`, so "no paint" reads exactly like
+  // "wrong paint". Repairing it writes nothing, so the next run finds it
+  // unchanged and repairs it again, for ever, pushing "Could not find tintable
+  // fill or stroke layers" into the warnings each time.
+  const paintlessSet = new MockNode("COMPONENT_SET", "Paintless");
+  const paintlessVariant = new MockNode("COMPONENT", "Size=Md");
+  paintlessSet.appendChild(paintlessVariant);
+  const bare = makeSlot();
+  bare.glyph.fills = [];
+  paintlessVariant.appendChild(bare.slot);
+
+  const bareStats = freshStats();
+  const bareFirst = plugin.repairIconSlotTints(
+    paintlessSet,
+    variableByName,
+    bareStats,
+  );
+  const bareSecond = plugin.repairIconSlotTints(
+    paintlessSet,
+    variableByName,
+    bareStats,
+  );
+  ok(
+    bareFirst.repaired === 0 && bareSecond.repaired === 0,
+    "a slot with no visible paint is never reported as repaired",
+  );
+  ok(
+    bareFirst.paintless === 1,
+    "it is counted as paintless so the run can still say so",
+  );
+  ok(
+    bareStats.warnings.length === 0,
+    "and neither run pushes a warning about it",
+  );
+
+  // Sidebar's remaining ten live inside another instance, where Figma owns the
+  // children. Say so rather than failing silently.
+  const nestedSet = new MockNode("COMPONENT_SET", "Sidebar");
+  const nestedVariant = new MockNode("COMPONENT", "Size=Md");
+  nestedSet.appendChild(nestedVariant);
+  const host = new MockNode("INSTANCE", "NavigationItem");
+  nestedVariant.appendChild(host);
+  const nested = makeSlot();
+  host.appendChild(nested.slot);
+
+  const nestedStats = freshStats();
+  const result = plugin.repairIconSlotTints(
+    nestedSet,
+    variableByName,
+    nestedStats,
+  );
+  ok(
+    result.repaired === 0 && result.unreachable.length === 1,
+    "a slot inside another instance is counted, not written",
+  );
+  ok(
+    nestedStats.warnings.some((warning) => /nested instance/.test(warning)),
+    "and the run warns which slots it could not reach",
+  );
+}
+
+// --- Rating's two scales -------------------------------------------------------------
+
+section("Rating");
+{
+  ok(
+    typeof plugin.updateRatingVariant === "function" &&
+      typeof plugin.buildRatingComponent === "function" &&
+      typeof plugin.updateRatingComponent === "function",
+    "Rating has a painter, a Build and an Update",
+  );
+  // Named explicitly rather than compared as JSON against a plugin constant:
+  // `JSON.stringify` drops an undefined key, so `{ Scale: undefined, ... }`
+  // matched the old two-axis shape exactly and the assertion passed on a
+  // painter that had no Scale at all.
+  const ratingAxes = plugin.expectedVariantAxesForComponentSetName("Rating");
+  ok(
+    JSON.stringify(ratingAxes && ratingAxes.Scale) ===
+      JSON.stringify(["Stars", "Thumbs"]),
+    `the set expects a Scale of Stars and Thumbs (got ${JSON.stringify(ratingAxes && ratingAxes.Scale)})`,
+  );
+  ok(
+    Array.isArray(ratingAxes && ratingAxes.Value) &&
+      Array.isArray(ratingAxes && ratingAxes.State),
+    "beside Value and State",
+  );
+
+  // The theme steps this painter binds — Colors/theme/0 and /600 — are in the
+  // payload rather than in the bare mock list, so the map is built the way the
+  // Stepper and card checks build theirs. Without it the paint falls back to
+  // its hex and the binding assertions below would be measuring the harness.
+  const ratingTokens = payloadVariables([...variableByName.keys()]);
+
+  async function paint(scale, value, state = "Default") {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateRatingVariant(component, {
+      scale,
+      value,
+      state,
+      variableByName: ratingTokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    return { component, stats };
+  }
+
+  if (typeof plugin.updateRatingVariant === "function") {
+    const stars = (await paint("Stars", "3")).component;
+    ok(
+      stars.name === "Scale=Stars, Value=3, State=Default",
+      `a star variant carries all three axes (got "${stars.name}")`,
+    );
+    ok(stars.children.length === 5, "the stars scale draws five cells");
+
+    const thumbs = (await paint("Thumbs", "2")).component;
+    ok(
+      thumbs.name === "Scale=Thumbs, Value=2, State=Default",
+      `a thumbs variant is named for its scale (got "${thumbs.name}")`,
+    );
+    ok(thumbs.children.length === 2, "the thumbs scale draws two cells");
+    ok(
+      thumbs.children[0].name === "Rating Thumb Down" &&
+        thumbs.children[1].name === "Rating Thumb Up",
+      "down first, then up — 1 is the lowest on both scales",
+    );
+    ok(
+      thumbs.children.every((cell) => cell.width === 44 && cell.height === 44),
+      "each thumb keeps a 44 target",
+    );
+
+    const discOf = (cell) => cell.children[0];
+    ok(
+      thumbs.children.every(
+        (cell) => discOf(cell).width === 40 && discOf(cell).height === 40,
+      ),
+      "with a 40 disc inside it",
+    );
+
+    // Exactly the one chosen fills. A thumbs-up is not "two thumbs", so the
+    // cumulative rule the stars follow must NOT apply here.
+    ok(
+      discOf(thumbs.children[1]).strokeWeight === 2 &&
+        boundVariableName(discOf(thumbs.children[1]).strokes[0]) ===
+          "Colors/theme/600",
+      "the chosen thumb takes a 2 ring in the theme",
+    );
+    ok(
+      discOf(thumbs.children[0]).strokes.length === 0,
+      "and the other takes none — thumbs do not fill cumulatively",
+    );
+
+    const down = (await paint("Thumbs", "1")).component;
+    ok(
+      discOf(down.children[0]).strokeWeight === 2 &&
+        discOf(down.children[1]).strokes.length === 0,
+      "choosing down rings down and not up",
+    );
+
+    const none = (await paint("Thumbs", "0")).component;
+    ok(
+      none.children.every((cell) => discOf(cell).strokes.length === 0),
+      "0 is unanswered: neither is ringed",
+    );
+
+    const readonly = (await paint("Thumbs", "2", "Readonly")).component;
+    ok(
+      readonly.children.every((cell) => cell.opacity === 0.72),
+      "a read-only rating is drawn quieter, as the stars are",
+    );
+  }
+
+  // The name a variant built before the Scale axis carries. Update has to read
+  // it as Stars and RENAME it, because replacing it would change the node id
+  // Code Connect pins.
+  ok(
+    typeof plugin.parseRatingVariantName === "function" &&
+      JSON.stringify(plugin.parseRatingVariantName("Value=3, State=Default")) ===
+        JSON.stringify({ scale: "Stars", value: "3", state: "Default" }),
+    "a variant with no Scale reads as Stars, so Update renames rather than replaces",
+  );
+  ok(
+    plugin.parseRatingVariantName("Scale=Thumbs, Value=4, State=Default") ===
+      null,
+    "thumbs has no fourth value, and the set refuses to draw one",
+  );
+  ok(
+    JSON.stringify(
+      plugin.parseRatingVariantName("Scale=Thumbs, Value=2, State=Readonly"),
+    ) === JSON.stringify({ scale: "Thumbs", value: "2", state: "Readonly" }),
+    "and accepts the three values it does have",
+  );
+}
+
+// --- Card's padding, and the second axis the helper now takes ------------------------
+
+section("Card");
+{
+  const cardAxes = plugin.expectedVariantAxesForComponentSetName("Card");
+  ok(
+    JSON.stringify(cardAxes && cardAxes.Padding) ===
+      JSON.stringify(["Default", "Compact"]),
+    `the set expects a Padding of Default and Compact (got ${JSON.stringify(cardAxes && cardAxes.Padding)})`,
+  );
+
+  const cardTokens = payloadVariables([...variableByName.keys()]);
+  async function card(value, second) {
+    const component = figma.createComponent();
+    await plugin.updateCardVariant(component, {
+      value,
+      second,
+      variableByName: cardTokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  }
+
+  const full = await card("Full", "Default");
+  ok(
+    full.name === "Content=Full, Padding=Default",
+    `a variant carries both axes (got "${full.name}")`,
+  );
+
+  const compact = await card("Full", "Compact");
+  const padsOf = (component) =>
+    ["Card Header", "Card Body", "Card Footer"]
+      .map((name) => named(component, name))
+      .filter(Boolean)
+      .map((node) => node.paddingLeft);
+
+  ok(
+    padsOf(full).length >= 2 && padsOf(full).every((v) => v === 24),
+    `default pads 24 throughout (got ${JSON.stringify(padsOf(full))})`,
+  );
+  // The whole card, not just the header: 16 at the top and 24 at the bottom
+  // is the bug, not the fix.
+  ok(
+    padsOf(compact).length === padsOf(full).length &&
+      padsOf(compact).every((v) => v === 16),
+    `compact pads 16 throughout (got ${JSON.stringify(padsOf(compact))})`,
+  );
+
+  ok(
+    JSON.stringify(plugin.parseCardVariantName("Content=Full")) ===
+      JSON.stringify({ value: "Full", second: "Default" }),
+    "a variant with no Padding reads as Default, so Update renames rather than replaces",
+  );
+  ok(
+    plugin.parseCardVariantName("Content=Full, Padding=Roomy") === null,
+    "and an unknown padding is refused",
+  );
+
+  // The generic helper grew the second axis; these are the two facts every
+  // set built through it now depends on.
+  ok(
+    typeof plugin.generatedVariantCombinations === "function" &&
+      plugin.generatedVariantCombinations({
+        values: ["a", "b"],
+        axis2Values: ["x", "y"],
+      }).length === 4,
+    "the helper crosses both axes",
+  );
+  // Guarded, like the assertion above it. Calling a helper that a previous
+  // build did not have throws a TypeError, which aborts the whole run — so a
+  // negative control against the old painter would stop here and every
+  // section after it would silently never execute.
+  ok(
+    typeof plugin.generatedVariantCombinations === "function" &&
+      plugin.generatedVariantCombinations({ values: ["a", "b"] }).length === 2 &&
+      plugin.generatedVariantCombinations({ values: ["a"] })[0].second === null,
+    "and a set with one axis is untouched",
+  );
+}
+
+// --- EmptyState's size, Container's inset, POIResultCard's appearance ----------------
+
+section("The rest of the batch");
+{
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const paint = async (painter, value, second) => {
+    const component = figma.createComponent();
+    await plugin[painter](component, {
+      value,
+      second,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    return component;
+  };
+  const axis = (set, name) => {
+    const axes = plugin.expectedVariantAxesForComponentSetName(set);
+    return axes && axes[name];
+  };
+
+  // EmptyState
+  ok(
+    JSON.stringify(axis("EmptyState", "Size")) ===
+      JSON.stringify(["Default", "Compact"]),
+    `EmptyState expects a Size (got ${JSON.stringify(axis("EmptyState", "Size"))})`,
+  );
+  const esFull = await paint("updateEmptyStateVariant", "Icon", "Default");
+  const esCompact = await paint("updateEmptyStateVariant", "Icon", "Compact");
+  ok(
+    esFull.name === "Content=Icon, Size=Default",
+    `EmptyState carries both axes (got "${esFull.name}")`,
+  );
+  ok(
+    esFull.paddingTop === 32 && esCompact.paddingTop === 16,
+    `32 by default, 16 compact (got ${esFull.paddingTop} and ${esCompact.paddingTop})`,
+  );
+  ok(
+    named(esFull, "Icon Container").width === 64 &&
+      named(esCompact, "Icon Container").width === 40,
+    "and the icon box shrinks with it",
+  );
+  ok(
+    JSON.stringify(plugin.parseEmptyStateVariantName("Content=Icon")) ===
+      JSON.stringify({ value: "Icon", second: "Default" }),
+    "EmptyState: no Size reads as Default, so Update renames rather than replaces",
+  );
+
+  // Container
+  ok(
+    JSON.stringify(axis("Container", "Inset")) ===
+      JSON.stringify(["Window", "Panel"]),
+    `Container expects an Inset (got ${JSON.stringify(axis("Container", "Inset"))})`,
+  );
+  const ctWindow = await paint("updateContainerVariant", "True", "Window");
+  const ctPanel = await paint("updateContainerVariant", "True", "Panel");
+  ok(
+    ctWindow.name === "Centered=True, Inset=Window",
+    `Container carries both axes (got "${ctWindow.name}")`,
+  );
+  ok(
+    ctWindow.paddingLeft === 24 && ctPanel.paddingLeft === 16,
+    `the window's widest step against the panel's fixed 16 (got ${ctWindow.paddingLeft} and ${ctPanel.paddingLeft})`,
+  );
+  ok(
+    JSON.stringify(plugin.parseContainerVariantName("Centered=True")) ===
+      JSON.stringify({ value: "True", second: "Window", centered: "True" }),
+    "Container: no Inset reads as Window",
+  );
+
+  // POIResultCard
+  ok(
+    JSON.stringify(axis("POIResultCard", "Appearance")) ===
+      JSON.stringify(["Card", "Row"]),
+    `POIResultCard expects an Appearance (got ${JSON.stringify(axis("POIResultCard", "Appearance"))})`,
+  );
+  const asCard = await paint("updatePOIResultCardVariant", "Selected", "Card");
+  const asRow = await paint("updatePOIResultCardVariant", "Selected", "Row");
+  ok(
+    asCard.name === "State=Selected, Appearance=Card",
+    `POIResultCard carries both axes (got "${asCard.name}")`,
+  );
+  // A row sits in a list that already draws the edges, so it has none of its
+  // own and states its selection with the fill instead.
+  ok(
+    asCard.strokes.length === 1 && asRow.strokes.length === 0,
+    "a card has a border and a row has none",
+  );
+  ok(
+    asCard.cornerRadius === plugin.KOZMOS_RADIUS.container &&
+      asRow.cornerRadius === plugin.KOZMOS_RADIUS.none,
+    "a card is rounded and a row is not",
+  );
+  const featuredRow = await paint("updatePOIResultCardVariant", "Featured", "Row");
+  const featuredCard = await paint("updatePOIResultCardVariant", "Featured", "Card");
+  ok(
+    featuredCard.findOne((n) => /Featured|Tab/.test(n.name || "")) !== null &&
+      featuredRow.findOne((n) => /Featured|Tab/.test(n.name || "")) === null,
+    "the tab hangs from a card's edge, and a row has no edge to hang it from",
+  );
+  ok(
+    JSON.stringify(plugin.parsePOIResultCardVariantName("State=Selected")) ===
+      JSON.stringify({ value: "Selected", second: "Card" }),
+    "POIResultCard: no Appearance reads as Card",
+  );
+}
 
 // --- Summary ---------------------------------------------------------------------
 

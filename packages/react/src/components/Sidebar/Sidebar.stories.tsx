@@ -1,7 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Sidebar } from "./Sidebar";
 import { NavigationItem } from "../NavigationItem/NavigationItem";
-import { Bell, Home, Search, Settings, User } from "lucide-react";
+import {
+  Bell01 as Bell,
+  Home01 as Home,
+  SearchMd as Search,
+  Settings01 as Settings,
+  User01 as User,
+} from "@kozmos-ds/icons";
 
 const meta: Meta<typeof Sidebar> = {
   title: "Navigation/Sidebar",

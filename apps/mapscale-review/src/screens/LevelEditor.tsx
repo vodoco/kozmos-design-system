@@ -20,7 +20,7 @@ import {
   SelectValue,
   Switch,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import PointrMap, { type MapBuilding } from "../map/PointrMap";
 import { PANEL_WIDTH } from "../ui/Chrome";
 import { MapSettings, type MapPrefsState } from "../ui/MapSettings";

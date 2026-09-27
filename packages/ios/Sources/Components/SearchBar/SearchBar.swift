@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct KozmosSearchBar: View {
+public struct KozmosSearchBar<Trailing: View>: View {
     @Environment(\.kozmosAnalytics) var trackEvent
     @Binding var text: String
     let placeholder: String
@@ -8,20 +8,34 @@ public struct KozmosSearchBar: View {
     /// The host's focus for the field, so a sheet can open when the field is
     /// tapped and the host can end the search from a Cancel of its own.
     let focused: FocusState<Bool>.Binding?
-    
+    /// What sits at the end of the search row — the assistant's button, in the
+    /// SDK's sheet. The row is the component's, not the caller's: composed by
+    /// hand the pair ends up on two lines the moment the row is narrow, and on
+    /// the web it did exactly that. Nothing here can put them apart.
+    let trailing: Trailing
+
     public init(
         text: Binding<String>,
         placeholder: String = "Search...",
         focused: FocusState<Bool>.Binding? = nil,
-        onClear: (() -> Void)? = nil
+        onClear: (() -> Void)? = nil,
+        @ViewBuilder trailing: () -> Trailing
     ) {
         self._text = text
         self.placeholder = placeholder
         self.focused = focused
         self.onClear = onClear
+        self.trailing = trailing()
     }
-    
+
     public var body: some View {
+        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+            field_row
+            trailing
+        }
+    }
+
+    private var field_row: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
@@ -75,4 +89,24 @@ public struct KozmosSearchBar: View {
             TextField(placeholder, text: $text)
         }
     }
+}
+
+extension KozmosSearchBar where Trailing == EmptyView {
+    /// A field with nothing after it. `EmptyView` here is the whole content of
+    /// the trailing slot, not a child of a layout that would mis-measure it.
+    public init(
+        text: Binding<String>,
+        placeholder: String = "Search...",
+        focused: FocusState<Bool>.Binding? = nil,
+        onClear: (() -> Void)? = nil
+    ) {
+        self.init(
+            text: text,
+            placeholder: placeholder,
+            focused: focused,
+            onClear: onClear,
+            trailing: { EmptyView() }
+        )
+    }
+
 }

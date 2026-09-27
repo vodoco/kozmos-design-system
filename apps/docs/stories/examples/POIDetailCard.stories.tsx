@@ -19,7 +19,7 @@ import {
   Stack,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 /**
  * `fullPOIDetailCard`, rebuilt from Kozmos components only.
@@ -28,7 +28,7 @@ import {
  * (375×3183, 886 nodes), read over the Figma REST API on 2026-09-14.
  *
  * The rule this example is built under (`docs/ds-handoff.md` §11): only what
- * `@kozmos/react` exports, its tokens and its roles. No hand-rolled markup
+ * `@kozmos-ds/react` exports, its tokens and its roles. No hand-rolled markup
  * standing in for a missing component, no raw hex, no one-off class that
  * quietly reinvents a part — a workaround would destroy the evidence this
  * example exists to collect.
@@ -300,9 +300,9 @@ export const Default: Story = {
           </Stack>
 
           <Gap title="Favourite and bookmark buttons">
-            Heart and bookmark glyphs are now available in @kozmos/icons. This
-            legacy example still needs product favourite/save callbacks before
-            those actions can be demonstrated meaningfully.
+            Heart and bookmark glyphs are now available in @kozmos-ds/icons.
+            This legacy example still needs product favourite/save callbacks
+            before those actions can be demonstrated meaningfully.
           </Gap>
 
           {/* level / building, and the open-now status */}
@@ -338,7 +338,7 @@ export const Default: Story = {
           </Stack>
 
           <Gap title="poiMetaInformation — the meta strip">
-            MetaStrip is now exported by @kozmos/react. This legacy example
+            MetaStrip is now exported by @kozmos-ds/react. This legacy example
             still needs its travel time, distance, rating, price and access data
             mapped into that component; the component itself is no longer
             missing.

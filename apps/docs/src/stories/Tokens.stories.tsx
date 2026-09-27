@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ReactNode } from "react";
-import * as Tokens from "@kozmos/tokens";
+import * as Tokens from "@kozmos-ds/tokens";
 
 const meta: Meta = {
   title: "Design System/Tokens/Map",

@@ -4,7 +4,7 @@ import {
   IconButton,
   buttonVariants,
   type ButtonProps,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 const buttonRef = createRef<HTMLButtonElement>();
 const anchorRef = createRef<HTMLAnchorElement>();

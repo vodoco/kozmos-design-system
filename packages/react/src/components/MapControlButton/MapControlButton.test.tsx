@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { Focus } from "lucide-react";
+import { NavigationPointer01 as Focus } from "@kozmos-ds/icons";
 import { describe, expect, it, vi } from "vitest";
 import { MapControlButton } from "./MapControlButton";
 

@@ -1,0 +1,33 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./POIResultGroup.stories";
+
+<Meta of={Stories} />
+
+# POIResultGroup
+
+One venue, many branches.
+
+An airport has five Starbucks, and a visitor asking for coffee wants one row —
+not five, and not the same name scattered through the list. The group shows one
+representative and folds the rest behind a count of what is **hidden**: nine
+branches read "Show 8 more".
+
+Which branch represents the group is the product's decision — nearest by
+walking distance where there is a blue dot, otherwise the one on the current
+level — so the group draws its members in the order it is given and never
+reorders them.
+
+The container draws the border and its members draw none, separated by
+dividers: nine bordered cards inside one bordered box reads as a mistake. The
+members are ordinary `POIResultCard`s, so a grouped result opens the same
+details and offers the same actions as an ungrouped one.
+
+Nothing here is specific to a brand. A group is a representative and a
+remainder, which is as true of "other floors" or "similar places". Pass one
+straight to `POIResultList` alongside ordinary rows.
+
+<Canvas of={Stories.Collapsed} />
+<Canvas of={Stories.Expanded} />
+<Canvas of={Stories.SingleBranch} />
+<Controls />

@@ -7,7 +7,11 @@ const Skeleton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("animate-pulse rounded-control bg-muted", className)}
+    // The pulse is `.kozmos-skeleton` rather than `animate-pulse` so one
+    // owned rule can rest it under the reduced-motion preference and under the
+    // design config's `motion: reduced`, together with the spinner and the
+    // assistant's ring (GAP-50).
+    className={cn("kozmos-skeleton rounded-control bg-muted", className)}
     {...props}
   />
 ));

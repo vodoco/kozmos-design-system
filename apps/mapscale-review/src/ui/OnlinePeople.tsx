@@ -1,6 +1,11 @@
 import { Pencil } from "./icons";
 import { useSyncExternalStore } from "react";
-import { Popover, PopoverContent, PopoverTrigger, Text } from "@kozmos/react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+} from "@kozmos-ds/react";
 import {
   isCrossMachine,
   followPeer,

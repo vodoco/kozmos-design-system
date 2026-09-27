@@ -757,7 +757,7 @@ export const BAND: Record<
  * hardcoded hex with a note saying no published equivalent existed, which was true and was also
  * the reason to add one rather than to bend them onto `--semantics-data-*` (charts — and its blue
  * is a different blue). `Semantics/Diff/{New,Updated,Deleted,Override}` now ships in
- * `@kozmos/tokens`, so the map's diff encoding is design-system law rather than five literals
+ * `@kozmos-ds/tokens`, so the map's diff encoding is design-system law rather than five literals
  * copied between files.
  *
  * It also makes them **theme-aware**: the app mounts a ThemeProvider and loads all the token

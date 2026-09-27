@@ -26,3 +26,21 @@ export const Submitting: Story = {
     isSubmitting: true,
   },
 };
+
+/**
+ * The Express Maps prompt: a thumbs question with a counted comment.
+ *
+ * Every part is Kozmos — `Rating` on its thumbs scale, `Textarea` with a soft
+ * limit and a minimum, `Button`. Nothing here overrides a component's own
+ * styling from outside.
+ */
+export const ThumbsWithACountedComment: Story = {
+  args: {
+    title: "Are you enjoying Express Maps?",
+    description: "Your feedback remains anonymous.",
+    variant: "thumbs",
+    count: { limit: 512, minimum: 50 },
+    commentPlaceholder: "Your feedback",
+    submitLabel: "Submit",
+  },
+};

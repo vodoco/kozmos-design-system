@@ -1,6 +1,6 @@
 import React from "react";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
-import { Circle } from "lucide-react";
+import { Circle } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
 import { Label } from "../Label";

@@ -1,5 +1,11 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { Icon, Popover, PopoverTrigger, PopoverContent, Text } from "@kozmos/react";
+import {
+  Icon,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  Text,
+} from "@kozmos-ds/react";
 import {
   NOTIF_TONE,
   buildFeed,
@@ -76,8 +82,20 @@ function Row({
         }}
       />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ display: "block", fontSize: 13, fontWeight: 600, color: FG }}>{n.title}</Text>
-        <Text style={{ display: "block", fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.45 }}>
+        <Text
+          style={{ display: "block", fontSize: 13, fontWeight: 600, color: FG }}
+        >
+          {n.title}
+        </Text>
+        <Text
+          style={{
+            display: "block",
+            fontSize: 12,
+            color: MUTED,
+            marginTop: 2,
+            lineHeight: 1.45,
+          }}
+        >
           {n.meta} · {n.ago}
         </Text>
         {n.action && (
@@ -112,7 +130,11 @@ function Row({
   );
 }
 
-export function NotificationBell({ onGo }: { onGo: (t: NotificationTarget) => void }) {
+export function NotificationBell({
+  onGo,
+}: {
+  onGo: (t: NotificationTarget) => void;
+}) {
   // The feed depends on the grace period, so it must re-derive when Settings changes it.
   const settings = useSyncExternalStore(subscribeSettings, getSettings);
   const read = useSyncExternalStore(subscribeRead, getRead);
@@ -121,7 +143,10 @@ export function NotificationBell({ onGo }: { onGo: (t: NotificationTarget) => vo
    * settings at first, which meant a concluded review changed the underlying data and the bell
    * went on showing the old projection until something unrelated happened to re-render it.
    */
-  const versions = useSyncExternalStore(subscribeLevelVersions, getLevelVersionsRevision);
+  const versions = useSyncExternalStore(
+    subscribeLevelVersions,
+    getLevelVersionsRevision,
+  );
   const reviews = useSyncExternalStore(subscribeReviews, getReviewCount);
   const feed = useMemo(() => buildFeed(), [settings, versions, reviews]);
   const unreadIds = feed.filter((n) => !read.has(n.id)).map((n) => n.id);
@@ -169,7 +194,10 @@ export function NotificationBell({ onGo }: { onGo: (t: NotificationTarget) => vo
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" style={{ width: 380, padding: 0, overflow: "hidden" }}>
+      <PopoverContent
+        align="end"
+        style={{ width: 380, padding: 0, overflow: "hidden" }}
+      >
         <div
           style={{
             display: "flex",
@@ -179,7 +207,9 @@ export function NotificationBell({ onGo }: { onGo: (t: NotificationTarget) => vo
             borderBottom: `1px solid ${LINE}`,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: 600, color: INK }}>Notifications</Text>
+          <Text style={{ fontSize: 14, fontWeight: 600, color: INK }}>
+            Notifications
+          </Text>
           <button
             onClick={() => markAllRead(feed.map((n) => n.id))}
             disabled={unreadIds.length === 0}
@@ -198,7 +228,14 @@ export function NotificationBell({ onGo }: { onGo: (t: NotificationTarget) => vo
 
         <div style={{ maxHeight: 420, overflowY: "auto" }}>
           {feed.length === 0 ? (
-            <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 12.5, color: MUTED }}>
+            <div
+              style={{
+                padding: "24px 16px",
+                textAlign: "center",
+                fontSize: 12.5,
+                color: MUTED,
+              }}
+            >
               Nothing needs your attention.
             </div>
           ) : (

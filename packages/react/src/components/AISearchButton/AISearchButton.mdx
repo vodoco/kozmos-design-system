@@ -19,20 +19,37 @@ The AI search, beside the search field: a 48 disc inside a 66 ring whose gradien
 
 <div className="subheading">Code</div>
 
+The button belongs at the end of the search row, and `SearchBar`'s `trailing`
+slot is how it gets there: the field is as wide as its container, so a pair
+composed by hand lands on two lines unless the caller knows to make the field
+shrink. Through the slot it cannot.
+
 <PlatformSnippets
     react={`
-import { AISearchButton } from "@kozmos/react";
+import { AISearchButton, SearchBar } from "@kozmos-ds/react";
 
 export function Example() {
-  return <AISearchButton label="AI search" onClick={() => {}} />;
+  return (
+    <SearchBar
+      placeholder="Search this building"
+      trailing={<AISearchButton label="AI search" onClick={() => {}} />}
+    />
+  );
 }
     `}
     swift={`
 import SwiftUI
 
-KozmosAISearchButton(label: "AI search", action: {})
+KozmosSearchBar(text: $query, placeholder: "Search this building") {
+    KozmosAISearchButton(label: "AI search", action: {})
+}
 `}
     kotlin={`
-KozmosAISearchButton(label = "AI search", onClick = {})
+KozmosSearchBar(
+    value = query,
+    onValueChange = { query = it },
+    placeholder = "Search this building",
+    trailing = { KozmosAISearchButton(label = "AI search", onClick = {}) }
+)
     `}
 />

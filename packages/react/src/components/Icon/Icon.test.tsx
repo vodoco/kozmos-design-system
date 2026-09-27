@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { Icon } from "./Icon";
-import { Home } from "lucide-react";
+import { Home01 as Home } from "@kozmos-ds/icons";
 
 describe("Icon", () => {
   it("renders svg", () => {

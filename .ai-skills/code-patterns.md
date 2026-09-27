@@ -25,11 +25,11 @@
 
 ```tsx
 // packages/react/src/components/Button/Button.tsx
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../../utils/cn';
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "../../utils/cn";
 
 // -----------------------------------------------------------------------------
 // Variants
@@ -38,62 +38,62 @@ import { cn } from '../../utils/cn';
 const buttonVariants = cva(
   // Base styles (always applied)
   [
-    'kozmos-btn',
-    'inline-flex items-center justify-center gap-2',
-    'rounded-[var(--kozmos-radius-200)]',
-    'font-medium',
-    'transition-colors duration-[var(--kozmos-motion-duration-fast)]',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-    'focus-visible:ring-[var(--kozmos-color-interactive-primary)]',
-    'disabled:pointer-events-none disabled:opacity-[var(--kozmos-opacity-disabled)]',
+    "kozmos-btn",
+    "inline-flex items-center justify-center gap-2",
+    "rounded-[var(--kozmos-radius-200)]",
+    "font-medium",
+    "transition-colors duration-[var(--kozmos-motion-duration-fast)]",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+    "focus-visible:ring-[var(--kozmos-color-interactive-primary)]",
+    "disabled:pointer-events-none disabled:opacity-[var(--kozmos-opacity-disabled)]",
   ],
   {
     variants: {
       variant: {
         primary: [
-          'bg-[var(--kozmos-color-interactive-primary)]',
-          'text-[var(--kozmos-color-text-inverse)]',
-          'hover:bg-[var(--kozmos-color-interactive-primary-hover)]',
-          'active:bg-[var(--kozmos-color-interactive-primary-active)]',
+          "bg-[var(--kozmos-color-interactive-primary)]",
+          "text-[var(--kozmos-color-text-inverse)]",
+          "hover:bg-[var(--kozmos-color-interactive-primary-hover)]",
+          "active:bg-[var(--kozmos-color-interactive-primary-active)]",
         ],
         secondary: [
-          'bg-[var(--kozmos-color-background-secondary)]',
-          'text-[var(--kozmos-color-text-primary)]',
-          'hover:bg-[var(--kozmos-color-background-secondary-hover)]',
+          "bg-[var(--kozmos-color-background-secondary)]",
+          "text-[var(--kozmos-color-text-primary)]",
+          "hover:bg-[var(--kozmos-color-background-secondary-hover)]",
         ],
         outlined: [
-          'border border-[var(--kozmos-color-border-default)]',
-          'bg-transparent',
-          'text-[var(--kozmos-color-text-primary)]',
-          'hover:bg-[var(--kozmos-color-background-secondary)]',
+          "border border-[var(--kozmos-color-border-default)]",
+          "bg-transparent",
+          "text-[var(--kozmos-color-text-primary)]",
+          "hover:bg-[var(--kozmos-color-background-secondary)]",
         ],
         ghost: [
-          'bg-transparent',
-          'text-[var(--kozmos-color-text-primary)]',
-          'hover:bg-[var(--kozmos-color-background-secondary)]',
+          "bg-transparent",
+          "text-[var(--kozmos-color-text-primary)]",
+          "hover:bg-[var(--kozmos-color-background-secondary)]",
         ],
         destructive: [
-          'bg-[var(--kozmos-color-status-danger)]',
-          'text-[var(--kozmos-color-text-inverse)]',
-          'hover:bg-[var(--kozmos-color-status-danger-hover)]',
+          "bg-[var(--kozmos-color-status-danger)]",
+          "text-[var(--kozmos-color-text-inverse)]",
+          "hover:bg-[var(--kozmos-color-status-danger-hover)]",
         ],
       },
       size: {
-        sm: 'h-8 px-3 text-[var(--kozmos-font-size-200)]',
-        md: 'h-10 px-4 text-[var(--kozmos-font-size-300)]',
-        lg: 'h-12 px-6 text-[var(--kozmos-font-size-400)]',
+        sm: "h-8 px-3 text-[var(--kozmos-font-size-200)]",
+        md: "h-10 px-4 text-[var(--kozmos-font-size-300)]",
+        lg: "h-12 px-6 text-[var(--kozmos-font-size-400)]",
       },
       fullWidth: {
-        true: 'w-full',
-        false: 'w-auto',
+        true: "w-full",
+        false: "w-auto",
       },
     },
     defaultVariants: {
-      variant: 'primary',
-      size: 'md',
+      variant: "primary",
+      size: "md",
       fullWidth: false,
     },
-  }
+  },
 );
 
 // -----------------------------------------------------------------------------
@@ -101,7 +101,8 @@ const buttonVariants = cva(
 // -----------------------------------------------------------------------------
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   /** Shows loading spinner and disables button */
   isLoading?: boolean;
@@ -131,7 +132,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <button
@@ -153,29 +154,29 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
       </button>
     );
-  }
+  },
 );
 
-Button.displayName = 'Button';
+Button.displayName = "Button";
 
 // -----------------------------------------------------------------------------
 // Sub-components
 // -----------------------------------------------------------------------------
 
 interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg' | null;
+  size?: "sm" | "md" | "lg" | null;
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size }) => {
   const sizeClass = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4',
-    lg: 'h-5 w-5',
-  }[size ?? 'md'];
+    sm: "h-3 w-3",
+    md: "h-4 w-4",
+    lg: "h-5 w-5",
+  }[size ?? "md"];
 
   return (
     <svg
-      className={cn('animate-spin', sizeClass)}
+      className={cn("animate-spin", sizeClass)}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -210,10 +211,10 @@ export type { ButtonProps };
 
 ```tsx
 // packages/react/src/components/Tabs/Tabs.tsx
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cn } from '../../utils/cn';
+import * as React from "react";
+import { cn } from "../../utils/cn";
 
 // -----------------------------------------------------------------------------
 // Context
@@ -222,7 +223,7 @@ import { cn } from '../../utils/cn';
 interface TabsContextValue {
   activeTab: string;
   setActiveTab: (value: string) => void;
-  orientation: 'horizontal' | 'vertical';
+  orientation: "horizontal" | "vertical";
 }
 
 const TabsContext = React.createContext<TabsContextValue | null>(null);
@@ -230,7 +231,7 @@ const TabsContext = React.createContext<TabsContextValue | null>(null);
 const useTabsContext = () => {
   const context = React.useContext(TabsContext);
   if (!context) {
-    throw new Error('Tabs compound components must be used within <Tabs>');
+    throw new Error("Tabs compound components must be used within <Tabs>");
   }
   return context;
 };
@@ -247,7 +248,7 @@ interface TabsProps {
   /** Callback when tab changes */
   onValueChange?: (value: string) => void;
   /** Layout orientation */
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
   children: React.ReactNode;
   className?: string;
 }
@@ -260,11 +261,12 @@ const Tabs: React.FC<TabsProps> & {
   defaultValue,
   value: controlledValue,
   onValueChange,
-  orientation = 'horizontal',
+  orientation = "horizontal",
   children,
   className,
 }) => {
-  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue);
+  const [uncontrolledValue, setUncontrolledValue] =
+    React.useState(defaultValue);
 
   const isControlled = controlledValue !== undefined;
   const activeTab = isControlled ? controlledValue : uncontrolledValue;
@@ -276,16 +278,16 @@ const Tabs: React.FC<TabsProps> & {
       }
       onValueChange?.(newValue);
     },
-    [isControlled, onValueChange]
+    [isControlled, onValueChange],
   );
 
   return (
     <TabsContext.Provider value={{ activeTab, setActiveTab, orientation }}>
       <div
         className={cn(
-          'kozmos-tabs',
-          orientation === 'vertical' && 'flex',
-          className
+          "kozmos-tabs",
+          orientation === "vertical" && "flex",
+          className,
         )}
         data-orientation={orientation}
       >
@@ -312,12 +314,12 @@ const TabsList: React.FC<TabsListProps> = ({ children, className }) => {
       role="tablist"
       aria-orientation={orientation}
       className={cn(
-        'kozmos-tabs-list',
-        'inline-flex gap-1 p-1',
-        'bg-[var(--kozmos-color-background-secondary)]',
-        'rounded-[var(--kozmos-radius-200)]',
-        orientation === 'vertical' && 'flex-col',
-        className
+        "kozmos-tabs-list",
+        "inline-flex gap-1 p-1",
+        "bg-[var(--kozmos-color-background-secondary)]",
+        "rounded-[var(--kozmos-radius-200)]",
+        orientation === "vertical" && "flex-col",
+        className,
       )}
     >
       {children}
@@ -356,24 +358,24 @@ const TabsTrigger: React.FC<TabsTriggerProps> = ({
       disabled={disabled}
       onClick={() => setActiveTab(value)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           setActiveTab(value);
         }
       }}
       className={cn(
-        'kozmos-tabs-trigger',
-        'px-3 py-1.5',
-        'text-[var(--kozmos-font-size-300)]',
-        'font-medium',
-        'rounded-[var(--kozmos-radius-100)]',
-        'transition-colors duration-[var(--kozmos-motion-duration-fast)]',
-        'focus-visible:outline-none focus-visible:ring-2',
+        "kozmos-tabs-trigger",
+        "px-3 py-1.5",
+        "text-[var(--kozmos-font-size-300)]",
+        "font-medium",
+        "rounded-[var(--kozmos-radius-100)]",
+        "transition-colors duration-[var(--kozmos-motion-duration-fast)]",
+        "focus-visible:outline-none focus-visible:ring-2",
         isSelected
-          ? 'bg-[var(--kozmos-color-background-primary)] text-[var(--kozmos-color-text-primary)] shadow-sm'
-          : 'text-[var(--kozmos-color-text-secondary)] hover:text-[var(--kozmos-color-text-primary)]',
-        disabled && 'opacity-50 cursor-not-allowed',
-        className
+          ? "bg-[var(--kozmos-color-background-primary)] text-[var(--kozmos-color-text-primary)] shadow-sm"
+          : "text-[var(--kozmos-color-text-secondary)] hover:text-[var(--kozmos-color-text-primary)]",
+        disabled && "opacity-50 cursor-not-allowed",
+        className,
       )}
     >
       {children}
@@ -414,11 +416,11 @@ const TabsContent: React.FC<TabsContentProps> = ({
       hidden={!isSelected}
       tabIndex={0}
       className={cn(
-        'kozmos-tabs-content',
-        'mt-2 p-4',
-        'focus-visible:outline-none focus-visible:ring-2',
-        'rounded-[var(--kozmos-radius-200)]',
-        className
+        "kozmos-tabs-content",
+        "mt-2 p-4",
+        "focus-visible:outline-none focus-visible:ring-2",
+        "rounded-[var(--kozmos-radius-200)]",
+        className,
       )}
     >
       {children}
@@ -446,11 +448,11 @@ export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps };
 
 ```tsx
 // packages/react/src/components/Input/Input.tsx
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../../utils/cn';
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "../../utils/cn";
 
 // -----------------------------------------------------------------------------
 // Variants
@@ -458,46 +460,46 @@ import { cn } from '../../utils/cn';
 
 const inputContainerVariants = cva(
   [
-    'kozmos-input-container',
-    'flex items-center gap-2',
-    'border rounded-[var(--kozmos-radius-200)]',
-    'bg-[var(--kozmos-color-background-primary)]',
-    'transition-colors duration-[var(--kozmos-motion-duration-fast)]',
+    "kozmos-input-container",
+    "flex items-center gap-2",
+    "border rounded-[var(--kozmos-radius-200)]",
+    "bg-[var(--kozmos-color-background-primary)]",
+    "transition-colors duration-[var(--kozmos-motion-duration-fast)]",
   ],
   {
     variants: {
       size: {
-        sm: 'h-8 px-2 text-[var(--kozmos-font-size-200)]',
-        md: 'h-10 px-3 text-[var(--kozmos-font-size-300)]',
-        lg: 'h-12 px-4 text-[var(--kozmos-font-size-400)]',
+        sm: "h-8 px-2 text-[var(--kozmos-font-size-200)]",
+        md: "h-10 px-3 text-[var(--kozmos-font-size-300)]",
+        lg: "h-12 px-4 text-[var(--kozmos-font-size-400)]",
       },
       state: {
         default: [
-          'border-[var(--kozmos-color-border-default)]',
-          'focus-within:border-[var(--kozmos-color-interactive-primary)]',
-          'focus-within:ring-2 focus-within:ring-[var(--kozmos-color-interactive-primary)]/20',
+          "border-[var(--kozmos-color-border-default)]",
+          "focus-within:border-[var(--kozmos-color-interactive-primary)]",
+          "focus-within:ring-2 focus-within:ring-[var(--kozmos-color-interactive-primary)]/20",
         ],
         error: [
-          'border-[var(--kozmos-color-status-danger)]',
-          'focus-within:ring-2 focus-within:ring-[var(--kozmos-color-status-danger)]/20',
+          "border-[var(--kozmos-color-status-danger)]",
+          "focus-within:ring-2 focus-within:ring-[var(--kozmos-color-status-danger)]/20",
         ],
         success: [
-          'border-[var(--kozmos-color-status-success)]',
-          'focus-within:ring-2 focus-within:ring-[var(--kozmos-color-status-success)]/20',
+          "border-[var(--kozmos-color-status-success)]",
+          "focus-within:ring-2 focus-within:ring-[var(--kozmos-color-status-success)]/20",
         ],
         disabled: [
-          'border-[var(--kozmos-color-border-default)]',
-          'bg-[var(--kozmos-color-background-secondary)]',
-          'opacity-[var(--kozmos-opacity-disabled)]',
-          'cursor-not-allowed',
+          "border-[var(--kozmos-color-border-default)]",
+          "bg-[var(--kozmos-color-background-secondary)]",
+          "opacity-[var(--kozmos-opacity-disabled)]",
+          "cursor-not-allowed",
         ],
       },
     },
     defaultVariants: {
-      size: 'md',
-      state: 'default',
+      size: "md",
+      state: "default",
     },
-  }
+  },
 );
 
 // -----------------------------------------------------------------------------
@@ -505,7 +507,8 @@ const inputContainerVariants = cva(
 // -----------------------------------------------------------------------------
 
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
     VariantProps<typeof inputContainerVariants> {
   /** Label text */
   label?: string;
@@ -542,10 +545,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       fullWidth = false,
       disabled,
       id: idProp,
-      'aria-describedby': ariaDescribedByProp,
+      "aria-describedby": ariaDescribedByProp,
       ...props
     },
-    ref
+    ref,
   ) => {
     // Generate stable ID
     const generatedId = React.useId();
@@ -556,35 +559,36 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     // Determine state
     const state = disabled
-      ? 'disabled'
+      ? "disabled"
       : errorMessage
-      ? 'error'
-      : successMessage
-      ? 'success'
-      : stateProp ?? 'default';
+        ? "error"
+        : successMessage
+          ? "success"
+          : (stateProp ?? "default");
 
     // Build aria-describedby
-    const ariaDescribedBy = [
-      ariaDescribedByProp,
-      helperText && helperId,
-      errorMessage && errorId,
-      successMessage && successId,
-    ]
-      .filter(Boolean)
-      .join(' ') || undefined;
+    const ariaDescribedBy =
+      [
+        ariaDescribedByProp,
+        helperText && helperId,
+        errorMessage && errorId,
+        successMessage && successId,
+      ]
+        .filter(Boolean)
+        .join(" ") || undefined;
 
     return (
-      <div className={cn('kozmos-input', fullWidth && 'w-full', className)}>
+      <div className={cn("kozmos-input", fullWidth && "w-full", className)}>
         {/* Label */}
         {label && (
           <label
             htmlFor={id}
             className={cn(
-              'kozmos-input-label',
-              'block mb-1.5',
-              'text-[var(--kozmos-font-size-200)]',
-              'font-medium',
-              'text-[var(--kozmos-color-text-primary)]'
+              "kozmos-input-label",
+              "block mb-1.5",
+              "text-[var(--kozmos-font-size-200)]",
+              "font-medium",
+              "text-[var(--kozmos-color-text-primary)]",
             )}
           >
             {label}
@@ -605,16 +609,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={id}
             disabled={disabled}
-            aria-invalid={state === 'error' || undefined}
+            aria-invalid={state === "error" || undefined}
             aria-describedby={ariaDescribedBy}
             className={cn(
-              'kozmos-input-field',
-              'flex-1 min-w-0',
-              'bg-transparent',
-              'border-none outline-none',
-              'text-[var(--kozmos-color-text-primary)]',
-              'placeholder:text-[var(--kozmos-color-text-tertiary)]',
-              disabled && 'cursor-not-allowed'
+              "kozmos-input-field",
+              "flex-1 min-w-0",
+              "bg-transparent",
+              "border-none outline-none",
+              "text-[var(--kozmos-color-text-primary)]",
+              "placeholder:text-[var(--kozmos-color-text-tertiary)]",
+              disabled && "cursor-not-allowed",
             )}
             {...props}
           />
@@ -659,10 +663,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
-Input.displayName = 'Input';
+Input.displayName = "Input";
 
 // -----------------------------------------------------------------------------
 // Exports
@@ -675,86 +679,94 @@ export { Input, inputContainerVariants };
 
 ```tsx
 // packages/react/src/components/Box/Box.tsx
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cn } from '../../utils/cn';
+import * as React from "react";
+import { cn } from "../../utils/cn";
 
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
 
-type BoxElement = 'div' | 'section' | 'article' | 'aside' | 'header' | 'footer' | 'main' | 'nav';
+type BoxElement =
+  | "div"
+  | "section"
+  | "article"
+  | "aside"
+  | "header"
+  | "footer"
+  | "main"
+  | "nav";
 
-type BoxProps<T extends BoxElement = 'div'> = {
+type BoxProps<T extends BoxElement = "div"> = {
   /** HTML element to render */
   as?: T;
   /** Padding using token scale */
-  p?: 'none' | '100' | '200' | '300' | '400' | '500' | '600';
+  p?: "none" | "100" | "200" | "300" | "400" | "500" | "600";
   /** Padding X (horizontal) */
-  px?: 'none' | '100' | '200' | '300' | '400' | '500' | '600';
+  px?: "none" | "100" | "200" | "300" | "400" | "500" | "600";
   /** Padding Y (vertical) */
-  py?: 'none' | '100' | '200' | '300' | '400' | '500' | '600';
+  py?: "none" | "100" | "200" | "300" | "400" | "500" | "600";
   /** Margin using token scale */
-  m?: 'none' | '100' | '200' | '300' | '400' | '500' | '600' | 'auto';
+  m?: "none" | "100" | "200" | "300" | "400" | "500" | "600" | "auto";
   /** Margin X (horizontal) */
-  mx?: 'none' | '100' | '200' | '300' | '400' | '500' | '600' | 'auto';
+  mx?: "none" | "100" | "200" | "300" | "400" | "500" | "600" | "auto";
   /** Margin Y (vertical) */
-  my?: 'none' | '100' | '200' | '300' | '400' | '500' | '600' | 'auto';
+  my?: "none" | "100" | "200" | "300" | "400" | "500" | "600" | "auto";
   /** Border radius */
-  radius?: 'none' | '100' | '200' | '300' | '400' | 'full';
+  radius?: "none" | "100" | "200" | "300" | "400" | "full";
   /** Background color token */
-  bg?: 'primary' | 'secondary' | 'tertiary' | 'inverse';
+  bg?: "primary" | "secondary" | "tertiary" | "inverse";
   /** Shadow elevation */
-  shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  shadow?: "none" | "sm" | "md" | "lg" | "xl";
   children?: React.ReactNode;
   className?: string;
-} & Omit<React.ComponentPropsWithoutRef<T>, 'as'>;
+} & Omit<React.ComponentPropsWithoutRef<T>, "as">;
 
 // -----------------------------------------------------------------------------
 // Utility classes
 // -----------------------------------------------------------------------------
 
 const spacingClasses = {
-  none: '0',
-  '100': 'var(--kozmos-space-100)',
-  '200': 'var(--kozmos-space-200)',
-  '300': 'var(--kozmos-space-300)',
-  '400': 'var(--kozmos-space-400)',
-  '500': 'var(--kozmos-space-500)',
-  '600': 'var(--kozmos-space-600)',
-  auto: 'auto',
+  none: "0",
+  "100": "var(--kozmos-space-100)",
+  "200": "var(--kozmos-space-200)",
+  "300": "var(--kozmos-space-300)",
+  "400": "var(--kozmos-space-400)",
+  "500": "var(--kozmos-space-500)",
+  "600": "var(--kozmos-space-600)",
+  auto: "auto",
 };
 
 const radiusClasses = {
-  none: '0',
-  '100': 'var(--kozmos-radius-100)',
-  '200': 'var(--kozmos-radius-200)',
-  '300': 'var(--kozmos-radius-300)',
-  '400': 'var(--kozmos-radius-400)',
-  full: 'var(--kozmos-radius-full)',
+  none: "0",
+  "100": "var(--kozmos-radius-100)",
+  "200": "var(--kozmos-radius-200)",
+  "300": "var(--kozmos-radius-300)",
+  "400": "var(--kozmos-radius-400)",
+  full: "var(--kozmos-radius-full)",
 };
 
 const bgClasses = {
-  primary: 'var(--kozmos-color-background-primary)',
-  secondary: 'var(--kozmos-color-background-secondary)',
-  tertiary: 'var(--kozmos-color-background-tertiary)',
-  inverse: 'var(--kozmos-color-background-inverse)',
+  primary: "var(--kozmos-color-background-primary)",
+  secondary: "var(--kozmos-color-background-secondary)",
+  tertiary: "var(--kozmos-color-background-tertiary)",
+  inverse: "var(--kozmos-color-background-inverse)",
 };
 
 const shadowClasses = {
-  none: 'none',
-  sm: 'var(--kozmos-shadow-sm)',
-  md: 'var(--kozmos-shadow-md)',
-  lg: 'var(--kozmos-shadow-lg)',
-  xl: 'var(--kozmos-shadow-xl)',
+  none: "none",
+  sm: "var(--kozmos-shadow-sm)",
+  md: "var(--kozmos-shadow-md)",
+  lg: "var(--kozmos-shadow-lg)",
+  xl: "var(--kozmos-shadow-xl)",
 };
 
 // -----------------------------------------------------------------------------
 // Component
 // -----------------------------------------------------------------------------
 
-function BoxInner<T extends BoxElement = 'div'>(
+function BoxInner<T extends BoxElement = "div">(
   {
     as,
     p,
@@ -771,9 +783,9 @@ function BoxInner<T extends BoxElement = 'div'>(
     children,
     ...props
   }: BoxProps<T>,
-  ref: React.ForwardedRef<HTMLElement>
+  ref: React.ForwardedRef<HTMLElement>,
 ) {
-  const Component = as || 'div';
+  const Component = as || "div";
 
   const customStyle: React.CSSProperties = {
     ...(p && { padding: spacingClasses[p] }),
@@ -792,16 +804,16 @@ function BoxInner<T extends BoxElement = 'div'>(
     Component,
     {
       ref,
-      className: cn('kozmos-box', className),
+      className: cn("kozmos-box", className),
       style: customStyle,
       ...props,
     },
-    children
+    children,
   );
 }
 
-const Box = React.forwardRef(BoxInner) as <T extends BoxElement = 'div'>(
-  props: BoxProps<T> & { ref?: React.ForwardedRef<HTMLElement> }
+const Box = React.forwardRef(BoxInner) as <T extends BoxElement = "div">(
+  props: BoxProps<T> & { ref?: React.ForwardedRef<HTMLElement> },
 ) => React.ReactElement;
 
 // -----------------------------------------------------------------------------
@@ -816,10 +828,10 @@ export type { BoxProps, BoxElement };
 
 ```tsx
 // packages/react/src/components/ErrorBoundary/ErrorBoundary.tsx
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Button } from '../Button';
+import * as React from "react";
+import { Button } from "../Button";
 
 // -----------------------------------------------------------------------------
 // Types
@@ -828,7 +840,9 @@ import { Button } from '../Button';
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   /** Custom fallback UI */
-  fallback?: React.ReactNode | ((error: Error, reset: () => void) => React.ReactNode);
+  fallback?:
+    | React.ReactNode
+    | ((error: Error, reset: () => void) => React.ReactNode);
   /** Callback when error is caught */
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
   /** Reset keys - when these change, the error boundary resets */
@@ -844,7 +858,10 @@ interface ErrorBoundaryState {
 // Component
 // -----------------------------------------------------------------------------
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -861,7 +878,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   componentDidUpdate(prevProps: ErrorBoundaryProps): void {
     if (this.state.hasError && this.props.resetKeys) {
       const hasResetKeyChanged = this.props.resetKeys.some(
-        (key, index) => key !== prevProps.resetKeys?.[index]
+        (key, index) => key !== prevProps.resetKeys?.[index],
       );
       if (hasResetKeyChanged) {
         this.reset();
@@ -877,7 +894,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     if (this.state.hasError && this.state.error) {
       // Custom fallback
       if (this.props.fallback) {
-        if (typeof this.props.fallback === 'function') {
+        if (typeof this.props.fallback === "function") {
           return this.props.fallback(this.state.error, this.reset);
         }
         return this.props.fallback;
@@ -927,11 +944,11 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({ error, onReset }) => {
           Something went wrong
         </h2>
         <p className="mt-1 text-sm text-[var(--kozmos-color-text-secondary)]">
-          {error.message || 'An unexpected error occurred'}
+          {error.message || "An unexpected error occurred"}
         </p>
       </div>
       {onReset && (
-        <Button variant="outlined" size="sm" onClick={onReset}>
+        <Button variant="outline" size="sm" onClick={onReset}>
           Try again
         </Button>
       )}
@@ -951,8 +968,8 @@ export type { ErrorBoundaryProps, ErrorFallbackProps };
 
 ```tsx
 // packages/react/src/utils/cn.ts
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 /**
  * Merges class names using clsx and tailwind-merge.
@@ -971,16 +988,16 @@ export function cn(...inputs: ClassValue[]): string {
 
 ```tsx
 // packages/react/src/components/ThemeProvider/ThemeProvider.tsx
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
 
-type Theme = 'light' | 'dark' | 'system';
-type ResolvedTheme = 'light' | 'dark';
+type Theme = "light" | "dark" | "system";
+type ResolvedTheme = "light" | "dark";
 
 interface ThemeProviderProps {
   children: React.ReactNode;
@@ -1017,7 +1034,7 @@ const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 export const useTheme = (): ThemeContextValue => {
   const context = React.useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within <ThemeProvider>');
+    throw new Error("useTheme must be used within <ThemeProvider>");
   }
   return context;
 };
@@ -1028,39 +1045,42 @@ export const useTheme = (): ThemeContextValue => {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   children,
-  defaultTheme = 'system',
-  storageKey = 'kozmos-theme',
+  defaultTheme = "system",
+  storageKey = "kozmos-theme",
   brandColors,
   disableTransitionOnChange = false,
 }) => {
   const [theme, setThemeState] = React.useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = React.useState<ResolvedTheme>('light');
+  const [resolvedTheme, setResolvedTheme] =
+    React.useState<ResolvedTheme>("light");
 
   // Get system preference
   const getSystemTheme = React.useCallback((): ResolvedTheme => {
-    if (typeof window === 'undefined') return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (typeof window === "undefined") return "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   }, []);
 
   // Resolve theme
   React.useEffect(() => {
-    const resolved = theme === 'system' ? getSystemTheme() : theme;
+    const resolved = theme === "system" ? getSystemTheme() : theme;
     setResolvedTheme(resolved);
 
     // Apply to document
     const root = document.documentElement;
 
     if (disableTransitionOnChange) {
-      root.style.setProperty('--kozmos-transition-duration', '0ms');
+      root.style.setProperty("--kozmos-transition-duration", "0ms");
     }
 
-    root.setAttribute('data-kozmos-theme', resolved);
-    root.classList.remove('light', 'dark');
+    root.setAttribute("data-kozmos-theme", resolved);
+    root.classList.remove("light", "dark");
     root.classList.add(resolved);
 
     if (disableTransitionOnChange) {
       requestAnimationFrame(() => {
-        root.style.removeProperty('--kozmos-transition-duration');
+        root.style.removeProperty("--kozmos-transition-duration");
       });
     }
   }, [theme, getSystemTheme, disableTransitionOnChange]);
@@ -1072,25 +1092,40 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     const root = document.documentElement;
 
     if (brandColors.primary) {
-      root.style.setProperty('--kozmos-color-brand-primary', brandColors.primary);
+      root.style.setProperty(
+        "--kozmos-color-brand-primary",
+        brandColors.primary,
+      );
     }
     if (brandColors.background) {
-      root.style.setProperty('--kozmos-color-background-primary', brandColors.background);
+      root.style.setProperty(
+        "--kozmos-color-background-primary",
+        brandColors.background,
+      );
     }
     if (brandColors.foreground) {
-      root.style.setProperty('--kozmos-color-text-primary', brandColors.foreground);
+      root.style.setProperty(
+        "--kozmos-color-text-primary",
+        brandColors.foreground,
+      );
     }
     if (brandColors.success) {
-      root.style.setProperty('--kozmos-color-status-success', brandColors.success);
+      root.style.setProperty(
+        "--kozmos-color-status-success",
+        brandColors.success,
+      );
     }
     if (brandColors.danger) {
-      root.style.setProperty('--kozmos-color-status-danger', brandColors.danger);
+      root.style.setProperty(
+        "--kozmos-color-status-danger",
+        brandColors.danger,
+      );
     }
     if (brandColors.alert) {
-      root.style.setProperty('--kozmos-color-status-alert', brandColors.alert);
+      root.style.setProperty("--kozmos-color-status-alert", brandColors.alert);
     }
     if (brandColors.info) {
-      root.style.setProperty('--kozmos-color-status-info', brandColors.info);
+      root.style.setProperty("--kozmos-color-status-info", brandColors.info);
     }
 
     return () => {
@@ -1103,13 +1138,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
   // Listen for system theme changes
   React.useEffect(() => {
-    if (theme !== 'system') return;
+    if (theme !== "system") return;
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => setResolvedTheme(getSystemTheme());
 
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
   }, [theme, getSystemTheme]);
 
   // Persist to storage
@@ -1122,14 +1157,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
         // Storage not available
       }
     },
-    [storageKey]
+    [storageKey],
   );
 
   // Load from storage on mount
   React.useEffect(() => {
     try {
       const stored = localStorage.getItem(storageKey) as Theme | null;
-      if (stored && ['light', 'dark', 'system'].includes(stored)) {
+      if (stored && ["light", "dark", "system"].includes(stored)) {
         setThemeState(stored);
       }
     } catch {
@@ -1139,13 +1174,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
   const value = React.useMemo(
     () => ({ theme, resolvedTheme, setTheme }),
-    [theme, resolvedTheme, setTheme]
+    [theme, resolvedTheme, setTheme],
   );
 
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 };
 ```
@@ -1158,29 +1191,30 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
 ```typescript
 // packages/vue/src/components/kozmos-button.ts
-import { LitElement, html, css, PropertyValues } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { classMap } from 'lit/directives/class-map.js';
+import { LitElement, html, css, PropertyValues } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
 
-@customElement('kozmos-button')
+@customElement("kozmos-button")
 export class KozmosButton extends LitElement {
   // -----------------------------------------------------------------------------
   // Properties
   // -----------------------------------------------------------------------------
 
   @property({ type: String, reflect: true })
-  variant: 'primary' | 'secondary' | 'outlined' | 'ghost' | 'destructive' = 'primary';
+  variant: "primary" | "secondary" | "outlined" | "ghost" | "destructive" =
+    "primary";
 
   @property({ type: String, reflect: true })
-  size: 'sm' | 'md' | 'lg' = 'md';
+  size: "sm" | "md" | "lg" = "md";
 
   @property({ type: Boolean, reflect: true })
   disabled = false;
 
-  @property({ type: Boolean, reflect: true, attribute: 'is-loading' })
+  @property({ type: Boolean, reflect: true, attribute: "is-loading" })
   isLoading = false;
 
-  @property({ type: Boolean, reflect: true, attribute: 'full-width' })
+  @property({ type: Boolean, reflect: true, attribute: "full-width" })
   fullWidth = false;
 
   // -----------------------------------------------------------------------------
@@ -1206,7 +1240,8 @@ export class KozmosButton extends LitElement {
       font-weight: 500;
       font-family: inherit;
       cursor: pointer;
-      transition: all var(--kozmos-motion-duration-fast) var(--kozmos-motion-easing-standard);
+      transition: all var(--kozmos-motion-duration-fast)
+        var(--kozmos-motion-easing-standard);
       border: none;
       outline: none;
     }
@@ -1290,8 +1325,12 @@ export class KozmosButton extends LitElement {
       animation: spin 1s linear infinite;
     }
     @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
     }
   `;
 
@@ -1301,10 +1340,10 @@ export class KozmosButton extends LitElement {
 
   override render() {
     const classes = {
-      'kozmos-btn': true,
+      "kozmos-btn": true,
       [`kozmos-btn--${this.variant}`]: true,
       [`kozmos-btn--${this.size}`]: true,
-      'kozmos-btn--full-width': this.fullWidth,
+      "kozmos-btn--full-width": this.fullWidth,
     };
 
     return html`
@@ -1348,7 +1387,7 @@ export class KozmosButton extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'kozmos-button': KozmosButton;
+    "kozmos-button": KozmosButton;
   }
 }
 ```
@@ -1371,23 +1410,23 @@ declare global {
 </template>
 
 <script setup lang="ts">
-import '../components/kozmos-button';
+import "../components/kozmos-button";
 
 // -----------------------------------------------------------------------------
 // Props
 // -----------------------------------------------------------------------------
 
 export interface KozmosButtonProps {
-  variant?: 'primary' | 'secondary' | 'outlined' | 'ghost' | 'destructive';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "outlined" | "ghost" | "destructive";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   isLoading?: boolean;
   fullWidth?: boolean;
 }
 
 withDefaults(defineProps<KozmosButtonProps>(), {
-  variant: 'primary',
-  size: 'md',
+  variant: "primary",
+  size: "md",
   disabled: false,
   isLoading: false,
   fullWidth: false,
@@ -1398,7 +1437,7 @@ withDefaults(defineProps<KozmosButtonProps>(), {
 // -----------------------------------------------------------------------------
 
 defineEmits<{
-  (e: 'click', event: MouseEvent): void;
+  (e: "click", event: MouseEvent): void;
 }>();
 </script>
 ```
@@ -2138,7 +2177,7 @@ fun KozmosTheme(
 ```tsx
 // packages/react-native/src/components/Button/Button.tsx
 
-import React from 'react';
+import React from "react";
 import {
   Pressable,
   Text,
@@ -2147,20 +2186,25 @@ import {
   ViewStyle,
   TextStyle,
   View,
-} from 'react-native';
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-} from 'react-native-reanimated';
-import { tokens } from '../../tokens';
+} from "react-native-reanimated";
+import { tokens } from "../../tokens";
 
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'ghost' | 'destructive';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outlined"
+  | "ghost"
+  | "destructive";
+export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps {
   children: React.ReactNode;
@@ -2185,8 +2229,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export const Button: React.FC<ButtonProps> = ({
   children,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   disabled = false,
   isLoading = false,
   fullWidth = false,
@@ -2246,17 +2290,18 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {isLoading ? (
         <ActivityIndicator
-          size={size === 'lg' ? 'small' : 'small'}
-          color={variant === 'primary' || variant === 'destructive'
-            ? tokens.colors.text.inverse
-            : tokens.colors.text.primary
+          size={size === "lg" ? "small" : "small"}
+          color={
+            variant === "primary" || variant === "destructive"
+              ? tokens.colors.text.inverse
+              : tokens.colors.text.primary
           }
         />
       ) : (
         <View style={styles.content}>
           {leftIcon && <View style={styles.icon}>{leftIcon}</View>}
           <Text style={textStyles}>
-            {typeof children === 'string' ? children : children}
+            {typeof children === "string" ? children : children}
           </Text>
           {rightIcon && <View style={styles.icon}>{rightIcon}</View>}
         </View>
@@ -2271,21 +2316,21 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: tokens.radius[200],
   },
 
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: tokens.space[200],
   },
 
   icon: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Variants
@@ -2296,12 +2341,12 @@ const styles = StyleSheet.create({
     backgroundColor: tokens.colors.background.secondary,
   },
   variant_outlined: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: tokens.colors.border.default,
   },
   variant_ghost: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   variant_destructive: {
     backgroundColor: tokens.colors.status.danger,
@@ -2323,7 +2368,7 @@ const styles = StyleSheet.create({
 
   // Text
   text: {
-    fontWeight: '500',
+    fontWeight: "500",
   },
   text_primary: {
     color: tokens.colors.text.inverse,
@@ -2353,7 +2398,7 @@ const styles = StyleSheet.create({
 
   // States
   fullWidth: {
-    width: '100%',
+    width: "100%",
   },
   disabled: {
     opacity: tokens.opacity.disabled,
@@ -2374,29 +2419,29 @@ const styles = StyleSheet.create({
 export const tokens = {
   colors: {
     interactive: {
-      primary: '#2563eb',
-      primaryHover: '#1d4ed8',
+      primary: "#2563eb",
+      primaryHover: "#1d4ed8",
     },
     background: {
-      primary: '#ffffff',
-      secondary: '#f5f5f5',
-      tertiary: '#e5e5e5',
+      primary: "#ffffff",
+      secondary: "#f5f5f5",
+      tertiary: "#e5e5e5",
     },
     text: {
-      primary: '#171717',
-      secondary: '#525252',
-      tertiary: '#a3a3a3',
-      inverse: '#ffffff',
+      primary: "#171717",
+      secondary: "#525252",
+      tertiary: "#a3a3a3",
+      inverse: "#ffffff",
     },
     border: {
-      default: '#e5e5e5',
-      strong: '#a3a3a3',
+      default: "#e5e5e5",
+      strong: "#a3a3a3",
     },
     status: {
-      success: '#22c55e',
-      danger: '#ef4444',
-      alert: '#f59e0b',
-      info: '#3b82f6',
+      success: "#22c55e",
+      danger: "#ef4444",
+      alert: "#f59e0b",
+      info: "#3b82f6",
     },
   },
 
@@ -2550,63 +2595,59 @@ export type Tokens = typeof tokens;
 ```typescript
 // packages/tokens/style-dictionary.config.ts
 
-import StyleDictionary from 'style-dictionary';
-import type { Config } from 'style-dictionary';
+import StyleDictionary from "style-dictionary";
+import type { Config } from "style-dictionary";
 
 const config: Config = {
-  source: ['src/**/*.tokens.json'],
+  source: ["src/**/*.tokens.json"],
 
-  preprocessors: ['tokens-studio'],
+  preprocessors: ["tokens-studio"],
 
   platforms: {
     // Web - CSS Variables
     css: {
-      transformGroup: 'css',
-      buildPath: 'dist/web/',
+      transformGroup: "css",
+      buildPath: "dist/web/",
       files: [
         {
-          destination: 'tokens.css',
-          format: 'css/variables',
+          destination: "tokens.css",
+          format: "css/variables",
           options: {
             outputReferences: true,
           },
         },
       ],
-      transforms: [
-        'attribute/cti',
-        'name/cti/kebab',
-        'color/css',
-      ],
-      prefix: 'kozmos',
+      transforms: ["attribute/cti", "name/cti/kebab", "color/css"],
+      prefix: "kozmos",
     },
 
     // Web - TypeScript
     ts: {
-      transformGroup: 'js',
-      buildPath: 'dist/web/',
+      transformGroup: "js",
+      buildPath: "dist/web/",
       files: [
         {
-          destination: 'tokens.ts',
-          format: 'javascript/es6',
+          destination: "tokens.ts",
+          format: "javascript/es6",
         },
         {
-          destination: 'tokens.d.ts',
-          format: 'typescript/es6-declarations',
+          destination: "tokens.d.ts",
+          format: "typescript/es6-declarations",
         },
       ],
     },
 
     // iOS - Swift
     ios: {
-      transformGroup: 'ios-swift',
-      buildPath: 'dist/ios/',
+      transformGroup: "ios-swift",
+      buildPath: "dist/ios/",
       files: [
         {
-          destination: 'KozmosTokens.swift',
-          format: 'ios-swift/class.swift',
-          className: 'KozmosTokens',
+          destination: "KozmosTokens.swift",
+          format: "ios-swift/class.swift",
+          className: "KozmosTokens",
           options: {
-            accessControl: 'public',
+            accessControl: "public",
           },
         },
       ],
@@ -2614,26 +2655,26 @@ const config: Config = {
 
     // Android - Compose
     android: {
-      transformGroup: 'compose',
-      buildPath: 'dist/android/',
+      transformGroup: "compose",
+      buildPath: "dist/android/",
       files: [
         {
-          destination: 'KozmosTokens.kt',
-          format: 'compose/object',
-          className: 'KozmosTokens',
-          packageName: 'com.pointr.kozmos.tokens',
+          destination: "KozmosTokens.kt",
+          format: "compose/object",
+          className: "KozmosTokens",
+          packageName: "com.pointr.kozmos.tokens",
         },
       ],
     },
 
     // React Native - JS
     rn: {
-      transformGroup: 'react-native',
-      buildPath: 'dist/react-native/',
+      transformGroup: "react-native",
+      buildPath: "dist/react-native/",
       files: [
         {
-          destination: 'tokens.ts',
-          format: 'javascript/es6',
+          destination: "tokens.ts",
+          format: "javascript/es6",
         },
       ],
     },
@@ -2652,21 +2693,21 @@ export default config;
 ```tsx
 // packages/react/src/components/Button/Button.stories.tsx
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
-import { Button } from './Button';
-import { Icon } from '../Icon';
+import type { Meta, StoryObj } from "@storybook/react";
+import { fn } from "@storybook/test";
+import { Button } from "./Button";
+import { Icon } from "../Icon";
 
 // -----------------------------------------------------------------------------
 // Meta
 // -----------------------------------------------------------------------------
 
 const meta: Meta<typeof Button> = {
-  title: 'Components/Button',
+  title: "Components/Button",
   component: Button,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   parameters: {
-    layout: 'centered',
+    layout: "centered",
     docs: {
       description: {
         component: `
@@ -2684,47 +2725,47 @@ for the button's importance and context.
       },
     },
     design: {
-      type: 'figma',
-      url: 'https://www.figma.com/file/XXXXX/Kozmos?node-id=123:456',
+      type: "figma",
+      url: "https://www.figma.com/file/XXXXX/Kozmos?node-id=123:456",
     },
   },
   argTypes: {
     variant: {
-      control: 'select',
-      options: ['primary', 'secondary', 'outlined', 'ghost', 'destructive'],
-      description: 'Visual style variant',
+      control: "select",
+      options: ["primary", "secondary", "outlined", "ghost", "destructive"],
+      description: "Visual style variant",
       table: {
-        defaultValue: { summary: 'primary' },
+        defaultValue: { summary: "primary" },
       },
     },
     size: {
-      control: 'select',
-      options: ['sm', 'md', 'lg'],
-      description: 'Button size',
+      control: "select",
+      options: ["sm", "md", "lg"],
+      description: "Button size",
       table: {
-        defaultValue: { summary: 'md' },
+        defaultValue: { summary: "md" },
       },
     },
     isLoading: {
-      control: 'boolean',
-      description: 'Shows loading spinner',
+      control: "boolean",
+      description: "Shows loading spinner",
     },
     disabled: {
-      control: 'boolean',
-      description: 'Disables the button',
+      control: "boolean",
+      description: "Disables the button",
     },
     fullWidth: {
-      control: 'boolean',
-      description: 'Makes button full width of container',
+      control: "boolean",
+      description: "Makes button full width of container",
     },
     children: {
-      control: 'text',
-      description: 'Button label text',
+      control: "text",
+      description: "Button label text",
     },
   },
   args: {
     onClick: fn(),
-    children: 'Button',
+    children: "Button",
   },
 };
 
@@ -2737,17 +2778,17 @@ type Story = StoryObj<typeof Button>;
 
 export const Default: Story = {
   args: {
-    variant: 'primary',
-    size: 'md',
+    variant: "primary",
+    size: "md",
   },
 };
 
 export const AllVariants: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-      <Button variant="primary">Primary</Button>
+    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <Button variant="default">Primary</Button>
       <Button variant="secondary">Secondary</Button>
-      <Button variant="outlined">Outlined</Button>
+      <Button variant="outline">Outlined</Button>
       <Button variant="ghost">Ghost</Button>
       <Button variant="destructive">Destructive</Button>
     </div>
@@ -2755,7 +2796,7 @@ export const AllVariants: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'All available button variants.',
+        story: "All available button variants.",
       },
     },
   },
@@ -2763,9 +2804,9 @@ export const AllVariants: Story = {
 
 export const AllSizes: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
       <Button size="sm">Small</Button>
-      <Button size="md">Medium</Button>
+      <Button size="default">Medium</Button>
       <Button size="lg">Large</Button>
     </div>
   ),
@@ -2773,10 +2814,8 @@ export const AllSizes: Story = {
 
 export const WithIcons: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: '8px' }}>
-      <Button leftIcon={<Icon name="action-check" />}>
-        With Left Icon
-      </Button>
+    <div style={{ display: "flex", gap: "8px" }}>
+      <Button leftIcon={<Icon name="action-check" />}>With Left Icon</Button>
       <Button rightIcon={<Icon name="nav-arrow-right" />}>
         With Right Icon
       </Button>
@@ -2787,25 +2826,25 @@ export const WithIcons: Story = {
 export const Loading: Story = {
   args: {
     isLoading: true,
-    children: 'Loading...',
+    children: "Loading...",
   },
 };
 
 export const Disabled: Story = {
   args: {
     disabled: true,
-    children: 'Disabled',
+    children: "Disabled",
   },
 };
 
 export const FullWidth: Story = {
   args: {
     fullWidth: true,
-    children: 'Full Width Button',
+    children: "Full Width Button",
   },
   decorators: [
     (Story) => (
-      <div style={{ width: '300px' }}>
+      <div style={{ width: "300px" }}>
         <Story />
       </div>
     ),
@@ -2818,10 +2857,10 @@ export const FullWidth: Story = {
 
 export const Accessibility: Story = {
   render: () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <h3>Keyboard Navigation</h3>
       <p>Tab to focus, Enter/Space to activate</p>
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: "flex", gap: "8px" }}>
         <Button>First</Button>
         <Button>Second</Button>
         <Button disabled>Disabled (skipped)</Button>
@@ -2834,8 +2873,8 @@ export const Accessibility: Story = {
       // Ensure no a11y violations
       config: {
         rules: [
-          { id: 'color-contrast', enabled: true },
-          { id: 'button-name', enabled: true },
+          { id: "color-contrast", enabled: true },
+          { id: "button-name", enabled: true },
         ],
       },
     },
@@ -2848,15 +2887,15 @@ export const Accessibility: Story = {
 ```tsx
 // packages/react/.storybook/preview.tsx
 
-import type { Preview } from '@storybook/react';
-import { themes } from '@storybook/theming';
-import '../src/tokens/tokens.css';
-import './preview.css';
+import type { Preview } from "@storybook/react";
+import { themes } from "@storybook/theming";
+import "../src/tokens/tokens.css";
+import "./preview.css";
 
 const preview: Preview = {
   parameters: {
     // Actions
-    actions: { argTypesRegex: '^on[A-Z].*' },
+    actions: { argTypesRegex: "^on[A-Z].*" },
 
     // Controls
     controls: {
@@ -2868,20 +2907,26 @@ const preview: Preview = {
 
     // Backgrounds
     backgrounds: {
-      default: 'light',
+      default: "light",
       values: [
-        { name: 'light', value: '#ffffff' },
-        { name: 'dark', value: '#171717' },
-        { name: 'gray', value: '#f5f5f5' },
+        { name: "light", value: "#ffffff" },
+        { name: "dark", value: "#171717" },
+        { name: "gray", value: "#f5f5f5" },
       ],
     },
 
     // Viewport
     viewport: {
       viewports: {
-        mobile: { name: 'Mobile', styles: { width: '375px', height: '667px' } },
-        tablet: { name: 'Tablet', styles: { width: '768px', height: '1024px' } },
-        desktop: { name: 'Desktop', styles: { width: '1280px', height: '800px' } },
+        mobile: { name: "Mobile", styles: { width: "375px", height: "667px" } },
+        tablet: {
+          name: "Tablet",
+          styles: { width: "768px", height: "1024px" },
+        },
+        desktop: {
+          name: "Desktop",
+          styles: { width: "1280px", height: "800px" },
+        },
       },
     },
 
@@ -2893,9 +2938,7 @@ const preview: Preview = {
     // Accessibility
     a11y: {
       config: {
-        rules: [
-          { id: 'color-contrast', enabled: true },
-        ],
+        rules: [{ id: "color-contrast", enabled: true }],
       },
     },
   },
@@ -2903,8 +2946,8 @@ const preview: Preview = {
   // Global decorators
   decorators: [
     (Story, context) => {
-      const theme = context.globals.theme || 'light';
-      document.documentElement.setAttribute('data-kozmos-theme', theme);
+      const theme = context.globals.theme || "light";
+      document.documentElement.setAttribute("data-kozmos-theme", theme);
       return <Story />;
     },
   ],
@@ -2912,14 +2955,14 @@ const preview: Preview = {
   // Global types (toolbar items)
   globalTypes: {
     theme: {
-      name: 'Theme',
-      description: 'Global theme for components',
-      defaultValue: 'light',
+      name: "Theme",
+      description: "Global theme for components",
+      defaultValue: "light",
       toolbar: {
-        icon: 'circlehollow',
+        icon: "circlehollow",
         items: [
-          { value: 'light', icon: 'sun', title: 'Light' },
-          { value: 'dark', icon: 'moon', title: 'Dark' },
+          { value: "light", icon: "sun", title: "Light" },
+          { value: "dark", icon: "moon", title: "Dark" },
         ],
         showName: true,
       },
@@ -2939,37 +2982,42 @@ export default preview;
 ```tsx
 // packages/react/src/components/Button/Button.test.tsx
 
-import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { axe, toHaveNoViolations } from 'jest-axe';
-import { describe, it, expect, vi } from 'vitest';
-import { Button } from './Button';
+import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { axe, toHaveNoViolations } from "jest-axe";
+import { describe, it, expect, vi } from "vitest";
+import { Button } from "./Button";
 
 expect.extend(toHaveNoViolations);
 
-describe('Button', () => {
+describe("Button", () => {
   // ---------------------------------------------------------------------------
   // Rendering
   // ---------------------------------------------------------------------------
 
-  describe('rendering', () => {
-    it('renders with children', () => {
+  describe("rendering", () => {
+    it("renders with children", () => {
       render(<Button>Click me</Button>);
-      expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Click me" }),
+      ).toBeInTheDocument();
     });
 
-    it.each(['primary', 'secondary', 'outlined', 'ghost', 'destructive'] as const)(
-      'renders %s variant',
-      (variant) => {
-        render(<Button variant={variant}>Button</Button>);
-        const button = screen.getByRole('button');
-        expect(button).toHaveClass(`kozmos-btn`);
-      }
-    );
+    it.each([
+      "primary",
+      "secondary",
+      "outlined",
+      "ghost",
+      "destructive",
+    ] as const)("renders %s variant", (variant) => {
+      render(<Button variant={variant}>Button</Button>);
+      const button = screen.getByRole("button");
+      expect(button).toHaveClass(`kozmos-btn`);
+    });
 
-    it.each(['sm', 'md', 'lg'] as const)('renders %s size', (size) => {
+    it.each(["sm", "md", "lg"] as const)("renders %s size", (size) => {
       render(<Button size={size}>Button</Button>);
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      expect(screen.getByRole("button")).toBeInTheDocument();
     });
   });
 
@@ -2977,58 +3025,66 @@ describe('Button', () => {
   // Interactions
   // ---------------------------------------------------------------------------
 
-  describe('interactions', () => {
-    it('calls onClick when clicked', async () => {
+  describe("interactions", () => {
+    it("calls onClick when clicked", async () => {
       const handleClick = vi.fn();
       render(<Button onClick={handleClick}>Click me</Button>);
 
-      await userEvent.click(screen.getByRole('button'));
+      await userEvent.click(screen.getByRole("button"));
 
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
 
-    it('does not call onClick when disabled', async () => {
+    it("does not call onClick when disabled", async () => {
       const handleClick = vi.fn();
-      render(<Button onClick={handleClick} disabled>Click me</Button>);
+      render(
+        <Button onClick={handleClick} disabled>
+          Click me
+        </Button>,
+      );
 
-      await userEvent.click(screen.getByRole('button'));
+      await userEvent.click(screen.getByRole("button"));
 
       expect(handleClick).not.toHaveBeenCalled();
     });
 
-    it('does not call onClick when loading', async () => {
+    it("does not call onClick when loading", async () => {
       const handleClick = vi.fn();
-      render(<Button onClick={handleClick} isLoading>Click me</Button>);
+      render(
+        <Button onClick={handleClick} isLoading>
+          Click me
+        </Button>,
+      );
 
-      await userEvent.click(screen.getByRole('button'));
+      await userEvent.click(screen.getByRole("button"));
 
       expect(handleClick).not.toHaveBeenCalled();
     });
 
-    it('can be focused with keyboard', async () => {
+    it("can be focused with keyboard", async () => {
       render(<Button>Focus me</Button>);
 
       await userEvent.tab();
 
-      expect(screen.getByRole('button')).toHaveFocus();
+      expect(screen.getByRole("button")).toHaveFocus();
     });
 
-    it('can be activated with Enter key', async () => {
+    it("can be activated with Enter key", async () => {
       const handleClick = vi.fn();
       render(<Button onClick={handleClick}>Press Enter</Button>);
 
       await userEvent.tab();
-      await userEvent.keyboard('{Enter}');
+      await userEvent.keyboard("{Enter}");
 
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
 
-    it('can be activated with Space key', async () => {
+    it("can be activated with Space key", async () => {
       const handleClick = vi.fn();
       render(<Button onClick={handleClick}>Press Space</Button>);
 
       await userEvent.tab();
-      await userEvent.keyboard(' ');
+      await userEvent.keyboard(" ");
 
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
@@ -3038,23 +3094,23 @@ describe('Button', () => {
   // States
   // ---------------------------------------------------------------------------
 
-  describe('states', () => {
-    it('shows loading spinner when isLoading', () => {
+  describe("states", () => {
+    it("shows loading spinner when isLoading", () => {
       render(<Button isLoading>Loading</Button>);
 
-      expect(screen.getByRole('button')).toHaveAttribute('aria-busy', 'true');
+      expect(screen.getByRole("button")).toHaveAttribute("aria-busy", "true");
     });
 
-    it('is disabled when disabled prop is true', () => {
+    it("is disabled when disabled prop is true", () => {
       render(<Button disabled>Disabled</Button>);
 
-      expect(screen.getByRole('button')).toBeDisabled();
+      expect(screen.getByRole("button")).toBeDisabled();
     });
 
-    it('is disabled when isLoading', () => {
+    it("is disabled when isLoading", () => {
       render(<Button isLoading>Loading</Button>);
 
-      expect(screen.getByRole('button')).toBeDisabled();
+      expect(screen.getByRole("button")).toBeDisabled();
     });
   });
 
@@ -3062,8 +3118,8 @@ describe('Button', () => {
   // Accessibility
   // ---------------------------------------------------------------------------
 
-  describe('accessibility', () => {
-    it('has no accessibility violations', async () => {
+  describe("accessibility", () => {
+    it("has no accessibility violations", async () => {
       const { container } = render(<Button>Accessible Button</Button>);
 
       const results = await axe(container);
@@ -3071,7 +3127,7 @@ describe('Button', () => {
       expect(results).toHaveNoViolations();
     });
 
-    it('has no accessibility violations when disabled', async () => {
+    it("has no accessibility violations when disabled", async () => {
       const { container } = render(<Button disabled>Disabled Button</Button>);
 
       const results = await axe(container);
@@ -3079,7 +3135,7 @@ describe('Button', () => {
       expect(results).toHaveNoViolations();
     });
 
-    it('has no accessibility violations when loading', async () => {
+    it("has no accessibility violations when loading", async () => {
       const { container } = render(<Button isLoading>Loading Button</Button>);
 
       const results = await axe(container);
@@ -3087,15 +3143,21 @@ describe('Button', () => {
       expect(results).toHaveNoViolations();
     });
 
-    it.each(['primary', 'secondary', 'outlined', 'ghost', 'destructive'] as const)(
-      'has no accessibility violations for %s variant',
+    it.each([
+      "primary",
+      "secondary",
+      "outlined",
+      "ghost",
+      "destructive",
+    ] as const)(
+      "has no accessibility violations for %s variant",
       async (variant) => {
         const { container } = render(<Button variant={variant}>Button</Button>);
 
         const results = await axe(container);
 
         expect(results).toHaveNoViolations();
-      }
+      },
     );
   });
 
@@ -3103,25 +3165,25 @@ describe('Button', () => {
   // Slots
   // ---------------------------------------------------------------------------
 
-  describe('slots', () => {
-    it('renders left icon', () => {
+  describe("slots", () => {
+    it("renders left icon", () => {
       render(
         <Button leftIcon={<span data-testid="left-icon">←</span>}>
           With Icon
-        </Button>
+        </Button>,
       );
 
-      expect(screen.getByTestId('left-icon')).toBeInTheDocument();
+      expect(screen.getByTestId("left-icon")).toBeInTheDocument();
     });
 
-    it('renders right icon', () => {
+    it("renders right icon", () => {
       render(
         <Button rightIcon={<span data-testid="right-icon">→</span>}>
           With Icon
-        </Button>
+        </Button>,
       );
 
-      expect(screen.getByTestId('right-icon')).toBeInTheDocument();
+      expect(screen.getByTestId("right-icon")).toBeInTheDocument();
     });
   });
 });
@@ -3132,60 +3194,60 @@ describe('Button', () => {
 ```tsx
 // packages/react/src/components/Button/Button.visual.test.tsx
 
-import { test, expect } from '@playwright/experimental-ct-react';
-import { Button } from './Button';
+import { test, expect } from "@playwright/experimental-ct-react";
+import { Button } from "./Button";
 
-test.describe('Button Visual Regression', () => {
-  test('default button', async ({ mount }) => {
+test.describe("Button Visual Regression", () => {
+  test("default button", async ({ mount }) => {
     const component = await mount(<Button>Click me</Button>);
-    await expect(component).toHaveScreenshot('button-default.png');
+    await expect(component).toHaveScreenshot("button-default.png");
   });
 
-  test('all variants', async ({ mount }) => {
+  test("all variants", async ({ mount }) => {
     const component = await mount(
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <Button variant="primary">Primary</Button>
+      <div style={{ display: "flex", gap: "8px" }}>
+        <Button variant="default">Primary</Button>
         <Button variant="secondary">Secondary</Button>
-        <Button variant="outlined">Outlined</Button>
+        <Button variant="outline">Outlined</Button>
         <Button variant="ghost">Ghost</Button>
         <Button variant="destructive">Destructive</Button>
-      </div>
+      </div>,
     );
-    await expect(component).toHaveScreenshot('button-variants.png');
+    await expect(component).toHaveScreenshot("button-variants.png");
   });
 
-  test('all sizes', async ({ mount }) => {
+  test("all sizes", async ({ mount }) => {
     const component = await mount(
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         <Button size="sm">Small</Button>
-        <Button size="md">Medium</Button>
+        <Button size="default">Medium</Button>
         <Button size="lg">Large</Button>
-      </div>
+      </div>,
     );
-    await expect(component).toHaveScreenshot('button-sizes.png');
+    await expect(component).toHaveScreenshot("button-sizes.png");
   });
 
-  test('states', async ({ mount }) => {
+  test("states", async ({ mount }) => {
     const component = await mount(
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: "flex", gap: "8px" }}>
         <Button>Default</Button>
         <Button disabled>Disabled</Button>
         <Button isLoading>Loading</Button>
-      </div>
+      </div>,
     );
-    await expect(component).toHaveScreenshot('button-states.png');
+    await expect(component).toHaveScreenshot("button-states.png");
   });
 
-  test('hover state', async ({ mount }) => {
+  test("hover state", async ({ mount }) => {
     const component = await mount(<Button>Hover me</Button>);
     await component.hover();
-    await expect(component).toHaveScreenshot('button-hover.png');
+    await expect(component).toHaveScreenshot("button-hover.png");
   });
 
-  test('focus state', async ({ mount }) => {
+  test("focus state", async ({ mount }) => {
     const component = await mount(<Button>Focus me</Button>);
     await component.focus();
-    await expect(component).toHaveScreenshot('button-focus.png');
+    await expect(component).toHaveScreenshot("button-focus.png");
   });
 });
 ```
@@ -3199,41 +3261,50 @@ test.describe('Button Visual Regression', () => {
 ```tsx
 // packages/react/src/components/Button/Button.figma.tsx
 
-import figma from '@figma/code-connect';
-import { Button } from './Button';
+import figma from "@figma/code-connect";
+import { Button } from "./Button";
 
-const FIGMA_URL = 'https://www.figma.com/design/XXXXX/Kozmos?node-id=123:456';
+const FIGMA_URL = "https://www.figma.com/design/XXXXX/Kozmos?node-id=123:456";
 
 figma.connect(Button, FIGMA_URL, {
   props: {
     // Text content
-    children: figma.textContent('Label'),
+    children: figma.textContent("Label"),
 
     // Enum mappings
-    variant: figma.enum('Variant', {
-      'Primary': 'primary',
-      'Secondary': 'secondary',
-      'Outlined': 'outlined',
-      'Ghost': 'ghost',
-      'Destructive': 'destructive',
+    variant: figma.enum("Variant", {
+      Primary: "primary",
+      Secondary: "secondary",
+      Outlined: "outlined",
+      Ghost: "ghost",
+      Destructive: "destructive",
     }),
-    size: figma.enum('Size', {
-      'Small': 'sm',
-      'Medium': 'md',
-      'Large': 'lg',
+    size: figma.enum("Size", {
+      Small: "sm",
+      Medium: "md",
+      Large: "lg",
     }),
 
     // Booleans
-    disabled: figma.boolean('Disabled'),
-    isLoading: figma.boolean('Loading'),
-    fullWidth: figma.boolean('Full Width'),
+    disabled: figma.boolean("Disabled"),
+    isLoading: figma.boolean("Loading"),
+    fullWidth: figma.boolean("Full Width"),
 
     // Instance slots
-    leftIcon: figma.instance('Leading Icon'),
-    rightIcon: figma.instance('Trailing Icon'),
+    leftIcon: figma.instance("Leading Icon"),
+    rightIcon: figma.instance("Trailing Icon"),
   },
 
-  example: ({ children, variant, size, disabled, isLoading, fullWidth, leftIcon, rightIcon }) => (
+  example: ({
+    children,
+    variant,
+    size,
+    disabled,
+    isLoading,
+    fullWidth,
+    leftIcon,
+    rightIcon,
+  }) => (
     <Button
       variant={variant}
       size={size}
@@ -3251,16 +3322,16 @@ figma.connect(Button, FIGMA_URL, {
 // Variant-specific connections for complex components
 figma.connect(Button, `${FIGMA_URL}&variant=Icon%20Only`, {
   props: {
-    icon: figma.instance('Icon'),
-    variant: figma.enum('Variant', {
-      'Primary': 'primary',
-      'Secondary': 'secondary',
-      'Ghost': 'ghost',
+    icon: figma.instance("Icon"),
+    variant: figma.enum("Variant", {
+      Primary: "primary",
+      Secondary: "secondary",
+      Ghost: "ghost",
     }),
-    size: figma.enum('Size', {
-      'Small': 'sm',
-      'Medium': 'md',
-      'Large': 'lg',
+    size: figma.enum("Size", {
+      Small: "sm",
+      Medium: "md",
+      Large: "lg",
     }),
   },
   example: ({ icon, variant, size }) => (
@@ -3393,47 +3464,44 @@ fun KozmosButtonDoc(
 ```typescript
 // packages/icons/scripts/optimize.ts
 
-import { optimize, Config } from 'svgo';
-import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { optimize, Config } from "svgo";
+import { readdir, readFile, writeFile, mkdir } from "fs/promises";
+import { join } from "path";
 
 const SVGO_CONFIG: Config = {
   multipass: true,
   plugins: [
-    'preset-default',
-    'removeDimensions',
+    "preset-default",
+    "removeDimensions",
     {
-      name: 'removeAttrs',
+      name: "removeAttrs",
       params: {
-        attrs: ['fill', 'stroke'],
+        attrs: ["fill", "stroke"],
       },
     },
     {
-      name: 'addAttributesToSVGElement',
+      name: "addAttributesToSVGElement",
       params: {
-        attributes: [
-          { fill: 'currentColor' },
-          { 'aria-hidden': 'true' },
-        ],
+        attributes: [{ fill: "currentColor" }, { "aria-hidden": "true" }],
       },
     },
   ],
 };
 
 async function optimizeSvgs() {
-  const inputDir = join(__dirname, '../svg');
-  const outputDir = join(__dirname, '../dist/optimized');
+  const inputDir = join(__dirname, "../svg");
+  const outputDir = join(__dirname, "../dist/optimized");
 
   await mkdir(outputDir, { recursive: true });
 
   const files = await readdir(inputDir);
-  const svgFiles = files.filter(f => f.endsWith('.svg'));
+  const svgFiles = files.filter((f) => f.endsWith(".svg"));
 
   for (const file of svgFiles) {
-    const input = await readFile(join(inputDir, file), 'utf8');
+    const input = await readFile(join(inputDir, file), "utf8");
     const result = optimize(input, SVGO_CONFIG);
 
-    if ('data' in result) {
+    if ("data" in result) {
       await writeFile(join(outputDir, file), result.data);
       console.log(`Optimized: ${file}`);
     }
@@ -3448,8 +3516,8 @@ optimizeSvgs().catch(console.error);
 ```typescript
 // packages/icons/scripts/generate-react.ts
 
-import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
-import { join, basename } from 'path';
+import { readdir, readFile, writeFile, mkdir } from "fs/promises";
+import { join, basename } from "path";
 
 function toPascalCase(str: string): string {
   return str
@@ -3458,25 +3526,25 @@ function toPascalCase(str: string): string {
 }
 
 async function generateReactIcons() {
-  const inputDir = join(__dirname, '../dist/optimized');
-  const outputDir = join(__dirname, '../dist/react');
+  const inputDir = join(__dirname, "../dist/optimized");
+  const outputDir = join(__dirname, "../dist/react");
 
   await mkdir(outputDir, { recursive: true });
 
   const files = await readdir(inputDir);
-  const svgFiles = files.filter(f => f.endsWith('.svg'));
+  const svgFiles = files.filter((f) => f.endsWith(".svg"));
 
   const exports: string[] = [];
 
   for (const file of svgFiles) {
-    const name = basename(file, '.svg');
+    const name = basename(file, ".svg");
     const componentName = `Icon${toPascalCase(name)}`;
-    const svgContent = await readFile(join(inputDir, file), 'utf8');
+    const svgContent = await readFile(join(inputDir, file), "utf8");
 
     // Extract SVG content (remove outer <svg> tag attributes we'll add in React)
     const innerContent = svgContent
-      .replace(/<svg[^>]*>/, '')
-      .replace(/<\/svg>/, '')
+      .replace(/<svg[^>]*>/, "")
+      .replace(/<\/svg>/, "")
       .trim();
 
     const component = `
@@ -3513,11 +3581,11 @@ ${componentName}.displayName = '${componentName}';
   // Generate index file
   const indexContent = `
 // Auto-generated - DO NOT EDIT
-${exports.join('\n')}
+${exports.join("\n")}
 export type { IconProps } from './types';
 `;
 
-  await writeFile(join(outputDir, 'index.ts'), indexContent.trim());
+  await writeFile(join(outputDir, "index.ts"), indexContent.trim());
 
   // Generate types file
   const typesContent = `
@@ -3529,7 +3597,7 @@ export interface IconProps extends SVGProps<SVGSVGElement> {
 }
 `;
 
-  await writeFile(join(outputDir, 'types.ts'), typesContent.trim());
+  await writeFile(join(outputDir, "types.ts"), typesContent.trim());
 
   console.log(`Generated ${svgFiles.length} React icon components`);
 }
@@ -3543,34 +3611,34 @@ generateReactIcons().catch(console.error);
 
 ### File Naming Conventions
 
-| File Type | Convention | Example |
-|-----------|------------|---------|
-| React Component | PascalCase | `Button.tsx` |
-| React Story | PascalCase + `.stories` | `Button.stories.tsx` |
-| React Test | PascalCase + `.test` | `Button.test.tsx` |
-| Code Connect | PascalCase + `.figma` | `Button.figma.tsx` |
-| SwiftUI Component | `Kozmos` + PascalCase | `KozmosButton.swift` |
-| Compose Component | `Kozmos` + PascalCase | `KozmosButton.kt` |
-| Token File | kebab-case + `.tokens.json` | `colors.tokens.json` |
-| CSS | kebab-case | `tokens.css` |
+| File Type         | Convention                  | Example              |
+| ----------------- | --------------------------- | -------------------- |
+| React Component   | PascalCase                  | `Button.tsx`         |
+| React Story       | PascalCase + `.stories`     | `Button.stories.tsx` |
+| React Test        | PascalCase + `.test`        | `Button.test.tsx`    |
+| Code Connect      | PascalCase + `.figma`       | `Button.figma.tsx`   |
+| SwiftUI Component | `Kozmos` + PascalCase       | `KozmosButton.swift` |
+| Compose Component | `Kozmos` + PascalCase       | `KozmosButton.kt`    |
+| Token File        | kebab-case + `.tokens.json` | `colors.tokens.json` |
+| CSS               | kebab-case                  | `tokens.css`         |
 
 ### Import Patterns
 
 ```tsx
 // ✅ Correct - named imports
-import { Button, Input } from '@kozmos/react';
+import { Button, Input } from "@kozmos/react";
 
 // ✅ Correct - individual import (tree-shaking)
-import { Button } from '@kozmos/react/Button';
+import { Button } from "@kozmos/react/Button";
 
 // ✅ Correct - tokens
-import { tokens } from '@kozmos/tokens';
+import { tokens } from "@kozmos/tokens";
 
 // ❌ Wrong - default import
-import Button from '@kozmos/react/Button';
+import Button from "@kozmos/react/Button";
 ```
 
 ---
 
-*Last updated: 2025-02-07*
-*Maintainer: Kozmos Design System Team*
+_Last updated: 2025-02-07_
+_Maintainer: Kozmos Design System Team_

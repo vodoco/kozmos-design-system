@@ -20,7 +20,14 @@ import {
   Text,
   Heading,
   POIDetailPanel,
-} from "@kozmos/react";
+  Spinner,
+  AISearchButton,
+  SearchBar,
+  Skeleton,
+  Tag,
+  ToggleButton,
+  SegmentedControl,
+} from "@kozmos-ds/react";
 
 function Controls({ id }: { id: string }) {
   return (
@@ -84,6 +91,81 @@ function Controls({ id }: { id: string }) {
       <Button isLoading data-testid={`${id}-loading`}>
         Loading
       </Button>
+      <Spinner data-testid={`${id}-spinner`} />
+      <Spinner size="xl" data-testid={`${id}-spinner-xl`} />
+      <AISearchButton
+        data-testid={`${id}-ai-search`}
+        label={`${id} AI search`}
+      />
+      {/* The search row, in a container narrow enough and willing to wrap. The
+          pair composed by hand lands on two lines, because the field is
+          `w-full`; the pair composed through `trailing` cannot. */}
+      <div
+        data-testid={`${id}-row-by-hand`}
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 8,
+          width: 360,
+        }}
+      >
+        <SearchBar aria-label={`${id} by hand`} placeholder="Search places" />
+        <AISearchButton label={`${id} assistant, by hand`} />
+      </div>
+      <div
+        data-testid={`${id}-row-by-slot`}
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 8,
+          width: 360,
+        }}
+      >
+        <SearchBar
+          aria-label={`${id} by slot`}
+          placeholder="Search places"
+          trailing={<AISearchButton label={`${id} assistant, by slot`} />}
+        />
+      </div>
+      {/* GAP-75: the same icon-and-label gap as the Button's, in parts that
+          share none of its CSS. */}
+      <ToggleButton data-testid={`${id}-toggle-icon-label`}>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" />
+        Step free
+      </ToggleButton>
+      <SegmentedControl
+        aria-label={`${id} route`}
+        items={[
+          {
+            value: "walk",
+            label: (
+              <>
+                <svg
+                  aria-hidden="true"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                />
+                Walk
+              </>
+            ),
+          },
+          { value: "step-free", label: "Step free" },
+        ]}
+        value="walk"
+        onValueChange={() => undefined}
+        data-testid={`${id}-segmented`}
+      />
+      <Tag data-testid={`${id}-tag-remove`} onRemove={() => undefined}>
+        Open
+      </Tag>
+      <Tag data-testid={`${id}-tag-icon-label`}>
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" />
+        Open
+      </Tag>
+      <Skeleton data-testid={`${id}-skeleton`} className="h-4 w-24" />
       <Button data-testid={`${id}-icon-label`}>
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" />
         Navigate
@@ -252,6 +334,19 @@ function Fixture() {
           <ThemeProvider theme="light">
             <Controls id="nested" />
           </ThemeProvider>
+          {/* The design config's own reduced motion, with no media query set:
+              GAP-50 asked that `motion: reduced` reach the animations, and it
+              reached none of them. */}
+          <DesignConfigProvider initialConfig={{ motion: "reduced" }}>
+            <div data-testid="config-reduced">
+              <Spinner data-testid="config-reduced-spinner" />
+              <Skeleton
+                data-testid="config-reduced-skeleton"
+                className="h-4 w-24"
+              />
+              <AISearchButton label="config reduced assistant" />
+            </div>
+          </DesignConfigProvider>
         </DesignConfigProvider>
       </ThemeProvider>
     </>

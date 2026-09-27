@@ -1,5 +1,5 @@
-import { Button, Icon, Text } from "@kozmos/react";
-import type { KozmosIconKey } from "@kozmos/icons";
+import { Button, Icon, Text } from "@kozmos-ds/react";
+import type { KozmosIconKey } from "@kozmos-ds/icons";
 import type { MapSection } from "../mock/taxonomy";
 
 /**
@@ -106,7 +106,7 @@ export function TopBar({
             alignSelf: "stretch",
           }}
         >
-          {/* exported from the Figma header (globe-01) — not in @kozmos/icons */}
+          {/* exported from the Figma header (globe-01) — not in @kozmos-ds/icons */}
           <img src="/icons/globe-01.svg" alt="" width={32} height={32} />
         </div>
         {/* The site block empties out on System Settings, per `2002:41171` — and that is a real
@@ -246,12 +246,12 @@ const SETTINGS_RAIL: RailItem[] = [
   { label: "Metadata", icon: "alert-circle" },
   { label: "SDK Configuration", icon: "settings-01" },
   { label: "User Management", icon: "users-01" },
-  // @kozmos/icons has no translate/language glyph (D9) — the local globe export stands in
+  // @kozmos-ds/icons has no translate/language glyph (D9) — the local globe export stands in
   { label: "UI Translation Manager", img: "/icons/globe-01.svg" },
   { label: "System Settings", icon: "settings-01", active: true },
 ];
 
-/** Left icon rail. NB: uses the limited @kozmos/icons set — swap for the dashboard icon set when available. */
+/** Left icon rail. NB: uses the limited @kozmos-ds/icons set — swap for the dashboard icon set when available. */
 export function LeftRail({
   variant = "maps",
   section = "content",

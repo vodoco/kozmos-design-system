@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
 import { useKozmosAnalytics } from "../../utils/analytics";

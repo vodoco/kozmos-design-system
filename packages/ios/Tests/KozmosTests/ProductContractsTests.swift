@@ -33,6 +33,100 @@ final class ProductContractsTests: XCTestCase {
         XCTAssertEqual(makePOI(buildingLabel: "").locationLabel, "Level 2")
     }
 
+    // MARK: - a venue without levels (MAP-474 Story 15 edge case)
+
+    func testLocationLabelDropsTheFloorAVenueDoesNotHave() {
+        // Required until 2026-09-25, so a single-storey venue had to invent a
+        // floor and every result read "Ground Floor" on iOS long after the web
+        // had stopped. The label is now the building alone.
+        let poi = KozmosPOIPresentation(id: "p", name: "Boots", buildingLabel: "Terminal B")
+        XCTAssertNil(poi.floorId)
+        XCTAssertNil(poi.floorLabel)
+        XCTAssertEqual(poi.locationLabel, "Terminal B")
+    }
+
+    func testAResultNeedsNoFloorEither() {
+        let result = KozmosPOIResultPresentation(poiId: "p", resultIndex: 0)
+        XCTAssertNil(result.floorId)
+    }
+
+    // MARK: - why a result is in the list
+
+    func testTheMatchEnumerationCarriesTheWireValues() {
+        // Compared against the web's POIResultMatch by
+        // `pnpm contracts:parity:check`; asserted here so the cases cannot be
+        // renamed on this platform alone.
+        XCTAssertEqual(
+            KozmosPOIResultMatch.allCases.map(\.rawValue),
+            ["exact", "alternative", "unconfirmed"]
+        )
+    }
+
+    func testTheAvailabilityEnumerationCarriesTheWireValues() {
+        XCTAssertEqual(
+            KozmosPOIAvailability.allCases.map(\.rawValue),
+            ["open", "openingSoon", "closingSoon", "closed", "unknown"]
+        )
+    }
+
+    func testTheEmptyKindEnumerationCarriesTheWireValues() {
+        XCTAssertEqual(
+            KozmosSearchEmptyKind.allCases.map(\.rawValue),
+            ["noMatch", "filteredOut", "unavailable"]
+        )
+    }
+
+    // MARK: - selecting() carries every stored property
+
+    func testSelectingKeepsTheFieldsAddedSinceItWasWritten() {
+        // `selecting` rebuilds the struct by hand, so a new field that is not
+        // listed is dropped on every selection change - which badge and actions
+        // did until a test asked, and which match, unitLabel and nameLanguage
+        // would have done next.
+        let result = KozmosPOIResultPresentation(
+            poiId: "p",
+            resultIndex: 0,
+            floorId: "f",
+            badge: KozmosPOIResultBadgePresentation(label: "Nearby"),
+            match: .alternative,
+            unitLabel: "Unit 214",
+            nameLanguage: "ja",
+            actions: [KozmosPOIResultActionPresentation(action: .details, label: "Details")]
+        )
+        let selected = result.selecting("p")
+        XCTAssertTrue(selected.selected)
+        XCTAssertEqual(selected.match, .alternative)
+        XCTAssertEqual(selected.unitLabel, "Unit 214")
+        XCTAssertEqual(selected.nameLanguage, "ja")
+        XCTAssertEqual(selected.badge?.label, "Nearby")
+        XCTAssertEqual(selected.actions.count, 1)
+    }
+
+    // MARK: - what an empty search means
+
+    func testASearchResponseSaysWhyItIsEmpty() {
+        let response = KozmosSearchResponsePresentation(
+            emptyKind: .filteredOut,
+            emptiedBy: "Gluten-free",
+            languageFallback: "en"
+        )
+        XCTAssertTrue(response.results.isEmpty)
+        XCTAssertEqual(response.emptyKind, .filteredOut)
+        XCTAssertEqual(response.emptiedBy, "Gluten-free")
+        XCTAssertEqual(response.languageFallback, "en")
+    }
+
+    // MARK: - a category's own artwork
+
+    func testACategoryCarriesTheTaxonomysArtworkUrl() {
+        let category = KozmosCategoryPresentation(
+            id: "dining",
+            label: "Dining",
+            iconUrl: "https://example.test/dining.svg"
+        )
+        XCTAssertEqual(category.iconUrl, "https://example.test/dining.svg")
+    }
+
     // MARK: - logoFallbackInitial
 
     func testLogoFallbackInitialIsUppercasedFirstCharacter() {

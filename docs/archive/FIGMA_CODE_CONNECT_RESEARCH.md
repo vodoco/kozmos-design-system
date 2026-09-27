@@ -1065,7 +1065,7 @@ Code Connect enhances the Figma MCP (Model Context Protocol) server, which is a 
 
 1. Code Connect mappings are published to Figma
 2. The Figma MCP server reads these mappings
-3. AI agents (Claude, Copilot, etc.) query the MCP server
+3. AI agents (the coding agent, Copilot, etc.) query the MCP server
 4. The server returns actual production code patterns instead of generic guesses
 5. AI generates more accurate, design-system-compliant code
 

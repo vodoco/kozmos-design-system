@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus } from "lucide-react";
+import { Plus } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { Button, type ButtonProps } from "../Button/Button";
 

@@ -4,8 +4,8 @@ import type {
   POIDetailsPresentation,
   POIPresentation,
   POISupplementaryAction,
-} from "@kozmos/product-contracts";
-import { Navigation, X } from "lucide-react";
+} from "@kozmos-ds/product-contracts";
+import { NavigationPointer01 as Navigation, X } from "@kozmos-ds/icons";
 import {
   Bookmark,
   CalendarCheck01,
@@ -13,8 +13,8 @@ import {
   Phone,
   Share01,
   ShoppingBag02,
-} from "@kozmos/icons";
-import { cn } from "../../utils";
+} from "@kozmos-ds/icons";
+import { cn, poiLocationLabel } from "../../utils";
 import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
@@ -149,9 +149,7 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
       // starts at its identity. Focus remains the responsibility of the host.
       if (root.current) root.current.scrollTop = 0;
     }, [poi.id]);
-    const locationLabel = [poi.floorLabel, poi.buildingLabel]
-      .filter(Boolean)
-      .join(" / ");
+    const locationLabel = poiLocationLabel(poi);
     const actions = poi.actions.filter((action) => !isToggle(action));
     const SectionHeading = titleLevel === 2 ? "h3" : "h4";
     const hasRestriction =

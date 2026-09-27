@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.kozmos.contracts.KozmosPOIAvailability
 import com.kozmos.contracts.KozmosPOIPresentation
+import com.kozmos.contracts.KozmosPOIResultAction
+import com.kozmos.contracts.KozmosPOIResultActionPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
@@ -80,10 +82,16 @@ fun KozmosPOIResultCard(
     featuredLabel: String = "Featured",
     /** The floor the map shows: a result on it carries a dot before its floor. */
     currentFloorId: String? = null,
-    selectionLabel: String? = null
+    selectionLabel: String? = null,
+    actionsLabel: String = "Actions for this result",
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     val trackEvent = LocalKozmosAnalytics.current
     val available = result.isAvailable
+
+    // Shown only on the selected result: an action row on every card would be a
+    // wall of buttons, and the tap that selects is the tap that asks.
+    val visibleActions = if (result.selected && available) result.actions else emptyList()
 
     val accessibilityDescription = selectionLabel ?: listOfNotNull(
         poi.name,
@@ -159,6 +167,41 @@ fun KozmosPOIResultCard(
                         color = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentIdle
                     )
                 }
+            } else if (result.badge != null) {
+                // One tab, one treatment: the prototypes draw "Popular Choice"
+                // in the same amber as "Featured", so the LABEL distinguishes
+                // them and the styling does not. What differs is meaning --
+                // featured is the CMS's word and the map marker acts on it too.
+                Row(
+                    modifier = Modifier
+                        .padding(
+                            start = KozmosDimensions.primitivesLayoutSpacing200,
+                            top = KozmosDimensions.primitivesLayoutSpacing100
+                        )
+                        .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+                        .background(KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle)
+                        .padding(
+                            horizontal = KozmosDimensions.primitivesLayoutSpacing100,
+                            vertical = KozmosDimensions.primitivesLayoutSpacing50
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(
+                        KozmosDimensions.primitivesLayoutSpacing50
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentIdle,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = result.badge.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentIdle
+                    )
+                }
             }
 
             // 80 tall: the prototype's row.
@@ -226,10 +269,16 @@ fun KozmosPOIResultCard(
                             text = availabilityLabel,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (poi.availability == KozmosPOIAvailability.Open) {
-                                KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle
-                            } else {
-                                KozmosThemeTokens.primitivesColorsForeground500
+                            // Three tones, not two. "Closing soon" is a reason
+                            // to hurry, so it cannot look like open; the place
+                            // is still open, so it is not closed either.
+                            color = when (poi.availability) {
+                                KozmosPOIAvailability.Open ->
+                                    KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle
+                                KozmosPOIAvailability.OpeningSoon,
+                                KozmosPOIAvailability.ClosingSoon ->
+                                    KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle
+                                else -> KozmosThemeTokens.primitivesColorsForeground500
                             }
                         )
                     }
@@ -253,6 +302,44 @@ fun KozmosPOIResultCard(
                 }
             }
 
+            if (visibleActions.isNotEmpty()) {
+                Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { contentDescription = actionsLabel }
+                        .padding(
+                            horizontal = KozmosDimensions.primitivesLayoutSpacing200,
+                            vertical = KozmosDimensions.primitivesLayoutSpacing100
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(
+                        KozmosDimensions.primitivesLayoutSpacing100
+                    )
+                ) {
+                    visibleActions.forEach { entry ->
+                        KozmosPOIResultActionButton(
+                            entry = entry,
+                            onClick = {
+                                trackEvent(
+                                    KozmosAnalyticsEvent(
+                                        component = "POIResultCard",
+                                        eventName = "poi_result_action",
+                                        properties = mapOf(
+                                            "poiId" to poi.id,
+                                            "resultIndex" to result.resultIndex.toString(),
+                                            "action" to entry.action.value
+                                        )
+                                    )
+                                )
+                                onAction?.invoke(entry.action, poi.id)
+                            }
+                        )
+                    }
+                }
+            }
+
             if (!available && result.unavailableReason != null) {
                 Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
@@ -267,6 +354,54 @@ fun KozmosPOIResultCard(
                 )
             }
         }
+    }
+}
+
+/**
+ * One action on a selected result.
+ *
+ * Its own composable so the card's body stays readable, and so the button's
+ * own click target is unambiguous: the row above it is the select target, and
+ * a nested clickable that shared its semantics would be unreachable to
+ * TalkBack even while it drew on screen.
+ */
+@Composable
+private fun KozmosPOIResultActionButton(
+    entry: KozmosPOIResultActionPresentation,
+    onClick: () -> Unit
+) {
+    val background = if (entry.primary) {
+        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+    } else {
+        KozmosThemeTokens.primitivesColorsBackground0
+    }
+    val foreground = if (entry.primary) {
+        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+    } else {
+        KozmosThemeTokens.primitivesColorsForeground0
+    }
+
+    Surface(
+        onClick = onClick,
+        enabled = !entry.disabled,
+        shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
+        color = background,
+        border = if (entry.primary) {
+            null
+        } else {
+            BorderStroke(1.dp, KozmosThemeTokens.semanticsBorderSubtle)
+        }
+    ) {
+        Text(
+            text = entry.label,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = foreground,
+            modifier = Modifier.padding(
+                horizontal = KozmosDimensions.primitivesLayoutSpacing200,
+                vertical = KozmosDimensions.primitivesLayoutSpacing100
+            )
+        )
     }
 }
 

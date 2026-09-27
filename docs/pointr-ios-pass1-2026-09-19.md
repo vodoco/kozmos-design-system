@@ -1,6 +1,6 @@
 # Pointr iOS — Pass 1: the native browse experience, 19 September 2026
 
-Claude Code, continuing [Astra's handoff](claude-code-handoff-2026-09-19.md). Branch
+The coding agent, continuing [Astra's handoff](handoff-2026-09-19.md). Branch
 `claude/pointr-browse-repairs`, cut from `astra/browser-compatibility` at `663cde1` in the same
 worktree, `/private/tmp/kozmos-browser-compat.uqPMBD`. Local commits only: nothing is merged,
 pushed or published, and no Cloud content was touched.
@@ -284,7 +284,7 @@ cd /private/tmp/kozmos-browser-compat.uqPMBD && node scripts/check-ios-poi.mjs  
 
 **Measure, don't eyeball.** Screenshots via `xcrun simctl io <udid> screenshot out.png` work on any
 booted simulator, granted to the tooling or not; driving a device needs it granted from the
-simulator panel ("Let Claude use it"). Then:
+simulator panel ("Let the coding agent use it"). Then:
 
 ```sh
 python3 apps/PointrPlayground/Tools/measure-selected-pin.py out.png            # pin top, anchor, clearance

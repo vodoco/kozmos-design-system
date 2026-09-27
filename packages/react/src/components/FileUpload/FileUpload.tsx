@@ -1,5 +1,5 @@
 import React from "react";
-import { File as FileIcon, Upload, X } from "lucide-react";
+import { File01 as FileIcon, Upload01 as Upload, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button";

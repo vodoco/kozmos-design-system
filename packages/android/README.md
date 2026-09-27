@@ -26,7 +26,7 @@ Component packages are lowercase and match the directory name — directory
 `components/POIResultCard` declares `package com.kozmos.components.poiresultcard`.
 
 Platform-neutral presentation models live in `com.kozmos.contracts` and mirror
-the TypeScript `@kozmos/product-contracts` package. Product / SDK components
+the TypeScript `@kozmos-ds/product-contracts` package. Product / SDK components
 take these contracts rather than loose primitives so React, SwiftUI, and Compose
 describe the same shape.
 

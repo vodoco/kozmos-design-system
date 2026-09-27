@@ -4,9 +4,18 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".vscode/**"
+      - "LICENSE"
   pull_request:
     branches:
       - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   chromatic:
@@ -42,11 +51,20 @@ jobs:
 
       - name: Build dependencies
         if: ${{ env.CHROMATIC_PROJECT_TOKEN != '' }}
-        run: pnpm --filter '!@kozmos/docs' build # Build everything except docs/storybook to save time; Chromatic will build Storybook.
+        run: pnpm --filter '!@kozmos-ds/docs' build # Build everything except docs/storybook to save time; Chromatic will build Storybook.
 
       - name: Publish to Chromatic
         if: ${{ env.CHROMATIC_PROJECT_TOKEN != '' }}
-        uses: chromaui/action@latest
+        # Pinned by commit, as release.yml pins the actions that touch a
+        # credential. This step runs with CHROMATIC_PROJECT_TOKEN in its
+        # environment, and `@latest` is a tag Chromatic moves - it pointed at
+        # v18.9.5 on 2026-09-22 - so whoever can move it can change what runs
+        # beside that token. A public repository makes that worth spelling out.
+        #
+        # The cost is real: Chromatic publishes `latest` so that upgrades arrive
+        # by themselves, and this opts out of them. Re-pin deliberately when
+        # their action gains something needed, rather than drifting into it.
+        uses: chromaui/action@6b3c2820222d23bad770d57a4ad5e2d1c91f92e9 # v18.9.5
         with:
           projectToken: ${{ env.CHROMATIC_PROJECT_TOKEN }}
           # The storybook is located in apps/docs

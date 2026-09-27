@@ -2,7 +2,7 @@
 
 This guide covers the React reference implementation added after the Web SDK
 revamp audit. The source of truth for platform-neutral models is
-`@kozmos/product-contracts`; UI components are exported by `@kozmos/react`.
+`@kozmos-ds/product-contracts`; UI components are exported by `@kozmos-ds/react`.
 
 ## Ownership Boundary
 
@@ -26,7 +26,7 @@ import type {
   POIPresentation,
   POIResultPresentation,
   RouteOptionPresentation,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import {
   AdaptiveMapShell,
   FloorSelector,
@@ -36,7 +36,7 @@ import {
   POIResultList,
   RoutePreviewPanel,
   getPOIResultDomId,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 ```
 
 ## Keep List And Marker Selection Synchronized

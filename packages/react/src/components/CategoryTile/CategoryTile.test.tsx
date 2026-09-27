@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag01 as ShoppingBag } from "@kozmos-ds/icons";
 import { describe, expect, it, vi } from "vitest";
 import { CategoryTile } from "./CategoryTile";
 

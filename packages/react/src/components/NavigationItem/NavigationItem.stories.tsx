@@ -1,5 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Bell, ChevronRight, Home, Search, Settings } from "lucide-react";
+import {
+  Bell01 as Bell,
+  ChevronRight,
+  Home01 as Home,
+  SearchMd as Search,
+  Settings01 as Settings,
+} from "@kozmos-ds/icons";
 import { NavigationItem } from "./NavigationItem";
 
 const meta: Meta<typeof NavigationItem> = {

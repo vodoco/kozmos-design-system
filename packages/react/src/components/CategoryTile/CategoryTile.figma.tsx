@@ -76,7 +76,7 @@ figma.connect(CategoryTile, categoryTileUrl, {
       false: undefined,
     }),
   },
-  // category is a CategoryPresentation from @kozmos/product-contracts; the
+  // category is a CategoryPresentation from @kozmos-ds/product-contracts; the
   // Figma set carries the label, the selection state and the count, so the
   // rest of the object is product data supplied by the caller.
   example: ({ label, selected, disabled, tint, resultCount }) => (

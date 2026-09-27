@@ -3,7 +3,7 @@
 2026-09-17 · implemented on `astra/prepublish-foundations`, not published.
 
 This is the React geometry foundation, not a claim of complete foldable-device support.
-The TypeScript presentation contract is in `@kozmos/product-contracts`; SwiftUI and Compose
+The TypeScript presentation contract is in `@kozmos-ds/product-contracts`; SwiftUI and Compose
 still use their previous implementations. Theme/portal/CSS isolation is the next separate
 foundation, not part of this change.
 
@@ -19,8 +19,8 @@ The browser fixture's labelled renderer slot is instrumentation, not an implemen
 
 ```tsx
 import type { ReactNode } from "react";
-import { AdaptiveMapShell } from "@kozmos/react";
-import type { AdaptiveMapLayoutSnapshot } from "@kozmos/react";
+import { AdaptiveMapShell } from "@kozmos-ds/react";
+import type { AdaptiveMapLayoutSnapshot } from "@kozmos-ds/react";
 
 export function MapHost({
   renderer,
@@ -104,7 +104,7 @@ pnpm turbo run build --filter="./packages/*"
 pnpm exec playwright install chromium webkit
 pnpm test:adaptive
 ADAPTIVE_BROWSER=webkit pnpm test:adaptive
-pnpm --filter @kozmos/react test
+pnpm --filter @kozmos-ds/react test
 pnpm packages:install:check
 ```
 

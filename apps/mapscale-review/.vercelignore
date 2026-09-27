@@ -1,5 +1,5 @@
 # Only the built output ships. The app is part of a pnpm workspace and depends on
-# @kozmos/react via workspace:*, so Vercel cannot install or build it standalone —
+# @kozmos-ds/react via workspace:*, so Vercel cannot install or build it standalone —
 # we build locally (pnpm --filter mapscale-review build) and upload dist/.
 #
 # NB every pattern is ROOT-ANCHORED with a leading slash. Unanchored, `index.html`

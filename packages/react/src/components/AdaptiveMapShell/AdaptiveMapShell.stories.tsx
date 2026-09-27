@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Info } from "lucide-react";
+import { InfoCircle as Info } from "@kozmos-ds/icons";
 import { AdaptiveMapShell, panelPeekAnchorProps } from "./AdaptiveMapShell";
 import { MapControlButton } from "../MapControlButton";
 

@@ -1,5 +1,9 @@
 import React from "react";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  DotsHorizontal as MoreHorizontal,
+} from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { type ButtonProps, buttonVariants } from "../Button/Button";
 import { useKozmosAnalytics } from "../../utils/analytics";

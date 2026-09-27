@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
-import { Accessibility } from "lucide-react";
+import { Accessibility } from "@kozmos-ds/icons";
 import { CategoryTile } from "./CategoryTile";
 
 const meta = {

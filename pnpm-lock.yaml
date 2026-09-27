@@ -55,6 +55,9 @@ importers:
       prettier:
         specifier: ^3.2.0
         version: 3.8.1
+      semver:
+        specifier: 7.8.5
+        version: 7.8.5
       tsx:
         specifier: ^4.7.0
         version: 4.21.0
@@ -70,16 +73,22 @@ importers:
       vitest:
         specifier: ^1.2.0
         version: 1.6.1(@types/node@20.19.33)(jsdom@28.0.0)(lightningcss@1.32.0)
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
 
   apps/docs:
     dependencies:
-      "@kozmos/react":
+      "@kozmos-ds/icons":
+        specifier: workspace:*
+        version: link:../../packages/icons
+      "@kozmos-ds/react":
         specifier: workspace:*
         version: link:../../packages/react
-      "@kozmos/tokens":
+      "@kozmos-ds/tokens":
         specifier: workspace:*
         version: link:../../packages/tokens
-      "@kozmos/vue":
+      "@kozmos-ds/vue":
         specifier: workspace:*
         version: link:../../packages/vue
       react:
@@ -155,18 +164,15 @@ importers:
       "@emotion/is-prop-valid":
         specifier: 1.4.0
         version: 1.4.0
-      "@kozmos/icons":
+      "@kozmos-ds/icons":
         specifier: workspace:*
         version: link:../../packages/icons
-      "@kozmos/react":
+      "@kozmos-ds/react":
         specifier: workspace:*
         version: link:../../packages/react
       framer-motion:
         specifier: ^11.0.0
         version: 11.18.2(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      lucide-react:
-        specifier: 0.563.0
-        version: 0.563.0(react@19.2.4)
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -216,10 +222,10 @@ importers:
 
   apps/playground-vue:
     dependencies:
-      "@kozmos/react":
+      "@kozmos-ds/react":
         specifier: workspace:*
         version: link:../../packages/react
-      "@kozmos/vue":
+      "@kozmos-ds/vue":
         specifier: workspace:*
         version: link:../../packages/vue
       react:
@@ -256,18 +262,15 @@ importers:
       "@emotion/is-prop-valid":
         specifier: 1.4.0
         version: 1.4.0
-      "@kozmos/icons":
+      "@kozmos-ds/icons":
         specifier: workspace:*
         version: link:../../packages/icons
-      "@kozmos/react":
+      "@kozmos-ds/react":
         specifier: workspace:*
         version: link:../../packages/react
       framer-motion:
         specifier: ^11.0.0
         version: 11.18.2(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      lucide-react:
-        specifier: 0.563.0
-        version: 0.563.0(react@19.2.4)
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -393,9 +396,6 @@ importers:
       "@types/react":
         specifier: ^18.2.66
         version: 18.3.28
-      lucide-react:
-        specifier: 0.563.0
-        version: 0.563.0(react@19.2.4)
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -426,13 +426,13 @@ importers:
       "@emotion/is-prop-valid":
         specifier: 1.4.0
         version: 1.4.0
-      "@kozmos/icons":
+      "@kozmos-ds/icons":
         specifier: workspace:*
         version: link:../icons
-      "@kozmos/product-contracts":
+      "@kozmos-ds/product-contracts":
         specifier: workspace:*
         version: link:../product-contracts
-      "@kozmos/tokens":
+      "@kozmos-ds/tokens":
         specifier: workspace:*
         version: link:../tokens
       "@radix-ui/react-accordion":
@@ -504,9 +504,6 @@ importers:
       framer-motion:
         specifier: ^11.0.0
         version: 11.18.2(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      lucide-react:
-        specifier: 0.563.0
-        version: 0.563.0(react@19.2.4)
       react:
         specifier: ^18.2.0 || ^19.0.0
         version: 19.2.4
@@ -616,7 +613,7 @@ importers:
 
   packages/vue:
     dependencies:
-      "@kozmos/react":
+      "@kozmos-ds/react":
         specifier: workspace:*
         version: link:../react
       react:
@@ -8592,14 +8589,6 @@ packages:
       }
     engines: { node: ">=16.14" }
 
-  lucide-react@0.563.0:
-    resolution:
-      {
-        integrity: sha512-8dXPB2GI4dI8jV4MgUDGBeLdGk8ekfqVZ0BdLcrRzocGgG75ltNEmWS+gE7uokKF/0oSUuczNDT+g9hFJ23FkA==,
-      }
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   lz-string@1.5.0:
     resolution:
       {
@@ -10303,6 +10292,14 @@ packages:
     resolution:
       {
         integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==,
+      }
+    engines: { node: ">=10" }
+    hasBin: true
+
+  semver@7.8.5:
+    resolution:
+      {
+        integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==,
       }
     engines: { node: ">=10" }
     hasBin: true
@@ -12062,6 +12059,14 @@ packages:
     resolution:
       {
         integrity: sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==,
+      }
+    engines: { node: ">= 14.6" }
+    hasBin: true
+
+  yaml@2.9.1:
+    resolution:
+      {
+        integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==,
       }
     engines: { node: ">= 14.6" }
     hasBin: true
@@ -17674,10 +17679,6 @@ snapshots:
 
   lru-cache@8.0.5: {}
 
-  lucide-react@0.563.0(react@19.2.4):
-    dependencies:
-      react: 19.2.4
-
   lz-string@1.5.0: {}
 
   magic-string@0.27.0:
@@ -18737,6 +18738,8 @@ snapshots:
       lru-cache: 6.0.0
 
   semver@7.7.4: {}
+
+  semver@7.8.5: {}
 
   send@1.2.1:
     dependencies:
@@ -19935,6 +19938,8 @@ snapshots:
   yallist@4.0.0: {}
 
   yaml@2.8.2: {}
+
+  yaml@2.9.1: {}
 
   yargs-parser@21.1.1: {}
 

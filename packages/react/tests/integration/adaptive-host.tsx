@@ -6,11 +6,11 @@ import {
   Input,
   POIDetailPanel,
   Stack,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import type {
   AdaptiveMapShellProps,
   AdaptiveMapLayoutSnapshot,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 declare global {
   interface Window {

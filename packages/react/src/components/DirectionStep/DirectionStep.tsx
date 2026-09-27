@@ -1,15 +1,13 @@
 import React from "react";
 import {
-  ArrowBigRight,
-  ArrowBigLeft,
-  ArrowBigUp,
-  ArrowDownToLine,
-  ArrowRightToLine,
-  ArrowUpFromLine,
-  MapPin,
-  Undo2,
-  type LucideIcon,
-} from "lucide-react";
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  MarkerPin01,
+  FlipBackward,
+  type KozmosIconComponent,
+} from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
 /**
@@ -55,24 +53,27 @@ export const DIRECTION_TYPES: readonly DirectionType[] = [
 
 /**
  * The arrow for each direction, one table for every part that draws one.
- * Lucide has no lift, escalator or stairs: a level change shows the
- * direction of travel, whatever carries it.
+ * Pointr has no lift, escalator or stairs glyph either, so a level change
+ * shows the direction of travel and the instruction's words name what carries
+ * it. These are the same outlines the Figma component swaps in: its fourteen
+ * variants resolve to arrow-up, arrow-down, arrow-left, arrow-right,
+ * marker-pin-01 and flip-backward, and nothing finer.
  */
-export const DIRECTION_ICONS: Record<DirectionType, LucideIcon> = {
-  straight: ArrowBigUp,
-  left: ArrowBigLeft,
-  right: ArrowBigRight,
-  destination: MapPin,
-  "lift-up": ArrowUpFromLine,
-  "lift-down": ArrowDownToLine,
-  "escalator-up": ArrowUpFromLine,
-  "escalator-down": ArrowDownToLine,
-  "stairs-up": ArrowUpFromLine,
-  "stairs-down": ArrowDownToLine,
-  "level-up": ArrowUpFromLine,
-  "level-down": ArrowDownToLine,
-  transition: ArrowRightToLine,
-  "turn-back": Undo2,
+export const DIRECTION_ICONS: Record<DirectionType, KozmosIconComponent> = {
+  straight: ArrowUp,
+  left: ArrowLeft,
+  right: ArrowRight,
+  destination: MarkerPin01,
+  "lift-up": ArrowUp,
+  "lift-down": ArrowDown,
+  "escalator-up": ArrowUp,
+  "escalator-down": ArrowDown,
+  "stairs-up": ArrowUp,
+  "stairs-down": ArrowDown,
+  "level-up": ArrowUp,
+  "level-down": ArrowDown,
+  transition: ArrowRight,
+  "turn-back": FlipBackward,
 };
 
 /**

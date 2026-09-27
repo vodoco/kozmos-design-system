@@ -1,7 +1,7 @@
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Loader2 } from "lucide-react";
 import { cn } from "../../utils";
+import { SpinnerArc } from "../Spinner/SpinnerArc";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 /**
@@ -171,10 +171,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {isLoading && (
-          <Loader2
-            aria-hidden="true"
-            className="kozmos-reset kozmos-button-loader"
-          />
+          <SpinnerArc className="kozmos-reset kozmos-button-loader" size={16} />
         )}
         {children}
       </button>

@@ -1,7 +1,7 @@
 import { createThemePortal } from "../../theme/ThemePortal";
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 
 import { cn, mergeAriaIds } from "../../utils";
 

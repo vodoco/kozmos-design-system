@@ -277,6 +277,14 @@ export function DesignConfigProvider({
         <div
           ref={wrapper}
           data-kozmos-design-scope={id}
+          // The config's own reduced motion, for the rules that cannot read a
+          // duration scale: an animation that loops has to be told to stop,
+          // not run a thousand times faster (GAP-50).
+          data-kozmos-motion={
+            config.accessibility.reduceMotion || config.motion === "reduced"
+              ? "reduced"
+              : undefined
+          }
           style={{ display: "contents" }}
           onPointerMove={onPointerMove}
           onPointerOut={onPointerOut}

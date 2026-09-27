@@ -12,7 +12,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { BAND, MAGNITUDE } from "../mock/diff";
 import { SITE_SNAPSHOT, SITE_ID, SITE_NAME } from "../mock/site";
 import {

@@ -19,7 +19,7 @@ figma.connect(POIDetailPanel, poiDetailPanelUrl, {
       Panel: "panel",
     }),
   },
-  // poi is a POIPresentation from @kozmos/product-contracts: the title,
+  // poi is a POIPresentation from @kozmos-ds/product-contracts: the title,
   // subtitle and description shown in Figma are fields of it, not separate
   // props, so the example passes the object rather than the text bindings.
   example: ({ presentation }) => (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Icon, Input, Text } from "@kozmos/react";
+import { Button, Icon, Input, Text } from "@kozmos-ds/react";
 import { Tour, TOUR_STEPS, type TourScreen } from "./Tour";
 
 /**

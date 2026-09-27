@@ -1,5 +1,5 @@
 import React from "react";
-import type { MapCollisionInsets } from "@kozmos/product-contracts";
+import type { MapCollisionInsets } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
 
 export interface MapOverlayProps extends React.HTMLAttributes<HTMLDivElement> {

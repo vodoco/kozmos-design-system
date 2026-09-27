@@ -194,8 +194,15 @@ const NavigationItem = React.forwardRef<HTMLElement, NavigationItemProps>(
         {!isIconOnly && labelContent ? (
           <span
             className={cn(
-              "min-w-0 truncate",
-              isRail ? "max-w-full leading-4" : "flex-1",
+              "min-w-0",
+              // A rail is narrow on purpose, and truncating there loses the
+              // word rather than shortening it: "Overvi…", "Wayfin…". Two
+              // lines fit the 72px tile and the Cloud Dashboard already wraps
+              // "SDK Configuration" this way. Elsewhere the row is wide and a
+              // single truncated line is the right compromise.
+              isRail
+                ? "line-clamp-2 max-w-full text-balance leading-4"
+                : "flex-1 truncate",
             )}
           >
             {labelContent}

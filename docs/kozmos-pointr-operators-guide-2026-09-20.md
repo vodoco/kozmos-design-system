@@ -1,20 +1,20 @@
 # Operator's guide — the Kozmos design system through the Pointr QA app, 20 September 2026
 
 Everything needed to change, run, measure and check the work of 19–20 September without the
-session that did it. Written by Claude Code at Olcay's request; every command below was run in
+session that did it. Written by the coding agent at Olcay's request; every command below was run in
 this worktree on this Mac. The reports it summarises: the Pointr passes
 ([1](pointr-ios-pass1-2026-09-19.md), [2](pointr-ios-pass2-2026-09-19.md),
 [3](pointr-ios-pass3-2026-09-19.md), [3's closure](pointr-ios-pass3-closure-2026-09-20.md)), the
 [design-system pass](design-system-pass-2026-09-20.md), the
 [prototype's screen states](pointr-prototype-screen-states-2026-09-20.md), and the
-[Pointr handoff](claude-code-handoff-2026-09-19-pass3.md) with its update notes.
+[Pointr handoff](handoff-2026-09-19-pass3.md) with its update notes.
 
 ## 1. Where everything is
 
 | What                                                      | Where                                                                                                                                                                                                                                  |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The worktree with all of the work                         | `/Volumes/4TB Depo/development/K/kozmos-design-system-pointr`, branch `claude/pointr-browse-repairs`, pushed (PR #56); off `/private/tmp` since the 22nd                                                                               |
-| The main checkout                                         | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev` on `main`, holds none of it; one untracked pointer file, `docs/claude-code-handoff-2026-09-19.md`                                                                           |
+| The main checkout                                         | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev` on `main`, holds none of it; one untracked pointer file, `docs/handoff-2026-09-19.md`                                                                                       |
 | The QA app (real PointrKit, Design-QA Cloud)              | `apps/PointrPlayground` — `Sources/App`, `Tests`, `UITests`, `Tools`, `project.yml`                                                                                                                                                    |
 | Ignored, unrecoverable from Git, **only in the worktree** | `apps/PointrPlayground/.local/` (PointrKit 10.3.0, MapLibre 6.27 xcframeworks, `Info.plist`), `apps/PointrPlayground/Sources/App/Resources/QAConfig.json` (mode 0600, never print or commit), the generated `KozmosPointrQA.xcodeproj` |
 | The design system                                         | `packages/react`, `packages/ios` (SwiftUI package `Kozmos`), `packages/android` (Compose), `packages/tokens` (DTCG sources in `src/tokens-light.json` and `tokens-dark.json`), `packages/product-contracts`                            |
@@ -29,7 +29,7 @@ copy them somewhere safe. Decision 5 (push, and move those files) is answered (�
 ## 2. Git rules that held
 
 Stage by file, never `git add -A` or a directory (parallel sessions leave work in the tree);
-never a bare `git stash`; commit messages end with `Co-Authored-By: Claude Fable 5.1
+never a bare `git stash`; commit messages end with `Co-Authored-By: the coding agent
 <noreply@anthropic.com>`; `lint-staged` runs prettier on staged `md/yml/json` and eslint +
 prettier on `ts/tsx/js/jsx`, so a docs commit may reflow tables — that is expected. Nothing is
 pushed without an explicit ask.
@@ -476,7 +476,7 @@ _On the 22nd, at 17:00, Olcay ruled on two: splitting the React bundle is its ow
 which merges with `analyze-bundle` knowingly red; and the worktree moved off `/private/tmp` to
 `/Volumes/4TB Depo/development/K/kozmos-design-system-pointr`. The old copy's `.git` is renamed
 and it is his to delete, after he re-imports the Figma plugin from the new path. The rest went
-as recommended ([claude-code-handoff-2026-09-22.md](claude-code-handoff-2026-09-22.md) §0a)._
+as recommended ([handoff-2026-09-22.md](handoff-2026-09-22.md) §0a)._
 
 ## 8. What the design system still lacks, from the prototype
 
@@ -765,7 +765,7 @@ _Added on the 22nd, from the five decisions:_
   take `CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE` (0.0001 %, calibrated in its KDoc); anything
   larger is a real difference.
 
-_Added on the 22nd, from the handoff's checks (`docs/claude-code-handoff-2026-09-22.md` §9):_
+_Added on the 22nd, from the handoff's checks (`docs/handoff-2026-09-22.md` §9):_
 
 - A Curated Icons → Update that draws an icon's source again orphans every tint laid through it,
   in every set but the four it repaints (Button, IconButton, FloatingActionButton, Badge); at

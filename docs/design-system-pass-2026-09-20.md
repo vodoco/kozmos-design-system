@@ -1,6 +1,6 @@
 # Design system pass — the card's header, the level switcher, folded phones, 20 September 2026
 
-Claude Code, on Olcay's redirection after the [closure of Pass 3](pointr-ios-pass3-closure-2026-09-20.md):
+The coding agent, on Olcay's redirection after the [closure of Pass 3](pointr-ios-pass3-closure-2026-09-20.md):
 "focus on the design system, and on what is missing, not on making the app most functional",
 with three examples — the level switcher could be better, the name and the buttons should be a
 single row, a long POI title should take two or at most three lines — and, added on the way, new

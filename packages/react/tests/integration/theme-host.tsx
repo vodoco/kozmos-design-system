@@ -7,7 +7,7 @@ import {
   PopoverContent,
   ThemeProvider,
   useTheme,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 function Controls({ id }: { id: string }) {
   const { theme, resolvedTheme, setTheme } = useTheme();

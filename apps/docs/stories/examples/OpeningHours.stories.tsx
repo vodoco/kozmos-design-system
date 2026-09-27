@@ -10,7 +10,7 @@ import {
   Stack,
   Tag,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 /**
  * Opening hours, composed from Kozmos components only.

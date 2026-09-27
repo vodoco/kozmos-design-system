@@ -1,7 +1,7 @@
 import { createElement, type ComponentProps } from "react";
-import * as kozmos from "@kozmos/react";
-import { getIconComponent, type KozmosIconName } from "@kozmos/icons";
-import type { RouteOptionPresentation } from "@kozmos/product-contracts";
+import * as kozmos from "@kozmos-ds/react";
+import { getIconComponent, type KozmosIconName } from "@kozmos-ds/icons";
+import type { RouteOptionPresentation } from "@kozmos-ds/product-contracts";
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 const typedButton: IsAny<ComponentProps<typeof kozmos.Button>> = false;

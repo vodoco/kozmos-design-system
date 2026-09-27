@@ -2,7 +2,12 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Navbar } from "./Navbar";
 import { Button } from "../Button/Button";
 import { NavigationItem } from "../NavigationItem/NavigationItem";
-import { Bell, ChevronDown, Globe, User } from "lucide-react";
+import {
+  Bell01 as Bell,
+  ChevronDown,
+  Globe01 as Globe,
+  User01 as User,
+} from "@kozmos-ds/icons";
 
 const meta: Meta<typeof Navbar> = {
   title: "Navigation/Navbar",

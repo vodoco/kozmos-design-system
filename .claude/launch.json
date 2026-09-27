@@ -10,7 +10,7 @@
     {
       "name": "storybook-react",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@kozmos/docs", "storybook:react"],
+      "runtimeArgs": ["--filter", "@kozmos-ds/docs", "storybook:react"],
       "port": 6006
     }
   ]

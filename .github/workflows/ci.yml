@@ -15,6 +15,10 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   web:
     name: Web Build & Test
@@ -39,6 +43,9 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify Release Safeguards
+        run: pnpm test:release
+
       # The design system gates on its own lint. apps/mapscale-review is a
       # consumer of the library — a place to use the components for real — and
       # its in-flight work should not block a packages/ change. It is still
@@ -57,10 +64,38 @@ jobs:
         run: pnpm test
 
       - name: Verify Web Contracts (Pact)
-        run: pnpm --filter @kozmos/react test:contracts
+        run: pnpm --filter @kozmos-ds/react test:contracts
 
       - name: Verify Component Contracts
         run: pnpm components:contract:check
+
+      # The three product-contract files are one contract. Nothing compared
+      # them until 2026-09-25, and the drift that found was ten fields and
+      # types the web had and neither native platform did.
+      - name: Verify Product Contract Parity
+        run: pnpm contracts:parity:check
+
+      # .ai-skills/ is what an assistant is handed as fact about Kozmos, and
+      # nothing verified it: it documented a v3.x with a Modal component and a
+      # variant="primary" to "solid" migration, none of which ever existed here.
+      - name: Verify The AI-Facing Docs Match The Code
+        run: pnpm skills:check
+
+      # Also never run by any workflow until 2026-09-22. It reports the axes a
+      # platform is missing, and fails when the analysis it writes is stale, so
+      # the record and the code cannot drift apart unnoticed. Its own controls
+      # run first: the enum reader lost a whole axis to a doc comment holding
+      # commas, and said the platform was missing what it had just been given.
+      # The rename to @kozmos-ds was a search and replace recorded as a diff over
+      # 247 files, and a diff cannot know about a file written after it. Rebased
+      # onto #58 it missed thirteen, seven of them changesets whose frontmatter
+      # names the package `changeset version` looks up — a release that would
+      # have found nothing to publish. So the rename is verified, not trusted.
+      - name: Verify The Packages Are Named @kozmos-ds
+        run: node scripts/check-package-scope.mjs
+
+      - name: Verify Component Variant Parity
+        run: node --test scripts/skills/variant-parity.test.mjs && pnpm components:variant:check
 
       - name: Verify Native POI Fixtures Match Storybook
         run: node --import tsx scripts/sync-ios-poi-examples.mjs
@@ -115,7 +150,11 @@ jobs:
       # project with npm, resolves every export and README import, renders a
       # component and type-checks every README sample. It reads the build above.
       - name: Verify Packages Install From Their Tarballs
-        run: pnpm test:declarations && pnpm test:doc-snippets && pnpm packages:install:check
+        # `test:release:packages` runs `check-package-install.mjs` inside an
+        # isolated git fixture as well as proving the release plan's export
+        # path, so it supersedes `packages:install:check` rather than replacing
+        # the two checks beside it.
+        run: pnpm test:declarations && pnpm test:doc-snippets && pnpm test:release:packages
 
       # A stale stamp means the plugin source changed without the build id
       # following, and the id is the only way to tell which build produced what
@@ -164,7 +203,7 @@ jobs:
           pnpm figma:publish:linked:dry
 
       - name: Install Playwright
-        run: pnpm --filter @kozmos/react exec playwright install --with-deps chromium firefox webkit
+        run: pnpm --filter @kozmos-ds/react exec playwright install --with-deps chromium firefox webkit
 
       - name: Verify Installed Product Consumer (offline, no authentication)
         run: pnpm product:consumer:check --browser
@@ -216,64 +255,10 @@ jobs:
           done
           exit "$result"
 
-      - name: Core Pipeline - Storybook E2E & A11y Verification
-        run: |
-          # Chromatic is the required visual-regression gate. Keep local screenshot baselines manual until repaired.
-          pnpm --filter @kozmos/docs exec concurrently -k -s first -n "SB,TEST" \
-            "pnpm --filter @kozmos/docs storybook:react --ci --host 127.0.0.1" \
-            "bash -lc 'until curl -sf http://127.0.0.1:6006 >/dev/null; do sleep 2; done; pnpm --filter @kozmos/react exec playwright test && pnpm -w exec tsx scripts/skills/check-a11y.ts && pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-regressions'"
-
-      - name: Audit Every React Story and Keyboard Scroll Interaction
-        run: |
-          pnpm --filter @kozmos/docs exec concurrently -k -s first -n "STATIC,TEST" \
-            "python3 -m http.server 6008 --bind 127.0.0.1 --directory storybook-static" \
-            "bash -lc 'until curl -sf http://127.0.0.1:6008/index.json >/dev/null; do sleep 2; done; STORY_SCOPE=all STORYBOOK_URL=http://127.0.0.1:6008 pnpm -w test:storybook-audit && STORYBOOK_URL=http://127.0.0.1:6008 pnpm -w test:storybook-interactions && STORYBOOK_URL=http://127.0.0.1:6008 ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-interactions && STORYBOOK_URL=http://127.0.0.1:6008 ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-interactions'"
-
-      - name: Verify Public Documentation
-        run: |
-          pnpm --filter @kozmos/docs exec concurrently -k -s first -n "DOCS,TEST" \
-            "python3 -m http.server 6008 --bind 127.0.0.1 --directory storybook-static" \
-            "bash -lc 'until curl -sf http://127.0.0.1:6008/index.json >/dev/null; do sleep 2; done; STORYBOOK_URL=http://127.0.0.1:6008 pnpm -w test:storybook-docs && STORYBOOK_URL=http://127.0.0.1:6008 pnpm -w test:storybook-audit-fixes && STORYBOOK_URL=http://127.0.0.1:6008 ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-audit-fixes && STORYBOOK_URL=http://127.0.0.1:6008 ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-audit-fixes'"
-
-      - name: Verify SDK POI Reference Examples
-        # Package-built gallery checks are separate from source-backed Storybook.
-        run: |
-          pnpm test:poi-gallery
-          ADAPTIVE_BROWSER=firefox pnpm test:poi-gallery
-          ADAPTIVE_BROWSER=webkit pnpm test:poi-gallery
-
-      - name: Verify SDK POI Reference Screens
-        run: |
-          pnpm --filter @kozmos/docs exec concurrently -k -s first -n "POI,TEST" \
-            "python3 -m http.server 6008 --bind 127.0.0.1 --directory storybook-static" \
-            "bash -lc 'until curl -sf http://127.0.0.1:6008/index.json >/dev/null; do sleep 2; done; STORYBOOK_URL=http://127.0.0.1:6008 pnpm -w test:poi-details && STORYBOOK_URL=http://127.0.0.1:6008 ADAPTIVE_BROWSER=firefox pnpm -w test:poi-details && STORYBOOK_URL=http://127.0.0.1:6008 ADAPTIVE_BROWSER=webkit pnpm -w test:poi-details'"
-
-      # These three suites existed and no workflow ran them. The search sheet's
-      # had been red since 2026-09-21, asking CategoryField's name to be the
-      # category colour that Olcay's own ruling had just removed for failing
-      # 4.5:1, and asking the clear to be 32 when the ruling made it a 44
-      # target around a 32 circle. A suite nobody runs is a suite nobody keeps.
-      - name: Verify Map Sheet, Search Sheet and Navigation Screens
-        run: |
-          pnpm --filter @kozmos/docs exec concurrently -k -s first -n "SB,TEST" \
-            "python3 -m http.server 6009 --bind 127.0.0.1 --directory storybook-static" \
-            "bash -lc 'until curl -sf http://127.0.0.1:6009/index.json >/dev/null; do sleep 2; done; STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:map-sheet && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=firefox pnpm -w test:map-sheet && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:search-sheet && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=firefox pnpm -w test:search-sheet && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:navigation && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=firefox pnpm -w test:navigation && STORYBOOK_URL=http://127.0.0.1:6009 ADAPTIVE_BROWSER=webkit pnpm -w test:navigation'"
-
-      - name: Preserve POI Reference Evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: poi-detail-examples
-          path: |
-            test-results/poi-detail-examples
-            test-results/poi-gallery
-          if-no-files-found: ignore
-          retention-days: 7
-
       - name: Build and Smoke Test Internal Vue Harness
         run: |
-          pnpm --filter @kozmos/docs build-storybook:vue
-          pnpm --filter @kozmos/docs exec concurrently -k -s first -n "VUE,TEST" \
+          pnpm --filter @kozmos-ds/docs build-storybook:vue
+          pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "VUE,TEST" \
             "python3 -m http.server 6009 --bind 127.0.0.1 --directory storybook-internal/vue" \
             "bash -lc 'until curl -sf http://127.0.0.1:6009/index.json >/dev/null; do sleep 2; done; VUE_STORYBOOK_URL=http://127.0.0.1:6009 pnpm -w test:storybook-vue-smoke'"
 
@@ -305,8 +290,179 @@ jobs:
             }
             console.log('✅ Dark Mode divergence verified cross-platform.');
           "
+  # Five Storybook suites were 72% of the Web job: 1933s of 2686s, measured on
+  # run 36016744708. Each ran chromium, then firefox, then webkit in sequence,
+  # so the same work was done three times over in one queue. Split by browser
+  # they run at once. The repository is public, so these runners are free; the
+  # only thing spent is wall clock, which was the whole problem.
+  #
+  # Each shard installs and builds for itself rather than taking an artifact
+  # from the web job. That costs ~4 minutes per shard in parallel, and buys
+  # independence: a shard is a complete, re-runnable check, and nothing waits
+  # on the web job to finish before it can start.
+  browsers:
+    name: ${{ matrix.shard.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # One red browser must not hide the others: a WebKit-only failure is the
+      # kind this repository has shipped before.
+      fail-fast: false
+      matrix:
+        shard:
+          - name: Stories & Interactions (chromium)
+            port: 6101
+            run: STORY_SCOPE=all pnpm -w test:storybook-audit && pnpm -w test:storybook-interactions
+          - name: Interactions (firefox)
+            port: 6102
+            run: ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-interactions
+          - name: Interactions (webkit)
+            port: 6103
+            run: ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-interactions
+          - name: Documentation (chromium)
+            port: 6104
+            run: pnpm -w test:storybook-docs && pnpm -w test:storybook-audit-fixes
+          - name: Documentation (firefox)
+            port: 6105
+            run: ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-audit-fixes
+          - name: Documentation (webkit)
+            port: 6106
+            run: ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-audit-fixes
+          - name: POI Reference (chromium)
+            port: 6107
+            run: pnpm -w test:poi-details
+          - name: POI Reference (firefox)
+            port: 6108
+            run: ADAPTIVE_BROWSER=firefox pnpm -w test:poi-details
+          - name: POI Reference (webkit)
+            port: 6109
+            run: ADAPTIVE_BROWSER=webkit pnpm -w test:poi-details
+          - name: Map, Search & Navigation (chromium)
+            port: 6110
+            run: pnpm -w test:map-sheet && pnpm -w test:search-sheet && pnpm -w test:navigation
+          - name: Map, Search & Navigation (firefox)
+            port: 6111
+            run: ADAPTIVE_BROWSER=firefox pnpm -w test:map-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:search-sheet && ADAPTIVE_BROWSER=firefox pnpm -w test:navigation
+          - name: Map, Search & Navigation (webkit)
+            port: 6112
+            run: ADAPTIVE_BROWSER=webkit pnpm -w test:map-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:search-sheet && ADAPTIVE_BROWSER=webkit pnpm -w test:navigation
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Web
+        run: pnpm build
+
+      - name: Install Playwright
+        run: pnpm --filter @kozmos-ds/react exec playwright install --with-deps
+
+      # Every shard gets its own port. They are separate runners today, but a
+      # fixed port is the kind of thing that only breaks once two of these ever
+      # share a machine, and the failure then looks like a flaky test.
+      - name: ${{ matrix.shard.name }}
+        run: |
+          pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "STATIC,TEST" \
+            "python3 -m http.server ${{ matrix.shard.port }} --bind 127.0.0.1 --directory storybook-static" \
+            "bash -lc 'until curl -sf http://127.0.0.1:${{ matrix.shard.port }}/index.json >/dev/null; do sleep 2; done; export STORYBOOK_URL=http://127.0.0.1:${{ matrix.shard.port }}; ${{ matrix.shard.run }}'"
+
+      - name: Preserve Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-${{ strategy.job-index }}
+          path: |
+            test-results/poi-detail-examples
+            test-results/storybook-*.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The dev-server pipeline and the package-built gallery do not read
+  # storybook-static, so they do not fit the matrix above: one needs Storybook
+  # running, the other needs no server at all. They are their own job so they
+  # stop queueing behind the static suites.
+  pipeline:
+    name: Core Pipeline & POI Gallery
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Web
+        run: pnpm build
+
+      - name: Install Playwright
+        run: pnpm --filter @kozmos-ds/react exec playwright install --with-deps
+
+      - name: Core Pipeline - Storybook E2E & A11y Verification
+        run: |
+          # Chromatic is the required visual-regression gate. Keep local screenshot baselines manual until repaired.
+          pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "SB,TEST" \
+            "pnpm --filter @kozmos-ds/docs storybook:react --ci --host 127.0.0.1" \
+            "bash -lc 'until curl -sf http://127.0.0.1:6006 >/dev/null; do sleep 2; done; pnpm --filter @kozmos-ds/react exec playwright test && pnpm -w exec tsx scripts/skills/check-a11y.ts && pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=firefox pnpm -w test:storybook-regressions && ADAPTIVE_BROWSER=webkit pnpm -w test:storybook-regressions'"
+
+      - name: Verify SDK POI Reference Examples
+        # Package-built gallery checks are separate from source-backed Storybook.
+        run: |
+          pnpm test:poi-gallery
+          ADAPTIVE_BROWSER=firefox pnpm test:poi-gallery
+          ADAPTIVE_BROWSER=webkit pnpm test:poi-gallery
+
+      - name: Preserve POI Reference Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: poi-gallery
+          path: test-results/poi-gallery
+          if-no-files-found: ignore
+          retention-days: 7
+
   ios:
     name: iOS Build
+    # macos-latest bills at 10x minutes, and this is how the spending limit was
+    # reached on 2026-08-28 and again on 2026-09-23. So this runs once per merge
+    # rather than once per push: over the last 60 CI runs that is 13 rather than
+    # 47, and it used to be all 60.
+    #
+    # It runs on main and not on the pull request because release/policy.mjs
+    # requires a successful "iOS Build" job in the main-push CI run it publishes
+    # against, and a merge commit's SHA has never existed on a pull request - it
+    # has two parents. Gating this to pull requests left every main push short
+    # one job, which is why dispatch 36001027330 refused to publish 0.2.0 with
+    # "skipped jobs are not evidence". The guard was right; the gate was wrong.
+    #
+    # The cost is that a pull request gets no iOS signal from CI. Run
+    # `pnpm ci:local --job ios` before merging - it covers 8 of these 12 steps
+    # on a Mac that is already paid for.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: macos-latest
     steps:
       - name: Checkout Repo
@@ -327,7 +483,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Design Tokens
-        run: pnpm --filter @kozmos/tokens build
+        run: pnpm --filter @kozmos-ds/tokens build
 
       - name: Build iOS Package
         working-directory: packages/ios
@@ -386,7 +542,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Design Tokens
-        run: pnpm --filter @kozmos/tokens build
+        run: pnpm --filter @kozmos-ds/tokens build
 
       - name: Setup Java
         uses: actions/setup-java@v4

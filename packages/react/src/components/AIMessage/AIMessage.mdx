@@ -1,0 +1,24 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./AIMessage.stories";
+
+<Meta of={Stories} />
+
+# AIMessage
+
+An assistant turn.
+
+`status="streaming"` draws its dots **beside** the text rather than instead of
+it: a streamed acknowledgement is what arrives within the 2.5s a first visible
+response is allowed, so the words show while the dots run.
+
+`status="timedOut"` is drawn rather than left silent. A thread that simply
+stops reads exactly like one still thinking.
+
+`actionCard` carries rich content under the bubble, and `trailing` sits beside
+it — a read-aloud control, for example.
+
+<Canvas of={Stories.Default} />
+<Canvas of={Stories.Streaming} />
+<Canvas of={Stories.TimedOut} />
+<Controls />

@@ -2,14 +2,15 @@ import React from "react";
 import type {
   POIDetailsPresentation,
   POIServicePresentation,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import {
   ClockPlus,
   Feather,
   getIconDefinition,
   isKozmosIconKey,
-} from "@kozmos/icons";
-import { Accessibility, Star } from "lucide-react";
+} from "@kozmos-ds/icons";
+import { Star01 as Star } from "@kozmos-ds/icons";
+import { Accessibility } from "@kozmos-ds/icons";
 import { Button } from "../Button";
 import { MetaStrip, MetaStripItem } from "../MetaStrip";
 

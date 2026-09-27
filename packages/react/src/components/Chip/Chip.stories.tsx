@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { Chip, ChipGroup } from "./Chip";
-import { Coffee, MapPin, ShoppingBag, Utensils } from "lucide-react";
+import {
+  MarkerPin01 as MapPin,
+  ShoppingBag01 as ShoppingBag,
+} from "@kozmos-ds/icons";
+import { Utensils as Coffee, Utensils } from "@kozmos-ds/icons";
 import { useState } from "react";
 
 const meta = {

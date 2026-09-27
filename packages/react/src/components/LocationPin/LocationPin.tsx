@@ -1,6 +1,6 @@
 import type { CategoryTint } from "../CategoryTile/CategoryTint";
 import React from "react";
-import { MapPin, Star } from "lucide-react";
+import { MarkerPin01 as MapPin, Star01 as Star } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 

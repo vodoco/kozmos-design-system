@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
-import type { POIPresentation } from "@kozmos/product-contracts";
+import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import { POIResultList } from "./POIResultList";
 
 const pois: POIPresentation[] = [

@@ -1,7 +1,6 @@
 package com.kozmos.components.iconbutton
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -10,6 +9,9 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import com.kozmos.components.spinner.KozmosSpinner
+import com.kozmos.components.spinner.KozmosSpinnerSize
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.border
@@ -55,10 +57,14 @@ fun KozmosIconButton(
 
     val content: @Composable () -> Unit = {
         if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(if (size == KozmosIconButtonSize.Lg) 16.dp else 14.dp),
-                color = LocalContentColor.current,
-                strokeWidth = 2.dp
+            // The system's arc at the small size, taking the control's own
+            // content colour — one drawing on all four platforms (2026-09-22).
+            // Both sizes draw 16: a loader inside a control is one size, and
+            // the 14 the small one used matched nothing else in the system.
+            KozmosSpinner(
+                modifier = Modifier.clearAndSetSemantics {},
+                size = KozmosSpinnerSize.Sm,
+                color = LocalContentColor.current
             )
         } else {
             Icon(

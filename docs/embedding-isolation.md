@@ -5,7 +5,7 @@ Not published; browser/WebView support policy is still awaiting Olcay's decision
 
 ## Contract
 
-Import `@kozmos/react/style.css` once. Wrap each independent module in the exported
+Import `@kozmos-ds/react/style.css` once. Wrap each independent module in the exported
 `ThemeProvider`. It renders a layout-transparent `div` (`display: contents`) with
 `data-kozmos-root`, `data-theme` and `dir`. The provider must therefore be placed where
 a `div` is valid HTML, not directly inside a `select`, `table` or paragraph.
@@ -84,9 +84,9 @@ and generic utility classes. This is not Shadow DOM: high-specificity host selec
 The integration fixture checks real computed host/component styles, not class presence.
 
 The default CSS contains a **local** component reset. The separate exported
-`@kozmos/react/reset.css` is the optional global Tailwind preflight. It is never imported
+`@kozmos-ds/react/reset.css` is the optional global Tailwind preflight. It is never imported
 by the JS entry or default stylesheet. Import it only when the application owns the
-whole page and wants that reset. Importing `@kozmos/tokens/css/light.css` separately
+whole page and wants that reset. Importing `@kozmos-ds/tokens/css/light.css` separately
 still applies the token package's documented global behavior; embedded React modules
 do not need it.
 
@@ -174,8 +174,8 @@ not claimed as independently reproduced old failures.
 Build before dist-based checks:
 
 ```sh
-pnpm --filter @kozmos/react build
-pnpm --filter @kozmos/react test
+pnpm --filter @kozmos-ds/react build
+pnpm --filter @kozmos-ds/react test
 pnpm test:themes
 ADAPTIVE_BROWSER=webkit pnpm test:themes
 pnpm test:config
@@ -185,7 +185,7 @@ ADAPTIVE_BROWSER=webkit pnpm test:overlays
 pnpm test:adaptive
 ADAPTIVE_BROWSER=webkit pnpm test:adaptive
 pnpm packages:install:check
-pnpm --filter @kozmos/docs build-storybook
+pnpm --filter @kozmos-ds/docs build-storybook
 ```
 
 The browser fixtures use the built workspace React package and distributed CSS.

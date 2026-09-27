@@ -40,7 +40,7 @@ import { PlatformSnippets } from '../PlatformSnippets';
 <PlatformSnippets
   react={`
 import { useState } from "react";
-import { DateRangePicker, type DateRangeValue } from "@kozmos/react";
+import { DateRangePicker, type DateRangeValue } from "@kozmos-ds/react";
 export function Example() {
   const [period, setPeriod] = useState<DateRangeValue>({ start: "", end: "" });
   const [stay, setStay] = useState<DateRangeValue>({
@@ -72,7 +72,7 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { KozmosDateRangePicker } from "@kozmos/vue"
+import { KozmosDateRangePicker } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const period = ref({ start: "", end: "" })

@@ -239,6 +239,31 @@
   /* The AI search's ring: the prototype's rainbow from the system's own data
      colours and its success green, as a conic gradient made of tokens.
      It turns in place, the prototype's 3.6 seconds a turn, unless motion is reduced. */
+  /* The search row: the field and what follows it, on one line.
+
+     Owned CSS rather than utilities, because the utility layer does not reach
+     a browser without `@scope` and this is exactly the rule that must not go
+     missing — the promise the row makes is that the pair cannot be put on
+     separate lines, and a promise that holds only where Tailwind's layer
+     applies is not one. */
+  .kozmos-search-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-search-row-field {
+    /* The field takes what is left, and may be narrower than the text inside
+       it: without `min-width: 0` a long placeholder pushes the row wider than
+       its container and the wrap comes back by another door. */
+    flex: 1 1 0%;
+    width: auto;
+    min-width: 0;
+  }
+  .kozmos-search-row-end {
+    flex: none;
+  }
   .kozmos-ai-search-ring {
     background: conic-gradient(
       from 0deg,
@@ -251,6 +276,24 @@
       var(--semantics-data-red)
     );
     animation: ai-search-spin 3.6s linear infinite;
+    /* The band is cut out of this one element, not left over between two.
+       Stacked as a 43 disc inside a 48 circle it measured 1.83 to 3.14 wide
+       around the turn in Chromium — the disc's rounded rect painting 0.44px
+       right and down of the ring's, at every pixel ratio, animated or not,
+       while `getBoundingClientRect` swore they were concentric. WebKit and
+       Firefox drew it evenly, so it looked like nothing. Cut by a radial mask
+       the band is 2.5 in all three. The disc behind is inset 2, inside the
+       band, so its edge never decides where the ring ends. */
+    -webkit-mask: radial-gradient(
+      farthest-side,
+      #0000 calc(100% - 2.5px),
+      #000 calc(100% - 2.5px)
+    );
+    mask: radial-gradient(
+      farthest-side,
+      #0000 calc(100% - 2.5px),
+      #000 calc(100% - 2.5px)
+    );
   }
   /* The build prefixes keyframe names with kozmos-: this becomes kozmos-ai-search-spin. */
   @keyframes ai-search-spin {
@@ -258,10 +301,8 @@
       transform: rotate(360deg);
     }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .kozmos-ai-search-ring {
-      animation: none;
-    }
+  .kozmos-skeleton {
+    @apply animate-pulse;
   }
   .kozmos-button {
     @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control bg-transparent text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98];
@@ -362,8 +403,17 @@
   .kozmos-button-emotion-text {
     @apply text-[var(--kz-button-fg)] hover:bg-muted hover:text-[var(--kz-button-fg-hover)];
   }
+  /* The loading arc turns on the system's own `kozmos-spin`, one second,
+     linear — the same turn every other spinning part takes. The rule lives on
+     the arc rather than on each caller, so `Spinner` and a loading `Button`
+     cannot drift, and so one media query answers for both (GAP-50: the
+     spinner, the skeleton and the loading button ignored the preference). The
+     status role keeps announcing the wait when the turn stops. */
+  .kozmos-spinner-arc {
+    @apply animate-spin;
+  }
   .kozmos-button-loader {
-    @apply h-4 w-4 animate-spin;
+    @apply h-4 w-4;
   }
   .kozmos-popover {
     @apply z-50 w-72 rounded-control border bg-popover p-4 text-popover-foreground shadow-overlay outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2;
@@ -371,5 +421,27 @@
   .kozmos-popover-arrow {
     @apply fill-popover;
     display: block;
+  }
+  /* Last in the owned block on purpose: these rules and the animations
+     they stop are all one class, so source order is what decides, and a
+     `@apply animate-spin` declared later would simply win. */
+  /* Every animation that loops, stopped by either signal, in one place
+     (GAP-50). Two of them read only the media query before 2026-09-23, the
+     skeleton read neither, and the design config's `motion: reduced` reached
+     none of them — it scales `--semantics-motion-duration-scale` to 0.001,
+     which turns a transition into a cut and a one-second spin into a strobe,
+     so a loop needs telling, not scaling. The provider marks the scope and
+     these rules read the mark. */
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-ai-search-ring,
+    .kozmos-spinner-arc,
+    .kozmos-skeleton {
+      animation: none;
+    }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-ai-search-ring,
+  [data-kozmos-motion="reduced"] .kozmos-spinner-arc,
+  [data-kozmos-motion="reduced"] .kozmos-skeleton {
+    animation: none;
   }
 }

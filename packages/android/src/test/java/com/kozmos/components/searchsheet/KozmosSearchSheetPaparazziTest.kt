@@ -39,10 +39,16 @@ class KozmosSearchSheetPaparazziTest {
         paparazzi.snapshot {
             MaterialTheme {
                 Column(modifier = Modifier.padding(16.dp).width(360.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        KozmosSearchBar(value = "sta", onValueChange = {}, onClear = {}, modifier = Modifier.weight(1f))
-                        KozmosAISearchButton(onClick = {})
-                    }
+                    // Through the field's own trailing slot, not a row composed
+                    // here: the golden is unchanged by the move, which is the
+                    // point — the slot draws the row that was already reviewed,
+                    // and a caller can no longer compose it wrongly.
+                    KozmosSearchBar(
+                        value = "sta",
+                        onValueChange = {},
+                        onClear = {},
+                        trailing = { KozmosAISearchButton(onClick = {}) }
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("Food and drink", "Shops", "Toilets", "Gates").forEachIndexed { index, label ->
                             KozmosCategoryTile(

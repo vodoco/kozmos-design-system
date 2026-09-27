@@ -22,6 +22,15 @@
   },
   "include": ["src"],
   "exclude": [
+    // Storybook Docs infrastructure, not library code. It is imported by 79
+    // .mdx pages and by nothing that ships: it is absent from src/index.ts and
+    // from dist/index.d.ts. Compiling it here pulled @storybook/blocks into
+    // the library type-check, and with it whichever @types/react that copy of
+    // Storybook was built against - 18 in one resolution, 19 in another. CI run
+    // 36027708162 lost one shard of fourteen to exactly that, with TS2786 on a
+    // component no consumer can import. Storybook still compiles the .mdx and
+    // this file with its own config; only the published build stops reading it.
+    "src/components/DocumentationControls.tsx",
     "src/**/*.stories.ts",
     "src/**/*.stories.tsx",
     "src/**/*.spec.ts",

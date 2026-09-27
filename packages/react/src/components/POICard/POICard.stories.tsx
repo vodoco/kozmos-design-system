@@ -4,7 +4,11 @@ import { MapOverlay } from "../MapOverlay";
 import { Badge } from "../Badge/Badge";
 import { Tag } from "../Tag/Tag";
 import { Button } from "../Button/Button";
-import { Navigation, Share2, Star } from "lucide-react";
+import {
+  NavigationPointer01 as Navigation,
+  Share01 as Share2,
+  Star01 as Star,
+} from "@kozmos-ds/icons";
 
 const meta = {
   title: "Components/POICard",

@@ -23,6 +23,9 @@ const textVariants = cva("kozmos-reset kozmos-text", {
       bold: "kozmos-text-bold",
     },
     align: {
+      /** The side reading starts on: left in English, right in Arabic. */
+      start: "kozmos-text-start",
+      end: "kozmos-text-end",
       left: "kozmos-text-left",
       center: "kozmos-text-center",
       right: "kozmos-text-right",
@@ -42,7 +45,9 @@ const textVariants = cva("kozmos-reset kozmos-text", {
   defaultVariants: {
     size: "base",
     weight: "normal",
-    align: "left",
+    // start, not left: Story 2 reads this interface in Arabic, and text that
+    // insists on the left there is text pinned to the wrong edge.
+    align: "start",
     color: "default",
   },
 });

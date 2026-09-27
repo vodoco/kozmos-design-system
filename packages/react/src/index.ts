@@ -37,6 +37,13 @@ export * from "./components/Toast/Toast";
 export * from "./components/Breadcrumb/Breadcrumb";
 export * from "./components/Pagination/Pagination";
 export * from "./components/Stepper/Stepper";
+export * from "./components/ActionCard";
+export * from "./components/Notice";
+export * from "./components/AICompanionPanel";
+export * from "./components/AIInputBar";
+export * from "./components/AIMessage";
+export * from "./components/AIMessageList";
+export * from "./components/UserMessage";
 export * from "./components/Alert/Alert";
 export * from "./components/Progress/Progress";
 export * from "./components/Spinner/Spinner";
@@ -63,6 +70,7 @@ export * from "./components/Itinerary";
 export * from "./components/ManoeuvreCard";
 export * from "./components/POICard/POICard";
 export * from "./components/POIResultCard";
+export * from "./components/POIResultGroup";
 export * from "./components/POIResultList";
 export * from "./components/POIMediaGallery";
 export * from "./components/POIDetailPanel";
@@ -110,3 +118,6 @@ export * from "./hooks/useRevealOnChange";
 export * from "./context/DesignConfigContext";
 export * from "./theme/KozmosTheme";
 export * from "./utils/analytics";
+// The one derivation a product composing its own row needs: floor and building
+// joined the way every platform joins them.
+export { poiLocationLabel } from "./utils";

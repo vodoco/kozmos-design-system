@@ -1,6 +1,6 @@
 {
-  "name": "@kozmos/icons",
-  "version": "0.0.1",
+  "name": "@kozmos-ds/icons",
+  "version": "0.3.0",
   "description": "Icon components and the name registry for the Kozmos design system.",
   "keywords": [
     "kozmos",
@@ -9,6 +9,16 @@
     "react"
   ],
   "license": "MIT",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system-.git",
+    "directory": "packages/icons"
+  },
+  "homepage": "https://github.com/vodoco/kozmos-design-system-/tree/main/packages/icons#readme",
+  "bugs": {
+    "url": "https://github.com/vodoco/kozmos-design-system-/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -36,12 +46,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
-    "lucide-react": ">=0.300.0",
     "react": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
-    "lucide-react": "0.563.0",
     "react": "19.2.4",
     "typescript": "^5.3.0",
     "vite": "^5.2.0",

@@ -221,7 +221,7 @@ asks; the open rows on ⑦ are owned by others (§6).
   under the level selector beside the panel (§3, 19); `MapSettings.tsx`'s trigger is 44×44 where v9's is 32×32; the app carries the Kozmos-role
   token names from §185 while the file binds the product's tokens.
 - **iOS / deploy** (not MAP-595): PR #17's iOS tests fail since 2026-09-08 (four tests in
-  `KozmosAdaptiveMapShellTests.swift`); the deploy never rebuilds `@kozmos/react` — see the archived
+  `KozmosAdaptiveMapShellTests.swift`); the deploy never rebuilds `@kozmos-ds/react` — see the archived
   2026-09-11 morning handoff §7.
 
 ## 7 · How to work here — the traps that cost time
@@ -367,4 +367,4 @@ their pages). What remains is Olcay's:
 > Pointr bindings still point at the unpublished "Primitive Tokens" collection.
 
 5. **Not this workstream's, still open:** the prototype's code follow-ups (§6), PR #17's failing
-   iOS tests, and the deploy that never rebuilds `@kozmos/react`.
+   iOS tests, and the deploy that never rebuilds `@kozmos-ds/react`.

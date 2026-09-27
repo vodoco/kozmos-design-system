@@ -1,0 +1,21 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./AIInputBar.stories";
+
+<Meta of={Stories} />
+
+# AIInputBar
+
+Text in, question out. A form, so Enter submits the way every other field
+does.
+
+It never emits an empty or whitespace-only question, and hands over **trimmed**
+text — no product should have to trim what it is given.
+
+Voice is out of scope here: `trailing` is a slot inside the field that a
+product fills with its own microphone control, rather than a control this
+owns.
+
+<Canvas of={Stories.Default} />
+<Canvas of={Stories.Empty} />
+<Controls />

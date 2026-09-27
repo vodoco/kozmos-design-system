@@ -9,7 +9,7 @@ a separate Select failure. That failure is deliberately still blocking CI.
 
 Work is local on `astra/browser-compatibility` in
 `/private/tmp/kozmos-browser-compat.uqPMBD`, continuing `2db8c2c`.
-Shared main, Claude's worktrees, MAP-595, native code and Figma are untouched.
+Shared main, the agent's worktrees, MAP-595, native code and Figma are untouched.
 No push, merge, credentials, release settings or publication is part of this batch.
 
 ## What the screenshots revealed

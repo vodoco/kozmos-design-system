@@ -1,6 +1,7 @@
 {
-  "name": "@kozmos/docs",
-  "version": "0.0.1",
+  "name": "@kozmos-ds/docs",
+  "version": "0.0.5",
+  "private": true,
   "scripts": {
     "dev": "pnpm storybook:react",
     "build": "pnpm build-storybook",
@@ -13,9 +14,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@kozmos/react": "workspace:*",
-    "@kozmos/tokens": "workspace:*",
-    "@kozmos/vue": "workspace:*",
+    "@kozmos-ds/icons": "workspace:*",
+    "@kozmos-ds/react": "workspace:*",
+    "@kozmos-ds/tokens": "workspace:*",
+    "@kozmos-ds/vue": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

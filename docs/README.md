@@ -6,19 +6,19 @@ these files honest are listed in its §7.
 
 ## Start here
 
-Latest handoff: [Claude Code handoff — the evening of 2026-09-22: npm as `@kozmos-ds`, one file per
-module, GAP-56, and the Figma pass under way](claude-code-handoff-2026-09-22-evening.md): the three
+Latest handoff: [Session handoff — the evening of 2026-09-22: npm as `@kozmos-ds`, one file per
+module, GAP-56, and the Figma pass under way](handoff-2026-09-22-evening.md): the three
 branches in merge order, the road to npm 0.1.0, the Figma re-tint pass and the checks after it, the
 design-system roadmap from the website's gap findings, and the to-do. Before it, the day's
-[Claude Code handoff — every edge in its role, the five open, the five decisions,
-PR #56's CI, and the icon tints the live file lost (2026-09-22)](claude-code-handoff-2026-09-22.md):
+[Session handoff — every edge in its role, the five open, the five decisions,
+PR #56's CI, and the icon tints the live file lost (2026-09-22)](handoff-2026-09-22.md):
 the exact working state on `claude/pointr-browse-repairs`, what Olcay asked for on the 22nd and
 what was done, the CI and the live Figma file as measured, the revised Figma run, the decisions
 still his, the traps, and how to resume. Before it, [the handoff of the
-21st](claude-code-handoff-2026-09-21.md): the 20th and 21st, the parts' new parameters on three
-platforms, the QA app and the SDK as they stand. Before that, the native continuation: [Claude Code handoff after Pass 3 —
-2026-09-19](claude-code-handoff-2026-09-19-pass3.md), the state of the Pointr iOS work after the
-three passes of [Astra's handoff to Claude Code](claude-code-handoff-2026-09-19.md): routing
+21st](handoff-2026-09-21.md): the 20th and 21st, the parts' new parameters on three
+platforms, the QA app and the SDK as they stand. Before that, the native continuation: [Session handoff after Pass 3 —
+2026-09-19](handoff-2026-09-19-pass3.md), the state of the Pointr iOS work after the
+three passes of [Astra's handoff to the coding agent](handoff-2026-09-19.md): routing
 between two named places, measured on the simulator, and what a new session does next — updated
 20 September with the [closure of Pass 3's leftovers](pointr-ios-pass3-closure-2026-09-20.md).
 Later that day the work turned to the design system itself:
@@ -45,12 +45,12 @@ Earlier baseline: [Overnight quality pass — 2026-09-18](overnight-quality-pass
 Read it before the older measured-state sections: it records repairs, reproducible
 checks, source locations, preview ownership and remaining pre-publication gates.
 
-| File                         | What it is                                                                                                                                                                        |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ds-handoff.md`              | The handoff for the next session: the scope, the priorities in order, the measured state, what is decided, what is open, and the traps.                                           |
-| `agent-switch-2026-09-17.md` | The switch from Claude Code to ChatGPT Astra at `a02a008`: how to pick the work up, the working agreement that made it reliable, and the handback to leave before switching back. |
-| `ds-scope-2026-09-12.md`     | What the design system is missing and where the SDK components belong: the 24 Product / SDK sets and the eight missing parts.                                                     |
-| `style-playbook.md`          | How to change how Kozmos looks without breaking the agreement between Figma, the web and the two native platforms: roles, cookbook, traps, checks.                                |
+| File                         | What it is                                                                                                                                                                             |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ds-handoff.md`              | The handoff for the next session: the scope, the priorities in order, the measured state, what is decided, what is open, and the traps.                                                |
+| `agent-switch-2026-09-17.md` | The switch from the coding agent to ChatGPT Astra at `a02a008`: how to pick the work up, the working agreement that made it reliable, and the handback to leave before switching back. |
+| `ds-scope-2026-09-12.md`     | What the design system is missing and where the SDK components belong: the 24 Product / SDK sets and the eight missing parts.                                                          |
+| `style-playbook.md`          | How to change how Kozmos looks without breaking the agreement between Figma, the web and the two native platforms: roles, cookbook, traps, checks.                                     |
 
 ## Current
 
@@ -88,7 +88,7 @@ The Pointr iOS thread, 2026-09-19 to 2026-09-20, newest first:
   Design-QA (every `Do Not Route` is "false"), readiness measured and the not-ready state given a
   retry, the iPad's three panels driven by a new XCUITest, VoiceOver's tree over the directions
   read and repaired; Pass 3's Arabic finding withdrawn (the simulator's language).
-- `claude-code-handoff-2026-09-19-pass3.md`: Claude Code's handoff to a new session after Pass 3 —
+- `handoff-2026-09-19-pass3.md`: The agent's handoff to a new session after Pass 3 —
   the exact Git state, the fifteen commits, routing as built and measured (Dunkin' to Airport
   Shuttles, both modes, every step), the findings, the eight open decisions, and the order of
   what comes next. Read first.
@@ -103,7 +103,7 @@ The Pointr iOS thread, 2026-09-19 to 2026-09-20, newest first:
 - `pointr-ios-pass1-2026-09-19.md`: Pass 1 of the handoff below — map controls, the selected
   marker's framing, the native gallery and the sheet card, each measured in the simulator;
   what is verified, what is not, and the decisions that wait on Olcay.
-- `claude-code-handoff-2026-09-19.md`: Astra's handover of the Pointr iOS work to Claude Code —
+- `handoff-2026-09-19.md`: Astra's handover of the Pointr iOS work to the coding agent —
   the worktree, the SDK setup, the seven native findings and the four passes that follow. Its
   status notes say which findings Pass 1 closed.
 - `pointr-ios-integration-2026-09-19.md`: the real PointrKit host — SDK artifacts and their
@@ -135,6 +135,8 @@ The Storybook and POI thread, 2026-09-18:
 
 - `browser-compatibility-2026-09-17.md`: reproduced WebKit form-styling blocker,
   real Firefox coverage and the unfixed baseline that motivated the CSS migration.
+- `release-process.md`: manual SHA-confirmed releases, protected environment setup,
+  exact tested tarballs, fail-closed guards and partial-publication recovery.
 
 - `embedding-isolation.md`: scoped ThemeProvider and CSS, automatic portal ownership,
   migration, compatibility decision gate and remaining legacy configuration work.
@@ -156,8 +158,9 @@ The Storybook and POI thread, 2026-09-18:
 | `nested-radius.md`                   | Concentric corner radii: how a rounded shape hugs the rounded shape inside it. `pnpm tokens:radius:nesting` reports against it.                                                                                                    |
 | `generated-color-scales.md`          | Scope for colour ramps that derive from a base. Not started.                                                                                                                                                                       |
 | `figma-change-workflow.md`           | Who owns what between code, the token JSON and Figma, and how a change travels between them.                                                                                                                                       |
-| `product-sdk-react-handoff.md`       | The React Product / SDK reference implementation and the `@kozmos/product-contracts` models behind it.                                                                                                                             |
+| `product-sdk-react-handoff.md`       | The React Product / SDK reference implementation and the `@kozmos-ds/product-contracts` models behind it.                                                                                                                          |
 | `component-variant-gap-analysis.md`  | Which variant axes and values each platform can express. Its data blocks are written by `pnpm components:variant:write`; `components:variant:check` fails when they are stale. The commentary around them is edited by hand.       |
+| `user-stories-to-design-prompt.md`   | The brief to paste when an AI-written user-stories document arrives: where the system is (checkout, clone or npm), the preconditions, the six phases to a Figma file, flows, prototype and handoff, the rules, done. 2026-09-21.   |
 | `session-handoff.md`                 | The long record, 2026-08-24 to 2026-09-10. Read its §3 for the reasoning behind a specific decision.                                                                                                                               |
 
 ## Generated data

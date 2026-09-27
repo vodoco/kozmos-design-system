@@ -64,7 +64,7 @@ const workspaceFile = findUp(process.cwd(), 'pnpm-workspace.yaml');
 const workspaceRoot = workspaceFile ? path.dirname(workspaceFile) : process.cwd();
 const parseArgs = normalizeParseArgs(process.argv.slice(2), workspaceRoot);
 
-const result = spawnSync('pnpm', ['--filter', '@kozmos/react', 'exec', 'figma', 'connect', 'parse', ...parseArgs], {
+const result = spawnSync('pnpm', ['--filter', '@kozmos-ds/react', 'exec', 'figma', 'connect', 'parse', ...parseArgs], {
     stdio: 'inherit',
     env,
     cwd: workspaceRoot,

@@ -35,7 +35,7 @@ test("fixtures preserve exact copied text, isolate modules and enable strict lib
   const app = fs.mkdtempSync(path.join(os.tmpdir(), "kozmos-snippet-test-"));
   try {
     const code =
-      '\nimport { Button } from "@kozmos/react";\nexport const Example = () => <Button>Save</Button>;\n';
+      '\nimport { Button } from "@kozmos-ds/react";\nexport const Example = () => <Button>Save</Button>;\n';
     const mapping = writeReactSnippetFixtures(app, [
       { file: "Button.mdx", section: 2, line: 9, platform: "react", code },
     ]);

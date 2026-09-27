@@ -1,0 +1,66 @@
+name: Visual Regression
+
+# Kozmos's own visual regression, run here rather than bought. Playwright
+# compares each story against a committed baseline; the baselines live in the
+# same commit as the code that changed them, which a hosted service cannot do.
+#
+# **Seeding.** Playwright names a baseline after the platform that recorded it,
+# so a macOS one and a Linux one coexist and neither is wrong. This job records
+# Linux baselines, because CI is Linux. Until they exist the job is manual: run
+# it once from the Actions tab with `record` set, download the `visual-baselines`
+# artifact, commit its contents, then move this workflow onto `pull_request`.
+on:
+  workflow_dispatch:
+    inputs:
+      record:
+        description: "Record the baselines instead of checking them"
+        type: boolean
+        default: false
+
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual:
+    name: Visual Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter '@kozmos-ds/react...' build
+      - run: pnpm --filter @kozmos-ds/docs build-storybook
+      - name: Install the browsers Playwright drives
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Compare every story against its baseline
+        # The Storybook is served here and named explicitly: the suite must
+        # measure this build and not whatever is listening on 6006.
+        run: |
+          pnpm --filter @kozmos-ds/docs exec concurrently -k -s first -n "SB,VISUAL" \
+            "python3 -m http.server 6010 --bind 127.0.0.1 --directory storybook-static" \
+            "bash -lc 'until curl -sf http://127.0.0.1:6010/index.json >/dev/null; do sleep 2; done; \
+              STORYBOOK_URL=http://127.0.0.1:6010 pnpm -w exec playwright test visual-regression.spec.ts ${{ inputs.record && '--update-snapshots' || '' }}'"
+      - name: Keep the baselines this run recorded
+        if: ${{ inputs.record }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: tests/e2e/visual-regression.spec.ts-snapshots
+          retention-days: 7
+      - name: Keep the differences this run found
+        if: ${{ failure() && !inputs.record }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-differences
+          path: |
+            test-results
+            playwright-report
+          retention-days: 7

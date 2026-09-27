@@ -1,0 +1,14 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./UserMessage.stories";
+
+<Meta of={Stories} />
+
+# UserMessage
+
+The visitor's turn. Filled and right-aligned against the assistant's
+outlined, left-aligned bubble: the two differ by side and fill, not by colour
+alone.
+
+<Canvas of={Stories.Default} />
+<Controls />

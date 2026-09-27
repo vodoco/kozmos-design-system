@@ -1,6 +1,6 @@
 # Kozmos Design System - Contract Tests
 
-This directory contains the provider contracts for the `@kozmos/react` package using [Pact](https://docs.pact.io/).
+This directory contains the provider contracts for the `@kozmos-ds/react` package using [Pact](https://docs.pact.io/).
 
 ## Purpose
 

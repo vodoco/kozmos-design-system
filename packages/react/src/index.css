@@ -1,6 +1,6 @@
 /* Import Design Tokens */
-@import "@kozmos/tokens/css/light.css";
-@import "@kozmos/tokens/css/dark.css";
+@import "@kozmos-ds/tokens/css/light.css";
+@import "@kozmos-ds/tokens/css/dark.css";
 @import "./styles/owned-components.css";
 @import "./styles/owned-native-fields.css";
 @import "./styles/owned-temporal-fields.css";

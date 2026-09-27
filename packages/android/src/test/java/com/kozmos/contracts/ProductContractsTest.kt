@@ -3,6 +3,7 @@ package com.kozmos.contracts
 import com.kozmos.components.poiresultcard.kozmosPOIResultIdentifier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -42,6 +43,105 @@ class ProductContractsTest {
         assertEquals("Level 2", makePOI(buildingLabel = "").locationLabel)
     }
 
+    // region a venue without levels (MAP-474 Story 15 edge case)
+
+    @Test
+    fun locationLabelDropsTheFloorAVenueDoesNotHave() {
+        // Required until 2026-09-25, so a single-storey venue had to invent a
+        // floor and every result read "Ground Floor" on Android long after the
+        // web had stopped. The label is now the building alone.
+        val poi = KozmosPOIPresentation(id = "p", name = "Boots", buildingLabel = "Terminal B")
+        assertNull(poi.floorId)
+        assertNull(poi.floorLabel)
+        assertEquals("Terminal B", poi.locationLabel)
+    }
+
+    @Test
+    fun aResultNeedsNoFloorEither() {
+        assertNull(KozmosPOIResultPresentation(poiId = "p", resultIndex = 0).floorId)
+    }
+
+    // endregion
+
+    // region the wire values of every shared enumeration
+
+    // Compared against the web's by `pnpm contracts:parity:check`; asserted
+    // here so the entries cannot be renamed on this platform alone.
+
+    @Test
+    fun theMatchEnumerationCarriesTheWireValues() {
+        assertEquals(
+            listOf("exact", "alternative", "unconfirmed"),
+            KozmosPOIResultMatch.entries.map { it.value }
+        )
+    }
+
+    @Test
+    fun theAvailabilityEnumerationCarriesTheWireValues() {
+        assertEquals(
+            listOf("open", "openingSoon", "closingSoon", "closed", "unknown"),
+            KozmosPOIAvailability.entries.map { it.value }
+        )
+    }
+
+    @Test
+    fun theEmptyKindEnumerationCarriesTheWireValues() {
+        assertEquals(
+            listOf("noMatch", "filteredOut", "unavailable"),
+            KozmosSearchEmptyKind.entries.map { it.value }
+        )
+    }
+
+    // endregion
+
+    // region what an empty search means
+
+    @Test
+    fun aSearchResponseSaysWhyItIsEmpty() {
+        val response = KozmosSearchResponsePresentation(
+            emptyKind = KozmosSearchEmptyKind.FilteredOut,
+            emptiedBy = "Gluten-free",
+            languageFallback = "en"
+        )
+        assertTrue(response.results.isEmpty())
+        assertEquals(KozmosSearchEmptyKind.FilteredOut, response.emptyKind)
+        assertEquals("Gluten-free", response.emptiedBy)
+        assertEquals("en", response.languageFallback)
+    }
+
+    // endregion
+
+    // region a result carries why it is here, its unit and its language
+
+    @Test
+    fun aResultCarriesTheFieldsMap474Needs() {
+        val result = KozmosPOIResultPresentation(
+            poiId = "p",
+            resultIndex = 0,
+            match = KozmosPOIResultMatch.Alternative,
+            unitLabel = "Unit 214",
+            nameLanguage = "ja"
+        )
+        assertEquals(KozmosPOIResultMatch.Alternative, result.match)
+        assertEquals("Unit 214", result.unitLabel)
+        assertEquals("ja", result.nameLanguage)
+    }
+
+    // endregion
+
+    // region a category's own artwork
+
+    @Test
+    fun aCategoryCarriesTheTaxonomysArtworkUrl() {
+        val category = KozmosCategoryPresentation(
+            id = "dining",
+            label = "Dining",
+            iconUrl = "https://example.test/dining.svg"
+        )
+        assertEquals("https://example.test/dining.svg", category.iconUrl)
+    }
+
+    // endregion
     // endregion
 
     // region logoFallbackInitial

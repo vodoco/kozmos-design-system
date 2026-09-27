@@ -17,7 +17,7 @@ import {
   Slider,
   Switch,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { PANEL_WIDTH } from "../ui/Chrome";
 import PointrMap from "../map/PointrMap";
 import { AiMappingStatus, type MapScaleState } from "../ui/AiMappingStatus";

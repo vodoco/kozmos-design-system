@@ -1,0 +1,36 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./Notice.stories";
+
+<Meta of={Stories} />
+
+# Notice
+
+A short notice that opens for the long version.
+
+The full legal wording above AI-assisted results runs to four lines — 114px
+above the results that are themselves the answer. Collapsed, this is one line:
+an icon, a sentence worth reading on its own, and a clear affordance that there
+is more. Keep the summary informative; a collapsed notice reading "Important"
+tells the reader nothing.
+
+`role="status"`, never `alert`: it must be heard when results arrive without
+cutting across whatever the visitor is already being told.
+
+The collapsed detail is hidden with the `hidden` **attribute**, not a class, so
+it stays hidden when the stylesheet does not and stays out of the accessibility
+tree either way.
+
+Set `collapsible={false}` with a `critical` tone and an `action` for an
+emergency: help first, not a result list. Nobody in an emergency should have to
+find a "More" link before they can act.
+
+Expansion is uncontrolled by default and controllable, so a product can
+remember it for the session — persistence belongs to the app, which knows what
+storage it is allowed.
+
+<Canvas of={Stories.Collapsed} />
+<Canvas of={Stories.Expanded} />
+<Canvas of={Stories.Emergency} />
+<Canvas of={Stories.SingleLine} />
+<Controls />

@@ -109,6 +109,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 **Types:**
+
 - `feat` - New feature
 - `fix` - Bug fix
 - `docs` - Documentation
@@ -118,6 +119,7 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore` - Maintenance
 
 **Examples:**
+
 ```
 feat(button): add loading state variant
 fix(input): correct focus ring color in dark mode
@@ -128,7 +130,7 @@ docs(readme): update installation instructions
 
 ```bash
 # Start Storybook (React)
-pnpm --filter @kozmos/react storybook
+pnpm --filter @kozmos-ds/react storybook
 
 # Run tests
 pnpm test
@@ -146,7 +148,7 @@ pnpm typecheck
 pnpm build
 
 # Build specific package
-pnpm --filter @kozmos/tokens build
+pnpm --filter @kozmos-ds/tokens build
 ```
 
 ---
@@ -176,24 +178,29 @@ pnpm --filter @kozmos/tokens build
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Related Issues
+
 Fixes #123
 
 ## Testing
+
 - [ ] Unit tests added/updated
 - [ ] Visual tests pass
 - [ ] Accessibility tests pass
 - [ ] Tested in Storybook
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-reviewed my code
 - [ ] Added changeset if needed
@@ -216,28 +223,28 @@ Fixes #123
 
 ```typescript
 // Use explicit types
-function Button(props: ButtonProps): React.ReactElement
+function Button(props: ButtonProps): React.ReactElement;
 
 // Use interfaces for objects
 interface ButtonProps {
-  variant?: 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   children: React.ReactNode;
 }
 
 // Use const assertions
-const VARIANTS = ['primary', 'secondary'] as const;
+const VARIANTS = ["primary", "secondary"] as const;
 
 // Avoid any - use unknown if necessary
-function handleData(data: unknown): void
+function handleData(data: unknown): void;
 ```
 
 ### React
 
 ```tsx
 // Use function components
-export function Button({ variant = 'primary', children }: ButtonProps) {
+export function Button({ variant = "primary", children }: ButtonProps) {
   return <button className={styles[variant]}>{children}</button>;
 }
 
@@ -252,7 +259,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
   <Select.Content>
     <Select.Option value="1">Option 1</Select.Option>
   </Select.Content>
-</Select>
+</Select>;
 ```
 
 ### CSS
@@ -327,8 +334,8 @@ Button/
 ```typescript
 interface ComponentProps {
   // Variant props (appearance)
-  variant?: 'primary' | 'secondary';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary";
+  size?: "sm" | "md" | "lg";
 
   // State props
   disabled?: boolean;
@@ -396,12 +403,12 @@ it('has no accessibility violations', async () => {
 
 ### Coverage Requirements
 
-| Metric | Minimum |
-|--------|---------|
-| Statements | 80% |
-| Branches | 80% |
-| Functions | 80% |
-| Lines | 80% |
+| Metric     | Minimum |
+| ---------- | ------- |
+| Statements | 80%     |
+| Branches   | 80%     |
+| Functions  | 80%     |
+| Lines      | 80%     |
 
 ---
 
@@ -419,17 +426,17 @@ Every component needs:
 ### Story Template
 
 ```typescript
-import type { Meta, StoryObj } from '@storybook/react';
-import { Button } from './Button';
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button } from "./Button";
 
 const meta = {
-  title: 'Primitives/Button',
+  title: "Primitives/Button",
   component: Button,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
     variant: {
-      control: 'select',
-      options: ['primary', 'secondary'],
+      control: "select",
+      options: ["primary", "secondary"],
     },
   },
 } satisfies Meta<typeof Button>;
@@ -439,8 +446,8 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
-    variant: 'primary',
-    children: 'Primary Button',
+    variant: "primary",
+    children: "Primary Button",
   },
 };
 ```
@@ -465,11 +472,11 @@ pnpm changeset
 
 ### Version Bumps
 
-| Type | When to Use |
-|------|-------------|
-| `patch` | Bug fixes, documentation |
+| Type    | When to Use                        |
+| ------- | ---------------------------------- |
+| `patch` | Bug fixes, documentation           |
 | `minor` | New features (backward compatible) |
-| `major` | Breaking changes |
+| `major` | Breaking changes                   |
 
 ### Release Workflow
 

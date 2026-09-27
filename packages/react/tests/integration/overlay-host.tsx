@@ -32,7 +32,7 @@ import {
   BottomSheetTrigger,
   BottomSheetContent,
   BottomSheetDescription,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 declare global {
   interface Window {

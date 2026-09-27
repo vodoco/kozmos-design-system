@@ -1,23 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import {
-  TaxonomyAmenitySpaceDesk,
-  TaxonomyEntranceExit,
-  TaxonomyFoodBeverageSpace,
-  TaxonomyParkingSpace,
-  TaxonomyRetailSpace,
-  TaxonomySecuritySpace,
-  TaxonomyServiceSpaceOffice,
-  TaxonomyTransportationSpaceBoardingGate,
-} from "@kozmos/icons";
-import {
-  Accessibility,
   Heart,
-  Info,
-  Search,
-  ShoppingBag,
-  Utensils,
-} from "lucide-react";
+  InfoCircle as Info,
+  SearchMd as Search,
+  ShoppingBag01 as ShoppingBag,
+} from "@kozmos-ds/icons";
+import { Accessibility, Utensils } from "@kozmos-ds/icons";
 import { BrowseCategoriesPanel } from "./BrowseCategoriesPanel";
 import { SearchBar } from "../SearchBar";
 
@@ -95,67 +84,32 @@ const categoryPalette = [
 ];
 
 /**
- * The aviation quick access at 10.12.0 — the taxonomy's first eight
- * categories, each with the symbol and the colour it publishes — as the SDK's
- * bar shows it and the Figma set draws it.
+ * The aviation quick access as the taxonomy publishes it, read from
+ * quick-access/aviation_customer.json at 10.12.0 - the current release, not the
+ * mutable `latest` alias, so this story cannot change under us.
+ *
+ * The artwork is the taxonomy's own, fetched from its CDN. It is deliberately
+ * NOT in @kozmos-ds/icons: a category symbol belongs to the venue's taxonomy
+ * and changes with it, while an icon in the design system is drawn once and
+ * versioned with the components. Bundling these meant shipping eight PNGs that
+ * went stale the moment Pointr published a release.
+ *
+ * The colour in each filename is the taxonomy's, and the tint tokens below are
+ * the design system's reading of it. Both are named so a drift is visible.
  */
+const TAXONOMY_RELEASE = "10.12.0";
+const quickAccessIcon = (file: string) =>
+  `https://pointrmapstorage.blob.core.windows.net/taxonomy/${TAXONOMY_RELEASE}/quick-access/icons/png/2x/${file}.png`;
+
 const aviationQuickAccess = [
-  {
-    id: "entrances-exits",
-    label: "Entrances & Exits",
-    colour: "green",
-    Symbol: TaxonomyEntranceExit,
-    count: 6,
-  },
-  {
-    id: "check-in-baggage",
-    label: "Check-in & Baggage",
-    colour: "turquoise",
-    Symbol: TaxonomyServiceSpaceOffice,
-    count: 14,
-  },
-  {
-    id: "security-immigration",
-    label: "Security & Immigration",
-    colour: "red",
-    Symbol: TaxonomySecuritySpace,
-    count: 5,
-  },
-  {
-    id: "gates",
-    label: "Gates",
-    colour: "yellow",
-    Symbol: TaxonomyTransportationSpaceBoardingGate,
-    count: 88,
-  },
-  {
-    id: "customer-service",
-    label: "Customer Service",
-    colour: "blue",
-    Symbol: TaxonomyAmenitySpaceDesk,
-    count: 9,
-  },
-  {
-    id: "parking-ground-transport",
-    label: "Parking & Ground Transport",
-    colour: "navy",
-    Symbol: TaxonomyParkingSpace,
-    count: 22,
-  },
-  {
-    id: "dining",
-    label: "Dining",
-    colour: "orange",
-    Symbol: TaxonomyFoodBeverageSpace,
-    count: 37,
-  },
-  {
-    id: "shopping",
-    label: "Shopping",
-    colour: "pink",
-    Symbol: TaxonomyRetailSpace,
-    count: 41,
-  },
+  { id: "entrances-exits", label: "Entrances & Exits", colour: "green", icon: "entrance-exit-green", count: 6 },
+  { id: "check-in-baggage", label: "Check-in & Baggage", colour: "turquoise", icon: "service-space_office-turquoise", count: 14 },
+  { id: "security-immigration", label: "Security & Immigration", colour: "red", icon: "security-space-red", count: 5 },
+  { id: "gates", label: "Gates", colour: "yellow", icon: "transportation-space_boarding-gate-yellow", count: 88 },
+  { id: "customer-service", label: "Customer Service", colour: "blue", icon: "amenity-space_desk-blue", count: 9 },
+  { id: "parking-ground-transport", label: "Parking & Ground Transport", colour: "navy", icon: "parking-space-navy", count: 22 },
+  { id: "dining", label: "Dining", colour: "orange", icon: "food-beverage-space-orange", count: 37 },
+  { id: "shopping", label: "Shopping", colour: "pink", icon: "retail-space-pink", count: 41 },
 ];
 
 export const AviationQuickAccess: Story = {
@@ -168,8 +122,16 @@ export const AviationQuickAccess: Story = {
     })),
     renderIcon: (category) => {
       const entry = aviationQuickAccess.find(({ id }) => id === category.id);
-      const Symbol = entry ? entry.Symbol : TaxonomyEntranceExit;
-      return <Symbol aria-hidden="true" />;
+      if (!entry) return null;
+      return (
+        <img
+          src={quickAccessIcon(entry.icon)}
+          alt=""
+          aria-hidden="true"
+          width={24}
+          height={24}
+        />
+      );
     },
     tint: (category) => {
       const entry = aviationQuickAccess.find(({ id }) => id === category.id);

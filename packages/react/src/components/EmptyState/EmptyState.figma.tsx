@@ -1,5 +1,5 @@
 import figma from "@figma/code-connect";
-import { Search } from "lucide-react";
+import { SearchMd as Search } from "@kozmos-ds/icons";
 import { EmptyState } from "./EmptyState";
 
 const emptyStateUrl =

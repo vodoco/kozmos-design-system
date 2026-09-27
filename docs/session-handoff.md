@@ -200,7 +200,7 @@ Three CI failures were real and are fixed:
   fixable by registering the plugin: the hoisted
   `eslint-plugin-react-hooks@7.0.1` fails to load, importing a
   `zod-validation-error/v4` subpath that package does not export.
-- **`analyze-bundle`**, which was ours. The wave took `@kozmos/react` from 79 to
+- **`analyze-bundle`**, which was ours. The wave took `@kozmos-ds/react` from 79 to
   97 components and the ESM bundle from 128.80 KB to 254.07 KB raw, past a
   250 KB ceiling set when the library was half the size. Gzip — what consumers
   actually download — went 26.15 KB to 51.07 KB against an unchanged 70 KB
@@ -296,7 +296,7 @@ Three shared helpers carry the repeated anatomy: `productSdkFrame`,
 
 Rebasing onto `main` was the first thing all session to run against a clean
 checkout, and it surfaced that 18 React component directories, the whole
-`@kozmos/product-contracts` package, half the SwiftUI and Compose packages, and
+`@kozmos-ds/product-contracts` package, half the SwiftUI and Compose packages, and
 several script fixes existed only in the working tree. Committed in twelve
 focused commits (`a75e1ac`..`7ca53a3`), including:
 
@@ -1638,7 +1638,7 @@ inline. Full write-up: `docs/component-variant-gap-analysis.md`.
 - Components are inserted into Figma **through the plugin**
   (`figma/foundations-importer/manifest.json`), not via MCP writes.
 - Product / SDK is deliberately outside Core — see `docs/archive/figma-core-gap-audit.md`.
-- Native presentation contracts mirror `@kozmos/product-contracts`:
+- Native presentation contracts mirror `@kozmos-ds/product-contracts`:
   `packages/ios/Sources/ProductContracts/` and `com.kozmos.contracts`.
 - Build commands:
   - `cd packages/android && ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew assembleDebug testDebugUnitTest verifyPaparazziDebug`

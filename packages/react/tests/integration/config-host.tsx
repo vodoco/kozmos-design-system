@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
   ThemeProvider,
   useDesignConfig,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 function Controls({ id }: { id: string }) {
   const { updateGlassConfig, updateConfig, injectRuntimeTokens } =

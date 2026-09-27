@@ -37,14 +37,41 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 
+/**
+ * @param trailing What sits at the end of the search row — the assistant's
+ * button, in the SDK's sheet. The row is the component's, not the caller's:
+ * the field fills its width, so a pair composed by hand ends up on two lines
+ * the moment the row is narrow, and on the web it did exactly that. Nothing a
+ * caller passes here can put them apart.
+ */
 @Composable
 fun KozmosSearchBar(
     value: String,
     onValueChange: (String) -> Unit,
     onClear: (() -> Unit)? = null,
     placeholder: String = "Search...",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailing: (@Composable () -> Unit)? = null
 ) {
+    if (trailing != null) {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // The field takes what is left; what follows keeps its own width.
+            KozmosSearchBar(
+                value = value,
+                onValueChange = onValueChange,
+                onClear = onClear,
+                placeholder = placeholder,
+                modifier = Modifier.weight(1f)
+            )
+            trailing()
+        }
+        return
+    }
+
     val trackEvent = LocalKozmosAnalytics.current
 
     // 44 tall: a control's height, the prototype's field. A basic field, since

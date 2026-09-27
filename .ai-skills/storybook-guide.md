@@ -23,12 +23,12 @@
 
 ### Storybook Stack
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Storybook | 8.x | Component development environment |
-| Vite | 5.x | Build tool (fast HMR) |
-| React | 18.x | Component framework |
-| TypeScript | 5.x | Type safety |
+| Tool       | Version | Purpose                           |
+| ---------- | ------- | --------------------------------- |
+| Storybook  | 8.x     | Component development environment |
+| Vite       | 5.x     | Build tool (fast HMR)             |
+| React      | 18.x    | Component framework               |
+| TypeScript | 5.x     | Type safety                       |
 
 ### Key Features
 
@@ -92,46 +92,43 @@ packages/react/
 
 ```typescript
 // .storybook/main.ts
-import type { StorybookConfig } from '@storybook/react-vite';
+import type { StorybookConfig } from "@storybook/react-vite";
 
 const config: StorybookConfig = {
-  stories: [
-    '../src/**/*.mdx',
-    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
-  ],
+  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
 
   addons: [
-    '@storybook/addon-onboarding',
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@chromatic-com/storybook',
-    '@storybook/addon-interactions',
-    '@storybook/addon-a11y',
-    '@storybook/addon-designs',
-    '@storybook/addon-storysource',
+    "@storybook/addon-onboarding",
+    "@storybook/addon-links",
+    "@storybook/addon-essentials",
+    "@chromatic-com/storybook",
+    "@storybook/addon-interactions",
+    "@storybook/addon-a11y",
+    "@storybook/addon-designs",
+    "@storybook/addon-storysource",
   ],
 
   framework: {
-    name: '@storybook/react-vite',
+    name: "@storybook/react-vite",
     options: {},
   },
 
   docs: {
-    autodocs: 'tag',
-    defaultName: 'Documentation',
+    autodocs: "tag",
+    defaultName: "Documentation",
   },
 
-  staticDirs: ['../public'],
+  staticDirs: ["../public"],
 
   typescript: {
-    reactDocgen: 'react-docgen-typescript',
+    reactDocgen: "react-docgen-typescript",
     reactDocgenTypescriptOptions: {
       shouldExtractLiteralValuesFromEnum: true,
       shouldRemoveUndefinedFromOptional: true,
       propFilter: (prop) => {
         // Filter out HTML attributes unless explicitly defined
         if (prop.parent) {
-          return !prop.parent.fileName.includes('node_modules/@types/react');
+          return !prop.parent.fileName.includes("node_modules/@types/react");
         }
         return true;
       },
@@ -151,13 +148,13 @@ export default config;
 
 ```typescript
 // .storybook/preview.ts
-import type { Preview } from '@storybook/react';
-import { themes } from '@storybook/theming';
-import { withThemeByDataAttribute } from '@storybook/addon-themes';
+import type { Preview } from "@storybook/react";
+import { themes } from "@storybook/theming";
+import { withThemeByDataAttribute } from "@storybook/addon-themes";
 
 // Import Kozmos tokens and global styles
-import '@kozmos/tokens/css/tokens.css';
-import '../src/styles/global.css';
+import "@kozmos/tokens/css/tokens.css";
+import "../src/styles/global.css";
 
 const preview: Preview = {
   parameters: {
@@ -165,13 +162,13 @@ const preview: Preview = {
     docs: {
       toc: true, // Table of contents
       source: {
-        type: 'code',
-        language: 'tsx',
+        type: "code",
+        language: "tsx",
       },
     },
 
     // Actions configuration
-    actions: { argTypesRegex: '^on[A-Z].*' },
+    actions: { argTypesRegex: "^on[A-Z].*" },
 
     // Controls configuration
     controls: {
@@ -180,16 +177,16 @@ const preview: Preview = {
         color: /(background|color)$/i,
         date: /Date$/i,
       },
-      sort: 'requiredFirst',
+      sort: "requiredFirst",
     },
 
     // Backgrounds
     backgrounds: {
-      default: 'light',
+      default: "light",
       values: [
-        { name: 'light', value: '#ffffff' },
-        { name: 'dark', value: '#1a1a1a' },
-        { name: 'gray', value: '#f5f5f5' },
+        { name: "light", value: "#ffffff" },
+        { name: "dark", value: "#1a1a1a" },
+        { name: "gray", value: "#f5f5f5" },
       ],
     },
 
@@ -197,39 +194,39 @@ const preview: Preview = {
     viewport: {
       viewports: {
         mobile: {
-          name: 'Mobile',
-          styles: { width: '375px', height: '667px' },
+          name: "Mobile",
+          styles: { width: "375px", height: "667px" },
         },
         tablet: {
-          name: 'Tablet',
-          styles: { width: '768px', height: '1024px' },
+          name: "Tablet",
+          styles: { width: "768px", height: "1024px" },
         },
         desktop: {
-          name: 'Desktop',
-          styles: { width: '1280px', height: '800px' },
+          name: "Desktop",
+          styles: { width: "1280px", height: "800px" },
         },
         wide: {
-          name: 'Wide Desktop',
-          styles: { width: '1920px', height: '1080px' },
+          name: "Wide Desktop",
+          styles: { width: "1920px", height: "1080px" },
         },
       },
     },
 
     // Layout
-    layout: 'centered', // 'centered' | 'fullscreen' | 'padded'
+    layout: "centered", // 'centered' | 'fullscreen' | 'padded'
 
     // Options
     options: {
       storySort: {
         order: [
-          'Introduction',
-          'Getting Started',
-          'Design Tokens',
-          'Primitives',
-          ['Button', 'Input', 'Select', 'Checkbox', 'Radio', 'Switch'],
-          'Components',
-          'Patterns',
-          'SDK Components',
+          "Introduction",
+          "Getting Started",
+          "Design Tokens",
+          "Primitives",
+          ["Button", "Input", "Select", "Checkbox", "Radio", "Switch"],
+          "Components",
+          "Patterns",
+          "SDK Components",
         ],
       },
     },
@@ -239,11 +236,11 @@ const preview: Preview = {
   decorators: [
     withThemeByDataAttribute({
       themes: {
-        light: 'light',
-        dark: 'dark',
+        light: "light",
+        dark: "dark",
       },
-      defaultTheme: 'light',
-      attributeName: 'data-color-scheme',
+      defaultTheme: "light",
+      attributeName: "data-color-scheme",
     }),
   ],
 
@@ -251,19 +248,19 @@ const preview: Preview = {
   argTypes: {
     // Common props across components
     className: {
-      control: 'text',
-      description: 'Additional CSS classes',
-      table: { category: 'Styling' },
+      control: "text",
+      description: "Additional CSS classes",
+      table: { category: "Styling" },
     },
     style: {
-      control: 'object',
-      description: 'Inline styles',
-      table: { category: 'Styling' },
+      control: "object",
+      description: "Inline styles",
+      table: { category: "Styling" },
     },
   },
 
   // Tags
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 };
 
 export default preview;
@@ -273,14 +270,14 @@ export default preview;
 
 ```typescript
 // .storybook/manager.ts
-import { addons } from '@storybook/manager-api';
-import { kozmosTheme } from './theme';
+import { addons } from "@storybook/manager-api";
+import { kozmosTheme } from "./theme";
 
 addons.setConfig({
   theme: kozmosTheme,
   sidebar: {
     showRoots: true,
-    collapsedRoots: ['examples'],
+    collapsedRoots: ["examples"],
   },
   toolbar: {
     title: { hidden: false },
@@ -296,26 +293,26 @@ addons.setConfig({
 
 ```typescript
 // .storybook/theme.ts
-import { create } from '@storybook/theming/create';
+import { create } from "@storybook/theming/create";
 
 export const kozmosTheme = create({
-  base: 'light',
+  base: "light",
 
   // Brand
-  brandTitle: 'Kozmos Design System',
-  brandUrl: 'https://kozmos.pointr.tech',
-  brandImage: '/kozmos-logo.svg',
-  brandTarget: '_self',
+  brandTitle: "Kozmos Design System",
+  brandUrl: "https://kozmos.pointr.tech",
+  brandImage: "/kozmos-logo.svg",
+  brandTarget: "_self",
 
   // Colors
-  colorPrimary: '#2563EB',
-  colorSecondary: '#7C3AED',
+  colorPrimary: "#2563EB",
+  colorSecondary: "#7C3AED",
 
   // UI
-  appBg: '#F5F5F5',
-  appContentBg: '#FFFFFF',
-  appPreviewBg: '#FFFFFF',
-  appBorderColor: '#E5E5E5',
+  appBg: "#F5F5F5",
+  appContentBg: "#FFFFFF",
+  appPreviewBg: "#FFFFFF",
+  appBorderColor: "#E5E5E5",
   appBorderRadius: 8,
 
   // Typography
@@ -323,33 +320,33 @@ export const kozmosTheme = create({
   fontCode: '"JetBrains Mono", monospace',
 
   // Text colors
-  textColor: '#171717',
-  textInverseColor: '#FAFAFA',
-  textMutedColor: '#737373',
+  textColor: "#171717",
+  textInverseColor: "#FAFAFA",
+  textMutedColor: "#737373",
 
   // Toolbar
-  barTextColor: '#737373',
-  barSelectedColor: '#2563EB',
-  barHoverColor: '#2563EB',
-  barBg: '#FFFFFF',
+  barTextColor: "#737373",
+  barSelectedColor: "#2563EB",
+  barHoverColor: "#2563EB",
+  barBg: "#FFFFFF",
 
   // Form colors
-  inputBg: '#FFFFFF',
-  inputBorder: '#E5E5E5',
-  inputTextColor: '#171717',
+  inputBg: "#FFFFFF",
+  inputBorder: "#E5E5E5",
+  inputTextColor: "#171717",
   inputBorderRadius: 6,
 });
 
 export const kozmosDarkTheme = create({
-  base: 'dark',
-  brandTitle: 'Kozmos Design System',
-  brandUrl: 'https://kozmos.pointr.tech',
-  brandImage: '/kozmos-logo-dark.svg',
-  colorPrimary: '#60A5FA',
-  colorSecondary: '#A78BFA',
-  appBg: '#1A1A1A',
-  appContentBg: '#262626',
-  appPreviewBg: '#1A1A1A',
+  base: "dark",
+  brandTitle: "Kozmos Design System",
+  brandUrl: "https://kozmos.pointr.tech",
+  brandImage: "/kozmos-logo-dark.svg",
+  colorPrimary: "#60A5FA",
+  colorSecondary: "#A78BFA",
+  appBg: "#1A1A1A",
+  appContentBg: "#262626",
+  appPreviewBg: "#1A1A1A",
 });
 ```
 
@@ -359,12 +356,12 @@ export const kozmosDarkTheme = create({
 
 ### 4.1 Essential Addons (Pre-installed)
 
-| Addon | Purpose |
-|-------|---------|
-| `@storybook/addon-essentials` | Controls, Actions, Docs, Viewport, Backgrounds, Measure, Outline |
-| `@storybook/addon-links` | Link between stories |
-| `@storybook/addon-interactions` | Test interactions |
-| `@storybook/addon-onboarding` | First-time user guide |
+| Addon                           | Purpose                                                          |
+| ------------------------------- | ---------------------------------------------------------------- |
+| `@storybook/addon-essentials`   | Controls, Actions, Docs, Viewport, Backgrounds, Measure, Outline |
+| `@storybook/addon-links`        | Link between stories                                             |
+| `@storybook/addon-interactions` | Test interactions                                                |
+| `@storybook/addon-onboarding`   | First-time user guide                                            |
 
 ### 4.2 Accessibility Addon
 
@@ -540,7 +537,7 @@ export const Sizes: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
       <Button {...args} size="sm">Small</Button>
-      <Button {...args} size="md">Medium</Button>
+      <Button {...args} size="default">Medium</Button>
       <Button {...args} size="lg">Large</Button>
     </div>
   ),
@@ -553,7 +550,7 @@ export const Sizes: Story = {
 export const AllVariants: Story = {
   render: () => (
     <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-      <Button variant="primary">Primary</Button>
+      <Button variant="default">Primary</Button>
       <Button variant="secondary">Secondary</Button>
       <Button variant="ghost">Ghost</Button>
       <Button variant="destructive">Destructive</Button>
@@ -589,15 +586,15 @@ export const Disabled: Story = {
 ### 5.3 Interactive Stories
 
 ```typescript
-import { within, userEvent, expect } from '@storybook/test';
+import { within, userEvent, expect } from "@storybook/test";
 
 export const ClickInteraction: Story = {
   args: {
-    children: 'Click Me',
+    children: "Click Me",
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button');
+    const button = canvas.getByRole("button");
 
     // Verify initial state
     await expect(button).toBeEnabled();
@@ -613,14 +610,14 @@ export const ClickInteraction: Story = {
 export const KeyboardNavigation: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button');
+    const button = canvas.getByRole("button");
 
     // Tab to button
     await userEvent.tab();
     await expect(button).toHaveFocus();
 
     // Press Enter
-    await userEvent.keyboard('{Enter}');
+    await userEvent.keyboard("{Enter}");
   },
 };
 ```
@@ -677,10 +674,10 @@ export const FormExample: Story = {
 
 ### 6.1 MDX Documentation
 
-```mdx
+````mdx
 {/* Introduction.mdx */}
 import { Meta, Canvas, Story } from '@storybook/blocks';
-import * as ButtonStories from '../components/Button/Button.stories';
+import \* as ButtonStories from '../components/Button/Button.stories';
 
 <Meta title="Introduction" />
 
@@ -696,14 +693,15 @@ Install the package:
 ```bash
 npm install @kozmos/react
 ```
+````
 
 Import and use components:
 
 ```tsx
-import { Button } from '@kozmos/react';
+import { Button } from "@kozmos/react";
 
 function App() {
-  return <Button variant="primary">Navigate</Button>;
+  return <Button variant="default">Navigate</Button>;
 }
 ```
 
@@ -717,7 +715,8 @@ function App() {
 2. **Responsive** — Mobile-first approach
 3. **Themeable** — Full white-labeling support
 4. **Performant** — Zero runtime CSS-in-JS
-```
+
+````
 
 ### 6.2 Component Documentation
 
@@ -736,7 +735,7 @@ Buttons allow users to take actions and make choices with a single tap.
 
 ```tsx
 import { Button } from '@kozmos/react';
-```
+````
 
 ## Usage
 
@@ -796,7 +795,8 @@ Use for tertiary actions or in toolbars.
 ## Design Specs
 
 See [Figma designs](https://figma.com/...) for detailed specifications.
-```
+
+````
 
 ### 6.3 Design Token Documentation
 
@@ -883,7 +883,7 @@ Kozmos uses a three-tier token system: primitives, semantic, and component token
 | `--kozmos-spacing-4` | 16px | <div style={{width: '16px', height: '16px', background: '#2563EB'}} /> |
 | `--kozmos-spacing-6` | 24px | <div style={{width: '24px', height: '16px', background: '#2563EB'}} /> |
 | `--kozmos-spacing-8` | 32px | <div style={{width: '32px', height: '16px', background: '#2563EB'}} /> |
-```
+````
 
 ---
 
@@ -893,30 +893,30 @@ Kozmos uses a three-tier token system: primitives, semantic, and component token
 
 ```typescript
 // .storybook/preview.ts
-import { withThemeByDataAttribute } from '@storybook/addon-themes';
+import { withThemeByDataAttribute } from "@storybook/addon-themes";
 
 export const decorators = [
   withThemeByDataAttribute({
     themes: {
-      light: 'light',
-      dark: 'dark',
+      light: "light",
+      dark: "dark",
     },
-    defaultTheme: 'light',
-    attributeName: 'data-color-scheme',
+    defaultTheme: "light",
+    attributeName: "data-color-scheme",
   }),
 ];
 
 // Add toolbar button
 export const globalTypes = {
   theme: {
-    description: 'Global theme for components',
-    defaultValue: 'light',
+    description: "Global theme for components",
+    defaultValue: "light",
     toolbar: {
-      title: 'Theme',
-      icon: 'circlehollow',
+      title: "Theme",
+      icon: "circlehollow",
       items: [
-        { value: 'light', icon: 'sun', title: 'Light' },
-        { value: 'dark', icon: 'moon', title: 'Dark' },
+        { value: "light", icon: "sun", title: "Light" },
+        { value: "dark", icon: "moon", title: "Dark" },
       ],
       dynamicTitle: true,
     },
@@ -1018,15 +1018,15 @@ pnpm storybook:test --ci
 
 ```typescript
 // .storybook/test-runner.ts
-import type { TestRunnerConfig } from '@storybook/test-runner';
-import { injectAxe, checkA11y } from 'axe-playwright';
+import type { TestRunnerConfig } from "@storybook/test-runner";
+import { injectAxe, checkA11y } from "axe-playwright";
 
 const config: TestRunnerConfig = {
   async preVisit(page) {
     await injectAxe(page);
   },
   async postVisit(page) {
-    await checkA11y(page, '#storybook-root', {
+    await checkA11y(page, "#storybook-root", {
       detailedReport: true,
       detailedReportOptions: {
         html: true,
@@ -1090,7 +1090,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/react/**'
+      - "packages/react/**"
 
 jobs:
   deploy:
@@ -1101,7 +1101,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
         run: pnpm install
@@ -1138,17 +1138,17 @@ jobs:
 
 ```typescript
 // ✅ Good: Organized by component type
-'Primitives/Button'
-'Primitives/Input'
-'Components/Card'
-'Components/Modal'
-'Patterns/Forms'
-'SDK Components/MapView'
+"Primitives/Button";
+"Primitives/Input";
+"Components/Card";
+"Components/Modal";
+"Patterns/Forms";
+"SDK Components/MapView";
 
 // ❌ Bad: Flat structure
-'Button'
-'Input'
-'Card'
+"Button";
+"Input";
+"Card";
 ```
 
 ### 10.2 Naming Conventions
@@ -1185,7 +1185,7 @@ export const PrimarySmall: Story = {
 
 // ❌ Bad: Hardcoded in render
 export const Primary: Story = {
-  render: () => <Button variant="primary">Button</Button>,
+  render: () => <Button variant="default">Button</Button>,
 };
 ```
 

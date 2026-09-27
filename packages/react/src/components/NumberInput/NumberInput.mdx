@@ -36,7 +36,7 @@ import { PlatformSnippets } from '../PlatformSnippets';
 <PlatformSnippets
   react={`
 import { useState } from "react";
-import { NumberInput } from "@kozmos/react";
+import { NumberInput } from "@kozmos-ds/react";
 export function Example() {
   const [threshold, setThreshold] = useState<number | null>(null);
   return (
@@ -61,7 +61,7 @@ export function Example() {
   `}
   vue={`
 <script setup>
-import { KozmosNumberInput } from "@kozmos/vue"
+import { KozmosNumberInput } from "@kozmos-ds/vue"
 import { ref } from "vue"
 
 const quantity = ref(1)

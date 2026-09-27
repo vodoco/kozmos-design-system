@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "../../utils";
 import { Button, type ButtonProps } from "../Button/Button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "../Menu";
 

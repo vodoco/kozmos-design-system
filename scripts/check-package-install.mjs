@@ -3,7 +3,7 @@
  *
  * Nothing else here tests what npm will actually hand people. The build can
  * pass, the types can check and every gate can be green while the tarball is
- * wrong: #27 put 92 `*.figma.d.ts` files into @kozmos/react's dist, and
+ * wrong: #27 put 92 `*.figma.d.ts` files into @kozmos-ds/react's dist, and
  * `files: ["dist"]` would have published them — found only by counting dist.
  * An `exports` map is sharper still: a path it does not list simply stops
  * resolving, for everyone outside the repo and for nobody inside it.
@@ -20,7 +20,7 @@
  * ship has to say so in its own package.json.
  *
  * It needs built packages and the network: run
- * `pnpm --filter "@kozmos/react..." build` first.
+ * `pnpm --filter "@kozmos-ds/react..." build` first.
  */
 import fs from "node:fs";
 import os from "node:os";
@@ -31,7 +31,34 @@ import {
   writeReactSnippetFixtures,
   writeSnippetNegativeControl,
 } from "./lib/doc-snippets.mjs";
+import { parseArgs } from "node:util";
+import { writeCandidate } from "./release/candidate.mjs";
+import { readPlan } from "./release/verify-request.mjs";
 
+const { values: releaseOptions } = parseArgs({
+  options: {
+    "release-output": { type: "string" },
+    "release-sha": { type: "string" },
+  },
+});
+if (
+  Boolean(releaseOptions["release-output"]) !==
+  Boolean(releaseOptions["release-sha"])
+) {
+  throw new Error(
+    "--release-output and --release-sha must be supplied together",
+  );
+}
+const releasePlan = releaseOptions["release-output"] ? readPlan() : null;
+if (releasePlan) {
+  const head = execFileSync("git", ["rev-parse", "HEAD"], {
+    encoding: "utf8",
+  }).trim();
+  if (releaseOptions["release-sha"] !== head)
+    throw new Error("Release SHA differs from checkout");
+  if (fs.existsSync(releaseOptions["release-output"]))
+    throw new Error("Release output already exists");
+}
 const ROOT = process.cwd();
 const docSnippets = collectSnippets(ROOT);
 const PACKAGES = path.join(ROOT, "packages");
@@ -220,7 +247,7 @@ const typeProblems = new Set();
 const unreported = new Set();
 for (const { manifest, tarball } of packed) {
   // Written to a file, not read through a pipe: the tool exits before a large
-  // report has drained, which cut @kozmos/react's off at exactly 65,536 bytes
+  // report has drained, which cut @kozmos-ds/react's off at exactly 65,536 bytes
   // and left JSON that would not parse.
   const reportPath = path.join(work, `${path.basename(tarball)}.types.json`);
   const reportFile = fs.openSync(reportPath, "w");
@@ -305,7 +332,7 @@ for (const { manifest, files } of packed) {
 }
 
 // Whatever a README tells people to import, which the map must also reach: a
-// README promising `@kozmos/react/style.css` after the map dropped it would
+// README promising `@kozmos-ds/react/style.css` after the map dropped it would
 // otherwise pass, because a `*.css` declaration types any CSS import at all.
 const samples = [];
 for (const { manifest } of packed) {
@@ -316,7 +343,7 @@ for (const { manifest } of packed) {
   );
   for (const block of readme.matchAll(/```(tsx|ts|css)\n([\s\S]*?)```/g)) {
     for (const found of block[2].matchAll(
-      /(?:from\s+|import\s+|@import\s+)["'](@kozmos\/[^"']+)["']/g,
+      /(?:from\s+|import\s+|@import\s+)["'](@kozmos-ds\/[^"']+)["']/g,
     )) {
       if (!specifiers.includes(found[1])) specifiers.push(found[1]);
     }
@@ -333,8 +360,8 @@ for (const { manifest } of packed) {
 // without widening legacy action labels or importing workspace source.
 samples.push({
   file: "poi-details.tsx",
-  body: `import { POIDetailPanel } from "@kozmos/react";
-import type { POIDetailsPresentation, POIPresentation } from "@kozmos/product-contracts";
+  body: `import { POIDetailPanel } from "@kozmos-ds/react";
+import type { POIDetailsPresentation, POIPresentation } from "@kozmos-ds/product-contracts";
 const poi: POIPresentation = { id: "entry", name: "Entrance", floorId: "1", floorLabel: "Floor 1", media: [], actions: ["navigate"] };
 const details: POIDetailsPresentation = {
   summary: [{ id: "access", kind: "property", label: "Accessibility", value: "Step-free", tone: "success", iconUrl: "/access.png", iconMonochrome: true }, { id: "price", kind: "price", label: "Price", value: "3 of 4", priceLevel: 3 }],
@@ -376,14 +403,14 @@ if (typeof import.meta.resolve !== "function") {
 for (const name of ${JSON.stringify(requirable)}) {
   try {
     const exports = require(name);
-    results.push([name === "@kozmos/product-contracts" ? Object.keys(exports).length === 0 : Object.keys(exports).length > 0, "require(" + name + ") returns its exports (contracts intentionally has no runtime API)"]);
+    results.push([name === "@kozmos-ds/product-contracts" ? Object.keys(exports).length === 0 : Object.keys(exports).length > 0, "require(" + name + ") returns its exports (contracts intentionally has no runtime API)"]);
   } catch (error) {
     results.push([false, "require(" + name + ") — " + error.message]);
   }
 }
 
 console.warn = () => {};
-const kozmos = await import("@kozmos/react");
+const kozmos = await import("@kozmos-ds/react");
 const html = renderToStaticMarkup(
   createElement(kozmos.Button, { emotion: "success" }, createElement(kozmos.Icon, { name: "check" }), "Save"),
 );
@@ -392,10 +419,10 @@ results.push([html.includes("<button") && html.includes("Save") && html.includes
 process.stdout.write(JSON.stringify(results));
 `;
 
-const react = JSON.parse(
-  fs.readFileSync(path.join(PACKAGES, "react", "package.json"), "utf8"),
-);
-const lucide = react.dependencies["lucide-react"];
+// Until 2026-09-24 this installed lucide-react alongside the tarballs, at the
+// version @kozmos-ds/react asked for. It asks for nothing now: the last icon
+// that needed it, the wheelchair, is drawn by this estate. A consumer installs
+// the four packages and React, and that is all.
 
 // ---- install, use and type-check, once per React major ----
 
@@ -427,7 +454,6 @@ for (const major of REACT_MAJORS) {
         ...packed.map(({ tarball }) => tarball),
         `react@${major}`,
         `react-dom@${major}`,
-        `lucide-react@${lucide}`,
         "typescript@5",
         `@types/react@${major}`,
         `@types/react-dom@${major}`,
@@ -607,6 +633,17 @@ declare module "*.css";
 }
 
 if (problems.length === 0) {
+  if (releasePlan) {
+    writeCandidate(
+      releaseOptions["release-output"],
+      releaseOptions["release-sha"],
+      releasePlan,
+      packed,
+    );
+    ok(
+      `tested release candidate retained at ${releaseOptions["release-output"]}`,
+    );
+  }
   fs.rmSync(work, { recursive: true, force: true });
 } else {
   console.log(`\n  The install is kept for inspection at ${work}`);

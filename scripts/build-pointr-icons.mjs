@@ -1,7 +1,7 @@
 /**
  * Generate owned React components from the Pointr Icon Library's own artwork.
  *
- * `@kozmos/icons` maps its names onto lucide components, which draw the same
+ * `@kozmos-ds/icons` maps its names onto lucide components, which draw the same
  * concept in a different hand. That was recorded as "renders different artwork
  * from Figma ... resolve before extending" (`docs/ds-handoff.md` §4.4), and the
  * POI detail card made it concrete: 14 of its 19 glyphs had no Kozmos name at
@@ -75,6 +75,23 @@ function parseDotEnv(filePath) {
   return values;
 }
 
+// `Infinity`, `NaN` and `undefined` cannot be bound without shadowing the
+// global of the same name inside this module — ESLint's
+// no-shadow-restricted-names refuses it, and it is a genuine hazard in
+// generated code nobody reads. The catalogue contains `infinity`. Bind such an
+// icon under a safe local name and export it under the name callers expect, so
+// the package's surface is unchanged.
+const RESTRICTED = new Set(["Infinity", "NaN", "undefined"]);
+
+function emitIcon(exported, paths) {
+  const body = `/* @__PURE__ */ createPointrIcon("${exported}", [\n${paths}\n])`;
+  if (!RESTRICTED.has(exported)) return `export const ${exported} = ${body};`;
+  return (
+    `const ${exported}Icon = ${body};\n` +
+    `export { ${exported}Icon as ${exported} };`
+  );
+}
+
 function pascalCase(name) {
   return name
     .split(/[^a-zA-Z0-9]+/)
@@ -146,31 +163,94 @@ if (!token) {
 const catalog = JSON.parse(fs.readFileSync(CATALOG, "utf-8"));
 const byName = new Map(catalog.icons.map((icon) => [icon.name, icon]));
 
-const picked = OWNED.map((name) => {
-  const icon = byName.get(name);
-  if (!icon)
-    throw new Error(`${name} is not in ${path.relative(ROOT_DIR, CATALOG)}`);
-  return { name, ...icon };
-});
+// `--all` builds every icon the catalogue lists rather than the curated set
+// above. The catalogue can name the same icon twice — `colors` appears at two
+// nodes — and two entries would emit the same `export const`, so the first
+// wins and the rest are reported rather than silently overwriting.
+const buildAll = process.argv.includes("--all");
+const duplicates = [];
+let picked;
+if (buildAll) {
+  const seen = new Set();
+  picked = [];
+  for (const icon of catalog.icons) {
+    if (seen.has(icon.name)) {
+      duplicates.push(icon.name);
+      continue;
+    }
+    seen.add(icon.name);
+    picked.push({ ...icon });
+  }
+} else {
+  picked = OWNED.map((name) => {
+    const icon = byName.get(name);
+    if (!icon)
+      throw new Error(`${name} is not in ${path.relative(ROOT_DIR, CATALOG)}`);
+    return { name, ...icon };
+  });
+}
+if (duplicates.length) {
+  console.log(
+    `  ${duplicates.length} duplicate name(s) in the catalogue, first wins: ${duplicates.join(", ")}`,
+  );
+}
+console.log(`  building ${picked.length} icon(s)\n`);
 
-const { images } = await figma(
-  `/images/${FILE_KEY}?ids=${encodeURIComponent(picked.map((p) => p.nodeId).join(","))}&format=svg`,
-  token,
-);
+const ID_BATCH = 120;
+const images = {};
+for (let i = 0; i < picked.length; i += ID_BATCH) {
+  const batch = picked.slice(i, i + ID_BATCH);
+  const page = await figma(
+    `/images/${FILE_KEY}?ids=${encodeURIComponent(batch.map((p) => p.nodeId).join(","))}&format=svg`,
+    token,
+  );
+  Object.assign(images, page.images);
+  if (picked.length > ID_BATCH) {
+    console.log(
+      `  asked Figma for ${Math.min(i + ID_BATCH, picked.length)}/${picked.length} image url(s)`,
+    );
+  }
+}
 
-const generated = [];
-for (const icon of picked) {
+const svgOf = async (icon) => {
   const url = images[icon.nodeId];
   if (!url)
     throw new Error(`${icon.name}: Figma returned no image for ${icon.nodeId}`);
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`${icon.name}: could not download ${url}`);
-  const paths = extractPaths(await response.text(), icon.name);
-  generated.push({ ...icon, paths });
-  console.log(
-    `  ${icon.name.padEnd(20)} ${icon.nodeId.padEnd(12)} ${paths.length} path(s)`,
-  );
-}
+  // S3 hands these out and occasionally drops one; a whole run should not be
+  // lost to a single flake.
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.text();
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+  throw new Error(`${icon.name}: could not download ${url} (${lastError})`);
+};
+
+const CONCURRENCY = 8;
+const generated = new Array(picked.length);
+let cursor = 0;
+let done = 0;
+await Promise.all(
+  Array.from({ length: Math.min(CONCURRENCY, picked.length) }, async () => {
+    for (;;) {
+      const index = cursor++;
+      if (index >= picked.length) return;
+      const icon = picked[index];
+      const paths = extractPaths(await svgOf(icon), icon.name);
+      generated[index] = { ...icon, paths };
+      done += 1;
+      if (picked.length <= 40 || done % 100 === 0 || done === picked.length) {
+        console.log(`  ${done}/${picked.length} drawn`);
+      }
+    }
+  }),
+);
 
 const body = generated
   .map((icon) => {
@@ -185,7 +265,7 @@ const body = generated
       .join("\n");
     return (
       `/** ${icon.description || icon.name} — Pointr \`${icon.name}\`, node \`${icon.nodeId}\`. */\n` +
-      `export const ${pascalCase(icon.name)} = createPointrIcon("${pascalCase(icon.name)}", [\n${paths}\n]);`
+      emitIcon(pascalCase(icon.name), paths)
     );
   })
   .join("\n\n");

@@ -1,6 +1,6 @@
 import React from "react";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { Check, Minus } from "lucide-react";
+import { Check, Minus } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { Label } from "../Label";
 import { useKozmosAnalytics } from "../../utils/analytics";

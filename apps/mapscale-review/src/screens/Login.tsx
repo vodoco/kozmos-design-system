@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Button, Input, Text } from "@kozmos/react";
+import { Button, Input, Text } from "@kozmos-ds/react";
 import { AuthError, signIn } from "../cloud/session";
 import { POINTR } from "../mock/pointrConfig";
 import "./Login.css";

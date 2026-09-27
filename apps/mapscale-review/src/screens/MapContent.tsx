@@ -22,7 +22,7 @@ import {
   PopoverTrigger,
   PopoverContent,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import PointrMap, {
   type MapNetwork,
   type MapBuilding,

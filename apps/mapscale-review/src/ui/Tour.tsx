@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button } from "@kozmos/react";
+import { Button } from "@kozmos-ds/react";
 
 /**
  * The walkthrough — **anchored, not a wall of prose.**

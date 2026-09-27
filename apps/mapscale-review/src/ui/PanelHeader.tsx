@@ -1,4 +1,4 @@
-import { IconButton, Icon, Text } from "@kozmos/react";
+import { IconButton, Icon, Text } from "@kozmos-ds/react";
 
 /**
  * The padding of the block a `PanelHeader` sits in — **the thing that decides where the ✕ lands**,

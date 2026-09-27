@@ -36,6 +36,16 @@
   .kozmos-text-bold {
     @apply font-bold;
   }
+  /* Logical, so a right-to-left interface flips them and a left-to-right one
+     is unchanged. text-left is kept for the rare case that means LEFT whatever
+     the direction - a number column, a code block - rather than "the side the
+     reading starts on", which is what almost every caller meant by it. */
+  .kozmos-text-start {
+    @apply text-start;
+  }
+  .kozmos-text-end {
+    @apply text-end;
+  }
   .kozmos-text-left {
     @apply text-left;
   }

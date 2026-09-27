@@ -2,7 +2,11 @@ import React from "react";
 import { cn } from "../../utils";
 import { Card, CardContent, CardHeader, CardTitle } from "../Card/Card";
 import { Button } from "../Button/Button";
-import { X, MapPin, ArrowDownUp } from "lucide-react";
+import {
+  X,
+  MarkerPin01 as MapPin,
+  ArrowDown as ArrowDownUp,
+} from "@kozmos-ds/icons";
 import { inputVariants } from "../Input/Input";
 import { useKozmosAnalytics } from "../../utils/analytics";
 

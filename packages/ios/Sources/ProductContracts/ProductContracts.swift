@@ -2,15 +2,23 @@ import Foundation
 
 /// Platform-neutral, already-localized presentation models.
 ///
-/// These mirror the TypeScript contracts in `@kozmos/product-contracts` so that
+/// These mirror the TypeScript contracts in `@kozmos-ds/product-contracts` so that
 /// React, SwiftUI, and Compose Product / SDK components describe the same shape.
 ///
 /// API and map-SDK objects must be adapted into these contracts outside UI
 /// components. Human-readable labels are included alongside machine values so
 /// each platform renders the same meaning without embedding English formatters.
 
+/// Whether a place is open, and how close that is to changing.
+///
+/// openingSoon and closingSoon are their own states rather than a flag on the
+/// other two: a visitor reads "closing soon" as a reason to hurry, and drawing
+/// it as plain "open" is the difference between arriving and arriving too late.
+/// Where the boundary sits is the product's, not this contract's.
 public enum KozmosPOIAvailability: String, Sendable, Hashable, CaseIterable, Codable {
     case open
+    case openingSoon
+    case closingSoon
     case closed
     case unknown
 }
@@ -33,6 +41,58 @@ public enum KozmosPOIAction: String, Sendable, Hashable, CaseIterable, Codable {
     case order
 }
 
+/// What a RESULT may offer: everything a POI offers, plus opening its own details.
+///
+/// Kept apart from ``KozmosPOIAction`` rather than folded into it, mirroring
+/// the web contract. A detail panel cannot offer to open itself, and widening
+/// the shared list would make every consumer handle a case that never arrives.
+public enum KozmosPOIResultAction: String, Sendable, Hashable, CaseIterable, Codable {
+    case navigate
+    case favourite
+    case bookmark
+    case share
+    case order
+    case details
+}
+
+/// A short, already-localized tab above a result: "Alternative", "Similar", "Close by".
+///
+/// Deliberately not how ``KozmosPOIResultPresentation/featured`` is expressed.
+/// Featured is a property of the POI in the CMS and is read by more than this
+/// card - the map marker draws a featured POI with its logo - so it stays a
+/// boolean with meaning, and this stays a label with none.
+public struct KozmosPOIResultBadgePresentation: Sendable, Hashable, Codable {
+    /// Already localized. Keep it to a word or two; it sits in a 24pt tab.
+    public let label: String
+
+    public init(label: String) {
+        self.label = label
+    }
+}
+
+/// What a result card offers on the selected result, in the order given.
+public struct KozmosPOIResultActionPresentation: Sendable, Hashable, Identifiable, Codable {
+    public var id: String { action.rawValue + "-" + label }
+    public let action: KozmosPOIResultAction
+    /// Already localized.
+    public let label: String
+    /// Drawn first and filled. Exactly one action should carry it.
+    public let primary: Bool
+    public let disabled: Bool
+
+    public init(
+        action: KozmosPOIResultAction,
+        label: String,
+        primary: Bool = false,
+        disabled: Bool = false
+    ) {
+        self.action = action
+        self.label = label
+        self.primary = primary
+        self.disabled = disabled
+    }
+}
+
 public struct KozmosPOIMediaPresentation: Sendable, Hashable, Identifiable, Codable {
     public let id: String
     public let src: String
@@ -45,15 +105,44 @@ public struct KozmosPOIMediaPresentation: Sendable, Hashable, Identifiable, Coda
     }
 }
 
+/// What sort of attribute a chip is.
+///
+/// Access restrictions, dietary, accessibility and services are four meanings
+/// and one shape - a short localized label with an optional icon - so they
+/// share one list rather than gaining three more. The kind is what lets a card
+/// order them, tone them, or show only some.
+public enum KozmosPOIAttributeKind: String, Sendable, Hashable, CaseIterable, Codable {
+    case service
+    case dietary
+    case accessibility
+    case restriction
+}
+
 public struct KozmosPOIServicePresentation: Sendable, Hashable, Identifiable, Codable {
     public let id: String
     public let label: String
     public let iconName: String?
+    /// Optional decorative asset; the label stays visible.
+    public let iconUrl: String?
+    /// Use the asset alpha as a current-colour mask (monochrome assets only).
+    public let iconMonochrome: Bool
+    /// Defaults to a plain service when absent.
+    public let kind: KozmosPOIAttributeKind?
 
-    public init(id: String, label: String, iconName: String? = nil) {
+    public init(
+        id: String,
+        label: String,
+        iconName: String? = nil,
+        iconUrl: String? = nil,
+        iconMonochrome: Bool = false,
+        kind: KozmosPOIAttributeKind? = nil
+    ) {
         self.id = id
         self.label = label
         self.iconName = iconName
+        self.iconUrl = iconUrl
+        self.iconMonochrome = iconMonochrome
+        self.kind = kind
     }
 }
 
@@ -72,8 +161,14 @@ public struct KozmosPOIPresentation: Sendable, Hashable, Identifiable, Codable {
     public let name: String
     public let categoryId: String?
     public let categoryLabel: String?
-    public let floorId: String
-    public let floorLabel: String
+    /// Optional: a venue need not have levels.
+    ///
+    /// Story 15's edge case is a single-storey venue, where every result
+    /// sitting on "Ground Floor" is noise rather than information. A product
+    /// with levels supplies these exactly as before; one without omits them,
+    /// and the card draws what is left rather than a floor nobody has.
+    public let floorId: String?
+    public let floorLabel: String?
     public let buildingId: String?
     public let buildingLabel: String?
     public let logo: KozmosPOILogoPresentation?
@@ -91,8 +186,8 @@ public struct KozmosPOIPresentation: Sendable, Hashable, Identifiable, Codable {
         name: String,
         categoryId: String? = nil,
         categoryLabel: String? = nil,
-        floorId: String,
-        floorLabel: String,
+        floorId: String? = nil,
+        floorLabel: String? = nil,
         buildingId: String? = nil,
         buildingLabel: String? = nil,
         logo: KozmosPOILogoPresentation? = nil,
@@ -163,25 +258,72 @@ public struct KozmosTravelEstimatePresentation: Sendable, Hashable, Codable {
     }
 }
 
+/// Why a result is in the list.
+///
+/// So the further lists MAP-474 shows under their own headings come from data
+/// rather than from the order a product happened to build. Absent means exact.
+public enum KozmosPOIResultMatch: String, Sendable, Hashable, CaseIterable, Codable {
+    case exact
+    case alternative
+    case unconfirmed
+}
+
+/// Why a search came back empty.
+///
+/// An empty list is not one situation, and "nothing found" leaves the visitor
+/// to guess what to undo.
+public enum KozmosSearchEmptyKind: String, Sendable, Hashable, CaseIterable, Codable {
+    /// The query matched nothing anywhere in the venue.
+    case noMatch
+    /// Matches exist, but every one was excluded by a filter.
+    case filteredOut
+    /// The venue has no data for this at all - a category nobody has mapped.
+    case unavailable
+}
+
 public struct KozmosPOIResultPresentation: Sendable, Hashable {
     public let poiId: String
     public let resultIndex: Int
     public let selected: Bool
     public let featured: Bool
-    public let floorId: String
+    /// Optional for the same reason as `KozmosPOIPresentation.floorId`:
+    /// no levels, no floor.
+    public let floorId: String?
     public let travelEstimate: KozmosTravelEstimatePresentation?
     public let available: Bool?
     public let unavailableReason: String?
+    /// A quiet tab: why this result is in this list. Ignored when `featured`.
+    public let badge: KozmosPOIResultBadgePresentation?
+    /// Whether this result answers the query exactly, stands in for one that
+    /// would, or has not been confirmed. Absent means exact.
+    public let match: KozmosPOIResultMatch?
+    /// The unit or suite, where a venue has them: "Unit 214", "Suite 3B".
+    /// Separate from `floorLabel` because a visitor is told both.
+    public let unitLabel: String?
+    /// BCP 47 tag for the language `poi.name` is authored in, when it differs
+    /// from the interface language. MAP-474 Story 2 requires an authored name
+    /// to be shown exactly as authored, and VoiceOver needs the tag to say it
+    /// correctly.
+    public let nameLanguage: String?
+    /// Revealed when the result is selected. The product decides what a POI
+    /// offers - a restaurant may book where a shop does not - so the card draws
+    /// what it is given and never assumes a fixed pair.
+    public let actions: [KozmosPOIResultActionPresentation]
 
     public init(
         poiId: String,
         resultIndex: Int,
         selected: Bool = false,
         featured: Bool = false,
-        floorId: String,
+        floorId: String? = nil,
         travelEstimate: KozmosTravelEstimatePresentation? = nil,
         available: Bool? = nil,
-        unavailableReason: String? = nil
+        unavailableReason: String? = nil,
+        badge: KozmosPOIResultBadgePresentation? = nil,
+        match: KozmosPOIResultMatch? = nil,
+        unitLabel: String? = nil,
+        nameLanguage: String? = nil,
+        actions: [KozmosPOIResultActionPresentation] = []
     ) {
         self.poiId = poiId
         self.resultIndex = resultIndex
@@ -191,6 +333,11 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         self.travelEstimate = travelEstimate
         self.available = available
         self.unavailableReason = unavailableReason
+        self.badge = badge
+        self.match = match
+        self.unitLabel = unitLabel
+        self.nameLanguage = nameLanguage
+        self.actions = actions
     }
 
     /// Mirrors the web rule: only an explicit `false` marks a result unavailable.
@@ -209,7 +356,16 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
             floorId: floorId,
             travelEstimate: travelEstimate,
             available: available,
-            unavailableReason: unavailableReason
+            unavailableReason: unavailableReason,
+            // Every stored property must be carried. Swift rebuilds the struct
+            // by hand here rather than copying it, so a new field that is not
+            // listed is silently dropped on every selection change -- which is
+            // exactly what badge and actions did until a test asked.
+            badge: badge,
+            match: match,
+            unitLabel: unitLabel,
+            nameLanguage: nameLanguage,
+            actions: actions
         )
     }
 }
@@ -232,6 +388,14 @@ public struct KozmosCategoryPresentation: Sendable, Hashable, Identifiable {
     public let id: String
     public let label: String
     public let iconName: String?
+    /// The venue's own category artwork, as the taxonomy publishes it.
+    ///
+    /// A quick-access category carries an `iconUrl` in the taxonomy's
+    /// published JSON. That artwork belongs to the venue and is versioned on
+    /// Pointr's cadence, not this package's, so it arrives as a URL rather
+    /// than a bundled asset - the eight that were bundled went stale the
+    /// moment a taxonomy release landed, and were removed.
+    public let iconUrl: String?
     public let selected: Bool
     public let disabled: Bool
     public let resultCount: Int?
@@ -241,6 +405,7 @@ public struct KozmosCategoryPresentation: Sendable, Hashable, Identifiable {
         id: String,
         label: String,
         iconName: String? = nil,
+        iconUrl: String? = nil,
         selected: Bool = false,
         disabled: Bool = false,
         resultCount: Int? = nil,
@@ -249,6 +414,7 @@ public struct KozmosCategoryPresentation: Sendable, Hashable, Identifiable {
         self.id = id
         self.label = label
         self.iconName = iconName
+        self.iconUrl = iconUrl
         self.selected = selected
         self.disabled = disabled
         self.resultCount = resultCount
@@ -338,5 +504,35 @@ public struct KozmosMapCollisionInsets: Sendable, Hashable {
         self.right = right
         self.bottom = bottom
         self.left = left
+    }
+}
+
+/// A search's results and what to say when there are none.
+///
+/// Mirrors `SearchResponsePresentation` on the web and
+/// `KozmosSearchResponsePresentation` on Compose.
+public struct KozmosSearchResponsePresentation: Sendable, Hashable {
+    public let results: [KozmosPOIResultPresentation]
+    /// Present only when `results` is empty.
+    public let emptyKind: KozmosSearchEmptyKind?
+    /// The filter that emptied the list, already localized - "HQ Building",
+    /// "Gluten-free". Story 15 AC6: name what to undo.
+    public let emptiedBy: String?
+    /// Set when results were found in a language other than the one asked for,
+    /// carrying the BCP 47 tag actually used. Story 2's unhappy path: a visitor
+    /// reading Japanese who gets English names should be told, not left to
+    /// wonder.
+    public let languageFallback: String?
+
+    public init(
+        results: [KozmosPOIResultPresentation] = [],
+        emptyKind: KozmosSearchEmptyKind? = nil,
+        emptiedBy: String? = nil,
+        languageFallback: String? = nil
+    ) {
+        self.results = results
+        self.emptyKind = emptyKind
+        self.emptiedBy = emptiedBy
+        self.languageFallback = languageFallback
     }
 }

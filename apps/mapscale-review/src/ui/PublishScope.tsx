@@ -1,4 +1,4 @@
-import { Icon, Text } from "@kozmos/react";
+import { Icon, Text } from "@kozmos-ds/react";
 import { ConfirmOverlay } from "./ConfirmOverlay";
 import { levelsHeldFromPublish, type HeldLevel } from "../mock/publishScope";
 import { SITE_NAME } from "../mock/site";
@@ -69,17 +69,39 @@ export function PublishScope({
       onConfirm={onPublish}
       onCancel={onCancel}
     >
-      <Text style={{ display: "block", fontSize: 13.5, color: INK, lineHeight: 1.5 }}>
+      <Text
+        style={{
+          display: "block",
+          fontSize: 13.5,
+          color: INK,
+          lineHeight: 1.5,
+        }}
+      >
         You are about to go live with the content updates for site, {SITE_NAME}.
       </Text>
 
       {held.length > 0 && (
         <div style={{ marginTop: 14 }}>
-          <Text style={{ display: "block", fontSize: 13, color: INK, lineHeight: 1.5 }}>
-            <strong>{held.length} levels are still in review</strong> and will not be included.
+          <Text
+            style={{
+              display: "block",
+              fontSize: 13,
+              color: INK,
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>{held.length} levels are still in review</strong> and will
+            not be included.
           </Text>
 
-          <div style={{ marginTop: 8, border: `1px solid ${LINE}`, borderRadius: 8, overflow: "hidden" }}>
+          <div
+            style={{
+              marginTop: 8,
+              border: `1px solid ${LINE}`,
+              borderRadius: 8,
+              overflow: "hidden",
+            }}
+          >
             {buildings.map((b, bi) => (
               <div key={b.name}>
                 <div
@@ -120,7 +142,15 @@ export function PublishScope({
                     >
                       {l.short} · {l.name}
                     </Text>
-                    <Text style={{ fontSize: 12, color: MUTED, whiteSpace: "nowrap" }}>{status(l)}</Text>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: MUTED,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {status(l)}
+                    </Text>
                     <Icon name="chevron-right" />
                   </div>
                 ))}
@@ -130,7 +160,14 @@ export function PublishScope({
         </div>
       )}
 
-      <Text style={{ display: "block", fontSize: 12.5, color: MUTED, marginTop: 14 }}>
+      <Text
+        style={{
+          display: "block",
+          fontSize: 12.5,
+          color: MUTED,
+          marginTop: 14,
+        }}
+      >
         Note: It may take up to 15 minutes due to caching.
       </Text>
     </ConfirmOverlay>

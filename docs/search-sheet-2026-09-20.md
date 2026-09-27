@@ -1,6 +1,6 @@
 # The search sheet, 20 September 2026
 
-Claude Code, the last stage in Olcay's order, on his four answers: the prototype's category tile,
+The coding agent, the last stage in Olcay's order, on his four answers: the prototype's category tile,
 result row and search field on tokens, and the two parts the system lacked — the AI search button
 with its ring from the theme ramp, and the location marker's halo. Unlike the earlier stages this
 one changes the look of parts the system already had, on all three platforms. Branch

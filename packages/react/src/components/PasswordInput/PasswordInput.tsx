@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { FieldWrapper } from "../FieldWrapper";
 import { inputVariants, type InputStatus } from "../Input/Input";

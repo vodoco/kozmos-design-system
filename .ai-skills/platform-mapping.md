@@ -20,14 +20,14 @@
 
 ### Platform Matrix
 
-| Platform | Package | Language | Framework | Target |
-|----------|---------|----------|-----------|--------|
-| **React** | `@kozmos/react` | TypeScript | React 18+ | Web SDK |
-| **Vue** | `@kozmos/vue` | TypeScript | Vue 3 / Lit | Dashboard |
-| **iOS** | `KozmosSwiftUI` | Swift | SwiftUI | iOS SDK |
-| **Android** | `com.kozmos:compose` | Kotlin | Jetpack Compose | Android SDK |
-| **React Native** | `@kozmos/react-native` | TypeScript | React Native | Cross-platform mobile |
-| **Tokens** | `@kozmos/tokens` | Multiple | — | All platforms |
+| Platform         | Package                | Language   | Framework       | Target                |
+| ---------------- | ---------------------- | ---------- | --------------- | --------------------- |
+| **React**        | `@kozmos/react`        | TypeScript | React 18+       | Web SDK               |
+| **Vue**          | `@kozmos/vue`          | TypeScript | Vue 3 / Lit     | Dashboard             |
+| **iOS**          | `KozmosSwiftUI`        | Swift      | SwiftUI         | iOS SDK               |
+| **Android**      | `com.kozmos:compose`   | Kotlin     | Jetpack Compose | Android SDK           |
+| **React Native** | `@kozmos/react-native` | TypeScript | React Native    | Cross-platform mobile |
+| **Tokens**       | `@kozmos/tokens`       | Multiple   | —               | All platforms         |
 
 ### Import Patterns
 
@@ -56,119 +56,119 @@ import { Button, Input, Modal } from '@kozmos/react-native';
 
 ### Legend
 
-| Symbol | Meaning |
-|--------|---------|
-| ✅ | Implemented with full feature parity |
-| 🟡 | Implemented with partial features |
-| 🔄 | Uses platform-native equivalent |
-| ➖ | Not applicable to platform |
-| 🚧 | Planned / In development |
+| Symbol | Meaning                              |
+| ------ | ------------------------------------ |
+| ✅     | Implemented with full feature parity |
+| 🟡     | Implemented with partial features    |
+| 🔄     | Uses platform-native equivalent      |
+| ➖     | Not applicable to platform           |
+| 🚧     | Planned / In development             |
 
 ### Foundation Components
 
-| Component | React | Vue | iOS | Android | React Native | Notes |
-|-----------|:-----:|:---:|:---:|:-------:|:------------:|-------|
-| **ThemeProvider** | ✅ | ✅ | ✅ | ✅ | ✅ | Required wrapper |
-| **Box** | ✅ | ✅ | 🔄 | 🔄 | ✅ | Native: use native containers |
-| **Stack** | ✅ | ✅ | ✅ | ✅ | ✅ | HStack/VStack on native |
-| **Grid** | ✅ | ✅ | ✅ | ✅ | 🟡 | RN: use flex workaround |
-| **Text** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Heading** | ✅ | ✅ | ✅ | ✅ | ✅ | Semantic levels |
-| **Spacer** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Divider** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **VisuallyHidden** | ✅ | ✅ | ✅ | ✅ | ✅ | Screen reader only |
+| Component          | React | Vue | iOS | Android | React Native | Notes                         |
+| ------------------ | :---: | :-: | :-: | :-----: | :----------: | ----------------------------- |
+| **ThemeProvider**  |  ✅   | ✅  | ✅  |   ✅    |      ✅      | Required wrapper              |
+| **Box**            |  ✅   | ✅  | 🔄  |   🔄    |      ✅      | Native: use native containers |
+| **Stack**          |  ✅   | ✅  | ✅  |   ✅    |      ✅      | HStack/VStack on native       |
+| **Grid**           |  ✅   | ✅  | ✅  |   ✅    |      🟡      | RN: use flex workaround       |
+| **Text**           |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                               |
+| **Heading**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      | Semantic levels               |
+| **Spacer**         |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                               |
+| **Divider**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                               |
+| **VisuallyHidden** |  ✅   | ✅  | ✅  |   ✅    |      ✅      | Screen reader only            |
 
 ### Action Components
 
-| Component | React | Vue | iOS | Android | React Native | Notes |
-|-----------|:-----:|:---:|:---:|:-------:|:------------:|-------|
-| **Button** | ✅ | ✅ | ✅ | ✅ | ✅ | All variants |
-| **IconButton** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Link** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **ButtonGroup** | ✅ | ✅ | ✅ | ✅ | ✅ | |
+| Component       | React | Vue | iOS | Android | React Native | Notes        |
+| --------------- | :---: | :-: | :-: | :-----: | :----------: | ------------ |
+| **Button**      |  ✅   | ✅  | ✅  |   ✅    |      ✅      | All variants |
+| **IconButton**  |  ✅   | ✅  | ✅  |   ✅    |      ✅      |              |
+| **Link**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      |              |
+| **ButtonGroup** |  ✅   | ✅  | ✅  |   ✅    |      ✅      |              |
 
 ### Form Components
 
-| Component | React | Vue | iOS | Android | React Native | Notes |
-|-----------|:-----:|:---:|:---:|:-------:|:------------:|-------|
-| **Input** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **TextArea** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Checkbox** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Radio** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **RadioGroup** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Switch** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Select** | ✅ | ✅ | ✅ | ✅ | ✅ | Native pickers on mobile |
-| **Slider** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **DatePicker** | ✅ | ✅ | 🔄 | 🔄 | 🔄 | Uses native date pickers |
-| **TimePicker** | ✅ | ✅ | 🔄 | 🔄 | 🔄 | Uses native time pickers |
-| **FormField** | ✅ | ✅ | ✅ | ✅ | ✅ | Label + input + error |
-| **FormErrorMessage** | ✅ | ✅ | ✅ | ✅ | ✅ | |
+| Component            | React | Vue | iOS | Android | React Native | Notes                    |
+| -------------------- | :---: | :-: | :-: | :-----: | :----------: | ------------------------ |
+| **Input**            |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                          |
+| **TextArea**         |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                          |
+| **Checkbox**         |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                          |
+| **Radio**            |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                          |
+| **RadioGroup**       |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                          |
+| **Switch**           |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                          |
+| **Select**           |  ✅   | ✅  | ✅  |   ✅    |      ✅      | Native pickers on mobile |
+| **Slider**           |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                          |
+| **DatePicker**       |  ✅   | ✅  | 🔄  |   🔄    |      🔄      | Uses native date pickers |
+| **TimePicker**       |  ✅   | ✅  | 🔄  |   🔄    |      🔄      | Uses native time pickers |
+| **FormField**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      | Label + input + error    |
+| **FormErrorMessage** |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                          |
 
 ### Feedback Components
 
-| Component | React | Vue | iOS | Android | React Native | Notes |
-|-----------|:-----:|:---:|:---:|:-------:|:------------:|-------|
-| **Modal** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Drawer** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Toast** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Alert** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **AlertDialog** | ✅ | ✅ | 🔄 | 🔄 | 🔄 | Native alerts on mobile |
-| **Tooltip** | ✅ | ✅ | ✅ | ✅ | 🟡 | Limited on RN |
-| **Popover** | ✅ | ✅ | ✅ | ✅ | 🟡 | |
-| **Progress** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Spinner** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Skeleton** | ✅ | ✅ | ✅ | ✅ | ✅ | |
+| Component       | React | Vue | iOS | Android | React Native | Notes                   |
+| --------------- | :---: | :-: | :-: | :-----: | :----------: | ----------------------- |
+| **Modal**       |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                         |
+| **Drawer**      |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                         |
+| **Toast**       |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                         |
+| **Alert**       |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                         |
+| **AlertDialog** |  ✅   | ✅  | 🔄  |   🔄    |      🔄      | Native alerts on mobile |
+| **Tooltip**     |  ✅   | ✅  | ✅  |   ✅    |      🟡      | Limited on RN           |
+| **Popover**     |  ✅   | ✅  | ✅  |   ✅    |      🟡      |                         |
+| **Progress**    |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                         |
+| **Spinner**     |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                         |
+| **Skeleton**    |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                         |
 
 ### Data Display Components
 
-| Component | React | Vue | iOS | Android | React Native | Notes |
-|-----------|:-----:|:---:|:---:|:-------:|:------------:|-------|
-| **Avatar** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **AvatarGroup** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Badge** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Card** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **List** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **ListItem** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Table** | ✅ | ✅ | 🟡 | 🟡 | ➖ | Limited on mobile |
-| **DataTable** | ✅ | ✅ | ➖ | ➖ | ➖ | Web/Dashboard only |
-| **Tag** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Chip** | ✅ | ✅ | ✅ | ✅ | ✅ | |
+| Component       | React | Vue | iOS | Android | React Native | Notes              |
+| --------------- | :---: | :-: | :-: | :-----: | :----------: | ------------------ |
+| **Avatar**      |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **AvatarGroup** |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **Badge**       |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **Card**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **List**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **ListItem**    |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **Table**       |  ✅   | ✅  | 🟡  |   🟡    |      ➖      | Limited on mobile  |
+| **DataTable**   |  ✅   | ✅  | ➖  |   ➖    |      ➖      | Web/Dashboard only |
+| **Tag**         |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **Chip**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
 
 ### Navigation Components
 
-| Component | React | Vue | iOS | Android | React Native | Notes |
-|-----------|:-----:|:---:|:---:|:-------:|:------------:|-------|
-| **Tabs** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Accordion** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Breadcrumb** | ✅ | ✅ | ➖ | ➖ | ➖ | Web only |
-| **Pagination** | ✅ | ✅ | 🟡 | 🟡 | 🟡 | Mobile: simplified |
-| **Stepper** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **Menu** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **ContextMenu** | ✅ | ✅ | 🔄 | 🔄 | 🔄 | Native context menus |
+| Component       | React | Vue | iOS | Android | React Native | Notes                |
+| --------------- | :---: | :-: | :-: | :-----: | :----------: | -------------------- |
+| **Tabs**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                      |
+| **Accordion**   |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                      |
+| **Breadcrumb**  |  ✅   | ✅  | ➖  |   ➖    |      ➖      | Web only             |
+| **Pagination**  |  ✅   | ✅  | 🟡  |   🟡    |      🟡      | Mobile: simplified   |
+| **Stepper**     |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                      |
+| **Menu**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                      |
+| **ContextMenu** |  ✅   | ✅  | 🔄  |   🔄    |      🔄      | Native context menus |
 
 ### SDK-Specific Components
 
-| Component | React | Vue | iOS | Android | React Native | Notes |
-|-----------|:-----:|:---:|:---:|:-------:|:------------:|-------|
-| **MapView** | ✅ | ✅ | ✅ | ✅ | ✅ | Core SDK |
-| **SearchPanel** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **SearchResults** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **POIDetailsCard** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **WayfindingCard** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **DirectionsList** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **LevelSwitcher** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **ZoomControls** | ✅ | ✅ | 🟡 | 🟡 | 🟡 | Gestures on mobile |
-| **CompassControl** | ✅ | ✅ | ✅ | ✅ | ✅ | |
-| **AICompanion** | ✅ | 🚧 | ✅ | ✅ | ✅ | Complex composite |
+| Component          | React | Vue | iOS | Android | React Native | Notes              |
+| ------------------ | :---: | :-: | :-: | :-----: | :----------: | ------------------ |
+| **MapView**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      | Core SDK           |
+| **SearchPanel**    |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **SearchResults**  |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **POIDetailsCard** |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **WayfindingCard** |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **DirectionsList** |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **LevelSwitcher**  |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **ZoomControls**   |  ✅   | ✅  | 🟡  |   🟡    |      🟡      | Gestures on mobile |
+| **CompassControl** |  ✅   | ✅  | ✅  |   ✅    |      ✅      |                    |
+| **AICompanion**    |  ✅   | 🚧  | ✅  |   ✅    |      ✅      | Complex composite  |
 
 ### Dashboard-Only Components
 
-| Component | React | Vue | iOS | Android | React Native | Notes |
-|-----------|:-----:|:---:|:---:|:-------:|:------------:|-------|
-| **DrawingToolbar** | ➖ | ✅ | ➖ | ➖ | ➖ | CMS only |
-| **LayerPanel** | ➖ | ✅ | ➖ | ➖ | ➖ | CMS only |
-| **PropertiesPanel** | ➖ | ✅ | ➖ | ➖ | ➖ | CMS only |
-| **DataGrid** | ➖ | ✅ | ➖ | ➖ | ➖ | Dashboard only |
+| Component           | React | Vue | iOS | Android | React Native | Notes          |
+| ------------------- | :---: | :-: | :-: | :-----: | :----------: | -------------- |
+| **DrawingToolbar**  |  ➖   | ✅  | ➖  |   ➖    |      ➖      | CMS only       |
+| **LayerPanel**      |  ➖   | ✅  | ➖  |   ➖    |      ➖      | CMS only       |
+| **PropertiesPanel** |  ➖   | ✅  | ➖  |   ➖    |      ➖      | CMS only       |
+| **DataGrid**        |  ➖   | ✅  | ➖  |   ➖    |      ➖      | Dashboard only |
 
 ---
 
@@ -176,14 +176,14 @@ import { Button, Input, Modal } from '@kozmos/react-native';
 
 ### Common Prop Translations
 
-| Concept | React | Vue | iOS | Android | React Native |
-|---------|-------|-----|-----|---------|--------------|
-| **Click handler** | `onClick` | `@click` | `action` | `onClick` | `onPress` |
-| **Change handler** | `onChange` | `@update:modelValue` | `Binding` | `onValueChange` | `onChangeText` |
-| **Value binding** | `value` | `v-model` | `$value` | `value` | `value` |
-| **Disabled state** | `disabled` | `:disabled` | `.disabled()` | `enabled = false` | `disabled` |
-| **Loading state** | `loading` | `:loading` | `.loading()` | `loading` | `loading` |
-| **Class/Style** | `className` | `class` | modifiers | `Modifier` | `style` |
+| Concept            | React       | Vue                  | iOS           | Android           | React Native   |
+| ------------------ | ----------- | -------------------- | ------------- | ----------------- | -------------- |
+| **Click handler**  | `onClick`   | `@click`             | `action`      | `onClick`         | `onPress`      |
+| **Change handler** | `onChange`  | `@update:modelValue` | `Binding`     | `onValueChange`   | `onChangeText` |
+| **Value binding**  | `value`     | `v-model`            | `$value`      | `value`           | `value`        |
+| **Disabled state** | `disabled`  | `:disabled`          | `.disabled()` | `enabled = false` | `disabled`     |
+| **Loading state**  | `loading`   | `:loading`           | `.loading()`  | `loading`         | `loading`      |
+| **Class/Style**    | `className` | `class`              | modifiers     | `Modifier`        | `style`        |
 
 ### Button Props Across Platforms
 
@@ -292,29 +292,29 @@ KozmosInput(
 
 ### Token Access by Platform
 
-| Platform | Access Pattern | Example |
-|----------|----------------|---------|
-| **React** | CSS Variables | `var(--kozmos-color-text-primary)` |
-| **Vue** | CSS Variables | `var(--kozmos-color-text-primary)` |
-| **iOS** | Static Properties | `KozmosTokens.color.text.primary` |
-| **Android** | Object Properties | `KozmosTokens.color.text.primary` |
-| **React Native** | JS Object | `tokens.color.text.primary` |
+| Platform         | Access Pattern    | Example                            |
+| ---------------- | ----------------- | ---------------------------------- |
+| **React**        | CSS Variables     | `var(--kozmos-color-text-primary)` |
+| **Vue**          | CSS Variables     | `var(--kozmos-color-text-primary)` |
+| **iOS**          | Static Properties | `KozmosTokens.color.text.primary`  |
+| **Android**      | Object Properties | `KozmosTokens.color.text.primary`  |
+| **React Native** | JS Object         | `tokens.color.text.primary`        |
 
 ### Color Token Mapping
 
-| Token | CSS Variable | Swift | Kotlin | JS |
-|-------|--------------|-------|--------|-----|
-| Primary text | `--kozmos-color-text-primary` | `.textPrimary` | `.textPrimary` | `color.text.primary` |
-| Background | `--kozmos-color-bg-primary` | `.bgPrimary` | `.bgPrimary` | `color.background.primary` |
-| Brand | `--kozmos-color-interactive-primary` | `.interactivePrimary` | `.interactivePrimary` | `color.interactive.primary` |
-| Error | `--kozmos-color-status-error` | `.statusError` | `.statusError` | `color.status.error` |
+| Token        | CSS Variable                         | Swift                 | Kotlin                | JS                          |
+| ------------ | ------------------------------------ | --------------------- | --------------------- | --------------------------- |
+| Primary text | `--kozmos-color-text-primary`        | `.textPrimary`        | `.textPrimary`        | `color.text.primary`        |
+| Background   | `--kozmos-color-bg-primary`          | `.bgPrimary`          | `.bgPrimary`          | `color.background.primary`  |
+| Brand        | `--kozmos-color-interactive-primary` | `.interactivePrimary` | `.interactivePrimary` | `color.interactive.primary` |
+| Error        | `--kozmos-color-status-error`        | `.statusError`        | `.statusError`        | `color.status.error`        |
 
 ### Spacing Token Mapping
 
-| Token | CSS Variable | Swift | Kotlin | JS |
-|-------|--------------|-------|--------|-----|
-| space.100 | `--kozmos-space-100` (4px) | `.space100` (4) | `.space100` (4.dp) | `space[100]` (4) |
-| space.200 | `--kozmos-space-200` (8px) | `.space200` (8) | `.space200` (8.dp) | `space[200]` (8) |
+| Token     | CSS Variable                | Swift            | Kotlin              | JS                |
+| --------- | --------------------------- | ---------------- | ------------------- | ----------------- |
+| space.100 | `--kozmos-space-100` (4px)  | `.space100` (4)  | `.space100` (4.dp)  | `space[100]` (4)  |
+| space.200 | `--kozmos-space-200` (8px)  | `.space200` (8)  | `.space200` (8.dp)  | `space[200]` (8)  |
 | space.400 | `--kozmos-space-400` (16px) | `.space400` (16) | `.space400` (16.dp) | `space[400]` (16) |
 | space.600 | `--kozmos-space-600` (24px) | `.space600` (24) | `.space600` (24.dp) | `space[600]` (24) |
 
@@ -324,15 +324,15 @@ KozmosInput(
 
 ### Event Name Translations
 
-| Event | React | Vue | iOS | Android | React Native |
-|-------|-------|-----|-----|---------|--------------|
-| Click/Tap | `onClick` | `@click` | `action:` closure | `onClick` | `onPress` |
-| Long Press | `onLongPress` | `@longpress` | `.onLongPressGesture` | `onLongClick` | `onLongPress` |
-| Value Change | `onChange` | `@update:modelValue` | `Binding<T>` | `onValueChange` | `onChangeText` |
-| Focus | `onFocus` | `@focus` | `.focused()` | `onFocusChanged` | `onFocus` |
-| Blur | `onBlur` | `@blur` | `.focused()` | `onFocusChanged` | `onBlur` |
-| Submit | `onSubmit` | `@submit` | `.onSubmit` | N/A | `onSubmitEditing` |
-| Scroll | `onScroll` | `@scroll` | `.onChange` | N/A | `onScroll` |
+| Event        | React         | Vue                  | iOS                   | Android          | React Native      |
+| ------------ | ------------- | -------------------- | --------------------- | ---------------- | ----------------- |
+| Click/Tap    | `onClick`     | `@click`             | `action:` closure     | `onClick`        | `onPress`         |
+| Long Press   | `onLongPress` | `@longpress`         | `.onLongPressGesture` | `onLongClick`    | `onLongPress`     |
+| Value Change | `onChange`    | `@update:modelValue` | `Binding<T>`          | `onValueChange`  | `onChangeText`    |
+| Focus        | `onFocus`     | `@focus`             | `.focused()`          | `onFocusChanged` | `onFocus`         |
+| Blur         | `onBlur`      | `@blur`              | `.focused()`          | `onFocusChanged` | `onBlur`          |
+| Submit       | `onSubmit`    | `@submit`            | `.onSubmit`           | N/A              | `onSubmitEditing` |
+| Scroll       | `onScroll`    | `@scroll`            | `.onChange`           | N/A              | `onScroll`        |
 
 ### Event Handler Patterns
 
@@ -368,19 +368,19 @@ KozmosButton(
 
 ### Features by Platform
 
-| Feature | React | Vue | iOS | Android | React Native |
-|---------|:-----:|:---:|:---:|:-------:|:------------:|
-| **Server Components** | ✅ | ➖ | ➖ | ➖ | ➖ |
-| **SSR/SSG** | ✅ | ✅ | ➖ | ➖ | ➖ |
-| **Native Date Picker** | ➖ | ➖ | ✅ | ✅ | ✅ |
-| **Haptic Feedback** | ➖ | ➖ | ✅ | ✅ | ✅ |
-| **Native Share Sheet** | ➖ | ➖ | ✅ | ✅ | ✅ |
-| **Context Menu** | ✅ | ✅ | ✅ | ✅ | 🟡 |
-| **Keyboard Shortcuts** | ✅ | ✅ | ✅ | ➖ | ➖ |
-| **Drag and Drop** | ✅ | ✅ | ✅ | 🟡 | 🟡 |
-| **RTL Support** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Dynamic Type** | ➖ | ➖ | ✅ | ✅ | 🟡 |
-| **Reduce Motion** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Feature                | React | Vue | iOS | Android | React Native |
+| ---------------------- | :---: | :-: | :-: | :-----: | :----------: |
+| **Server Components**  |  ✅   | ➖  | ➖  |   ➖    |      ➖      |
+| **SSR/SSG**            |  ✅   | ✅  | ➖  |   ➖    |      ➖      |
+| **Native Date Picker** |  ➖   | ➖  | ✅  |   ✅    |      ✅      |
+| **Haptic Feedback**    |  ➖   | ➖  | ✅  |   ✅    |      ✅      |
+| **Native Share Sheet** |  ➖   | ➖  | ✅  |   ✅    |      ✅      |
+| **Context Menu**       |  ✅   | ✅  | ✅  |   ✅    |      🟡      |
+| **Keyboard Shortcuts** |  ✅   | ✅  | ✅  |   ➖    |      ➖      |
+| **Drag and Drop**      |  ✅   | ✅  | ✅  |   🟡    |      🟡      |
+| **RTL Support**        |  ✅   | ✅  | ✅  |   ✅    |      ✅      |
+| **Dynamic Type**       |  ➖   | ➖  | ✅  |   ✅    |      🟡      |
+| **Reduce Motion**      |  ✅   | ✅  | ✅  |   ✅    |      ✅      |
 
 ### Platform-Specific Component Variants
 
@@ -457,19 +457,13 @@ KozmosDatePicker(
 #### React
 
 ```tsx
-import {
-  FormField,
-  Input,
-  Select,
-  Button,
-  Stack
-} from '@kozmos/react';
+import { FormField, Input, Select, Button, Stack } from "@kozmos/react";
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    category: ''
+    name: "",
+    email: "",
+    category: "",
   });
 
   return (
@@ -478,10 +472,12 @@ export function ContactForm() {
         <FormField label="Name" required>
           <Input
             value={formData.name}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              name: e.target.value
-            }))}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                name: e.target.value,
+              }))
+            }
             placeholder="Enter your name"
           />
         </FormField>
@@ -490,10 +486,12 @@ export function ContactForm() {
           <Input
             type="email"
             value={formData.email}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              email: e.target.value
-            }))}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                email: e.target.value,
+              }))
+            }
             placeholder="you@example.com"
           />
         </FormField>
@@ -501,10 +499,12 @@ export function ContactForm() {
         <FormField label="Category">
           <Select
             value={formData.category}
-            onValueChange={(value) => setFormData(prev => ({
-              ...prev,
-              category: value
-            }))}
+            onValueChange={(value) =>
+              setFormData((prev) => ({
+                ...prev,
+                category: value,
+              }))
+            }
           >
             <Select.Option value="general">General</Select.Option>
             <Select.Option value="support">Support</Select.Option>
@@ -512,7 +512,7 @@ export function ContactForm() {
           </Select>
         </FormField>
 
-        <Button type="submit" variant="solid">
+        <Button type="submit" variant="default">
           Submit
         </Button>
       </Stack>
@@ -528,10 +528,7 @@ export function ContactForm() {
   <form @submit.prevent="handleSubmit">
     <KozmosStack gap="400">
       <KozmosFormField label="Name" required>
-        <KozmosInput
-          v-model="formData.name"
-          placeholder="Enter your name"
-        />
+        <KozmosInput v-model="formData.name" placeholder="Enter your name" />
       </KozmosFormField>
 
       <KozmosFormField label="Email" required>
@@ -550,28 +547,26 @@ export function ContactForm() {
         </KozmosSelect>
       </KozmosFormField>
 
-      <KozmosButton type="submit" variant="solid">
-        Submit
-      </KozmosButton>
+      <KozmosButton type="submit" variant="solid"> Submit </KozmosButton>
     </KozmosStack>
   </form>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue";
 import {
   KozmosStack,
   KozmosFormField,
   KozmosInput,
   KozmosSelect,
   KozmosSelectOption,
-  KozmosButton
-} from '@kozmos/vue';
+  KozmosButton,
+} from "@kozmos/vue";
 
 const formData = ref({
-  name: '',
-  email: '',
-  category: ''
+  name: "",
+  email: "",
+  category: "",
 });
 
 function handleSubmit() {
@@ -684,19 +679,13 @@ fun ContactForm() {
 #### React Native
 
 ```tsx
-import {
-  FormField,
-  Input,
-  Select,
-  Button,
-  VStack
-} from '@kozmos/react-native';
+import { FormField, Input, Select, Button, VStack } from "@kozmos/react-native";
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    category: ''
+    name: "",
+    email: "",
+    category: "",
   });
 
   return (
@@ -704,10 +693,12 @@ export function ContactForm() {
       <FormField label="Name" required>
         <Input
           value={formData.name}
-          onChangeText={(text) => setFormData(prev => ({
-            ...prev,
-            name: text
-          }))}
+          onChangeText={(text) =>
+            setFormData((prev) => ({
+              ...prev,
+              name: text,
+            }))
+          }
           placeholder="Enter your name"
         />
       </FormField>
@@ -715,10 +706,12 @@ export function ContactForm() {
       <FormField label="Email" required>
         <Input
           value={formData.email}
-          onChangeText={(text) => setFormData(prev => ({
-            ...prev,
-            email: text
-          }))}
+          onChangeText={(text) =>
+            setFormData((prev) => ({
+              ...prev,
+              email: text,
+            }))
+          }
           placeholder="you@example.com"
           keyboardType="email-address"
         />
@@ -727,19 +720,21 @@ export function ContactForm() {
       <FormField label="Category">
         <Select
           selectedValue={formData.category}
-          onValueChange={(value) => setFormData(prev => ({
-            ...prev,
-            category: value
-          }))}
+          onValueChange={(value) =>
+            setFormData((prev) => ({
+              ...prev,
+              category: value,
+            }))
+          }
           options={[
-            { label: 'General', value: 'general' },
-            { label: 'Support', value: 'support' },
-            { label: 'Sales', value: 'sales' },
+            { label: "General", value: "general" },
+            { label: "Support", value: "support" },
+            { label: "Sales", value: "sales" },
           ]}
         />
       </FormField>
 
-      <Button variant="solid" onPress={handleSubmit}>
+      <Button variant="default" onPress={handleSubmit}>
         Submit
       </Button>
     </VStack>
@@ -753,13 +748,13 @@ export function ContactForm() {
 
 ### Component Name Prefix Convention
 
-| Platform | Prefix | Example |
-|----------|--------|---------|
-| React | (none) | `Button` |
-| Vue | `Kozmos` | `KozmosButton` |
-| iOS | `Kozmos` | `KozmosButton` |
-| Android | `Kozmos` | `KozmosButton` |
-| React Native | (none) | `Button` |
+| Platform     | Prefix   | Example        |
+| ------------ | -------- | -------------- |
+| React        | (none)   | `Button`       |
+| Vue          | `Kozmos` | `KozmosButton` |
+| iOS          | `Kozmos` | `KozmosButton` |
+| Android      | `Kozmos` | `KozmosButton` |
+| React Native | (none)   | `Button`       |
 
 ### Import Cheat Sheet
 
@@ -775,9 +770,9 @@ React Native: import { Button } from '@kozmos/react-native';
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial platform mapping |
+| Version | Date       | Changes                  |
+| ------- | ---------- | ------------------------ |
+| 1.0.0   | 2026-02-07 | Initial platform mapping |
 
 ---
 

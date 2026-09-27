@@ -40,7 +40,7 @@ jobs:
         run: node scripts/skills/darken-tokens.mjs
 
       - name: Execute StyleDictionary Aggregation
-        run: pnpm --filter @kozmos/tokens build
+        run: pnpm --filter @kozmos-ds/tokens build
 
       # Every native file the build writes, walked from the build: the list
       # this step kept by hand missed the effects, motion and themed colour

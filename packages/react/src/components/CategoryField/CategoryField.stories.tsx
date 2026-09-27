@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Plane, UtensilsCrossed, Bookmark } from "lucide-react";
+import { Plane, Bookmark } from "@kozmos-ds/icons";
+import { Utensils as UtensilsCrossed } from "@kozmos-ds/icons";
 import { CategoryField } from "./CategoryField";
 import { AISearchButton } from "../AISearchButton";
 import { IconButton } from "../IconButton";
-import { SlidersHorizontal } from "lucide-react";
+import { Sliders01 as SlidersHorizontal } from "@kozmos-ds/icons";
 
 const meta = {
   title: "Product SDK/CategoryField",
@@ -27,18 +28,29 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-/** In the search row, as the prototype places it: the field's place, Filters and the AI search beside. */
+/**
+ * In the search row, as the prototype places it: the field's place, Filters
+ * and the AI search beside. The row is the component's — before `trailing`
+ * this example passed `flex-1` through `className`, which an integrator
+ * composing the same pair had no way to know.
+ */
 export const InTheSearchRow: Story = {
   render: (args) => (
-    <div className="flex max-w-[402px] items-center gap-2">
-      <CategoryField {...args} className="flex-1" />
-      <IconButton
-        variant="outline"
-        size="lg"
-        aria-label="Filters"
-        icon={<SlidersHorizontal />}
+    <div className="max-w-[402px]">
+      <CategoryField
+        {...args}
+        trailing={
+          <>
+            <IconButton
+              variant="outline"
+              size="lg"
+              aria-label="Filters"
+              icon={<SlidersHorizontal />}
+            />
+            <AISearchButton />
+          </>
+        }
       />
-      <AISearchButton />
     </div>
   ),
 };

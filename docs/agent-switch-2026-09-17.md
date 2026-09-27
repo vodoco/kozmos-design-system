@@ -1,8 +1,8 @@
-# Agent switch — Claude to ChatGPT Astra, and back
+# Agent switch — the coding agent to ChatGPT Astra, and back
 
-Written 2026-09-17, when Olcay moved Kozmos development from Claude Code to ChatGPT Astra for a
+Written 2026-09-17, when Olcay moved Kozmos development from the coding agent to ChatGPT Astra for a
 while. It does two jobs. §1 to §5 hand the work **to** Astra. §6 is what Astra leaves before Olcay
-switches **back**, and §7 is what Claude does on return.
+switches **back**, and §7 is what the agent does on return.
 
 It is an entry point, not a second copy of the handoff. `docs/ds-handoff.md` holds the depth — the
 decisions, the traps, the reasoning — and is the authority on all of it. Every state claim in §2 was
@@ -26,17 +26,17 @@ start of every new Astra chat:
 
 ## 2 · Where it stands — handed over at `a02a008`
 
-| What                 | State                                                                                                                                                                                                                                                                    | Re-check with                                                                              |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `main`               | `a02a008`, followed only by this handoff's merge. CI and Release last ran on `e9f5069`: everything after it is documentation, which CI skips on a push. Every run on those commits is green                                                                              | `git log --oneline a02a008..origin/main`, `gh run list --branch main --limit 12`           |
-| Open PRs             | **none**, besides this handoff's own until it merges                                                                                                                                                                                                                     | `gh pr list --state open`                                                                  |
-| Branches on `origin` | `main`, and `codex/wayfinding-map-panel` — MAP-595's prototype, parked                                                                                                                                                                                                   | `git branch -r`                                                                            |
-| The shared checkout  | on `main` at `a02a008`, clean. The six other worktrees registered to it live under `/private/tmp/claude-501/` and are Claude's. Locally, `codex/wayfinding-map-panel` holds one commit `origin` does not (`0b3acfd`, MAP-595, 2026-09-13). Leave all of them as they are | `git status`, `git worktree list`, `git branch -vv`                                        |
-| Packages             | five, all `0.0.1`, never published, no tags; `@kozmos/vue` is private                                                                                                                                                                                                    | `npm view @kozmos/react` (E404), `git tag`                                                 |
-| Components           | 98 in `packages/react/src/components`, beside one file, `PlatformSnippets.tsx`. `STATUS.md`: Core 69, Code-only 5, Product / SDK 22, Platform 2 — every lane complete on web, iOS and Android                                                                            | `find packages/react/src/components -mindepth 1 -maxdepth 1 -type d \| wc -l`, `STATUS.md` |
-| Tests                | React 353 in 103 files · iOS 57 · Android 25 JVM tests, one of them the Paparazzi snapshot                                                                                                                                                                               | §5                                                                                         |
-| Figma                | Core Library `Yj4O8p6Y9h2Sa9zJVoAiVY`: 95 of 95 sets, variant drift clean; 71 painted by the current plugin build `dd9f78a05cc0`, the 24 Product / SDK sets by `3e597100b157`                                                                                            | `pnpm figma:verify`                                                                        |
-| CI                   | green, but `UI Tests` is **always pending** — Chromatic's plan is on its limit, so that is the normal state of a green PR                                                                                                                                                | `gh pr checks <n>`                                                                         |
+| What                 | State                                                                                                                                                                                                                                                                       | Re-check with                                                                              |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `main`               | `a02a008`, followed only by this handoff's merge. CI and Release last ran on `e9f5069`: everything after it is documentation, which CI skips on a push. Every run on those commits is green                                                                                 | `git log --oneline a02a008..origin/main`, `gh run list --branch main --limit 12`           |
+| Open PRs             | **none**, besides this handoff's own until it merges                                                                                                                                                                                                                        | `gh pr list --state open`                                                                  |
+| Branches on `origin` | `main`, and `codex/wayfinding-map-panel` — MAP-595's prototype, parked                                                                                                                                                                                                      | `git branch -r`                                                                            |
+| The shared checkout  | on `main` at `a02a008`, clean. The six other worktrees registered to it live under `/private/tmp/claude-501/` and are the agent's. Locally, `codex/wayfinding-map-panel` holds one commit `origin` does not (`0b3acfd`, MAP-595, 2026-09-13). Leave all of them as they are | `git status`, `git worktree list`, `git branch -vv`                                        |
+| Packages             | five, all `0.0.1`, never published, no tags; `@kozmos/vue` is private                                                                                                                                                                                                       | `npm view @kozmos/react` (E404), `git tag`                                                 |
+| Components           | 98 in `packages/react/src/components`, beside one file, `PlatformSnippets.tsx`. `STATUS.md`: Core 69, Code-only 5, Product / SDK 22, Platform 2 — every lane complete on web, iOS and Android                                                                               | `find packages/react/src/components -mindepth 1 -maxdepth 1 -type d \| wc -l`, `STATUS.md` |
+| Tests                | React 353 in 103 files · iOS 57 · Android 25 JVM tests, one of them the Paparazzi snapshot                                                                                                                                                                                  | §5                                                                                         |
+| Figma                | Core Library `Yj4O8p6Y9h2Sa9zJVoAiVY`: 95 of 95 sets, variant drift clean; 71 painted by the current plugin build `dd9f78a05cc0`, the 24 Product / SDK sets by `3e597100b157`                                                                                               | `pnpm figma:verify`                                                                        |
+| CI                   | green, but `UI Tests` is **always pending** — Chromatic's plan is on its limit, so that is the normal state of a green PR                                                                                                                                                   | `gh pr checks <n>`                                                                         |
 
 **In flight: nothing.** Two SDK components have been rebuilt so far — the POI detail card
 (`ds-handoff.md` §11.1) and the map mode toggle (§11.3).
@@ -66,7 +66,7 @@ and never runs `npm publish` or `changeset publish`.
 ## 3 · Read in this order
 
 1. `docs/ds-handoff.md`, all of it. §2 is how Olcay works, §5 the decisions that must not be
-   reopened (23 of them), §8 the traps that have cost real time. Its §0 and §8 name Claude's memory
+   reopened (23 of them), §8 the traps that have cost real time. Its §0 and §8 name the agent's memory
    files, which are not in the repository — §4 below says where they are, and what in them matters
    to anyone else.
 2. `docs/style-playbook.md` — how to change how Kozmos looks without the platforms drifting.
@@ -76,7 +76,7 @@ and never runs `npm publish` or `changeset publish`.
 
 ## 4 · The working agreement
 
-These are what made the work reliable. None is a Claude preference; each has a failure behind it,
+These are what made the work reliable. None is an agent preference; each has a failure behind it,
 and most are recorded in `ds-handoff.md` §8 and §10.
 
 **Olcay's standing instruction**, repeated most turns:
@@ -103,7 +103,7 @@ and most are recorded in `ds-handoff.md` §8 and §10.
   Record each ruling in `ds-handoff.md` §5, numbered on from **24**, so nobody asks it again.
 - **Never delete a project directory, a checkout, or a worktree with anything in it, and never offer
   deleting one as tidying.** "Get rid of X" has meant "stop using X" every time, and a checkout holds
-  what git does not — `.env`, `local.properties`, unpushed commits. On 2026-08-28 Claude proposed
+  what git does not — `.env`, `local.properties`, unpushed commits. On 2026-08-28 the agent proposed
   deleting a checkout as a next step, Olcay agreed to that wording, and a 4.4 GB clone went to the
   Trash. If deleting something is ever the right answer, say exactly what disappears.
 - **Never erase a simulator or an emulator** without asking.
@@ -114,7 +114,7 @@ and most are recorded in `ds-handoff.md` §8 and §10.
   other sessions. Never commit on `main` there, never `git add -A` or a directory, never reset or
   switch a branch another session is using. Build each change in its own `git worktree`.
 - **Name branches `astra/<topic>`** from now on. The existing `codex/` names are history; the prefix
-  is what lets the reverse handoff tell whose work is whose. Claude will use `claude/<topic>`.
+  is what lets the reverse handoff tell whose work is whose. The agent will use `claude/<topic>`.
 - **Push, edit a PR or merge only on Olcay's go-ahead** ("push the branch"). Commit when asked, or
   as the natural end of a "proceed".
 - One PR per change. **Wait for CI before merging**, however complete local verification is (ruling
@@ -156,12 +156,12 @@ and most are recorded in `ds-handoff.md` §8 and §10.
   needed; recorded as expiring **2026-11-24**), used by `pnpm figma:verify` and the REST scripts.
   Never commit it, and never paste it into a chat — this one included.
 
-**What only Claude's memory held**
+**What only the agent's memory held**
 
-Claude keeps notes outside the repository, in
+The agent keeps notes outside the repository, in
 `~/.claude/projects/-Volumes-4TB-Depo-development-K-kozmos-design-system-dev/memory/` — no secret is
 in them (searched for token patterns on 2026-09-17). `ds-handoff.md` §8 carries what most of them
-say, and many of the rest are about Claude's own tools. These matter to anyone and are not in the
+say, and many of the rest are about the agent's own tools. These matter to anyone and are not in the
 handoff — the never-delete rule above was one:
 
 - **A library component's name is not its shape.** In the product's `Kozmos | Core (PDS Core)`
@@ -175,7 +175,7 @@ handoff — the never-delete rule above was one:
 - **A disabled Button in Figma** is the idle variant at 50% layer opacity, unbound: `State=Disabled`
   paints charcoal, and the `Opacity/50` variable binds as 0.5%. This and the stroke are recorded, for
   MAP-595, in `docs/map-595-figma-2026-09-07.md`.
-- **Plugin API behaviour**, measured through Claude's Figma connector, which runs Plugin API code in
+- **Plugin API behaviour**, measured through the agent's Figma connector, which runs Plugin API code in
   the file: `setBoundVariableForPaint` drops the paint's `opacity`; `clone()` of a section's child
   lands on the page; `itemReverseZIndex` throws on a frame without auto-layout. Check them before
   relying on the opposite in `code.js`.
@@ -221,12 +221,12 @@ the script to lock the gain in: `tokens:raw:check`, `components:classes:check`, 
 
 ## 6 · The reverse handoff — what Astra leaves before Olcay switches back
 
-Olcay should be able to say "I'm back" and have Claude start from facts. So before the switch, Astra
+Olcay should be able to say "I'm back" and have the agent start from facts. So before the switch, Astra
 does all of this:
 
 1. **Nothing uncommitted anywhere.** The shared checkout is as it was handed over — on `main`,
    clean — and every piece of work is on an `astra/` branch with a PR, merged or open with its state
-   stated. Claude's worktrees and the local `codex/wayfinding-map-panel` are untouched.
+   stated. The agent's worktrees and the local `codex/wayfinding-map-panel` are untouched.
 2. **`docs/ds-handoff.md` brought up to date**, as each earlier session left it: the header date; §0's
    paste-in message; §3's state table, **re-measured** with the command beside each number; §5's new
    rulings from 24; §6 and §6.3; a §10 log section headed with its dates and "(Astra)"; §11 for any
@@ -252,15 +252,15 @@ does all of this:
    - **what is next**, in Astra's judgement.
 4. **Index** the handback in `docs/README.md`.
 
-## 7 · When Olcay switches back to Claude
+## 7 · When Olcay switches back to the coding agent
 
-Paste this to Claude:
+Paste this to the coding agent:
 
 > I'm back from ChatGPT Astra. Read `docs/agent-switch-2026-09-17.md` §7, the newest
 > `docs/agent-handback-*.md` and `docs/ds-handoff.md`, then verify the state before starting
 > anything.
 
-Claude then, before any new work:
+The coding agent then, before any new work:
 
 1. Fetches, and reads `git log --oneline a02a008..origin/main`, the open PRs, the branches and
    `main`'s CI — against the handback's own account of them.

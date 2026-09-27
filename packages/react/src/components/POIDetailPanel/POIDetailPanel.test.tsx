@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { POIAction, POIPresentation } from "@kozmos/product-contracts";
+import type { POIAction, POIPresentation } from "@kozmos-ds/product-contracts";
 import { describe, expect, it, vi } from "vitest";
 import { POIDetailPanel } from "./POIDetailPanel";
 import { POIDetailAssetIcon } from "./POIDetailContent";

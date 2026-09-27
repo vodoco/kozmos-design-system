@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "../../utils";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import { Button } from "../Button";
-import { X, Navigation } from "lucide-react";
+import { X, NavigationPointer01 as Navigation } from "@kozmos-ds/icons";
 
 interface RouteSummaryBaseProps extends React.HTMLAttributes<HTMLDivElement> {
   distanceText: string;

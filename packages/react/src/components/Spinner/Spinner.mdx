@@ -7,13 +7,27 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # Spinner
 
-Displays the Spinner interface topology natively.
+Indeterminate loading: three quarters of a circle, turning. Use it when a wait has no measurable progress — `Progress` is the one that knows how far along it is.
+
+The mark is the system's own arc, the same drawing on React, SwiftUI, Compose and in Figma: radius 9 in the icons' 24 box, round caps, stroke 2, so its weight scales with its size exactly as every Kozmos icon's does. It takes its colour from the text around it, so a spinner on a themed surface follows the theme without being told. The quarter that is missing is what reads as motion; a full ring turning shows nothing at all.
 
 <Canvas>
-  <Story of={SpinnerStories.Default} />
+  <Story of={SpinnerStories.EverySize} />
 </Canvas>
 
+The four sizes are the `Spinner/size` scale — 16, 24, 32 and 48.
+
 <Controls />
+
+## Waiting, said out loud
+
+The component carries `role="status"` and a visually hidden `label`, so the wait is announced and not only drawn. The turn stops under `prefers-reduced-motion`, and the label is what still says what is happening when it does — which is why it is not decorative and why an empty one is wrong.
+
+A control that is already busy should not hold a second live region. `Button` draws the same arc directly for `isLoading` rather than nesting a `Spinner`.
+
+<Canvas>
+  <Story of={SpinnerStories.InAButton} />
+</Canvas>
 
 ## Implementation
 
@@ -21,48 +35,29 @@ Displays the Spinner interface topology natively.
 
 <PlatformSnippets
     react={`
-import { Spinner } from "@kozmos/react";
+import { Spinner } from "@kozmos-ds/react";
+
 export function Example() {
-  return (
-    <>
-      <Spinner />
-    </>
-  );
+  return <Spinner size="lg" label="Loading places" />;
 }
     `}
     vue={`
 <script setup>
-import { KozmosSpinner } from "@kozmos/vue"
+import { KozmosSpinner } from "@kozmos-ds/vue"
 </script>
 
 <template>
-  <KozmosSpinner />
+  <KozmosSpinner size="lg" label="Loading places" />
 </template>
     `}
     swift={`
 import SwiftUI
 
-KozmosSpinner()
+KozmosSpinner(size: .lg, label: "Loading places")
+// A control with a foreground of its own passes it in:
+// KozmosSpinner(size: .sm, color: foregroundColor)
 `}
     kotlin={`
-package com.kozmos.components.spinner
-
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.kozmos.tokens.KozmosColors
-
-@Composable
-fun KozmosSpinner(
-modifier: Modifier = Modifier
-) {
-CircularProgressIndicator(
-modifier = modifier,
-color = KozmosColors.primitivesColorsTheme500
-)
-}
-
+KozmosSpinner(size = KozmosSpinnerSize.Lg, label = "Loading places")
     `}
-
 />

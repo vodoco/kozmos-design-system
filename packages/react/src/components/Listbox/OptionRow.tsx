@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import { Check } from "lucide-react";
+import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import type { ComboboxOption } from "../Combobox";
 

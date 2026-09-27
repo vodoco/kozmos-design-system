@@ -4,7 +4,7 @@ import {
   DatePicker,
   DateRangePicker,
   TimePicker,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 function Fields({ id }: { id: string }) {
   return (

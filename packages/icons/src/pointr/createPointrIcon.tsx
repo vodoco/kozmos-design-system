@@ -1,5 +1,6 @@
 import * as React from "react";
-import type { LucideProps } from "lucide-react";
+
+import type { KozmosIconProps } from "../iconProps";
 
 /**
  * One path of a Pointr icon, as exported from the Pointr Icon Library.
@@ -29,10 +30,10 @@ export function createPointrIcon(
   paths: readonly PointrIconPath[],
 ) {
   // `children` is omitted deliberately. An icon has no children, and taking
-  // them from `LucideProps` dragged React's `ReactNode` into this file —
+  // them from `KozmosIconProps` dragged React's `ReactNode` into this file —
   // which broke the build wherever `lucide-react`'s types resolve to a
   // different `@types/react` than this package's, as CI's does.
-  const Component = React.forwardRef<SVGSVGElement, Omit<LucideProps, "children">>(
+  const Component = React.forwardRef<SVGSVGElement, KozmosIconProps>(
     (
       {
         color = "currentColor",

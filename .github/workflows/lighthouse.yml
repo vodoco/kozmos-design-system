@@ -7,29 +7,38 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".vscode/**"
+      - "LICENSE"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
-          
+
       - name: Install dependencies
         run: pnpm install
-        
+
       - name: Build workspace topology
-        run: pnpm turbo run build --filter=@kozmos/docs
-        
+        run: pnpm turbo run build --filter=@kozmos-ds/docs
+
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v12
         with:

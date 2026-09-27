@@ -5,7 +5,7 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { splitOverrideLines } from "../mock/overrideLines";
 import {
   changeAccent,

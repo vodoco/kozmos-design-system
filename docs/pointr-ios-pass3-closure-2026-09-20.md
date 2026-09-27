@@ -1,6 +1,6 @@
 # Pointr iOS — Pass 3 closed: the marker, the no-route case, readiness, the iPad, VoiceOver, 20 September 2026
 
-Claude Code, continuing the [handoff after Pass 3](claude-code-handoff-2026-09-19-pass3.md), its
+The coding agent, continuing the [handoff after Pass 3](handoff-2026-09-19-pass3.md), its
 §11 item 2: the five leftovers Pass 3 recorded for itself. Branch `claude/pointr-browse-repairs`,
 still unpushed, in `/private/tmp/kozmos-browser-compat.uqPMBD`. No Cloud content was changed.
 Every measurement below is from the real QA app on Design-QA: the iPhone 17 Pro simulator

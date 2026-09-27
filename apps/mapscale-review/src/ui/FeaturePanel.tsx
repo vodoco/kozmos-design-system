@@ -18,7 +18,7 @@ import {
   Separator,
   Switch,
   Text,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { PanelHeader, PANEL_PAD } from "./PanelHeader";
 import {
   CLASS_LABEL,

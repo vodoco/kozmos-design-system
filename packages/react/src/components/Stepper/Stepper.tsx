@@ -1,5 +1,5 @@
 import React from "react";
-import { Check } from "lucide-react";
+import { Check } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
 export interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {

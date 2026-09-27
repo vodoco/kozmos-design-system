@@ -236,6 +236,63 @@ final class KozmosSearchSheetTests: XCTestCase {
         XCTAssertEqual(clear.midY, 50, accuracy: 2, "the clear circle is not centred in a 44 field")
     }
 
+    /// The system's loading arc: three quarters of a circle at the size asked
+    /// for, in the theme's ink, and still when less motion is asked for.
+    ///
+    /// Android has goldens for this and iOS had nothing — the asymmetry is the
+    /// reason for this test. A quarter missing is what reads as motion, so it
+    /// is measured: the drawn box is the size, and the gap in the ring is real.
+    @MainActor func testTheSpinnerIsThreeQuartersOfACircle() async throws {
+        let view = KozmosSpinner(size: .xl)
+            .padding(16)
+            .background(Color.white)
+        let size = CGSize(width: 80, height: 80)
+        let pixels = try await RenderedPixels.render(view, size: size)
+        let ring = try XCTUnwrap(
+            pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: RenderedPixels.isDarkText),
+            "no arc drawn"
+        )
+        XCTAssertEqual(ring.width, 40, accuracy: 3, "the arc is not radius 9 in a 48 box: \(ring)")
+        XCTAssertEqual(ring.height, 40, accuracy: 3, "the arc is not radius 9 in a 48 box: \(ring)")
+        // The gap: a full ring would paint on both sides of the centre line at
+        // every angle. Three quarters leaves one quadrant empty — here the
+        // upper-left, before the turn starts.
+        let quadrant = CGRect(x: 16, y: 16, width: 20, height: 20)
+        XCTAssertNil(
+            pixels.boundingBox(in: quadrant, where: RenderedPixels.isDarkText),
+            "the arc has no gap: it is a full ring, not three quarters"
+        )
+    }
+
+    /// The search row through the field's own trailing slot: the field and the
+    /// assistant on one line, the assistant's 48 at the end, eight between
+    /// them. The row is the component's — composed by hand on the web the pair
+    /// landed on two lines, because the field is as wide as its container.
+    @MainActor func testTheTrailingSlotKeepsTheAssistantBesideTheField() async throws {
+        let view = KozmosSearchBar(text: .constant(""), placeholder: "Search") {
+            KozmosAISearchButton(action: {})
+        }
+        .frame(width: 320)
+        .padding(16)
+        .background(Color.white)
+        let size = CGSize(width: 352, height: 96)
+        let pixels = try await RenderedPixels.render(view, size: size)
+        // The ring is the only saturated thing here; the field is white on white.
+        let ring = try XCTUnwrap(
+            pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: Self.isSaturated),
+            "no assistant in the row"
+        )
+        XCTAssertEqual(ring.width, 48, accuracy: 2, "the assistant is not 48: \(ring)")
+        XCTAssertEqual(ring.maxX, 336, accuracy: 2, "the assistant is not at the end of the 320 row: \(ring)")
+        XCTAssertEqual(ring.midY, 48, accuracy: 2, "the assistant is not centred on the field's line: \(ring)")
+        // One line: the row is the assistant's 48, not a field stacked on it.
+        let drawn = try XCTUnwrap(
+            pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: { r, g, b in r < 250 || g < 250 || b < 250 }),
+            "nothing drawn"
+        )
+        XCTAssertLessThan(drawn.height, 60, "the row is more than one control tall: \(drawn)")
+    }
+
     /// The marker: an 18 dot inside a 64 halo.
     @MainActor func testTheMarkerIsAnEighteenDotInASixtyFourHalo() async throws {
         let view = KozmosUserLocationMarker(showHeading: false).padding(8).background(Color.white)

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
-import type { POIAction, POIPresentation } from "@kozmos/product-contracts";
+import type { POIAction, POIPresentation } from "@kozmos-ds/product-contracts";
 import { POIDetailPanel } from "./POIDetailPanel";
 
 const actionLabels: Record<POIAction, string> = {

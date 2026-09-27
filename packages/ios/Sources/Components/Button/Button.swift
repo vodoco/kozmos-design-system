@@ -64,9 +64,13 @@ public struct KozmosButton: View {
         Button(action: action) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                 if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(foregroundColor)
+                    // The system's arc at the small size, not `ProgressView`:
+                    // one drawing on all four platforms (2026-09-22). Hidden
+                    // from assistive technology — the button is already
+                    // disabled and named, and a second live region for one
+                    // wait is a defect.
+                    KozmosSpinner(size: .sm, color: foregroundColor)
+                        .accessibilityHidden(true)
                 }
                 Text(label)
                     .font(KozmosTypography.subheadline)

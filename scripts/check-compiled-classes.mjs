@@ -148,7 +148,7 @@ console.log("Classes that compile to nothing\n");
 const cssPath = path.join(ROOT, CSS);
 if (!fs.existsSync(cssPath)) {
   fail(
-    `${CSS} does not exist. Build it first — pnpm --filter "@kozmos/react..." build — because this check reads what actually shipped, and without it every class would look absent.`,
+    `${CSS} does not exist. Build it first — pnpm --filter "@kozmos-ds/react..." build — because this check reads what actually shipped, and without it every class would look absent.`,
   );
   console.log(`\n${problems.length} problem(s)`);
   process.exit(1);

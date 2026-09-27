@@ -1,5 +1,6 @@
 import * as React from "react";
-import type { LucideProps } from "lucide-react";
+
+import type { KozmosIconProps } from "../iconProps";
 
 /** One path of a taxonomy symbol, as the taxonomy publishes it. */
 export interface TaxonomyIconPath {
@@ -27,10 +28,7 @@ export function createTaxonomyIcon(
   paths: readonly TaxonomyIconPath[],
 ) {
   // `children` is omitted as it is for a Pointr icon: see createPointrIcon.
-  const Component = React.forwardRef<
-    SVGSVGElement,
-    Omit<LucideProps, "children">
-  >(
+  const Component = React.forwardRef<SVGSVGElement, KozmosIconProps>(
     (
       {
         color = "currentColor",

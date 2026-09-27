@@ -1,6 +1,6 @@
 # Directions for transitions, 20 September 2026
 
-Claude Code, in Olcay's order after the glass and sheet stages, on his answer "each platform's
+The coding agent, in Olcay's order after the glass and sheet stages, on his answer "each platform's
 own icon set": the design system's `DirectionType` had four arrows and no way to say a lift, an
 escalator or stairs, so "Take Elevator down to First Floor" carried a straight arrow on the card,
 the rail and the itinerary alike — the gap recorded since Pass 3. Built on iOS, React and

@@ -13,14 +13,14 @@ export default defineConfig({
             fileName: (format) => format === 'es' ? 'kozmos-vue.mjs' : 'kozmos-vue.umd.cjs',
         },
         rollupOptions: {
-            external: ['vue', 'react', 'react-dom', 'react-dom/client', '@kozmos/react'],
+            external: ['vue', 'react', 'react-dom', 'react-dom/client', '@kozmos-ds/react'],
             output: {
                 globals: {
                     vue: 'Vue',
                     react: 'React',
                     'react-dom': 'ReactDOM',
                     'react-dom/client': 'ReactDOMClient',
-                    '@kozmos/react': 'KozmosReact'
+                    '@kozmos-ds/react': 'KozmosReact'
                 }
             }
         }

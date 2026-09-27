@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -20,6 +19,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import com.kozmos.components.spinner.KozmosSpinner
+import com.kozmos.components.spinner.KozmosSpinnerSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import com.kozmos.tokens.KozmosDimensions
@@ -195,10 +197,16 @@ private fun RowScope.ButtonContent(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (isLoading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(14.dp),
-                color = LocalContentColor.current,
-                strokeWidth = 2.dp
+            // The system's arc at the small size, not material3's indicator:
+            // one drawing on all four platforms (2026-09-22). material3 1.1.2's
+            // indeterminate indicator is also the one Paparazzi cannot render
+            // against animation-core 1.6.0, so no golden has ever shown a
+            // loading button. Cleared from semantics — the button is already
+            // disabled and named.
+            KozmosSpinner(
+                modifier = Modifier.clearAndSetSemantics {},
+                size = KozmosSpinnerSize.Sm,
+                color = LocalContentColor.current
             )
         }
         content()

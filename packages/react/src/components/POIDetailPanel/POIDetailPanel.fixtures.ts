@@ -2,7 +2,7 @@ import type {
   POIAction,
   POIDetailsPresentation,
   POIPresentation,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 
 import { presentTaxonomyProperties } from "./POITaxonomy.fixtures";
 

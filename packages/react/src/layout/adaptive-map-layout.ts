@@ -3,7 +3,7 @@ import type {
   MapCollisionInsets,
   MapLayoutRect,
   MapPanelPresentation,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 type LayoutRect = MapLayoutRect;
 type LayoutInsets = MapCollisionInsets;
 export interface AdaptiveMapLayoutInput {

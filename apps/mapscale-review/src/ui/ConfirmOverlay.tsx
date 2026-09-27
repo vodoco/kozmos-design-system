@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Button, Icon } from "@kozmos/react";
+import { Button, Icon } from "@kozmos-ds/react";
 
 /**
  * v9's confirmation overlay (Figma b8dqhE3CPxitYfqlXuQJTC · 7581:268934 — the `error` component

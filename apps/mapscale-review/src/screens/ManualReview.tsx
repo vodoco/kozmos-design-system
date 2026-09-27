@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { ChangeGroupBlock } from "../ui/ChangeGroup";
 import { FeaturePanel, FEATURE_PANEL_WIDTH } from "../ui/FeaturePanel";
 import { typeLabel } from "../mock/taxonomy";

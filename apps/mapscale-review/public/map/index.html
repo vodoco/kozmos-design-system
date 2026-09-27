@@ -182,7 +182,7 @@ function missingConfig() {
 // ⚠️ The ONE deliberate copy of the diff palette. Everywhere else in the app these are DS tokens
 // (`--semantics-diff-*`, added 2026-08-11) — but this page is a standalone iframe that never loads
 // the DS stylesheet, so `var()` here would resolve to nothing and every shape would draw black.
-// The values must stay in step with `Semantics/Diff` in @kozmos/tokens and CHANGE_COLORS in diff.ts.
+// The values must stay in step with `Semantics/Diff` in @kozmos-ds/tokens and CHANGE_COLORS in diff.ts.
 // (Making the map theme-aware means posting the resolved values in `prefs` — a real follow-up.)
 const COLORS = { new:"#2FBF71", updated:"#3B82F6", geometry:"#3B82F6", metadata:"#3B82F6", deleted:"#EF4444", preserved:"#9C6EFF" };
 

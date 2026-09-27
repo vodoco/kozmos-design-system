@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Button, Text } from "@kozmos/react";
+import { Button, Text } from "@kozmos-ds/react";
 import PointrMap, {
   type MapCamera,
   type PointrMapHandle,

@@ -76,3 +76,21 @@ export function mergeAriaIds(...values: (string | undefined)[]) {
   const ids = values.flatMap((value) => value?.trim().split(/\s+/) ?? []);
   return [...new Set(ids.filter(Boolean))].join(" ") || undefined;
 }
+
+/**
+ * A POI's floor and building, joined the way every platform joins them.
+ *
+ * Kotlin and Swift both derive this on the model with " · ". The web had no
+ * shared derivation, so two components each built it by hand — and
+ * POIDetailPanel had drifted to " / " while POIResultCard used " · ", which is
+ * the same place described two ways in one product.
+ *
+ * Exported, so a product composing its own row joins them identically rather
+ * than inventing a third separator.
+ */
+export function poiLocationLabel(poi: {
+  floorLabel?: string;
+  buildingLabel?: string;
+}): string {
+  return [poi.floorLabel, poi.buildingLabel].filter(Boolean).join(" · ");
+}

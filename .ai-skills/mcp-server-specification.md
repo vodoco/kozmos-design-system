@@ -1,4 +1,11 @@
+<!-- kozmos-skills: specification -->
+
 # Kozmos MCP Server Specification
+
+> **Not built.** This specifies a server that does not exist yet, so the
+> package name and install commands below are proposals rather than something
+> you can run today. `pnpm skills:check` allows them because of the marker on
+> the first line of this file.
 
 > **Purpose:** This document specifies the Model Context Protocol (MCP) server for Kozmos Design System, enabling AI agents (Claude, Cursor, Anti Gravity, Copilot, and others) to interact with components, tokens, and patterns programmatically.
 
@@ -33,16 +40,16 @@ The Kozmos MCP Server exposes the design system to AI agents via the Model Conte
 
 ### Supported AI Agents
 
-| Agent | Integration Method | Status |
-|-------|-------------------|--------|
-| **Claude** (Anthropic) | MCP Native | ✅ Full Support |
-| **Claude Code** | MCP Native | ✅ Full Support |
-| **Cursor** | MCP via config | ✅ Full Support |
-| **Anti Gravity** | MCP Native | ✅ Full Support |
-| **GitHub Copilot** | Context files + Extension | 🟡 Partial |
-| **Codeium** | Context files | 🟡 Partial |
-| **Amazon Q** | Context files | 🟡 Partial |
-| **JetBrains AI** | Context files | 🟡 Partial |
+| Agent                  | Integration Method        | Status          |
+| ---------------------- | ------------------------- | --------------- |
+| **Claude** (Anthropic) | MCP Native                | ✅ Full Support |
+| **Claude Code**        | MCP Native                | ✅ Full Support |
+| **Cursor**             | MCP via config            | ✅ Full Support |
+| **Anti Gravity**       | MCP Native                | ✅ Full Support |
+| **GitHub Copilot**     | Context files + Extension | 🟡 Partial      |
+| **Codeium**            | Context files             | 🟡 Partial      |
+| **Amazon Q**           | Context files             | 🟡 Partial      |
+| **JetBrains AI**       | Context files             | 🟡 Partial      |
 
 ### Key Benefits
 
@@ -65,7 +72,7 @@ The Kozmos MCP Server exposes the design system to AI agents via the Model Conte
                                       │ MCP Protocol (JSON-RPC over stdio)
                                       │
 ┌─────────────────────────────────────┴───────────────────────────────────┐
-│                         @kozmos/mcp-server                              │
+│                         @kozmos-ds/mcp-server                              │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │
@@ -83,7 +90,7 @@ The Kozmos MCP Server exposes the design system to AI agents via the Model Conte
 │  │                      Data Layer                                  │  │
 │  │                                                                  │  │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │  │
-│  │  │ @kozmos/     │  │ @kozmos/     │  │ .ai-skills/  │          │  │
+│  │  │ @kozmos-ds/     │  │ @kozmos-ds/     │  │ .ai-skills/  │          │  │
 │  │  │ tokens       │  │ react (etc.) │  │ (docs)       │          │  │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘          │  │
 │  └─────────────────────────────────────────────────────────────────┘  │
@@ -135,10 +142,10 @@ packages/mcp-server/
 
 ```bash
 # Global installation (recommended for system-wide use)
-npm install -g @kozmos/mcp-server
+npm install -g @kozmos-ds/mcp-server
 
 # Or in a project
-pnpm add -D @kozmos/mcp-server
+pnpm add -D @kozmos-ds/mcp-server
 ```
 
 ### Configuration for Claude Desktop
@@ -150,7 +157,7 @@ pnpm add -D @kozmos/mcp-server
   "mcpServers": {
     "kozmos": {
       "command": "npx",
-      "args": ["@kozmos/mcp-server"],
+      "args": ["@kozmos-ds/mcp-server"],
       "env": {
         "KOZMOS_PROJECT_ROOT": "/path/to/your/project"
       }
@@ -167,7 +174,7 @@ pnpm add -D @kozmos/mcp-server
   "mcpServers": {
     "kozmos": {
       "command": "npx",
-      "args": ["@kozmos/mcp-server"],
+      "args": ["@kozmos-ds/mcp-server"],
       "cwd": "."
     }
   }
@@ -182,7 +189,7 @@ pnpm add -D @kozmos/mcp-server
   "servers": {
     "kozmos": {
       "command": "npx",
-      "args": ["@kozmos/mcp-server"],
+      "args": ["@kozmos-ds/mcp-server"],
       "cwd": "${workspaceFolder}"
     }
   }
@@ -198,7 +205,7 @@ pnpm add -D @kozmos/mcp-server
     "servers": [
       {
         "name": "kozmos",
-        "command": "npx @kozmos/mcp-server",
+        "command": "npx @kozmos-ds/mcp-server",
         "transport": "stdio"
       }
     ]
@@ -215,6 +222,7 @@ pnpm add -D @kozmos/mcp-server
 Retrieves detailed information about a component.
 
 **Input Schema:**
+
 ```typescript
 {
   name: string;           // Component name (e.g., "Button", "Modal")
@@ -224,6 +232,7 @@ Retrieves detailed information about a component.
 ```
 
 **Output:**
+
 ```typescript
 {
   name: string;
@@ -239,6 +248,7 @@ Retrieves detailed information about a component.
 ```
 
 **Example Usage:**
+
 ```
 AI: I need to use the Button component in React
 
@@ -272,6 +282,7 @@ Response:
 Retrieves token values across platforms.
 
 **Input Schema:**
+
 ```typescript
 {
   path: string;           // Token path (e.g., "color.text.primary", "space.400")
@@ -281,6 +292,7 @@ Retrieves token values across platforms.
 ```
 
 **Output:**
+
 ```typescript
 {
   path: string;
@@ -297,6 +309,7 @@ Retrieves token values across platforms.
 ```
 
 **Example Usage:**
+
 ```
 AI: What's the primary text color token?
 
@@ -324,6 +337,7 @@ Response:
 Searches for tokens by name or value.
 
 **Input Schema:**
+
 ```typescript
 {
   query: string;          // Search query
@@ -333,6 +347,7 @@ Searches for tokens by name or value.
 ```
 
 **Output:**
+
 ```typescript
 {
   results: TokenResult[];
@@ -347,6 +362,7 @@ Searches for tokens by name or value.
 Generates component code following Kozmos patterns.
 
 **Input Schema:**
+
 ```typescript
 {
   name: string;           // Component name (PascalCase)
@@ -361,6 +377,7 @@ Generates component code following Kozmos patterns.
 ```
 
 **Output:**
+
 ```typescript
 {
   files: GeneratedFile[];
@@ -369,6 +386,7 @@ Generates component code following Kozmos patterns.
 ```
 
 **Example Usage:**
+
 ```
 AI: Create a Tooltip component for React
 
@@ -403,6 +421,7 @@ Response:
 Validates code against Kozmos patterns and guidelines.
 
 **Input Schema:**
+
 ```typescript
 {
   code: string;           // Code to validate
@@ -412,6 +431,7 @@ Validates code against Kozmos patterns and guidelines.
 ```
 
 **Output:**
+
 ```typescript
 {
   valid: boolean;
@@ -422,6 +442,7 @@ Validates code against Kozmos patterns and guidelines.
 ```
 
 **Example Usage:**
+
 ```
 AI: Is this Button usage correct?
 
@@ -458,6 +479,7 @@ Response:
 Lists all available components with filtering.
 
 **Input Schema:**
+
 ```typescript
 {
   platform?: string;      // Filter by platform
@@ -467,6 +489,7 @@ Lists all available components with filtering.
 ```
 
 **Output:**
+
 ```typescript
 {
   components: ComponentSummary[];
@@ -481,6 +504,7 @@ Lists all available components with filtering.
 Retrieves a code pattern or best practice.
 
 **Input Schema:**
+
 ```typescript
 {
   pattern: string;        // Pattern name (e.g., "compound-component", "form-validation")
@@ -489,6 +513,7 @@ Retrieves a code pattern or best practice.
 ```
 
 **Output:**
+
 ```typescript
 {
   name: string;
@@ -506,6 +531,7 @@ Retrieves a code pattern or best practice.
 Performs accessibility audit on component code.
 
 **Input Schema:**
+
 ```typescript
 {
   code: string;
@@ -514,6 +540,7 @@ Performs accessibility audit on component code.
 ```
 
 **Output:**
+
 ```typescript
 {
   score: number;          // 0-100
@@ -698,7 +725,9 @@ import type { KozmosData } from "../data/index.js";
 
 export const GetComponentSchema = z.object({
   name: z.string().describe("Component name"),
-  platform: z.enum(["react", "vue", "ios", "android", "react-native"]).optional(),
+  platform: z
+    .enum(["react", "vue", "ios", "android", "react-native"])
+    .optional(),
   includeExamples: z.boolean().optional().default(true),
 });
 
@@ -734,7 +763,9 @@ export function registerComponentTools(server: Server, data: KozmosData) {
       if (args.platform) {
         result = {
           ...component,
-          examples: component.examples.filter((e) => e.platform === args.platform),
+          examples: component.examples.filter(
+            (e) => e.platform === args.platform,
+          ),
           props: component.props[args.platform] || component.props.common,
         };
       }
@@ -826,8 +857,14 @@ export async function loadKozmosData(): Promise<KozmosData> {
   const projectRoot = process.env.KOZMOS_PROJECT_ROOT || process.cwd();
 
   // Try to load from installed packages first
-  const tokensPath = resolvePackage("@kozmos/tokens/build/json/tokens.json", projectRoot);
-  const componentsPath = resolvePackage("@kozmos/react/dist/components.json", projectRoot);
+  const tokensPath = resolvePackage(
+    "@kozmos-ds/tokens/build/json/tokens.json",
+    projectRoot,
+  );
+  const componentsPath = resolvePackage(
+    "@kozmos-ds/react/dist/components.json",
+    projectRoot,
+  );
 
   // Fall back to .ai-skills directory
   const skillsPath = resolve(projectRoot, ".ai-skills");
@@ -876,7 +913,7 @@ function resolvePackage(packagePath: string, root: string): string | null {
   "mcpServers": {
     "kozmos": {
       "command": "npx",
-      "args": ["@kozmos/mcp-server"],
+      "args": ["@kozmos-ds/mcp-server"],
       "env": {
         "KOZMOS_PROJECT_ROOT": "${workspaceFolder}"
       }
@@ -893,7 +930,7 @@ function resolvePackage(packagePath: string, root: string): string | null {
   "servers": {
     "kozmos": {
       "command": "npx",
-      "args": ["@kozmos/mcp-server"],
+      "args": ["@kozmos-ds/mcp-server"],
       "cwd": "${workspaceFolder}"
     }
   }
@@ -907,7 +944,7 @@ function resolvePackage(packagePath: string, root: string): string | null {
 mcp:
   servers:
     - name: kozmos
-      command: npx @kozmos/mcp-server
+      command: npx @kozmos-ds/mcp-server
       transport: stdio
       env:
         KOZMOS_PROJECT_ROOT: .
@@ -922,7 +959,7 @@ import { spawn } from "child_process";
 
 const transport = new StdioClientTransport({
   command: "npx",
-  args: ["@kozmos/mcp-server"],
+  args: ["@kozmos-ds/mcp-server"],
 });
 
 const client = new Client({
@@ -946,11 +983,13 @@ const result = await client.callTool("kozmos_get_component", {
 ### Data Access
 
 The MCP server only provides read access to:
+
 - Installed Kozmos packages
 - Local `.ai-skills` documentation
 - Project configuration
 
 It does **not**:
+
 - Modify files
 - Access network resources
 - Read sensitive data (env vars, credentials)
@@ -964,12 +1003,12 @@ const server = new Server(
   { name: "kozmos", version: "1.0.0" },
   {
     capabilities: {
-      tools: {},       // Read-only tools
-      resources: {},   // Read-only resources
-      prompts: {},     // Template prompts only
+      tools: {}, // Read-only tools
+      resources: {}, // Read-only resources
+      prompts: {}, // Template prompts only
       // No 'sampling' capability - server cannot make AI calls
     },
-  }
+  },
 );
 ```
 
@@ -994,7 +1033,9 @@ export function registerCustomTools(server: Server, data: KozmosData) {
         {
           name: "kozmos_custom_tool",
           description: "Your custom tool",
-          inputSchema: { /* ... */ },
+          inputSchema: {
+            /* ... */
+          },
         },
       ],
     };
@@ -1007,10 +1048,7 @@ export function registerCustomTools(server: Server, data: KozmosData) {
 ```typescript
 // Load additional patterns from company config
 const companyPatterns = loadCompanyPatterns();
-data.patterns = new Map([
-  ...data.patterns,
-  ...companyPatterns,
-]);
+data.patterns = new Map([...data.patterns, ...companyPatterns]);
 ```
 
 ### Plugin System (Future)
@@ -1018,10 +1056,7 @@ data.patterns = new Map([
 ```typescript
 // kozmos.mcp.config.js
 export default {
-  plugins: [
-    "@company/kozmos-mcp-plugin",
-    "./local-plugin.js",
-  ],
+  plugins: ["@company/kozmos-mcp-plugin", "./local-plugin.js"],
   customTools: {
     // ...
   },
@@ -1034,7 +1069,7 @@ export default {
 
 ```json
 {
-  "name": "@kozmos/mcp-server",
+  "name": "@kozmos-ds/mcp-server",
   "version": "1.0.0",
   "description": "MCP server for Kozmos Design System AI integration",
   "bin": {
@@ -1053,12 +1088,12 @@ export default {
     "zod-to-json-schema": "^3.22.0"
   },
   "peerDependencies": {
-    "@kozmos/tokens": "*",
-    "@kozmos/react": "*"
+    "@kozmos-ds/tokens": "*",
+    "@kozmos-ds/react": "*"
   },
   "peerDependenciesMeta": {
-    "@kozmos/tokens": { "optional": true },
-    "@kozmos/react": { "optional": true }
+    "@kozmos-ds/tokens": { "optional": true },
+    "@kozmos-ds/react": { "optional": true }
   },
   "files": ["dist", "bin"],
   "keywords": ["mcp", "model-context-protocol", "design-system", "kozmos", "ai"]
@@ -1069,9 +1104,9 @@ export default {
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial MCP server specification |
+| Version | Date       | Changes                          |
+| ------- | ---------- | -------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial MCP server specification |
 
 ---
 

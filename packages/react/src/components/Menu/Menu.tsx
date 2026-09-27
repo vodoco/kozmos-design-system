@@ -2,7 +2,7 @@ import { createThemePortal } from "../../theme/ThemePortal";
 import React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { cn } from "../../utils";
-import { Check, ChevronRight, Circle } from "lucide-react";
+import { Check, ChevronRight, Circle } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 const Menu = DropdownMenuPrimitive.Root;

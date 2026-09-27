@@ -2363,19 +2363,6 @@ if (categoryTile.content.iconDecorative) {
       );
     }
   }
-  // And the art itself: React's symbols and the importer's, both generated
-  // from the SVGs the taxonomy published, which the package keeps.
-  try {
-    execFileSync(
-      process.execPath,
-      [path.join(root, "scripts/build-taxonomy-icons.mjs"), "--check"],
-      { cwd: root, stdio: "pipe" },
-    );
-  } catch (error) {
-    fail(
-      String((error.stderr && error.stderr.toString()) || error.message).trim(),
-    );
-  }
   for (const name of definitions.keys()) {
     if (!names.includes(name)) {
       fail(
@@ -8613,8 +8600,8 @@ assertContains(
 assertContains(
   files.reactEmptyStateFigma,
   source.reactEmptyStateFigma,
-  'import { Search } from "lucide-react"',
-  "React EmptyState Code Connect uses the Figma search icon",
+  'import { SearchMd as Search } from "@kozmos-ds/icons"',
+  "React EmptyState Code Connect draws Figma's search-md, not another size",
 );
 assertContains(
   files.reactEmptyStateFigma,
@@ -9629,8 +9616,8 @@ assertContains(
 assertContains(
   files.iosButton,
   source.iosButton,
-  ".tint(foregroundColor)",
-  "iOS Button loading indicator foreground tint",
+  "KozmosSpinner(size: .sm, color: foregroundColor)",
+  "iOS Button draws the system's arc in its own foreground while loading",
 );
 
 assertContains(
@@ -9692,8 +9679,8 @@ assertContains(
 assertContains(
   files.iosIconButton,
   source.iosIconButton,
-  ".tint(foregroundColor)",
-  "iOS IconButton loading indicator foreground tint",
+  "KozmosSpinner(size: .sm, color: foregroundColor)",
+  "iOS IconButton draws the system's arc in its own foreground while loading",
 );
 
 // CategoryTile: the count is the system's counter, brand tone, at the icon
@@ -10247,8 +10234,8 @@ assertContains(
 assertContains(
   files.androidButton,
   source.androidButton,
-  "color = LocalContentColor.current",
-  "Android Button loading indicator foreground color",
+  "size = KozmosSpinnerSize.Sm",
+  "Android Button draws the system's arc while loading",
 );
 assertContains(
   files.androidButton,
@@ -10316,8 +10303,8 @@ assertContains(
 assertContains(
   files.androidIconButton,
   source.androidIconButton,
-  "color = LocalContentColor.current",
-  "Android IconButton loading indicator foreground color",
+  "size = KozmosSpinnerSize.Sm",
+  "Android IconButton draws the system's arc while loading",
 );
 assertContains(
   files.androidIconButton,

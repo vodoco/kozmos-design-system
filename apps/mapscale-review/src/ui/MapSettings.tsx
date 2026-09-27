@@ -9,7 +9,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import type { MapPrefs } from "../map/PointrMap";
 
 export type MapPrefsState = MapPrefs;
@@ -124,7 +124,7 @@ export function MapSettings({
         >
           {/*
             v9's settings-04 sliders (node 19452:255828) — the trigger briefly wore settings-01's
-            gear, which is the wrong glyph. @kozmos/icons only ships settings-01, so this is a
+            gear, which is the wrong glyph. @kozmos-ds/icons only ships settings-01, so this is a
             Figma export like the ai-* sparkles (DS gap D9: raise settings-04 with the icon set).
           */}
           <img

@@ -1,5 +1,10 @@
 import React from "react";
-import { ChevronDown, ChevronRight, File, Folder } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  File01 as File,
+  Folder,
+} from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
 export type TreeDensity = "default" | "compact";

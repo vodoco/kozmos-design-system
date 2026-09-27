@@ -29,7 +29,9 @@ public struct KozmosPOIResultCard: View {
     private let selectionLabel: String?
     /// The floor the map shows: a result on it carries a dot before its floor.
     private let currentFloorId: String?
+    private let actionsLabel: String
     private let onSelect: (String) -> Void
+    private let onAction: ((KozmosPOIResultAction, String) -> Void)?
 
     public init(
         poi: KozmosPOIPresentation,
@@ -37,19 +39,58 @@ public struct KozmosPOIResultCard: View {
         featuredLabel: String = "Featured",
         selectionLabel: String? = nil,
         currentFloorId: String? = nil,
-        onSelect: @escaping (String) -> Void
+        actionsLabel: String = "Actions for this result",
+        onSelect: @escaping (String) -> Void,
+        onAction: ((KozmosPOIResultAction, String) -> Void)? = nil
     ) {
         self.poi = poi
         self.result = result
         self.featuredLabel = featuredLabel
         self.selectionLabel = selectionLabel
         self.currentFloorId = currentFloorId
+        self.actionsLabel = actionsLabel
         self.onSelect = onSelect
+        self.onAction = onAction
+    }
+
+    private func handleAction(_ action: KozmosPOIResultAction) {
+        trackEvent(
+            KozmosAnalyticsEvent(
+                eventName: "poi_result_action",
+                component: "POIResultCard",
+                properties: [
+                    "poiId": poi.id,
+                    "resultIndex": result.resultIndex,
+                    "action": action.rawValue
+                ]
+            )
+        )
+        onAction?(action, poi.id)
+    }
+
+    /// Shown only on the selected result: an action row on every card would
+    /// be a wall of buttons, and the tap that selects is the tap that asks.
+    private var visibleActions: [KozmosPOIResultActionPresentation] {
+        guard result.selected, available else { return [] }
+        return result.actions
     }
 
     var onCurrentFloor: Bool { currentFloorId != nil && result.floorId == currentFloorId }
 
     private var available: Bool { result.isAvailable }
+
+    /// Three tones, not two. "Closing soon" is a reason to hurry, so it cannot
+    /// look like open; the place is still open, so it is not closed either.
+    private var availabilityTone: Color {
+        switch poi.availability {
+        case .open:
+            return KozmosColors.componentsPrimaryButtonsSuccessButtonBackgroundIdle
+        case .openingSoon, .closingSoon:
+            return KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle
+        default:
+            return KozmosColors.primitivesColorsForeground500
+        }
+    }
 
     private var accessibilityDescription: String {
         if let selectionLabel { return selectionLabel }
@@ -110,6 +151,29 @@ public struct KozmosPOIResultCard: View {
                     )
                 )
                 .padding(.leading, KozmosDimensions.primitivesLayoutSpacing200)
+            } else if let badge = result.badge {
+                // One tab, one treatment: the prototypes draw "Popular Choice"
+                // in the same amber as "Featured", so the LABEL distinguishes
+                // them and the styling does not. What differs is meaning -
+                // featured is the CMS's word and the map marker acts on it too.
+                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                    Image(systemName: "star.fill")
+                        .font(KozmosTypography.caption2)
+                        .accessibilityHidden(true)
+                    Text(badge.label)
+                        .font(.caption.weight(.semibold))
+                }
+                .foregroundColor(KozmosColors.componentsPrimaryButtonsAlertButtonForegroundContentIdle)
+                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
+                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
+                .background(KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle)
+                .clipShape(
+                    RoundedRectangle(
+                        cornerRadius: KozmosDimensions.semanticsRadiusControl,
+                        style: .continuous
+                    )
+                )
+                .padding(.leading, KozmosDimensions.primitivesLayoutSpacing200)
             }
 
             Button(action: handleSelect) {
@@ -144,11 +208,7 @@ public struct KozmosPOIResultCard: View {
                         if let availabilityLabel = poi.availabilityLabel {
                             Text(availabilityLabel)
                                 .font(.caption.weight(.semibold))
-                                .foregroundColor(
-                                    poi.availability == .open
-                                        ? KozmosColors.componentsPrimaryButtonsSuccessButtonBackgroundIdle
-                                        : KozmosColors.primitivesColorsForeground500
-                                )
+                                .foregroundColor(availabilityTone)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -175,6 +235,38 @@ public struct KozmosPOIResultCard: View {
             .buttonStyle(.plain)
             .disabled(!available)
             .opacity(available ? 1 : 0.6)
+            // The collapse belongs to the SELECT ROW, not the card.
+            //
+            // It used to sit on the outer VStack, which flattened everything
+            // inside it into one element - fine while the card was only a row,
+            // and the exact SwiftUI counterpart of the nested <button> the web
+            // card had: any action button added below would have been drawn on
+            // screen and unreachable to VoiceOver.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityDescription)
+            .accessibilityAddTraits(accessibilityTraits)
+            .accessibilityAction {
+                // No-ops when unavailable; the traits above already withhold
+                // the button affordance so VoiceOver does not offer the action.
+                handleSelect()
+            }
+
+            if !visibleActions.isEmpty {
+                Divider().overlay(KozmosColors.semanticsBorderSubtle)
+
+                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                    ForEach(visibleActions) { entry in
+                        KozmosPOIResultActionButton(entry: entry) {
+                            handleAction(entry.action)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(actionsLabel)
+            }
 
             if !available, let unavailableReason = result.unavailableReason {
                 Divider().overlay(KozmosColors.semanticsBorderSubtle)
@@ -197,14 +289,6 @@ public struct KozmosPOIResultCard: View {
                     lineWidth: result.selected ? 2 : 1
                 )
         )
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityDescription)
-        .accessibilityAddTraits(accessibilityTraits)
-        .accessibilityAction {
-            // No-ops when unavailable; the traits above already withhold the
-            // button affordance so VoiceOver does not offer the action.
-            handleSelect()
-        }
         .accessibilityIdentifier(kozmosPOIResultIdentifier(poi.id))
     }
 
@@ -227,5 +311,52 @@ public struct KozmosPOIResultCard: View {
             )
             .accessibilityLabel(logo.alt)
         }
+    }
+}
+
+/// One action on a selected result.
+///
+/// Its own View rather than an inline chain: SwiftUI's type checker gave up on
+/// the styling when it lived inside the card's body, and splitting the
+/// expression is the fix the compiler itself asks for.
+private struct KozmosPOIResultActionButton: View {
+    let entry: KozmosPOIResultActionPresentation
+    let action: () -> Void
+
+    private var foreground: Color {
+        entry.primary
+            ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+            : KozmosColors.primitivesColorsForeground0
+    }
+
+    private var background: Color {
+        entry.primary
+            ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
+            : KozmosColors.primitivesColorsBackground0
+    }
+
+    private var border: Color {
+        entry.primary ? Color.clear : KozmosColors.semanticsBorderSubtle
+    }
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(
+            cornerRadius: KozmosDimensions.semanticsRadiusControl,
+            style: .continuous
+        )
+    }
+
+    var body: some View {
+        Button(entry.label, action: action)
+            .buttonStyle(.plain)
+            .font(.subheadline.weight(.semibold))
+            .foregroundColor(foreground)
+            .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+            .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
+            .background(background)
+            .clipShape(shape)
+            .overlay(shape.stroke(border, lineWidth: 1))
+            .disabled(entry.disabled)
+            .opacity(entry.disabled ? 0.6 : 1)
     }
 }

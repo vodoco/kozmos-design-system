@@ -1,0 +1,23 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./AICompanionPanel.stories";
+
+<Meta of={Stories} />
+
+# AICompanionPanel
+
+The assistant surface. It covers the frame and leaves the search sheet
+untouched beneath, so closing it returns the visitor to the search they left.
+
+`onClose` is optional: a host app may turn the assistant off, and the panel
+has to tolerate `AISearchButton` being absent. Escape closes it when there is
+something to close — a surface covering the frame that can only be dismissed
+by clicking its × is a trap for anyone not using a pointer.
+
+Put the thread and its input inside, in that order. `banner` sits above the
+thread, for a `Notice` or an offline `EmptyState`.
+
+<Canvas of={Stories.Conversation} />
+<Canvas of={Stories.Streaming} />
+<Canvas of={Stories.TimedOut} />
+<Controls />

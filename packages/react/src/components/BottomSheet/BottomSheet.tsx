@@ -9,7 +9,7 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "../Drawer";
-import { X } from "lucide-react";
+import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
 const BottomSheet = Drawer;

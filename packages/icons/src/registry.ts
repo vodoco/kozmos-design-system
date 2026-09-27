@@ -1,76 +1,63 @@
-import type { LucideIcon } from "lucide-react";
 import type { createPointrIcon } from "./pointr/createPointrIcon";
 import type { createTaxonomyIcon } from "./taxonomy/createTaxonomyIcon";
-import {
-  TaxonomyAmenitySpaceDesk,
-  TaxonomyEntranceExit,
-  TaxonomyFoodBeverageSpace,
-  TaxonomyParkingSpace,
-  TaxonomyRetailSpace,
-  TaxonomySecuritySpace,
-  TaxonomyServiceSpaceOffice,
-  TaxonomyTransportationSpaceBoardingGate,
-} from "./taxonomy/icons.generated";
-import {
-  Bookmark,
-  CalendarCheck01,
-  ClockPlus,
-  Eye,
-  Feather,
-  Globe02,
-  Heart,
-  LayoutAlt02,
-  Loading01,
-  Mail01,
-  Phone,
-  Share01,
-  ShoppingBag02,
-} from "./pointr/icons.generated";
 import {
   Activity,
   AlertCircle,
   AlertTriangle,
   ArrowDown,
-  ArrowDownUp,
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Bell,
-  Building2,
+  Bell01,
+  Bookmark,
+  Building01,
   Bus,
   Calendar,
+  CalendarCheck01,
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
   Clock,
-  Compass,
-  Download,
-  Edit,
-  Home,
-  Info,
-  Lock,
-  Map,
-  MapPin,
-  Menu,
+  ClockPlus,
+  Compass01,
+  Download01,
+  Edit01,
+  Eye,
+  Feather,
+  FlipBackward,
+  Globe02,
+  Heart,
+  HomeLine,
+  InfoCircle,
+  LayoutAlt02,
+  Loading01,
+  Lock01,
+  Mail01,
+  Map01,
+  MarkerPin01,
+  Menu01,
   Minus,
-  Navigation,
+  NavigationPointer01,
+  Phone,
   Plus,
-  QrCode,
+  QrCode01,
   Route,
-  ScanLine,
-  Search,
-  Settings,
-  Sparkles,
-  Trash2,
-  Undo2,
-  Upload,
-  User,
-  Users,
+  Scan,
+  SearchMd,
+  Settings01,
+  Share01,
+  ShoppingBag02,
+  Stars01,
+  SwitchVertical01,
+  Trash01,
+  Upload01,
+  User01,
+  Users01,
   Wifi,
-  X,
-} from "lucide-react";
+  XClose,
+} from "./pointr/icons.generated";
 
 export const kozmosIconNames = [
   "activity",
@@ -117,9 +104,11 @@ export const kozmosIconNames = [
   "wifi",
   "x-close",
 
-  // Owned outlines, drawn by the Pointr Icon Library rather than mapped onto
-  // the nearest lucide shape. Every one was needed by the SDK's POI detail
-  // card and had no Kozmos name at all — see docs/poi-detail-card-gaps.
+  // These were the first owned outlines, added when every name above still
+  // resolved to the nearest lucide shape. Each was needed by the SDK's POI
+  // detail card and had no Kozmos name at all — see docs/poi-detail-card-gaps.
+  // Every name in this registry is now drawn by the Pointr Icon Library, so
+  // this grouping records history rather than a difference.
   "bookmark",
   "calendar-check-01",
   "clock-plus",
@@ -134,29 +123,19 @@ export const kozmosIconNames = [
   "share-01",
   "shopping-bag-02",
 
-  // The taxonomy's quick-access symbols, as it publishes them: solid
-  // pictograms rather than outlines, which the Pointr Icon Library does not
-  // carry. The browse panel's tiles draw them — see
-  // scripts/build-taxonomy-icons.mjs.
-  "taxonomy-amenity-space-desk",
-  "taxonomy-entrance-exit",
-  "taxonomy-food-beverage-space",
-  "taxonomy-parking-space",
-  "taxonomy-retail-space",
-  "taxonomy-security-space",
-  "taxonomy-service-space-office",
-  "taxonomy-transportation-space-boarding-gate",
 ] as const;
 
 export type KozmosIconName = (typeof kozmosIconNames)[number];
 
 /**
- * An icon is a lucide component, an outline owned by this package, or a
- * taxonomy symbol. All take the same props, so a consumer cannot tell them
- * apart — the distinction is where the drawing came from, not how it is used.
+ * An icon is an outline owned by this package or a taxonomy symbol, and both
+ * are drawn from the Pointr Icon Library's own artwork. Until 2026-09-23 this
+ * union had a third arm, `LucideIcon`, and 43 of the 64 names resolved to it:
+ * the same concept in a different hand from the one Figma shows. Every one had
+ * an exact Pointr equivalent by name, so nothing here maps onto a near-miss
+ * any more. Both take the same props, so a consumer cannot tell them apart.
  */
 export type KozmosIconComponent =
-  | LucideIcon
   | ReturnType<typeof createPointrIcon>
   | ReturnType<typeof createTaxonomyIcon>;
 
@@ -253,7 +232,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10340",
     category: "General",
     description: "Notification bell.",
-    component: Bell,
+    component: Bell01,
   },
   {
     name: "building-01",
@@ -261,7 +240,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9771",
     category: "General",
     description: "Building or venue.",
-    component: Building2,
+    component: Building01,
   },
   {
     name: "bus",
@@ -333,7 +312,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:11770",
     category: "Maps & travel",
     description: "Compass navigation.",
-    component: Compass,
+    component: Compass01,
   },
   {
     name: "download-01",
@@ -341,7 +320,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9873",
     category: "General",
     description: "Download action.",
-    component: Download,
+    component: Download01,
   },
   {
     name: "edit-01",
@@ -349,7 +328,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10179",
     category: "General",
     description: "Edit action.",
-    component: Edit,
+    component: Edit01,
   },
   {
     name: "flip-backward",
@@ -357,7 +336,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9436",
     category: "Arrows",
     description: "Turn back: the direction step that reverses.",
-    component: Undo2,
+    component: FlipBackward,
   },
   {
     name: "home-line",
@@ -365,7 +344,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10275",
     category: "General",
     description: "Home navigation.",
-    component: Home,
+    component: HomeLine,
   },
   {
     name: "info-circle",
@@ -373,7 +352,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10281",
     category: "Alerts & feedback",
     description: "Informational message.",
-    component: Info,
+    component: InfoCircle,
   },
   {
     name: "lock-01",
@@ -381,7 +360,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:8883",
     category: "Security",
     description: "Locked or private state.",
-    component: Lock,
+    component: Lock01,
   },
   {
     name: "map-01",
@@ -389,7 +368,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:11824",
     category: "Maps & travel",
     description: "Map view.",
-    component: Map,
+    component: Map01,
   },
   {
     name: "marker-pin-01",
@@ -397,7 +376,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:11833",
     category: "Maps & travel",
     description: "Map pin or destination marker.",
-    component: MapPin,
+    component: MarkerPin01,
   },
   {
     name: "menu-01",
@@ -405,7 +384,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10077",
     category: "General",
     description: "Navigation menu.",
-    component: Menu,
+    component: Menu01,
   },
   {
     name: "minus",
@@ -421,7 +400,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:11851",
     category: "Maps & travel",
     description: "Navigation pointer.",
-    component: Navigation,
+    component: NavigationPointer01,
   },
   {
     name: "plus",
@@ -437,7 +416,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9176",
     category: "Development",
     description: "QR code.",
-    component: QrCode,
+    component: QrCode01,
   },
   {
     name: "route",
@@ -453,7 +432,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:8919",
     category: "Security",
     description: "Scan frame.",
-    component: ScanLine,
+    component: Scan,
   },
   {
     name: "search-md",
@@ -461,7 +440,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10140",
     category: "General",
     description: "Search action.",
-    component: Search,
+    component: SearchMd,
   },
   {
     name: "settings-01",
@@ -469,7 +448,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10149",
     category: "General",
     description: "Settings.",
-    component: Settings,
+    component: Settings01,
   },
   {
     name: "stars-01",
@@ -477,7 +456,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:11992",
     category: "Weather",
     description: "Sparkles: the AI search.",
-    component: Sparkles,
+    component: Stars01,
   },
   {
     name: "switch-vertical-01",
@@ -485,7 +464,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9487",
     category: "Arrows",
     description: "Swap the origin and the destination.",
-    component: ArrowDownUp,
+    component: SwitchVertical01,
   },
   {
     name: "trash-01",
@@ -493,7 +472,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9963",
     category: "General",
     description: "Delete action.",
-    component: Trash2,
+    component: Trash01,
   },
   {
     name: "upload-01",
@@ -501,7 +480,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9975",
     category: "General",
     description: "Upload action.",
-    component: Upload,
+    component: Upload01,
   },
   {
     name: "user-01",
@@ -509,7 +488,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10494",
     category: "Users",
     description: "Single user.",
-    component: User,
+    component: User01,
   },
   {
     name: "users-01",
@@ -517,7 +496,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:10566",
     category: "Users",
     description: "User group.",
-    component: Users,
+    component: Users01,
   },
   {
     name: "wifi",
@@ -533,7 +512,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9999",
     category: "General",
     description: "Close or dismiss.",
-    component: X,
+    component: XClose,
   },
   {
     name: "bookmark",
@@ -639,87 +618,15 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     description: "Order or shop.",
     component: ShoppingBag02,
   },
-  {
-    name: "taxonomy-amenity-space-desk",
-    figmaName: "amenity-space_desk",
-    source: "taxonomy",
-    taxonomyVersion: "10.12.0",
-    category: "Taxonomy",
-    description:
-      "Customer Service: the quick-access symbol for amenity-space / desk.",
-    component: TaxonomyAmenitySpaceDesk,
-  },
-  {
-    name: "taxonomy-entrance-exit",
-    figmaName: "entrance-exit",
-    source: "taxonomy",
-    taxonomyVersion: "10.12.0",
-    category: "Taxonomy",
-    description:
-      "Entrances & Exits: the quick-access symbol for entrance-exit.",
-    component: TaxonomyEntranceExit,
-  },
-  {
-    name: "taxonomy-food-beverage-space",
-    figmaName: "food-beverage-space",
-    source: "taxonomy",
-    taxonomyVersion: "10.12.0",
-    category: "Taxonomy",
-    description: "Dining: the quick-access symbol for food-beverage-space.",
-    component: TaxonomyFoodBeverageSpace,
-  },
-  {
-    name: "taxonomy-parking-space",
-    figmaName: "parking-space",
-    source: "taxonomy",
-    taxonomyVersion: "10.12.0",
-    category: "Taxonomy",
-    description:
-      "Parking & Ground Transport: the quick-access symbol for parking-space.",
-    component: TaxonomyParkingSpace,
-  },
-  {
-    name: "taxonomy-retail-space",
-    figmaName: "retail-space",
-    source: "taxonomy",
-    taxonomyVersion: "10.12.0",
-    category: "Taxonomy",
-    description: "Shopping: the quick-access symbol for retail-space.",
-    component: TaxonomyRetailSpace,
-  },
-  {
-    name: "taxonomy-security-space",
-    figmaName: "security-space",
-    source: "taxonomy",
-    taxonomyVersion: "10.12.0",
-    category: "Taxonomy",
-    description:
-      "Security & Immigration: the quick-access symbol for security-space.",
-    component: TaxonomySecuritySpace,
-  },
-  {
-    name: "taxonomy-service-space-office",
-    figmaName: "service-space_office",
-    source: "taxonomy",
-    taxonomyVersion: "10.12.0",
-    category: "Taxonomy",
-    description:
-      "Check-in & Baggage: the quick-access symbol for service-space / office.",
-    component: TaxonomyServiceSpaceOffice,
-  },
-  {
-    name: "taxonomy-transportation-space-boarding-gate",
-    figmaName: "transportation-space_boarding-gate",
-    source: "taxonomy",
-    taxonomyVersion: "10.12.0",
-    category: "Taxonomy",
-    description:
-      "Gates: the quick-access symbol for transportation-space / boarding-gate.",
-    component: TaxonomyTransportationSpaceBoardingGate,
-  },
 ];
 
-export const kozmosIconRegistry = Object.fromEntries(
+// `/* @__PURE__ */` for the same reason each generated icon carries one: this
+// is a call at module scope, and a bundler must assume a call can do something
+// unless told otherwise. Without it, importing a single icon from this package
+// retained the whole registry — measured on 2026-09-23 at 75 path definitions
+// in a bundle that asked for one icon — because the lookup references every
+// component the registry names.
+export const kozmosIconRegistry = /* @__PURE__ */ Object.fromEntries(
   kozmosIconDefinitions.map((icon) => [icon.name, icon.component]),
 ) as Record<KozmosIconName, KozmosIconComponent>;
 

@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
   Button,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 
 declare global {
   interface Window {

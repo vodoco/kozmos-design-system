@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { X } from "lucide-react";
+import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
 export const chipVariants = cva(

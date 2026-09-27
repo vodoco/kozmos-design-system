@@ -1,5 +1,5 @@
 import figma from "@figma/code-connect";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@kozmos-ds/icons";
 import {
   Pagination,
   PaginationContent,

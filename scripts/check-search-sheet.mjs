@@ -2,8 +2,8 @@
  * The search sheet's parts, measured in a real browser against the
  * Storybook build: the category grid aligns its cells at the top, so a
  * one-line label beside a two-line one keeps its square on the same edge;
- * the AI search button is a 48 circle whose gradient ring is a 2.5 band around
- * a 43 disc, and the ring's gradient turns in place unless motion is reduced.
+ * the AI search button is a 48 circle whose gradient ring is a 2.5 band cut by
+ * a mask, and the ring's gradient turns in place unless motion is reduced.
  *
  *   STORYBOOK_URL=http://127.0.0.1:6012 node scripts/check-search-sheet.mjs
  *   ADAPTIVE_BROWSER=firefox|webkit for the other engines.
@@ -109,7 +109,11 @@ try {
     assert.equal(m.borderTop, "0px", `the sheet panel keeps a top border: ${m.borderTop}`);
     assert.equal(m.borderLeft, "0px", `the sheet panel keeps a side border: ${m.borderLeft}`);
   });
-  await finish(await open("product-sdk-aisearchbutton--default"), "ai-search-ring-turns", async (page) => {
+  // Eight device pixels to the CSS pixel: a 2.5 band is two or three pixels
+  // at 1x, antialiasing is most of it, and rays through it read anywhere
+  // from nothing to three and a fifth. The band is measured in the paint
+  // below, so the paint has to be worth measuring.
+  await finish(await open("product-sdk-aisearchbutton--default", { deviceScaleFactor: 8 }), "ai-search-ring-turns", async (page) => {
     const button = page.getByRole("button", { name: "AI search" });
     await button.waitFor();
     const box = await button.boundingBox();
@@ -123,10 +127,47 @@ try {
     });
     near(ring.width, 48, 1, "the ring is not the button's 48");
     near(ring.height, 48, 1, "the ring is not the button's 48");
-    // The disc 2.5 inside the ring: a band two and a half wide, the prototype's.
-    const disc = await page.locator(".kozmos-ai-search-ring + span").evaluate((node) => ({ width: node.offsetWidth, left: node.offsetLeft }));
-    near(disc.width, 43, 1, "the disc is not 43");
-    near(disc.left, 2.5, 0.75, "the ring's band is not two and a half wide");
+    // The band is cut out of the ring by a mask, not left over between two
+    // stacked circles: as a 43 disc inside a 48 circle it measured 1.93 to 3.20
+    // wide around the turn in Chromium, the disc's rounded rect painting 0.44px
+    // off the ring's while `offsetWidth` and `offsetLeft` — which is all this
+    // check used to read — swore they were concentric.
+    //
+    // The band itself is measured in the paint, in `check-owned-css.mjs`, on a
+    // page whose device ratio that check controls: a 2.5 band is two or three
+    // device pixels at 1x and mostly antialiasing, so rays through it in a
+    // Storybook viewport read anywhere from 1.7 to 2.6 whatever is drawn. Here
+    // the structure is asserted, and the structure is what can be got wrong by
+    // editing.
+    const mask = await page.locator(".kozmos-ai-search-ring").evaluate((node) => {
+      const s = getComputedStyle(node);
+      return s.maskImage === "none" ? s.webkitMaskImage : s.maskImage;
+    });
+    assert.match(
+      mask,
+      /radial-gradient/,
+      `the ring's band is not cut by a mask: ${mask}`,
+    );
+    assert.match(
+      mask,
+      /100% - 2\.5px/,
+      `the ring's band is not cut at two and a half: ${mask}`,
+    );
+    // The disc is inset 2 — inside the 2.5 band — and painted before the ring,
+    // so its own edge is covered and never decides where the ring ends.
+    const disc = await page
+      .locator(".kozmos-ai-search > span:first-of-type")
+      .evaluate((node) => ({
+        left: node.offsetLeft,
+        width: node.offsetWidth,
+        beforeTheRing: Boolean(
+          node.nextElementSibling &&
+            node.nextElementSibling.classList.contains("kozmos-ai-search-ring"),
+        ),
+      }));
+    assert.equal(disc.left, 2, `the disc is not inset 2: ${JSON.stringify(disc)}`);
+    assert.equal(disc.width, 44, `the disc is not 44: ${JSON.stringify(disc)}`);
+    assert.ok(disc.beforeTheRing, "the disc is not painted behind the ring");
     assert.equal(ring.animationName, "kozmos-ai-search-spin", `the ring does not turn: ${ring.animationName}`);
     assert.equal(ring.animationDuration, "3.6s", `the ring's turn is not the prototype's 3.6 seconds: ${ring.animationDuration}`);
     assert.match(ring.background, /conic-gradient/, `the ring is not the conic gradient: ${ring.background}`);

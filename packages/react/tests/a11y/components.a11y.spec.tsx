@@ -10,7 +10,7 @@ import { Button } from "../../src/components/Button/Button";
 import { IconButton } from "../../src/components/IconButton/IconButton";
 import { Card } from "../../src/components/Card/Card";
 import { Input } from "../../src/components/Input/Input";
-import { Search } from "lucide-react";
+import { SearchMd as Search } from "@kozmos-ds/icons";
 
 expect.extend(matchers);
 

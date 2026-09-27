@@ -19,6 +19,7 @@
  */
 
 import fs from "node:fs";
+import { pathToFileURL } from "node:url";
 import path from "node:path";
 import prettier from "prettier";
 
@@ -66,7 +67,12 @@ const VALUE_ALIASES = new Map(
  * component with both `variant` and `status` is still compared strictly.
  */
 const AXIS_ALIASES = {
-  variant: ["status", "tone", "style"],
+  // `scale`: Rating's React prop is `variant`, and its Figma axis is `Scale`
+  // — because the set already has an axis called `Value`, and
+  // "Variant=Stars, Value=3" reads as two generic words where
+  // "Scale=Stars, Value=3" says what it is. This map is what lets the two
+  // sides name the same axis for their own audience.
+  variant: ["status", "tone", "style", "scale"],
   tone: ["variant", "status"],
   direction: ["orientation"],
   orientation: ["direction"],
@@ -78,6 +84,26 @@ const AXIS_ALIASES = {
  * decisions on record, not backlog. Keyed `Component.axis` -> platforms.
  */
 const INTENTIONAL = {
+  // Three axes that became visible on 2026-09-25, when the analyser learned to
+  // read a union given a name. Each is here because it has no visual form at
+  // all, which is the same test Sidebar.variant and LocationPin.variant meet —
+  // not because nobody has got to it. Everything else the analyser newly found
+  // is left in the report as a gap, for a decision rather than a silence.
+  "Alert.live": {
+    figma:
+      "off | polite | assertive is role and aria-live: whether a screen reader interrupts for the notice. There is nothing to draw, and a designer picking it from a variant menu would be choosing something they cannot see. The iOS and Android gap is real and stays in the report: neither native Alert announces at all today.",
+  },
+  "Tree.activationMode": {
+    figma:
+      "What a click does — select the row, toggle it open, or both. Every value renders the same tree; the difference is in what happens next, which a static component set cannot hold.",
+  },
+  "ThemeProvider.theme": {
+    figma:
+      "A React context provider, not a drawn component. Figma expresses the theme as a variable mode on the whole file, which is why the set is absent rather than missing an axis.",
+    ios: "Expressed as KozmosColors against the environment's colorScheme rather than as a parameter on a component: SwiftUI has no provider to put it on.",
+    android:
+      "Expressed as LocalKozmosUseDarkTokens and the generated KozmosThemeTokens rather than as a parameter: Compose reads it from the composition, not from a prop.",
+  },
   "Sidebar.variant": {
     figma:
       "Modelled as part of the Content axis: SIDEBAR_CONTENT is Basic, Sections, Tools, Rail, so the rail variant is expressible. A separate Variant axis would multiply the set without adding a state designers cannot already pick.",
@@ -352,11 +378,51 @@ function reactAxes(component) {
     cursor = file.indexOf("variants:", cursor + 1);
   }
 
-  // 2. Union-typed props on the exported Props interface.
-  const propsMatch = file.match(
-    new RegExp(`export interface ${component}Props[\\s\\S]*?\\n\\}`),
-  );
+  // 2. Union-typed props on the component's Props declaration.
+  //
+  // Two blind spots closed on 2026-09-25, both the species this file already
+  // warns about below — a check asserting on how something is written rather
+  // than on what it says:
+  //
+  //   a. The props block had to be `export interface <C>Props`. Twenty-six
+  //      components declare theirs another way, and every union prop on them
+  //      was unseen.
+  //   b. The union had to be written INLINE. A union given a name —
+  //      `export type RatingVariant = "stars" | "thumbs"`, then
+  //      `variant?: RatingVariant` — was invisible, and that is the better
+  //      style and the one this repository uses most. Seventeen components
+  //      declared axes that way, including AIMessage's streaming state and
+  //      NavigationItem's content and state. None had ever been compared
+  //      against iOS, Android or Figma.
+  //
+  // Both were found by asking why `Rating.variant` did not appear in the
+  // report the hour it was added.
+  const aliases = {};
+  for (const alias of file.matchAll(
+    /^(?:export )?type (\w+)\s*=\s*((?:\s*\|?\s*["'][^"']+["'])+)\s*;/gm,
+  )) {
+    const values = [...alias[2].matchAll(/["']([^"']+)["']/g)].map((v) => v[1]);
+    if (values.length > 1) aliases[alias[1]] = values;
+  }
+
+  const propsMatch =
+    file.match(
+      new RegExp(`export interface ${component}Props[\\s\\S]*?\\n\\}`),
+    ) ??
+    file.match(new RegExp(`interface ${component}Props[\\s\\S]*?\\n\\}`)) ??
+    file.match(
+      new RegExp(`type ${component}Props[^=]*=[\\s\\S]*?\\n\\};?`),
+    );
   if (propsMatch) {
+    // A prop whose type is one of those named unions.
+    for (const match of propsMatch[0].matchAll(
+      /^\s+([a-zA-Z][a-zA-Z0-9]*)\??:\s*(\w+)\s*;/gm,
+    )) {
+      const values = aliases[match[2]];
+      if (values) {
+        axes[match[1]] = [...new Set([...(axes[match[1]] || []), ...values])];
+      }
+    }
     // Accept either quote style. Matching only double quotes made the analyzer
     // blind to any component whose file had never been through prettier — Link
     // declared `variant?: 'default' | 'subtle'` from the first commit and went
@@ -375,6 +441,19 @@ function reactAxes(component) {
         axes[axis] = [...new Set([...(axes[axis] || []), ...values])];
       }
     }
+  }
+
+  // `defaultFoo` beside `foo` is the uncontrolled twin of one axis, not a
+  // second axis. Counting both made ColorPicker and ThemeProvider look like
+  // they had a native gap on `defaultFormat` and `defaultTheme` when the only
+  // thing missing was React's own controlled/uncontrolled pair, which SwiftUI
+  // and Compose express with a Binding and a plain value instead.
+  for (const name of Object.keys(axes)) {
+    if (!name.startsWith("default")) continue;
+    const controlled =
+      name.slice("default".length, "default".length + 1).toLowerCase() +
+      name.slice("default".length + 1);
+    if (axes[controlled]) delete axes[name];
   }
 
   return axes;
@@ -437,8 +516,15 @@ function nativeAxes(component, files, enumPattern, language) {
  * one line (`Default, Info, Success` in Kotlin, `case a, b` in Swift), and
  * Kotlin entries may carry constructor arguments (`Quickest("quickest")`).
  */
-function enumBodyValues(block, language) {
-  let body = block.slice(1, -1);
+export function enumBodyValues(block, language) {
+  // Comments first: a doc comment inside the body carries commas, and the
+  // split below would tear it into entries. Blanked, not removed, so nothing
+  // downstream shifts. Spinner's whole size axis disappeared this way on
+  // 2026-09-22, and the check reported the platform as missing it.
+  let body = block
+    .slice(1, -1)
+    .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, " "))
+    .replace(/\/\/[^\n]*/g, (c) => c.replace(/[^\n]/g, " "));
 
   // Kotlin separates entries from members with `;`; Swift declares members
   // after the cases, so cut at the first `func`/`var`/`init`.
@@ -991,4 +1077,5 @@ async function main() {
   }
 }
 
-await main();
+// Only when run, not when a test imports `enumBodyValues`.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) await main();

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { RouteOptionPresentation } from "@kozmos/product-contracts";
+import type { RouteOptionPresentation } from "@kozmos-ds/product-contracts";
 import { describe, expect, it, vi } from "vitest";
 import { RoutePreviewPanel } from "./RoutePreviewPanel";
 

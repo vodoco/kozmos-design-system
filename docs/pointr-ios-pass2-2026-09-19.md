@@ -1,6 +1,6 @@
 # Pointr iOS — Pass 2: a place's live data on the card, 19 September 2026
 
-Claude Code, continuing [Astra's handoff](claude-code-handoff-2026-09-19.md) after
+The coding agent, continuing [Astra's handoff](handoff-2026-09-19.md) after
 [Pass 1](pointr-ios-pass1-2026-09-19.md). Handoff item E and §10's Pass 2. Branch
 `claude/pointr-browse-repairs`, still unpushed, in `/private/tmp/kozmos-browser-compat.uqPMBD`.
 No Cloud content was changed.

@@ -8,25 +8,18 @@ struct KozmosSpinnerConnect: FigmaConnect {
     @FigmaEnum(
         "Size",
         mapping: [
-            "Small": "small",
-            "Medium": "medium",
-            "Large": "large",
-            "XLarge": "xlarge"
+            "Small": "sm",
+            "Medium": "md",
+            "Large": "lg",
+            "XLarge": "xl"
         ]
     )
-    var size: String = "medium"
+    var size: String = "md"
 
     var body: some View {
-        KozmosSpinner()
-            .frame(width: self.dimension, height: self.dimension)
-    }
-
-    private var dimension: CGFloat {
-        switch self.size {
-        case "small": return 16
-        case "large": return 32
-        case "xlarge": return 48
-        default: return 24
-        }
+        // The size is the component's own now, not a frame around it: until
+        // 2026-09-22 `KozmosSpinner` took none and Dev Mode showed a spinner
+        // wrapped in a `.frame`, which is not how a caller should write one.
+        KozmosSpinner(size: KozmosSpinnerSize(rawValue: self.size) ?? .md)
     }
 }

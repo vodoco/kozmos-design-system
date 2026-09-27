@@ -5,7 +5,7 @@ import type {
   MapLayoutRect,
   MapPanelPresentation,
   MapReadiness,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import {
@@ -38,7 +38,7 @@ export type {
   AdaptiveMapLayoutSnapshot,
   MapLayoutRect,
   MapPanelPresentation,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 
 export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivElement> {
   map: React.ReactNode;
@@ -49,6 +49,12 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
   topBar?: React.ReactNode;
   panel?: React.ReactNode;
   panelLabel?: string;
+  /**
+   * The sheet handle's accessible name. It is a slider, and "Panel height" is
+   * the only thing a screen reader has to go on — in English, whatever
+   * language the interface is in.
+   */
+  panelHandleLabel?: string;
   panelPlacement?: "start" | "end";
   panelPresentation?: MapPanelPresentation;
   /**
@@ -142,6 +148,7 @@ const AdaptiveMapShell = React.forwardRef<
       panelFraction,
       panelSizing = "fraction",
       panelSurface = "solid",
+      panelHandleLabel = "Panel height",
       collisionInsets,
       safeAreaInsets,
       usableRegions,
@@ -719,7 +726,7 @@ const AdaptiveMapShell = React.forwardRef<
                 className="kozmos-map-sheet-handle"
                 role="slider"
                 tabIndex={0}
-                aria-label="Panel height"
+                aria-label={panelHandleLabel}
                 aria-orientation="vertical"
                 aria-valuemin={0}
                 aria-valuemax={ordered.length - 1}
@@ -733,7 +740,14 @@ const AdaptiveMapShell = React.forwardRef<
             )}
             <div
               ref={panelContent}
-              className="min-h-0 flex-1 overscroll-contain"
+              className={cn(
+                "min-h-0 flex-1 overscroll-contain",
+                // A side panel has no grip, so nothing was making the space
+                // the sheet's grip makes: the search field sat 1px under the
+                // panel's top edge. 16 matches where the field starts below
+                // the sheet's grip.
+                !isSheet && "pt-4",
+              )}
               // A finger scrolls the list natively at the largest detent;
               // at the list's top only downward panning (into the list) is
               // native, so a finger pulling the other way reaches the sheet

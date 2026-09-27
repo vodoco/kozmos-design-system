@@ -1,5 +1,5 @@
 import React from "react";
-import type { CategoryPresentation } from "@kozmos/product-contracts";
+import type { CategoryPresentation } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
 import { CategoryTile } from "../CategoryTile";
 import type { CategoryTint } from "../CategoryTile/CategoryTint";

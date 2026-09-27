@@ -1,4 +1,4 @@
-# @kozmos/tokens
+# @kozmos-ds/tokens
 
 The Kozmos design tokens, generated from one source for the web, iOS and
 Android.
@@ -6,14 +6,14 @@ Android.
 ## Install
 
 ```sh
-npm install @kozmos/tokens
+npm install @kozmos-ds/tokens
 ```
 
 ## CSS
 
 ```css
-@import "@kozmos/tokens/css/light.css";
-@import "@kozmos/tokens/css/dark.css";
+@import "@kozmos-ds/tokens/css/light.css";
+@import "@kozmos-ds/tokens/css/dark.css";
 ```
 
 The light file defines every variable on `:root`; the dark file redefines them
@@ -28,7 +28,7 @@ theme.
 ```
 
 The semantic radius roles are unitless numbers, so that the web, iOS and Android read one scale — hence the `calc`. The primitive radii, such as `--primitives-radius-sm`, carry units. The files are also reachable by their built paths,
-such as `@kozmos/tokens/dist/css/variables-light.css`.
+such as `@kozmos-ds/tokens/dist/css/variables-light.css`.
 
 ## JavaScript
 
@@ -36,7 +36,7 @@ such as `@kozmos/tokens/dist/css/variables-light.css`.
 import {
   PrimitivesColorsTheme500,
   SemanticsRadiusControl,
-} from "@kozmos/tokens";
+} from "@kozmos-ds/tokens";
 
 PrimitivesColorsTheme500; // "#135bec"
 SemanticsRadiusControl; // 16

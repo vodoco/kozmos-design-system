@@ -1,16 +1,16 @@
 # Pointr iOS — Pass 3: a route between two places the visitor names, 19 September 2026
 
-Claude Code, continuing [Astra's handoff](claude-code-handoff-2026-09-19.md) after
+The coding agent, continuing [Astra's handoff](handoff-2026-09-19.md) after
 [Pass 2](pointr-ios-pass2-2026-09-19.md). Handoff §10's Pass 3. Branch
 `claude/pointr-browse-repairs`, still unpushed, in `/private/tmp/kozmos-browser-compat.uqPMBD`.
 No Cloud content was changed. There is no positioning in this milestone — location, motion and
 Bluetooth permissions are declined — so a route starts from a place the visitor chooses, and
 nothing here calls itself live navigation.
 
-| Commit    | What                                                                                        |
-| --------- | ------------------------------------------------------------------------------------------- |
-| `afa7bdf` | Routing on the Kozmos routing parts; the SDK asked for the device's language                |
-| `5a177df` | The [session handoff](claude-code-handoff-2026-09-19-pass3.md) this report was written from |
+| Commit    | What                                                                            |
+| --------- | ------------------------------------------------------------------------------- |
+| `afa7bdf` | Routing on the Kozmos routing parts; the SDK asked for the device's language    |
+| `5a177df` | The [session handoff](handoff-2026-09-19-pass3.md) this report was written from |
 
 ## What PointrKit gives, as measured
 
@@ -197,7 +197,7 @@ guide (`kozmos-pointr-operators-guide-2026-09-20.md`) has the current map._
 | Go on the card                                                                            | `…/SDKPOIAdapter.swift`: `presentation`, `actions`                                |
 | Tests                                                                                     | `Tests/RoutePresenterTests.swift`, `Tests/SDKIntegrationTests.swift`              |
 
-Build, launch and test commands are in the [session handoff](claude-code-handoff-2026-09-19-pass3.md)
+Build, launch and test commands are in the [session handoff](handoff-2026-09-19-pass3.md)
 §9. The route summary is logged as a `notice` and persists; the per-step lines are `debug` and
 do not, so stream them before calculating:
 

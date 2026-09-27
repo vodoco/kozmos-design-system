@@ -180,7 +180,7 @@ const result = spawnSync(
   "pnpm",
   [
     "--filter",
-    "@kozmos/react",
+    "@kozmos-ds/react",
     "exec",
     "figma",
     "connect",

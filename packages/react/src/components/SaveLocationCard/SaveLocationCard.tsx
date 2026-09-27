@@ -2,7 +2,12 @@ import React from "react";
 import { cn } from "../../utils";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import { Button } from "../Button";
-import { Car, Navigation, MapPin, Edit3 } from "lucide-react";
+import {
+  Car01 as Car,
+  NavigationPointer01 as Navigation,
+  MarkerPin01 as MapPin,
+  Edit03 as Edit3,
+} from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export interface SaveLocationCardProps extends React.HTMLAttributes<HTMLDivElement> {

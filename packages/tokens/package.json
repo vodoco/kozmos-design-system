@@ -1,6 +1,6 @@
 {
-  "name": "@kozmos/tokens",
-  "version": "0.0.1",
+  "name": "@kozmos-ds/tokens",
+  "version": "0.1.0",
   "description": "Kozmos design tokens: CSS custom properties for light and dark themes, a JavaScript module, and generated Swift and Kotlin sources.",
   "keywords": [
     "kozmos",
@@ -11,6 +11,15 @@
     "kotlin"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system-.git",
+    "directory": "packages/tokens"
+  },
+  "homepage": "https://github.com/vodoco/kozmos-design-system-/tree/main/packages/tokens#readme",
+  "bugs": {
+    "url": "https://github.com/vodoco/kozmos-design-system-/issues"
+  },
   "publishConfig": {
     "access": "public"
   },

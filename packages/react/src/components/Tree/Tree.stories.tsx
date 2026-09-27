@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { ReactNode } from "react";
-import { EyeOff, FolderOpen, Lock, MapPin, Pencil } from "lucide-react";
+import {
+  EyeOff,
+  Folder as FolderOpen,
+  Lock01 as Lock,
+  MarkerPin01 as MapPin,
+  Pencil01 as Pencil,
+} from "@kozmos-ds/icons";
 import {
   Tree,
   TreeChildItemRow,

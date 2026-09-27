@@ -4,7 +4,7 @@ import type {
   POIDetailAttributeGroup,
   POIDetailSummary,
   POIServicePresentation,
-} from "@kozmos/product-contracts";
+} from "@kozmos-ds/product-contracts";
 import snapshot from "./taxonomy-10.12.0.fixture.json";
 
 interface ValueDisplay {

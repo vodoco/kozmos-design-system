@@ -35,7 +35,10 @@ const fail = (m) => {
 
 // Counts as they stood on 2026-09-09. Lower these as they are fixed.
 const BASELINE = {
-  colour: { total: 19, components: 6 },
+  // 19 across 6 until 2026-09-25, when FeedbackCard's success mark stopped
+  // being bg-green-100 / dark:bg-green-900-30 — a fixed rgb(220 252 231) that
+  // a re-themed product got here and nowhere else — and took the success role.
+  colour: { total: 18, components: 6 },
   // 6 across 5 until 2026-09-22, when the four map cards took the panel role.
   radius: { total: 2, components: 1 },
 };

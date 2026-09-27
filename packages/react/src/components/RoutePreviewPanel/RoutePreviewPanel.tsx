@@ -2,8 +2,8 @@ import React from "react";
 import type {
   RouteOptionPresentation,
   RouteReadiness,
-} from "@kozmos/product-contracts";
-import { ArrowLeft } from "lucide-react";
+} from "@kozmos-ds/product-contracts";
+import { ArrowLeft } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import {
   EMOTION_FILLED_CLASSES,

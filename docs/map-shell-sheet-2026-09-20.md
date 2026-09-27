@@ -1,6 +1,6 @@
 # The map shell's sheet: fitted to its content, on the surface style, 20 September 2026
 
-Claude Code, on Olcay's answer to the glass stage's second decision
+The coding agent, on Olcay's answer to the glass stage's second decision
 ([glass-surface-2026-09-20.md](glass-surface-2026-09-20.md) §5): the shell's sheet takes the
 surface style, with the compact detent chosen in the navigation stage. Built on iOS, React and
 Android; the Pointr QA app rests its directions sheet on both, as the prototype's navigation

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Icon } from "@kozmos/react";
+import { Icon } from "@kozmos-ds/react";
 import type { MapBuilding } from "../map/PointrMap";
 
 /**
@@ -44,18 +44,26 @@ export function LevelSelector({
   offsetRight?: number;
 }) {
   const [open, setOpen] = useState(false);
-  const i = Math.max(0, buildings.findIndex((b) => b.id === buildingId));
+  const i = Math.max(
+    0,
+    buildings.findIndex((b) => b.id === buildingId),
+  );
   const building = buildings[i];
   if (!building) return null;
-  const level = building.levels.find((l) => l.index === levelIndex) ?? building.levels[0];
+  const level =
+    building.levels.find((l) => l.index === levelIndex) ?? building.levels[0];
 
   // Stepping to another building lands on its nearest level to the one you were on, so you keep
   // your place vertically instead of being dumped on the ground floor.
   const step = (by: number) => {
     const next = buildings[(i + by + buildings.length) % buildings.length];
-    const nearest = next.levels.reduce((best, l) =>
-      Math.abs(l.index - levelIndex) < Math.abs(best.index - levelIndex) ? l : best,
-    next.levels[0]);
+    const nearest = next.levels.reduce(
+      (best, l) =>
+        Math.abs(l.index - levelIndex) < Math.abs(best.index - levelIndex)
+          ? l
+          : best,
+      next.levels[0],
+    );
     setOpen(false);
     onChange(next.id, nearest.index);
   };
@@ -77,21 +85,43 @@ export function LevelSelector({
         zIndex: 4,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", padding: "8px 10px" }}>
+      <div
+        style={{ display: "flex", alignItems: "center", padding: "8px 10px" }}
+      >
         <button
           onClick={() => step(-1)}
           aria-label="Previous building"
-          style={{ background: "none", border: "none", cursor: "pointer", color: "#5d626f", display: "grid" }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#5d626f",
+            display: "grid",
+          }}
         >
           <Icon name="arrow-left" />
         </button>
-        <div style={{ flex: 1, textAlign: "center", fontSize: 14, fontWeight: 600, color: INK }}>
+        <div
+          style={{
+            flex: 1,
+            textAlign: "center",
+            fontSize: 14,
+            fontWeight: 600,
+            color: INK,
+          }}
+        >
           {building.name}
         </div>
         <button
           onClick={() => step(1)}
           aria-label="Next building"
-          style={{ background: "none", border: "none", cursor: "pointer", color: "#5d626f", display: "grid" }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#5d626f",
+            display: "grid",
+          }}
         >
           <Icon name="arrow-right" />
         </button>
@@ -101,8 +131,14 @@ export function LevelSelector({
         building.levels.map((l) => (
           <button
             key={l.index}
-            onClick={() => { setOpen(false); onChange(building.id, l.index); }}
-            style={{ ...ROW, background: l.index === level.index ? "#eceef1" : "none" }}
+            onClick={() => {
+              setOpen(false);
+              onChange(building.id, l.index);
+            }}
+            style={{
+              ...ROW,
+              background: l.index === level.index ? "#eceef1" : "none",
+            }}
           >
             {l.long} ({l.short})
           </button>
@@ -111,7 +147,13 @@ export function LevelSelector({
         <button
           onClick={() => setOpen(true)}
           aria-expanded={false}
-          style={{ ...ROW, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+          style={{
+            ...ROW,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+          }}
         >
           <span style={{ flex: 1, textAlign: "center" }}>
             {level.long} ({level.short})

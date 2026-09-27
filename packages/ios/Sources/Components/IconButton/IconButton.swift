@@ -44,9 +44,12 @@ public struct KozmosIconButton: View {
         Button(action: action) {
             Group {
                 if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(foregroundColor)
+                    // The system's arc at the small size, taking the control's
+                    // own foreground — one drawing on all four platforms
+                    // (2026-09-22). Hidden from assistive technology: the
+                    // control is disabled and already named.
+                    KozmosSpinner(size: .sm, color: foregroundColor)
+                        .accessibilityHidden(true)
                 } else {
                     Image(systemName: iconName)
                         .font(iconFont)

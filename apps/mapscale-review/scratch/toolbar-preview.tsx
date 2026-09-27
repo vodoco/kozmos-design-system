@@ -4,8 +4,8 @@
  */
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ThemeProvider } from "@kozmos/react";
-import "@kozmos/react/dist/style.css";
+import { ThemeProvider } from "@kozmos-ds/react";
+import "@kozmos-ds/react/dist/style.css";
 import "../src/index.css";
 import { GeometryToolbar, type GeomState } from "../src/ui/GeometryToolbar";
 import { SavedNotice } from "../src/ui/SavedNotice";

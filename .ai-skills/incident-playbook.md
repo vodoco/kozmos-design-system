@@ -6,12 +6,12 @@
 
 ## Incident Severity Levels
 
-| Level | Definition | Response SLA | Resolution SLA | Examples |
-|-------|------------|--------------|----------------|----------|
-| **P0 - Critical** | Production down for major consumer, no workaround | 15 min acknowledge | 2 hours | Button component crashes on render; ThemeProvider breaks all styling |
-| **P1 - High** | Significant functionality broken, workaround exists | 1 hour | 24 hours | Form submission fails in Safari; Dark mode colors inverted |
-| **P2 - Medium** | Feature broken in edge case, simple workaround | 4 hours | Next sprint | Icon fails to load for specific POI type; RTL layout broken on one component |
-| **P3 - Low** | Cosmetic or minor issue | Next business day | Backlog | Hover state slightly off-color; Typo in aria-label |
+| Level             | Definition                                          | Response SLA       | Resolution SLA | Examples                                                                     |
+| ----------------- | --------------------------------------------------- | ------------------ | -------------- | ---------------------------------------------------------------------------- |
+| **P0 - Critical** | Production down for major consumer, no workaround   | 15 min acknowledge | 2 hours        | Button component crashes on render; ThemeProvider breaks all styling         |
+| **P1 - High**     | Significant functionality broken, workaround exists | 1 hour             | 24 hours       | Form submission fails in Safari; Dark mode colors inverted                   |
+| **P2 - Medium**   | Feature broken in edge case, simple workaround      | 4 hours            | Next sprint    | Icon fails to load for specific POI type; RTL layout broken on one component |
+| **P3 - Low**      | Cosmetic or minor issue                             | Next business day  | Backlog        | Hover state slightly off-color; Typo in aria-label                           |
 
 ---
 
@@ -51,22 +51,28 @@
 ### Phase 1: Detection & Acknowledgment (0-15 min)
 
 #### 1.1 Issue Reported
+
 Consumer reports via:
+
 - GitHub Issue (preferred)
 - Slack #kozmos-support channel
 - Direct message to team member
 
 #### 1.2 Acknowledge Receipt
+
 ```markdown
 <!-- GitHub Issue Response Template -->
+
 Thanks for reporting this issue. We're investigating now.
 
 **Initial Assessment:**
+
 - Severity: [P0/P1/P2/P3]
 - Affected versions: @kozmos/react@x.y.z
 - Platforms impacted: [React/iOS/Android/RN/Vue]
 
 **Next Steps:**
+
 - [ ] Reproducing locally
 - [ ] Identifying root cause
 - [ ] ETA for fix: [time estimate]
@@ -75,6 +81,7 @@ We'll update this issue as we progress.
 ```
 
 #### 1.3 Alert Team (P0/P1 only)
+
 ```
 # Slack message to #kozmos-incidents
 🚨 **P0/P1 Incident Declared**
@@ -93,6 +100,7 @@ Investigating now. Updates every 30 min.
 ### Phase 2: Triage & Decision (15-60 min)
 
 #### 2.1 Reproduce the Issue
+
 ```bash
 # Clone consumer's reproduction if provided
 git clone [repro-repo]
@@ -108,6 +116,7 @@ pnpm add @kozmos/react@[affected-version]
 ```
 
 #### 2.2 Identify Root Cause
+
 - Check recent commits to affected package
 - Review changelog for related changes
 - Check if issue exists in previous versions
@@ -142,6 +151,7 @@ pnpm add @kozmos/react@[affected-version]
 ### Phase 3: Hotfix Process
 
 #### 3.1 Create Hotfix Branch
+
 ```bash
 # From the affected release tag
 git checkout v1.2.3
@@ -157,7 +167,9 @@ pnpm typecheck
 ```
 
 #### 3.2 Expedited Review (P0/P1)
+
 For P0/P1 incidents, normal PR process is abbreviated:
+
 - Single reviewer approval (any core team member)
 - Skip visual regression if not UI-related
 - Skip Chromatic approval if blocking
@@ -184,6 +196,7 @@ Fixes #123"
 ```
 
 #### 3.3 Publish Hotfix Release
+
 ```bash
 # After PR merged
 git checkout main
@@ -204,24 +217,29 @@ git push --tags
 ```
 
 #### 3.4 Notify Consumers
-```markdown
+
+````markdown
 <!-- GitHub Issue Update -->
+
 ## ✅ Fix Released
 
 **Version:** @kozmos/react@1.2.4
 **Changelog:** [link]
 
 **To update:**
+
 ```bash
 pnpm update @kozmos/react@1.2.4
 ```
+````
 
 Please confirm the fix resolves your issue. We'll close this in 48 hours if no response.
 
 ---
 
 **Post-mortem scheduled for [date]. Summary will be posted here.**
-```
+
+````
 
 ---
 
@@ -234,17 +252,20 @@ npm view @kozmos/react versions --json | tail -10
 
 # Verify the safe version
 npm info @kozmos/react@1.2.2
-```
+````
 
 #### 4.2 Deprecate Broken Version
+
 ```bash
 # Mark broken version as deprecated
 npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 ```
 
 #### 4.3 Communicate Rollback
-```markdown
+
+````markdown
 <!-- Slack #kozmos-announcements -->
+
 ⚠️ **Version Rollback Notice**
 
 **Package:** @kozmos/react
@@ -253,15 +274,18 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 
 **Action required:**
 If you're on 1.2.3, update immediately:
+
 ```bash
 pnpm update @kozmos/react@1.2.4
 ```
+````
 
 **Root cause:** [brief description]
 **Status:** Fix released in 1.2.4
 
 Questions? Thread below or #kozmos-support
-```
+
+````
 
 ---
 
@@ -317,9 +341,10 @@ Schedule within 48 hours of resolution. Use this template:
 
 ## Prevention
 [How we'll prevent this class of issue in the future]
-```
+````
 
 #### 5.2 Create Prevention Items
+
 Convert action items to GitHub issues:
 
 ```bash
@@ -340,7 +365,8 @@ Acceptance criteria:
 ## Communication Templates
 
 ### Consumer Notification (P0/P1)
-```markdown
+
+````markdown
 Subject: [ACTION REQUIRED] Critical issue in @kozmos/react@1.2.3
 
 Hi [Team],
@@ -348,15 +374,19 @@ Hi [Team],
 We've identified a critical issue in @kozmos/react@1.2.3 that causes [brief description].
 
 **Immediate action:**
+
 - If you're on version 1.2.3, update to 1.2.4 immediately
 - If you haven't updated past 1.2.2, you're not affected
 
 **Update command:**
+
 ```bash
 pnpm update @kozmos/react@1.2.4
 ```
+````
 
 **Details:**
+
 - Issue: [link to GitHub issue]
 - Root cause: [brief]
 - Fix: [brief]
@@ -366,7 +396,8 @@ We apologize for any disruption. A post-mortem will be shared within 48 hours.
 Questions? Reply to this email or reach us at #kozmos-support.
 
 — Kozmos Design System Team
-```
+
+````
 
 ### All-Clear Notification
 ```markdown
@@ -387,21 +418,23 @@ Post-mortem summary: [link]
 Thank you for your patience.
 
 — Kozmos Design System Team
-```
+````
 
 ---
 
 ## On-Call Rotation
 
 ### Primary Responders
-| Week | Primary | Backup |
-|------|---------|--------|
-| 1 | React Lead | Core Team Member |
-| 2 | iOS Lead | React Lead |
-| 3 | Android Lead | iOS Lead |
-| 4 | Core Team Member | Android Lead |
+
+| Week | Primary          | Backup           |
+| ---- | ---------------- | ---------------- |
+| 1    | React Lead       | Core Team Member |
+| 2    | iOS Lead         | React Lead       |
+| 3    | Android Lead     | iOS Lead         |
+| 4    | Core Team Member | Android Lead     |
 
 ### Escalation Path
+
 ```
 Level 1: Primary on-call (15 min response)
     ↓ (no response in 15 min)
@@ -413,15 +446,17 @@ Level 4: Engineering manager
 ```
 
 ### Contact Methods
+
 - **Slack:** #kozmos-incidents (monitored during business hours)
 - **PagerDuty:** [For P0 after-hours, if configured]
-- **Email:** kozmos-oncall@pointr.ai
+- **Email:** the Kozmos on-call address (ask an owner; deliberately not written here)
 
 ---
 
 ## Runbook Quick Reference
 
 ### I just got paged for a P0
+
 1. Acknowledge in Slack within 15 min
 2. Open the GitHub issue
 3. Start reproducing locally
@@ -429,6 +464,7 @@ Level 4: Engineering manager
 5. If can't fix in 2 hours → rollback
 
 ### I need to publish a hotfix NOW
+
 ```bash
 # Assuming fix is ready and tested
 git checkout main && git pull
@@ -440,12 +476,14 @@ npm deprecate @kozmos/[pkg]@[broken] "Use [fixed] instead"
 ```
 
 ### I need to rollback a release
+
 ```bash
 npm deprecate @kozmos/react@1.2.3 "Critical bug, use 1.2.2 or 1.2.4"
 # Then publish fix as 1.2.4 (never re-use 1.2.3)
 ```
 
 ### I need to find who's using a broken version
+
 ```bash
 # Check npm download stats (approximate)
 npm info @kozmos/react
@@ -458,16 +496,16 @@ grep "@kozmos/react" /path/to/sdk/pnpm-lock.yaml
 
 ## Metrics to Track
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| P0 acknowledgment time | < 15 min | Time from report to first response |
-| P0 resolution time | < 2 hours | Time from report to fix published |
-| P1 resolution time | < 24 hours | Time from report to fix published |
-| Incidents per quarter | < 2 P0/P1 | Count of P0+P1 incidents |
-| Post-mortem completion | 100% for P0/P1 | Post-mortem published within 48h |
-| Action item completion | > 90% | Prevention items closed within 2 weeks |
+| Metric                 | Target         | Measurement                            |
+| ---------------------- | -------------- | -------------------------------------- |
+| P0 acknowledgment time | < 15 min       | Time from report to first response     |
+| P0 resolution time     | < 2 hours      | Time from report to fix published      |
+| P1 resolution time     | < 24 hours     | Time from report to fix published      |
+| Incidents per quarter  | < 2 P0/P1      | Count of P0+P1 incidents               |
+| Post-mortem completion | 100% for P0/P1 | Post-mortem published within 48h       |
+| Action item completion | > 90%          | Prevention items closed within 2 weeks |
 
 ---
 
-*Last updated: 2025-02-07*
-*Maintainer: Kozmos Design System Team*
+_Last updated: 2025-02-07_
+_Maintainer: Kozmos Design System Team_

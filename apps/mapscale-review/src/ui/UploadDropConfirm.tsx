@@ -5,7 +5,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@kozmos/react";
+} from "@kozmos-ds/react";
 import { ConfirmOverlay } from "./ConfirmOverlay";
 import type { MapBuilding } from "../map/PointrMap";
 import type { LevelRef } from "../screens/MapContent";

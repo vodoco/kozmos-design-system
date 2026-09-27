@@ -63,7 +63,7 @@ After code merges, regenerate the manifest, update the Figma component, then upd
 9. Use root `pnpm figma:publish:dry` only after non-core scaffold mappings have real node IDs.
 10. A new `.figma.*` file goes into its platform's `figma.linked.config.json` by name, beside its source file. The configs are lists, not globs: a file left off is never validated or published, and `pnpm components:contract:check` fails on it.
 11. Publish only when asked: `pnpm figma:publish:linked` and `pnpm figma:publish:native:linked`, from a clean, pushed branch that holds every mapping `main` has, or from `main` after the merge. Each publish sends its platform's whole linked set.
-12. Then `pnpm figma:connect:readback`, with Figma desktop open on the Core Library and its Dev Mode MCP server on: every linked node must show a snippet on every platform, with imports a consumer can use (`@kozmos/react`, `import Kozmos`, the Compose package).
+12. Then `pnpm figma:connect:readback`, with Figma desktop open on the Core Library and its Dev Mode MCP server on: every linked node must show a snippet on every platform, with imports a consumer can use (`@kozmos-ds/react`, `import Kozmos`, the Compose package).
 
 ## Current Plugin Scope
 

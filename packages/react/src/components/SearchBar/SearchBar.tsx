@@ -1,5 +1,5 @@
 import React, { forwardRef } from "react";
-import { Search, X } from "lucide-react";
+import { SearchMd as Search, X } from "@kozmos-ds/icons";
 import { cva } from "class-variance-authority";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
@@ -26,8 +26,25 @@ export interface SearchBarProps extends Omit<
   value?: string;
   onChange?: (value: string) => void;
   onClear?: () => void;
+  /** The clear button's accessible name. Defaults to "Clear search". */
+  clearLabel?: string;
   containerClassName?: string;
   variant?: "floating" | "inline";
+  /**
+   * What sits at the end of the search row — the assistant's button, in the
+   * SDK's sheet.
+   *
+   * The field is `w-full` and always has been, so a caller composing the pair
+   * in a row of their own got the field on one line and the button on the
+   * next, unless they happened to know to pass `flex-1` through
+   * `containerClassName`. Storybook's example knew; the reference site's did
+   * not, and neither will an integrator's. So the row is the component's, not
+   * the caller's: with this set the field and what follows it cannot be put on
+   * separate lines.
+   */
+  trailing?: React.ReactNode;
+  /** Classes for the row `trailing` creates, not for the field inside it. */
+  rowClassName?: string;
 }
 
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
@@ -35,11 +52,19 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     {
       className,
       containerClassName,
+      rowClassName,
+      trailing,
       variant,
       value,
       onChange,
       onClear,
       placeholder = "Search...",
+      /**
+       * The clear button's accessible name. Story 2 reads this interface in
+       * other languages, and a fixed English string is a control a visitor
+       * cannot hear in theirs.
+       */
+      clearLabel = "Clear search",
       type = "search",
       "aria-label": ariaLabel,
       ...props
@@ -48,14 +73,22 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
   ) => {
     const { trackEvent } = useKozmosAnalytics();
 
-    return (
+    const field = (
       <div
-        className={cn(searchBarVariants({ variant }), containerClassName)}
+        className={cn(
+          searchBarVariants({ variant }),
+          // In a row the field takes what is left, and `min-w-0` lets it be
+          // narrower than the text inside it — without that a long placeholder
+          // pushes the row wider than its container and the wrap comes back by
+          // another door.
+          trailing && "w-auto min-w-0 flex-1",
+          containerClassName,
+        )}
         role="search"
       >
         <Search
           aria-hidden="true"
-          className="h-[18px] w-[18px] text-muted-foreground mr-2 shrink-0"
+          className="h-[18px] w-[18px] text-muted-foreground me-2 shrink-0"
         />
         <input
           ref={ref}
@@ -83,8 +116,8 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               onChange?.("");
               onClear?.();
             }}
-            className="kozmos-search-clear ml-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Clear search"
+            className="kozmos-search-clear ms-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={clearLabel}
             type="button"
           >
             {/* A 24 grey circle to see; the 44 button around it to hit. */}
@@ -96,6 +129,23 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             </span>
           </button>
         )}
+      </div>
+    );
+
+    if (!trailing) return field;
+
+    return (
+      <div
+        className={cn(
+          "kozmos-search-row flex w-full min-w-0 items-center gap-2",
+          rowClassName,
+        )}
+      >
+        {field}
+        {/* A row, not a box: the slot takes more than one control in the
+            prototype — the assistant beside Filters — and two inline-flex
+            buttons in a plain div touch, with none of the row's gap. */}
+        <div className="flex shrink-0 items-center gap-2">{trailing}</div>
       </div>
     );
   },

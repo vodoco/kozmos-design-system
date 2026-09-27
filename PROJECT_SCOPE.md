@@ -9,25 +9,30 @@
 > **AI Agents:** For detailed operational documents, see the `.ai-skills/` directory (25 skill files):
 >
 > **Core References:**
+>
 > - [Design Philosophy](./.ai-skills/design-philosophy.md) — Visual language, interaction patterns
 > - [Component Lifecycle](./.ai-skills/component-lifecycle.md) — From proposal to deprecation
 > - [Code Patterns](./.ai-skills/code-patterns.md) — Templates for all 6 platforms
 >
 > **Operations:**
+>
 > - [Incident Playbook](./.ai-skills/incident-playbook.md) — Production issues, hotfixes
 > - [Troubleshooting Guide](./.ai-skills/troubleshooting.md) — Common issues and solutions
 >
 > **Maintenance & Evolution:**
+>
 > - [Migration Guide](./.ai-skills/migration-guide.md) — Version upgrades and migrations
 > - [API Changelog](./.ai-skills/api-changelog.md) — Breaking changes and deprecations
 > - [Decision Log](./.ai-skills/decision-log.md) — Architecture Decision Records
 >
 > **Quality & Performance:**
+>
 > - [Performance Benchmarks](./.ai-skills/performance-benchmarks.md) — Budgets and baselines
 > - [Platform Mapping](./.ai-skills/platform-mapping.md) — Cross-platform component reference
 > - [Figma Audit](./.ai-skills/figma-audit.md) — Designer checklists
 >
 > **Technical Implementation (Executable):**
+>
 > - [Getting Started](./.ai-skills/getting-started.md) — Environment setup, project structure
 > - [Component Creation Guide](./.ai-skills/component-creation-guide.md) — Step-by-step for all platforms
 > - [Token Implementation](./.ai-skills/token-implementation.md) — Style Dictionary, DTCG format
@@ -37,14 +42,16 @@
 > - [Storybook Guide](./.ai-skills/storybook-guide.md) — Storybook setup, addons, documentation
 >
 > **Quality & Compliance:**
+>
 > - [Accessibility Guide](./.ai-skills/accessibility-guide.md) — WCAG 2.1 AA compliance, component checklists
 > - [i18n Guide](./.ai-skills/i18n-guide.md) — Internationalization, RTL support, translations
 > - [Theming Guide](./.ai-skills/theming-guide.md) — White-labeling, customer themes, dark mode
 > - [Security Guide](./.ai-skills/security-guide.md) — Security hardening, vulnerability prevention
 >
 > **AI Integration (For Consuming Projects):**
-> - [MCP Server Specification](./.ai-skills/mcp-server-specification.md) — `@kozmos/mcp-server` design for Claude/Cursor
-> - [AI Integration Guide](./.ai-skills/ai-integration-guide.md) — Context files for Claude, Cursor, Anti Gravity, Copilot, Codeium, and more
+>
+> - [MCP Server Specification](./.ai-skills/mcp-server-specification.md) — `@kozmos/mcp-server` design for Cursor and similar assistants
+> - [AI Integration Guide](./.ai-skills/ai-integration-guide.md) — Context files for Cursor, Anti Gravity, Copilot, Codeium and more
 
 ---
 
@@ -65,9 +72,9 @@ Figma serves as the single source of truth. The system uses **Figma Code Connect
 
 Two prior implementations exist in `/Volumes/4TB Depo/development/K/`:
 
-| Repository | Stack | Status |
-|---|---|---|
-| `kozmos-design-system` | Turborepo + pnpm, Stitches CSS-in-JS, Storybook 7, custom Figma sync scripts, tsup builds | Partially built: tokens package with Figma parser/writer, core package with Stitches config, react package with CVA/Tailwind Merge, empty mobile/utils/tools packages |
+| Repository              | Stack                                                                                           | Status                                                                                                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kozmos-design-system`  | Turborepo + pnpm, Stitches CSS-in-JS, Storybook 7, custom Figma sync scripts, tsup builds       | Partially built: tokens package with Figma parser/writer, core package with Stitches config, react package with CVA/Tailwind Merge, empty mobile/utils/tools packages |
 | `_kozmos-design-system` | npm workspaces, styled-components, Style Dictionary with iOS/Android/Web outputs, Rollup builds | Partially built: tokens with Style Dictionary multi-platform config, web package with Button/TextInput/Layout/Typography/Icons components, empty iOS/Android packages |
 
 ### Key Decision Points
@@ -277,36 +284,39 @@ All tokens conform to the **W3C Design Tokens Community Group (DTCG) specificati
 ### 3.1 Token Taxonomy
 
 #### Foundation Tokens (Global/Primitive)
+
 Raw values not tied to any semantic meaning.
 
-| Category | Tokens | Examples |
-|---|---|---|
-| **Color Palette** | Brand, Neutrals, Status | `color.blue.500: #2563eb`, `color.neutral.100: #f5f5f5` |
-| **Typography Scale** | Font families, sizes, weights, line heights | `font.size.300: 14px`, `font.weight.bold: 700` |
-| **Spacing Scale** | 4px base unit, geometric scale | `space.100: 4px`, `space.200: 8px`, `space.400: 16px` |
-| **Border Radius** | Corner rounding | `radius.100: 4px`, `radius.200: 8px`, `radius.full: 9999px` |
-| **Elevation/Shadow** | Box shadows, z-index (composite type) | `shadow.sm`, `shadow.md`, `shadow.lg` |
-| **Motion** | Duration, easing curves | `duration.fast: 150ms`, `easing.standard: cubic-bezier(...)` |
-| **Opacity** | Alpha values | `opacity.disabled: 0.38`, `opacity.hover: 0.08` |
-| **Breakpoints** | Responsive thresholds | `breakpoint.sm: 640px`, `breakpoint.md: 768px` |
-| **Z-Index** | Stacking context layers | `z-index.dropdown: 1000`, `z-index.modal: 1300` |
+| Category             | Tokens                                      | Examples                                                     |
+| -------------------- | ------------------------------------------- | ------------------------------------------------------------ |
+| **Color Palette**    | Brand, Neutrals, Status                     | `color.blue.500: #2563eb`, `color.neutral.100: #f5f5f5`      |
+| **Typography Scale** | Font families, sizes, weights, line heights | `font.size.300: 14px`, `font.weight.bold: 700`               |
+| **Spacing Scale**    | 4px base unit, geometric scale              | `space.100: 4px`, `space.200: 8px`, `space.400: 16px`        |
+| **Border Radius**    | Corner rounding                             | `radius.100: 4px`, `radius.200: 8px`, `radius.full: 9999px`  |
+| **Elevation/Shadow** | Box shadows, z-index (composite type)       | `shadow.sm`, `shadow.md`, `shadow.lg`                        |
+| **Motion**           | Duration, easing curves                     | `duration.fast: 150ms`, `easing.standard: cubic-bezier(...)` |
+| **Opacity**          | Alpha values                                | `opacity.disabled: 0.38`, `opacity.hover: 0.08`              |
+| **Breakpoints**      | Responsive thresholds                       | `breakpoint.sm: 640px`, `breakpoint.md: 768px`               |
+| **Z-Index**          | Stacking context layers                     | `z-index.dropdown: 1000`, `z-index.modal: 1300`              |
 
 #### Semantic Tokens (Alias/Theme-Aware)
+
 Map foundation tokens to purpose. These change per theme.
 
-| Category | Light Mode | Dark Mode |
-|---|---|---|
-| `color.background.primary` | `color.white` | `color.neutral.900` |
-| `color.background.secondary` | `color.neutral.50` | `color.neutral.800` |
-| `color.text.primary` | `color.neutral.900` | `color.white` |
-| `color.text.secondary` | `color.neutral.600` | `color.neutral.400` |
-| `color.interactive.primary` | `color.blue.600` | `color.blue.400` |
-| `color.interactive.primary.hover` | `color.blue.700` | `color.blue.300` |
-| `color.border.default` | `color.neutral.200` | `color.neutral.700` |
-| `color.status.error` | `color.red.600` | `color.red.400` |
-| `color.status.success` | `color.green.600` | `color.green.400` |
+| Category                          | Light Mode          | Dark Mode           |
+| --------------------------------- | ------------------- | ------------------- |
+| `color.background.primary`        | `color.white`       | `color.neutral.900` |
+| `color.background.secondary`      | `color.neutral.50`  | `color.neutral.800` |
+| `color.text.primary`              | `color.neutral.900` | `color.white`       |
+| `color.text.secondary`            | `color.neutral.600` | `color.neutral.400` |
+| `color.interactive.primary`       | `color.blue.600`    | `color.blue.400`    |
+| `color.interactive.primary.hover` | `color.blue.700`    | `color.blue.300`    |
+| `color.border.default`            | `color.neutral.200` | `color.neutral.700` |
+| `color.status.error`              | `color.red.600`     | `color.red.400`     |
+| `color.status.success`            | `color.green.600`   | `color.green.400`   |
 
 #### Component Tokens
+
 Scoped to individual components. Reference semantic tokens.
 
 ```
@@ -324,16 +334,19 @@ button.font.size.md               → font.size.300
 Multi-platform output using Style Dictionary v4:
 
 **Web outputs:**
+
 - `tokens.css` - CSS custom properties (`:root { --color-blue-500: #2563eb; }`)
 - `tokens.ts` - TypeScript module with full type safety
 - `tokens.module.css` - CSS Modules compatible
 
 **iOS outputs:**
+
 - `KozmosTokens.swift` - Swift struct with static properties
 - `KozmosColors.swift` - UIColor/Color extensions
 - `KozmosTypography.swift` - Font descriptors
 
 **Android outputs:**
+
 - `tokens.xml` - Android resource XML
 - `KozmosTokens.kt` - Kotlin object with Compose Color/TextStyle values
 - `themes.xml` - Android theme attributes
@@ -343,6 +356,7 @@ Multi-platform output using Style Dictionary v4:
 Tokens that change value based on context (breakpoint, device, density):
 
 **Web — CSS media query re-mapping:**
+
 ```css
 :root {
   --font-size-body: 14px;
@@ -357,11 +371,13 @@ Tokens that change value based on context (breakpoint, device, density):
 ```
 
 **iOS — adaptive via `@Environment(\.sizeClass)`:**
+
 ```swift
 KozmosTokens.fontSize(for: sizeClass == .compact ? .sm : .md)
 ```
 
 **Android — adaptive via `WindowSizeClass`:**
+
 ```kotlin
 val bodySize = when (windowSizeClass.widthSizeClass) {
     WindowWidthSizeClass.Compact -> KozmosTokens.fontSize300
@@ -379,11 +395,13 @@ Two-directional sync strategy:
 2. **Code to Figma** (validation): CI validates that code tokens match Figma source, flags drift
 
 **Sync mechanism:**
+
 - Figma Variables REST API (`GET /v1/files/:key/variables/local`)
 - Output: W3C DTCG format (`.tokens.json`)
 - Trigger: Webhook on Figma file version change, or manual via `pnpm sync-tokens`
 
 **Tokens Studio integration** (optional, evaluated in Open Questions):
+
 - Bidirectional sync between Figma and Git repository
 - Supports composite token types Figma Variables cannot natively represent (multi-value borders, complex shadows)
 - Remote storage to GitHub/GitLab with branch-based workflows
@@ -393,6 +411,7 @@ Two-directional sync strategy:
 Modern displays support colors beyond sRGB. The token system supports wide gamut colors:
 
 **Token definition (DTCG format):**
+
 ```json
 {
   "color": {
@@ -409,11 +428,11 @@ Modern displays support colors beyond sRGB. The token system supports wide gamut
 
 **Platform outputs:**
 
-| Platform | Format | Fallback Strategy |
-|---|---|---|
-| **Web** | `oklch()` with `@supports` fallback to hex | `color: #22c55e; @supports (color: oklch(0 0 0)) { color: oklch(70% 0.25 145); }` |
-| **iOS** | `Color(.displayP3, red:, green:, blue:)` | Automatic fallback to sRGB on older displays |
-| **Android** | `Color.colorSpace(ColorSpaces.DisplayP3)` | API 26+ with sRGB fallback |
+| Platform    | Format                                     | Fallback Strategy                                                                 |
+| ----------- | ------------------------------------------ | --------------------------------------------------------------------------------- |
+| **Web**     | `oklch()` with `@supports` fallback to hex | `color: #22c55e; @supports (color: oklch(0 0 0)) { color: oklch(70% 0.25 145); }` |
+| **iOS**     | `Color(.displayP3, red:, green:, blue:)`   | Automatic fallback to sRGB on older displays                                      |
+| **Android** | `Color.colorSpace(ColorSpaces.DisplayP3)`  | API 26+ with sRGB fallback                                                        |
 
 **Style Dictionary transform:** Custom `color/oklch` transform converts oklch to platform-appropriate formats.
 
@@ -424,6 +443,7 @@ Modern displays support colors beyond sRGB. The token system supports wide gamut
 Color token pairs are validated for WCAG contrast compliance during the Style Dictionary build:
 
 **Configuration (`style-dictionary.config.ts`):**
+
 ```typescript
 {
   hooks: {
@@ -455,38 +475,42 @@ Beyond duration/easing tokens, a complete motion system defines semantic animati
 
 #### Motion Tokens
 
-| Token | Value | Usage |
-|---|---|---|
-| `motion.duration.instant` | `100ms` | Micro-interactions (checkbox, toggle) |
-| `motion.duration.fast` | `150ms` | Button hover, focus states |
-| `motion.duration.normal` | `250ms` | Dropdowns, tooltips, small reveals |
-| `motion.duration.slow` | `400ms` | Modal entrance, page transitions |
-| `motion.duration.deliberate` | `700ms` | Complex choreographed sequences |
-| `motion.easing.standard` | `cubic-bezier(0.4, 0, 0.2, 1)` | General purpose |
-| `motion.easing.decelerate` | `cubic-bezier(0, 0, 0.2, 1)` | Elements entering |
-| `motion.easing.accelerate` | `cubic-bezier(0.4, 0, 1, 1)` | Elements exiting |
-| `motion.easing.spring` | `cubic-bezier(0.175, 0.885, 0.32, 1.275)` | Playful bounce |
+| Token                        | Value                                     | Usage                                 |
+| ---------------------------- | ----------------------------------------- | ------------------------------------- |
+| `motion.duration.instant`    | `100ms`                                   | Micro-interactions (checkbox, toggle) |
+| `motion.duration.fast`       | `150ms`                                   | Button hover, focus states            |
+| `motion.duration.normal`     | `250ms`                                   | Dropdowns, tooltips, small reveals    |
+| `motion.duration.slow`       | `400ms`                                   | Modal entrance, page transitions      |
+| `motion.duration.deliberate` | `700ms`                                   | Complex choreographed sequences       |
+| `motion.easing.standard`     | `cubic-bezier(0.4, 0, 0.2, 1)`            | General purpose                       |
+| `motion.easing.decelerate`   | `cubic-bezier(0, 0, 0.2, 1)`              | Elements entering                     |
+| `motion.easing.accelerate`   | `cubic-bezier(0.4, 0, 1, 1)`              | Elements exiting                      |
+| `motion.easing.spring`       | `cubic-bezier(0.175, 0.885, 0.32, 1.275)` | Playful bounce                        |
 
 #### Semantic Motion Patterns
 
-| Pattern | Tokens Used | Description |
-|---|---|---|
-| `motion.enter` | `duration.normal` + `easing.decelerate` | Elements appearing |
-| `motion.exit` | `duration.fast` + `easing.accelerate` | Elements disappearing |
-| `motion.hover` | `duration.fast` + `easing.standard` | Hover state changes |
-| `motion.expand` | `duration.normal` + `easing.standard` | Accordions, dropdowns |
-| `motion.page` | `duration.slow` + `easing.decelerate` | Page/view transitions |
+| Pattern         | Tokens Used                             | Description           |
+| --------------- | --------------------------------------- | --------------------- |
+| `motion.enter`  | `duration.normal` + `easing.decelerate` | Elements appearing    |
+| `motion.exit`   | `duration.fast` + `easing.accelerate`   | Elements disappearing |
+| `motion.hover`  | `duration.fast` + `easing.standard`     | Hover state changes   |
+| `motion.expand` | `duration.normal` + `easing.standard`   | Accordions, dropdowns |
+| `motion.page`   | `duration.slow` + `easing.decelerate`   | Page/view transitions |
 
 #### Platform Implementation
 
 **Web:**
+
 ```css
 .kozmos-dialog[data-state="open"] {
-  animation: kozmos-fade-in var(--motion-duration-normal) var(--motion-easing-decelerate);
+  animation: kozmos-fade-in var(--motion-duration-normal)
+    var(--motion-easing-decelerate);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
@@ -494,12 +518,14 @@ Beyond duration/easing tokens, a complete motion system defines semantic animati
 ```
 
 **iOS:**
+
 ```swift
 .animation(.easeOut(duration: KozmosTokens.motionDurationNormal))
 // Respects system "Reduce Motion" automatically via .animation()
 ```
 
 **Android:**
+
 ```kotlin
 AnimatedVisibility(
     visible = isVisible,
@@ -514,6 +540,7 @@ AnimatedVisibility(
 #### Reduced Motion Compliance
 
 All components must:
+
 1. Check `prefers-reduced-motion` (web) / Reduce Motion setting (iOS) / animator duration scale (Android)
 2. Replace motion with instant state changes or subtle opacity fades
 3. Never disable functionality — only reduce motion
@@ -526,11 +553,11 @@ All components must:
 
 ### 4.0.1 Core Pillars
 
-| Pillar | Description |
-|--------|-------------|
-| **Clarity** | Information hierarchy that guides the eye; whitespace over decoration |
-| **Consistency** | Same patterns across all 6 platforms; predictable interactions |
-| **Accessibility** | Everyone can navigate, regardless of ability; WCAG AA minimum |
+| Pillar            | Description                                                           |
+| ----------------- | --------------------------------------------------------------------- |
+| **Clarity**       | Information hierarchy that guides the eye; whitespace over decoration |
+| **Consistency**   | Same patterns across all 6 platforms; predictable interactions        |
+| **Accessibility** | Everyone can navigate, regardless of ability; WCAG AA minimum         |
 
 ### 4.0.2 Visual Language Principles
 
@@ -549,6 +576,7 @@ All components must:
 ### 4.0.4 Design Decision Framework
 
 When making design decisions, ask in order:
+
 1. Is it accessible? (WCAG AA minimum)
 2. Is it consistent? (Matches existing patterns)
 3. Is it clear? (User understands immediately)
@@ -567,67 +595,67 @@ When making design decisions, ask in order:
 
 #### Phase 1 - Foundation Components
 
-| Component | Web (React) | iOS (SwiftUI) | Android (Compose) | Code Connect |
-|---|---|---|---|---|
-| **ThemeProvider** | Context + CSS vars | `@Environment` | `MaterialTheme` wrapper | N/A (system) |
-| **Box** | `<div>` + spacing/layout props | `VStack`/`HStack` | `Box`/`Column`/`Row` | Yes |
-| **Stack** | Flex container | `VStack`/`HStack`/`ZStack` | `Column`/`Row` | Yes |
-| **Text** | `<span>`/`<p>` | `Text` view | `Text` composable | Yes |
-| **Heading** | `<h1>`-`<h6>` | `Text` + font style | `Text` + MaterialTheme.typography | Yes |
-| **Button** | `<button>` with variants | `Button` view | `Button`/`OutlinedButton` | Yes |
-| **IconButton** | `<button>` with icon | `Button` + `Image` | `IconButton` | Yes |
-| **Icon** | SVG React component | `Image(systemName:)` / custom | `Icon` composable | Yes |
-| **Input** | `<input>` | `TextField` | `TextField`/`OutlinedTextField` | Yes |
-| **Checkbox** | `<input type="checkbox">` | `Toggle` with checkbox style | `Checkbox` | Yes |
-| **Radio** | `<input type="radio">` | `Picker` with radio style | `RadioButton` | Yes |
-| **Select** | Custom dropdown | `Picker` | `ExposedDropdownMenu` | Yes |
-| **Switch** | Toggle component | `Toggle` | `Switch` | Yes |
-| **Divider** | `<hr>` | `Divider` | `Divider` | Yes |
-| **Spacer** | Flex spacer | `Spacer` | `Spacer` | Yes |
+| Component         | Web (React)                    | iOS (SwiftUI)                 | Android (Compose)                 | Code Connect |
+| ----------------- | ------------------------------ | ----------------------------- | --------------------------------- | ------------ |
+| **ThemeProvider** | Context + CSS vars             | `@Environment`                | `MaterialTheme` wrapper           | N/A (system) |
+| **Box**           | `<div>` + spacing/layout props | `VStack`/`HStack`             | `Box`/`Column`/`Row`              | Yes          |
+| **Stack**         | Flex container                 | `VStack`/`HStack`/`ZStack`    | `Column`/`Row`                    | Yes          |
+| **Text**          | `<span>`/`<p>`                 | `Text` view                   | `Text` composable                 | Yes          |
+| **Heading**       | `<h1>`-`<h6>`                  | `Text` + font style           | `Text` + MaterialTheme.typography | Yes          |
+| **Button**        | `<button>` with variants       | `Button` view                 | `Button`/`OutlinedButton`         | Yes          |
+| **IconButton**    | `<button>` with icon           | `Button` + `Image`            | `IconButton`                      | Yes          |
+| **Icon**          | SVG React component            | `Image(systemName:)` / custom | `Icon` composable                 | Yes          |
+| **Input**         | `<input>`                      | `TextField`                   | `TextField`/`OutlinedTextField`   | Yes          |
+| **Checkbox**      | `<input type="checkbox">`      | `Toggle` with checkbox style  | `Checkbox`                        | Yes          |
+| **Radio**         | `<input type="radio">`         | `Picker` with radio style     | `RadioButton`                     | Yes          |
+| **Select**        | Custom dropdown                | `Picker`                      | `ExposedDropdownMenu`             | Yes          |
+| **Switch**        | Toggle component               | `Toggle`                      | `Switch`                          | Yes          |
+| **Divider**       | `<hr>`                         | `Divider`                     | `Divider`                         | Yes          |
+| **Spacer**        | Flex spacer                    | `Spacer`                      | `Spacer`                          | Yes          |
 
 #### Phase 2 - Interactive Components
 
-| Component | Description |
-|---|---|
-| **Toast/Snackbar** | Notification messages |
-| **Dialog/Modal** | Overlay dialogs |
-| **Tooltip** | Contextual information |
-| **Popover** | Rich content overlay |
-| **Tabs** | Tab navigation |
-| **Accordion** | Expandable sections |
-| **Badge** | Status indicators |
-| **Avatar** | User/entity representation |
-| **Card** | Content container |
-| **Chip/Tag** | Categorization labels |
-| **Progress** | Linear/circular progress |
-| **Skeleton** | Loading placeholder |
+| Component          | Description                |
+| ------------------ | -------------------------- |
+| **Toast/Snackbar** | Notification messages      |
+| **Dialog/Modal**   | Overlay dialogs            |
+| **Tooltip**        | Contextual information     |
+| **Popover**        | Rich content overlay       |
+| **Tabs**           | Tab navigation             |
+| **Accordion**      | Expandable sections        |
+| **Badge**          | Status indicators          |
+| **Avatar**         | User/entity representation |
+| **Card**           | Content container          |
+| **Chip/Tag**       | Categorization labels      |
+| **Progress**       | Linear/circular progress   |
+| **Skeleton**       | Loading placeholder        |
 
 #### Phase 3 - Complex Components
 
-| Component | Description |
-|---|---|
-| **DataTable** | Sortable/filterable data grid |
-| **Navigation** | App navigation patterns |
-| **Sidebar** | Side panel layout |
-| **Breadcrumb** | Navigation path |
-| **Pagination** | Page navigation |
-| **Calendar/DatePicker** | Date selection |
-| **Autocomplete** | Search with suggestions |
-| **FileUpload** | File selection |
-| **Stepper** | Multi-step wizard |
+| Component               | Description                   |
+| ----------------------- | ----------------------------- |
+| **DataTable**           | Sortable/filterable data grid |
+| **Navigation**          | App navigation patterns       |
+| **Sidebar**             | Side panel layout             |
+| **Breadcrumb**          | Navigation path               |
+| **Pagination**          | Page navigation               |
+| **Calendar/DatePicker** | Date selection                |
+| **Autocomplete**        | Search with suggestions       |
+| **FileUpload**          | File selection                |
+| **Stepper**             | Multi-step wizard             |
 
 #### Pointr SDK-Specific Components (Phase 2-3)
 
-| Component | Description | Platforms |
-|---|---|---|
-| **MapView** | Indoor map container | Web, iOS, Android |
-| **WayfindingCard** | Navigation instruction | Web, iOS, Android |
-| **FloorSelector** | Floor/level picker | Web, iOS, Android |
-| **POICard** | Point of interest detail | Web, iOS, Android |
-| **SearchBar** | Location search | Web, iOS, Android |
-| **DirectionStep** | Turn-by-turn step | Web, iOS, Android |
-| **LocationPin** | Map marker | Web, iOS, Android |
-| **BottomSheet** | Pull-up panel | iOS, Android |
+| Component          | Description              | Platforms         |
+| ------------------ | ------------------------ | ----------------- |
+| **MapView**        | Indoor map container     | Web, iOS, Android |
+| **WayfindingCard** | Navigation instruction   | Web, iOS, Android |
+| **FloorSelector**  | Floor/level picker       | Web, iOS, Android |
+| **POICard**        | Point of interest detail | Web, iOS, Android |
+| **SearchBar**      | Location search          | Web, iOS, Android |
+| **DirectionStep**  | Turn-by-turn step        | Web, iOS, Android |
+| **LocationPin**    | Map marker               | Web, iOS, Android |
+| **BottomSheet**    | Pull-up panel            | iOS, Android      |
 
 ### 5.2 Component API Design Principles
 
@@ -647,6 +675,7 @@ Each component across all platforms should follow these conventions:
 For complex components with multiple related parts (Tabs, Accordion, Dialog), use the compound component pattern:
 
 **React example (Tabs):**
+
 ```tsx
 // Usage
 <Tabs defaultValue="tab1">
@@ -656,7 +685,7 @@ For complex components with multiple related parts (Tabs, Accordion, Dialog), us
   </Tabs.List>
   <Tabs.Content value="tab1">Content 1</Tabs.Content>
   <Tabs.Content value="tab2">Content 2</Tabs.Content>
-</Tabs>
+</Tabs>;
 
 // Implementation uses React Context for state sharing
 const TabsContext = React.createContext<TabsContextValue | null>(null);
@@ -675,6 +704,7 @@ Tabs.Content = TabsContent;
 ```
 
 **SwiftUI equivalent:**
+
 ```swift
 TabView(selection: $selectedTab) {
     Text("Content 1").tag("tab1")
@@ -684,6 +714,7 @@ TabView(selection: $selectedTab) {
 ```
 
 **Compose equivalent:**
+
 ```kotlin
 KozmosTabs(selectedTabIndex = selectedTab) {
     Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) { Text("Tab 1") }
@@ -696,11 +727,14 @@ KozmosTabs(selectedTabIndex = selectedTab) {
 Components with customizable regions expose named slots:
 
 **React (using render props or children inspection):**
+
 ```tsx
 <Card>
   <Card.Header>
     <Card.Title>Title</Card.Title>
-    <Card.Action><IconButton icon="more" /></Card.Action>
+    <Card.Action>
+      <IconButton icon="more" />
+    </Card.Action>
   </Card.Header>
   <Card.Body>Content here</Card.Body>
   <Card.Footer>Footer actions</Card.Footer>
@@ -708,11 +742,16 @@ Components with customizable regions expose named slots:
 ```
 
 **Alternative: Slot props for simpler cases:**
+
 ```tsx
 <Input
   label="Email"
   leftSlot={<Icon name="mail" />}
-  rightSlot={<Button variant="ghost" size="sm">Clear</Button>}
+  rightSlot={
+    <Button variant="ghost" size="sm">
+      Clear
+    </Button>
+  }
 />
 ```
 
@@ -736,7 +775,9 @@ export class KozmosErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback ?? <KozmosErrorFallback error={this.state.error} />;
+      return (
+        this.props.fallback ?? <KozmosErrorFallback error={this.state.error} />
+      );
     }
     return this.props.children;
   }
@@ -756,18 +797,19 @@ const KozmosErrorFallback = ({ error, onRetry }) => (
 
 Each component handles edge cases gracefully:
 
-| Scenario | Handling |
-|---|---|
+| Scenario              | Handling                                                         |
+| --------------------- | ---------------------------------------------------------------- |
 | Missing required prop | TypeScript error at build time; runtime fallback to safe default |
-| Empty children | Render nothing or placeholder (never crash) |
-| Invalid variant value | Fall back to default variant with console warning (dev only) |
-| Network image failure | Show placeholder/skeleton, fire `onError` callback |
-| Async data loading | Built-in loading states via `loading` prop |
-| Overflow text | Truncate with ellipsis, expose `title` for full text |
+| Empty children        | Render nothing or placeholder (never crash)                      |
+| Invalid variant value | Fall back to default variant with console warning (dev only)     |
+| Network image failure | Show placeholder/skeleton, fire `onError` callback               |
+| Async data loading    | Built-in loading states via `loading` prop                       |
+| Overflow text         | Truncate with ellipsis, expose `title` for full text             |
 
 #### Platform Equivalents
 
 **iOS:**
+
 ```swift
 // Use @ViewBuilder with conditional rendering
 var body: some View {
@@ -780,6 +822,7 @@ var body: some View {
 ```
 
 **Android:**
+
 ```kotlin
 // Compose error handling
 @Composable
@@ -809,11 +852,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-[var(--color-interactive-primary)] text-[var(--color-text-inverse)]",
-        secondary: "bg-[var(--color-background-secondary)] text-[var(--color-text-primary)]",
+        primary:
+          "bg-[var(--color-interactive-primary)] text-[var(--color-text-inverse)]",
+        secondary:
+          "bg-[var(--color-background-secondary)] text-[var(--color-text-primary)]",
         outlined: "border border-[var(--color-border-default)] bg-transparent",
         ghost: "bg-transparent hover:bg-[var(--color-background-secondary)]",
-        destructive: "bg-[var(--color-status-error)] text-[var(--color-text-inverse)]",
+        destructive:
+          "bg-[var(--color-status-error)] text-[var(--color-text-inverse)]",
       },
       size: {
         sm: "h-8 px-3 text-sm",
@@ -822,17 +868,21 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: { variant: "primary", size: "md" },
-  }
+  },
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   loading?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, loading, children, disabled, ...props }, ref) => (
+  (
+    { className, variant, size, loading, children, disabled, ...props },
+    ref,
+  ) => (
     <button
       ref={ref}
       className={cn(buttonVariants({ variant, size }), className)}
@@ -842,7 +892,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     >
       {loading ? <Spinner /> : children}
     </button>
-  )
+  ),
 );
 ```
 
@@ -922,6 +972,7 @@ Use **Figma Code Connect CLI** to publish production code snippets from all thre
 ### 6.2 Configuration
 
 **Root `figma.config.json`:**
+
 ```json
 {
   "codeConnect": {
@@ -937,6 +988,7 @@ Use **Figma Code Connect CLI** to publish production code snippets from all thre
 ```
 
 **iOS `packages/ios/figma.config.json`:**
+
 ```json
 {
   "codeConnect": {
@@ -949,6 +1001,7 @@ Use **Figma Code Connect CLI** to publish production code snippets from all thre
 ```
 
 **Android `packages/android/figma.config.json`:**
+
 ```json
 {
   "codeConnect": {
@@ -964,6 +1017,7 @@ Use **Figma Code Connect CLI** to publish production code snippets from all thre
 Beyond basic prop mapping, Code Connect supports advanced patterns critical for complex components:
 
 **`figma.nestedProps`** — Map properties from nested Figma component instances:
+
 ```tsx
 props: {
   inputField: figma.nestedProps("Input Field", {
@@ -975,6 +1029,7 @@ props: {
 ```
 
 **`figma.children`** — Map child layers to React children / SwiftUI `@ViewBuilder`:
+
 ```tsx
 props: {
   items: figma.children("List Item *"),  // wildcard matches List Item 1, List Item 2, etc.
@@ -982,6 +1037,7 @@ props: {
 ```
 
 **`figma.className`** — Map boolean props to CSS class toggles:
+
 ```tsx
 props: {
   className: figma.className("Compact", { true: "kozmos-compact", false: "" }),
@@ -989,6 +1045,7 @@ props: {
 ```
 
 **`figma.textContent`** — Map Figma text layer content directly:
+
 ```tsx
 props: {
   label: figma.textContent("Label Text"),
@@ -996,6 +1053,7 @@ props: {
 ```
 
 **Variant-specific connections** — Map different code components to different Figma variants:
+
 ```tsx
 // Connect a specific variant to a different component
 figma.connect(AlertDialog, FIGMA_URL, {
@@ -1012,39 +1070,50 @@ figma.connect(ConfirmDialog, FIGMA_URL, {
 ### 6.4 Code Connect File Examples
 
 **React (`Button.figma.tsx`):**
+
 ```tsx
 import figma from "@figma/code-connect";
 import { Button } from "./Button";
 
-figma.connect(Button, "https://figma.com/design/FILE_KEY/..?node-id=BUTTON_NODE_ID", {
-  props: {
-    label: figma.string("Label"),
-    variant: figma.enum("Variant", {
-      Primary: "primary",
-      Secondary: "secondary",
-      Outlined: "outlined",
-      Ghost: "ghost",
-      Destructive: "destructive",
-    }),
-    size: figma.enum("Size", {
-      Small: "sm",
-      Medium: "md",
-      Large: "lg",
-    }),
-    disabled: figma.boolean("Disabled"),
-    loading: figma.boolean("Loading"),
-    icon: figma.instance("Icon"),
+figma.connect(
+  Button,
+  "https://figma.com/design/FILE_KEY/..?node-id=BUTTON_NODE_ID",
+  {
+    props: {
+      label: figma.string("Label"),
+      variant: figma.enum("Variant", {
+        Primary: "primary",
+        Secondary: "secondary",
+        Outlined: "outlined",
+        Ghost: "ghost",
+        Destructive: "destructive",
+      }),
+      size: figma.enum("Size", {
+        Small: "sm",
+        Medium: "md",
+        Large: "lg",
+      }),
+      disabled: figma.boolean("Disabled"),
+      loading: figma.boolean("Loading"),
+      icon: figma.instance("Icon"),
+    },
+    example: ({ label, variant, size, disabled, loading, icon }) => (
+      <Button
+        variant={variant}
+        size={size}
+        disabled={disabled}
+        loading={loading}
+      >
+        {icon}
+        {label}
+      </Button>
+    ),
   },
-  example: ({ label, variant, size, disabled, loading, icon }) => (
-    <Button variant={variant} size={size} disabled={disabled} loading={loading}>
-      {icon}
-      {label}
-    </Button>
-  ),
-});
+);
 ```
 
 **SwiftUI (`Button.figma.swift`):**
+
 ```swift
 import Figma
 import KozmosUI
@@ -1076,6 +1145,7 @@ struct Button_Doc: FigmaConnect {
 ```
 
 **Compose (`Button.figma.kt`):**
+
 ```kotlin
 @FigmaConnect(
     url = "https://figma.com/design/FILE_KEY/..?node-id=BUTTON_NODE_ID"
@@ -1147,6 +1217,7 @@ jobs:
 **Approach:** Token-driven CSS custom properties consumed via `class-variance-authority` for variants, `clsx` + `tailwind-merge` for class composition. No CSS-in-JS runtime.
 
 **Pros:**
+
 - Zero runtime overhead (CSS variables are native)
 - Works with SSR/SSG without hydration issues
 - Tailwind-compatible ecosystem (familiar to developers)
@@ -1154,6 +1225,7 @@ jobs:
 - Already partially implemented in `@kozmos/react` package
 
 **Cons:**
+
 - Requires build step for token-to-CSS-variable generation
 - Less dynamic than JS-based solutions
 
@@ -1162,12 +1234,14 @@ jobs:
 **Approach:** Zero-runtime CSS-in-JS with TypeScript type safety. Generates static CSS at build time.
 
 **Pros:**
+
 - Type-safe style authoring
 - Zero runtime CSS-in-JS
 - Sprinkles API for utility-first patterns
 - Strong theming via `createThemeContract`
 
 **Cons:**
+
 - Requires Vite/webpack plugin
 - Smaller ecosystem than Tailwind
 - More complex setup
@@ -1179,6 +1253,7 @@ jobs:
 ### Recommendation
 
 **Option A (CSS Variables + CVA)** is recommended because:
+
 1. Already partially implemented in the `@kozmos/react` package
 2. Zero runtime = best performance for SDK products
 3. CSS custom properties work natively for theming (light/dark)
@@ -1202,12 +1277,13 @@ jobs:
 
 All interactive components include `"use client"` directives. The package provides two entry points:
 
-| Entry Point | Contents | RSC-Safe |
-|---|---|---|
-| `@kozmos/react` | All components (re-exports client components) | No (client boundary) |
-| `@kozmos/react/tokens` | Token constants, `cn()` utility, static config | Yes |
+| Entry Point            | Contents                                       | RSC-Safe             |
+| ---------------------- | ---------------------------------------------- | -------------------- |
+| `@kozmos/react`        | All components (re-exports client components)  | No (client boundary) |
+| `@kozmos/react/tokens` | Token constants, `cn()` utility, static config | Yes                  |
 
 **Key requirements:**
+
 - Every component using hooks, refs, event handlers, or Context must have `"use client"` at the top
 - tsup must be configured with `banner: { js: '"use client";' }` or per-file preservation
 - ThemeProvider is inherently client-only (uses Context); document that consumers wrap it at a layout boundary
@@ -1226,6 +1302,7 @@ Since Pointr SDK components embed into customer applications, CSS isolation is c
 #### Next.js App Router Integration Guide (Phase 2 deliverable)
 
 Document the recommended setup:
+
 1. Import `@kozmos/react/tokens/tokens.css` in root `layout.tsx`
 2. Wrap app in `<KozmosThemeProvider>` at the layout level (client boundary)
 3. Theme detection: default to CSS `@media (prefers-color-scheme)`, with optional JS override via `useEffect` to avoid hydration mismatch
@@ -1236,12 +1313,10 @@ Document the recommended setup:
 Ensure maximum dead code elimination for consuming bundlers:
 
 **`package.json` configuration:**
+
 ```json
 {
-  "sideEffects": [
-    "*.css",
-    "./dist/tokens.css"
-  ],
+  "sideEffects": ["*.css", "./dist/tokens.css"],
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -1263,9 +1338,10 @@ Ensure maximum dead code elimination for consuming bundlers:
 ```
 
 **Component-level exports:** Each component is individually importable:
+
 ```tsx
 // Tree-shakes everything except Button
-import { Button } from '@kozmos/react/Button';
+import { Button } from "@kozmos/react/Button";
 ```
 
 **Barrel file strategy:** Main `index.ts` re-exports all components but bundlers can tree-shake unused ones when `sideEffects: false` is set (except CSS).
@@ -1274,23 +1350,25 @@ import { Button } from '@kozmos/react/Button';
 
 When Pointr SDK embeds into customer apps that may have their own design systems:
 
-| Conflict Type | Mitigation |
-|---|---|
-| **CSS variable collision** | All vars prefixed `--kozmos-*`; scoped to `.kozmos-root` selector if needed |
-| **CSS class collision** | All classes prefixed `kozmos-*`; optional BEM naming |
-| **React Context collision** | Kozmos contexts use unique Symbol keys |
-| **Global state collision** | No global singletons; all state scoped to provider tree |
+| Conflict Type                | Mitigation                                                                    |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| **CSS variable collision**   | All vars prefixed `--kozmos-*`; scoped to `.kozmos-root` selector if needed   |
+| **CSS class collision**      | All classes prefixed `kozmos-*`; optional BEM naming                          |
+| **React Context collision**  | Kozmos contexts use unique Symbol keys                                        |
+| **Global state collision**   | No global singletons; all state scoped to provider tree                       |
 | **Duplicate React versions** | Peer dependency + `peerDependenciesMeta.react.optional: true` for flexibility |
-| **CSS specificity wars** | Use `@layer kozmos` for controlled cascade priority |
-| **Bundle duplication** | Document in README: consumers should dedupe via bundler config |
+| **CSS specificity wars**     | Use `@layer kozmos` for controlled cascade priority                           |
+| **Bundle duplication**       | Document in README: consumers should dedupe via bundler config                |
 
 **Scoped root pattern:**
+
 ```tsx
 // Wrap SDK UI in a scoped container
 <div className="kozmos-root" data-kozmos-theme="light">
   <PointrMapView />
 </div>
 ```
+
 All Kozmos CSS is scoped to `.kozmos-root` descendants, preventing leakage into host app.
 
 ### 8.2 iOS (SwiftUI)
@@ -1316,6 +1394,7 @@ Pointr SDK operates in venues with unreliable connectivity. All UI assets must b
 **Framework size budget**: < 2MB to minimize SDK integration impact on host app size.
 
 **Resource loading pattern:**
+
 ```swift
 // Load bundled font
 UIFont.register(from: Bundle.module.url(forResource: "KozmosFont", withExtension: "ttf")!)
@@ -1347,6 +1426,7 @@ Same offline requirements as iOS. All resources must be bundled:
 **AAR size budget**: < 1MB for the UI library (excluding SDK-specific assets like map tiles).
 
 **ProGuard/R8 configuration:**
+
 ```proguard
 # Keep Compose-related classes
 -keep class com.pointr.kozmos.** { *; }
@@ -1356,6 +1436,7 @@ Same offline requirements as iOS. All resources must be bundled:
 ```
 
 **Resource loading pattern:**
+
 ```kotlin
 // Access bundled font
 val kozmosFont = FontFamily(Font(R.font.kozmos_regular))
@@ -1370,30 +1451,31 @@ Icon(painter = painterResource(R.drawable.ic_kozmos_icon), contentDescription = 
 
 ### 9.1 Test Matrix
 
-| Level | Web | iOS | Android |
-|---|---|---|---|
-| **Unit** | Vitest + React Testing Library | XCTest | JUnit + Compose Testing |
-| **Visual Regression** | Chromatic (Storybook) | Xcode snapshot tests | Paparazzi/Roborazzi |
-| **Accessibility** | axe-core + jest-axe | Accessibility Inspector | Accessibility Scanner |
-| **Integration** | Playwright | XCUITest | Espresso/Compose UI Test |
-| **Performance** | Lighthouse + bundlesize | Instruments | Benchmark library |
+| Level                 | Web                            | iOS                     | Android                  |
+| --------------------- | ------------------------------ | ----------------------- | ------------------------ |
+| **Unit**              | Vitest + React Testing Library | XCTest                  | JUnit + Compose Testing  |
+| **Visual Regression** | Chromatic (Storybook)          | Xcode snapshot tests    | Paparazzi/Roborazzi      |
+| **Accessibility**     | axe-core + jest-axe            | Accessibility Inspector | Accessibility Scanner    |
+| **Integration**       | Playwright                     | XCUITest                | Espresso/Compose UI Test |
+| **Performance**       | Lighthouse + bundlesize        | Instruments             | Benchmark library        |
 
 ### 9.2 Accessibility Test Automation (CI-Integrated)
 
-| Platform | Tool | CI Integration | What It Catches |
-|---|---|---|---|
-| **Web** | `@storybook/addon-a11y` | Storybook test runner with `a11y.test: 'error'` fails PR on violations | ~57% of WCAG issues (missing labels, contrast, roles) |
-| **Web** | `axe-storybook-testing` (CZI) | CLI runs axe-core against all stories, non-zero exit on failure | Same as above, alternative CI approach |
-| **Web** | `jest-axe` in Vitest | Unit test assertions: `expect(container).toHaveNoViolations()` | Per-component fine-grained checks |
-| **iOS** | `performAccessibilityAudit()` | XCUITest suite, auto-fails on violations (Xcode 15+) | Missing labels, clipped text, contrast, Dynamic Type |
-| **Android** | `AccessibilityChecks.enable()` | Espresso/Compose test setup, auto-fails | Content descriptions, touch targets, contrast |
-| **Web** | Chromatic Accessibility | Visual regression with a11y annotations | Color contrast in real rendered screenshots |
+| Platform    | Tool                           | CI Integration                                                         | What It Catches                                       |
+| ----------- | ------------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------- |
+| **Web**     | `@storybook/addon-a11y`        | Storybook test runner with `a11y.test: 'error'` fails PR on violations | ~57% of WCAG issues (missing labels, contrast, roles) |
+| **Web**     | `axe-storybook-testing` (CZI)  | CLI runs axe-core against all stories, non-zero exit on failure        | Same as above, alternative CI approach                |
+| **Web**     | `jest-axe` in Vitest           | Unit test assertions: `expect(container).toHaveNoViolations()`         | Per-component fine-grained checks                     |
+| **iOS**     | `performAccessibilityAudit()`  | XCUITest suite, auto-fails on violations (Xcode 15+)                   | Missing labels, clipped text, contrast, Dynamic Type  |
+| **Android** | `AccessibilityChecks.enable()` | Espresso/Compose test setup, auto-fails                                | Content descriptions, touch targets, contrast         |
+| **Web**     | Chromatic Accessibility        | Visual regression with a11y annotations                                | Color contrast in real rendered screenshots           |
 
 **CI gate rule:** Any PR that introduces an axe-core / `performAccessibilityAudit` / `AccessibilityChecks` failure is blocked from merge.
 
 ### 9.3 Component Test Requirements
 
 Every component must have:
+
 - Rendering tests (all variants, sizes, states)
 - Accessibility audit (automated axe-core / platform equivalents)
 - Keyboard navigation test (web)
@@ -1458,16 +1540,19 @@ Release (changeset publish)
 ### 11.2 Monorepo Publishing Details
 
 **Workspace protocol:**
+
 - All internal references use `workspace:*` (e.g., `"@kozmos/tokens": "workspace:*"`)
 - pnpm automatically replaces with actual version numbers during `pnpm publish`
 - Changesets `linked` groups ensure `@kozmos/tokens` and `@kozmos/react` version in lockstep
 
 **npm provenance & supply chain security:**
+
 - Enable npm provenance via OIDC trusted publishing (GitHub Actions `id-token: write`)
 - Published packages include signed provenance attestation linking to the exact commit
 - `npm audit signatures` verifiable by consumers
 
 **Cross-platform publish coordination:**
+
 ```
 Changesets "Version Packages" PR merged
   ├── npm publish (parallel):
@@ -1481,11 +1566,13 @@ Changesets "Version Packages" PR merged
 ```
 
 **Peer dependency strategy:**
+
 - `react` and `react-dom` are peer dependencies: `"^18.0.0 || ^19.0.0"`
 - `@kozmos/tokens` is a direct dependency of `@kozmos/react` (not peer)
 - Shared dev dependencies hoisted to workspace root (TypeScript, ESLint, Prettier, Vitest)
 
 **`publishConfig` in each package:**
+
 ```json
 {
   "publishConfig": {
@@ -1520,16 +1607,16 @@ Figma Variables Updated (webhook/manual)
 
 ### 12.2 Per-Platform Requirements
 
-| Requirement | Web | iOS | Android |
-|---|---|---|---|
-| Keyboard navigation | Tab/Enter/Space/Arrow | VoiceOver gestures | TalkBack gestures |
-| Focus indicators | 2px ring, 3:1 contrast | System focus ring | System focus ring |
-| Color contrast | 4.5:1 text, 3:1 UI | 4.5:1 text, 3:1 UI | 4.5:1 text, 3:1 UI |
-| Touch targets | 44x44px minimum | 44x44pt minimum | 48x48dp minimum |
-| Motion | `prefers-reduced-motion` | Reduce Motion setting | Animator duration scale |
-| Screen reader | ARIA labels + roles | `.accessibilityLabel` | `contentDescription` |
-| Dynamic sizing | `rem`-based, responsive | Dynamic Type | `sp` units |
-| RTL support | `dir="rtl"` + logical props | `.environment(\.layoutDirection)` | `CompositionLocalLayoutDirection` |
+| Requirement         | Web                         | iOS                               | Android                           |
+| ------------------- | --------------------------- | --------------------------------- | --------------------------------- |
+| Keyboard navigation | Tab/Enter/Space/Arrow       | VoiceOver gestures                | TalkBack gestures                 |
+| Focus indicators    | 2px ring, 3:1 contrast      | System focus ring                 | System focus ring                 |
+| Color contrast      | 4.5:1 text, 3:1 UI          | 4.5:1 text, 3:1 UI                | 4.5:1 text, 3:1 UI                |
+| Touch targets       | 44x44px minimum             | 44x44pt minimum                   | 48x48dp minimum                   |
+| Motion              | `prefers-reduced-motion`    | Reduce Motion setting             | Animator duration scale           |
+| Screen reader       | ARIA labels + roles         | `.accessibilityLabel`             | `contentDescription`              |
+| Dynamic sizing      | `rem`-based, responsive     | Dynamic Type                      | `sp` units                        |
+| RTL support         | `dir="rtl"` + logical props | `.environment(\.layoutDirection)` | `CompositionLocalLayoutDirection` |
 
 ---
 
@@ -1538,6 +1625,7 @@ Figma Variables Updated (webhook/manual)
 ### 13.1 Semantic Versioning
 
 All packages follow SemVer independently:
+
 - `@kozmos/tokens` - Token changes are MINOR if additive, MAJOR if removing/renaming
 - `@kozmos/react` - Component API changes follow standard SemVer
 - `KozmosUI` (Swift) - Tagged releases matching SemVer
@@ -1577,12 +1665,14 @@ packages/codemods/
 ```
 
 **Tooling:**
+
 - **React/Web**: jscodeshift AST transforms for component prop renames, import path changes, token reference updates
 - **CSS/Tokens**: Custom scripts for CSS variable renames (`--kozmos-old-name` → `--kozmos-new-name`)
 - **iOS**: SwiftSyntax-based transforms (where applicable)
 - **Android**: IntelliJ structural search/replace templates
 
 **Invocation:**
+
 ```bash
 npx @kozmos/codemods v1-to-v2 --path ./src
 ```
@@ -1596,6 +1686,7 @@ Changes must be communicated clearly to all consumers:
 #### Automated Changelog Generation
 
 Changesets generates `CHANGELOG.md` per package with:
+
 - Version number and release date
 - Grouped changes by type (Features, Fixes, Breaking Changes)
 - Links to PRs and issues
@@ -1603,12 +1694,12 @@ Changesets generates `CHANGELOG.md` per package with:
 
 #### Communication Channels
 
-| Audience | Channel | Frequency |
-|---|---|---|
-| **All developers** | GitHub Releases + CHANGELOG.md | Every release |
-| **Breaking changes** | Email to SDK consumers + Slack announcement | Major versions |
-| **Design team** | Figma comment on affected components | When Code Connect updated |
-| **SDK consumers** | Dedicated migration guide + office hours | Major versions |
+| Audience             | Channel                                     | Frequency                 |
+| -------------------- | ------------------------------------------- | ------------------------- |
+| **All developers**   | GitHub Releases + CHANGELOG.md              | Every release             |
+| **Breaking changes** | Email to SDK consumers + Slack announcement | Major versions            |
+| **Design team**      | Figma comment on affected components        | When Code Connect updated |
+| **SDK consumers**    | Dedicated migration guide + office hours    | Major versions            |
 
 #### Release Notes Structure
 
@@ -1616,20 +1707,24 @@ Changesets generates `CHANGELOG.md` per package with:
 ## @kozmos/react v2.0.0 (2025-03-15)
 
 ### Breaking Changes
+
 - **Button**: `type` prop renamed to `variant` (#123)
   - Migration: Run `npx @kozmos/codemods v1-to-v2`
 
 ### Features
+
 - **Dialog**: New compound component pattern (#145)
 - **Tokens**: Added wide gamut color support (#156)
 
 ### Fixes
+
 - **Input**: Fixed focus ring in Safari (#134)
 ```
 
 #### Deprecation Notices
 
 Components/props scheduled for removal include:
+
 1. Console warning in development mode
 2. TypeScript `@deprecated` JSDoc tag
 3. Storybook deprecation banner
@@ -1643,12 +1738,12 @@ When a released component breaks production, follow the incident playbook:
 
 #### Severity Levels
 
-| Level | Definition | Response SLA | Resolution SLA |
-|-------|------------|--------------|----------------|
-| **P0** | Production down, no workaround | 15 min | 2 hours |
-| **P1** | Significant break, workaround exists | 1 hour | 24 hours |
-| **P2** | Edge case break, simple workaround | 4 hours | Next sprint |
-| **P3** | Cosmetic/minor issue | Next business day | Backlog |
+| Level  | Definition                           | Response SLA      | Resolution SLA |
+| ------ | ------------------------------------ | ----------------- | -------------- |
+| **P0** | Production down, no workaround       | 15 min            | 2 hours        |
+| **P1** | Significant break, workaround exists | 1 hour            | 24 hours       |
+| **P2** | Edge case break, simple workaround   | 4 hours           | Next sprint    |
+| **P3** | Cosmetic/minor issue                 | Next business day | Backlog        |
 
 #### Hotfix Process
 
@@ -1673,16 +1768,16 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 
 ## 14. Performance Budgets
 
-| Metric | Target |
-|---|---|
-| `@kozmos/react` full bundle | < 50KB gzipped |
-| Individual component | < 10KB gzipped |
-| Token CSS file | < 5KB gzipped |
-| First paint (component render) | < 16ms |
-| Style Dictionary build | < 5s |
-| Code Connect publish | < 30s |
-| iOS framework size | < 2MB |
-| Android AAR size | < 1MB |
+| Metric                         | Target         |
+| ------------------------------ | -------------- |
+| `@kozmos/react` full bundle    | < 50KB gzipped |
+| Individual component           | < 10KB gzipped |
+| Token CSS file                 | < 5KB gzipped  |
+| First paint (component render) | < 16ms         |
+| Style Dictionary build         | < 5s           |
+| Code Connect publish           | < 30s          |
+| iOS framework size             | < 2MB          |
+| Android AAR size               | < 1MB          |
 
 ---
 
@@ -1698,15 +1793,15 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 
 ### 15.2 Supply Chain Security
 
-| Measure | Tool | Stage |
-|---|---|---|
-| Dependency scanning | `npm audit` / Dependabot / Socket.dev | CI + weekly |
-| npm provenance | OIDC trusted publishing | Release |
-| Package integrity | npm `--provenance` flag, SLSA attestation | Release |
-| Lock file integrity | `pnpm install --frozen-lockfile` in CI | CI |
-| License compliance | `license-checker` / FOSSA | CI |
-| Secret detection | `gitleaks` / GitHub secret scanning | CI + pre-commit |
-| SBOM generation | `cyclonedx-npm` or `spdx-sbom-generator` | Release |
+| Measure             | Tool                                      | Stage           |
+| ------------------- | ----------------------------------------- | --------------- |
+| Dependency scanning | `npm audit` / Dependabot / Socket.dev     | CI + weekly     |
+| npm provenance      | OIDC trusted publishing                   | Release         |
+| Package integrity   | npm `--provenance` flag, SLSA attestation | Release         |
+| Lock file integrity | `pnpm install --frozen-lockfile` in CI    | CI              |
+| License compliance  | `license-checker` / FOSSA                 | CI              |
+| Secret detection    | `gitleaks` / GitHub secret scanning       | CI + pre-commit |
+| SBOM generation     | `cyclonedx-npm` or `spdx-sbom-generator`  | Release         |
 
 ### 15.3 Figma Token Security
 
@@ -1770,6 +1865,7 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 ### Phase 1: Foundation (Tokens + Infrastructure)
 
 **Deliverables:**
+
 - [ ] Monorepo setup (Turborepo + pnpm)
 - [ ] Token package with Style Dictionary (web/ios/android/react-native outputs)
 - [ ] **Wide gamut color support (P3/oklch)** — Phase 1 priority
@@ -1788,6 +1884,7 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 ### Phase 2: Core Components (React-first, then parallel platform implementation)
 
 **Deliverables:**
+
 - [ ] ThemeProvider with white-label support (all 5 platforms)
 - [ ] Layout primitives: Box, Stack, Grid (all platforms)
 - [ ] Typography: Text, Heading (all platforms)
@@ -1803,6 +1900,7 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 ### Phase 3: Form & Interactive Components + SDK Integration
 
 **Deliverables:**
+
 - [ ] Input, Checkbox, Radio, Select, Switch (all platforms)
 - [ ] Toast/Snackbar, Dialog/Modal (all platforms)
 - [ ] Tooltip, Popover (web + native equivalents)
@@ -1819,6 +1917,7 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 ### Phase 4: Advanced & SDK-Specific
 
 **Deliverables:**
+
 - [ ] DataTable, Navigation, Sidebar, Breadcrumb, Pagination
 - [ ] Calendar/DatePicker, Autocomplete, FileUpload, Stepper
 - [ ] Pointr SDK-specific components (MapView, WayfindingCard, FloorSelector, etc.)
@@ -1834,59 +1933,59 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 
 ### Root / Build
 
-| Dependency | Version | Purpose |
-|---|---|---|
-| `turbo` | ^2.x | Monorepo build orchestration |
-| `pnpm` | ^9.x | Package manager |
-| `typescript` | ^5.x | Type system |
-| `@changesets/cli` | ^2.x | Version management |
-| `husky` | ^9.x | Git hooks |
-| `lint-staged` | ^15.x | Pre-commit linting |
+| Dependency        | Version | Purpose                      |
+| ----------------- | ------- | ---------------------------- |
+| `turbo`           | ^2.x    | Monorepo build orchestration |
+| `pnpm`            | ^9.x    | Package manager              |
+| `typescript`      | ^5.x    | Type system                  |
+| `@changesets/cli` | ^2.x    | Version management           |
+| `husky`           | ^9.x    | Git hooks                    |
+| `lint-staged`     | ^15.x   | Pre-commit linting           |
 
 ### Tokens Package
 
-| Dependency | Version | Purpose |
-|---|---|---|
-| `style-dictionary` | ^4.x | Multi-platform token generation |
-| `@figma/rest-api-spec` | latest | Figma API types |
-| `dotenv` | ^16.x | Environment variables |
+| Dependency             | Version | Purpose                         |
+| ---------------------- | ------- | ------------------------------- |
+| `style-dictionary`     | ^4.x    | Multi-platform token generation |
+| `@figma/rest-api-spec` | latest  | Figma API types                 |
+| `dotenv`               | ^16.x   | Environment variables           |
 
 ### React Package
 
-| Dependency | Version | Purpose |
-|---|---|---|
-| `react` | ^18.x | UI framework |
-| `class-variance-authority` | ^0.7.x | Variant management |
-| `clsx` | ^2.x | Class name composition |
-| `tailwind-merge` | ^2.x | Tailwind class dedup |
-| `tsup` | ^8.x | Build/bundle |
-| `@figma/code-connect` | latest | Figma Code Connect |
+| Dependency                 | Version | Purpose                |
+| -------------------------- | ------- | ---------------------- |
+| `react`                    | ^18.x   | UI framework           |
+| `class-variance-authority` | ^0.7.x  | Variant management     |
+| `clsx`                     | ^2.x    | Class name composition |
+| `tailwind-merge`           | ^2.x    | Tailwind class dedup   |
+| `tsup`                     | ^8.x    | Build/bundle           |
+| `@figma/code-connect`      | latest  | Figma Code Connect     |
 
 ### React Dev/Test
 
-| Dependency | Version | Purpose |
-|---|---|---|
-| `vitest` | ^2.x | Unit testing |
-| `@testing-library/react` | ^16.x | Component testing |
-| `@storybook/react-vite` | ^8.x | Documentation |
-| `chromatic` | latest | Visual regression |
-| `axe-core` | ^4.x | Accessibility testing |
+| Dependency               | Version | Purpose               |
+| ------------------------ | ------- | --------------------- |
+| `vitest`                 | ^2.x    | Unit testing          |
+| `@testing-library/react` | ^16.x   | Component testing     |
+| `@storybook/react-vite`  | ^8.x    | Documentation         |
+| `chromatic`              | latest  | Visual regression     |
+| `axe-core`               | ^4.x    | Accessibility testing |
 
 ### iOS Package
 
-| Dependency | Version | Purpose |
-|---|---|---|
-| Swift 5.9+ | - | Language |
-| SwiftUI | iOS 16+ | UI framework |
-| `@figma/code-connect` (npm) | latest | Code Connect CLI |
+| Dependency                  | Version | Purpose          |
+| --------------------------- | ------- | ---------------- |
+| Swift 5.9+                  | -       | Language         |
+| SwiftUI                     | iOS 16+ | UI framework     |
+| `@figma/code-connect` (npm) | latest  | Code Connect CLI |
 
 ### Android Package
 
-| Dependency | Version | Purpose |
-|---|---|---|
-| Kotlin 1.9+ | - | Language |
-| Jetpack Compose BOM | 2024.x | UI framework |
-| `@figma/code-connect` (npm) | latest | Code Connect CLI |
+| Dependency                  | Version | Purpose          |
+| --------------------------- | ------- | ---------------- |
+| Kotlin 1.9+                 | -       | Language         |
+| Jetpack Compose BOM         | 2024.x  | UI framework     |
+| `@figma/code-connect` (npm) | latest  | Code Connect CLI |
 
 ---
 
@@ -1922,24 +2021,24 @@ Pointr Design System (Figma)
 
 ### 19.2 Figma Variable Collections
 
-| Collection | Modes | Purpose |
-|---|---|---|
-| `Colors` | Light, Dark | Semantic color tokens with mode switching |
-| `Typography` | Default | Font sizes, weights, line heights |
-| `Spacing` | Default | Spacing scale |
-| `Radius` | Default | Border radius scale |
-| `Elevation` | Light, Dark | Shadows (mode-aware) |
+| Collection   | Modes       | Purpose                                   |
+| ------------ | ----------- | ----------------------------------------- |
+| `Colors`     | Light, Dark | Semantic color tokens with mode switching |
+| `Typography` | Default     | Font sizes, weights, line heights         |
+| `Spacing`    | Default     | Spacing scale                             |
+| `Radius`     | Default     | Border radius scale                       |
+| `Elevation`  | Light, Dark | Shadows (mode-aware)                      |
 
 ### 19.3 Naming Convention (Figma to Code)
 
 Figma Variables use `/` separators. Code uses `.` or camelCase:
 
-| Figma Variable | CSS Variable | Swift | Kotlin |
-|---|---|---|---|
-| `color/background/primary` | `--color-background-primary` | `KozmosTokens.colorBackgroundPrimary` | `KozmosTokens.colorBackgroundPrimary` |
+| Figma Variable              | CSS Variable                  | Swift                                  | Kotlin                                 |
+| --------------------------- | ----------------------------- | -------------------------------------- | -------------------------------------- |
+| `color/background/primary`  | `--color-background-primary`  | `KozmosTokens.colorBackgroundPrimary`  | `KozmosTokens.colorBackgroundPrimary`  |
 | `color/interactive/primary` | `--color-interactive-primary` | `KozmosTokens.colorInteractivePrimary` | `KozmosTokens.colorInteractivePrimary` |
-| `space/400` | `--space-400` | `KozmosTokens.space400` | `KozmosTokens.space400` |
-| `font/size/300` | `--font-size-300` | `KozmosTokens.fontSize300` | `KozmosTokens.fontSize300` |
+| `space/400`                 | `--space-400`                 | `KozmosTokens.space400`                | `KozmosTokens.space400`                |
+| `font/size/300`             | `--font-size-300`             | `KozmosTokens.fontSize300`             | `KozmosTokens.fontSize300`             |
 
 ### 19.4 Figma Component Naming for Code Connect
 
@@ -1947,32 +2046,32 @@ Figma component and property names must map cleanly to code. Follow these conven
 
 #### Component Naming
 
-| Figma Name | Code Connect Target | Notes |
-|---|---|---|
-| `Button` | `Button` | Match exactly |
-| `Icon Button` | `IconButton` | Space → PascalCase |
-| `Text Input` | `Input` | Simplify for code; map via Code Connect |
-| `.Button/Primary` (variant) | Use `variant` prop | Dot prefix = internal, slash = variant grouping |
+| Figma Name                  | Code Connect Target | Notes                                           |
+| --------------------------- | ------------------- | ----------------------------------------------- |
+| `Button`                    | `Button`            | Match exactly                                   |
+| `Icon Button`               | `IconButton`        | Space → PascalCase                              |
+| `Text Input`                | `Input`             | Simplify for code; map via Code Connect         |
+| `.Button/Primary` (variant) | Use `variant` prop  | Dot prefix = internal, slash = variant grouping |
 
 #### Property Naming
 
-| Figma Property | Code Connect Mapping | Type |
-|---|---|---|
-| `Variant` (enum: Primary, Secondary, Outlined) | `figma.enum("Variant", {...})` | String literal union |
-| `Size` (enum: Small, Medium, Large) | `figma.enum("Size", { Small: "sm", ... })` | Abbreviated in code |
-| `Disabled` (boolean) | `figma.boolean("Disabled")` | Direct map |
-| `Show Icon` (boolean) | `figma.boolean("Show Icon")` | Controls slot visibility |
-| `Label` (text) | `figma.string("Label")` or `figma.textContent("Label")` | Content |
-| `Icon` (instance swap) | `figma.instance("Icon")` | Nested component |
+| Figma Property                                 | Code Connect Mapping                                    | Type                     |
+| ---------------------------------------------- | ------------------------------------------------------- | ------------------------ |
+| `Variant` (enum: Primary, Secondary, Outlined) | `figma.enum("Variant", {...})`                          | String literal union     |
+| `Size` (enum: Small, Medium, Large)            | `figma.enum("Size", { Small: "sm", ... })`              | Abbreviated in code      |
+| `Disabled` (boolean)                           | `figma.boolean("Disabled")`                             | Direct map               |
+| `Show Icon` (boolean)                          | `figma.boolean("Show Icon")`                            | Controls slot visibility |
+| `Label` (text)                                 | `figma.string("Label")` or `figma.textContent("Label")` | Content                  |
+| `Icon` (instance swap)                         | `figma.instance("Icon")`                                | Nested component         |
 
 #### Boolean Property Values
 
 Figma booleans normalize various truthy/falsy strings:
 
-| Figma Value | Normalized Code Value |
-|---|---|
-| `Yes`, `True`, `On` | `true` |
-| `No`, `False`, `Off` | `false` |
+| Figma Value          | Normalized Code Value |
+| -------------------- | --------------------- |
+| `Yes`, `True`, `On`  | `true`                |
+| `No`, `False`, `Off` | `false`               |
 
 Use `figma.boolean()` — it handles all these automatically.
 
@@ -2000,17 +2099,17 @@ props: {
 
 ## 21. Success Criteria
 
-| Metric | Target | Measurement |
-|---|---|---|
-| Token parity | 100% Figma to Code match | Automated drift detection CI |
-| Component coverage | All Phase 1-2 components on all platforms | Component inventory audit |
-| Code Connect coverage | Every Figma component has code snippets | `figma connect parse` validation |
-| Accessibility | WCAG 2.1 AA pass | axe-core + manual audit |
-| Bundle size | < 50KB React core | `bundlesize` CI check |
-| Test coverage | > 80% line coverage | Vitest/XCTest/JUnit reports |
-| Documentation | Every component documented | Storybook + docs site audit |
-| Dev adoption | SDK teams using the system | Usage analytics |
-| Design-dev handoff | Reduction in implementation questions | Survey / ticket tracking |
+| Metric                | Target                                    | Measurement                      |
+| --------------------- | ----------------------------------------- | -------------------------------- |
+| Token parity          | 100% Figma to Code match                  | Automated drift detection CI     |
+| Component coverage    | All Phase 1-2 components on all platforms | Component inventory audit        |
+| Code Connect coverage | Every Figma component has code snippets   | `figma connect parse` validation |
+| Accessibility         | WCAG 2.1 AA pass                          | axe-core + manual audit          |
+| Bundle size           | < 50KB React core                         | `bundlesize` CI check            |
+| Test coverage         | > 80% line coverage                       | Vitest/XCTest/JUnit reports      |
+| Documentation         | Every component documented                | Storybook + docs site audit      |
+| Dev adoption          | SDK teams using the system                | Usage analytics                  |
+| Design-dev handoff    | Reduction in implementation questions     | Survey / ticket tracking         |
 
 ---
 
@@ -2025,6 +2124,7 @@ pnpm create-component Button
 ```
 
 **Generated files:**
+
 ```
 packages/react/src/components/Button/
   ├── Button.tsx               # Component implementation
@@ -2043,6 +2143,7 @@ packages/android/kozmos-ui/src/main/kotlin/components/
 ```
 
 **Templates include:**
+
 - Pre-filled variant/size pattern matching the design system conventions
 - Storybook story with Controls args for all props
 - Vitest test with `toHaveNoViolations()` axe assertion
@@ -2052,21 +2153,21 @@ packages/android/kozmos-ui/src/main/kotlin/components/
 
 ### 21.2 Development Scripts
 
-| Command | Description |
-|---|---|
-| `pnpm dev` | Start all packages in watch mode |
-| `pnpm storybook` | Launch Storybook dev server |
+| Command                        | Description                            |
+| ------------------------------ | -------------------------------------- |
+| `pnpm dev`                     | Start all packages in watch mode       |
+| `pnpm storybook`               | Launch Storybook dev server            |
 | `pnpm create-component <Name>` | Scaffold new component (all platforms) |
-| `pnpm sync-tokens` | Pull latest tokens from Figma |
-| `pnpm build-tokens` | Run Style Dictionary build |
-| `pnpm figma:validate` | Validate all Code Connect files |
-| `pnpm figma:publish` | Publish Code Connect to Figma |
-| `pnpm test` | Run all tests |
-| `pnpm test:a11y` | Run accessibility tests only |
-| `pnpm lint` | Lint all packages |
-| `pnpm typecheck` | TypeScript type checking |
-| `pnpm bundle-size` | Check bundle size budgets |
-| `pnpm migrate <from> <to>` | Run codemods for version migration |
+| `pnpm sync-tokens`             | Pull latest tokens from Figma          |
+| `pnpm build-tokens`            | Run Style Dictionary build             |
+| `pnpm figma:validate`          | Validate all Code Connect files        |
+| `pnpm figma:publish`           | Publish Code Connect to Figma          |
+| `pnpm test`                    | Run all tests                          |
+| `pnpm test:a11y`               | Run accessibility tests only           |
+| `pnpm lint`                    | Lint all packages                      |
+| `pnpm typecheck`               | TypeScript type checking               |
+| `pnpm bundle-size`             | Check bundle size budgets              |
+| `pnpm migrate <from> <to>`     | Run codemods for version migration     |
 
 ### 21.3 VS Code / Cursor Integration
 
@@ -2081,13 +2182,14 @@ packages/android/kozmos-ui/src/main/kotlin/components/
 
 ### 22.1 How Code Connect Powers AI Code Generation
 
-Figma's **MCP (Model Context Protocol) Server** enables AI agents (Claude, Cursor, GitHub Copilot) to read Figma designs and generate code. When Code Connect is published, the MCP server provides AI agents with:
+Figma's **MCP (Model Context Protocol) Server** enables AI agents (Cursor, GitHub Copilot and others) to read Figma designs and generate code. When Code Connect is published, the MCP server provides AI agents with:
 
 1. The actual component API and import paths (not hallucinated ones)
 2. Correct prop names, variant values, and composition patterns
 3. Production-tested code examples directly from the design system
 
 **Flow:**
+
 ```
 Designer selects component in Figma
         │
@@ -2106,7 +2208,7 @@ Developer gets accurate, production-ready code
 
 ### 22.2 Integration with Development Workflow
 
-- **Cursor / Claude Code**: Configure Figma MCP server in `.cursor/mcp.json` or Claude config
+- **Cursor and similar assistants**: Configure Figma MCP server in `.cursor/mcp.json` or assistant config
 - **Code generation accuracy**: Code Connect reduces hallucinated prop names and incorrect imports
 - **Design-to-code**: Developers can paste Figma URLs and get accurate component code
 - **Prototype generation**: AI can compose multiple components following real API patterns
@@ -2129,6 +2231,7 @@ Proposal → RFC → Design Review → Implementation → Code Review → Releas
 ```
 
 **RFC process:**
+
 1. Contributor opens an RFC issue using the template
 2. RFC describes: use case, API proposal, Figma component requirements, platform parity
 3. Design system team reviews within 1 sprint
@@ -2145,25 +2248,25 @@ PROPOSAL → DRAFT → BETA → STABLE → DEPRECATED → REMOVED
 (1-2 wk)   (2-4 wk) (4-8 wk) (indefinite) (2 minor vers)
 ```
 
-| Stage | npm Tag | Production Safe? | API Stable? |
-|-------|---------|------------------|-------------|
-| Proposal | N/A | No | No |
-| Draft | `@alpha` | No | No |
-| Beta | `@beta` | Caution | Mostly |
-| Stable | `@latest` | Yes | Yes |
-| Deprecated | `@deprecated` | Migrate | Frozen |
+| Stage      | npm Tag       | Production Safe? | API Stable? |
+| ---------- | ------------- | ---------------- | ----------- |
+| Proposal   | N/A           | No               | No          |
+| Draft      | `@alpha`      | No               | No          |
+| Beta       | `@beta`       | Caution          | Mostly      |
+| Stable     | `@latest`     | Yes              | Yes         |
+| Deprecated | `@deprecated` | Migrate          | Frozen      |
 
 **Minimum time to Stable:** ~14 weeks (3.5 months)
 **Deprecation period:** 2 minor versions (~3-4 months)
 
 ### 24.3 Component Maturity Model
 
-| Status | Meaning | Dev Mode Label |
-|---|---|---|
-| **Draft** | Under active development, API unstable | `@alpha` / `@beta` |
-| **Beta** | Feature complete, gathering feedback | `@beta` |
-| **Stable** | Production ready, SemVer guarantees | `@latest` |
-| **Deprecated** | Scheduled for removal, migration guide available | `@deprecated` |
+| Status         | Meaning                                          | Dev Mode Label     |
+| -------------- | ------------------------------------------------ | ------------------ |
+| **Draft**      | Under active development, API unstable           | `@alpha` / `@beta` |
+| **Beta**       | Feature complete, gathering feedback             | `@beta`            |
+| **Stable**     | Production ready, SemVer guarantees              | `@latest`          |
+| **Deprecated** | Scheduled for removal, migration guide available | `@deprecated`      |
 
 ### 24.4 Ownership Model
 
@@ -2174,14 +2277,14 @@ PROPOSAL → DRAFT → BETA → STABLE → DEPRECATED → REMOVED
 
 ### 24.5 Review Requirements
 
-| Change Type | Required Reviews |
-|---|---|
-| Token changes | Design lead + Core team |
-| New component | Platform lead + Core team + Design review |
-| Component API change | Platform lead + 1 other |
-| Code Connect update | Platform lead |
-| Infrastructure / CI | Core team |
-| Documentation | 1 reviewer |
+| Change Type          | Required Reviews                          |
+| -------------------- | ----------------------------------------- |
+| Token changes        | Design lead + Core team                   |
+| New component        | Platform lead + Core team + Design review |
+| Component API change | Platform lead + 1 other                   |
+| Code Connect update  | Platform lead                             |
+| Infrastructure / CI  | Core team                                 |
+| Documentation        | 1 reviewer                                |
 
 ---
 
@@ -2189,20 +2292,21 @@ PROPOSAL → DRAFT → BETA → STABLE → DEPRECATED → REMOVED
 
 ### 25.1 What to Measure
 
-| Category | Metric | Tool |
-|---|---|---|
-| **Package adoption** | npm downloads, install counts | npm stats API |
-| **Component usage** | Which components are imported in consuming codebases | Static import analysis (custom script) |
-| **Code Connect coverage** | % of Figma components with code snippets | `figma connect parse` report |
-| **Token coverage** | % of hardcoded values vs. token usage in consuming code | Custom ESLint rule / stylelint |
-| **Figma adoption** | Component insertion analytics in Figma | Figma Analytics API |
-| **Bundle impact** | Bundle size contribution in consuming apps | `source-map-explorer` |
-| **Design-dev velocity** | Time from Figma design to code PR | Jira/Linear ticket tracking |
-| **Visual consistency** | Pixel-level design system coverage in production UI | Percy / Chromatic visual analysis |
+| Category                  | Metric                                                  | Tool                                   |
+| ------------------------- | ------------------------------------------------------- | -------------------------------------- |
+| **Package adoption**      | npm downloads, install counts                           | npm stats API                          |
+| **Component usage**       | Which components are imported in consuming codebases    | Static import analysis (custom script) |
+| **Code Connect coverage** | % of Figma components with code snippets                | `figma connect parse` report           |
+| **Token coverage**        | % of hardcoded values vs. token usage in consuming code | Custom ESLint rule / stylelint         |
+| **Figma adoption**        | Component insertion analytics in Figma                  | Figma Analytics API                    |
+| **Bundle impact**         | Bundle size contribution in consuming apps              | `source-map-explorer`                  |
+| **Design-dev velocity**   | Time from Figma design to code PR                       | Jira/Linear ticket tracking            |
+| **Visual consistency**    | Pixel-level design system coverage in production UI     | Percy / Chromatic visual analysis      |
 
 ### 25.2 Design System Health Dashboard
 
 A lightweight dashboard (deployed alongside the docs site) aggregating:
+
 - Token drift status (last Figma sync, any mismatches)
 - Component inventory (implemented vs. designed, per platform)
 - Code Connect publication status (which components are published)
@@ -2214,6 +2318,7 @@ A lightweight dashboard (deployed alongside the docs site) aggregating:
 ### 25.3 Deprecation Analytics
 
 Before deprecating a component, measure actual usage:
+
 - Static import analysis across consuming repositories
 - Figma insertion analytics (how often is the component used in designs)
 - Set deprecation threshold: components used in <2 consuming projects can be deprecated faster
@@ -2242,18 +2347,26 @@ Final Resolved Tokens
 ```
 
 **Web implementation:**
+
 ```css
 /* Base theme (Kozmos defaults) */
-:root { --kozmos-color-brand-primary: #2563eb; }
+:root {
+  --kozmos-color-brand-primary: #2563eb;
+}
 
 /* Customer override (loaded via separate stylesheet or JS) */
-[data-brand="customer-a"] { --kozmos-color-brand-primary: #e11d48; }
+[data-brand="customer-a"] {
+  --kozmos-color-brand-primary: #e11d48;
+}
 
 /* Mode layer */
-[data-brand="customer-a"][data-theme="dark"] { --kozmos-color-background-primary: #1a1a2e; }
+[data-brand="customer-a"][data-theme="dark"] {
+  --kozmos-color-background-primary: #1a1a2e;
+}
 ```
 
 **iOS implementation:**
+
 ```swift
 struct KozmosBrand {
     let primaryColor: Color
@@ -2267,6 +2380,7 @@ KozmosTheme(brand: .customerA) {
 ```
 
 **Android implementation:**
+
 ```kotlin
 KozmosTheme(brand = KozmosBrand.CustomerA) {
     Content()
@@ -2294,14 +2408,15 @@ Style Dictionary processes brand files as overlay layers, generating platform-sp
 
 Based on existing Pointr SDK theming capabilities:
 
-| Token Category | Description | Example |
-|---|---|---|
-| **Theme Color** | Primary brand color | `color.brand.primary` |
-| **Background Color** | Surface/background | `color.background.primary` |
-| **Foreground Color** | Text/icon on background | `color.text.primary` |
-| **Emotional Colors** | Status/feedback colors | `color.status.success`, `.error`, `.warning`, `.info` (TBC) |
+| Token Category       | Description             | Example                                                     |
+| -------------------- | ----------------------- | ----------------------------------------------------------- |
+| **Theme Color**      | Primary brand color     | `color.brand.primary`                                       |
+| **Background Color** | Surface/background      | `color.background.primary`                                  |
+| **Foreground Color** | Text/icon on background | `color.text.primary`                                        |
+| **Emotional Colors** | Status/feedback colors  | `color.status.success`, `.error`, `.warning`, `.info` (TBC) |
 
 **API Design (TBD based on Question #18):**
+
 ```typescript
 // Web
 <KozmosThemeProvider
@@ -2369,6 +2484,7 @@ packages/vue/
 ```
 
 **Key decisions:**
+
 - Lit (5KB base) for standards-based custom elements
 - Web Components work in any framework (Vue, Angular, Svelte, plain HTML)
 - Vue wrappers provide idiomatic Vue 3 DX (props, events, v-model)
@@ -2376,15 +2492,14 @@ packages/vue/
 - Code Connect shows Vue code in Figma Dev Mode
 
 **Vue component usage:**
+
 ```vue
 <template>
-  <KozmosButton variant="primary" @click="handleClick">
-    Click me
-  </KozmosButton>
+  <KozmosButton variant="primary" @click="handleClick"> Click me </KozmosButton>
 </template>
 
 <script setup>
-import { KozmosButton } from '@kozmos/vue';
+import { KozmosButton } from "@kozmos/vue";
 </script>
 ```
 
@@ -2411,6 +2526,7 @@ packages/react-native/
 ```
 
 **Key decisions:**
+
 - Uses React Native's `StyleSheet` API (no CSS)
 - Tokens exported as JS objects (same values as other platforms)
 - Animation via `Animated` API or Reanimated (consistent with token durations/easings)
@@ -2418,12 +2534,13 @@ packages/react-native/
 - Shares component API signatures with React where possible
 
 **React Native component example:**
+
 ```tsx
-import { Button } from '@kozmos/react-native';
+import { Button } from "@kozmos/react-native";
 
 <Button variant="primary" onPress={handlePress}>
   Press me
-</Button>
+</Button>;
 ```
 
 ### 27.3 Future Considerations
@@ -2431,6 +2548,7 @@ import { Button } from '@kozmos/react-native';
 #### Module Federation / Micro-Frontend
 
 For live-updating design system components across independently deployed dashboards:
+
 - Module Federation 2.0 (standalone runtime, not Webpack-coupled)
 - Zero-runtime CSS approach makes federation simpler than CSS-in-JS
 - Consider only if Pointr's dashboard architecture requires runtime-shared modules
@@ -2438,6 +2556,7 @@ For live-updating design system components across independently deployed dashboa
 ### 27.4 Design System as a Service
 
 Advanced capabilities for scale:
+
 - Token API: REST endpoint serving current token values for non-JS consumers
 - Component CDN: Pre-built UMD bundles for legacy integration
 - Figma widget: Custom Figma widget for token/component browsing (alternative to Code Connect UI)
@@ -2448,25 +2567,25 @@ Advanced capabilities for scale:
 
 The following questions have been resolved:
 
-| # | Question | Decision | Notes |
-|---|---|---|---|
-| 1 | **Figma plan tier** | ✅ **Organisation** | Code Connect enabled, proceed with Phase 1 |
-| 2 | **Styling approach** | ✅ **CSS Variables + CVA** | Zero runtime, best for SDK |
-| 3 | **Icon source** | ✅ **Custom SVG with platform mappings** | Consistent cross-platform |
-| 4 | **Token authoring tool** | ✅ **Figma Variables + Tokens Studio** | Tokens Studio for composites |
-| 5 | **SDK component boundary** | ✅ **SDK uses Kozmos as dependency** | Layout modules (search, results) consume `@kozmos/react` |
-| 6 | **Multi-brand / white-labeling** | ✅ **Yes, required** | Currently supports theme color, bg/fg, emotional colors |
-| 7 | **Vue.js support** | ✅ **Yes, via Web Components** | Lit-based layer per Section 28.1 |
-| 8 | **React Native** | ✅ **Yes, add `packages/react-native/`** | 4th platform alongside native iOS/Android |
-| 9 | **CI runner infrastructure** | ✅ **GitHub-hosted macos-latest** | Re-evaluate if costs exceed budget |
-| 10 | **Team resourcing** | ✅ **Minimum viable team** | 1 React, 1 iOS, 1 Android, 1 Design |
-| 11 | **Figma MCP adoption** | ✅ **Yes, invest in completeness** | Primary AI-assisted workflow |
-| 12 | **npm scope** | ✅ **`@kozmos` by Pointr Design** | Branding decision finalized |
-| 13 | **Wide gamut colors** | ✅ **Phase 1 priority** | Include P3/oklch from start |
-| 14 | **Animation library** | ✅ **CSS-only for SDK, cross-platform consistency** | See Section 28.1 below |
-| 15 | **Contract testing** | ✅ **Phase 3** | Implement Pact as consumer base grows |
-| 16 | **Figma branching** | ✅ **Use branching** | For breaking changes |
-| 17 | **Error tracking** | ✅ **Callback prop pattern** | Let SDK consumers choose service |
+| #   | Question                         | Decision                                            | Notes                                                    |
+| --- | -------------------------------- | --------------------------------------------------- | -------------------------------------------------------- |
+| 1   | **Figma plan tier**              | ✅ **Organisation**                                 | Code Connect enabled, proceed with Phase 1               |
+| 2   | **Styling approach**             | ✅ **CSS Variables + CVA**                          | Zero runtime, best for SDK                               |
+| 3   | **Icon source**                  | ✅ **Custom SVG with platform mappings**            | Consistent cross-platform                                |
+| 4   | **Token authoring tool**         | ✅ **Figma Variables + Tokens Studio**              | Tokens Studio for composites                             |
+| 5   | **SDK component boundary**       | ✅ **SDK uses Kozmos as dependency**                | Layout modules (search, results) consume `@kozmos/react` |
+| 6   | **Multi-brand / white-labeling** | ✅ **Yes, required**                                | Currently supports theme color, bg/fg, emotional colors  |
+| 7   | **Vue.js support**               | ✅ **Yes, via Web Components**                      | Lit-based layer per Section 28.1                         |
+| 8   | **React Native**                 | ✅ **Yes, add `packages/react-native/`**            | 4th platform alongside native iOS/Android                |
+| 9   | **CI runner infrastructure**     | ✅ **GitHub-hosted macos-latest**                   | Re-evaluate if costs exceed budget                       |
+| 10  | **Team resourcing**              | ✅ **Minimum viable team**                          | 1 React, 1 iOS, 1 Android, 1 Design                      |
+| 11  | **Figma MCP adoption**           | ✅ **Yes, invest in completeness**                  | Primary AI-assisted workflow                             |
+| 12  | **npm scope**                    | ✅ **`@kozmos` by Pointr Design**                   | Branding decision finalized                              |
+| 13  | **Wide gamut colors**            | ✅ **Phase 1 priority**                             | Include P3/oklch from start                              |
+| 14  | **Animation library**            | ✅ **CSS-only for SDK, cross-platform consistency** | See Section 28.1 below                                   |
+| 15  | **Contract testing**             | ✅ **Phase 3**                                      | Implement Pact as consumer base grows                    |
+| 16  | **Figma branching**              | ✅ **Use branching**                                | For breaking changes                                     |
+| 17  | **Error tracking**               | ✅ **Callback prop pattern**                        | Let SDK consumers choose service                         |
 
 ### 28.1 Animation Strategy Decision
 
@@ -2474,16 +2593,17 @@ To ensure **consistency across all products** (Web SDK, Mobile Native SDKs, Dash
 
 **Decision:** Use **CSS custom properties for animation tokens** consumed by each platform's native animation system:
 
-| Platform | Animation System | Token Consumption |
-|---|---|---|
-| **Web (React)** | CSS transitions/animations | `var(--kozmos-motion-*)` |
-| **Web (Vue)** | CSS transitions/animations | Same CSS variables |
-| **iOS (SwiftUI)** | SwiftUI `.animation()` | `KozmosTokens.motion*` |
-| **Android (Compose)** | Compose `animate*()` | `KozmosTokens.motion*` |
-| **React Native** | `Animated` / Reanimated | Shared JS token values |
-| **Dashboard** | Optional Framer Motion | Falls back to CSS if not installed |
+| Platform              | Animation System           | Token Consumption                  |
+| --------------------- | -------------------------- | ---------------------------------- |
+| **Web (React)**       | CSS transitions/animations | `var(--kozmos-motion-*)`           |
+| **Web (Vue)**         | CSS transitions/animations | Same CSS variables                 |
+| **iOS (SwiftUI)**     | SwiftUI `.animation()`     | `KozmosTokens.motion*`             |
+| **Android (Compose)** | Compose `animate*()`       | `KozmosTokens.motion*`             |
+| **React Native**      | `Animated` / Reanimated    | Shared JS token values             |
+| **Dashboard**         | Optional Framer Motion     | Falls back to CSS if not installed |
 
 This ensures:
+
 1. Token values are consistent across all platforms
 2. Each platform uses its native, performant animation system
 3. Dashboard apps can optionally enhance with Framer Motion
@@ -2493,50 +2613,53 @@ This ensures:
 
 ## 29. Additional Questions — RESOLVED
 
-| # | Question | Decision |
-|---|---|---|
-| 18 | **Current theming implementation** | ✅ Custom implementation per SDK using design team color tokens. **Breaking change acceptable** — clean slate with new naming. |
-| 19 | **Emotional colors definition** | ✅ Status colors: **Danger, Success, Alert, Info** (maps to `color.status.*`) |
-| 20 | **Vue.js timeline** | ✅ **Phase 2** — unless it impacts fundamentals (it won't; Web Components are additive) |
-| 21 | **React Native scope** | ✅ **Comprehensive subset** — not 100% parity, but covers most components |
-| 22 | **SDK layout modules** | ✅ See Section 29.1 below for full module inventory |
-| 23 | **Existing SDK package names** | ✅ **Not on public registries** — enterprise software. Goal: Pointr-first, potentially open source later. |
-| 24 | **Dashboard tech stack** | ✅ **Vue 2 → Vue 3 migration needed**. Dashboard must use Kozmos Vue components. |
-| 25 | **P3 color usage** | ✅ **All colors** — wide gamut for entire palette |
-| 26 | **Existing design tokens** | ✅ **Fresh start preferred**, use existing as reference. Design files TBD (provide existing or create new). |
-| 27 | **Backward compatibility** | ✅ **Breaking change acceptable** — clean API design |
+| #   | Question                           | Decision                                                                                                                       |
+| --- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 18  | **Current theming implementation** | ✅ Custom implementation per SDK using design team color tokens. **Breaking change acceptable** — clean slate with new naming. |
+| 19  | **Emotional colors definition**    | ✅ Status colors: **Danger, Success, Alert, Info** (maps to `color.status.*`)                                                  |
+| 20  | **Vue.js timeline**                | ✅ **Phase 2** — unless it impacts fundamentals (it won't; Web Components are additive)                                        |
+| 21  | **React Native scope**             | ✅ **Comprehensive subset** — not 100% parity, but covers most components                                                      |
+| 22  | **SDK layout modules**             | ✅ See Section 29.1 below for full module inventory                                                                            |
+| 23  | **Existing SDK package names**     | ✅ **Not on public registries** — enterprise software. Goal: Pointr-first, potentially open source later.                      |
+| 24  | **Dashboard tech stack**           | ✅ **Vue 2 → Vue 3 migration needed**. Dashboard must use Kozmos Vue components.                                               |
+| 25  | **P3 color usage**                 | ✅ **All colors** — wide gamut for entire palette                                                                              |
+| 26  | **Existing design tokens**         | ✅ **Fresh start preferred**, use existing as reference. Design files TBD (provide existing or create new).                    |
+| 27  | **Backward compatibility**         | ✅ **Breaking change acceptable** — clean API design                                                                           |
 
 ### 29.1 Pointr SDK Module Inventory
 
 Based on the SDK architecture, Kozmos must support these modules:
 
 #### Map Widget Modules
-| Module | Description | Priority |
-|---|---|---|
-| **Search Panel** | Search input + quick access | P1 |
-| **Quick Access Panel** | Frequently accessed items | P1 |
-| **Search Results** | List of search results | P1 |
-| **Filtering** | Category/attribute filters | P1 |
-| **POI Details Card** | Point of interest information | P1 |
-| **Map Component** | Core map + sub-components | P1 |
-| **Info Component** | Informational overlays | P2 |
-| **Settings Component** | User preferences | P2 |
-| **Overlays** | Map overlay UI elements | P1 |
-| **AI Companion** | AI-powered assistant UI | P2 |
+
+| Module                 | Description                   | Priority |
+| ---------------------- | ----------------------------- | -------- |
+| **Search Panel**       | Search input + quick access   | P1       |
+| **Quick Access Panel** | Frequently accessed items     | P1       |
+| **Search Results**     | List of search results        | P1       |
+| **Filtering**          | Category/attribute filters    | P1       |
+| **POI Details Card**   | Point of interest information | P1       |
+| **Map Component**      | Core map + sub-components     | P1       |
+| **Info Component**     | Informational overlays        | P2       |
+| **Settings Component** | User preferences              | P2       |
+| **Overlays**           | Map overlay UI elements       | P1       |
+| **AI Companion**       | AI-powered assistant UI       | P2       |
 
 #### Wayfinding Modules
-| Module | Description | Priority |
-|---|---|---|
-| **Progress Module** | Navigation progress indicator | P1 |
-| **Directions (Expanded)** | Full turn-by-turn list | P1 |
-| **Directions (Collapsed)** | Compact next-step view | P1 |
+
+| Module                     | Description                   | Priority |
+| -------------------------- | ----------------------------- | -------- |
+| **Progress Module**        | Navigation progress indicator | P1       |
+| **Directions (Expanded)**  | Full turn-by-turn list        | P1       |
+| **Directions (Collapsed)** | Compact next-step view        | P1       |
 
 #### Dashboard / CMS Modules
-| Module | Description | Priority |
-|---|---|---|
-| **Dashboard** | Admin dashboard layout | P2 (Vue 3) |
-| **Map Content CMS** | Content management | P2 (Vue 3) |
-| **Drawing Tools** | Map editing tools | P2 (Vue 3) |
+
+| Module              | Description            | Priority   |
+| ------------------- | ---------------------- | ---------- |
+| **Dashboard**       | Admin dashboard layout | P2 (Vue 3) |
+| **Map Content CMS** | Content management     | P2 (Vue 3) |
+| **Drawing Tools**   | Map editing tools      | P2 (Vue 3) |
 
 ### 29.2 Token Naming — Emotional/Status Colors
 
@@ -2555,13 +2678,13 @@ Each with hover/active/muted variants as needed.
 
 Since Kozmos may be open-sourced:
 
-| Consideration | Recommendation |
-|---|---|
-| **License** | MIT (most permissive) or Apache 2.0 (patent protection) |
-| **Naming** | `@kozmos/*` is generic enough for open source |
-| **Branding** | Remove Pointr-specific references from public package |
-| **Documentation** | Public docs site (Storybook + Docusaurus) |
-| **Contribution** | CONTRIBUTING.md, Code of Conduct, PR templates |
+| Consideration       | Recommendation                                                        |
+| ------------------- | --------------------------------------------------------------------- |
+| **License**         | MIT (most permissive) or Apache 2.0 (patent protection)               |
+| **Naming**          | `@kozmos/*` is generic enough for open source                         |
+| **Branding**        | Remove Pointr-specific references from public package                 |
+| **Documentation**   | Public docs site (Storybook + Docusaurus)                             |
+| **Contribution**    | CONTRIBUTING.md, Code of Conduct, PR templates                        |
 | **Pointr-specific** | Keep SDK modules (`packages/sdk/`) as private/separate repo initially |
 
 ### 29.4 Dashboard Vue 2 → Vue 3 Migration Path
@@ -2577,15 +2700,15 @@ The dashboard migration strategy:
 
 ## 30. Final Clarifying Questions — RESOLVED
 
-| # | Question | Decision |
-|---|---|---|
-| 28 | **Design files decision** | ✅ **Start from scratch** — new Figma library |
-| 29 | **AI Companion UI** | ✅ **Agentic AI chat** — voice + text, integrated with search, triggers map actions (show POIs, start wayfinding) |
-| 30 | **Map Component sub-components** | ✅ Zoom controls, Attribution, Scale, Level/Floor Switcher, Compass, etc. |
-| 31 | **Drawing Tools complexity** | ✅ **Full GeoJSON drawing tools** + annotation — complex component set |
-| 32 | **Offline-first requirement** | ✅ See Section 30.1 below for recommendation |
-| 33 | **Localization languages** | ✅ **Comprehensive i18n** — US, China, Taiwan, India, UAE, Turkey, Portugal, Spain, Germany, Japan, France, etc. |
-| 34 | **License preference** | ✅ **MIT License** |
+| #   | Question                         | Decision                                                                                                          |
+| --- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| 28  | **Design files decision**        | ✅ **Start from scratch** — new Figma library                                                                     |
+| 29  | **AI Companion UI**              | ✅ **Agentic AI chat** — voice + text, integrated with search, triggers map actions (show POIs, start wayfinding) |
+| 30  | **Map Component sub-components** | ✅ Zoom controls, Attribution, Scale, Level/Floor Switcher, Compass, etc.                                         |
+| 31  | **Drawing Tools complexity**     | ✅ **Full GeoJSON drawing tools** + annotation — complex component set                                            |
+| 32  | **Offline-first requirement**    | ✅ See Section 30.1 below for recommendation                                                                      |
+| 33  | **Localization languages**       | ✅ **Comprehensive i18n** — US, China, Taiwan, India, UAE, Turkey, Portugal, Spain, Germany, Japan, France, etc.  |
+| 34  | **License preference**           | ✅ **MIT License**                                                                                                |
 
 ### 30.1 Offline Strategy Recommendation
 
@@ -2593,18 +2716,19 @@ Given that Pointr SDK operates in venues (airports, malls, hospitals) with poten
 
 **Recommendation: Progressive Offline Support**
 
-| Layer | Offline Strategy |
-|---|---|
-| **Design Tokens** | ✅ Fully offline — compiled into code |
-| **UI Components** | ✅ Fully offline — bundled assets |
-| **Icons/Fonts** | ✅ Fully offline — bundled in SDK |
-| **Map Tiles** | ⚡ Cached on first load, works offline after |
-| **POI Data** | ⚡ Cached on first load, works offline after |
-| **Search** | ⚡ Local search index cached, works offline |
-| **Wayfinding** | ⚡ Route calculation can work offline if graph is cached |
-| **AI Companion** | 🌐 Requires connectivity (LLM API calls) — graceful degradation with offline message |
+| Layer             | Offline Strategy                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| **Design Tokens** | ✅ Fully offline — compiled into code                                                |
+| **UI Components** | ✅ Fully offline — bundled assets                                                    |
+| **Icons/Fonts**   | ✅ Fully offline — bundled in SDK                                                    |
+| **Map Tiles**     | ⚡ Cached on first load, works offline after                                         |
+| **POI Data**      | ⚡ Cached on first load, works offline after                                         |
+| **Search**        | ⚡ Local search index cached, works offline                                          |
+| **Wayfinding**    | ⚡ Route calculation can work offline if graph is cached                             |
+| **AI Companion**  | 🌐 Requires connectivity (LLM API calls) — graceful degradation with offline message |
 
 **Implementation:**
+
 - All UI renders without network
 - Data-dependent features show cached data or "offline" state
 - AI Companion shows "Connect to internet for AI assistance" when offline
@@ -2633,6 +2757,7 @@ AICompanion/
 ```
 
 **Key interactions:**
+
 - "Show me vegan restaurants in South Terminal" → Triggers map POI filter
 - "Take me to my car" → Starts wayfinding to saved location
 - Voice input with real-time transcription
@@ -2640,61 +2765,62 @@ AICompanion/
 
 ### 30.3 Map Component Sub-components
 
-| Component | Description | Platform |
-|---|---|---|
-| **ZoomControls** | +/- buttons for zoom | Web, optionally mobile |
-| **CompassControl** | North indicator, tap to reset | All |
-| **ScaleBar** | Distance scale indicator | All |
-| **LevelSwitcher** | Floor/level picker (vertical list or dropdown) | All |
-| **Attribution** | Map data attribution | All (legal requirement) |
-| **LocationButton** | Center on user location | All |
-| **RotateControl** | Rotation gesture hint/reset | Mobile |
-| **3DToggle** | Switch 2D/3D view (if supported) | All |
-| **LayerToggle** | Show/hide map layers | Dashboard/CMS |
+| Component          | Description                                    | Platform                |
+| ------------------ | ---------------------------------------------- | ----------------------- |
+| **ZoomControls**   | +/- buttons for zoom                           | Web, optionally mobile  |
+| **CompassControl** | North indicator, tap to reset                  | All                     |
+| **ScaleBar**       | Distance scale indicator                       | All                     |
+| **LevelSwitcher**  | Floor/level picker (vertical list or dropdown) | All                     |
+| **Attribution**    | Map data attribution                           | All (legal requirement) |
+| **LocationButton** | Center on user location                        | All                     |
+| **RotateControl**  | Rotation gesture hint/reset                    | Mobile                  |
+| **3DToggle**       | Switch 2D/3D view (if supported)               | All                     |
+| **LayerToggle**    | Show/hide map layers                           | Dashboard/CMS           |
 
 ### 30.4 GeoJSON Drawing Tools Components
 
 For the Dashboard/CMS full drawing suite:
 
-| Component | Description |
-|---|---|
-| **DrawingToolbar** | Tool selection (point, line, polygon, etc.) |
-| **PointTool** | Place single point markers |
-| **LineTool** | Draw polylines (paths, routes) |
-| **PolygonTool** | Draw closed shapes (zones, areas) |
-| **RectangleTool** | Draw rectangular regions |
-| **CircleTool** | Draw circular regions |
-| **EditTool** | Select and modify existing features |
-| **DeleteTool** | Remove selected features |
+| Component           | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| **DrawingToolbar**  | Tool selection (point, line, polygon, etc.)        |
+| **PointTool**       | Place single point markers                         |
+| **LineTool**        | Draw polylines (paths, routes)                     |
+| **PolygonTool**     | Draw closed shapes (zones, areas)                  |
+| **RectangleTool**   | Draw rectangular regions                           |
+| **CircleTool**      | Draw circular regions                              |
+| **EditTool**        | Select and modify existing features                |
+| **DeleteTool**      | Remove selected features                           |
 | **PropertiesPanel** | Edit GeoJSON properties (name, category, metadata) |
-| **LayerPanel** | Manage multiple drawing layers |
-| **UndoRedo** | History management |
-| **ExportPanel** | Export as GeoJSON, KML, etc. |
-| **AnnotationTool** | Add text labels, callouts |
-| **MeasureTool** | Distance and area measurement |
-| **SnapControls** | Snap to grid/vertices/edges |
+| **LayerPanel**      | Manage multiple drawing layers                     |
+| **UndoRedo**        | History management                                 |
+| **ExportPanel**     | Export as GeoJSON, KML, etc.                       |
+| **AnnotationTool**  | Add text labels, callouts                          |
+| **MeasureTool**     | Distance and area measurement                      |
+| **SnapControls**    | Snap to grid/vertices/edges                        |
 
 ### 30.5 Internationalization Scope
 
 **Languages to support (based on customer locations):**
 
-| Language | Code | Direction | Script | Notes |
-|---|---|---|---|---|
-| English (US) | `en-US` | LTR | Latin | Default |
-| English (UK) | `en-GB` | LTR | Latin | Spelling variants |
-| Chinese (Simplified) | `zh-CN` | LTR | Han | China mainland |
-| Chinese (Traditional) | `zh-TW` | LTR | Han | Taiwan |
-| Japanese | `ja` | LTR | Han/Kana | |
-| Korean | `ko` | LTR | Hangul | Consider for future |
-| Hindi | `hi` | LTR | Devanagari | India |
-| Arabic | `ar` | **RTL** | Arabic | UAE, Emirates |
-| Turkish | `tr` | LTR | Latin | |
-| Portuguese | `pt` | LTR | Latin | Portugal |
-| Spanish | `es` | LTR | Latin | Spain |
-| German | `de` | LTR | Latin | |
-| French | `fr` | LTR | Latin | |
+| Language              | Code    | Direction | Script     | Notes               |
+| --------------------- | ------- | --------- | ---------- | ------------------- |
+| English (US)          | `en-US` | LTR       | Latin      | Default             |
+| English (UK)          | `en-GB` | LTR       | Latin      | Spelling variants   |
+| Chinese (Simplified)  | `zh-CN` | LTR       | Han        | China mainland      |
+| Chinese (Traditional) | `zh-TW` | LTR       | Han        | Taiwan              |
+| Japanese              | `ja`    | LTR       | Han/Kana   |                     |
+| Korean                | `ko`    | LTR       | Hangul     | Consider for future |
+| Hindi                 | `hi`    | LTR       | Devanagari | India               |
+| Arabic                | `ar`    | **RTL**   | Arabic     | UAE, Emirates       |
+| Turkish               | `tr`    | LTR       | Latin      |                     |
+| Portuguese            | `pt`    | LTR       | Latin      | Portugal            |
+| Spanish               | `es`    | LTR       | Latin      | Spain               |
+| German                | `de`    | LTR       | Latin      |                     |
+| French                | `fr`    | LTR       | Latin      |                     |
 
 **Key requirements:**
+
 - **RTL support** mandatory (Arabic)
 - **CJK fonts** bundled (Chinese, Japanese, Korean)
 - **Devanagari font** for Hindi
@@ -2709,6 +2835,7 @@ For the Dashboard/CMS full drawing suite:
 All questions have been resolved. The Kozmos Design System scope is now finalized:
 
 ### Platform Coverage (6 platforms)
+
 - ✅ React (Web SDK, primary)
 - ✅ Vue 3 (Dashboard, via Web Components) — Phase 2
 - ✅ iOS SwiftUI (Native SDK)
@@ -2717,6 +2844,7 @@ All questions have been resolved. The Kozmos Design System scope is now finalize
 - ✅ Dashboard (Vue 3 migration from Vue 2)
 
 ### Key Architectural Decisions
+
 - **Styling**: CSS Variables + CVA (zero runtime)
 - **Tokens**: Style Dictionary v4 + Figma Variables + wide gamut (P3/oklch)
 - **Figma**: New library from scratch, Code Connect for all platforms
@@ -2726,6 +2854,7 @@ All questions have been resolved. The Kozmos Design System scope is now finalize
 - **License**: MIT (open source ready)
 
 ### Component Scope
+
 - **Foundation**: Tokens, ThemeProvider, Layout, Typography, Button, Icon, Form controls
 - **SDK Modules**: Search, POI, Map controls, Wayfinding, AI Companion
 - **Dashboard**: Full GeoJSON drawing tools, CMS components
@@ -2740,6 +2869,7 @@ All questions have been resolved. The Kozmos Design System scope is now finalize
 Use this checklist when implementing each new component:
 
 ### Design Readiness
+
 - [ ] Figma component exists with all variants
 - [ ] Figma Variables applied (no hardcoded values)
 - [ ] All states designed (default, hover, focus, active, disabled, loading, error)
@@ -2748,6 +2878,7 @@ Use this checklist when implementing each new component:
 - [ ] Accessibility annotations present (focus order, labels)
 
 ### Implementation (per platform)
+
 - [ ] Component code complete
 - [ ] All variants implemented
 - [ ] Props match Figma properties
@@ -2758,6 +2889,7 @@ Use this checklist when implementing each new component:
 - [ ] Empty state handled
 
 ### Accessibility
+
 - [ ] Keyboard navigation works
 - [ ] Screen reader announces correctly
 - [ ] Focus visible and meets contrast
@@ -2766,6 +2898,7 @@ Use this checklist when implementing each new component:
 - [ ] Color contrast passes WCAG AA
 
 ### Testing
+
 - [ ] Unit tests written
 - [ ] Accessibility tests pass
 - [ ] Visual regression snapshot added
@@ -2773,6 +2906,7 @@ Use this checklist when implementing each new component:
 - [ ] All variants covered in tests
 
 ### Documentation
+
 - [ ] Storybook story created (React)
 - [ ] Xcode Preview added (iOS)
 - [ ] Compose Preview added (Android)
@@ -2781,6 +2915,7 @@ Use this checklist when implementing each new component:
 - [ ] Do's and Don'ts documented
 
 ### Code Connect
+
 - [ ] `.figma.tsx` file created
 - [ ] `.figma.swift` file created
 - [ ] `.figma.kt` file created
@@ -2789,6 +2924,7 @@ Use this checklist when implementing each new component:
 - [ ] Published to Figma
 
 ### Release
+
 - [ ] Changeset added
 - [ ] CHANGELOG entry written
 - [ ] Breaking changes documented (if any)
@@ -2840,23 +2976,23 @@ Use this checklist when implementing each new component:
 
 Track implementation status across platforms:
 
-| Component | React | SwiftUI | Compose | Code Connect | Notes |
-|-----------|:-----:|:-------:|:-------:|:------------:|-------|
-| ThemeProvider | | | | N/A | |
-| Box | | | | | |
-| Stack | | | | | |
-| Text | | | | | |
-| Heading | | | | | |
-| Button | | | | | |
-| IconButton | | | | | |
-| Icon | | | | | |
-| Input | | | | | |
-| Checkbox | | | | | |
-| Radio | | | | | |
-| Select | | | | | |
-| Switch | | | | | |
-| Divider | | | | | |
-| Spacer | | | | | |
+| Component     | React | SwiftUI | Compose | Code Connect | Notes |
+| ------------- | :---: | :-----: | :-----: | :----------: | ----- |
+| ThemeProvider |       |         |         |     N/A      |       |
+| Box           |       |         |         |              |       |
+| Stack         |       |         |         |              |       |
+| Text          |       |         |         |              |       |
+| Heading       |       |         |         |              |       |
+| Button        |       |         |         |              |       |
+| IconButton    |       |         |         |              |       |
+| Icon          |       |         |         |              |       |
+| Input         |       |         |         |              |       |
+| Checkbox      |       |         |         |              |       |
+| Radio         |       |         |         |              |       |
+| Select        |       |         |         |              |       |
+| Switch        |       |         |         |              |       |
+| Divider       |       |         |         |              |       |
+| Spacer        |       |         |         |              |       |
 
 Legend: ✅ Complete | 🟡 In Progress | ❌ Not Started | ➖ N/A
 
@@ -2864,33 +3000,33 @@ Legend: ✅ Complete | 🟡 In Progress | ❌ Not Started | ➖ N/A
 
 ## Appendix D: Glossary
 
-| Term | Definition |
-|---|---|
-| **AAR** | Android Archive — Android library packaging format |
-| **a11y** | Accessibility (a + 11 letters + y) |
-| **Atomic design** | Methodology organizing components as atoms → molecules → organisms → templates → pages |
-| **Barrel file** | `index.ts` that re-exports multiple modules for cleaner imports |
-| **Code Connect** | Figma feature bridging design components to production code via `.figma.*` files |
-| **Compound component** | React pattern where a parent component shares state with specialized children |
-| **CSP** | Content Security Policy — browser security mechanism restricting inline scripts/styles |
-| **CVA** | class-variance-authority — TypeScript library for managing component variant styles |
-| **DTCG** | Design Tokens Community Group — W3C working group defining the token specification |
-| **FOUC** | Flash of Unstyled Content — brief display of unstyled page before CSS loads |
-| **Foundation token** | Raw value token (color, size) without semantic meaning |
-| **Hydration** | Process of attaching JavaScript behavior to server-rendered HTML |
-| **MCP** | Model Context Protocol — Figma's API for AI agents to read design context |
-| **Peer dependency** | Package required by the host app, not bundled with the library |
-| **Polymorphic component** | Component that can render as different HTML elements via `as` prop |
-| **Provenance** | Cryptographic attestation linking npm package to source commit |
-| **RSC** | React Server Components — Server-rendered React components without client JS |
-| **SBOM** | Software Bill of Materials — inventory of all dependencies |
-| **Semantic token** | Token that references another token and carries contextual meaning |
-| **Side effect** | Code that runs on import (e.g., CSS injection) affecting tree-shaking |
-| **Slot** | Named insertion point in a component for custom content |
-| **SPM** | Swift Package Manager — Apple's dependency management for Swift projects |
-| **Tree-shaking** | Dead code elimination removing unused exports from bundles |
-| **Wide gamut** | Color spaces (Display P3, oklch) that exceed sRGB range |
-| **Workspace protocol** | pnpm's `workspace:*` syntax for linking local packages |
+| Term                      | Definition                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| **AAR**                   | Android Archive — Android library packaging format                                     |
+| **a11y**                  | Accessibility (a + 11 letters + y)                                                     |
+| **Atomic design**         | Methodology organizing components as atoms → molecules → organisms → templates → pages |
+| **Barrel file**           | `index.ts` that re-exports multiple modules for cleaner imports                        |
+| **Code Connect**          | Figma feature bridging design components to production code via `.figma.*` files       |
+| **Compound component**    | React pattern where a parent component shares state with specialized children          |
+| **CSP**                   | Content Security Policy — browser security mechanism restricting inline scripts/styles |
+| **CVA**                   | class-variance-authority — TypeScript library for managing component variant styles    |
+| **DTCG**                  | Design Tokens Community Group — W3C working group defining the token specification     |
+| **FOUC**                  | Flash of Unstyled Content — brief display of unstyled page before CSS loads            |
+| **Foundation token**      | Raw value token (color, size) without semantic meaning                                 |
+| **Hydration**             | Process of attaching JavaScript behavior to server-rendered HTML                       |
+| **MCP**                   | Model Context Protocol — Figma's API for AI agents to read design context              |
+| **Peer dependency**       | Package required by the host app, not bundled with the library                         |
+| **Polymorphic component** | Component that can render as different HTML elements via `as` prop                     |
+| **Provenance**            | Cryptographic attestation linking npm package to source commit                         |
+| **RSC**                   | React Server Components — Server-rendered React components without client JS           |
+| **SBOM**                  | Software Bill of Materials — inventory of all dependencies                             |
+| **Semantic token**        | Token that references another token and carries contextual meaning                     |
+| **Side effect**           | Code that runs on import (e.g., CSS injection) affecting tree-shaking                  |
+| **Slot**                  | Named insertion point in a component for custom content                                |
+| **SPM**                   | Swift Package Manager — Apple's dependency management for Swift projects               |
+| **Tree-shaking**          | Dead code elimination removing unused exports from bundles                             |
+| **Wide gamut**            | Color spaces (Display P3, oklch) that exceed sRGB range                                |
+| **Workspace protocol**    | pnpm's `workspace:*` syntax for linking local packages                                 |
 
 ---
 
@@ -2900,13 +3036,13 @@ Legend: ✅ Complete | 🟡 In Progress | ❌ Not Started | ➖ N/A
 
 **Decision:** System font stack across all platforms to minimize bundle size and ensure native feel.
 
-| Platform | Font Stack | Notes |
-|----------|------------|-------|
-| **Web** | `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif` | No custom fonts in SDK bundle |
-| **iOS** | SF Pro (system) | Automatically uses SF Pro via system fonts |
-| **Android** | Roboto (system) | Default Material system font |
-| **React Native** | Platform default | Uses iOS/Android system fonts respectively |
-| **Dashboard** | System font or Inter (optional) | If Inter is used, ensure OFL license compliance for MIT release |
+| Platform         | Font Stack                                                                                              | Notes                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **Web**          | `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif` | No custom fonts in SDK bundle                                   |
+| **iOS**          | SF Pro (system)                                                                                         | Automatically uses SF Pro via system fonts                      |
+| **Android**      | Roboto (system)                                                                                         | Default Material system font                                    |
+| **React Native** | Platform default                                                                                        | Uses iOS/Android system fonts respectively                      |
+| **Dashboard**    | System font or Inter (optional)                                                                         | If Inter is used, ensure OFL license compliance for MIT release |
 
 **Custom font injection** (for white-labeling): ThemeProvider accepts optional `fontFamily` override that customers can configure.
 
@@ -2929,12 +3065,14 @@ Legend: ✅ Complete | 🟡 In Progress | ❌ Not Started | ➖ N/A
 | `ai` | AI Companion | `ai-assistant`, `ai-microphone`, `ai-send` |
 
 **Modifiers:**
+
 - `-filled` — Solid fill variant
 - `-outlined` — Stroke-only variant
 - `-circle` — Circular background variant
 - `-small` — Optimized for small sizes (12-16px)
 
 **Examples:**
+
 ```
 nav-arrow-left
 nav-arrow-left-circle
@@ -2945,22 +3083,23 @@ action-check-circle-filled
 
 ### E.3 Gesture Handling
 
-| Platform | Library/Approach | Notes |
-|----------|------------------|-------|
-| **Web (React)** | Native DOM events + `@use-gesture/react` (optional) | Use native events for simple gestures; use-gesture for complex (pinch, drag) |
-| **iOS (SwiftUI)** | Built-in gesture system | `.gesture()`, `.onTapGesture()`, `DragGesture()`, etc. |
-| **Android (Compose)** | Built-in gesture system | `Modifier.pointerInput()`, `detectTapGestures()`, `detectDragGestures()` |
-| **React Native** | `react-native-gesture-handler` | Required for performant, native-driven gestures |
+| Platform              | Library/Approach                                    | Notes                                                                        |
+| --------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Web (React)**       | Native DOM events + `@use-gesture/react` (optional) | Use native events for simple gestures; use-gesture for complex (pinch, drag) |
+| **iOS (SwiftUI)**     | Built-in gesture system                             | `.gesture()`, `.onTapGesture()`, `DragGesture()`, etc.                       |
+| **Android (Compose)** | Built-in gesture system                             | `Modifier.pointerInput()`, `detectTapGestures()`, `detectDragGestures()`     |
+| **React Native**      | `react-native-gesture-handler`                      | Required for performant, native-driven gestures                              |
 
 **React Native gesture configuration:**
+
 ```tsx
 // Required in app entry point
-import 'react-native-gesture-handler';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 <GestureHandlerRootView style={{ flex: 1 }}>
   <App />
-</GestureHandlerRootView>
+</GestureHandlerRootView>;
 ```
 
 ### E.4 Voice Input UI Components
@@ -2969,29 +3108,30 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 **Voice UI Components:**
 
-| Component | Description | States |
-|-----------|-------------|--------|
-| `VoiceButton` | Microphone button to trigger voice input | idle, listening, processing, error |
-| `VoiceWaveform` | Audio waveform visualization during recording | amplitude-reactive animation |
-| `VoiceTranscript` | Real-time transcription display | streaming text with cursor |
-| `VoicePermissionPrompt` | Permission request UI | prompt, denied, settings-redirect |
-| `VoiceUnavailableNotice` | Fallback when voice not supported | informational message |
+| Component                | Description                                   | States                             |
+| ------------------------ | --------------------------------------------- | ---------------------------------- |
+| `VoiceButton`            | Microphone button to trigger voice input      | idle, listening, processing, error |
+| `VoiceWaveform`          | Audio waveform visualization during recording | amplitude-reactive animation       |
+| `VoiceTranscript`        | Real-time transcription display               | streaming text with cursor         |
+| `VoicePermissionPrompt`  | Permission request UI                         | prompt, denied, settings-redirect  |
+| `VoiceUnavailableNotice` | Fallback when voice not supported             | informational message              |
 
 **Props interface (React example):**
+
 ```tsx
 interface VoiceButtonProps {
-  state: 'idle' | 'listening' | 'processing' | 'error';
+  state: "idle" | "listening" | "processing" | "error";
   onPress: () => void;
-  onLongPressStart?: () => void;  // Push-to-talk start
-  onLongPressEnd?: () => void;    // Push-to-talk end
+  onLongPressStart?: () => void; // Push-to-talk start
+  onLongPressEnd?: () => void; // Push-to-talk end
   disabled?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 interface VoiceTranscriptProps {
   text: string;
   isStreaming: boolean;
-  confidence?: number;  // Optional confidence indicator
+  confidence?: number; // Optional confidence indicator
 }
 ```
 
@@ -3001,26 +3141,27 @@ interface VoiceTranscriptProps {
 
 **Export UI Components:**
 
-| Component | Description |
-|-----------|-------------|
-| `ExportPanel` | Panel with format selection and options |
-| `ExportFormatSelector` | Radio/dropdown for format choice (GeoJSON, KML, PDF, PNG, SVG) |
-| `ExportOptionsForm` | Format-specific options (resolution, layers, metadata inclusion) |
-| `ExportProgressIndicator` | Progress bar/spinner during export generation |
-| `ExportCompleteDialog` | Success state with download/share actions |
-| `ExportErrorState` | Error handling with retry option |
+| Component                 | Description                                                      |
+| ------------------------- | ---------------------------------------------------------------- |
+| `ExportPanel`             | Panel with format selection and options                          |
+| `ExportFormatSelector`    | Radio/dropdown for format choice (GeoJSON, KML, PDF, PNG, SVG)   |
+| `ExportOptionsForm`       | Format-specific options (resolution, layers, metadata inclusion) |
+| `ExportProgressIndicator` | Progress bar/spinner during export generation                    |
+| `ExportCompleteDialog`    | Success state with download/share actions                        |
+| `ExportErrorState`        | Error handling with retry option                                 |
 
 **Supported format options (UI only):**
+
 ```typescript
-type ExportFormat = 'geojson' | 'kml' | 'pdf' | 'png' | 'svg';
+type ExportFormat = "geojson" | "kml" | "pdf" | "png" | "svg";
 
 interface ExportOptions {
   format: ExportFormat;
-  includeLayers?: string[];        // Which layers to include
-  includeMetadata?: boolean;       // Include GeoJSON properties
-  resolution?: 'low' | 'medium' | 'high';  // For raster exports
-  paperSize?: 'a4' | 'letter' | 'custom';  // For PDF
-  orientation?: 'portrait' | 'landscape';   // For PDF
+  includeLayers?: string[]; // Which layers to include
+  includeMetadata?: boolean; // Include GeoJSON properties
+  resolution?: "low" | "medium" | "high"; // For raster exports
+  paperSize?: "a4" | "letter" | "custom"; // For PDF
+  orientation?: "portrait" | "landscape"; // For PDF
 }
 ```
 
@@ -3028,33 +3169,34 @@ interface ExportOptions {
 
 **Addons (React/Vue):**
 
-| Addon | Purpose | Priority |
-|-------|---------|----------|
-| `@storybook/addon-essentials` | Controls, Docs, Actions, Viewport, Backgrounds, Measure, Outline | Required |
-| `@storybook/addon-a11y` | Accessibility violation panel | Required |
-| `@storybook/addon-designs` | Figma embed for design reference | Required |
-| `@storybook/addon-interactions` | Play function testing | Required |
-| `@storybook/addon-storysource` | View story source code | Recommended |
-| `@storybook/addon-viewport` | Responsive testing (part of essentials) | Required |
-| `storybook-dark-mode` | Dark mode toggle | Required |
-| `chromatic` | Visual regression (external service) | Required |
+| Addon                           | Purpose                                                          | Priority    |
+| ------------------------------- | ---------------------------------------------------------------- | ----------- |
+| `@storybook/addon-essentials`   | Controls, Docs, Actions, Viewport, Backgrounds, Measure, Outline | Required    |
+| `@storybook/addon-a11y`         | Accessibility violation panel                                    | Required    |
+| `@storybook/addon-designs`      | Figma embed for design reference                                 | Required    |
+| `@storybook/addon-interactions` | Play function testing                                            | Required    |
+| `@storybook/addon-storysource`  | View story source code                                           | Recommended |
+| `@storybook/addon-viewport`     | Responsive testing (part of essentials)                          | Required    |
+| `storybook-dark-mode`           | Dark mode toggle                                                 | Required    |
+| `chromatic`                     | Visual regression (external service)                             | Required    |
 
 **Storybook configuration (`main.ts`):**
+
 ```typescript
 const config: StorybookConfig = {
-  stories: ['../src/**/*.stories.@(ts|tsx)'],
+  stories: ["../src/**/*.stories.@(ts|tsx)"],
   addons: [
-    '@storybook/addon-essentials',
-    '@storybook/addon-a11y',
-    '@storybook/addon-designs',
-    '@storybook/addon-interactions',
+    "@storybook/addon-essentials",
+    "@storybook/addon-a11y",
+    "@storybook/addon-designs",
+    "@storybook/addon-interactions",
   ],
   framework: {
-    name: '@storybook/react-vite',
+    name: "@storybook/react-vite",
     options: {},
   },
   docs: {
-    autodocs: 'tag',
+    autodocs: "tag",
   },
   viteFinal: async (config) => {
     // Custom Vite config for tokens CSS
@@ -3068,6 +3210,7 @@ const config: StorybookConfig = {
 **Decision:** Use **Storybook for React Native** with Expo for component development and previews.
 
 **Setup:**
+
 ```
 packages/react-native/
 ├── .storybook/
@@ -3083,18 +3226,20 @@ packages/react-native/
 ```
 
 **Configuration:**
+
 ```typescript
 // .storybook/main.ts
 module.exports = {
-  stories: ['../src/**/*.stories.@(ts|tsx)'],
+  stories: ["../src/**/*.stories.@(ts|tsx)"],
   addons: [
-    '@storybook/addon-ondevice-controls',
-    '@storybook/addon-ondevice-actions',
+    "@storybook/addon-ondevice-controls",
+    "@storybook/addon-ondevice-actions",
   ],
 };
 ```
 
 **Running:**
+
 ```bash
 # Development with Storybook
 pnpm --filter @kozmos/react-native storybook
@@ -3114,6 +3259,7 @@ cd packages/react-native && expo start
 **Strict mode:** Enabled with full strictness for maximum type safety.
 
 **Base configuration (`tsconfig.base.json`):**
+
 ```json
 {
   "compilerOptions": {
@@ -3143,6 +3289,7 @@ cd packages/react-native && expo start
 ```
 
 **Key decisions:**
+
 - `declarationMap: true` — Enables "Go to Definition" to source `.tsx` files in consuming projects
 - `verbatimModuleSyntax: true` — Enforces explicit `type` imports for type-only imports
 - `noUncheckedIndexedAccess: true` — Requires null checks on array/object index access
@@ -3154,74 +3301,87 @@ cd packages/react-native && expo start
 ```javascript
 module.exports = {
   extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/strict-type-checked',
-    'plugin:@typescript-eslint/stylistic-type-checked',
-    'plugin:react/recommended',
-    'plugin:react/jsx-runtime',
-    'plugin:react-hooks/recommended',
-    'plugin:jsx-a11y/strict',
-    'prettier',
+    "eslint:recommended",
+    "plugin:@typescript-eslint/strict-type-checked",
+    "plugin:@typescript-eslint/stylistic-type-checked",
+    "plugin:react/recommended",
+    "plugin:react/jsx-runtime",
+    "plugin:react-hooks/recommended",
+    "plugin:jsx-a11y/strict",
+    "prettier",
   ],
-  plugins: ['@typescript-eslint', 'react', 'jsx-a11y', 'import'],
-  parser: '@typescript-eslint/parser',
+  plugins: ["@typescript-eslint", "react", "jsx-a11y", "import"],
+  parser: "@typescript-eslint/parser",
   parserOptions: {
     project: true,
   },
   rules: {
     // Enforce design system token usage
-    'no-restricted-syntax': [
-      'error',
+    "no-restricted-syntax": [
+      "error",
       {
-        selector: 'Literal[value=/^#[0-9a-fA-F]{3,8}$/]',
-        message: 'Use design tokens instead of hardcoded color values.',
+        selector: "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+        message: "Use design tokens instead of hardcoded color values.",
       },
       {
-        selector: 'Literal[value=/^\\d+px$/]',
-        message: 'Use design tokens for spacing/sizing values.',
+        selector: "Literal[value=/^\\d+px$/]",
+        message: "Use design tokens for spacing/sizing values.",
       },
     ],
 
     // Import organization
-    'import/order': [
-      'error',
+    "import/order": [
+      "error",
       {
-        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-        'newlines-between': 'always',
-        alphabetize: { order: 'asc' },
+        groups: [
+          "builtin",
+          "external",
+          "internal",
+          "parent",
+          "sibling",
+          "index",
+        ],
+        "newlines-between": "always",
+        alphabetize: { order: "asc" },
       },
     ],
-    'import/no-duplicates': 'error',
+    "import/no-duplicates": "error",
 
     // React specifics
-    'react/prop-types': 'off', // TypeScript handles this
-    'react/display-name': 'error',
-    'react/jsx-no-useless-fragment': 'error',
-    'react/jsx-curly-brace-presence': ['error', { props: 'never', children: 'never' }],
-    'react/self-closing-comp': 'error',
+    "react/prop-types": "off", // TypeScript handles this
+    "react/display-name": "error",
+    "react/jsx-no-useless-fragment": "error",
+    "react/jsx-curly-brace-presence": [
+      "error",
+      { props: "never", children: "never" },
+    ],
+    "react/self-closing-comp": "error",
 
     // Accessibility
-    'jsx-a11y/no-autofocus': 'warn', // Allow with warning for modals/dialogs
+    "jsx-a11y/no-autofocus": "warn", // Allow with warning for modals/dialogs
 
     // TypeScript
-    '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/naming-convention': [
-      'error',
-      { selector: 'typeLike', format: ['PascalCase'] },
-      { selector: 'enumMember', format: ['UPPER_CASE'] },
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      { prefer: "type-imports" },
+    ],
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/naming-convention": [
+      "error",
+      { selector: "typeLike", format: ["PascalCase"] },
+      { selector: "enumMember", format: ["UPPER_CASE"] },
     ],
   },
   overrides: [
     {
-      files: ['*.stories.tsx'],
+      files: ["*.stories.tsx"],
       rules: {
-        'no-restricted-syntax': 'off', // Allow hardcoded values in stories for demos
+        "no-restricted-syntax": "off", // Allow hardcoded values in stories for demos
       },
     },
     {
-      files: ['*.test.tsx', '*.test.ts'],
-      extends: ['plugin:testing-library/react'],
+      files: ["*.test.tsx", "*.test.ts"],
+      extends: ["plugin:testing-library/react"],
     },
   ],
 };
@@ -3235,29 +3395,29 @@ module.exports = {
 module.exports = {
   semi: true,
   singleQuote: true,
-  trailingComma: 'es5',
+  trailingComma: "es5",
   tabWidth: 2,
   useTabs: false,
   printWidth: 100,
   bracketSpacing: true,
   bracketSameLine: false,
-  arrowParens: 'always',
-  endOfLine: 'lf',
-  quoteProps: 'as-needed',
+  arrowParens: "always",
+  endOfLine: "lf",
+  quoteProps: "as-needed",
   jsxSingleQuote: false,
-  proseWrap: 'preserve',
-  htmlWhitespaceSensitivity: 'css',
-  embeddedLanguageFormatting: 'auto',
+  proseWrap: "preserve",
+  htmlWhitespaceSensitivity: "css",
+  embeddedLanguageFormatting: "auto",
   singleAttributePerLine: false,
-  plugins: ['prettier-plugin-tailwindcss'],
+  plugins: ["prettier-plugin-tailwindcss"],
   overrides: [
     {
-      files: '*.json',
+      files: "*.json",
       options: { tabWidth: 2 },
     },
     {
-      files: '*.md',
-      options: { proseWrap: 'always', printWidth: 80 },
+      files: "*.md",
+      options: { proseWrap: "always", printWidth: 80 },
     },
   ],
 };
@@ -3267,42 +3427,44 @@ module.exports = {
 
 **Standard prop patterns:**
 
-| Pattern | Usage | Examples |
-|---------|-------|----------|
-| **Boolean `is*`** | Current state | `isOpen`, `isLoading`, `isDisabled`, `isSelected` |
-| **Boolean `has*`** | Feature presence | `hasError`, `hasIcon`, `hasBorder` |
-| **Boolean `should*`** | Behavior hints | `shouldAnimate`, `shouldTruncate` |
-| **Boolean `allow*`** | Permission flags | `allowMultiple`, `allowEmpty` |
-| **Event `on*`** | Callback props | `onClick`, `onChange`, `onClose`, `onSubmit` |
-| **Render `render*`** | Render prop patterns | `renderIcon`, `renderEmpty`, `renderItem` |
-| **Slot `*Slot`** | Slot content | `leftSlot`, `rightSlot`, `headerSlot` |
-| **Ref `*Ref`** | Forwarded refs | `inputRef`, `containerRef` |
+| Pattern               | Usage                | Examples                                          |
+| --------------------- | -------------------- | ------------------------------------------------- |
+| **Boolean `is*`**     | Current state        | `isOpen`, `isLoading`, `isDisabled`, `isSelected` |
+| **Boolean `has*`**    | Feature presence     | `hasError`, `hasIcon`, `hasBorder`                |
+| **Boolean `should*`** | Behavior hints       | `shouldAnimate`, `shouldTruncate`                 |
+| **Boolean `allow*`**  | Permission flags     | `allowMultiple`, `allowEmpty`                     |
+| **Event `on*`**       | Callback props       | `onClick`, `onChange`, `onClose`, `onSubmit`      |
+| **Render `render*`**  | Render prop patterns | `renderIcon`, `renderEmpty`, `renderItem`         |
+| **Slot `*Slot`**      | Slot content         | `leftSlot`, `rightSlot`, `headerSlot`             |
+| **Ref `*Ref`**        | Forwarded refs       | `inputRef`, `containerRef`                        |
 
 **Variant/size props:**
+
 ```typescript
 // Use literal unions, not enums
-type Variant = 'primary' | 'secondary' | 'outlined' | 'ghost' | 'destructive';
-type Size = 'sm' | 'md' | 'lg';
+type Variant = "primary" | "secondary" | "outlined" | "ghost" | "destructive";
+type Size = "sm" | "md" | "lg";
 
 // Props interface pattern
 interface ButtonProps {
-  variant?: Variant;      // Optional with default
-  size?: Size;            // Optional with default
-  isLoading?: boolean;    // Boolean state
-  isDisabled?: boolean;   // Boolean state (prefer over `disabled` for consistency)
-  onClick?: () => void;   // Event handler
-  leftSlot?: ReactNode;   // Slot content
-  children: ReactNode;    // Required content
+  variant?: Variant; // Optional with default
+  size?: Size; // Optional with default
+  isLoading?: boolean; // Boolean state
+  isDisabled?: boolean; // Boolean state (prefer over `disabled` for consistency)
+  onClick?: () => void; // Event handler
+  leftSlot?: ReactNode; // Slot content
+  children: ReactNode; // Required content
 }
 ```
 
 **Deprecated props:**
+
 ```typescript
 interface ButtonProps {
   /**
    * @deprecated Use `variant` instead. Will be removed in v2.0.0.
    */
-  type?: 'primary' | 'secondary';
+  type?: "primary" | "secondary";
   variant?: Variant;
 }
 ```
@@ -3341,25 +3503,25 @@ pnpm test --passWithNoTests
 ```javascript
 module.exports = {
   // TypeScript/JavaScript
-  '*.{ts,tsx,js,jsx}': ['eslint --fix', 'prettier --write'],
+  "*.{ts,tsx,js,jsx}": ["eslint --fix", "prettier --write"],
 
   // Styles
-  '*.css': ['prettier --write'],
+  "*.css": ["prettier --write"],
 
   // JSON/YAML/Markdown
-  '*.{json,yaml,yml,md}': ['prettier --write'],
+  "*.{json,yaml,yml,md}": ["prettier --write"],
 
   // Swift
-  '*.swift': ['swiftformat --lint'],
+  "*.swift": ["swiftformat --lint"],
 
   // Kotlin
-  '*.kt': ['ktlint --format'],
+  "*.kt": ["ktlint --format"],
 
   // Tokens - rebuild on change
-  'packages/tokens/src/**/*.json': () => 'pnpm --filter @kozmos/tokens build',
+  "packages/tokens/src/**/*.json": () => "pnpm --filter @kozmos/tokens build",
 
   // Prevent secrets
-  '*': ['secretlint'],
+  "*": ["secretlint"],
 };
 ```
 
@@ -3367,40 +3529,40 @@ module.exports = {
 
 ```javascript
 module.exports = {
-  extends: ['@commitlint/config-conventional'],
+  extends: ["@commitlint/config-conventional"],
   rules: {
-    'type-enum': [
+    "type-enum": [
       2,
-      'always',
+      "always",
       [
-        'feat',     // New feature
-        'fix',      // Bug fix
-        'docs',     // Documentation
-        'style',    // Formatting (not CSS)
-        'refactor', // Code refactoring
-        'perf',     // Performance
-        'test',     // Tests
-        'build',    // Build system
-        'ci',       // CI config
-        'chore',    // Maintenance
-        'revert',   // Revert commit
+        "feat", // New feature
+        "fix", // Bug fix
+        "docs", // Documentation
+        "style", // Formatting (not CSS)
+        "refactor", // Code refactoring
+        "perf", // Performance
+        "test", // Tests
+        "build", // Build system
+        "ci", // CI config
+        "chore", // Maintenance
+        "revert", // Revert commit
       ],
     ],
-    'scope-enum': [
+    "scope-enum": [
       2,
-      'always',
+      "always",
       [
-        'tokens',
-        'react',
-        'ios',
-        'android',
-        'react-native',
-        'vue',
-        'icons',
-        'docs',
-        'storybook',
-        'ci',
-        'deps',
+        "tokens",
+        "react",
+        "ios",
+        "android",
+        "react-native",
+        "vue",
+        "icons",
+        "docs",
+        "storybook",
+        "ci",
+        "deps",
       ],
     ],
   },
@@ -3411,12 +3573,12 @@ module.exports = {
 
 **Required environment variables:**
 
-| Variable | Required | Description | Used In |
-|----------|----------|-------------|---------|
-| `FIGMA_ACCESS_TOKEN` | CI only | Figma API token for Code Connect | `tokens-sync.yml`, `code-connect.yml` |
-| `NPM_TOKEN` | CI only | npm publish token | `release.yml` |
-| `CHROMATIC_PROJECT_TOKEN` | CI only | Chromatic visual testing | `ci.yml` |
-| `GITHUB_TOKEN` | Auto | GitHub Actions token (auto-injected) | All workflows |
+| Variable                  | Required | Description                          | Used In                               |
+| ------------------------- | -------- | ------------------------------------ | ------------------------------------- |
+| `FIGMA_ACCESS_TOKEN`      | CI only  | Figma API token for Code Connect     | `tokens-sync.yml`, `code-connect.yml` |
+| `NPM_TOKEN`               | CI only  | npm publish token                    | `release.yml`                         |
+| `CHROMATIC_PROJECT_TOKEN` | CI only  | Chromatic visual testing             | `ci.yml`                              |
+| `GITHUB_TOKEN`            | Auto     | GitHub Actions token (auto-injected) | All workflows                         |
 
 **Local development (`.env.example`):**
 
@@ -3432,6 +3594,7 @@ DEBUG=kozmos:*
 ```
 
 **Environment loading:**
+
 - Never commit `.env` files
 - Use `dotenv` only in scripts (not in library code)
 - Libraries must not read environment variables at runtime
@@ -3442,39 +3605,39 @@ DEBUG=kozmos:*
 
 ### G.1 GitHub Actions Secrets
 
-| Secret | Required For | Rotation | Notes |
-|--------|--------------|----------|-------|
-| `FIGMA_ACCESS_TOKEN` | Figma API operations | 90 days | Personal access token from Figma account |
-| `NPM_TOKEN` | npm publishing | 1 year | Automation token with publish scope |
-| `CHROMATIC_PROJECT_TOKEN` | Visual regression | Never | Project-specific token from Chromatic |
-| `CODECOV_TOKEN` | Coverage reports | Never | Optional, for private repos |
+| Secret                    | Required For         | Rotation | Notes                                    |
+| ------------------------- | -------------------- | -------- | ---------------------------------------- |
+| `FIGMA_ACCESS_TOKEN`      | Figma API operations | 90 days  | Personal access token from Figma account |
+| `NPM_TOKEN`               | npm publishing       | 1 year   | Automation token with publish scope      |
+| `CHROMATIC_PROJECT_TOKEN` | Visual regression    | Never    | Project-specific token from Chromatic    |
+| `CODECOV_TOKEN`           | Coverage reports     | Never    | Optional, for private repos              |
 
 **Secret access by workflow:**
 
-| Workflow | Secrets Used |
-|----------|--------------|
-| `ci.yml` | `CHROMATIC_PROJECT_TOKEN` |
-| `release.yml` | `NPM_TOKEN` |
-| `code-connect.yml` | `FIGMA_ACCESS_TOKEN` |
-| `tokens-sync.yml` | `FIGMA_ACCESS_TOKEN` |
+| Workflow           | Secrets Used              |
+| ------------------ | ------------------------- |
+| `ci.yml`           | `CHROMATIC_PROJECT_TOKEN` |
+| `release.yml`      | `NPM_TOKEN`               |
+| `code-connect.yml` | `FIGMA_ACCESS_TOKEN`      |
+| `tokens-sync.yml`  | `FIGMA_ACCESS_TOKEN`      |
 
 ### G.2 Package Entry Point Validation
 
 **CI check (`scripts/validate-exports.ts`):**
 
 ```typescript
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
-const packages = ['react', 'vue', 'react-native', 'tokens', 'icons'];
+const packages = ["react", "vue", "react-native", "tokens", "icons"];
 
 for (const pkg of packages) {
   const pkgJsonPath = resolve(`packages/${pkg}/package.json`);
-  const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+  const pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
 
   if (pkgJson.exports) {
     for (const [key, value] of Object.entries(pkgJson.exports)) {
-      const paths = typeof value === 'string' ? [value] : Object.values(value);
+      const paths = typeof value === "string" ? [value] : Object.values(value);
       for (const p of paths) {
         const fullPath = resolve(`packages/${pkg}`, p);
         if (!existsSync(fullPath)) {
@@ -3487,6 +3650,7 @@ for (const pkg of packages) {
 ```
 
 **Add to CI:**
+
 ```yaml
 - name: Validate package exports
   run: pnpm validate-exports
@@ -3511,11 +3675,13 @@ for (const pkg of packages) {
 ```
 
 **Thresholds:**
+
 - `diffThreshold: 0.2` — Allow 0.2% pixel difference before flagging
 - Anti-aliasing differences are auto-ignored
 - Font rendering differences across OS are expected — baseline per OS
 
 **Approval workflow:**
+
 1. Chromatic runs on every PR
 2. Any visual changes require manual review
 3. Approved changes update baseline automatically
@@ -3529,34 +3695,35 @@ for (const pkg of packages) {
 module.exports = {
   rules: {
     // Disable rules that don't apply to component libraries
-    'document-title': { enabled: false },
-    'html-has-lang': { enabled: false },
-    'landmark-one-main': { enabled: false },
-    'page-has-heading-one': { enabled: false },
-    'region': { enabled: false },
+    "document-title": { enabled: false },
+    "html-has-lang": { enabled: false },
+    "landmark-one-main": { enabled: false },
+    "page-has-heading-one": { enabled: false },
+    region: { enabled: false },
 
     // Enable all other WCAG 2.1 AA rules
-    'color-contrast': { enabled: true },
-    'focus-visible': { enabled: true },
-    'label': { enabled: true },
-    'aria-required-attr': { enabled: true },
+    "color-contrast": { enabled: true },
+    "focus-visible": { enabled: true },
+    label: { enabled: true },
+    "aria-required-attr": { enabled: true },
     // ... (all WCAG 2.1 AA rules enabled by default)
   },
   // Fail CI on any violation
-  resultTypes: ['violations'],
+  resultTypes: ["violations"],
 };
 ```
 
 **Storybook a11y addon configuration:**
+
 ```typescript
 // .storybook/preview.ts
 export const parameters = {
   a11y: {
-    config: require('../.axe.config.js'),
+    config: require("../.axe.config.js"),
     options: {
       runOnly: {
-        type: 'tag',
-        values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+        type: "tag",
+        values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
       },
     },
   },
@@ -3597,12 +3764,14 @@ export const parameters = {
 ## Checklist
 
 ### General
+
 - [ ] I have read the contributing guidelines
 - [ ] My code follows the project's coding standards
 - [ ] I have added/updated tests for my changes
 - [ ] All tests pass locally
 
 ### Components (if applicable)
+
 - [ ] Component works in all variants/sizes
 - [ ] Accessibility requirements met (keyboard nav, screen reader, contrast)
 - [ ] RTL layout tested
@@ -3611,6 +3780,7 @@ export const parameters = {
 - [ ] Storybook story added/updated
 
 ### Breaking Changes (if applicable)
+
 - [ ] Changeset added with `major` bump
 - [ ] Migration guide written
 - [ ] Codemod provided (or documented why not applicable)
@@ -3632,6 +3802,7 @@ export const parameters = {
 **Issue templates (`.github/ISSUE_TEMPLATE/`):**
 
 Create separate templates for:
+
 - `bug_report.md` — Bug reports with reproduction steps
 - `feature_request.md` — New component/feature requests
 - `rfc.md` — Architecture/API proposals
@@ -3730,23 +3901,24 @@ Create separate templates for:
 
 **iOS 16+ Justification:**
 
-| Factor | Rationale |
-|--------|-----------|
-| **SwiftUI maturity** | iOS 16 introduces NavigationStack, Charts, and stable Transferable — essential for modern UI |
-| **Market coverage** | ~95% of active iOS devices (as of 2025) |
-| **Feature dependencies** | `@Environment(\.dismiss)`, `@FocusState`, `Layout` protocol |
-| **Pointr SDK alignment** | Matches Pointr iOS SDK minimum target |
+| Factor                   | Rationale                                                                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------- |
+| **SwiftUI maturity**     | iOS 16 introduces NavigationStack, Charts, and stable Transferable — essential for modern UI |
+| **Market coverage**      | ~95% of active iOS devices (as of 2025)                                                      |
+| **Feature dependencies** | `@Environment(\.dismiss)`, `@FocusState`, `Layout` protocol                                  |
+| **Pointr SDK alignment** | Matches Pointr iOS SDK minimum target                                                        |
 
 **Android API 26 (8.0) Justification:**
 
-| Factor | Rationale |
-|--------|-----------|
-| **Compose stability** | API 26 is Compose's recommended minimum |
-| **Market coverage** | ~97% of active Android devices (as of 2025) |
+| Factor                   | Rationale                                                 |
+| ------------------------ | --------------------------------------------------------- |
+| **Compose stability**    | API 26 is Compose's recommended minimum                   |
+| **Market coverage**      | ~97% of active Android devices (as of 2025)               |
 | **Feature dependencies** | Adaptive icons, notification channels, autofill framework |
-| **Pointr SDK alignment** | Matches Pointr Android SDK minimum target |
+| **Pointr SDK alignment** | Matches Pointr Android SDK minimum target                 |
 
 **Future deprecation timeline:**
+
 - Review minimum versions annually
 - iOS 17+ consideration: 2026
 - Android API 28+ consideration: 2026
@@ -3757,19 +3929,19 @@ Create separate templates for:
 
 Items deferred to later phases:
 
-| Item | Phase | Notes |
-|------|-------|-------|
-| Analytics SDK integration | Phase 3+ | Define integration points with Pointr analytics |
-| Performance regression testing | Phase 3+ | Lighthouse CI, bundle-analyzer thresholds |
-| Memory leak detection | Phase 3+ | React DevTools profiler, Instruments (iOS), LeakCanary (Android) |
-| Browser/device lab testing | Phase 3+ | Consider BrowserStack or Sauce Labs for cross-browser matrix |
-| Documentation site tech stack | Phase 2 | Evaluate Storybook alone vs. Storybook + Docusaurus/Astro |
-| Contract testing (Pact) | Phase 3 | Define consumer/provider contracts as SDK adoption grows |
-| Module Federation | Phase 4+ | Evaluate only if dashboard micro-frontend architecture is adopted |
+| Item                           | Phase    | Notes                                                             |
+| ------------------------------ | -------- | ----------------------------------------------------------------- |
+| Analytics SDK integration      | Phase 3+ | Define integration points with Pointr analytics                   |
+| Performance regression testing | Phase 3+ | Lighthouse CI, bundle-analyzer thresholds                         |
+| Memory leak detection          | Phase 3+ | React DevTools profiler, Instruments (iOS), LeakCanary (Android)  |
+| Browser/device lab testing     | Phase 3+ | Consider BrowserStack or Sauce Labs for cross-browser matrix      |
+| Documentation site tech stack  | Phase 2  | Evaluate Storybook alone vs. Storybook + Docusaurus/Astro         |
+| Contract testing (Pact)        | Phase 3  | Define consumer/provider contracts as SDK adoption grows          |
+| Module Federation              | Phase 4+ | Evaluate only if dashboard micro-frontend architecture is adopted |
 
 ---
 
-*This document serves as the comprehensive project scope for the Kozmos Design System. It should be treated as a living document and updated as architectural decisions are made and requirements evolve.*
+_This document serves as the comprehensive project scope for the Kozmos Design System. It should be treated as a living document and updated as architectural decisions are made and requirements evolve._
 
 **Document version:** 1.2.0
 **Last updated:** 2025-02-07

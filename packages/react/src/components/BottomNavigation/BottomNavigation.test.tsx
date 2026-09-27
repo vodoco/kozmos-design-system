@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { BottomNavigation } from "./BottomNavigation";
-import { Home } from "lucide-react";
+import { Home01 as Home } from "@kozmos-ds/icons";
 import { describe, it, expect } from "vitest";
 import "@testing-library/jest-dom/vitest";
 

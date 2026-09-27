@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { IconButton } from "./IconButton";
 import { describe, it, expect } from "vitest";
-import { Search } from "lucide-react";
+import { SearchMd as Search } from "@kozmos-ds/icons";
 
 describe("IconButton", () => {
   it("renders correctly", () => {

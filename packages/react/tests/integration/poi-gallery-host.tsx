@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Button, POIMediaGallery, ThemeProvider } from "@kozmos/react";
+import { Button, POIMediaGallery, ThemeProvider } from "@kozmos-ds/react";
 
 // Deliberately labelled test illustrations, not venue photos or brand assets.
 const pictures = ["One", "Two", "Three"].map((label, index) => ({

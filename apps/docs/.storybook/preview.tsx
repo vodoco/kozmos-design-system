@@ -1,6 +1,6 @@
 import type { Preview } from "@storybook/react";
 import "../../../packages/react/dist/style.css";
-import { DesignConfigProvider } from "@kozmos/react";
+import { DesignConfigProvider } from "@kozmos-ds/react";
 import "./preview.css";
 
 const preview: Preview = {
