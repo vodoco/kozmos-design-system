@@ -11,9 +11,9 @@ built today, where things live, and the traps. The evening handoff,
 
 | What              | Where / how                                                         | State                                                                                                          |
 | ----------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `7d89cb51` (#121) when written                                                                       |
+| Repository        | `vodoco/kozmos-design-system` (**public**)                          | `main` at `8a5fb43c` (#122) when written                                                                       |
 | Main checkout     | `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`          | shared with other sessions — stage by file, never `git add -A`                                                 |
-| Open PRs (mine)   | none — #118–#121 merged                                             | nothing in flight (§3)                                                                                         |
+| Open PRs (mine)   | none — #118–#122 merged                                             | nothing in flight (§3)                                                                                         |
 | Open PRs (others) | #55 website (the site session's, `claude/kozmos-site`)              | **conflicts with `main`**; once main is merged in, all 18 required checks must pass                            |
 | Required checks   | branch protection on `main`                                         | **all 18 PR checks** (decision 13), GitHub Actions only; auto-merge allowed. Chromatic's workflow **disabled** |
 | Visual review     | `pnpm test:visual` (Docker) · CI "Visual Review"                    | every story × light/dark (632 drawings), `tests/visual/baselines`                                              |
@@ -91,6 +91,7 @@ are out of scope.
 | #120 | 82 (web)         | GAP-083 on the web: the shell's two custom properties; the hosted `sheet` card tops up to them; first per-PR changeset |
 | #119 | —                | this handoff                                                                                                           |
 | #121 | decision 13      | every PR check required; CONTRIBUTING names them; this handoff's final state                                           |
+| #122 | decisions 14–20  | Olcay's answers to the open questions                                                                                  |
 
 ## 3. In flight — nothing
 
@@ -189,7 +190,7 @@ list and numbers the unnumbered items (decision 20).
 | now                           | Triage the 135 Dependabot alerts                         | none reach consumers; the only task touching the lockfile                                          |
 | now                           | Fix the docs' iOS and Android snippets                   | 72 native tabs are stale implementation copies; 8 don't compile                                    |
 | now, one after the other      | Android sheet: content overhangs; easing                 | same file                                                                                          |
-| now                           | Browse panel: stop doubling the grip's space             | decision 14 — then every part hosted at the panel's top                                            |
+| now                           | Keep the grip's 4px above every hosted panel part        | decision 14; the browse panel first                                                                |
 | now                           | Floor stepper: "Floor up" / "Floor down" in React        | decision 15; docs and tests say the new names                                                      |
 | now                           | AICompanionPanel: focus in only when opened              | decision 16                                                                                        |
 | now, then ask Olcay           | Rail tile: one smaller label size                        | decision 17; measure first, change after Olcay sees it                                             |
@@ -284,7 +285,7 @@ Never `rm -rf` a worktree; branches stay. Each worktree needs `pnpm install` onc
 
 ```bash
 cd "/Volumes/4TB Depo/development/K/kozmos-design-system-dev"
-git checkout main && git pull --ff-only && git log --oneline -1   # expect 7d89cb51 or later
+git checkout main && git pull --ff-only && git log --oneline -1   # expect 8a5fb43c or later
 gh pr list --repo vodoco/kozmos-design-system --state open         # #55, and anything newer
 pnpm install && pnpm exec turbo run build --filter=@kozmos-ds/react...
 ```
