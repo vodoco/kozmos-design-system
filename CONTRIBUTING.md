@@ -195,7 +195,7 @@ Fixes #123
 ## Testing
 
 - [ ] Unit tests added/updated
-- [ ] Visual tests pass
+- [ ] Visual tests pass (`pnpm test:visual`; record intended changes with `pnpm test:visual:update`)
 - [ ] Accessibility tests pass
 - [ ] Tested in Storybook
 
@@ -211,7 +211,9 @@ Fixes #123
 
 1. **Automated checks** must pass (CI, tests, linting)
 2. **Code review** by at least one maintainer
-3. **Visual review** for component changes (Chromatic)
+3. **Visual review** for component changes: the "Visual Review" check compares every story with
+   its committed baseline, and intended changes show in "Files changed" (see
+   [docs/visual-review.md](docs/visual-review.md))
 4. **Approval** from maintainer
 5. **Squash and merge** to main
 
