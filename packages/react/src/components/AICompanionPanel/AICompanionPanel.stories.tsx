@@ -6,6 +6,7 @@ import { ActionCard } from "../ActionCard";
 import { AIInputBar } from "../AIInputBar";
 import { AIMessage } from "../AIMessage";
 import { AIMessageList } from "../AIMessageList";
+import { AISearchButton } from "../AISearchButton";
 import { UserMessage } from "../UserMessage";
 import { POIResultCard } from "../POIResultCard";
 
@@ -48,7 +49,9 @@ export const Conversation: Story = {
                 Hello! What are you looking for? Describe it in your own words,
                 like &ldquo;somewhere quiet to work.&rdquo;
               </AIMessage>
-              <UserMessage>Where is the nearest accessible restroom?</UserMessage>
+              <UserMessage>
+                Where is the nearest accessible restroom?
+              </UserMessage>
               <AIMessage
                 actionCard={
                   <ActionCard title="2 results">
@@ -90,12 +93,49 @@ export const Streaming: Story = {
       <AICompanionPanel onClose={fn()}>
         <AIMessageList>
           <UserMessage>Where is the nearest accessible restroom?</UserMessage>
-          <AIMessage status="streaming">Looking through this building…</AIMessage>
+          <AIMessage status="streaming">
+            Looking through this building…
+          </AIMessage>
         </AIMessageList>
         <AIInputBar onSubmit={fn()} onValueChange={fn()} value="" />
       </AICompanionPanel>
     </Frame>
   ),
+};
+
+/**
+ * Row 60: open it from the button and focus goes into the panel; close it
+ * and focus comes back to the button, which stayed beneath it all along.
+ */
+export const OpenAndClose: Story = {
+  render: () => {
+    const Demo = () => {
+      const [open, setOpen] = useState(false);
+      return (
+        <Frame>
+          <div className="relative h-full">
+            <div className="flex h-full items-center justify-center">
+              <AISearchButton onClick={() => setOpen(true)} />
+            </div>
+            {open && (
+              <div className="absolute inset-0">
+                <AICompanionPanel onClose={() => setOpen(false)}>
+                  <AIMessageList>
+                    <AIMessage>
+                      Hello! What are you looking for? Describe it in your own
+                      words, like &ldquo;somewhere quiet to work.&rdquo;
+                    </AIMessage>
+                  </AIMessageList>
+                  <AIInputBar onSubmit={fn()} onValueChange={fn()} value="" />
+                </AICompanionPanel>
+              </div>
+            )}
+          </div>
+        </Frame>
+      );
+    };
+    return <Demo />;
+  },
 };
 
 /** Story 10: the ten-second hard stop, drawn rather than left silent. */

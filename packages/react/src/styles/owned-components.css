@@ -519,7 +519,7 @@
   [data-kozmos-motion="reduced"] .kozmos-poi-result-actions {
     animation: none;
   }
-  /* Two controls whose drawn size is deliberately small and whose target must
+  /* Controls whose drawn size is deliberately small and whose target must
      not be. The mark stays the size the design asks for; a pseudo-element
      carries the target, so nothing moves and no row grows.
 
@@ -534,11 +534,13 @@
      taking its clicks, which trades one 2.5.8 failure for a worse bug. Tall
      is free: it lands in the gap between wrapped rows, where nothing sits. */
   .kozmos-chip-remove,
-  .kozmos-notice-more {
+  .kozmos-notice-more,
+  .kozmos-ai-companion-close {
     position: relative;
   }
   .kozmos-chip-remove::after,
-  .kozmos-notice-more::after {
+  .kozmos-notice-more::after,
+  .kozmos-ai-companion-close::after {
     content: "";
     position: absolute;
     top: 50%;
@@ -550,8 +552,15 @@
     width: 100%;
   }
   /* The notice's "More" sits at the end of its row with free space beside it,
-     so here the target can be square. */
-  .kozmos-notice-more::after {
+     so here the target can be square.
+
+     The assistant panel's close can be square too (row 60). It is 36px
+     drawn, the mark its header was drawn round — the prototype's is 32 in a
+     61px header. The header's 12px padding and the 8px gap before the close
+     hold the 4px the target reaches past the mark on each side, and nothing
+     beside it is a control. */
+  .kozmos-notice-more::after,
+  .kozmos-ai-companion-close::after {
     width: max(100%, 44px);
   }
 }
