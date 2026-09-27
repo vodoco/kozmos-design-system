@@ -91,12 +91,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter '@kozmos-ds/react...' build
       - run: pnpm --filter @kozmos-ds/docs build-storybook
-      # Every baseline is drawn afresh, so one whose story is gone goes with
-      # it; one that draws the same is the same bytes, and git shows nothing.
+      # Only a drawing that fails the comparison is redrawn. A baseline that
+      # still matches keeps its bytes — redrawing everything committed a few
+      # anti-aliased pixels one unit off as "changes" nobody could see — and
+      # one whose story is gone is pruned.
       - name: Record new baselines
         run: |
-          rm -rf tests/visual/baselines
-          pnpm exec playwright test -c playwright.visual.config.ts --update-snapshots=all
+          pnpm exec playwright test -c playwright.visual.config.ts --update-snapshots=changed
+          node scripts/visual/prune-baselines.mjs
       - name: Commit the new baselines to this branch
         env:
           RUN_ID: ${{ github.run_id }}

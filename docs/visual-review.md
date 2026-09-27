@@ -53,12 +53,12 @@ views (2-up, swipe, onion skin). Approving the pull request approves the look.
   pnpm --filter @kozmos-ds/docs build-storybook
   pnpm test:visual:update          # or: pnpm test:visual:update --grep "chip"
   ```
-  then commit `tests/visual/baselines`. This records only what changed; a deleted story's baseline
-  stays until you delete it (the CI record below drops them).
+  then commit `tests/visual/baselines`. Only drawings that fail the comparison are redrawn, so
+  "Files changed" shows real changes and nothing else; baselines of deleted stories are pruned.
 - **Without Docker**: in GitHub's Actions tab, run **Visual Regression** on your branch with
-  **record** ticked. It redraws every baseline and commits what changed to your branch, dropping the
-  baselines of stories that no longer exist. A commit pushed by a workflow starts no checks, so push
-  again (or re-run the checks) to see them pass.
+  **record** ticked. It redraws the drawings that fail the comparison, prunes the baselines of
+  stories that no longer exist, and commits the result to your branch. A commit pushed by a workflow
+  starts no checks, so push again (or re-run the checks) to see them pass.
 
 `pnpm test:visual` compares without recording, as CI does. Any extra arguments go to Playwright.
 
