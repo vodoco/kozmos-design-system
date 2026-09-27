@@ -95,17 +95,17 @@
 
 ```yaml
 # .github/actions/setup/action.yml
-name: 'Setup'
-description: 'Setup Node.js, pnpm, and dependencies'
+name: "Setup"
+description: "Setup Node.js, pnpm, and dependencies"
 
 inputs:
   node-version:
-    description: 'Node.js version'
+    description: "Node.js version"
     required: false
-    default: '20'
+    default: "20"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Setup pnpm
       uses: pnpm/action-setup@v2
@@ -116,7 +116,7 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.node-version }}
-        cache: 'pnpm'
+        cache: "pnpm"
 
     - name: Install dependencies
       shell: bash
@@ -257,8 +257,8 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -290,8 +290,8 @@ jobs:
         uses: preactjs/compressed-size-action@v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: 'packages/*/dist/**/*.js'
-          exclude: '{**/*.map,**/node_modules/**}'
+          pattern: "packages/*/dist/**/*.js"
+          exclude: "{**/*.map,**/node_modules/**}"
 
   # =========================================================================
   # Accessibility
@@ -315,7 +315,16 @@ jobs:
   ci-ok:
     name: CI OK
     runs-on: ubuntu-latest
-    needs: [build, lint, test-react, test-ios, test-android, bundle-size, accessibility]
+    needs:
+      [
+        build,
+        lint,
+        test-react,
+        test-ios,
+        test-android,
+        bundle-size,
+        accessibility,
+      ]
     if: always()
     steps:
       - name: Check all jobs
@@ -339,13 +348,13 @@ jobs:
 
 ### Required Secrets
 
-| Secret | Purpose | How to Get |
-|--------|---------|------------|
-| `NPM_TOKEN` | npm publishing | npm.com → Access Tokens |
-| `FIGMA_ACCESS_TOKEN` | Figma API access | Figma → Account Settings |
+| Secret                    | Purpose           | How to Get                       |
+| ------------------------- | ----------------- | -------------------------------- |
+| `NPM_TOKEN`               | npm publishing    | npm.com → Access Tokens          |
+| `FIGMA_ACCESS_TOKEN`      | Figma API access  | Figma → Account Settings         |
 | `CHROMATIC_PROJECT_TOKEN` | Visual regression | chromatic.com → Project Settings |
-| `CODECOV_TOKEN` | Code coverage | codecov.io → Settings |
-| `SLACK_WEBHOOK_URL` | Notifications | Slack → Incoming Webhooks |
+| `CODECOV_TOKEN`           | Code coverage     | codecov.io → Settings            |
+| `SLACK_WEBHOOK_URL`       | Notifications     | Slack → Incoming Webhooks        |
 
 ### Setting Up Secrets
 
@@ -383,14 +392,14 @@ name: Tokens
 on:
   push:
     paths:
-      - 'packages/tokens/**'
+      - "packages/tokens/**"
   pull_request:
     paths:
-      - 'packages/tokens/**'
+      - "packages/tokens/**"
   workflow_dispatch:
     inputs:
       sync-from-figma:
-        description: 'Sync tokens from Figma'
+        description: "Sync tokens from Figma"
         type: boolean
         default: false
 
@@ -440,10 +449,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/react/**'
+      - "packages/react/**"
   pull_request:
     paths:
-      - 'packages/react/**'
+      - "packages/react/**"
 
 jobs:
   build:
@@ -505,15 +514,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - package: '@kozmos/react'
+          - package: "@kozmos/react"
             runner: ubuntu-latest
-          - package: '@kozmos/vue'
+          - package: "@kozmos/vue"
             runner: ubuntu-latest
-          - package: '@kozmos/react-native'
+          - package: "@kozmos/react-native"
             runner: ubuntu-latest
-          - package: 'ios'
+          - package: "ios"
             runner: macos-14
-          - package: 'android'
+          - package: "android"
             runner: ubuntu-latest
 
     name: Test ${{ matrix.package }}
@@ -547,8 +556,8 @@ jobs:
         if: matrix.package == 'android'
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Run Android tests
         if: matrix.package == 'android'
@@ -619,8 +628,8 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - '**.md'
-      - '.github/**'
+      - "**.md"
+      - ".github/**"
 
 jobs:
   publish:
@@ -647,8 +656,8 @@ jobs:
         with:
           version: pnpm changeset version
           publish: pnpm release
-          commit: 'chore: release packages'
-          title: 'chore: release packages'
+          commit: "chore: release packages"
+          title: "chore: release packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -693,7 +702,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish'
+        description: "Version to publish"
         required: true
 
 jobs:
@@ -736,7 +745,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish'
+        description: "Version to publish"
         required: true
 
 jobs:
@@ -748,8 +757,8 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -835,7 +844,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
+    - cron: "0 0 * * 0" # Weekly on Sunday
 
 jobs:
   analyze:
@@ -846,7 +855,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript-typescript', 'swift', 'java-kotlin']
+        language: ["javascript-typescript", "swift", "java-kotlin"]
 
     steps:
       - uses: actions/checkout@v4
@@ -862,7 +871,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: '/language:${{ matrix.language }}'
+          category: "/language:${{ matrix.language }}"
 ```
 
 ### Dependency Scanning
@@ -934,7 +943,7 @@ jobs:
             chore: release
 
             [skip ci]
-          title: 'chore: version packages'
+          title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -1078,9 +1087,9 @@ gh secret delete SECRET_NAME
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial CI/CD configuration guide |
+| Version | Date       | Changes                           |
+| ------- | ---------- | --------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial CI/CD configuration guide |
 
 ---
 

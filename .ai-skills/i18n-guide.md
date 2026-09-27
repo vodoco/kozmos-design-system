@@ -25,13 +25,13 @@
 
 Kozmos Design System provides:
 
-| Feature | Implementation | Coverage |
-|---------|---------------|----------|
-| **Translations** | JSON files per locale | All UI strings |
-| **RTL Support** | CSS logical properties + platform APIs | Full layout flip |
-| **Formatting** | Intl API / platform equivalents | Date, time, numbers |
-| **Pluralization** | ICU MessageFormat | Complex rules |
-| **Dynamic Loading** | Lazy load per locale | Performance |
+| Feature             | Implementation                         | Coverage            |
+| ------------------- | -------------------------------------- | ------------------- |
+| **Translations**    | JSON files per locale                  | All UI strings      |
+| **RTL Support**     | CSS logical properties + platform APIs | Full layout flip    |
+| **Formatting**      | Intl API / platform equivalents        | Date, time, numbers |
+| **Pluralization**   | ICU MessageFormat                      | Complex rules       |
+| **Dynamic Loading** | Lazy load per locale                   | Performance         |
 
 ### Key Principles
 
@@ -48,23 +48,23 @@ Kozmos Design System provides:
 
 ### Language Matrix
 
-| Code | Language | Direction | Region | Priority |
-|------|----------|-----------|--------|----------|
-| `en` | English | LTR | Global | ✅ Primary |
-| `de` | German | LTR | DACH | ✅ Required |
-| `fr` | French | LTR | France, Canada | ✅ Required |
-| `es` | Spanish | LTR | Spain, LATAM | ✅ Required |
-| `pt` | Portuguese | LTR | Brazil, Portugal | ✅ Required |
-| `it` | Italian | LTR | Italy | ✅ Required |
-| `nl` | Dutch | LTR | Netherlands, Belgium | ✅ Required |
-| `ja` | Japanese | LTR | Japan | ✅ Required |
-| `zh-Hans` | Chinese (Simplified) | LTR | China | ✅ Required |
-| `zh-Hant` | Chinese (Traditional) | LTR | Taiwan, HK | ✅ Required |
-| `ko` | Korean | LTR | Korea | ✅ Required |
-| `ar` | Arabic | RTL | MENA | ✅ Required |
-| `he` | Hebrew | RTL | Israel | 🟡 Optional |
-| `tr` | Turkish | LTR | Turkey | 🟡 Optional |
-| `ru` | Russian | LTR | Russia | 🟡 Optional |
+| Code      | Language              | Direction | Region               | Priority    |
+| --------- | --------------------- | --------- | -------------------- | ----------- |
+| `en`      | English               | LTR       | Global               | ✅ Primary  |
+| `de`      | German                | LTR       | DACH                 | ✅ Required |
+| `fr`      | French                | LTR       | France, Canada       | ✅ Required |
+| `es`      | Spanish               | LTR       | Spain, LATAM         | ✅ Required |
+| `pt`      | Portuguese            | LTR       | Brazil, Portugal     | ✅ Required |
+| `it`      | Italian               | LTR       | Italy                | ✅ Required |
+| `nl`      | Dutch                 | LTR       | Netherlands, Belgium | ✅ Required |
+| `ja`      | Japanese              | LTR       | Japan                | ✅ Required |
+| `zh-Hans` | Chinese (Simplified)  | LTR       | China                | ✅ Required |
+| `zh-Hant` | Chinese (Traditional) | LTR       | Taiwan, HK           | ✅ Required |
+| `ko`      | Korean                | LTR       | Korea                | ✅ Required |
+| `ar`      | Arabic                | RTL       | MENA                 | ✅ Required |
+| `he`      | Hebrew                | RTL       | Israel               | 🟡 Optional |
+| `tr`      | Turkish               | LTR       | Turkey               | 🟡 Optional |
+| `ru`      | Russian               | LTR       | Russia               | 🟡 Optional |
 
 ### Locale Fallback Chain
 
@@ -271,7 +271,7 @@ export function useI18n() {
 
 ```tsx
 // hooks/useTranslation.ts
-import { useIntl } from 'react-intl';
+import { useIntl } from "react-intl";
 
 export function useTranslation() {
   const intl = useIntl();
@@ -293,9 +293,9 @@ function NavigationCard() {
 
   return (
     <Card dir={dir}>
-      <Button>{t('navigation.startNavigation')}</Button>
-      <Text>{t('navigation.distanceRemaining', { distance: '250m' })}</Text>
-      <Text>{t('time.minutesAgo', { count: 5 })}</Text>
+      <Button>{t("navigation.startNavigation")}</Button>
+      <Text>{t("navigation.distanceRemaining", { distance: "250m" })}</Text>
+      <Text>{t("time.minutesAgo", { count: 5 })}</Text>
     </Card>
   );
 }
@@ -442,30 +442,32 @@ fun NavigationCard(
 
 ```tsx
 // i18n/index.ts
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import { I18nManager } from 'react-native';
-import * as RNLocalize from 'react-native-localize';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import { I18nManager } from "react-native";
+import * as RNLocalize from "react-native-localize";
 
-import en from '@kozmos/locales/en/common.json';
-import de from '@kozmos/locales/de/common.json';
-import ar from '@kozmos/locales/ar/common.json';
+import en from "@kozmos/locales/en/common.json";
+import de from "@kozmos/locales/de/common.json";
+import ar from "@kozmos/locales/ar/common.json";
 
-const resources = { en: { translation: en }, de: { translation: de }, ar: { translation: ar } };
+const resources = {
+  en: { translation: en },
+  de: { translation: de },
+  ar: { translation: ar },
+};
 
-const RTL_LANGUAGES = ['ar', 'he'];
+const RTL_LANGUAGES = ["ar", "he"];
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: RNLocalize.getLocales()[0].languageCode,
-    fallbackLng: 'en',
-    interpolation: { escapeValue: false },
-  });
+i18n.use(initReactI18next).init({
+  resources,
+  lng: RNLocalize.getLocales()[0].languageCode,
+  fallbackLng: "en",
+  interpolation: { escapeValue: false },
+});
 
 // Handle RTL
-i18n.on('languageChanged', (lng) => {
+i18n.on("languageChanged", (lng) => {
   const isRtl = RTL_LANGUAGES.includes(lng);
   if (I18nManager.isRTL !== isRtl) {
     I18nManager.forceRTL(isRtl);
@@ -478,8 +480,8 @@ export default i18n;
 
 ```tsx
 // Usage in component
-import { useTranslation } from 'react-i18next';
-import { I18nManager, View, Text } from 'react-native';
+import { useTranslation } from "react-i18next";
+import { I18nManager, View, Text } from "react-native";
 
 function NavigationCard({ distance, minutesAgo }: Props) {
   const { t } = useTranslation();
@@ -487,9 +489,9 @@ function NavigationCard({ distance, minutesAgo }: Props) {
 
   return (
     <View style={[styles.card, isRtl && styles.cardRtl]}>
-      <Text>{t('navigation.startNavigation')}</Text>
-      <Text>{t('navigation.distanceRemaining', { distance })}</Text>
-      <Text>{t('time.minutesAgo', { count: minutesAgo })}</Text>
+      <Text>{t("navigation.startNavigation")}</Text>
+      <Text>{t("navigation.distanceRemaining", { distance })}</Text>
+      <Text>{t("time.minutesAgo", { count: minutesAgo })}</Text>
     </View>
   );
 }
@@ -521,51 +523,51 @@ function NavigationCard({ distance, minutesAgo }: Props) {
 
 ### 5.2 Logical Property Reference
 
-| Physical (LTR) | Logical | RTL Equivalent |
-|----------------|---------|----------------|
-| `left` | `inset-inline-start` | `right` |
-| `right` | `inset-inline-end` | `left` |
-| `margin-left` | `margin-inline-start` | `margin-right` |
-| `margin-right` | `margin-inline-end` | `margin-left` |
-| `padding-left` | `padding-inline-start` | `padding-right` |
-| `padding-right` | `padding-inline-end` | `padding-left` |
-| `border-left` | `border-inline-start` | `border-right` |
-| `text-align: left` | `text-align: start` | `text-align: right` |
-| `float: left` | `float: inline-start` | `float: right` |
+| Physical (LTR)     | Logical                | RTL Equivalent      |
+| ------------------ | ---------------------- | ------------------- |
+| `left`             | `inset-inline-start`   | `right`             |
+| `right`            | `inset-inline-end`     | `left`              |
+| `margin-left`      | `margin-inline-start`  | `margin-right`      |
+| `margin-right`     | `margin-inline-end`    | `margin-left`       |
+| `padding-left`     | `padding-inline-start` | `padding-right`     |
+| `padding-right`    | `padding-inline-end`   | `padding-left`      |
+| `border-left`      | `border-inline-start`  | `border-right`      |
+| `text-align: left` | `text-align: start`    | `text-align: right` |
+| `float: left`      | `float: inline-start`  | `float: right`      |
 
 ### 5.3 Directional Icons
 
 ```tsx
 // Icons that should flip in RTL
 const MIRRORED_ICONS = [
-  'arrow-left',
-  'arrow-right',
-  'chevron-left',
-  'chevron-right',
-  'reply',
-  'forward',
-  'undo',
-  'redo',
+  "arrow-left",
+  "arrow-right",
+  "chevron-left",
+  "chevron-right",
+  "reply",
+  "forward",
+  "undo",
+  "redo",
 ];
 
 // Icons that should NOT flip
 const NON_MIRRORED_ICONS = [
-  'check',
-  'close',
-  'search',
-  'home',
-  'phone', // Handset orientation is universal
-  'clock', // Clock hands go clockwise universally
+  "check",
+  "close",
+  "search",
+  "home",
+  "phone", // Handset orientation is universal
+  "clock", // Clock hands go clockwise universally
 ];
 
 function DirectionalIcon({ name, ...props }) {
   const { dir } = useI18n();
-  const shouldMirror = MIRRORED_ICONS.includes(name) && dir === 'rtl';
+  const shouldMirror = MIRRORED_ICONS.includes(name) && dir === "rtl";
 
   return (
     <Icon
       name={name}
-      style={shouldMirror ? { transform: 'scaleX(-1)' } : undefined}
+      style={shouldMirror ? { transform: "scaleX(-1)" } : undefined}
       {...props}
     />
   );
@@ -608,6 +610,7 @@ function NavigationHeader() {
 
 ```markdown
 ## RTL Layout Verification
+
 - [ ] Text alignment follows reading direction
 - [ ] Navigation arrows point correctly
 - [ ] Progress indicators fill correctly (right to left)
@@ -855,9 +858,9 @@ name: Translation Sync
 on:
   push:
     paths:
-      - 'packages/locales/**'
+      - "packages/locales/**"
   schedule:
-    - cron: '0 6 * * 1' # Weekly sync
+    - cron: "0 6 * * 1" # Weekly sync
 
 jobs:
   sync:
@@ -879,21 +882,21 @@ jobs:
       - name: Create PR if changes
         uses: peter-evans/create-pull-request@v5
         with:
-          title: 'chore: update translations'
+          title: "chore: update translations"
           branch: translations/update
-          commit-message: 'chore: sync translations from Lokalise'
+          commit-message: "chore: sync translations from Lokalise"
 ```
 
 ### 8.4 Translation Validation
 
 ```typescript
 // scripts/validate-translations.ts
-import en from '@kozmos/locales/en/common.json';
-import de from '@kozmos/locales/de/common.json';
-import ar from '@kozmos/locales/ar/common.json';
+import en from "@kozmos/locales/en/common.json";
+import de from "@kozmos/locales/de/common.json";
+import ar from "@kozmos/locales/ar/common.json";
 
 const locales = { en, de, ar };
-const baseLocale = 'en';
+const baseLocale = "en";
 
 function validateTranslations() {
   const baseKeys = getAllKeys(locales[baseLocale]);
@@ -929,12 +932,12 @@ function validateTranslations() {
   }
 
   if (errors.length > 0) {
-    console.error('Translation validation failed:');
+    console.error("Translation validation failed:");
     errors.forEach((e) => console.error(`  - ${e}`));
     process.exit(1);
   }
 
-  console.log('✅ All translations valid');
+  console.log("✅ All translations valid");
 }
 
 validateTranslations();
@@ -1030,15 +1033,22 @@ export const RTL = {
 // For testing text expansion and missing translations
 const pseudoLocalize = (text: string): string => {
   const chars: Record<string, string> = {
-    'a': 'α', 'b': 'ḅ', 'c': 'ċ', 'd': 'ḍ', 'e': 'ḛ',
+    a: "α",
+    b: "ḅ",
+    c: "ċ",
+    d: "ḍ",
+    e: "ḛ",
     // ... more mappings
   };
 
-  return `[${text.split('').map(c => chars[c.toLowerCase()] || c).join('')}]`;
+  return `[${text
+    .split("")
+    .map((c) => chars[c.toLowerCase()] || c)
+    .join("")}]`;
 };
 
 // Enable pseudo-locale in dev
-if (process.env.NODE_ENV === 'development' && locale === 'pseudo') {
+if (process.env.NODE_ENV === "development" && locale === "pseudo") {
   messages = mapValues(messages, pseudoLocalize);
 }
 
@@ -1055,30 +1065,30 @@ if (process.env.NODE_ENV === 'development' && locale === 'pseudo') {
 
 ```typescript
 // ❌ Bad: Generic keys
-t('button1')
-t('text_34')
-t('label')
+t("button1");
+t("text_34");
+t("label");
 
 // ✅ Good: Semantic, namespaced keys
-t('navigation.startNavigation')
-t('search.placeholder')
-t('errors.network')
+t("navigation.startNavigation");
+t("search.placeholder");
+t("errors.network");
 
 // ❌ Bad: Full sentences as keys
-t('Click here to start navigation')
+t("Click here to start navigation");
 
 // ✅ Good: Short, descriptive keys
-t('navigation.startNavigation')
+t("navigation.startNavigation");
 ```
 
 ### 10.2 Interpolation
 
 ```typescript
 // ❌ Bad: Concatenation
-t('greeting') + name + t('punctuation')
+t("greeting") + name + t("punctuation");
 
 // ✅ Good: Interpolation
-t('greeting.withName', { name })
+t("greeting.withName", { name });
 
 // Translation: "Hello, {name}!"
 ```
@@ -1097,26 +1107,26 @@ t('greeting.withName', { name })
 
 ### 10.4 Text Expansion Planning
 
-| Language | Expansion vs English |
-|----------|---------------------|
-| German | +30% |
-| French | +20% |
-| Italian | +25% |
-| Spanish | +25% |
-| Portuguese | +30% |
-| Russian | +30% |
-| Japanese | -10% to +10% |
-| Chinese | -50% to 0% |
-| Arabic | +25% |
+| Language   | Expansion vs English |
+| ---------- | -------------------- |
+| German     | +30%                 |
+| French     | +20%                 |
+| Italian    | +25%                 |
+| Spanish    | +25%                 |
+| Portuguese | +30%                 |
+| Russian    | +30%                 |
+| Japanese   | -10% to +10%         |
+| Chinese    | -50% to 0%           |
+| Arabic     | +25%                 |
 
 ```css
 /* Design for text expansion */
 .button {
-  min-width: 120px;           /* Accommodate longer text */
-  padding-inline: 16px;       /* Flexible horizontal padding */
-  white-space: nowrap;        /* Or allow wrapping */
+  min-width: 120px; /* Accommodate longer text */
+  padding-inline: 16px; /* Flexible horizontal padding */
+  white-space: nowrap; /* Or allow wrapping */
   overflow: hidden;
-  text-overflow: ellipsis;    /* Graceful truncation */
+  text-overflow: ellipsis; /* Graceful truncation */
 }
 ```
 
@@ -1124,16 +1134,15 @@ t('greeting.withName', { name })
 
 ```typescript
 // ❌ Bad: Hardcoded units
-`${distance} meters`
+`${distance} meters`;
 
 // ✅ Good: Locale-aware formatting
-intl.formatNumber(distance, { style: 'unit', unit: 'meter' })
-
+intl.formatNumber(distance, { style: "unit", unit: "meter" })
 // ❌ Bad: Hardcoded date format
-`${month}/${day}/${year}`
+`${month}/${day}/${year}`;
 
 // ✅ Good: Locale-aware date
-intl.formatDate(date, { dateStyle: 'medium' })
+intl.formatDate(date, { dateStyle: "medium" });
 ```
 
 ---

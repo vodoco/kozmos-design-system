@@ -39,20 +39,20 @@
 ### Test Requirements by Component Maturity
 
 | Maturity | Unit Tests | A11y Tests | Visual Tests | Integration |
-|----------|------------|------------|--------------|-------------|
-| Alpha | Optional | Required | Optional | Optional |
-| Beta | Required | Required | Required | Optional |
-| Stable | Required | Required | Required | Required |
+| -------- | ---------- | ---------- | ------------ | ----------- |
+| Alpha    | Optional   | Required   | Optional     | Optional    |
+| Beta     | Required   | Required   | Required     | Optional    |
+| Stable   | Required   | Required   | Required     | Required    |
 
 ### What to Test
 
-| Test | Don't Test |
-|------|------------|
+| Test               | Don't Test             |
+| ------------------ | ---------------------- |
 | Component behavior | Implementation details |
-| User interactions | Internal state |
-| Accessibility | CSS styling |
-| Edge cases | Third-party libraries |
-| Error states | Platform internals |
+| User interactions  | Internal state         |
+| Accessibility      | CSS styling            |
+| Edge cases         | Third-party libraries  |
+| Error states       | Platform internals     |
 
 ---
 
@@ -62,24 +62,24 @@
 
 ```typescript
 // packages/react/vitest.config.ts
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
       exclude: [
-        'node_modules/',
-        'src/test/',
-        '**/*.stories.tsx',
-        '**/*.figma.tsx',
+        "node_modules/",
+        "src/test/",
+        "**/*.stories.tsx",
+        "**/*.figma.tsx",
       ],
     },
   },
@@ -90,11 +90,11 @@ export default defineConfig({
 
 ```typescript
 // packages/react/src/test/setup.ts
-import '@testing-library/jest-dom';
-import { expect, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
-import * as matchers from '@testing-library/jest-dom/matchers';
-import { axe, toHaveNoViolations } from 'jest-axe';
+import "@testing-library/jest-dom";
+import { expect, afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
+import * as matchers from "@testing-library/jest-dom/matchers";
+import { axe, toHaveNoViolations } from "jest-axe";
 
 // Extend Vitest's expect
 expect.extend(matchers);
@@ -106,7 +106,7 @@ afterEach(() => {
 });
 
 // Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
     matches: false,
@@ -1061,12 +1061,12 @@ class KozmosButtonTest : ComposeTest() {
 ```typescript
 // packages/react-native/jest.config.js
 module.exports = {
-  preset: 'react-native',
-  setupFilesAfterEnv: ['./src/test/setup.ts'],
+  preset: "react-native",
+  setupFilesAfterEnv: ["./src/test/setup.ts"],
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-reanimated)/)',
+    "node_modules/(?!(react-native|@react-native|react-native-reanimated)/)",
   ],
-  testMatch: ['**/*.test.tsx'],
+  testMatch: ["**/*.test.tsx"],
 };
 ```
 
@@ -1074,18 +1074,18 @@ module.exports = {
 
 ```typescript
 // packages/react-native/src/test/setup.ts
-import '@testing-library/jest-native/extend-expect';
+import "@testing-library/jest-native/extend-expect";
 
 // Mock react-native-reanimated
-jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
+jest.mock("react-native-reanimated", () => {
+  const Reanimated = require("react-native-reanimated/mock");
   Reanimated.default.call = () => {};
   return Reanimated;
 });
 
 // Mock Platform
-jest.mock('react-native/Libraries/Utilities/Platform', () => ({
-  OS: 'ios',
+jest.mock("react-native/Libraries/Utilities/Platform", () => ({
+  OS: "ios",
   select: jest.fn((obj) => obj.ios),
 }));
 ```
@@ -1179,15 +1179,15 @@ describe('Button', () => {
 
 ```typescript
 // packages/vue/vitest.config.ts
-import { defineConfig } from 'vitest/config';
-import vue from '@vitejs/plugin-vue';
+import { defineConfig } from "vitest/config";
+import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   plugins: [vue()],
   test: {
     globals: true,
-    environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
+    environment: "jsdom",
+    include: ["src/**/*.test.ts"],
   },
 });
 ```
@@ -1196,41 +1196,45 @@ export default defineConfig({
 
 ```typescript
 // packages/vue/src/components/kozmos-button.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
-import { fixture, html, expect as wcExpect } from '@open-wc/testing';
-import './kozmos-button';
+import { describe, it, expect, beforeEach } from "vitest";
+import { fixture, html, expect as wcExpect } from "@open-wc/testing";
+import "./kozmos-button";
 
-describe('kozmos-button', () => {
+describe("kozmos-button", () => {
   let element: HTMLElement;
 
   beforeEach(async () => {
     element = await fixture(html`<kozmos-button>Click</kozmos-button>`);
   });
 
-  it('renders slot content', () => {
-    expect(element.textContent).toContain('Click');
+  it("renders slot content", () => {
+    expect(element.textContent).toContain("Click");
   });
 
-  it('reflects variant attribute', async () => {
-    element.setAttribute('variant', 'outline');
+  it("reflects variant attribute", async () => {
+    element.setAttribute("variant", "outline");
     await element.updateComplete;
-    expect(element.getAttribute('variant')).toBe('outline');
+    expect(element.getAttribute("variant")).toBe("outline");
   });
 
-  it('dispatches click event', async () => {
+  it("dispatches click event", async () => {
     let clicked = false;
-    element.addEventListener('click', () => { clicked = true; });
+    element.addEventListener("click", () => {
+      clicked = true;
+    });
 
     element.click();
     expect(clicked).toBe(true);
   });
 
-  it('does not dispatch click when disabled', async () => {
-    element.setAttribute('disabled', '');
+  it("does not dispatch click when disabled", async () => {
+    element.setAttribute("disabled", "");
     await element.updateComplete;
 
     let clicked = false;
-    element.addEventListener('click', () => { clicked = true; });
+    element.addEventListener("click", () => {
+      clicked = true;
+    });
 
     element.click();
     expect(clicked).toBe(false);
@@ -1246,16 +1250,16 @@ describe('kozmos-button', () => {
 
 ```typescript
 // packages/react/.storybook/main.ts
-import type { StorybookConfig } from '@storybook/react-vite';
+import type { StorybookConfig } from "@storybook/react-vite";
 
 const config: StorybookConfig = {
-  stories: ['../src/**/*.stories.@(ts|tsx)'],
+  stories: ["../src/**/*.stories.@(ts|tsx)"],
   addons: [
-    '@storybook/addon-essentials',
-    '@storybook/addon-a11y',
-    '@chromatic-com/storybook',
+    "@storybook/addon-essentials",
+    "@storybook/addon-a11y",
+    "@chromatic-com/storybook",
   ],
-  framework: '@storybook/react-vite',
+  framework: "@storybook/react-vite",
 };
 
 export default config;
@@ -1306,7 +1310,7 @@ jobs:
 
 ```typescript
 // packages/react/src/test/a11y.ts
-import { axe, toHaveNoViolations } from 'jest-axe';
+import { axe, toHaveNoViolations } from "jest-axe";
 
 expect.extend(toHaveNoViolations);
 
@@ -1314,8 +1318,8 @@ export async function checkA11y(container: HTMLElement) {
   const results = await axe(container, {
     rules: {
       // Customize rules as needed
-      'color-contrast': { enabled: true },
-      'label': { enabled: true },
+      "color-contrast": { enabled: true },
+      label: { enabled: true },
     },
   });
 
@@ -1359,12 +1363,12 @@ describe('Accessibility', () => {
 
 ```typescript
 // scripts/test-bundle-size.ts
-import { readFileSync } from 'fs';
-import { gzipSync } from 'zlib';
+import { readFileSync } from "fs";
+import { gzipSync } from "zlib";
 
 const BUDGETS = {
-  '@kozmos/react': 80 * 1024, // 80KB
-  '@kozmos/tokens': 8 * 1024,  // 8KB
+  "@kozmos/react": 80 * 1024, // 80KB
+  "@kozmos/tokens": 8 * 1024, // 8KB
 };
 
 function getGzipSize(filePath: string): number {
@@ -1378,18 +1382,18 @@ function testBundleSize(packageName: string, bundlePath: string) {
 
   if (size > budget) {
     console.error(
-      `❌ ${packageName}: ${(size / 1024).toFixed(2)}KB exceeds budget of ${(budget / 1024).toFixed(2)}KB`
+      `❌ ${packageName}: ${(size / 1024).toFixed(2)}KB exceeds budget of ${(budget / 1024).toFixed(2)}KB`,
     );
     process.exit(1);
   }
 
   console.log(
-    `✅ ${packageName}: ${(size / 1024).toFixed(2)}KB (budget: ${(budget / 1024).toFixed(2)}KB)`
+    `✅ ${packageName}: ${(size / 1024).toFixed(2)}KB (budget: ${(budget / 1024).toFixed(2)}KB)`,
   );
 }
 
-testBundleSize('@kozmos/react', 'packages/react/dist/index.js');
-testBundleSize('@kozmos/tokens', 'packages/tokens/build/js/tokens.js');
+testBundleSize("@kozmos/react", "packages/react/dist/index.js");
+testBundleSize("@kozmos/tokens", "packages/tokens/build/js/tokens.js");
 ```
 
 ### Render Performance Tests
@@ -1488,8 +1492,8 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Build and Test
         run: |
@@ -1545,9 +1549,9 @@ Component.perf.test.tsx # Performance tests
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial testing patterns guide |
+| Version | Date       | Changes                        |
+| ------- | ---------- | ------------------------------ |
+| 1.0.0   | 2026-02-07 | Initial testing patterns guide |
 
 ---
 
