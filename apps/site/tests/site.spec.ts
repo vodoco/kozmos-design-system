@@ -143,10 +143,6 @@ const knownViolations: Record<string, readonly KnownViolation[]> = {
     // GAP-30: Sidebar's navigation cannot be named; the page's own has one too.
     { id: "landmark-unique", only: /sidebar-navigation/ },
   ],
-  "/components/alert": [
-    // GAP-12: AlertTitle is always an h5, under the demo card's h3.
-    { id: "heading-order", only: /<h5/ },
-  ],
   // GAP-45: the first brand variant's 600 reads 4.21:1 on the dark page, and
   // the token-override example re-points the theme's 600 to it.
   "/components/theme-provider": [
