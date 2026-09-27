@@ -26,7 +26,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -94,12 +96,45 @@ val KozmosDefaultPanelDetents: List<KozmosMapPanelDetent> =
     listOf(KozmosMapPanelDetent.Collapsed, KozmosMapPanelDetent.Medium, KozmosMapPanelDetent.Large)
 
 /**
+ * What the shell's panel leaves empty above its content (GAP-083): the
+ * handle's 16dp row on a sheet that draws one; nothing on a sheet with a
+ * single detent, which draws no handle, under a `panelHeader`, which sits
+ * there instead, or beside the map, where a side panel starts its content at
+ * its top edge. A part with its own top padding tops it up to what it needs
+ * rather than adding to it, as `KozmosPOIDetailPanel` does in its sheet and
+ * panel presentations. 0 outside a shell.
+ */
+val LocalKozmosPanelInsetTop = compositionLocalOf { 0.dp }
+
+/**
+ * How far the panel content's first control must still sit below
+ * [LocalKozmosPanelInsetTop] (GAP-083): 4dp under a handle — half of what its
+ * 16dp row falls short of 24 — so the handle's target keeps its WCAG 2.5.8
+ * spacing; 0 everywhere else.
+ */
+val LocalKozmosPanelClearanceTop = compositionLocalOf { 0.dp }
+
+/** The handle's row: deliberately shallow, an affordance at the sheet's top edge. */
+private val SheetHandleRowHeight = KozmosDimensions.primitivesLayoutSpacing200
+
+/**
+ * WCAG 2.5.8: a target smaller than 24dp keeps a 24dp circle on its centre
+ * clear of every other target. The handle's row is one.
+ */
+private val MinimumTargetSpacing = 24.dp
+
+/**
  * Adaptive container that layers a map, its controls, and a detail panel.
  *
  * Mirrors the React `AdaptiveMapShell`. The shell owns layout and z-ordering
  * only. [collisionInsets] are surfaced back to the caller through
  * [onCollisionInsetsChange] so the map renderer can pad its camera — layout
  * alone cannot move SDK labels, routes, attribution, or marker collision boxes.
+ *
+ * The [panel]'s content is told what the panel leaves empty above it, and how
+ * far its first control must keep below that — [LocalKozmosPanelInsetTop] and
+ * [LocalKozmosPanelClearanceTop] — so a part with its own top padding, as
+ * `KozmosPOIDetailPanel` has, tops it up rather than adding to it (GAP-083).
  */
 @Composable
 fun KozmosAdaptiveMapShell(
@@ -247,7 +282,15 @@ fun KozmosAdaptiveMapShell(
                         if (panelHeader != null) {
                             Box(modifier = Modifier.fillMaxWidth()) { panelHeader() }
                         }
-                        Box(modifier = Modifier.fillMaxWidth().weight(1f), propagateMinConstraints = true) { panel() }
+                        Box(modifier = Modifier.fillMaxWidth().weight(1f), propagateMinConstraints = true) {
+                            // A side panel starts its content at its top edge,
+                            // with no handle: it leaves nothing above it.
+                            CompositionLocalProvider(
+                                LocalKozmosPanelInsetTop provides 0.dp,
+                                LocalKozmosPanelClearanceTop provides 0.dp,
+                                content = panel
+                            )
+                        }
                     }
                 }
             } else {
@@ -378,6 +421,12 @@ private fun BottomSheet(
         // content within 16 of the largest detent folded the two, lost its
         // handle, unfolded and drew it again.
         val showsHandle = offered.distinct().size > 1
+        // What the sheet leaves above its content, for a part with its own
+        // top padding to top up rather than add to (GAP-083): the handle's
+        // row, and its target's clearance — unless a header sits there.
+        val underHandle = showsHandle && panelHeader == null
+        val insetTop = if (underHandle) SheetHandleRowHeight else 0.dp
+        val clearanceTop = if (underHandle) (MinimumTargetSpacing - SheetHandleRowHeight) / 2 else 0.dp
         Layout(
             content = {
                 if (showsHandle) {
@@ -408,7 +457,13 @@ private fun BottomSheet(
                         // The sheet's surface reaches the bottom edge; what it
                         // holds keeps above the navigation bar.
                         .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-                ) { panel() }
+                ) {
+                    CompositionLocalProvider(
+                        LocalKozmosPanelInsetTop provides insetTop,
+                        LocalKozmosPanelClearanceTop provides clearanceTop,
+                        content = panel
+                    )
+                }
             }
         ) { measurables, constraints ->
             // The content keeps its own size at every detent: measured as tall
@@ -416,7 +471,7 @@ private fun BottomSheet(
             // anchor row is never squashed by a collapsed sheet and a list
             // inside has a bounded height. The header keeps its own height as
             // well, and the content is measured in what it leaves.
-            val handleHeight = KozmosDimensions.primitivesLayoutSpacing200.roundToPx()
+            val handleHeight = SheetHandleRowHeight.roundToPx()
             val loose = constraints.copy(minWidth = 0, minHeight = 0)
             fun part(id: SheetPart) = measurables.firstOrNull { it.layoutId == id }
             val handle = part(SheetPart.Handle)?.measure(loose.copy(maxHeight = handleHeight))
@@ -473,7 +528,7 @@ private fun SheetHandle(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(KozmosDimensions.primitivesLayoutSpacing200)
+            .height(SheetHandleRowHeight)
             .clickable(onClick = onCycle)
             .semantics {
                 contentDescription = "Panel height"

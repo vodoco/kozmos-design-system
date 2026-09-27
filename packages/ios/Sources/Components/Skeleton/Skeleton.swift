@@ -80,7 +80,9 @@ public struct KozmosSkeleton: View {
     /// placeholder is cut to a plain rectangle, as it always was.
     private func surface<Outline: Shape>(_ outline: Outline) -> some View {
         Rectangle()
-            .fill(KozmosColors.primitivesColorsBackground300)
+            // Figma's `Colors/background/200`, as React and Android draw it.
+            // iOS drew 300 until 2026-09-27, React and Android 100.
+            .fill(KozmosColors.primitivesColorsBackground200)
             .overlay(
                 GeometryReader { geometry in
                     Rectangle()
