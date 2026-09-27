@@ -477,6 +477,16 @@ pnpm changeset
 # 3. Write summary of changes
 ```
 
+**Every pull request that changes what a published package ships carries a changeset naming that
+package** — `@kozmos-ds/react`, `@kozmos-ds/icons`, `@kozmos-ds/product-contracts` or
+`@kozmos-ds/tokens`. "Ships" means its `src/` apart from tests, stories, `.mdx` pages and Code Connect
+files, the build files beside it (`tsconfig*.json`, `vite.config.*` and the like), and the
+consumer-facing fields of its `package.json`. CI's "Web Build & Test" fails a pull request without
+one (`scripts/release/changeset-required.mjs`; run it yourself with
+`node scripts/release/changeset-required.mjs`). If a change genuinely needs no release, say so with
+an empty changeset: `pnpm changeset --empty`. React pins its siblings exactly, so a react change that
+needs a new icon or contract field needs their changesets too.
+
 ### Version Bumps
 
 | Type    | When to Use                        |
