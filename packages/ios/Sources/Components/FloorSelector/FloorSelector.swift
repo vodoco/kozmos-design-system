@@ -88,6 +88,16 @@ public struct KozmosFloorSelector: View {
     /// it, so the column's bottom level lies exactly over the tile whatever
     /// size the shared map-control surface gives it.
     @State private var tileSize = CGSize(width: 44, height: 44)
+    /// Whether the open column grows down from the tile, its top level over
+    /// it, rather than up: only where it has no room above the tile — parked
+    /// at the top of the map — as React's and Compose's do. Decided as the
+    /// column opens.
+    @State private var growsDown = false
+    #if os(iOS)
+    /// The UIKit element over the tile, which knows where the tile is in its
+    /// window and where the window's safe area begins; SwiftUI says neither.
+    @State private var anchor = KozmosFloorSwitcherAnchor()
+    #endif
     /// Bumped when the column closes on a choice or on Escape: VoiceOver goes
     /// back to the tile, which names the level now shown.
     @State private var tileFocusRequest = 0
@@ -172,6 +182,9 @@ public struct KozmosFloorSelector: View {
     /// Opens or closes the switcher's column.
     private func setExpanded(_ open: Bool) {
         guard open != isExpanded else { return }
+        #if os(iOS)
+        if open { growsDown = anchor.roomAbove < columnReachAboveTile }
+        #endif
         if open, let floor = selectedPresentation {
             trackEvent(
                 KozmosAnalyticsEvent(
@@ -301,19 +314,32 @@ public struct KozmosFloorSelector: View {
     /// 16pt corners inside the column's 20, concentric.
     private static let columnInset = KozmosDimensions.primitivesLayoutSpacing50
 
+    /// The open column's height: a tile per level, `columnInset` apart and
+    /// around them.
+    private var columnHeight: CGFloat {
+        let levels = CGFloat(floors.count)
+        return levels * tileSize.height + (levels + 1) * Self.columnInset
+    }
+
+    /// How far the column, grown up from the tile, reaches above the tile's
+    /// top: the room it needs there.
+    private var columnReachAboveTile: CGFloat {
+        columnHeight - tileSize.height - Self.columnInset
+    }
+
     /// The open column in the tile's own coordinates — one tile wide and a
     /// tile per level, `columnInset` apart and around them, its bottom level
-    /// on the tile — so the watch can tell a tap on it from a tap outside.
-    /// Worked out from the numbers the column is laid out with rather than
-    /// measured: a preference from the column, which opens inside an overlay
-    /// on a spring, never reached the switcher (measured on iOS 26.5). The
-    /// same both ways round: the column reaches past the tile equally on
-    /// either side.
+    /// on the tile, or its top one where it grows down — so the watch can
+    /// tell a tap on it from a tap outside. Worked out from the numbers the
+    /// column is laid out with rather than measured: a preference from the
+    /// column, which opens inside an overlay on a spring, never reached the
+    /// switcher (measured on iOS 26.5). The same both ways round: the column
+    /// reaches past the tile equally on either side.
     var columnFrameOverTile: CGRect {
         let inset = Self.columnInset
-        let levels = CGFloat(floors.count)
-        let height = levels * tileSize.height + (levels + 1) * inset
-        return CGRect(x: -inset, y: tileSize.height + inset - height, width: tileSize.width + 2 * inset, height: height)
+        let height = columnHeight
+        let top = growsDown ? -inset : tileSize.height + inset - height
+        return CGRect(x: -inset, y: top, width: tileSize.width + 2 * inset, height: height)
     }
 
     /// The closed tile, with the column over it while it is open.
@@ -321,13 +347,16 @@ public struct KozmosFloorSelector: View {
     private var switcher: some View {
         if let shown = selectedPresentation {
             tile(shown)
-                .overlay(alignment: .bottomTrailing) {
+                .overlay(alignment: growsDown ? .topTrailing : .bottomTrailing) {
                     column
                         // Reaching past the tile by its inset, so the bottom
-                        // level lies on the tile. Alignment guides mirror right
-                        // to left, as an offset would not — set here, on the
+                        // level lies on the tile — or the top one, where the
+                        // column grows down: the overlay reads the guide on the
+                        // edge it aligns. Alignment guides mirror right to
+                        // left, as an offset would not — set here, on the
                         // column as a whole: set inside its `if`, they never
                         // reach this overlay (measured).
+                        .alignmentGuide(.top) { $0[.top] + Self.columnInset }
                         .alignmentGuide(.bottom) { $0[.bottom] - Self.columnInset }
                         .alignmentGuide(.trailing) { $0[.trailing] - Self.columnInset }
                 }
@@ -370,6 +399,7 @@ public struct KozmosFloorSelector: View {
             .accessibilityHidden(true)
             .overlay(
                 KozmosFloorSwitcherElement(
+                    anchor: anchor,
                     label: tileLabel,
                     isExpanded: isExpanded,
                     columnFrame: isExpanded ? columnFrameOverTile : .zero,
@@ -386,10 +416,11 @@ public struct KozmosFloorSelector: View {
     }
 
     /// The open state: every level in a column over the tile, top floor first,
-    /// its bottom level where the tile was — the tile grows into it. The map
-    /// control's surface, edge and shadow, opaque where the tile is nine
-    /// tenths: the column lies over the tile, and the tile's own label showing
-    /// through its bottom level read as part of it.
+    /// its bottom level where the tile was — or its top one, where there is no
+    /// room above the tile — the tile grows into it. The map control's
+    /// surface, edge and shadow, opaque where the tile is nine tenths: the
+    /// column lies over the tile, and the tile's own label showing through the
+    /// level over it read as part of it.
     @ViewBuilder
     private var column: some View {
         if variant == .collapsible, isExpanded {
@@ -418,7 +449,7 @@ public struct KozmosFloorSelector: View {
             .transition(
                 reduceMotion
                     ? .opacity
-                    : .opacity.combined(with: .scale(scale: 0.92, anchor: .bottomTrailing))
+                    : .opacity.combined(with: .scale(scale: 0.92, anchor: growsDown ? .topTrailing : .bottomTrailing))
             )
         }
     }
@@ -601,6 +632,7 @@ import UIKit
 /// The watch takes nothing from the tap: a tap on the map still reaches the
 /// map, as a press outside Radix's popover still reaches what it landed on.
 struct KozmosFloorSwitcherElement: UIViewRepresentable {
+    let anchor: KozmosFloorSwitcherAnchor
     let label: String
     let isExpanded: Bool
     let columnFrame: CGRect
@@ -610,10 +642,13 @@ struct KozmosFloorSwitcherElement: UIViewRepresentable {
     let tappedOutside: () -> Void
 
     func makeUIView(context: Context) -> ElementView {
-        ElementView(focusRequest: focusRequest)
+        let view = ElementView(focusRequest: focusRequest)
+        anchor.view = view
+        return view
     }
 
     func updateUIView(_ view: ElementView, context: Context) {
+        anchor.view = view
         view.accessibilityLabel = label
         view.accessibilityHint = isExpanded ? nil : "Shows every level"
         view.toggle = toggle
@@ -694,6 +729,14 @@ struct KozmosFloorSwitcherElement: UIViewRepresentable {
             !bounds.contains(point) && !columnFrame.contains(point)
         }
 
+        /// How far the tile's top is below the top of its window's safe area:
+        /// the room a column grown up from the tile has. Unbounded out of a
+        /// window.
+        var roomAbove: CGFloat {
+            guard let window else { return .greatestFiniteMagnitude }
+            return convert(bounds, to: window).minY - window.safeAreaInsets.top
+        }
+
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
             isOutside(touch.location(in: self))
         }
@@ -714,5 +757,16 @@ struct KozmosFloorSwitcherElement: UIViewRepresentable {
             }
         }
     }
+}
+
+/// The switcher's hold on its UIKit element, kept in its state, so that as the
+/// column opens it can ask how much room there is above the tile.
+@MainActor
+final class KozmosFloorSwitcherAnchor {
+    weak var view: KozmosFloorSwitcherElement.ElementView?
+
+    /// The room above the tile in its window; unbounded before the tile is in
+    /// one, so the column grows up, as it always has.
+    var roomAbove: CGFloat { view?.roomAbove ?? .greatestFiniteMagnitude }
 }
 #endif

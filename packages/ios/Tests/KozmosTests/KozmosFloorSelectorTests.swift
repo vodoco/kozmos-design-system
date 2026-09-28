@@ -546,15 +546,18 @@ final class KozmosFloorSelectorTests: XCTestCase {
         override var safeAreaInsets: UIEdgeInsets { .zero }
     }
 
-    @MainActor private func host<V: View>(_ view: V) async -> UIWindow {
+    /// The switcher in a window of its own, parked 16 in from the bottom
+    /// trailing corner, as a map parks it — or from the top trailing one.
+    @MainActor private func host<V: View>(_ view: V, parkedAtTop: Bool = false) async -> UIWindow {
         let window = Window(frame: CGRect(origin: .zero, size: corner))
         window.rootViewController = UIHostingController(
             rootView: VStack {
-                Spacer()
+                if !parkedAtTop { Spacer() }
                 HStack {
                     Spacer()
                     view
                 }
+                if parkedAtTop { Spacer() }
             }
             .padding(16)
             .frame(width: corner.width, height: corner.height)
@@ -686,6 +689,33 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertTrue(tile.accessibilityActivate())
         await settle()
         XCTAssertTrue(offered(), "Escape is not offered while the column is open")
+    }
+
+    /// Parked at the top of the map, where the column has no room to grow up,
+    /// it grows down over the tile instead — its top level on the tile — as
+    /// React's and Compose's do, and the watch for a tap outside follows it.
+    /// Drawn from the window itself once the column has sprung open.
+    @MainActor func testWithNoRoomAboveTheColumnGrowsDownOverTheTile() async throws {
+        let window = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible),
+                                parkedAtTop: true)
+        defer { window.isHidden = true }
+        let element = try XCTUnwrap(
+            accessibleView(named: "First floor", in: window) as? KozmosFloorSwitcherElement.ElementView,
+            "VoiceOver finds no tile named by its level"
+        )
+        XCTAssertTrue(element.accessibilityActivate())
+        for _ in 0..<4 { await settle() }
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { window.layer.render(in: $0.cgContext) }
+        let drawn = try RenderedPixels(image, pointWidth: corner.width)
+        let tile = CGRect(x: corner.width - 16 - 44, y: 16, width: 44, height: 44)
+        let column = try XCTUnwrap(drawn.boundingBox(in: whole, where: try near(KozmosColors.primitivesColorsForeground300)),
+                                   "no column drawn")
+        XCTAssertEqual(column.minY, tile.minY - 4, accuracy: 1, "the column does not reach down from the tile: \(column)")
+        XCTAssertEqual(column.height, 3 * 44 + 2 * 4 + 8, accuracy: 1.5, "the column is cut short: \(column)")
+        XCTAssertEqual(column.maxX, tile.maxX + 4, accuracy: 1, "the column's trailing edge: \(column)")
+        // Below the tile is the column now; above it, the map.
+        XCTAssertFalse(element.isOutside(CGPoint(x: 22, y: 100)), "a tap on the column is taken for one outside")
+        XCTAssertTrue(element.isOutside(CGPoint(x: 22, y: -60)), "a tap on the map above is not taken for one outside")
     }
     #endif
 
