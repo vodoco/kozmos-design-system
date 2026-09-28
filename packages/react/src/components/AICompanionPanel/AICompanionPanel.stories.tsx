@@ -104,8 +104,10 @@ export const Streaming: Story = {
 };
 
 /**
- * Row 60: open it from the button and focus goes into the panel; close it
- * and focus comes back to the button, which stayed beneath it all along.
+ * Row 60 and decision 16: the panel stays mounted and `open` opens it. Open
+ * it from the button and focus goes into the panel; close it and focus comes
+ * back to the button, which stayed beneath it all along. The other stories
+ * are on screen from the start, so none of them takes focus.
  */
 export const OpenAndClose: Story = {
   render: () => {
@@ -117,19 +119,19 @@ export const OpenAndClose: Story = {
             <div className="flex h-full items-center justify-center">
               <AISearchButton onClick={() => setOpen(true)} />
             </div>
-            {open && (
-              <div className="absolute inset-0">
-                <AICompanionPanel onClose={() => setOpen(false)}>
-                  <AIMessageList>
-                    <AIMessage>
-                      Hello! What are you looking for? Describe it in your own
-                      words, like &ldquo;somewhere quiet to work.&rdquo;
-                    </AIMessage>
-                  </AIMessageList>
-                  <AIInputBar onSubmit={fn()} onValueChange={fn()} value="" />
-                </AICompanionPanel>
-              </div>
-            )}
+            <AICompanionPanel
+              className="absolute inset-0"
+              onClose={() => setOpen(false)}
+              open={open}
+            >
+              <AIMessageList>
+                <AIMessage>
+                  Hello! What are you looking for? Describe it in your own
+                  words, like &ldquo;somewhere quiet to work.&rdquo;
+                </AIMessage>
+              </AIMessageList>
+              <AIInputBar onSubmit={fn()} onValueChange={fn()} value="" />
+            </AICompanionPanel>
           </div>
         </Frame>
       );

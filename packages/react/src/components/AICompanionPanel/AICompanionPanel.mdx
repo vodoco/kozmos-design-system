@@ -27,23 +27,53 @@ The panel is a **region** named by its title, and the title is a heading.
 `titleLevel` — 2 by default — follows whatever heading sits above the panel;
 it looks the same at every level.
 
-It moves focus itself. As it **opens**, which is when it mounts, it takes
-focus: a screen reader announces it, and Escape works at once. Focus left on
-the button beneath would be on something the visitor can no longer see. As it
-**closes**, which is when it unmounts, it hands focus back to whatever had it
-when it opened — usually `AISearchButton`, which the panel covered rather than
-replaced.
+It moves focus itself, when the visitor opens and closes it. Keep the panel
+mounted and pass `open`; closed, it draws nothing.
 
-Either can be redirected with the two callbacks Kozmos's `Dialog` and `Drawer`
-already take. Each is called first; `event.preventDefault()` and put focus
-where it should go yourself — the field, for a product that wants the keyboard
-up at once:
+- When `open` turns **true**, the panel takes focus: a screen reader
+  announces it, and Escape works at once. Focus left on the button beneath
+  would be on something the visitor can no longer see.
+- When `open` turns **false**, or the panel unmounts, it hands focus back to
+  whatever had it when it opened — usually `AISearchButton`, which the panel
+  covered rather than replaced.
+- A panel that is **open as it mounts** — on screen from the start, with
+  `open` left out or true from the first render — was opened by nobody, so it
+  leaves focus where the page put it. Closed and opened again, it takes focus
+  like any other open.
+
+A product that mounts the panel to open it is showing it from the start, as
+far as the panel can tell, and focus stays on the button beneath. Keep it
+mounted and turn `open` on instead. Place the panel itself, through its
+`className`: a wrapper kept mounted around it would stay over the sheet,
+empty, once it closes.
+
+```tsx
+const [open, setOpen] = useState(false);
+
+<>
+  <AISearchButton onClick={() => setOpen(true)} />
+  <AICompanionPanel
+    className="absolute inset-0"
+    open={open}
+    onClose={() => setOpen(false)}
+  >
+    <AIMessageList>{turns}</AIMessageList>
+    <AIInputBar onSubmit={ask} onValueChange={setValue} value={value} />
+  </AICompanionPanel>
+</>;
+```
+
+Either move can be redirected with the two callbacks Kozmos's `Dialog` and
+`Drawer` already take. Each is called first; `event.preventDefault()` and put
+focus where it should go yourself — the field, for a product that wants the
+keyboard up at once:
 
 ```tsx
 const field = useRef<HTMLInputElement>(null);
 
 <AICompanionPanel
-  onClose={close}
+  open={open}
+  onClose={() => setOpen(false)}
   onOpenAutoFocus={(event) => {
     event.preventDefault();
     field.current?.focus();
@@ -59,11 +89,12 @@ const field = useRef<HTMLInputElement>(null);
 </AICompanionPanel>;
 ```
 
-`onCloseAutoFocus` works the same way at the close. Focus the product has
-already moved out of the panel — to the details of a place picked from the
-thread — is never taken back, and the callback is not called. A panel that is
-on screen from the start, rather than opened, can decline the first:
-`onOpenAutoFocus={(event) => event.preventDefault()}`.
+`onOpenAutoFocus` is called only when `open` turns true, never for a panel
+that mounts open, so a panel on screen from the start needs no
+`preventDefault()` to keep the page's focus. `onCloseAutoFocus` works the same
+way at the close. Focus the product has already moved out of the panel — to
+the details of a place picked from the thread — is never taken back, and the
+callback is not called.
 
 Close is drawn at 36px, as the header was drawn round it, with a 44px target.
 
