@@ -1,17 +1,20 @@
 # @kozmos-ds/site
 
-The Kozmos design system's website: what Kozmos is, shown live; the
-foundations, drawn from the tokens; a reference of every component with live
-examples, props and three-platform code; thirteen page and app examples built
-from Kozmos components and nothing else; and a search across all of it.
+The Kozmos design system's website, its front door: what Kozmos is, shown
+live; getting started; the foundations, drawn from the tokens; thirteen page
+and app examples built from Kozmos components and nothing else; every
+component, and where it exists — React, SwiftUI, Compose and Figma; and a
+search across all of it.
 
-**Status, 2026-09-27:** pre-release, in a public repository. It lives on
-`claude/kozmos-site`, based on `main`, and is open as pull request #55. It
-touches nothing outside `apps/site` except `pnpm-lock.yaml`, the two
-workflows that test and publish it, and the repository's own front door
-(`README.md`, `SECURITY.md`, `CONTRIBUTING.md`). Merging it publishes the
-site to <https://vodoco.github.io/kozmos-design-system/>; every page still
-says `noindex` until the launch.
+Storybook is the component reference (decision 44): each component's docs,
+stories and controls, and its code on every platform, live there only, and
+update with every pull request. The site links to it from its header and
+from every component's page, and publishes it beside itself.
+
+**Status, 2026-09-28:** live at <https://vodoco.github.io/kozmos-design-system/>,
+published from `main` (the site merged in #55), with Storybook at
+<https://vodoco.github.io/kozmos-design-system/storybook/>. Pre-release:
+every page still says `noindex` until the launch.
 
 - [Where it lives](#where-it-lives)
 - [Run it](#run-it)
@@ -19,13 +22,13 @@ says `noindex` until the launch.
 - [How it is built](#how-it-is-built)
 - [The pages](#the-pages)
 - [Add an example](#add-an-example)
-- [Add or change a component demo](#add-or-change-a-component-demo)
+- [Components, their status and Storybook](#components-their-status-and-storybook)
 - [Add a foundations page](#add-a-foundations-page)
 - [Add or change a page](#add-or-change-a-page)
 - [Styling](#styling)
 - [Testing](#testing)
-- [Keeping up with the component branch](#keeping-up-with-the-component-branch)
-- [The day the packages are published](#the-day-the-packages-are-published)
+- [Keeping up with `main`](#keeping-up-with-main)
+- [The packages on npm](#the-packages-on-npm)
 - [Deploying](#deploying)
 - [Decisions still open](#decisions-still-open)
 - [Found along the way, outside the site](#found-along-the-way-outside-the-site)
@@ -35,27 +38,21 @@ says `noindex` until the launch.
 
 ## Where it lives
 
-| What              | Where                                                               |
-| ----------------- | ------------------------------------------------------------------- |
-| Working copy      | `/Volumes/4TB Depo/development/K/kozmos-design-system-site`         |
-| Branch            | `claude/kozmos-site`, pushed; pull request #55 against `main`       |
-| Based on          | `main`                                                              |
-| The site          | `apps/site` in that working copy                                    |
-| Gaps it found     | [`GAPS.md`](./GAPS.md)                                              |
-| Fixes for Kozmos  | [`DS-HANDOFF.md`](./DS-HANDOFF.md), for whoever changes `packages/` |
-| The main checkout | `…/kozmos-design-system-dev`, on `main` — the site is not there     |
+| What             | Where                                                               |
+| ---------------- | ------------------------------------------------------------------- |
+| The site         | `apps/site`, on `main` since #55 (2026-09-28)                       |
+| Storybook        | `apps/docs`, published beside the site (Deploying)                  |
+| Gaps it found    | [`GAPS.md`](./GAPS.md)                                              |
+| Fixes for Kozmos | [`DS-HANDOFF.md`](./DS-HANDOFF.md), for whoever changes `packages/` |
+| Old working copy | `/Volumes/4TB Depo/development/K/kozmos-design-system-site`, #55's  |
 
-The working copy is a git worktree of the same repository, so its commits
-live in the main checkout's `.git` and survive even if the folder is deleted.
-Open the folder itself in your editor to work on the site. It sits next to
-the repository, not in a temporary folder, because temporary worktrees get
-cleaned away.
-
-To make a fresh working copy elsewhere:
+Work on the site in a branch of `main`, in a worktree of its own next to the
+repository — not in a temporary folder, because temporary worktrees get
+cleaned away:
 
 ```sh
 cd "/Volumes/4TB Depo/development/K/kozmos-design-system-dev"
-git worktree add ../another-folder claude/kozmos-site
+git worktree add ../another-folder -b my-site-branch origin/main
 ```
 
 ## Run it
@@ -72,17 +69,17 @@ The site reads each Kozmos package's built `dist`, so rebuild them (the
 second line) after pulling component changes. Turbo only rebuilds what
 changed.
 
-| Script (`pnpm --filter @kozmos-ds/site …`) | What it does                                                                                         |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `generate`                                 | Rebuilds `src/generated/` from the design system's sources (below). Run by dev, build and typecheck. |
-| `dev`                                      | Dev server with hot reload on port 5180.                                                             |
-| `build`                                    | Generate, route types, `tsc`, then the static build into `build/client`.                             |
-| `preview`                                  | Serves `build/client` on 5181 the way a static host does (404s included).                            |
-| `typecheck`                                | Generate, route types and `tsc` only.                                                                |
-| `lint`                                     | ESLint, then `scripts/check-ds-only.mjs` (the one rule).                                             |
-| `test`                                     | Unit tests: the token parser, contrast, the brand override, the generators, the rule's checker.      |
-| `test:e2e`                                 | Playwright in Chromium, Firefox and WebKit against the build. Build first.                           |
-| `brand`                                    | Rewrites the K mark and the favicons from the logo and the tokens (needs Playwright's Chromium).     |
+| Script (`pnpm --filter @kozmos-ds/site …`) | What it does                                                                                                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `generate`                                 | Rebuilds `src/generated/` from the design system's sources (below). Run by dev, build and typecheck.                        |
+| `dev`                                      | Dev server with hot reload on port 5180.                                                                                    |
+| `build`                                    | Generate, route types, `tsc`, then the static build into `build/client`.                                                    |
+| `preview`                                  | Serves `build/client` on 5181 the way a static host does (404s included).                                                   |
+| `typecheck`                                | Generate, route types and `tsc` only.                                                                                       |
+| `lint`                                     | ESLint, then `scripts/check-ds-only.mjs` (the one rule).                                                                    |
+| `test`                                     | Unit tests: the token parser, contrast, the brand override, the generators, the Storybook links' check, the rule's checker. |
+| `test:e2e`                                 | Playwright in Chromium, Firefox and WebKit against the build. Build first.                                                  |
+| `brand`                                    | Rewrites the K mark and the favicons from the logo and the tokens (needs Playwright's Chromium).                            |
 
 Screenshots of 23 pages — home, get started, the examples and each example,
 a foundations page, five component pages, the 404 — light and dark, desktop
@@ -96,8 +93,9 @@ SCREENSHOTS=1 pnpm --filter @kozmos-ds/site test:e2e --project=chromium tests/sc
 Ports: Storybook holds 6006, mapscale-review 5173; the site takes 5180 (Vite,
 `strictPort`, so it fails loudly rather than drift) and 5181, where
 `scripts/serve-static.mjs` serves the build. Outside CI the e2e tests reuse
-whatever already answers on 5181 (`reuseExistingServer`), so stop an old
-server after rebuilding if it predates a change to `serve-static.mjs`.
+whatever already answers on 5181 (`reuseExistingServer`) — which may be
+another worktree's server, serving another build: check what answers
+(`lsof -i :5181`) before trusting a local run.
 
 ## The one rule
 
@@ -189,23 +187,18 @@ sits in its corner.
 - **Generated data.** `scripts/generate-reference.mjs` reads the design
   system's own sources and writes `src/generated/` (gitignored; `pnpm
 generate` runs before dev, build and typecheck):
-  - `components.json` and `components/<slug>.json`: every component folder
-    under `packages/react/src/components`, its lane from the sets in
-    `scripts/skills/check-completion.ts` (the same ones that build
-    `docs/status.md`), its description and its React, Vue, SwiftUI and Compose
-    snippets from its `.mdx`, and its parts and props read from the
-    TypeScript source with the compiler API: every component the package
-    exports from that folder (re-exports followed), its props type resolved
-    through `forwardRef`, `React.FC`, function parameters and aliases, unions
-    merged, and only the props declared in this repository or by a Radix
-    primitive (those carry `source`), with defaults from destructuring and
-    `cva`'s `defaultVariants`, every string default written double-quoted as
-    the type column writes a string. A component's code comes from its docs'
-    `PlatformSnippets`, or failing that the first fenced block in each
-    platform's language; the index records which platforms each has.
-    `react-docgen-typescript` was tried first and read the wrong symbols
-    (`Surface`'s "props" came out as string methods); it is no longer a
-    dependency.
+  - `components.json`: every component, as the status script finds it —
+    `scripts/skills/check-completion.ts`, the one that writes the
+    repository's status report, run with `--json` — with its lane and, for
+    each of React, SwiftUI, Compose and Figma, whether it is there
+    (Components, below); its description, the first paragraph of its `.mdx`
+    (or the doc comment on the component itself, where the docs have none or
+    only their placeholder, GAP-81); and its page in Storybook — the docs
+    page its `.mdx` attaches to its stories (`<Meta of={…} />`), named as
+    Storybook names it from the stories' title, or its first story where it
+    has no docs page. Nothing is written by hand and nothing is copied from
+    the docs but a sentence: the docs, the props and the code on each
+    platform are Storybook's.
   - `contrast-contract.json`: a copy of `packages/tokens/src/contrast-contract.json`,
     so the colour page can measure the same pairs CI does.
   - `roadmap.json`, from `scripts/generate-roadmap.mjs`: every row of
@@ -231,10 +224,11 @@ apps/site/
 ├── DS-HANDOFF.md            the gaps as prioritised work for packages/
 ├── public/
 │   ├── favicon.svg, favicon.ico, apple-touch-icon.png   generated (pnpm brand)
-│   └── media/               three colour-free illustrations the gallery demos show
+│   └── media/               three colour-free illustrations the phone search's gallery shows
 ├── scripts/
 │   ├── check-ds-only.mjs    the one rule, enforced (+ its tests)
-│   ├── generate-reference.mjs  the generated data (+ its tests)
+│   ├── check-storybook-links.mjs  every component's Storybook link against a build (+ its tests)
+│   ├── generate-reference.mjs  the components' data (+ its tests)
 │   ├── generate-roadmap.mjs the roadmap's data, from GAPS.md and DS-HANDOFF.md (+ its tests)
 │   ├── generate-brand.mjs   the K mark and favicons, from the logo and tokens (+ its tests)
 │   └── serve-static.mjs     `preview` and the e2e tests' server
@@ -257,13 +251,13 @@ apps/site/
     ├── examples/            manifest.ts (data, no React), registry.tsx (lazy components),
     │                          focus.ts (focus for a view that replaces another),
     │                          one folder per example
-    ├── reference/           the component reference: types, the demo registry, the
-    │                          sidebar's sections (nav.ts), the generated-data loader,
-    │                          the shared sample data, the glass backdrop, demos/ (one
-    │                          file per component)
-    ├── snippets/            the code Get started shows, type-checked
+    ├── reference/           the components: the data's types, the lanes, platforms and
+    │                          the sidebar's sections (nav.ts), the status table and
+    │                          its marks (Status.tsx)
+    ├── snippets/            the code Get started and the theming page show, type-checked
     ├── lib/                 site facts, tokens, contrast, brand overrides, CI gates,
-    │                          the import parser, CSS custom-property typing
+    │                          the import parser, Storybook's address, CSS
+    │                          custom-property typing
     ├── generated/           written by `pnpm generate`, gitignored
     └── styles/site.css      layout, and type sizes from tokens
 ```
@@ -283,11 +277,12 @@ React reports the mismatch (error 418). Pages format dates and numbers by
 hand (`src/examples/dashboard/data.ts`); anything locale-dependent may only
 appear after an interaction.
 
-**Lazy demos are cached per slug.** `src/reference/registry.ts` makes one
-`React.lazy` component per slug and keeps it. A lazy component made during a
-render (`useMemo(() => lazy(…))`) is thrown away when that render suspends,
-so a same-route navigation — Tree to Tooltip — made a new one on every retry
-and never settled: the address changed and the page did not.
+**Lazy components are made once.** `src/examples/registry.tsx` makes each
+example's `React.lazy` component at module scope. A lazy component made
+during a render (`useMemo(() => lazy(…))`) is thrown away when that render
+suspends, so a same-route navigation made a new one on every retry and never
+settled: the address changed and the page did not. (The component pages'
+demos met it first, going from Tree to Tooltip.)
 
 **Nested providers paint nothing.** A `ThemeProvider` is `display: contents`;
 put a `Surface` inside a nested provider, or its content sits on the outer
@@ -378,8 +373,8 @@ header tests, run `brand`, and `LOGO_TEXT` if the words change.
 
 **Nothing draws over the header.** Kozmos's map overlays are z-index 50, as
 the sticky Navbar is, and `MapView` does not isolate them (GAP-40), so every
-site frame that hosts a map — demo stages, index previews, example
-canvases — has `isolation: isolate`. So does the home page's cover, whose
+site frame that hosts a map — the example canvases — has
+`isolation: isolate`. So does the home page's cover, whose
 words are raised over its own layers inside it. A test scrolls each stacked
 element of a page under the header and checks what is painted there.
 
@@ -426,14 +421,14 @@ and rise on the motion tokens as they come into view, only after hydration
 
 ## The pages
 
-| Page           | What it shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`            | In the order a visitor asks: the Figma file's cover, drawn with Kozmos and partly moving, with the claim and two next steps under it; three featured examples, live and small; five live tiles (the adaptive shell under a slider, three-platform code, tokens, emotions, contrast) with links to the rest in Foundations; "Make it yours"; Web, iOS, Android and Figma; the CI checks as a short list, linking to the full pipeline on Get started. Bands alternate plain and muted, all with the same padding. About 6 screens on a laptop (1280 × 800), the limit a test holds it to. |
-| `/get-started` | Install, set-up, using a component, dark mode, right to left, button-styled links, tokens in your own CSS, analytics, browser support, iOS and Android, working inside the repository, and what every pull request runs (`#checks`).                                                                                                                                                                                                                                                                                                                                                     |
-| `/roadmap`     | What Kozmos cannot do yet, as work for the design system: every item in `GAPS.md` under the priority `DS-HANDOFF.md` gives it (P0 to P3), with its status — open, worked around, shown as is, fixed — its lane and the examples it shows in. Linked from the footer, the search, the home page and every example.                                                                                                                                                                                                                                                                        |
-| `/foundations` | Seven pages, each drawn from the tokens: colour (every ramp and role, the contrast contract measured in both themes, the component layer), typography, layout, elevation and effects, motion, icons, theming.                                                                                                                                                                                                                                                                                                                                                                            |
-| `/components`  | The reference: 104 pages, one per component, in four lanes. Each page has live examples with their source, the React, SwiftUI and Compose code where the component's docs carry it (89 have all three; 11 have none yet), and a props table per part read from the TypeScript source, with a Radix primitive's own props marked. The index searches and filters by lane and shows each component's first example, live but inert, as it scrolls into view.                                                                                                                               |
-| `/examples`    | The index; each example on its own canvas with its source and its Kozmos parts, and a link to the roadmap for what it found Kozmos cannot do. SDK flows: wayfinding, the phone search sheet, the kiosk directory, the venue explorer. Product pages: sign in, the operations dashboard, room booking, the notifications inbox, onboarding, account settings. Patterns: loading, empty, error and offline states; the feedback survey; saved places.                                                                                                                                      |
+| Page           | What it shows                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`            | In the order a visitor asks: the Figma file's cover, drawn with Kozmos and partly moving, with the claim and two next steps under it; three featured examples, live and small; five live tiles (the adaptive shell under a slider, where every part exists on each platform, tokens, emotions, contrast) with links to the rest in Foundations; "Make it yours"; Web, iOS, Android and Figma; the CI checks as a short list, linking to the full pipeline on Get started. Bands alternate plain and muted, all with the same padding. About 6 screens on a laptop (1280 × 800), the limit a test holds it to. |
+| `/get-started` | Install, set-up, using a component, dark mode, right to left, button-styled links, tokens in your own CSS, analytics, browser support, iOS and Android, working inside the repository, and what every pull request runs (`#checks`).                                                                                                                                                                                                                                                                                                                                                                          |
+| `/roadmap`     | What Kozmos cannot do yet, as work for the design system: every item in `GAPS.md` under the priority `DS-HANDOFF.md` gives it (P0 to P3), with its status — open, worked around, shown as is, fixed — its lane and the examples it shows in. Linked from the footer, the search, the home page and every example.                                                                                                                                                                                                                                                                                             |
+| `/foundations` | Seven pages, each drawn from the tokens: colour (every ramp and role, the contrast contract measured in both themes, the component layer), typography, layout, elevation and effects, motion, icons, theming.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `/components`  | Every component and where it exists: the status matrix, one table per lane with React, SwiftUI, Compose and Figma, each _Implemented_ (or _Linked_), _Not yet_ or _Not expected_, what those marks mean and do not, a search and lane filters, and a link to Storybook. Then one short page per component, at its old address: its description, "Open in Storybook", its lane and its row of the matrix.                                                                                                                                                                                                      |
+| `/examples`    | The index; each example on its own canvas with its source and its Kozmos parts, and a link to the roadmap for what it found Kozmos cannot do. SDK flows: wayfinding, the phone search sheet, the kiosk directory, the venue explorer. Product pages: sign in, the operations dashboard, room booking, the notifications inbox, onboarding, account settings. Patterns: loading, empty, error and offline states; the feedback survey; saved places.                                                                                                                                                           |
 
 ## Add an example
 
@@ -483,59 +478,60 @@ canvas with its source, the components it uses and the gaps it hit.
 Data in examples is invented and must look it (`sam.rivera@example.com`);
 nothing submits anywhere.
 
-## Add or change a component demo
+## Components, their status and Storybook
 
-A component's page comes from two places: the generated data (name, lane,
-description, parts, props, snippets — nothing to write) and its demo file.
+Storybook is the component reference (decision 44): a component's docs,
+stories and controls, and its code on each platform, live there and nowhere
+else. The site says where each component exists and links to it. There is
+nothing to write for a component: a new one appears on the components page,
+in the sidebar, in the search and on a page of its own the moment the status
+script finds it.
 
-- **The file** is `src/reference/demos/<slug>.tsx`, where the slug is the
-  component folder's name in kebab case (`POIDetailPanel` →
-  `poi-detail-panel`). It exports `demos: DemoModule["demos"]`, a list of
-  `{ title, description?, Component, tall? }`. A component without a file
-  still gets its page, with the props and code and a note that no example
-  has been written; `pnpm generate` does not care either way. The registry
-  (`src/reference/registry.ts`) finds the files with `import.meta.glob`, so a
-  new file is a new set of examples, and the file's source is what the
-  "Examples" code tab shows, so write it as you would want it read.
-- **A demo is a small component**, built from Kozmos parts and the site's
-  layout classes only (the one rule applies; `pnpm lint` runs it). The stage
-  is a `Card`; `tall: true` gives it room for a map, a sheet or a shell.
-  `src/reference/sample-data.ts` has the venue, places, categories, floors,
-  routes and an itinerary, all invented, so demos agree with one another; a
-  glass part sits on `GlassBackdrop` (`src/reference/GlassBackdrop.tsx`).
-- **A part that pins itself to the window goes in a `Screen`**
-  (`src/reference/Screen.tsx`): `DynamicIsland`, `BottomNavigation`,
-  `Backdrop`, `ToastViewport` and a `FloatingActionButton` with
-  `placement="fixed"` are all `position: fixed` and take no placement from
-  their host (GAP-24, 29, 34, 36). The screen has paint containment, which
-  makes it the containing block for its fixed children, so the part sits
-  where it would on a phone instead of over this site's header or across the
-  whole window. It brings its own page for the part to cover.
-  It is a phone's **shape** — portrait, 9:16 — and not a phone: no bezel,
-  notch or status bar. Those belong to a device, not to Kozmos, and could
-  only be drawn by hand; and `DynamicIsland` is a capsule that mirrors iOS's
-  island, not iOS's own, which its page says in as many words. Decided with
-  Olcay on 2026-09-22, when he asked whether an iPhone mockup would fit.
-- **A description says only what the component does.** The copy review of
-  2026-09-22 found demos claiming a stroke that stays 2px, a spinner that
-  stops for reduced motion and a loading button that keeps its width — none
-  true. Check the component's source before writing a claim.
-- **The first demo is also the preview** on `/components`: it mounts inside
-  an `aria-hidden`, `inert` frame as the card scrolls into view. So the first
-  demo must not mount anything fixed to the viewport unless a `Screen` holds
-  it, must not need a click to show something, and should be the plainest
-  state — put the interactive states in a later demo.
-- **Several of one landmark on a page** need different names: three
-  `AdaptiveMapShell`s each name their map region and their panel with the
-  demo's name, or axe's `landmark-unique` fails the page (the tests run axe
-  on every component page).
-- **Status text** beside a demo uses `Text` with `aria-live="polite"`, so a
-  screen reader hears what a click did.
-- **Props tables** show what the TypeScript source declares in this
-  repository, plus a Radix primitive's own props (marked as such). Native
-  HTML attributes are left out on purpose: they are the element's, not the
-  component's. If a prop looks wrong, the reader is
-  `scripts/generate-reference.mjs` (`readParts`), with tests beside it.
+- **Where it exists.** For each component the generator asks the status
+  script (`scripts/skills/check-completion.ts --json`) what it found, and the
+  site shows four answers:
+  - **React, SwiftUI, Compose:** _Implemented_ where that platform's library
+    has the component's source where it keeps its components
+    (`packages/react` — also exported by the package — `packages/ios`,
+    `packages/android`); otherwise _Not yet_. Nothing says a component will
+    never reach SwiftUI or Compose, so neither is ever _Not expected_: the
+    status script would have to say so first.
+  - **Figma:** _Linked_ where a Code Connect mapping ties the component to a
+    real node in the Figma library; _Not expected_ for the components the
+    status script says have no Figma component set by design (a provider, a
+    typography primitive, a nonvisual utility); otherwise _Not yet_.
+- **What a mark does not say.** A mark says a file is there, and no more — it
+  proves structure, as the status report's own scope section says, not
+  parity: not the variants or the API, the look, accessibility, behaviour,
+  tests or readiness. The components page says so under "What the marks
+  mean", and variant parity has its own report
+  (`docs/component-variant-gap-analysis.md`).
+- **The components page** (`/components`) is the status matrix: one table per
+  lane, one row per component, the lane's own description and counts above
+  it, a search and lane filters. **A component's page** keeps its address and
+  is short: its description, the button to its Storybook page, its lane, and
+  its row of the matrix. The sidebar and the neighbour links move between
+  them in the app.
+- **Storybook's page for a component** is found as Storybook names it: the
+  `.mdx` attaches to a stories file (`<Meta of={Stories} />`), whose meta's
+  `title` ("Feedback/Alert") becomes the id (`feedback-alert--docs`) through
+  Storybook's own `sanitize`. A component with no docs page links to its
+  first story (CategoryField, today), and says so. A stories file without a
+  written-out `title` stops the generator rather than link somewhere wrong.
+  `scripts/check-storybook-links.mjs` then reads a Storybook build's
+  `index.json` and fails on any link to a page it lacks: the site's workflow
+  runs it on every pull request, the Pages workflow before it publishes.
+- **The links leave the app.** Storybook is no route of the site, so the
+  header, the drawer and the footer link to it with Kozmos's own
+  `NavigationItem` and `Link`, and "Open in Storybook" is a router link with
+  `reloadDocument`, which is how the React package's README styles a link
+  with `buttonVariants` — Kozmos's `Link` cannot take them, its
+  `text-primary` outranking the button's text colour (`src/site/links.tsx`).
+- **Descriptions** are the docs' first paragraph. 36 of 112 docs open with a
+  placeholder, "Displays the X interface topology natively." (GAP-81); the
+  generator counts it as no description, and the page says the docs have
+  none yet. The fix is one sentence in each `.mdx`, in `packages/`, and
+  `pnpm generate` picks it up.
 
 ## Add a foundations page
 
@@ -561,12 +557,12 @@ description, parts, props, snippets — nothing to write) and its demo file.
   from `.github/workflows/ci.yml`.
 - **Code on Get started** lives in `src/snippets/` as real modules, checked by
   `tsc` against the built packages and shown with `?raw`. Change the snippet,
-  not a string in the page. Component snippets on the home page and the
-  theming page come from the generated data, that is, from each component's
-  own docs.
+  not a string in the page. The theming page shows `dark-mode.tsx` too. No
+  page shows a component's own code: that is Storybook's.
 - **Claims** on the home page are sourced from the repository (package
-  READMEs, `ci.yml`, `docs/status.md`, `Package.swift`). Numbers on the page are
-  computed from data (token counts, contrast ratios), not typed in.
+  READMEs, `ci.yml`, the status script, `Package.swift`). Numbers on the page
+  are computed from data (token counts, contrast ratios, how many components
+  each platform has), not typed in.
 
 ## Styling
 
@@ -607,12 +603,12 @@ description, parts, props, snippets — nothing to write) and its demo file.
 
 ## Testing
 
-| Layer         | Command                    | What it proves                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Types         | `typecheck`                | Pages, examples, tiles and every snippet compile against the built packages and the generated data.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Lint and rule | `lint`                     | ESLint with the React hooks rules; the one rule.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Unit          | `test`                     | The token parser, the contrast maths, the brand override's matching, the generator's parsers (slugs, lanes, descriptions, snippets, prop types), the import parser; the checker refuses what it should.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| End to end    | `test:e2e` (after `build`) | Every page in both themes, in three browsers: status, one `h1`, `noindex`, axe (WCAG 2.2 AA and best practices) measured from the top after a full scroll, no console errors, no site CSS that Kozmos outranks (shorthands included), no rounded box cutting an edge, no sideways scroll or cut edge at 320px. Every one of the 104 component pages in Chromium, in both themes: status, name, a live example, axe, the site's CSS applying, no edge cut, no sideways scroll at 320px. Both 404s (an unknown page, an unknown component). The header: the logo and its K at their proportions and decodable, forced colours, the favicons served and drawn, one row at five widths, nothing drawn over it, the drawer on a phone, the skip link painted on top. Focus: after a navigation, after a drawer closes, on a linked section. The theme kept across a reload and back to System; the cover (the dark theme on a light page, painted from the dark ramps, its picture hidden from assistive technology, the claim and both buttons on a laptop's first screen at four sizes, its words measured against the brightest pixel behind them, its loops paused by the button, off screen and under reduced motion, its travellers round wherever they are); the tiles; the brand override; miniatures inert; the featured taglines, and their pictures one shape so the titles line up; the colour contract in words; icons search and copy; the measured type scale; the motion race; every example driven end to end (each flow's states, each form's validation, each undo); the search (keyboard, header, arrow keys, the empty field); the component index and pages (search, lanes, previews, code tabs, Radix props marked, demos driven); the home page's order, grids, spacing, length and band hairlines; swatches, samples and shapes edged; each map shell's list inside the panel's padding; and the design-system gaps, measured (below). |
+| Layer         | Command                    | What it proves                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Types         | `typecheck`                | Pages, examples, tiles and every snippet compile against the built packages and the generated data.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Lint and rule | `lint`                     | ESLint with the React hooks rules; the one rule.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Unit          | `test`                     | The token parser, the contrast maths, the brand override's matching, the generator (slugs, what exists on each platform, descriptions and the docs' placeholder, Storybook's ids from a stories file), the Storybook links' check, the import parser; the checker refuses what it should.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| End to end    | `test:e2e` (after `build`) | Every page in both themes, in three browsers: status, one `h1`, `noindex`, axe (WCAG 2.2 AA and best practices) measured from the top after a full scroll, no console errors, no site CSS that Kozmos outranks (shorthands included), no rounded box cutting an edge, no sideways scroll or cut edge at 320px. Every one of the 112 component pages in Chromium, in both themes: status, name, its row of the matrix as the data says it, its Storybook link, axe, the site's CSS applying, no edge cut, no sideways scroll at 320px. Both 404s (an unknown page, an unknown component). The header: the logo and its K at their proportions and decodable, forced colours, the favicons served and drawn, one row at five widths, the links centred from 64rem and in the drawer below, Storybook's link leaving the app from the header, the drawer and the footer, nothing drawn over it, the skip link painted on top. Focus: after a navigation, after a drawer closes, on a linked section. The theme kept across a reload and back to System; the cover (the dark theme on a light page, painted from the dark ramps, its picture hidden from assistive technology, the claim and both buttons on a laptop's first screen at four sizes, its words measured against the brightest pixel behind them, its loops paused by the button, off screen and under reduced motion, its travellers round wherever they are); the tiles; the brand override; miniatures inert; the featured taglines, and their pictures one shape so the titles line up; the colour contract in words; icons search and copy; the measured type scale; the motion race; every example driven end to end (each flow's states, each form's validation, each undo); the search (keyboard, header, arrow keys, the empty field); the components page and pages (every row as the status script says it, the marks and what they do not prove, search, lanes, "Open in Storybook" leaving the app, the sidebar and neighbour links); the home page's order, grids, spacing, length and band hairlines; swatches, samples and shapes edged; each map shell's list inside the panel's padding; and the design-system gaps, measured (below). |
 
 The e2e tests wait for the page to hydrate **and** for finite animations to
 finish before measuring: a dark-mode page animates from light (GAP-03), and
@@ -627,37 +623,40 @@ A violation that comes from inside a Kozmos component is listed in
 a pattern every flagged node must match, so a known finding cannot hide a new
 one under the same rule, and `theme` limits it to light or dark. A contrast
 finding is reported with its colours and ratio. Today: `SHELL_PANEL` (GAP-17,
-AdaptiveMapShell's aside) on the three map examples, the home page and the
-AdaptiveMapShell page; `SIDEBAR` (not a gap: a Sidebar is an aside by
-nature) on the dashboard and the Sidebar page; GAP-28, GAP-30 and GAP-12 on
-the pages that show them; GAP-31 in the light theme on the Alert, Input,
-DatePicker and Tag pages; GAP-45 in the dark theme on the ThemeProvider
-page. The tests expect exactly those, so a new violation fails — and so does
-a known one that disappears, which is the signal to close its gap. The same
+AdaptiveMapShell's aside) on the three map examples and the home page, and
+`SIDEBAR` (not a gap: a Sidebar is an aside by nature) on the dashboard. The
+component pages' own entries — GAP-17 and GAP-28 on the AdaptiveMapShell
+page, GAP-28 on SearchBar's, GAP-30 on Sidebar's, GAP-45 on ThemeProvider's
+— went with their demos on 2026-09-28. The tests expect exactly those, so a
+new violation fails — and so does a known one that disappears, which is the
+signal to close its gap. The same
 holds for GAP-20: the search-field test is marked `test.fail` in WebKit
 only, so Playwright reports it the day Kozmos fixes the field.
 
-**Design-system gaps, measured.** Twenty tests measure what Kozmos draws
-today. Four of them now measure a fix rather than a defect: the sheet
-handle's 16px row and 40 × 4 grip (GAP-38), the Button's 8px between icon
-and label (GAP-56), the spinner and the skeleton resting under the
-reduced-motion preference (GAP-50) and SearchBar hiding the browser's own
-clear (GAP-37). Beside them, emotion text now reads on every neutral surface
+**Design-system gaps, measured.** Seventeen tests measure what Kozmos draws
+today. Five of them now measure a fix rather than a defect: the sheet
+handle's 16px row and 40 × 4 grip (GAP-38), the spinner and the skeleton
+resting under the reduced-motion preference (GAP-50, in the states
+example's loading view), SearchBar hiding the browser's own clear (GAP-37),
+an empty state centring its wrapped words (GAP-66) and MapOverlay keeping
+the shadow of what floats in it (GAP-72); a sixth, the Button's 8px between
+icon and label (GAP-56), is held by the test of every button the site
+draws. Beside them, emotion text now reads on every neutral surface
 (GAP-31), whose four known-violation allowances are deleted. The rest still
 pin defects — the preflight zeroing a caller's border (GAP-52), the sheet's
 square corners on a rounded screen (GAP-53), the button link's underline
 (GAP-09), the label that cannot wrap (GAP-57), the `Listbox` column as wide
-as its widest option (GAP-55), the toast with no fill (GAP-58), the island
-that is black on a black page (GAP-59) and keeps no room for the camera
-(GAP-60), the breadcrumb's separator pointing back up its own trail in right
-to left (GAP-61), the four parts that pin themselves to the window and are
-held by a screen (GAP-24, 29, 34, 36), MapView's missing isolation (GAP-40),
-CardTitle's 1.0 line height (GAP-42), where a touch 20px from the slider's
-thumb lands (GAP-43), the header's white first paint for a dark-mode visitor
-with the scripts blocked (GAP-03), the two-row header at 320px (GAP-41) and
-brand variant 1's 4.20:1 (GAP-45). Each measures what a visitor gets, so any
-honest fix flips it; [`DS-HANDOFF.md`](./DS-HANDOFF.md) says what to flip it
-to.
+as its widest option (GAP-55), the breadcrumb's separator pointing back up
+its own trail in right to left (GAP-61), MapView's missing isolation
+(GAP-40), CardTitle's 1.0 line height (GAP-42), where a touch 20px from the
+slider's thumb lands (GAP-43), the header's white first paint for a
+dark-mode visitor with the scripts blocked (GAP-03), the two-row header at
+320px (GAP-41) and brand variant 1's 4.20:1 (GAP-45). Each measures what a
+visitor gets, so any honest fix flips it; [`DS-HANDOFF.md`](./DS-HANDOFF.md)
+says what to flip it to. The tests that read a component page's demo — the
+toast with no fill (GAP-58), the island on a black page and without room for
+its camera (GAP-59, 60), the four parts held by a screen (GAP-24, 29, 34, 36) — went with the demos on 2026-09-28; `GAPS.md` says where each gap
+stands now.
 
 **A tripwire must be able to trip.** GAP-37's first test read
 `getComputedStyle(field, "::-webkit-search-cancel-button")`, which answers
@@ -678,10 +677,12 @@ overflow there, and did. The first-screen fit and every component page's
 page's height budget — is written with that slack and says so.
 
 **In CI:** `.github/workflows/site.yml` runs lint (with the rule),
-typecheck, unit tests, the build and the e2e suite in all three engines on
-every pull request that touches `apps/site`, `packages` or the lockfile, and
-then builds the site again for its subpath and reads the pages back for any
-address that points at the domain's root.
+typecheck, unit tests and the build; then builds Storybook and checks that
+every component page's Storybook link names a page the build has; then the
+e2e suite in all three engines — on every pull request that touches
+`apps/site`, `apps/docs`, `packages`, the status script or the lockfile —
+and then builds the site again for its subpath and reads the pages back for
+any address that points at the domain's root.
 
 ## Keeping up with `main`
 
@@ -813,14 +814,12 @@ Measured while building the site; none of it is the site's to fix.
   workspace, a React 19 app's `ReactNode` does not fit Kozmos's props; the
   site maps the types to its own (tsconfig `paths`). Installed from npm, the
   declarations would read the consumer's types and this does not arise.
-- **`docs/status.md` is out of date on the component branch.**
-  `check-completion.ts --check` fails there: Core counts 75 components after
-  the internal exclusion (69 in the file), five with platform or Code Connect
-  gaps. The site's generator reads the same sets, so its counts are current.
-  Those sets also predate the newest components: they put AISearchButton and
-  CategoryField in Core where Storybook files them under Product SDK, and
-  Itinerary, ManoeuvreCard and RouteProgressRail in Core where Storybook
-  files them under Map. The reference shows the script's lanes.
+- **The status script's lanes and Storybook's groups disagree.** The
+  script's sets predate the newest components: they put the AI parts,
+  AISearchButton and CategoryField in Core where Storybook files them under
+  Product SDK, and Itinerary, ManoeuvreCard and RouteProgressRail in Core
+  where Storybook files them under Map. The site runs the script and shows
+  its lanes.
 - **Some CI checks exist only on this branch.** On `main`, `ci.yml` has no
   `figma:painters:check`, `test:adaptive`, `test:storybook-audit` or the
   POI-fixture and taxonomy steps; the site describes the pipeline of the
@@ -839,22 +838,26 @@ Measured while building the site; none of it is the site's to fix.
   `packages/ios`, not at the repository root, so it cannot be added by URL,
   and its library target depends on Figma's `code-connect` package. The
   Compose module has no Maven publishing configured.
-- **11 of the 104 components' docs carry no code at all** (AdaptiveMapShell,
-  BrowseCategoriesPanel, CategoryField, CategoryTile, MetaStrip, the four POI
-  parts, RouteOptionCard, RoutePreviewPanel), and 4 more lack SwiftUI or
-  Compose; 89 have all three. Six docs show their code in fenced blocks under
-  platform headings instead of `PlatformSnippets`; the generator reads those
-  too. CategoryField has no `.mdx` at all.
-- **37 of 104 component docs open with the placeholder "Displays the X
+- **Not every component's docs carry its code on all three platforms.**
+  Counted on 2026-09-28: 91 of 112 have React, SwiftUI and Compose; 15 carry
+  none (the AI messages, ActionCard, BrowseCategoriesPanel, CategoryField,
+  CategoryTile, MetaStrip, Notice, the POI parts, RouteOptionCard,
+  UserMessage), and six carry React alone or React and SwiftUI
+  (AICompanionPanel, AIInputBar, Counter, DynamicIsland, MapControlButton,
+  RoutingInputGroup). A component that is not on a platform yet cannot have
+  its code there; where it is, the missing snippet is the docs' to add. It
+  shows in Storybook, which is where the code is read now: the site no
+  longer shows any. CategoryField has no `.mdx` at all.
+- **36 of 112 component docs open with the placeholder "Displays the X
   interface topology natively."** (Backdrop, BottomNavigation, BottomSheet,
   Box, Breadcrumb, Container, FileUpload, FloatingActionButton,
   FloorSelector, Grid, Heading, Icon, Link, List, LocationPin, MapView, Menu,
   OTPInput, Pagination, POICard, Popover, Rating, Search, SearchBar,
-  Separator, Skeleton, Spinner, SplitButton, Stack, Stepper, Table, Tabs, Tag,
-  Text, Textarea, ThemeProvider, ToggleButton); DatePicker and TimePicker
-  repeat it as a second paragraph. The reference shows the docs' own words,
-  so those pages and index cards open with it; the fix is one sentence per
-  `.mdx`, and `pnpm generate` picks it up.
+  Separator, Skeleton, SplitButton, Stack, Stepper, Table, Tabs, Tag, Text,
+  Textarea, ThemeProvider, ToggleButton); DatePicker and TimePicker repeat it
+  as a second paragraph (GAP-81). The site's generator counts it as no
+  description, so those pages say their docs have none yet; the fix is one
+  sentence per `.mdx`, and `pnpm generate` picks it up.
 
 ## Troubleshooting
 
