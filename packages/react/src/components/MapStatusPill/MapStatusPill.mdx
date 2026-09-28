@@ -37,6 +37,15 @@ wraps: longer words, or a longer language, make it taller rather than cut.
 
 ## Tones
 
+{/* Four columns do not fit a phone: the table scrolls in its own region, as
+    the properties table does, rather than widening the page. */}
+
+<div
+  className="kozmos-docs-properties"
+  role="region"
+  aria-label="Tones"
+  tabIndex={0}
+>
 <table>
   <thead>
     <tr>
@@ -89,6 +98,7 @@ wraps: longer words, or a longer language, make it taller rather than cut.
     </tr>
   </tbody>
 </table>
+</div>
 
 The colours are Kozmos's emotion roles for text and glyphs on the page
 (`Semantics.Emotion.*.text`): the SDK's own green and red read 3.6:1 and 4.3:1
