@@ -62,8 +62,8 @@ export const Established: Story = {
 
 /**
  * In progress, as every wait is drawn. The board sets these words in the
- * theme's blue, where it sets the other waits' in ink: which one is meant is
- * a question for Olcay, and until it is answered the tone keeps one rule.
+ * theme's blue, where it sets the other waits' in ink; Olcay chose ink
+ * (2026-09-28), so the tone keeps one rule.
  */
 export const UpdatingRoute: Story = {
   args: { tone: "progress", children: "Updating Route" },
