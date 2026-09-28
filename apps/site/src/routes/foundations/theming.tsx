@@ -12,10 +12,12 @@ import {
 import { DirectionSample } from "../../foundations/DirectionSample";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
 import { foundationPage } from "../../foundations/nav";
-import themeProvider from "../../generated/components/theme-provider.json";
 import { MakeItYours } from "../../home/MakeItYours";
 import { CodeBlock } from "../../site/CodeBlock";
 import { Section } from "../../site/Section";
+// The checked module Get started shows too: the provider following the
+// system, and keeping a choice under a storage key the product owns.
+import darkModeSnippet from "../../snippets/dark-mode.tsx?raw";
 
 const page = foundationPage("theming");
 
@@ -74,12 +76,7 @@ export default function Theming() {
         title="Following the system, and remembering a choice"
         lead="By default a provider follows the system’s preference and its live changes. Persistence is opt-in: give it a storage key your product owns. The site’s own switcher in the header does exactly this."
       >
-        {themeProvider.snippets.react ? (
-          <CodeBlock
-            label="ThemeProvider"
-            code={themeProvider.snippets.react}
-          />
-        ) : null}
+        <CodeBlock label="Theme.tsx" code={darkModeSnippet} />
       </Section>
 
       <Section

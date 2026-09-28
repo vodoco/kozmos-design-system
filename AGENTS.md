@@ -12,7 +12,10 @@ Figma library they come from. This file is what a coding agent needs before chan
 - **SwiftUI** in `packages/ios` (library `Kozmos`) and **Compose** in `packages/android`
   (`com.kozmos`), used from a checkout: neither is published to a package registry yet.
 - **The website**, built from `apps/site`, publishes from `main` to
-  <https://vodoco.github.io/kozmos-design-system/>.
+  <https://vodoco.github.io/kozmos-design-system/>, and Storybook, built from `apps/docs`, with it
+  at <https://vodoco.github.io/kozmos-design-system/storybook/>. Storybook is the component
+  reference — each component's docs, stories, controls and code on every platform; the site is
+  the front door and says where each component exists.
 
 ## Where things are
 

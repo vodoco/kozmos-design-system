@@ -3,6 +3,8 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { contrastRatio, formatRatio, parseColour } from "../src/lib/contrast";
 
+type PlatformState = "implemented" | "linked" | "not-yet" | "not-expected";
+
 /** The generated index: the walk over every component page needs no list of its own. */
 const componentIndex = JSON.parse(
   readFileSync(
@@ -10,9 +12,26 @@ const componentIndex = JSON.parse(
     "utf8",
   ),
 ) as {
-  lanes: Record<string, string>;
-  components: { slug: string; name: string; lane: string }[];
+  lanes: Record<string, { title: string; description: string }>;
+  components: {
+    slug: string;
+    name: string;
+    lane: string;
+    description: string;
+    storybook: string | null;
+    platforms: Record<"react" | "swiftui" | "compose" | "figma", PlatformState>;
+  }[];
 };
+
+/** What a status cell says for each state (src/reference/nav.ts). */
+const STATE_LABEL: Record<PlatformState, string> = {
+  implemented: "Implemented",
+  linked: "Linked",
+  "not-yet": "Not yet",
+  "not-expected": "Not expected",
+};
+
+const PLATFORMS = ["react", "swiftui", "compose", "figma"] as const;
 
 /** The contrast contract the colour page measures, as the generator copied it. */
 const contrastContract = JSON.parse(
@@ -49,13 +68,16 @@ const pages = [
   { path: "/foundations/icons", title: "Icons" },
   { path: "/foundations/theming", title: "Theming" },
   { path: "/components", title: "Components" },
-  // One page per lane and per kind of demo: a control, a tree, a picker, the
-  // shell, a product panel. Every other page is walked in Chromium below.
+  // One page per lane, and the odd cases: a component not on iOS or Android
+  // yet, one with no docs page in Storybook, one with no description in its
+  // docs. Every other page is walked in Chromium below.
   { path: "/components/button", title: "Button" },
-  { path: "/components/tree", title: "Tree" },
-  { path: "/components/date-range-picker", title: "DateRangePicker" },
+  { path: "/components/ai-companion-panel", title: "AICompanionPanel" },
   { path: "/components/adaptive-map-shell", title: "AdaptiveMapShell" },
-  { path: "/components/poi-detail-panel", title: "POIDetailPanel" },
+  { path: "/components/dynamic-island", title: "DynamicIsland" },
+  { path: "/components/theme-provider", title: "ThemeProvider" },
+  { path: "/components/category-field", title: "CategoryField" },
+  { path: "/components/backdrop", title: "Backdrop" },
 ] as const;
 
 /** Console errors and uncaught exceptions, which a clean page has none of. */
@@ -158,22 +180,6 @@ const knownViolations: Record<string, readonly KnownViolation[]> = {
   "/examples/dashboard": [SIDEBAR],
   // The adaptive tile's shell.
   "/": [SHELL_PANEL],
-  "/components/adaptive-map-shell": [
-    SHELL_PANEL,
-    // GAP-28: SearchBar's search landmark cannot be named; three shells, three.
-    { id: "landmark-unique", only: /role="search"/ },
-  ],
-  "/components/search-bar": [{ id: "landmark-unique", only: /role="search"/ }],
-  "/components/sidebar": [
-    SIDEBAR,
-    // GAP-30: Sidebar's navigation cannot be named; the page's own has one too.
-    { id: "landmark-unique", only: /sidebar-navigation/ },
-  ],
-  // GAP-45: the first brand variant's 600 reads 4.21:1 on the dark page, and
-  // the token-override example re-points the theme's 600 to it.
-  "/components/theme-provider": [
-    { id: "color-contrast", only: /kozmos-text-primary/, theme: "dark" },
-  ],
 };
 
 async function axeViolations(page: Page) {
@@ -656,7 +662,7 @@ test.describe("on a narrow phone", () => {
     const drawer = page.getByRole("dialog", { name: "Components" });
     await expect(drawer).toBeVisible();
     await expect(
-      drawer.getByText(componentIndex.lanes["product-sdk"]),
+      drawer.getByText(componentIndex.lanes["product-sdk"].title),
     ).toBeVisible();
     await drawer.getByRole("link", { name: "Checkbox" }).click();
     await expect(page).toHaveURL(/\/components\/checkbox$/);
@@ -1120,12 +1126,45 @@ test.describe("home", () => {
     await page.keyboard.press("Home");
     await expect(adaptive.getByText("bottom", { exact: true })).toBeVisible();
 
-    // Platforms: three snippets from the component's docs.
-    const platforms = tile("Three platforms, one part");
-    await platforms.getByRole("tab", { name: "SwiftUI" }).click();
+    // Platforms: each one's count and what has not reached it, from the
+    // status script's data. It opens on SwiftUI.
+    const platforms = tile("Every part, on every platform");
+    const on = (platform: (typeof PLATFORMS)[number]) => ({
+      present: componentIndex.components.filter((component) =>
+        ["implemented", "linked"].includes(component.platforms[platform]),
+      ).length,
+      expected: componentIndex.components.filter(
+        (component) => component.platforms[platform] !== "not-expected",
+      ).length,
+      missing: componentIndex.components.filter(
+        (component) => component.platforms[platform] === "not-yet",
+      ),
+    });
+    const swiftui = on("swiftui");
     await expect(
-      platforms.getByRole("region", { name: "Button.swift" }),
-    ).toContainText("KozmosButton");
+      platforms.getByText(
+        `${swiftui.present} of ${swiftui.expected} components in SwiftUI`,
+      ),
+    ).toBeVisible();
+    await platforms.getByRole("radio", { name: "Compose" }).click();
+    const compose = on("compose");
+    await expect(
+      platforms.getByText(
+        `${compose.present} of ${compose.expected} components in Compose`,
+      ),
+    ).toBeVisible();
+    for (const component of compose.missing) {
+      await expect(
+        platforms.getByRole("link", { name: component.name, exact: true }),
+      ).toHaveAttribute("href", `/components/${component.slug}`);
+    }
+    await platforms.getByRole("radio", { name: "Figma" }).click();
+    const figma = on("figma");
+    await expect(
+      platforms.getByText(
+        `${figma.present} of ${figma.expected} components linked in Figma`,
+      ),
+    ).toBeVisible();
 
     // Contrast: four pairs, all passing.
     await expect(
@@ -1445,7 +1484,7 @@ test.describe("the header", () => {
   for (const [path, width] of [
     ["/", 1280],
     ["/", 390],
-    ["/components/map-overlay", 1280],
+    ["/examples/venue-explorer", 1280],
     ["/examples/kiosk-directory", 1280],
   ] as const) {
     test(`stays on top of ${path} at ${width}px`, async ({ page }) => {
@@ -1862,143 +1901,20 @@ test.describe("design-system gaps, measured", () => {
     expect(line).toBe("underline");
   });
 
-  test("GAP-56 is fixed: a Button spaces its icon from its label", async ({
-    page,
-  }) => {
-    await page.goto("/components/button");
-    await hydrated(page);
-    // Fixed in the design system on 2026-09-22 (`7775c73`): `.kozmos-button`
-    // takes the spacing scale's 100, the 8px Figma and iOS keep, and the
-    // loader's physical margin went with it. The site's `site-button-icon`
-    // class and the two examples' own are gone.
-    const directions = page
-      .locator(".site-demos")
-      .getByRole("button", { name: "Directions" })
-      .first();
-    expect(await iconGap(directions)).toBe(8);
-  });
-
   test("GAP-57: a Button's label cannot wrap", async ({ page }) => {
-    await page.goto("/components/button");
-    await hydrated(page);
+    await page.goto("/");
+    await scrolled(page);
     // `.kozmos-button` sets `white-space: nowrap`, which everything inside
     // inherits, so a label wider than the button cannot break. Measured on
-    // the component itself: until 2026-09-24 this was measured through the
-    // icons page, where the longest name overflowed a phone — the icon set
-    // has since lost its taxonomy names (56 icons, longest 21 characters),
-    // so that page no longer shows it while the defect is unchanged.
+    // a plain Button, the home page's emotions tile's first: until
+    // 2026-09-24 through the icons page, where the longest name overflowed a
+    // phone, then on the Button page's demo until the demos left the site
+    // for Storybook (2026-09-28).
     const wrapping = await page
-      .locator(".site-demos button")
+      .locator(".site-emotions button")
       .first()
       .evaluate((button) => getComputedStyle(button).whiteSpace);
     expect(wrapping).toBe("nowrap");
-  });
-
-  test("GAP-58: a Toast draws no background", async ({ page }) => {
-    await page.goto("/components/toast");
-    await hydrated(page);
-    await page
-      .locator(".site-demos")
-      .getByRole("button", { name: "Save the bookshop" })
-      .click();
-    // The toast itself, in the viewport inside the screen — not Radix's
-    // hidden announcer, which also carries role="status" and no fill of its
-    // own to speak of.
-    const toast = page
-      .locator(".site-screen li")
-      .filter({ hasText: "The bookshop is in your favourites." })
-      .first();
-    await expect(toast).toBeVisible();
-    const fill = await toast.evaluate(
-      (node) => getComputedStyle(node).backgroundColor,
-    );
-    // Nothing is painted behind the words: the page reads through them.
-    // A colour with no fourth number is opaque, which is the fixed state.
-    const alpha = fill.match(/[\d.]+/g)?.[3] ?? "1";
-    expect({ fill, alpha }).toEqual({ fill, alpha: "0" });
-  });
-
-  test("GAP-59: the island's capsule disappears into a dark page", async ({
-    page,
-  }) => {
-    await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/components/dynamic-island");
-    await hydrated(page);
-    const shades = await page
-      .locator(".site-screen")
-      .first()
-      .evaluate((screen) => {
-        const capsule = screen.querySelector("[class*='bg-background']");
-        const own = capsule ? getComputedStyle(capsule) : null;
-        return {
-          capsule: own?.backgroundColor ?? null,
-          behind: getComputedStyle(screen).backgroundColor,
-          edge: own?.borderTopWidth ?? null,
-        };
-      });
-    // The island keeps its own dark theme, so on a dark page it is black on
-    // black, with no edge to tell it from what is behind it.
-    expect(shades.capsule).toBe(shades.behind);
-    expect(shades.edge).toBe("0px");
-  });
-
-  test("GAP-60: the island keeps no room for the camera", async ({ page }) => {
-    await page.goto("/components/dynamic-island");
-    await hydrated(page);
-    const capsule = () => page.locator(".site-screen [class*='bg-background']");
-    // Compact: Apple keeps 125.3pt of a 230pt island for the TrueDepth
-    // camera — 54% of its width — with a 52.33pt slot each side. Here the
-    // slots run to 30px apart in a 240px capsule: 12%.
-    const compact = await capsule().evaluate((node) => {
-      const box = node.getBoundingClientRect();
-      const slots = Array.from(node.querySelectorAll("div > div"))
-        .map((child) => child.getBoundingClientRect())
-        .filter((rect) => rect.width > 0 && rect.width < box.width)
-        .sort((a, b) => a.left - b.left);
-      const first = slots[0];
-      const last = slots[slots.length - 1];
-      return {
-        width: box.width,
-        clear: slots.length > 1 ? last.left - first.right : 0,
-      };
-    });
-    expect(compact.clear / compact.width).toBeLessThan(0.4);
-
-    // Expanded: its content fills the capsule from the top edge, over where
-    // the camera sits, rather than wrapping around it. The capsule springs
-    // open while the compact layer scales away, so the measurement waits for
-    // that layer to go and for the capsule and the new one to stop moving.
-    await page.getByRole("radio", { name: "expanded" }).click();
-    await expect(
-      capsule().getByText("3 min to the bookshop", { exact: true }),
-    ).toHaveCount(0);
-    await page.waitForFunction(() => {
-      const node = document.querySelector<HTMLElement>(
-        ".site-screen [class*='bg-background']",
-      );
-      if (!node) return false;
-      const layer = Array.from(
-        node.querySelectorAll<HTMLElement>("div > div"),
-      ).find((child) => (child.textContent ?? "").includes("Turn left at the"));
-      if (!layer) return false;
-      const mark = `${node.getBoundingClientRect().width}:${layer.getBoundingClientRect().top}`;
-      const before = node.dataset.settledAt;
-      node.dataset.settledAt = mark;
-      return before === mark;
-    });
-    const expanded = await capsule().evaluate((node) => {
-      const box = node.getBoundingClientRect();
-      const layer = Array.from(node.querySelectorAll("div > div")).find(
-        (child) => (child.textContent ?? "").includes("Turn left at the"),
-      );
-      const content = layer?.getBoundingClientRect();
-      return {
-        share: content ? content.width / box.width : 0,
-        fromTop: content ? content.top - box.top : 0,
-      };
-    });
-    expect(expanded.share).toBeGreaterThan(0.9);
-    expect(expanded.fromTop).toBeLessThan(24);
   });
 
   test("GAP-61: the breadcrumb's separator does not mirror in right to left", async ({
@@ -2044,50 +1960,6 @@ test.describe("design-system gaps, measured", () => {
     expect(trail.separatorTransform).toBe("none");
   });
 
-  test("GAP-24, 29, 34, 36: the parts that pin themselves, held by a screen", async ({
-    page,
-  }) => {
-    const screens = [
-      { path: "/components/dynamic-island", show: null },
-      { path: "/components/bottom-navigation", show: null },
-      { path: "/components/backdrop", show: "Show the backdrop" },
-      { path: "/components/toast", show: "Save the bookshop" },
-      { path: "/components/floating-action-button", show: null },
-    ];
-    for (const { path, show } of screens) {
-      await page.goto(path);
-      await hydrated(page);
-      if (show) await page.getByRole("button", { name: show }).first().click();
-      const screen = page.locator(".site-screen").first();
-      await expect(screen).toBeVisible();
-      const held = await screen.evaluate((box) => {
-        const edge = box.getBoundingClientRect();
-        const pinned = Array.from(box.querySelectorAll("*")).filter(
-          (node) => getComputedStyle(node).position === "fixed",
-        );
-        return {
-          pinned: pinned.length,
-          outside: pinned
-            .filter((node) => {
-              const at = node.getBoundingClientRect();
-              return (
-                at.top < edge.top - 1 ||
-                at.bottom > edge.bottom + 1 ||
-                at.left < edge.left - 1 ||
-                at.right > edge.right + 1
-              );
-            })
-            .map((node) => String(node.className) || node.localName),
-        };
-      });
-      // The part is still fixed — that is the gap. When Kozmos takes a
-      // placement from its host, nothing here is pinned and this flips.
-      expect({ path, pinned: held.pinned > 0 }).toEqual({ path, pinned: true });
-      // And the screen's paint containment holds it.
-      expect({ path, outside: held.outside }).toEqual({ path, outside: [] });
-    }
-  });
-
   test("GAP-55: a Listbox's column is as wide as its widest option", async ({
     page,
   }) => {
@@ -2109,13 +1981,123 @@ test.describe("design-system gaps, measured", () => {
   });
 
   test("GAP-40: MapView does not isolate its overlays", async ({ page }) => {
-    await page.goto("/components/map-overlay");
+    // The kiosk directory floats a MapOverlay on its map.
+    await page.goto("/examples/kiosk-directory");
     await hydrated(page);
     const isolation = await page
-      .getByRole("region", { name: "Illustrative map" })
+      .getByRole("region", { name: /Illustrative map$/ })
       .first()
       .evaluate((map) => getComputedStyle(map).isolation);
     expect(isolation).toBe("auto");
+  });
+
+  test("GAP-66 is fixed: an empty state's wrapped description is centred", async ({
+    page,
+  }) => {
+    // Fixed in the design system on 2026-09-25 (`b9467b1f`): both of the
+    // empty state's words take align="center". It only showed once the
+    // description wrapped, and where a line breaks is the font's decision:
+    // in CI's WebKit the components page's one line fits a 320px phone. So
+    // the description is narrowed until it wraps whatever the face, and
+    // each line is measured against the box: a centred line sits on its
+    // centre, a ragged one does not.
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto("/components");
+    await hydrated(page);
+    await page
+      .getByRole("searchbox", { name: "Search components" })
+      .fill("zzzz");
+    const description = page.getByText("Try another word, or clear the lane.");
+    await expect(description).toBeVisible();
+    const drawn = await description.evaluate((node) => {
+      (node as HTMLElement).style.maxInlineSize = "14ch";
+      const box = node.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const lines = new Map<number, { left: number; right: number }>();
+      for (const rect of Array.from(range.getClientRects())) {
+        const top = Math.round(rect.top);
+        const line = lines.get(top) ?? { left: rect.left, right: rect.right };
+        line.left = Math.min(line.left, rect.left);
+        line.right = Math.max(line.right, rect.right);
+        lines.set(top, line);
+      }
+      const centre = (box.left + box.right) / 2;
+      return {
+        lines: lines.size,
+        align: getComputedStyle(node).textAlign,
+        offCentre: Math.max(
+          ...Array.from(lines.values()).map((line) =>
+            Math.abs((line.left + line.right) / 2 - centre),
+          ),
+        ),
+      };
+    });
+    expect(drawn.lines, "the description wraps").toBeGreaterThan(1);
+    expect(drawn.align).toBe("center");
+    // Every line on the box's centre, to a pixel and a half of rounding.
+    expect(drawn.offCentre).toBeLessThanOrEqual(1.5);
+  });
+
+  test("GAP-72 is fixed: MapOverlay keeps what floats in it whole", async ({
+    page,
+  }) => {
+    // Fixed in the design system on 2026-09-28 (`ded56bc5`, its GAP-082):
+    // the overlay's scroll box is padded by the floating shadow's reach, so
+    // it no longer cuts the shadow of what it holds. Read on the kiosk
+    // directory's overlay, which holds the floor list: the room round the
+    // part that casts the shadow, against how far that shadow reaches.
+    await page.goto("/examples/kiosk-directory");
+    await hydrated(page);
+    const fit = await page
+      .locator(".kozmos-map-overlay-stack")
+      .first()
+      .evaluate((stack) => {
+        const box = stack.getBoundingClientRect();
+        const caster = [
+          stack,
+          ...Array.from(stack.querySelectorAll<HTMLElement>("*")),
+        ].find(
+          (node) =>
+            node !== stack && getComputedStyle(node).boxShadow !== "none",
+        );
+        if (!caster) return null;
+        // The shadow's opaque layer: "rgba(…) x y blur spread", the last
+        // layer with any alpha.
+        const layers = getComputedStyle(caster)
+          .boxShadow.split(/,(?![^(]*\))/)
+          .map((layer) => layer.trim())
+          .filter((layer) => !/rgba\([^)]*,\s*0\)/.test(layer));
+        const numbers = (layers[layers.length - 1] ?? "")
+          .replace(/rgba?\([^)]*\)/, "")
+          .trim()
+          .split(/\s+/)
+          .map((value) => parseFloat(value));
+        const [x = 0, y = 0, blur = 0, spread = 0] = numbers;
+        const at = caster.getBoundingClientRect();
+        return {
+          overflow: getComputedStyle(stack).overflowY,
+          room: {
+            top: Math.round(at.top - box.top),
+            right: Math.round(box.right - at.right),
+            bottom: Math.round(box.bottom - at.bottom),
+            left: Math.round(at.left - box.left),
+          },
+          reach: {
+            top: Math.max(0, blur + spread - y),
+            right: Math.max(0, blur + spread + x),
+            bottom: Math.max(0, blur + spread + y),
+            left: Math.max(0, blur + spread - x),
+          },
+        };
+      });
+    expect(fit, "the overlay holds a part with a shadow").not.toBeNull();
+    if (!fit) return;
+    // Still a scroll box, which is what clipped: the room is what changed.
+    expect(fit.overflow).toBe("auto");
+    for (const side of ["top", "right", "bottom", "left"] as const) {
+      expect(fit.room[side], side).toBeGreaterThanOrEqual(fit.reach[side]);
+    }
   });
 
   test("GAP-42: a CardTitle's line height equals its font size", async ({
@@ -2217,32 +2199,34 @@ test.describe("design-system gaps, measured", () => {
     // Both states, so a pass cannot come from an animation that was never
     // there: with no preference each must move, with the preference each
     // must stop. The design config's `motion: reduced` is the same rule
-    // under [data-kozmos-motion=reduced].
-    const moving = async (path: string, selector: string) => {
-      await page.goto(path);
-      await hydrated(page);
-      return page
-        .locator(selector)
-        .first()
-        .evaluate((element) => {
+    // under [data-kozmos-motion=reduced]. Measured in the states example's
+    // loading view, which shows a Spinner and Skeletons for 1.8s: each time
+    // it has loaded, "Loading" starts it again, and both are read at once.
+    await page.goto("/examples/states");
+    await hydrated(page);
+    const example = page.getByRole("region", {
+      name: "Loading, empty, error, offline example",
+    });
+    const loaded = example.getByText("3 shops, nearest first");
+    const moving = async () => {
+      await expect(loaded).toBeVisible({ timeout: 8000 });
+      await example
+        .getByRole("group", { name: "State" })
+        .getByRole("radio", { name: "Loading" })
+        .click();
+      return page.evaluate(() =>
+        [".kozmos-skeleton", ".kozmos-spinner-arc"].map((selector) => {
+          const element = document.querySelector(selector);
+          if (!element) return `${selector} missing`;
           const style = getComputedStyle(element);
           return style.animationName !== "none" && style.animationName !== "";
-        });
-    };
-    for (const [path, selector] of [
-      ["/components/skeleton", ".kozmos-skeleton"],
-      ["/components/spinner", ".kozmos-spinner-arc"],
-    ] as const) {
-      await page.emulateMedia({ reducedMotion: "no-preference" });
-      expect(
-        await moving(path, selector),
-        `${selector} with no preference`,
-      ).toBe(true);
-      await page.emulateMedia({ reducedMotion: "reduce" });
-      expect(await moving(path, selector), `${selector} under reduce`).toBe(
-        false,
+        }),
       );
-    }
+    };
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    expect(await moving(), "with no preference").toEqual([true, true]);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await moving(), "under reduce").toEqual([false, false]);
     await page.emulateMedia({ reducedMotion: null });
   });
 
@@ -2254,9 +2238,9 @@ test.describe("design-system gaps, measured", () => {
       browserName !== "chromium",
       "the cancel button is a Blink and WebKit pseudo-element; WebKit's field is unstyled anyway (GAP-20)",
     );
-    await page.goto("/components/search-bar");
+    await page.goto("/components");
     await hydrated(page);
-    const field = page.locator(".site-demos").getByRole("searchbox").first();
+    const field = page.getByRole("searchbox", { name: "Search components" });
     await field.fill("bookshop");
     // Read in the stylesheet, not off the element. getComputedStyle on a
     // -webkit- shadow pseudo-element answers with the host's own values —
@@ -3272,11 +3256,12 @@ test("the search opens from the keyboard or the header and takes you there", asy
 test("a button that holds an icon and words keeps them 8px apart", async ({
   page,
 }) => {
-  // Nine pages, each loaded and scrolled end to end: 16–22s in WebKit on CI,
-  // and 31s, past the 30s limit, on a slower runner (run 36432507904).
+  // Seven pages, each loaded and scrolled end to end: nine took 16–22s in
+  // WebKit on CI, and 31s, past the 30s limit, on a slower runner (run
+  // 36432507904).
   test.slow();
-  // GAP-56: Kozmos's Button sets no gap; the site's buttons carry the 8px
-  // Figma's Button keeps between its indicator and its label.
+  // GAP-56, fixed in Kozmos: its Button keeps the 8px Figma's keeps between
+  // its indicator and its label, and so does every button the site draws.
   const cases: [string, (page: Page) => Locator, number?][] = [
     ["/", (p) => p.getByRole("banner").getByRole("button", { name: /^Theme/ })],
     [
@@ -3298,14 +3283,6 @@ test("a button that holds an icon and words keeps them 8px apart", async ({
     [
       "/examples/notifications",
       (p) => p.getByRole("button", { name: "Preferences" }),
-    ],
-    [
-      "/components/navbar",
-      (p) => p.getByRole("button", { name: "New venue" }).first(),
-    ],
-    [
-      "/components/menu",
-      (p) => p.getByRole("button", { name: "Actions" }).first(),
     ],
     // The reference's drawer button, below 64rem.
     [
@@ -3359,31 +3336,57 @@ test("the search's results never scroll sideways: a long description ends in an 
   expect(fit.cut).toBe(true);
 });
 
-test.describe("component reference", () => {
+test.describe("components", () => {
   const total = componentIndex.components.length;
+  const byName = (name: string) =>
+    componentIndex.components.find((component) => component.name === name)!;
+  /** The status cells of one component's row, in the table's order. */
+  const rowOf = (table: Locator, name: string) =>
+    table.getByRole("row").filter({
+      has: table
+        .page()
+        .getByRole("rowheader")
+        .getByRole("link", { name, exact: true }),
+    });
 
-  test("the index searches, filters by lane, and previews each component live but inert", async ({
+  test("the index lists every component by platform, lane by lane, and searches and filters", async ({
     page,
   }) => {
     await page.goto("/components");
     await hydrated(page);
     await expect(page.getByText(`${total} of ${total} shown`)).toBeVisible();
 
-    // A preview mounts as its card comes near, and stays out of the
-    // accessibility tree: real controls inside, none reachable.
-    const first = page.locator(".site-preview").first();
-    await first.scrollIntoViewIfNeeded();
-    await expect(first).toHaveAttribute("aria-hidden", "true");
-    await expect(first).toHaveAttribute("inert", "");
-    await expect(first.locator("button, input, a").first()).toBeAttached();
-    await expect(first.getByRole("button")).toHaveCount(0);
+    // One table per lane, one row per component, each row the status
+    // script's four answers.
+    const lanes = ["core", "product-sdk", "platform-form-factor", "code-only"];
+    let rows = 0;
+    for (const lane of lanes) {
+      const table = page.getByRole("table", {
+        name: `${componentIndex.lanes[lane].title} components by platform`,
+      });
+      const inLane = componentIndex.components.filter(
+        (component) => component.lane === lane,
+      );
+      // The header row, and one per component.
+      await expect(table.getByRole("row")).toHaveCount(inLane.length + 1);
+      rows += inLane.length;
+    }
+    expect(rows).toBe(total);
+    await expect(
+      page.getByRole("table", { name: /components by platform$/ }),
+    ).toHaveCount(lanes.length);
 
     const search = page.getByRole("searchbox", { name: "Search components" });
     await search.fill("otp");
     await expect(page.getByText(`1 of ${total} shown`)).toBeVisible();
+    // In the table: the sidebar beside it lists every component too.
+    const main = page.locator("main");
     await expect(
-      page.getByRole("link", { name: "Open OTPInput" }),
+      main.getByRole("link", { name: "OTPInput", exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("table", { name: /components by platform$/ }),
+    ).toHaveCount(1);
     await search.fill("zzzz");
     await expect(page.getByText("No component matches")).toBeVisible();
     await search.fill("");
@@ -3394,7 +3397,7 @@ test.describe("component reference", () => {
     await page
       .getByRole("group", { name: "Lanes" })
       .getByRole("button", {
-        name: componentIndex.lanes["platform-form-factor"],
+        name: componentIndex.lanes["platform-form-factor"].title,
       })
       .click();
     await expect(
@@ -3402,7 +3405,7 @@ test.describe("component reference", () => {
     ).toBeVisible();
     for (const component of platform) {
       await expect(
-        page.getByRole("link", { name: `Open ${component.name}` }),
+        main.getByRole("link", { name: component.name, exact: true }),
       ).toBeVisible();
     }
     await page
@@ -3410,6 +3413,82 @@ test.describe("component reference", () => {
       .getByRole("button", { name: "All" })
       .click();
     await expect(page.getByText(`${total} of ${total} shown`)).toBeVisible();
+  });
+
+  test("each row says what the status script says, in words", async ({
+    page,
+  }) => {
+    await page.goto("/components");
+    await hydrated(page);
+    // Every component and every platform: the words in its cell are the
+    // generated state's, so the page cannot drift from the data.
+    const cells = await page.evaluate(() =>
+      Array.from(
+        document.querySelectorAll<HTMLTableRowElement>(
+          'table[aria-label$="components by platform"] tbody tr',
+        ),
+      ).map((row) => ({
+        name: row.querySelector("th")?.textContent?.trim() ?? "",
+        states: Array.from(row.querySelectorAll("td")).map(
+          (cell) => cell.textContent?.trim() ?? "",
+        ),
+      })),
+    );
+    expect(cells).toHaveLength(total);
+    for (const { name, states } of cells) {
+      const component = byName(name);
+      expect({ name, states }).toEqual({
+        name,
+        states: PLATFORMS.map(
+          (platform) => STATE_LABEL[component.platforms[platform]],
+        ),
+      });
+    }
+    // The cases the site was wrong about, and the one nobody expects.
+    const core = page.getByRole("table", {
+      name: "Core components by platform",
+    });
+    await expect(rowOf(core, "AICompanionPanel").getByRole("cell")).toHaveText([
+      "Implemented",
+      "Not yet",
+      "Not yet",
+      "Not yet",
+    ]);
+    const utilities = page.getByRole("table", {
+      name: `${componentIndex.lanes["code-only"].title} components by platform`,
+    });
+    await expect(
+      rowOf(utilities, "ThemeProvider").getByRole("cell").last(),
+    ).toHaveText("Not expected");
+    // A lane nobody expects in Figma says so, rather than "0 of 0".
+    await expect(
+      page.getByRole("region", {
+        name: componentIndex.lanes["code-only"].title,
+      }),
+    ).toContainText("Figma not expected");
+  });
+
+  test("the marks say what they mean, and what none of them proves", async ({
+    page,
+  }) => {
+    await page.goto("/components#marks");
+    await hydrated(page);
+    const marks = page.getByRole("region", { name: "What the marks mean" });
+    await expect(marks.getByRole("table")).toBeVisible();
+    await expect(marks.getByRole("row")).toHaveCount(5);
+    for (const label of Object.values(STATE_LABEL)) {
+      await expect(
+        marks.getByRole("cell", { name: label, exact: true }),
+      ).toBeVisible();
+    }
+    // What the status report's own scope section says: structure, not parity.
+    await expect(marks).toContainText("proves structure only");
+    await expect(marks).toContainText("It does not say the platforms match");
+    await expect(marks).toContainText("check-completion.ts");
+    // And Storybook for the detail.
+    await expect(
+      page.getByRole("link", { name: "Open Storybook" }),
+    ).toHaveAttribute("href", "/storybook/");
   });
 
   test("the sidebar and the neighbour links move between components in the page", async ({
@@ -3444,78 +3523,78 @@ test.describe("component reference", () => {
     ).toBe(true);
   });
 
-  test("a page shows the examples' source, the three platforms' code and the props", async ({
+  test("a component's page is its description, where it exists and its Storybook page", async ({
     page,
   }) => {
+    const button = byName("Button");
     await page.goto("/components/button");
     await hydrated(page);
+    await expect(page.locator("main")).toContainText(button.description);
     await expect(
-      page.getByRole("region", { name: "button.tsx" }),
-    ).toContainText("export const demos");
-    await page.getByRole("tab", { name: "SwiftUI" }).click();
-    await expect(
-      page.getByRole("region", { name: "Button.swift" }),
-    ).toContainText("KozmosButton");
-    await page.getByRole("tab", { name: "Compose" }).click();
-    await expect(page.getByRole("region", { name: "Button.kt" })).toBeVisible();
-
-    const props = page.getByRole("table", { name: "Button props" });
-    const variant = props.getByRole("row").filter({
-      has: page.getByRole("cell", { name: "variant", exact: true }),
+      page
+        .getByRole("table", { name: "Where Button exists" })
+        .getByRole("cell"),
+    ).toHaveText(
+      PLATFORMS.map((platform) => STATE_LABEL[button.platforms[platform]]),
+    );
+    // Nothing of the reference is left on the page: no code, no props.
+    await expect(page.getByRole("tab")).toHaveCount(0);
+    await expect(page.getByRole("table")).toHaveCount(1);
+    const open = page.getByRole("link", { name: "Open in Storybook" });
+    await expect(open).toHaveAttribute(
+      "href",
+      "/storybook/?path=/docs/components-button--docs",
+    );
+    // A plain link: it loads Storybook, it does not ask the router.
+    await page.evaluate(() => {
+      (window as unknown as { sameDocument: boolean }).sameDocument = true;
     });
-    await expect(variant).toContainText("default");
+    await open.click();
+    await page.waitForURL(
+      /\/storybook\/\?path=\/docs\/components-button--docs$/,
+    );
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { sameDocument?: boolean }).sameDocument,
+      ),
+    ).toBeUndefined();
+
+    // Not on iOS or Android yet, and it says so.
+    await page.goto("/components/ai-companion-panel");
+    await hydrated(page);
     await expect(
-      page.getByRole("table", { name: "AdaptiveMapShell props" }),
-    ).toHaveCount(0);
+      page
+        .getByRole("table", { name: "Where AICompanionPanel exists" })
+        .getByRole("cell"),
+    ).toHaveText(["Implemented", "Not yet", "Not yet", "Not yet"]);
 
-    // A Radix primitive's own props are marked, with where they come from.
-    await page.goto("/components/dialog");
+    // No docs page in Storybook: its first story, and a line that says so.
+    await page.goto("/components/category-field");
     await hydrated(page);
-    const modal = page
-      .getByRole("table", { name: "Dialog props" })
-      .getByRole("row")
-      .filter({ has: page.getByRole("cell", { name: /^modal/ }) });
-    await expect(modal).toContainText("Radix");
-    await expect(modal).toContainText("@radix-ui/react-dialog");
-  });
-
-  test("the demos respond: the tree selects, the gallery turns, the island changes state", async ({
-    page,
-  }) => {
-    // The demos' source is on the page too (the "Examples" code tab), so the
-    // words a demo shows are looked for among the demos only.
-    const demos = () => page.locator(".site-demos");
-    await page.goto("/components/tree");
-    await hydrated(page);
-    await demos()
-      .getByRole("treeitem", { name: /Bookshop/ })
-      .click();
-    await expect(demos().getByText("Selected: Bookshop")).toBeVisible();
-
-    await page.goto("/components/poi-media-gallery");
-    await hydrated(page);
-    await demos().getByRole("button", { name: "Next image" }).first().click();
     await expect(
-      demos().getByText("Showing the counter with a stack of books."),
+      page.getByRole("link", { name: "Open in Storybook" }),
+    ).toHaveAttribute(
+      "href",
+      `/storybook/?path=${byName("CategoryField").storybook}`,
+    );
+    await expect(
+      page.getByText("Its docs page is not written yet"),
     ).toBeVisible();
 
-    await page.goto("/components/dynamic-island");
+    // Docs whose first paragraph is a placeholder (GAP-81) say they have none.
+    await page.goto("/components/backdrop");
     await hydrated(page);
-    // The island lives in a screen that holds it (GAP-24), and the control
-    // changes its state rather than mounting and unmounting it.
-    const island = page.getByText("3 min to the bookshop", { exact: true });
-    await expect(island).toBeVisible();
-    await demos().getByRole("radio", { name: "expanded" }).click();
-    await expect(demos().getByText("Turn left at the pharmacy")).toBeVisible();
-    await demos().getByRole("radio", { name: "minimal" }).click();
-    await expect(island).toHaveCount(0);
+    await expect(
+      page.getByText("Its docs have no description yet."),
+    ).toBeVisible();
   });
 });
 
 // Every component page, in both themes, in one browser: the sampled pages
-// above run in all three. Each page must answer, name itself, show a live
-// example, pass axe and log nothing. The dark theme is walked too: a token
-// can pass on white and fail on black (GAP-45).
+// above run in all three. Each page must answer, name itself, say where the
+// component exists as the data does, link to Storybook, pass axe and log
+// nothing. The dark theme is walked too: a token can pass on white and fail
+// on black (GAP-45).
 test.describe("every component page", () => {
   test.skip(
     ({ browserName }) => browserName !== "chromium",
@@ -3526,20 +3605,20 @@ test.describe("every component page", () => {
     test.describe(`${colorScheme} theme`, () => {
       test.use({ colorScheme });
 
-      for (const { slug, name } of componentIndex.components) {
-        componentPageTest(slug, name, colorScheme);
+      for (const component of componentIndex.components) {
+        componentPageTest(component, colorScheme);
       }
     });
   }
 });
 
-/** One component page's walk: it answers, names itself, shows its demo, passes axe. */
+/** One component page's walk: it answers, names itself, says where it exists, passes axe. */
 function componentPageTest(
-  slug: string,
-  name: string,
+  component: (typeof componentIndex.components)[number],
   colorScheme: "light" | "dark",
 ) {
-  test(`/components/${slug} shows ${name} live and passes axe`, async ({
+  const { slug, name } = component;
+  test(`/components/${slug} says where ${name} exists and passes axe`, async ({
     page,
   }) => {
     const errors = collectErrors(page);
@@ -3551,20 +3630,30 @@ function componentPageTest(
       colorScheme,
     );
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
-    const stage = page.locator(".site-demo-stage").first();
-    await expect(stage).toBeVisible();
-    expect(
-      await stage.evaluate((element) => element.childElementCount),
-    ).toBeGreaterThan(0);
-    await expect(page.getByRole("tab", { name: "SwiftUI" })).toBeVisible();
+    // A platform to a row: each row's header, then what the data says.
+    const where = page.getByRole("table", { name: `Where ${name} exists` });
+    await expect(where.getByRole("rowheader")).toHaveText([
+      "React",
+      "SwiftUI",
+      "Compose",
+      "Figma",
+    ]);
+    await expect(where.getByRole("cell")).toHaveText(
+      PLATFORMS.map((platform) => STATE_LABEL[component.platforms[platform]]),
+    );
+    if (component.storybook) {
+      await expect(
+        page.getByRole("link", { name: "Open in Storybook" }),
+      ).toHaveAttribute("href", `/storybook/?path=${component.storybook}`);
+    }
     await scrolled(page);
     expect(await axeViolations(page)).toEqual([]);
     expect(await overriddenSiteCss(page)).toEqual([]);
     expect(await clippedEdges(page)).toEqual([]);
     // WCAG 1.4.10: no sideways scroll at 320px, on every page — in the
-    // host's own sans and in a wider one, since a part's name is one long
-    // identifier (SelectScrollDownButton) and where it breaks is the font's
-    // decision, not the site's.
+    // host's own sans and in a wider one, since a component's name is one
+    // long identifier (BrowseCategoriesPanel) and where it breaks is the
+    // font's decision, not the site's.
     await page.setViewportSize({ width: 320, height: 700 });
     const sideways = () =>
       page.evaluate(
@@ -3573,10 +3662,6 @@ function componentPageTest(
     expect(await sideways()).toBeLessThanOrEqual(0);
     await widen(page, WIDE_SANS);
     expect(await sideways()).toBeLessThanOrEqual(0);
-    // The gallery's second example asks for an image that does not exist,
-    // on purpose; the browser logs that request and nothing else may fail.
-    expect(
-      errors.filter((error) => !error.includes("does-not-exist.svg")),
-    ).toEqual([]);
+    expect(errors).toEqual([]);
   });
 }

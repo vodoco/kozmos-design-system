@@ -1,28 +1,29 @@
 #!/usr/bin/env node
 /**
- * Generates the component reference's data from the design system's own
- * sources, so the site never restates by hand what the repository already
- * says:
+ * Generates the site's component data from the design system's own sources,
+ * so the site never restates by hand what the repository already says:
  *
- *  - the component list and its lanes from scripts/skills/check-completion.ts
- *    (the same sets that build docs/status.md);
- *  - each component's description and its React, Vue, SwiftUI and Compose
- *    snippets from its .mdx documentation (the PlatformSnippets block);
- *  - each component's parts — the PascalCase exports of its folder that the
- *    built package really exports — and their props, read with the
- *    TypeScript compiler: the members each `<Part>Props` declares itself
- *    (not what it inherits from an element), the variants of a `cva()` it
- *    extends, and the defaults its destructuring or `defaultVariants` give.
+ *  - every component, its lane, and where it exists — React, SwiftUI,
+ *    Compose, and Figma through Code Connect — from the status script,
+ *    scripts/skills/check-completion.ts, the one that writes the
+ *    repository's status report, run with `--json`;
+ *  - each component's description: the first paragraph of its .mdx docs,
+ *    or failing that the doc comment on the component itself;
+ *  - where its page is in Storybook, which is the component reference
+ *    (decision 44): the docs page its .mdx attaches to its stories
+ *    (`<Meta of={…} />`), named as Storybook names it, or its first story
+ *    when it has no docs page.
  *
  * Output (gitignored, rebuilt by `pnpm generate` before dev, build and
- * typecheck): src/generated/components.json — the index — and
- * src/generated/components/<slug>.json, one per component, and a copy of
- * the tokens package's contrast contract.
+ * typecheck): src/generated/components.json, and a copy of the tokens
+ * package's contrast contract.
  *
  *   node scripts/generate-reference.mjs            # write
  *   node scripts/generate-reference.mjs --check    # fail if the output would change
  */
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
@@ -37,17 +38,13 @@ const STATUS_SCRIPT = path.join(
   REPO_ROOT,
   "scripts/skills/check-completion.ts",
 );
-const REACT_TSCONFIG = path.join(REPO_ROOT, "packages/react/tsconfig.json");
-const REACT_PACKAGE = path.join(
-  REPO_ROOT,
-  "packages/react/dist/kozmos-react.mjs",
-);
 const CONTRAST_CONTRACT = path.join(
   REPO_ROOT,
   "packages/tokens/src/contrast-contract.json",
 );
 const OUT_DIR = path.join(SITE_ROOT, "src/generated");
 
+/** The lanes' names as the site writes them, in sentence case. */
 export const LANES = {
   core: "Core",
   "code-only": "Code-only / utility",
@@ -63,35 +60,65 @@ export function slugOf(name) {
     .toLowerCase();
 }
 
-/** The name sets the status script classifies by, read from its source. */
-export function readLaneSets(source) {
-  const setOf = (constant) => {
-    const match = source.match(
-      new RegExp(`const ${constant} = new Set\\(\\[([\\s\\S]*?)\\]\\)`),
-    );
-    if (!match) throw new Error(`${constant} not found in check-completion.ts`);
-    return new Set(
-      [...match[1].matchAll(/"([A-Za-z0-9]+)"/g)].map((m) => m[1]),
-    );
-  };
+// ---- Where each component exists --------------------------------------------
+
+/**
+ * The status script's own report, as JSON: its lanes and, per component,
+ * which files it found on each platform. Run through tsx, as the repository
+ * runs it everywhere else.
+ */
+export function readStatusReport() {
+  const require = createRequire(import.meta.url);
+  const output = execFileSync(
+    process.execPath,
+    [require.resolve("tsx/cli"), STATUS_SCRIPT, "--json"],
+    { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+  );
+  return JSON.parse(output);
+}
+
+/**
+ * What exists, platform by platform, from one component's status.
+ *
+ *  - React, SwiftUI, Compose: `implemented` where the platform's library has
+ *    the component's source (React's must also be exported by the package),
+ *    otherwise `not-yet`.
+ *  - Figma: `linked` where a Code Connect mapping ties the component to a
+ *    real node in the Figma library; `not-expected` where the status script
+ *    says a component has no Figma component set by design (a provider, a
+ *    typography primitive, a nonvisual utility); otherwise `not-yet`.
+ *
+ * Nothing says a component will never reach SwiftUI or Compose, so those are
+ * never `not-expected`: the status script would have to say so first.
+ */
+export function platformsOf(status) {
   return {
-    internal: setOf("INTERNAL_COMPONENT_NAMES"),
-    productSdk: setOf("PRODUCT_SDK_COMPONENT_NAMES"),
-    codeOnly: setOf("CODE_ONLY_UTILITY_COMPONENT_NAMES"),
-    platform: setOf("PLATFORM_FORM_FACTOR_COMPONENT_NAMES"),
+    react:
+      status.web.component && status.web.exported ? "implemented" : "not-yet",
+    swiftui: status.ios.component ? "implemented" : "not-yet",
+    compose: status.android.component ? "implemented" : "not-yet",
+    figma: !status.codeConnectApplicable
+      ? "not-expected"
+      : status.web.codeConnect ||
+          status.ios.codeConnect ||
+          status.android.codeConnect
+        ? "linked"
+        : "not-yet",
   };
 }
 
-export function laneOf(name, sets) {
-  if (sets.codeOnly.has(name)) return "code-only";
-  if (sets.productSdk.has(name)) return "product-sdk";
-  if (sets.platform.has(name)) return "platform-form-factor";
-  return "core";
-}
+// ---- What each component is ---------------------------------------------------
+
+/**
+ * The words 36 components' docs open with in place of a description
+ * (GAPS.md, GAP-81). They say nothing, so they count as no description.
+ */
+const PLACEHOLDER = /^Displays the \S+ interface topology natively\.$/;
 
 /**
  * The first paragraph after the mdx's title: prose, not an import, a JSX
  * block or a heading. Markdown emphasis is dropped; inline code is kept.
+ * The placeholder some docs carry is no description.
  */
 export function readDescription(mdx) {
   const lines = mdx.split("\n");
@@ -109,514 +136,175 @@ export function readDescription(mdx) {
     }
     paragraph.push(trimmed);
   }
-  return paragraph
+  const text = paragraph
     .join(" ")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/(^|[^*])\*([^*]+)\*/g, "$1$2");
+  return PLACEHOLDER.test(text) ? "" : text;
 }
 
-function dedent(code) {
-  const lines = code.replace(/^\n+|\s+$/g, "").split("\n");
-  const indent = Math.min(
-    ...lines
-      .filter((line) => line.trim())
-      .map((line) => line.match(/^\s*/)[0].length),
+/**
+ * The first paragraph of the doc comment on the declaration named `name` in
+ * a component's source: `const Name = …`, `function Name`, `class Name`.
+ */
+export function readDocComment(source, name) {
+  const file = ts.createSourceFile(
+    "component.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
   );
-  return lines
-    .map((line) => line.slice(Number.isFinite(indent) ? indent : 0))
-    .join("\n");
-}
-
-/** The PlatformSnippets block's code, per platform, from an mdx source. */
-/** A fenced block's language, as the platform whose code it is. */
-const FENCED_PLATFORM = {
-  tsx: "react",
-  jsx: "react",
-  swift: "swift",
-  kotlin: "kotlin",
-  kt: "kotlin",
-};
-
-/**
- * A component's code on each platform, from its docs: the PlatformSnippets
- * block, and failing that, the first fenced block in each platform's language
- * (some docs show their code under headings instead: "## iOS SwiftUI").
- */
-export function readSnippets(mdx) {
-  const snippets = {};
-  for (const match of mdx.matchAll(
-    /\b(react|vue|swift|kotlin)=\{`([\s\S]*?)`\}/g,
-  )) {
-    const [, platform, code] = match;
-    if (!(platform in snippets)) snippets[platform] = dedent(code);
+  for (const statement of file.statements) {
+    const named =
+      (ts.isVariableStatement(statement) &&
+        statement.declarationList.declarations.some(
+          (declaration) =>
+            ts.isIdentifier(declaration.name) && declaration.name.text === name,
+        )) ||
+      ((ts.isFunctionDeclaration(statement) ||
+        ts.isClassDeclaration(statement)) &&
+        statement.name?.text === name);
+    if (!named) continue;
+    const text = ts
+      .getJSDocCommentsAndTags(statement)
+      .filter((doc) => ts.isJSDoc(doc))
+      .map((doc) =>
+        typeof doc.comment === "string"
+          ? doc.comment
+          : ts.getTextOfJSDocComment(doc.comment),
+      )
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    return text.split("\n\n")[0].replace(/\s*\n\s*/g, " ");
   }
-  for (const match of mdx.matchAll(/^```(\w+)[^\n]*\n([\s\S]*?)^```/gm)) {
-    const platform = FENCED_PLATFORM[match[1]];
-    if (platform && !(platform in snippets))
-      snippets[platform] = match[2].trimEnd();
-  }
-  return snippets;
+  return "";
 }
 
-/** A folder's component sources: the .tsx files, not its stories, tests, mappings or barrel. */
-function sourceFilesOf(directory) {
-  return fs
-    .readdirSync(directory)
-    .filter(
-      (name) =>
-        /\.tsx$/.test(name) && !/\.(stories|test|spec|figma)\.tsx$/.test(name),
-    )
-    .map((name) => path.join(directory, name));
+// ---- Where each component is in Storybook ----------------------------------
+
+/** Storybook's own `sanitize` (storybook/internal/csf): a title or a name as part of an id. */
+export function sanitize(string) {
+  return string
+    .toLowerCase()
+    .replace(/[ ’–—―′¿'`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
 }
 
-/** A React component's name, as opposed to a helper (`buttonVariants`) or a constant (`BUTTON_EMOTIONS`). */
-export function isComponentName(name) {
-  return /^[A-Z][A-Za-z0-9]*$/.test(name) && !/^[A-Z0-9_]+$/.test(name);
+/** Storybook's `storyNameFromExport`: `InTheSearchRow` → `In The Search Row`. */
+export function storyNameFromExport(key) {
+  return key
+    .replace(/_/g, " ")
+    .replace(/-/g, " ")
+    .replace(/\./g, " ")
+    .replace(/([^\n])([A-Z])([a-z])/g, (_, a, b, c) => `${a} ${b}${c}`)
+    .replace(/([a-z])([A-Z])/g, (_, a, b) => `${a} ${b}`)
+    .replace(/([a-z])([0-9])/gi, (_, a, b) => `${a} ${b}`)
+    .replace(/([0-9])([a-z])/gi, (_, a, b) => `${a} ${b}`)
+    .replace(/(\s|^)(\w)/g, (_, a, b) => `${a}${b.toUpperCase()}`)
+    .replace(/ +/g, " ")
+    .trim();
 }
 
-/** The runtime export names of the built package, so a part is something a consumer can import. */
-export async function readPackageExports() {
-  const module = await import(pathToFileURL(REACT_PACKAGE).href);
-  return new Set(Object.keys(module));
-}
-
-// ---- Props, through the TypeScript compiler --------------------------------
-
-function hasExportModifier(node) {
-  return Boolean(ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export);
-}
-
-function jsDocOf(node) {
-  const docs = ts.getJSDocCommentsAndTags(node);
-  const texts = docs
-    .filter((doc) => ts.isJSDoc(doc))
-    .map((doc) =>
-      typeof doc.comment === "string"
-        ? doc.comment
-        : ts.getTextOfJSDocComment(doc.comment),
-    )
-    .filter(Boolean);
-  return texts.join("\n").trim();
+/** The stories file a component's docs attach to, from `<Meta of={X} />` and X's import. */
+export function attachedStories(mdx) {
+  const of = mdx.match(/<Meta\s+of=\{(\w+)\}/)?.[1];
+  if (!of) return null;
+  const from = mdx.match(
+    new RegExp(`import\\s+\\*\\s+as\\s+${of}\\s+from\\s+["']([^"']+)["']`),
+  )?.[1];
+  return from ?? null;
 }
 
 /**
- * Where a property was declared: the repository's own source, a Radix
- * primitive the part wraps (worth showing, marked), or the DOM's attribute
- * types and other libraries (left out: every element takes those).
+ * A stories file's title and its first story's export. The title is the
+ * meta's `title: "Group/Name"`; a file without one written out cannot be
+ * linked, and says so rather than linking somewhere wrong.
  */
-function originOf(symbol) {
-  const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0];
-  if (!declaration) return { keep: false };
-  const file = declaration.getSourceFile().fileName;
-  if (!file.includes("/node_modules/"))
-    return { keep: true, declaration, source: null };
-  const radix = file.match(/node_modules\/(@radix-ui\/[^/]+)/);
-  if (radix) return { keep: true, declaration, source: radix[1] };
-  return { keep: false };
+export function readStories(source, file) {
+  const title = source.match(/\btitle:\s*(["'])([^"'\n]+\/[^"'\n]+)\1/)?.[2];
+  if (!title) throw new Error(`${file}: no "Group/Name" title in its meta`);
+  const first = source.match(/^export const (\w+)/m)?.[1] ?? null;
+  return { title, first };
 }
 
 /**
- * A prop's type as one line. A union of literals is spelled out (`"sm" |
- * "lg"`), which is what a reader wants from an alias like `SurfaceVariant`;
- * anything else is the source text where there is one, which keeps names
- * like `ReactNode`, or the checker's own rendering.
+ * The `path` Storybook's address takes for a component: its docs page,
+ * `/docs/<title>--docs`, when its .mdx attaches to its stories; otherwise its
+ * first story, `/story/<title>--<story>`; `null` when it has no stories,
+ * which only a component that is not on the web yet can lack.
  */
-export function typeTextOf(checker, type, declaration) {
-  if (type.flags & ts.TypeFlags.Boolean) return "boolean";
-  if (type.isUnion()) {
-    const parts = type.types.filter(
-      (part) => !(part.flags & ts.TypeFlags.Undefined),
-    );
-    const booleans = parts.filter(
-      (part) => part.flags & ts.TypeFlags.BooleanLiteral,
-    );
-    const nulls = parts.filter((part) => part.flags & ts.TypeFlags.Null);
-    const literals = parts.filter((part) => part.isLiteral());
-    if (
-      parts.length &&
-      booleans.length + literals.length + nulls.length === parts.length
-    ) {
-      const names = literals.map((part) =>
-        typeof part.value === "string" ? `"${part.value}"` : String(part.value),
+export function storybookPathOf(name) {
+  const directory = path.join(COMPONENTS_DIR, name);
+  const mdxPath = path.join(directory, `${name}.mdx`);
+  const mdx = fs.existsSync(mdxPath) ? fs.readFileSync(mdxPath, "utf8") : "";
+  const attached = attachedStories(mdx);
+  const storiesPath = attached
+    ? path.resolve(
+        directory,
+        attached.endsWith(".tsx") ? attached : `${attached}.tsx`,
+      )
+    : path.join(directory, `${name}.stories.tsx`);
+  if (!fs.existsSync(storiesPath)) {
+    // Docs that attach to a file that is not there are broken docs.
+    if (attached) {
+      throw new Error(
+        `${name}: its docs attach to ${path.relative(REPO_ROOT, storiesPath)}, which does not exist`,
       );
-      if (booleans.length === 2) names.push("boolean");
-      else if (booleans.length === 1)
-        names.push(checker.typeToString(booleans[0]));
-      if (nulls.length) names.push("null");
-      return names.join(" | ");
     }
+    return null;
   }
-  if (declaration && ts.isPropertySignature(declaration) && declaration.type) {
-    return declaration.type.getText().replace(/\s+/g, " ");
-  }
-  const nonUndefined = type.isUnion()
-    ? type.types.filter((part) => !(part.flags & ts.TypeFlags.Undefined))
-    : null;
-  if (nonUndefined && nonUndefined.length === 1) {
-    return checker.typeToString(
-      nonUndefined[0],
-      undefined,
-      ts.TypeFormatFlags.NoTruncation,
-    );
-  }
-  return checker
-    .typeToString(type, undefined, ts.TypeFormatFlags.NoTruncation)
-    .replace(/ \| undefined$/, "");
+  const { title, first } = readStories(
+    fs.readFileSync(storiesPath, "utf8"),
+    path.relative(REPO_ROOT, storiesPath),
+  );
+  if (attached) return `/docs/${sanitize(title)}--docs`;
+  if (!first) return null;
+  return `/story/${sanitize(title)}--${sanitize(storyNameFromExport(first))}`;
 }
 
-/**
- * A default as the props table shows it: a string in double quotes, as the
- * type column writes a string's type, and anything else as it is written.
- */
-function defaultText(node, sourceFile) {
-  return ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)
-    ? JSON.stringify(node.text)
-    : node.getText(sourceFile).replace(/\s+/g, " ");
-}
+// ---- The whole index ------------------------------------------------------
 
-/** `const xVariants = cva(base, { defaultVariants: {...} })`: the defaults, by variant name. */
-function cvaDefaultsOf(sourceFile) {
-  const defaults = new Map();
-  const unquote = (text) => text.replace(/^["']|["']$/g, "");
-  const visit = (node) => {
-    if (
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === "cva" &&
-      node.arguments[1] &&
-      ts.isObjectLiteralExpression(node.arguments[1])
-    ) {
-      for (const property of node.arguments[1].properties) {
-        if (
-          ts.isPropertyAssignment(property) &&
-          property.name.getText(sourceFile) === "defaultVariants" &&
-          ts.isObjectLiteralExpression(property.initializer)
-        ) {
-          for (const entry of property.initializer.properties) {
-            if (ts.isPropertyAssignment(entry)) {
-              defaults.set(
-                unquote(entry.name.getText(sourceFile)),
-                defaultText(entry.initializer, sourceFile),
-              );
-            }
-          }
-        }
-      }
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
-  return defaults;
-}
-
-/** Defaults from destructuring: `({ size = "md", ...props })` anywhere in the file. */
-function destructuringDefaultsOf(sourceFile) {
-  const defaults = new Map();
-  const visit = (node) => {
-    if (
-      ts.isBindingElement(node) &&
-      node.initializer &&
-      ts.isIdentifier(node.name)
-    ) {
-      const key = node.propertyName
-        ? node.propertyName.getText(sourceFile)
-        : node.name.text;
-      if (!defaults.has(key)) {
-        defaults.set(key, defaultText(node.initializer, sourceFile));
-      }
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
-  return defaults;
-}
-
-/** Exported component declarations in a file, by name: the statement and the node that carries its type. */
-function declarationsOf(sourceFile, checker) {
-  const found = new Map();
-  for (const statement of sourceFile.statements) {
-    if (ts.isVariableStatement(statement) && hasExportModifier(statement)) {
-      for (const declaration of statement.declarationList.declarations) {
-        if (ts.isIdentifier(declaration.name))
-          found.set(declaration.name.text, { statement, declaration });
-      }
-    } else if (
-      ts.isFunctionDeclaration(statement) &&
-      statement.name &&
-      hasExportModifier(statement)
-    ) {
-      found.set(statement.name.text, { statement, declaration: statement });
-    } else if (
-      ts.isExportDeclaration(statement) &&
-      statement.exportClause &&
-      ts.isNamedExports(statement.exportClause)
-    ) {
-      for (const element of statement.exportClause.elements) {
-        if (statement.moduleSpecifier) {
-          // `export { X } from "../Other/Other"`: a folder that re-exports a
-          // part declared elsewhere (DateRangePicker lives in DatePicker.tsx).
-          const target = checker.getExportSpecifierLocalTargetSymbol(element);
-          const resolved =
-            target && target.flags & ts.SymbolFlags.Alias
-              ? checker.getAliasedSymbol(target)
-              : target;
-          const declaration = resolved?.declarations?.find(
-            (node) =>
-              ts.isVariableDeclaration(node) || ts.isFunctionDeclaration(node),
-          );
-          if (declaration) {
-            const owner = ts.isVariableDeclaration(declaration)
-              ? declaration.parent.parent
-              : declaration;
-            found.set(element.name.text, { statement: owner, declaration });
-          }
-          continue;
-        }
-        // `export { X }` after `const X = …`: find the declaration it names.
-        const local = (element.propertyName ?? element.name).text;
-        for (const other of sourceFile.statements) {
-          if (ts.isVariableStatement(other)) {
-            for (const declaration of other.declarationList.declarations) {
-              if (
-                ts.isIdentifier(declaration.name) &&
-                declaration.name.text === local
-              ) {
-                found.set(element.name.text, { statement: other, declaration });
-              }
-            }
-          } else if (
-            ts.isFunctionDeclaration(other) &&
-            other.name?.text === local
-          ) {
-            found.set(element.name.text, {
-              statement: other,
-              declaration: other,
-            });
-          }
-        }
-      }
-    }
-  }
-  return found;
-}
-
-/**
- * The props type of a component: the second type argument of
- * `React.forwardRef<E, P>`, the argument of `React.FC<P>`, or the first
- * parameter's type of a function or arrow function.
- */
-function propsTypeOf(checker, declaration) {
-  const fromNode = (node) =>
-    node ? checker.getTypeFromTypeNode(node) : undefined;
-  if (ts.isFunctionDeclaration(declaration)) {
-    return fromNode(declaration.parameters[0]?.type);
-  }
-  if (
-    declaration.type &&
-    ts.isTypeReferenceNode(declaration.type) &&
-    declaration.type.typeArguments?.[0]
-  ) {
-    return fromNode(declaration.type.typeArguments[0]);
-  }
-  let initializer = declaration.initializer;
-  while (
-    initializer &&
-    (ts.isAsExpression(initializer) ||
-      ts.isParenthesizedExpression(initializer))
-  ) {
-    initializer = initializer.expression;
-  }
-  if (!initializer) return undefined;
-  // `export const DateRangePicker = SomeOtherComponent`: follow the alias.
-  if (
-    ts.isIdentifier(initializer) ||
-    ts.isPropertyAccessExpression(initializer)
-  ) {
-    const symbol = checker.getSymbolAtLocation(initializer);
-    const target =
-      symbol && symbol.flags & ts.SymbolFlags.Alias
-        ? checker.getAliasedSymbol(symbol)
-        : symbol;
-    const aliased = target?.declarations?.find(
-      (node) =>
-        ts.isVariableDeclaration(node) || ts.isFunctionDeclaration(node),
-    );
-    return aliased ? propsTypeOf(checker, aliased) : undefined;
-  }
-  if (ts.isCallExpression(initializer)) {
-    if (initializer.typeArguments?.[1])
-      return fromNode(initializer.typeArguments[1]);
-    // forwardRef((props: P, ref) => …) or memo((props: P) => …) without type arguments.
-    const inner = initializer.arguments[0];
-    if (
-      inner &&
-      (ts.isArrowFunction(inner) || ts.isFunctionExpression(inner))
-    ) {
-      return fromNode(inner.parameters[0]?.type);
-    }
-    return undefined;
-  }
-  if (ts.isArrowFunction(initializer) || ts.isFunctionExpression(initializer)) {
-    return fromNode(initializer.parameters[0]?.type);
-  }
-  return undefined;
-}
-
-function compilerOptions() {
-  const config = ts.readConfigFile(REACT_TSCONFIG, ts.sys.readFile);
-  if (config.error)
+export function generate(report = readStatusReport()) {
+  const known = new Set(Object.keys(LANES));
+  const unknown = report.lanes.filter((lane) => !known.has(lane.id));
+  if (unknown.length) {
     throw new Error(
-      ts.flattenDiagnosticMessageText(config.error.messageText, "\n"),
+      `The status script has lanes the site does not name: ${unknown.map((lane) => lane.id).join(", ")}`,
     );
-  return ts.parseJsonConfigFileContent(
-    config.config,
-    ts.sys,
-    path.dirname(REACT_TSCONFIG),
-  ).options;
-}
-
-/**
- * The parts of every file, with their props: a map from file path to a list
- * of { name, description, props }. A prop is kept when the repository or a
- * Radix primitive declares it; the DOM's attributes are left out.
- */
-export function readParts(files, packageExports) {
-  const program = ts.createProgram(files, compilerOptions());
-  const checker = program.getTypeChecker();
-  const byFile = new Map();
-  for (const file of files) {
-    const sourceFile = program.getSourceFile(file);
-    if (!sourceFile) continue;
-    const defaults = destructuringDefaultsOf(sourceFile);
-    const cvaDefaults = cvaDefaultsOf(sourceFile);
-    const parts = [];
-    for (const [name, { statement, declaration }] of declarationsOf(
-      sourceFile,
-      checker,
-    )) {
-      if (!isComponentName(name) || !packageExports.has(name)) continue;
-      const type = propsTypeOf(checker, declaration);
-      const props = [];
-      if (type) {
-        // A union props type (RouteSummary's estimate or navigation form) lists
-        // every member's props; one is required only if every member requires it.
-        const members = type.isUnion() ? type.types : [type];
-        const byName = new Map();
-        for (const member of members) {
-          for (const symbol of checker.getPropertiesOfType(member)) {
-            const origin = originOf(symbol);
-            if (!origin.keep) continue;
-            const name = symbol.getName();
-            const required = !(symbol.flags & ts.SymbolFlags.Optional);
-            const propType = checker.getTypeOfSymbolAtLocation(
-              symbol,
-              origin.declaration,
-            );
-            const existing = byName.get(name);
-            if (existing) {
-              existing.required = existing.required && required;
-              existing.seen += 1;
-              // A discriminator declared `undefined` in one form: show the other's type.
-              if (existing.type === "undefined")
-                existing.type = typeTextOf(
-                  checker,
-                  propType,
-                  origin.declaration,
-                );
-              continue;
-            }
-            byName.set(name, {
-              name,
-              type: typeTextOf(checker, propType, origin.declaration),
-              required,
-              seen: 1,
-              defaultValue: defaults.get(name) ?? cvaDefaults.get(name) ?? null,
-              description: ts
-                .displayPartsToString(symbol.getDocumentationComment(checker))
-                .trim(),
-              source: origin.source,
-            });
-          }
-        }
-        for (const prop of byName.values()) {
-          if (prop.seen < members.length) prop.required = false;
-          delete prop.seen;
-          props.push(prop);
-        }
-      }
-      props.sort((a, b) => a.name.localeCompare(b.name));
-      parts.push({ name, description: jsDocOf(statement), props });
-    }
-    byFile.set(file, parts);
   }
-  return byFile;
-}
-
-// ---- The whole reference ----------------------------------------------------
-
-export async function generate() {
-  const sets = readLaneSets(fs.readFileSync(STATUS_SCRIPT, "utf8"));
-  const packageExports = await readPackageExports();
-  const names = fs
-    .readdirSync(COMPONENTS_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && !sets.internal.has(entry.name))
-    .map((entry) => entry.name)
+  const components = [...report.components]
     // One fixed locale, so every machine writes the same order.
-    .sort((a, b) => a.localeCompare(b, "en"));
-
-  const allFiles = names.flatMap((name) =>
-    sourceFilesOf(path.join(COMPONENTS_DIR, name)),
-  );
-  const partsByFile = readParts(allFiles, packageExports);
-
-  const components = names.map((name) => {
-    const directory = path.join(COMPONENTS_DIR, name);
-    const mdxPath = path.join(directory, `${name}.mdx`);
-    const mdx = fs.existsSync(mdxPath) ? fs.readFileSync(mdxPath, "utf8") : "";
-    const seen = new Set();
-    const parts = sourceFilesOf(directory)
-      .flatMap((file) => partsByFile.get(file) ?? [])
-      .filter((part) => (seen.has(part.name) ? false : seen.add(part.name)))
-      .sort((a, b) =>
-        a.name === name
-          ? -1
-          : b.name === name
-            ? 1
-            : a.name.localeCompare(b.name, "en"),
-      );
-    return {
-      name,
-      slug: slugOf(name),
-      lane: laneOf(name, sets),
-      // The docs' first paragraph; failing that, the component's own doc comment.
-      description:
-        readDescription(mdx) ||
-        parts
-          .find((part) => part.name === name)
-          ?.description.split("\n\n")[0] ||
-        "",
-      snippets: readSnippets(mdx),
-      parts,
-    };
-  });
-
+    .sort((a, b) => a.name.localeCompare(b.name, "en"))
+    .map((status) => {
+      // A component found only on a native platform has no React folder,
+      // so no docs and no stories: its page says where it is, and no more.
+      const directory = path.join(COMPONENTS_DIR, status.name);
+      const onTheWeb = fs.existsSync(directory);
+      const read = (file) =>
+        fs.existsSync(path.join(directory, file))
+          ? fs.readFileSync(path.join(directory, file), "utf8")
+          : "";
+      return {
+        name: status.name,
+        slug: slugOf(status.name),
+        lane: status.lane,
+        description:
+          readDescription(read(`${status.name}.mdx`)) ||
+          readDocComment(read(`${status.name}.tsx`), status.name),
+        storybook: onTheWeb ? storybookPathOf(status.name) : null,
+        platforms: platformsOf(status),
+      };
+    });
   return {
-    index: {
-      lanes: LANES,
-      components: components.map(
-        ({ name, slug, lane, description, parts, snippets }) => ({
-          name,
-          slug,
-          lane,
-          description,
-          exports: parts.map((part) => part.name),
-          // Which platforms' code the docs carry, so the index can count them.
-          code: ["react", "swift", "kotlin"].filter(
-            (platform) => platform in snippets,
-          ),
-        }),
-      ),
-    },
+    lanes: Object.fromEntries(
+      report.lanes.map((lane) => [
+        lane.id,
+        { title: LANES[lane.id], description: lane.description },
+      ]),
+    ),
     components,
   };
 }
@@ -632,7 +320,7 @@ function writeIfChanged(file, content, check) {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const check = process.argv.includes("--check");
-  const { index, components } = await generate();
+  const index = generate();
   const changed = [];
   const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
   if (
@@ -651,21 +339,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   ) {
     changed.push("contrast-contract.json");
   }
-  for (const component of components) {
-    const file = path.join(OUT_DIR, "components", `${component.slug}.json`);
-    if (writeIfChanged(file, json(component), check))
-      changed.push(path.basename(file));
-  }
-  // Drop files for components that no longer exist.
+  // One file per component was the reference's; the index is all there is.
   const componentsDir = path.join(OUT_DIR, "components");
   if (fs.existsSync(componentsDir)) {
-    const expected = new Set(components.map((c) => `${c.slug}.json`));
-    for (const name of fs.readdirSync(componentsDir)) {
-      if (!expected.has(name)) {
-        if (!check) fs.rmSync(path.join(componentsDir, name));
-        changed.push(`- ${name}`);
-      }
-    }
+    if (!check) fs.rmSync(componentsDir, { recursive: true });
+    changed.push("- components/");
   }
   if (check && changed.length) {
     console.error(
@@ -673,7 +351,18 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
     );
     process.exit(1);
   }
+  const counts = Object.entries(
+    index.components.reduce((totals, component) => {
+      for (const [platform, state] of Object.entries(component.platforms)) {
+        if (state === "implemented" || state === "linked")
+          totals[platform] = (totals[platform] ?? 0) + 1;
+      }
+      return totals;
+    }, {}),
+  )
+    .map(([platform, count]) => `${platform} ${count}`)
+    .join(", ");
   console.log(
-    `generate-reference: ${components.length} components, ${components.reduce((n, c) => n + c.parts.length, 0)} parts${changed.length ? `, ${changed.length} file(s) written` : ", unchanged"}.`,
+    `generate-reference: ${index.components.length} components (${counts})${changed.length ? `, ${changed.length} file(s) written` : ", unchanged"}.`,
   );
 }

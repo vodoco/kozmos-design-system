@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import {
   AdaptiveMapShell,
   Box,
@@ -8,23 +8,25 @@ import {
   CardHeader,
   CardTitle,
   MapView,
+  SegmentedControl,
   Slider,
   Stack,
   Surface,
   Switch,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Tag,
   Text,
   ThemeProvider,
 } from "@kozmos-ds/react";
-import button from "../generated/components/button.json";
 import contract from "../generated/contrast-contract.json";
 import { contrastRatio, formatRatio, parseColour } from "../lib/contrast";
 import { ramp, token } from "../lib/tokens";
-import { CodeBlock } from "../site/CodeBlock";
+import {
+  componentIndex,
+  countOn,
+  platformLabel,
+  platformOrder,
+} from "../reference/nav";
+import type { Platform } from "../reference/types";
 import { SiteLink } from "../site/links";
 
 function Tile({
@@ -195,47 +197,65 @@ export function AdaptiveTile() {
   );
 }
 
-const platforms = [
-  { value: "react", label: "React", file: "Button.tsx" },
-  { value: "swift", label: "SwiftUI", file: "Button.swift" },
-  { value: "kotlin", label: "Compose", file: "Button.kt" },
-] as const;
-
+/**
+ * How far each platform has come, from the same data as the components page:
+ * the repository's status script, which finds each component's files. A
+ * platform's count is of the components it could have (Figma is not
+ * expected to have a provider or a typography primitive), and the names are
+ * the ones it does not have yet.
+ */
 export function PlatformsTile() {
-  const snippets = button.snippets as Partial<
-    Record<(typeof platforms)[number]["value"], string>
-  >;
+  const [platform, setPlatform] = useState<Platform>("swiftui");
+  const { present, expected } = countOn(platform);
+  const missing = componentIndex.components.filter(
+    (component) => component.platforms[platform] === "not-yet",
+  );
+  const where =
+    platform === "figma" ? "linked in Figma" : `in ${platformLabel[platform]}`;
   return (
     <Tile
       span={4}
-      title="Three platforms, one part"
-      description="The same Button in React, SwiftUI and Jetpack Compose, from the component’s own documentation."
+      title="Every part, on every platform"
+      description="Which components exist in React, SwiftUI and Compose, and which Code Connect links in Figma, counted from the repository. Pick one."
     >
-      <Tabs defaultValue="react">
-        <TabsList aria-label="Platform">
-          {platforms.map((platform) => (
-            <TabsTrigger key={platform.value} value={platform.value}>
-              {platform.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {platforms.map((platform) => (
-          <TabsContent key={platform.value} value={platform.value}>
-            {snippets[platform.value] ? (
-              <CodeBlock
-                label={platform.file}
-                code={snippets[platform.value] ?? ""}
-              />
-            ) : (
-              <Text size="sm" color="muted">
-                No {platform.label} snippet in the docs.
-              </Text>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+      <SegmentedControl
+        aria-label="Platform"
+        size="sm"
+        fullWidth
+        value={platform}
+        onValueChange={(value) => {
+          if (value) setPlatform(value as Platform);
+        }}
+        items={platformOrder.map((entry) => ({
+          value: entry,
+          label: platformLabel[entry],
+        }))}
+      />
+      <Stack gap={1} aria-live="polite">
+        <Text weight="semibold">
+          {present} of {expected} components {where}
+        </Text>
+        <Text size="sm" color="muted">
+          {missing.length === 0 ? (
+            "Every one of them."
+          ) : (
+            <>
+              Not yet:{" "}
+              {missing.map((component, index) => (
+                <Fragment key={component.slug}>
+                  {index > 0 ? ", " : null}
+                  <SiteLink to={`/components/${component.slug}`}>
+                    {component.name}
+                  </SiteLink>
+                </Fragment>
+              ))}
+              .
+            </>
+          )}
+        </Text>
+      </Stack>
       <Text size="sm">
-        <SiteLink to="/components/button">The Button, in full</SiteLink>
+        <SiteLink to="/components">Every component, by platform</SiteLink>
       </Text>
     </Tile>
   );
