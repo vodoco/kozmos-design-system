@@ -15,7 +15,8 @@ pastes into a new chat; the chat then reads this file and does the work.
 >
 > Run the brief's preconditions first and tell me which hold. Then deliver, in order: the
 > normalised stories with their defects and questions; the screen inventory mapped to Kozmos with
-> a verdict per part; the flows; the Figma file; the functional prototype; the handoff document.
+> a verdict per part; the flows; the Figma file; the functional prototype and its README; the
+> session's handoff, in `.notes/` and never committed.
 > Where the design system cannot express something, report it and place a labelled gap — never
 > work around it. Ask decisions as short multiple-choice questions, recommended option first, and
 > proceed on your recommendation for anything that does not change the screen inventory. No push,
@@ -33,8 +34,9 @@ engineering team can act on, **using the Kozmos design system as it is**:
 2. every screen and state the stories imply, mapped part by part to Kozmos components;
 3. the user flows, as diagrams and as a walkable Figma prototype;
 4. a Figma design file composed from the Core Library's components;
-5. a functional prototype built from `@kozmos-ds/react` with mock data, that the flows drive;
-6. a handoff document that carries all of it, plus the gaps the design system has.
+5. a functional prototype built from `@kozmos-ds/react` with mock data, that the flows drive, with
+   a README beside it that says what it is, how to run it and the gaps it found;
+6. a handoff for the next session, which stays out of the repository (§5.6).
 
 The gaps are a deliverable, not a failure. The rule that makes this exercise worth anything is the
 one every Kozmos example follows: **only what the design system exports, its tokens and its
@@ -135,8 +137,9 @@ for the Figma part only; the rest of the work continues regardless.
 
 ## 5 · The work, in phases
 
-Each phase ends with a short message: what it produced, what it found, what it needs. Findings go
-in the handoff document as they are made, not reconstructed at the end.
+Each phase ends with a short message: what it produced, what it found, what it needs. Findings are
+written down as they are made, not reconstructed at the end: the gaps in the prototype's README,
+everything else in the handoff (§5.6).
 
 ### 5.1 · Read and normalise the stories
 
@@ -198,9 +201,9 @@ another floor). Each flow starts at an entry the story names and ends at its goa
 
 Three forms, which must agree because they share the node names:
 
-1. **Mermaid** in the handoff document — always.
+1. **Mermaid** in the prototype's README (§5.6) — always.
 2. **A FigJam board** through `generate_diagram` — when write access holds (load
-   `figma:figma-generate-diagram` first). Linked from the handoff.
+   `figma:figma-generate-diagram` first). Linked from the README.
 3. **The Figma prototype's reactions** (§5.4), which make the main path of each flow walkable.
 
 The functional prototype's state machine (§5.5) uses the same edge names, so a flow diagram, the
@@ -239,7 +242,7 @@ Connect pins the old ones. Load `figma:figma-create-new-file` before `create_new
 
 If a story needs a component the library does not have, the Figma answer is the gap placeholder —
 not a new component drawn in the product file. A component change is a design-system PR, proposed
-in the handoff, never made in passing.
+with its gap in the prototype's README, never made in passing.
 
 ### 5.5 · The functional prototype
 
@@ -262,7 +265,8 @@ click-through; this is where behaviour lives.
   app and serve `dist`, or the wrong tree is being reviewed), then: `read_console_messages`
   clean; axe on every screen (`@axe-core/playwright` is in the repo); widths 320, 390, 1024 and
   1440 where the target is the web; dark mode; a keyboard walk of each flow. Screenshots to
-  `apps/<slug>-prototype/screenshots/`, referenced from the handoff.
+  `.notes/<slug>-screenshots/`, beside the handoff: they are the session's proof, not part of the
+  app.
 - **A flow test** under the app (`scripts/` or `tests/`, Playwright): each flow's edges as steps.
   Break one route on purpose and run it once so it is seen to fail; then fix and run it green. A
   green that never failed proves nothing.
@@ -274,36 +278,49 @@ click-through; this is where behaviour lives.
 
 Gates before calling the prototype done: `pnpm --filter <app> typecheck`, `pnpm --filter <app>
 lint`, `pnpm --filter <app> build`, the flow test, and the repo's own — at least
-`pnpm components:contract:check`, `pnpm docs:snippets:check` (the handoff's snippets must type-
-check) and `pnpm components:classes:check` after a build if any package changed. None should
-change, because this brief changes no package; if one does, that is a finding.
+`pnpm components:contract:check`, `pnpm docs:snippets:check` and `pnpm components:classes:check`
+after a build if any package changed. None should change, because this brief changes no package;
+if one does, that is a finding.
 
-### 5.6 · The handoff document
+### 5.6 · The README and the handoff
 
-`apps/<slug>-prototype/HANDOFF.md`, beside the prototype it describes: dated handoffs and session
-notes do not go in `docs/`. Written for two readers at once: the person who will build this for
-real, and the person who will change the prototype or the Figma file themselves — so every number
-carries the command that measured it, and every change carries how to redo it by hand.
+Two documents, in two places. Session notes and handoffs are never committed: they go in the
+git-ignored `.notes/`, and nothing dated or session-shaped goes in `docs/` or anywhere else tracked.
 
-1. **The one-paragraph answer**: what the stories asked for, what the design system covers, the
-   count of covered / partial / missing parts, the one or two gaps that matter most.
+**`apps/<slug>-prototype/README.md` is committed with the prototype.** It is durable: it stays
+true for as long as the app does, and it is what someone who finds the app reads. It says three
+things, and only these:
+
+1. **What it is**: one paragraph on what the stories asked for, what the design system covers, the
+   count of covered / partial / missing parts and the one or two gaps that matter most; the
+   screens, each with its route, its states and its Figma frame link; the flows, as Mermaid, with
+   the FigJam link.
+2. **How to run it**: the commands, the launch entry, the gates and the flow test; where each
+   screen, fixture and flow lives, and the one-line recipe for the common edits.
+3. **The gaps it found**: each `GAP-nn` with the four things of §5.2 and a **proposed DS change** —
+   the lane, the size, whether it is a new axis on an existing set or a new component — as PR
+   candidates, not as work done here.
+
+**The session's handoff is `.notes/<slug>-handoff.md` in the main checkout**, that is
+`/Volumes/4TB Depo/development/K/kozmos-design-system-dev/.notes/` (§2 case A). It is never
+committed, and never written in the worktree, which does not outlive the session. It is for the
+next session and for whoever builds this for real, and it carries what the README does not:
+
+1. **Where it stands**: the branch and its commits, what was built, what was not and why.
 2. **The stories** (§5.1's table) and their **defects and questions**.
-3. **The screens**: the inventory, each with its Figma frame link, its route, its states.
-4. **The flows**: Mermaid, the FigJam link, the reactions read back.
-5. **Component usage**: per screen, per part — component, props, variant, verdict, gap number.
-6. **The gap list**: `GAP-nn`, the four things, and a **proposed DS change** for each — the lane,
-   the size, whether it is a new axis on an existing set or a new component — as PR candidates,
-   not as work done here.
-7. **Decisions taken** and the alternative not taken, one line each; **open questions** for Olcay
+3. **Component usage**: per screen, per part — component, props, variant, verdict, gap number.
+4. **The Figma prototype's reactions**, read back (§5.4), or the Figma specification when write
+   access was missing (§4 item 1).
+5. **Decisions taken** and the alternative not taken, one line each; **open questions** for Olcay
    as multiple choice, recommended first.
-8. **For engineering**: per screen the props and contracts, the copy as a table (every string,
+6. **For engineering**: per screen the props and contracts, the copy as a table (every string,
    its screen, its state), the states and transitions, the accessibility notes (names, roles,
    focus order, what is announced).
-9. **How to run and check it**: the commands, the launch entry, the gates and their outputs.
-10. **How to change it yourself**: where each screen, fixture, flow and Figma page lives, and the
-    one-line recipe for the common edits.
-11. **What was not done and why**, and **the traps met**.
-12. **The proof**: the screenshots, the gate outputs, the counts.
+7. **The traps met.**
+8. **The proof**: the gate outputs, the counts, and the screenshots in `.notes/<slug>-screenshots/`.
+
+Both are written for someone who will change things themselves: every number carries the command
+that measured it, and every change carries how to redo it by hand.
 
 ## 6 · Rules in force — do not relax them
 
@@ -311,7 +328,7 @@ carries the command that measured it, and every change carries how to redo it by
   part is a labelled gap, reported and asked about; never approximated, never deferred silently.
   A partial is built and its deviation recorded.
 - **The Core Library is read-only in this work.** No edits, no Rebuild, no page added to it. The
-  design lives in a new file; the system's changes are PR candidates in the handoff.
+  design lives in a new file; the system's changes are PR candidates in the README's gap list.
 - **The system's settled decisions are not reopened**: the roles (radius, border, elevation), the
   `emotion` axis, the brand colour at `theme/500`, the lanes (Core is domain-neutral; Product / SDK
   compositions are examples), the slot rule (only a `SLOT` node carries a slot binding), and the
@@ -341,16 +358,19 @@ Done when every item below is true or is named as not done, with the reason:
 - [ ] the flows exist as Mermaid, and as FigJam and reactions where write access held;
 - [ ] the Figma file exists with instances only, or §5.4 is a specification and the report says so;
 - [ ] the prototype runs, its flow test failed once and passes now, axe and the console are clean,
-      the screenshots are in the repo;
+      the screenshots are beside the handoff;
 - [ ] the gates in §5.5 pass and their output is in the handoff;
-- [ ] the handoff document is in `apps/<slug>-prototype/`, beside the prototype;
+- [ ] `apps/<slug>-prototype/README.md` says what the prototype is, how to run it and the gaps it
+      found;
+- [ ] the handoff is `.notes/<slug>-handoff.md` in the main checkout, and nothing session-shaped
+      is committed;
 - [ ] the self-audit is written and its findings are fixed or listed.
 
 The closing report, in the chat, in this order and nothing else: what was built, with links (the
-Figma file, the FigJam board, the local preview, the handoff path, the branch); what was not built
-and why; the gaps that matter most, by number; the questions, multiple choice, recommended first;
-the exact commands to run it and to check it; the commit(s) on the branch and the one line to push
-them when told. A handoff a new chat can start from is part of done.
+Figma file, the FigJam board, the local preview, the README, the handoff's path, the branch); what
+was not built and why; the gaps that matter most, by number; the questions, multiple choice,
+recommended first; the exact commands to run it and to check it; the commit(s) on the branch and
+the one line to push them when told. A handoff a new chat can start from is part of done.
 
 ## 8 · When this brief is stale
 
