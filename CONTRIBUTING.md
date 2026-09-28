@@ -218,11 +218,12 @@ Fixes #123
    branch and then retargeted to `main` has no `analyze-bundle` or `lighthouse` run, because both
    run only for pull requests into `main`: push to it, or close and reopen it.
 
-   Pull requests merge through a **merge queue**: when one is ready, the checks run again on it
-   combined with the latest `main` (and any pull requests queued ahead of it), and it merges only
-   if they pass, so two pull requests that are each green cannot break `main` together. Join the
-   queue with auto-merge (`gh pr merge <n> --auto`, or "Merge when ready"); `--merge` on its own is
-   refused.
+   A pull request must be **up to date with `main`** to merge, so its checks have run against the
+   `main` it merges into and two pull requests that are each green cannot break `main` together.
+   When `main` moves, update the branch (`gh pr update-branch <n>`, or "Update branch") and the
+   checks run again; auto-merge then merges it once they pass. (A merge queue would do this
+   automatically, but GitHub offers merge queues only to organisations, and this repository belongs
+   to a personal account.)
 
 2. **Code review** by at least one maintainer
 3. **Visual review** for component changes: the "Visual Review" check compares every story with

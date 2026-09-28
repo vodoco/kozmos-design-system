@@ -11,8 +11,6 @@ name: Visual Regression
 # commits them to that branch: the way to accept a change without Docker.
 on:
   pull_request:
-  # Required checks run in the merge queue too (decision 25).
-  merge_group:
   push:
     branches: [main]
   workflow_dispatch:
