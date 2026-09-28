@@ -638,7 +638,7 @@ signal to close its gap. The same
 holds for GAP-20: the search-field test is marked `test.fail` in WebKit
 only, so Playwright reports it the day Kozmos fixes the field.
 
-**Design-system gaps, measured.** Nineteen tests measure what Kozmos draws
+**Design-system gaps, measured.** Twenty tests measure what Kozmos draws
 today. Six of them now measure a fix rather than a defect: the sheet
 handle's 16px row and 40 × 4 grip (GAP-38), the spinner and the skeleton
 resting under the reduced-motion preference (GAP-50, in the states
@@ -657,8 +657,9 @@ its own trail in right to left (GAP-61), MapView's missing isolation
 (GAP-40), CardTitle's 1.0 line height (GAP-42), where a touch 20px from the
 slider's thumb lands (GAP-43), the header's white first paint for a
 dark-mode visitor with the scripts blocked (GAP-03), the two-row header at
-320px (GAP-41), brand variant 1's 4.20:1 (GAP-45) and the map shell's boxes
-cutting the shadows of what they hold (GAP-91). Each measures what a
+320px (GAP-41), brand variant 1's 4.20:1 (GAP-45), the map shell's boxes
+cutting the shadows of what they hold (GAP-91) and a muted `Text` staying
+grey on glass (GAP-94). Each measures what a
 visitor gets, so any honest fix flips it; [`DS-HANDOFF.md`](./DS-HANDOFF.md)
 says what to flip it to. The tests that read a component page's demo — the
 toast with no fill (GAP-58), the island on a black page and without room for
