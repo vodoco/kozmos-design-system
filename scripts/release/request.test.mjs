@@ -6,7 +6,7 @@ import { verifyRequest } from "./verify-request.mjs";
 const sha = execFileSync("git", ["rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
-const repo = "vodoco/kozmos-design-system-";
+const repo = "vodoco/kozmos-design-system";
 const env = {
   GITHUB_ACTIONS: "true",
   GITHUB_EVENT_NAME: "workflow_dispatch",
