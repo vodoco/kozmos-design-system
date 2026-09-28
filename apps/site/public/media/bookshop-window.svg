@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Illustration: the reading corner by the window">
+  <rect width="640" height="400" fill="currentColor" opacity="0.06"/>
+  <g fill="currentColor">
+    <rect x="360" y="40" width="240" height="220" rx="6" opacity="0.14"/>
+    <rect x="474" y="40" width="12" height="220" opacity="0.4"/>
+    <rect x="360" y="144" width="240" height="12" opacity="0.4"/>
+    <rect x="60" y="220" width="200" height="120" rx="16" opacity="0.45"/>
+    <rect x="40" y="200" width="60" height="140" rx="16" opacity="0.55"/>
+    <rect x="220" y="200" width="60" height="140" rx="16" opacity="0.55"/>
+    <rect x="0" y="340" width="640" height="60" opacity="0.25"/>
+    <rect x="300" y="280" width="40" height="60" opacity="0.35"/>
+    <circle cx="320" cy="270" r="22" opacity="0.4"/>
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+/* Phone search: a phone-sized frame on the canvas, with the sheet's detents
+   driven from a toolbar above it. Inside the frame, AdaptiveMapShell lays
+   out the map, the search bar, the controls and the bottom sheet. */
+
+.ex-phone-stage {
+  block-size: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  justify-items: center;
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+  padding: calc(var(--primitives-layout-spacing-300) * 1px);
+  background: var(--primitives-colors-background-50);
+}
+
+.ex-phone-toolbar {
+  display: grid;
+  gap: calc(var(--primitives-layout-spacing-150) * 1px);
+  justify-items: center;
+  max-inline-size: 36rem;
+}
+
+/* A phone's width; the height is what the canvas leaves. */
+.ex-phone {
+  position: relative;
+  inline-size: min(100%, 24.375rem);
+  block-size: 100%;
+  overflow: hidden;
+  /* The map's own corners (MapView is rounded-container), so its edge is the
+     screen's outline. The sheet keeps square bottom corners, which the
+     screen cuts (GAP-53). */
+  border-radius: calc(var(--semantics-radius-container) * 1px);
+  background: var(--primitives-colors-background-0);
+}
+
+.ex-phone-layer {
+  position: absolute;
+  top: var(--kozmos-map-inset-top, 0px);
+  right: var(--kozmos-map-inset-right, 0px);
+  bottom: var(--kozmos-map-inset-bottom, 0px);
+  left: var(--kozmos-map-inset-left, 0px);
+}
+
+.ex-phone-pin {
+  position: absolute;
+  left: var(--pin-x);
+  top: var(--pin-y);
+  transform: translate(-50%, -100%);
+}
+
+.ex-phone-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: calc(var(--primitives-layout-spacing-150) * 1px);
+}
+
+/* The panel takes focus when its view changes (../focus.ts); it is where the
+   keyboard starts from, not a control, so it shows no ring. */
+.ex-phone-panel-focus:focus {
+  outline: none;
+}
+
+/* The list of places brings no padding of its own; Kozmos's own panels pad
+   their content by 16px, so it sits in a box that does. */
+.ex-phone-list {
+  padding: calc(var(--primitives-layout-spacing-200) * 1px);
+}
+
+/* Focus moves to the list when the view changes, and Chromium and WebKit
+   scroll a tall view's top edge to the panel's, even in a sheet that does not
+   scroll at its height. The margin keeps the padding above the list. */
+.ex-phone-list > .ex-phone-panel-focus {
+  scroll-margin-block-start: calc(var(--primitives-layout-spacing-200) * 1px);
+}
