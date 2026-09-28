@@ -48,7 +48,7 @@ await publishPrepared(
         "--access=public",
         `--tag=${tag}`,
         "--ignore-scripts",
-        "--provenance=false",
+        "--provenance",
       ],
       { stdio: "inherit" },
     );
@@ -56,5 +56,6 @@ await publishPrepared(
   getPackage,
 );
 console.log(
-  "Approved tarballs verified in the npm registry. No git tags or GitHub releases were created.",
+  "Approved tarballs verified in the npm registry. This workflow makes no git tags or GitHub " +
+    "Releases: run `pnpm release:tag <sha>` with the dispatched sha for them.",
 );

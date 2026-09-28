@@ -982,15 +982,16 @@ notify:
 # Settings → Branches → Add rule
 
 # Required status checks (GitHub Actions only): every check a pull request runs —
-# Web Build & Test, Core Pipeline & POI Gallery, Android Build, the twelve browser
-# shards, analyze-bundle, lighthouse and Visual Review. They are matched by name:
-# renaming a job or shard means updating this list in the same change.
+# Web Build & Test, Core Pipeline & POI Gallery, Android Build, iOS Build (skipped,
+# and so passing, on a pull request that doesn't touch what it builds), the twelve
+# browser shards, analyze-bundle, lighthouse and Visual Review. They are matched by
+# name: renaming a job or shard means updating this list in the same change. A pull
+# request must also be up to date with main to merge.
 
-# Additional settings:
-# - Require pull request reviews: 1
-# - Dismiss stale reviews
-# - Require review from code owners
-# - Require signed commits
+# Nothing else is required: no reviews, code-owner review, signed commits or linear
+# history. Administrators are not held to the rule (enforce_admins is off), so an
+# administrator can merge past a red check; nobody should. Force-pushing to main and
+# deleting it are refused, and auto-merge is on.
 ```
 
 ### CODEOWNERS

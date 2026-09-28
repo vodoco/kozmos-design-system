@@ -50,7 +50,7 @@ how something _outside_ the repository consumes it. Pick the case that applies.
 ### Case A — inside this checkout (the default)
 
 `/Volumes/4TB Depo/development/K/kozmos-design-system-dev`, branch `main`, remote
-`https://github.com/vodoco/kozmos-design-system-.git` (private). The packages resolve as
+`https://github.com/vodoco/kozmos-design-system.git` (public). The packages resolve as
 `workspace:*`; nothing changes here when they are published.
 
 | What                    | Where                                                                                                                                                                                                                                                                        |
@@ -73,7 +73,7 @@ Build before reading anything at runtime: `pnpm install --frozen-lockfile` then
 ### Case B — another machine, or another repository
 
 ```bash
-gh repo clone vodoco/kozmos-design-system- kozmos-design-system && cd kozmos-design-system
+gh repo clone vodoco/kozmos-design-system && cd kozmos-design-system
 pnpm install --frozen-lockfile && pnpm --filter "@kozmos-ds/react..." build
 ```
 

@@ -107,6 +107,15 @@ jobs:
     # assertion can report which package the registry never showed.
     timeout-minutes: 45
     environment: npm-release
+    # npm provenance (Olcay's decision 32): this job, and only this job, may
+    # mint an OIDC token, so npm can attest that each package was built from
+    # this repository's commit by this workflow. It was off while the
+    # repository was private; npm attests public repositories only. Nothing
+    # gains write access to the repository.
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
