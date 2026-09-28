@@ -400,13 +400,32 @@ if (typeof import.meta.resolve !== "function") {
   }
 }
 
+// The contracts' runtime API is the travel-time rule (decision 50) and nothing
+// else: a new runtime export is a decision, and this list is where it shows.
+const contractsRuntime = "travelTimeBand,travelTimeTone";
 for (const name of ${JSON.stringify(requirable)}) {
   try {
     const exports = require(name);
-    results.push([name === "@kozmos-ds/product-contracts" ? Object.keys(exports).length === 0 : Object.keys(exports).length > 0, "require(" + name + ") returns its exports (contracts intentionally has no runtime API)"]);
+    results.push([name === "@kozmos-ds/product-contracts" ? Object.keys(exports).sort().join() === contractsRuntime : Object.keys(exports).length > 0, "require(" + name + ") returns its exports (contracts: " + contractsRuntime + " only)"]);
   } catch (error) {
     results.push([false, "require(" + name + ") — " + error.message]);
   }
+}
+try {
+  const required = require("@kozmos-ds/product-contracts");
+  const imported = await import("@kozmos-ds/product-contracts");
+  results.push([
+    [required, imported].every((contracts) =>
+      contracts.travelTimeBand(45) === "nearby" &&
+      contracts.travelTimeBand(120) === "oneToTwoMinutes" &&
+      contracts.travelTimeBand(121) === "twoToFiveMinutes" &&
+      contracts.travelTimeBand(Number.NaN) === undefined &&
+      contracts.travelTimeTone("nearby") === "success" &&
+      contracts.travelTimeTone("moreThanTenMinutes") === "neutral"),
+    "the installed contracts band a walk, as require() and import() alike",
+  ]);
+} catch (error) {
+  results.push([false, "the installed contracts band a walk — " + error.message]);
 }
 
 console.warn = () => {};

@@ -159,11 +159,77 @@ export interface POIDetailsPresentation {
 
 export interface TravelEstimatePresentation {
   durationSeconds: number;
+  /** The exact time, already localized: "3 min". The details card shows it. */
   durationLabel: string;
   distanceMetres?: number;
   distanceLabel?: string;
   mode?: string;
   modeLabel?: string;
+  /**
+   * Set when a result list shows this walk as a band rather than the exact
+   * minutes (decision 50): `travelTimeBand(durationSeconds)` gives it.
+   *
+   * POIResultCard then draws the band's words, and Nearby in the success
+   * colour. POIDetailPanel ignores it and keeps `durationLabel`, the exact
+   * minutes, so one estimate serves the list and the details card alike.
+   * Absent, a result shows `durationLabel`, as before.
+   */
+  band?: TravelTimeBand;
+}
+
+/**
+ * A walk as a result list shows it (decision 50): a band, not the exact
+ * minutes. Nearby is under a minute; then 1–2, 2–5 and 5–10 minutes, and
+ * more than 10.
+ *
+ * The product passes the walking time it already has and Kozmos's rule,
+ * `travelTimeBand`, turns it into one of these, so every product draws the
+ * edges in the same place. The words are the card's, and translatable.
+ */
+export type TravelTimeBand =
+  | "nearby"
+  | "oneToTwoMinutes"
+  | "twoToFiveMinutes"
+  | "fiveToTenMinutes"
+  | "moreThanTenMinutes";
+
+/**
+ * The colour a band is drawn in: Nearby in the success colour, the others
+ * in the card's normal text colour. `travelTimeTone` says which.
+ */
+export type TravelTimeTone = "success" | "neutral";
+
+/**
+ * The band a walk falls in, from its length in seconds: Kozmos's rule
+ * (decision 50).
+ *
+ * Nearby is under a minute. Every band after it keeps its upper edge, so a
+ * place exactly 2, 5 or 10 minutes away reads "1–2 min", "2–5 min" or
+ * "5–10 min", and one a second further reads the next band. Past the first
+ * minute that is the walk rounded up to whole minutes: 1 or 2, 3 to 5, 6 to
+ * 10, then 11 and more. No walk falls in two bands; a length below zero, or
+ * one that is not a finite number, falls in none, and a card given no band
+ * shows the exact minutes.
+ *
+ * SwiftUI has the same rule as `KozmosTravelTimeBand(durationSeconds:)` and
+ * Compose as `KozmosTravelTimeBand.forDuration`. The three are tested against
+ * one table of cases, `tests/travel-time-bands.txt` in this package.
+ */
+export function travelTimeBand(
+  durationSeconds: number,
+): TravelTimeBand | undefined {
+  if (!Number.isFinite(durationSeconds) || durationSeconds < 0)
+    return undefined;
+  if (durationSeconds < 60) return "nearby";
+  if (durationSeconds <= 120) return "oneToTwoMinutes";
+  if (durationSeconds <= 300) return "twoToFiveMinutes";
+  if (durationSeconds <= 600) return "fiveToTenMinutes";
+  return "moreThanTenMinutes";
+}
+
+/** The tone a band is drawn in: Nearby's is success, every other neutral. */
+export function travelTimeTone(band: TravelTimeBand): TravelTimeTone {
+  return band === "nearby" ? "success" : "neutral";
 }
 
 /**

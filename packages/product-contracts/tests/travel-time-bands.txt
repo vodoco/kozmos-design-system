@@ -1,0 +1,56 @@
+# Travel-time bands (decision 50): a walk in seconds, and the band a result
+# list shows for it. One case per line; "none" means no band, and the card
+# then shows the exact minutes it was given.
+#
+# Three suites read this one table, so the three rules agree at every edge:
+#   packages/product-contracts/tests/travel-time-bands.test.ts
+#   packages/ios/Tests/KozmosTests/KozmosTravelTimeBandTests.swift
+#   packages/android/src/test/java/com/kozmos/contracts/KozmosTravelTimeBandTest.kt
+#
+# Nearby is under a minute. Every band after it keeps its upper edge: exactly
+# 2, 5 and 10 minutes read "1–2 min", "2–5 min" and "5–10 min", and a second
+# more reads the next band. Past the first minute that is the walk rounded up
+# to whole minutes: 1 or 2, 3 to 5, 6 to 10, then 11 and more. No walk falls
+# in two bands, and every walk of a finite, non-negative length falls in one.
+
+# seconds   band
+0           nearby
+-0          nearby
+0.5         nearby
+30          nearby
+59          nearby
+59.999      nearby
+
+60          oneToTwoMinutes
+60.001      oneToTwoMinutes
+61          oneToTwoMinutes
+90          oneToTwoMinutes
+119         oneToTwoMinutes
+119.999     oneToTwoMinutes
+120         oneToTwoMinutes
+
+120.001     twoToFiveMinutes
+121         twoToFiveMinutes
+180         twoToFiveMinutes
+299         twoToFiveMinutes
+300         twoToFiveMinutes
+
+300.001     fiveToTenMinutes
+301         fiveToTenMinutes
+450         fiveToTenMinutes
+599         fiveToTenMinutes
+600         fiveToTenMinutes
+
+600.001     moreThanTenMinutes
+601         moreThanTenMinutes
+900         moreThanTenMinutes
+3600        moreThanTenMinutes
+86400       moreThanTenMinutes
+
+# Not a walk: a length below zero, or one that is not a finite number.
+-0.001      none
+-1          none
+-60         none
+NaN         none
+Infinity    none
+-Infinity   none
