@@ -163,5 +163,47 @@ final class KozmosPOIResultCardTravelTimeTests: XCTestCase {
         }
         XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
     }
+
+    /// The details card keeps the exact minutes: given the same estimate with
+    /// its band and without, it draws the same pixels. That it would show a
+    /// change there is proved by the same card with other minutes, which it
+    /// draws differently.
+    @MainActor func testTheDetailsPanelDrawsTheSameWithTheBandAsWithout() async throws {
+        let size = CGSize(width: 390, height: 420)
+        let place = KozmosPOIPresentation(id: "gate-12", name: "Gate 12", floorLabel: "Level 1", actions: [.navigate])
+        func panel(_ band: KozmosTravelTimeBand?, minutes: String) -> some View {
+            KozmosPOIDetailPanel(
+                poi: place,
+                actionLabels: [.navigate: "Go"],
+                onAction: { _, _ in },
+                details: KozmosPOIDetailsPresentation(
+                    travelEstimate: KozmosTravelEstimatePresentation(
+                        durationSeconds: 45, durationLabel: minutes, distanceLabel: "40 m", band: band
+                    )
+                )
+            )
+            .frame(width: size.width, height: size.height, alignment: .top)
+            .environment(\.colorScheme, .light)
+        }
+        func differing(_ one: RenderedPixels, _ two: RenderedPixels) -> Int {
+            var count = 0
+            for py in 0..<one.height {
+                for px in 0..<one.width {
+                    let point = CGPoint(x: (CGFloat(px) + 0.5) / one.scale, y: (CGFloat(py) + 0.5) / one.scale)
+                    if Self.distance(one.color(at: point), two.color(at: point)) > 0 { count += 1 }
+                }
+            }
+            return count
+        }
+        let exact = try await RenderedPixels.render(panel(nil, minutes: "1 min"), size: size)
+        let banded = try await RenderedPixels.render(panel(.nearby, minutes: "1 min"), size: size)
+        let other = try await RenderedPixels.render(panel(nil, minutes: "9 min"), size: size)
+        let attachment = XCTAttachment(image: banded.image)
+        attachment.name = "decision-50-details-with-band"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        XCTAssertGreaterThan(differing(exact, other), 0, "the details card draws no estimate this test could see change")
+        XCTAssertEqual(differing(exact, banded), 0, "the details card draws the band: it should keep the exact minutes")
+    }
     #endif
 }
