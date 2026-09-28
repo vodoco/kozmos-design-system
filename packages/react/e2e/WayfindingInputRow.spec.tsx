@@ -53,9 +53,9 @@ test("the fields are 40 high and 8 apart, with the swap centred at their end", a
 }) => {
   // WebKit before Safari 26.4 does not apply @scope rules to inputs, so the
   // row's utilities (h-10, pe-12, border-none, shadow-raised, bg-muted/50)
-  // lose to the input recipe there: 44 high, bordered, white. Known and pinned
-  // in docs/browser-compatibility-2026-09-17.md; this fails loudly once it is
-  // fixed, so the expectation can be dropped.
+  // lose to the input recipe there: 44 high, bordered, white. Known, and pinned
+  // by the `test.fail` below: it fails loudly once WebKit is fixed, so the
+  // expectation can be dropped.
   test.fail(
     browserName === "webkit",
     "WebKit < 26.4 drops @scope rules on inputs",

@@ -2,8 +2,8 @@ import SwiftUI
 
 // The sheet's content and the shell that holds it share four things here: whether
 // the content may scroll, how far it has scrolled, where its peek ends, and what
-// the panel leaves above the content. The prototype's rule, driven and measured
-// (docs/pointr-prototype-initial-sheet-2026-09-20.md §2): the content scrolls
+// the panel leaves above the content. The Pointr prototype's rule, driven and
+// measured by scripts/measure-prototype-sheet.cjs: the content scrolls
 // under a finger only at the largest detent; below it an upward drag grows the
 // sheet first; at the largest detent a downward drag empties the scroll before
 // the sheet moves.
@@ -38,12 +38,12 @@ public extension EnvironmentValues {
     /// its content at its top edge. A part with its own top padding and no
     /// surface of its own tops it up to what it needs rather than adding to
     /// it, as `KozmosPOIDetailPanel` and `KozmosBrowseCategoriesPanel` do in
-    /// their sheet presentations; a part that draws its own bordered surface
-    /// keeps its padding inside the border, since this space lies outside it.
-    /// Zero outside a shell. It describes the panel's top: a product that puts
-    /// such a part under a row of its own sets this and
-    /// `kozmosPanelClearanceTop` to zero for it, or the part tops up to a
-    /// space that is not above it.
+    /// their sheet presentations and `KozmosRoutePreviewPanel` does; a part
+    /// that draws its own bordered surface keeps its padding inside the
+    /// border, since this space lies outside it. Zero outside a shell. It
+    /// describes the panel's top: a product that puts such a part under a row
+    /// of its own sets this and `kozmosPanelClearanceTop` to zero for it, or
+    /// the part tops up to a space that is not above it.
     var kozmosPanelInsetTop: CGFloat {
         get { self[KozmosPanelInsetTopKey.self] }
         set { self[KozmosPanelInsetTopKey.self] = newValue }
@@ -167,7 +167,9 @@ public enum KozmosPanelDragKind: Equatable, Sendable {
     /// Moves the sheet between its detents.
     case sheet
 
-    /// The prototype's rule (docs/pointr-prototype-initial-sheet-2026-09-20.md §2).
+    /// The prototype's rule: a sideways move is the content's, and so is, at the
+    /// largest detent, an upward drag or any drag once the content has scrolled.
+    /// Everything else moves the sheet.
     public static func decide(
         startsInHandle: Bool,
         translation: CGSize,

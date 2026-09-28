@@ -196,8 +196,11 @@
      The category browser's first row — its search row, or its tiles when it
      has none — tops its 16 up to that rather than adding 16 to it, as the
      details card's header does (GAP-083): its search field sat 33 from the
-     panel's top and 17 from its side, in a sheet and a side panel alike. */
-  .kozmos-browse-categories-first-row {
+     panel's top and 17 from its side, in a sheet and a side panel alike.
+     The route preview's destination row does the same: its "To" sat 33 and
+     17 too. */
+  .kozmos-browse-categories-first-row,
+  .kozmos-route-preview-first-row {
     padding-top: max(
       var(--kozmos-panel-clearance-top, 0px),
       calc(1rem - var(--kozmos-panel-inset-top, 0px))

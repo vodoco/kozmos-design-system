@@ -50,9 +50,9 @@ export const Rail: Story = {
   render: () => (
     <div className="flex h-[520px] border">
       <Sidebar
-        className="w-20 items-center px-1 py-6"
+        variant="rail"
         navigation={
-          <div className="flex w-full flex-col items-center gap-2">
+          <div className="flex flex-col">
             {[
               { icon: Home, label: "Home" },
               { icon: Search, label: "Search", active: true },

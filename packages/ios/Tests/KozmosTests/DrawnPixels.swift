@@ -95,6 +95,27 @@ struct DrawnPixels {
         return bands
     }
 
+    /// The darkest opaque pixel inside `region` (in points): on a plain fill,
+    /// the colour of the text drawn on it, where a stroke covers a pixel whole.
+    func darkest(in region: CGRect) -> (r: UInt8, g: UInt8, b: UInt8, a: UInt8)? {
+        let x0 = max(0, Int(region.minX * scale)), x1 = min(width, Int(region.maxX * scale))
+        let y0 = max(0, Int(region.minY * scale)), y1 = min(height, Int(region.maxY * scale))
+        var found: (r: UInt8, g: UInt8, b: UInt8, a: UInt8)?
+        var lightest = Int.max
+        for y in y0..<y1 {
+            for x in x0..<x1 {
+                let i = (y * width + x) * 4
+                guard rgba[i + 3] > 240 else { continue }
+                let lightness = Int(rgba[i]) + Int(rgba[i + 1]) + Int(rgba[i + 2])
+                if lightness < lightest {
+                    lightest = lightness
+                    found = (rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3])
+                }
+            }
+        }
+        return found
+    }
+
     /// How many pixels inside `region` (in points) match.
     func count(in region: CGRect, where matches: (UInt8, UInt8, UInt8, UInt8) -> Bool) -> Int {
         let x0 = max(0, Int(region.minX * scale)), x1 = min(width, Int(region.maxX * scale))

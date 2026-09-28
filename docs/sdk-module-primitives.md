@@ -15,11 +15,11 @@ state, a status message that lives inside a map, a labelled row of chips. If
 those exist, a product team assembles the card and the system never has to know
 what a POI is.
 
-That reframes the audit in `gap-audit-2026-09-05.md` §5. The 24 Product/SDK sets
-diverging from their React implementations matters much less than this: **can a
-module be built from Kozmos alone today?** For every module below, the answer is
-no, and the missing pieces are small and reusable rather than large and
-bespoke.
+That reframes the gap audit of 2026-09-05, which found the 24 Product/SDK sets
+diverging from their React implementations. That matters much less than this:
+**can a module be built from Kozmos alone today?** For every module below, the
+answer is no, and the missing pieces are small and reusable rather than large
+and bespoke.
 
 ## The map module
 
@@ -165,8 +165,8 @@ Once the primitives exist, the 24 Product/SDK sets should be **re-examined as
 compositions**, not repaired as components. Several probably should not be
 design-system sets at all — `POIDetailPanel`, `POICard`, `RoutePreviewPanel`
 and `WayfindingCard` are product layouts. Keeping them in the library is what
-produced the anatomy drift catalogued in `gap-audit-2026-09-05.md` §5: two
-teams modelling the same product decision independently.
+produced the anatomy drift that audit found: two teams modelling the same
+product decision independently.
 
 The ones that should stay are the ones that are genuinely primitives wearing a
 map-shaped name: `MapControlButton`, `MapControlsGroup`, `FloorSelector`,

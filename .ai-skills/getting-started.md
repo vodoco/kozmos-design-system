@@ -221,7 +221,7 @@ kozmos-design-system/
 ├── package.json                    # Root package.json
 ├── tsconfig.base.json              # Shared TypeScript config
 ├── eslint.config.mjs               # ESLint config (Prettier runs with its defaults)
-├── PROJECT_SCOPE.md                # Full specification
+├── docs/project-scope.md           # Full specification
 └── README.md
 ```
 

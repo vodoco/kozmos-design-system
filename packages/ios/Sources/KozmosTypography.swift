@@ -1,4 +1,9 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
 
 /// One place that decides what the design system renders text in.
 ///
@@ -48,4 +53,23 @@ public enum KozmosTypography {
     public static var caption2: Font { font(.caption2) }
     public static var title2: Font { font(.title2) }
     public static var title3: Font { font(.title3) }
+
+    /// What SwiftUI adds between lines of `caption2` to set them 14pt apart at
+    /// the default text size, as React's 11px labels sit on 14px lines: 14
+    /// less caption2's own line, 13.1pt of SF Pro at 11pt. From the next size
+    /// up caption2's own line is taller than 14 (18pt for its 13pt) and
+    /// SwiftUI sets the lines by it, so the line grows with the text without
+    /// this growing too. The rail's labels and BottomNavigation's use it.
+    static let caption2On14ptLineSpacing: CGFloat = {
+        #if canImport(UIKit)
+        let caption2 = UIFont.preferredFont(
+            forTextStyle: .caption2,
+            compatibleWith: UITraitCollection(preferredContentSizeCategory: .large)
+        )
+        return max(0, 14 - caption2.lineHeight)
+        #else
+        let caption2 = NSFont.preferredFont(forTextStyle: .caption2)
+        return max(0, 14 - (caption2.ascender - caption2.descender + caption2.leading))
+        #endif
+    }()
 }

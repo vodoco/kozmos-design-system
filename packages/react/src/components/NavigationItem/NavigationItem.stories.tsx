@@ -13,6 +13,7 @@ import {
   Users01 as Users,
   Wifi,
 } from "@kozmos-ds/icons";
+import { ThemeProvider } from "../ThemeProvider";
 import { NavigationItem } from "./NavigationItem";
 
 const meta: Meta<typeof NavigationItem> = {
@@ -62,9 +63,14 @@ export const Top: Story = {
   ),
 };
 
-export const Rail: Story = {
-  render: () => (
-    <nav className="flex w-20 flex-col items-center gap-2 rounded-control border bg-background p-2">
+// A rail is 96px wide, on the surface, with a 1px edge at its inline end, and
+// its items fill it (decision 42). Kozmos's own rail is Sidebar's `rail`
+// variant; these stories draw a plain one so the items are all there is.
+const railClassName = "flex w-24 flex-col border-e bg-surface-0";
+
+function AppRail() {
+  return (
+    <nav aria-label="Main" className={railClassName}>
       <NavigationItem
         content="icon-label"
         icon={<Home className="h-6 w-6" />}
@@ -80,14 +86,21 @@ export const Rail: Story = {
       >
         Search
       </NavigationItem>
-      {/* Two words that each fit the tile but not together: the label takes
-          its second line and the tile stays 72px tall. */}
       <NavigationItem
         content="icon-label"
         icon={<MarkerPin className="h-6 w-6" />}
         placement="rail"
       >
         Nearby places
+      </NavigationItem>
+      {/* Two words that do not fit one line: the label takes its second line
+          and the item grows to hold it. */}
+      <NavigationItem
+        content="icon-label"
+        icon={<NavigationPointer className="h-6 w-6" />}
+        placement="rail"
+      >
+        Accessible routes
       </NavigationItem>
       <NavigationItem
         content="icon-label"
@@ -97,13 +110,31 @@ export const Rail: Story = {
         Settings
       </NavigationItem>
     </nav>
-  ),
+  );
+}
+
+export const Rail: Story = {
+  render: () => <AppRail />,
 };
 
-// A web dashboard's rail is wider than an app's: its tiles are 96px, given
-// with `className="w-24"`, as BottomNavigation widens its own. At 72px no
-// legible size fits "Configuration" in the tile's 56px; at 96px every one of
-// these nine labels fits two 11px lines, in every engine and font measured.
+// The selected item's bar is on the inline end, so it moves to the left.
+export const RailRightToLeft: Story = {
+  name: "Rail, right to left",
+  render: function RailRightToLeftStory(_args, { globals }) {
+    return (
+      <ThemeProvider
+        dir="rtl"
+        theme={globals.theme === "dark" ? "dark" : "light"}
+      >
+        <AppRail />
+      </ThemeProvider>
+    );
+  },
+};
+
+// The Cloud Dashboard's nine labels, the longest a rail has been asked to
+// hold: in the 96px rail each takes at most two lines and no word splits, in
+// every engine and font measured.
 const dashboardRail = [
   { icon: MapIcon, label: "Map Content" },
   { icon: MarkerPin, label: "Geofences" },
@@ -119,11 +150,10 @@ const dashboardRail = [
 export const DashboardRail: Story = {
   name: "Dashboard rail",
   render: () => (
-    <nav className="flex w-28 flex-col items-center gap-2 rounded-control border bg-background p-2">
+    <nav aria-label="Settings" className={railClassName}>
       {dashboardRail.map((item) => (
         <NavigationItem
           key={item.label}
-          className="w-24"
           content="icon-label"
           icon={<item.icon className="h-6 w-6" />}
           placement="rail"
