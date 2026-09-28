@@ -192,7 +192,7 @@ generate` runs before dev, build and typecheck):
   - `components.json` and `components/<slug>.json`: every component folder
     under `packages/react/src/components`, its lane from the sets in
     `scripts/skills/check-completion.ts` (the same ones that build
-    `STATUS.md`), its description and its React, Vue, SwiftUI and Compose
+    `docs/status.md`), its description and its React, Vue, SwiftUI and Compose
     snippets from its `.mdx`, and its parts and props read from the
     TypeScript source with the compiler API: every component the package
     exports from that folder (re-exports followed), its props type resolved
@@ -550,7 +550,7 @@ description, parts, props, snippets — nothing to write) and its demo file.
   theming page come from the generated data, that is, from each component's
   own docs.
 - **Claims** on the home page are sourced from the repository (package
-  READMEs, `ci.yml`, `STATUS.md`, `Package.swift`). Numbers on the page are
+  READMEs, `ci.yml`, `docs/status.md`, `Package.swift`). Numbers on the page are
   computed from data (token counts, contrast ratios), not typed in.
 
 ## Styling
@@ -778,7 +778,7 @@ Measured while building the site; none of it is the site's to fix.
   workspace, a React 19 app's `ReactNode` does not fit Kozmos's props; the
   site maps the types to its own (tsconfig `paths`). Installed from npm, the
   declarations would read the consumer's types and this does not arise.
-- **`STATUS.md` is out of date on the component branch.**
+- **`docs/status.md` is out of date on the component branch.**
   `check-completion.ts --check` fails there: Core counts 75 components after
   the internal exclusion (69 in the file), five with platform or Code Connect
   gaps. The site's generator reads the same sets, so its counts are current.

@@ -54,7 +54,7 @@ how something _outside_ the repository consumes it. Pick the case that applies.
 
 | What                    | Where                                                                                                                                                                                                       |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The components          | `packages/react/src/components/` — 98 in `STATUS.md` (Core 69 · Code-only 5 · Product/SDK 22 · Platform 2); the barrel is `packages/react/src/index.ts`                                                     |
+| The components          | `packages/react/src/components/` — 98 in `docs/status.md` (Core 69 · Code-only 5 · Product/SDK 22 · Platform 2); the barrel is `packages/react/src/index.ts`                                                |
 | Props and variants      | `docs/figma-library-manifest.json` → `components.items[]` (props, variant values, Code Connect node); regenerate with `pnpm figma:manifest`                                                                 |
 | Tokens and roles        | `packages/tokens/src/tokens-light.json`, `tokens-dark.json`; the roles and the one rule in `docs/style-playbook.md`                                                                                         |
 | Icons                   | `@kozmos-ds/icons` (`kozmosIconNames`); the set is small — count it before promising an icon                                                                                                                |
@@ -355,7 +355,8 @@ them when told. A handoff a new chat can start from is part of done.
 ## 8 · When this brief is stale
 
 The dated facts: 98 components, 92 Code Connect links, 95 Figma sets, 641 + 641 tokens,
-packages at `0.0.1` and unpublished, Figma MCP read-only in the writing session. Re-measure rather than trust: `STATUS.md` (`pnpm exec tsx
-scripts/skills/check-completion.ts --check`), `pnpm figma:manifest`, `pnpm figma:verify`,
-`npm view @kozmos-ds/react version`, `git branch -r --merged origin/main`. If a number here disagrees
-with a measurement, the measurement wins and this file gets the correction in the same commit.
+packages at `0.0.1` and unpublished, Figma MCP read-only in the writing session. Re-measure
+rather than trust: `docs/status.md` (`pnpm exec tsx scripts/skills/check-completion.ts --check`),
+`pnpm figma:manifest`, `pnpm figma:verify`, `npm view @kozmos-ds/react version`,
+`git branch -r --merged origin/main`. If a number here disagrees with a measurement, the
+measurement wins and this file gets the correction in the same commit.

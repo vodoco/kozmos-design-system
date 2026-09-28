@@ -189,7 +189,7 @@ The component never changes its own selected route. During `calculating`,
 ## Native Parity
 
 SwiftUI and Compose now implement the same 22 Product / SDK components as React,
-so `STATUS.md` reports the lane at 22/22 on all three platforms.
+so `docs/status.md` reports the lane at 22/22 on all three platforms.
 
 The presentation contracts are mirrored natively rather than re-derived:
 

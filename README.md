@@ -62,8 +62,8 @@ order, the measured state and the open decisions. Superseded material,
 including the May 2026 agent-tracking passes, is under
 [`docs/archive/`](./docs/archive/README.md).
 
-[`STATUS.md`](./STATUS.md) is generated: which components exist on which
-platform, and which are linked to Figma.
+[`docs/status.md`](./docs/status.md) is generated: which components exist on
+which platform, and which are linked to Figma.
 
 ## The repository
 

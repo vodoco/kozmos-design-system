@@ -8,7 +8,7 @@ the reading of the numbers, which are judgements the script does not make.
 
 ## Why This Exists
 
-`STATUS.md` reports every component present on Web, iOS, and Android, but it only proves that a
+`docs/status.md` reports every component present on Web, iOS, and Android, but it only proves that a
 file exists. It says so itself: it does not grade API parity, behavioural
 completeness, or variant coverage. This document is the missing half — it looks
 _inside_ the files and compares the variant surface each platform can express.
