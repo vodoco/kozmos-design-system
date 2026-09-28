@@ -1,5 +1,8 @@
 # Session handoff — 2026-09-27 night: where everything stands
 
+> **Superseded as the door in by [handoff-2026-09-28.md](handoff-2026-09-28.md)** (the audit, the
+> merge queue, iOS on pull requests, 0.5.0 prepared). This one keeps decisions 1–23 and the evidence.
+
 **Read this first in a new chat.** It is self-contained: scope, how Olcay works, current state, what
 is in flight with the exact next steps, decisions, open questions, the queue of tasks, the systems
 built today, where things live, and the traps. The evening handoff,

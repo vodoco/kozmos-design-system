@@ -14,6 +14,10 @@ on:
       - "LICENSE"
   pull_request:
     types: [opened, synchronize]
+  # No merge_group: GitHub offers merge queues only to organisations, and this
+  # repository belongs to a personal account. Branch protection requires a
+  # pull request to be up to date with main instead (Olcay's decision 25), so
+  # its checks have run against the main it merges into.
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -463,24 +467,54 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # Whether a change touches what the iOS job builds: the iOS package, the
+  # tokens it compiles against (the job builds @kozmos-ds/tokens first), the
+  # scripts it runs, this workflow, or the installed dependencies.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    outputs:
+      ios: ${{ steps.diff.outputs.ios }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Paths Touched
+        id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # No base (a push to main) builds everything.
+          if [ -z "$BASE" ]; then
+            echo "ios=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BASE"...HEAD | grep -qE '^(packages/ios/|packages/tokens/|scripts/check-ios-poi\.mjs$|scripts/figma-connect-native\.mjs$|\.github/workflows/ci\.yml$|package\.json$|pnpm-lock\.yaml$)'; then
+            echo "ios=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ios=false" >> "$GITHUB_OUTPUT"
+          fi
+
   ios:
     name: iOS Build
-    # macos-latest bills at 10x minutes, and this is how the spending limit was
-    # reached on 2026-08-28 and again on 2026-09-23. So this runs once per merge
-    # rather than once per push: over the last 60 CI runs that is 13 rather than
-    # 47, and it used to be all 60.
+    # Every push to main builds iOS: release/policy.mjs requires a successful
+    # "iOS Build" job in the main-push CI run it publishes against, and a
+    # skipped job is not evidence (dispatch 36001027330 refused 0.2.0 for it).
     #
-    # It runs on main and not on the pull request because release/policy.mjs
-    # requires a successful "iOS Build" job in the main-push CI run it publishes
-    # against, and a merge commit's SHA has never existed on a pull request - it
-    # has two parents. Gating this to pull requests left every main push short
-    # one job, which is why dispatch 36001027330 refused to publish 0.2.0 with
-    # "skipped jobs are not evidence". The guard was right; the gate was wrong.
-    #
-    # The cost is that a pull request gets no iOS signal from CI. Run
-    # `pnpm ci:local --job ios` before merging - it covers 8 of these 12 steps
-    # on a Mac that is already paid for.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # A pull request builds iOS when it touches what the job builds (Olcay's
+    # decision 24). What it costs was measured, not assumed: the run timing
+    # API reports 0 billable MACOS milliseconds for this public repository's
+    # runs (2026-09-28); why the spending limits above were once reached is
+    # not known from here. A skipped job passes as a required check, which is
+    # safe only because the skip is deliberate: if working out the paths
+    # failed, the job builds rather than skips. `!cancelled()` so a run
+    # superseded by a newer push does not start a macOS job anyway.
+    needs: changes
+    if: >-
+      ${{ !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      needs.changes.result != 'success' ||
+      needs.changes.outputs.ios == 'true') }}
     runs-on: macos-latest
     steps:
       - name: Checkout Repo

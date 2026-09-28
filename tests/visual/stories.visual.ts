@@ -69,7 +69,25 @@ for (const story of stories) {
       await page.goto(
         `/iframe.html?id=${story.id}&viewMode=story&globals=theme:${theme}`,
       );
-      await page.locator("#storybook-root").waitFor({ state: "attached" });
+      // Storybook's own signal that the story is on screen: `sb-show-main` on
+      // the body. `#storybook-root` is in iframe.html from the first byte, so
+      // waiting for it proved nothing, and network idle only happened to come
+      // after the render on a fast machine: a local run under amd64 emulation
+      // (12 workers) photographed 356 of 634 stories as Storybook's 52px
+      // loading spinner. A story that throws shows the error display instead,
+      // and fails here rather than being photographed.
+      const shown = await page.waitForFunction(() => {
+        const state = document.body.classList;
+        if (state.contains("sb-show-errordisplay")) return "the error display";
+        if (state.contains("sb-show-nopreview")) return "no preview";
+        return state.contains("sb-show-main") &&
+          !state.contains("sb-show-preparing-story")
+          ? "the story"
+          : false;
+      });
+      expect(await shown.jsonValue(), `${story.id} did not render`).toBe(
+        "the story",
+      );
       await page.waitForLoadState("networkidle");
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
       // `animations: "disabled"` rewinds most motion but not reliably (the AI
