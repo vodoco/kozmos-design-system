@@ -385,11 +385,22 @@ export type MapReadiness =
   | "offline"
   | "unsupported";
 
+/**
+ * What the map is doing with the visitor's position, as the location control
+ * shows it.
+ *
+ * `following` keeps the visitor centred; `heading` also turns the map with
+ * them. `heading-paused` is heading remembered while the map has been moved
+ * away from them (decision 45): the SDK's rotational Off, "Focus / Off" beside
+ * the upright pointer in outline. The next press goes straight back to
+ * `heading`, which is the product's to do.
+ */
 export type UserLocationState =
   | "off"
   | "locating"
   | "following"
   | "heading"
+  | "heading-paused"
   | "permission-denied"
   | "stale"
   | "unavailable";
