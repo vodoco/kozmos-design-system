@@ -139,13 +139,18 @@ struct KozmosMapShellContentPanelHeightKey: PreferenceKey {
 /// anchor in it is honoured, and with no anchor a collapsed sheet is tall
 /// enough to show all of it. A vertical drag on it moves the sheet, whatever
 /// the content has scrolled; a sideways one stays with the header, for a row
-/// of chips that scrolls. In a side panel it is the panel's first row.
+/// of chips that scrolls. Under the grabber it starts 4 points below the
+/// grabber's row, so its first control keeps the grabber's target clear
+/// (WCAG 2.5.8). In a side panel it is the panel's first row.
 ///
 /// The panel's content is told what the panel leaves empty above it, and how
 /// far its first control must keep below that — `kozmosPanelInsetTop` and
 /// `kozmosPanelClearanceTop` in the environment — so a part with its own top
-/// padding and no surface of its own, as `KozmosPOIDetailPanel` is in its
-/// sheet presentation, tops it up rather than adding to it (GAP-083).
+/// padding and no surface of its own, as `KozmosPOIDetailPanel` and
+/// `KozmosBrowseCategoriesPanel` are in their sheet presentations, tops it up
+/// rather than adding to it (GAP-083, decision 14). The values describe the
+/// panel's top: a part a product places under its own row there is not at
+/// the top, and is told so by setting both to zero.
 public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Panel: View, MapStatusContent: View>: View {
     public enum PanelPlacement {
         case start
@@ -213,6 +218,10 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// WCAG 2.5.8: a target smaller than 24 points keeps a 24-point circle on
     /// its centre clear of every other target. The grabber's row is one.
     private static var minimumTargetSpacing: CGFloat { 24 }
+
+    /// How far the first control under the grabber's row keeps below it: half
+    /// of what the row falls short of a 24-point target, 4.
+    private static var grabberClearance: CGFloat { (minimumTargetSpacing - grabberRowHeight) / 2 }
 
     public init<PanelHeader: View>(
         mapLabel: String = "Map",
@@ -396,7 +405,19 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// (the web's leaves 16 above it).
     func panelContentTop(isRegularWidth: Bool) -> (inset: CGFloat, clearance: CGFloat) {
         guard drawsGrabber(isRegularWidth: isRegularWidth), panelHeader == nil else { return (0, 0) }
-        return (Self.grabberRowHeight, (Self.minimumTargetSpacing - Self.grabberRowHeight) / 2)
+        return (Self.grabberRowHeight, Self.grabberClearance)
+    }
+
+    /// How far the panel header starts below the grabber's row: the
+    /// grabber's clearance, so the search field a header usually starts with
+    /// keeps the grabber's target its WCAG 2.5.8 spacing — as the web's header
+    /// has since #109, and as the panel's content keeps it when no header sits
+    /// there (decision 14). It sat flush under the row, 8 from the grabber's
+    /// centre. Nothing with no grabber, and beside the map, where the header
+    /// is the panel's first row.
+    func panelHeaderTop(isRegularWidth: Bool) -> CGFloat {
+        guard drawsGrabber(isRegularWidth: isRegularWidth), panelHeader != nil else { return 0 }
+        return Self.grabberClearance
     }
 
     /// The panel's content, told what the panel leaves above it.
@@ -858,7 +879,11 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// panel, and outside whatever the panel scrolls. It keeps its own height
     /// at every detent — a short sheet clips it rather than squashing it —
     /// and the side safe areas, as the panel does. Its box, and a peek anchor
-    /// marked in it, are handed up as the header's.
+    /// marked in it, are handed up as the header's. Under the grabber it
+    /// starts the grabber's clearance below the grabber's row
+    /// (`panelHeaderTop`); the clearance lies outside the box it hands up,
+    /// so a header that draws nothing is still no header to the detents, and
+    /// the box's bottom edge is measured where the clearance puts it.
     @ViewBuilder
     private func sheetHeader(safeArea: EdgeInsets) -> some View {
         if let panelHeader {
@@ -870,6 +895,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                 .transformAnchorPreference(key: KozmosMapShellPeekAnchorKey.self, value: .bounds) { anchors, bounds in
                     anchors = KozmosPanelPeekAnchors(header: anchors.content, headerBounds: bounds)
                 }
+                .padding(.top, panelHeaderTop(isRegularWidth: isRegularWidth))
         }
     }
 

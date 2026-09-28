@@ -51,6 +51,9 @@ const run = spawnSync(
     // A details card hosted in the shell's panel (GAP-083): drawn and
     // measured, so it runs only here too.
     "-only-testing:KozmosTests/KozmosMapShellHostedDetailsTests",
+    // The category browser, the panel header and a result list at the top
+    // of the shell's panel keep the grabber's clearance (decision 14).
+    "-only-testing:KozmosTests/KozmosMapShellHostedBrowseTests",
     // Skeleton's and FloorSelector's (rows 56 and 69): most of each runs in
     // `swift test` too, but their Dynamic Type cases and the open list's
     // render only run here — a Mac does not scale @ScaledMetric.
