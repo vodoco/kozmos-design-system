@@ -52,9 +52,9 @@
 
 ### Master Reference
 
-| Document                                | Purpose                                       | When to Use                                   |
-| --------------------------------------- | --------------------------------------------- | --------------------------------------------- |
-| [project-scope.md](../PROJECT_SCOPE.md) | Complete project specification (3,900+ lines) | Understanding architecture, tokens, platforms |
+| Document                                     | Purpose                                       | When to Use                                   |
+| -------------------------------------------- | --------------------------------------------- | --------------------------------------------- |
+| [project-scope.md](../docs/project-scope.md) | Complete project specification (3,900+ lines) | Understanding architecture, tokens, platforms |
 
 ---
 
@@ -111,8 +111,9 @@ kozmos-design-system-dev/
 │   └── icons/           # SVG source + generated icons
 ├── apps/
 │   └── docs/            # Documentation site
-├── .ai-skills/          # This directory
-└── PROJECT_SCOPE.md     # Full specification
+├── docs/
+│   └── project-scope.md # Full specification
+└── .ai-skills/          # This directory
 ```
 
 ---
@@ -125,14 +126,14 @@ When generating component code, reference:
 
 1. **code-patterns.md** - Ready-to-use templates for all 6 platforms
 2. **design-philosophy.md** - For interaction patterns and visual guidelines
-3. **PROJECT_SCOPE.md §5** - For component API patterns (CVA, compound components)
-4. **PROJECT_SCOPE.md §8** - For platform-specific patterns
+3. **docs/project-scope.md §5** - For component API patterns (CVA, compound components)
+4. **docs/project-scope.md §8** - For platform-specific patterns
 
 ### For Decision Making
 
 When making architectural decisions, reference:
 
-1. **PROJECT_SCOPE.md §28** - Decisions already made
+1. **docs/project-scope.md §28** - Decisions already made
 2. **design-philosophy.md** - Design decision framework
 3. **component-lifecycle.md** - For component maturity decisions
 
@@ -142,9 +143,10 @@ When debugging or fixing issues, reference:
 
 1. **troubleshooting.md** - Quick solutions for common issues
 2. **incident-playbook.md** - For severity assessment and response process
-3. **PROJECT_SCOPE.md §15** - For security considerations
-4. **ci-cd-configuration.md** - For what CI runs and how a release is made (PROJECT_SCOPE.md's
-   Appendix G describes workflows and secrets this repository does not have)
+3. **docs/project-scope.md §15** - For security considerations
+4. **ci-cd-configuration.md** - For what CI runs and how a release is made
+   (docs/project-scope.md's Appendix G describes workflows and secrets this repository does not
+   have)
 
 ### For Version Upgrades
 
@@ -168,7 +170,7 @@ When implementing across multiple platforms:
 
 1. **platform-mapping.md** - Component and prop equivalents
 2. **code-patterns.md** - Platform-specific templates
-3. **PROJECT_SCOPE.md §8** - Platform considerations
+3. **docs/project-scope.md §8** - Platform considerations
 
 ### For Figma/Design Work
 
@@ -176,7 +178,7 @@ When preparing Figma components or reviewing designs:
 
 1. **figma-audit.md** - Component quality checklists
 2. **design-philosophy.md** - Visual language principles
-3. **PROJECT_SCOPE.md §6** - Code Connect requirements
+3. **docs/project-scope.md §6** - Code Connect requirements
 
 ### For AI Integration in Consuming Projects
 
@@ -205,7 +207,7 @@ Supported AI agents:
 
 ```
 Using the Kozmos design system patterns from .ai-skills/code-patterns.md
-and PROJECT_SCOPE.md §5, create a Tooltip component for React that:
+and docs/project-scope.md §5, create a Tooltip component for React that:
 - Uses CVA for variants
 - Follows the compound component pattern
 - Includes proper ARIA attributes
@@ -219,8 +221,8 @@ and PROJECT_SCOPE.md §5, create a Tooltip component for React that:
 Review this PR against:
 1. Kozmos design philosophy (.ai-skills/design-philosophy.md)
 2. Component lifecycle requirements (.ai-skills/component-lifecycle.md)
-3. Accessibility requirements (PROJECT_SCOPE.md §12)
-4. Testing requirements (PROJECT_SCOPE.md §9)
+3. Accessibility requirements (docs/project-scope.md §12)
+4. Testing requirements (docs/project-scope.md §9)
 ```
 
 ### Handling an Incident

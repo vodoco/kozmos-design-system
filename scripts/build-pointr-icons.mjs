@@ -2,8 +2,8 @@
  * Generate owned React components from the Pointr Icon Library's own artwork.
  *
  * `@kozmos-ds/icons` maps its names onto lucide components, which draw the same
- * concept in a different hand. That was recorded as "renders different artwork
- * from Figma ... resolve before extending" (`docs/ds-handoff.md` §4.4), and the
+ * concept in a different hand. That was a known gap — the set renders different
+ * artwork from Figma, to be resolved before it is extended — and the
  * POI detail card made it concrete: 14 of its 19 glyphs had no Kozmos name at
  * all. The icons added from here carry Pointr's real outlines instead.
  *

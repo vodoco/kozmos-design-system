@@ -42,9 +42,9 @@ to, and check the variable in Figma.
 `docs/figma-icons-2026-09-22-0947Z.json` is the Icons page as it stands before the pending run
 (`lastModified` 09:47:15Z: 64 icon components, 56 Pointr Sources and 8 taxonomy sources).
 `docs/figma-icons-2026-09-22-0810Z.json` is the page before that, at 08:10:23Z; a Curated Icons →
-Update at 09:47:15Z drew every one of its 56 sources anew and orphaned the tints laid through them
-(the handoff of the 22nd, §5). After the next Curated Icons → Update, read the page again and
-compare the source ids; every one should be kept:
+Update at 09:47:15Z drew every one of its 56 sources anew and orphaned the tints laid through them.
+After the next Curated Icons → Update, read the page again and compare the source ids; every one
+should be kept:
 
 ```bash
 scripts/figma-rest/with-figma-token.sh node scripts/figma-rest/icons-baseline.mjs /tmp/icons-after.json

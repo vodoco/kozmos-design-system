@@ -444,8 +444,8 @@ final class KozmosMapShellContentDetentTests: XCTestCase {
     #endif
 }
 
-/// The prototype's drag rule, decided once at a drag's first move
-/// (docs/pointr-prototype-initial-sheet-2026-09-20.md §2).
+/// The Pointr prototype's drag rule, decided once at a drag's first move, as
+/// scripts/measure-prototype-sheet.cjs measured it.
 final class KozmosPanelDragKindTests: XCTestCase {
     private func decide(
         handle: Bool = false, dx: CGFloat = 0, dy: CGFloat, largest: Bool, offset: CGFloat = 0

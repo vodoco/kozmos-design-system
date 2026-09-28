@@ -2,8 +2,7 @@
 
 Kozmos checks how every story looks on every pull request, for free. It replaced Chromatic, which
 stopped comparing screenshots when its free quota ran out (every pull request from #60 on 2026-09-23
-had no visual review), at a price Olcay chose not to pay (decision 11 in
-[handoff-2026-09-27-evening.md](handoff-2026-09-27-evening.md)).
+had no visual review), at a price Olcay chose not to pay (decision 11, 2026-09-27).
 
 ## What it checks
 

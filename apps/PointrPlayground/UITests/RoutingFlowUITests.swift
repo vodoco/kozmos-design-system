@@ -91,7 +91,7 @@ final class RoutingFlowUITests: XCTestCase {
         app.launch()
 
         // 1. Browse: the building's places have loaded. Which building the map
-        // opens on varies between launches (handoff item G); a run that needs
+        // opens on varies between launches; a run that needs
         // a particular one names its place count and relaunches until it gets it.
         // The sheet's value carries the count, since the sheet rests on the
         // search row and the tiles, not on a list of every place.
