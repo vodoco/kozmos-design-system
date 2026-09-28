@@ -53,8 +53,10 @@
   border-radius: calc(var(--semantics-radius-container) * 1px);
 }
 
-/* A phone keeps the width for the content, not the frame around it. */
-@media (max-width: 40rem) {
+/* A phone or a tablet keeps the width for the content, not the frame around
+   it: beside the rail at 48rem, the full frame left the venue table 31px
+   short, and the table scrolled. */
+@media (max-width: 64rem) {
   .ex-dash-main {
     margin: calc(var(--primitives-layout-spacing-150) * 1px);
     padding: calc(var(--primitives-layout-spacing-300) * 1px)
