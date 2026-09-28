@@ -71,6 +71,12 @@ it reads first: the layout, the commands and the rules every change follows.
 [`.ai-skills/`](./.ai-skills/README.md) is the reference for assistants that
 design or build with Kozmos.
 
+Designing with Kozmos in Claude Design?
+[`docs/claude-design/`](./docs/claude-design/README.md) is what its Kozmos
+artifact carries, generated from the code: how to consume the system — the
+global, the files an artboard loads, the `ThemeProvider` — and one API card per
+component, with every prop and an example that compiles.
+
 ## The repository
 
 | Path                         | What                                                 |

@@ -31,6 +31,7 @@ Figma library they come from. This file is what a coding agent needs before chan
 | `scripts/`                                        | the checks (tokens, parity, Figma, releases), run by name         |
 | `tests/visual`                                    | the visual review's suite and its committed baselines             |
 | `docs/`                                           | the written documentation                                         |
+| `docs/claude-design/`                             | what the Claude Design artifact carries, generated (below)        |
 | `.ai-skills/`                                     | the knowledge base for AI assistants, kept true by `skills:check` |
 | `.changeset/`, `release/`                         | changes waiting for a release, and the plan a release publishes   |
 
@@ -88,6 +89,7 @@ testing what uses it, and restart Storybook after a rebuild.
   git-ignored `.notes/` folder, not in `docs/` or anywhere tracked.
 - **Generated files are regenerated, never edited:** `docs/status.md`, the data blocks of
   `docs/component-variant-gap-analysis.md`, `.ai-skills/component-inventory.md`,
+  everything in `docs/claude-design/` (`pnpm skills:build`, after building React),
   `docs/figma-*.json`, and the native token copies in `packages/ios` and `packages/android`
   (`pnpm tokens:build`, then `pnpm tokens:native:copy`).
 - **Examples use only Kozmos:** what `@kozmos-ds/react` exports, its tokens and its roles. A part
@@ -103,4 +105,8 @@ testing what uses it, and restart Storybook after a rebuild.
 - [`docs/README.md`](docs/README.md): the documentation, one line on when to read each document.
 - [`.ai-skills/README.md`](.ai-skills/README.md): the knowledge base for assistants that design
   or build with Kozmos.
+- [`docs/claude-design/README.md`](docs/claude-design/README.md): consuming Kozmos, and one API
+  card per component — every prop and an example that compiles — for the Kozmos artifact in
+  Claude Design (decision 52). `pnpm skills:build` writes it from the built types and the
+  stories; `pnpm skills:check` fails when it is stale or an example stops compiling.
 - Releases: [`docs/release-process.md`](docs/release-process.md).

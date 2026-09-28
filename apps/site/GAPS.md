@@ -132,6 +132,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-92 | `AdaptiveMapShell` does not say which edge its controls sit on   | Product / SDK          | composed     |
 | GAP-93 | `AICompanionPanel` leaves what it covers in the tab order        | Core                   | composed     |
 | GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | open         |
+| GAP-95 | `FloorSelector`'s column can grow out of the map it floats on    | Product / SDK          | left visible |
 
 ---
 
@@ -1871,3 +1872,26 @@ Text"])`) and the Get started page shows — touches it.
 - **Lane:** Core.
 - **Fix in Kozmos:** let `.kozmos-text-muted` read the surface's property, as
   `.kozmos-muted-text` does, falling back to the muted colour.
+
+## GAP-95 · `FloorSelector`'s column can grow out of the map it floats on
+
+- **What:** the collapsible level switcher (decision 38, #144) opens its
+  column in a `Popover`, portalled to the page and placed by Radix against
+  the window: it grows up over the tile, and turns down only where the
+  window's edge leaves it no room (`FloorSelector.tsx`, the collapsible's
+  `PopoverContent`, `side="top"`). Nothing sets its collision boundary, so a
+  map smaller than the window — a pane in a web app, the site's phone frame
+  — cannot keep the column inside itself. iOS measures against the window's
+  safe area too, which is right for a map that fills the screen.
+- **Evidence:** measured on 2026-09-28 in the phone search at 1280×900 and
+  1280×720, in Chromium, Firefox and WebKit. Opened from the tile under the
+  search bar, the column rises 28px above the phone's frame, over the page's
+  sheet switcher. In the wayfinding, whose map fills its canvas, it stays 52
+  to 58px inside the canvas's top.
+- **Now:** left visible in the phone search. "GAP-95: the level switcher's
+  column grows out of the phone's frame" reads the column against the frame,
+  and the same reading on the wayfinding finds it inside.
+- **Lane:** Product / SDK.
+- **Fix in Kozmos:** a collision boundary for the column (Radix's
+  `collisionBoundary`), which `AdaptiveMapShell` can fill with its map's
+  bounds, or the shell as the default boundary for what floats on it.

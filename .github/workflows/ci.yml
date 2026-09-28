@@ -93,6 +93,10 @@ jobs:
       # .ai-skills/ is what an assistant is handed as fact about Kozmos, and
       # nothing verified it: it documented a v3.x with a Modal component and a
       # variant="primary" to "solid" migration, none of which ever existed here.
+      # docs/claude-design/ is what the Kozmos artifact in Claude Design carries
+      # (decision 52): this fails when a card is stale or short of a prop the
+      # built types give, and type-checks every card's example against the
+      # build above. It reads packages/react/dist, so it stays after Build Web.
       - name: Verify The AI-Facing Docs Match The Code
         run: pnpm skills:check
 
