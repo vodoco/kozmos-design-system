@@ -8,7 +8,7 @@ the reading of the numbers, which are judgements the script does not make.
 
 ## Why This Exists
 
-`STATUS.md` reports every component present on Web, iOS, and Android, but it only proves that a
+`docs/status.md` reports every component present on Web, iOS, and Android, but it only proves that a
 file exists. It says so itself: it does not grade API parity, behavioural
 completeness, or variant coverage. This document is the missing half — it looks
 _inside_ the files and compares the variant surface each platform can express.
@@ -24,12 +24,12 @@ cannot".
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 112    |
-| Declaring at least one React variant axis | 48     |
-| Variations that are compositional only    | 64     |
-| Components with variant gaps — iOS        | 13/48  |
-| Components with variant gaps — Android    | 13/48  |
-| Components with variant gaps — Figma      | 12/48  |
-| Components with variant gaps — Vue        | 4/48   |
+| Declaring at least one React variant axis | 49     |
+| Variations that are compositional only    | 63     |
+| Components with variant gaps — iOS        | 14/49  |
+| Components with variant gaps — Android    | 14/49  |
+| Components with variant gaps — Figma      | 13/49  |
+| Components with variant gaps — Vue        | 4/49   |
 | Components absent entirely — iOS          | 9/112  |
 | Components absent entirely — Android      | 8/112  |
 | Components absent entirely — Figma        | 16/112 |
@@ -69,6 +69,10 @@ AdaptiveMapShell
 Alert
   - ios missing axes -> live (off, polite, assertive)
   - android missing axes -> live (off, polite, assertive)
+BottomNavigation
+  - ios missing axes -> density (default, compact)
+  - android missing axes -> density (default, compact)
+  - figma missing axes -> density (default, compact)
 Container
   - ios missing axes -> inset (window, panel)
   - android missing axes -> inset (window, panel)
@@ -119,8 +123,8 @@ Tree
 Two kinds of thing appear here. "component/set absent" means the platform has
 no such component at all — for Figma that is usually a painter nobody has
 written yet. "missing axes" means the component exists and cannot express an
-axis React has, which is the more interesting gap: `Link` and `Spinner` are the
-standing examples, both recorded in `ds-handoff.md` §4.4.
+axis React has, which is the more interesting gap: `Link` is the standing
+example, its `variant` on iOS and Android.
 
 ### Corrections made while validating
 

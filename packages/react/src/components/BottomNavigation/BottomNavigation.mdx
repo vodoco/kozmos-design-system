@@ -9,9 +9,10 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 Displays the BottomNavigation interface topology natively.
 
-Its tiles are NavigationItem's compact rail tiles, sharing the bar's width (`w-auto flex-1`), so
-their labels are the rail's: **11px on a 14px line**, up to two lines. See NavigationItem's Rail
-section.
+Its items are its own: an icon over an **11px label on a 14px line**, up to two lines, sharing the
+bar's width, a selected item on the muted fill. They are not NavigationItem's rail items, and do not
+take the rail's width, padding or selected bar. iOS draws the same 64pt tiles, and Android is
+Material's navigation bar with 11sp labels.
 
 <Canvas>
   <Story of={BottomNavigationStories.Default} />
@@ -66,43 +67,29 @@ items: [
     kotlin={`
 package com.kozmos.components.bottomnavigation
 
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import com.kozmos.tokens.KozmosColors
-
-data class BottomNavigationItem(
-val title: String,
-val icon: ImageVector,
-val route: String
-)
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @Composable
-fun KozmosBottomNavigation(
-items: List<BottomNavigationItem>,
-currentRoute: String,
-onNavigate: (String) -> Unit,
-modifier: Modifier = Modifier
-) {
-NavigationBar(
-modifier = modifier,
-containerColor = KozmosColors.primitivesColorsBackground0
-) {
-items.forEach { item ->
-NavigationBarItem(
-icon = { Icon(item.icon, contentDescription = item.title) },
-label = { Text(item.title) },
-selected = currentRoute == item.route,
-onClick = { onNavigate(item.route) }
+fun BottomNavigationExample() {
+var route by remember { mutableStateOf("home") }
+KozmosBottomNavigation(
+items = listOf(
+BottomNavigationItem(title = "Home", icon = Icons.Default.Home, route = "home"),
+BottomNavigationItem(title = "Maps", icon = Icons.Default.Place, route = "maps"),
+BottomNavigationItem(title = "Alerts", icon = Icons.Default.Notifications, route = "alerts")
+),
+currentRoute = route,
+onNavigate = { route = it }
 )
 }
-}
-}
-
-    `}
+`}
 
 />

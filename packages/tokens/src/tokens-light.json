@@ -2584,6 +2584,11 @@
         "$value": "{shadow.lg}",
         "$type": "shadow",
         "$description": "Above everything, with the page dimmed or ignored behind it: menus, tooltips, popovers, dialogs. The heaviest step the scale has."
+      },
+      "Map Control": {
+        "$value": "{shadow.xl}",
+        "$type": "shadow",
+        "$description": "A control over a map: zoom, compass, the location and step-free control, the floor tile. The SDK's own map controls cast this (decision 40, 2026-09-28): Pointr's \"Shadows/Floating Components BG\" style on the Tracking Indicator (Figma ce7phRJR1sCkH6zT8EMH8I, 434:31572), three layers, so a small control reads against busy tiles. Dark mode gives the key layer the Floating role's dark alpha and keeps the SDK's proportions for the other two; the Figma file draws the light theme only."
       }
     },
     "Typography": {
@@ -5631,6 +5636,10 @@
     },
     "lg": {
       "$value": "0 8px 16px rgba(0,0,0,0.1)",
+      "$type": "shadow"
+    },
+    "xl": {
+      "$value": "0 8px 8px rgba(0,0,0,0.16), 0 24px 24px rgba(0,0,0,0.08), 0 0 32px rgba(0,0,0,0.12)",
       "$type": "shadow"
     }
   }

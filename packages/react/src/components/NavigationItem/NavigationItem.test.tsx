@@ -3,70 +3,145 @@ import { describe, expect, it, vi } from "vitest";
 import { NavigationItem, navigationItemVariants } from "./NavigationItem";
 
 /**
- * Decision 36 (row 25 / GAP-013): every rail tile's label is 11px on a 14px
- * line, up to two lines, in both densities — "one smaller size for every tile,
- * not some small some large" (decision 17). The tiles stay 72px wide (64
- * compact). The browser check measures the lines and the heights; these pin
- * the classes that draw them.
+ * Decision 42: the rail is the dashboard side menu's. An item fills its rail
+ * (96px), padded 16px by 8px, its 24px icon 6px above an 11px regular label
+ * on 14px lines that wraps to two and grows the item. At rest it is the muted
+ * foreground; selected, primary on theme/0's tint with a 2px primary bar on
+ * its inline end. The browser check measures all of it in three engines;
+ * these pin the classes and the bar that draw it.
  */
-describe("NavigationItem rail tile", () => {
-  it("sets the label at 11px in both densities", () => {
+describe("NavigationItem rail item", () => {
+  const rail = (density: "default" | "compact") =>
+    navigationItemVariants({ placement: "rail", density }).split(/\s+/);
+
+  it("fills its rail, with no width or height of its own, in either density", () => {
+    // The fixed 72px and 64px tiles are retired. `compact` stays a valid
+    // density, because top and side items use it, and a rail item draws the
+    // same with it as without it.
     for (const density of ["default", "compact"] as const) {
-      const classes = navigationItemVariants({
-        placement: "rail",
-        density,
-      }).split(/\s+/);
-      expect(classes, density).toContain("text-[11px]");
-      expect(classes, density).not.toContain("text-xs");
+      expect(rail(density), density).toContain("w-full");
+      for (const fixed of ["w-[72px]", "w-16", "min-h-[72px]", "min-h-16"])
+        expect(rail(density), density).not.toContain(fixed);
     }
+    expect(rail("compact")).toEqual(rail("default"));
   });
 
-  it("draws an 11px tile, whichever density it is given", () => {
-    const { rerender } = render(
+  it("is padded 16px by 8px, its icon 6px above its label", () => {
+    render(
       <NavigationItem icon={<svg />} placement="rail">
         Settings
       </NavigationItem>,
     );
-    const tile = screen.getByRole("button", { name: "Settings" });
-    expect(tile).toHaveClass("text-[11px]", "w-[72px]", "min-h-[72px]");
-    expect(tile).not.toHaveClass("text-xs");
-
-    rerender(
-      <NavigationItem density="compact" icon={<svg />} placement="rail">
-        Settings
-      </NavigationItem>,
-    );
-    expect(tile).toHaveClass("text-[11px]", "w-16", "min-h-16");
-    expect(tile).not.toHaveClass("text-xs");
+    const item = screen.getByRole("button", { name: "Settings" });
+    expect(item).toHaveClass("py-4", "px-2", "gap-1.5");
+    expect(item).not.toHaveClass("py-2", "py-1.5", "gap-1");
+    expect(item.querySelector("[aria-hidden]")).toHaveClass("h-6", "w-6");
   });
 
-  it("gives the label two balanced lines of 14px", () => {
+  it("sets its label 11px on 14px lines at regular weight, up to two lines", () => {
     render(
       <NavigationItem icon={<svg />} placement="rail">
         SDK Configuration
       </NavigationItem>,
     );
-    const label = screen.getByText("SDK Configuration");
-    // 14px keeps a two-line tile 72px tall: 8 + 24 + 4 + 2 × 14 + 8. The
-    // 16px line it had made it 76.
-    expect(label).toHaveClass("line-clamp-2", "text-balance", "leading-[14px]");
-    expect(label).not.toHaveClass("leading-4");
+    const item = screen.getByRole("button", { name: "SDK Configuration" });
+    expect(item).toHaveClass("text-[11px]", "font-normal");
+    expect(item).not.toHaveClass("font-medium");
+    expect(screen.getByText("SDK Configuration")).toHaveClass(
+      "line-clamp-2",
+      "text-balance",
+      "leading-[14px]",
+    );
   });
 
-  it("takes a dashboard rail's 96px from className, as the docs say", () => {
-    // Holds before the change and after it: w-24 replaces the tile's own
-    // width rather than losing to it, which is what makes the documented
-    // `className="w-24"` work.
+  it("is the muted foreground at rest, with no fill and no bar", () => {
     render(
-      <NavigationItem className="w-24" icon={<svg />} placement="rail">
-        UI Translation Manager
+      <NavigationItem icon={<svg />} placement="rail">
+        Home
       </NavigationItem>,
     );
-    const tile = screen.getByRole("button", {
-      name: "UI Translation Manager",
-    });
-    expect(tile).toHaveClass("w-24");
-    expect(tile).not.toHaveClass("w-[72px]");
+    const item = screen.getByRole("button", { name: "Home" });
+    expect(item).toHaveClass("text-muted-foreground");
+    expect(item).not.toHaveClass("text-foreground", "bg-muted");
+    expect(
+      item.querySelector('[data-slot="navigation-item-indicator"]'),
+    ).toBeNull();
+  });
+
+  it("selected, is primary on the theme/0 tint with a 2px bar at its inline end", () => {
+    for (const props of [{ selected: true }, { state: "selected" as const }]) {
+      const { unmount } = render(
+        <NavigationItem icon={<svg />} placement="rail" {...props}>
+          Search
+        </NavigationItem>,
+      );
+      const item = screen.getByRole("button", { name: "Search" });
+      expect(item).toHaveClass(
+        "bg-[var(--primitives-colors-theme-0)]",
+        "text-primary",
+      );
+      expect(item).not.toHaveClass("bg-muted");
+      const bar = item.querySelector('[data-slot="navigation-item-indicator"]');
+      // `end-0` is the inline end: the right in LTR, the left in RTL.
+      expect(bar).toHaveClass(
+        "absolute",
+        "inset-y-0",
+        "end-0",
+        "w-0.5",
+        "bg-primary",
+      );
+      expect(bar).toHaveAttribute("aria-hidden", "true");
+      unmount();
+    }
+  });
+
+  it("is square, and rings its focus inside itself", () => {
+    // Full width in a rail that scrolls, an outside ring would be clipped.
+    render(
+      <NavigationItem focusVisible icon={<svg />} placement="rail">
+        Settings
+      </NavigationItem>,
+    );
+    const item = screen.getByRole("button", { name: "Settings" });
+    expect(item).toHaveClass(
+      "rounded-none",
+      "ring-inset",
+      "ring-offset-0",
+      "focus-visible:ring-inset",
+      "focus-visible:ring-offset-0",
+    );
+    expect(item).not.toHaveClass("rounded-control", "ring-offset-2");
+  });
+
+  it("leaves top and side items as they were", () => {
+    // Holds before the change and after it.
+    render(
+      <>
+        <NavigationItem placement="side" selected>
+          Overview
+        </NavigationItem>
+        <NavigationItem placement="top">Explore</NavigationItem>
+      </>,
+    );
+    const side = screen.getByRole("button", { name: "Overview" });
+    expect(side).toHaveClass(
+      "rounded-control",
+      "font-medium",
+      "bg-muted",
+      "text-primary",
+      "px-3",
+      "py-2",
+      "text-sm",
+    );
+    expect(
+      side.querySelector('[data-slot="navigation-item-indicator"]'),
+    ).toBeNull();
+    expect(screen.getByRole("button", { name: "Explore" })).toHaveClass(
+      "rounded-control",
+      "text-foreground",
+      "px-3",
+      "py-2",
+    );
   });
 });
 

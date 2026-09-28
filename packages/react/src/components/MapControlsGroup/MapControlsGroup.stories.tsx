@@ -33,18 +33,20 @@ const locationStates: [UserLocationState, string][] = [
   ["off", "Off"],
   ["locating", "Locating"],
   ["following", "On"],
-  ["heading", "Turning"],
+  ["heading", "On"],
   ["stale", "Last known"],
-  ["permission-denied", "Not allowed"],
-  ["unavailable", "No location"],
+  ["permission-denied", "No access"],
+  ["unavailable", "No Location"],
 ];
 
 /**
- * Every state's mark, labelled so the state can be read beside it. The marks
- * are the Location Tracking Buttons revamp's: the outline pointer while the
- * map is not following, the solid pointer with its cone while it follows, the
- * upright pointer with the turning arc for heading, and the pointer struck
- * through when there is no position.
+ * Every state's mark, labelled so the state can be read beside it, in the
+ * SDK's words (decision 40): "Focus" over the state, grey while off and navy
+ * while on. The marks are the Location Tracking Buttons revamp's: the outline
+ * pointer while the map is not following, the solid pointer with its cone
+ * while it follows, the upright pointer with the turning arc for heading —
+ * "On", as following reads — and the pointer struck through when there is no
+ * position, which reads its state alone, on one line.
  */
 export const LocationStates: Story = {
   render: () => (
@@ -65,20 +67,22 @@ export const LocationStates: Story = {
   ),
 };
 
-// Heading gets its own state text, not a second "On": the name is all a
-// screen reader has, and "Focus, On" for both modes would hide the one that
-// turns the map.
+// Heading reads "On", as following does, and as the SDK's control does: its
+// mark tells the two apart, and a screen reader hears what the group adds
+// after the words ("Focus, On, map turns with you").
 const sdkCycle: [UserLocationState, string][] = [
   ["off", "Off"],
   ["following", "On"],
-  ["heading", "Turning"],
+  ["heading", "On"],
 ];
 
 /**
  * The SDK's location control: icon-only over the map, widening to "Focus / On"
  * for a moment when the mode changes. Each press moves to the next mode, as
  * the revamp's sequence does — off, following, then the map turning with the
- * visitor. The group draws; the product decides what a press does.
+ * visitor. From following to heading the words stay "On", so nothing widens:
+ * the mark changes, and the SDK says "Map Rotation: On" in a status message
+ * of its own. The group draws; the product decides what a press does.
  */
 export const SDKLocationControl: Story = {
   render: function SDKLocationControlStory() {

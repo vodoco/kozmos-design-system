@@ -109,16 +109,41 @@ describe("MapControlsGroup", () => {
       // A caller class beats the component through tailwind-merge. The group
       // used to restate `bg-background/90` — which compiles to nothing, so the
       // compass stayed see-through between two white controls — and
-      // `hover:bg-secondary`, the border grey.
-      expect(button.className).not.toContain("bg-background/");
+      // `hover:bg-secondary`, the border grey. Every control wears the map
+      // controls' own surface and restates none of it.
+      expect(button.className).not.toContain("bg-background");
       expect(button.className).not.toContain("hover:bg-secondary");
-      expect(button).toHaveClass("bg-background", "hover:bg-muted");
+      expect(button.className).not.toMatch(/\bshadow-/);
+      expect(button).toHaveClass("kozmos-map-control");
     }
 
-    // `shadow-floating` passed from here used to win over the component's
-    // `shadow-raised`, so a following location control never lifted.
-    expect(buttons[3]).toHaveClass("shadow-raised");
-    expect(buttons[3]).not.toHaveClass("shadow-floating");
+    // The zoom pair is one surface: its buttons are its segments, and cast
+    // nothing of their own inside it (decision 40).
+    const pair = buttons[0].parentElement;
+    expect(pair).toBe(buttons[1].parentElement);
+    expect(pair).toHaveClass("kozmos-map-control-stack");
+  });
+
+  it("draws its marks at the SDK's 24, in one box for every mode", () => {
+    render(
+      <MapControlsGroup
+        locationLabel="Focus"
+        locationState="following"
+        onMyLocation={() => undefined}
+        onZoomIn={() => undefined}
+      />,
+    );
+
+    // The Tracking Indicator's icons are 24 squares (Figma 434:31572); the
+    // two symbols overflow theirs, as the revamp's cone and arc do.
+    for (const name of ["Zoom in", "Focus"]) {
+      const svg = screen.getByRole("button", { name }).querySelector("svg");
+      expect(svg?.closest(".kozmos-map-control-mark")).not.toBeNull();
+    }
+    const following = screen
+      .getByRole("button", { name: "Focus" })
+      .querySelector("svg");
+    expect(following).toHaveAttribute("width", "36");
   });
 
   it("lets the product name every control, in its own language", () => {
@@ -168,7 +193,8 @@ describe("MapControlsGroup", () => {
           onMyLocation={() => undefined}
         />,
       );
-      const control = screen.getByRole("button", { name: "Focus" });
+      // Heading's name goes on after the words ("…, map turns with you").
+      const control = screen.getByRole("button", { name: /^Focus/ });
 
       expect(outline.length).toBeGreaterThan(0);
       expect(drawnIcons(control)).toContainEqual(outline);
@@ -185,7 +211,9 @@ describe("MapControlsGroup", () => {
         />,
       );
 
-      const control = screen.getByRole("button", { name: "Focus" });
+      const control = screen.getByRole("button", {
+        name: "Focus, map turns with you",
+      });
       expect(within(control).getByTestId("own-heading")).toBeInTheDocument();
       // Only the state it was given: the others keep the group's own marks.
       expect(drawnIcons(control)).not.toContainEqual(
@@ -250,8 +278,83 @@ describe("MapControlsGroup", () => {
 
       const control = screen.getByRole("button", { name: "Focus, On" });
       expect(within(control).getByText("Focus").parentElement).toHaveClass(
-        "flex-col",
+        "kozmos-map-control-words-stacked",
       );
+    });
+
+    it.each(["unavailable", "permission-denied"] as const)(
+      "reads %s as one line, the state alone, as the SDK's No Location does",
+      (state) => {
+        render(
+          <MapControlsGroup
+            locationLabel="Focus"
+            locationLabelPlacement="stacked"
+            locationPresentation="labelled"
+            locationState={state}
+            locationStateLabel="No Location"
+            onMyLocation={() => undefined}
+          />,
+        );
+
+        // Figma's "no position" type draws "No Location" alone, with no
+        // "Focus" over it. The name still says what the control does.
+        const control = screen.getByRole("button", {
+          name: "Focus, No Location",
+        });
+        expect(within(control).getByText("No Location")).toBeVisible();
+        expect(within(control).queryByText("Focus")).toBeNull();
+      },
+    );
+
+    it("says heading's On as following does, and more to a screen reader", () => {
+      const { rerender } = render(
+        <MapControlsGroup
+          locationLabel="Focus"
+          locationLabelPlacement="stacked"
+          locationPresentation="labelled"
+          locationState="following"
+          locationStateLabel="On"
+          onMyLocation={() => undefined}
+        />,
+      );
+      expect(screen.getByRole("button", { name: "Focus, On" })).toBeVisible();
+
+      rerender(
+        <MapControlsGroup
+          locationLabel="Focus"
+          locationLabelPlacement="stacked"
+          locationPresentation="labelled"
+          locationState="heading"
+          locationStateLabel="On"
+          onMyLocation={() => undefined}
+        />,
+      );
+      // The SDK reads "Focus / On" in both modes and lets the mark tell them
+      // apart. The mark says nothing to a screen reader, so heading's name
+      // goes on after the words it shows.
+      const heading = screen.getByRole("button", {
+        name: "Focus, On, map turns with you",
+      });
+      expect(within(heading).getByText("On")).toBeVisible();
+      expect(within(heading).queryByText(/turns/)).toBeNull();
+    });
+
+    it("lets the product translate what heading adds", () => {
+      render(
+        <MapControlsGroup
+          locationHeadingDescription="Karte dreht sich mit"
+          locationLabel="Fokus"
+          locationState="heading"
+          locationStateLabel="Ein"
+          onMyLocation={() => undefined}
+        />,
+      );
+
+      expect(
+        screen.getByRole("button", {
+          name: "Fokus, Ein, Karte dreht sich mit",
+        }),
+      ).toHaveAttribute("aria-pressed", "true");
     });
   });
 
@@ -346,7 +449,7 @@ describe("MapControlsGroup", () => {
         expect(control).toHaveAttribute("data-presentation", "labelled");
         expect(
           within(control).getByText("Step-free").parentElement,
-        ).toHaveClass("flex-col");
+        ).toHaveClass("kozmos-map-control-words-stacked");
       } finally {
         vi.useRealTimers();
       }

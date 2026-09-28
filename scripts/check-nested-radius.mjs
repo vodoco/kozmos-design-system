@@ -167,7 +167,7 @@ async function main() {
   );
   if (res.status !== 200) {
     console.error(
-      `Figma API returned ${res.status}.${res.status === 403 ? " Token expired or lacking file_content:read — see docs/session-handoff.md §6." : ""}`,
+      `Figma API returned ${res.status}.${res.status === 403 ? " Token expired or lacking file_content:read — FIGMA_ACCESS_TOKEN (env, .env or the CI secret) needs a new Figma personal access token with that scope." : ""}`,
     );
     process.exit(2);
   }

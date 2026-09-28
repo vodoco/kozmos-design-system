@@ -5,7 +5,7 @@
  * says:
  *
  *  - the component list and its lanes from scripts/skills/check-completion.ts
- *    (the same sets that build STATUS.md);
+ *    (the same sets that build docs/status.md);
  *  - each component's description and its React, Vue, SwiftUI and Compose
  *    snippets from its .mdx documentation (the PlatformSnippets block);
  *  - each component's parts — the PascalCase exports of its folder that the

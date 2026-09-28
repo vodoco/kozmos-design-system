@@ -199,6 +199,8 @@ module.exports = {
         raised: "var(--semantics-elevation-raised)",
         floating: "var(--semantics-elevation-floating)",
         overlay: "var(--semantics-elevation-overlay)",
+        // The map controls' own, three layers: the SDK's (decision 40).
+        "map-control": "var(--semantics-elevation-map-control)",
       },
       transitionDuration: {
         DEFAULT: "calc(150ms * var(--semantics-motion-duration-scale, 1))", // Updated to semantics
@@ -245,7 +247,7 @@ module.exports = {
     // carried only Tailwind own ping, pulse and spin, so every overlay appeared
     // instantly. The classes are strings, so types and tests pass either way, and
     // Chromatic — the one gate that would have shown it — has been on its snapshot
-    // limit since early September. Measured 2026-09-12; see docs/ds-scope-2026-09-12.md.
+    // limit since early September. Measured 2026-09-12.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("tailwindcss-animate"),
     plugin(function ({ addUtilities, theme }) {

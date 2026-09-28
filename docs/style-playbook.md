@@ -351,8 +351,12 @@ Recorded so nobody rediscovers them:
 - **No glass surface role.** FeedbackCard, RoutingInputGroup and
   SaveLocationCard each repeat `bg-white/70 dark:bg-black/70 backdrop-blur-3xl
 ring-1 ring-black/5` — 29 of the 35 raw colours `tokens:raw:check` counts.
-- **19 Figma sets cast no shadow** where at least one implementation does. The
-  list is in `docs/session-handoff.md` §4.
+- **19 Figma sets cast no shadow** where at least one implementation does:
+  POICard, WayfindingCard, RouteSummary, FeedbackCard, SaveLocationCard,
+  RoutingInputGroup, MapControlsGroup, FloorSelector, POIDetailPanel,
+  LocationPin, AdaptiveMapShell, UserLocationMarker, Navbar, DirectionStep,
+  POIResultCard, POIMediaGallery, Listbox, Select and DynamicIsland. Each needs
+  `elevationEffect(role)` in its painter, then a run.
 - **Card disagrees across platforms**: raised on the web and iOS, flat on
   Android. **The iOS FloatingActionButton** uses a bare SwiftUI default where
   Figma paints it heavier than any step.

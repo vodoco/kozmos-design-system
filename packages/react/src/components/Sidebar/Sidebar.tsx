@@ -41,8 +41,12 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
         data-collapsed={variant === "rail" ? "true" : undefined}
         data-collapsible={collapsible ? "true" : undefined}
         className={cn(
-          "flex h-full flex-col border-r bg-background py-6",
-          variant === "rail" ? "w-20 items-center px-2" : "w-64 px-4",
+          // On the surface, its edge at the inline end: the right in LTR,
+          // the left in RTL.
+          "flex h-full flex-col border-e bg-surface-0 py-6",
+          // The rail is 96px and its NavigationItems fill it (decision 42),
+          // so it has no inline padding; its header and footer stay centred.
+          variant === "rail" ? "w-24 items-center" : "w-64 px-4",
           collapsible && "transition-[width]",
           className,
         )}
@@ -56,7 +60,10 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
         {navigationContent ? (
           <nav
             data-slot="sidebar-navigation"
-            className="min-h-0 flex-1 overflow-y-auto py-4"
+            className={cn(
+              "min-h-0 flex-1 overflow-y-auto py-4",
+              variant === "rail" && "self-stretch",
+            )}
           >
             {navigationContent}
           </nav>

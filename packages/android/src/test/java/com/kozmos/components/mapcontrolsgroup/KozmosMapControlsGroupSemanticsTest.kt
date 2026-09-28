@@ -1,6 +1,8 @@
 package com.kozmos.components.mapcontrolsgroup
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -85,7 +87,9 @@ class KozmosMapControlsGroupSemanticsTest {
             }
             val following = state == KozmosUserLocationState.Following ||
                 state == KozmosUserLocationState.Heading
-            assertEquals("$state", following, tree.named("Focus").selected)
+            // Heading's name goes on after the words (decision 40).
+            val name = if (state == KozmosUserLocationState.Heading) "Focus, map turns with you" else "Focus"
+            assertEquals("$state", following, tree.named(name).selected)
         }
     }
 
@@ -187,6 +191,88 @@ class KozmosMapControlsGroupSemanticsTest {
     }
 
     @Test
+    fun headingSaysMoreThanItsWordsToTalkBack() {
+        // Decision 40: heading reads "On", as following does and as the SDK's
+        // control does; its mark tells them apart on screen, and TalkBack hears
+        // what the group adds after the words. The product translates it.
+        val tree = read {
+            KozmosMapControlsGroup(
+                onMyLocation = {},
+                locationLabel = "Focus",
+                locationStateLabel = "On",
+                locationState = KozmosUserLocationState.Heading
+            )
+        }
+        assertEquals(true, tree.named("Focus, On, map turns with you").selected)
+
+        val translated = read {
+            KozmosMapControlsGroup(
+                onMyLocation = {},
+                locationLabel = "Fokus",
+                locationStateLabel = "Ein",
+                locationState = KozmosUserLocationState.Heading,
+                locationHeadingDescription = "Karte dreht sich mit"
+            )
+        }
+        translated.named("Fokus, Ein, Karte dreht sich mit")
+    }
+
+    @Test
+    fun noPositionReadsItsStateAlone() {
+        // The SDK's "No Location" is one line, with no "Focus" over it. The
+        // name still starts what TalkBack hears.
+        for (state in listOf(KozmosUserLocationState.Unavailable, KozmosUserLocationState.PermissionDenied)) {
+            val tree = read {
+                KozmosMapControlsGroup(
+                    onMyLocation = {},
+                    locationPresentation = KozmosMapControlButtonPresentation.Labelled,
+                    locationLabelPlacement = KozmosMapControlButtonLabelPlacement.Stacked,
+                    locationLabel = "Focus",
+                    locationStateLabel = "No Location",
+                    locationState = state
+                )
+            }
+            tree.named("Focus, No Location")
+            assertTrue("$state: No Location is not drawn", tree.unmerged.any { "No Location" in it.texts })
+            assertTrue("$state: the name is drawn over No Location", tree.unmerged.none { "Focus" in it.texts })
+        }
+    }
+
+    @Test
+    fun theControlsAreTheSDKs48Square() {
+        // Decision 40: the Tracking Indicator's 48 square, and 48 tall labelled.
+        // A 100dp ruler gives the density the bounds are drawn at.
+        val tree = read {
+            Column {
+                Box(Modifier.size(100.dp).testTag("ruler"))
+                KozmosMapControlsGroup(onCompassReset = {}, onMyLocation = {}, locationLabel = "Focus")
+            }
+        }
+        val dp = tree.unmerged.single { it.tag == "ruler" }.bounds.width / 100f
+        for (name in listOf("Zoom in", "Zoom out", "Reset bearing", "Focus")) {
+            val bounds = tree.named(name).bounds
+            assertEquals("$name is ${bounds.width / dp}dp wide", 48f, bounds.width / dp, 0.5f)
+            assertEquals("$name is ${bounds.height / dp}dp tall", 48f, bounds.height / dp, 0.5f)
+        }
+
+        val labelled = read {
+            Column {
+                Box(Modifier.size(100.dp).testTag("ruler"))
+                KozmosMapControlsGroup(
+                    onMyLocation = {},
+                    locationPresentation = KozmosMapControlButtonPresentation.Labelled,
+                    locationLabelPlacement = KozmosMapControlButtonLabelPlacement.Stacked,
+                    locationLabel = "Focus",
+                    locationStateLabel = "Off"
+                )
+            }
+        }
+        val labelledDp = labelled.unmerged.single { it.tag == "ruler" }.bounds.width / 100f
+        val height = labelled.named("Focus, Off").bounds.height / labelledDp
+        assertEquals("the labelled control is ${height}dp tall", 48f, height, 0.5f)
+    }
+
+    @Test
     fun stepFreeStacksAsTheLocationControlItReplacesIsSetTo() {
         val tree = read {
             KozmosMapControlsGroup(
@@ -198,9 +284,12 @@ class KozmosMapControlsGroupSemanticsTest {
 
         val name = tree.unmerged.single { "Step-free" in it.texts }
         val state = tree.unmerged.single { "Off" in it.texts }
+        // Centres, not edges: each line is a box as tall as its type (the
+        // SDK's 16 on a 16 line), and the text's own box, with its leading,
+        // overflows it (decision 40).
         assertTrue(
             "the state sits under the name: ${name.bounds} over ${state.bounds}",
-            state.bounds.top >= name.bounds.bottom
+            state.bounds.center.y > name.bounds.center.y && state.bounds.left == name.bounds.left
         )
     }
 }

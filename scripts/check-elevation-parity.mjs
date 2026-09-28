@@ -449,6 +449,158 @@ for (const mode of ["light", "dark"]) {
   }
 }
 
+// 9. The map controls' role, three layers (decision 40, 2026-09-28).
+//
+// The SDK's map controls cast Pointr's "Shadows/Floating Components BG": 0 8 8
+// at 16%, 0 24 24 at 8% and 0 0 32 at 12% (Figma ce7phRJR1sCkH6zT8EMH8I,
+// 434:31572). The light token is pinned to those numbers, and every consumer to
+// the token: the web's class, iOS layer by layer (each radius half its blur,
+// which is how SwiftUI's radius draws a CSS blur), and Android's one elevation,
+// the key light's blur. The Figma importer does not paint this role yet: its
+// map controls are Olcay's to bring over with an Update, and this says so
+// rather than passing quietly.
+{
+  const ROLE = "Map Control";
+  const NAME = "semanticsElevationMapControl";
+  const PRIMITIVE = "shadow.xl";
+  const SDK = [
+    { a: 0.16, x: 0, y: 8, blur: 8 },
+    { a: 0.08, x: 0, y: 24, blur: 24 },
+    { a: 0.12, x: 0, y: 0, blur: 32 },
+  ];
+  const layersOf = (value, where) =>
+    String(value)
+      .split(/,(?![^(]*\))/)
+      .map((layer) => {
+        const rgba = layer.match(
+          /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/,
+        );
+        const dims = layer.replace(/rgba?\([^)]*\)/, "").match(/-?[\d.]+/g);
+        if (!rgba || !dims || dims.length < 3)
+          throw new Error(`cannot parse ${where}: ${value}`);
+        return {
+          rgb: [rgba[1], rgba[2], rgba[3]].map(Number),
+          a: parseFloat(rgba[4] === undefined ? "1" : rgba[4]),
+          x: Number(dims[0]),
+          y: Number(dims[1]),
+          blur: Number(dims[2]),
+        };
+      });
+  const token = {};
+  for (const mode of ["light", "dark"]) {
+    const tree = JSON.parse(read(`packages/tokens/src/tokens-${mode}.json`));
+    const role = lookup(tree, `Semantics.Elevation.${ROLE}`);
+    if (!role) {
+      fail(`${mode}: Semantics.Elevation.${ROLE} is missing`);
+      continue;
+    }
+    if (role.$value !== `{${PRIMITIVE}}`)
+      fail(
+        `${mode}: Elevation.${ROLE} aliases ${role.$value}, expected {${PRIMITIVE}}`,
+      );
+    token[mode] = layersOf(
+      lookup(tree, PRIMITIVE).$value,
+      `${mode} ${PRIMITIVE}`,
+    );
+  }
+  if (token.light && token.dark) {
+    const geometry = (layers) =>
+      layers.map((l) => `${l.x} ${l.y} ${l.blur}`).join(", ");
+    if (geometry(token.light) !== geometry(token.dark))
+      fail(
+        `${ROLE}: the geometry changes between modes (${geometry(token.light)} / ${geometry(token.dark)})`,
+      );
+    const sdk = token.light.every(
+      (l, i) =>
+        SDK[i] &&
+        l.rgb.every((v) => v === 0) &&
+        l.a === SDK[i].a &&
+        l.x === SDK[i].x &&
+        l.y === SDK[i].y &&
+        l.blur === SDK[i].blur,
+    );
+    if (sdk && token.light.length === SDK.length)
+      ok(`light: Elevation.${ROLE} → ${PRIMITIVE}, the SDK's three shadows`);
+    else
+      fail(
+        `light: ${PRIMITIVE} is not the SDK's three shadows: ${JSON.stringify(token.light)}`,
+      );
+    if (token.dark.every((l, i) => l.a > token.light[i].a))
+      ok(
+        `dark: Elevation.${ROLE} deepens every layer — ${token.dark.map((l) => l.a).join("/")}`,
+      );
+    else fail(`dark: ${ROLE} does not deepen every layer against the light`);
+
+    const tailwind = read("packages/react/tailwind.config.js");
+    if (
+      /^\s*"map-control":\s*"var\(--semantics-elevation-map-control\)"/m.test(
+        tailwind,
+      )
+    )
+      ok("web: shadow-map-control reads --semantics-elevation-map-control");
+    else fail("web: tailwind.config.js does not map shadow-map-control");
+
+    const ios = read("packages/ios/Sources/KozmosShadows.swift");
+    const block = ios.match(
+      new RegExp(`${NAME}: \\[ShadowToken\\] = \\[([\\s\\S]*?)\\n    \\]`),
+    );
+    const iosLayers = block
+      ? [
+          ...block[1].matchAll(
+            /ShadowToken\(color: kozmosShadowColor\(light: \(([^)]*)\), dark: \(([^)]*)\)\), radius: ([\d.]+), x: ([\d.-]+), y: ([\d.-]+)\)/g,
+          ),
+        ]
+      : [];
+    const wrong = [];
+    if (iosLayers.length !== token.light.length)
+      wrong.push(
+        `${iosLayers.length} layer(s) where the token has ${token.light.length}`,
+      );
+    iosLayers.forEach((m, i) => {
+      const l = token.light[i];
+      const d = token.dark[i];
+      if (!l) return;
+      if (Number(m[1].split(",")[3]) !== l.a)
+        wrong.push(`layer ${i + 1} light alpha ${m[1].split(",")[3]}`);
+      if (Number(m[2].split(",")[3]) !== d.a)
+        wrong.push(`layer ${i + 1} dark alpha ${m[2].split(",")[3]}`);
+      if (Number(m[3]) !== l.blur / 2)
+        wrong.push(
+          `layer ${i + 1} radius ${m[3]}, half its blur is ${l.blur / 2}`,
+        );
+      if (Number(m[4]) !== l.x || Number(m[5]) !== l.y)
+        wrong.push(`layer ${i + 1} offset ${m[4]},${m[5]}`);
+    });
+    if (wrong.length === 0)
+      ok(
+        `iOS: ${ROLE} is the token's ${token.light.length} layers in both themes, each radius half its blur`,
+      );
+    else fail(`iOS: ${NAME} disagrees with the tokens — ${wrong.join("; ")}`);
+
+    const android = read(
+      "packages/android/src/main/java/com/kozmos/tokens/KozmosShadows.kt",
+    );
+    const dp = android.match(new RegExp(`${NAME} = ([\\d.]+)\\.dp`));
+    if (dp && Number(dp[1]) === token.light[0].blur)
+      ok(
+        `Android: ${ROLE} is ${dp[1]}.dp, its key light's blur (Compose draws one elevation)`,
+      );
+    else
+      fail(
+        `Android: ${NAME} is ${dp ? `${dp[1]}.dp` : "missing"}, the key light's blur is ${token.light[0].blur}`,
+      );
+
+    const plugin = read("figma/foundations-importer/code.js");
+    const elevation = plugin.match(/const KOZMOS_ELEVATION = \{([\s\S]*?)\};/);
+    if (elevation && /mapControl\s*:/.test(elevation[1]))
+      ok("plugin: KOZMOS_ELEVATION carries the map controls' step");
+    else
+      console.log(
+        "  gap   plugin: KOZMOS_ELEVATION has no map-control step yet — the importer's MapControlButton and MapControlsGroup painters still draw the Floating role until the map changes are brought to Figma",
+      );
+  }
+}
+
 console.log(
   `\n${problems.length === 0 ? "ok    every consumer reads Semantics.Elevation" : `${problems.length} problem(s)`}`,
 );

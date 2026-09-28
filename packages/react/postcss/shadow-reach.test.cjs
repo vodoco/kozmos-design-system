@@ -46,6 +46,23 @@ test("the largest over the token's layers and over both themes", async () => {
   assert.equal(await room(":root {--elevation: none}", "bottom"), "0px");
 });
 
+test("several tokens make one room, the largest over all of them", async () => {
+  // MapOverlay holds cards that float and map controls that cast their own,
+  // heavier role (decision 40): its room is the larger of the two, per side.
+  const tokens =
+    ":root {--floating: 0 4px 8px red; --map: 0 8px 8px red, 0 24px 24px red, 0 0 32px red}";
+  // A refusal is read as the output, so the room is what is asserted.
+  const css = await compile(
+    `${tokens} .room {padding: kozmos-shadow-reach(--floating --map top) kozmos-shadow-reach(--floating --map inline) kozmos-shadow-reach(--map --floating bottom)}`,
+  ).catch((error) => String(error.message));
+  assert.match(css, /\.room \{padding: 32px 32px 48px\}/);
+  // One token that is missing still fails, whatever the others.
+  await assert.rejects(
+    compile(`${tokens} .a {padding: kozmos-shadow-reach(--floating --other top)}`),
+    /--other is not declared/,
+  );
+});
+
 test("it composes with calc() and leaves everything else alone", async () => {
   const css = await compile(
     ":root {--elevation: 0 4px 8px red} .a {margin: calc(-1 * kozmos-shadow-reach(--elevation top)) 0; padding: 1px}",
@@ -70,6 +87,6 @@ test("a token it cannot measure, or none at all, fails the build", async () => {
     compile(
       ":root {--elevation: 0 4px 8px red} .a {padding: kozmos-shadow-reach(--elevation start)}",
     ),
-    /takes a custom property and one of/,
+    /takes one or more custom properties and one of/,
   );
 });

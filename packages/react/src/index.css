@@ -2,6 +2,8 @@
 @import "@kozmos-ds/tokens/css/light.css";
 @import "@kozmos-ds/tokens/css/dark.css";
 @import "./styles/owned-components.css";
+/* After the Button's rules, which the map controls' own outweigh by order. */
+@import "./styles/owned-map-controls.css";
 @import "./styles/owned-native-fields.css";
 @import "./styles/owned-temporal-fields.css";
 @import "./styles/owned-selection.css";

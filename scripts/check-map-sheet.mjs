@@ -1,7 +1,6 @@
 /**
  * The map shell's bottom sheet, driven in a real browser against the
- * Storybook build, as the prototype was driven
- * (docs/pointr-prototype-initial-sheet-2026-09-20.md, scripts/measure-prototype-sheet.cjs):
+ * Storybook build, as the prototype was driven (scripts/measure-prototype-sheet.cjs):
  * the three detents' heights, a drag anywhere on the sheet snapping to the
  * nearest detent, the handle's tap and keys, the content's scroll locked
  * below the largest detent, and the collapsed detent resting on a peek anchor.

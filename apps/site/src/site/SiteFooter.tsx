@@ -1,9 +1,12 @@
-import { Container, Separator, Stack, Text } from "@kozmos-ds/react";
+import { Container, Link, Separator, Stack, Text } from "@kozmos-ds/react";
 import { PACKAGES_PUBLISHED } from "../lib/site";
 import { SiteLink } from "./links";
-import { primaryNavigation } from "./SiteHeader";
+import { primaryNavigation, storybookNavigation } from "./SiteHeader";
 
-/** The header's pages, and the roadmap, which the header has no room for. */
+/**
+ * The header's pages, and the roadmap, which the header has no room for;
+ * then Storybook, which is a plain link (src/lib/storybook.ts).
+ */
 const footerNavigation = [
   ...primaryNavigation,
   { to: "/roadmap", label: "Roadmap" },
@@ -35,6 +38,11 @@ export function SiteFooter() {
                   </SiteLink>
                 </Text>
               ))}
+              <Text as="span" size="sm">
+                <Link href={storybookNavigation.href} variant="subtle">
+                  {storybookNavigation.label}
+                </Link>
+              </Text>
             </nav>
           </Stack>
         </Stack>

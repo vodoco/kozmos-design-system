@@ -2,8 +2,8 @@
 
 The site is built from `@kozmos-ds/react` and its tokens only (see README.md,
 "The one rule"). Where that was not enough, the gap is written here instead of
-being worked around, following the method in `docs/ds-handoff.md` §11: the
-component and the part, what was tried, the lane, and the evidence. Entries
+being worked around, the way Kozmos records what its examples cannot express:
+the component and the part, what was tried, the lane, and the evidence. Entries
 up to GAP-36 were measured on `claude/pointr-browse-repairs` at `ef1b68b`
 (2026-09-21), the branch the site is built on; the rest, and every revision
 since, on the same packages at `f30c0f9`, the site's current base, on
@@ -11,7 +11,7 @@ since, on the same packages at `f30c0f9`, the site's current base, on
 GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
 the same day.
 
-**Lanes** are the handoff's: Core (domain-neutral components), Product / SDK,
+**Lanes** are the design system's: Core (domain-neutral components), Product / SDK,
 Platform / form factor, or Site (a need of this website, not of a product).
 
 **Status** is one of: _open_ (nothing done), _composed_ (the site builds it
@@ -345,7 +345,7 @@ keep the table's four columns and its statuses as they are.
 - **What:** the icon set's 56 glyphs have nothing for food and drink, toilets,
   accessible facilities, parking or first aid — the categories an indoor map
   shows first. The accessibility glyph is already on record as missing
-  (`docs/ds-handoff.md` §6.5: drawn 1,213 times across 7 surfaces).
+  (the product draws it 1,213 times across 7 surfaces, by the 2026-09-14 scan).
 - **Now (venue explorer, phone search, kiosk directory):** those categories
   are left out rather than drawn with a stand-in icon. The six they have
   (shops, information, transport, events, offices, Wi-Fi) use Kozmos icons.
@@ -763,8 +763,8 @@ keep the table's four columns and its statuses as they are.
   227px tall — 27 % of the screen, and sticky. There is no way to collapse
   the navigation into a menu.
 - **Now:** the site puts everything in the navigation slot: the links,
-  shown from 48rem, and three small tools — a theme menu, search, and a
-  button that opens the links in a `Drawer` below 48rem. That slot keeps a
+  shown from 64rem, and three small tools — a theme menu, search, and a
+  button that opens the links in a `Drawer` below 64rem. That slot keeps a
   16rem basis of its own, which leaves the logo little room beside it: the
   header shows the full logo from 48rem and its K below. One 64px row from
   360px up; at 320px the tools still drop to a second row (a test measures

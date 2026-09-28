@@ -333,6 +333,7 @@
   <string name="semantics_elevation_raised">@string/shadow_sm</string>
   <string name="semantics_elevation_floating">@string/shadow_md</string>
   <string name="semantics_elevation_overlay">@string/shadow_lg</string>
+  <string name="semantics_elevation_map_control">@string/shadow_xl</string>
   <string name="semantics_typography_family_system">ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji"</string>
   <string name="semantics_typography_family_brand">@string/primitives_typography_font_family_primary</string>
   <string name="semantics_typography_family_mono">ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace</string>
@@ -674,4 +675,5 @@
   <string name="shadow_sm">0 2px 4px rgba(0,0,0,0.3)</string>
   <string name="shadow_md">0 4px 8px rgba(0,0,0,0.4)</string>
   <string name="shadow_lg">0 8px 16px rgba(0,0,0,0.5)</string>
+  <string name="shadow_xl">0 8px 8px rgba(0,0,0,0.4), 0 24px 24px rgba(0,0,0,0.2), 0 0 32px rgba(0,0,0,0.3)</string>
 </resources>

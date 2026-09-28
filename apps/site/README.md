@@ -103,9 +103,10 @@ server after rebuilding if it predates a change to `serve-static.mjs`.
 
 **What is on the page is Kozmos.** Every visible part is a component from
 `@kozmos-ds/react`; every colour, radius, shadow, size and spacing value is a
-Kozmos token. It is the rule `docs/ds-handoff.md` §11 set for examples,
-applied to the whole site, for the same reason: the site is the best test the
-system gets before it is published, and a workaround destroys the evidence.
+Kozmos token. It is the rule Kozmos sets for its examples (only what the
+design system exports, its tokens and its roles), applied to the whole site,
+for the same reason: the site is the best test the system gets before it is
+published, and a workaround destroys the evidence.
 
 One allowance, decided on 2026-09-21: **site CSS may set typography from the
 typography tokens** — a size, line height, family or spacing named by a token
@@ -191,7 +192,7 @@ generate` runs before dev, build and typecheck):
   - `components.json` and `components/<slug>.json`: every component folder
     under `packages/react/src/components`, its lane from the sets in
     `scripts/skills/check-completion.ts` (the same ones that build
-    `STATUS.md`), its description and its React, Vue, SwiftUI and Compose
+    `docs/status.md`), its description and its React, Vue, SwiftUI and Compose
     snippets from its `.mdx`, and its parts and props read from the
     TypeScript source with the compiler API: every component the package
     exports from that folder (re-exports followed), its props type resolved
@@ -325,23 +326,38 @@ showed "Something went wrong" with a hydration error.)
 **The header.** One 64px row from 360px up, from Kozmos's `Navbar`.
 Everything sits in its navigation slot — the Navbar's leading group has a
 32rem basis, so its trailing slot drops to a second row on a phone (GAP-41):
-the page links, shown from 48rem and centred on the header itself (the
-sticky Navbar is their containing block), so they sit on the page's centre
-line whatever the logo's width — where the row has room for that, which a
-container query on the bar measures in rem, so enlarged text sends them
-back into the row, after the logo, before they could touch it or the tools
-(WCAG 1.4.4); a theme menu (`ThemeMenu.tsx`: a `Menu` of
-radio items behind one small button, words because there is no sun or moon
-icon, GAP-07); search; and, below 48rem, a button that opens the links in a
-`Drawer`. The navigation slot keeps a 16rem basis of its own, so beside it the
-logo is the full logo from 48rem and its K below; at 320px the tools wrap to
-a second row whatever the logo. The skip link is the header's first child:
-the sticky Navbar sits at the top layer, and a link before it was painted
-under it. Tests hold the header to one row at 1280, 1024, 768, 390 and 360px,
+the page links — the four pages, then Storybook — shown from 64rem and
+centred on the header itself (the sticky Navbar is their containing block),
+so they sit on the page's centre line whatever the logo's width — where the
+row has room for that, which a container query on the bar measures in rem,
+so enlarged text sends them back into the row, after the logo, before they
+could touch it or the tools (WCAG 1.4.4); a theme menu (`ThemeMenu.tsx`: a
+`Menu` of radio items behind one small button, words because there is no
+sun or moon icon, GAP-07); search; and, below 64rem, a button that opens the
+links in a `Drawer`. Five links need a page 848px wide to sit centred
+between the logo and the tools (868px in a wide sans), so a tablet held
+upright uses the drawer, as the docs pages' sidebar does below 64rem. The
+navigation slot keeps a 16rem basis of its own, so beside it the logo is the
+full logo from 48rem and its K below; at 320px the tools wrap to a second
+row whatever the logo. The skip link is the header's first child: the
+sticky Navbar sits at the top layer, and a link before it was painted under
+it. Tests hold the header to one row at 1280, 1024, 768, 390 and 360px,
 measure the 320px wrap (GAP-41), and check the focused skip link is what the
 page paints at its own centre, and measure the links centred on the page,
-clear of the logo and the tools, at 768, 1024, 1280 and 1440px, and back in
-the row with the text at 150% and 200%.
+clear of the logo and the tools, at 1024, 1280 and 1440px, back in the row
+with the text at 150% and 200%, and in the drawer at 390 and 768px.
+
+**Storybook's link.** Storybook is published beside the site, in its
+`storybook/` folder (Deploying), and is not a route of it, so the header,
+the drawer and the footer link to it with Kozmos's own `NavigationItem` and
+`Link`, never through the router: a router link would look for a
+`storybook` route and show the not-found page. `storybookHref()` in
+`src/lib/storybook.ts` hangs the folder off the base, as `asset()` does
+for `public/`, and the scan in `src/lib/asset.test.ts` fails a
+root-absolute `/storybook` in the source. A test clicks each of the three
+links and checks that a new document loaded. Outside the Pages artifact —
+the dev server, the e2e tests' server — `/storybook/` is the site's 404
+page.
 
 **The logo.** `src/brand/kozmos-logo.svg` is the logo as supplied on
 2026-09-22, its canvas trimmed to the artwork (its paths untouched). Kozmos
@@ -549,7 +565,7 @@ description, parts, props, snippets — nothing to write) and its demo file.
   theming page come from the generated data, that is, from each component's
   own docs.
 - **Claims** on the home page are sourced from the repository (package
-  READMEs, `ci.yml`, `STATUS.md`, `Package.swift`). Numbers on the page are
+  READMEs, `ci.yml`, `docs/status.md`, `Package.swift`). Numbers on the page are
   computed from data (token counts, contrast ratios), not typed in.
 
 ## Styling
@@ -719,16 +735,36 @@ of that name and the assets at the build's root, and the workflow merges the
 two into the artifact it publishes. Everything the document addresses goes
 through `asset()` (`src/lib/asset.ts`), which hangs it off that base.
 
+**Storybook is published with it** (decision 34): the same workflow builds
+`apps/docs` and puts it in the artifact's `storybook/` folder, so it is
+served at <https://vodoco.github.io/kozmos-design-system/storybook/>, and a
+docs page at `…/storybook/?path=/docs/<id>--docs`. A repository has one
+Pages deployment — a second workflow deploying would replace this one — so
+this workflow is the only one. Storybook needs no base of its own: its
+build addresses everything from its own page (its Vite base is `./`), so it
+works in any folder. The assembly fails if the site ever has a page at
+`storybook/`, if Storybook's build is missing a file it needs, or if its
+pages address the domain's root. A push to `main` that touches `apps/site`,
+`apps/docs`, `packages` or the lockfile deploys both.
+
 - **Output:** `apps/site/build/client` — one `index.html` per route, assets
   under `assets/`, and `404.html` for unknown addresses. Pages resolves a
   directory to its index and serves `404.html` for a miss, which is what the
   prerendered build expects. (A plain blob container does neither.)
-- **To see the subpath build as the host will serve it:**
+- **To see the artifact as the host will serve it,** from the repository
+  root: build it, run the workflow's own assembly step, read out of the
+  workflow, and serve it under the subpath.
 
   ```sh
-  BASE_PATH=/kozmos-design-system/ pnpm build
-  # assemble as the workflow does, then:
-  SERVE_ROOT=build/pages-root node scripts/serve-static.mjs 5199
+  pnpm turbo run build --filter=@kozmos-ds/site^... --filter=@kozmos-ds/react...
+  BASE_PATH=/kozmos-design-system/ pnpm --filter @kozmos-ds/site build
+  pnpm --filter @kozmos-ds/docs build-storybook
+  node -e 'const w = require("yaml").parse(require("fs").readFileSync(".github/workflows/pages.yml", "utf8")); process.stdout.write(w.jobs.build.steps.find((s) => s.name === "Assemble the artifact").run)' > /tmp/assemble.sh
+  BASE_PATH=/kozmos-design-system/ bash /tmp/assemble.sh
+  rm -rf /tmp/pages-root && mkdir /tmp/pages-root
+  cp -R apps/site/build/pages /tmp/pages-root/kozmos-design-system
+  python3 -m http.server 6320 --bind 127.0.0.1 --directory /tmp/pages-root
+  # http://127.0.0.1:6320/kozmos-design-system/ and …/kozmos-design-system/storybook/
   ```
 
 - **Until the launch** every page says `noindex` (`SITE_INDEXABLE` in
@@ -777,7 +813,7 @@ Measured while building the site; none of it is the site's to fix.
   workspace, a React 19 app's `ReactNode` does not fit Kozmos's props; the
   site maps the types to its own (tsconfig `paths`). Installed from npm, the
   declarations would read the consumer's types and this does not arise.
-- **`STATUS.md` is out of date on the component branch.**
+- **`docs/status.md` is out of date on the component branch.**
   `check-completion.ts --check` fails there: Core counts 75 components after
   the internal exclusion (69 in the file), five with platform or Code Connect
   gaps. The site's generator reads the same sets, so its counts are current.
