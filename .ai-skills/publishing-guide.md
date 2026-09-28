@@ -23,15 +23,15 @@
 
 ### Package Registry Matrix
 
-| Package | Registry | Command | Automation |
-|---------|----------|---------|------------|
-| `@kozmos/tokens` | npm | `pnpm publish` | Changesets |
-| `@kozmos/react` | npm | `pnpm publish` | Changesets |
-| `@kozmos/vue` | npm | `pnpm publish` | Changesets |
-| `@kozmos/react-native` | npm | `pnpm publish` | Changesets |
-| `@kozmos/icons` | npm | `pnpm publish` | Changesets |
-| `KozmosSwiftUI` | SPM (GitHub) | Git tag | Manual/CI |
-| `com.kozmos:compose` | Maven Central | Gradle | CI |
+| Package                | Registry      | Command        | Automation |
+| ---------------------- | ------------- | -------------- | ---------- |
+| `@kozmos/tokens`       | npm           | `pnpm publish` | Changesets |
+| `@kozmos/react`        | npm           | `pnpm publish` | Changesets |
+| `@kozmos/vue`          | npm           | `pnpm publish` | Changesets |
+| `@kozmos/react-native` | npm           | `pnpm publish` | Changesets |
+| `@kozmos/icons`        | npm           | `pnpm publish` | Changesets |
+| `KozmosSwiftUI`        | SPM (GitHub)  | Git tag        | Manual/CI  |
+| `com.kozmos:compose`   | Maven Central | Gradle         | CI         |
 
 ### Publishing Flow
 
@@ -96,11 +96,7 @@ echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
     "registry": "https://registry.npmjs.org",
     "provenance": true
   },
-  "files": [
-    "dist",
-    "README.md",
-    "CHANGELOG.md"
-  ],
+  "files": ["dist", "README.md", "CHANGELOG.md"],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -118,9 +114,7 @@ echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
     "./styles.css": "./dist/styles.css",
     "./package.json": "./package.json"
   },
-  "sideEffects": [
-    "*.css"
-  ]
+  "sideEffects": ["*.css"]
 }
 ```
 
@@ -545,9 +539,11 @@ Added new Tooltip component
 Updated tooltip tokens and added Tooltip component
 
 **Tokens:**
+
 - Added tooltip-specific color tokens
 
 **React & Vue:**
+
 - New Tooltip component
 - Supports all positions and variants
 ```
@@ -580,30 +576,30 @@ Updated tooltip tokens and added Tooltip component
 
 ### Semantic Versioning
 
-| Change Type | Version Bump | Example |
-|-------------|--------------|---------|
-| Breaking change | Major | 1.0.0 → 2.0.0 |
-| New feature | Minor | 1.0.0 → 1.1.0 |
-| Bug fix | Patch | 1.0.0 → 1.0.1 |
-| Pre-release | Pre-release | 1.0.0 → 1.1.0-beta.1 |
+| Change Type     | Version Bump | Example              |
+| --------------- | ------------ | -------------------- |
+| Breaking change | Major        | 1.0.0 → 2.0.0        |
+| New feature     | Minor        | 1.0.0 → 1.1.0        |
+| Bug fix         | Patch        | 1.0.0 → 1.0.1        |
+| Pre-release     | Pre-release  | 1.0.0 → 1.1.0-beta.1 |
 
 ### Version Sync Across Platforms
 
 ```javascript
 // scripts/sync-versions.js
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const packageJson = require('../packages/react/package.json');
+const packageJson = require("../packages/react/package.json");
 const version = packageJson.version;
 
 // Update iOS
-const packageSwift = fs.readFileSync('packages/ios/Package.swift', 'utf8');
+const packageSwift = fs.readFileSync("packages/ios/Package.swift", "utf8");
 // SPM uses git tags, no version in Package.swift
 
 // Update Android
 const gradleProps = `VERSION_NAME=${version}`;
-fs.writeFileSync('packages/android/gradle.properties', gradleProps);
+fs.writeFileSync("packages/android/gradle.properties", gradleProps);
 
 console.log(`Synced version ${version} across platforms`);
 ```
@@ -618,7 +614,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/react/package.json'
+      - "packages/react/package.json"
 
 jobs:
   sync:
@@ -928,20 +924,20 @@ swift package show-dependencies
 
 ### Registry URLs
 
-| Registry | URL |
-|----------|-----|
-| npm | https://registry.npmjs.org |
-| GitHub Packages | https://npm.pkg.github.com |
-| Maven Central | https://s01.oss.sonatype.org |
+| Registry            | URL                           |
+| ------------------- | ----------------------------- |
+| npm                 | https://registry.npmjs.org    |
+| GitHub Packages     | https://npm.pkg.github.com    |
+| Maven Central       | https://s01.oss.sonatype.org  |
 | Swift Package Index | https://swiftpackageindex.com |
 
 ---
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial publishing guide |
+| Version | Date       | Changes                  |
+| ------- | ---------- | ------------------------ |
+| 1.0.0   | 2026-02-07 | Initial publishing guide |
 
 ---
 

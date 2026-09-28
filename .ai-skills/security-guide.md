@@ -6,11 +6,11 @@
 
 ## 1. Security Principles
 
-| Principle | Implementation |
-|-----------|----------------|
-| **Defense in Depth** | Input validation + output encoding + CSP |
-| **Least Privilege** | Scoped tokens, limited API access |
-| **Secure by Default** | XSS protection, HTTPS only |
+| Principle             | Implementation                           |
+| --------------------- | ---------------------------------------- |
+| **Defense in Depth**  | Input validation + output encoding + CSP |
+| **Least Privilege**   | Scoped tokens, limited API access        |
+| **Secure by Default** | XSS protection, HTTPS only               |
 
 ---
 
@@ -33,7 +33,7 @@ const clean = DOMPurify.sanitize(dirty);
 ### URL Validation
 
 ```typescript
-const ALLOWED_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:'];
+const ALLOWED_PROTOCOLS = ["http:", "https:", "mailto:", "tel:"];
 
 export function sanitizeUrl(url: string): string | null {
   try {
@@ -72,9 +72,9 @@ export function sanitizeUrl(url: string): string | null {
 
 ```typescript
 const cspPolicy = {
-  'default-src': ["'self'"],
-  'script-src': ["'self'", "'strict-dynamic'"],
-  'frame-ancestors': ["'none'"],
+  "default-src": ["'self'"],
+  "script-src": ["'self'", "'strict-dynamic'"],
+  "frame-ancestors": ["'none'"],
 };
 ```
 
@@ -87,8 +87,8 @@ const cspPolicy = {
 // Use HttpOnly cookies or secure storage
 
 // React Native
-import * as SecureStore from 'expo-secure-store';
-await SecureStore.setItemAsync('token', value);
+import * as SecureStore from "expo-secure-store";
+await SecureStore.setItemAsync("token", value);
 ```
 
 ---
@@ -96,16 +96,19 @@ await SecureStore.setItemAsync('token', value);
 ## 6. Mobile Security
 
 ### iOS
+
 - Use Keychain for sensitive data
 - Enable certificate pinning
 - Use `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`
 
 ### Android
+
 - Use EncryptedSharedPreferences
 - Enable certificate pinning with OkHttp
 - Use hardware-backed keystore
 
 ### React Native
+
 - Use react-native-keychain
 - Prevent screenshots on sensitive screens
 - Detect jailbreak/root in production
@@ -123,6 +126,7 @@ await SecureStore.setItemAsync('token', value);
 ## 8. Audit Checklist
 
 ### Pre-Release
+
 - [ ] `pnpm audit` clean
 - [ ] No secrets in code
 - [ ] CSP configured
@@ -130,6 +134,7 @@ await SecureStore.setItemAsync('token', value);
 - [ ] HTTPS enforced
 
 ### Quarterly
+
 - [ ] Dependency review
 - [ ] Penetration test
 - [ ] Secret rotation

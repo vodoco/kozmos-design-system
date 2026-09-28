@@ -60,11 +60,11 @@
 
 ### Token Categories
 
-| Category | Description | Example |
-|----------|-------------|---------|
-| **Foundation** | Raw values, no references | `color.blue.500: #2563eb` |
-| **Semantic** | References to foundation, contextual | `color.text.primary → {color.neutral.900}` |
-| **Component** | Component-scoped, references semantic | `button.background.primary → {color.interactive.primary}` |
+| Category       | Description                           | Example                                                   |
+| -------------- | ------------------------------------- | --------------------------------------------------------- |
+| **Foundation** | Raw values, no references             | `color.blue.500: #2563eb`                                 |
+| **Semantic**   | References to foundation, contextual  | `color.text.primary → {color.neutral.900}`                |
+| **Component**  | Component-scoped, references semantic | `button.background.primary → {color.interactive.primary}` |
 
 ---
 
@@ -88,17 +88,17 @@ Kozmos uses the DTCG format (W3C Draft Specification) for token definitions.
 
 ### Token Types
 
-| Type | Description | Example Value |
-|------|-------------|---------------|
-| `color` | Color value | `#2563eb`, `oklch(55% 0.2 260)` |
-| `dimension` | Size with unit | `16px`, `1rem` |
-| `fontFamily` | Font stack | `system-ui, sans-serif` |
-| `fontWeight` | Font weight | `400`, `bold` |
-| `duration` | Time value | `200ms` |
-| `cubicBezier` | Easing curve | `[0.4, 0, 0.2, 1]` |
-| `number` | Unitless number | `1.5`, `100` |
-| `shadow` | Shadow object | Complex object |
-| `typography` | Composite type | Font size, weight, line height |
+| Type          | Description     | Example Value                   |
+| ------------- | --------------- | ------------------------------- |
+| `color`       | Color value     | `#2563eb`, `oklch(55% 0.2 260)` |
+| `dimension`   | Size with unit  | `16px`, `1rem`                  |
+| `fontFamily`  | Font stack      | `system-ui, sans-serif`         |
+| `fontWeight`  | Font weight     | `400`, `bold`                   |
+| `duration`    | Time value      | `200ms`                         |
+| `cubicBezier` | Easing curve    | `[0.4, 0, 0.2, 1]`              |
+| `number`      | Unitless number | `1.5`, `100`                    |
+| `shadow`      | Shadow object   | Complex object                  |
+| `typography`  | Composite type  | Font size, weight, line height  |
 
 ### Reference Syntax
 
@@ -443,7 +443,7 @@ packages/tokens/
 
 ```javascript
 // packages/tokens/sd.config.js
-import StyleDictionary from 'style-dictionary';
+import StyleDictionary from "style-dictionary";
 
 // ============================================================================
 // Custom Transforms
@@ -451,13 +451,13 @@ import StyleDictionary from 'style-dictionary';
 
 // CSS Variable reference transform
 StyleDictionary.registerTransform({
-  name: 'css/variable',
-  type: 'value',
+  name: "css/variable",
+  type: "value",
   transitive: true,
-  filter: (token) => token.$type === 'color' || token.$type === 'dimension',
+  filter: (token) => token.$type === "color" || token.$type === "dimension",
   transform: (token) => {
-    if (token.original.$value?.startsWith('{')) {
-      const refPath = token.original.$value.slice(1, -1).replace(/\./g, '-');
+    if (token.original.$value?.startsWith("{")) {
+      const refPath = token.original.$value.slice(1, -1).replace(/\./g, "-");
       return `var(--kozmos-${refPath})`;
     }
     return token.$value;
@@ -466,11 +466,11 @@ StyleDictionary.registerTransform({
 
 // Swift Color transform
 StyleDictionary.registerTransform({
-  name: 'swift/color',
-  type: 'value',
-  filter: (token) => token.$type === 'color',
+  name: "swift/color",
+  type: "value",
+  filter: (token) => token.$type === "color",
   transform: (token) => {
-    const hex = token.$value.replace('#', '');
+    const hex = token.$value.replace("#", "");
     const r = parseInt(hex.substr(0, 2), 16) / 255;
     const g = parseInt(hex.substr(2, 2), 16) / 255;
     const b = parseInt(hex.substr(4, 2), 16) / 255;
@@ -480,20 +480,20 @@ StyleDictionary.registerTransform({
 
 // Kotlin Color transform
 StyleDictionary.registerTransform({
-  name: 'kotlin/color',
-  type: 'value',
-  filter: (token) => token.$type === 'color',
+  name: "kotlin/color",
+  type: "value",
+  filter: (token) => token.$type === "color",
   transform: (token) => {
-    const hex = token.$value.replace('#', '');
+    const hex = token.$value.replace("#", "");
     return `Color(0xFF${hex.toUpperCase()})`;
   },
 });
 
 // Dimension to number (for Swift/Kotlin)
 StyleDictionary.registerTransform({
-  name: 'dimension/number',
-  type: 'value',
-  filter: (token) => token.$type === 'dimension',
+  name: "dimension/number",
+  type: "value",
+  filter: (token) => token.$type === "dimension",
   transform: (token) => parseFloat(token.$value),
 });
 
@@ -503,17 +503,16 @@ StyleDictionary.registerTransform({
 
 // TypeScript constants
 StyleDictionary.registerFormat({
-  name: 'typescript/constants',
+  name: "typescript/constants",
   format: ({ dictionary }) => {
     const tokens = dictionary.allTokens
       .map((token) => {
-        const name = token.path.join('_').toUpperCase();
-        const value = typeof token.$value === 'string'
-          ? `'${token.$value}'`
-          : token.$value;
+        const name = token.path.join("_").toUpperCase();
+        const value =
+          typeof token.$value === "string" ? `'${token.$value}'` : token.$value;
         return `export const ${name} = ${value};`;
       })
-      .join('\n');
+      .join("\n");
 
     return `// Auto-generated by Style Dictionary\n\n${tokens}\n`;
   },
@@ -521,7 +520,7 @@ StyleDictionary.registerFormat({
 
 // TypeScript object
 StyleDictionary.registerFormat({
-  name: 'typescript/object',
+  name: "typescript/object",
   format: ({ dictionary }) => {
     const buildObject = (tokens) => {
       const result = {};
@@ -548,9 +547,9 @@ export type Tokens = typeof tokens;
 
 // Swift extension
 StyleDictionary.registerFormat({
-  name: 'swift/extension',
+  name: "swift/extension",
   format: ({ dictionary, options }) => {
-    const generateSwift = (tokens, indent = '    ') => {
+    const generateSwift = (tokens, indent = "    ") => {
       const groups = {};
 
       tokens.forEach((token) => {
@@ -563,14 +562,14 @@ StyleDictionary.registerFormat({
         .map(([category, categoryTokens]) => {
           const properties = categoryTokens
             .map((token) => {
-              const name = token.subPath.join('_');
+              const name = token.subPath.join("_");
               return `${indent}static let ${name} = ${token.$value}`;
             })
-            .join('\n');
+            .join("\n");
 
           return `    struct ${category} {\n${properties}\n    }`;
         })
-        .join('\n\n');
+        .join("\n\n");
     };
 
     return `// Auto-generated by Style Dictionary
@@ -585,7 +584,7 @@ ${generateSwift(dictionary.allTokens)}
 
 // Kotlin object
 StyleDictionary.registerFormat({
-  name: 'kotlin/object',
+  name: "kotlin/object",
   format: ({ dictionary }) => {
     const generateKotlin = (tokens) => {
       const groups = {};
@@ -600,14 +599,14 @@ StyleDictionary.registerFormat({
         .map(([category, categoryTokens]) => {
           const properties = categoryTokens
             .map((token) => {
-              const name = token.subPath.join('_')
+              const name = token.subPath.join("_");
               return `        val ${name} = ${token.$value}`;
             })
-            .join('\n');
+            .join("\n");
 
           return `    object ${category} {\n${properties}\n    }`;
         })
-        .join('\n\n');
+        .join("\n\n");
     };
 
     return `// Auto-generated by Style Dictionary
@@ -629,108 +628,118 @@ ${generateKotlin(dictionary.allTokens)}
 // ============================================================================
 
 export default {
-  source: ['src/**/*.json'],
+  source: ["src/**/*.json"],
   platforms: {
     // CSS Variables
     css: {
-      transformGroup: 'css',
-      transforms: ['attribute/cti', 'name/kebab', 'css/variable'],
-      buildPath: 'build/css/',
+      transformGroup: "css",
+      transforms: ["attribute/cti", "name/kebab", "css/variable"],
+      buildPath: "build/css/",
       files: [
         {
-          destination: 'tokens.css',
-          format: 'css/variables',
+          destination: "tokens.css",
+          format: "css/variables",
           options: {
             outputReferences: true,
           },
         },
       ],
-      prefix: 'kozmos',
+      prefix: "kozmos",
     },
 
     // CSS Dark Theme
     cssDark: {
-      transformGroup: 'css',
-      transforms: ['attribute/cti', 'name/kebab'],
-      buildPath: 'build/css/',
-      source: ['src/themes/dark.json'],
+      transformGroup: "css",
+      transforms: ["attribute/cti", "name/kebab"],
+      buildPath: "build/css/",
+      source: ["src/themes/dark.json"],
       files: [
         {
-          destination: 'tokens-dark.css',
-          format: 'css/variables',
+          destination: "tokens-dark.css",
+          format: "css/variables",
           options: {
             selector: '[data-theme="dark"]',
           },
         },
       ],
-      prefix: 'kozmos',
+      prefix: "kozmos",
     },
 
     // TypeScript/JavaScript
     js: {
-      transformGroup: 'js',
-      buildPath: 'build/js/',
+      transformGroup: "js",
+      buildPath: "build/js/",
       files: [
         {
-          destination: 'tokens.js',
-          format: 'javascript/es6',
+          destination: "tokens.js",
+          format: "javascript/es6",
         },
         {
-          destination: 'tokens.d.ts',
-          format: 'typescript/es6-declarations',
+          destination: "tokens.d.ts",
+          format: "typescript/es6-declarations",
         },
         {
-          destination: 'tokens-object.ts',
-          format: 'typescript/object',
+          destination: "tokens-object.ts",
+          format: "typescript/object",
         },
       ],
     },
 
     // React Native (JS values, no CSS vars)
     reactNative: {
-      transformGroup: 'js',
-      transforms: ['attribute/cti', 'name/camel', 'dimension/number'],
-      buildPath: 'build/react-native/',
+      transformGroup: "js",
+      transforms: ["attribute/cti", "name/camel", "dimension/number"],
+      buildPath: "build/react-native/",
       files: [
         {
-          destination: 'tokens.ts',
-          format: 'typescript/object',
+          destination: "tokens.ts",
+          format: "typescript/object",
         },
       ],
     },
 
     // iOS (Swift)
     ios: {
-      transforms: ['attribute/cti', 'name/camel', 'swift/color', 'dimension/number'],
-      buildPath: 'build/ios/',
+      transforms: [
+        "attribute/cti",
+        "name/camel",
+        "swift/color",
+        "dimension/number",
+      ],
+      buildPath: "build/ios/",
       files: [
         {
-          destination: 'KozmosTokens.swift',
-          format: 'swift/extension',
+          destination: "KozmosTokens.swift",
+          format: "swift/extension",
         },
       ],
     },
 
     // Android (Kotlin)
     android: {
-      transforms: ['attribute/cti', 'name/camel', 'kotlin/color', 'dimension/number'],
-      buildPath: 'build/android/',
+      transforms: [
+        "attribute/cti",
+        "name/camel",
+        "kotlin/color",
+        "dimension/number",
+      ],
+      buildPath: "build/android/",
       files: [
         {
-          destination: 'KozmosTokens.kt',
-          format: 'kotlin/object',
+          destination: "KozmosTokens.kt",
+          format: "kotlin/object",
         },
       ],
     },
 
     // JSON (for tooling, documentation)
     json: {
-      transformGroup: 'js',
-      buildPath: 'build/json/',
+      transformGroup: "js",
+      buildPath: "build/json/",
       files: [
         {
-          destination: 'tokens.json',
-          format: 'json/flat',
+          destination: "tokens.json",
+          format: "json/flat",
         },
       ],
     },
@@ -783,13 +792,13 @@ export default {
 
 ### Transform Summary
 
-| Platform | Transforms Applied | Output Format |
-|----------|-------------------|---------------|
-| **CSS** | `name/kebab`, `css/variable` | CSS custom properties |
-| **JavaScript** | `name/camel` | ES6 exports |
-| **React Native** | `name/camel`, `dimension/number` | TS object |
-| **iOS** | `name/camel`, `swift/color` | Swift extension |
-| **Android** | `name/camel`, `kotlin/color` | Kotlin object |
+| Platform         | Transforms Applied               | Output Format         |
+| ---------------- | -------------------------------- | --------------------- |
+| **CSS**          | `name/kebab`, `css/variable`     | CSS custom properties |
+| **JavaScript**   | `name/camel`                     | ES6 exports           |
+| **React Native** | `name/camel`, `dimension/number` | TS object             |
+| **iOS**          | `name/camel`, `swift/color`      | Swift extension       |
+| **Android**      | `name/camel`, `kotlin/color`     | Kotlin object         |
 
 ### CSS Transform Example
 
@@ -975,8 +984,8 @@ object KozmosTokens {
 
 ```typescript
 // scripts/sync-figma.ts
-import * as Figma from 'figma-api';
-import { writeFileSync } from 'fs';
+import * as Figma from "figma-api";
+import { writeFileSync } from "fs";
 
 const FIGMA_TOKEN = process.env.FIGMA_ACCESS_TOKEN!;
 const FILE_KEY = process.env.FIGMA_FILE_KEY!;
@@ -986,12 +995,12 @@ const api = new Figma.Api({ personalAccessToken: FIGMA_TOKEN });
 interface FigmaVariable {
   id: string;
   name: string;
-  resolvedType: 'COLOR' | 'FLOAT' | 'STRING';
+  resolvedType: "COLOR" | "FLOAT" | "STRING";
   valuesByMode: Record<string, any>;
 }
 
 async function syncFigmaVariables() {
-  console.log('🔄 Fetching Figma variables...');
+  console.log("🔄 Fetching Figma variables...");
 
   const response = await api.getLocalVariables(FILE_KEY);
   const variables = response.meta.variables;
@@ -1000,7 +1009,7 @@ async function syncFigmaVariables() {
   const tokens: Record<string, any> = {};
 
   for (const [id, variable] of Object.entries(variables)) {
-    const path = variable.name.split('/');
+    const path = variable.name.split("/");
     const value = convertFigmaValue(variable);
 
     setNestedValue(tokens, path, {
@@ -1010,24 +1019,27 @@ async function syncFigmaVariables() {
   }
 
   writeFileSync(
-    'packages/tokens/src/figma-sync.json',
-    JSON.stringify(tokens, null, 2)
+    "packages/tokens/src/figma-sync.json",
+    JSON.stringify(tokens, null, 2),
   );
 
-  console.log('✅ Figma variables synced to figma-sync.json');
+  console.log("✅ Figma variables synced to figma-sync.json");
 }
 
 function convertFigmaValue(variable: FigmaVariable): any {
   const modeId = Object.keys(variable.valuesByMode)[0];
   const value = variable.valuesByMode[modeId];
 
-  if (variable.resolvedType === 'COLOR') {
+  if (variable.resolvedType === "COLOR") {
     const { r, g, b, a } = value;
-    const toHex = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
+    const toHex = (n: number) =>
+      Math.round(n * 255)
+        .toString(16)
+        .padStart(2, "0");
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
 
-  if (variable.resolvedType === 'FLOAT') {
+  if (variable.resolvedType === "FLOAT") {
     return `${value}px`;
   }
 
@@ -1036,10 +1048,14 @@ function convertFigmaValue(variable: FigmaVariable): any {
 
 function getTokenType(figmaType: string): string {
   switch (figmaType) {
-    case 'COLOR': return 'color';
-    case 'FLOAT': return 'dimension';
-    case 'STRING': return 'string';
-    default: return 'string';
+    case "COLOR":
+      return "color";
+    case "FLOAT":
+      return "dimension";
+    case "STRING":
+      return "string";
+    default:
+      return "string";
   }
 }
 
@@ -1075,30 +1091,34 @@ color/text/primary      →     color.text.primary
 
 ```tsx
 // packages/react/src/theme/ThemeProvider.tsx
-import * as React from 'react';
-import '@kozmos/tokens/css';
+import * as React from "react";
+import "@kozmos/tokens/css";
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = "light" | "dark" | "system";
 
 interface ThemeContextValue {
   theme: Theme;
-  resolvedTheme: 'light' | 'dark';
+  resolvedTheme: "light" | "dark";
   setTheme: (theme: Theme) => void;
 }
 
-const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefined);
+const ThemeContext = React.createContext<ThemeContextValue | undefined>(
+  undefined,
+);
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'system',
-  storageKey = 'kozmos-theme',
+  defaultTheme = "system",
+  storageKey = "kozmos-theme",
 }: {
   children: React.ReactNode;
   defaultTheme?: Theme;
   storageKey?: string;
 }) {
   const [theme, setThemeState] = React.useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = React.useState<'light' | 'dark'>('light');
+  const [resolvedTheme, setResolvedTheme] = React.useState<"light" | "dark">(
+    "light",
+  );
 
   React.useEffect(() => {
     const stored = localStorage.getItem(storageKey) as Theme | null;
@@ -1107,27 +1127,29 @@ export function ThemeProvider({
 
   React.useEffect(() => {
     const root = document.documentElement;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const updateTheme = () => {
-      const resolved = theme === 'system'
-        ? (mediaQuery.matches ? 'dark' : 'light')
-        : theme;
+      const resolved =
+        theme === "system" ? (mediaQuery.matches ? "dark" : "light") : theme;
 
       setResolvedTheme(resolved);
-      root.setAttribute('data-theme', resolved);
+      root.setAttribute("data-theme", resolved);
     };
 
     updateTheme();
-    mediaQuery.addEventListener('change', updateTheme);
+    mediaQuery.addEventListener("change", updateTheme);
 
-    return () => mediaQuery.removeEventListener('change', updateTheme);
+    return () => mediaQuery.removeEventListener("change", updateTheme);
   }, [theme]);
 
-  const setTheme = React.useCallback((newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem(storageKey, newTheme);
-  }, [storageKey]);
+  const setTheme = React.useCallback(
+    (newTheme: Theme) => {
+      setThemeState(newTheme);
+      localStorage.setItem(storageKey, newTheme);
+    },
+    [storageKey],
+  );
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
@@ -1139,7 +1161,7 @@ export function ThemeProvider({
 export function useTheme() {
   const context = React.useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 }
@@ -1200,14 +1222,14 @@ public struct KozmosThemeProvider<Content: View>: View {
 ### React Usage
 
 ```tsx
-import { tokens } from '@kozmos/tokens';
-import '@kozmos/tokens/css';
+import { tokens } from "@kozmos/tokens";
+import "@kozmos/tokens/css";
 
 // CSS Variables (recommended)
 const styles = {
-  color: 'var(--kozmos-color-text-primary)',
-  padding: 'var(--kozmos-space-400)',
-  borderRadius: 'var(--kozmos-radius-200)',
+  color: "var(--kozmos-color-text-primary)",
+  padding: "var(--kozmos-space-400)",
+  borderRadius: "var(--kozmos-radius-200)",
 };
 
 // JavaScript values (for dynamic usage)
@@ -1239,8 +1261,8 @@ Text(
 ### React Native Usage
 
 ```tsx
-import { tokens } from '@kozmos/tokens/react-native';
-import { StyleSheet } from 'react-native';
+import { tokens } from "@kozmos/tokens/react-native";
+import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
   container: {
@@ -1259,7 +1281,7 @@ const styles = StyleSheet.create({
 
 ```typescript
 // scripts/validate-tokens.ts
-import tokens from '../src/tokens.json';
+import tokens from "../src/tokens.json";
 
 interface ValidationError {
   path: string;
@@ -1271,17 +1293,17 @@ const errors: ValidationError[] = [];
 function validateToken(path: string, token: any) {
   // Check required fields
   if (!token.$type) {
-    errors.push({ path, message: 'Missing $type' });
+    errors.push({ path, message: "Missing $type" });
   }
 
   if (token.$value === undefined) {
-    errors.push({ path, message: 'Missing $value' });
+    errors.push({ path, message: "Missing $value" });
   }
 
   // Validate color format
-  if (token.$type === 'color') {
+  if (token.$type === "color") {
     const value = token.$value;
-    if (typeof value === 'string' && !value.startsWith('{')) {
+    if (typeof value === "string" && !value.startsWith("{")) {
       if (!value.match(/^#[0-9a-fA-F]{6}$/)) {
         errors.push({ path, message: `Invalid color format: ${value}` });
       }
@@ -1289,9 +1311,9 @@ function validateToken(path: string, token: any) {
   }
 
   // Validate dimension format
-  if (token.$type === 'dimension') {
+  if (token.$type === "dimension") {
     const value = token.$value;
-    if (typeof value === 'string' && !value.startsWith('{')) {
+    if (typeof value === "string" && !value.startsWith("{")) {
       if (!value.match(/^-?\d+(\.\d+)?(px|rem|em|%)$/)) {
         errors.push({ path, message: `Invalid dimension format: ${value}` });
       }
@@ -1299,15 +1321,15 @@ function validateToken(path: string, token: any) {
   }
 }
 
-function walkTokens(obj: any, path = '') {
+function walkTokens(obj: any, path = "") {
   for (const [key, value] of Object.entries(obj)) {
     const currentPath = path ? `${path}.${key}` : key;
 
-    if (key.startsWith('$')) continue;
+    if (key.startsWith("$")) continue;
 
-    if (value && typeof value === 'object' && '$value' in value) {
+    if (value && typeof value === "object" && "$value" in value) {
       validateToken(currentPath, value);
-    } else if (value && typeof value === 'object') {
+    } else if (value && typeof value === "object") {
       walkTokens(value, currentPath);
     }
   }
@@ -1316,11 +1338,11 @@ function walkTokens(obj: any, path = '') {
 walkTokens(tokens);
 
 if (errors.length > 0) {
-  console.error('❌ Token validation failed:\n');
+  console.error("❌ Token validation failed:\n");
   errors.forEach((e) => console.error(`  ${e.path}: ${e.message}`));
   process.exit(1);
 } else {
-  console.log('✅ All tokens valid');
+  console.log("✅ All tokens valid");
 }
 ```
 
@@ -1333,10 +1355,10 @@ name: Tokens
 on:
   push:
     paths:
-      - 'packages/tokens/**'
+      - "packages/tokens/**"
   pull_request:
     paths:
-      - 'packages/tokens/**'
+      - "packages/tokens/**"
 
 jobs:
   validate:
@@ -1387,9 +1409,9 @@ Kotlin Output: packages/tokens/build/android/KozmosTokens.kt
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial token implementation guide |
+| Version | Date       | Changes                            |
+| ------- | ---------- | ---------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial token implementation guide |
 
 ---
 
