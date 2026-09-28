@@ -470,9 +470,11 @@ internal fun KozmosFloorSwitcher(
 
 /**
  * The switcher's open column: every level, top floor first, each the tile's
- * size and its short label, as the tile shows it. The map control's surface,
- * edge and shadow, opaque where the tile is nine tenths: the column lies over
- * the tile, and the tile's own label showing through read as part of it.
+ * size and its short label, as the tile shows it. The map control's surface
+ * and shadow, opaque where the tile is nine tenths: the column lies over the
+ * tile, and the tile's own label showing through read as part of it. Its edge
+ * is a container's, the subtle border role, as the web's popover draws the
+ * same column.
  *
  * The board's states: the current level outlined in the theme's primary, its
  * label in the primary; a closed level on the muted surface in the muted ink.
@@ -499,7 +501,7 @@ internal fun KozmosFloorSwitcherColumn(
             // The map control's own shadow, as KozmosMapControlButton casts it.
             .shadow(8.dp, edge)
             .background(KozmosThemeTokens.primitivesColorsBackground0, edge)
-            .border(1.dp, KozmosThemeTokens.primitivesColorsForeground300, edge)
+            .border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, edge)
             .padding(SwitcherInset)
             // Escape from a keyboard, as Back: the popup hears only Back.
             .onPreviewKeyEvent { event ->

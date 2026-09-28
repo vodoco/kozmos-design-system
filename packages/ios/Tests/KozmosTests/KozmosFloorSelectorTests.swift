@@ -385,12 +385,13 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// Opened, the tile grows into a column of every level over itself: the
     /// column's bottom level lies where the tile was, the column reaching past
     /// it by its 4pt inset, one tile wide — each level its short label, as the
-    /// tile shows it, and no name beside it. Measured by its edge.
+    /// tile shows it, and no name beside it. Measured by its edge, the subtle
+    /// border role a container is drawn with.
     @MainActor func testTheTileGrowsIntoAColumnOverItself() async throws {
         let drawn = try await drawSwitcher(
             KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible, expanded: true)
         )
-        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.primitivesColorsForeground300)),
+        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.semanticsBorderSubtle)),
                                    "no column drawn")
         XCTAssertEqual(column.maxX, tileRect.maxX + 4, accuracy: 1, "the column's trailing edge: \(column)")
         XCTAssertEqual(column.maxY, tileRect.maxY + 4, accuracy: 1, "the column's bottom edge: \(column)")
@@ -438,7 +439,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
             direction: .rightToLeft
         )
         let tile = CGRect(x: 16, y: corner.height - 16 - 44, width: 44, height: 44)
-        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.primitivesColorsForeground300)),
+        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.semanticsBorderSubtle)),
                                    "no column drawn")
         XCTAssertEqual(column.minX, tile.minX - 4, accuracy: 1, "the column is not on the tile's trailing edge: \(column)")
         XCTAssertEqual(column.maxY, tile.maxY + 4, accuracy: 1, "the column's bottom edge: \(column)")
@@ -742,7 +743,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         let image = UIGraphicsImageRenderer(bounds: window.bounds).image { window.layer.render(in: $0.cgContext) }
         let drawn = try RenderedPixels(image, pointWidth: corner.width)
         let tile = CGRect(x: corner.width - 16 - 44, y: 16, width: 44, height: 44)
-        let column = try XCTUnwrap(drawn.boundingBox(in: whole, where: try near(KozmosColors.primitivesColorsForeground300)),
+        let column = try XCTUnwrap(drawn.boundingBox(in: whole, where: try near(KozmosColors.semanticsBorderSubtle)),
                                    "no column drawn")
         XCTAssertEqual(column.minY, tile.minY - 4, accuracy: 1, "the column does not reach down from the tile: \(column)")
         XCTAssertEqual(column.height, 3 * 44 + 2 * 4 + 8, accuracy: 1.5, "the column is cut short: \(column)")

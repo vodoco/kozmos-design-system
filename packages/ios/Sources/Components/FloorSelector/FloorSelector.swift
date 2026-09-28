@@ -429,9 +429,10 @@ public struct KozmosFloorSelector: View {
     /// The open state: every level in a column over the tile, top floor first,
     /// its bottom level where the tile was — or its top one, where there is no
     /// room above the tile — the tile grows into it. The map control's
-    /// surface, edge and shadow, opaque where the tile is nine tenths: the
-    /// column lies over the tile, and the tile's own label showing through the
-    /// level over it read as part of it.
+    /// surface and shadow, opaque where the tile is nine tenths: the column
+    /// lies over the tile, and the tile's own label showing through the level
+    /// over it read as part of it. Its edge is a container's, the subtle
+    /// border role, as the web's popover draws the same column.
     @ViewBuilder
     private var column: some View {
         if variant == .collapsible, isExpanded {
@@ -443,7 +444,7 @@ public struct KozmosFloorSelector: View {
             }
             .padding(Self.columnInset)
             .background(KozmosColors.primitivesColorsBackground0, in: edge)
-            .overlay(edge.stroke(KozmosColors.primitivesColorsForeground300, lineWidth: 1))
+            .overlay(edge.stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1))
             .kozmosElevation(KozmosShadows.semanticsElevationFloating)
             .fixedSize()
             .accessibilityElement(children: .contain)
