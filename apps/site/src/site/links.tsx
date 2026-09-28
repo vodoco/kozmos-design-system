@@ -14,6 +14,7 @@ import {
   NavigationItem,
   type LinkProps,
 } from "@kozmos-ds/react";
+import { storybookTo } from "../lib/storybook";
 
 /**
  * Client-side navigation for Kozmos's own anchors.
@@ -125,6 +126,39 @@ export function ButtonLink({
 }: ButtonLinkProps) {
   return (
     <RouterLink to={to} className={buttonVariants({ variant, size })}>
+      {children}
+    </RouterLink>
+  );
+}
+
+export interface StorybookButtonLinkProps {
+  /** Storybook's `path` for the page (`/docs/…`, `/story/…`); its front page when left out. */
+  page?: string;
+  children: ReactNode;
+  variant?: "default" | "outline" | "secondary" | "ghost";
+}
+
+/**
+ * A link to Storybook, styled as a button. It is a router link, as
+ * `ButtonLink` is — the React package's README styles a link with
+ * `buttonVariants` on the app's own anchor, and Kozmos's `Link` cannot take
+ * them: its `text-primary` outranks the button's text colour, which left the
+ * label blue on blue. `reloadDocument` hands the click to the browser, so
+ * Storybook, published beside the site and no route of it
+ * (src/lib/storybook.ts), loads instead of the not-found page; the router
+ * only adds its basename to the address.
+ */
+export function StorybookButtonLink({
+  page,
+  children,
+  variant = "default",
+}: StorybookButtonLinkProps) {
+  return (
+    <RouterLink
+      reloadDocument
+      to={storybookTo(page)}
+      className={buttonVariants({ variant })}
+    >
       {children}
     </RouterLink>
   );

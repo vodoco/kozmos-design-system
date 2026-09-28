@@ -3,7 +3,7 @@ import { join } from "node:path";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { assetPath } from "./asset";
-import { storybookPath } from "./storybook";
+import { storybookPath, storybookTo } from "./storybook";
 
 test("a path from public/ hangs off the base, whatever the base is", () => {
   assert.equal(assetPath("/", "/media/a.svg"), "/media/a.svg");
@@ -22,6 +22,12 @@ test("Storybook hangs off the base, in its own folder beside the pages", () => {
   assert.equal(
     storybookPath("/kozmos-design-system/"),
     "/kozmos-design-system/storybook/",
+  );
+  // A router link's `to`: the router adds the basename, so none here.
+  assert.equal(storybookTo(), "/storybook/");
+  assert.equal(
+    storybookTo("/docs/components-button--docs"),
+    "/storybook/?path=/docs/components-button--docs",
   );
 });
 

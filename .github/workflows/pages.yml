@@ -29,6 +29,8 @@ on:
       # stories and docs are under packages/.
       - "apps/docs/**"
       - "packages/**"
+      # The status script: where each component exists, which the site shows.
+      - "scripts/skills/check-completion.ts"
       - ".github/workflows/pages.yml"
       - "pnpm-lock.yaml"
   # So the site can be published from a branch before it lands on main.
@@ -77,6 +79,12 @@ jobs:
 
       - name: Build Storybook
         run: pnpm --filter @kozmos-ds/docs build-storybook
+
+      # The site's component pages link into this Storybook: none may name a
+      # page it does not have (the site's workflow runs the same check on
+      # every pull request).
+      - name: Every component page's Storybook link lands
+        run: pnpm --filter @kozmos-ds/site exec node scripts/check-storybook-links.mjs
 
       # The pages sit under the prefix; the assets do not. The artifact is the
       # site's root, so both belong at the top of it, and Storybook in its

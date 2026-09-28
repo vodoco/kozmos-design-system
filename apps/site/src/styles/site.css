@@ -1486,15 +1486,6 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   overflow-wrap: anywhere;
 }
 
-/* A heading that is one long identifier — BottomSheetDescription,
-   SelectScrollDownButton — has nowhere to wrap. At 24px in a 288px column
-   it runs off a 320px screen in a wide system font, which is a sideways
-   scroll the whole page pays for (WCAG 1.4.10), so it may break inside the
-   word. Nothing in Kozmos sets overflow-wrap on a heading (GAP-04). */
-.site-part-name {
-  overflow-wrap: anywhere;
-}
-
 /* ---- Home: make it yours --------------------------------------------- */
 
 .site-brand {
@@ -1718,7 +1709,9 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
    height that scrolls inside, like a device preview. An app needs the height
    (AdaptiveMapShell fills its parent), and a page needs the frame: its own
    Navbar is always sticky (GAP-19) and would otherwise stick over the site's
-   header while the page scrolls past the example. */
+   header while the page scrolls past the example. It isolates its stacking:
+   Kozmos's map overlays use z-index 50, as the sticky Navbar does, and a
+   later overlay would draw over the header (GAPS.md, GAP-40). */
 .site-example-canvas {
   isolation: isolate;
   block-size: min(56rem, calc(100dvh - var(--site-space-900)));
@@ -1747,7 +1740,7 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   padding-block: var(--site-space-700);
 }
 
-/* ---- Component reference ---------------------------------------------- */
+/* ---- Components -------------------------------------------------------- */
 
 .site-docs-group {
   padding-inline: var(--site-space-150);
@@ -1759,99 +1752,24 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   overflow-y: auto;
 }
 
-.site-demos {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--site-space-300);
-}
-
-.site-demo-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  overflow: hidden;
-}
-
-/* Every frame that hosts a demo or an example isolates its stacking:
-   Kozmos's map overlays use z-index 50, the sticky Navbar too, and a later
-   overlay would draw over the header (GAPS.md, GAP-40). */
-
-/* The stage an example is drawn on: the muted background, so a component's
-   own surface reads against it. */
-.site-demo-stage {
-  isolation: isolate;
-  padding: var(--site-space-300);
-  background: var(--primitives-colors-background-25);
-  min-inline-size: 0;
-  overflow-x: auto;
-}
-
-.site-demo-stage-tall {
-  min-block-size: 30rem;
+/* The index's lanes, a table each; the space between them is the
+   sections' own (.site-section + .site-section). */
+.site-status-lanes {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
 
-.site-demo-loading {
-  block-size: calc(var(--primitives-layout-sizing-1000) * 1px);
-  inline-size: 100%;
+/* One component's four answers: a platform to a row, as wide as it needs
+   and no wider, so the words sit beside the platform they belong to. */
+.site-status-single {
+  max-inline-size: 28rem;
 }
 
-/* ---- A screen, for the parts that pin themselves ---------------------- */
-
-/* GAP-24, 29, 34 and 36: DynamicIsland, BottomNavigation, Backdrop and the
-   toast viewport are `position: fixed` and take no placement from their host,
-   so on a page they leave whatever holds them — the island draws over this
-   site's header, the bar stretches across the whole window. A page cannot ask
-   them to stay in the flow, but it can give them a smaller window: a box with
-   paint containment is the containing block for its fixed children (CSS
-   Containment; measured in Chromium, WebKit and Firefox), so inside this one
-   the screen is the whole viewport. The island then sits at the screen's top
-   edge, a bar on its bottom, a scrim over its page — where each would sit on
-   a phone.
-
-   It is a phone's shape, not a phone: a portrait screen a little narrower
-   than the phone example's frame, and no bezel, notch or status bar. Those
-   are a device's, not Kozmos's, and the parts here are components of a page —
-   `DynamicIsland` is a capsule that mirrors iOS's, not iOS's own. The fill
-   and the edge are the `Surface`'s, since site CSS cannot draw a border
-   inside the provider (GAP-52). */
-.site-screen {
-  contain: layout paint;
-  position: relative;
-  /* A phone's width, as the phone example's frame uses. It has to be at
-     least the widest part it holds: the island's expanded capsule stops at
-     360px, which would be cut by a narrower screen — on a phone that
-     capsule is 371pt inside a 393pt screen. */
-  inline-size: min(100%, 24.375rem);
-  aspect-ratio: 9 / 16;
-  border-radius: var(--site-radius-container);
-}
-
-/* What the part covers: the screen's own page, in its own scale. Its first
-   and last lines keep clear of where the parts sit — the island's 60px at the
-   top, a bar's 64 at the bottom — as a phone's app pads for them. */
-.site-screen-page {
-  block-size: 100%;
-  display: grid;
-  align-content: start;
-  gap: var(--site-space-200);
-  padding: var(--site-space-700) var(--site-space-300);
-}
-
-.site-screen-line {
-  display: grid;
-  gap: var(--site-space-50);
-}
-
-/* The index's preview: a component's first example, small and inert. */
-.site-preview {
-  isolation: isolate;
-  block-size: 12rem;
-  overflow: hidden;
-  padding: var(--site-space-300);
-  background: var(--primitives-colors-background-25);
-  pointer-events: none;
-  user-select: none;
+/* A status pill keeps its words together ("Not expected"): on a narrow
+   screen the table scrolls inside its own frame instead, as Kozmos's Table
+   lets it. Tag sets no white-space of its own. */
+.site-status-tag {
+  white-space: nowrap;
 }
 
 .site-prev-next {
@@ -1859,105 +1777,4 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   justify-content: space-between;
   gap: var(--site-space-300);
   margin-block-start: var(--site-space-700);
-}
-
-/* A row of parts in a demo, wrapping; a column of them; a bounded box. */
-.site-demo-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--site-space-150);
-}
-
-.site-demo-column {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--site-space-200);
-  max-inline-size: 28rem;
-}
-
-.site-demo-wide {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--site-space-200);
-}
-
-.site-demo-map {
-  position: relative;
-  block-size: 100%;
-  min-block-size: 26rem;
-}
-
-.site-demo-pin {
-  position: absolute;
-  left: var(--pin-x);
-  top: var(--pin-y);
-  transform: translate(-50%, -100%);
-}
-
-.site-demo-scroll {
-  block-size: 12rem;
-}
-
-/* The lines' column in the skeleton demo. Their shape and size are
-   Skeleton's own since it took a `shape` and a size; all that is left for
-   the site is how much of the row the column may have. */
-.site-skeleton-lines {
-  flex: 1;
-}
-
-.site-demo-scroll-row {
-  block-size: calc(var(--primitives-layout-sizing-600) * 1px);
-}
-
-/* A stage for pins, which position themselves (LocationPin is absolute, tip
-   on its anchor): tall enough for a large pin, or one with a label above. */
-.site-demo-pins {
-  position: relative;
-  inline-size: 100%;
-  block-size: 6rem;
-}
-
-.site-demo-pins-tall {
-  block-size: 9rem;
-}
-
-/* The map shell needs a height to lay out in; the layer fills MapView's inset
-   region so pins can sit at percentages, as the venue example's does. */
-.site-demo-shell {
-  position: relative;
-  block-size: 34rem;
-}
-
-/* A POIResultList brings no padding; Kozmos's own panels pad by 16px. */
-.site-demo-panel {
-  padding: var(--site-space-200);
-}
-
-.site-demo-layer {
-  position: absolute;
-  top: var(--kozmos-map-inset-top, 0px);
-  right: var(--kozmos-map-inset-right, 0px);
-  bottom: var(--kozmos-map-inset-bottom, 0px);
-  left: var(--kozmos-map-inset-left, 0px);
-}
-
-.site-demo-centred {
-  display: grid;
-  place-items: center;
-  padding: var(--site-space-300);
-}
-
-.site-demo-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: end;
-  gap: var(--site-space-150);
-}
-
-.site-demo-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: var(--site-space-150);
-  inline-size: 100%;
 }

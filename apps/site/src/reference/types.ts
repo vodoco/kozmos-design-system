@@ -1,36 +1,4 @@
-import type { ComponentType } from "react";
-
-/** One live example on a component's page. */
-export interface Demo {
-  title: string;
-  /** What to notice, or what the props do. One or two sentences. */
-  description?: string;
-  Component: ComponentType;
-  /** A taller stage for parts that need room (maps, sheets, panels). */
-  tall?: boolean;
-}
-
-/** What `src/reference/demos/<slug>.tsx` exports. */
-export interface DemoModule {
-  demos: readonly Demo[];
-}
-
-/** The generated data for one component (src/generated/components/<slug>.json). */
-export interface ComponentProp {
-  name: string;
-  type: string;
-  required: boolean;
-  defaultValue: string | null;
-  description: string;
-  /** The Radix package a prop comes from, when it is a primitive's own. */
-  source: string | null;
-}
-
-export interface ComponentPart {
-  name: string;
-  description: string;
-  props: ComponentProp[];
-}
+/** The generated data (src/generated/components.json, scripts/generate-reference.mjs). */
 
 export type Lane =
   | "core"
@@ -38,26 +6,38 @@ export type Lane =
   | "product-sdk"
   | "platform-form-factor";
 
-export interface ComponentData {
-  name: string;
-  slug: string;
-  lane: Lane;
-  description: string;
-  snippets: Partial<Record<"react" | "vue" | "swift" | "kotlin", string>>;
-  parts: ComponentPart[];
-}
+/** The four places a component can exist, in the order the site shows them. */
+export type Platform = "react" | "swiftui" | "compose" | "figma";
+
+/**
+ * What exists on one platform. `implemented`: the platform's library has the
+ * component. `linked`: Figma only — a Code Connect mapping ties it to a real
+ * node in the Figma library. `not-yet`: not there yet. `not-expected`: Figma
+ * only — a provider, a typography primitive or a nonvisual utility, which has
+ * no Figma component set by design.
+ */
+export type PlatformState =
+  | "implemented"
+  | "linked"
+  | "not-yet"
+  | "not-expected";
 
 export interface ComponentSummary {
   name: string;
   slug: string;
   lane: Lane;
+  /** The docs' first paragraph, or the component's doc comment; "" when neither says anything. */
   description: string;
-  exports: string[];
-  /** The platforms whose code the component's docs carry. */
-  code: ("react" | "swift" | "kotlin")[];
+  /**
+   * The `path` Storybook's address takes for the component's page: its docs
+   * page (`/docs/…--docs`), or its first story (`/story/…`) where it has no
+   * docs page; `null` where it has no stories.
+   */
+  storybook: string | null;
+  platforms: Record<Platform, PlatformState>;
 }
 
 export interface ComponentIndex {
-  lanes: Record<Lane, string>;
+  lanes: Record<Lane, { title: string; description: string }>;
   components: ComponentSummary[];
 }
