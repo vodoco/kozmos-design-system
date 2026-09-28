@@ -3272,6 +3272,9 @@ test("the search opens from the keyboard or the header and takes you there", asy
 test("a button that holds an icon and words keeps them 8px apart", async ({
   page,
 }) => {
+  // Nine pages, each loaded and scrolled end to end: 16–22s in WebKit on CI,
+  // and 31s, past the 30s limit, on a slower runner (run 36432507904).
+  test.slow();
   // GAP-56: Kozmos's Button sets no gap; the site's buttons carry the 8px
   // Figma's Button keeps between its indicator and its label.
   const cases: [string, (page: Page) => Locator, number?][] = [
