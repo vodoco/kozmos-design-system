@@ -258,11 +258,22 @@ From `@kozmos-ds/product-contracts`.
 ```ts
 interface TravelEstimatePresentation {
   durationSeconds: number;
+  /** The exact time, already localized: "3 min". The details card shows it. */
   durationLabel: string;
   distanceMetres?: number;
   distanceLabel?: string;
   mode?: string;
   modeLabel?: string;
+  /**
+   * Set when a result list shows this walk as a band rather than the exact
+   * minutes (decision 50): `travelTimeBand(durationSeconds)` gives it.
+   *
+   * POIResultCard then draws the band's words, and Nearby in the success
+   * colour. POIDetailPanel ignores it and keeps `durationLabel`, the exact
+   * minutes, so one estimate serves the list and the details card alike.
+   * Absent, a result shows `durationLabel`, as before.
+   */
+  band?: TravelTimeBand;
 }
 ```
 
@@ -337,4 +348,26 @@ From `@kozmos-ds/product-contracts`.
  * kind is still a service.
  */
 type POIAttributeKind = "service" | "dietary" | "accessibility" | "restriction";
+```
+
+### TravelTimeBand
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/**
+ * A walk as a result list shows it (decision 50): a band, not the exact
+ * minutes. Nearby is under a minute; then 1–2, 2–5 and 5–10 minutes, and
+ * more than 10.
+ *
+ * The product passes the walking time it already has and Kozmos's rule,
+ * `travelTimeBand`, turns it into one of these, so every product draws the
+ * edges in the same place. The words are the card's, and translatable.
+ */
+type TravelTimeBand =
+  | "nearby"
+  | "oneToTwoMinutes"
+  | "twoToFiveMinutes"
+  | "fiveToTenMinutes"
+  | "moreThanTenMinutes";
 ```

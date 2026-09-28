@@ -38,6 +38,8 @@ import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultAction
 import com.kozmos.contracts.KozmosPOIResultActionPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
+import com.kozmos.contracts.KozmosTravelTimeBand
+import com.kozmos.contracts.KozmosTravelTimeTone
 import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.tokens.KozmosDimensions
@@ -84,6 +86,12 @@ fun KozmosPOIResultCard(
     currentFloorId: String? = null,
     selectionLabel: String? = null,
     actionsLabel: String = "Actions for this result",
+    /**
+     * The words for a walk shown as a band, when `result.travelEstimate.band`
+     * is set (decision 50). English until the product gives its own, for one
+     * band or all five.
+     */
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
     onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     val trackEvent = LocalKozmosAnalytics.current
@@ -93,12 +101,19 @@ fun KozmosPOIResultCard(
     // wall of buttons, and the tap that selects is the tap that asks.
     val visibleActions = if (result.selected && available) result.actions else emptyList()
 
+    // The band's words when the product set a band (decision 50), the exact
+    // minutes when it did not: the details card keeps those either way.
+    val travelTimeText = result.travelEstimate?.let { estimate ->
+        estimate.band?.let { band -> travelTimeBandLabels[band] ?: englishTravelTimeBandLabel(band) }
+            ?: estimate.durationLabel
+    }
+
     val accessibilityDescription = selectionLabel ?: listOfNotNull(
         poi.name,
         poi.categoryLabel,
         poi.locationLabel,
         poi.availabilityLabel,
-        result.travelEstimate?.durationLabel,
+        travelTimeText,
         if (available) null else result.unavailableReason
     ).joinToString(", ")
 
@@ -292,11 +307,19 @@ fun KozmosPOIResultCard(
                 ) {
                     POILogo(poi = poi)
 
-                    result.travelEstimate?.let { travelEstimate ->
+                    travelTimeText?.let { text ->
                         Text(
-                            text = travelEstimate.durationLabel,
+                            text = text,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = KozmosThemeTokens.primitivesColorsForeground100
+                            // Nearby in the success emotion's Text role, which
+                            // reads at 4.5:1 or more on the card in both
+                            // themes; every other band, and the exact minutes,
+                            // in the card's text colour. The word is Nearby,
+                            // so the colour is never the only signal.
+                            color = when (result.travelEstimate?.band?.tone) {
+                                KozmosTravelTimeTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
+                                KozmosTravelTimeTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
+                            }
                         )
                     }
                 }
@@ -355,6 +378,15 @@ fun KozmosPOIResultCard(
             }
         }
     }
+}
+
+/** The bands' words, and the only English the card holds for them. */
+internal fun englishTravelTimeBandLabel(band: KozmosTravelTimeBand): String = when (band) {
+    KozmosTravelTimeBand.Nearby -> "Nearby"
+    KozmosTravelTimeBand.OneToTwoMinutes -> "1–2 min"
+    KozmosTravelTimeBand.TwoToFiveMinutes -> "2–5 min"
+    KozmosTravelTimeBand.FiveToTenMinutes -> "5–10 min"
+    KozmosTravelTimeBand.MoreThanTenMinutes -> "More than 10 min"
 }
 
 /**

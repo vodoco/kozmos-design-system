@@ -235,11 +235,20 @@ public struct KozmosPOIPresentation: Sendable, Hashable, Identifiable, Codable {
 
 public struct KozmosTravelEstimatePresentation: Sendable, Hashable, Codable {
     public let durationSeconds: Double
+    /// The exact time, already localized: "3 min". The details card shows it.
     public let durationLabel: String
     public let distanceMetres: Double?
     public let distanceLabel: String?
     public let mode: String?
     public let modeLabel: String?
+    /// Set when a result list shows this walk as a band rather than the exact
+    /// minutes (decision 50): `KozmosTravelTimeBand(durationSeconds:)` gives it.
+    ///
+    /// `KozmosPOIResultCard` then draws the band's words, and Nearby in the
+    /// success colour. `KozmosPOIDetailPanel` ignores it and keeps
+    /// `durationLabel`, the exact minutes, so one estimate serves the list and
+    /// the details card alike. Nil, a result shows `durationLabel`, as before.
+    public let band: KozmosTravelTimeBand?
 
     public init(
         durationSeconds: Double,
@@ -247,7 +256,8 @@ public struct KozmosTravelEstimatePresentation: Sendable, Hashable, Codable {
         distanceMetres: Double? = nil,
         distanceLabel: String? = nil,
         mode: String? = nil,
-        modeLabel: String? = nil
+        modeLabel: String? = nil,
+        band: KozmosTravelTimeBand? = nil
     ) {
         self.durationSeconds = durationSeconds
         self.durationLabel = durationLabel
@@ -255,6 +265,64 @@ public struct KozmosTravelEstimatePresentation: Sendable, Hashable, Codable {
         self.distanceLabel = distanceLabel
         self.mode = mode
         self.modeLabel = modeLabel
+        self.band = band
+    }
+}
+
+/// A walk as a result list shows it (decision 50): a band, not the exact
+/// minutes. Nearby is under a minute; then 1–2, 2–5 and 5–10 minutes, and
+/// more than 10.
+///
+/// The product passes the walking time it already has and Kozmos's rule,
+/// `init(durationSeconds:)`, turns it into one of these, so every product
+/// draws the edges in the same place. The words are the card's, and
+/// translatable. Mirrors `TravelTimeBand` on the web and
+/// `KozmosTravelTimeBand` on Compose.
+public enum KozmosTravelTimeBand: String, Sendable, Hashable, CaseIterable, Codable {
+    case nearby
+    case oneToTwoMinutes
+    case twoToFiveMinutes
+    case fiveToTenMinutes
+    case moreThanTenMinutes
+}
+
+/// The colour a band is drawn in: Nearby in the success colour, the others
+/// in the card's normal text colour. A band's `tone` says which.
+public enum KozmosTravelTimeTone: String, Sendable, Hashable, CaseIterable, Codable {
+    case success
+    case neutral
+}
+
+extension KozmosTravelTimeBand {
+    /// The band a walk falls in, from its length in seconds: Kozmos's rule
+    /// (decision 50), the web's `travelTimeBand`.
+    ///
+    /// Nearby is under a minute. Every band after it keeps its upper edge, so
+    /// a place exactly 2, 5 or 10 minutes away reads "1–2 min", "2–5 min" or
+    /// "5–10 min", and one a second further reads the next band. Past the
+    /// first minute that is the walk rounded up to whole minutes: 1 or 2, 3
+    /// to 5, 6 to 10, then 11 and more. No walk falls in two bands; a length
+    /// below zero, or one that is not finite, falls in none (nil), and a card
+    /// given no band shows the exact minutes. Tested against the table the web
+    /// and Compose read, packages/product-contracts/tests/travel-time-bands.txt.
+    public init?(durationSeconds: Double) {
+        guard durationSeconds.isFinite, durationSeconds >= 0 else { return nil }
+        if durationSeconds < 60 {
+            self = .nearby
+        } else if durationSeconds <= 120 {
+            self = .oneToTwoMinutes
+        } else if durationSeconds <= 300 {
+            self = .twoToFiveMinutes
+        } else if durationSeconds <= 600 {
+            self = .fiveToTenMinutes
+        } else {
+            self = .moreThanTenMinutes
+        }
+    }
+
+    /// The tone this band is drawn in: Nearby's is success, every other neutral.
+    public var tone: KozmosTravelTimeTone {
+        self == .nearby ? .success : .neutral
     }
 }
 
