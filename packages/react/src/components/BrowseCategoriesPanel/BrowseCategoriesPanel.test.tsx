@@ -64,6 +64,24 @@ describe("BrowseCategoriesPanel", () => {
     expect(alone.firstElementChild!.className).not.toMatch(/\b(p|pt|py)-/);
   });
 
+  it("paints its fill through the class a map shell's panel can turn off", () => {
+    // Decision 43: hosted in AdaptiveMapShell's panel, whose surface is the
+    // one surface, the browser paints no fill (owned CSS reads the shell's
+    // --kozmos-panel-part-fill; measured in check-adaptive-edge-cases.mjs).
+    // Its fill is that class's alone: a `bg-background` beside it would
+    // outrank it and paint the block back.
+    const section = render(
+      <BrowseCategoriesPanel
+        categories={[{ id: "gates", label: "Gates", selected: false }]}
+        onSelect={() => undefined}
+        renderIcon={() => <svg />}
+      />,
+    ).container.querySelector("section")!;
+    expect(section.classList.contains("kozmos-browse-categories")).toBe(true);
+    expect(section.className).not.toMatch(/(^|\s)bg-/);
+    expect(section.className).toMatch(/\btext-foreground\b/);
+  });
+
   it("renders a directed empty state", () => {
     render(
       <BrowseCategoriesPanel

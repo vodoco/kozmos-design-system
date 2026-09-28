@@ -86,6 +86,30 @@ describe("RoutePreviewPanel", () => {
     expect(body.className).toMatch(/\bp-4\b/);
   });
 
+  it("paints its fill through the class a map shell's panel can turn off", () => {
+    // Decision 43: hosted in AdaptiveMapShell's panel, whose surface is the
+    // one surface, the preview paints no fill (owned CSS reads the shell's
+    // --kozmos-panel-part-fill; measured in check-adaptive-edge-cases.mjs).
+    // Its fill is that class's alone: a `bg-background` beside it would
+    // outrank it and paint the block back.
+    const { container } = render(
+      <RoutePreviewPanel
+        backLabel="Back"
+        continueLabel="Continue"
+        destinationName="Burger King"
+        onBack={() => undefined}
+        onContinue={() => undefined}
+        onOptionSelect={() => undefined}
+        options={options}
+        status="ready"
+      />,
+    );
+    const section = container.querySelector("section")!;
+    expect(section.classList.contains("kozmos-route-preview")).toBe(true);
+    expect(section.className).not.toMatch(/(^|\s)bg-/);
+    expect(section.className).toMatch(/\btext-foreground\b/);
+  });
+
   it("disables continuation while calculating", () => {
     render(
       <RoutePreviewPanel

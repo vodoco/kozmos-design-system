@@ -116,6 +116,78 @@ async function insideGripCircle(page) {
   });
 }
 
+// The page every case starts from: the shell 390 wide and 600 tall, left to
+// right, in the light theme. A case that tries several parts in turn starts
+// each from it again.
+async function fresh(page) {
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture" style="width:390px;height:600px"></div></body></html>`,
+  );
+  await page.addScriptTag({ content: code });
+  await page.waitForFunction(
+    () => window.adaptiveSnapshot?.mapBounds.width === 390,
+  );
+  await settleLayout(page);
+}
+
+// Decision 43: the parts the shell hosts at the top of its panel, each found
+// by its own root. The category browser and the route preview paint a fill
+// of their own standing alone; the result list and the details card's sheet
+// presentation paint none anywhere.
+const PARTS = {
+  browse: 'section[aria-label="Browse categories"]',
+  route: 'section[aria-label="Route preview"]',
+  results: 'section[aria-label="Points of interest"]',
+  details: '.kozmos-poi-detail[data-presentation="sheet"]',
+};
+const TRANSPARENT = "rgba(0, 0, 0, 0)";
+
+// Hosts `part` as the panel's whole content, with these shell options.
+async function showPart(page, part, options = {}) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.evaluate(
+    ({ part, options }) => {
+      if (part === "browse") window.showBrowse();
+      if (part === "route") window.showRoute();
+      if (part === "results") window.showResults();
+      if (part === "details") window.showDetails("sheet");
+      window.setAdaptiveOptions(options);
+    },
+    { part, options },
+  );
+  await settleLayout(page);
+}
+
+// The fill `part` paints behind itself and the colour of its text, as the
+// browser computes them, beside the theme's own background and foreground
+// resolved in the same place; and the panel's fill, when a shell hosts it.
+// Counted first, as the details card is.
+async function partFill(page, part) {
+  const found = page.locator(PARTS[part]);
+  assert.equal(await found.count(), 1, `the ${part} part is drawn once`);
+  return found.evaluate((element) => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--primitives-colors-foreground-0)";
+    probe.style.backgroundColor = "var(--primitives-colors-background-0)";
+    element.append(probe);
+    const theme = getComputedStyle(probe);
+    const panel = element.closest("aside");
+    const measured = {
+      fill: getComputedStyle(element).backgroundColor,
+      text: getComputedStyle(element).color,
+      themeBackground: theme.backgroundColor,
+      themeForeground: theme.color,
+      panel: panel && getComputedStyle(panel).backgroundColor,
+      presentation: panel
+        ? document.querySelector("[data-panel-presentation]").dataset
+            .panelPresentation
+        : null,
+    };
+    probe.remove();
+    return measured;
+  });
+}
+
 // The side panel, as a wide host lays it out: the fixture made 1024 wide.
 async function widen(page) {
   await page.evaluate(() => {
@@ -1001,6 +1073,124 @@ const cases = [
       );
     },
   ],
+  [
+    "on a glass sheet, a hosted part paints no fill of its own, and its text follows the theme (decision 43)",
+    async (page) => {
+      // Decision 43: in the shell's panel, the panel's surface is the one
+      // surface. The category browser and the route preview filled their
+      // box with the background colour wherever they were, so on a glass
+      // sheet each was an opaque block from under the grip's row down. The
+      // result list and the details card's sheet presentation paint none
+      // already. Light and dark: the text keeps the theme's foreground.
+      const painted = [];
+      const text = [];
+      for (const theme of ["light", "dark"]) {
+        for (const part of Object.keys(PARTS)) {
+          await fresh(page);
+          await page.evaluate((t) => (document.body.dataset.theme = t), theme);
+          await showPart(page, part, {
+            panelSurface: "glass",
+            panelDetent: "medium",
+          });
+          const at = await partFill(page, part);
+          assert.equal(at.presentation, "bottom", `${part}: not the sheet`);
+          assert.match(
+            at.panel,
+            /^rgba\(.+, 0?\.\d+\)$/,
+            `${part}: the sheet is not glass (${at.panel})`,
+          );
+          if (at.fill !== TRANSPARENT)
+            painted.push(`${part} ${theme} ${at.fill}`);
+          if (part in { browse: 1, route: 1 } && at.text !== at.themeForeground)
+            text.push(`${part} ${theme} ${at.text}, not ${at.themeForeground}`);
+        }
+      }
+      assert.deepEqual(
+        painted,
+        [],
+        `a fill of their own on a glass sheet: ${painted.join("; ")}`,
+      );
+      assert.deepEqual(
+        text,
+        [],
+        `text off the theme on a glass sheet: ${text.join("; ")}`,
+      );
+    },
+  ],
+  [
+    "on a solid sheet, a hosted part paints no fill of its own, and the sheet's fill shows as before",
+    async (page) => {
+      // The sheet's solid fill is the background colour the parts painted,
+      // so a part that paints none looks as it did.
+      const painted = [];
+      for (const part of Object.keys(PARTS)) {
+        await fresh(page);
+        await showPart(page, part, { panelDetent: "medium" });
+        const at = await partFill(page, part);
+        assert.equal(at.presentation, "bottom", `${part}: not the sheet`);
+        assert.equal(
+          at.panel,
+          at.themeBackground,
+          `${part}: the solid sheet is not the background colour`,
+        );
+        if (at.fill !== TRANSPARENT) painted.push(`${part} ${at.fill}`);
+      }
+      assert.deepEqual(
+        painted,
+        [],
+        `a fill of their own on a solid sheet: ${painted.join("; ")}`,
+      );
+    },
+  ],
+  [
+    "in a side panel, glass or solid, a hosted part paints no fill of its own",
+    async (page) => {
+      // A side panel's surface can be glass too: the same opaque block
+      // stood in it. On a solid side panel a part that paints none looks as
+      // it did, its fill being the panel's.
+      const painted = [];
+      for (const surface of ["glass", "solid"]) {
+        for (const part of Object.keys(PARTS)) {
+          await fresh(page);
+          await showPart(page, part, { panelSurface: surface });
+          await widen(page);
+          const at = await partFill(page, part);
+          assert.equal(at.presentation, "side", `${part}: not the side panel`);
+          if (at.fill !== TRANSPARENT)
+            painted.push(`${part} ${surface} ${at.fill}`);
+        }
+      }
+      assert.deepEqual(
+        painted,
+        [],
+        `a fill of their own in a side panel: ${painted.join("; ")}`,
+      );
+    },
+  ],
+  [
+    "standing alone, the category browser and the route preview keep their own fill, light and dark",
+    async (page) => {
+      // The guard: outside a shell nothing says a surface is there, and a
+      // part keeps its fill, the theme's background, under the theme's text.
+      const wrong = [];
+      for (const theme of ["light", "dark"]) {
+        for (const part of ["browse", "route"]) {
+          await fresh(page);
+          await page.evaluate((t) => (document.body.dataset.theme = t), theme);
+          await page.evaluate((p) => window.showStandalone(p), part);
+          await page.waitForSelector(`[data-standalone="${part}"] section`);
+          await settleLayout(page);
+          const at = await partFill(page, part);
+          assert.equal(at.panel, null, `${part}: hosted in a panel`);
+          if (at.fill !== at.themeBackground)
+            wrong.push(`${part} ${theme} fill ${at.fill}`);
+          if (at.text !== at.themeForeground)
+            wrong.push(`${part} ${theme} text ${at.text}`);
+        }
+      }
+      assert.deepEqual(wrong, [], `standing alone: ${wrong.join("; ")}`);
+    },
+  ],
 ];
 try {
   for (const [name, test] of cases) {
@@ -1008,14 +1198,7 @@ try {
       viewport: { width: 1024, height: 768 },
     });
     try {
-      await page.setContent(
-        `<!doctype html><html><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture" style="width:390px;height:600px"></div></body></html>`,
-      );
-      await page.addScriptTag({ content: code });
-      await page.waitForFunction(
-        () => window.adaptiveSnapshot?.mapBounds.width === 390,
-      );
-      await settleLayout(page);
+      await fresh(page);
       await test(page);
       console.log(`PASS ${name}`);
     } catch (error) {

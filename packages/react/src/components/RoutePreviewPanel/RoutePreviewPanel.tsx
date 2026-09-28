@@ -62,13 +62,16 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
     // and keeps the grip's clearance (decision 14, owned-components.css). Its
     // top padding is that class's alone; a `p-4` or `pt-4` beside it would
     // outrank it. The options under it keep their 16.
+    // Its fill is `kozmos-route-preview`'s: the background colour on its own,
+    // and nothing in the shell's panel, whose surface, solid or glass, is the
+    // one surface (decision 43). A `bg-background` would outrank it.
 
     return (
       <section
         ref={ref}
         aria-label="Route preview"
         className={cn(
-          "flex min-h-0 min-w-0 w-full flex-col bg-background text-foreground",
+          "kozmos-route-preview flex min-h-0 min-w-0 w-full flex-col text-foreground",
           className,
         )}
         data-route-status={status}

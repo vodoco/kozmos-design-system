@@ -45,12 +45,15 @@ const BrowseCategoriesPanel = React.forwardRef<
     // keeps the grip's clearance (owned-components.css). Its top padding is
     // that class's alone; a `pt-4` beside it would outrank it. The tiles
     // under a search row sit under that row, and keep their 16.
+    // Its fill is `kozmos-browse-categories`'s: the background colour on its
+    // own, and nothing in the shell's panel, whose surface, solid or glass,
+    // is the one surface (decision 43). A `bg-background` would outrank it.
     return (
       <section
         ref={ref}
         aria-label={label}
         className={cn(
-          "flex min-h-0 min-w-0 w-full flex-col bg-background text-foreground",
+          "kozmos-browse-categories flex min-h-0 min-w-0 w-full flex-col text-foreground",
           className,
         )}
         {...props}

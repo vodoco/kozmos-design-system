@@ -213,6 +213,22 @@
   .kozmos-poi-result-list {
     padding-top: var(--kozmos-panel-clearance-top, 0px);
   }
+  /* A part's own fill (decision 43). Standing alone, the category browser
+     and the route preview fill their box with the background colour. In the
+     map shell's panel, a sheet or a side panel, the panel's surface, solid
+     or glass, is the one surface: the shell sets --kozmos-panel-part-fill to
+     transparent on it, and they paint nothing. A glass panel shows through
+     them, where each stood as an opaque block from under the grip's row
+     down; a solid one looks as it did, its fill being this same colour.
+     Their text keeps the theme's foreground. The fill is this rule's alone:
+     a bg-background beside it would outrank it. */
+  .kozmos-browse-categories,
+  .kozmos-route-preview {
+    background-color: var(
+      --kozmos-panel-part-fill,
+      var(--primitives-colors-background-0)
+    );
+  }
   /* MapOverlay's stack. It scrolls when what it holds is taller than the map
      leaves room for, so it is a scroll box, and a scroll box clips at its
      padding edge. With no padding, that edge sat on the map chrome itself and

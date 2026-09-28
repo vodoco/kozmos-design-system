@@ -858,7 +858,18 @@ const AdaptiveMapShell = React.forwardRef<
             ref={panelElement}
             aria-label={panelLabel}
             hidden={panelHidden}
-            style={position(layout.panelBounds ?? zero)}
+            style={
+              {
+                ...position(layout.panelBounds ?? zero),
+                // Decision 43: the panel's surface, solid or glass, is the
+                // one surface. A part that fills its own box standing alone
+                // (the category browser, the route preview) paints nothing
+                // on it. Said on the panel itself, a sheet or a side panel,
+                // so its header and its content both hear it; on a solid
+                // panel nothing changes, its fill being the parts' colour.
+                "--kozmos-panel-part-fill": "transparent",
+              } as React.CSSProperties
+            }
             className={cn(
               surfaceClass(panelSurface),
               "z-40 flex-col overflow-hidden shadow-overlay",

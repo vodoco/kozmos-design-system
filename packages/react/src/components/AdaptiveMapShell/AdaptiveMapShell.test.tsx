@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AdaptiveMapShell } from "./AdaptiveMapShell";
 
@@ -206,6 +206,24 @@ describe("AdaptiveMapShell sheet detents", () => {
 
   it("asks no clearance in a side panel, which has no grip", () => {
     expect(clearanceTop(sheet({ panelPresentation: "side" }))).toBe("0px");
+  });
+
+  // Decision 43: the panel's surface is the one surface, so a part that
+  // fills its own box standing alone paints nothing on it. Said on the panel
+  // itself, so its header and its content both hear it.
+  const partFill = (aside: HTMLElement) =>
+    aside.style.getPropertyValue("--kozmos-panel-part-fill");
+
+  it("tells what it hosts to paint no fill of its own, glass or solid, sheet or side panel", () => {
+    expect(partFill(sheet())).toBe("transparent");
+    cleanup();
+    expect(partFill(sheet({ panelSurface: "glass" }))).toBe("transparent");
+    cleanup();
+    expect(partFill(sheet({ panelPresentation: "side" }))).toBe("transparent");
+    cleanup();
+    expect(
+      partFill(sheet({ panelPresentation: "side", panelSurface: "glass" })),
+    ).toBe("transparent");
   });
 
   it("steps the detents from the keyboard and cycles them on a tap", () => {

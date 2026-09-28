@@ -46,6 +46,11 @@ declare global {
      * whole of the panel's content, its destination row first.
      */
     showRoute: () => void;
+    /**
+     * Draw the category browser or the route preview standing alone, in a
+     * box of its own after the fixture, outside any shell.
+     */
+    showStandalone: (part: "browse" | "route") => void;
   }
 }
 
@@ -169,6 +174,55 @@ const routeOptions: RoutePreviewPanelProps["options"] = [
   },
 ];
 
+// The category browser as a product hosts it, with its own search row — a
+// field and a button — or, with `search` false, the tiles alone.
+function browser(search: boolean) {
+  return (
+    <BrowseCategoriesPanel
+      categories={categories}
+      onSelect={() => undefined}
+      renderIcon={() => (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" fill="currentColor" />
+        </svg>
+      )}
+      search={
+        search ? (
+          <SearchBar aria-label="Search places" placeholder="Search" />
+        ) : undefined
+      }
+      actions={search ? <Button variant="outline">Saved</Button> : undefined}
+    />
+  );
+}
+
+function routePreview(onBack: () => void) {
+  return (
+    <RoutePreviewPanel
+      backLabel="Back"
+      continueLabel="Start"
+      destinationName="Harbour Coffee Co."
+      onBack={onBack}
+      onContinue={() => undefined}
+      onOptionSelect={() => undefined}
+      options={routeOptions}
+      status="ready"
+    />
+  );
+}
+
+// A part standing alone, in a box of its own after the fixture, outside any
+// shell: what it paints when nothing hosts it.
+window.showStandalone = (part) => {
+  const box = document.createElement("div");
+  box.dataset.standalone = part;
+  box.style.width = "390px";
+  document.body.append(box);
+  createRoot(box).render(
+    part === "browse" ? browser(true) : routePreview(() => undefined),
+  );
+};
+
 function Host() {
   const [options, setOptions] = useState(window.adaptiveOptions ?? {});
   const [header, setHeader] = useState(false);
@@ -191,36 +245,9 @@ function Host() {
       map={<MapSlot />}
       panel={
         route ? (
-          <RoutePreviewPanel
-            backLabel="Back"
-            continueLabel="Start"
-            destinationName="Harbour Coffee Co."
-            onBack={() => setRoute(false)}
-            onContinue={() => undefined}
-            onOptionSelect={() => undefined}
-            options={routeOptions}
-            status="ready"
-          />
+          routePreview(() => setRoute(false))
         ) : browse ? (
-          <BrowseCategoriesPanel
-            categories={categories}
-            onSelect={() => undefined}
-            renderIcon={() => (
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="8" fill="currentColor" />
-              </svg>
-            )}
-            search={
-              browse.search ? (
-                <SearchBar aria-label="Search places" placeholder="Search" />
-              ) : undefined
-            }
-            actions={
-              browse.search ? (
-                <Button variant="outline">Saved</Button>
-              ) : undefined
-            }
-          />
+          browser(browse.search)
         ) : details ? (
           <POIDetailPanel
             poi={{
