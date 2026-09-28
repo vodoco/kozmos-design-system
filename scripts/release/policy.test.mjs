@@ -13,7 +13,7 @@ const request = {
 };
 const evidence = {
   request,
-  repository: "vodoco/kozmos-design-system-",
+  repository: "vodoco/kozmos-design-system",
   mainSha: sha,
   enabled: "true",
   run: {
@@ -22,8 +22,8 @@ const evidence = {
     event: "push",
     head_branch: "main",
     head_sha: sha,
-    repository: { full_name: "vodoco/kozmos-design-system-" },
-    head_repository: { full_name: "vodoco/kozmos-design-system-" },
+    repository: { full_name: "vodoco/kozmos-design-system" },
+    head_repository: { full_name: "vodoco/kozmos-design-system" },
     status: "completed",
     conclusion: "success",
   },
