@@ -5,7 +5,17 @@ import SwiftUI
 /// Mirrors the React `RoutePreviewPanel`. The panel never changes its own
 /// selected route, and continuation is disabled while the route status is
 /// `calculating`, `noRoute`, `error`, or `idle`.
+///
+/// It fills with the background colour and draws no border of its own, so as
+/// the content of the map shell's panel it is that panel's top: its
+/// destination row tops its padding up to what the panel already leaves above
+/// it (`kozmosPanelInsetTop`, `kozmosPanelClearanceTop`) rather than adding
+/// to it, so the destination sits as far from the panel's top as from its
+/// side and keeps the grabber's target clear (decision 14).
 public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: View {
+    @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
+    @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
+
     private let destinationName: String
     private let destinationLabel: String
     private let options: [KozmosRouteOptionPresentation]
@@ -63,6 +73,18 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
 
     private var ready: Bool { status == .ready }
 
+    /// The destination row's top padding. Hosted in the shell's panel, the
+    /// space the panel leaves above it — a grabber's row — is the preview's
+    /// own top: the row tops its 16 up to it rather than adding 16 to it, and
+    /// keeps the clearance the panel asks for under a grabber. It padded 16
+    /// under the grabber's 16-point row: the destination sat 32 from the
+    /// sheet's top and 16 from its side. Outside a shell both are zero, and
+    /// it keeps its 16. The options under the row keep theirs.
+    private var firstRowTopPadding: CGFloat {
+        let padding = KozmosDimensions.primitivesLayoutSpacing200
+        return max(panelClearanceTop, padding - panelInsetTop)
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
@@ -76,7 +98,8 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(KozmosDimensions.primitivesLayoutSpacing200)
+            .padding([.horizontal, .bottom], KozmosDimensions.primitivesLayoutSpacing200)
+            .padding(.top, firstRowTopPadding)
 
             Divider().overlay(KozmosColors.semanticsBorderSubtle)
 
