@@ -66,6 +66,35 @@ struct DrawnPixels {
                       width: CGFloat(maxX - minX + 1) / scale, height: CGFloat(maxY - minY + 1) / scale)
     }
 
+    /// Runs of pixel rows holding a match, top to bottom, each the bounding
+    /// box of its matches in points: the lines of drawn text, when nothing
+    /// else is drawn.
+    func bands(where matches: (UInt8, UInt8, UInt8, UInt8) -> Bool) -> [CGRect] {
+        var bands: [CGRect] = []
+        var run: (minX: Int, maxX: Int, minY: Int, maxY: Int)?
+        func close() {
+            guard let r = run else { return }
+            bands.append(CGRect(x: CGFloat(r.minX) / scale, y: CGFloat(r.minY) / scale,
+                                width: CGFloat(r.maxX - r.minX + 1) / scale, height: CGFloat(r.maxY - r.minY + 1) / scale))
+            run = nil
+        }
+        for y in 0..<height {
+            var rowMin = Int.max, rowMax = -1
+            for x in 0..<width {
+                let i = (y * width + x) * 4
+                if matches(rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]) { rowMin = min(rowMin, x); rowMax = max(rowMax, x) }
+            }
+            if rowMax < 0 { close(); continue }
+            if let r = run {
+                run = (min(r.minX, rowMin), max(r.maxX, rowMax), r.minY, y)
+            } else {
+                run = (rowMin, rowMax, y, y)
+            }
+        }
+        close()
+        return bands
+    }
+
     /// How many pixels inside `region` (in points) match.
     func count(in region: CGRect, where matches: (UInt8, UInt8, UInt8, UInt8) -> Bool) -> Int {
         let x0 = max(0, Int(region.minX * scale)), x1 = min(width, Int(region.maxX * scale))

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": [
+        "src/**",
+        "public/**",
+        "scripts/**",
+        "tests/**",
+        "package.json",
+        "react-router.config.ts",
+        "tsconfig.json",
+        "vite.config.ts",
+        "playwright.config.ts",
+        "$TURBO_ROOT$/scripts/skills/check-completion.ts",
+        "GAPS.md",
+        "DS-HANDOFF.md"
+      ],
+      "outputs": ["build/**"]
+    },
+    "test": {
+      "inputs": [
+        "src/**",
+        "scripts/**",
+        "public/**",
+        "package.json",
+        "GAPS.md",
+        "DS-HANDOFF.md"
+      ],
+      "outputs": []
+    }
+  }
+}

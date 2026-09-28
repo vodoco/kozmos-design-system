@@ -1,0 +1,35 @@
+/* Sign in: one card in the middle of the page. Layout only. */
+
+.ex-signin {
+  min-block-size: 100%;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--primitives-layout-spacing-600) * 1px)
+    calc(var(--primitives-layout-spacing-300) * 1px);
+  background: var(--primitives-colors-background-50);
+}
+
+.ex-signin-card {
+  inline-size: min(100%, 26rem);
+}
+
+.ex-signin-form {
+  display: grid;
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+.ex-signin-wide {
+  inline-size: 100%;
+}
+
+/* A live region stays on the page; empty, it leaves the flow, so the form's
+   gap does not open for it. */
+.ex-signin-live:empty {
+  position: absolute;
+}
+
+/* A step's heading takes focus when the step appears (../focus.ts); it is
+   where the keyboard starts from, not a control, so it shows no ring. */
+.ex-signin-title:focus {
+  outline: none;
+}

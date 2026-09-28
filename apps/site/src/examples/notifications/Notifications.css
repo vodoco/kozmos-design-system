@@ -1,0 +1,26 @@
+/* Notifications: a column of items, each an icon, the words and one action.
+   Layout only. */
+
+.ex-inbox {
+  min-block-size: 100%;
+  padding: calc(var(--primitives-layout-spacing-600) * 1px)
+    calc(var(--primitives-layout-spacing-300) * 1px)
+    calc(var(--primitives-layout-spacing-900) * 1px);
+  max-inline-size: 48rem;
+  margin-inline: auto;
+}
+
+.ex-inbox-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: calc(var(--primitives-layout-spacing-200) * 1px);
+  padding-block: calc(var(--primitives-layout-spacing-100) * 1px);
+}
+
+/* A live region stays on the page; empty, it leaves the flow, so no gap
+   opens for it. */
+.ex-inbox-live:empty {
+  position: absolute;
+}
+

@@ -140,6 +140,40 @@ export const OpenAndClose: Story = {
   },
 };
 
+/**
+ * Decision 22: a spoken conversation, the assistant answering aloud. The
+ * product has a voice model, so it turns the microphone on and drives its
+ * state; the thread shows what was said. While the conversation is live the
+ * thread stops announcing itself (`aria-live="off"`), or a screen reader
+ * would read out the words the assistant is already speaking.
+ */
+export const VoiceConversation: Story = {
+  render: () => (
+    <Frame>
+      <AICompanionPanel onClose={fn()}>
+        <AIMessageList aria-live="off">
+          <AIMessage>
+            Hello! What are you looking for? Describe it in your own words, like
+            &ldquo;somewhere quiet to work.&rdquo;
+          </AIMessage>
+          <UserMessage>Where is the nearest accessible restroom?</UserMessage>
+          <AIMessage status="streaming">
+            The closest accessible restroom is on the second floor
+          </AIMessage>
+        </AIMessageList>
+        <AIInputBar
+          onSubmit={fn()}
+          onValueChange={fn()}
+          onVoiceEnd={fn()}
+          onVoiceStart={fn()}
+          value=""
+          voiceState="speaking"
+        />
+      </AICompanionPanel>
+    </Frame>
+  ),
+};
+
 /** Story 10: the ten-second hard stop, drawn rather than left silent. */
 export const TimedOut: Story = {
   render: () => (

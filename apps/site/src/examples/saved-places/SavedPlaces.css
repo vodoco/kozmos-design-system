@@ -1,0 +1,34 @@
+/* Saved places: a column. Layout only. */
+
+.ex-saved {
+  min-block-size: 100%;
+  padding: calc(var(--primitives-layout-spacing-600) * 1px)
+    calc(var(--primitives-layout-spacing-300) * 1px)
+    calc(var(--primitives-layout-spacing-900) * 1px);
+  max-inline-size: 44rem;
+  margin-inline: auto;
+}
+
+.ex-saved-form {
+  display: grid;
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+/* Below 30rem a row cannot hold a name, a floor and a note (GAP-48). */
+@media (max-width: 30rem) {
+  .ex-saved-note {
+    display: none;
+  }
+}
+
+/* A live region stays on the page; empty, it leaves the flow, so no gap
+   opens for it. */
+.ex-saved-live:empty {
+  position: absolute;
+}
+
+/* The heading Undo hands focus to (../focus.ts): where the keyboard starts
+   from, not a control, so it shows no ring. */
+.ex-saved-title:focus {
+  outline: none;
+}

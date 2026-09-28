@@ -1,0 +1,22 @@
+/* Feedback survey: a column of one card at a time. Layout only. */
+
+.ex-survey {
+  min-block-size: 100%;
+  padding: calc(var(--primitives-layout-spacing-600) * 1px)
+    calc(var(--primitives-layout-spacing-300) * 1px)
+    calc(var(--primitives-layout-spacing-900) * 1px);
+  max-inline-size: 36rem;
+  margin-inline: auto;
+}
+
+.ex-survey-form {
+  display: grid;
+  gap: calc(var(--primitives-layout-spacing-400) * 1px);
+}
+
+/* A view's heading, or the thanks, takes focus when it appears
+   (../focus.ts): where the keyboard starts from, not a control, so it shows
+   no ring. */
+.ex-survey-focus:focus {
+  outline: none;
+}

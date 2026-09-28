@@ -1,0 +1,32 @@
+/* Booking: one card, three steps. Layout only. */
+
+.ex-booking {
+  min-block-size: 100%;
+  display: grid;
+  place-items: start center;
+  padding: calc(var(--primitives-layout-spacing-600) * 1px)
+    calc(var(--primitives-layout-spacing-300) * 1px);
+  background: var(--primitives-colors-background-50);
+}
+
+.ex-booking-card {
+  inline-size: min(100%, 36rem);
+}
+
+.ex-booking-form {
+  display: grid;
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+.ex-booking-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+/* A step's heading, or the booking, takes focus when it appears
+   (../focus.ts): where the keyboard starts from, not a control, so it shows
+   no ring. */
+.ex-booking-focus:focus {
+  outline: none;
+}

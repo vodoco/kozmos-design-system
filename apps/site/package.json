@@ -1,0 +1,46 @@
+{
+  "name": "@kozmos-ds/site",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The Kozmos design system's website: what it is, how to start, and page and app examples built from Kozmos components only.",
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate-reference.mjs && node scripts/generate-roadmap.mjs",
+    "brand": "node scripts/generate-brand.mjs",
+    "dev": "pnpm generate && react-router dev",
+    "build": "pnpm generate && react-router typegen && tsc && react-router build",
+    "preview": "node scripts/serve-static.mjs",
+    "typecheck": "pnpm generate && react-router typegen && tsc",
+    "lint": "eslint . && node scripts/check-ds-only.mjs",
+    "test": "tsx --test src/lib/*.test.ts && node --test scripts/*.test.mjs",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@kozmos-ds/icons": "workspace:*",
+    "@kozmos-ds/react": "workspace:*",
+    "@kozmos-ds/tokens": "workspace:*",
+    "@react-router/node": "^7.18.4",
+    "isbot": "^5.1.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router": "^7.18.4"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.11.1",
+    "@eslint/js": "^9.39.4",
+    "@kozmos-ds/product-contracts": "workspace:*",
+    "@playwright/test": "1.58.2",
+    "@react-router/dev": "^7.18.4",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^17.4.0",
+    "tsx": "^4.7.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.57.0",
+    "vite": "^8.0.1"
+  }
+}
