@@ -9,6 +9,9 @@ import prettier from "prettier";
  * Default: writes docs/status.md.
  * --check: fails when docs/status.md is stale without mutating the workspace.
  * --no-write: prints only.
+ * --json: prints the lanes and every component's status as JSON on stdout,
+ *   and nothing else, writing nothing. The website's status matrix reads
+ *   it (apps/site/scripts/generate-reference.mjs).
  */
 
 const __filename = fileURLToPath(import.meta.url);
@@ -259,8 +262,11 @@ async function checkExports(componentNames: string[]): Promise<Set<string>> {
 }
 
 async function runCheck() {
-  console.log("🔍 Checking Component Implementation Status...");
-  console.log(`📂 Root: ${ROOT_DIR}\n`);
+  const json = args.has("--json");
+  if (!json) {
+    console.log("🔍 Checking Component Implementation Status...");
+    console.log(`📂 Root: ${ROOT_DIR}\n`);
+  }
 
   const components = discoverComponents();
   const exportedComponents = await checkExports(components);
@@ -302,6 +308,13 @@ async function runCheck() {
           codeConnectApplicable && hasRealCodeConnectMapping(androidFigmaPath),
       },
     });
+  }
+
+  if (json) {
+    process.stdout.write(
+      `${JSON.stringify({ lanes: COMPONENT_LANES, components: statuses }, null, 2)}\n`,
+    );
+    return;
   }
 
   printTable(statuses);
