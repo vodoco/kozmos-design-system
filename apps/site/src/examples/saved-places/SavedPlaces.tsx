@@ -175,10 +175,11 @@ export default function SavedPlaces() {
 
         {/* A toast would leave the page (GAPS.md, GAP-36), so the undo stays
             inline, in a status region that is always there; the Alert inside
-            is only its look (Alert is always role="alert", GAP-12). */}
+            keeps its default, no live region of its own, so it is only the
+            look. */}
         <Box role="status" className="ex-saved-live">
           {undo ? (
-            <Alert variant="success" role="none">
+            <Alert variant="success">
               <AlertDescription>
                 <Stack
                   direction="row"

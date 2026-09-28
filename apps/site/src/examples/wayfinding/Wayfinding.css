@@ -44,6 +44,10 @@
   transform: translate(-50%, -50%);
 }
 
+/* The controls line up on the edge the map shell sets them against
+   (../controls-edge.ts): the location and step-free controls widen to say
+   their new mode, away from that edge, and the floor selector stays where
+   it was. */
 .ex-way-controls {
   display: flex;
   flex-direction: column;
@@ -51,12 +55,27 @@
   gap: calc(var(--primitives-layout-spacing-150) * 1px);
 }
 
+.ex-way-controls[data-edge="start"] {
+  align-items: start;
+}
+
 /* The navigation and arrival panels: the summary or the feedback card, then
-   the example's own controls, with the panel's padding. */
+   the example's own controls, padded 16 as Kozmos's panels pad theirs. At
+   the top of the map shell's panel the padding tops up to what the panel
+   leaves above it, and keeps the grip's clearance, as the route preview
+   before it does (decision 14): the summary's first row sits as far from
+   the panel's top as from its side, 4px further under a grip. */
 .ex-way-stack {
   display: grid;
   gap: calc(var(--primitives-layout-spacing-300) * 1px);
-  padding: calc(var(--primitives-layout-spacing-300) * 1px);
+  padding: calc(var(--primitives-layout-spacing-200) * 1px);
+  padding-block-start: max(
+    var(--kozmos-panel-clearance-top, 0px),
+    calc(
+      var(--primitives-layout-spacing-200) * 1px -
+        var(--kozmos-panel-inset-top, 0px)
+    )
+  );
 }
 
 /* The panel's view takes focus when the stage changes (../focus.ts); it is
@@ -66,16 +85,23 @@
 }
 
 /* The list of places brings no padding of its own; Kozmos's own panels pad
-   their content by 16px, so it sits in a box that does. */
+   their content by 16px, so it sits in a box that does. At the top of the
+   map shell's panel the box tops its 16 up to what the panel already leaves
+   above it — the side panel's 16, the grip's row on a sheet — rather than
+   adding 16 to it, as Kozmos's own parts there do (AdaptiveMapShell, the
+   panel's two inset properties; decision 14). The list keeps the grip's 4px
+   clearance itself. Its first place then sits as far from the panel's top
+   as from its side, and 4px further under a grip. Outside a shell both
+   properties are unset, and the box pads 16 all round. */
 .ex-way-list {
   padding: calc(var(--primitives-layout-spacing-200) * 1px);
-}
-
-/* Focus moves to the list when the view changes, and Chromium and WebKit
-   scroll a tall view's top edge to the panel's, even in a sheet that does not
-   scroll at its height. The margin keeps the padding above the list. */
-.ex-way-list > .ex-way-panel-focus {
-  scroll-margin-block-start: calc(var(--primitives-layout-spacing-200) * 1px);
+  padding-block-start: max(
+    0px,
+    calc(
+      var(--primitives-layout-spacing-200) * 1px -
+        var(--kozmos-panel-inset-top, 0px)
+    )
+  );
 }
 
 /* A live region stays on the page; empty, it leaves the flow. */

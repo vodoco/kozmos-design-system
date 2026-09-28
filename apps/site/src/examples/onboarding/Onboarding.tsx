@@ -120,9 +120,8 @@ export default function Onboarding() {
                 tabIndex={-1}
                 className="ex-onboarding-focus"
               >
-                {/* Alert is always role="alert" (GAPS.md, GAP-12); a
-                    confirmation is a status. */}
-                <Alert variant="success" role="status">
+                {/* A confirmation is a status: polite, not an interruption. */}
+                <Alert variant="success" live="polite">
                   <AlertDescription>
                     <Text as="span" weight="semibold">
                       You are set.
@@ -242,7 +241,7 @@ export default function Onboarding() {
                     />
                   ))}
                 </RadioGroup>
-                <Alert variant="info" role="note">
+                <Alert variant="info">
                   <AlertDescription>
                     Your position stays on your phone. The venue sees counts,
                     never people.

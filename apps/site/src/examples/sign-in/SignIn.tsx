@@ -280,9 +280,8 @@ export default function SignIn() {
             </CardHeader>
             <CardContent>
               <Stack gap={4}>
-                {/* Alert is always role="alert" (GAPS.md, GAP-12); a status
-                    that was expected is announced politely. */}
-                <Alert variant="success" role="status">
+                {/* A status that was expected is announced politely. */}
+                <Alert variant="success" live="polite">
                   <AlertDescription>
                     <Text as="span" weight="semibold">
                       Welcome back.

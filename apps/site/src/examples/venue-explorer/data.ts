@@ -7,6 +7,7 @@ import type {
   FloorPresentation,
   POIDetailsPresentation,
   POIPresentation,
+  UserLocationState,
 } from "@kozmos-ds/product-contracts";
 
 type IconName = NonNullable<IconProps["name"]>;
@@ -247,3 +248,27 @@ export const places: readonly Place[] = [
 
 /** The ground-floor entrance, where "my location" is in this example. */
 export const userLocation = { floorId: "g", position: { x: 50, y: 88 } };
+
+/**
+ * What a press on the location control does, as the SDK's control does it
+ * (decision 40): the map follows the visitor, then turns with them, then
+ * stops. The states are the contracts' `UserLocationState`; a product moves
+ * them with the device's position, which this example does not have.
+ */
+export function nextLocationState(state: UserLocationState): UserLocationState {
+  if (state === "following") return "heading";
+  if (state === "heading") return "off";
+  return "following";
+}
+
+/**
+ * The words under "Focus", as the SDK writes them: "On" while the map follows
+ * or turns with the visitor, "No Location" alone where there is no position,
+ * and "Off" otherwise. Every word is the product's to translate.
+ */
+export function locationStateLabel(state: UserLocationState) {
+  if (state === "following" || state === "heading") return "On";
+  if (state === "unavailable" || state === "permission-denied")
+    return "No Location";
+  return "Off";
+}

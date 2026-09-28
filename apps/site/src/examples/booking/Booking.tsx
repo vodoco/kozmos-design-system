@@ -153,9 +153,8 @@ export default function Booking() {
                 tabIndex={-1}
                 className="ex-booking-focus"
               >
-                {/* Alert is always role="alert" (GAPS.md, GAP-12); a
-                    confirmation is a status. */}
-                <Alert variant="success" role="status">
+                {/* A confirmation is a status: polite, not an interruption. */}
+                <Alert variant="success" live="polite">
                   <AlertDescription>
                     <Text as="span" weight="semibold">
                       Booked.

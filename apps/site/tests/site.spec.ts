@@ -182,12 +182,21 @@ const knownViolations: Record<string, readonly KnownViolation[]> = {
   "/examples/venue-explorer": [SHELL_PANEL],
   "/examples/wayfinding": [SHELL_PANEL],
   "/examples/phone-search": [SHELL_PANEL],
+  // The assistant open over the phone's frame: the map shell under it is
+  // inert (GAP-93), and axe leaves inert content out, so the shell's panel
+  // is not measured then.
+  "/examples/phone-search#assistant": [],
   "/examples/dashboard": [SIDEBAR],
   // The adaptive tile's shell.
   "/": [SHELL_PANEL],
 };
 
-async function axeViolations(page: Page) {
+/**
+ * axe's findings on the page as it is now, less the known ones. `state`
+ * names a state of the page with known findings of its own:
+ * `knownViolations["<path>#<state>"]`.
+ */
+async function axeViolations(page: Page, state?: string) {
   // From the top of the page: scrolled, whatever passes under the sticky
   // header counts as covered, and axe's target-size rule then fails the
   // links there, which a visitor simply scrolls back to.
@@ -205,7 +214,8 @@ async function axeViolations(page: Page) {
   const theme = await page.evaluate(
     () => document.documentElement.dataset.theme,
   );
-  const known = (knownViolations[new URL(page.url()).pathname] ?? [])
+  const key = `${new URL(page.url()).pathname}${state ? `#${state}` : ""}`;
+  const known = (knownViolations[key] ?? [])
     .map(
       (entry): KnownEntry =>
         typeof entry === "string" ? { id: entry } : entry,
@@ -559,25 +569,108 @@ async function clippedEdges(page: Page) {
   ];
 }
 
+type PanelInset = { top: number; side: number; fromGrip: number | null };
+
 /**
- * How far the first place in a map shell's list sits inside the panel's
- * edge. POIResultList brings no padding; Kozmos's own panels pad by 16px.
+ * Where a part sits in a map shell's panel: how far below the panel's top,
+ * how far in from its side, and, under a sheet's grip, how far from the
+ * grip's centre. By default the part is the first place in the panel's
+ * list; POIResultList brings no padding of its own.
  */
-async function listInset(page: Page) {
-  const card = page.locator("aside article").first();
-  await expect(card).toBeVisible();
-  return card.evaluate((article) => {
-    const panel = article.closest("aside")?.getBoundingClientRect();
-    const own = article.getBoundingClientRect();
-    if (!panel) return 0;
-    return Math.round(
-      Math.min(
-        own.left - panel.left,
-        own.top - panel.top,
-        panel.right - own.right,
-      ),
-    );
+async function panelInset(page: Page, part?: Locator): Promise<PanelInset> {
+  const target = part ?? page.locator("main aside article").first();
+  await expect(target).toBeVisible();
+  const inset = await target.evaluate((element) => {
+    const aside = element.closest("aside");
+    if (!aside) return null;
+    const panel = aside.getBoundingClientRect();
+    const own = element.getBoundingClientRect();
+    const grip = aside
+      .querySelector(".kozmos-map-sheet-grip")
+      ?.getBoundingClientRect();
+    let fromGrip: number | null = null;
+    if (grip) {
+      // From the grip's centre to the nearest point of the part.
+      const x = grip.left + grip.width / 2;
+      const y = grip.top + grip.height / 2;
+      fromGrip = Math.round(
+        Math.hypot(
+          Math.max(own.left, Math.min(x, own.right)) - x,
+          Math.max(own.top, Math.min(y, own.bottom)) - y,
+        ),
+      );
+    }
+    return {
+      top: Math.round(own.top - panel.top),
+      side: Math.round(own.left - panel.left),
+      fromGrip,
+    };
   });
+  expect(inset, "the part sits in a map shell's panel").not.toBeNull();
+  return inset ?? { top: 0, side: 0, fromGrip: null };
+}
+
+/**
+ * The map shell's panel inset contract (AdaptiveMapShell, decision 14; #135,
+ * #141): a part at the panel's top sits as far below it as in from the side,
+ * the panel's 16 and its 1px edge, and 4px further under a grip, which keeps
+ * it 12px from the grip's centre (WCAG 2.5.8). The examples' own holders pad
+ * 16 and top it up to what the panel leaves above them; adding the two put
+ * the first place 16px further down.
+ */
+function expectPanelContract({ top, side, fromGrip }: PanelInset) {
+  expect(side, "in from the panel's side").toBeGreaterThanOrEqual(16);
+  const expected = fromGrip === null ? side : side + 4;
+  expect(
+    Math.abs(top - expected),
+    `${top}px below the panel's top, ${side}px in from its side${fromGrip === null ? "" : ", under a grip"}`,
+  ).toBeLessThanOrEqual(1);
+  if (fromGrip !== null) expect(fromGrip).toBeGreaterThanOrEqual(12);
+}
+
+/**
+ * Records, as it changes, what the phone search's assistant says in its
+ * field while a voice conversation runs, the thread's live region beside it
+ * and the mark on the voice button: "Listening… · off · <path>". The
+ * scripted beats are shorter than a slow run's steps, so they are caught as
+ * they happen rather than polled for. Call it with the assistant open.
+ */
+async function recordVoiceBeats(page: Page) {
+  await page.evaluate(() => {
+    const panel = document.querySelector(".ex-phone-assistant");
+    const field = panel?.querySelector("input");
+    const thread = panel?.querySelector('[role="log"]');
+    const voice = panel?.querySelector('form button[type="button"]');
+    if (!panel || !field || !thread || !voice) throw new Error("no assistant");
+    const beats: { words: string[]; marks: string[] } = {
+      words: [],
+      marks: [],
+    };
+    (window as unknown as { voiceBeats: typeof beats }).voiceBeats = beats;
+    const read = () => {
+      const words = `${field.placeholder} · ${thread.getAttribute("aria-live")}`;
+      if (beats.words[beats.words.length - 1] === words) return;
+      beats.words.push(words);
+      beats.marks.push(voice.querySelector("path")?.getAttribute("d") ?? "");
+    };
+    new MutationObserver(read).observe(panel, {
+      attributes: true,
+      attributeFilter: ["placeholder", "aria-live"],
+      subtree: true,
+    });
+  });
+}
+
+async function voiceBeats(page: Page, what: "words" | "marks" = "words") {
+  return page.evaluate(
+    (key) =>
+      (
+        window as unknown as {
+          voiceBeats?: { words: string[]; marks: string[] };
+        }
+      ).voiceBeats?.[key] ?? [],
+    what,
+  );
 }
 
 /** Clipped edges that come from inside Kozmos, recorded in GAPS.md. */
@@ -2122,6 +2215,139 @@ test.describe("design-system gaps, measured", () => {
     }
   });
 
+  test("GAP-91: the map shell's boxes cut the shadows of what they hold", async ({
+    page,
+  }) => {
+    // AdaptiveMapShell holds its top bar and its controls in boxes that
+    // scroll, each the size of what it holds, so what that casts past the
+    // box is cut at its edge. MapOverlay's stack is padded by the shadows'
+    // reach now (GAP-72); the shell's boxes are not. Read in the venue
+    // explorer: each box's first part with a shadow, the room round it in
+    // the box, and how far its shadow reaches. A fix gives it the room.
+    await page.goto("/examples/venue-explorer");
+    await hydrated(page);
+    const app = page.getByRole("region", { name: "Venue explorer example" });
+    for (const [name, inside] of [
+      [
+        "top bar",
+        app.getByRole("searchbox", { name: "Search Riverside Centre" }),
+      ],
+      ["controls", app.getByRole("group", { name: "Floor" })],
+    ] as const) {
+      const fit = await inside.evaluate((start) => {
+        // The shell's box: the nearest ancestor that scrolls.
+        let box = start.parentElement;
+        while (box && getComputedStyle(box).overflowY !== "auto")
+          box = box.parentElement;
+        if (!box) return null;
+        const layers = (node: Element) => {
+          const shadow = getComputedStyle(node).boxShadow;
+          if (shadow === "none") return [];
+          return shadow
+            .split(/,(?![^(]*\))/)
+            .map((layer) => layer.trim())
+            .filter(
+              (layer) =>
+                !/rgba\([^)]*,\s*0\)/.test(layer) && !layer.includes("inset"),
+            );
+        };
+        const caster = Array.from(box.querySelectorAll("*")).find(
+          (node) => layers(node).length > 0,
+        );
+        if (!caster) return null;
+        const reach = { top: 0, right: 0, bottom: 0, left: 0 };
+        for (const layer of layers(caster)) {
+          const [x = 0, y = 0, blur = 0, spread = 0] = layer
+            .replace(/rgba?\([^)]*\)/, "")
+            .trim()
+            .split(/\s+/)
+            .map((value) => parseFloat(value));
+          reach.top = Math.max(reach.top, blur + spread - y);
+          reach.right = Math.max(reach.right, blur + spread + x);
+          reach.bottom = Math.max(reach.bottom, blur + spread + y);
+          reach.left = Math.max(reach.left, blur + spread - x);
+        }
+        const own = box.getBoundingClientRect();
+        const at = caster.getBoundingClientRect();
+        const room = {
+          top: at.top - own.top,
+          right: own.right - at.right,
+          bottom: own.bottom - at.bottom,
+          left: at.left - own.left,
+        };
+        return {
+          cut: (["top", "right", "bottom", "left"] as const).filter(
+            (side) => room[side] + 0.5 < reach[side],
+          ),
+        };
+      });
+      expect(fit, `the ${name} box holds a part with a shadow`).not.toBeNull();
+      // The defect: on some side the box leaves less room than the shadow
+      // reaches, so it is cut there.
+      expect(fit?.cut.length, `the ${name} box cuts it`).toBeGreaterThan(0);
+    }
+  });
+
+  test("GAP-86 is fixed: the assistant's voice control draws its own marks", async ({
+    page,
+  }) => {
+    // Fixed in the design system on 2026-09-28 (#140): AIInputBar draws its
+    // voice control itself, with the Pointr set's microphone at rest and
+    // while listening, its speaker while the assistant talks, and a spinner
+    // while it connects. The outlines, read from the icons' source.
+    test.slow();
+    const icons = readFileSync(
+      new URL(
+        "../../../packages/icons/src/pointr/icons.generated.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const outline = (name: string) =>
+      icons.match(
+        new RegExp(`export const ${name} = [^[]*\\[\\s*\\{\\s*d: "([^"]+)"`),
+      )?.[1];
+    const microphone = outline("Microphone01");
+    const speaker = outline("VolumeMax");
+    expect(microphone, "Microphone01's outline").toBeTruthy();
+    expect(speaker, "VolumeMax's outline").toBeTruthy();
+
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const example = page.getByRole("region", {
+      name: "Phone search sheet example",
+    });
+    await example.getByRole("button", { name: "Ask the assistant" }).click();
+    const start = example
+      .getByRole("region", { name: "Assistant" })
+      .getByRole("button", { name: "Start voice conversation" });
+    expect(await start.locator("path").first().getAttribute("d")).toBe(
+      microphone,
+    );
+    await recordVoiceBeats(page);
+    await start.click();
+    await expect
+      .poll(async () => (await voiceBeats(page)).length, { timeout: 10_000 })
+      .toBeGreaterThanOrEqual(4);
+    expect((await voiceBeats(page)).slice(0, 4)).toEqual([
+      "Connecting… · off",
+      "Listening… · off",
+      "Assistant is speaking… · off",
+      "Listening… · off",
+    ]);
+    const [connecting, listening, speaking, again] = await voiceBeats(
+      page,
+      "marks",
+    );
+    expect([listening, speaking, again]).toEqual([
+      microphone,
+      speaker,
+      microphone,
+    ]);
+    expect(connecting, "the spinner, not a microphone").not.toBe(microphone);
+    expect(connecting).not.toBe(speaker);
+  });
+
   test("GAP-42: a CardTitle's line height equals its font size", async ({
     page,
   }) => {
@@ -2467,17 +2693,31 @@ test.describe("account settings example", () => {
 });
 
 test.describe("venue explorer example", () => {
-  test("the list of places sits inside the panel's padding", async ({
+  test("the list of places sits in the panel as the shell's own parts do", async ({
     page,
   }) => {
-    await page.goto("/examples/venue-explorer");
-    await hydrated(page);
-    await page
-      .getByRole("region", { name: "Venue explorer example" })
-      .getByRole("searchbox", { name: "Search Riverside Centre" })
-      .fill("o");
-    expect(await listInset(page)).toBeGreaterThanOrEqual(16);
-    expect(await clippedEdges(page)).toEqual([]);
+    // A side panel at 1280, a sheet with its grip at 390. A short list shows
+    // the holder's padding. A list long enough to scroll takes focus as the
+    // results replace the categories, and focus alone would scroll its top
+    // to the panel's scroll box, padding and all: ../focus.ts puts the box
+    // back at its top and focuses the list where it is.
+    for (const width of [1280, 390]) {
+      for (const query of ["book", "o"]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/examples/venue-explorer");
+        await hydrated(page);
+        await page
+          .getByRole("region", { name: "Venue explorer example" })
+          .getByRole("searchbox", { name: "Search Riverside Centre" })
+          .fill(query);
+        const inset = await panelInset(page);
+        expect(inset.fromGrip === null, `a side panel at ${width}`).toBe(
+          width === 1280,
+        );
+        expectPanelContract(inset);
+        expect(await clippedEdges(page)).toEqual([]);
+      }
+    }
   });
 
   function explorer(page: Page) {
@@ -2584,7 +2824,7 @@ test.describe("venue explorer example", () => {
     expect(style).toEqual({ fontSize: "15px", borderTopWidth: "0px" });
   });
 
-  test("floors, zoom and my location", async ({ page }) => {
+  test("floors, zoom, and the SDK's location control", async ({ page }) => {
     await page.goto("/examples/venue-explorer");
     await hydrated(page);
     const app = explorer(page);
@@ -2608,39 +2848,243 @@ test.describe("venue explorer example", () => {
         Math.abs(after.x - before.x) + Math.abs(after.y - before.y),
     ).toBeGreaterThan(1);
 
-    await app.getByRole("button", { name: "Show my location" }).click();
+    // The SDK's control (decision 40, #143): icon-only over the map, named
+    // "Focus" and its state, and "Focus / On" drawn for a moment when the
+    // mode changes. A press goes off, following, heading, off.
+    const focus = app
+      .getByRole("group", { name: "Map controls" })
+      .getByRole("button", { name: /^Focus/ });
+    await expect(focus).toHaveAccessibleName("Focus, Off");
+    await expect(focus).toHaveAttribute("aria-pressed", "false");
+    await expect(focus).toHaveAttribute("data-presentation", "icon-only");
+    await expect(app.getByLabel("You are here")).toHaveCount(0);
+
+    // Following: back to the visitor's floor, with the marker on it.
+    await focus.click();
+    await expect(focus).toHaveAccessibleName("Focus, On");
+    await expect(focus).toHaveAttribute("aria-pressed", "true");
+    await expect(focus).toHaveAttribute("data-presentation", "labelled");
     await expect(
       app.getByRole("button", { name: "Ground floor", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(app.getByLabel("You are here")).toBeVisible();
+    // Then icon-only again, so it stops covering the map.
+    await expect(focus).toHaveAttribute("data-presentation", "icon-only", {
+      timeout: 5_000,
+    });
+
+    // Heading: "On" as following is, and only the mark and the name's
+    // description tell the two apart.
+    await focus.click();
+    await expect(focus).toHaveAccessibleName("Focus, On, map turns with you");
+    await expect(focus).toHaveAttribute("aria-pressed", "true");
+    await focus.click();
+    await expect(focus).toHaveAccessibleName("Focus, Off");
+    await expect(app.getByLabel("You are here")).toHaveCount(0);
+
+    // Another floor than the visitor's: the map stops following them.
+    await focus.click();
+    await expect(focus).toHaveAccessibleName("Focus, On");
+    await app
+      .getByRole("button", { name: "Second floor", exact: true })
+      .click();
+    await expect(focus).toHaveAccessibleName("Focus, Off");
+  });
+
+  test("the map controls keep their place when one widens to say its mode", async ({
+    page,
+  }) => {
+    // GAP-92: the shell does not say which edge it sets its controls
+    // against, so the example reads it from onLayoutChange and lines its
+    // column up on that edge (controls-edge.ts): the inline start beside the
+    // side panel at 1280, the inline end over the sheet at 390. Lined up on
+    // the end beside the side panel, the floor selector jumped 48px right.
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/examples/venue-explorer");
+      await hydrated(page);
+      const app = explorer(page);
+      const floors = app.getByRole("group", { name: "Floor" });
+      const focus = app
+        .getByRole("group", { name: "Map controls" })
+        .getByRole("button", { name: /^Focus/ });
+      const rest = await floors.boundingBox();
+      const narrow = await focus.boundingBox();
+      await focus.click();
+      await expect(focus).toHaveAttribute("data-presentation", "labelled");
+      // The words are in: the control has widened.
+      await expect
+        .poll(async () => (await focus.boundingBox())?.width ?? 0)
+        .toBeGreaterThan((narrow?.width ?? 0) + 24);
+      const wide = await focus.boundingBox();
+      const shown = await floors.boundingBox();
+      expect(shown?.x, `the floor selector at ${width}`).toBeCloseTo(
+        rest?.x ?? -1,
+        0,
+      );
+      // It grows away from the edge it is set against.
+      if (width === 1280) expect(wide?.x).toBeCloseTo(narrow?.x ?? -1, 0);
+      else
+        expect((wide?.x ?? 0) + (wide?.width ?? 0)).toBeCloseTo(
+          (narrow?.x ?? 0) + (narrow?.width ?? 0),
+          0,
+        );
+    }
   });
 });
 
 test.describe("wayfinding example", () => {
-  test("the list of places sits inside the panel's padding", async ({
+  function app(page: Page) {
+    return page.getByRole("region", { name: "Wayfinding example" });
+  }
+
+  test("the list and the walk sit in the panel as the shell's own parts do", async ({
+    page,
+  }) => {
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/examples/wayfinding");
+      await hydrated(page);
+      const example = app(page);
+      expectPanelContract(await panelInset(page));
+      expect(await clippedEdges(page)).toEqual([]);
+      // Back from the route options, focus returns to the list; focusing it
+      // must not scroll its padding away.
+      await example
+        .getByRole("button", { name: /Bookshop/ })
+        .first()
+        .click();
+      await example.getByRole("button", { name: "Back" }).click();
+      await expect(
+        example.getByRole("region", { name: "Where to?" }),
+      ).toBeFocused();
+      expectPanelContract(await panelInset(page));
+      // Walking: the summary is the panel's first row.
+      await example
+        .getByRole("button", { name: /Bookshop/ })
+        .first()
+        .click();
+      await example.getByRole("button", { name: "Start" }).click();
+      expectPanelContract(
+        await panelInset(page, example.locator(".ex-way-stack > *").first()),
+      );
+    }
+  });
+
+  test("step-free takes the location control's place while a route is shown", async ({
     page,
   }) => {
     await page.goto("/examples/wayfinding");
     await hydrated(page);
-    expect(await listInset(page)).toBeGreaterThanOrEqual(16);
-    expect(await clippedEdges(page)).toEqual([]);
-    // Back from the route options, focus returns to the list; focusing it
-    // must not scroll its padding away.
-    const example = page.getByRole("region", { name: "Wayfinding example" });
+    const example = app(page);
+    const controls = example.getByRole("group", { name: "Map controls" });
+    const floors = example.getByRole("group", { name: "Floor" });
+
+    // Planning: the location control, and no step-free.
+    await expect(
+      controls.getByRole("button", { name: "Focus, Off" }),
+    ).toBeVisible();
+    await expect(
+      controls.getByRole("button", { name: /^Step-free/ }),
+    ).toHaveCount(0);
+
+    // A route on the map: the same button, in the same place, is step-free
+    // (#143), and it says which route is shown.
     await example
       .getByRole("button", { name: /Bookshop/ })
       .first()
       .click();
-    await example.getByRole("button", { name: "Back" }).click();
+    const stepFree = controls.getByRole("button", { name: /^Step-free/ });
+    await expect(stepFree).toHaveAccessibleName("Step-free, Off");
+    await expect(controls.getByRole("button", { name: /^Focus/ })).toHaveCount(
+      0,
+    );
+    const rest = await floors.boundingBox();
+    const narrow = await stepFree.boundingBox();
+    await stepFree.click();
+    await expect(stepFree).toHaveAccessibleName("Step-free, On");
+    await expect(stepFree).toHaveAttribute("aria-pressed", "true");
+    await expect(example.getByText("Step-free selected")).toBeAttached();
+    // Saying "Step-free / On", it widens away from the floor selector,
+    // which stays where it was (GAP-92).
+    await expect(stepFree).toHaveAttribute("data-presentation", "labelled");
+    await expect
+      .poll(async () => (await stepFree.boundingBox())?.width ?? 0)
+      .toBeGreaterThan((narrow?.width ?? 0) + 24);
+    expect((await floors.boundingBox())?.x).toBeCloseTo(rest?.x ?? -1, 0);
+    await stepFree.click();
+    await expect(stepFree).toHaveAccessibleName("Step-free, Off");
+    await expect(example.getByText("Quickest selected")).toBeAttached();
+
+    // Walking the step-free route, the control still says so.
+    await stepFree.click();
+    await example.getByRole("button", { name: "Start" }).click();
     await expect(
-      example.getByRole("region", { name: "Where to?" }),
-    ).toBeFocused();
-    expect(await listInset(page)).toBeGreaterThanOrEqual(16);
+      controls.getByRole("button", { name: "Step-free, On" }),
+    ).toBeVisible();
+
+    // The route ended, the location control is back.
+    await example.getByRole("button", { name: "End" }).click();
+    await expect(
+      controls.getByRole("button", { name: "Focus, Off" }),
+    ).toBeVisible();
+    await expect(
+      controls.getByRole("button", { name: /^Step-free/ }),
+    ).toHaveCount(0);
   });
 
-  function app(page: Page) {
-    return page.getByRole("region", { name: "Wayfinding example" });
-  }
+  test("the panel, the manoeuvre card and the summary are glass, as the SDK draws them", async ({
+    page,
+  }) => {
+    // Decision 43 (#145): the panel is the one surface, and what it holds
+    // paints no fill of its own; on glass, text muted elsewhere takes the
+    // foreground colour (decision 48).
+    await page.goto("/examples/wayfinding");
+    await hydrated(page);
+    const example = app(page);
+    const panel = example.getByRole("complementary", {
+      name: "Where to",
+      exact: true,
+    });
+    await expect(panel).toHaveClass(/kozmos-surface-glass/);
+    await example
+      .getByRole("button", { name: /Bookshop/ })
+      .first()
+      .click();
+    const preview = example.getByRole("complementary", {
+      name: "Route options",
+    });
+    const colours = await preview.evaluate((aside) => {
+      const to = Array.from(aside.querySelectorAll("p")).find(
+        (node) => node.textContent?.trim().toLowerCase() === "to",
+      );
+      const part = aside.querySelector(".kozmos-route-preview");
+      return {
+        to: to ? getComputedStyle(to).color : null,
+        foreground: getComputedStyle(aside).color,
+        fill: part ? getComputedStyle(part).backgroundColor : null,
+      };
+    });
+    expect(colours.fill, "the route preview paints no fill").toBe(
+      "rgba(0, 0, 0, 0)",
+    );
+    expect(colours.to, "“To” in the foreground colour").toBe(
+      colours.foreground,
+    );
+    await example.getByRole("button", { name: "Start" }).click();
+    await expect(
+      example.locator(".kozmos-surface-glass").filter({
+        hasText: "Head towards the atrium",
+      }),
+    ).not.toHaveCount(0);
+    await expect(
+      example
+        .getByRole("complementary", { name: "Navigation" })
+        .locator(".kozmos-surface-glass")
+        .filter({ hasText: "Bookshop" }),
+    ).not.toHaveCount(0);
+    expect(await axeViolations(page)).toEqual([]);
+  });
 
   test("choose a place, compare the routes, walk the step-free one and rate it", async ({
     page,
@@ -2663,7 +3107,11 @@ test.describe("wayfinding example", () => {
     await expect(
       example.getByText("The terrace is closed for the season."),
     ).toBeVisible();
-    await example.getByText("Step-free", { exact: true }).click();
+    // The route option, not the step-free control over the map (#143).
+    await example
+      .getByRole("complementary", { name: "Route options" })
+      .getByText("Step-free", { exact: true })
+      .click();
     await expect(example.getByText("Step-free selected")).toBeAttached();
     await example.getByRole("button", { name: "Start" }).click();
 
@@ -2701,17 +3149,238 @@ test.describe("wayfinding example", () => {
 });
 
 test.describe("phone search example", () => {
-  test("the list of places sits inside the sheet's padding", async ({
+  function phone(page: Page) {
+    return page.getByRole("region", { name: "Phone search sheet example" });
+  }
+
+  test("the list of places sits in the sheet as the shell's own parts do", async ({
+    page,
+  }) => {
+    // A short list shows the holder's padding; a long one, which takes focus
+    // as the results replace the categories, that focus does not scroll it
+    // (../focus.ts).
+    for (const query of ["book", "o"]) {
+      await page.goto("/examples/phone-search");
+      await hydrated(page);
+      await phone(page)
+        .getByRole("searchbox", { name: "Search Riverside Centre" })
+        .fill(query);
+      const inset = await panelInset(page);
+      expect(inset.fromGrip, "the phone's sheet has a grip").not.toBeNull();
+      expectPanelContract(inset);
+      expect(await clippedEdges(page)).toEqual([]);
+    }
+  });
+
+  test("the sheet is glass, and what it holds paints no fill", async ({
+    page,
+  }) => {
+    // The SDK's sheet is glass (decision 43, #145); Kozmos's default is
+    // solid. The category browser filled its box before, an opaque block
+    // from under the grip down.
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const sheet = phone(page).getByRole("complementary", { name: "Places" });
+    await expect(sheet).toHaveClass(/kozmos-surface-glass/);
+    expect(
+      await sheet
+        .locator(".kozmos-browse-categories")
+        .evaluate((part) => getComputedStyle(part).backgroundColor),
+    ).toBe("rgba(0, 0, 0, 0)");
+  });
+
+  test("the map's location control is the SDK's, as in the venue explorer", async ({
     page,
   }) => {
     await page.goto("/examples/phone-search");
     await hydrated(page);
-    await page
-      .getByRole("region", { name: "Phone search sheet example" })
-      .getByRole("searchbox", { name: "Search Riverside Centre" })
-      .fill("o");
-    expect(await listInset(page)).toBeGreaterThanOrEqual(16);
-    expect(await clippedEdges(page)).toEqual([]);
+    const example = phone(page);
+    const focus = example
+      .getByRole("group", { name: "Map controls" })
+      .getByRole("button", { name: /^Focus/ });
+    await expect(focus).toHaveAccessibleName("Focus, Off");
+    await expect(example.getByLabel("You are here")).toHaveCount(0);
+    await focus.click();
+    await expect(focus).toHaveAccessibleName("Focus, On");
+    await expect(example.getByLabel("You are here")).toBeVisible();
+  });
+
+  test("the assistant answers with places, and hands one to the sheet", async ({
+    page,
+  }) => {
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const example = phone(page);
+    const ask = example.getByRole("button", { name: "Ask the assistant" });
+    // From the keyboard, so every engine has focus on the button to hand
+    // back: WebKit does not focus a button a pointer presses.
+    await ask.press("Enter");
+
+    // Opened with `open` (#133): the panel takes focus as it opens.
+    const assistant = example.getByRole("region", { name: "Assistant" });
+    await expect(assistant).toBeFocused();
+    const thread = assistant.getByRole("log", {
+      name: "Assistant conversation",
+    });
+    // GAP-83, composed: the thread scrolls, so it takes a tab stop.
+    await expect(thread).toHaveAttribute("tabindex", "0");
+    await expect(thread).toHaveAttribute("aria-live", "polite");
+    expect(await axeViolations(page, "assistant")).toEqual([]);
+
+    const field = assistant.getByRole("textbox", { name: "Ask the assistant" });
+    await field.fill("Where can I buy a book?");
+    await field.press("Enter");
+    await expect(thread.getByText("Where can I buy a book?")).toBeVisible();
+    await expect(
+      thread.getByText("Bookshop is on the first floor, 3 min on foot."),
+    ).toBeVisible();
+    // GAP-88, left visible: the places come under a paragraph, not a heading.
+    await expect(thread.getByText("1 place", { exact: true })).toBeVisible();
+    await expect(thread.getByRole("heading", { name: "1 place" })).toHaveCount(
+      0,
+    );
+    const result = thread.getByRole("button", { name: /^Bookshop/ });
+    await expect(result).toBeVisible();
+
+    // A place picked from the thread: the assistant closes, and the sheet
+    // opens that place and keeps the focus the product gave it. The panel
+    // does not hand focus back to the AI button on the way, where a screen
+    // reader would announce it first (onCloseAutoFocus, AICompanionPanel.mdx).
+    await ask.evaluate((button) => {
+      const hits = { count: 0 };
+      (window as unknown as { askFocus: typeof hits }).askFocus = hits;
+      button.addEventListener("focus", () => (hits.count += 1));
+    });
+    await result.click();
+    await expect(assistant).toHaveCount(0);
+    await expect(
+      example.getByRole("heading", { level: 2, name: "Bookshop" }),
+    ).toBeVisible();
+    await expect(ask).not.toBeFocused();
+    expect(
+      await page.evaluate(
+        () =>
+          (window as unknown as { askFocus: { count: number } }).askFocus.count,
+      ),
+      "times the AI button took focus",
+    ).toBe(0);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.activeElement
+              ?.closest("aside")
+              ?.getAttribute("aria-label") ?? null,
+        ),
+      )
+      .toBe("Bookshop");
+  });
+
+  test("the assistant's voice conversation, from its script", async ({
+    page,
+  }) => {
+    // #140: a press on the input bar's microphone starts a conversation the
+    // product drives through `voiceState`. There is no voice model here, so
+    // the example plays one: connecting, listening, one question heard and
+    // answered aloud, then listening again.
+    test.slow();
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const example = phone(page);
+    const ask = example.getByRole("button", { name: "Ask the assistant" });
+    // From the keyboard, as above: the focus it moves is what is checked.
+    await ask.press("Enter");
+    const assistant = example.getByRole("region", { name: "Assistant" });
+    const thread = assistant.getByRole("log", {
+      name: "Assistant conversation",
+    });
+    const field = assistant.getByRole("textbox", { name: "Ask the assistant" });
+
+    // Each beat the field says, with what the thread's live region is then,
+    // as they happen: a beat is shorter than a slow run's step.
+    await recordVoiceBeats(page);
+    await assistant
+      .getByRole("button", { name: "Start voice conversation" })
+      .press("Enter");
+    // One button through every state, so focus stays on it.
+    const end = assistant.getByRole("button", {
+      name: "End voice conversation",
+    });
+    await expect(end).toBeFocused();
+    await expect
+      .poll(() => voiceBeats(page), { timeout: 10_000 })
+      .toContain("Assistant is speaking… · off");
+    await expect(
+      thread.getByText("Is there somewhere with Wi-Fi?"),
+    ).toBeVisible();
+    await expect(
+      thread.getByText("Wi-Fi lounge is on the first floor, 3 min on foot."),
+    ).toBeVisible();
+    await expect(field).toHaveAttribute("placeholder", "Listening…", {
+      timeout: 5_000,
+    });
+    // Live, the thread does not read turns out over the assistant saying
+    // them: it is off from the first beat to the last.
+    expect(await voiceBeats(page)).toEqual([
+      "Connecting… · off",
+      "Listening… · off",
+      "Assistant is speaking… · off",
+      "Listening… · off",
+    ]);
+
+    // The visitor ends it: the thread speaks for itself again.
+    await end.press("Enter");
+    const start = assistant.getByRole("button", {
+      name: "Start voice conversation",
+    });
+    await expect(start).toBeFocused();
+    await expect(thread).toHaveAttribute("aria-live", "polite");
+    await expect(field).toHaveAttribute("placeholder", "Ask about the centre");
+
+    // Closing ends a live conversation too, and hands focus back to the AI
+    // button the panel covered.
+    await start.press("Enter");
+    await expect(field).toHaveAttribute("placeholder", "Listening…");
+    await assistant.getByRole("button", { name: "Close assistant" }).click();
+    await expect(assistant).toHaveCount(0);
+    await expect(ask).toBeFocused();
+    await ask.click();
+    await expect(
+      assistant.getByRole("button", { name: "Start voice conversation" }),
+    ).toBeVisible();
+    await expect(field).toHaveAttribute("placeholder", "Ask about the centre");
+  });
+
+  test("the assistant keeps the keyboard out of what it covers", async ({
+    page,
+  }) => {
+    // GAP-93, composed: the panel covers the frame but leaves what it covers
+    // in the tab order, so the example makes the map shell inert while it is
+    // open. Shift+Tab from the panel went to the sheet's tiles under it.
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const example = phone(page);
+    await example.getByRole("button", { name: "Ask the assistant" }).click();
+    const assistant = example.getByRole("region", { name: "Assistant" });
+    await expect(assistant).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    const landed = await page.evaluate(() => {
+      const active = document.activeElement;
+      const frame = document.querySelector(".ex-phone");
+      const panel = document.querySelector(".ex-phone-assistant");
+      return {
+        inFrame: Boolean(frame?.contains(active)),
+        inPanel: Boolean(panel?.contains(active)),
+      };
+    });
+    expect(landed.inFrame && !landed.inPanel, "focus under the panel").toBe(
+      false,
+    );
+    // Nothing under the panel takes focus, even asked directly. (Playwright's
+    // role queries do not count inert content as hidden.)
+    const tile = example.getByRole("button", { name: "Shops 3 places" });
+    await tile.evaluate((button) => button.focus());
+    await expect(tile).not.toBeFocused();
   });
 
   test("browse a category, open a place in the sheet, turn its photos, and set the sheet's height", async ({
@@ -2905,6 +3574,114 @@ test.describe("dashboard example", () => {
     await expect(example.getByText("13 venues · page 1 of 3")).toBeVisible();
     await hydrated(page);
     expect(await axeViolations(page)).toEqual([]);
+  });
+
+  test("the console's sections go down the rail, and into a drawer below 48rem", async ({
+    page,
+  }) => {
+    // The dashboard side menu's design (decision 42, #142): a 96px rail
+    // whose items fill it, each icon over its label, the selected one in the
+    // light tint with a 2px bar down its inline end.
+    await page.goto("/examples/dashboard");
+    await hydrated(page);
+    const example = page.getByRole("region", {
+      name: "Operations dashboard example",
+    });
+    const rail = example.getByRole("complementary", { name: "Console" });
+    const drawn = () =>
+      rail.evaluate((aside) => {
+        const own = aside.getBoundingClientRect();
+        return {
+          width: own.width,
+          inner: aside.clientWidth,
+          items: Array.from(aside.querySelectorAll("nav button")).map(
+            (item) => {
+              const box = item.getBoundingClientRect();
+              const bar = item
+                .querySelector('[data-slot="navigation-item-indicator"]')
+                ?.getBoundingClientRect();
+              return {
+                name: item.textContent?.trim() ?? "",
+                current: item.getAttribute("aria-current"),
+                left: box.left - own.left,
+                width: box.width,
+                fill: getComputedStyle(item).backgroundColor,
+                bar: bar
+                  ? {
+                      width: bar.width,
+                      tall: bar.height === box.height,
+                      end: box.right - bar.right,
+                    }
+                  : null,
+              };
+            },
+          ),
+        };
+      });
+    const rest = await drawn();
+    expect(rest.width).toBe(96);
+    expect(rest.items.map((item) => item.name)).toEqual([
+      "Venues",
+      "Places",
+      "Reports",
+      "Team",
+      "Settings",
+    ]);
+    for (const item of rest.items) {
+      expect([item.left, item.width], item.name).toEqual([0, rest.inner]);
+      const selected = item.name === "Venues";
+      expect(item.current, item.name).toBe(selected ? "page" : null);
+      expect(item.fill === "rgba(0, 0, 0, 0)", item.name).toBe(!selected);
+      expect(item.bar, item.name).toEqual(
+        selected ? { width: 2, tall: true, end: 0 } : null,
+      );
+    }
+    // Choosing a section moves the tint and the bar.
+    await rail.getByRole("button", { name: "Places" }).click();
+    const places = await drawn();
+    expect(
+      places.items.filter((item) => item.bar).map((item) => item.name),
+    ).toEqual(["Places"]);
+    expect(places.items.find((item) => item.name === "Places")?.current).toBe(
+      "page",
+    );
+
+    // At 48rem the rail is there and the venue table fits beside it, in the
+    // host's sans and in a wide one.
+    await rail.getByRole("button", { name: "Venues" }).click();
+    await page.setViewportSize({ width: 768, height: 900 });
+    await expect(rail).toBeVisible();
+    const overflow = () =>
+      example.getByRole("table").evaluate((node) => {
+        let box = node.parentElement;
+        while (box && getComputedStyle(box).overflowX === "visible")
+          box = box.parentElement;
+        return box ? box.scrollWidth - box.clientWidth : null;
+      });
+    expect(await overflow(), "the table's scroll box overflows by").toBe(0);
+    await widen(page, WIDE_SANS);
+    expect(
+      await overflow(),
+      "in a wide sans, the table's scroll box overflows by",
+    ).toBe(0);
+
+    // Below it the rail goes, and its sections open from the navbar.
+    await page.setViewportSize({ width: 767, height: 900 });
+    await expect(rail).toBeHidden();
+    await example.getByRole("button", { name: "Console menu" }).click();
+    const drawer = page.getByRole("dialog", { name: "Pointr operations" });
+    await expect(
+      drawer
+        .getByRole("navigation", { name: "Console" })
+        .getByRole("button", { name: "Reports" }),
+    ).toBeVisible();
+    await drawer.getByRole("button", { name: "Reports" }).click();
+    await expect(drawer).toBeHidden();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(rail.getByRole("button", { name: "Reports" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 });
 

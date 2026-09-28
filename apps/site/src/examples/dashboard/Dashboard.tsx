@@ -173,7 +173,7 @@ export default function Dashboard() {
     setPage(1);
   }
 
-  /** The console's sections: in the sidebar, or in the drawer below 64rem. */
+  /** The console's sections in the drawer, below 48rem: a row each. */
   const navigation = (onChoose?: () => void) => (
     <Stack gap={1}>
       {sections.map((entry) => (
@@ -185,6 +185,29 @@ export default function Dashboard() {
             setSection(entry.id);
             onChoose?.();
           }}
+        >
+          {entry.label}
+        </NavigationItem>
+      ))}
+    </Stack>
+  );
+
+  /**
+   * The same sections down the rail, from 48rem: the dashboard side menu's
+   * design (decision 42). Each item fills the 96px rail, its 24px icon over
+   * its label; the selected one takes the light tint and the bar at its
+   * inline end.
+   */
+  const rail = (
+    <Stack gap={0}>
+      {sections.map((entry) => (
+        <NavigationItem
+          key={entry.id}
+          placement="rail"
+          content="icon-label"
+          icon={<Icon name={entry.icon} size="lg" />}
+          selected={section === entry.id}
+          onClick={() => setSection(entry.id)}
         >
           {entry.label}
         </NavigationItem>
@@ -222,7 +245,7 @@ export default function Dashboard() {
             >
               <Icon name="bell-01" size="sm" />
             </IconButton>
-            {/* Below 64rem the sidebar goes and its sections open from here:
+            {/* Below 48rem the rail goes and its sections open from here:
                 Kozmos's Sidebar has no narrow mode of its own (GAP-47). */}
             <Box className="ex-dash-menu">
               <Drawer open={menuOpen} onOpenChange={setMenuOpen}>
@@ -254,22 +277,11 @@ export default function Dashboard() {
       />
       <Box className="ex-dash-body">
         {/* The wrapper is what hides: the Sidebar's own display is one of
-            Kozmos's scoped utilities, which a class cannot outrank (GAP-04). */}
+            Kozmos's scoped utilities, which a class cannot outrank (GAP-04).
+            The rail is the Sidebar's rail variant; the navbar already says
+            whose console it is and who is signed in. */}
         <Box className="ex-dash-aside">
-          <Sidebar
-            aria-label="Console"
-            header={
-              <Text as="span" size="sm" color="muted">
-                Pointr operations
-              </Text>
-            }
-            navigation={navigation()}
-            footer={
-              <Text as="span" size="xs" color="muted">
-                Signed in as Sam Rivera
-              </Text>
-            }
-          />
+          <Sidebar aria-label="Console" variant="rail" navigation={rail} />
         </Box>
         <Surface className="ex-dash-main">
           {section !== "venues" ? (
@@ -387,11 +399,11 @@ export default function Dashboard() {
               </Box>
 
               {/* Always on the page, so a screen reader hears each notice put
-                  in it; the Alert inside is only its look (Alert is always
-                  role="alert", GAP-12, and a confirmation is a status). */}
+                  in it; the Alert inside keeps its default, no live region of
+                  its own, so it is only the look. */}
               <Box role="status" className="ex-dash-live">
                 {notice ? (
-                  <Alert variant="success" role="none">
+                  <Alert variant="success">
                     <AlertDescription>{notice}</AlertDescription>
                   </Alert>
                 ) : null}
