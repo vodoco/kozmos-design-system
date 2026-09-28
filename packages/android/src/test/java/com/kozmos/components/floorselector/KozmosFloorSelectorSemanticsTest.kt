@@ -48,8 +48,8 @@ class KozmosFloorSelectorSemanticsTest {
 
     @Test
     fun theStepperNamesDefaultToTheEnglishTheyWere() {
-        // React's read "Previous floor" and "Next floor"; a product that passes
-        // none here hears nothing new.
+        // The words these buttons always said, which React and SwiftUI say
+        // too; a product that passes none here hears nothing new.
         val tree = paparazzi.readSemantics {
             MaterialTheme {
                 KozmosFloorSelector(

@@ -28,6 +28,8 @@ export const HorizontalList: Story = {
   args: { variant: "horizontal-list" },
 };
 
+// Listed top first: the up chevron steps to the previous level in the list,
+// so "Floor up" goes up.
 export const CompactStepper: Story = {
-  args: { variant: "compact-stepper" },
+  args: { variant: "compact-stepper", floors: [...floors].reverse() },
 };

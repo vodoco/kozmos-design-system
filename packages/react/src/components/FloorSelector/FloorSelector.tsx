@@ -15,12 +15,16 @@ export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement>
   label?: string;
   /**
    * What the compact stepper's two buttons are called, for a visitor who
-   * cannot see them. Hard-coded English until row 67, so a German or Japanese
-   * device announced "Previous floor" whatever else the product had
-   * translated. Only the stepper draws them; the two list variants name each
-   * floor by its own label.
+   * cannot see them: "Floor up" and "Floor down" unless the product passes
+   * its own words, as on iOS and Android. The up chevron steps to the previous
+   * level in `floors` and the down chevron to the next, so list the levels top
+   * first and up goes up. Hard-coded English until row 67, so a German or
+   * Japanese device heard English whatever else the product had translated.
+   * Only the stepper draws them; the two list variants name each floor by its
+   * own label.
    */
   previousFloorLabel?: string;
+  /** The down chevron's name, "Floor down" unless the product passes its own. */
   nextFloorLabel?: string;
   /**
    * How a level's result count is said, for a visitor who cannot see the
@@ -60,8 +64,8 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
       selectedFloor,
       onFloorSelect,
       label = "Floor selector",
-      previousFloorLabel = "Previous floor",
-      nextFloorLabel = "Next floor",
+      previousFloorLabel = "Floor up",
+      nextFloorLabel = "Floor down",
       resultCountLabel = (count) =>
         count === 1 ? "1 result" : `${count} results`,
       variant = "vertical-list",

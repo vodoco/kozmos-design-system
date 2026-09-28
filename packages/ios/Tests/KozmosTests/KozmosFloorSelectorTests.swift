@@ -106,8 +106,8 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertEqual(strings.stepperLabel(step: 1), "次の階")
     }
 
-    /// The defaults stay the words they were — React's read "Previous floor"
-    /// and "Next floor", and a product that passes none hears nothing new here.
+    /// The defaults stay the words they were, which React and Compose say too,
+    /// and a product that passes none hears nothing new here.
     func testTheStepperNamesDefaultToTheEnglishTheyWere() {
         let view = KozmosFloorSelector(floors: levels, selectedFloor: .constant("level-1"), variant: .compactStepper)
         XCTAssertEqual(view.stepperLabel(step: -1), "Floor up")

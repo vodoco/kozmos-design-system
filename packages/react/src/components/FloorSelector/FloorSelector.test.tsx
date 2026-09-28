@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { ChevronUp } from "@kozmos-ds/icons";
 import { FloorSelector } from "./FloorSelector";
 import { describe, it, expect, vi } from "vitest";
 
@@ -48,21 +49,54 @@ describe("FloorSelector", () => {
     render(
       <FloorSelector
         floors={[
-          { id: "g", label: "Ground floor", shortLabel: "GF" },
-          { id: "1", label: "First floor", shortLabel: "1F", disabled: true },
           { id: "2", label: "Second floor", shortLabel: "2F" },
+          { id: "1", label: "First floor", shortLabel: "1F", disabled: true },
+          { id: "g", label: "Ground floor", shortLabel: "GF" },
         ]}
-        selectedFloor="g"
+        selectedFloor="2"
         onFloorSelect={onSelect}
         variant="compact-stepper"
       />,
     );
 
-    expect(
-      screen.getByRole("button", { name: "Previous floor" }),
-    ).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Next floor" }));
-    expect(onSelect).toHaveBeenCalledWith("2");
+    // Down from the second floor lands on the ground: the first is closed.
+    expect(screen.getByRole("button", { name: "Floor up" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Floor down" }));
+    expect(onSelect).toHaveBeenCalledWith("g");
+  });
+
+  it("calls the stepper's buttons Floor up and Floor down, as iOS and Android do", () => {
+    // One pair of names on all three platforms. The previous level in list
+    // order is on the up chevron, so a venue that lists its levels top first,
+    // as the native tests do, goes up with "Floor up".
+    const onSelect = vi.fn();
+    render(
+      <FloorSelector
+        floors={[
+          { id: "2", label: "Second floor", shortLabel: "2F" },
+          { id: "1", label: "First floor", shortLabel: "1F" },
+          { id: "g", label: "Ground floor", shortLabel: "GF" },
+        ]}
+        selectedFloor="1"
+        onFloorSelect={onSelect}
+        variant="compact-stepper"
+      />,
+    );
+
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(2);
+    const [up, down] = buttons;
+    expect(up).toHaveAccessibleName("Floor up");
+    expect(down).toHaveAccessibleName("Floor down");
+    // The name sits on the button that draws the up chevron.
+    const chevronUp = render(<ChevronUp />)
+      .container.querySelector("path")
+      ?.getAttribute("d");
+    expect(chevronUp).toBeTruthy();
+    expect(up.querySelector("path")).toHaveAttribute("d", chevronUp);
+    fireEvent.click(up);
+    fireEvent.click(down);
+    expect(onSelect.mock.calls).toEqual([["2"], ["g"]]);
   });
 
   it("lets the product name the stepper's two buttons", () => {
@@ -80,7 +114,8 @@ describe("FloorSelector", () => {
       screen.getByRole("button", { name: "Vorherige Etage" }),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Nächste Etage" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Previous floor" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Floor up" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Floor down" })).toBeNull();
   });
 
   it("marks the levels that hold results, and says how many", () => {
