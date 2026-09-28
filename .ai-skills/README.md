@@ -29,19 +29,19 @@
 
 ### Technical Implementation Documents (Executable)
 
-| Document                                                     | Purpose                                             | When to Use                                                    |
-| ------------------------------------------------------------ | --------------------------------------------------- | -------------------------------------------------------------- |
-| [getting-started.md](./getting-started.md)                   | Development environment setup, project structure    | Setting up the project from scratch, onboarding new developers |
-| [component-creation-guide.md](./component-creation-guide.md) | Step-by-step component creation for all platforms   | Creating new components, following correct patterns            |
-| [token-implementation.md](./token-implementation.md)         | Style Dictionary configuration, DTCG format, output | Setting up tokens, modifying token pipeline                    |
-| [testing-patterns.md](./testing-patterns.md)                 | Platform-specific test examples, setup              | Writing tests, ensuring quality                                |
-| [ci-cd-configuration.md](./ci-cd-configuration.md)           | GitHub Actions workflows, secrets, automation       | Setting up CI/CD, debugging pipelines                          |
-| [publishing-guide.md](./publishing-guide.md)                 | npm, SPM, Maven publishing steps                    | Releasing packages, managing versions                          |
-| [storybook-guide.md](./storybook-guide.md)                   | Storybook setup, addons, documentation              | Component development environment                              |
-| [accessibility-guide.md](./accessibility-guide.md)           | WCAG 2.1 AA compliance, component checklists        | Ensuring accessibility standards                               |
-| [i18n-guide.md](./i18n-guide.md)                             | Internationalization, RTL support, translations     | Multi-language implementation                                  |
-| [theming-guide.md](./theming-guide.md)                       | White-labeling, customer themes, dark mode          | Theme customization                                            |
-| [security-guide.md](./security-guide.md)                     | Security hardening, vulnerability prevention        | Secure component patterns                                      |
+| Document                                                     | Purpose                                                | When to Use                                                    |
+| ------------------------------------------------------------ | ------------------------------------------------------ | -------------------------------------------------------------- |
+| [getting-started.md](./getting-started.md)                   | Development environment setup, project structure       | Setting up the project from scratch, onboarding new developers |
+| [component-creation-guide.md](./component-creation-guide.md) | Step-by-step component creation for all platforms      | Creating new components, following correct patterns            |
+| [token-implementation.md](./token-implementation.md)         | Style Dictionary configuration, DTCG format, output    | Setting up tokens, modifying token pipeline                    |
+| [testing-patterns.md](./testing-patterns.md)                 | Platform-specific test examples, setup                 | Writing tests, ensuring quality                                |
+| [ci-cd-configuration.md](./ci-cd-configuration.md)           | GitHub Actions workflows, secrets, automation          | Setting up CI/CD, debugging pipelines                          |
+| [publishing-guide.md](./publishing-guide.md)                 | The npm release; SwiftUI and Compose are not published | Releasing packages, managing versions                          |
+| [storybook-guide.md](./storybook-guide.md)                   | Storybook setup, addons, documentation                 | Component development environment                              |
+| [accessibility-guide.md](./accessibility-guide.md)           | WCAG 2.1 AA compliance, component checklists           | Ensuring accessibility standards                               |
+| [i18n-guide.md](./i18n-guide.md)                             | Internationalization, RTL support, translations        | Multi-language implementation                                  |
+| [theming-guide.md](./theming-guide.md)                       | White-labeling, customer themes, dark mode             | Theme customization                                            |
+| [security-guide.md](./security-guide.md)                     | Security hardening, vulnerability prevention           | Secure component patterns                                      |
 
 ### AI Integration Documents
 
@@ -52,9 +52,9 @@
 
 ### Master Reference
 
-| Document                                | Purpose                                       | When to Use                                          |
-| --------------------------------------- | --------------------------------------------- | ---------------------------------------------------- |
-| [project-scope.md](../PROJECT_SCOPE.md) | Complete project specification (3,900+ lines) | Understanding architecture, tokens, platforms, CI/CD |
+| Document                                | Purpose                                       | When to Use                                   |
+| --------------------------------------- | --------------------------------------------- | --------------------------------------------- |
+| [project-scope.md](../PROJECT_SCOPE.md) | Complete project specification (3,900+ lines) | Understanding architecture, tokens, platforms |
 
 ---
 
@@ -77,7 +77,7 @@ Kozmos is a multi-platform design system for **Pointr's indoor navigation SDK**.
 | Tokens            | Style Dictionary v4 + DTCG format    |
 | Colors            | Wide gamut P3/oklch for all colors   |
 | Monorepo          | Turborepo + pnpm                     |
-| Build (React)     | tsup (ESM + CJS)                     |
+| Build (React)     | Vite library mode (ES modules + UMD) |
 | Testing           | Vitest + Testing Library + axe-core  |
 | Visual Regression | Own visual review (`tests/visual`)   |
 | Figma             | Code Connect for 5 platforms         |
@@ -143,7 +143,8 @@ When debugging or fixing issues, reference:
 1. **troubleshooting.md** - Quick solutions for common issues
 2. **incident-playbook.md** - For severity assessment and response process
 3. **PROJECT_SCOPE.md §15** - For security considerations
-4. **PROJECT_SCOPE.md Appendix G** - For CI/CD details
+4. **ci-cd-configuration.md** - For what CI runs and how a release is made (PROJECT_SCOPE.md's
+   Appendix G describes workflows and secrets this repository does not have)
 
 ### For Version Upgrades
 
@@ -244,4 +245,4 @@ These documents should be updated when:
 - New platforms or tools are added
 
 **Maintainer:** Kozmos Design System Core Team
-**Last updated:** 2026-02-08
+**Last updated:** 2026-09-28
