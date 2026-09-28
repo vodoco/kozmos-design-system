@@ -151,6 +151,7 @@ async function showPart(page, part, options = {}) {
       if (part === "route") window.showRoute();
       if (part === "results") window.showResults();
       if (part === "details") window.showDetails("sheet");
+      if (part === "details-body") window.showDetails("sheet", { body: true });
       window.setAdaptiveOptions(options);
     },
     { part, options },
@@ -186,6 +187,91 @@ async function partFill(page, part) {
     probe.remove();
     return measured;
   });
+}
+
+// WCAG 2's relative luminance of an sRGB colour, and the contrast of two.
+function luminance(rgb) {
+  const [r, g, b] = rgb.map((channel) => {
+    const c = channel / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+// Decision 48: text a hosted part draws on glass reads at 4.5:1 over any
+// map. Each part's title and the text that is muted elsewhere, found by its
+// place in the part: for the details card's body, its gallery's position
+// and the headings of its services and of a group of attributes, read with
+// the sheet at its largest detent, where its content scrolls.
+const GLASS_TEXT = {
+  route: [
+    'section[aria-label="Route preview"] header > p',
+    'section[aria-label="Route preview"] header > h2',
+    'section[aria-label="Route preview"] [role="group"] > p',
+  ],
+  details: [
+    ".kozmos-poi-detail .kozmos-poi-location > p",
+    ".kozmos-poi-detail .kozmos-poi-title",
+  ],
+  "details-body": [
+    ".kozmos-poi-detail .kozmos-poi-gallery-position",
+    '.kozmos-poi-detail section[aria-label="Service options"] > .kozmos-poi-section-heading',
+    '.kozmos-poi-detail section[aria-label="Dietary options"] > .kozmos-poi-section-heading',
+  ],
+  browse: [
+    'section[aria-label="Browse categories"] button[data-category-id="gates"] > .line-clamp-2',
+  ],
+};
+const GLASS_DETENT = { "details-body": "large" };
+
+// The contrast of `selector`'s text with what is drawn behind it. The text
+// is made transparent and its box photographed, and the photograph is read
+// back through a canvas in the page: the ratio of the text's own colour to
+// the least contrasting pixel behind it, the worst a reader meets.
+async function textContrast(page, selector) {
+  const node = page.locator(selector);
+  assert.equal(await node.count(), 1, `${selector} is drawn once`);
+  await node.scrollIntoViewIfNeeded();
+  const { colour, text } = await node.evaluate((element) => {
+    const measured = {
+      colour: getComputedStyle(element).color,
+      text: element.textContent.trim(),
+    };
+    for (const e of [element, ...element.querySelectorAll("*")])
+      e.style.setProperty("color", "transparent", "important");
+    return measured;
+  });
+  const box = await node.boundingBox();
+  const photo = await page.screenshot({ clip: box });
+  await node.evaluate((element) => {
+    for (const e of [element, ...element.querySelectorAll("*")])
+      e.style.removeProperty("color");
+  });
+  const pixels = await page.evaluate(async (png) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${png}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0);
+    return Array.from(
+      context.getImageData(0, 0, image.width, image.height).data,
+    );
+  }, photo.toString("base64"));
+  const ink = colour
+    .match(/[\d.]+/g)
+    .slice(0, 3)
+    .map(Number);
+  let lowest = Infinity;
+  for (let i = 0; i < pixels.length; i += 4)
+    lowest = Math.min(lowest, contrast(ink, pixels.slice(i, i + 3)));
+  return { colour, text, lowest };
 }
 
 // The side panel, as a wide host lays it out: the fixture made 1024 wide.
@@ -1189,6 +1275,104 @@ const cases = [
         }
       }
       assert.deepEqual(wrong, [], `standing alone: ${wrong.join("; ")}`);
+    },
+  ],
+  [
+    "on a glass sheet over a saturated map, a hosted part's text reads at 4.5:1 or more, light and dark (decision 48)",
+    async (page) => {
+      // Decision 48: on glass, text that is muted elsewhere takes the
+      // foreground colour, so it passes 4.5:1 over any map. Muted over the
+      // glass stories' saturated rooms, the route preview's "To" and the
+      // details card's level line read about 3.7:1, light and dark. The
+      // glass itself stays as it is. Each text is read over each room.
+      const low = [];
+      for (const theme of ["light", "dark"]) {
+        for (const amberFirst of [false, true]) {
+          const room = amberFirst ? "amber" : "blue";
+          for (const [part, selectors] of Object.entries(GLASS_TEXT)) {
+            await fresh(page);
+            await page.evaluate(
+              (t) => (document.body.dataset.theme = t),
+              theme,
+            );
+            await page.evaluate((a) => window.showSaturatedMap(a), amberFirst);
+            await showPart(page, part, {
+              panelSurface: "glass",
+              panelDetent: GLASS_DETENT[part] ?? "medium",
+            });
+            for (const selector of selectors) {
+              const at = await textContrast(page, selector);
+              if (at.lowest < 4.5)
+                low.push(
+                  `${part} ${theme} over ${room} "${at.text}" ${at.lowest.toFixed(2)}:1 in ${at.colour}`,
+                );
+            }
+          }
+        }
+      }
+      assert.deepEqual(low, [], `below 4.5:1 on glass: ${low.join("; ")}`);
+    },
+  ],
+  [
+    "on a solid sheet and standing alone, text that is muted keeps its muted colour",
+    async (page) => {
+      // The guard: only glass turns muted text to ink. On a solid sheet, and
+      // with no surface around it, it keeps the theme's muted colour; and so
+      // does the details card's bordered presentation on a glass sheet, a
+      // card of its own that its text sits on.
+      const muted = (selector) =>
+        page.locator(selector).evaluate((element) => {
+          const probe = document.createElement("span");
+          probe.style.color = "var(--primitives-colors-foreground-400)";
+          element.append(probe);
+          const measured = {
+            colour: getComputedStyle(element).color,
+            muted: getComputedStyle(probe).color,
+          };
+          probe.remove();
+          return measured;
+        });
+      const wrong = [];
+      for (const [part, selector] of [
+        ["route", GLASS_TEXT.route[0]],
+        ["details", GLASS_TEXT.details[0]],
+        ...GLASS_TEXT["details-body"].map((selector) => [
+          "details-body",
+          selector,
+        ]),
+      ]) {
+        await fresh(page);
+        await showPart(page, part, { panelDetent: "medium" });
+        const at = await muted(selector);
+        if (at.colour !== at.muted)
+          wrong.push(`${part} on a solid sheet ${selector} ${at.colour}`);
+      }
+      await fresh(page);
+      await page.evaluate(() => {
+        window.showDetails("panel", { body: true });
+        window.setAdaptiveOptions({
+          panelSurface: "glass",
+          panelDetent: "medium",
+        });
+      });
+      await settleLayout(page);
+      for (const selector of [
+        GLASS_TEXT.details[0],
+        ...GLASS_TEXT["details-body"],
+      ]) {
+        const at = await muted(selector);
+        if (at.colour !== at.muted)
+          wrong.push(
+            `the bordered card on a glass sheet ${selector} ${at.colour}`,
+          );
+      }
+      await fresh(page);
+      await page.evaluate(() => window.showStandalone("route"));
+      await page.waitForSelector('[data-standalone="route"] section');
+      const alone = await muted(`[data-standalone="route"] header > p`);
+      if (alone.colour !== alone.muted)
+        wrong.push(`route standing alone ${alone.colour}`);
+      assert.deepEqual(wrong, [], `not muted: ${wrong.join("; ")}`);
     },
   ],
 ];

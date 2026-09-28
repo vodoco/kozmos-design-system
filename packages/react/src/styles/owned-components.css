@@ -109,12 +109,20 @@
     @apply text-success-text;
   }
   /* The solid surface: the default. The background colour with the subtle
-     border, the container edge. */
+     border, the container edge. Text that is muted keeps its muted colour
+     on it, even inside a glass surface (decision 48, below). */
   .kozmos-surface-solid {
     background-color: var(--primitives-colors-background-0);
     border: 1px solid var(--semantics-border-subtle);
+    --kozmos-surface-muted-foreground: initial;
   }
+  /* The glass surface. It says what text that is muted elsewhere draws in
+     on it, --kozmos-surface-muted-foreground: the foreground colour, so it
+     reads at 4.5:1 over any map (decision 48), where muted it read 3.6:1
+     over a saturated one. Text that follows it reads the property; the
+     glass itself is as it was. */
   .kozmos-surface-glass {
+    --kozmos-surface-muted-foreground: var(--primitives-colors-foreground-0);
     background-color: rgba(
       var(--kozmos-glass-rgb),
       var(--kozmos-surface-glass-opacity, var(--semantics-effect-glass-opacity))
@@ -228,6 +236,19 @@
     background-color: var(
       --kozmos-panel-part-fill,
       var(--primitives-colors-background-0)
+    );
+  }
+  /* Text a hosted part draws muted, straight on its surface: the route
+     preview's "To" and its count of options, and the empty states of the
+     category browser, the route preview and the result list. On glass it
+     takes what the glass says, the foreground colour (decision 48); on
+     anything else it is the theme's muted colour, as text-muted-foreground
+     draws it. Text inside a card of its own keeps muted: it is on the card,
+     not the glass. */
+  .kozmos-muted-text {
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
     );
   }
   /* MapOverlay's stack. It scrolls when what it holds is taller than the map

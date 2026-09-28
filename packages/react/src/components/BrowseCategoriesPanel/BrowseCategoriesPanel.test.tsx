@@ -96,6 +96,24 @@ describe("BrowseCategoriesPanel", () => {
     ).toBeVisible();
   });
 
+  it("draws its empty state muted through the class a glass surface turns to ink", () => {
+    // Decision 48: on glass, text that is muted elsewhere takes the
+    // foreground colour; the empty state's box is see-through, so its text
+    // sits on the glass. A `text-muted-foreground` beside the class would
+    // outrank it.
+    render(
+      <BrowseCategoriesPanel
+        categories={[]}
+        emptyState="No categories are available on this floor."
+        onSelect={() => undefined}
+        renderIcon={() => null}
+      />,
+    );
+    const box = screen.getByText("No categories are available on this floor.");
+    expect(box.classList.contains("kozmos-muted-text")).toBe(true);
+    expect(box.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
+
   it("passes a category's colours to its tile", () => {
     render(
       <BrowseCategoriesPanel

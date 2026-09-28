@@ -302,7 +302,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
           // this repository was passing a flag, and nothing would have.
           <div
             className={cn(
-              "rounded-container border border-dashed border-border bg-muted/40 text-center text-sm text-muted-foreground",
+              "kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 text-center text-sm",
               typeof emptyState === "string" && "p-6",
             )}
           >

@@ -110,6 +110,51 @@ describe("RoutePreviewPanel", () => {
     expect(section.className).toMatch(/\btext-foreground\b/);
   });
 
+  it("draws its muted text through the class a glass surface turns to ink", () => {
+    // Decision 48: on glass, text that is muted elsewhere takes the
+    // foreground colour (owned CSS reads the glass surface's
+    // --kozmos-surface-muted-foreground; measured over a saturated map in
+    // check-adaptive-edge-cases.mjs). "To", the count of options and the
+    // status box draw muted through that class alone: a
+    // `text-muted-foreground` beside it would outrank it.
+    const muted = "kozmos-muted-text";
+    const ready = render(
+      <RoutePreviewPanel
+        backLabel="Back"
+        continueLabel="Continue"
+        destinationName="Burger King"
+        onBack={() => undefined}
+        onContinue={() => undefined}
+        onOptionSelect={() => undefined}
+        options={options}
+        optionsCountLabel="2 route options"
+        status="ready"
+      />,
+    );
+    for (const text of ["To", "2 route options"]) {
+      const node = screen.getByText(text);
+      expect(node.classList.contains(muted)).toBe(true);
+      expect(node.className).not.toMatch(/\btext-muted-foreground\b/);
+    }
+    ready.unmount();
+    render(
+      <RoutePreviewPanel
+        backLabel="Back"
+        continueLabel="Continue"
+        destinationName="Burger King"
+        onBack={() => undefined}
+        onContinue={() => undefined}
+        onOptionSelect={() => undefined}
+        options={[]}
+        status="calculating"
+        statusContent="Calculating routes…"
+      />,
+    );
+    const status = screen.getByRole("status");
+    expect(status.classList.contains(muted)).toBe(true);
+    expect(status.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
+
   it("disables continuation while calculating", () => {
     render(
       <RoutePreviewPanel

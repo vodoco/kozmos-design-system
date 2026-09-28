@@ -71,7 +71,7 @@ const BrowseCategoriesPanel = React.forwardRef<
           )}
         >
           {categories.length === 0 ? (
-            <div className="rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+            <div className="kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm">
               {emptyState}
             </div>
           ) : (
