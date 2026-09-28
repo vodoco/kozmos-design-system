@@ -2,6 +2,7 @@ import "./PhoneSearch.css";
 import { useMemo, useState } from "react";
 import {
   AdaptiveMapShell,
+  AISearchButton,
   Box,
   BrowseCategoriesPanel,
   CategoryField,
@@ -15,20 +16,26 @@ import {
   SearchBar,
   SegmentedControl,
   Text,
+  UserLocationMarker,
   type POIActionState,
 } from "@kozmos-ds/react";
 import { useFocusOnChange } from "../focus";
+import { Assistant } from "./Assistant";
 import type {
   CategoryPresentation,
   POIAction,
+  UserLocationState,
 } from "@kozmos-ds/product-contracts";
 import {
   categories,
   categoryFor,
   floorLabel,
   floors,
+  locationStateLabel,
+  nextLocationState,
   places,
   tint,
+  userLocation,
   venueName,
   type Place,
 } from "./data";
@@ -68,10 +75,12 @@ export default function PhoneSearch() {
   const [categoryId, setCategoryId] = useState<string>();
   const [selectedId, setSelectedId] = useState<string>();
   const [floorId, setFloorId] = useState("g");
+  const [locationState, setLocationState] = useState<UserLocationState>("off");
   const [favourites, setFavourites] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
   const [notice, setNotice] = useState<string>();
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const category = categoryFor(categoryId);
   const browsing = !category && !query.trim();
@@ -166,6 +175,14 @@ export default function PhoneSearch() {
         setQuery("");
         setSelectedId(undefined);
       }}
+      // The AI search belongs at the end of the search row; the slot keeps
+      // the pair on one line (AISearchButton.mdx).
+      trailing={
+        <AISearchButton
+          label="Ask the assistant"
+          onClick={() => setAssistantOpen(true)}
+        />
+      }
     />
   );
 
@@ -279,6 +296,23 @@ export default function PhoneSearch() {
             </Box>
           );
         })}
+        {locationState !== "off" && floorId === userLocation.floorId ? (
+          <Box
+            className="ex-phone-pin ex-phone-user"
+            style={{
+              "--pin-x": `${userLocation.position.x}%`,
+              "--pin-y": `${userLocation.position.y}%`,
+            }}
+          >
+            {/* Turning with the visitor, a map engine rotates the map; this
+                stand-in cannot, so the marker shows which way they face. */}
+            <UserLocationMarker
+              aria-label="You are here"
+              heading={0}
+              showHeading={locationState === "heading"}
+            />
+          </Box>
+        ) : null}
       </Box>
     </MapView>
   );
@@ -293,9 +327,26 @@ export default function PhoneSearch() {
         onFloorSelect={(id) => {
           setFloorId(id);
           if (selected && selected.poi.floorId !== id) setSelectedId(undefined);
+          // Another floor than the visitor's: the map stops following them.
+          if (id !== userLocation.floorId) setLocationState("off");
         }}
       />
-      <MapControlsGroup label="Map controls" locationLabel="Show my location" />
+      {/* The SDK's location control (decision 40): icon-only over the map,
+          "Focus" over "On" or "Off" for a moment when the mode changes. A
+          phone pinches to zoom, so there are no zoom buttons. */}
+      <MapControlsGroup
+        label="Map controls"
+        onMyLocation={() => {
+          const next = nextLocationState(locationState);
+          setLocationState(next);
+          if (next !== "off") setFloorId(userLocation.floorId);
+        }}
+        locationState={locationState}
+        locationLabel="Focus"
+        locationStateLabel={locationStateLabel(locationState)}
+        locationLabelPlacement="stacked"
+        locationRevealOnChange
+      />
     </Box>
   );
 
@@ -329,6 +380,19 @@ export default function PhoneSearch() {
           panelDetent={detent}
           onPanelDetentChange={(next) => {
             if (isDetent(next as string)) setDetent(next as Detent);
+          }}
+        />
+        {/* Kept mounted and opened with `open`, so it takes focus as it
+            opens and hands it back to the AI search button as it closes. It
+            covers the frame and leaves the sheet as it was beneath. */}
+        <Assistant
+          open={assistantOpen}
+          places={places}
+          currentFloorId={floorId}
+          onClose={() => setAssistantOpen(false)}
+          onChoosePlace={(poiId) => {
+            setAssistantOpen(false);
+            select(poiId);
           }}
         />
       </Box>

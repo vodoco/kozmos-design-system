@@ -47,11 +47,24 @@
   transform: translate(-50%, -100%);
 }
 
+/* The visitor's marker is centred on where they stand, not stood on it. */
+.ex-phone-user {
+  transform: translate(-50%, -50%);
+}
+
 .ex-phone-controls {
   display: flex;
   flex-direction: column;
   align-items: end;
   gap: calc(var(--primitives-layout-spacing-150) * 1px);
+}
+
+/* The assistant covers the phone's frame, over the map, its controls and
+   the sheet, and leaves them as they were beneath (AICompanionPanel.mdx). */
+.ex-phone-assistant {
+  position: absolute;
+  inset: 0;
+  z-index: var(--primitives-layer-50);
 }
 
 /* The panel takes focus when its view changes (../focus.ts); it is where the
@@ -61,14 +74,47 @@
 }
 
 /* The list of places brings no padding of its own; Kozmos's own panels pad
-   their content by 16px, so it sits in a box that does. */
+   their content by 16px, so it sits in a box that does. At the top of the
+   map shell's panel the box tops its 16 up to what the panel already leaves
+   above it — the side panel's 16, the grip's row on a sheet — rather than
+   adding 16 to it, as Kozmos's own parts there do (AdaptiveMapShell, the
+   panel's two inset properties; decision 14). The list keeps the grip's 4px
+   clearance itself. Its first place then sits as far from the panel's top
+   as from its side, and 4px further under a grip. Outside a shell both
+   properties are unset, and the box pads 16 all round. */
 .ex-phone-list {
   padding: calc(var(--primitives-layout-spacing-200) * 1px);
+  padding-block-start: max(
+    0px,
+    calc(
+      var(--primitives-layout-spacing-200) * 1px -
+        var(--kozmos-panel-inset-top, 0px)
+    )
+  );
 }
 
 /* Focus moves to the list when the view changes, and Chromium and WebKit
-   scroll a tall view's top edge to the panel's, even in a sheet that does not
-   scroll at its height. The margin keeps the padding above the list. */
+   scroll a tall view's top edge to the panel's scroll box, even in a sheet
+   that does not scroll at its height. The margin is what stays above the
+   list then, so it does not move: the box's own top padding, and in a side
+   panel the panel's 16 too, which sits inside the scroll box. Under a grip
+   the grip's row is outside it, and the shell sets a clearance only there,
+   so a clearance takes the panel's part to nothing. */
 .ex-phone-list > .ex-phone-panel-focus {
-  scroll-margin-block-start: calc(var(--primitives-layout-spacing-200) * 1px);
+  scroll-margin-block-start: calc(
+    max(
+        0px,
+        calc(
+          var(--primitives-layout-spacing-200) * 1px -
+            var(--kozmos-panel-inset-top, 0px)
+        )
+      ) +
+      max(
+        0px,
+        calc(
+          var(--kozmos-panel-inset-top, 0px) -
+            var(--kozmos-panel-clearance-top, 0px) * 1000
+        )
+      )
+  );
 }
