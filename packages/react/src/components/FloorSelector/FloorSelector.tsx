@@ -10,6 +10,17 @@ import { useKozmosAnalytics } from "../../utils/analytics";
 
 export type FloorSelectorOption = FloorPresentation | string;
 
+/**
+ * How the levels are laid out; see `FloorSelectorProps.variant`. Named, as
+ * `RatingVariant` is, so the variant-parity check reads it: a union written
+ * on the prop itself runs over one line and the check reads only one.
+ */
+export type FloorSelectorVariant =
+  | "vertical-list"
+  | "horizontal-list"
+  | "compact-stepper"
+  | "collapsible";
+
 export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement> {
   floors: readonly FloorSelectorOption[];
   selectedFloor: string;
@@ -67,11 +78,7 @@ export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement>
    * to the tile, which names the level now shown. The same variant,
    * `.collapsible` and `Collapsible`, on iOS and Android.
    */
-  variant?:
-    | "vertical-list"
-    | "horizontal-list"
-    | "compact-stepper"
-    | "collapsible";
+  variant?: FloorSelectorVariant;
 }
 
 function normalizeFloor(floor: FloorSelectorOption): FloorPresentation {
