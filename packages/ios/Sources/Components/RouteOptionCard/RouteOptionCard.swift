@@ -71,10 +71,13 @@ public struct KozmosRouteOptionCard<Icon: View>: View {
             .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
             .foregroundColor(KozmosColors.primitivesColorsForeground100)
             .padding(KozmosDimensions.primitivesLayoutSpacing150)
+            // A card of its own: the background colour, and the chosen one
+            // the theme's 5% tint on it. The tint lay over nothing, so on a
+            // glass sheet the map showed through the chosen option while the
+            // others stood opaque.
             .background(
-                option.selected
-                    ? KozmosColors.primitivesColorsTheme500.opacity(0.05)
-                    : KozmosColors.primitivesColorsBackground0
+                KozmosColors.primitivesColorsBackground0
+                    .overlay(option.selected ? KozmosColors.primitivesColorsTheme500.opacity(0.05) : Color.clear)
             )
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusPanel, style: .continuous))
             .overlay(

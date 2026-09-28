@@ -97,9 +97,11 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                                 .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
                             if let detail, !detail.isEmpty {
+                                // Muted, and on glass the foreground colour
+                                // (decision 48): the card's surface says which.
                                 Text(detail)
                                     .font(KozmosTypography.subheadline)
-                                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                                    .kozmosMutedText()
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
