@@ -177,7 +177,7 @@ value it accepts — these are the only values that compile.
 | **BrowseCategoriesPanel** | ✅  |   ✅    | —                                                                                                                                  |
 | **CategoryField**         | ✅  |   ✅    | —                                                                                                                                  |
 | **CategoryTile**          | ✅  |   ✅    | —                                                                                                                                  |
-| **FloorSelector**         | ✅  |   ✅    | `variant`: vertical-list \| horizontal-list \| compact-stepper                                                                     |
+| **FloorSelector**         | ✅  |   ✅    | `variant`: vertical-list \| horizontal-list \| compact-stepper \| collapsible                                                      |
 | **LocationPin**           | ✅  |   ✅    | `variant`: default \| primary \| secondary \| accent<br>`size`: sm \| md \| lg<br>`labelPlacement`: top \| right \| bottom \| left |
 | **MapControlButton**      | ✅  |   ✅    | `presentation`: icon-only \| labelled<br>`emphasis`: tinted \| filled<br>`labelPlacement`: inline \| stacked                       |
 | **Notice**                |  —  |    —    | `tone`: warning \| info \| critical<br>`live`: off \| polite \| assertive                                                          |

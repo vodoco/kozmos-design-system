@@ -17,10 +17,27 @@ Displays the FloorSelector interface topology natively.
 
 ## Variants
 
-`vertical-list`, `horizontal-list` and `compact-stepper` exist on every platform. iOS also has
-`collapsible`, for a control parked in a corner of a map: it shows the current level only and
-opens the full list on touch, each row the level's short label beside its name, the current one
-filled. React and Compose do not have that variant yet.
+`vertical-list`, `horizontal-list`, `compact-stepper` and `collapsible` exist on every platform.
+
+`collapsible` is the SDK's level switcher, for a control parked in a corner of a map. At rest it is
+one map control showing the current level's short label. Activated, it grows into a column of every
+level over itself, top floor first, each level its short label as the tile shows it, the current
+one outlined in the theme's primary and a closed level muted. A choice, Escape or a tap outside
+closes the column, and focus goes back to the tile, which names the level now shown. The tile is
+the map's own control (`MapControlButton`, `KozmosMapControlButton` on iOS and Android), so it
+follows the shared map-control surface; screen readers hear whether its column is open.
+
+<Canvas of={FloorSelectorStories.Collapsible} />
+
+## The visitor's level
+
+Pass the level the visitor is on as `userFloor`, by the same id as `selectedFloor`, and the
+switcher marks it with a dot, as the SDK's does: on the closed tile while the tile shows that
+level, and on that level in the open column whichever level is shown. It is said with the level's
+name — "Level 1, your level" — in the product's words, `userFloorLabel`. Leave it out and nothing is
+marked. The product knows where the visitor is; the switcher neither works it out nor chooses a
+level by it. Only `collapsible` draws the dot. In its column a level's result count sits at the
+bottom corner, the top one being the dot's, so the two never cover each other.
 
 ## The order of the levels
 
@@ -75,6 +92,26 @@ export function LevelStepper() {
     />
   );
 }
+
+// The SDK's level switcher, parked in a corner of the map: one tile that
+// grows into every level. The dot marks the level the visitor is on.
+export function LevelSwitcher({ visitorLevel }: { visitorLevel?: string }) {
+  const [floor, setFloor] = useState("L1");
+  return (
+    <FloorSelector
+      floors={[
+        { id: "L2", label: "Level 2", shortLabel: "L2" },
+        { id: "L1", label: "Level 1", shortLabel: "L1" },
+        { id: "G", label: "Ground", shortLabel: "G" },
+      ]}
+      selectedFloor={floor}
+      onFloorSelect={setFloor}
+      variant="collapsible"
+      userFloor={visitorLevel}
+      userFloorLabel="your level"
+    />
+  );
+}
     `}
     vue={`
 <script setup>
@@ -112,6 +149,20 @@ KozmosFloorPresentation(id: "G", label: "Ground", shortLabel: "G", resultCount: 
 ],
 selectedFloor: .constant("G"),
 resultCountLabel: { count in String(localized: "\\(count) results") }
+)
+
+// The SDK's level switcher, parked in a corner of the map: one tile that
+// grows into every level. The dot marks the level the visitor is on.
+KozmosFloorSelector(
+floors: [
+KozmosFloorPresentation(id: "L2", label: "Level 2", shortLabel: "L2"),
+KozmosFloorPresentation(id: "L1", label: "Level 1", shortLabel: "L1"),
+KozmosFloorPresentation(id: "G", label: "Ground", shortLabel: "G")
+],
+selectedFloor: .constant("L1"),
+variant: .collapsible,
+userFloor: "G",
+userFloorLabel: String(localized: "your level")
 )
 `}
     kotlin={`
@@ -159,6 +210,24 @@ fun LevelsWithResults(selected: String, onSelect: (String) -> Unit) {
         selectedFloor = selected,
         onFloorSelect = onSelect,
         resultCountLabel = { count -> resources.getQuantityString(R.plurals.results, count, count) }
+    )
+}
+
+// The SDK's level switcher, parked in a corner of the map: one tile that
+// grows into every level. The dot marks the level the visitor is on.
+@Composable
+fun LevelSwitcher(selected: String, visitorLevel: String?, onSelect: (String) -> Unit) {
+    KozmosFloorSelector(
+        floors = listOf(
+            KozmosFloorPresentation(id = "L2", label = "Level 2", shortLabel = "L2"),
+            KozmosFloorPresentation(id = "L1", label = "Level 1", shortLabel = "L1"),
+            KozmosFloorPresentation(id = "G", label = "Ground", shortLabel = "G")
+        ),
+        selectedFloor = selected,
+        onFloorSelect = onSelect,
+        variant = KozmosFloorSelectorVariant.Collapsible,
+        userFloor = visitorLevel,
+        userFloorLabel = "your level"
     )
 }
     `}
