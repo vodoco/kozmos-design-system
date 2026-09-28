@@ -1139,14 +1139,16 @@ try {
   // how much at most, the first that does, and how many differ by one level
   // alone; and how far chosen pixels of the second stand off the bare board.
   // A level is rounding: the cut this is about differed by 28, and a room
-  // 4px short below by 2. The faint count is reported, never hidden.
+  // 4px short below by 2. The faint count is reported, never hidden, with
+  // how many of those pixels lie beyond the overlay stacks' boxes in the
+  // first drawing (`rooms`), where only a trimmed shadow tail can differ.
   const compareShots = (
     shotA,
     shotB,
-    { regionA, regionB, samples = [] } = {},
+    { regionA, regionB, samples = [], rooms = [] } = {},
   ) =>
     boards.evaluate(
-      async ({ shotA, shotB, regionA, regionB, samples }) => {
+      async ({ shotA, shotB, regionA, regionB, samples, rooms }) => {
         const decode = async (b64) => {
           const image = new Image();
           image.src = "data:image/png;base64," + b64;
@@ -1168,6 +1170,7 @@ try {
         const rb = regionB ?? ra;
         let differing = 0;
         let faint = 0;
+        let faintBeyond = 0;
         let maxDelta = 0;
         let first = null;
         for (let y = 0; y < ra.height; y++)
@@ -1179,6 +1182,13 @@ try {
             maxDelta = Math.max(maxDelta, delta);
             if (delta === 1) {
               faint++;
+              const [px, py] = [ra.x + x, ra.y + y];
+              if (
+                !rooms.some(
+                  ([l, t, r, b]) => px >= l && px < r && py >= t && py < b,
+                )
+              )
+                faintBeyond++;
               continue;
             }
             differing++;
@@ -1191,6 +1201,7 @@ try {
           compared: ra.width * ra.height,
           differing,
           faint,
+          faintBeyond,
           maxDelta,
           first,
           ground,
@@ -1199,10 +1210,27 @@ try {
           ),
         };
       },
-      { shotA, shotB, regionA, regionB, samples },
+      { shotA, shotB, regionA, regionB, samples, rooms },
     );
+  // The overlay stacks' boxes in a board: what the stacks' clip keeps.
+  const roomsOf = (locator) =>
+    locator.evaluate((node) => {
+      const origin = node.getBoundingClientRect();
+      return [...node.querySelectorAll(".kozmos-map-overlay-stack")].map(
+        (stack) => {
+          const r = stack.getBoundingClientRect();
+          return [
+            r.left - origin.left,
+            r.top - origin.top,
+            r.right - origin.left,
+            r.bottom - origin.top,
+          ];
+        },
+      );
+    });
   // Two drawings of boards, each exactly 200 by 220, or out of register.
   const faint = [];
+  const faintBeyond = [];
   const compareBoards = async (
     shotA,
     shotB,
@@ -1215,9 +1243,13 @@ try {
       [200, 220, 200, 220],
       `a board was not drawn 200 by 220, so two drawings would be compared out of register: ${JSON.stringify(result.sizes)}`,
     );
-    if (tally) faint.push(result.faint);
+    if (tally) {
+      faint.push(result.faint);
+      faintBeyond.push(result.faintBeyond);
+    }
     return result;
   };
+  const sum = (counts) => counts.reduce((total, count) => total + count, 0);
   const alike = [];
   const reads = [];
   for (const [id, theme] of [
@@ -1251,7 +1283,7 @@ try {
       const atRest = await compareBoards(
         await shoot(overlay),
         await shoot(byHand),
-        { samples },
+        { samples, rooms: await roomsOf(overlay) },
       );
       assert(
         atRest.samples.every((level) => level >= 2),
@@ -1289,7 +1321,13 @@ try {
         ringShows.differing > 0,
         `${theme} ${dir}: focusing the control placed by hand draws nothing, so there is no ring to compare`,
       );
-      const withRing = await compareBoards(focused.overlay, focused["by-hand"]);
+      const withRing = await compareBoards(
+        focused.overlay,
+        focused["by-hand"],
+        {
+          rooms: await roomsOf(overlay),
+        },
+      );
       assert.equal(
         withRing.differing,
         0,
@@ -1336,6 +1374,7 @@ try {
       await shoot(scrolling),
       await shoot(byHand),
       {
+        rooms: await roomsOf(scrolling),
         regionA: {
           x: 0,
           y: 0,
@@ -1377,6 +1416,7 @@ try {
       await shoot(scrolling),
       await shoot(byHand),
       {
+        rooms: await roomsOf(scrolling),
         regionA: below(last),
         regionB: below(one),
         samples: [[Math.round(one.left) + 22, Math.ceil(one.bottom) + 3]],
@@ -1396,7 +1436,7 @@ try {
     });
   }
   console.log(
-    `PASS GAP-082: controls in a MapOverlay draw as placed by hand, to within a level (${alike.join(", ")}; at rest and focused; edge and shadow ${reads.join(", ")} levels off the board; ${faint.reduce((sum, count) => sum + count, 0)} pixels one level apart in all), and a scrolling overlay keeps its controls' sides, top and last shadow`,
+    `PASS GAP-082: controls in a MapOverlay draw as placed by hand, to within a level (${alike.join(", ")}; at rest and focused; edge and shadow ${reads.join(", ")} levels off the board; ${sum(faint)} pixels one level apart in all, ${sum(faintBeyond)} of them beyond an overlay's room), and a scrolling overlay keeps its controls' sides, top and last shadow`,
   );
   await boards.close();
 
