@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,16 +37,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.button.KozmosButton
@@ -56,6 +60,7 @@ import com.kozmos.components.poimediagallery.KozmosPOIMediaGallery
 import com.kozmos.contracts.KozmosPOIAccessRestrictions
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIAvailability
+import com.kozmos.contracts.KozmosPOILogoPresentation
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIServicePresentation
 import com.kozmos.tokens.KozmosDimensions
@@ -94,6 +99,10 @@ enum class KozmosPOIDetailPanelPresentation {
  * theme, and TalkBack hears it as selected. Each toggle is named by its
  * [actionLabels] entry. The other actions are labelled buttons in the row
  * under the header.
+ *
+ * A supplied logo shows its artwork once loaded, and the name's initial while
+ * it loads or if it fails to, as on iOS; with no logo the header draws none,
+ * as on iOS and the web, and the name starts at its edge.
  *
  * In its sheet presentation, which paints no surface of its own, the card is
  * the top of the map shell's panel: its header tops its top padding up to what
@@ -366,7 +375,11 @@ private fun Header(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
         ) {
-            POILogo(poi = poi, surface = surface)
+            // No logo, no box: the name starts at the header's edge, as on
+            // iOS and the web.
+            poi.logo?.let { logo ->
+                POILogo(logo = logo, initial = poi.logoFallbackInitial, surface = surface)
+            }
 
             Text(
                 text = poi.name,
@@ -532,34 +545,44 @@ private fun Services(
     }
 }
 
+/**
+ * A supplied logo, drawn as iOS draws it: its artwork once loaded, and the
+ * name's [initial] on the inset [surface] while it loads or if it cannot
+ * (the phases of iOS's AsyncImage). TalkBack hears one image, named by the
+ * logo's alt text, whichever is showing. With no logo the header draws
+ * none, so this is only called with one.
+ */
 @Composable
-private fun POILogo(poi: KozmosPOIPresentation, surface: Color = KozmosThemeTokens.primitivesColorsBackground100) {
-    val logo = poi.logo
-    val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
+private fun POILogo(logo: KozmosPOILogoPresentation, initial: String, surface: Color) {
+    SubcomposeAsyncImage(
+        model = logo.src,
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+            .clearAndSetSemantics {
+                contentDescription = logo.alt
+                role = Role.Image
+            },
+        loading = { LogoInitial(initial = initial, surface = surface) },
+        error = { LogoInitial(initial = initial, surface = surface) }
+    )
+}
 
-    if (logo != null) {
-        AsyncImage(
-            model = logo.src,
-            contentDescription = logo.alt,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .size(48.dp)
-                .clip(shape)
+@Composable
+private fun LogoInitial(initial: String, surface: Color) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(surface),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = initial,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            color = KozmosThemeTokens.primitivesColorsForeground500
         )
-    } else {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(shape)
-                .background(surface),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = poi.logoFallbackInitial,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = KozmosThemeTokens.primitivesColorsForeground500
-            )
-        }
     }
 }

@@ -63,6 +63,10 @@ dependencies {
     compileOnly("com.figma.code.connect:code-connect-lib:1.1.3")
     testImplementation("junit:junit:4.13.2")
     testImplementation("app.cash.paparazzi:paparazzi:1.3.5")
+    // Dispatchers.setMain: Paparazzi starts a new main looper for every test,
+    // and Dispatchers.Main keeps the first. 1.9.0 is the coroutines version
+    // the unit tests already resolve.
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }
 
 // A failing test says why in the log: a snapshot that differs names by how

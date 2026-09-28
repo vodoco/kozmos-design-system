@@ -7,6 +7,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.ReadNode
@@ -62,14 +64,16 @@ class KozmosPOIDetailPanelHeaderTest {
     private fun read(
         states: Map<KozmosPOIAction, KozmosPOIActionState> =
             mapOf(KozmosPOIAction.Favourite to KozmosPOIActionState(pressed = true)),
-        direction: LayoutDirection = LayoutDirection.Ltr
+        direction: LayoutDirection = LayoutDirection.Ltr,
+        place: KozmosPOIPresentation = poi,
+        width: Dp = 360.dp
     ): ReadSemantics = paparazzi.readSemantics {
         density = LocalDensity.current.density
         CompositionLocalProvider(LocalLayoutDirection provides direction) {
             MaterialTheme {
-                Box(modifier = Modifier.width(360.dp)) {
+                Box(modifier = Modifier.width(width)) {
                     KozmosPOIDetailPanel(
-                        poi = poi,
+                        poi = place,
                         actionLabels = labels,
                         onAction = { action, id -> acted += action to id },
                         actionStates = states,
@@ -190,5 +194,32 @@ class KozmosPOIDetailPanelHeaderTest {
         assertEquals("the disabled save can be pressed", false, save.enabled)
         assertEquals(false, favourite.selected)
         assertEquals(false, save.selected)
+    }
+
+    /**
+     * With no logo the header draws none, as the web and iOS do, and the
+     * name starts at the header's edge. At a 312dp card it is 124dp wide:
+     * 312 less the header's 16 on each side, the buttons' 144 and the 12
+     * between them and the name, the width the web gives it (iOS, spacing
+     * 8, gives 128). Android drew the name's initial in a 48dp box instead,
+     * which left the name 64dp and broke it mid-word.
+     */
+    @Test
+    fun withNoLogoTheNameTakesItsPlace() {
+        val place = poi.copy(
+            name = "Il Forno — Neapolitan restaurant and handmade pasta kitchen on the upper concourse"
+        )
+        val tree = read(place = place, width = 312.dp)
+        val card = tree.named(place.name).bounds
+        val name = tree.merged.single { it.texts == listOf(place.name) }.bounds
+
+        assertEquals("the name's start, from the card's", 16f, dp(name.left - card.left), 0.5f)
+        assertEquals("the name's width", 124f, dp(name.width), 0.5f)
+        assertEquals(
+            "nodes that draw the name's initial",
+            emptyList<String>(),
+            tree.merged.filter { it.texts == listOf(place.logoFallbackInitial) }.map { it.texts.single() }
+        )
+        assertEquals("images in the card", 0, tree.merged.count { it.role == Role.Image })
     }
 }

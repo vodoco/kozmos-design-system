@@ -155,7 +155,11 @@ data class KozmosPOIPresentation(
             .filter { it.isNotEmpty() }
             .joinToString(" · ")
 
-    /** Single-character fallback used when no logo artwork is supplied. */
+    /**
+     * The name's first letter, which the details card shows in a supplied
+     * logo's place while its artwork loads or if it fails to, as iOS does. A
+     * POI with no logo shows none, on every platform.
+     */
     val logoFallbackInitial: String
         get() = name.take(1).uppercase()
 }
