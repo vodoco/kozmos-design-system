@@ -56,6 +56,36 @@ describe("RoutePreviewPanel", () => {
     );
   });
 
+  it("tops up only its first row to what a map shell's panel leaves above it", () => {
+    // Decision 14: hosted at the top of AdaptiveMapShell's panel, the
+    // destination row tops its 16 up to what the panel leaves (owned CSS,
+    // measured in scripts/check-adaptive-edge-cases.mjs). The options under
+    // it sit under that row and keep their 16. A `p-4` or `pt-4` on the row
+    // would outrank the owned rule.
+    const { container } = render(
+      <RoutePreviewPanel
+        backLabel="Back"
+        continueLabel="Continue"
+        destinationName="Burger King"
+        onBack={() => undefined}
+        onContinue={() => undefined}
+        onOptionSelect={() => undefined}
+        options={options}
+        status="ready"
+      />,
+    );
+    const [row, body] = Array.from(
+      container.querySelector("section")!.children,
+    );
+    expect(row.tagName).toBe("HEADER");
+    expect(row.classList.contains("kozmos-route-preview-first-row")).toBe(true);
+    expect(row.className).not.toMatch(/\b(p|pt|py)-/);
+    expect(body.classList.contains("kozmos-route-preview-first-row")).toBe(
+      false,
+    );
+    expect(body.className).toMatch(/\bp-4\b/);
+  });
+
   it("disables continuation while calculating", () => {
     render(
       <RoutePreviewPanel

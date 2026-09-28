@@ -15,6 +15,15 @@ Vertical navigation shell. Compose persistent destinations with `NavigationItem`
 
 <Controls />
 
+## Rail
+
+`variant="rail"` (or `collapsed`) is Kozmos's rail: **96px** on the surface, with a **1px edge** in the
+border role at its inline end, the right, and the left right to left. It has no horizontal padding,
+so the `NavigationItem` rail items in its `navigation` fill it; stack them in a column with no gap
+between them. Its header and footer stay centred. See NavigationItem's Rail section for the items.
+
+<Canvas of={SidebarStories.Rail} />
+
 ## Implementation
 
 <div className="subheading">Code</div>

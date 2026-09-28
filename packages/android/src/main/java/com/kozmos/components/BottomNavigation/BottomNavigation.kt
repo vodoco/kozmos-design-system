@@ -1,6 +1,7 @@
 package com.kozmos.components.bottomnavigation
 
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
@@ -29,7 +30,9 @@ fun KozmosBottomNavigation(
         items.forEach { item ->
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.title) },
-                label = { Text(item.title) },
+                // 11sp, Material's labelSmall, as React's and iOS's bars label
+                // theirs (decision 41); NavigationBarItem's own is 12sp.
+                label = { Text(item.title, style = MaterialTheme.typography.labelSmall) },
                 selected = currentRoute == item.route,
                 onClick = { onNavigate(item.route) }
             )

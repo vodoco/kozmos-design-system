@@ -17,7 +17,14 @@ const navigationItemVariants = cva(
       placement: {
         top: "inline-flex items-center justify-center gap-2 whitespace-nowrap",
         side: "flex w-full items-center justify-start gap-2 text-left",
-        rail: "inline-flex flex-col items-center justify-center gap-1 text-center",
+        // Decision 42: the dashboard side menu's item. It fills its rail, a
+        // 96px one, and grows with its label: 16px by 8px of padding, a 24px
+        // icon 6px above an 11px regular label on 14px lines, up to two (76px
+        // tall, 90 with two lines). It is square, so its selected bar runs the
+        // whole height of its inline end, and it rings its focus inside
+        // itself, because a rail scrolls and would clip a ring drawn outside.
+        // It has no compact size: `density` sizes top and side items only.
+        rail: "flex w-full flex-col items-center justify-center gap-1.5 rounded-none px-2 py-4 text-center text-[11px] font-normal focus-visible:ring-inset focus-visible:ring-offset-0",
       },
       density: {
         default: "",
@@ -54,19 +61,24 @@ const navigationItemVariants = cva(
         density: "compact",
         className: "min-h-11 px-2.5 py-1.5 text-sm",
       },
-      // One label size for every rail tile, 11px as CategoryTile's and
-      // Counter's (decision 36). A dashboard rail widens its tiles with
-      // `className="w-24"`: in a 72px tile no legible size fits a word as
-      // long as "Configuration".
+      // A rail item at rest is the muted foreground. Selected, it is primary
+      // on theme/0, the lightest theme step (the dashboard's tint, a pair the
+      // contrast contract holds at 4.5:1 in both themes), with no grey fill;
+      // its bar is drawn by the item itself.
       {
         placement: "rail",
-        density: "default",
-        className: "min-h-[72px] w-[72px] px-2 py-2 text-[11px]",
+        state: "default",
+        className: "text-muted-foreground",
       },
       {
         placement: "rail",
-        density: "compact",
-        className: "min-h-16 w-16 px-1.5 py-1.5 text-[11px]",
+        state: "selected",
+        className: "bg-[var(--primitives-colors-theme-0)]",
+      },
+      {
+        placement: "rail",
+        state: "focus",
+        className: "text-muted-foreground ring-inset ring-offset-0",
       },
     ],
     defaultVariants: {
@@ -92,6 +104,12 @@ export interface NavigationItemProps
   badge?: React.ReactNode;
   children?: React.ReactNode;
   content?: NavigationItemContent;
+  /**
+   * How roomy a top or side item is. A rail item has one size and draws the
+   * same with `compact` as without it: the 64px compact tile is retired, and
+   * a rail item fills its rail (decision 42).
+   */
+  density?: VariantProps<typeof navigationItemVariants>["density"];
   disabled?: boolean;
   focusVisible?: boolean;
   href?: string;
@@ -200,12 +218,11 @@ const NavigationItem = React.forwardRef<HTMLElement, NavigationItemProps>(
             className={cn(
               "min-w-0",
               // A rail is narrow on purpose, and truncating there loses the
-              // word rather than shortening it: "Overvi…", "Wayfin…". Two
-              // lines fit the 72px tile and the Cloud Dashboard already wraps
-              // "SDK Configuration" this way. A 14px line keeps a two-line
-              // tile 72px tall, as a one-line tile is; the 16px line made it
-              // 76. Elsewhere the row is wide and a single truncated line is
-              // the right compromise.
+              // word rather than shortening it: "Overvi…", "Wayfin…". A label
+              // wraps to two lines instead, as the Cloud Dashboard wraps "SDK
+              // Configuration", and the item grows to hold them. Elsewhere the
+              // row is wide and a single truncated line is the right
+              // compromise.
               isRail
                 ? "line-clamp-2 max-w-full text-balance leading-[14px]"
                 : "flex-1 truncate",
@@ -233,6 +250,15 @@ const NavigationItem = React.forwardRef<HTMLElement, NavigationItemProps>(
           >
             {trailing}
           </span>
+        ) : null}
+        {isRail && visualState === "selected" ? (
+          // The selected rail item's 2px bar, down its inline end: the right
+          // in LTR, the left in RTL.
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 end-0 w-0.5 bg-primary"
+            data-slot="navigation-item-indicator"
+          />
         ) : null}
       </Comp>
     );
