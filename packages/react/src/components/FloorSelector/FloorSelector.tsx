@@ -4,6 +4,8 @@ import { ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
+import { MapControlButton } from "../MapControlButton";
+import { Popover, PopoverContent, PopoverTrigger } from "../Popover";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
 export type FloorSelectorOption = FloorPresentation | string;
@@ -35,7 +37,41 @@ export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement>
    * singular for one, as on iOS and Android.
    */
   resultCountLabel?: (count: number) => string;
-  variant?: "vertical-list" | "horizontal-list" | "compact-stepper";
+  /**
+   * The level the visitor is on, by the same id as `selectedFloor`. The
+   * collapsible switcher marks it with a dot, as the SDK's level switcher
+   * does (decision 38): on the closed tile while the tile shows that level,
+   * and on that level in the open list whichever level is shown. Left out,
+   * nothing is marked. The product knows where the visitor is; the switcher
+   * neither works it out nor chooses a level by it. Only the collapsible
+   * draws it; the same parameter on iOS and Android.
+   */
+  userFloor?: string;
+  /**
+   * How the dot is said, for a visitor who cannot see it, joined to the
+   * level's own label: "Level 1, your level". English until the product
+   * passes its own words.
+   */
+  userFloorLabel?: string;
+  /**
+   * How the levels are laid out.
+   *
+   * `vertical-list` and `horizontal-list` show every level; `compact-stepper`
+   * shows the current one between a Floor up and a Floor down button.
+   *
+   * `collapsible` is the SDK's level switcher, for a control parked in a
+   * corner of a map (row 79): at rest one map-control tile showing the
+   * current level's short label; activated, it grows into a column of every
+   * level, top floor first, the current one outlined in the theme's primary.
+   * A choice, Escape or a tap outside closes the column, and focus goes back
+   * to the tile, which names the level now shown. The same variant,
+   * `.collapsible` and `Collapsible`, on iOS and Android.
+   */
+  variant?:
+    | "vertical-list"
+    | "horizontal-list"
+    | "compact-stepper"
+    | "collapsible";
 }
 
 function normalizeFloor(floor: FloorSelectorOption): FloorPresentation {
@@ -56,6 +92,257 @@ function markedResultCount(floor: FloorPresentation): number | undefined {
   return count !== undefined && count > 0 ? count : undefined;
 }
 
+/**
+ * What a level's button is called: its label, then what its marks say — the
+ * visitor's level, where the switcher marks it, and the count of results.
+ */
+function spokenLabel(
+  floor: FloorPresentation,
+  resultCountLabel: (count: number) => string,
+  userLevel?: string,
+): string {
+  const count = markedResultCount(floor);
+  return [
+    floor.label,
+    userLevel,
+    count !== undefined ? resultCountLabel(count) : undefined,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
+/**
+ * The count, drawn once and said once: hidden from assistive technology
+ * because the button's own label already carries it, and hearing "3" after
+ * "Level 2, 3 results" is noise. Logical inset so it mirrors in Arabic. The
+ * lists mark it at the top; the collapsible's column at the bottom, because
+ * the top of a level there is where the visitor's dot goes, and the two must
+ * never cover each other.
+ */
+function ResultMarker({
+  count,
+  corner = "top",
+}: {
+  count: number;
+  corner?: "top" | "bottom";
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      // Inside the button, not hanging off it. The horizontal list scrolls
+      // on one axis, and CSS will not let the other stay visible beside it —
+      // `overflow-x: auto` computes `overflow-y` to `auto` too, so a badge two
+      // pixels proud of the button would be clipped there, or would raise a
+      // scrollbar.
+      className={cn(
+        "absolute end-0.5 min-w-4 rounded-pill bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground",
+        corner === "top" ? "top-0.5" : "bottom-0.5",
+      )}
+      data-floor-selector-result-count=""
+    >
+      {count}
+    </span>
+  );
+}
+
+/**
+ * The visitor's level (decision 38): a dot in the theme's primary with a halo
+ * of the surface, at the top trailing corner, as the SDK's level switcher
+ * marks it. Hidden from assistive technology: the level's name says it.
+ */
+function UserLevelDot() {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute end-1 top-1 h-2.5 w-2.5 rounded-pill border-2 border-background bg-primary"
+      data-floor-selector-user-level=""
+    />
+  );
+}
+
+/**
+ * How far the column's first level sits inside its edge: its 1px border and
+ * its 4px padding. The column is placed so that its bottom level lies exactly
+ * over the tile — the tile grows into the column — and its corners stay
+ * concentric with the tile's: 16 inside 20, 4 apart.
+ */
+const COLUMN_INSET = 5;
+
+interface CollapsibleFloorSelectorProps extends React.HTMLAttributes<HTMLDivElement> {
+  options: FloorPresentation[];
+  selectedFloor: string;
+  selectedOption: FloorPresentation | undefined;
+  userFloor: string | undefined;
+  userFloorLabel: string;
+  label: string;
+  resultCountLabel: (count: number) => string;
+  onChoose: (floor: string) => void;
+}
+
+/**
+ * The `collapsible` variant (row 79, GAP-080): the SDK's level switcher, as
+ * Olcay's board draws it (decision 38).
+ *
+ * At rest it is one tile, drawn by `MapControlButton` so it is the map's own
+ * control, not a lookalike, showing the current level's short label.
+ * Activated, it grows into a column of every level in a `Popover`: a portal,
+ * so a `MapOverlay`'s scroll box cannot clip a column that grows upwards out
+ * of it, and Radix's own Escape, outside press and focus return. The column
+ * lies over the tile, its bottom level where the tile was, and turns
+ * downwards from the tile's top where there is no room above.
+ */
+const CollapsibleFloorSelector = React.forwardRef<
+  HTMLDivElement,
+  CollapsibleFloorSelectorProps
+>(
+  (
+    {
+      className,
+      options,
+      selectedFloor,
+      selectedOption,
+      userFloor,
+      userFloorLabel,
+      label,
+      resultCountLabel,
+      onChoose,
+      ...props
+    },
+    ref,
+  ) => {
+    const { trackEvent } = useKozmosAnalytics();
+    const [open, setOpen] = React.useState(false);
+    // The column is placed by the tile's height, which text zoom changes.
+    const [tileHeight, setTileHeight] = React.useState(44);
+    const tileRef = React.useRef<HTMLButtonElement>(null);
+    const currentRef = React.useRef<HTMLButtonElement>(null);
+
+    const setOpenState = (next: boolean) => {
+      if (next && !open) {
+        trackEvent("FloorSelector", "floor_selector_expanded", {
+          floor: selectedOption?.id ?? selectedFloor,
+        });
+        setTileHeight(tileRef.current?.offsetHeight || 44);
+      }
+      setOpen(next);
+    };
+
+    // The closed tile marks the visitor's level only while it shows it.
+    const tileIsUserLevel =
+      userFloor !== undefined && selectedFloor === userFloor;
+    const tileLabel = selectedOption?.label ?? selectedFloor;
+
+    return (
+      <div
+        ref={ref}
+        aria-label={label}
+        className={cn("w-fit", className)}
+        role="group"
+        {...props}
+      >
+        <Popover open={open} onOpenChange={setOpenState}>
+          <PopoverTrigger asChild>
+            {/* The map's own control, surface and states and all: nothing
+                here restyles it, so the tile follows the shared map-control
+                surface wherever it goes. `relative` only places the dot.
+                Named by the level it shows, as iOS's is: the group says what
+                the control is, the tile which level is on. It marks no
+                result count — it is the level already in view. */}
+            <MapControlButton
+              ref={tileRef}
+              className="relative"
+              icon={
+                <>
+                  <span className="text-sm font-semibold leading-5">
+                    {selectedOption?.shortLabel ?? selectedFloor}
+                  </span>
+                  {tileIsUserLevel ? <UserLevelDot /> : null}
+                </>
+              }
+              label={
+                tileIsUserLevel ? `${tileLabel}, ${userFloorLabel}` : tileLabel
+              }
+            />
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            alignOffset={-COLUMN_INSET}
+            aria-label={label}
+            className="kozmos-floor-selector-list flex w-auto flex-col gap-1 rounded-container bg-background p-1 shadow-floating"
+            side="top"
+            sideOffset={-(tileHeight + COLUMN_INSET)}
+            onCloseAutoFocus={(event) => {
+              // Back to the tile after a choice, Escape, or a tap on the map
+              // that took focus nowhere. Not after a tap that put it on
+              // another control: the search field a visitor tapped is where
+              // they are typing next, and taking focus back would close their
+              // keyboard. Radix itself returns it only when nothing was
+              // pressed outside.
+              event.preventDefault();
+              const active = tileRef.current?.ownerDocument.activeElement;
+              if (!active || active === active.ownerDocument.body) {
+                tileRef.current?.focus();
+              }
+            }}
+            onOpenAutoFocus={(event) => {
+              // The current level, where a visitor who opened the column to
+              // look around already is, rather than the top floor.
+              const current = currentRef.current;
+              if (current && !current.disabled) {
+                event.preventDefault();
+                current.focus();
+              }
+            }}
+          >
+            {options.map((floor) => {
+              const isCurrent = floor.id === selectedFloor;
+              const isUserLevel =
+                userFloor !== undefined && floor.id === userFloor;
+              const count = markedResultCount(floor);
+              return (
+                <Button
+                  key={floor.id}
+                  ref={isCurrent ? currentRef : undefined}
+                  aria-label={spokenLabel(
+                    floor,
+                    resultCountLabel,
+                    isUserLevel ? userFloorLabel : undefined,
+                  )}
+                  aria-pressed={isCurrent}
+                  // The board's states: the current level outlined in the
+                  // theme's primary; on hover a light primary outline, and
+                  // pressed a full one; a closed level on the muted surface.
+                  className={cn(
+                    "relative border border-transparent p-0 text-sm font-semibold text-foreground hover:bg-transparent active:border-primary active:text-primary disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+                    isCurrent
+                      ? "border-primary text-primary"
+                      : "hover:border-primary/40 hover:text-primary",
+                  )}
+                  disabled={floor.disabled}
+                  onClick={() => {
+                    onChoose(floor.id);
+                    setOpen(false);
+                  }}
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                >
+                  {floor.shortLabel}
+                  {isUserLevel ? <UserLevelDot /> : null}
+                  {count !== undefined ? (
+                    <ResultMarker corner="bottom" count={count} />
+                  ) : null}
+                </Button>
+              );
+            })}
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  },
+);
+CollapsibleFloorSelector.displayName = "CollapsibleFloorSelector";
+
 const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
   (
     {
@@ -68,6 +355,8 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
       nextFloorLabel = "Floor down",
       resultCountLabel = (count) =>
         count === 1 ? "1 result" : `${count} results`,
+      userFloor,
+      userFloorLabel = "your level",
       variant = "vertical-list",
       ...props
     },
@@ -95,6 +384,24 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
       selectedIndex >= 0
         ? options.slice(selectedIndex + 1).find((floor) => !floor.disabled)
         : undefined;
+
+    if (variant === "collapsible") {
+      return (
+        <CollapsibleFloorSelector
+          ref={ref}
+          className={className}
+          label={label}
+          onChoose={handleFloorSelect}
+          options={options}
+          resultCountLabel={resultCountLabel}
+          selectedFloor={selectedFloor}
+          selectedOption={selectedOption}
+          userFloor={userFloor}
+          userFloorLabel={userFloorLabel}
+          {...props}
+        />
+      );
+    }
 
     if (variant === "compact-stepper") {
       return (
@@ -165,11 +472,7 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
               key={floor.id}
               variant={selectedFloor === floor.id ? "default" : "ghost"}
               size="sm"
-              aria-label={
-                count !== undefined
-                  ? `${floor.label}, ${resultCountLabel(count)}`
-                  : floor.label
-              }
+              aria-label={spokenLabel(floor, resultCountLabel)}
               aria-pressed={selectedFloor === floor.id}
               className={cn(
                 "relative h-11 w-11 p-0 font-medium",
@@ -181,25 +484,9 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
               type="button"
             >
               {floor.shortLabel}
-              {/* The count, drawn once and said once: the marker is hidden from
-                assistive technology because the button's own label already
-                carries it, and hearing "3" after "Level 2, 3 results" is
-                noise. Logical inset so it mirrors in Arabic. Only where the
-                product gave a count above zero — absent is unknown, which is
-                not the same as none. */}
-              {count !== undefined ? (
-                <span
-                  aria-hidden="true"
-                  // Inside the button, not hanging off it. The horizontal list
-                  // scrolls on one axis, and CSS will not let the other stay
-                  // visible beside it — `overflow-x: auto` computes `overflow-y`
-                  // to `auto` too, so a badge two pixels proud of the button
-                  // would be clipped there, or would raise a scrollbar.
-                  className="absolute end-0.5 top-0.5 min-w-4 rounded-pill bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground"
-                >
-                  {count}
-                </span>
-              ) : null}
+              {/* Only where the product gave a count above zero — absent is
+                unknown, which is not the same as none. */}
+              {count !== undefined ? <ResultMarker count={count} /> : null}
             </Button>
           );
         })}

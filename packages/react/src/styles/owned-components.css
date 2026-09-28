@@ -558,6 +558,16 @@
     @apply fill-popover;
     display: block;
   }
+  /* The floor selector's open list (row 79) arrives without the popover's
+     zoom and slide when the system asks for reduced motion: the popover
+     reads only the design config's duration scale, which the portal carries,
+     and not the media query. Two classes, so it outweighs the popover's own
+     `[data-state]` rule. */
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-popover.kozmos-floor-selector-list {
+      animation: none;
+    }
+  }
   /* Last in the owned block on purpose: these rules and the animations
      they stop are all one class, so source order is what decides, and a
      `@apply animate-spin` declared later would simply win. */

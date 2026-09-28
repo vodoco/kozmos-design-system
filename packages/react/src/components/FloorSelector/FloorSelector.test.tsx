@@ -1,5 +1,13 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { useState } from "react";
 import { ChevronUp } from "@kozmos-ds/icons";
+import { AnalyticsProvider } from "../../utils/analytics";
 import { FloorSelector } from "./FloorSelector";
 import { describe, it, expect, vi } from "vitest";
 
@@ -188,5 +196,339 @@ describe("FloorSelector", () => {
     );
     const level1 = screen.getByRole("button", { name: "Level 1" });
     expect(within(level1).queryByText("-2")).toBeNull();
+  });
+});
+
+// Row 79 (GAP-080): the SDK's level switcher, as Olcay's board draws it
+// (decision 38). At rest one map-control tile showing the current level's
+// short label; activated, it grows into a column of every level, top floor
+// first (decision 29), the current one outlined; a choice, Escape or a tap
+// outside closes it, handing focus back to the tile. The level the visitor is
+// on carries a dot.
+describe("FloorSelector collapsible", () => {
+  const levels = [
+    { id: "2", label: "Second floor", shortLabel: "2F" },
+    { id: "1", label: "First floor", shortLabel: "1F" },
+    { id: "g", label: "Ground floor", shortLabel: "GF" },
+  ];
+
+  function Controlled({
+    onSelect,
+    userFloor,
+  }: {
+    onSelect?: (floor: string) => void;
+    userFloor?: string;
+  }) {
+    const [floor, setFloor] = useState("1");
+    return (
+      <FloorSelector
+        floors={levels}
+        onFloorSelect={(next) => {
+          onSelect?.(next);
+          setFloor(next);
+        }}
+        selectedFloor={floor}
+        userFloor={userFloor}
+        variant="collapsible"
+      />
+    );
+  }
+
+  /** The tile, found in its group: open, the column has a level of that name too. */
+  const tileNamed = (name: string) =>
+    within(screen.getByRole("group", { name: "Floor selector" })).getByRole(
+      "button",
+      { name },
+    );
+
+  /** Opens the column from the tile and returns both. */
+  async function open(name = "First floor") {
+    const tile = tileNamed(name);
+    fireEvent.click(tile);
+    const list = await screen.findByRole("dialog", { name: "Floor selector" });
+    return { tile, list };
+  }
+
+  const dotsIn = (element: HTMLElement) =>
+    element.querySelectorAll("[data-floor-selector-user-level]");
+
+  it("rests as one map-control tile showing the current level's short label", () => {
+    render(
+      <FloorSelector
+        floors={levels}
+        onFloorSelect={() => undefined}
+        selectedFloor="1"
+        variant="collapsible"
+      />,
+    );
+    const group = screen.getByRole("group", { name: "Floor selector" });
+    const buttons = within(group).getAllByRole("button");
+    // One tile, not a button per level.
+    expect(buttons).toHaveLength(1);
+    const [tile] = buttons;
+    // Named by the level it is on, and closed.
+    expect(tile).toHaveAccessibleName("First floor");
+    expect(tile).toHaveAttribute("aria-expanded", "false");
+    expect(tile).toHaveTextContent("1F");
+    // Drawn by the map control itself, so it is styled as one.
+    expect(tile).toHaveAttribute("data-presentation", "icon-only");
+    // The level alone: no arrows, and no dot without a visitor's level.
+    expect(tile.querySelectorAll("svg")).toHaveLength(0);
+    expect(dotsIn(tile)).toHaveLength(0);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("grows into a column of every level, says it is open, and moves focus to the current level", async () => {
+    render(<Controlled />);
+    const { tile, list } = await open();
+    expect(tile).toHaveAttribute("aria-expanded", "true");
+    const rows = within(list).getAllByRole("button");
+    // Top floor first, each level its short label, as the tile shows it.
+    expect(rows.map((row) => row.getAttribute("aria-label"))).toEqual([
+      "Second floor",
+      "First floor",
+      "Ground floor",
+    ]);
+    expect(rows.map((row) => row.textContent)).toEqual(["2F", "1F", "GF"]);
+    expect(rows.map((row) => row.getAttribute("aria-pressed"))).toEqual([
+      "false",
+      "true",
+      "false",
+    ]);
+    await waitFor(() => expect(rows[1]).toHaveFocus());
+  });
+
+  it("closes after a choice, hands focus back to the tile, and the tile names the new level", async () => {
+    const onSelect = vi.fn();
+    render(<Controlled onSelect={onSelect} />);
+    const { list } = await open();
+    fireEvent.click(within(list).getByRole("button", { name: "Ground floor" }));
+    expect(onSelect).toHaveBeenCalledWith("g");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    // Focus lands on the tile, which is named by the level now shown: that is
+    // how a screen reader hears the choice was made.
+    const tile = tileNamed("Ground floor");
+    expect(tile).toHaveAttribute("aria-expanded", "false");
+    await waitFor(() => expect(tile).toHaveFocus());
+  });
+
+  it("closes on Escape without choosing, and hands focus back to the tile", async () => {
+    const onSelect = vi.fn();
+    render(<Controlled onSelect={onSelect} />);
+    const { tile, list } = await open();
+    await waitFor(() =>
+      expect(
+        within(list).getByRole("button", { name: "First floor" }),
+      ).toHaveFocus(),
+    );
+    fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(tile).toHaveAttribute("aria-expanded", "false");
+    await waitFor(() => expect(tile).toHaveFocus());
+  });
+
+  it("closes on a tap outside, and hands focus back to the tile", async () => {
+    const onSelect = vi.fn();
+    render(
+      <>
+        <Controlled onSelect={onSelect} />
+        <div data-testid="map" style={{ height: 200, width: 200 }} />
+      </>,
+    );
+    const { tile } = await open();
+    // Radix listens for a press outside from the tick after it opens, so the
+    // press that opened it does not close it again.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fireEvent.pointerDown(screen.getByTestId("map"));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(onSelect).not.toHaveBeenCalled();
+    await waitFor(() => expect(tile).toHaveFocus());
+  });
+
+  it("leaves focus where a tap outside put it, on another control", async () => {
+    // A visitor who taps the search field with the column open is typing
+    // next, not choosing a level: taking focus back would close their
+    // keyboard.
+    render(
+      <>
+        <Controlled />
+        <input aria-label="Search" />
+      </>,
+    );
+    await open();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const search = screen.getByRole("textbox", { name: "Search" });
+    fireEvent.pointerDown(search);
+    search.focus();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(search).toHaveFocus();
+  });
+
+  it("closes when the tile is activated again, as a screen reader can while the column covers it", async () => {
+    render(<Controlled />);
+    const { tile } = await open();
+    fireEvent.click(tile);
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(tile).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("marks the levels that hold results in the column, and not on the tile", async () => {
+    render(
+      <FloorSelector
+        floors={[
+          { ...levels[0], resultCount: 3 },
+          { ...levels[1], resultCount: 1 },
+          { ...levels[2], resultCount: 0 },
+        ]}
+        onFloorSelect={() => undefined}
+        selectedFloor="1"
+        variant="collapsible"
+      />,
+    );
+    // The tile is the level in view: it marks nothing and says no count.
+    const tile = tileNamed("First floor");
+    expect(
+      tile.querySelectorAll("[data-floor-selector-result-count]"),
+    ).toHaveLength(0);
+    const { list } = await open();
+    const second = within(list).getByRole("button", {
+      name: "Second floor, 3 results",
+    });
+    expect(within(second).getByText("3")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    within(list).getByRole("button", { name: "First floor, 1 result" });
+    within(list).getByRole("button", { name: "Ground floor" });
+  });
+
+  it("lists a closed level but does not let it be chosen", async () => {
+    render(
+      <FloorSelector
+        floors={[levels[0], { ...levels[1], disabled: true }, levels[2]]}
+        onFloorSelect={() => undefined}
+        selectedFloor="2"
+        variant="collapsible"
+      />,
+    );
+    const { list } = await open("Second floor");
+    expect(
+      within(list).getByRole("button", { name: "First floor" }),
+    ).toBeDisabled();
+  });
+
+  it("reports the column opening, as iOS does", async () => {
+    const dispatched = vi.fn();
+    render(
+      <AnalyticsProvider batchDelayMs={0} onDispatch={dispatched}>
+        <Controlled />
+      </AnalyticsProvider>,
+    );
+    await open();
+    await waitFor(() =>
+      expect(dispatched.mock.calls.flat(2)).toContainEqual(
+        expect.objectContaining({
+          component: "FloorSelector",
+          eventName: "floor_selector_expanded",
+          properties: { floor: "1" },
+        }),
+      ),
+    );
+  });
+
+  // Decision 38: the level the visitor is on carries a dot, as the SDK's
+  // switcher marks it, and assistive technology hears it with the level.
+  describe("the visitor's level", () => {
+    it("marks the visitor's level in the column whichever level is shown, and says so", async () => {
+      render(<Controlled userFloor="g" />);
+      const { list } = await open();
+      const ground = within(list).getByRole("button", {
+        name: "Ground floor, your level",
+      });
+      // Drawn once and said once: the dot itself is hidden.
+      const [dot] = [...dotsIn(ground)];
+      expect(dot).toBeTruthy();
+      expect(dot).toHaveAttribute("aria-hidden", "true");
+      // On that level only.
+      expect(dotsIn(list)).toHaveLength(1);
+      within(list).getByRole("button", { name: "First floor" });
+    });
+
+    it("marks the closed tile only while it shows the visitor's level", () => {
+      const { rerender } = render(
+        <FloorSelector
+          floors={levels}
+          onFloorSelect={() => undefined}
+          selectedFloor="1"
+          userFloor="g"
+          variant="collapsible"
+        />,
+      );
+      // The tile shows the first floor; the visitor is on the ground.
+      const tile = tileNamed("First floor");
+      expect(dotsIn(tile)).toHaveLength(0);
+      rerender(
+        <FloorSelector
+          floors={levels}
+          onFloorSelect={() => undefined}
+          selectedFloor="g"
+          userFloor="g"
+          variant="collapsible"
+        />,
+      );
+      const onTheirLevel = tileNamed("Ground floor, your level");
+      expect(dotsIn(onTheirLevel)).toHaveLength(1);
+    });
+
+    it("draws no dot and says nothing without the visitor's level", async () => {
+      render(<Controlled />);
+      const { list } = await open();
+      expect(dotsIn(document.body)).toHaveLength(0);
+      expect(
+        within(list)
+          .getAllByRole("button")
+          .map((row) => row.getAttribute("aria-label")),
+      ).toEqual(["Second floor", "First floor", "Ground floor"]);
+    });
+
+    it("says the visitor's level in the product's words", () => {
+      render(
+        <FloorSelector
+          floors={levels}
+          onFloorSelect={() => undefined}
+          selectedFloor="1"
+          userFloor="1"
+          userFloorLabel="Ihre Ebene"
+          variant="collapsible"
+        />,
+      );
+      tileNamed("First floor, Ihre Ebene");
+    });
+
+    it("keeps the dot and a result count apart on one level", async () => {
+      // The dot takes the level's top trailing corner, as on the SDK's board;
+      // the count moves to its bottom trailing corner in this column, so
+      // neither covers the other.
+      render(
+        <FloorSelector
+          floors={[{ ...levels[0], resultCount: 3 }, levels[1], levels[2]]}
+          onFloorSelect={() => undefined}
+          selectedFloor="1"
+          userFloor="2"
+          variant="collapsible"
+        />,
+      );
+      const { list } = await open();
+      const second = within(list).getByRole("button", {
+        name: "Second floor, your level, 3 results",
+      });
+      const [dot] = [...dotsIn(second)];
+      const count = second.querySelector("[data-floor-selector-result-count]");
+      expect(dot).toHaveClass("top-1");
+      expect(count).toHaveClass("bottom-0.5");
+      expect(count).not.toHaveClass("top-0.5");
+    });
   });
 });
