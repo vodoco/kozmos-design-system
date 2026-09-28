@@ -60,7 +60,20 @@ views (2-up, swipe, onion skin). Approving the pull request approves the look.
   stories that no longer exist, and commits the result to your branch. A commit pushed by a workflow
   starts no checks, so push again (or re-run the checks) to see them pass.
 
-`pnpm test:visual` compares without recording, as CI does. Any extra arguments go to Playwright.
+`pnpm test:visual` compares without recording, as CI does. Extra arguments go to Playwright in both
+scripts, e.g. `--grep chip`.
+
+**On a Mac, it draws what CI draws.** Both scripts run the image's amd64 build, the one CI uses, even
+on Apple silicon (under emulation). Measured on 2026-09-28 on an M-series Mac:
+
+- **Compare, amd64:** every story, 634 drawings, in about 4 to 5 minutes; all equal to CI's.
+- **Compare, native arm64:** about 1 minute, also all equal, but only within the review's tolerance:
+  arm64 draws a few anti-aliased pixels one level apart (149 pixels of one drawing).
+- **Record, amd64:** byte-identical to CI's baselines.
+- **Record, native arm64:** would commit those one-level differences beside CI's pixels, so don't.
+
+For a quick check, `VISUAL_PLATFORM=linux/arm64 pnpm test:visual` compares natively; never record
+that way.
 
 ## When it fails for no reason
 
@@ -68,3 +81,14 @@ A story that draws differently on two runs of the same code is a bug in the stor
 bad luck: the suite has no retries on purpose. Find what moves (a timer, a random value, a remote
 resource, an animation that JavaScript drives) and still it, or tag the story `no-visual` with the
 reason.
+
+Two such bugs were found by running the review on a slower machine (2026-09-28):
+
+- **The suite photographed Storybook's loading spinner.** It waited for `#storybook-root`, which
+  is in the page from the first byte, and then for network idle. It now waits for Storybook's own
+  `sb-show-main`, and fails with the story's name if the error display shows instead.
+- **A story raced its own timer.** Progress's Default story went from 13 to 66 after 500ms, so a
+  fast machine drew 66 and a slow one 13. A story draws the state it means from the start; the
+  motion lives in its own story tagged `no-visual`.
+
+The suite fixes `Date`, not timers.
