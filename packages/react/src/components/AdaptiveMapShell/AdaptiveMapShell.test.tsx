@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AdaptiveMapShell } from "./AdaptiveMapShell";
 
@@ -207,6 +207,39 @@ describe("AdaptiveMapShell sheet detents", () => {
 
   it("asks no clearance in a side panel, which has no grip", () => {
     expect(clearanceTop(sheet({ panelPresentation: "side" }))).toBe("0px");
+  });
+
+  // Decision 43: the panel's surface is the one surface, so a part that
+  // fills its own box standing alone paints nothing on it. Said on the
+  // panel's content and its header, where what the panel hosts sits.
+  const partFill = (element: HTMLElement | null) =>
+    element!.style.getPropertyValue("--kozmos-panel-part-fill");
+
+  it("tells what it hosts to paint no fill of its own, glass or solid, sheet or side panel", () => {
+    for (const props of [
+      {},
+      { panelSurface: "glass" as const },
+      { panelPresentation: "side" as const },
+      { panelPresentation: "side" as const, panelSurface: "glass" as const },
+    ]) {
+      const aside = sheet({
+        ...props,
+        panelHeader: <input aria-label="Find" />,
+      });
+      expect(
+        partFill(aside.querySelector<HTMLElement>("[data-kozmos-scroller]")),
+      ).toBe("transparent");
+      expect(
+        partFill(
+          aside.querySelector<HTMLElement>("[data-kozmos-panel-header]"),
+        ),
+      ).toBe("transparent");
+      // Not on the aside itself: axe reports a landmark by its opening tag,
+      // and past 300 characters cuts every attribute value to 20, so the
+      // site's GAP-17 exclusion, which reads its class, stopped matching.
+      expect(partFill(aside)).toBe("");
+      cleanup();
+    }
   });
 
   it("steps the detents from the keyboard and cycles them on a tap", () => {

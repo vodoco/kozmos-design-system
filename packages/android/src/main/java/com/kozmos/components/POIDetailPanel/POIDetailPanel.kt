@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
+import com.kozmos.components.adaptivemapshell.kozmosMutedForeground
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.button.KozmosButtonEmotion
 import com.kozmos.components.button.KozmosButtonSize
@@ -158,6 +161,11 @@ fun KozmosPOIDetailPanel(
         headerPadding
     }
 
+    // The panel's surface the card's text sits on: the panel's own in the
+    // sheet presentation, and none in the others, which draw a card of their
+    // own that the text sits on.
+    val textSurface = if (presentation == KozmosPOIDetailPanelPresentation.Sheet) LocalKozmosPanelSurface.current else null
+
     val showsAccessRestrictions = poi.accessRestrictions != null &&
         poi.accessRestrictions != KozmosPOIAccessRestrictions.None &&
         poi.accessRestrictionsLabel != null
@@ -186,6 +194,10 @@ fun KozmosPOIDetailPanel(
             else -> 8.dp
         }
     ) {
+        // What the card holds is on the panel's surface in the sheet
+        // presentation, and on the card's own in the others: its muted text
+        // takes the foreground colour only on a glass panel (decision 48).
+        CompositionLocalProvider(LocalKozmosPanelSurface provides textSurface) {
         // The body scrolls under a pinned header, which requires a bounded
         // height. When the caller nests the panel somewhere unbounded (another
         // scroll container, wrapContentSize) Compose would throw, so fall back
@@ -230,7 +242,7 @@ fun KozmosPOIDetailPanel(
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = KozmosThemeTokens.primitivesColorsForeground500
+                        color = kozmosMutedForeground()
                     )
                 }
 
@@ -326,6 +338,7 @@ fun KozmosPOIDetailPanel(
                     Services(heading = servicesHeading, services = services)
                 }
             }
+        }
         }
         }
     }
@@ -429,13 +442,13 @@ private fun Header(
                 Icon(
                     imageVector = Icons.Default.Place,
                     contentDescription = null,
-                    tint = KozmosThemeTokens.primitivesColorsForeground500,
+                    tint = kozmosMutedForeground(),
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
                     text = poi.locationLabel,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = KozmosThemeTokens.primitivesColorsForeground500,
+                    color = kozmosMutedForeground(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -449,7 +462,7 @@ private fun Header(
                     color = if (poi.availability == KozmosPOIAvailability.Open) {
                         KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle
                     } else {
-                        KozmosThemeTokens.primitivesColorsForeground500
+                        kozmosMutedForeground()
                     },
                     modifier = Modifier.semantics {
                         contentDescription = "Availability: $availabilityLabel"

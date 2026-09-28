@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -119,6 +120,32 @@ val LocalKozmosPanelInsetTop = compositionLocalOf { 0.dp }
  * spacing; 0 everywhere else.
  */
 val LocalKozmosPanelClearanceTop = compositionLocalOf { 0.dp }
+
+/**
+ * The surface of the shell's panel under what it hosts, a sheet's or a side
+ * panel's, solid or glass; null outside a shell. The panel's surface is the
+ * one surface (decision 43): a part that fills its own box standing alone,
+ * as `KozmosRoutePreviewPanel` does, paints no fill on it, so a glass panel
+ * shows through it and a solid one looks as it did, its fill being the
+ * same background colour. A part that draws a bordered card of its own
+ * keeps it. Provided to the panel's header and its content alike.
+ */
+val LocalKozmosPanelSurface = compositionLocalOf<KozmosSurfaceStyle?> { null }
+
+/**
+ * Text that is muted elsewhere, as a hosted part draws it on [surface]
+ * (decision 48): on glass the foreground colour, so it reads at 4.5:1 over
+ * any map, where muted it read under 3:1 over a saturated one; elsewhere the
+ * muted colour. A part that draws a card of its own provides null for
+ * [LocalKozmosPanelSurface] to what it holds: that text is on the card.
+ */
+@Composable
+internal fun kozmosMutedForeground(surface: KozmosSurfaceStyle? = LocalKozmosPanelSurface.current): Color =
+    if (surface == KozmosSurfaceStyle.Glass) {
+        KozmosThemeTokens.primitivesColorsForeground100
+    } else {
+        KozmosThemeTokens.primitivesColorsForeground500
+    }
 
 /** The handle's row: deliberately shallow, an affordance at the sheet's top edge. */
 private val SheetHandleRowHeight = KozmosDimensions.primitivesLayoutSpacing200
@@ -291,18 +318,21 @@ fun KozmosAdaptiveMapShell(
                 ) {
                     // Beside the map the header is the panel's first row, and
                     // the panel takes the rest at the size it always had.
-                    Column {
-                        if (panelHeader != null) {
-                            Box(modifier = Modifier.fillMaxWidth()) { panelHeader() }
-                        }
-                        Box(modifier = Modifier.fillMaxWidth().weight(1f), propagateMinConstraints = true) {
-                            // A side panel starts its content at its top edge,
-                            // with no handle: it leaves nothing above it.
-                            CompositionLocalProvider(
-                                LocalKozmosPanelInsetTop provides 0.dp,
-                                LocalKozmosPanelClearanceTop provides 0.dp,
-                                content = panel
-                            )
+                    // Both sit on the panel's surface (decision 43).
+                    CompositionLocalProvider(LocalKozmosPanelSurface provides panelSurface) {
+                        Column {
+                            if (panelHeader != null) {
+                                Box(modifier = Modifier.fillMaxWidth()) { panelHeader() }
+                            }
+                            Box(modifier = Modifier.fillMaxWidth().weight(1f), propagateMinConstraints = true) {
+                                // A side panel starts its content at its top edge,
+                                // with no handle: it leaves nothing above it.
+                                CompositionLocalProvider(
+                                    LocalKozmosPanelInsetTop provides 0.dp,
+                                    LocalKozmosPanelClearanceTop provides 0.dp,
+                                    content = panel
+                                )
+                            }
                         }
                     }
                 }
@@ -442,40 +472,44 @@ private fun BottomSheet(
         val clearanceTop = if (underHandle) HandleClearance else 0.dp
         Layout(
             content = {
-                if (showsHandle) {
-                    SheetHandle(
-                        description = active.description,
-                        index = index,
-                        count = ordered.size,
-                        onCycle = { setDetent(ordered[(index + 1) % ordered.size]) },
-                        onStep = { step -> setDetent(ordered[(index + step).coerceIn(0, ordered.size - 1)]) },
-                        modifier = Modifier.layoutId(SheetPart.Handle)
-                    )
-                }
-                if (panelHeader != null) {
-                    // Outside whatever the panel scrolls: a vertical drag on
-                    // it reaches the sheet's own drag, however far the list
-                    // under it has scrolled.
+                // What the sheet hosts sits on its surface (decision 43). Not
+                // a layout of its own: the parts below are still the Layout's.
+                CompositionLocalProvider(LocalKozmosPanelSurface provides panelSurface) {
+                    if (showsHandle) {
+                        SheetHandle(
+                            description = active.description,
+                            index = index,
+                            count = ordered.size,
+                            onCycle = { setDetent(ordered[(index + 1) % ordered.size]) },
+                            onStep = { step -> setDetent(ordered[(index + step).coerceIn(0, ordered.size - 1)]) },
+                            modifier = Modifier.layoutId(SheetPart.Handle)
+                        )
+                    }
+                    if (panelHeader != null) {
+                        // Outside whatever the panel scrolls: a vertical drag on
+                        // it reaches the sheet's own drag, however far the list
+                        // under it has scrolled.
+                        Box(
+                            modifier = Modifier
+                                .layoutId(SheetPart.Header)
+                                .fillMaxWidth()
+                                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                        ) { panelHeader() }
+                    }
                     Box(
                         modifier = Modifier
-                            .layoutId(SheetPart.Header)
+                            .layoutId(SheetPart.Content)
                             .fillMaxWidth()
-                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                    ) { panelHeader() }
-                }
-                Box(
-                    modifier = Modifier
-                        .layoutId(SheetPart.Content)
-                        .fillMaxWidth()
-                        // The sheet's surface reaches the bottom edge; what it
-                        // holds keeps above the navigation bar.
-                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
-                ) {
-                    CompositionLocalProvider(
-                        LocalKozmosPanelInsetTop provides insetTop,
-                        LocalKozmosPanelClearanceTop provides clearanceTop,
-                        content = panel
-                    )
+                            // The sheet's surface reaches the bottom edge; what it
+                            // holds keeps above the navigation bar.
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                    ) {
+                        CompositionLocalProvider(
+                            LocalKozmosPanelInsetTop provides insetTop,
+                            LocalKozmosPanelClearanceTop provides clearanceTop,
+                            content = panel
+                        )
+                    }
                 }
             }
         ) { measurables, constraints ->

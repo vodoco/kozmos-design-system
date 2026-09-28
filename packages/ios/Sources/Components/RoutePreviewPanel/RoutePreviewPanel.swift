@@ -6,15 +6,20 @@ import SwiftUI
 /// selected route, and continuation is disabled while the route status is
 /// `calculating`, `noRoute`, `error`, or `idle`.
 ///
-/// It fills with the background colour and draws no border of its own, so as
-/// the content of the map shell's panel it is that panel's top: its
-/// destination row tops its padding up to what the panel already leaves above
-/// it (`kozmosPanelInsetTop`, `kozmosPanelClearanceTop`) rather than adding
-/// to it, so the destination sits as far from the panel's top as from its
-/// side and keeps the grabber's target clear (decision 14).
+/// Standing alone it fills with the background colour, and it draws no
+/// border of its own. As the content of the map shell's panel it is that
+/// panel's top: its destination row tops its padding up to what the panel
+/// already leaves above it (`kozmosPanelInsetTop`, `kozmosPanelClearanceTop`)
+/// rather than adding to it, so the destination sits as far from the panel's
+/// top as from its side and keeps the grabber's target clear (decision 14).
+/// And it paints no fill there (`kozmosPanelSurface`): the panel's surface,
+/// solid or glass, is the one surface (decision 43). On glass its muted
+/// text, "To" and the count of options, takes the foreground colour, so it
+/// reads at 4.5:1 over any map (decision 48).
 public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: View {
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
+    @Environment(\.kozmosPanelSurface) private var panelSurface
 
     private let destinationName: String
     private let destinationLabel: String
@@ -90,7 +95,7 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
                 Text(destinationLabel.uppercased())
                     .font(.caption.weight(.semibold))
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(kozmosMutedForeground(on: panelSurface))
 
                 Text(destinationName)
                     .font(.title3.weight(.semibold))
@@ -141,7 +146,7 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
                         if options.count > 1, let optionsCountLabel {
                             Text(optionsCountLabel)
                                 .font(KozmosTypography.caption)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(kozmosMutedForeground(on: panelSurface))
                         }
                     }
 
@@ -180,7 +185,11 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
             .padding(KozmosDimensions.primitivesLayoutSpacing200)
         }
         .frame(maxWidth: .infinity)
-        .background(KozmosColors.primitivesColorsBackground0)
+        // The background colour standing alone, and no fill on the shell's
+        // panel, whose surface is the one surface (decision 43). On a glass
+        // sheet it was an opaque block, and a square one: it covered the
+        // panel's rounded top corners.
+        .background(panelSurface == nil ? KozmosColors.primitivesColorsBackground0 : Color.clear)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Route preview")
     }

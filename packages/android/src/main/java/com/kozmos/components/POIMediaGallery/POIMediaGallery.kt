@@ -32,9 +32,9 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.kozmos.components.adaptivemapshell.kozmosMutedForeground
 import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.contracts.KozmosPOIMediaPresentation
-import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 import kotlinx.coroutines.launch
 
@@ -84,10 +84,13 @@ fun KozmosPOIMediaGallery(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // On the shell's glass panel the position takes the foreground
+            // colour, so it reads at 4.5:1 over any map (decision 48); a
+            // details card says which surface it sits on.
             Text(
                 text = positionLabel(currentIndex + 1, media.size),
                 style = MaterialTheme.typography.bodySmall,
-                color = KozmosThemeTokens.primitivesColorsForeground500,
+                color = kozmosMutedForeground(),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
             )
 

@@ -71,6 +71,12 @@ public struct KozmosPOIDetailPanel: View {
     private let onClose: (() -> Void)?
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
+    @Environment(\.kozmosPanelSurface) private var panelSurface
+
+    /// The panel's surface the card's text sits on: in the sheet
+    /// presentation the panel's own, and none in the panel and inline
+    /// presentations, which draw a card of their own that the text sits on.
+    private var textSurface: KozmosSurfaceStyle? { presentation == .sheet ? panelSurface : nil }
 
     public init(
         poi: KozmosPOIPresentation,
@@ -172,7 +178,7 @@ public struct KozmosPOIDetailPanel: View {
                     if let services = poi.services, !services.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(servicesHeading).font(KozmosTypography.footnote)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(kozmosMutedForeground(on: textSurface))
                                 .accessibilityAddTraits(.isHeader)
                             POIDetailTags(items: services.map(KozmosPOIDetailTag.init(service:)))
                         }
@@ -185,6 +191,10 @@ public struct KozmosPOIDetailPanel: View {
         }
         // Reset scroll/disclosure state only when selecting a different place.
         .id(poi.id)
+        // What the card holds is on the panel's surface in the sheet
+        // presentation, and on the card's own in the others: its summaries
+        // and sections draw their muted text for it (decision 48).
+        .environment(\.kozmosPanelSurface, textSurface)
         .foregroundColor(KozmosColors.primitivesColorsForeground100)
         // In a sheet the panel paints no surface of its own: it sits on the
         // sheet's, as the browse panel does, with no border and no card.
@@ -261,7 +271,7 @@ public struct KozmosPOIDetailPanel: View {
 
     private var location: some View {
         Text(poi.locationLabel).font(KozmosTypography.subheadline)
-            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+            .foregroundColor(kozmosMutedForeground(on: textSurface))
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -270,7 +280,7 @@ public struct KozmosPOIDetailPanel: View {
             Text(label).font(KozmosTypography.caption.weight(.semibold))
                 .foregroundColor(poi.availability == .open
                     ? KozmosColors.componentsPrimaryButtonsSuccessButtonBackgroundIdle
-                    : KozmosColors.primitivesColorsForeground500)
+                    : kozmosMutedForeground(on: textSurface))
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

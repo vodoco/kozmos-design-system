@@ -62,20 +62,23 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
     // and keeps the grip's clearance (decision 14, owned-components.css). Its
     // top padding is that class's alone; a `p-4` or `pt-4` beside it would
     // outrank it. The options under it keep their 16.
+    // Its fill is `kozmos-route-preview`'s: the background colour on its own,
+    // and nothing in the shell's panel, whose surface, solid or glass, is the
+    // one surface (decision 43). A `bg-background` would outrank it.
 
     return (
       <section
         ref={ref}
         aria-label="Route preview"
         className={cn(
-          "flex min-h-0 min-w-0 w-full flex-col bg-background text-foreground",
+          "kozmos-route-preview flex min-h-0 min-w-0 w-full flex-col text-foreground",
           className,
         )}
         data-route-status={status}
         {...props}
       >
         <header className="kozmos-route-preview-first-row border-b border-border px-4 pb-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="kozmos-muted-text text-xs font-semibold uppercase tracking-wide">
             {destinationLabel}
           </p>
           <h2 className="mt-1 truncate text-xl font-semibold tracking-tight">
@@ -90,7 +93,7 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
 
           {status !== "ready" && statusContent ? (
             <div
-              className="rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground"
+              className="kozmos-muted-text rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm"
               role={
                 status === "error" || status === "no-route" ? "alert" : "status"
               }
@@ -111,9 +114,7 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
                 ))}
               </ul>
               {options.length > 1 && optionsCountLabel && (
-                <p className="text-xs text-muted-foreground">
-                  {optionsCountLabel}
-                </p>
+                <p className="kozmos-muted-text text-xs">{optionsCountLabel}</p>
               )}
             </div>
           )}

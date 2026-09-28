@@ -64,6 +64,24 @@ describe("BrowseCategoriesPanel", () => {
     expect(alone.firstElementChild!.className).not.toMatch(/\b(p|pt|py)-/);
   });
 
+  it("paints its fill through the class a map shell's panel can turn off", () => {
+    // Decision 43: hosted in AdaptiveMapShell's panel, whose surface is the
+    // one surface, the browser paints no fill (owned CSS reads the shell's
+    // --kozmos-panel-part-fill; measured in check-adaptive-edge-cases.mjs).
+    // Its fill is that class's alone: a `bg-background` beside it would
+    // outrank it and paint the block back.
+    const section = render(
+      <BrowseCategoriesPanel
+        categories={[{ id: "gates", label: "Gates", selected: false }]}
+        onSelect={() => undefined}
+        renderIcon={() => <svg />}
+      />,
+    ).container.querySelector("section")!;
+    expect(section.classList.contains("kozmos-browse-categories")).toBe(true);
+    expect(section.className).not.toMatch(/(^|\s)bg-/);
+    expect(section.className).toMatch(/\btext-foreground\b/);
+  });
+
   it("renders a directed empty state", () => {
     render(
       <BrowseCategoriesPanel
@@ -76,6 +94,24 @@ describe("BrowseCategoriesPanel", () => {
     expect(
       screen.getByText("No categories are available on this floor."),
     ).toBeVisible();
+  });
+
+  it("draws its empty state muted through the class a glass surface turns to ink", () => {
+    // Decision 48: on glass, text that is muted elsewhere takes the
+    // foreground colour; the empty state's box is see-through, so its text
+    // sits on the glass. A `text-muted-foreground` beside the class would
+    // outrank it.
+    render(
+      <BrowseCategoriesPanel
+        categories={[]}
+        emptyState="No categories are available on this floor."
+        onSelect={() => undefined}
+        renderIcon={() => null}
+      />,
+    );
+    const box = screen.getByText("No categories are available on this floor.");
+    expect(box.classList.contains("kozmos-muted-text")).toBe(true);
+    expect(box.className).not.toMatch(/\btext-muted-foreground\b/);
   });
 
   it("passes a category's colours to its tile", () => {
