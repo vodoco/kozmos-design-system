@@ -24,12 +24,12 @@ cannot".
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 112    |
-| Declaring at least one React variant axis | 47     |
-| Variations that are compositional only    | 65     |
-| Components with variant gaps — iOS        | 13/47  |
-| Components with variant gaps — Android    | 13/47  |
-| Components with variant gaps — Figma      | 10/47  |
-| Components with variant gaps — Vue        | 3/47   |
+| Declaring at least one React variant axis | 48     |
+| Variations that are compositional only    | 64     |
+| Components with variant gaps — iOS        | 13/48  |
+| Components with variant gaps — Android    | 13/48  |
+| Components with variant gaps — Figma      | 12/48  |
+| Components with variant gaps — Vue        | 4/48   |
 | Components absent entirely — iOS          | 9/112  |
 | Components absent entirely — Android      | 8/112  |
 | Components absent entirely — Figma        | 16/112 |
@@ -52,6 +52,11 @@ component gains an axis on one platform before another.
 <!-- generated:gaps -->
 
 ```
+AIInputBar
+  - ios: component/set absent
+  - android: component/set absent
+  - figma: component/set absent
+  - vue: component absent
 AIMessage
   - ios: component/set absent
   - android: component/set absent
@@ -82,6 +87,8 @@ List
   - android missing axes -> density (default, compact)
 MapControlButton
   - figma missing axes -> emphasis (tinted, filled); labelPlacement (inline, stacked)
+MapControlsGroup
+  - figma missing axes -> locationLabelPlacement (inline, stacked)
 MapView
   - ios missing axes -> variant (framed, fill)
   - android missing axes -> variant (framed, fill)
@@ -94,9 +101,6 @@ Notice
 POIResultCard
   - ios missing axes -> appearance (card, row)
   - android missing axes -> appearance (card, row)
-Skeleton
-  - ios missing axes -> shape (line, block, circle)
-  - android missing axes -> shape (line, block, circle)
 Surface
   - ios: component/set absent
   - figma: component/set absent

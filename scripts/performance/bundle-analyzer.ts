@@ -21,9 +21,16 @@ import { gzipSync } from "zlib";
 //
 // Until 2026-09-22 this held the one-file bundle to 300 KB raw and 70 KB gzip, because that was
 // the cost of any import. Raise a budget only with the measurement that justifies it.
+//
+// Everything went from 60 to 64 KB on 2026-09-27, with Olcay's agreement. Main measured 59.63 KB
+// here (CI reads about 0.13 KB more), after 14 pull requests of features on 09-26; that day's
+// three rows then measured +0.31 (the location control's modes and step-free, row 77), +0.18
+// (the single-choice ChipGroup, row 37) and +0.70 (the selected result scrolling into view,
+// row 70). That is growth by features, not a tree-shaking regression: the per-export and Button
+// budgets, which catch one, did not move.
 const MAX_EXPORT_GZIP_KB = 8;
 const MAX_BUTTON_GZIP_KB = 2;
-const MAX_TOTAL_GZIP_KB = 60;
+const MAX_TOTAL_GZIP_KB = 64;
 const MAX_CSS_GZIP_KB = 30;
 const MIN_ESM_MODULES = 50;
 

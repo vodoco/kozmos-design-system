@@ -16,3 +16,18 @@ last row reachable on mobile.
 ## A category's colours
 
 `tint` returns a `CategoryTint` per category — `{ accent, fill, onFill }` — and each tile wears it; leave it out for the theme's colour.
+
+## In the map shell's panel
+
+As the whole content of `AdaptiveMapShell`'s panel, the browser is the panel's top. Its first row
+(the search row, or the tiles when there is no search row) tops its 16px up to what the panel
+already leaves above it, rather than adding 16px to it. Under a sheet's grip it keeps 4px more, so
+no tile or field sits inside the grip's target circle (WCAG 2.5.8). The search field used to sit
+33px from the panel's top and 17px from its side; it now sits 21px down under a grip, and 17px down
+in a side panel or a sheet with a single detent. The tiles under a search row keep their 16px.
+On its own, outside a shell, nothing changes.
+
+If the search field lives in the shell's `panelHeader`, leave out `search` here: the browser's tiles
+then sit 16px under the header. If you place the browser under a row of your own inside the panel,
+set `--kozmos-panel-inset-top` and `--kozmos-panel-clearance-top` to `0px` on it, because it is not
+at the panel's top. On iOS, host it with `presentation: .sheet`.

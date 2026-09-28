@@ -34,7 +34,7 @@
 
 - **Component isolation** — Develop components in isolation
 - **Documentation** — Auto-generated docs from props
-- **Visual testing** — Chromatic integration
+- **Visual testing** — every story is compared with its baseline in light and dark (the Kozmos visual review (`tests/visual`, the "Visual Review" check))
 - **Accessibility** — Built-in a11y addon
 - **Theming** — Light/dark mode preview
 - **Responsive** — Viewport addon for mobile testing
@@ -45,44 +45,37 @@
 
 ### 2.1 Installation
 
+Storybook is already set up, in its own workspace package: `@kozmos-ds/docs` (`apps/docs`), on
+Storybook 8 with the Vite builder. Nothing needs initialising; `pnpm install` at the root installs
+it. To add an addon, add it to that package:
+
 ```bash
-# In packages/react directory
-cd packages/react
-
-# Install Storybook
-pnpm dlx storybook@latest init --builder vite
-
-# Install additional addons
-pnpm add -D @storybook/addon-a11y \
-  @storybook/addon-designs \
-  @storybook/addon-storysource \
-  @storybook/test \
-  @chromatic-com/storybook
+pnpm --filter @kozmos-ds/docs add -D <addon>
 ```
 
 ### 2.2 Directory Structure
 
 ```
-packages/react/
+apps/docs/
 ├── .storybook/
-│   ├── main.ts              # Storybook configuration
-│   ├── preview.ts           # Global decorators & parameters
+│   ├── main.ts              # Stories, addons, framework
+│   ├── preview.tsx          # Global decorators & parameters
 │   ├── preview-head.html    # Custom head elements
-│   ├── manager.ts           # Manager UI customization
-│   └── theme.ts             # Custom Storybook theme
-├── src/
-│   ├── components/
-│   │   ├── Button/
-│   │   │   ├── Button.tsx
-│   │   │   ├── Button.stories.tsx
-│   │   │   ├── Button.test.tsx
-│   │   │   └── index.ts
-│   │   └── ...
-│   └── stories/
-│       ├── Introduction.mdx      # Welcome page
-│       ├── GettingStarted.mdx    # Setup guide
-│       └── DesignTokens.mdx      # Token documentation
+│   └── preview.css
+├── .storybook-vue/          # The private Vue harness's Storybook
+├── src/                     # Documentation pages and stories
+└── stories/                 # Example stories
+packages/react/src/components/Button/
+├── Button.tsx
+├── Button.stories.tsx       # Stories live beside their component
+├── Button.mdx
+├── Button.test.tsx
+├── Button.figma.tsx
+└── index.ts
 ```
+
+`apps/docs/.storybook/main.ts` reads stories and MDX from `apps/docs/src`, `apps/docs/stories` and
+`packages/react/src`.
 
 ---
 
@@ -101,7 +94,6 @@ const config: StorybookConfig = {
     "@storybook/addon-onboarding",
     "@storybook/addon-links",
     "@storybook/addon-essentials",
-    "@chromatic-com/storybook",
     "@storybook/addon-interactions",
     "@storybook/addon-a11y",
     "@storybook/addon-designs",
@@ -404,28 +396,21 @@ parameters: {
 },
 ```
 
-### 4.4 Chromatic (Visual Testing)
+### 4.4 Visual Review (Visual Testing)
+
+Every story is drawn in light and dark by the repository's own visual review (`tests/visual`) and
+compared with its committed baseline; a pull request that changes how a story looks shows the new
+drawing in "Files changed". Stories must draw the same way every time: the suite fixes the clock,
+seeds `Math.random`, prefers reduced motion and masks map canvases. A story that cannot be drawn
+deterministically opts out with a tag:
 
 ```typescript
-// .storybook/main.ts
-addons: [
-  '@chromatic-com/storybook',
-],
-
-// In stories
-export const Primary: Story = {
-  parameters: {
-    chromatic: {
-      // Capture at multiple viewports
-      viewports: [375, 768, 1280],
-      // Delay before snapshot
-      delay: 300,
-      // Disable for specific stories
-      // disableSnapshot: true,
-    },
-  },
+export const LiveFeed: Story = {
+  tags: ["no-visual"],
 };
 ```
+
+See `docs/visual-review.md` for recording baselines and reading a difference.
 
 ### 4.5 Pseudo States Addon
 
@@ -992,79 +977,41 @@ export const decorators = [
 
 ### 8.1 Test Runner
 
+The Storybook test runner (`test-storybook`) is not used, and there is no `storybook:test` script.
+The suites are Playwright scripts at the root that visit a served Storybook, named by
+`STORYBOOK_URL`:
+
 ```bash
-# Install test runner
-pnpm add -D @storybook/test-runner
+# Serve a Storybook first (the dev server listens on port 6006)
+pnpm --filter @kozmos-ds/docs storybook
 
-# Run tests
-pnpm storybook:test
+# Interactions, in light and dark at three viewports
+STORYBOOK_URL=http://127.0.0.1:6006 pnpm test:storybook-interactions
 
-# Run in CI
-pnpm storybook:test --ci
+# Two more of the suites CI runs against Storybook
+STORYBOOK_URL=http://127.0.0.1:6006 pnpm test:storybook-docs
+STORYBOOK_URL=http://127.0.0.1:6006 pnpm test:storybook-regressions
 ```
 
-```json
-// package.json
-{
-  "scripts": {
-    "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build",
-    "storybook:test": "test-storybook"
-  }
-}
-```
+In CI the browser shards serve the built Storybook and run these suites in Chromium, Firefox and
+WebKit ([ci-cd-configuration.md](./ci-cd-configuration.md)); locally, `ADAPTIVE_BROWSER=firefox`
+or `ADAPTIVE_BROWSER=webkit` picks the browser.
 
 ### 8.2 Accessibility Tests
 
-```typescript
-// .storybook/test-runner.ts
-import type { TestRunnerConfig } from "@storybook/test-runner";
-import { injectAxe, checkA11y } from "axe-playwright";
+`pnpm test:storybook-audit` runs axe on stories through Playwright (`@axe-core/playwright`), in
+light and dark at 320 and 1280 px, and fails on any violation; `STORY_SCOPE=all` audits every story,
+as CI does, instead of one per component. `scripts/skills/check-a11y.ts` is a smaller axe check of
+five stories. The `@storybook/addon-a11y` panel shows axe's findings while you work.
 
-const config: TestRunnerConfig = {
-  async preVisit(page) {
-    await injectAxe(page);
-  },
-  async postVisit(page) {
-    await checkA11y(page, "#storybook-root", {
-      detailedReport: true,
-      detailedReportOptions: {
-        html: true,
-      },
-    });
-  },
-};
+### 8.3 Visual Regression
 
-export default config;
-```
-
-### 8.3 Visual Regression with Chromatic
-
-```yaml
-# .github/workflows/chromatic.yml
-name: Chromatic
-
-on: push
-
-jobs:
-  chromatic:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Publish to Chromatic
-        uses: chromaui/action@latest
-        with:
-          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
-          buildScriptName: storybook:build
-          onlyChanged: true
-          exitZeroOnChanges: true
-```
+The repository's own visual review draws every story in light and dark with Chromium in the
+Playwright image and compares it with the baseline committed in `tests/visual/baselines`
+(`.github/workflows/visual.yml`; the "Visual Review" check is required on every pull request).
+Locally, `pnpm test:visual` compares and `pnpm test:visual:update` records, both in Docker, never on a
+bare Mac, whose fonts draw differently. `docs/visual-review.md` explains how to read a difference and
+how to accept one.
 
 ---
 
@@ -1073,62 +1020,16 @@ jobs:
 ### 9.1 Static Build
 
 ```bash
-# Build static Storybook
-pnpm storybook:build
-
-# Output in storybook-static/
-# Deploy to any static host
+# Build static Storybook into apps/docs/storybook-static
+pnpm --filter @kozmos-ds/docs build-storybook
 ```
+
+CI, Visual Regression and Lighthouse CI build it this way to test it.
 
 ### 9.2 GitHub Pages
 
-```yaml
-# .github/workflows/deploy-storybook.yml
-name: Deploy Storybook
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - "packages/react/**"
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build Storybook
-        run: pnpm --filter @kozmos/react storybook:build
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./packages/react/storybook-static
-```
-
-### 9.3 Versioned Documentation
-
-```typescript
-// storybook-static/.storybook/versions.json
-{
-  "current": "2.0.0",
-  "versions": [
-    { "version": "2.0.0", "url": "/v2" },
-    { "version": "1.5.0", "url": "/v1.5" },
-    { "version": "1.0.0", "url": "/v1" }
-  ]
-}
-```
+Storybook is not hosted anywhere yet, and no workflow deploys it. Olcay's decision 34 is to host it
+with the website on GitHub Pages; that work has not started.
 
 ---
 
@@ -1220,11 +1121,9 @@ export const ComplexVisualization: Story = {
   ),
 };
 
-// Skip heavy stories in Chromatic
+// Leave a story that cannot draw the same way twice out of the visual review
 export const HeavyAnimation: Story = {
-  parameters: {
-    chromatic: { disableSnapshot: true },
-  },
+  tags: ["no-visual"],
 };
 ```
 
@@ -1234,7 +1133,7 @@ export const HeavyAnimation: Story = {
 
 - [Component Creation Guide](./component-creation-guide.md) — Story templates
 - [Testing Patterns](./testing-patterns.md) — Integration with tests
-- [CI/CD Configuration](./ci-cd-configuration.md) — Chromatic setup
+- [CI/CD Configuration](./ci-cd-configuration.md) — the Visual Review workflow
 
 ---
 

@@ -6,11 +6,11 @@
 
 ## 1. Security Principles
 
-| Principle | Implementation |
-|-----------|----------------|
-| **Defense in Depth** | Input validation + output encoding + CSP |
-| **Least Privilege** | Scoped tokens, limited API access |
-| **Secure by Default** | XSS protection, HTTPS only |
+| Principle             | Implementation                           |
+| --------------------- | ---------------------------------------- |
+| **Defense in Depth**  | Input validation + output encoding + CSP |
+| **Least Privilege**   | Scoped tokens, limited API access        |
+| **Secure by Default** | XSS protection, HTTPS only               |
 
 ---
 
@@ -33,7 +33,7 @@ const clean = DOMPurify.sanitize(dirty);
 ### URL Validation
 
 ```typescript
-const ALLOWED_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:'];
+const ALLOWED_PROTOCOLS = ["http:", "https:", "mailto:", "tel:"];
 
 export function sanitizeUrl(url: string): string | null {
   try {
@@ -50,20 +50,11 @@ export function sanitizeUrl(url: string): string | null {
 
 ## 3. Dependency Security
 
-```yaml
-# .github/workflows/security.yml
-- name: Audit dependencies
-  run: pnpm audit --audit-level=moderate
+No workflow audits dependencies: there is no `security.yml`, no Snyk and no Renovate. GitHub's
+Dependabot alerts are the dependency scanning, and an audit can be run by hand:
 
-- name: Snyk scan
-  uses: snyk/actions/node@master
-```
-
-```json
-// renovate.json
-{
-  "vulnerabilityAlerts": { "enabled": true, "automerge": true }
-}
+```bash
+pnpm audit --audit-level=moderate
 ```
 
 ---
@@ -72,9 +63,9 @@ export function sanitizeUrl(url: string): string | null {
 
 ```typescript
 const cspPolicy = {
-  'default-src': ["'self'"],
-  'script-src': ["'self'", "'strict-dynamic'"],
-  'frame-ancestors': ["'none'"],
+  "default-src": ["'self'"],
+  "script-src": ["'self'", "'strict-dynamic'"],
+  "frame-ancestors": ["'none'"],
 };
 ```
 
@@ -87,8 +78,8 @@ const cspPolicy = {
 // Use HttpOnly cookies or secure storage
 
 // React Native
-import * as SecureStore from 'expo-secure-store';
-await SecureStore.setItemAsync('token', value);
+import * as SecureStore from "expo-secure-store";
+await SecureStore.setItemAsync("token", value);
 ```
 
 ---
@@ -96,16 +87,19 @@ await SecureStore.setItemAsync('token', value);
 ## 6. Mobile Security
 
 ### iOS
+
 - Use Keychain for sensitive data
 - Enable certificate pinning
 - Use `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`
 
 ### Android
+
 - Use EncryptedSharedPreferences
 - Enable certificate pinning with OkHttp
 - Use hardware-backed keystore
 
 ### React Native
+
 - Use react-native-keychain
 - Prevent screenshots on sensitive screens
 - Detect jailbreak/root in production
@@ -114,15 +108,21 @@ await SecureStore.setItemAsync('token', value);
 
 ## 7. CI/CD Security
 
-- Use OIDC for cloud auth (no long-lived secrets)
-- Generate SBOM for supply chain visibility
-- Sign packages with npm provenance
+What the workflows do today ([ci-cd-configuration.md](./ci-cd-configuration.md)):
+
+- The npm credential, `NPM_TOKEN`, is an environment secret that only the publish job in
+  `release.yml` can read, after Olcay approves the deployment; it is never a repository secret.
+- The publish job alone may mint an OIDC token, for npm provenance (from the release after 0.5.0).
+- `release.yml` pins its third-party actions to commit SHAs, gives the GitHub token read-only
+  permissions and never persists it at checkout.
+- Nothing generates an SBOM.
 
 ---
 
 ## 8. Audit Checklist
 
 ### Pre-Release
+
 - [ ] `pnpm audit` clean
 - [ ] No secrets in code
 - [ ] CSP configured
@@ -130,6 +130,7 @@ await SecureStore.setItemAsync('token', value);
 - [ ] HTTPS enforced
 
 ### Quarterly
+
 - [ ] Dependency review
 - [ ] Penetration test
 - [ ] Secret rotation

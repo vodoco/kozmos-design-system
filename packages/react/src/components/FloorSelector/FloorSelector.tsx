@@ -15,13 +15,26 @@ export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement>
   label?: string;
   /**
    * What the compact stepper's two buttons are called, for a visitor who
-   * cannot see them. Hard-coded English until row 67, so a German or Japanese
-   * device announced "Previous floor" whatever else the product had
-   * translated. Only the stepper draws them; the two list variants name each
-   * floor by its own label.
+   * cannot see them: "Floor up" and "Floor down" unless the product passes
+   * its own words, as on iOS and Android. The up chevron steps to the previous
+   * level in `floors` and the down chevron to the next, so list the levels top
+   * first and up goes up. Hard-coded English until row 67, so a German or
+   * Japanese device heard English whatever else the product had translated.
+   * Only the stepper draws them; the two list variants name each floor by its
+   * own label.
    */
   previousFloorLabel?: string;
+  /** The down chevron's name, "Floor down" unless the product passes its own. */
   nextFloorLabel?: string;
+  /**
+   * How a level's result count is said, for a visitor who cannot see the
+   * marker. Joined to the floor's own label: "Level 2, 3 results".
+   *
+   * A function because a count needs a plural rule, and the design system has
+   * no locale to pick one with — the product does. The default is English,
+   * singular for one, as on iOS and Android.
+   */
+  resultCountLabel?: (count: number) => string;
   variant?: "vertical-list" | "horizontal-list" | "compact-stepper";
 }
 
@@ -32,6 +45,17 @@ function normalizeFloor(floor: FloorSelectorOption): FloorPresentation {
   return floor;
 }
 
+/**
+ * The count a level's button marks, or undefined for none: only a count above
+ * zero. Absent is unknown, which is not the same as none; a real zero reads as
+ * the level itself; and a negative count is no count at all. iOS and Android
+ * read it the same way.
+ */
+function markedResultCount(floor: FloorPresentation): number | undefined {
+  const count = floor.resultCount;
+  return count !== undefined && count > 0 ? count : undefined;
+}
+
 const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
   (
     {
@@ -40,8 +64,10 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
       selectedFloor,
       onFloorSelect,
       label = "Floor selector",
-      previousFloorLabel = "Previous floor",
-      nextFloorLabel = "Next floor",
+      previousFloorLabel = "Floor up",
+      nextFloorLabel = "Floor down",
+      resultCountLabel = (count) =>
+        count === 1 ? "1 result" : `${count} results`,
       variant = "vertical-list",
       ...props
     },
@@ -132,25 +158,51 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
         role="group"
         {...props}
       >
-        {options.map((floor) => (
-          <Button
-            key={floor.id}
-            variant={selectedFloor === floor.id ? "default" : "ghost"}
-            size="sm"
-            aria-label={floor.label}
-            aria-pressed={selectedFloor === floor.id}
-            className={cn(
-              "h-11 w-11 p-0 font-medium",
-              variant === "horizontal-list" && "w-auto min-w-11 px-3",
-              selectedFloor === floor.id && "shadow-raised",
-            )}
-            disabled={floor.disabled}
-            onClick={() => handleFloorSelect(floor.id)}
-            type="button"
-          >
-            {floor.shortLabel}
-          </Button>
-        ))}
+        {options.map((floor) => {
+          const count = markedResultCount(floor);
+          return (
+            <Button
+              key={floor.id}
+              variant={selectedFloor === floor.id ? "default" : "ghost"}
+              size="sm"
+              aria-label={
+                count !== undefined
+                  ? `${floor.label}, ${resultCountLabel(count)}`
+                  : floor.label
+              }
+              aria-pressed={selectedFloor === floor.id}
+              className={cn(
+                "relative h-11 w-11 p-0 font-medium",
+                variant === "horizontal-list" && "w-auto min-w-11 px-3",
+                selectedFloor === floor.id && "shadow-raised",
+              )}
+              disabled={floor.disabled}
+              onClick={() => handleFloorSelect(floor.id)}
+              type="button"
+            >
+              {floor.shortLabel}
+              {/* The count, drawn once and said once: the marker is hidden from
+                assistive technology because the button's own label already
+                carries it, and hearing "3" after "Level 2, 3 results" is
+                noise. Logical inset so it mirrors in Arabic. Only where the
+                product gave a count above zero — absent is unknown, which is
+                not the same as none. */}
+              {count !== undefined ? (
+                <span
+                  aria-hidden="true"
+                  // Inside the button, not hanging off it. The horizontal list
+                  // scrolls on one axis, and CSS will not let the other stay
+                  // visible beside it — `overflow-x: auto` computes `overflow-y`
+                  // to `auto` too, so a badge two pixels proud of the button
+                  // would be clipped there, or would raise a scrollbar.
+                  className="absolute end-0.5 top-0.5 min-w-4 rounded-pill bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground"
+                >
+                  {count}
+                </span>
+              ) : null}
+            </Button>
+          );
+        })}
       </div>
     );
   },

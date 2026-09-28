@@ -26,22 +26,22 @@
 
 Kozmos Design System targets **WCAG 2.1 Level AA** compliance across all platforms:
 
-| Standard | Level | Status | Notes |
-|----------|-------|--------|-------|
-| WCAG 2.1 AA | Required | ✅ Target | All components |
+| Standard     | Level       | Status     | Notes          |
+| ------------ | ----------- | ---------- | -------------- |
+| WCAG 2.1 AA  | Required    | ✅ Target  | All components |
 | WCAG 2.1 AAA | Recommended | 🟡 Partial | Where feasible |
-| Section 508 | Required | ✅ Target | US Federal |
-| EN 301 549 | Required | ✅ Target | EU Standard |
-| ADA | Required | ✅ Target | US Law |
+| Section 508  | Required    | ✅ Target  | US Federal     |
+| EN 301 549   | Required    | ✅ Target  | EU Standard    |
+| ADA          | Required    | ✅ Target  | US Law         |
 
 ### Accessibility Principles (POUR)
 
-| Principle | Description | Kozmos Implementation |
-|-----------|-------------|----------------------|
-| **Perceivable** | Users can perceive content | Color contrast, alt text, captions |
-| **Operable** | Users can operate UI | Keyboard nav, timing, seizure safety |
-| **Understandable** | Users can understand | Clear labels, error prevention |
-| **Robust** | Works with assistive tech | Semantic HTML, ARIA, platform a11y APIs |
+| Principle          | Description                | Kozmos Implementation                   |
+| ------------------ | -------------------------- | --------------------------------------- |
+| **Perceivable**    | Users can perceive content | Color contrast, alt text, captions      |
+| **Operable**       | Users can operate UI       | Keyboard nav, timing, seizure safety    |
+| **Understandable** | Users can understand       | Clear labels, error prevention          |
+| **Robust**         | Works with assistive tech  | Semantic HTML, ARIA, platform a11y APIs |
 
 ---
 
@@ -87,12 +87,12 @@ Kozmos Design System targets **WCAG 2.1 Level AA** compliance across all platfor
 
 #### 1.4 Distinguishable (Level AA)
 
-| Requirement | Kozmos Token | Value |
-|-------------|--------------|-------|
-| Text contrast (normal) | `--kozmos-color-text-primary` | 4.5:1 minimum |
-| Text contrast (large) | `--kozmos-color-text-primary` | 3:1 minimum |
-| Non-text contrast | `--kozmos-color-border-default` | 3:1 minimum |
-| Focus indicator | `--kozmos-focus-ring` | 3:1 minimum |
+| Requirement            | Kozmos Token                    | Value         |
+| ---------------------- | ------------------------------- | ------------- |
+| Text contrast (normal) | `--kozmos-color-text-primary`   | 4.5:1 minimum |
+| Text contrast (large)  | `--kozmos-color-text-primary`   | 3:1 minimum   |
+| Non-text contrast      | `--kozmos-color-border-default` | 3:1 minimum   |
+| Focus indicator        | `--kozmos-focus-ring`           | 3:1 minimum   |
 
 ### 2.2 Operable
 
@@ -213,39 +213,39 @@ All interactive components must be keyboard accessible:
 
 ### Primitive Components
 
-| Component | Keyboard | Screen Reader | Focus Visible | ARIA | WCAG Level |
-|-----------|----------|---------------|---------------|------|------------|
-| Button | ✅ Enter/Space | ✅ Role=button | ✅ Ring | Optional | AA |
-| Input | ✅ Full | ✅ Label+Value | ✅ Ring | Required | AA |
-| Select | ✅ Arrow keys | ✅ Listbox | ✅ Ring | Required | AA |
-| Checkbox | ✅ Space | ✅ Checked state | ✅ Ring | Required | AA |
-| Radio | ✅ Arrow keys | ✅ Group+Checked | ✅ Ring | Required | AA |
-| Switch | ✅ Space | ✅ Checked state | ✅ Ring | Required | AA |
-| Slider | ✅ Arrow keys | ✅ Value | ✅ Ring | Required | AA |
-| Link | ✅ Enter | ✅ Role=link | ✅ Ring | Optional | AA |
+| Component | Keyboard       | Screen Reader    | Focus Visible | ARIA     | WCAG Level |
+| --------- | -------------- | ---------------- | ------------- | -------- | ---------- |
+| Button    | ✅ Enter/Space | ✅ Role=button   | ✅ Ring       | Optional | AA         |
+| Input     | ✅ Full        | ✅ Label+Value   | ✅ Ring       | Required | AA         |
+| Select    | ✅ Arrow keys  | ✅ Listbox       | ✅ Ring       | Required | AA         |
+| Checkbox  | ✅ Space       | ✅ Checked state | ✅ Ring       | Required | AA         |
+| Radio     | ✅ Arrow keys  | ✅ Group+Checked | ✅ Ring       | Required | AA         |
+| Switch    | ✅ Space       | ✅ Checked state | ✅ Ring       | Required | AA         |
+| Slider    | ✅ Arrow keys  | ✅ Value         | ✅ Ring       | Required | AA         |
+| Link      | ✅ Enter       | ✅ Role=link     | ✅ Ring       | Optional | AA         |
 
 ### Compound Components
 
-| Component | Keyboard | Screen Reader | Focus Visible | ARIA | WCAG Level |
-|-----------|----------|---------------|---------------|------|------------|
-| Modal | ✅ Tab trap | ✅ Dialog | ✅ Content | Required | AA |
-| Dropdown | ✅ Arrow+Esc | ✅ Menu | ✅ Options | Required | AA |
-| Tabs | ✅ Arrow keys | ✅ Tablist | ✅ Tab | Required | AA |
-| Accordion | ✅ Enter/Space | ✅ Expanded | ✅ Header | Required | AA |
-| Toast | N/A | ✅ Live region | N/A | Required | AA |
-| Tooltip | ✅ Hover+Focus | ✅ Describedby | N/A | Required | AA |
-| Popover | ✅ Esc to close | ✅ Dialog | ✅ Content | Required | AA |
+| Component | Keyboard        | Screen Reader  | Focus Visible | ARIA     | WCAG Level |
+| --------- | --------------- | -------------- | ------------- | -------- | ---------- |
+| Modal     | ✅ Tab trap     | ✅ Dialog      | ✅ Content    | Required | AA         |
+| Dropdown  | ✅ Arrow+Esc    | ✅ Menu        | ✅ Options    | Required | AA         |
+| Tabs      | ✅ Arrow keys   | ✅ Tablist     | ✅ Tab        | Required | AA         |
+| Accordion | ✅ Enter/Space  | ✅ Expanded    | ✅ Header     | Required | AA         |
+| Toast     | N/A             | ✅ Live region | N/A           | Required | AA         |
+| Tooltip   | ✅ Hover+Focus  | ✅ Describedby | N/A           | Required | AA         |
+| Popover   | ✅ Esc to close | ✅ Dialog      | ✅ Content    | Required | AA         |
 
 ### SDK Components
 
-| Component | Keyboard | Screen Reader | Focus Visible | ARIA | WCAG Level |
-|-----------|----------|---------------|---------------|------|------------|
-| MapView | ✅ Pan/Zoom | ✅ Landmarks | ✅ POIs | Custom | AA |
-| WayfindingCard | ✅ Full nav | ✅ Instructions | ✅ Steps | Required | AA |
-| SearchBar | ✅ Full | ✅ Results | ✅ Ring | Required | AA |
-| FloorSelector | ✅ Arrow keys | ✅ Current floor | ✅ Option | Required | AA |
-| POICard | ✅ Full | ✅ Details | ✅ Actions | Required | AA |
-| DirectionsList | ✅ Arrow keys | ✅ Step by step | ✅ Current | Required | AA |
+| Component      | Keyboard      | Screen Reader    | Focus Visible | ARIA     | WCAG Level |
+| -------------- | ------------- | ---------------- | ------------- | -------- | ---------- |
+| MapView        | ✅ Pan/Zoom   | ✅ Landmarks     | ✅ POIs       | Custom   | AA         |
+| WayfindingCard | ✅ Full nav   | ✅ Instructions  | ✅ Steps      | Required | AA         |
+| SearchBar      | ✅ Full       | ✅ Results       | ✅ Ring       | Required | AA         |
+| FloorSelector  | ✅ Arrow keys | ✅ Current floor | ✅ Option     | Required | AA         |
+| POICard        | ✅ Full       | ✅ Details       | ✅ Actions    | Required | AA         |
+| DirectionsList | ✅ Arrow keys | ✅ Step by step  | ✅ Current    | Required | AA         |
 
 ---
 
@@ -255,10 +255,10 @@ All interactive components must be keyboard accessible:
 
 ```tsx
 // Button.tsx - Accessible implementation
-import { forwardRef } from 'react';
+import { forwardRef } from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: "primary" | "secondary" | "ghost";
   loading?: boolean;
 }
 
@@ -272,18 +272,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         aria-disabled={disabled || loading}
         {...props}
       >
-        {loading && (
-          <span aria-hidden="true" className="spinner" />
-        )}
-        <span className={loading ? 'visually-hidden' : ''}>
-          {children}
-        </span>
-        {loading && (
-          <span className="visually-hidden">Loading...</span>
-        )}
+        {loading && <span aria-hidden="true" className="spinner" />}
+        <span className={loading ? "visually-hidden" : ""}>{children}</span>
+        {loading && <span className="visually-hidden">Loading...</span>}
       </button>
     );
-  }
+  },
 );
 ```
 
@@ -430,7 +424,7 @@ fun KozmosMapView(
 
 ```tsx
 // Button.tsx - Accessible implementation
-import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
 
 interface ButtonProps {
   title: string;
@@ -439,7 +433,12 @@ interface ButtonProps {
   disabled?: boolean;
 }
 
-export function KozmosButton({ title, onPress, loading, disabled }: ButtonProps) {
+export function KozmosButton({
+  title,
+  onPress,
+  loading,
+  disabled,
+}: ButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -460,7 +459,7 @@ export function KozmosButton({ title, onPress, loading, disabled }: ButtonProps)
 }
 
 // Live region for announcements
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo } from "react-native";
 
 export function announceForAccessibility(message: string) {
   AccessibilityInfo.announceForAccessibility(message);
@@ -473,17 +472,17 @@ export function announceForAccessibility(message: string) {
 
 ### 5.1 Standard Key Bindings
 
-| Key | Action | Components |
-|-----|--------|------------|
-| `Tab` | Move to next focusable | All |
-| `Shift + Tab` | Move to previous focusable | All |
-| `Enter` | Activate | Button, Link, Menu item |
-| `Space` | Activate / Toggle | Button, Checkbox, Switch |
-| `Arrow Up/Down` | Navigate options | Select, Menu, Radio group |
-| `Arrow Left/Right` | Navigate tabs, Slider | Tabs, Slider, Radio group |
-| `Escape` | Close / Cancel | Modal, Dropdown, Popover |
-| `Home` | First item | List, Menu, Slider |
-| `End` | Last item | List, Menu, Slider |
+| Key                | Action                     | Components                |
+| ------------------ | -------------------------- | ------------------------- |
+| `Tab`              | Move to next focusable     | All                       |
+| `Shift + Tab`      | Move to previous focusable | All                       |
+| `Enter`            | Activate                   | Button, Link, Menu item   |
+| `Space`            | Activate / Toggle          | Button, Checkbox, Switch  |
+| `Arrow Up/Down`    | Navigate options           | Select, Menu, Radio group |
+| `Arrow Left/Right` | Navigate tabs, Slider      | Tabs, Slider, Radio group |
+| `Escape`           | Close / Cancel             | Modal, Dropdown, Popover  |
+| `Home`             | First item                 | List, Menu, Slider        |
+| `End`              | Last item                  | List, Menu, Slider        |
 
 ### 5.2 Focus Management Patterns
 
@@ -567,18 +566,18 @@ function Tabs({ tabs, activeTab, onChange }) {
 
 ### 6.1 ARIA Attributes Reference
 
-| Attribute | Usage | Example |
-|-----------|-------|---------|
-| `aria-label` | Accessible name | `<button aria-label="Close dialog">×</button>` |
-| `aria-labelledby` | Reference to label | `<div aria-labelledby="heading-id">` |
-| `aria-describedby` | Additional description | `<input aria-describedby="hint-id" />` |
-| `aria-live` | Dynamic content | `<div aria-live="polite">Status update</div>` |
-| `aria-expanded` | Expandable state | `<button aria-expanded="false">Menu</button>` |
-| `aria-haspopup` | Has popup | `<button aria-haspopup="menu">Options</button>` |
-| `aria-current` | Current item | `<a aria-current="page">Home</a>` |
-| `aria-pressed` | Toggle state | `<button aria-pressed="true">Bold</button>` |
-| `aria-invalid` | Validation state | `<input aria-invalid="true" />` |
-| `aria-busy` | Loading state | `<button aria-busy="true">Saving...</button>` |
+| Attribute          | Usage                  | Example                                         |
+| ------------------ | ---------------------- | ----------------------------------------------- |
+| `aria-label`       | Accessible name        | `<button aria-label="Close dialog">×</button>`  |
+| `aria-labelledby`  | Reference to label     | `<div aria-labelledby="heading-id">`            |
+| `aria-describedby` | Additional description | `<input aria-describedby="hint-id" />`          |
+| `aria-live`        | Dynamic content        | `<div aria-live="polite">Status update</div>`   |
+| `aria-expanded`    | Expandable state       | `<button aria-expanded="false">Menu</button>`   |
+| `aria-haspopup`    | Has popup              | `<button aria-haspopup="menu">Options</button>` |
+| `aria-current`     | Current item           | `<a aria-current="page">Home</a>`               |
+| `aria-pressed`     | Toggle state           | `<button aria-pressed="true">Bold</button>`     |
+| `aria-invalid`     | Validation state       | `<input aria-invalid="true" />`                 |
+| `aria-busy`        | Loading state          | `<button aria-busy="true">Saving...</button>`   |
 
 ### 6.2 Live Regions
 
@@ -608,15 +607,15 @@ function Toast({ message, type }) {
 
 ### 6.3 Screen Reader Testing Matrix
 
-| Platform | Screen Reader | Browser/OS | Priority |
-|----------|--------------|------------|----------|
-| Web | NVDA | Chrome/Windows | ✅ Required |
-| Web | VoiceOver | Safari/macOS | ✅ Required |
-| Web | JAWS | Chrome/Windows | 🟡 Recommended |
-| iOS | VoiceOver | Safari/iOS | ✅ Required |
-| Android | TalkBack | Chrome/Android | ✅ Required |
-| React Native | VoiceOver | iOS | ✅ Required |
-| React Native | TalkBack | Android | ✅ Required |
+| Platform     | Screen Reader | Browser/OS     | Priority       |
+| ------------ | ------------- | -------------- | -------------- |
+| Web          | NVDA          | Chrome/Windows | ✅ Required    |
+| Web          | VoiceOver     | Safari/macOS   | ✅ Required    |
+| Web          | JAWS          | Chrome/Windows | 🟡 Recommended |
+| iOS          | VoiceOver     | Safari/iOS     | ✅ Required    |
+| Android      | TalkBack      | Chrome/Android | ✅ Required    |
+| React Native | VoiceOver     | iOS            | ✅ Required    |
+| React Native | TalkBack      | Android        | ✅ Required    |
 
 ---
 
@@ -624,14 +623,14 @@ function Toast({ message, type }) {
 
 ### 7.1 Contrast Requirements
 
-| Content Type | WCAG Level | Minimum Ratio | Kozmos Target |
-|--------------|------------|---------------|---------------|
-| Normal text (< 18pt) | AA | 4.5:1 | 5:1 |
-| Large text (≥ 18pt) | AA | 3:1 | 4:1 |
-| UI components | AA | 3:1 | 3.5:1 |
-| Focus indicators | AA | 3:1 | 4:1 |
-| Normal text | AAA | 7:1 | — |
-| Large text | AAA | 4.5:1 | — |
+| Content Type         | WCAG Level | Minimum Ratio | Kozmos Target |
+| -------------------- | ---------- | ------------- | ------------- |
+| Normal text (< 18pt) | AA         | 4.5:1         | 5:1           |
+| Large text (≥ 18pt)  | AA         | 3:1           | 4:1           |
+| UI components        | AA         | 3:1           | 3.5:1         |
+| Focus indicators     | AA         | 3:1           | 4:1           |
+| Normal text          | AAA        | 7:1           | —             |
+| Large text           | AAA        | 4.5:1         | —             |
 
 ### 7.2 Color Token Contrast Matrix
 
@@ -706,7 +705,9 @@ Light Theme Contrast Ratios:
 ```css
 /* Default animations */
 .kozmos-component {
-  transition: transform 200ms ease-out, opacity 200ms ease-out;
+  transition:
+    transform 200ms ease-out,
+    opacity 200ms ease-out;
 }
 
 /* Respect user preference */
@@ -746,12 +747,12 @@ function AnimatedComponent() {
 
 ### 8.2 Animation Guidelines
 
-| Type | Duration | Use Case | Reduced Motion |
-|------|----------|----------|----------------|
-| Micro | 100-200ms | Hover, focus | Instant |
-| Standard | 200-300ms | Transitions | Instant or fade |
-| Emphasis | 300-500ms | Attention | Fade only |
-| Complex | 500ms+ | Tutorials | Skip or simplify |
+| Type     | Duration  | Use Case     | Reduced Motion   |
+| -------- | --------- | ------------ | ---------------- |
+| Micro    | 100-200ms | Hover, focus | Instant          |
+| Standard | 200-300ms | Transitions  | Instant or fade  |
+| Emphasis | 300-500ms | Attention    | Fade only        |
+| Complex  | 500ms+    | Tutorials    | Skip or simplify |
 
 ### 8.3 Seizure Safety
 
@@ -767,7 +768,7 @@ function validateAnimation(keyframes: Keyframe[]) {
   const duration = keyframes.length / 60; // Assuming 60fps
 
   if (flashCount / duration > SAFE_FLASH_THRESHOLD) {
-    console.warn('Animation may cause seizures. Reduce flash rate.');
+    console.warn("Animation may cause seizures. Reduce flash rate.");
   }
 }
 ```
@@ -896,6 +897,7 @@ describe('Button accessibility', () => {
 
 ```markdown
 ## Keyboard Testing
+
 - [ ] All interactive elements reachable via Tab
 - [ ] Tab order follows logical reading order
 - [ ] Focus visible on all elements
@@ -905,6 +907,7 @@ describe('Button accessibility', () => {
 - [ ] Arrow keys work in menus/selects
 
 ## Screen Reader Testing (VoiceOver/NVDA)
+
 - [ ] All content readable
 - [ ] Interactive elements announce role
 - [ ] Form fields have labels
@@ -914,6 +917,7 @@ describe('Button accessibility', () => {
 - [ ] Links/buttons have accessible names
 
 ## Visual Testing
+
 - [ ] 4.5:1 contrast for text
 - [ ] 3:1 contrast for UI components
 - [ ] Works at 200% zoom
@@ -927,19 +931,19 @@ describe('Button accessibility', () => {
 ```typescript
 // .storybook/main.ts
 export default {
-  addons: ['@storybook/addon-a11y'],
+  addons: ["@storybook/addon-a11y"],
 };
 
 // Component.stories.tsx
 export default {
-  title: 'Components/Button',
+  title: "Components/Button",
   component: Button,
   parameters: {
     a11y: {
       config: {
         rules: [
-          { id: 'color-contrast', enabled: true },
-          { id: 'focus-order-semantics', enabled: true },
+          { id: "color-contrast", enabled: true },
+          { id: "focus-order-semantics", enabled: true },
         ],
       },
     },
@@ -949,29 +953,22 @@ export default {
 
 ### 10.4 CI/CD Integration
 
-```yaml
-# .github/workflows/accessibility.yml
-name: Accessibility Tests
+There is no separate accessibility workflow and no `test:a11y` script. Accessibility is checked
+inside the workflows every pull request runs:
 
-on: [push, pull_request]
+- **`ci.yml`:** React's unit tests (`pnpm test`) include `vitest-axe` checks; the "Stories &
+  Interactions (chromium)" shard runs axe on every story in light and dark at 320 and 1280 px
+  (`pnpm test:storybook-audit`) and fails on any violation; "Core Pipeline & POI Gallery" runs
+  `scripts/skills/check-a11y.ts` on five stories.
+- **`lighthouse.yml`:** Lighthouse CI over four stories of the built Storybook
+  (`lighthouserc.json`) fails below an accessibility score of 100.
 
-jobs:
-  a11y:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+Locally, against a running Storybook (`pnpm --filter @kozmos-ds/docs storybook`):
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run axe tests
-        run: pnpm test:a11y
-
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v10
-        with:
-          configPath: './.lighthouserc.json'
-          uploadArtifacts: true
+```bash
+# Every story, as CI runs it (without STORY_SCOPE=all, one story per component)
+STORY_SCOPE=all STORYBOOK_URL=http://127.0.0.1:6006 pnpm test:storybook-audit
+STORYBOOK_URL=http://127.0.0.1:6006 pnpm exec tsx scripts/skills/check-a11y.ts
 ```
 
 ---
@@ -984,35 +981,41 @@ jobs:
 ## Component: [Name]
 
 ### Semantics
+
 - [ ] Uses semantic HTML elements
 - [ ] Has appropriate ARIA role (if not native)
 - [ ] Has accessible name (label or aria-label)
 - [ ] Has accessible description (if needed)
 
 ### Keyboard
+
 - [ ] Focusable (if interactive)
 - [ ] Focus indicator visible
 - [ ] Keyboard operable
 - [ ] No keyboard traps
 
 ### Screen Reader
+
 - [ ] Content announced correctly
 - [ ] State changes announced
 - [ ] Error messages announced
 
 ### Visual
+
 - [ ] Color contrast meets AA
 - [ ] Color not only indicator
 - [ ] Works at 200% zoom
 - [ ] Supports reduced motion
 
 ### States
+
 - [ ] Disabled state accessible
 - [ ] Loading state accessible
 - [ ] Error state accessible
 - [ ] Selected state accessible
 
 ### Documentation
+
 - [ ] a11y props documented
 - [ ] Usage examples include a11y
 - [ ] Known limitations documented
@@ -1024,22 +1027,26 @@ jobs:
 ## Pre-Release Accessibility Audit
 
 ### Automated Tests
+
 - [ ] axe-core tests passing
-- [ ] Lighthouse accessibility score ≥ 90
-- [ ] No regressions in Chromatic
+- [ ] Lighthouse accessibility score 100 (the `lighthouse` check)
+- [ ] No unintended changes in Visual Review (`pnpm test:visual`)
 
 ### Manual Testing
+
 - [ ] VoiceOver on Safari (macOS)
 - [ ] NVDA on Chrome (Windows)
 - [ ] TalkBack on Chrome (Android)
 - [ ] VoiceOver on iOS Safari
 
 ### Documentation
+
 - [ ] a11y section in docs
 - [ ] VPAT/ACR updated (if applicable)
 - [ ] Known issues documented
 
 ### Sign-off
+
 - [ ] QA approved
 - [ ] Accessibility specialist approved
 - [ ] Ready for release

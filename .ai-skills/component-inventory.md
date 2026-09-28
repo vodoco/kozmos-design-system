@@ -7,9 +7,9 @@
 
 | package                        | version |
 | ------------------------------ | ------- |
-| `@kozmos-ds/icons`             | 0.3.0   |
-| `@kozmos-ds/product-contracts` | 0.3.0   |
-| `@kozmos-ds/react`             | 0.4.0   |
+| `@kozmos-ds/icons`             | 0.4.0   |
+| `@kozmos-ds/product-contracts` | 0.4.0   |
+| `@kozmos-ds/react`             | 0.5.0   |
 | `@kozmos-ds/tokens`            | 0.1.0   |
 
 `@kozmos-ds/vue` exists in the workspace but is **private**: an internal
@@ -125,7 +125,7 @@ value it accepts — these are the only values that compile.
 | **DirectionStep**     | ✅  |   ✅    | `type`: straight \| left \| right \| destination \| lift-up \| lift-down \| escalator-up \| escalator-down \| stairs-up \| stairs-down \| level-up \| level-down \| transition \| turn-back |
 | **Itinerary**         | ✅  |   ✅    | —                                                                                                                                                                                           |
 | **ManoeuvreCard**     | ✅  |   ✅    | —                                                                                                                                                                                           |
-| **MapControlsGroup**  | ✅  |   ✅    | `locationPresentation`: icon-only \| labelled                                                                                                                                               |
+| **MapControlsGroup**  | ✅  |   ✅    | `locationPresentation`: icon-only \| labelled<br>`locationLabelPlacement`: inline \| stacked                                                                                                |
 | **MapOverlay**        | ✅  |   ✅    | `width`: auto \| sm \| md \| lg \| full                                                                                                                                                     |
 | **MapView**           | ✅  |   ✅    | `variant`: framed \| fill                                                                                                                                                                   |
 | **RouteProgressRail** | ✅  |   ✅    | —                                                                                                                                                                                           |
@@ -168,7 +168,7 @@ value it accepts — these are the only values that compile.
 | Component                 | iOS | Android | Variants                                                                                                                           |
 | ------------------------- | :-: | :-----: | ---------------------------------------------------------------------------------------------------------------------------------- |
 | **AICompanionPanel**      |  —  |    —    | —                                                                                                                                  |
-| **AIInputBar**            |  —  |    —    | —                                                                                                                                  |
+| **AIInputBar**            |  —  |    —    | `voiceState`: idle \| connecting \| listening \| speaking \| unavailable \| error                                                  |
 | **AIMessage**             |  —  |    —    | `status`: complete \| streaming \| timedOut                                                                                        |
 | **AIMessageList**         |  —  |    —    | —                                                                                                                                  |
 | **AISearchButton**        | ✅  |   ✅    | —                                                                                                                                  |

@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/icons",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Icon components and the name registry for the Kozmos design system.",
   "keywords": [
     "kozmos",
@@ -12,12 +12,12 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vodoco/kozmos-design-system-.git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system.git",
     "directory": "packages/icons"
   },
-  "homepage": "https://github.com/vodoco/kozmos-design-system-/tree/main/packages/icons#readme",
+  "homepage": "https://github.com/vodoco/kozmos-design-system/tree/main/packages/icons#readme",
   "bugs": {
-    "url": "https://github.com/vodoco/kozmos-design-system-/issues"
+    "url": "https://github.com/vodoco/kozmos-design-system/issues"
   },
   "publishConfig": {
     "access": "public"

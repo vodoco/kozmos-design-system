@@ -30,6 +30,47 @@ Pair `locationState` with a localized `locationStateLabel`. The visual treatment
 alone does not tell a screen reader user whether location is following, denied,
 or merely stale.
 
+### The location control's marks
+
+The location control draws a mark for each state, from Pointr's Location
+Tracking Buttons revamp:
+
+| State                                   | Mark                                                      |
+| --------------------------------------- | --------------------------------------------------------- |
+| `off`, `stale`                          | the outline pointer                                       |
+| `locating`                              | the outline pointer, with the button's spinner            |
+| `following`                             | `LocationFollowing` — the solid pointer and its cone      |
+| `heading`                               | `LocationHeading` — the upright pointer and the turn arc  |
+| `permission-denied`, `unavailable`      | the pointer struck through                                |
+
+The two symbols come from `@kozmos-ds/icons` and take the control's colour, so
+they tint with it when pressed. To draw your own mark for a state, pass that
+state in `locationIcons`; the others keep the group's marks.
+
+### The SDK's location control
+
+The SDK's control is icon-only over the map and widens to say its new mode for a
+moment when the mode changes — "Focus / On", the state set under the name. Ask
+for that with `locationRevealOnChange` and `locationLabelPlacement="stacked"`.
+Both are off by default, so a product that relies on a fixed presentation sees
+nothing move.
+
+Give `heading` its own `locationStateLabel` rather than a second "On": the name
+is all a screen reader has to tell following from a map that turns.
+
+### Step-free during wayfinding
+
+While a route is shown, a step-free control takes the location control's place.
+Passing `onStepFreeChange` draws it, and the location control is not drawn; leave
+it out once the route is gone and the location control returns. It reads as the
+location control does — it follows `locationPresentation`,
+`locationRevealOnChange` and `locationLabelPlacement` — so the corner keeps its
+character between exploring and wayfinding.
+
+Set `stepFree` once the route it describes is the one on the map. The name and
+its two states are `stepFreeLabel`, `stepFreeOnLabel` and `stepFreeOffLabel`
+("Step-free", "On", "Off"), for the product to translate.
+
 ## Implementation
 
 import { PlatformSnippets } from '../PlatformSnippets';
@@ -59,6 +100,23 @@ export function Example(
     />
   );
 }
+
+// While a route is shown, step-free takes the location control's place.
+export function WayfindingControls({
+  stepFree,
+  onStepFreeChange,
+}: Pick<MapControlsGroupProps, "stepFree" | "onStepFreeChange">) {
+  return (
+    <MapControlsGroup
+      label="Map controls"
+      locationLabelPlacement="stacked"
+      locationRevealOnChange
+      stepFree={stepFree}
+      stepFreeLabel="Step-free"
+      onStepFreeChange={onStepFreeChange}
+    />
+  );
+}
   `}
   vue={`
 <script setup>
@@ -82,6 +140,7 @@ import Kozmos
 
 struct MapControls: View {
     let bearing: Double
+    let locationState: KozmosUserLocationState
 
     var body: some View {
         KozmosMapControlsGroup(
@@ -90,8 +149,28 @@ struct MapControls: View {
             onZoomOut: { zoomOut() },
             onCompassReset: { resetBearing() },
             onMyLocation: { recenter() },
+            // Every name is the product's to translate.
+            zoomInLabel: String(localized: "Zoom in"),
+            zoomOutLabel: String(localized: "Zoom out"),
+            compassResetLabel: String(localized: "Reset bearing"),
+            locationState: locationState,
             locationPresentation: .iconOnly,
-            locationLabel: "My location"
+            locationLabel: String(localized: "My location")
+        )
+    }
+}
+
+// While a route is shown, step-free takes the location control's place.
+struct WayfindingControls: View {
+    @Binding var stepFree: Bool
+
+    var body: some View {
+        KozmosMapControlsGroup(
+            locationRevealOnChange: true,
+            locationLabelPlacement: .stacked,
+            onStepFreeChange: { stepFree = $0 },
+            stepFree: stepFree,
+            stepFreeLabel: String(localized: "Step-free")
         )
     }
 }
@@ -100,17 +179,36 @@ struct MapControls: View {
 package com.kozmos.example
 
 import androidx.compose.runtime.Composable
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlacement
 import com.kozmos.components.mapcontrolsgroup.KozmosMapControlsGroup
+import com.kozmos.contracts.KozmosUserLocationState
 
 @Composable
-fun MapControls(bearing: Float) {
+fun MapControls(bearing: Float, locationState: KozmosUserLocationState) {
     KozmosMapControlsGroup(
         compassBearing = bearing,
         onZoomIn = { zoomIn() },
         onZoomOut = { zoomOut() },
         onCompassReset = { resetBearing() },
         onMyLocation = { recenter() },
-        locationLabel = "My location"
+        locationLabel = "My location",
+        // Every name is the product's to translate.
+        zoomInLabel = "Zoom in",
+        zoomOutLabel = "Zoom out",
+        compassResetLabel = "Reset bearing",
+        locationState = locationState
+    )
+}
+
+// While a route is shown, step-free takes the location control's place.
+@Composable
+fun WayfindingControls(stepFree: Boolean, onStepFreeChange: (Boolean) -> Unit) {
+    KozmosMapControlsGroup(
+        locationRevealOnChange = true,
+        locationLabelPlacement = KozmosMapControlButtonLabelPlacement.Stacked,
+        onStepFreeChange = onStepFreeChange,
+        stepFree = stepFree,
+        stepFreeLabel = "Step-free"
     )
 }
   `}
@@ -123,7 +221,9 @@ fun MapControls(bearing: Float) {
 - `label` names the cluster so it is announced as one group of controls rather
   than a run of unlabelled buttons.
 - `locationState` must be conveyed through `locationStateLabel`, not by the icon
-  treatment alone.
+  treatment alone. The marks are decorative: the button's name carries the state.
+- The step-free control is a toggle: it reports `aria-pressed`, and its name
+  carries its state ("Step-free, On"), as the location control's does.
 - The compass glyph does not auto-mirror in RTL; a bearing is physical.
 
 ## Stories
@@ -133,3 +233,12 @@ fun MapControls(bearing: Float) {
 
 ### Zoom Only
 <Canvas of={MapControlsGroupStories.ZoomOnly} />
+
+### Location States
+<Canvas of={MapControlsGroupStories.LocationStates} />
+
+### SDK Location Control
+<Canvas of={MapControlsGroupStories.SDKLocationControl} />
+
+### Step-free During Wayfinding
+<Canvas of={MapControlsGroupStories.StepFreeDuringWayfinding} />

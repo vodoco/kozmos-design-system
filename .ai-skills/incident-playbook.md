@@ -68,7 +68,7 @@ Thanks for reporting this issue. We're investigating now.
 **Initial Assessment:**
 
 - Severity: [P0/P1/P2/P3]
-- Affected versions: @kozmos/react@x.y.z
+- Affected versions: @kozmos-ds/react@x.y.z
 - Platforms impacted: [React/iOS/Android/RN/Vue]
 
 **Next Steps:**
@@ -87,7 +87,7 @@ We'll update this issue as we progress.
 🚨 **P0/P1 Incident Declared**
 
 **Issue:** [Brief description]
-**Affected:** @kozmos/react@1.2.3
+**Affected:** @kozmos-ds/react@1.2.3
 **Reporter:** [Consumer name]
 **Responder:** @[your-name]
 **GitHub:** [link to issue]
@@ -111,7 +111,7 @@ pnpm dev
 # Or create minimal reproduction
 mkdir kozmos-repro && cd kozmos-repro
 pnpm init
-pnpm add @kozmos/react@[affected-version]
+pnpm add @kozmos-ds/react@[affected-version]
 # ... create minimal test case
 ```
 
@@ -153,31 +153,30 @@ pnpm add @kozmos/react@[affected-version]
 #### 3.1 Create Hotfix Branch
 
 ```bash
-# From the affected release tag
-git checkout v1.2.3
-git checkout -b hotfix/button-crash-fix
+# From main: a release publishes only main's HEAD, so every fix goes through main
+git checkout main && git pull --ff-only
+git checkout -b fix/button-crash
 
 # Make the fix
 # ... edit files ...
 
-# Run tests
+# Run tests (React's unit tests carry its vitest-axe accessibility checks)
 pnpm test
-pnpm test:a11y
 pnpm typecheck
 ```
 
-#### 3.2 Expedited Review (P0/P1)
+#### 3.2 Review (P0/P1)
 
-For P0/P1 incidents, normal PR process is abbreviated:
+A hotfix is an ordinary pull request to `main`; nothing is abbreviated for P0/P1:
 
-- Single reviewer approval (any core team member)
-- Skip visual regression if not UI-related
-- Skip Chromatic approval if blocking
+- Every required check must pass, on a branch up to date with `main`
+  ([ci-cd-configuration.md](./ci-cd-configuration.md)).
+- Visual Review stays required: a hotfix that changes how a story looks records its baselines
+  (docs/visual-review.md) rather than skipping the check
 
 ```bash
-# Create PR with hotfix label
+# Create the pull request (the repository has no hotfix or priority labels)
 gh pr create --title "fix(react): prevent Button crash on undefined children" \
-  --label "hotfix,P0" \
   --body "## Root Cause
 Button component did not handle undefined children prop.
 
@@ -197,23 +196,23 @@ Fixes #123"
 
 #### 3.3 Publish Hotfix Release
 
-```bash
-# After PR merged
-git checkout main
-git pull
+A hotfix is released like any version; nothing is published from a laptop
+([publishing-guide.md](./publishing-guide.md), [docs/release-process.md](../docs/release-process.md)):
 
-# Create patch release
+```bash
+# 1. In the fix's pull request: a patch changeset
 pnpm changeset
 # Select affected packages, choose "patch"
 # Write: "fix(react): prevent Button crash on undefined children"
 
-# Version and publish
-pnpm changeset version
-pnpm publish -r --access public
+# 2. After it merges: a version PR (with release/plan.json and pnpm skills:build)
+pnpm version-packages
 
-# Tag release
-git tag v1.2.4
-git push --tags
+# 3. After the version PR merges and main's CI is green
+pnpm release:preflight <sha> <ci-run-id>
+
+# 4. Olcay dispatches Release Kozmos System and approves npm-release; then the tags
+pnpm release:tag <sha>
 ```
 
 #### 3.4 Notify Consumers
@@ -223,13 +222,13 @@ git push --tags
 
 ## ✅ Fix Released
 
-**Version:** @kozmos/react@1.2.4
+**Version:** @kozmos-ds/react@1.2.4
 **Changelog:** [link]
 
 **To update:**
 
 ```bash
-pnpm update @kozmos/react@1.2.4
+pnpm update @kozmos-ds/react@1.2.4
 ```
 ````
 
@@ -248,18 +247,18 @@ Please confirm the fix resolves your issue. We'll close this in 48 hours if no r
 #### 4.1 Determine Safe Version
 ```bash
 # Check what version was before the breaking change
-npm view @kozmos/react versions --json | tail -10
+npm view @kozmos-ds/react versions --json | tail -10
 
 # Verify the safe version
-npm info @kozmos/react@1.2.2
+npm info @kozmos-ds/react@1.2.2
 ````
 
 #### 4.2 Deprecate Broken Version
 
-```bash
-# Mark broken version as deprecated
-npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
-```
+Deprecating or re-tagging a published version is a registry write outside `release.yml`: Olcay's
+decision, never an assistant's. A release that failed part-way is recovered by
+[docs/release-process.md](../docs/release-process.md), "Failure and recovery", which never
+unpublishes, overwrites or retags.
 
 #### 4.3 Communicate Rollback
 
@@ -268,7 +267,7 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 
 ⚠️ **Version Rollback Notice**
 
-**Package:** @kozmos/react
+**Package:** @kozmos-ds/react
 **Broken version:** 1.2.3 (deprecated)
 **Safe versions:** 1.2.2 (previous) or 1.2.4 (fix)
 
@@ -276,7 +275,7 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 If you're on 1.2.3, update immediately:
 
 ```bash
-pnpm update @kozmos/react@1.2.4
+pnpm update @kozmos-ds/react@1.2.4
 ```
 ````
 
@@ -367,11 +366,11 @@ Acceptance criteria:
 ### Consumer Notification (P0/P1)
 
 ````markdown
-Subject: [ACTION REQUIRED] Critical issue in @kozmos/react@1.2.3
+Subject: [ACTION REQUIRED] Critical issue in @kozmos-ds/react@1.2.3
 
 Hi [Team],
 
-We've identified a critical issue in @kozmos/react@1.2.3 that causes [brief description].
+We've identified a critical issue in @kozmos-ds/react@1.2.3 that causes [brief description].
 
 **Immediate action:**
 
@@ -381,7 +380,7 @@ We've identified a critical issue in @kozmos/react@1.2.3 that causes [brief desc
 **Update command:**
 
 ```bash
-pnpm update @kozmos/react@1.2.4
+pnpm update @kozmos-ds/react@1.2.4
 ```
 ````
 
@@ -401,11 +400,11 @@ Questions? Reply to this email or reach us at #kozmos-support.
 
 ### All-Clear Notification
 ```markdown
-Subject: [RESOLVED] @kozmos/react@1.2.3 issue fixed in 1.2.4
+Subject: [RESOLVED] @kozmos-ds/react@1.2.3 issue fixed in 1.2.4
 
 Hi [Team],
 
-The critical issue in @kozmos/react@1.2.3 has been resolved.
+The critical issue in @kozmos-ds/react@1.2.3 has been resolved.
 
 **Fix version:** 1.2.4
 **Changelog:** [link]
@@ -465,31 +464,23 @@ Level 4: Engineering manager
 
 ### I need to publish a hotfix NOW
 
-```bash
-# Assuming fix is ready and tested
-git checkout main && git pull
-pnpm changeset  # patch, write description
-pnpm changeset version
-pnpm publish -r --access public
-git push && git push --tags
-npm deprecate @kozmos/[pkg]@[broken] "Use [fixed] instead"
-```
+Nothing publishes from a laptop, however urgent: the fix merges to `main` with a patch changeset,
+then a version PR, `pnpm release:preflight <sha> <ci-run-id>`, Olcay's dispatch and approval of
+`release.yml`, and `pnpm release:tag <sha>` (§3.3).
 
 ### I need to rollback a release
 
-```bash
-npm deprecate @kozmos/react@1.2.3 "Critical bug, use 1.2.2 or 1.2.4"
-# Then publish fix as 1.2.4 (never re-use 1.2.3)
-```
+There is no rollback by publishing: the fix goes forward as a new version through `release.yml`
+(never re-using a published version), and deprecating the broken one is Olcay's call (§4.2).
 
 ### I need to find who's using a broken version
 
 ```bash
 # Check npm download stats (approximate)
-npm info @kozmos/react
+npm info @kozmos-ds/react
 
 # For internal consumers, check lockfiles in SDK repos
-grep "@kozmos/react" /path/to/sdk/pnpm-lock.yaml
+grep "@kozmos-ds/react" /path/to/sdk/pnpm-lock.yaml
 ```
 
 ---

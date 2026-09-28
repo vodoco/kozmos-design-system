@@ -3,13 +3,18 @@ import SwiftUI
 public struct KozmosUserLocationMarker: View {
     public let heading: Double
     public let showHeading: Bool
+    /// What the marker is called, for a visitor who cannot see it. It had no
+    /// name until row 67, so VoiceOver passed over the visitor's own position;
+    /// React's was "User location" in English whatever the device's language.
+    public let label: String
 
     /// One full expand-and-fade of the pulse, in seconds.
     private static let pulsePeriod: Double = 1.5
 
-    public init(heading: Double = 0, showHeading: Bool = true) {
+    public init(heading: Double = 0, showHeading: Bool = true, label: String = "User location") {
         self.heading = heading
         self.showHeading = showHeading
+        self.label = label
     }
 
     public var body: some View {
@@ -65,6 +70,11 @@ public struct KozmosUserLocationMarker: View {
                 )
         }
         .frame(width: 64, height: 64)
+        // One element, an image, as React's `role="img"` is: the rings and the
+        // cone are drawing, and the name is the whole of what it says.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(.isImage)
     }
 
     /// 0 at the start of a pulse, approaching 1 as it fades out.

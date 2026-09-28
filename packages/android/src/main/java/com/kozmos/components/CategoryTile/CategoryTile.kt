@@ -25,7 +25,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -44,8 +43,8 @@ import com.kozmos.tokens.KozmosThemeTokens
  * semantics only. Category identity, labels, counts, and selected state are
  * supplied by the consuming app through [KozmosCategoryPresentation]. A
  * `resultCount` draws as the system's counter at the icon square's top-right;
- * `resultCountLabel` is its spoken form (the state description) and draws
- * nothing. A `tint` — the category's colours — takes the icon, the selection's
+ * `resultCountLabel` is its spoken form, joined to the tile's name ("Cafés,
+ * 12 results"), and draws nothing. A `tint` — the category's colours — takes the icon, the selection's
  * stroke and the counter's fill and ink; the square stays neutral.
  */
 @Composable
@@ -76,9 +75,14 @@ fun KozmosCategoryTile(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
-                contentDescription = category.label
+                // The count joins the name, as React's hidden span and the
+                // floor selector's levels do. Not the state description: in
+                // Compose that replaces the "Selected" TalkBack would say, so
+                // a chosen category with results was never said to be chosen.
+                contentDescription = category.resultCountLabel
+                    ?.let { "${category.label}, $it" }
+                    ?: category.label
                 selected = category.selected
-                category.resultCountLabel?.let { stateDescription = it }
             },
         enabled = isEnabled,
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),

@@ -10,5 +10,11 @@ The visitor's turn. Filled and right-aligned against the assistant's
 outlined, left-aligned bubble: the two differ by side and fill, not by colour
 alone.
 
+A screen reader hears neither side nor fill, so the turn starts with a
+visually hidden `speakerLabel`, "You said", read before the words — the
+assistant's say "Assistant said". Pass it in the product's language; an empty
+string leaves it out, for a product that names the speaker where everyone can
+see it.
+
 <Canvas of={Stories.Default} />
 <Controls />

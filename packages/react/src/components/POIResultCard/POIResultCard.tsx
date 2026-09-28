@@ -202,7 +202,19 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
             (result.actions?.length ?? 0) > 0 ? showActions : undefined
           }
           aria-label={selectionLabel}
-          aria-pressed={result.selected}
+          // `aria-current`, not `aria-pressed` (GAP-049).
+          //
+          // A pressed button is a toggle, and this one is not: `handleSelect`
+          // always selects, so a second tap never releases it. Claiming the
+          // toggle meant every result in a list announced itself as a button
+          // that was "not pressed" — a state the visitor could not reach and
+          // the card could not leave.
+          //
+          // What is actually true is that one result is the current one, which
+          // is what LocationPin has always said about the same state, in the
+          // same word. The two now agree, which matters: the pin and the row
+          // are one thing to a visitor and are announced together.
+          aria-current={result.selected ? "location" : undefined}
           className="grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[inherit] px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           disabled={!available}
           onClick={handleSelect}

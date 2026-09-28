@@ -13,12 +13,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vodoco/kozmos-design-system-.git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system.git",
     "directory": "packages/tokens"
   },
-  "homepage": "https://github.com/vodoco/kozmos-design-system-/tree/main/packages/tokens#readme",
+  "homepage": "https://github.com/vodoco/kozmos-design-system/tree/main/packages/tokens#readme",
   "bugs": {
-    "url": "https://github.com/vodoco/kozmos-design-system-/issues"
+    "url": "https://github.com/vodoco/kozmos-design-system/issues"
   },
   "publishConfig": {
     "access": "public"

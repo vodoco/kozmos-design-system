@@ -362,6 +362,67 @@ try {
             "--components-primary-buttons-themed-button-background-idle",
           ),
         );
+        // A labelled map control keeps its gap between the mark and the
+        // words in both directions. It was `ml-2` and `text-left`: right to
+        // left the mark sits at the start, on the right, and the margin went
+        // to the far side of the words, so the two touched.
+        const labelGap = (testId) =>
+          page.getByTestId(testId).evaluate(async (button) => {
+            const [mark, words] = button.children;
+            // The words animate their margin, so a flip of direction is read
+            // once that settles, not on its first frame.
+            await Promise.all(words.getAnimations().map((a) => a.finished));
+            const a = mark.getBoundingClientRect();
+            const b = words.getBoundingClientRect();
+            const rtl = getComputedStyle(button).direction === "rtl";
+            return {
+              rtl,
+              gap: rtl ? a.left - b.right : b.left - a.right,
+              align: getComputedStyle(words).textAlign,
+            };
+          });
+        const labelled = `${id}-map-control-labelled`;
+        const inRtl = await labelGap(labelled);
+        assert.equal(inRtl.rtl, true, "the fixture draws right to left");
+        assert(
+          inRtl.gap >= 7.5,
+          `right to left the words sit ${inRtl.gap}px from the mark`,
+        );
+        assert.equal(inRtl.align, "start");
+        await page
+          .getByTestId(labelled)
+          .evaluate((node) => node.setAttribute("dir", "ltr"));
+        const inLtr = await labelGap(labelled);
+        assert(
+          !inLtr.rtl && inLtr.gap >= 7.5,
+          `left to right the words sit ${inLtr.gap}px from the mark`,
+        );
+        await page
+          .getByTestId(labelled)
+          .evaluate((node) => node.removeAttribute("dir"));
+        // The assistant's "replying" dots keep their gap before the words
+        // right to left too: they were `mr-2`, on the far side of the dots.
+        const dotsGap = await page
+          .getByTestId(`${id}-ai-streaming`)
+          .evaluate((message) => {
+            const dots = message.querySelector(
+              "[aria-hidden='true']",
+            ).parentElement;
+            const bubble = dots.parentElement;
+            const text = [...bubble.childNodes].find(
+              (node) => node.nodeType === 3 && node.textContent.trim(),
+            );
+            const range = document.createRange();
+            range.selectNodeContents(text);
+            const a = dots.getBoundingClientRect();
+            const words = range.getClientRects()[0];
+            const rtl = getComputedStyle(bubble).direction === "rtl";
+            return rtl ? a.left - words.right : words.left - a.right;
+          });
+        assert(
+          dotsGap >= 7.5,
+          `right to left the replying dots sit ${dotsGap}px from the words`,
+        );
       }
       // The search row: the field and what follows it on one line, in a
       // container that puts them on two when the pair is composed by hand.
@@ -380,8 +441,7 @@ try {
           return {
             // Centres, not tops: the assistant is 48 and the field 44, so on
             // one line their top edges are two apart by design.
-            sameLine:
-              Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) < 2,
+            sameLine: Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) < 2,
             drop: Math.round(b.y - a.y),
             rowHeight: Math.round(node.getBoundingClientRect().height),
             fieldHeight: Math.round(a.height),
@@ -424,25 +484,28 @@ try {
       // arc is three quarters of a circle of radius 9 in the icons' own 24 box,
       // stroke 2, round caps, so it scales as every Kozmos icon does.
       const arc = (testId) =>
-        page.getByTestId(testId).locator("svg").evaluate((node) => {
-          const path = node.querySelector("path");
-          return {
-            viewBox: node.getAttribute("viewBox"),
-            d: path && path.getAttribute("d"),
-            width: path && path.getAttribute("stroke-width"),
-            cap: path && path.getAttribute("stroke-linecap"),
-            paths: node.querySelectorAll("path").length,
-            // With the turn running the box is the rotated square's, up to 41 %
-            // wider mid-turn; stop it to measure the layout box it occupies.
-            box: (() => {
-              const own = node.style.animation;
-              node.style.animation = "none";
-              const width = node.getBoundingClientRect().width;
-              node.style.animation = own;
-              return width;
-            })(),
-          };
-        });
+        page
+          .getByTestId(testId)
+          .locator("svg")
+          .evaluate((node) => {
+            const path = node.querySelector("path");
+            return {
+              viewBox: node.getAttribute("viewBox"),
+              d: path && path.getAttribute("d"),
+              width: path && path.getAttribute("stroke-width"),
+              cap: path && path.getAttribute("stroke-linecap"),
+              paths: node.querySelectorAll("path").length,
+              // With the turn running the box is the rotated square's, up to 41 %
+              // wider mid-turn; stop it to measure the layout box it occupies.
+              box: (() => {
+                const own = node.style.animation;
+                node.style.animation = "none";
+                const width = node.getBoundingClientRect().width;
+                node.style.animation = own;
+                return width;
+              })(),
+            };
+          });
       const buttonArc = await arc(`${id}-loading`);
       const spinnerArc = await arc(`${id}-spinner`);
       for (const [where, drawn] of [
@@ -485,16 +548,22 @@ try {
             const icon = svg.getBoundingClientRect();
             svg.style.animation = "";
             const label = [...node.childNodes].find(
-              (child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
+              (child) =>
+                child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
             );
             const range = document.createRange();
             range.selectNodeContents(label);
             const text = range.getBoundingClientRect();
-            return Math.round(Math.max(text.left - icon.right, icon.left - text.right));
+            return Math.round(
+              Math.max(text.left - icon.right, icon.left - text.right),
+            );
           };
           const own = node.getAttribute("dir");
           const rendered = measure();
-          node.setAttribute("dir", getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl");
+          node.setAttribute(
+            "dir",
+            getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl",
+          );
           const flipped = measure();
           if (own === null) node.removeAttribute("dir");
           else node.setAttribute("dir", own);
@@ -537,16 +606,22 @@ try {
             const mark = node.querySelector("svg");
             const box = mark.getBoundingClientRect();
             const label = [...node.childNodes].find(
-              (child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
+              (child) =>
+                child.nodeType === Node.TEXT_NODE && child.textContent.trim(),
             );
             const range = document.createRange();
             range.selectNodeContents(label);
             const text = range.getBoundingClientRect();
-            return Math.round(Math.max(text.left - box.right, box.left - text.right));
+            return Math.round(
+              Math.max(text.left - box.right, box.left - text.right),
+            );
           };
           const own = node.getAttribute("dir");
           const rendered = measure();
-          node.setAttribute("dir", getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl");
+          node.setAttribute(
+            "dir",
+            getComputedStyle(node).direction === "rtl" ? "ltr" : "rtl",
+          );
           const flipped = measure();
           if (own === null) node.removeAttribute("dir");
           else node.setAttribute("dir", own);
@@ -576,7 +651,9 @@ try {
               const range = document.createRange();
               range.selectNodeContents(label);
               const text = range.getBoundingClientRect();
-              const cross = node.querySelector("button").getBoundingClientRect();
+              const cross = node
+                .querySelector("button")
+                .getBoundingClientRect();
               return Math.round(
                 Math.max(cross.left - text.right, text.left - cross.right),
               );
@@ -697,13 +774,27 @@ try {
       (await measure(page.getByTestId("nested-glass"))).backgroundColor,
     );
     // The glass button is the glass surface: the token's filter and tint.
-    const glassButton = await page.getByTestId("nested-glass").evaluate((node) => {
-      const s = getComputedStyle(node);
-      return { background: s.backgroundColor, filter: s.backdropFilter || s.webkitBackdropFilter };
-    });
-    assert.match(glassButton.filter, /blur\(20px\) saturate\(1\.8\)/, `${mode}: the glass button's filter: ${glassButton.filter}`);
-    const buttonTint = /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(glassButton.background);
-    assert(buttonTint && Math.abs(Number(buttonTint[1]) - 0.7) < 0.01, `${mode}: the glass button's tint: ${glassButton.background}`);
+    const glassButton = await page
+      .getByTestId("nested-glass")
+      .evaluate((node) => {
+        const s = getComputedStyle(node);
+        return {
+          background: s.backgroundColor,
+          filter: s.backdropFilter || s.webkitBackdropFilter,
+        };
+      });
+    assert.match(
+      glassButton.filter,
+      /blur\(20px\) saturate\(1\.8\)/,
+      `${mode}: the glass button's filter: ${glassButton.filter}`,
+    );
+    const buttonTint = /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(
+      glassButton.background,
+    );
+    assert(
+      buttonTint && Math.abs(Number(buttonTint[1]) - 0.7) < 0.01,
+      `${mode}: the glass button's tint: ${glassButton.background}`,
+    );
     // The glass surface role reads Semantics.Effect.glass: the theme's glass
     // colour at 0.7, blur 20 and saturation 1.8 on what shows through, a
     // light edge at 0.2; the two themes' tints differ.
@@ -716,22 +807,56 @@ try {
           edge: s.borderTopColor,
           edgeWidth: s.borderTopWidth,
           edgeStyle: s.borderTopStyle,
-          edgeOpacityVar: s.getPropertyValue("--semantics-effect-glass-border-opacity"),
+          edgeOpacityVar: s.getPropertyValue(
+            "--semantics-effect-glass-border-opacity",
+          ),
         };
       });
     const nestedSurface = await surface("nested");
     // A browser keeps eight bits of alpha: 0.7 reads back as 0.698 or 0.7.
-    const tint = /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(nestedSurface.background);
-    assert(tint && Math.abs(Number(tint[1]) - 0.7) < 0.01, `${mode}: the light glass surface's tint: ${nestedSurface.background}`);
-    assert.match(nestedSurface.filter, /blur\(20px\) saturate\(1\.8\)/, `${mode}: the glass surface's filter: ${nestedSurface.filter}`);
-    assert.equal(nestedSurface.edge, "rgba(255, 255, 255, 0.2)", `${mode}: the glass surface's edge: ${JSON.stringify(nestedSurface)}`);
-    assert.notEqual((await surface("outer")).background, nestedSurface.background, `${mode}: the two themes' glass tints are the same`);
+    const tint = /^rgba\(255, 255, 255, (0\.\d+)\)$/.exec(
+      nestedSurface.background,
+    );
+    assert(
+      tint && Math.abs(Number(tint[1]) - 0.7) < 0.01,
+      `${mode}: the light glass surface's tint: ${nestedSurface.background}`,
+    );
+    assert.match(
+      nestedSurface.filter,
+      /blur\(20px\) saturate\(1\.8\)/,
+      `${mode}: the glass surface's filter: ${nestedSurface.filter}`,
+    );
+    assert.equal(
+      nestedSurface.edge,
+      "rgba(255, 255, 255, 0.2)",
+      `${mode}: the glass surface's edge: ${JSON.stringify(nestedSurface)}`,
+    );
+    assert.notEqual(
+      (await surface("outer")).background,
+      nestedSurface.background,
+      `${mode}: the two themes' glass tints are the same`,
+    );
     // Solid, the default: the background colour whole, with the subtle border.
     const solidSurface = await surface("nested", "solid");
-    assert.equal(solidSurface.background, await value("nested-solid-surface", "--primitives-colors-background-0"), `${mode}: the solid surface is not the background colour: ${solidSurface.background}`);
-    assert(!solidSurface.background.startsWith("rgba("), `${mode}: the solid surface is translucent: ${solidSurface.background}`);
-    assert.equal(solidSurface.edge, await value("nested-solid-surface", "--semantics-border-subtle"), `${mode}: the solid surface's edge: ${solidSurface.edge}`);
-    assert.equal(solidSurface.edgeWidth, "1px", `${mode}: the solid surface has no edge`);
+    assert.equal(
+      solidSurface.background,
+      await value("nested-solid-surface", "--primitives-colors-background-0"),
+      `${mode}: the solid surface is not the background colour: ${solidSurface.background}`,
+    );
+    assert(
+      !solidSurface.background.startsWith("rgba("),
+      `${mode}: the solid surface is translucent: ${solidSurface.background}`,
+    );
+    assert.equal(
+      solidSurface.edge,
+      await value("nested-solid-surface", "--semantics-border-subtle"),
+      `${mode}: the solid surface's edge: ${solidSurface.edge}`,
+    );
+    assert.equal(
+      solidSurface.edgeWidth,
+      "1px",
+      `${mode}: the solid surface has no edge`,
+    );
     // Rotate/reflow a narrow host and switch direction without remounting. This
     // checks composition geometry, not certification of physical foldable devices.
     const outer = page.getByTestId("outer");
@@ -814,9 +939,8 @@ try {
   await still.getByTestId("outer-spinner").waitFor();
   for (const testId of ["outer-spinner", "outer-loading", "outer-skeleton"]) {
     const target = still.getByTestId(testId);
-    const animation = await (testId.endsWith("-skeleton")
-      ? target
-      : target.locator("svg")
+    const animation = await (
+      testId.endsWith("-skeleton") ? target : target.locator("svg")
     ).evaluate((node) => getComputedStyle(node).animationName);
     assert.equal(
       animation,
@@ -852,9 +976,9 @@ try {
     ["config-reduced-skeleton", null],
   ]) {
     const target = moving.getByTestId(testId);
-    const animation = await (selector ? target.locator(selector) : target).evaluate(
-      (node) => getComputedStyle(node).animationName,
-    );
+    const animation = await (
+      selector ? target.locator(selector) : target
+    ).evaluate((node) => getComputedStyle(node).animationName);
     assert.equal(
       animation,
       "none",
@@ -886,6 +1010,439 @@ try {
   await still.close();
   await moving.close();
 
+  // One grey on every surface: the Skeleton is Figma's Colors/background/200,
+  // as iOS and Android draw it (Olcay, 2026-09-27). React drew `bg-muted`,
+  // which is background/100. `outer` is the dark theme and `nested` the light
+  // one. The token is read through a probe beside each placeholder, so the
+  // page resolves it exactly as it resolves the placeholder's own colour.
+  const greys = await browser.newPage({
+    viewport: { width: 600, height: 600 },
+  });
+  await greys.setContent(
+    `<!doctype html><html><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture"></div></body></html>`,
+  );
+  await greys.addScriptTag({ content: code });
+  await greys.getByTestId("outer-skeleton").waitFor();
+  const tokens = [];
+  for (const testId of ["outer-skeleton", "nested-skeleton"]) {
+    const [drawn, token] = await greys.getByTestId(testId).evaluate((node) => {
+      const probe = document.createElement("div");
+      probe.style.backgroundColor = "var(--primitives-colors-background-200)";
+      node.after(probe);
+      const resolved = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return [getComputedStyle(node).backgroundColor, resolved];
+    });
+    assert.notEqual(
+      token,
+      "rgba(0, 0, 0, 0)",
+      `${testId}: background/200 did not resolve beside it`,
+    );
+    assert.equal(
+      drawn,
+      token,
+      `${testId} is not background/200: drew ${drawn}, the token is ${token}`,
+    );
+    tokens.push(token);
+  }
+  // The two themes' greys differ, so both were really compared.
+  assert.notEqual(tokens[0], tokens[1], "both placeholders sat in one theme");
+  console.log(
+    `PASS the Skeleton is background/200 in the dark (${tokens[0]}) and the light (${tokens[1]}) theme`,
+  );
+  await greys.close();
+
+  // GAP-082 (row 81): MapOverlay does not cut what floats in it. Its stack is
+  // a scroll box, and a scroll box clips at its own edges. It had no room of
+  // its own, so it sat exactly on its controls and cut away their floating
+  // shadow on every side, and with it the one-pixel ring that is a map
+  // control's edge: every engine read 0px of shadow beyond a control in an
+  // overlay, where the same control placed by hand showed 4 above, 8 at the
+  // sides and 12 below (Chromium, light theme).
+  //
+  // So: a map board with its controls in MapOverlays, and the same board
+  // with the same controls placed by hand at the overlay's insets. They must
+  // draw alike, every pixel to within a level — in the dark theme (`outer`) and the light
+  // (`nested`), right to left and left to right, at rest and with a
+  // control's focus ring showing. A third board's overlay is shorter than
+  // its stack, so it scrolls: its controls keep their sides and top, and
+  // scrolled to the end, the last one keeps its shadow below.
+  const boards = await browser.newPage({
+    viewport: { width: 1100, height: 1100 },
+  });
+  await boards.setContent(
+    `<!doctype html><html><head><style>${css}</style></head><body data-kozmos-root data-theme="light" style="margin:0"><div id="fixture"></div></body></html>`,
+  );
+  await boards.addScriptTag({ content: code });
+  // Where a scrollbar takes room of its own (a classic one, as some Linux
+  // engines draw), the scrolling board's would stand in its stack's inline
+  // room and narrow it. That is the platform's, and not what this measures.
+  await boards.addStyleTag({
+    content:
+      "[data-testid$='-map-overlay-scrolling'] > div {scrollbar-width: none}",
+  });
+  await boards.getByTestId("outer-map-board-overlay").waitFor();
+  // Every board on whole pixels, pinned to the viewport. In the fixture's
+  // flow a board sits below text whose height is the host's font's: on
+  // Linux, Firefox captured a board 221 rows tall whose first row was the
+  // page above it, so the two drawings were compared a row out of register.
+  await boards.evaluate(() => {
+    ["outer", "nested"].forEach((id, row) =>
+      ["overlay", "by-hand", "scrolling"].forEach((layout, column) => {
+        const node = document.querySelector(
+          `[data-testid="${id}-map-board-${layout}"]`,
+        );
+        node.style.setProperty("position", "fixed", "important");
+        node.style.setProperty("top", `${16 + row * 240}px`, "important");
+        node.style.setProperty("left", `${16 + column * 224}px`, "important");
+        node.style.setProperty("z-index", "2147483647", "important");
+      }),
+    );
+  });
+  await settleLayout(boards);
+  const board = (id, layout) => boards.getByTestId(`${id}-map-board-${layout}`);
+  const shoot = async (locator) =>
+    (await locator.screenshot()).toString("base64");
+  // The boards' own transitions only: the page's spinners turn for ever.
+  const settleBoards = () =>
+    boards.evaluate(() =>
+      Promise.all(
+        [...document.querySelectorAll("[data-testid*='-map-board-']")]
+          .flatMap((node) => node.getAnimations({ subtree: true }))
+          .map((animation) => animation.finished),
+      ),
+    );
+  // Where each control sits in its board, in CSS pixels of the board's
+  // drawing: the map buttons, and the floor selector as one part.
+  const partsOf = (locator) =>
+    locator.evaluate((node) => {
+      const origin = node.getBoundingClientRect();
+      return [...node.querySelectorAll("button, [role=group]")]
+        .filter(
+          (part) =>
+            part.getAttribute("role") === "group" ||
+            !part.closest("[role=group]"),
+        )
+        .map((part) => {
+          const r = part.getBoundingClientRect();
+          return {
+            name: part.getAttribute("aria-label"),
+            left: r.left - origin.left,
+            top: r.top - origin.top,
+            right: r.right - origin.left,
+            bottom: r.bottom - origin.top,
+          };
+        });
+    });
+  // Two drawings of one size compared inside a region of each (the whole
+  // drawing unless given): how many pixels differ by more than a level, by
+  // how much at most, the first that does, and how many differ by one level
+  // alone; and how far chosen pixels of the second stand off the bare board.
+  // One level is below sight: the cut this is about differed by 28, and a
+  // room 4px short below by 2. It is also what the room trims on Linux,
+  // where Chromium and Firefox draw the floating shadow's tail a level past
+  // its blur distance: 2875 and 2728 pixels on CI, every one beyond the
+  // room, none in WebKit, none on macOS. So one-level pixels are counted and
+  // reported, never hidden, with how many lie beyond the overlay stacks'
+  // boxes in the first drawing (`rooms`), where only a trimmed tail can.
+  const compareShots = (
+    shotA,
+    shotB,
+    { regionA, regionB, samples = [], rooms = [] } = {},
+  ) =>
+    boards.evaluate(
+      async ({ shotA, shotB, regionA, regionB, samples, rooms }) => {
+        const decode = async (b64) => {
+          const image = new Image();
+          image.src = "data:image/png;base64," + b64;
+          await image.decode();
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const context = canvas.getContext("2d", { willReadFrequently: true });
+          context.drawImage(image, 0, 0);
+          return context.getImageData(0, 0, image.width, image.height);
+        };
+        const [A, B] = [await decode(shotA), await decode(shotB)];
+        const at = (image, x, y) => {
+          const i = (y * image.width + x) * 4;
+          return [image.data[i], image.data[i + 1], image.data[i + 2]];
+        };
+        const whole = { x: 0, y: 0, width: A.width, height: A.height };
+        const ra = regionA ?? whole;
+        const rb = regionB ?? ra;
+        let differing = 0;
+        let faint = 0;
+        let faintBeyond = 0;
+        let maxDelta = 0;
+        let first = null;
+        for (let y = 0; y < ra.height; y++)
+          for (let x = 0; x < ra.width; x++) {
+            const p = at(A, ra.x + x, ra.y + y);
+            const q = at(B, rb.x + x, rb.y + y);
+            const delta = Math.max(...p.map((v, k) => Math.abs(v - q[k])));
+            if (delta === 0) continue;
+            maxDelta = Math.max(maxDelta, delta);
+            if (delta === 1) {
+              faint++;
+              const [px, py] = [ra.x + x, ra.y + y];
+              if (
+                !rooms.some(
+                  ([l, t, r, b]) => px >= l && px < r && py >= t && py < b,
+                )
+              )
+                faintBeyond++;
+              continue;
+            }
+            differing++;
+            first ??= { x: ra.x + x, y: ra.y + y, a: p, b: q };
+          }
+        // The bare board, from a corner nothing is drawn near.
+        const ground = at(B, 1, 1);
+        return {
+          sizes: [A.width, A.height, B.width, B.height],
+          compared: ra.width * ra.height,
+          differing,
+          faint,
+          faintBeyond,
+          maxDelta,
+          first,
+          ground,
+          samples: samples.map(([x, y]) =>
+            Math.max(...at(B, x, y).map((v, k) => Math.abs(v - ground[k]))),
+          ),
+        };
+      },
+      { shotA, shotB, regionA, regionB, samples, rooms },
+    );
+  // The overlay stacks' boxes in a board: what the stacks' clip keeps.
+  const roomsOf = (locator) =>
+    locator.evaluate((node) => {
+      const origin = node.getBoundingClientRect();
+      return [...node.querySelectorAll(".kozmos-map-overlay-stack")].map(
+        (stack) => {
+          const r = stack.getBoundingClientRect();
+          return [
+            r.left - origin.left,
+            r.top - origin.top,
+            r.right - origin.left,
+            r.bottom - origin.top,
+          ];
+        },
+      );
+    });
+  // Two drawings of boards, each exactly 200 by 220, or out of register.
+  const faint = [];
+  const faintBeyond = [];
+  const compareBoards = async (
+    shotA,
+    shotB,
+    options,
+    { tally = true } = {},
+  ) => {
+    const result = await compareShots(shotA, shotB, options);
+    assert.deepEqual(
+      result.sizes,
+      [200, 220, 200, 220],
+      `a board was not drawn 200 by 220, so two drawings would be compared out of register: ${JSON.stringify(result.sizes)}`,
+    );
+    if (tally) {
+      faint.push(result.faint);
+      faintBeyond.push(result.faintBeyond);
+    }
+    return result;
+  };
+  const sum = (counts) => counts.reduce((total, count) => total + count, 0);
+  const alike = [];
+  const reads = [];
+  for (const [id, theme] of [
+    ["outer", "dark"],
+    ["nested", "light"],
+  ]) {
+    const overlay = board(id, "overlay");
+    const byHand = board(id, "by-hand");
+    for (const dir of ["rtl", "ltr"]) {
+      for (const layout of ["overlay", "by-hand"])
+        await board(id, layout).evaluate((node, value) => {
+          node.setAttribute("dir", value);
+        }, dir);
+      await settleBoards();
+      const placedByHand = await partsOf(byHand);
+      assert.deepEqual(
+        await partsOf(overlay),
+        placedByHand.map((part) => ({
+          ...part,
+          name: part.name.replace("by-hand", "overlay"),
+        })),
+        `${theme} ${dir}: the overlay no longer puts its controls at the insets a hand places them at`,
+      );
+      // Just outside each control in the drawing by hand: its edge beside
+      // it, its shadow below it. Both must be there, or two blank boards
+      // would compare equal and prove nothing.
+      const samples = placedByHand.flatMap((part) => [
+        [Math.floor(part.left) - 1, Math.round((part.top + part.bottom) / 2)],
+        [Math.round((part.left + part.right) / 2), Math.ceil(part.bottom) + 3],
+      ]);
+      const atRest = await compareBoards(
+        await shoot(overlay),
+        await shoot(byHand),
+        { samples, rooms: await roomsOf(overlay) },
+      );
+      assert(
+        atRest.samples.every((level) => level >= 2),
+        `${theme} ${dir}: the controls placed by hand draw no edge or shadow to compare: ${JSON.stringify(atRest)}`,
+      );
+      assert.equal(
+        atRest.differing,
+        0,
+        `${theme} ${dir}: controls in a MapOverlay draw differently from the same controls placed by hand — ${atRest.differing} of ${atRest.compared} pixels differ by more than a level, by up to ${atRest.maxDelta}; the first at ${JSON.stringify(atRest.first)}, on a board of ${JSON.stringify(atRest.ground)}. The overlay cuts what floats in it.`,
+      );
+      // With the zoom control's focus ring showing, one board at a time. A
+      // key first, so the focus is a keyboard's and the ring shows.
+      const focused = {};
+      for (const layout of ["overlay", "by-hand"]) {
+        const control = board(id, layout).locator("button").first();
+        await boards.keyboard.press("Shift");
+        await control.focus();
+        assert.equal(
+          await control.evaluate((node) => node.matches(":focus-visible")),
+          true,
+          `${theme} ${dir}: the ${layout} zoom control shows no focus ring`,
+        );
+        await settleBoards();
+        focused[layout] = await shoot(board(id, layout));
+        await control.blur();
+        await settleBoards();
+      }
+      const ringShows = await compareBoards(
+        focused["by-hand"],
+        await shoot(byHand),
+        {},
+        { tally: false },
+      );
+      assert(
+        ringShows.differing > 0,
+        `${theme} ${dir}: focusing the control placed by hand draws nothing, so there is no ring to compare`,
+      );
+      const withRing = await compareBoards(
+        focused.overlay,
+        focused["by-hand"],
+        {
+          rooms: await roomsOf(overlay),
+        },
+      );
+      assert.equal(
+        withRing.differing,
+        0,
+        `${theme} ${dir}: a focused control in a MapOverlay draws its focus ring differently from the same control placed by hand — ${withRing.differing} pixels differ by more than a level, by up to ${withRing.maxDelta}; the first at ${JSON.stringify(withRing.first)}. The overlay cuts the ring.`,
+      );
+      alike.push(`${theme} ${dir}`);
+      reads.push(atRest.samples.join("/"));
+    }
+    for (const layout of ["overlay", "by-hand"])
+      await board(id, layout).evaluate((node) => node.removeAttribute("dir"));
+    await settleBoards();
+    // The scrolling board. Its overlay is 120 tall and its stack of three
+    // controls is not, so the stack scrolls; its first control sits where the
+    // board by hand places its one.
+    const scrolling = board(id, "scrolling");
+    const scrollingOverlay = boards.getByTestId(`${id}-map-overlay-scrolling`);
+    const stack = scrollingOverlay.locator(":scope > div");
+    const scroll = await stack.evaluate((node) => ({
+      overflowY: getComputedStyle(node).overflowY,
+      scrollable: node.scrollHeight - node.clientHeight,
+    }));
+    assert.equal(
+      scroll.overflowY,
+      "auto",
+      `${theme}: the overlay's stack no longer scrolls`,
+    );
+    assert(
+      scroll.scrollable > 0,
+      `${theme}: the scrolling board's stack fits, so it tests nothing: ${JSON.stringify(scroll)}`,
+    );
+    assert.deepEqual(
+      await scrollingOverlay.evaluate((node) => {
+        const r = node.getBoundingClientRect();
+        const o = node.parentElement.getBoundingClientRect();
+        return [r.left - o.left, r.top - o.top, r.width, r.height];
+      }),
+      [16, 16, 44, 120],
+      `${theme}: the scrolling overlay is no longer where, or as large as, it was`,
+    );
+    const [one] = await partsOf(byHand);
+    // Beside and above the first control, down to its bottom edge: below it
+    // the next control's shadow begins.
+    const sides = await compareBoards(
+      await shoot(scrolling),
+      await shoot(byHand),
+      {
+        rooms: await roomsOf(scrolling),
+        regionA: {
+          x: 0,
+          y: 0,
+          width: Math.ceil(one.right) + 16,
+          height: Math.floor(one.bottom),
+        },
+        samples: [
+          [Math.floor(one.left) - 1, Math.round((one.top + one.bottom) / 2)],
+        ],
+      },
+    );
+    assert(
+      sides.samples[0] >= 2,
+      `${theme}: nothing is drawn beside the control placed by hand: ${JSON.stringify(sides)}`,
+    );
+    assert.equal(
+      sides.differing,
+      0,
+      `${theme}: while its stack scrolls, a MapOverlay cuts its controls' sides and top — ${sides.differing} of ${sides.compared} pixels differ from the control placed by hand by more than a level, by up to ${sides.maxDelta}; the first at ${JSON.stringify(sides.first)}`,
+    );
+    // Scrolled to its end, the last control's shadow below it against the
+    // shadow below the control placed by hand.
+    await stack.evaluate((node) => {
+      node.scrollTop = node.scrollHeight;
+    });
+    const last = await scrolling.evaluate((node) => {
+      const origin = node.getBoundingClientRect();
+      const buttons = node.querySelectorAll("button");
+      const r = buttons[buttons.length - 1].getBoundingClientRect();
+      return { left: r.left - origin.left, bottom: r.bottom - origin.top };
+    });
+    const below = (part) => ({
+      x: Math.floor(part.left) - 12,
+      y: Math.ceil(part.bottom),
+      width: 44 + 24,
+      height: 13,
+    });
+    const end = await compareBoards(
+      await shoot(scrolling),
+      await shoot(byHand),
+      {
+        rooms: await roomsOf(scrolling),
+        regionA: below(last),
+        regionB: below(one),
+        samples: [[Math.round(one.left) + 22, Math.ceil(one.bottom) + 3]],
+      },
+    );
+    assert(
+      end.samples[0] >= 2,
+      `${theme}: no shadow below the control placed by hand: ${JSON.stringify(end)}`,
+    );
+    assert.equal(
+      end.differing,
+      0,
+      `${theme}: scrolled to its end, a MapOverlay cuts the shadow below its last control — ${end.differing} of ${end.compared} pixels differ by more than a level, by up to ${end.maxDelta}; the first at ${JSON.stringify(end.first)}`,
+    );
+    await stack.evaluate((node) => {
+      node.scrollTop = 0;
+    });
+  }
+  console.log(
+    `PASS GAP-082: controls in a MapOverlay draw as placed by hand, to within a level (${alike.join(", ")}; at rest and focused; edge and shadow ${reads.join(", ")} levels off the board; ${sum(faint)} pixels one level apart in all, ${sum(faintBeyond)} of them beyond an overlay's room), and a scrolling overlay keeps its controls' sides, top and last shadow`,
+  );
+  await boards.close();
+
   // The AI search button's gradient ring: a band two and a half wide, all the
   // way round, MEASURED IN THE PAINT.
   //
@@ -915,7 +1472,9 @@ try {
     content: ".kozmos-ai-search-ring{animation:none !important}",
   });
   await ring.scrollIntoViewIfNeeded();
-  const laidOut = await ring.evaluate((node) => node.getBoundingClientRect().width);
+  const laidOut = await ring.evaluate(
+    (node) => node.getBoundingClientRect().width,
+  );
   assert.equal(laidOut, 48, `the AI search button is not 48: ${laidOut}`);
   // The element's own screenshot, which is exactly the element once the turn is
   // stopped. While it turns it is the rotated square's bounding box — 49 CSS
@@ -930,7 +1489,12 @@ try {
     canvas.height = image.height;
     const context = canvas.getContext("2d", { willReadFrequently: true });
     context.drawImage(image, 0, 0);
-    const { data, width } = context.getImageData(0, 0, image.width, image.height);
+    const { data, width } = context.getImageData(
+      0,
+      0,
+      image.width,
+      image.height,
+    );
     const at = (x, y) => {
       const i = (Math.round(y) * width + Math.round(x)) * 4;
       return [data[i], data[i + 1], data[i + 2], data[i + 3]];
@@ -940,7 +1504,8 @@ try {
     // neutral. A near-white test only works in the light theme, and the
     // fixture's outer tree is dark.
     const plain = (p) =>
-      p[3] < 100 || Math.max(p[0], p[1], p[2]) - Math.min(p[0], p[1], p[2]) < 40;
+      p[3] < 100 ||
+      Math.max(p[0], p[1], p[2]) - Math.min(p[0], p[1], p[2]) < 40;
     const perPixel = width / 48;
     const centre = width / 2;
     const widths = [];
@@ -949,20 +1514,36 @@ try {
       let outer = null;
       let inner = null;
       for (let r = centre - 1; r > 0; r -= 0.05) {
-        const sample = at(centre + Math.cos(angle) * r, centre + Math.sin(angle) * r);
+        const sample = at(
+          centre + Math.cos(angle) * r,
+          centre + Math.sin(angle) * r,
+        );
         if (outer === null && !plain(sample)) outer = r;
-        if (outer !== null && plain(sample)) { inner = r; break; }
+        if (outer !== null && plain(sample)) {
+          inner = r;
+          break;
+        }
       }
-      if (outer !== null && inner !== null) widths.push((outer - inner) / perPixel);
+      if (outer !== null && inner !== null)
+        widths.push((outer - inner) / perPixel);
     }
-    return { min: Math.min(...widths), max: Math.max(...widths), rays: widths.length, width };
+    return {
+      min: Math.min(...widths),
+      max: Math.max(...widths),
+      rays: widths.length,
+      width,
+    };
   }, shot.toString("base64"));
   assert.equal(
     measured.width,
     48 * 8,
     `the shot is not the button at eight device pixels to the CSS pixel: ${measured.width}`,
   );
-  assert.equal(measured.rays, 36, `the ring was not found all the way round: ${JSON.stringify(measured)}`);
+  assert.equal(
+    measured.rays,
+    36,
+    `the ring was not found all the way round: ${JSON.stringify(measured)}`,
+  );
   // Evenness is the claim, and evenness is what the defect broke. The absolute
   // figure carries the classifier's own bias — saturation falls off across the
   // antialiased inner edge, so the band reads a shade under 2.5 in every engine

@@ -259,7 +259,16 @@ data class KozmosFloorPresentation(
     val id: String,
     val label: String,
     val shortLabel: String,
-    val disabled: Boolean = false
+    val disabled: Boolean = false,
+    /**
+     * How many results sit on this level. Drawn as a small marker on the
+     * floor's button, so a visitor can see that the answer is upstairs
+     * without changing level to find out.
+     *
+     * `null` means unknown, which is not the same as zero: a selector given
+     * no counts marks nothing, rather than marking every level as empty.
+     */
+    val resultCount: Int? = null
 )
 
 data class KozmosCategoryPresentation(
@@ -338,6 +347,38 @@ data class KozmosMapCollisionInsets(
     }
 }
 
+/** What part of the venue a search was held to. */
+enum class KozmosSearchScopeKind(val value: String) {
+    Building("building"),
+    Area("area")
+}
+
+/**
+ * The part of the venue a search was held to.
+ *
+ * NH-D: a visitor types "coffee in this terminal" or "coffee after security",
+ * and the list is limited to Terminal 2, or to the airside area. One chip says
+ * which, and its x searches the whole venue again. Without this the chip was
+ * hand-written (GAP-023).
+ *
+ * Mirrors `SearchScopePresentation` on the web and
+ * `KozmosSearchScopePresentation` on SwiftUI.
+ */
+data class KozmosSearchScopePresentation(
+    val kind: KozmosSearchScopeKind,
+    /** The building's or the area's id, as the venue's data names it. */
+    val id: String,
+    /** Already localized: "Terminal 2", "After security". The chip's text. */
+    val label: String,
+    /**
+     * The query without the words that set the scope - "coffee" for "coffee
+     * in this terminal" - for the chip's x to search the whole venue with.
+     * Null when nothing in the query set the scope, as when the host app
+     * chose it.
+     */
+    val queryWithoutScope: String? = null
+)
+
 /**
  * A search's results and what to say when there are none.
  *
@@ -359,5 +400,11 @@ data class KozmosSearchResponsePresentation(
      * reading Japanese who gets English names should be told, not left to
      * wonder.
      */
-    val languageFallback: String? = null
+    val languageFallback: String? = null,
+    /**
+     * The part of the venue the results were limited to. Null means the whole
+     * venue, which is the default (US9-AC1): a scope is something a query or
+     * the host app asked for, never something the list assumes.
+     */
+    val appliedScope: KozmosSearchScopePresentation? = null
 )

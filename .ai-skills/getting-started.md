@@ -55,11 +55,11 @@ xcodebuild -version  # Should output Xcode 15+
 
 ```bash
 # Clone the repository
-git clone https://github.com/AcmeCorp/kozmos-design-system.git
+git clone https://github.com/vodoco/kozmos-design-system.git
 cd kozmos-design-system
 
 # Or if using SSH
-git clone git@github.com:AcmeCorp/kozmos-design-system.git
+git clone git@github.com:vodoco/kozmos-design-system.git
 cd kozmos-design-system
 ```
 
@@ -78,37 +78,15 @@ pnpm install
 
 ### Environment Configuration
 
-```bash
-# Copy environment template
-cp .env.example .env.local
+Building, testing and running Storybook need no environment file. A `.env` at the repository root
+holding `FIGMA_ACCESS_TOKEN` is read by the Code Connect scripts, the icon and foundation builds,
+`pnpm figma:verify` and the nested-radius check, and by `scripts/ci-local.mjs` for the CI steps
+that need it; `pnpm tokens:sync` takes `FIGMA_ACCESS_TOKEN` and `FIGMA_FILE_KEY` from the
+environment instead. Turborepo treats `.env` as a global dependency.
 
-# Edit with your values
-# Required variables:
-# - FIGMA_ACCESS_TOKEN (for Code Connect)
-# - CHROMATIC_PROJECT_TOKEN (for visual regression)
-# - NPM_TOKEN (for publishing)
-```
-
-### `.env.local` Template
-
-```bash
-# Figma Integration
-FIGMA_ACCESS_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
-
-# Visual Regression (Chromatic)
-CHROMATIC_PROJECT_TOKEN=chpt_xxxxxxxxxxxxxxxxxxxx
-
-# npm Publishing
-NPM_TOKEN=npm_xxxxxxxxxxxxxxxxxxxx
-
-# Optional: Turbo Remote Caching
-TURBO_TOKEN=
-TURBO_TEAM=
-
-# Development
-NODE_ENV=development
-DEBUG=kozmos:*
-```
+The npm credential never goes in a local file. Releases publish from `release.yml` alone, whose
+publish job is the only place `NPM_TOKEN` exists ([publishing-guide.md](./publishing-guide.md)).
+CI uses no Turborepo remote cache.
 
 ---
 
@@ -119,14 +97,13 @@ DEBUG=kozmos:*
 ```
 kozmos-design-system/
 ├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml                 # Main CI pipeline
-│   │   ├── publish.yml            # Package publishing
-│   │   ├── chromatic.yml          # Visual regression
-│   │   └── codeql.yml             # Security scanning
-│   ├── ISSUE_TEMPLATE/
-│   ├── PULL_REQUEST_TEMPLATE.md
-│   └── CODEOWNERS
+│   └── workflows/                  # The six workflows (ci-cd-configuration.md)
+│       ├── ci.yml                  # CI: web, browser shards, core pipeline, iOS, Android
+│       ├── visual.yml              # Visual Review
+│       ├── lighthouse.yml          # Lighthouse CI
+│       ├── bundle-size.yml         # Bundle budgets
+│       ├── figma-tokens.yml        # Figma token sync (manual)
+│       └── release.yml             # The npm release (dispatched, approved)
 │
 ├── .ai-skills/                     # AI agent reference docs
 │   ├── README.md
@@ -164,7 +141,7 @@ kozmos-design-system/
 │   │   │   └── index.ts            # Barrel export
 │   │   ├── .storybook/
 │   │   ├── tsconfig.json
-│   │   ├── tsup.config.ts
+│   │   ├── vite.config.mts         # The build: Vite library mode
 │   │   ├── vitest.config.ts
 │   │   └── package.json
 │   │
@@ -243,8 +220,7 @@ kozmos-design-system/
 ├── pnpm-workspace.yaml             # pnpm workspace
 ├── package.json                    # Root package.json
 ├── tsconfig.base.json              # Shared TypeScript config
-├── .prettierrc                     # Prettier config
-├── .eslintrc.js                    # ESLint config
+├── eslint.config.mjs               # ESLint config (Prettier runs with its defaults)
 ├── PROJECT_SCOPE.md                # Full specification
 └── README.md
 ```
@@ -271,62 +247,15 @@ mkdir -p .changeset
 
 ### Root `package.json`
 
-```json
-{
-  "name": "kozmos-design-system",
-  "private": true,
-  "version": "0.0.0",
-  "description": "Multi-platform design system for Pointr SDK",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/AcmeCorp/kozmos-design-system.git"
-  },
-  "license": "MIT",
-  "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0"
-  },
-  "packageManager": "pnpm@9.0.0",
-  "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "typecheck": "turbo run typecheck",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "tokens:build": "pnpm --filter @kozmos-ds/tokens build",
-    "tokens:sync": "tsx scripts/sync-figma.ts",
-    "icons:generate": "tsx scripts/generate-icons.ts",
-    "new-component": "tsx scripts/new-component.ts",
-    "storybook": "pnpm --filter @kozmos-ds/react storybook",
-    "build-storybook": "pnpm --filter @kozmos-ds/react build-storybook",
-    "chromatic": "pnpm --filter @kozmos-ds/react chromatic",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "turbo run build && changeset publish",
-    "figma:connect": "turbo run figma:connect",
-    "figma:publish": "turbo run figma:publish",
-    "prepare": "husky install"
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.27.0",
-    "@types/node": "^20.10.0",
-    "eslint": "^8.55.0",
-    "husky": "^8.0.0",
-    "lint-staged": "^15.2.0",
-    "prettier": "^3.1.0",
-    "tsx": "^4.7.0",
-    "turbo": "^2.0.0",
-    "typescript": "^5.3.0"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx}": ["eslint --fix", "prettier --write"],
-    "*.{json,md,yml,yaml}": ["prettier --write"]
-  }
-}
-```
+The root [`package.json`](../package.json) holds the repository's commands: over a hundred
+scripts, run from the root as `pnpm <name>` (`pnpm run` lists them), and `pnpm skills:check` fails
+when a code block in these documents runs a `pnpm` command nothing declares. Three that are often
+misremembered:
+
+- `pnpm release` deliberately exits with instructions: nobody publishes from a laptop
+  ([publishing-guide.md](./publishing-guide.md)).
+- `pnpm version-packages` runs `changeset version`, in a version PR.
+- Storybook's commands belong to `@kozmos-ds/docs`: `pnpm --filter @kozmos-ds/docs storybook`.
 
 ### `pnpm-workspace.yaml`
 
@@ -338,63 +267,9 @@ packages:
 
 ### `turbo.json`
 
-```json
-{
-  "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [".env.local"],
-  "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**"],
-      "cache": true
-    },
-    "dev": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true
-    },
-    "test": {
-      "dependsOn": ["build"],
-      "outputs": ["coverage/**"],
-      "cache": true
-    },
-    "test:watch": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {
-      "outputs": [],
-      "cache": true
-    },
-    "typecheck": {
-      "dependsOn": ["^build"],
-      "outputs": [],
-      "cache": true
-    },
-    "clean": {
-      "cache": false
-    },
-    "storybook": {
-      "dependsOn": ["^build"],
-      "cache": false,
-      "persistent": true
-    },
-    "build-storybook": {
-      "dependsOn": ["^build"],
-      "outputs": ["storybook-static/**"],
-      "cache": true
-    },
-    "figma:connect": {
-      "dependsOn": ["build"],
-      "cache": false
-    },
-    "figma:publish": {
-      "dependsOn": ["figma:connect"],
-      "cache": false
-    }
-  }
-}
-```
+[`turbo.json`](../turbo.json) defines the `build`, `dev`, `test`, `lint`, `typecheck`, `clean` and
+`tokens:build` tasks, with `.env` and `tsconfig.base.json` as global dependencies. It has no
+Storybook or Figma tasks: those are package and root scripts.
 
 ### `tsconfig.base.json`
 
@@ -424,76 +299,21 @@ packages:
 }
 ```
 
-### `.prettierrc`
+### Prettier
 
-```json
-{
-  "semi": true,
-  "singleQuote": true,
-  "tabWidth": 2,
-  "trailingComma": "es5",
-  "printWidth": 100,
-  "bracketSpacing": true,
-  "arrowParens": "always",
-  "endOfLine": "lf"
-}
-```
+There is no Prettier configuration file: Prettier runs with its defaults, through `pnpm format`
+and through lint-staged on every commit.
 
-### `.eslintrc.js`
+### ESLint
 
-```javascript
-module.exports = {
-  root: true,
-  env: {
-    browser: true,
-    es2022: true,
-    node: true,
-  },
-  extends: [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended",
-    "plugin:react-hooks/recommended",
-    "plugin:jsx-a11y/recommended",
-    "prettier",
-  ],
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaVersion: "latest",
-    sourceType: "module",
-    ecmaFeatures: {
-      jsx: true,
-    },
-  },
-  plugins: ["@typescript-eslint", "react", "react-hooks", "jsx-a11y"],
-  settings: {
-    react: {
-      version: "detect",
-    },
-  },
-  rules: {
-    "react/react-in-jsx-scope": "off",
-    "react/prop-types": "off",
-    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-    "@typescript-eslint/explicit-function-return-type": "off",
-    "@typescript-eslint/explicit-module-boundary-types": "off",
-    "jsx-a11y/anchor-is-valid": "off",
-  },
-  ignorePatterns: [
-    "dist",
-    "build",
-    "node_modules",
-    "*.config.js",
-    "*.config.ts",
-  ],
-};
-```
+ESLint takes the flat configuration in [`eslint.config.mjs`](../eslint.config.mjs)
+(typescript-eslint and eslint-plugin-react); there is no `.eslintrc.js`.
 
 ### `.changeset/config.json`
 
 ```json
 {
-  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "$schema": "https://unpkg.com/@changesets/config@3.1.2/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [],
@@ -501,9 +321,16 @@ module.exports = {
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": [],
+  "privatePackages": {
+    "version": false,
+    "tag": false
+  }
 }
 ```
+
+Private packages are neither versioned nor tagged. Changesets only version here; publishing is
+`release.yml`'s alone.
 
 ---
 
@@ -512,7 +339,7 @@ module.exports = {
 ### Common Commands
 
 ```bash
-# Start all packages in dev mode
+# Start every package's dev task
 pnpm dev
 
 # Build all packages
@@ -521,8 +348,8 @@ pnpm build
 # Run all tests
 pnpm test
 
-# Run tests in watch mode
-pnpm test:watch
+# Run React's tests in watch mode
+pnpm --filter @kozmos-ds/react test:watch
 
 # Lint all packages
 pnpm lint
@@ -533,7 +360,7 @@ pnpm format
 # Type check all packages
 pnpm typecheck
 
-# Clean all build artifacts
+# turbo run clean, then remove the root node_modules
 pnpm clean
 ```
 
@@ -542,19 +369,18 @@ pnpm clean
 ```bash
 # Tokens
 pnpm tokens:build          # Build token outputs
-pnpm tokens:sync           # Sync from Figma
+pnpm tokens:sync           # Sync from Figma (FIGMA_ACCESS_TOKEN and FIGMA_FILE_KEY in the environment)
 
 # React
-pnpm --filter @kozmos-ds/react dev           # Dev mode
+pnpm --filter @kozmos-ds/react dev           # Vite dev server
 pnpm --filter @kozmos-ds/react build         # Build
 pnpm --filter @kozmos-ds/react test          # Run tests
-pnpm --filter @kozmos-ds/react storybook     # Start Storybook
 
 # iOS
 cd packages/ios
 swift build                # Build Swift package
 swift test                 # Run tests
-xcodebuild -scheme KozmosSwiftUI -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild -scheme Kozmos -destination 'platform=iOS Simulator,name=iPhone 16'
 
 # Android
 cd packages/android
@@ -563,38 +389,39 @@ cd packages/android
 ./gradlew connectedCheck  # Run instrumented tests
 
 # Icons
-pnpm icons:generate       # Generate icons from SVGs
+pnpm icons:pointr:build   # Regenerate the owned icons from Pointr's Figma artwork (FIGMA_ACCESS_TOKEN)
 
 # Component scaffolding
-pnpm new-component Button     # Create new component
-pnpm new-component Modal --compound  # Create compound component
+pnpm new-component <Name> # A React component in packages/react/src/components/<Name>
 ```
 
 ### Storybook Commands
 
+Storybook is `@kozmos-ds/docs`, in `apps/docs`.
+
 ```bash
-# Start Storybook dev server
-pnpm storybook
+# Start the Storybook dev server on port 6006
+pnpm --filter @kozmos-ds/docs storybook
 
-# Build static Storybook
-pnpm build-storybook
+# Build static Storybook into apps/docs/storybook-static
+pnpm --filter @kozmos-ds/docs build-storybook
 
-# Run Chromatic visual tests
-pnpm chromatic
+# Compare every story with its baseline (needs Docker)
+pnpm test:visual
 ```
 
 ### Figma Code Connect Commands
 
 ```bash
-# Parse and validate Code Connect files
-pnpm figma:connect
+# Parse the linked Code Connect files, as CI does
+pnpm figma:parse:linked
+pnpm figma:parse:native:linked
 
-# Publish to Figma
-pnpm figma:publish
+# Dry-run the publish (reads FIGMA_ACCESS_TOKEN)
+pnpm figma:publish:linked:dry
 
-# Or manually per package
-npx figma connect parse packages/react
-npx figma connect publish packages/react
+# Publish to the live Figma file, on Olcay's word
+pnpm figma:publish:linked
 ```
 
 ### Release Commands
@@ -603,12 +430,13 @@ npx figma connect publish packages/react
 # Create a changeset
 pnpm changeset
 
-# Apply version bumps
+# Apply the version bumps, in a version PR
 pnpm version-packages
-
-# Publish to npm
-pnpm release
 ```
+
+Nothing here publishes: `pnpm release` deliberately exits with instructions. A release is
+`release.yml`, dispatched and approved by Olcay after `pnpm release:preflight`
+([publishing-guide.md](./publishing-guide.md)).
 
 ---
 
@@ -778,144 +606,24 @@ Linting: ✅ Clean
 
 ### React Package Setup
 
-```bash
-cd packages/react
-
-# package.json essentials
-{
-  "name": "@kozmos-ds/react",
-  "version": "0.0.0",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./styles.css": "./dist/styles.css"
-  },
-  "sideEffects": ["*.css"],
-  "files": ["dist"],
-  "scripts": {
-    "dev": "tsup --watch",
-    "build": "tsup",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "lint": "eslint src --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist .turbo"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
-  },
-  "dependencies": {
-    "@kozmos-ds/tokens": "workspace:*",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.0.0"
-  },
-  "devDependencies": {
-    "@storybook/react-vite": "^8.0.0",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "jsdom": "^23.0.0",
-    "tsup": "^8.0.0",
-    "vitest": "^1.0.0"
-  }
-}
-```
+[`packages/react/package.json`](../packages/react/package.json) is the React package's manifest.
+It builds with Vite in library mode (`packages/react/vite.config.mts`: ES modules and a UMD
+CommonJS bundle, declarations by `vite-plugin-dts`), tests with Vitest
+(`pnpm --filter @kozmos-ds/react test`), and takes `@kozmos-ds/tokens`, `@kozmos-ds/icons` and
+`@kozmos-ds/product-contracts` through `workspace:*`. Storybook is not the React package's: it
+lives in `apps/docs`.
 
 ### iOS Package Setup
 
-```swift
-// packages/ios/Package.swift
-// swift-tools-version: 5.9
-import PackageDescription
-
-let package = Package(
-    name: "KozmosSwiftUI",
-    platforms: [
-        .iOS(.v16),
-        .macOS(.v13)
-    ],
-    products: [
-        .library(
-            name: "KozmosSwiftUI",
-            targets: ["KozmosSwiftUI"]
-        ),
-    ],
-    dependencies: [
-        // Add dependencies here if needed
-    ],
-    targets: [
-        .target(
-            name: "KozmosSwiftUI",
-            dependencies: [],
-            path: "Sources/KozmosSwiftUI"
-        ),
-        .testTarget(
-            name: "KozmosSwiftUITests",
-            dependencies: ["KozmosSwiftUI"],
-            path: "Tests"
-        ),
-    ]
-)
-```
+[`packages/ios/Package.swift`](../packages/ios/Package.swift) declares the Swift package `Kozmos`
+(one library, `Kozmos`, and the `KozmosTests` test target) for iOS 16, macOS 13 and Mac Catalyst
+16, with Figma Code Connect and swift-snapshot-testing as its dependencies. It is not published.
 
 ### Android Package Setup
 
-```kotlin
-// packages/android/build.gradle.kts
-plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("maven-publish")
-}
-
-android {
-    namespace = "com.kozmos.compose"
-    compileSdk = 34
-
-    defaultConfig {
-        minSdk = 24
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildFeatures {
-        compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
-
-dependencies {
-    implementation(platform("androidx.compose:compose-bom:2024.01.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-}
-```
+[`packages/android/build.gradle.kts`](../packages/android/build.gradle.kts) builds an Android
+library with Compose and Paparazzi. It applies no publishing plugin, and the library is not
+published.
 
 ---
 
@@ -926,11 +634,11 @@ dependencies {
 □ pnpm 9.x installed
 □ Repository cloned
 □ pnpm install completed
-□ .env.local configured
+□ .env with FIGMA_ACCESS_TOKEN, only for the Figma scripts
 □ pnpm build succeeds
 □ pnpm test passes
 □ IDE extensions installed
-□ Storybook runs (pnpm storybook)
+□ Storybook runs (pnpm --filter @kozmos-ds/docs storybook)
 ```
 
 ---
@@ -940,19 +648,21 @@ dependencies {
 After setup is complete:
 
 1. **Read** `code-patterns.md` for component templates
-2. **Run** `pnpm new-component Button` to scaffold your first component
-3. **Start** Storybook with `pnpm storybook`
+2. **Run** `pnpm new-component <Name>` to scaffold your first component, with a name no component
+   has yet (it refuses one that exists)
+3. **Start** Storybook with `pnpm --filter @kozmos-ds/docs storybook`
 4. **Read** `token-implementation.md` for token setup
 
 ---
 
 ## Version History
 
-| Version | Date       | Changes                       |
-| ------- | ---------- | ----------------------------- |
-| 1.0.0   | 2026-02-07 | Initial getting started guide |
+| Version | Date       | Changes                                                 |
+| ------- | ---------- | ------------------------------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial getting started guide                           |
+| 1.1.0   | 2026-09-28 | Commands, workflows, secrets and publishing as they are |
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last Updated:** 2026-02-07
+**Last Updated:** 2026-09-28

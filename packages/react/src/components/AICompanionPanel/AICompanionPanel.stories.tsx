@@ -6,6 +6,7 @@ import { ActionCard } from "../ActionCard";
 import { AIInputBar } from "../AIInputBar";
 import { AIMessage } from "../AIMessage";
 import { AIMessageList } from "../AIMessageList";
+import { AISearchButton } from "../AISearchButton";
 import { UserMessage } from "../UserMessage";
 import { POIResultCard } from "../POIResultCard";
 
@@ -48,7 +49,9 @@ export const Conversation: Story = {
                 Hello! What are you looking for? Describe it in your own words,
                 like &ldquo;somewhere quiet to work.&rdquo;
               </AIMessage>
-              <UserMessage>Where is the nearest accessible restroom?</UserMessage>
+              <UserMessage>
+                Where is the nearest accessible restroom?
+              </UserMessage>
               <AIMessage
                 actionCard={
                   <ActionCard title="2 results">
@@ -90,9 +93,82 @@ export const Streaming: Story = {
       <AICompanionPanel onClose={fn()}>
         <AIMessageList>
           <UserMessage>Where is the nearest accessible restroom?</UserMessage>
-          <AIMessage status="streaming">Looking through this building…</AIMessage>
+          <AIMessage status="streaming">
+            Looking through this building…
+          </AIMessage>
         </AIMessageList>
         <AIInputBar onSubmit={fn()} onValueChange={fn()} value="" />
+      </AICompanionPanel>
+    </Frame>
+  ),
+};
+
+/**
+ * Row 60 and decision 16: the panel stays mounted and `open` opens it. Open
+ * it from the button and focus goes into the panel; close it and focus comes
+ * back to the button, which stayed beneath it all along. The other stories
+ * are on screen from the start, so none of them takes focus.
+ */
+export const OpenAndClose: Story = {
+  render: () => {
+    const Demo = () => {
+      const [open, setOpen] = useState(false);
+      return (
+        <Frame>
+          <div className="relative h-full">
+            <div className="flex h-full items-center justify-center">
+              <AISearchButton onClick={() => setOpen(true)} />
+            </div>
+            <AICompanionPanel
+              className="absolute inset-0"
+              onClose={() => setOpen(false)}
+              open={open}
+            >
+              <AIMessageList>
+                <AIMessage>
+                  Hello! What are you looking for? Describe it in your own
+                  words, like &ldquo;somewhere quiet to work.&rdquo;
+                </AIMessage>
+              </AIMessageList>
+              <AIInputBar onSubmit={fn()} onValueChange={fn()} value="" />
+            </AICompanionPanel>
+          </div>
+        </Frame>
+      );
+    };
+    return <Demo />;
+  },
+};
+
+/**
+ * Decision 22: a spoken conversation, the assistant answering aloud. The
+ * product has a voice model, so it turns the microphone on and drives its
+ * state; the thread shows what was said. While the conversation is live the
+ * thread stops announcing itself (`aria-live="off"`), or a screen reader
+ * would read out the words the assistant is already speaking.
+ */
+export const VoiceConversation: Story = {
+  render: () => (
+    <Frame>
+      <AICompanionPanel onClose={fn()}>
+        <AIMessageList aria-live="off">
+          <AIMessage>
+            Hello! What are you looking for? Describe it in your own words, like
+            &ldquo;somewhere quiet to work.&rdquo;
+          </AIMessage>
+          <UserMessage>Where is the nearest accessible restroom?</UserMessage>
+          <AIMessage status="streaming">
+            The closest accessible restroom is on the second floor
+          </AIMessage>
+        </AIMessageList>
+        <AIInputBar
+          onSubmit={fn()}
+          onValueChange={fn()}
+          onVoiceEnd={fn()}
+          onVoiceStart={fn()}
+          value=""
+          voiceState="speaking"
+        />
       </AICompanionPanel>
     </Frame>
   ),

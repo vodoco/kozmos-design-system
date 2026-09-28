@@ -41,6 +41,12 @@ export interface PanelDetentMeasures {
   contentHeight?: number;
   /** The bottom edge of the content's peek anchor from the sheet's top; 0 when none. */
   peekBottom?: number;
+  /**
+   * The bottom edge of the sheet's panel header from the sheet's top; 0 when
+   * there is none. A floor for the collapsed detent, not an anchor: see
+   * `panelDetentHeight`.
+   */
+  headerBottom?: number;
 }
 
 const clamp = (value: number, low: number, high: number) =>
@@ -69,10 +75,23 @@ export function panelDetentHeight(
   if (detent === "collapsed") {
     if (measures.peekBottom && measures.peekBottom > 0)
       return anchoredCollapsedHeight(measures.peekBottom, shellHeight);
-    return Math.min(
+    const resting = Math.min(
       Math.max(shellHeight * rules.collapsed, rules.collapsedFloor),
       shellHeight * rules.collapsedCap,
     );
+    // A panel header stays put above the content, so a collapsed sheet has to
+    // show all of it. It raises the resting height only when it would not
+    // fit: treated as an anchor, its quarter-of-the-shell floor lifted every
+    // search sheet with a small header above the prototype's fifth (row 73).
+    if (measures.headerBottom && measures.headerBottom > 0)
+      return Math.max(
+        resting,
+        Math.min(
+          measures.headerBottom + rules.peekMargin,
+          shellHeight * rules.peekCap,
+        ),
+      );
+    return resting;
   }
   if (detent === "medium") return shellHeight * rules.medium;
   if (detent === "large") return largest;

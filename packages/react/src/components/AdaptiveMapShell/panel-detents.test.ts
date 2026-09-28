@@ -29,6 +29,28 @@ describe("panel detents", () => {
     expect(panelDetentHeight("collapsed", 800, { peekBottom: 0 })).toBe(160);
   });
 
+  it("lets a panel header raise the collapsed sheet only when the header would not fit (row 73)", () => {
+    // A header is a floor, not an anchor: a search field under the grip
+    // leaves the prototype's collapsed sheet (a fifth, 160 here) as it was...
+    expect(panelDetentHeight("collapsed", 800, { headerBottom: 72 })).toBe(160);
+    // ...and a header taller than that raises it to show the whole header,
+    // with the peek's margin under it,
+    expect(panelDetentHeight("collapsed", 800, { headerBottom: 200 })).toBe(
+      216,
+    );
+    // never past the peek's cap.
+    expect(panelDetentHeight("collapsed", 800, { headerBottom: 700 })).toBe(
+      576,
+    );
+    // An anchor still rules where there is one.
+    expect(
+      panelDetentHeight("collapsed", 800, {
+        headerBottom: 72,
+        peekBottom: 250,
+      }),
+    ).toBe(266);
+  });
+
   it("fits the content detent between collapsed and large, and reads as medium until measured", () => {
     expect(panelDetentHeight("content", 800)).toBe(432);
     expect(panelDetentHeight("content", 800, { contentHeight: 120 })).toBe(160);

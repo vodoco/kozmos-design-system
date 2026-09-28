@@ -2,6 +2,12 @@
 
 > **Purpose:** This document provides migration guidance for consumers upgrading between Kozmos versions, and for teams migrating from existing implementations to Kozmos.
 
+> **Status:** Every Kozmos package is on 0.x, and there has never been a breaking-change migration
+> ([api-changelog.md](./api-changelog.md)). The packages are scoped `@kozmos-ds`, and neither
+> `@kozmos/cli` nor `@kozmos/codemod` exists, in this repository or on npm: do not run the `npx`
+> commands below, which would fetch whatever npm served under those names one day. The v2 → v3
+> walkthrough shows the process, not a real upgrade.
+
 ---
 
 ## Table of Contents
@@ -25,20 +31,20 @@
 
 Kozmos follows strict semantic versioning:
 
-| Version Change | What It Means | Migration Effort |
-|----------------|---------------|------------------|
-| **Patch** (1.0.x) | Bug fixes only, no API changes | None — drop-in upgrade |
-| **Minor** (1.x.0) | New features, backward compatible | Minimal — review new features |
-| **Major** (x.0.0) | Breaking changes | Significant — follow migration guide |
+| Version Change    | What It Means                     | Migration Effort                     |
+| ----------------- | --------------------------------- | ------------------------------------ |
+| **Patch** (1.0.x) | Bug fixes only, no API changes    | None — drop-in upgrade               |
+| **Minor** (1.x.0) | New features, backward compatible | Minimal — review new features        |
+| **Major** (x.0.0) | Breaking changes                  | Significant — follow migration guide |
 
 ### Version Support Policy
 
-| Version | Status | Support End |
-|---------|--------|-------------|
-| v3.x (current) | Active | — |
-| v2.x | Maintenance | 6 months after v3.0 |
-| v1.x | Deprecated | 3 months after v3.0 |
-| v0.x | End of Life | Unsupported |
+| Version        | Status      | Support End         |
+| -------------- | ----------- | ------------------- |
+| v3.x (current) | Active      | —                   |
+| v2.x           | Maintenance | 6 months after v3.0 |
+| v1.x           | Deprecated  | 3 months after v3.0 |
+| v0.x           | End of Life | Unsupported         |
 
 ### Recommended Upgrade Path
 
@@ -75,6 +81,7 @@ npx @kozmos/cli breaking-changes --from 2.0.0 --to 3.0.0
 ```
 
 Output format:
+
 ```
 BREAKING CHANGES: v2.0.0 → v3.0.0
 
@@ -133,10 +140,12 @@ pnpm test
 #### Step 7: Visual Regression Check
 
 ```bash
-# Compare screenshots before/after
-pnpm chromatic --exit-zero-on-changes
+# Compare every story with its baseline, in light and dark (needs Docker)
+pnpm test:visual
 
-# Review changes in Chromatic dashboard
+# Read each difference in the report; record the intended ones
+pnpm test:visual:report
+pnpm test:visual:update
 ```
 
 ### Post-Migration Verification
@@ -144,10 +153,12 @@ pnpm chromatic --exit-zero-on-changes
 #### Step 8: Full Test Suite
 
 ```bash
+# The application's own tests
 pnpm test
-pnpm test:e2e
-pnpm test:a11y
 ```
+
+Run the application's end-to-end and accessibility suites too, under whatever names its own
+`package.json` gives them: Kozmos has no `test:e2e` or `test:a11y` script to lend it.
 
 #### Step 9: Bundle Size Check
 
@@ -176,6 +187,7 @@ If your team has custom components that will be replaced by Kozmos:
 #### Assessment Phase
 
 1. **Inventory existing components**
+
    ```bash
    # List all custom components
    find ./src/components -name "*.tsx" -exec basename {} \; | sort | uniq
@@ -183,11 +195,11 @@ If your team has custom components that will be replaced by Kozmos:
 
 2. **Map to Kozmos equivalents**
 
-   | Your Component | Kozmos Equivalent | Notes |
-   |----------------|-------------------|-------|
-   | `CustomButton` | `Button` | Match variants |
-   | `FormInput` | `Input` | Check validation API |
-   | `ModalDialog` | `Modal` | Check trigger pattern |
+   | Your Component | Kozmos Equivalent | Notes                 |
+   | -------------- | ----------------- | --------------------- |
+   | `CustomButton` | `Button`          | Match variants        |
+   | `FormInput`    | `Input`           | Check validation API  |
+   | `ModalDialog`  | `Modal`           | Check trigger pattern |
 
 3. **Identify gaps**
    - Components Kozmos doesn't have
@@ -197,16 +209,19 @@ If your team has custom components that will be replaced by Kozmos:
 #### Migration Strategy Options
 
 **Option A: Big Bang (Small projects)**
+
 - Replace all components at once
 - Faster but higher risk
 - Best for: <50 component instances
 
 **Option B: Incremental (Recommended)**
+
 - Migrate page-by-page or feature-by-feature
 - Lower risk, easier to validate
 - Best for: >50 component instances
 
 **Option C: Strangler Fig (Large projects)**
+
 - Run both systems in parallel
 - Gradually shift new code to Kozmos
 - Deprecate old components over time
@@ -218,29 +233,29 @@ If your team has custom components that will be replaced by Kozmos:
 // Step 1: Create adapter component
 // src/components/Button/index.tsx
 
-import { Button as KozmosButton } from '@kozmos/react';
-import type { ButtonProps as KozmosButtonProps } from '@kozmos/react';
+import { Button as KozmosButton } from "@kozmos/react";
+import type { ButtonProps as KozmosButtonProps } from "@kozmos/react";
 
 // Your existing prop interface
 interface LegacyButtonProps {
-  type?: 'primary' | 'secondary' | 'danger';
+  type?: "primary" | "secondary" | "danger";
   onClick?: () => void;
   disabled?: boolean;
   children: React.ReactNode;
 }
 
 // Map old props to Kozmos props
-const variantMap: Record<string, KozmosButtonProps['variant']> = {
-  primary: 'solid',
-  secondary: 'outline',
-  danger: 'destructive',
+const variantMap: Record<string, KozmosButtonProps["variant"]> = {
+  primary: "solid",
+  secondary: "outline",
+  danger: "destructive",
 };
 
 // Adapter maintains old API
-export function Button({ type = 'primary', ...props }: LegacyButtonProps) {
+export function Button({ type = "primary", ...props }: LegacyButtonProps) {
   console.warn(
-    'Button: Legacy props detected. Migrate to Kozmos Button API. ' +
-    'See: https://kozmos.pointr.design/migration/button'
+    "Button: Legacy props detected. Migrate to Kozmos Button API. " +
+      "See: https://kozmos.pointr.design/migration/button",
   );
 
   return <KozmosButton variant={variantMap[type]} {...props} />;
@@ -267,24 +282,24 @@ For Pointr SDK teams migrating to Kozmos:
 
 ```tsx
 // Before (custom implementation)
-import { PoiCard } from '@pointr/sdk-web/components';
+import { PoiCard } from "@pointr/sdk-web/components";
 
 <PoiCard
   poi={poiData}
   onSelect={handleSelect}
-  style={{ background: '#fff' }}
-/>
+  style={{ background: "#fff" }}
+/>;
 
 // After (Kozmos)
-import { POIDetailsCard } from '@kozmos/react';
-import { useTheme } from '@kozmos/react';
+import { POIDetailsCard } from "@kozmos/react";
+import { useTheme } from "@kozmos/react";
 
 // Theme provides consistent styling
 <POIDetailsCard
   poi={poiData}
   onSelect={handleSelect}
   // Theming handled via CSS variables, not inline styles
-/>
+/>;
 ```
 
 #### iOS SDK Migration
@@ -364,10 +379,10 @@ fun PoiCard(poi: POI) {
 
 ```tsx
 // Before
-import { Button, Input, Card } from '@pointr/sdk-components';
+import { Button, Input, Card } from "@pointr/sdk-components";
 
 // After
-import { Button, Input, Card } from '@kozmos/react';
+import { Button, Input, Card } from "@kozmos/react";
 ```
 
 #### ThemeProvider Setup
@@ -376,17 +391,17 @@ import { Button, Input, Card } from '@kozmos/react';
 // Before (if using custom theming)
 <CustomThemeProvider theme={myTheme}>
   <App />
-</CustomThemeProvider>
+</CustomThemeProvider>;
 
 // After
-import { ThemeProvider } from '@kozmos/react';
+import { ThemeProvider } from "@kozmos/react";
 
 <ThemeProvider
   theme="light"
   brand="pointr" // or customer brand ID
 >
   <App />
-</ThemeProvider>
+</ThemeProvider>;
 ```
 
 #### CSS Variable Migration
@@ -513,10 +528,10 @@ fun App() {
 
 ```tsx
 // Before
-import { ThemeProvider } from '@pointr/rn-components';
+import { ThemeProvider } from "@pointr/rn-components";
 
 // After
-import { KozmosProvider } from '@kozmos/react-native';
+import { KozmosProvider } from "@kozmos/react-native";
 
 function App() {
   return (
@@ -544,14 +559,14 @@ function App() {
 
 ```typescript
 // Before
-import { PointrUI } from '@pointr/vue-components';
+import { PointrUI } from "@pointr/vue-components";
 app.use(PointrUI);
 
 // After
-import { KozmosVue } from '@kozmos/vue';
+import { KozmosVue } from "@kozmos/vue";
 app.use(KozmosVue, {
-  theme: 'light',
-  brand: 'pointr'
+  theme: "light",
+  brand: "pointr",
 });
 ```
 
@@ -563,20 +578,20 @@ app.use(KozmosVue, {
 
 When Kozmos tokens are renamed between versions:
 
-| v2.x Token | v3.x Token | Codemod |
-|------------|------------|---------|
-| `color.brand.primary` | `color.interactive.primary` | ✅ |
-| `color.brand.secondary` | `color.interactive.secondary` | ✅ |
-| `space.xs` | `space.100` | ✅ |
-| `space.sm` | `space.200` | ✅ |
-| `space.md` | `space.400` | ✅ |
-| `space.lg` | `space.600` | ✅ |
-| `space.xl` | `space.800` | ✅ |
-| `radius.sm` | `radius.100` | ✅ |
-| `radius.md` | `radius.200` | ✅ |
-| `radius.lg` | `radius.300` | ✅ |
-| `shadow.sm` | `shadow.100` | ✅ |
-| `shadow.md` | `shadow.200` | ✅ |
+| v2.x Token              | v3.x Token                    | Codemod |
+| ----------------------- | ----------------------------- | ------- |
+| `color.brand.primary`   | `color.interactive.primary`   | ✅      |
+| `color.brand.secondary` | `color.interactive.secondary` | ✅      |
+| `space.xs`              | `space.100`                   | ✅      |
+| `space.sm`              | `space.200`                   | ✅      |
+| `space.md`              | `space.400`                   | ✅      |
+| `space.lg`              | `space.600`                   | ✅      |
+| `space.xl`              | `space.800`                   | ✅      |
+| `radius.sm`             | `radius.100`                  | ✅      |
+| `radius.md`             | `radius.200`                  | ✅      |
+| `radius.lg`             | `radius.300`                  | ✅      |
+| `shadow.sm`             | `shadow.100`                  | ✅      |
+| `shadow.md`             | `shadow.200`                  | ✅      |
 
 ### CSS Variable Migration
 
@@ -630,29 +645,34 @@ Template for documenting component API changes:
 ### v2.x → v3.x Changes
 
 #### Props Renamed
-| v2.x | v3.x | Notes |
-|------|------|-------|
+
+| v2.x                | v3.x              | Notes                         |
+| ------------------- | ----------------- | ----------------------------- |
 | `variant="primary"` | `variant="solid"` | Aligns with industry standard |
-| `size="small"` | `size="sm"` | Consistent abbreviations |
-| `isLoading` | `loading` | Remove `is` prefix |
-| `isDisabled` | `disabled` | Use native HTML naming |
+| `size="small"`      | `size="sm"`       | Consistent abbreviations      |
+| `isLoading`         | `loading`         | Remove `is` prefix            |
+| `isDisabled`        | `disabled`        | Use native HTML naming        |
 
 #### Props Removed
-| Prop | Replacement | Migration |
-|------|-------------|-----------|
-| `leftIcon` | `<Button.Icon position="start">` | Use compound component |
-| `rightIcon` | `<Button.Icon position="end">` | Use compound component |
+
+| Prop        | Replacement                      | Migration              |
+| ----------- | -------------------------------- | ---------------------- |
+| `leftIcon`  | `<Button.Icon position="start">` | Use compound component |
+| `rightIcon` | `<Button.Icon position="end">`   | Use compound component |
 
 #### Props Added
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `asChild` | boolean | false | Render as child element |
+
+| Prop      | Type    | Default | Description             |
+| --------- | ------- | ------- | ----------------------- |
+| `asChild` | boolean | false   | Render as child element |
 
 #### Behavioral Changes
+
 - Loading state now shows spinner inline instead of replacing text
 - Disabled state now uses `aria-disabled` instead of `disabled` attribute
 
 #### Codemod Coverage
+
 - ✅ Prop renames (automatic)
 - ⚠️ Icon migration (semi-automatic, review needed)
 - ❌ Behavioral changes (manual testing required)
@@ -706,15 +726,15 @@ Template for documenting component API changes:
 
 ### Available Codemods
 
-| Codemod | Description | Risk |
-|---------|-------------|------|
-| `v2-to-v3` | All v2→v3 transformations | Medium |
-| `button-variant-rename` | Button variant prop updates | Low |
-| `boolean-prop-rename` | `is*` → `*` prop renames | Low |
-| `token-migration` | CSS variable renames | Low |
+| Codemod                    | Description                   | Risk   |
+| -------------------------- | ----------------------------- | ------ |
+| `v2-to-v3`                 | All v2→v3 transformations     | Medium |
+| `button-variant-rename`    | Button variant prop updates   | Low    |
+| `boolean-prop-rename`      | `is*` → `*` prop renames      | Low    |
+| `token-migration`          | CSS variable renames          | Low    |
 | `compound-component-icons` | Icon prop to compound pattern | Medium |
-| `modal-controlled` | Modal API migration | Medium |
-| `import-paths` | Package import updates | Low |
+| `modal-controlled`         | Modal API migration           | Medium |
+| `import-paths`             | Package import updates        | Low    |
 
 ### Running Codemods
 
@@ -750,7 +770,7 @@ For project-specific migrations:
 
 ```typescript
 // custom-codemod.ts
-import { Transform } from '@kozmos/codemod';
+import { Transform } from "@kozmos/codemod";
 
 const transform: Transform = (file, api) => {
   const j = api.jscodeshift;
@@ -758,10 +778,10 @@ const transform: Transform = (file, api) => {
 
   // Find and replace JSX prop
   root
-    .findJSXElements('MyComponent')
-    .find(j.JSXAttribute, { name: { name: 'oldProp' } })
+    .findJSXElements("MyComponent")
+    .find(j.JSXAttribute, { name: { name: "oldProp" } })
     .forEach((path) => {
-      path.node.name.name = 'newProp';
+      path.node.name.name = "newProp";
     });
 
   return root.toSource();
@@ -782,8 +802,9 @@ npx jscodeshift -t ./custom-codemod.ts ./src
 ### When to Rollback
 
 Rollback if migration causes:
+
 - P0/P1 production issues
-- >5% error rate increase
+- > 5% error rate increase
 - Critical user flows broken
 - Performance regression >20%
 
@@ -862,10 +883,11 @@ git revert <codemod-commit-hash>
 ### Rollback Criteria
 
 Define before migration:
-- [ ] Error rate threshold: ___% increase triggers rollback
-- [ ] Performance threshold: ___ms latency increase triggers rollback
-- [ ] Critical flows: ___ must work or rollback
-- [ ] Rollback decision owner: ___
+
+- [ ] Error rate threshold: \_\_\_% increase triggers rollback
+- [ ] Performance threshold: \_\_\_ms latency increase triggers rollback
+- [ ] Critical flows: \_\_\_ must work or rollback
+- [ ] Rollback decision owner: \_\_\_
 
 ---
 
@@ -880,6 +902,7 @@ error TS2339: Property 'isLoading' does not exist on type 'ButtonProps'.
 ```
 
 **Solution:** Run codemod for prop renames:
+
 ```bash
 npx @kozmos/codemod boolean-prop-rename --path ./src
 ```
@@ -887,11 +910,13 @@ npx @kozmos/codemod boolean-prop-rename --path ./src
 #### Issue: Styles look different after upgrade
 
 **Causes:**
+
 1. Token values changed
 2. Default theme changed
 3. CSS specificity issues
 
 **Solution:**
+
 1. Compare token values between versions
 2. Check ThemeProvider configuration
 3. Review CSS custom properties in dev tools
@@ -899,21 +924,24 @@ npx @kozmos/codemod boolean-prop-rename --path ./src
 #### Issue: Bundle size increased significantly
 
 **Causes:**
+
 1. Tree-shaking not working
 2. Importing entire package instead of specific components
 
 **Solution:**
+
 ```tsx
 // Bad (imports everything)
-import { Button } from '@kozmos/react';
+import { Button } from "@kozmos/react";
 
 // Good (tree-shakeable)
-import { Button } from '@kozmos/react/Button';
+import { Button } from "@kozmos/react/Button";
 ```
 
 #### Issue: Codemod missed some transformations
 
 **Solution:**
+
 1. Check codemod logs for skipped files
 2. Run with `--verbose` flag
 3. Some patterns may need manual migration
@@ -929,9 +957,9 @@ import { Button } from '@kozmos/react/Button';
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial migration guide |
+| Version | Date       | Changes                 |
+| ------- | ---------- | ----------------------- |
+| 1.0.0   | 2026-02-07 | Initial migration guide |
 
 ---
 

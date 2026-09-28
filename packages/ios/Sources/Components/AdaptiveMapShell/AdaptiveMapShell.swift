@@ -6,7 +6,9 @@ import SwiftUI
 /// every detent — so it carries its own detent type rather than reusing
 /// SwiftUI's `PresentationDetent`, which only applies to presented sheets.
 public enum KozmosMapPanelDetent: Hashable, Sendable {
-    /// A peek: the panel's own header row and nothing more.
+    /// A peek: a fifth of the shell, or the row marked with
+    /// `kozmosPanelPeekAnchor()`; with no row marked, tall enough for the
+    /// whole panel header.
     case collapsed
     /// The resting height, where the map and the panel share the shell.
     case medium
@@ -63,6 +65,19 @@ public enum KozmosMapPanelDetent: Hashable, Sendable {
         )
     }
 
+    /// The collapsed detent when the sheet has a panel header and no peek
+    /// anchor: the plain collapsed height, grown only as far as the header's
+    /// bottom edge and the peek margin need, and never over three quarters of
+    /// the shell (row 73). A header is not an anchor: an anchored peek's
+    /// quarter-of-the-shell floor would grow the prototype's fifth under a
+    /// search row that already fits in it.
+    static func headerCollapsedHeight(headerBottom: CGFloat, in shellHeight: CGFloat) -> CGFloat {
+        max(
+            KozmosMapPanelDetent.collapsed.height(in: shellHeight),
+            min(headerBottom + KozmosDimensions.primitivesLayoutSpacing200, shellHeight * 0.72)
+        )
+    }
+
     var accessibilityDescription: String {
         switch self {
         case .collapsed: return "Collapsed"
@@ -116,6 +131,26 @@ struct KozmosMapShellContentPanelHeightKey: PreferenceKey {
 /// routes, attribution, or marker collision boxes. The reported insets follow
 /// the detent the panel has settled on, not the live drag, so the camera does
 /// not chase a moving sheet.
+///
+/// `panelHeader` is drawn under the sheet's grab handle and above the panel,
+/// and is not scrolled with it: a search field, the assistant button, or a
+/// chosen category stays put while the results under it scroll (row 73).
+/// Every detent counts it — a sheet fitted to its content includes it, a peek
+/// anchor in it is honoured, and with no anchor a collapsed sheet is tall
+/// enough to show all of it. A vertical drag on it moves the sheet, whatever
+/// the content has scrolled; a sideways one stays with the header, for a row
+/// of chips that scrolls. Under the grabber it starts 4 points below the
+/// grabber's row, so its first control keeps the grabber's target clear
+/// (WCAG 2.5.8). In a side panel it is the panel's first row.
+///
+/// The panel's content is told what the panel leaves empty above it, and how
+/// far its first control must keep below that — `kozmosPanelInsetTop` and
+/// `kozmosPanelClearanceTop` in the environment — so a part with its own top
+/// padding and no surface of its own, as `KozmosPOIDetailPanel` and
+/// `KozmosBrowseCategoriesPanel` are in their sheet presentations, tops it up
+/// rather than adding to it (GAP-083, decision 14). The values describe the
+/// panel's top: a part a product places under its own row there is not at
+/// the top, and is told so by setting both to zero.
 public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Panel: View, MapStatusContent: View>: View {
     public enum PanelPlacement {
         case start
@@ -138,6 +173,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private let controls: Controls
     private let topBar: TopBar
     private let panel: Panel
+    private let panelHeader: AnyView?
     private let panelLabel: String
     private let panelPlacement: PanelPlacement
     private let controlsPlacement: ControlsPlacement
@@ -146,9 +182,12 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private let panelSurface: KozmosSurfaceStyle
     /// The sheet's height while it is fitted to its content, as measured.
     @State private var contentPanelHeight: CGFloat = 0
-    /// The bottom edge of the content's peek anchor, from the sheet's top;
-    /// zero when the content marks none.
+    /// The bottom edge of the peek anchor — the panel header's, else the
+    /// content's — from the sheet's top; zero when neither marks one.
     @State private var peekAnchorBottom: CGFloat = 0
+    /// The panel header's bottom edge, from the sheet's top: the handle's row
+    /// and the header. Zero with no header, or one that draws nothing.
+    @State private var panelHeaderBottom: CGFloat = 0
     /// How far the content's `KozmosPanelScrollView` has scrolled.
     @State private var panelScrollOffset: CGFloat = 0
     /// What the drag in progress on the sheet's body is doing, from its first
@@ -170,12 +209,21 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     @State private var dragTranslation: CGFloat = 0
 
     /// Deliberately shallow. The handle is an affordance at the very top edge
-    /// of the sheet, not a row of chrome the content has to be pushed past —
-    /// the panel below keeps its own padding rather than stacking on top of
-    /// this.
+    /// of the sheet, not a row of chrome the content has to be pushed past:
+    /// the content is told the row is there (`kozmosPanelInsetTop`), so a
+    /// part with its own top padding tops it up rather than stacking its
+    /// padding on top of this (GAP-083).
     private static var grabberRowHeight: CGFloat { KozmosDimensions.primitivesLayoutSpacing200 }
 
-    public init(
+    /// WCAG 2.5.8: a target smaller than 24 points keeps a 24-point circle on
+    /// its centre clear of every other target. The grabber's row is one.
+    private static var minimumTargetSpacing: CGFloat { 24 }
+
+    /// How far the first control under the grabber's row keeps below it: half
+    /// of what the row falls short of a 24-point target, 4.
+    private static var grabberClearance: CGFloat { (minimumTargetSpacing - grabberRowHeight) / 2 }
+
+    public init<PanelHeader: View>(
         mapLabel: String = "Map",
         mapStatus: KozmosMapReadiness = .ready,
         panelLabel: String = "Map details",
@@ -190,7 +238,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         @ViewBuilder mapStatusContent: () -> MapStatusContent,
         @ViewBuilder controls: () -> Controls,
         @ViewBuilder topBar: () -> TopBar,
-        @ViewBuilder panel: () -> Panel
+        @ViewBuilder panel: () -> Panel,
+        @ViewBuilder panelHeader: () -> PanelHeader = { EmptyView() }
     ) {
         self.mapLabel = mapLabel
         self.mapStatus = mapStatus
@@ -207,6 +256,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         self.controls = controls()
         self.topBar = topBar()
         self.panel = panel()
+        self.panelHeader = PanelHeader.self == EmptyView.self ? nil : AnyView(panelHeader())
         self.hasControls = Controls.self != EmptyView.self
         self.hasTopBar = TopBar.self != EmptyView.self
         self.hasPanel = Panel.self != EmptyView.self
@@ -227,11 +277,14 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
 
     /// A detent's height: the content-fitted one from the sheet as measured,
     /// between the collapsed and the large heights, or medium until measured;
-    /// every other detent from its own arithmetic.
+    /// the collapsed one from a peek anchor, else from the panel header; every
+    /// other detent from its own arithmetic.
     func detentHeight(_ detent: KozmosMapPanelDetent, in shellHeight: CGFloat) -> CGFloat {
         switch detent {
         case .collapsed where peekAnchorBottom > 0:
             return KozmosMapPanelDetent.anchoredCollapsedHeight(peekBottom: peekAnchorBottom, in: shellHeight)
+        case .collapsed where panelHeaderBottom > 0:
+            return KozmosMapPanelDetent.headerCollapsedHeight(headerBottom: panelHeaderBottom, in: shellHeight)
         case .content where contentPanelHeight > 0:
             return min(
                 max(contentPanelHeight, detentHeight(.collapsed, in: shellHeight)),
@@ -332,8 +385,47 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         }
     }
 
-    private var showsGrabber: Bool {
+    private var showsGrabber: Bool { drawsGrabber(isRegularWidth: isRegularWidth) }
+
+    /// Whether the docked sheet draws its grabber: by the detents on offer —
+    /// one offers nothing to move between — not by their heights. The width
+    /// class is an argument so the rule can be tested, as the insets' is.
+    func drawsGrabber(isRegularWidth: Bool) -> Bool {
         hasPanel && !isRegularWidth && panelDetents.count > 1
+    }
+
+    /// What the panel leaves empty above its content, and how far the
+    /// content's first control must still sit below that (GAP-083): handed to
+    /// the content as `kozmosPanelInsetTop` and `kozmosPanelClearanceTop`, so a
+    /// part with its own top padding tops it up rather than adding to it.
+    /// Under a grabber, its 16-point row, and half of what the row falls short
+    /// of a 24-point target, 4, so the grabber keeps its spacing. Nothing with
+    /// no grabber, under a panel header, which sits there instead, or beside
+    /// the map, where a native side panel starts its content at its top edge
+    /// (the web's leaves 16 above it).
+    func panelContentTop(isRegularWidth: Bool) -> (inset: CGFloat, clearance: CGFloat) {
+        guard drawsGrabber(isRegularWidth: isRegularWidth), panelHeader == nil else { return (0, 0) }
+        return (Self.grabberRowHeight, Self.grabberClearance)
+    }
+
+    /// How far the panel header starts below the grabber's row: the
+    /// grabber's clearance, so the search field a header usually starts with
+    /// keeps the grabber's target its WCAG 2.5.8 spacing — as the web's header
+    /// has since #109, and as the panel's content keeps it when no header sits
+    /// there (decision 14). It sat flush under the row, 8 from the grabber's
+    /// centre. Nothing with no grabber, and beside the map, where the header
+    /// is the panel's first row.
+    func panelHeaderTop(isRegularWidth: Bool) -> CGFloat {
+        guard drawsGrabber(isRegularWidth: isRegularWidth), panelHeader != nil else { return 0 }
+        return Self.grabberClearance
+    }
+
+    /// The panel's content, told what the panel leaves above it.
+    private var hostedPanel: some View {
+        let top = panelContentTop(isRegularWidth: isRegularWidth)
+        return panel
+            .environment(\.kozmosPanelInsetTop, top.inset)
+            .environment(\.kozmosPanelClearanceTop, top.clearance)
     }
 
     // MARK: - Collision insets
@@ -550,6 +642,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             .onPreferenceChange(KozmosMapShellControlsSizeKey.self) { controlsSize = $0 }
             .onPreferenceChange(KozmosMapShellContentPanelHeightKey.self) { contentPanelHeight = $0 }
             .onPreferenceChange(KozmosMapShellPeekBottomKey.self) { peekAnchorBottom = $0 }
+            .onPreferenceChange(KozmosMapShellPanelHeaderBottomKey.self) { panelHeaderBottom = $0 }
             .onPreferenceChange(KozmosPanelScrollOffsetKey.self) { panelScrollOffset = $0 }
             .onAppear { onCollisionInsetsChange?(insets) }
             .onChange(of: insets) { onCollisionInsetsChange?($0) }
@@ -563,23 +656,30 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     @ViewBuilder
     private func panelContainer(in geometry: GeometryProxy, safeArea: EdgeInsets) -> some View {
         if isRegularWidth {
-            panel
-                .frame(width: min(416, geometry.size.width * 0.42))
-                .frame(maxHeight: .infinity)
-                .kozmosSurface(
-                    RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusPanel, style: .continuous),
-                    style: panelSurface
-                )
-                .shadow(color: KozmosColors.primitivesColorsForeground900.opacity(0.18), radius: 24, x: 0, y: 12)
-                .padding(KozmosDimensions.primitivesLayoutSpacing200)
-                .padding(EdgeInsets(top: safeArea.top, leading: safeArea.leading, bottom: safeArea.bottom, trailing: safeArea.trailing))
-                .frame(
-                    width: geometry.size.width,
-                    height: geometry.size.height,
-                    alignment: panelPlacement == .end ? .trailing : .leading
-                )
-                .accessibilityElement(children: .contain)
-                .accessibilityLabel(panelLabel)
+            // Beside the map the header is the panel's first row, and the
+            // panel takes the rest.
+            VStack(spacing: 0) {
+                if let panelHeader {
+                    panelHeader.fixedSize(horizontal: false, vertical: true)
+                }
+                hostedPanel.frame(maxHeight: .infinity)
+            }
+            .frame(width: min(416, geometry.size.width * 0.42))
+            .frame(maxHeight: .infinity)
+            .kozmosSurface(
+                RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusPanel, style: .continuous),
+                style: panelSurface
+            )
+            .shadow(color: KozmosColors.primitivesColorsForeground900.opacity(0.18), radius: 24, x: 0, y: 12)
+            .padding(KozmosDimensions.primitivesLayoutSpacing200)
+            .padding(EdgeInsets(top: safeArea.top, leading: safeArea.leading, bottom: safeArea.bottom, trailing: safeArea.trailing))
+            .frame(
+                width: geometry.size.width,
+                height: geometry.size.height,
+                alignment: panelPlacement == .end ? .trailing : .leading
+            )
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(panelLabel)
         } else {
             let fitted = activeDetent(in: geometry.size.height) == .content && dragTranslation == 0
             Group {
@@ -593,7 +693,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                             if showsGrabber {
                                 grabber(in: geometry.size.height)
                             }
-                            panel
+                            sheetHeader(safeArea: safeArea)
+                            hostedPanel
                                 .environment(\.kozmosPanelScrollEnabled, panelScrollEnabled(in: geometry.size.height, docked: true))
                                 // Fitted content never scrolls, so the safe
                                 // areas are plain padding here: a safe-area
@@ -616,8 +717,9 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         if showsGrabber {
                             grabber(in: geometry.size.height)
                         }
+                        sheetHeader(safeArea: safeArea)
 
-                        panel
+                        hostedPanel
                             .environment(\.kozmosPanelScrollEnabled, panelScrollEnabled(in: geometry.size.height, docked: true))
                             .modifier(KozmosSheetSafeArea(safeArea: safeArea))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -642,12 +744,24 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             }
             // The peek anchor, resolved where the sheet's top is zero: its
             // bottom edge becomes the collapsed detent (`anchoredCollapsedHeight`).
-            .overlayPreferenceValue(KozmosMapShellPeekAnchorKey.self) { anchor in
+            // An anchor in the panel header outranks one in the content, as
+            // React's `measurePeekBottom` has it. The header's own bottom edge
+            // is not an anchor: it sets the least the collapsed detent may be
+            // (`headerCollapsedHeight`) and where a drag is the header's.
+            .overlayPreferenceValue(KozmosMapShellPeekAnchorKey.self) { anchors in
                 GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: KozmosMapShellPeekBottomKey.self,
-                        value: anchor.map { proxy[$0].maxY } ?? 0
-                    )
+                    let header = anchors.headerBounds.map { proxy[$0] }
+                    Color.clear
+                        .preference(
+                            key: KozmosMapShellPeekBottomKey.self,
+                            value: (anchors.header ?? anchors.content).map { proxy[$0].maxY } ?? 0
+                        )
+                        // A header that draws nothing — a builder whose `if`
+                        // came out false — is no header.
+                        .preference(
+                            key: KozmosMapShellPanelHeaderBottomKey.self,
+                            value: header.map { $0.height > 0 ? $0.maxY : 0 } ?? 0
+                        )
                 }
                 .allowsHitTesting(false)
             }
@@ -681,12 +795,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         let shellHeight = geometry.size.height
         KozmosSheetPanCatcher(
             shouldBegin: { start, translation in
-                let kind = KozmosPanelDragKind.decide(
-                    startsInHandle: showsGrabber && start.y < Self.grabberRowHeight,
-                    translation: translation,
-                    atLargestDetent: isAtLargestDetent(in: shellHeight),
-                    scrollOffset: panelScrollOffset
-                )
+                let kind = sheetDragKind(startingAt: start.y, translation: translation, in: shellHeight)
                 guard kind == .sheet else { return false }
                 bodyDrag = .sheet
                 return true
@@ -714,6 +823,21 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     @ViewBuilder private func bodyDragCatcher(in geometry: GeometryProxy) -> some View { EmptyView() }
     #endif
 
+    /// What a drag that starts `startY` points below the sheet's top does:
+    /// the prototype's rule, with the handle's row and the panel header
+    /// placed. The header does not scroll, so a drag that starts on it is the
+    /// sheet's whatever the content under it has scrolled — at the largest
+    /// detent a scrolled list used to claim it (row 73) — while a sideways one
+    /// stays with the header, for a row of chips that scrolls.
+    func sheetDragKind(startingAt startY: CGFloat, translation: CGSize, in shellHeight: CGFloat) -> KozmosPanelDragKind {
+        KozmosPanelDragKind.decide(
+            startsInHandle: showsGrabber && startY < Self.grabberRowHeight,
+            translation: translation,
+            atLargestDetent: isAtLargestDetent(in: shellHeight),
+            scrollOffset: startY < panelHeaderBottom ? 0 : panelScrollOffset
+        )
+    }
+
     /// A drag anywhere on the sheet. What it does is decided at its first move
     /// and held until the finger lifts: the handle's own gesture keeps a drag
     /// that starts on the handle; a sideways move, or a scroll at the largest
@@ -728,11 +852,10 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         return DragGesture(minimumDistance: kozmosMapPanelTapSlop, coordinateSpace: .global)
             .onChanged { value in
                 if bodyDrag == nil {
-                    bodyDrag = KozmosPanelDragKind.decide(
-                        startsInHandle: showsGrabber && value.startLocation.y < sheetTop + Self.grabberRowHeight,
+                    bodyDrag = sheetDragKind(
+                        startingAt: value.startLocation.y - sheetTop,
                         translation: value.translation,
-                        atLargestDetent: isAtLargestDetent(in: shellHeight),
-                        scrollOffset: panelScrollOffset
+                        in: shellHeight
                     )
                 }
                 guard bodyDrag == .sheet else { return }
@@ -750,6 +873,30 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     }
                 }
             }
+    }
+
+    /// The panel header in the docked sheet: under the handle, above the
+    /// panel, and outside whatever the panel scrolls. It keeps its own height
+    /// at every detent — a short sheet clips it rather than squashing it —
+    /// and the side safe areas, as the panel does. Its box, and a peek anchor
+    /// marked in it, are handed up as the header's. Under the grabber it
+    /// starts the grabber's clearance below the grabber's row
+    /// (`panelHeaderTop`); the clearance lies outside the box it hands up,
+    /// so a header that draws nothing is still no header to the detents, and
+    /// the box's bottom edge is measured where the clearance puts it.
+    @ViewBuilder
+    private func sheetHeader(safeArea: EdgeInsets) -> some View {
+        if let panelHeader {
+            panelHeader
+                .padding(.leading, safeArea.leading)
+                .padding(.trailing, safeArea.trailing)
+                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
+                .transformAnchorPreference(key: KozmosMapShellPeekAnchorKey.self, value: .bounds) { anchors, bounds in
+                    anchors = KozmosPanelPeekAnchors(header: anchors.content, headerBounds: bounds)
+                }
+                .padding(.top, panelHeaderTop(isRegularWidth: isRegularWidth))
+        }
     }
 
     private func grabber(in shellHeight: CGFloat) -> some View {
@@ -832,7 +979,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
 }
 
 public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
-    init(
+    init<PanelHeader: View>(
         mapLabel: String = "Map",
         mapStatus: KozmosMapReadiness = .ready,
         panelLabel: String = "Map details",
@@ -846,7 +993,8 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
         @ViewBuilder map: () -> Map,
         @ViewBuilder mapStatusContent: () -> MapStatusContent,
         @ViewBuilder controls: () -> Controls,
-        @ViewBuilder panel: () -> Panel
+        @ViewBuilder panel: () -> Panel,
+        @ViewBuilder panelHeader: () -> PanelHeader = { EmptyView() }
     ) {
         self.init(
             mapLabel: mapLabel,
@@ -863,14 +1011,15 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
             mapStatusContent: mapStatusContent,
             controls: controls,
             topBar: { EmptyView() },
-            panel: panel
+            panel: panel,
+            panelHeader: panelHeader
         )
     }
 }
 
 public extension KozmosAdaptiveMapShell
 where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView {
-    init(
+    init<PanelHeader: View>(
         mapLabel: String = "Map",
         panelLabel: String = "Map details",
         panelPlacement: PanelPlacement = .end,
@@ -881,7 +1030,8 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
         collisionInsets: KozmosMapCollisionInsets = .zero,
         onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Void)? = nil,
         @ViewBuilder map: () -> Map,
-        @ViewBuilder panel: () -> Panel
+        @ViewBuilder panel: () -> Panel,
+        @ViewBuilder panelHeader: () -> PanelHeader = { EmptyView() }
     ) {
         self.init(
             mapLabel: mapLabel,
@@ -898,7 +1048,8 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
             mapStatusContent: { EmptyView() },
             controls: { EmptyView() },
             topBar: { EmptyView() },
-            panel: panel
+            panel: panel,
+            panelHeader: panelHeader
         )
     }
 }

@@ -154,6 +154,60 @@ describe("AdaptiveMapShell sheet detents", () => {
     expect(screen.queryByRole("slider")).toBeNull();
   });
 
+  // GAP-083: what the panel leaves empty above its content, so a part with
+  // its own top padding tops it up rather than adding to it.
+  const insetTop = (aside: HTMLElement) =>
+    aside
+      .querySelector<HTMLElement>("[data-kozmos-scroller]")!
+      .style.getPropertyValue("--kozmos-panel-inset-top");
+
+  it("tells its content it leaves the grip's row above it", () => {
+    expect(insetTop(sheet())).toBe(
+      "calc(var(--primitives-layout-spacing-200) * 1px)",
+    );
+  });
+
+  it("tells its content it leaves nothing above it without a grip", () => {
+    expect(insetTop(sheet({ panelFraction: 0.3 }))).toBe("0px");
+  });
+
+  it("tells its content it leaves nothing above it under a panel header", () => {
+    expect(
+      insetTop(sheet({ panelHeader: <input aria-label="Search" /> })),
+    ).toBe("0px");
+  });
+
+  it("tells a side panel's content it leaves 16 above it", () => {
+    expect(insetTop(sheet({ panelPresentation: "side" }))).toBe("1rem");
+  });
+
+  // And how far the content's first control must still keep below that, so
+  // the grip's 16px target keeps its WCAG 2.5.8 spacing.
+  const clearanceTop = (aside: HTMLElement) =>
+    aside
+      .querySelector<HTMLElement>("[data-kozmos-scroller]")!
+      .style.getPropertyValue("--kozmos-panel-clearance-top");
+
+  it("asks its content to keep the grip's target clear", () => {
+    expect(clearanceTop(sheet())).toBe(
+      "calc((24px - var(--primitives-layout-spacing-200) * 1px) / 2)",
+    );
+  });
+
+  it("asks no clearance with no grip", () => {
+    expect(clearanceTop(sheet({ panelFraction: 0.3 }))).toBe("0px");
+  });
+
+  it("asks no clearance under a panel header, which keeps it itself", () => {
+    expect(
+      clearanceTop(sheet({ panelHeader: <input aria-label="Search" /> })),
+    ).toBe("0px");
+  });
+
+  it("asks no clearance in a side panel, which has no grip", () => {
+    expect(clearanceTop(sheet({ panelPresentation: "side" }))).toBe("0px");
+  });
+
   it("steps the detents from the keyboard and cycles them on a tap", () => {
     const onPanelDetentChange = vi.fn();
     sheet({ onPanelDetentChange });
@@ -175,6 +229,109 @@ describe("AdaptiveMapShell sheet detents", () => {
     const scroller = atMedium.querySelector<HTMLElement>("p")!.parentElement!;
     expect(scroller.style.overflowY).toBe("hidden");
     expect(scroller.style.touchAction).toBe("none");
+  });
+
+  describe("a panel header (row 73)", () => {
+    // The sheet scrolled as one piece, so the search field and the assistant
+    // button scrolled away with the results they were searching.
+    it("draws it under the grip and outside the content that scrolls", () => {
+      const aside = sheet({
+        panelHeader: <input aria-label="Search places" />,
+      });
+      const header = screen.getByRole("textbox", { name: "Search places" });
+      const scroller = aside.querySelector<HTMLElement>("p")!.parentElement!;
+      const handle = screen.getByRole("slider", { name: "Panel height" });
+
+      expect(scroller.contains(header)).toBe(false);
+      expect(aside.contains(header)).toBe(true);
+      const order = Array.from(aside.children);
+      const headerRow = order.find((child) => child.contains(header))!;
+      expect(order.indexOf(handle)).toBeLessThan(order.indexOf(headerRow));
+      expect(order.indexOf(headerRow)).toBeLessThan(order.indexOf(scroller));
+    });
+
+    it("keeps its first control clear of the grab handle's target", () => {
+      // WCAG 2.5.8: the handle is a 16px row, so a control directly under it
+      // leaves its target a 16px clear space, not 24 - the Storybook audit's
+      // target-size failure on the header story. Half the shortfall below it,
+      // derived from the handle's own height token.
+      const aside = sheet({
+        panelHeader: <input aria-label="Search places" />,
+      });
+      expect(
+        screen.getByRole("slider", { name: "Panel height" }),
+      ).toBeVisible();
+      const header = aside.querySelector<HTMLElement>(
+        "[data-kozmos-panel-header]",
+      )!;
+      expect(header.style.paddingTop).toBe(
+        "calc((24px - var(--primitives-layout-spacing-200) * 1px) / 2)",
+      );
+    });
+
+    it("gives vertical drags on it to the sheet and keeps sideways ones for a row that scrolls", () => {
+      const aside = sheet({
+        panelHeader: <input aria-label="Search places" />,
+      });
+      const header = aside.querySelector<HTMLElement>(
+        "[data-kozmos-panel-header]",
+      );
+      expect(header).not.toBeNull();
+      expect(header!.style.touchAction).toBe("pan-x");
+    });
+
+    it("counts the grab handle too, when a fitted sheet offers another detent", () => {
+      // iOS measures its fitted sheet with the grabber in it; the web counted
+      // only the content, so a sheet offering `content` and `large` was the
+      // handle's 16px short and clipped its last line.
+      const heights = [
+        vi
+          .spyOn(HTMLElement.prototype, "scrollHeight", "get")
+          .mockReturnValue(120),
+        vi
+          .spyOn(HTMLElement.prototype, "offsetHeight", "get")
+          .mockImplementation(function (this: HTMLElement) {
+            if (this.hasAttribute("data-kozmos-panel-header")) return 56;
+            if (this.classList.contains("kozmos-map-sheet-handle")) return 16;
+            return 0;
+          }),
+      ];
+      try {
+        const aside = sheet({
+          panelHeader: <input aria-label="Search places" />,
+          panelDetents: ["content", "large"],
+          panelDetent: "content",
+        });
+        expect(
+          screen.getByRole("slider", { name: "Panel height" }),
+        ).toBeInTheDocument();
+        expect(aside.style.height).toBe("192px");
+      } finally {
+        heights.forEach((spy) => spy.mockRestore());
+      }
+    });
+
+    it("counts it in a sheet fitted to its content", () => {
+      const heights = [
+        vi
+          .spyOn(HTMLElement.prototype, "scrollHeight", "get")
+          .mockReturnValue(120),
+        vi
+          .spyOn(HTMLElement.prototype, "offsetHeight", "get")
+          .mockImplementation(function (this: HTMLElement) {
+            return this.hasAttribute("data-kozmos-panel-header") ? 56 : 0;
+          }),
+      ];
+      try {
+        const aside = sheet({
+          panelHeader: <input aria-label="Search places" />,
+          panelSizing: "content",
+        });
+        expect(aside.style.height).toBe("176px");
+      } finally {
+        heights.forEach((spy) => spy.mockRestore());
+      }
+    });
   });
 
   it("frees the content's scroll at the largest detent", () => {

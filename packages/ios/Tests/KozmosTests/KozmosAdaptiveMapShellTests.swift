@@ -619,3 +619,267 @@ final class KozmosMapShellEdgesTests: XCTestCase {
     }
     #endif
 }
+
+/// The panel header (row 73): drawn under the grab handle and above the
+/// content, outside what the content scrolls, so a search field or a chosen
+/// category stays put while the results under it scroll. Every detent counts
+/// it, and a drag that starts on it moves the sheet whatever the content has
+/// scrolled — at the largest detent a scrolled list used to claim that drag.
+final class KozmosMapShellPanelHeaderTests: XCTestCase {
+    /// A header is not a peek anchor: collapsed only grows to show the whole
+    /// header, never under the default and never over three quarters. A
+    /// search field's 60 leaves the prototype's fifth where it was.
+    func testTheCollapsedDetentGrowsOnlyToShowTheWholeHeader() {
+        XCTAssertEqual(KozmosMapPanelDetent.headerCollapsedHeight(headerBottom: 60, in: 800), 160, accuracy: 0.001)
+        XCTAssertEqual(KozmosMapPanelDetent.headerCollapsedHeight(headerBottom: 216, in: 800), 232, accuracy: 0.001)
+        XCTAssertEqual(KozmosMapPanelDetent.headerCollapsedHeight(headerBottom: 716, in: 800), 576, accuracy: 0.001)
+        // A short shell keeps the default's 112 floor.
+        XCTAssertEqual(KozmosMapPanelDetent.headerCollapsedHeight(headerBottom: 60, in: 400), 112, accuracy: 0.001)
+    }
+
+    #if os(iOS)
+    private let size = CGSize(width: 390, height: 800)
+    private var whole: CGRect { CGRect(origin: .zero, size: size) }
+
+    private static func isGreen(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool { g > 150 && r < 120 && b < 140 }
+    private static func isRed(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool { r > 200 && g < 80 && b < 80 }
+    // SwiftUI's blue is (0, 122, 255): the green channel is not low.
+    private static func isBlue(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool { b > 200 && r < 60 && g < 160 }
+    private static func isYellow(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool { r > 220 && g > 180 && b < 80 }
+
+    private func shell<Header: View, Panel: View>(
+        detent: Binding<KozmosMapPanelDetent>,
+        detents: [KozmosMapPanelDetent] = [.collapsed, .medium, .large],
+        @ViewBuilder header: () -> Header,
+        @ViewBuilder panel: () -> Panel
+    ) -> some View {
+        KozmosAdaptiveMapShell(
+            panelDetent: detent, panelDetents: detents,
+            map: { Color.red }, mapStatusContent: { EmptyView() }, controls: { EmptyView() },
+            topBar: { EmptyView() }, panel: panel, panelHeader: header
+        )
+        .environment(\.horizontalSizeClass, .compact)
+    }
+
+    /// Thirty 60-point stripes, blue then yellow, in the sheet's own scroll
+    /// view: scrolled 300 points, the stripe under a fixed point flips.
+    private var stripes: some View {
+        KozmosPanelScrollView {
+            VStack(spacing: 0) {
+                ForEach(0..<30, id: \.self) { index in
+                    (index.isMultiple(of: 2) ? Color.blue : Color.yellow).frame(height: 60)
+                }
+            }
+        }
+    }
+
+    // MARK: Hosted in a window, to scroll it and to reach its pan catcher
+
+    /// No safe areas, as the snapshot strategy's own window has none: the
+    /// simulator's would move the sheet.
+    private final class Window: UIWindow {
+        override var safeAreaInsets: UIEdgeInsets { .zero }
+    }
+
+    @MainActor private func host<V: View>(_ view: V) async -> UIWindow {
+        let window = Window(frame: whole)
+        window.rootViewController = UIHostingController(rootView: view.frame(width: size.width, height: size.height))
+        window.makeKeyAndVisible()
+        await settle()
+        return window
+    }
+
+    /// A preference reaches the shell after a pass or two.
+    @MainActor private func settle() async {
+        for _ in 0..<10 {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.03))
+            await Task.yield()
+        }
+    }
+
+    @MainActor private func pixels(of window: UIWindow) throws -> RenderedPixels {
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { window.layer.render(in: $0.cgContext) }
+        return try RenderedPixels(image, pointWidth: size.width)
+    }
+
+    private func descendants(of view: UIView) -> [UIView] {
+        view.subviews + view.subviews.flatMap(descendants(of:))
+    }
+
+    @MainActor private func scrollView(in window: UIWindow) throws -> UIScrollView {
+        try XCTUnwrap(
+            descendants(of: window).compactMap { $0 as? UIScrollView }.first { $0.contentSize.height > $0.bounds.height },
+            "the content has no scroll view"
+        )
+    }
+
+    // MARK: The header stays put
+
+    /// Scrolled 300 points, the content moves under the header and the
+    /// header does not move. The large sheet's top is 800 − 752 = 48, and
+    /// the header follows the grab handle's 16-point row and its 4-point
+    /// clearance (decision 14).
+    @MainActor func testTheHeaderStaysPutWhileTheContentUnderItScrolls() async throws {
+        let window = await host(shell(detent: .constant(.large)) {
+            Color.green.frame(height: 72)
+        } panel: {
+            stripes
+        })
+        defer { window.isHidden = true }
+        let before = try pixels(of: window)
+        // Found first: a missing header would otherwise read nil twice and
+        // "stay put".
+        let header = try XCTUnwrap(before.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
+        XCTAssertEqual(header.minY, 48 + 16 + 4, accuracy: 1.5, "the header is not under the grab handle's row: \(header)")
+        XCTAssertEqual(header.height, 72, accuracy: 1.5, "the header is not its own height: \(header)")
+        let probe = CGPoint(x: 40, y: header.maxY + 30)
+        let first = before.color(at: probe)
+        XCTAssertTrue(Self.isBlue(first.r, first.g, first.b), "the content does not start under the header: \(first)")
+
+        try scrollView(in: window).contentOffset = CGPoint(x: 0, y: 300)
+        await settle()
+        let after = try pixels(of: window)
+        let scrolled = after.color(at: probe)
+        XCTAssertTrue(Self.isYellow(scrolled.r, scrolled.g, scrolled.b), "the content did not scroll under the header: \(scrolled)")
+        XCTAssertEqual(after.boundingBox(in: whole, where: Self.isGreen), header, "the header moved with the content")
+    }
+
+    // MARK: Every detent counts it
+
+    /// No anchor, and a header taller than a fifth of the shell: the
+    /// collapsed sheet grows to the header's bottom edge and the peek margin
+    /// — the handle's row and its 4-point clearance, the 200-point header and
+    /// 16 of what follows, 236 — where it used to stop at a fifth, 160, and
+    /// cut the header.
+    @MainActor func testACollapsedSheetShowsTheWholeHeader() async throws {
+        let pixels = try await RenderedPixels.render(shell(detent: .constant(.collapsed)) {
+            Color.green.frame(height: 200)
+        } panel: {
+            Color.blue.frame(height: 900)
+        }, size: size)
+        let header = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
+        XCTAssertEqual(header.height, 200, accuracy: 1.5, "the collapsed sheet cuts the header: \(header)")
+        XCTAssertEqual(header.maxY, size.height - 16, accuracy: 1.5, "the margin under the header is not 16: \(header)")
+        let content = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isBlue), "nothing follows the header")
+        XCTAssertEqual(content.height, 16, accuracy: 1.5, "more than the margin shows under the header: \(content)")
+    }
+
+    /// A header is not a peek anchor: a search row's 44 under the handle's
+    /// row and its clearance leaves the collapsed sheet at a fifth of the
+    /// shell, 160, with the content under the header — not at an anchored
+    /// peek's quarter, 192.
+    @MainActor func testASmallHeaderLeavesTheCollapsedDetentWhereItWas() async throws {
+        let pixels = try await RenderedPixels.render(shell(detent: .constant(.collapsed)) {
+            Color.green.frame(height: 44)
+        } panel: {
+            Color.blue.frame(height: 900)
+        }, size: size)
+        let header = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
+        XCTAssertEqual(header.minY, size.height - 160 + 16 + 4, accuracy: 1.5, "the collapsed sheet is not a fifth of the shell: \(header)")
+        let content = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isBlue), "nothing follows the header")
+        XCTAssertEqual(content.height, 160 - 16 - 4 - 44, accuracy: 1.5, "the content under the header is not what a fifth leaves: \(content)")
+    }
+
+    /// An anchor marked in the header is honoured, and outranks one in the
+    /// content, as React's `measurePeekBottom` has it: the sheet rests on the
+    /// header's 60-point first row — a quarter of the shell, 192 — not on the
+    /// content's anchor (546) nor on the header's bottom edge (296).
+    @MainActor func testAnAnchorInTheHeaderIsHonoured() async throws {
+        let pixels = try await RenderedPixels.render(shell(detent: .constant(.collapsed)) {
+            VStack(spacing: 0) {
+                Color.green.frame(height: 60).kozmosPanelPeekAnchor()
+                Color.yellow.frame(height: 200)
+            }
+        } panel: {
+            VStack(spacing: 0) {
+                Color.blue.frame(height: 250).kozmosPanelPeekAnchor()
+                Color.red.frame(height: 900)
+            }
+        }, size: size)
+        let row = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
+        XCTAssertEqual(row.minY, size.height - 192 + 16 + 4, accuracy: 1.5, "the sheet does not rest on the header's anchor: \(row)")
+    }
+
+    /// Fitted to its content, the sheet counts the header: the handle's row
+    /// and its clearance, the 80-point header and the 300-point panel, 400,
+    /// with the map above.
+    @MainActor func testTheContentFittedSheetCountsTheHeader() async throws {
+        let pixels = try await RenderedPixels.render(shell(detent: .constant(.content), detents: [.collapsed, .content, .large]) {
+            Color.green.frame(height: 80)
+        } panel: {
+            Color.blue.frame(height: 300)
+        }, size: size)
+        let header = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
+        XCTAssertEqual(header.minY, size.height - 400 + 16 + 4, accuracy: 1.5, "the fitted sheet does not count the header: \(header)")
+        let content = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isBlue), "no content drawn")
+        XCTAssertEqual(content.minY, header.maxY, accuracy: 1.5, "the content does not follow the header: \(content)")
+        XCTAssertEqual(content.maxY, size.height, accuracy: 1.5, "the content is cut: \(content)")
+        let map = pixels.color(at: CGPoint(x: 40, y: header.minY - 40))
+        XCTAssertTrue(Self.isRed(map.r, map.g, map.b), "the map is not just above the fitted sheet: \(map)")
+    }
+
+    // MARK: The drag
+
+    /// The large sheet's list has scrolled, so a downward drag on the list
+    /// scrolls it back first. The same drag started on the header moves the
+    /// sheet: released 300 points down, it lands on medium. Through the
+    /// sheet's own pan catcher, which decides whether UIKit's recogniser
+    /// begins; the recogniser itself needs a finger.
+    @MainActor func testADragThatStartsOnTheHeaderMovesTheSheetWhateverTheContentHasScrolled() async throws {
+        var detent = KozmosMapPanelDetent.large
+        let binding = Binding(get: { detent }, set: { detent = $0 })
+        let window = await host(shell(detent: binding) {
+            Color.green.frame(height: 72)
+        } panel: {
+            stripes
+        })
+        defer { window.isHidden = true }
+        try scrollView(in: window).contentOffset = CGPoint(x: 0, y: 300)
+        await settle()
+        let catcher = try XCTUnwrap(
+            descendants(of: window).compactMap { ($0 as? KozmosSheetPanCatcher.CatcherView)?.coordinator }.first,
+            "the sheet has no pan catcher"
+        )
+        // In the sheet's space: the handle's row is 16 tall, its clearance 4,
+        // and the header's 72 follow them.
+        let down = CGSize(width: 0, height: 20)
+        XCTAssertFalse(catcher.shouldBegin(CGPoint(x: 195, y: 16 + 4 + 72 + 100), down),
+                       "a downward drag on the scrolled list moved the sheet: the list has not scrolled")
+        XCTAssertFalse(catcher.shouldBegin(CGPoint(x: 195, y: 16 + 4 + 36), CGSize(width: 20, height: 4)),
+                       "a sideways drag on the header is the sheet's, not the header's")
+        let began = catcher.shouldBegin(CGPoint(x: 195, y: 16 + 4 + 36), down)
+        XCTAssertTrue(began, "a drag that starts on the header is the list's once the list has scrolled")
+        guard began else { return }
+        catcher.changed(300)
+        catcher.ended(300, 0)
+        XCTAssertEqual(detent, .medium, "the drag from the header did not move the sheet")
+    }
+
+    // MARK: Beside the map
+
+    /// In a side panel the header is the panel's first row: 416 wide, 16 in
+    /// from the top and from the panel's end — the right, or in a
+    /// right-to-left layout the left — the content under it.
+    @MainActor func testInASidePanelTheHeaderIsTheFirstRow() async throws {
+        let wide = CGSize(width: 1024, height: 700)
+        let region = CGRect(origin: .zero, size: wide)
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let view = KozmosAdaptiveMapShell(
+                map: { Color.red }, mapStatusContent: { EmptyView() }, controls: { EmptyView() },
+                topBar: { EmptyView() }, panel: { Color.blue }, panelHeader: { Color.green.frame(height: 72) }
+            )
+            .environment(\.horizontalSizeClass, .regular)
+            .environment(\.layoutDirection, direction)
+            let pixels = try await RenderedPixels.render(view, size: wide)
+            let header = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isGreen), "\(direction): the header is not drawn")
+            XCTAssertEqual(header.minY, 16, accuracy: 1.5, "\(direction): the header is not the panel's first row: \(header)")
+            XCTAssertEqual(header.height, 72, accuracy: 1.5)
+            XCTAssertEqual(header.minX, direction == .leftToRight ? 1024 - 16 - 416 : 16, accuracy: 1.5,
+                           "\(direction): the header is not in the panel: \(header)")
+            let content = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isBlue), "\(direction): no content drawn")
+            XCTAssertEqual(content.minY, header.maxY, accuracy: 1.5, "\(direction): the content does not follow the header: \(content)")
+            XCTAssertEqual(content.maxY, wide.height - 16, accuracy: 1.5, "\(direction): the content does not fill the panel under the header: \(content)")
+        }
+    }
+    #endif
+}

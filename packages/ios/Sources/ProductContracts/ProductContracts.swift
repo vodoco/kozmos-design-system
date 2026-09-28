@@ -385,12 +385,26 @@ public struct KozmosFloorPresentation: Sendable, Hashable, Identifiable {
     public let label: String
     public let shortLabel: String
     public let disabled: Bool
+    /// How many results sit on this level. Drawn as a small marker on the
+    /// floor's button, so a visitor can see that the answer is upstairs
+    /// without changing level to find out.
+    ///
+    /// `nil` means unknown, which is not the same as zero: a selector given
+    /// no counts marks nothing, rather than marking every level as empty.
+    public let resultCount: Int?
 
-    public init(id: String, label: String, shortLabel: String, disabled: Bool = false) {
+    public init(
+        id: String,
+        label: String,
+        shortLabel: String,
+        disabled: Bool = false,
+        resultCount: Int? = nil
+    ) {
         self.id = id
         self.label = label
         self.shortLabel = shortLabel
         self.disabled = disabled
+        self.resultCount = resultCount
     }
 }
 
@@ -517,6 +531,46 @@ public struct KozmosMapCollisionInsets: Sendable, Hashable {
     }
 }
 
+/// What part of the venue a search was held to.
+public enum KozmosSearchScopeKind: String, Sendable, Hashable, CaseIterable, Codable {
+    case building
+    case area
+}
+
+/// The part of the venue a search was held to.
+///
+/// NH-D: a visitor types "coffee in this terminal" or "coffee after security",
+/// and the list is limited to Terminal 2, or to the airside area. One chip says
+/// which, and its x searches the whole venue again. Without this the chip was
+/// hand-written (GAP-023).
+///
+/// Mirrors `SearchScopePresentation` on the web and
+/// `KozmosSearchScopePresentation` on Compose.
+public struct KozmosSearchScopePresentation: Sendable, Hashable {
+    public let kind: KozmosSearchScopeKind
+    /// The building's or the area's id, as the venue's data names it.
+    public let id: String
+    /// Already localized: "Terminal 2", "After security". The chip's text.
+    public let label: String
+    /// The query without the words that set the scope - "coffee" for "coffee
+    /// in this terminal" - for the chip's x to search the whole venue with.
+    /// Nil when nothing in the query set the scope, as when the host app
+    /// chose it.
+    public let queryWithoutScope: String?
+
+    public init(
+        kind: KozmosSearchScopeKind,
+        id: String,
+        label: String,
+        queryWithoutScope: String? = nil
+    ) {
+        self.kind = kind
+        self.id = id
+        self.label = label
+        self.queryWithoutScope = queryWithoutScope
+    }
+}
+
 /// A search's results and what to say when there are none.
 ///
 /// Mirrors `SearchResponsePresentation` on the web and
@@ -533,16 +587,22 @@ public struct KozmosSearchResponsePresentation: Sendable, Hashable {
     /// reading Japanese who gets English names should be told, not left to
     /// wonder.
     public let languageFallback: String?
+    /// The part of the venue the results were limited to. Nil means the whole
+    /// venue, which is the default (US9-AC1): a scope is something a query or
+    /// the host app asked for, never something the list assumes.
+    public let appliedScope: KozmosSearchScopePresentation?
 
     public init(
         results: [KozmosPOIResultPresentation] = [],
         emptyKind: KozmosSearchEmptyKind? = nil,
         emptiedBy: String? = nil,
-        languageFallback: String? = nil
+        languageFallback: String? = nil,
+        appliedScope: KozmosSearchScopePresentation? = nil
     ) {
         self.results = results
         self.emptyKind = emptyKind
         self.emptiedBy = emptiedBy
         self.languageFallback = languageFallback
+        self.appliedScope = appliedScope
     }
 }

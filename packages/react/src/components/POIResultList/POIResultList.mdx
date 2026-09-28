@@ -12,4 +12,37 @@ change. The empty state should tell the person how to recover.
 
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.Empty} />
+
+## The selected result comes into view
+
+When `selectedPoiId` changes, the list brings that result into view: a pin's
+tap selects a result that may be anywhere in the list. It scrolls the nearest
+thing around it that scrolls, by the least distance, and nothing further out —
+never the map sheet's frame, the shell, or the page when something closer
+scrolls. With nothing around the list that scrolls, it scrolls the page.
+
+A box that hides its overflow counts only when it says it scrolls, with
+`data-kozmos-scroller`. `AdaptiveMapShell`'s sheet does: below its largest
+detent it hides its overflow and a finger cannot scroll it, but the list can.
+Any other box that hides its overflow is clipping, and is left alone.
+
+- A list that appears with a result already selected, as when a pin's tap
+  opens it, brings that result in too.
+- A selected card opens its action row as it animates, so the list brings it in
+  again once the row is open.
+- A result inside a collapsed group brings in its group.
+- With reduced motion the list jumps rather than glides.
+
+Pass `scrollSelectedIntoView={false}` if the product already scrolls the panel
+itself.
+
+<Canvas of={Stories.SelectionComesIntoView} />
+
+## At the top of a map sheet
+
+The list brings no padding of its own; whatever holds it pads it. At the top of
+`AdaptiveMapShell`'s sheet, under the grip, it keeps the grip's 4px clearance
+(`--kozmos-panel-clearance-top`), so its first result stays out of the grip's
+target circle (WCAG 2.5.8). Anywhere else it adds nothing.
+
 <Controls />

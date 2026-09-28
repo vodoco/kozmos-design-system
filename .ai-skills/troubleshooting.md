@@ -28,26 +28,26 @@
 ### 1.1 Style Dictionary Build Fails
 
 **Symptoms:**
+
 ```
 Error: Cannot resolve reference: {color.blue.500}
 ```
 
 **Causes & Solutions:**
 
-| Cause | Solution |
-|-------|----------|
+| Cause                    | Solution                                                               |
+| ------------------------ | ---------------------------------------------------------------------- |
 | Missing token definition | Check that `color.blue.500` exists in `foundations/colors.tokens.json` |
-| Circular reference | Token A references B which references A — break the cycle |
-| Typo in reference | Verify exact path: `{color.blue.500}` not `{colors.blue.500}` |
-| Wrong file extension | Use `.tokens.json` not `.json` for DTCG files |
+| Circular reference       | Token A references B which references A — break the cycle              |
+| Typo in reference        | Verify exact path: `{color.blue.500}` not `{colors.blue.500}`          |
+| Wrong file extension     | Use `.tokens.json` not `.json` for DTCG files                          |
 
 **Debug Command:**
-```bash
-# Validate token files
-pnpm --filter @kozmos/tokens validate
 
-# Build with verbose output
-pnpm --filter @kozmos/tokens build -- --verbose
+```bash
+# Build the tokens: Style Dictionary already logs verbosely and names the unresolved reference.
+# There is no token validation script.
+pnpm --filter @kozmos-ds/tokens build
 ```
 
 ---
@@ -55,31 +55,34 @@ pnpm --filter @kozmos/tokens build -- --verbose
 ### 1.2 Token Values Not Updating in Components
 
 **Symptoms:**
+
 - Changed token value in source file
 - Component still shows old value
 
 **Solutions:**
 
 1. **Rebuild tokens:**
+
    ```bash
-   pnpm --filter @kozmos/tokens build
+   pnpm --filter @kozmos-ds/tokens build
    ```
 
-2. **Clear Turbo cache:**
+2. **Rebuild without Turborepo's cache** (Turborepo has no `clean` command):
+
    ```bash
-   pnpm turbo clean
-   pnpm build
+   pnpm build --force
    ```
 
 3. **Check CSS import order:**
+
    ```tsx
    // Correct - tokens first
-   import '@kozmos/tokens/tokens.css';
-   import { Button } from '@kozmos/react';
+   import "@kozmos/tokens/tokens.css";
+   import { Button } from "@kozmos/react";
 
    // Wrong - tokens after component
-   import { Button } from '@kozmos/react';
-   import '@kozmos/tokens/tokens.css';
+   import { Button } from "@kozmos/react";
+   import "@kozmos/tokens/tokens.css";
    ```
 
 4. **Verify CSS variable name:**
@@ -94,45 +97,42 @@ pnpm --filter @kozmos/tokens build -- --verbose
 ### 1.3 Figma Variables Out of Sync
 
 **Symptoms:**
+
 - Token values in code don't match Figma
 - Drift detected in CI
 
 **Solutions:**
 
 1. **Re-sync from Figma:**
+
    ```bash
-   pnpm sync-tokens
+   # Reads FIGMA_ACCESS_TOKEN and FIGMA_FILE_KEY from the environment
+   pnpm tokens:sync
    ```
 
-2. **Check Figma API token:**
-   ```bash
-   # Verify token has correct permissions
-   echo $FIGMA_ACCESS_TOKEN
+   In CI the sync is `.github/workflows/figma-tokens.yml`, a manual workflow that runs only when
+   the repository variable `FIGMA_VARIABLES_API_ENABLED` is `true`.
 
-   # Test API access
-   curl -H "X-Figma-Token: $FIGMA_ACCESS_TOKEN" \
-     "https://api.figma.com/v1/files/YOUR_FILE_KEY/variables/local"
-   ```
+2. **Check the Figma token without printing it:** never echo it. Figma reads go through
+   `scripts/figma-rest/with-figma-token.sh <command>`, which passes `FIGMA_ACCESS_TOKEN` from the
+   main checkout's `.env` to that one command and never prints the value.
 
 3. **Check Figma file version:**
    - Ensure you're syncing from the published library, not a branch
-
-4. **Validate DTCG schema:**
-   ```bash
-   npx ajv validate -s dtcg-schema.json -d src/**/*.tokens.json
-   ```
 
 ---
 
 ### 1.4 Wide Gamut Colors Not Working
 
 **Symptoms:**
+
 - P3/oklch colors falling back to sRGB unexpectedly
 - Colors look different across devices
 
 **Solutions:**
 
 1. **Check browser support:**
+
    ```css
    /* Ensure fallback is present */
    .element {
@@ -142,10 +142,11 @@ pnpm --filter @kozmos/tokens build -- --verbose
    ```
 
 2. **Check display capability:**
+
    ```javascript
    // Check if display supports P3
-   if (window.matchMedia('(color-gamut: p3)').matches) {
-     console.log('Display supports P3');
+   if (window.matchMedia("(color-gamut: p3)").matches) {
+     console.log("Display supports P3");
    }
    ```
 
@@ -162,6 +163,7 @@ pnpm --filter @kozmos/tokens build -- --verbose
 ### 2.1 "use client" Directive Missing
 
 **Symptoms:**
+
 ```
 Error: useState only works in Client Components. Add the "use client" directive.
 ```
@@ -169,26 +171,20 @@ Error: useState only works in Client Components. Add the "use client" directive.
 **Solutions:**
 
 1. **Add directive to component:**
+
    ```tsx
    // First line of file
-   'use client';
+   "use client";
 
-   import * as React from 'react';
+   import * as React from "react";
    ```
 
-2. **Check tsup config:**
-   ```typescript
-   // tsup.config.ts
-   export default defineConfig({
-     banner: {
-       js: '"use client";',
-     },
-   });
-   ```
+2. **Check the Vite build:** React builds with Vite, not tsup. `packages/react/vite.config.mts`
+   sets `banner: '"use client";'` on both Rollup outputs.
 
 3. **Verify build output:**
    ```bash
-   head -1 dist/index.mjs
+   head -1 packages/react/dist/kozmos-react.mjs
    # Should output: "use client";
    ```
 
@@ -197,24 +193,28 @@ Error: useState only works in Client Components. Add the "use client" directive.
 ### 2.2 Bundle Size Exceeds Budget
 
 **Symptoms:**
+
 ```
-Error: @kozmos/react bundle size (65KB) exceeds budget (50KB)
+❌ ERROR: everything costs 64.20 KB, over 64 KB
 ```
 
 **Solutions:**
 
-1. **Analyze bundle:**
+1. **Analyze bundle** (what the required `analyze-bundle` check runs):
+
    ```bash
-   pnpm --filter @kozmos/react analyze
-   # Opens bundle visualization
+   pnpm tsx scripts/performance/bundle-analyzer.ts
+   # Prints the median export and the five heaviest, Button, everything and the stylesheet
    ```
 
 2. **Check for unnecessary dependencies:**
+
    ```bash
    npx depcheck packages/react
    ```
 
 3. **Verify tree-shaking:**
+
    ```typescript
    // package.json
    {
@@ -223,12 +223,13 @@ Error: @kozmos/react bundle size (65KB) exceeds budget (50KB)
    ```
 
 4. **Split large components:**
+
    ```tsx
    // Instead of one large component
-   import { DataTable } from '@kozmos/react';
+   import { DataTable } from "@kozmos/react";
 
    // Use code splitting
-   const DataTable = lazy(() => import('@kozmos/react/DataTable'));
+   const DataTable = lazy(() => import("@kozmos/react/DataTable"));
    ```
 
 5. **Remove duplicate dependencies:**
@@ -241,37 +242,25 @@ Error: @kozmos/react bundle size (65KB) exceeds budget (50KB)
 ### 2.3 Dual CJS/ESM Issues
 
 **Symptoms:**
+
 ```
 Error: require() of ES Module not supported
 ```
+
 or
+
 ```
 SyntaxError: Cannot use import statement outside a module
 ```
 
 **Solutions:**
 
-1. **Check package.json exports:**
-   ```json
-   {
-     "exports": {
-       ".": {
-         "import": "./dist/index.mjs",
-         "require": "./dist/index.cjs",
-         "types": "./dist/index.d.ts"
-       }
-     }
-   }
-   ```
+1. **Check package.json exports:** `packages/react/package.json` sends `import` to
+   `dist/kozmos-react.mjs` (types `dist/index.d.mts`) and `require` to `dist/kozmos-react.umd.cjs`
+   (types `dist/index.d.cts`).
 
-2. **Verify tsup output:**
-   ```typescript
-   // tsup.config.ts
-   export default defineConfig({
-     format: ['esm', 'cjs'],
-     dts: true,
-   });
-   ```
+2. **Verify the Vite output:** `packages/react/vite.config.mts` builds an ES output (one file per
+   module under `dist/esm/`) and a UMD CommonJS bundle; `vite-plugin-dts` writes the declarations.
 
 3. **Check consumer's bundler config:**
    ```javascript
@@ -286,6 +275,7 @@ SyntaxError: Cannot use import statement outside a module
 ### 2.4 TypeScript Declaration Errors
 
 **Symptoms:**
+
 ```
 error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type declarations.
 ```
@@ -293,6 +283,7 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
 **Solutions:**
 
 1. **Check types field in package.json:**
+
    ```json
    {
      "types": "./dist/index.d.ts",
@@ -305,11 +296,13 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
    ```
 
 2. **Rebuild declarations:**
+
    ```bash
-   pnpm --filter @kozmos/tokens build
+   pnpm --filter @kozmos-ds/tokens build
    ```
 
 3. **Check tsconfig paths:**
+
    ```json
    // tsconfig.json
    {
@@ -333,18 +326,21 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
 ### 3.1 CSS Variables Not Applied
 
 **Symptoms:**
+
 - Styles show as `var(--kozmos-color-*)` in DevTools
 - Components have no styling
 
 **Solutions:**
 
 1. **Import tokens CSS:**
+
    ```tsx
    // App.tsx or layout.tsx
-   import '@kozmos/tokens/tokens.css';
+   import "@kozmos/tokens/tokens.css";
    ```
 
 2. **Check for CSS isolation:**
+
    ```tsx
    // Wrap in kozmos-root if needed
    <div className="kozmos-root">
@@ -353,6 +349,7 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
    ```
 
 3. **Check for conflicting CSS resets:**
+
    ```css
    /* Some resets override custom properties */
    :root {
@@ -372,6 +369,7 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
 ### 3.2 Hydration Mismatch
 
 **Symptoms:**
+
 ```
 Warning: Text content did not match. Server: "light" Client: "dark"
 ```
@@ -379,6 +377,7 @@ Warning: Text content did not match. Server: "light" Client: "dark"
 **Solutions:**
 
 1. **Defer theme detection:**
+
    ```tsx
    // Use useEffect for client-only theme detection
    const [mounted, setMounted] = useState(false);
@@ -388,12 +387,15 @@ Warning: Text content did not match. Server: "light" Client: "dark"
    ```
 
 2. **Use CSS media query for initial theme:**
+
    ```css
    :root {
      color-scheme: light dark;
    }
    @media (prefers-color-scheme: dark) {
-     :root { /* dark tokens */ }
+     :root {
+       /* dark tokens */
+     }
    }
    ```
 
@@ -407,19 +409,22 @@ Warning: Text content did not match. Server: "light" Client: "dark"
 ### 3.3 Ref Forwarding Not Working
 
 **Symptoms:**
+
 - `ref` prop doesn't give access to DOM element
 - Third-party library can't attach to component
 
 **Solutions:**
 
 1. **Use forwardRef:**
+
    ```tsx
    const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-     (props, ref) => <button ref={ref} {...props} />
+     (props, ref) => <button ref={ref} {...props} />,
    );
    ```
 
 2. **Check component wrapping:**
+
    ```tsx
    // Wrong - ref is lost
    const WrappedButton = (props) => <Button {...props} />;
@@ -435,6 +440,7 @@ Warning: Text content did not match. Server: "light" Client: "dark"
 ### 3.4 Context Not Found
 
 **Symptoms:**
+
 ```
 Error: useTabsContext must be used within <Tabs>
 ```
@@ -442,6 +448,7 @@ Error: useTabsContext must be used within <Tabs>
 **Solutions:**
 
 1. **Wrap with provider:**
+
    ```tsx
    <Tabs>
      <Tabs.Trigger /> {/* Must be inside Tabs */}
@@ -449,6 +456,7 @@ Error: useTabsContext must be used within <Tabs>
    ```
 
 2. **Check provider hierarchy:**
+
    ```tsx
    // Providers must be properly nested
    <ThemeProvider>
@@ -464,7 +472,7 @@ Error: useTabsContext must be used within <Tabs>
    render(
      <Tabs defaultValue="tab1">
        <ComponentUnderTest />
-     </Tabs>
+     </Tabs>,
    );
    ```
 
@@ -475,18 +483,21 @@ Error: useTabsContext must be used within <Tabs>
 ### 4.1 Colors Not Loading from Asset Catalog
 
 **Symptoms:**
+
 - Colors appear as clear/transparent
 - Console: `Unable to load color named 'color-name'`
 
 **Solutions:**
 
 1. **Check bundle reference:**
+
    ```swift
    // Use Bundle.module for SPM packages
    Color("interactive-primary", bundle: .module)
    ```
 
 2. **Verify asset catalog exists:**
+
    ```
    Sources/KozmosUI/Resources/Colors.xcassets/
    └── interactive-primary.colorset/
@@ -506,12 +517,14 @@ Error: useTabsContext must be used within <Tabs>
 ### 4.2 Preview Not Rendering
 
 **Symptoms:**
+
 - Xcode Preview shows "Failed to build"
 - Preview canvas is blank
 
 **Solutions:**
 
 1. **Check preview provider:**
+
    ```swift
    #if DEBUG
    struct Button_Previews: PreviewProvider {
@@ -526,6 +539,7 @@ Error: useTabsContext must be used within <Tabs>
    - Xcode → Product → Clean Build Folder (Cmd+Shift+K)
 
 3. **Check iOS version:**
+
    ```swift
    @available(iOS 16.0, *)
    struct KozmosButton: View { ... }
@@ -545,12 +559,14 @@ Error: useTabsContext must be used within <Tabs>
 ### 4.3 Dynamic Type Not Scaling
 
 **Symptoms:**
+
 - Text doesn't resize with accessibility settings
 - Font sizes are fixed
 
 **Solutions:**
 
 1. **Use dynamic type styles:**
+
    ```swift
    Text("Hello")
      .font(.body) // Scales with Dynamic Type
@@ -561,6 +577,7 @@ Error: useTabsContext must be used within <Tabs>
    ```
 
 2. **Use scaled metric:**
+
    ```swift
    @ScaledMetric var iconSize: CGFloat = 24
 
@@ -575,12 +592,14 @@ Error: useTabsContext must be used within <Tabs>
 ### 5.1 Theme Not Applied
 
 **Symptoms:**
+
 - Components have default Material colors
 - Custom tokens not visible
 
 **Solutions:**
 
 1. **Wrap with KozmosTheme:**
+
    ```kotlin
    KozmosTheme {
      // Components must be inside theme
@@ -602,6 +621,7 @@ Error: useTabsContext must be used within <Tabs>
 ### 5.2 Compose Preview Fails
 
 **Symptoms:**
+
 ```
 java.lang.IllegalStateException: CompositionLocal not present
 ```
@@ -609,6 +629,7 @@ java.lang.IllegalStateException: CompositionLocal not present
 **Solutions:**
 
 1. **Provide required CompositionLocals:**
+
    ```kotlin
    @Preview
    @Composable
@@ -632,12 +653,14 @@ java.lang.IllegalStateException: CompositionLocal not present
 ### 5.3 ProGuard/R8 Stripping Classes
 
 **Symptoms:**
+
 - Crash in release build: `ClassNotFoundException`
 - Compose components not rendering
 
 **Solutions:**
 
 1. **Add ProGuard rules:**
+
    ```proguard
    # kozmos-ui/proguard-rules.pro
    -keep class com.pointr.kozmos.** { *; }
@@ -659,6 +682,7 @@ java.lang.IllegalStateException: CompositionLocal not present
 ### 6.1 Metro Bundler Fails
 
 **Symptoms:**
+
 ```
 error: Error: Unable to resolve module @kozmos/react-native
 ```
@@ -666,17 +690,17 @@ error: Error: Unable to resolve module @kozmos/react-native
 **Solutions:**
 
 1. **Clear Metro cache:**
+
    ```bash
    npx react-native start --reset-cache
    ```
 
 2. **Check metro.config.js:**
+
    ```javascript
    module.exports = {
      resolver: {
-       nodeModulesPaths: [
-         path.resolve(__dirname, 'node_modules'),
-       ],
+       nodeModulesPaths: [path.resolve(__dirname, "node_modules")],
      },
    };
    ```
@@ -691,14 +715,16 @@ error: Error: Unable to resolve module @kozmos/react-native
 ### 6.2 Gesture Handler Not Working
 
 **Symptoms:**
+
 - Buttons don't respond to touch
 - Swipe gestures fail
 
 **Solutions:**
 
 1. **Wrap app with GestureHandlerRootView:**
+
    ```tsx
-   import { GestureHandlerRootView } from 'react-native-gesture-handler';
+   import { GestureHandlerRootView } from "react-native-gesture-handler";
 
    export default function App() {
      return (
@@ -712,7 +738,7 @@ error: Error: Unable to resolve module @kozmos/react-native
 2. **Import at entry point:**
    ```tsx
    // index.js - FIRST LINE
-   import 'react-native-gesture-handler';
+   import "react-native-gesture-handler";
    ```
 
 ---
@@ -720,6 +746,7 @@ error: Error: Unable to resolve module @kozmos/react-native
 ### 6.3 Reanimated Errors
 
 **Symptoms:**
+
 ```
 Reanimated 2 failed to create a worklet
 ```
@@ -727,10 +754,11 @@ Reanimated 2 failed to create a worklet
 **Solutions:**
 
 1. **Add Babel plugin:**
+
    ```javascript
    // babel.config.js
    module.exports = {
-     plugins: ['react-native-reanimated/plugin'],
+     plugins: ["react-native-reanimated/plugin"],
    };
    ```
 
@@ -748,10 +776,13 @@ Reanimated 2 failed to create a worklet
 ### 7.1 Custom Elements Not Defined
 
 **Symptoms:**
+
 ```
 Uncaught TypeError: Illegal constructor
 ```
+
 or
+
 ```
 [Vue warn]: Failed to resolve component: kozmos-button
 ```
@@ -759,9 +790,10 @@ or
 **Solutions:**
 
 1. **Register custom elements:**
+
    ```typescript
    // main.ts
-   import '@kozmos/vue/define'; // Auto-registers all elements
+   import "@kozmos/vue/define"; // Auto-registers all elements
    ```
 
 2. **Configure Vue to recognize custom elements:**
@@ -772,7 +804,7 @@ or
        vue({
          template: {
            compilerOptions: {
-             isCustomElement: (tag) => tag.startsWith('kozmos-'),
+             isCustomElement: (tag) => tag.startsWith("kozmos-"),
            },
          },
        }),
@@ -785,12 +817,14 @@ or
 ### 7.2 v-model Not Working
 
 **Symptoms:**
+
 - Two-way binding doesn't update
 - Input value not syncing
 
 **Solutions:**
 
 1. **Use Vue wrapper, not raw Web Component:**
+
    ```vue
    <!-- Use Vue wrapper -->
    <KozmosInput v-model="value" />
@@ -801,10 +835,7 @@ or
 
 2. **Handle events manually for Web Components:**
    ```vue
-   <kozmos-input
-     :value="value"
-     @input="value = $event.target.value"
-   />
+   <kozmos-input :value="value" @input="value = $event.target.value" />
    ```
 
 ---
@@ -814,6 +845,7 @@ or
 ### 8.1 "Cannot find Figma file"
 
 **Symptoms:**
+
 ```
 Error: Could not find Figma file with key XXXXX
 ```
@@ -821,12 +853,13 @@ Error: Could not find Figma file with key XXXXX
 **Solutions:**
 
 1. **Check URL format:**
+
    ```typescript
    // Correct - full URL with node-id
-   const FIGMA_URL = 'https://www.figma.com/design/XXXXX/Name?node-id=123:456';
+   const FIGMA_URL = "https://www.figma.com/design/XXXXX/Name?node-id=123:456";
 
    // Wrong - file key only
-   const FIGMA_URL = 'XXXXX';
+   const FIGMA_URL = "XXXXX";
    ```
 
 2. **Verify API token permissions:**
@@ -840,18 +873,21 @@ Error: Could not find Figma file with key XXXXX
 ### 8.2 Props Not Mapping Correctly
 
 **Symptoms:**
+
 - Code snippet shows wrong prop values
 - Enum values not matching
 
 **Solutions:**
 
 1. **Check Figma property names:**
+
    ```typescript
    // Figma property must match exactly (case-sensitive)
    variant: figma.enum('Variant', { ... }) // "Variant" in Figma
    ```
 
 2. **Verify enum mappings:**
+
    ```typescript
    variant: figma.enum('Variant', {
      'Primary': 'primary',    // Figma value : Code value
@@ -870,6 +906,7 @@ Error: Could not find Figma file with key XXXXX
 ### 8.3 Code Connect Publish Fails
 
 **Symptoms:**
+
 ```
 Error: Failed to publish Code Connect
 ```
@@ -877,27 +914,18 @@ Error: Failed to publish Code Connect
 **Solutions:**
 
 1. **Validate before publishing:**
+
    ```bash
-   npx figma connect parse --dry-run
+   pnpm figma:parse:linked
+   pnpm figma:publish:linked:dry
    ```
 
-2. **Check figma.config.json:**
-   ```json
-   {
-     "codeConnect": {
-       "include": ["src/**/*.figma.tsx"],
-       "parser": "react",
-       "label": "React"
-     }
-   }
-   ```
+2. **Check the linked config:** what is published is named by `figma.linked.config.json` (React),
+   `packages/ios/figma.linked.config.json` and `packages/android/figma.linked.config.json`.
 
-3. **Verify token in CI:**
-   ```yaml
-   - run: npx figma connect publish
-     env:
-       FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
-   ```
+3. **CI never publishes:** it parses on all three platforms and, when `FIGMA_ACCESS_TOKEN` is set,
+   runs the dry runs only. A publish is run by hand
+   ([publishing-guide.md](./publishing-guide.md)).
 
 ---
 
@@ -906,22 +934,25 @@ Error: Failed to publish Code Connect
 ### 9.1 Stories Not Loading
 
 **Symptoms:**
+
 - Storybook sidebar is empty
 - "No stories found" message
 
 **Solutions:**
 
 1. **Check story file pattern:**
+
    ```typescript
    // .storybook/main.ts
    stories: ['../src/**/*.stories.@(ts|tsx)'],
    ```
 
 2. **Verify story export:**
+
    ```tsx
    // Correct
    export default {
-     title: 'Components/Button',
+     title: "Components/Button",
      component: Button,
    } satisfies Meta<typeof Button>;
 
@@ -941,18 +972,20 @@ Error: Failed to publish Code Connect
 ### 9.2 Controls Not Working
 
 **Symptoms:**
+
 - Args panel shows no controls
 - Controls don't update component
 
 **Solutions:**
 
 1. **Define argTypes:**
+
    ```tsx
    const meta: Meta<typeof Button> = {
      argTypes: {
        variant: {
-         control: 'select',
-         options: ['primary', 'secondary'],
+         control: "select",
+         options: ["primary", "secondary"],
        },
      },
    };
@@ -969,28 +1002,25 @@ Error: Failed to publish Code Connect
 ### 9.3 Addon Not Appearing
 
 **Symptoms:**
+
 - a11y panel missing
 - Design tab not visible
 
 **Solutions:**
 
-1. **Check addon installation:**
+1. **Check addon installation:** Storybook's addons belong to `@kozmos-ds/docs`, which already
+   has `@storybook/addon-a11y`. Another is added there:
+
    ```bash
-   pnpm add -D @storybook/addon-a11y
+   pnpm --filter @kozmos-ds/docs add -D <addon>
    ```
 
-2. **Register in main.ts:**
-   ```typescript
-   addons: [
-     '@storybook/addon-essentials',
-     '@storybook/addon-a11y',
-     '@storybook/addon-designs',
-   ],
-   ```
+2. **Register in main.ts:** `apps/docs/.storybook/main.ts` registers links, essentials,
+   interactions, a11y and `storybook-addon-performance`; there is no designs addon.
 
-3. **Restart Storybook:**
+3. **Restart Storybook** (Storybook 8's `dev` has no `--no-cache` option):
    ```bash
-   pnpm storybook --no-cache
+   pnpm --filter @kozmos-ds/docs storybook
    ```
 
 ---
@@ -1000,6 +1030,7 @@ Error: Failed to publish Code Connect
 ### 10.1 axe-core Violations
 
 **Symptoms:**
+
 ```
 Expected 0 violations but found 2:
 - color-contrast: Elements must meet minimum color contrast ratio
@@ -1009,12 +1040,14 @@ Expected 0 violations but found 2:
 **Solutions:**
 
 1. **Color contrast:**
+
    ```tsx
    // Check token values meet 4.5:1 ratio
    // Use https://webaim.org/resources/contrastchecker/
    ```
 
 2. **Button name:**
+
    ```tsx
    // Add accessible name
    <Button aria-label="Close dialog">
@@ -1026,7 +1059,7 @@ Expected 0 violations but found 2:
    ```tsx
    const results = await axe(container, {
      rules: {
-       'color-contrast': { enabled: false },
+       "color-contrast": { enabled: false },
      },
    });
    ```
@@ -1036,6 +1069,7 @@ Expected 0 violations but found 2:
 ### 10.2 Testing Library Queries Fail
 
 **Symptoms:**
+
 ```
 Unable to find an element with the role "button"
 ```
@@ -1043,21 +1077,23 @@ Unable to find an element with the role "button"
 **Solutions:**
 
 1. **Use correct role:**
+
    ```tsx
    // For <button>
-   screen.getByRole('button');
+   screen.getByRole("button");
 
    // For <a>
-   screen.getByRole('link');
+   screen.getByRole("link");
 
    // For custom components
-   screen.getByTestId('custom-component');
+   screen.getByTestId("custom-component");
    ```
 
 2. **Wait for async rendering:**
+
    ```tsx
    await waitFor(() => {
-     expect(screen.getByRole('button')).toBeInTheDocument();
+     expect(screen.getByRole("button")).toBeInTheDocument();
    });
    ```
 
@@ -1073,38 +1109,26 @@ Unable to find an element with the role "button"
 ### 10.3 Visual Regression Flaky
 
 **Symptoms:**
+
 - Same code produces different screenshots
 - Tests pass locally but fail in CI
 
 **Solutions:**
 
-1. **Increase threshold:**
-   ```javascript
-   // Chromatic config
-   {
-     "diffThreshold": 0.3 // Allow 0.3% difference
-   }
-   ```
+A difference is an answer, not bad luck: the suite runs with no retries on purpose.
 
-2. **Disable animations:**
-   ```tsx
-   // In test setup
-   document.body.style.setProperty('--kozmos-motion-duration-fast', '0ms');
-   ```
-
-3. **Use consistent fonts:**
-   ```css
-   /* Force system fonts in tests */
-   * { font-family: sans-serif !important; }
-   ```
-
-4. **Pin browser version:**
-   ```yaml
-   # CI config
-   - uses: browser-actions/setup-chrome@latest
-     with:
-       chrome-version: 120.0.6099.109
-   ```
+1. **Don't raise the threshold.** `threshold: 0.02` in `playwright.visual.config.ts` is calibrated:
+   the default 0.2 passed a whole token step (a delta of 351) as unchanged, while anti-aliasing
+   noise is a delta under 1. Loosen it only after re-running a control that proves a token step
+   still fails.
+2. **Draw where CI draws.** Run `pnpm test:visual` (the Playwright image in Docker), never on a bare
+   Mac: its fonts and rendering differ. The browser version is pinned by the image tag.
+3. **Make the story deterministic.** The suite already fixes the clock, seeds `Math.random`,
+   prefers reduced motion and refuses outside requests; a story that still moves between runs has
+   its own timer, random or network dependency to remove. A story that genuinely cannot hold still
+   takes `tags: ["no-visual"]`.
+4. **Masked areas** (map canvases, Pointr taxonomy symbols) are deliberate; see
+   `docs/visual-review.md`, "When it fails for no reason".
 
 ---
 
@@ -1113,94 +1137,63 @@ Unable to find an element with the role "button"
 ### 11.1 GitHub Actions Fails on macOS
 
 **Symptoms:**
+
 ```
 Error: The operation was canceled.
 ```
 
 **Solutions:**
 
-1. **Increase timeout:**
-   ```yaml
-   jobs:
-     build-ios:
-       timeout-minutes: 30
-   ```
-
-2. **Use correct runner:**
-   ```yaml
-   runs-on: macos-14 # M1 runner, faster
-   ```
-
-3. **Cache CocoaPods:**
-   ```yaml
-   - uses: actions/cache@v4
-     with:
-       path: ios/Pods
-       key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-   ```
+1. **Check for a newer push:** CI cancels its run in progress when the same branch is pushed again
+   (`cancel-in-progress`), and each cancelled job says exactly this. The newer run is the one that
+   counts.
+2. **Know what `iOS Build` runs:** the only macOS job (`macos-latest`) builds and tests
+   `packages/ios` with SwiftPM (`swift build`, `swift test`) and renders the POI tests on a
+   simulator. There is no CocoaPods to cache.
+3. **A deliberate skip passes:** on a pull request that touches no iOS input, the `Changes` job
+   skips `iOS Build`, and the skipped check counts as passing.
 
 ---
 
 ### 11.2 npm Publish Fails
 
 **Symptoms:**
+
 ```
-npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
+npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos-ds/react
 ```
 
 **Solutions:**
 
-1. **Check npm token:**
-   ```yaml
-   env:
-     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-   ```
+Only `release.yml`'s publish job publishes, with the `NPM_TOKEN` of the `npm-release`
+environment; there is no other token to check. Do not re-run it blindly: in the first release, a
+re-run asked npm to publish over a version it already had, and npm answered 403. A release that
+failed part-way is recovered by [docs/release-process.md](../docs/release-process.md), "Failure and
+recovery". See what npm holds:
 
-2. **Verify package access:**
-   ```json
-   {
-     "publishConfig": {
-       "access": "public"
-     }
-   }
-   ```
-
-3. **Check version not already published:**
-   ```bash
-   npm view @kozmos/react versions
-   ```
+```bash
+npm view @kozmos-ds/react versions
+```
 
 ---
 
 ### 11.3 Turbo Cache Not Working
 
 **Symptoms:**
+
 - Builds not faster with caching
 - "FULL TURBO" not appearing
 
 **Solutions:**
 
-1. **Check turbo.json:**
-   ```json
-   {
-     "pipeline": {
-       "build": {
-         "outputs": ["dist/**"],
-         "dependsOn": ["^build"]
-       }
-     }
-   }
-   ```
-
-2. **Enable remote caching:**
+1. **Check turbo.json:** the root `turbo.json` lists each task's `inputs`, `outputs` and
+   `dependsOn` under `tasks`, and `.env` and `tsconfig.base.json` are global dependencies: a
+   change to either invalidates every task.
+2. **Remote caching is not set up:** no workflow sets `TURBO_TOKEN` or `TURBO_TEAM`, and each CI
+   run starts with an empty cache.
+3. **Ignore the local cache for one run:**
    ```bash
-   npx turbo login
-   npx turbo link
-   ```
-
-3. **Clear local cache:**
-   ```bash
-   npx turbo clean
+   pnpm build --force
    ```
 
 ---
@@ -1210,32 +1203,36 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 ### 12.1 Component Looks Different Across Platforms
 
 **Symptoms:**
+
 - Button has different padding on iOS vs Android
 - Colors don't match web
 
 **Solutions:**
 
 1. **Use shared tokens:**
+
    ```swift
    // iOS
    .padding(.horizontal, KozmosTokens.space400)
    ```
+
    ```kotlin
    // Android
    Modifier.padding(horizontal = KozmosTokens.space400.dp)
    ```
+
    ```tsx
    // React
-   padding: 'var(--kozmos-space-400)'
+   padding: "var(--kozmos-space-400)";
    ```
 
 2. **Document intentional differences:**
    ```markdown
-   | Platform | Touch target | Reason |
-   |----------|--------------|--------|
-   | Web | 44x44px | WCAG minimum |
-   | iOS | 44x44pt | Apple HIG |
-   | Android | 48x48dp | Material 3 |
+   | Platform | Touch target | Reason       |
+   | -------- | ------------ | ------------ |
+   | Web      | 44x44px      | WCAG minimum |
+   | iOS      | 44x44pt      | Apple HIG    |
+   | Android  | 48x48dp      | Material 3   |
    ```
 
 ---
@@ -1243,12 +1240,14 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 ### 12.2 Animation Timing Differs
 
 **Symptoms:**
+
 - Animations feel different per platform
 - Duration seems wrong
 
 **Solutions:**
 
 1. **Use same easing values:**
+
    ```typescript
    // Ensure all platforms use same curve
    // cubic-bezier(0.4, 0, 0.2, 1)
@@ -1271,12 +1270,14 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 ### 13.1 Slow Initial Render
 
 **Symptoms:**
+
 - First paint takes > 100ms
 - Component flashes unstyled
 
 **Solutions:**
 
 1. **Preload critical CSS:**
+
    ```html
    <link rel="preload" href="/tokens.css" as="style" />
    ```
@@ -1287,7 +1288,7 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 
 3. **Lazy load non-critical components:**
    ```tsx
-   const DataTable = lazy(() => import('@kozmos/react/DataTable'));
+   const DataTable = lazy(() => import("@kozmos/react/DataTable"));
    ```
 
 ---
@@ -1295,17 +1296,20 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 ### 13.2 Re-renders on Every Frame
 
 **Symptoms:**
+
 - React DevTools shows constant updates
 - Animations are janky
 
 **Solutions:**
 
 1. **Memoize expensive components:**
+
    ```tsx
    const MemoizedTable = React.memo(DataTable);
    ```
 
 2. **Use useCallback for handlers:**
+
    ```tsx
    const handleClick = useCallback(() => {
      // Handler logic
@@ -1328,12 +1332,14 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 ### 14.1 Focus Not Visible
 
 **Symptoms:**
+
 - No focus ring on keyboard navigation
 - Users can't see where focus is
 
 **Solutions:**
 
 1. **Add focus-visible styles:**
+
    ```css
    .kozmos-btn:focus-visible {
      outline: 2px solid var(--kozmos-color-interactive-primary);
@@ -1342,12 +1348,17 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
    ```
 
 2. **Don't remove outlines globally:**
+
    ```css
    /* Never do this */
-   *:focus { outline: none; }
+   *:focus {
+     outline: none;
+   }
 
    /* Use focus-visible instead */
-   *:focus:not(:focus-visible) { outline: none; }
+   *:focus:not(:focus-visible) {
+     outline: none;
+   }
    ```
 
 ---
@@ -1355,17 +1366,20 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 ### 14.2 Screen Reader Not Announcing
 
 **Symptoms:**
+
 - VoiceOver/TalkBack skips component
 - Announcements are incorrect
 
 **Solutions:**
 
 1. **Add ARIA labels:**
+
    ```tsx
    <button aria-label="Close dialog">X</button>
    ```
 
 2. **Use semantic elements:**
+
    ```tsx
    // Semantic
    <button>Submit</button>
@@ -1386,12 +1400,14 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 ### 14.3 Motion Causes Discomfort
 
 **Symptoms:**
+
 - Users report dizziness
 - Motion is too aggressive
 
 **Solutions:**
 
 1. **Respect prefers-reduced-motion:**
+
    ```css
    @media (prefers-reduced-motion: reduce) {
      *,
@@ -1421,23 +1437,23 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 
 ## Quick Reference: Error Messages
 
-| Error Message | Likely Cause | Solution Reference |
-|---------------|--------------|-------------------|
-| `Cannot resolve reference` | Token not found | Section 1.1 |
-| `use client directive` | Missing "use client" | Section 2.1 |
-| `bundle size exceeds` | Large bundle | Section 2.2 |
-| `require() of ES Module` | CJS/ESM conflict | Section 2.3 |
-| `Hydration mismatch` | Server/client diff | Section 3.2 |
-| `Unable to load color` | Missing asset | Section 4.1 |
-| `ClassNotFoundException` | ProGuard stripping | Section 5.3 |
-| `Unable to resolve module` | Metro issue | Section 6.1 |
-| `Illegal constructor` | Custom element not defined | Section 7.1 |
-| `Could not find Figma file` | Wrong URL/permissions | Section 8.1 |
-| `No stories found` | Story pattern issue | Section 9.1 |
-| `color-contrast violation` | Accessibility | Section 10.1 |
-| `403 Forbidden npm` | Token/access issue | Section 11.2 |
+| Error Message               | Likely Cause               | Solution Reference |
+| --------------------------- | -------------------------- | ------------------ |
+| `Cannot resolve reference`  | Token not found            | Section 1.1        |
+| `use client directive`      | Missing "use client"       | Section 2.1        |
+| `bundle size exceeds`       | Large bundle               | Section 2.2        |
+| `require() of ES Module`    | CJS/ESM conflict           | Section 2.3        |
+| `Hydration mismatch`        | Server/client diff         | Section 3.2        |
+| `Unable to load color`      | Missing asset              | Section 4.1        |
+| `ClassNotFoundException`    | ProGuard stripping         | Section 5.3        |
+| `Unable to resolve module`  | Metro issue                | Section 6.1        |
+| `Illegal constructor`       | Custom element not defined | Section 7.1        |
+| `Could not find Figma file` | Wrong URL/permissions      | Section 8.1        |
+| `No stories found`          | Story pattern issue        | Section 9.1        |
+| `color-contrast violation`  | Accessibility              | Section 10.1       |
+| `403 Forbidden npm`         | Token/access issue         | Section 11.2       |
 
 ---
 
-*Last updated: 2025-02-07*
-*Maintainer: Kozmos Design System Team*
+_Last updated: 2025-02-07_
+_Maintainer: Kozmos Design System Team_

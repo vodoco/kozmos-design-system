@@ -93,7 +93,10 @@ function Example({
           minHeight: 0,
           ...props.style,
         }}
-        presentation={map ? (bottom ? "sheet" : "panel") : "inline"}
+        // Hosted in the shell, sheet or side panel alike, the card paints no
+        // surface of its own and sits on the panel's (GAP-083); "panel" is
+        // for a card that is the desktop panel itself.
+        presentation={map ? "sheet" : "inline"}
         actionStates={actionStates}
         onAction={onAction}
         onClose={close}

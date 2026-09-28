@@ -58,4 +58,35 @@ describe("UserLocationMarker", () => {
     expect(screen.getByRole("img", { name: "Ihr Standort" })).toBeVisible();
     expect(screen.queryByRole("img", { name: "User location" })).toBeNull();
   });
+
+  it("goes hollow on another level, rather than looking the same everywhere", () => {
+    // GAP-069. The marker looked identical whatever level was in view, so the
+    // map page hid it and the visitor lost their position. Hollow, as
+    // LocationPin's offFloor is: shape carries the state, not colour alone.
+    const { container, rerender } = render(<UserLocationMarker />);
+    const dot = () =>
+      container.querySelector(
+        "[data-off-floor], .rounded-pill.shadow-floating",
+      );
+    expect(container.firstElementChild).not.toHaveAttribute("data-off-floor");
+    expect(container.innerHTML).toContain("bg-data-blue");
+
+    rerender(
+      <UserLocationMarker
+        offFloor
+        offFloorLabel="Ihr Standort, auf einer anderen Ebene"
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).toHaveAttribute("data-off-floor", "true");
+    expect(root).toHaveAttribute(
+      "aria-label",
+      "Ihr Standort, auf einer anderen Ebene",
+    );
+    // The ping says "here, now" and the cone says "facing this way". Neither
+    // is true of a level you are not looking at.
+    expect(container.querySelector(".animate-ping")).toBeNull();
+    expect(container.querySelector("svg")).toBeNull();
+    expect(dot()).not.toBeNull();
+  });
 });

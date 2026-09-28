@@ -30,6 +30,14 @@ public struct KozmosPOIActionState: Sendable, Hashable {
 
 /// Native POI card. Presentation is controlled by the product; no SDK objects or
 /// taxonomy lookups are embedded in this view. Existing basic callers still work.
+///
+/// In its sheet presentation, which paints no surface of its own, the card is
+/// the top of the map shell's panel: its header tops its top padding up to
+/// what the panel already leaves above it (`kozmosPanelInsetTop`,
+/// `kozmosPanelClearanceTop`) rather than adding to it, so its close button
+/// sits as far from the panel's top as from its side (GAP-083). The panel and
+/// inline presentations draw their own bordered card and keep their padding
+/// inside it.
 public struct KozmosPOIDetailPanel: View {
     public enum Presentation { case inline, sheet, panel }
     public enum TitleLevel {
@@ -61,6 +69,8 @@ public struct KozmosPOIDetailPanel: View {
     private let onAction: (KozmosPOIAction, String) -> Void
     private let onSupplementaryAction: ((String, String) -> Void)?
     private let onClose: (() -> Void)?
+    @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
+    @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
 
     public init(
         poi: KozmosPOIPresentation,
@@ -125,7 +135,9 @@ public struct KozmosPOIDetailPanel: View {
         // hands a downward drag back to the sheet once at its top.
         KozmosPanelScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                header.padding(16)
+                header
+                    .padding([.horizontal, .bottom], KozmosDimensions.primitivesLayoutSpacing200)
+                    .padding(.top, headerTopPadding)
                 if let description = poi.description, !description.isEmpty {
                     Text(description)
                         .font(KozmosTypography.subheadline)
@@ -181,6 +193,20 @@ public struct KozmosPOIDetailPanel: View {
         .overlay(panelShape.stroke(presentation == .sheet ? Color.clear : KozmosColors.semanticsBorderSubtle, lineWidth: 1))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(poi.name)
+    }
+
+    /// The header's top padding. In the sheet presentation the card paints no
+    /// surface of its own, so the space the shell's panel leaves above it is
+    /// the card's own top: the header tops it up to 16 rather than adding 16
+    /// to it, and keeps the clearance the panel asks for under a grabber — the
+    /// close button sat 32 from the sheet's top and 16 from its side
+    /// (GAP-083). The panel and inline presentations draw their own bordered
+    /// card, and that space lies outside the border: they keep their 16
+    /// inside it, or the header meets the card's own top edge.
+    private var headerTopPadding: CGFloat {
+        let padding = KozmosDimensions.primitivesLayoutSpacing200
+        guard presentation == .sheet else { return padding }
+        return max(panelClearanceTop, padding - panelInsetTop)
     }
 
     /// An inset block's surface: the muted grey on the panel's own white, and

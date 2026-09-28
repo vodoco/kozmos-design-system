@@ -1,10 +1,106 @@
 import assert from "node:assert/strict";
 import AxeBuilder from "@axe-core/playwright";
-import { launchFixtureBrowser } from "./lib/built-react-fixture.mjs";
+import {
+  launchFixtureBrowser,
+  settleLayout,
+} from "./lib/built-react-fixture.mjs";
 
 const base = process.env.STORYBOOK_URL ?? "http://127.0.0.1:6006";
 const browser = await launchFixtureBrowser();
 const failures = [];
+
+/**
+ * Every rail tile in the story, measured where it is drawn: the label's type,
+ * the lines it takes (a clamped line still counts: it is cut), the widest
+ * reach of each line, and the tile's content box. A line is the characters
+ * that share a top; whitespace is skipped, so a space hanging at a wrap does
+ * not widen a line.
+ */
+function measureRailTiles() {
+  return [
+    ...document.querySelectorAll(
+      '.kozmos-story-surface [data-placement="rail"]',
+    ),
+  ].map((tile) => {
+    const label = [...tile.children].find(
+      (child) => child.tagName === "SPAN" && !child.hasAttribute("aria-hidden"),
+    );
+    const style = getComputedStyle(tile);
+    const box = tile.getBoundingClientRect();
+    const contentLeft =
+      box.left + tile.clientLeft + parseFloat(style.paddingLeft);
+    const contentRight =
+      box.left +
+      tile.clientLeft +
+      tile.clientWidth -
+      parseFloat(style.paddingRight);
+    const lines = [];
+    const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
+    for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+      for (let i = 0; i < text.length; i++) {
+        if (/\s/.test(text.data[i])) continue;
+        const range = document.createRange();
+        range.setStart(text, i);
+        range.setEnd(text, i + 1);
+        for (const rect of range.getClientRects()) {
+          if (!rect.width) continue;
+          let line = lines.find((l) => Math.abs(l.top - rect.top) < 4);
+          if (!line) {
+            line = { top: rect.top, left: rect.left, right: rect.right };
+            lines.push(line);
+          }
+          line.left = Math.min(line.left, rect.left);
+          line.right = Math.max(line.right, rect.right);
+        }
+      }
+    }
+    const labelStyle = getComputedStyle(label);
+    return {
+      label: label.textContent,
+      fontSize: labelStyle.fontSize,
+      lineHeight: labelStyle.lineHeight,
+      lines: lines
+        .sort((a, b) => a.top - b.top)
+        .map((l) => ({ left: l.left, right: l.right })),
+      contentLeft,
+      contentRight,
+      width: box.width,
+      height: box.height,
+    };
+  });
+}
+
+/**
+ * Decision 36 (row 25 / GAP-013): every rail label is 11px on a 14px line and
+ * takes at most two lines, none wider than its tile's content box, and every
+ * tile stays 72px tall, a two-line one too (the 16px line made it 76).
+ */
+function railProblems(id, tiles) {
+  const problems = [];
+  for (const tile of tiles) {
+    const name = `${id} "${tile.label}"`;
+    if (tile.fontSize !== "11px" || tile.lineHeight !== "14px")
+      problems.push(
+        `${name}: the label is ${tile.fontSize} on ${tile.lineHeight}, not 11px on 14px`,
+      );
+    if (tile.lines.length < 1 || tile.lines.length > 2)
+      problems.push(`${name}: the label takes ${tile.lines.length} lines`);
+    tile.lines.forEach((line, index) => {
+      if (
+        line.left < tile.contentLeft - 0.5 ||
+        line.right > tile.contentRight + 0.5
+      )
+        problems.push(
+          `${name}: line ${index + 1} is ${(line.right - line.left).toFixed(1)}px wide in a ${(tile.contentRight - tile.contentLeft).toFixed(1)}px content box`,
+        );
+    });
+    if (Math.abs(tile.height - 72) > 0.5)
+      problems.push(
+        `${name}: a ${tile.lines.length}-line tile is ${tile.height.toFixed(1)}px tall, not 72`,
+      );
+  }
+  return problems;
+}
 try {
   for (const theme of ["light", "dark"]) {
     for (const viewport of [
@@ -162,6 +258,147 @@ try {
           null,
         );
         console.log(`PASS expanded ColorPicker ${theme} ${viewport.width}`);
+
+        // Decision 16: the assistant takes focus when the visitor opens it,
+        // and not when it is on screen from the start. Opened from the
+        // keyboard: WebKit on macOS does not focus a button that is clicked,
+        // so a click would leave the page, not the button, to hand back to.
+        await visit("product-sdk-aicompanionpanel--conversation");
+        await page.getByRole("region", { name: "Assistant" }).waitFor();
+        await settleLayout(page);
+        assert.equal(
+          await page.evaluate(() => document.activeElement?.tagName),
+          "BODY",
+          "a panel on screen from the start leaves focus where it was",
+        );
+        await visit("product-sdk-aicompanionpanel--open-and-close");
+        const ask = page.getByRole("button", { name: "AI search" });
+        const assistant = page.getByRole("region", { name: "Assistant" });
+        await ask.focus();
+        await page.keyboard.press("Enter");
+        await assistant.waitFor();
+        await settleLayout(page);
+        assert(
+          await assistant.evaluate((n) => n === document.activeElement),
+          "opening the panel moves focus into it",
+        );
+        await audit();
+        await page.keyboard.press("Escape");
+        await assistant.waitFor({ state: "detached" });
+        await settleLayout(page);
+        assert(
+          await ask.evaluate((n) => n === document.activeElement),
+          "closing the panel hands focus back to the button that opened it",
+        );
+        console.log(`PASS AICompanionPanel focus ${theme} ${viewport.width}`);
+
+        // Decision 22: the AI chat's spoken conversation, from the keyboard.
+        // The name says what a press does, one polite region says what
+        // changed, and focus stays on the microphone throughout. The story
+        // plays the product: connected 1.5s after the press. Everything the
+        // region comes to hold is recorded as it happens, so the check reads
+        // the whole sequence, not whatever is there when it looks.
+        await visit("product-sdk-aiinputbar--voice-conversation");
+        const voiceRegion = page.locator(
+          '.kozmos-story-surface [role="status"]',
+        );
+        const voiceSaid = () =>
+          voiceRegion.evaluate((n) => n.kozmosSaid ?? null);
+        const startVoice = page.getByRole("button", {
+          name: "Start voice conversation",
+        });
+        const endVoice = page.getByRole("button", {
+          name: "End voice conversation",
+        });
+        assert.equal(
+          await startVoice.count(),
+          1,
+          "a product that can start a conversation gets a microphone",
+        );
+        assert.equal(await voiceRegion.count(), 1, "one region speaks for it");
+        assert.equal(await voiceRegion.getAttribute("aria-live"), "polite");
+        assert.equal(
+          await voiceRegion.evaluate((n) => n.textContent),
+          "",
+          "nothing is said as it first draws",
+        );
+        await voiceRegion.evaluate((n) => {
+          n.kozmosSaid = [];
+          new MutationObserver(() => n.kozmosSaid.push(n.textContent)).observe(
+            n,
+            { characterData: true, childList: true, subtree: true },
+          );
+        });
+        await startVoice.focus();
+        await page.keyboard.press("Enter");
+        await endVoice.waitFor();
+        await page.waitForFunction(
+          () =>
+            document.querySelector('.kozmos-story-surface [role="status"]')
+              ?.textContent === "Listening…",
+        );
+        assert.deepEqual(
+          await voiceSaid(),
+          ["Connecting…", "Listening…"],
+          "each state is said once, as it comes",
+        );
+        assert(
+          await endVoice.evaluate((n) => n === document.activeElement),
+          "focus stays on the microphone as the conversation starts",
+        );
+        assert.equal(
+          await endVoice.getAttribute("aria-pressed"),
+          null,
+          "a name that says the action carries no pressed state",
+        );
+        assert.equal(
+          await page
+            .getByRole("textbox", { name: "Ask the assistant" })
+            .getAttribute("placeholder"),
+          "Listening…",
+        );
+        await audit();
+        await page.keyboard.press("Space");
+        await startVoice.waitFor();
+        await page.waitForFunction(
+          () =>
+            document.querySelector('.kozmos-story-surface [role="status"]')
+              ?.textContent === "Voice conversation ended",
+        );
+        assert.deepEqual(await voiceSaid(), [
+          "Connecting…",
+          "Listening…",
+          "Voice conversation ended",
+        ]);
+        assert(
+          await startVoice.evaluate((n) => n === document.activeElement),
+          "focus stays on the microphone as the conversation ends",
+        );
+        await audit();
+        console.log(`PASS AIInputBar voice ${theme} ${viewport.width}`);
+
+        await visit("product-sdk-aiinputbar--voice-unavailable");
+        const unavailableVoice = page.getByRole("button", {
+          name: "Voice conversation unavailable",
+        });
+        assert.equal(
+          await unavailableVoice.count(),
+          1,
+          "an unavailable microphone is still there to be found",
+        );
+        assert.equal(
+          await unavailableVoice.getAttribute("aria-disabled"),
+          "true",
+        );
+        await unavailableVoice.focus();
+        assert(
+          await unavailableVoice.evaluate((n) => n === document.activeElement),
+          "an unavailable microphone keeps its place in the tab order",
+        );
+        await audit();
+        console.log(
+          `PASS AIInputBar voice unavailable ${theme} ${viewport.width}`,
+        );
         for (const id of [
           "product-sdk-routepreviewpanel--ready",
           "system-themeprovider--default",
@@ -178,6 +415,28 @@ try {
             `PASS explicit contrast completeness ${id} ${theme} ${viewport.width}`,
           );
         }
+        // The standard rail, whose "Nearby places" takes two lines, and a web
+        // dashboard's, whose nine labels are the Cloud Dashboard's in 96px
+        // tiles (className "w-24"). Both are measured before either is
+        // judged, so a failure lists every tile that is wrong.
+        const rails = [];
+        for (const [id, count, width] of [
+          ["navigation-navigationitem--rail", 4, 72],
+          ["navigation-navigationitem--dashboard-rail", 9, 96],
+        ]) {
+          await visit(id);
+          await page.evaluate(() => document.fonts.ready);
+          const tiles = await page.evaluate(measureRailTiles);
+          const widths = tiles.map((tile) => Math.round(tile.width));
+          if (widths.join() !== Array(count).fill(width).join())
+            rails.push(`${id}: tiles ${widths} wide, not ${count} of ${width}`);
+          if (!tiles.some((tile) => tile.lines.length === 2))
+            rails.push(`${id}: no tile takes two lines`);
+          rails.push(...railProblems(id, tiles));
+          await audit();
+        }
+        assert.deepEqual(rails, []);
+        console.log(`PASS rail labels ${theme} ${viewport.width}`);
         if (viewport.width === 1280) {
           await visit("data-display-chip--variants");
           const chips = page.locator(

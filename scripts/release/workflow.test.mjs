@@ -117,3 +117,47 @@ test("local release alias cannot publish and CI exercises the safety tests", () 
   const ci = YAML.parse(fs.readFileSync(".github/workflows/ci.yml", "utf8"));
   assert.ok(ci.jobs.web.steps.some((s) => s.run === "pnpm test:release"));
 });
+
+test("only the publish job may mint an OIDC token, for npm provenance", () => {
+  // Provenance (Olcay's decision 32, 2026-09-28): npm attests that each
+  // package was built from this repository's commit by this workflow, which
+  // needs an OIDC token. Only the job that publishes may mint one, and no job
+  // gains write access to anything else. It was off while the repository was
+  // private; npm issues provenance only for public repositories.
+  assert.deepEqual(workflow.jobs.publish.permissions, {
+    contents: "read",
+    actions: "read",
+    "id-token": "write",
+  });
+  for (const [name, job] of Object.entries(workflow.jobs)) {
+    if (name === "publish") continue;
+    assert.equal(job.permissions, undefined, `${name} widens its permissions`);
+  }
+  const publisher = fs.readFileSync("scripts/release/publish.mjs", "utf8");
+  assert.match(publisher, /"--provenance"/);
+  assert.doesNotMatch(publisher, /--provenance=false/);
+});
+
+test("every published package names this repository, as provenance requires", () => {
+  // npm refuses a provenance statement whose source repository differs from
+  // the package's `repository`. The manifests named the repository's old
+  // name, `kozmos-design-system-`, which only a redirect made work.
+  for (const dir of ["react", "icons", "product-contracts", "tokens"]) {
+    const manifest = JSON.parse(
+      fs.readFileSync(`packages/${dir}/package.json`, "utf8"),
+    );
+    assert.deepEqual(manifest.repository, {
+      type: "git",
+      url: "git+https://github.com/vodoco/kozmos-design-system.git",
+      directory: `packages/${dir}`,
+    });
+    assert.equal(
+      manifest.homepage,
+      `https://github.com/vodoco/kozmos-design-system/tree/main/packages/${dir}#readme`,
+    );
+    assert.equal(
+      manifest.bugs?.url,
+      "https://github.com/vodoco/kozmos-design-system/issues",
+    );
+  }
+});

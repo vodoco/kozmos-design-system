@@ -279,7 +279,7 @@ console.log(
 );
 if (skipped)
   console.log(
-    "Skipped steps are not verified here. Chromatic's baselines and anything\n" +
-      "needing a secret still only run on GitHub.",
+    "Skipped steps are not verified here. Visual Review (`pnpm test:visual`, in\n" +
+      "Docker) and anything needing a secret still only run on GitHub.",
   );
 process.exit(failed ? 1 : 0);

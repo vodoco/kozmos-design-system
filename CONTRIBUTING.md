@@ -195,7 +195,7 @@ Fixes #123
 ## Testing
 
 - [ ] Unit tests added/updated
-- [ ] Visual tests pass
+- [ ] Visual tests pass (`pnpm test:visual`; record intended changes with `pnpm test:visual:update`)
 - [ ] Accessibility tests pass
 - [ ] Tested in Storybook
 
@@ -209,11 +209,29 @@ Fixes #123
 
 ### Review Process
 
-1. **Automated checks** must pass (CI, tests, linting)
+1. **Automated checks** must pass. Branch protection on `main` requires all 19 checks a pull
+   request runs: CI's web build and tests, its twelve browser shards, the Android build and the iOS
+   build, the bundle budget (`analyze-bundle`), Lighthouse's accessibility audit (`lighthouse`) and
+   "Visual Review". The iOS build runs when a pull request touches what it builds (`packages/ios`,
+   `packages/tokens`, its scripts, `ci.yml` or the dependencies) and is skipped, which counts as
+   passing, otherwise; every push to `main` builds it. A pull request opened against another
+   branch and then retargeted to `main` has no `analyze-bundle` or `lighthouse` run, because both
+   run only for pull requests into `main`: push to it, or close and reopen it.
+
+   A pull request must be **up to date with `main`** to merge, so its checks have run against the
+   `main` it merges into and two pull requests that are each green cannot break `main` together.
+   When `main` moves, update the branch (`gh pr update-branch <n>`, or "Update branch") and the
+   checks run again; auto-merge then merges it once they pass. (A merge queue would do this
+   automatically, but GitHub offers merge queues only to organisations, and this repository belongs
+   to a personal account.)
+
 2. **Code review** by at least one maintainer
-3. **Visual review** for component changes (Chromatic)
+3. **Visual review** for component changes: the "Visual Review" check compares every story with
+   its committed baseline, and intended changes show in "Files changed" (see
+   [docs/visual-review.md](docs/visual-review.md))
 4. **Approval** from maintainer
-5. **Squash and merge** to main
+5. **Merge with a merge commit** once all 19 checks pass on a branch that is up to date with `main`
+   (`gh pr merge <n> --merge`, or auto-merge, which waits for them)
 
 ---
 
@@ -470,6 +488,20 @@ pnpm changeset
 # 3. Write summary of changes
 ```
 
+**Every pull request that changes what a published package ships carries a changeset naming that
+package** — `@kozmos-ds/react`, `@kozmos-ds/icons`, `@kozmos-ds/product-contracts` or
+`@kozmos-ds/tokens`. "Ships" means its `src/` apart from tests, stories, `.mdx` pages and Code Connect
+files, the build files beside it (`tsconfig*.json`, `vite.config.*` and the like), and the
+consumer-facing fields of its `package.json`. CI's "Web Build & Test" fails a pull request without
+one (`scripts/release/changeset-required.mjs`; run it yourself with
+`node scripts/release/changeset-required.mjs`). If a change genuinely needs no release, say so with
+an empty changeset: `pnpm changeset --empty`. React pins its siblings exactly, so a react change that
+needs a new icon or contract field needs their changesets too.
+
+A Dependabot pull request that bumps a published package's runtime `dependencies` needs one too
+(consumers install the new version): push a patch changeset to its branch. Bumps of
+`devDependencies` need none.
+
 ### Version Bumps
 
 | Type    | When to Use                        |
@@ -480,11 +512,18 @@ pnpm changeset
 
 ### Release Workflow
 
-1. PRs merged to `main` accumulate changesets
-2. Release PR auto-created by Changesets bot
-3. Maintainer reviews and merges release PR
-4. CI publishes packages to npm
-5. GitHub release created automatically
+Releases are deliberate, not automatic; [docs/release-process.md](docs/release-process.md) is the
+full procedure. In short:
+
+1. PRs merged to `main` accumulate changesets (private packages are not versioned).
+2. A **version PR** runs `pnpm version-packages`, writes `release/plan.json` (the exact packages,
+   versions and npm tag it approves) and `pnpm skills:build`; it is reviewed and merged like any PR.
+3. Once `main`'s CI on that merge is green, `pnpm release:preflight <sha> <ci-run-id>` makes the
+   release job's checks in advance and prints the dispatch command.
+4. The owner dispatches **Release Kozmos System** and approves the `npm-release` deployment; the
+   workflow publishes the tested tarballs with npm provenance.
+5. `pnpm release:tag <sha>` creates the git tags and GitHub Releases, with each version's
+   changelog as the notes.
 
 ---
 

@@ -13,7 +13,7 @@ const request = {
 };
 const evidence = {
   request,
-  repository: "vodoco/kozmos-design-system-",
+  repository: "vodoco/kozmos-design-system",
   mainSha: sha,
   enabled: "true",
   run: {
@@ -22,8 +22,8 @@ const evidence = {
     event: "push",
     head_branch: "main",
     head_sha: sha,
-    repository: { full_name: "vodoco/kozmos-design-system-" },
-    head_repository: { full_name: "vodoco/kozmos-design-system-" },
+    repository: { full_name: "vodoco/kozmos-design-system" },
+    head_repository: { full_name: "vodoco/kozmos-design-system" },
     status: "completed",
     conclusion: "success",
   },
@@ -34,8 +34,15 @@ const evidence = {
   })),
   environment: {
     name: "npm-release",
-    protection_rules: [{ type: "branch_policy" }],
+    protection_rules: [
+      { type: "branch_policy" },
+      {
+        type: "required_reviewers",
+        reviewers: [{ type: "User", reviewer: { login: "vodoco" } }],
+      },
+    ],
     deployment_branch_policy: { custom_branch_policies: true },
+    can_admins_bypass: false,
   },
   branches: [{ name: "main", type: "branch" }],
 };
@@ -133,7 +140,37 @@ for (const [label, mutate] of [
   [
     "an environment with no branch rule",
     (e) => {
-      e.environment.protection_rules = [];
+      e.environment.protection_rules = e.environment.protection_rules.filter(
+        (rule) => rule.type !== "branch_policy",
+      );
+    },
+  ],
+  [
+    "an environment no one has to approve",
+    (e) => {
+      e.environment.protection_rules = e.environment.protection_rules.filter(
+        (rule) => rule.type !== "required_reviewers",
+      );
+    },
+  ],
+  [
+    "a required-reviewer rule that names no one",
+    (e) => {
+      e.environment.protection_rules.find(
+        (rule) => rule.type === "required_reviewers",
+      ).reviewers = [];
+    },
+  ],
+  [
+    "an environment administrators can bypass",
+    (e) => {
+      e.environment.can_admins_bypass = true;
+    },
+  ],
+  [
+    "an environment that does not say whether administrators can bypass",
+    (e) => {
+      delete e.environment.can_admins_bypass;
     },
   ],
   [

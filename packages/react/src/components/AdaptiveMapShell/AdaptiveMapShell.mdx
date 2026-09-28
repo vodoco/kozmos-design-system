@@ -1,5 +1,6 @@
 import { Meta, Canvas } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
+import { PlatformSnippets } from "../PlatformSnippets";
 import * as Stories from "./AdaptiveMapShell.stories";
 
 <Meta of={Stories} />
@@ -17,6 +18,153 @@ the content's peek anchor, marked with `panelPeekAnchorProps`), medium (54 %) an
 its content scrolls only at the largest detent. `panelFraction` and `panelSizing="content"`
 are single-detent shorthands. Read the resolved
 panel bounds from `onLayoutChange`. `panelPlacement` is logical and follows inherited RTL direction.
+
+`panelHeader` sits under the sheet's grip and above the panel's content, and does not
+scroll with it, so a search field or a chosen category stays put while the results under
+it scroll. Every detent counts it: a sheet fitted to its content includes it, and a
+collapsed sheet is always tall enough to show all of it (a header that fits leaves the
+collapsed detent where it was; a taller one raises it). A peek anchor, in the header or the
+content, still decides where a collapsed sheet rests. A vertical drag on it always
+moves the sheet, however far the content has scrolled; a sideways one stays with the
+header, for a row of chips that scrolls. Under a grab handle it keeps its first control
+clear of the handle's target (WCAG 2.5.8). In a side panel it is the panel's first row.
+
+<Canvas of={Stories.SheetPanelHeader} />
+<Canvas of={Stories.SheetWithPlaceDetails} />
+<Canvas of={Stories.SheetWithBrowseCategories} />
+
+The panel tells its content how much space it already leaves above it, so a part that brings its
+own top padding can top it up rather than add to it:
+
+- `--kozmos-panel-inset-top` is the empty space above the content: the grip's row on a sheet that
+  draws one, `1rem` in a side panel, and `0px` with no grip or under a `panelHeader`.
+- `--kozmos-panel-clearance-top` is how far the content's first control must still sit below that
+  so the grip's 16px target keeps its WCAG 2.5.8 spacing: 4px under a grip, `0px` elsewhere. A
+  panel header keeps the same clearance itself.
+
+Every part at the top of the panel keeps the grip's clearance, so no first control sits inside the
+grip's 24px circle:
+
+- `POIDetailPanel` in its `sheet` presentation, which paints no surface of its own, and
+  `BrowseCategoriesPanel`, whose first row is its search row (or its tiles when it has none), top
+  their 16px up to what the panel leaves, `max(clearance, 16px − inset)`. The close button and the
+  search field sit as far from the panel's top as from its side, and 4px further under a grip
+  (GAP-083 and decision 14; the search field sat 33px down and 17px in).
+- `POIResultList` brings no top padding of its own, so it keeps only the clearance. Under a grip
+  its first result used to sit inside the grip's circle.
+
+The two values describe the panel's top. A part you place under a row of your own is not at the
+top: put that row in `panelHeader`, which keeps the grip clear itself, or set both properties to
+`0px` on what follows the row.
+
+iOS and Android take the same header: `panelHeader:` on `KozmosAdaptiveMapShell` in
+SwiftUI, and `panelHeader =` in Compose. On iOS, put the content that scrolls in a
+`KozmosPanelScrollView`, so the sheet can take a drag from it.
+
+<PlatformSnippets
+  react={`
+import { useState, type ReactNode } from "react";
+import { AdaptiveMapShell, SearchBar } from "@kozmos-ds/react";
+
+// The search field stays under the sheet's grip while the results scroll.
+export function PlacesSheet({
+  map,
+  results,
+}: {
+  map: ReactNode;
+  results: ReactNode;
+}) {
+  const [query, setQuery] = useState("");
+  return (
+    <AdaptiveMapShell
+      map={map}
+      panelLabel="Places"
+      panelHeader={
+        <div style={{ padding: "0 16px 8px" }}>
+          <SearchBar
+            aria-label="Search places"
+            placeholder="Search"
+            value={query}
+            onChange={setQuery}
+            variant="inline"
+          />
+        </div>
+      }
+      panel={results}
+    />
+  );
+}
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+// The search field stays under the sheet's grip while the results scroll.
+struct PlacesSheet: View {
+    @State private var query = ""
+
+    var body: some View {
+        KozmosAdaptiveMapShell(panelLabel: String(localized: "Places")) {
+            VenueMap()
+        } panel: {
+            KozmosPanelScrollView { PlaceResults(query: query) }
+        } panelHeader: {
+            KozmosSearchBar(text: $query, placeholder: String(localized: "Search"))
+                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+        }
+    }
+}
+  `}
+  kotlin={`
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import com.kozmos.components.adaptivemapshell.KozmosAdaptiveMapShell
+import com.kozmos.components.searchbar.KozmosSearchBar
+import com.kozmos.tokens.KozmosDimensions
+
+// The search field stays under the sheet's grip while the results scroll.
+@Composable
+fun PlacesSheet(map: @Composable () -> Unit, results: @Composable () -> Unit) {
+    var query by remember { mutableStateOf("") }
+    KozmosAdaptiveMapShell(
+        map = map,
+        panelLabel = "Places",
+        panelHeader = {
+            KozmosSearchBar(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = "Search",
+                modifier = Modifier.padding(horizontal = KozmosDimensions.primitivesLayoutSpacing200)
+            )
+        },
+        panel = results
+    )
+}
+  `}
+/>
+
+On iOS and Android the shell tells its panel's content how much space it already leaves
+above it, so a part that brings its own top padding tops it up rather than adding to it
+(GAP-083): `kozmosPanelInsetTop` and `kozmosPanelClearanceTop` in the SwiftUI environment,
+`LocalKozmosPanelInsetTop` and `LocalKozmosPanelClearanceTop` in Compose. Under a grab
+handle they are its 16-point row and 4 points of clearance, so the handle's target keeps
+its WCAG 2.5.8 spacing; with no handle (a single detent), under a `panelHeader`, and in a
+side panel, which starts its content at its top edge, both are zero. `KozmosPOIDetailPanel`
+in its sheet presentation, which paints no surface of its own, uses both, so its close
+button sits as far from the panel's top as from its side. The panel and inline presentations
+draw their own bordered card and keep their padding inside it: the space the panel leaves
+lies outside that border. `KozmosBrowseCategoriesPanel` uses both for its first row too: in
+its sheet presentation on iOS (the panel presentation paints its own surface and keeps its
+16), and always on Android, where it paints no surface. Under the grab handle the
+`panelHeader` itself starts 4 points (4dp) below the handle's row, as the web's does. For a
+part you place under a row of your own, set both values to zero: `.environment(\.kozmosPanelInsetTop, 0)`
+and `.environment(\.kozmosPanelClearanceTop, 0)` in SwiftUI, and `0.dp` for both
+CompositionLocals in Compose.
 
 `usableRegions` accepts host-provided hinge-free rectangles in shell-local CSS pixels.
 Auto mode can separate map and panel across those regions without remounting either.

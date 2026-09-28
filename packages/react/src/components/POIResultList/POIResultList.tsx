@@ -42,6 +42,97 @@ export type POIResultListEntry = POIResultListItem | POIResultListGroup;
 const isGroup = (entry: POIResultListEntry): entry is POIResultListGroup =>
   Array.isArray((entry as POIResultListGroup).items);
 
+/** Room left beside a result brought into view: the gap between two results. */
+const REVEAL_MARGIN = 12;
+
+/**
+ * What the list scrolls to bring a result into view: the nearest ancestor
+ * that scrolls, or, when nothing around the list does, the page.
+ *
+ * A box that hides its overflow scrolls only when it says so with
+ * `data-kozmos-scroller`. AdaptiveMapShell's sheet does: below its largest
+ * detent it hides its overflow and every touch moves the sheet, so a finger
+ * cannot scroll it, yet only script can bring a result into it. Any other box
+ * that hides its overflow is clipping — a group's rounded corners — and a
+ * pixel of rounding must not make it the one that moves.
+ */
+function scrollerOf(
+  element: HTMLElement,
+): { node: HTMLElement; page: boolean } | null {
+  const document = element.ownerDocument;
+  const view = document.defaultView;
+  if (!view) return null;
+  for (
+    let node = element.parentElement;
+    node && node !== document.body && node !== document.documentElement;
+    node = node.parentElement
+  ) {
+    if (node.scrollHeight <= node.clientHeight) continue;
+    const { overflowY } = view.getComputedStyle(node);
+    if (
+      /^(auto|scroll|overlay)$/.test(overflowY) ||
+      (overflowY === "hidden" && node.hasAttribute("data-kozmos-scroller"))
+    )
+      return { node, page: false };
+  }
+  // A page that hides its overflow is an app frame, not a document to scroll.
+  const page = document.scrollingElement ?? document.documentElement;
+  if (
+    page instanceof view.HTMLElement &&
+    page.scrollHeight > page.clientHeight &&
+    ![document.documentElement, document.body].some(
+      (node) =>
+        node && /^(hidden|clip)$/.test(view.getComputedStyle(node).overflowY),
+    )
+  )
+    return { node: page, page: true };
+  return null;
+}
+
+/**
+ * Scroll `target` into its scroller's view by the least distance, and only
+ * that scroller: `scrollIntoView` would also move every scrolling ancestor,
+ * the sheet and the page included. A result taller than the view keeps its
+ * top in view, where its name is.
+ */
+function revealWithin(target: HTMLElement) {
+  const scroller = scrollerOf(target);
+  if (!scroller) return;
+  const view = target.ownerDocument.defaultView!;
+  let top = 0;
+  let bottom = scroller.node.clientHeight;
+  if (!scroller.page) {
+    const style = view.getComputedStyle(scroller.node);
+    const frame = scroller.node.getBoundingClientRect();
+    // The scroller's padding is not somewhere a result can be read: the
+    // sheet's bottom padding is the device's home indicator.
+    top =
+      frame.top + scroller.node.clientTop + (parseFloat(style.paddingTop) || 0);
+    bottom =
+      frame.top +
+      scroller.node.clientTop +
+      scroller.node.clientHeight -
+      (parseFloat(style.paddingBottom) || 0);
+  }
+  const box = target.getBoundingClientRect();
+  let distance = 0;
+  if (box.top < top) distance = box.top - top - REVEAL_MARGIN;
+  else if (box.bottom > bottom)
+    distance = Math.min(
+      box.bottom - bottom + REVEAL_MARGIN,
+      box.top - top - REVEAL_MARGIN,
+    );
+  if (Math.abs(distance) < 1) return;
+  const reduced =
+    target.closest('[data-kozmos-motion="reduced"]') !== null ||
+    view.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+  const behavior: ScrollBehavior = reduced ? "auto" : "smooth";
+  if (scroller.page) view.scrollBy({ top: distance, behavior });
+  else if (typeof scroller.node.scrollBy === "function")
+    scroller.node.scrollBy({ top: distance, behavior });
+  else scroller.node.scrollTop += distance;
+}
+
 export interface POIResultListProps extends Omit<
   React.HTMLAttributes<HTMLElement>,
   "onSelect"
@@ -79,6 +170,23 @@ export interface POIResultListProps extends Omit<
   hideLabel?: string;
   /** Told which group, so one handler can hold several open. */
   onGroupExpandedChange?: (groupId: string, expanded: boolean) => void;
+  /**
+   * Bring the selected result into view when `selectedPoiId` changes — by
+   * scrolling whatever the list sits in, and nothing further out. On by
+   * default (row 70).
+   *
+   * A pin's tap selects its result, and the result can be anywhere in the
+   * list; in AdaptiveMapShell's sheet below its largest detent it cannot even
+   * be scrolled to by hand. A list that appears with a result already
+   * selected — the pin's tap that opened it — brings that one in too. A
+   * result in a collapsed group brings in its group. A box that hides its
+   * overflow is scrolled only when it says it scrolls, with
+   * `data-kozmos-scroller`, as AdaptiveMapShell's sheet does; with nothing
+   * around the list that scrolls, the page does.
+   *
+   * Turn it off for a product that already scrolls the panel itself.
+   */
+  scrollSelectedIntoView?: boolean;
 }
 
 const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
@@ -99,15 +207,78 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       showMoreLabel,
       hideLabel,
       onGroupExpandedChange,
+      scrollSelectedIntoView = true,
       ...props
     },
     ref,
   ) => {
+    const section = React.useRef<HTMLElement | null>(null);
+    const setSection = React.useCallback(
+      (node: HTMLElement | null) => {
+        section.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref],
+    );
+    // Nothing has been shown yet, so a list that mounts with a selection
+    // brings it in as it appears.
+    const shownSelection = React.useRef<string | undefined>(undefined);
+    // Read through a ref, not the effect's dependencies: a product that
+    // builds `items` during its render passes a new array every time, and
+    // each re-run would drop the listener still waiting for the selected
+    // card's action row to open. Synced in an effect, which runs before the
+    // one below reads it.
+    const latestItems = React.useRef(items);
+    React.useEffect(() => {
+      latestItems.current = items;
+    });
+
+    React.useEffect(() => {
+      const previous = shownSelection.current;
+      shownSelection.current = selectedPoiId;
+      if (
+        !scrollSelectedIntoView ||
+        selectedPoiId === undefined ||
+        selectedPoiId === previous ||
+        !section.current
+      )
+        return;
+      const cards = Array.from(
+        section.current.querySelectorAll<HTMLElement>("[data-poi-id]"),
+      );
+      const group = latestItems.current.find(
+        (entry) =>
+          isGroup(entry) &&
+          entry.items.some((item) => item.poi.id === selectedPoiId),
+      ) as POIResultListGroup | undefined;
+      const target =
+        cards.find((card) => card.dataset.poiId === selectedPoiId) ??
+        Array.from(
+          section.current.querySelectorAll<HTMLElement>("[data-result-group]"),
+        ).find((entry) => entry.dataset.resultGroup === group?.id);
+      if (!target) return;
+
+      revealWithin(target);
+      // A selected card opens its action row as it animates, so it is only
+      // its full height once that ends; bring it in again then, or a card
+      // tapped near the bottom opens its actions out of sight.
+      const reveal = (event: AnimationEvent) => {
+        if (event.target instanceof Node && target.contains(event.target))
+          revealWithin(target);
+      };
+      target.addEventListener("animationend", reveal, { once: true });
+      return () => target.removeEventListener("animationend", reveal);
+    }, [scrollSelectedIntoView, selectedPoiId]);
+
     return (
       <section
-        ref={ref}
+        ref={setSection}
         aria-label={label}
-        className={cn("min-w-0", className)}
+        // `kozmos-poi-result-list` keeps the grip's clearance above the first
+        // result when the list is the top of AdaptiveMapShell's sheet (owned
+        // CSS); it adds nothing anywhere else.
+        className={cn("kozmos-poi-result-list min-w-0", className)}
         {...props}
       >
         <p aria-live="polite" className="sr-only">
@@ -158,7 +329,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
 
               if (isGroup(entry)) {
                 return (
-                  <li key={entry.id}>
+                  <li data-result-group={entry.id} key={entry.id}>
                     <POIResultGroup
                       actionsLabel={actionsLabel}
                       collapsedCount={entry.collapsedCount}

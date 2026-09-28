@@ -9,6 +9,10 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 Displays the BottomNavigation interface topology natively.
 
+Its tiles are NavigationItem's compact rail tiles, sharing the bar's width (`w-auto flex-1`), so
+their labels are the rail's: **11px on a 14px line**, up to two lines. See NavigationItem's Rail
+section.
+
 <Canvas>
   <Story of={BottomNavigationStories.Default} />
 </Canvas>

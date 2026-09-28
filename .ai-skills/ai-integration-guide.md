@@ -2,6 +2,11 @@
 
 > **Purpose:** This document provides configuration templates and integration guides for using Kozmos Design System with various AI coding assistants including Claude, Cursor, Anti Gravity, GitHub Copilot, and others.
 
+> **Status:** Neither the `kozmos-ai-setup` command nor an MCP server package exists. No package in
+> this repository provides them and npm has no package under either name, so an `npx` of them would
+> run whatever npm served under that name one day. The setup commands below are a design that
+> follows [mcp-server-specification.md](./mcp-server-specification.md), not something to run.
+
 ---
 
 ## Table of Contents
@@ -23,12 +28,12 @@
 
 ### Integration Methods
 
-| Method | Agents Supported | Features | Setup Complexity |
-|--------|-----------------|----------|------------------|
-| **MCP Server** | Claude, Cursor, Anti Gravity | Full tools, resources, prompts | Medium |
-| **Context Files** | All agents | Static documentation | Low |
-| **VS Code Extension** | Copilot, Codeium | IntelliSense + snippets | Low |
-| **Custom Prompts** | All agents | Standardized instructions | Low |
+| Method                | Agents Supported             | Features                       | Setup Complexity |
+| --------------------- | ---------------------------- | ------------------------------ | ---------------- |
+| **MCP Server**        | Claude, Cursor, Anti Gravity | Full tools, resources, prompts | Medium           |
+| **Context Files**     | All agents                   | Static documentation           | Low              |
+| **VS Code Extension** | Copilot, Codeium             | IntelliSense + snippets        | Low              |
+| **Custom Prompts**    | All agents                   | Standardized instructions      | Low              |
 
 ### Quick Start
 
@@ -72,16 +77,16 @@ npx @kozmos/mcp-server --test
 
 ### Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `kozmos_get_component` | Get component details, props, examples |
-| `kozmos_get_token` | Get token values for any platform |
-| `kozmos_search_tokens` | Search tokens by name or value |
-| `kozmos_scaffold_component` | Generate component code |
-| `kozmos_validate_code` | Check code against patterns |
-| `kozmos_list_components` | List all available components |
-| `kozmos_get_pattern` | Get code patterns and best practices |
-| `kozmos_check_accessibility` | Audit accessibility |
+| Tool                         | Description                            |
+| ---------------------------- | -------------------------------------- |
+| `kozmos_get_component`       | Get component details, props, examples |
+| `kozmos_get_token`           | Get token values for any platform      |
+| `kozmos_search_tokens`       | Search tokens by name or value         |
+| `kozmos_scaffold_component`  | Generate component code                |
+| `kozmos_validate_code`       | Check code against patterns            |
+| `kozmos_list_components`     | List all available components          |
+| `kozmos_get_pattern`         | Get code patterns and best practices   |
+| `kozmos_check_accessibility` | Audit accessibility                    |
 
 ---
 
@@ -144,6 +149,7 @@ This project uses the **Kozmos Design System** for UI components.
 ## MCP Server
 
 The Kozmos MCP server is available. Use these tools:
+
 - `kozmos_get_component` - Look up any component
 - `kozmos_get_token` - Get token values
 - `kozmos_scaffold_component` - Generate new components
@@ -157,13 +163,15 @@ The Kozmos MCP server is available. Use these tools:
 4. Follow compound component pattern for Modal, Tabs, etc.
 
 ## File Structure
+```
+
+src/
+├── components/ # Use Kozmos components here
+├── features/ # Feature-specific code
+└── pages/ # Page components
 
 ```
-src/
-├── components/     # Use Kozmos components here
-├── features/       # Feature-specific code
-└── pages/          # Page components
-```
+
 ```
 
 ### Claude Projects Integration
@@ -205,6 +213,7 @@ Create `.cursor/rules.md` for Cursor-specific instructions:
 ## Component Development
 
 When creating or modifying components:
+
 1. ALWAYS use Kozmos components from `@kozmos/react`
 2. NEVER hardcode colors, spacing, or typography values
 3. Use the `kozmos_get_component` tool to check component APIs
@@ -219,6 +228,7 @@ When creating or modifying components:
 ## Code Quality
 
 Before completing any component:
+
 1. Run `kozmos_validate_code` to check patterns
 2. Run `kozmos_check_accessibility` to verify a11y
 3. Ensure all props match Kozmos conventions
@@ -329,7 +339,7 @@ GitHub Copilot doesn't support MCP natively, but we can optimize for it:
 
 ### .github/copilot-instructions.md
 
-```markdown
+````markdown
 # Copilot Instructions for Kozmos Design System
 
 ## Design System
@@ -340,11 +350,12 @@ This project uses the Kozmos Design System. When writing code:
 
 ```typescript
 // ✅ Correct
-import { Button, Input, Modal } from '@kozmos/react';
+import { Button, Input, Modal } from "@kozmos/react";
 
 // ❌ Wrong - don't create custom components when Kozmos has them
-import { CustomButton } from './CustomButton';
+import { CustomButton } from "./CustomButton";
 ```
+````
 
 ### Available Components
 
@@ -369,12 +380,14 @@ Navigation: Tabs, Accordion, Breadcrumb, Pagination, Menu
 ### Token Reference
 
 Colors:
+
 - `--kozmos-color-text-primary` - Primary text
 - `--kozmos-color-text-secondary` - Secondary text
 - `--kozmos-color-background-primary` - Main background
 - `--kozmos-color-interactive-primary` - Buttons, links
 
 Spacing:
+
 - `--kozmos-space-100` (4px)
 - `--kozmos-space-200` (8px)
 - `--kozmos-space-400` (16px)
@@ -386,7 +399,8 @@ Spacing:
 2. Use compound components for complex UI (Modal.Content, Tabs.List)
 3. Always include accessibility attributes
 4. Use Kozmos tokens, never hardcode values
-```
+
+````
 
 ### VS Code Settings for Copilot
 
@@ -406,7 +420,7 @@ Spacing:
     "*.figma.tsx": "typescriptreact"
   }
 }
-```
+````
 
 ### Copilot Snippets
 
@@ -562,6 +576,7 @@ This project uses the Kozmos Design System.
 ### Component Usage
 
 Always import from @kozmos/react:
+
 - Button, Input, Select for forms
 - Modal, Drawer, Toast for feedback
 - Tabs, Accordion for navigation
@@ -569,9 +584,10 @@ Always import from @kozmos/react:
 ### Tokens
 
 Use CSS variables for design values:
-- Colors: var(--kozmos-color-*)
-- Spacing: var(--kozmos-space-*)
-- Typography: var(--kozmos-font-*)
+
+- Colors: var(--kozmos-color-\*)
+- Spacing: var(--kozmos-space-\*)
+- Typography: var(--kozmos-font-\*)
 
 ### Patterns
 
@@ -588,7 +604,7 @@ Use CSS variables for design values:
 
 Create `.ai-context/kozmos.md` (works with most AI agents):
 
-```markdown
+````markdown
 # Kozmos Design System Context
 
 ## Overview
@@ -600,24 +616,27 @@ for Pointr's SDK products.
 
 ```typescript
 // React
-import { Button, Input, Modal } from '@kozmos/react';
+import { Button, Input, Modal } from "@kozmos/react";
 
 // Vue
-import { KozmosButton, KozmosInput } from '@kozmos/vue';
+import { KozmosButton, KozmosInput } from "@kozmos/vue";
 
 // React Native
-import { Button, Input } from '@kozmos/react-native';
+import { Button, Input } from "@kozmos/react-native";
 ```
+````
 
 ## Available Components
 
 ### Primitives
+
 - Box, Stack, Grid - Layout containers
 - Text, Heading - Typography
 - Button, IconButton, Link - Actions
 - Icon - Iconography
 
 ### Form Controls
+
 - Input, TextArea - Text input
 - Checkbox, Radio, Switch - Selection
 - Select - Dropdown
@@ -625,12 +644,14 @@ import { Button, Input } from '@kozmos/react-native';
 - FormField - Label + input wrapper
 
 ### Feedback
+
 - Modal, Drawer - Overlays
 - Toast, Alert - Messages
 - Tooltip, Popover - Contextual
 - Progress, Spinner, Skeleton - Loading
 
 ### Navigation
+
 - Tabs, Accordion - Content organization
 - Breadcrumb, Pagination - Navigation
 - Menu - Dropdown menus
@@ -638,6 +659,7 @@ import { Button, Input } from '@kozmos/react-native';
 ## Token System
 
 ### Colors
+
 ```css
 --kozmos-color-text-primary
 --kozmos-color-text-secondary
@@ -650,6 +672,7 @@ import { Button, Input } from '@kozmos/react-native';
 ```
 
 ### Spacing
+
 ```css
 --kozmos-space-100  /* 4px */
 --kozmos-space-200  /* 8px */
@@ -660,6 +683,7 @@ import { Button, Input } from '@kozmos/react-native';
 ```
 
 ### Typography
+
 ```css
 --kozmos-font-size-100  /* 12px */
 --kozmos-font-size-200  /* 14px */
@@ -670,28 +694,30 @@ import { Button, Input } from '@kozmos/react-native';
 ## Code Patterns
 
 ### Component with Variants (CVA)
-```typescript
-import { cva, type VariantProps } from 'class-variance-authority';
 
-const buttonStyles = cva('kozmos-button', {
+```typescript
+import { cva, type VariantProps } from "class-variance-authority";
+
+const buttonStyles = cva("kozmos-button", {
   variants: {
     variant: {
-      solid: 'kozmos-button--solid',
-      outline: 'kozmos-button--outline',
+      solid: "kozmos-button--solid",
+      outline: "kozmos-button--outline",
     },
     size: {
-      sm: 'kozmos-button--sm',
-      md: 'kozmos-button--md',
+      sm: "kozmos-button--sm",
+      md: "kozmos-button--md",
     },
   },
   defaultVariants: {
-    variant: 'solid',
-    size: 'md',
+    variant: "solid",
+    size: "md",
   },
 });
 ```
 
 ### Compound Component
+
 ```tsx
 <Modal open={isOpen} onOpenChange={setIsOpen}>
   <Modal.Trigger asChild>
@@ -714,7 +740,8 @@ const buttonStyles = cva('kozmos-button', {
 3. **Accessibility first** - All components must be accessible
 4. **Compound patterns** - Use compound components for complex UI
 5. **CVA for variants** - Use CVA for component variants
-```
+
+````
 
 ### Project-Specific Context Template
 
@@ -753,7 +780,7 @@ We use a custom brand theme:
 [data-brand="ourcompany"] {
   --kozmos-color-interactive-primary: #custom-color;
 }
-```
+````
 
 ## File Structure
 
@@ -771,7 +798,8 @@ src/
 2. Use our custom components when they exist
 3. Follow our file naming conventions
 4. Include tests for new components
-```
+
+````
 
 ---
 
@@ -949,7 +977,7 @@ const options: SetupOptions = {
 };
 
 setup(options);
-```
+````
 
 ### Usage
 
@@ -1004,20 +1032,20 @@ When reviewing AI-generated code, check:
 
 ### Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| MCP server not connecting | Check config file syntax, restart AI agent |
-| Wrong component suggestions | Update context files, use MCP tools explicitly |
-| Hardcoded values in output | Add token rules to context, use validation tool |
-| Missing accessibility | Add a11y check to prompts, use `kozmos_check_accessibility` |
+| Issue                       | Solution                                                    |
+| --------------------------- | ----------------------------------------------------------- |
+| MCP server not connecting   | Check config file syntax, restart AI agent                  |
+| Wrong component suggestions | Update context files, use MCP tools explicitly              |
+| Hardcoded values in output  | Add token rules to context, use validation tool             |
+| Missing accessibility       | Add a11y check to prompts, use `kozmos_check_accessibility` |
 
 ---
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial AI integration guide |
+| Version | Date       | Changes                      |
+| ------- | ---------- | ---------------------------- |
+| 1.0.0   | 2026-02-07 | Initial AI integration guide |
 
 ---
 

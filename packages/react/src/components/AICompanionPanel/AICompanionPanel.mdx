@@ -20,4 +20,114 @@ thread, for a `Notice` or an offline `EmptyState`.
 <Canvas of={Stories.Conversation} />
 <Canvas of={Stories.Streaming} />
 <Canvas of={Stories.TimedOut} />
+
+## Finding it, and focus
+
+The panel is a **region** named by its title, and the title is a heading.
+`titleLevel` — 2 by default — follows whatever heading sits above the panel;
+it looks the same at every level.
+
+It moves focus itself, when the visitor opens and closes it. Keep the panel
+mounted and pass `open`; closed, it draws nothing.
+
+- When `open` turns **true**, the panel takes focus: a screen reader
+  announces it, and Escape works at once. Focus left on the button beneath
+  would be on something the visitor can no longer see.
+- When `open` turns **false**, or the panel unmounts, it hands focus back to
+  whatever had it when it opened — usually `AISearchButton`, which the panel
+  covered rather than replaced.
+- A panel that is **open as it mounts** — on screen from the start, with
+  `open` left out or true from the first render — was opened by nobody, so it
+  leaves focus where the page put it. Closed and opened again, it takes focus
+  like any other open.
+
+A product that mounts the panel to open it is showing it from the start, as
+far as the panel can tell, and focus stays on the button beneath. Keep it
+mounted and turn `open` on instead. Place the panel itself, through its
+`className`: a wrapper kept mounted around it would stay over the sheet,
+empty, once it closes.
+
+```tsx
+const [open, setOpen] = useState(false);
+
+<>
+  <AISearchButton onClick={() => setOpen(true)} />
+  <AICompanionPanel
+    className="absolute inset-0"
+    open={open}
+    onClose={() => setOpen(false)}
+  >
+    <AIMessageList>{turns}</AIMessageList>
+    <AIInputBar onSubmit={ask} onValueChange={setValue} value={value} />
+  </AICompanionPanel>
+</>;
+```
+
+Either move can be redirected with the two callbacks Kozmos's `Dialog` and
+`Drawer` already take. Each is called first; `event.preventDefault()` and put
+focus where it should go yourself — the field, for a product that wants the
+keyboard up at once:
+
+```tsx
+const field = useRef<HTMLInputElement>(null);
+
+<AICompanionPanel
+  open={open}
+  onClose={() => setOpen(false)}
+  onOpenAutoFocus={(event) => {
+    event.preventDefault();
+    field.current?.focus();
+  }}
+>
+  <AIMessageList>{turns}</AIMessageList>
+  <AIInputBar
+    inputRef={field}
+    onSubmit={ask}
+    onValueChange={setValue}
+    value={value}
+  />
+</AICompanionPanel>;
+```
+
+`onOpenAutoFocus` is called only when `open` turns true, never for a panel
+that mounts open, so a panel on screen from the start needs no
+`preventDefault()` to keep the page's focus. `onCloseAutoFocus` works the same
+way at the close. Focus the product has already moved out of the panel — to
+the details of a place picked from the thread — is never taken back, and the
+callback is not called.
+
+Close is drawn at 36px, as the header was drawn round it, with a 44px target.
+
+<Canvas of={Stories.OpenAndClose} />
+
+## A spoken conversation
+
+Where the product has a voice model, the visitor can talk to the assistant
+and hear it answer aloud. `AIInputBar` draws the microphone when the product
+passes `onVoiceStart`, and says what the conversation is doing; its page has
+the states and the wiring. Where there is no voice model, as in an App Clip,
+leave `onVoiceStart` out and there is no microphone. The panel itself needs
+nothing new, and moves focus exactly as above.
+
+The thread still shows what was said, from the voice model's transcripts, as
+`UserMessage` and `AIMessage` turns. Two things are the product's to get
+right:
+
+- **One voice at a time.** The thread is a polite live region, so a screen
+  reader reads each turn as it arrives — while the assistant is already
+  saying it aloud, and the two talk over each other. Turn the thread's
+  announcements off while the conversation is live, and back on when it
+  ends. The microphone's own region still says whose turn it is.
+
+  ```tsx
+  const live = ["connecting", "listening", "speaking"].includes(voiceState);
+
+  <AIMessageList aria-live={live ? "off" : "polite"}>{turns}</AIMessageList>;
+  ```
+
+- **Closing ends it.** A panel closed while the conversation is live ends
+  the conversation too — in `onClose`, as `onVoiceEnd` does. A microphone
+  must never stay open behind a panel the visitor has closed.
+
+<Canvas of={Stories.VoiceConversation} />
 <Controls />

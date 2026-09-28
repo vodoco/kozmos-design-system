@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/product-contracts",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Platform-neutral presentation contracts for Kozmos map, POI, floor, and routing components.",
   "keywords": [
     "kozmos",
@@ -14,12 +14,12 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vodoco/kozmos-design-system-.git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system.git",
     "directory": "packages/product-contracts"
   },
-  "homepage": "https://github.com/vodoco/kozmos-design-system-/tree/main/packages/product-contracts#readme",
+  "homepage": "https://github.com/vodoco/kozmos-design-system/tree/main/packages/product-contracts#readme",
   "bugs": {
-    "url": "https://github.com/vodoco/kozmos-design-system-/issues"
+    "url": "https://github.com/vodoco/kozmos-design-system/issues"
   },
   "publishConfig": {
     "access": "public"

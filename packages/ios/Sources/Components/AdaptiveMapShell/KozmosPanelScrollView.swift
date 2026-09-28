@@ -1,11 +1,12 @@
 import SwiftUI
 
-// The sheet's content and the shell that holds it share three things here: whether
-// the content may scroll, how far it has scrolled, and where its peek ends. The
-// prototype's rule, driven and measured (docs/pointr-prototype-initial-sheet-
-// 2026-09-20.md §2): the content scrolls under a finger only at the largest
-// detent; below it an upward drag grows the sheet first; at the largest detent
-// a downward drag empties the scroll before the sheet moves.
+// The sheet's content and the shell that holds it share four things here: whether
+// the content may scroll, how far it has scrolled, where its peek ends, and what
+// the panel leaves above the content. The prototype's rule, driven and measured
+// (docs/pointr-prototype-initial-sheet-2026-09-20.md §2): the content scrolls
+// under a finger only at the largest detent; below it an upward drag grows the
+// sheet first; at the largest detent a downward drag empties the scroll before
+// the sheet moves.
 
 /// Whether the sheet's content may scroll. The shell sets it false below the
 /// largest detent and while the sheet is being dragged; outside a shell it is
@@ -21,6 +22,43 @@ public extension EnvironmentValues {
     }
 }
 
+struct KozmosPanelInsetTopKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+struct KozmosPanelClearanceTopKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+public extension EnvironmentValues {
+    /// What the shell's panel leaves empty above its content (GAP-083): the
+    /// grabber's 16-point row on a sheet that draws one; nothing on a sheet
+    /// with a single detent, which draws no grabber, under a `panelHeader`,
+    /// which sits there instead, or beside the map, where a side panel starts
+    /// its content at its top edge. A part with its own top padding and no
+    /// surface of its own tops it up to what it needs rather than adding to
+    /// it, as `KozmosPOIDetailPanel` and `KozmosBrowseCategoriesPanel` do in
+    /// their sheet presentations; a part that draws its own bordered surface
+    /// keeps its padding inside the border, since this space lies outside it.
+    /// Zero outside a shell. It describes the panel's top: a product that puts
+    /// such a part under a row of its own sets this and
+    /// `kozmosPanelClearanceTop` to zero for it, or the part tops up to a
+    /// space that is not above it.
+    var kozmosPanelInsetTop: CGFloat {
+        get { self[KozmosPanelInsetTopKey.self] }
+        set { self[KozmosPanelInsetTopKey.self] = newValue }
+    }
+
+    /// How far the panel content's first control must still sit below
+    /// `kozmosPanelInsetTop` (GAP-083): 4 points under a grabber — half of
+    /// what its 16-point row falls short of 24 — so the grabber's target keeps
+    /// its WCAG 2.5.8 spacing; zero everywhere else.
+    var kozmosPanelClearanceTop: CGFloat {
+        get { self[KozmosPanelClearanceTopKey.self] }
+        set { self[KozmosPanelClearanceTopKey.self] = newValue }
+    }
+}
+
 /// How far the sheet's content has scrolled from its top, in points; zero at
 /// the top. The shell reads it to decide whether a downward drag scrolls the
 /// content back or moves the sheet.
@@ -29,17 +67,38 @@ struct KozmosPanelScrollOffsetKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
-/// The bottom edge of the row the sheet's smallest detent rests on, as an
-/// anchor the shell resolves in the sheet's own space.
+/// What the sheet's smallest detent reads, as anchors the shell resolves in
+/// the sheet's own space: the row the content marks, the row the panel header
+/// marks, and the panel header's own box (row 73).
+struct KozmosPanelPeekAnchors {
+    var content: Anchor<CGRect>?
+    var header: Anchor<CGRect>?
+    var headerBounds: Anchor<CGRect>?
+}
+
+/// The rows the sheet's smallest detent rests on. Of two rows in one part,
+/// the later wins.
 struct KozmosMapShellPeekAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        value = nextValue() ?? value
+    static var defaultValue = KozmosPanelPeekAnchors()
+    static func reduce(value: inout KozmosPanelPeekAnchors, nextValue: () -> KozmosPanelPeekAnchors) {
+        let next = nextValue()
+        value = KozmosPanelPeekAnchors(
+            content: next.content ?? value.content,
+            header: next.header ?? value.header,
+            headerBounds: next.headerBounds ?? value.headerBounds
+        )
     }
 }
 
 /// The resolved peek edge, in points from the sheet's top.
 struct KozmosMapShellPeekBottomKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
+/// The panel header's bottom edge, in points from the sheet's top; zero with
+/// no header, or one that draws nothing.
+struct KozmosMapShellPanelHeaderBottomKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
@@ -90,9 +149,11 @@ public extension View {
     /// Marks the row the sheet's smallest detent rests on: `.collapsed` then
     /// resolves to this view's bottom edge plus a margin, within a quarter and
     /// three quarters of the shell — the prototype's place card peeks at its
-    /// Go row. Without an anchor `.collapsed` is a fifth of the shell.
+    /// Go row. Without an anchor `.collapsed` is a fifth of the shell, or as
+    /// much more as the whole panel header needs. A row in the panel header
+    /// counts as one in the content does, and outranks it.
     func kozmosPanelPeekAnchor() -> some View {
-        anchorPreference(key: KozmosMapShellPeekAnchorKey.self, value: .bounds) { $0 }
+        anchorPreference(key: KozmosMapShellPeekAnchorKey.self, value: .bounds) { KozmosPanelPeekAnchors(content: $0) }
     }
 }
 
