@@ -62,6 +62,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlSize
 import com.kozmos.contracts.KozmosFloorPresentation
 import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
@@ -351,8 +352,9 @@ fun KozmosFloorSelector(
 
 /**
  * How far the switcher's open column reaches past its tile, and how far its
- * levels sit inside its edge and apart: the tile's 16 corners inside the
- * column's 20, concentric.
+ * levels sit inside its edge and apart. The column's corner is the map
+ * control's Control corner grown by it, so the levels' corners stay
+ * concentric with it.
  */
 internal val SwitcherInset = KozmosDimensions.primitivesLayoutSpacing50
 
@@ -395,8 +397,9 @@ internal fun KozmosFloorSwitcher(
     val density = LocalDensity.current
     // The map control's own size, read off the tile: the column's levels take
     // it, so its bottom level lies exactly over the tile whatever size the
-    // shared map-control surface gives it.
-    var tileSize by remember { mutableStateOf(DpSize(44.dp, 44.dp)) }
+    // shared map-control surface gives it. The map control's square until the
+    // tile has been measured.
+    var tileSize by remember { mutableStateOf(DpSize(KozmosMapControlSize, KozmosMapControlSize)) }
     val tileFocus = remember { FocusRequester() }
     val inputModeManager = LocalInputModeManager.current
     var returnFocus by remember { mutableStateOf(false) }
@@ -470,11 +473,10 @@ internal fun KozmosFloorSwitcher(
 
 /**
  * The switcher's open column: every level, top floor first, each the tile's
- * size and its short label, as the tile shows it. The map control's surface
- * and shadow, opaque where the tile is nine tenths: the column lies over the
- * tile, and the tile's own label showing through read as part of it. Its edge
- * is a container's, the subtle border role, as the web's popover draws the
- * same column.
+ * size and its short label, as the tile shows it. It wears the map-control
+ * surface its tile does (decision 40): the page's own surface, opaque, no
+ * edge, and the map controls' elevation. Its corner is the Control corner
+ * grown by the column's inset, so the levels' corners stay concentric.
  *
  * The board's states: the current level outlined in the theme's primary, its
  * label in the primary; a closed level on the muted surface in the muted ink.
@@ -493,15 +495,15 @@ internal fun KozmosFloorSwitcherColumn(
     modifier: Modifier = Modifier,
     onEscape: () -> Unit = {}
 ) {
-    val edge = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer)
+    val edge = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl + SwitcherInset)
     val levelShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
     val labelStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
     Column(
         modifier = modifier
-            // The floating elevation role, which the map control casts at rest.
-            .shadow(KozmosShadows.semanticsElevationFloating, edge)
+            // The map controls' elevation role, as KozmosMapControlButton casts
+            // it, on the page's own surface, and no edge.
+            .shadow(KozmosShadows.semanticsElevationMapControl, edge)
             .background(KozmosThemeTokens.primitivesColorsBackground0, edge)
-            .border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, edge)
             .padding(SwitcherInset)
             // Escape from a keyboard, as Back: the popup hears only Back.
             .onPreviewKeyEvent { event ->

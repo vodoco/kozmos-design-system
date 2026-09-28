@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
 import com.kozmos.components.CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlSize
 import com.kozmos.contracts.KozmosFloorPresentation
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -98,7 +99,7 @@ class KozmosFloorSelectorPaparazziTest {
                 userFloor = "2",
                 userFloorLabel = "your level",
                 resultCountLabel = { "$it results" },
-                levelSize = DpSize(44.dp, 44.dp),
+                levelSize = DpSize(KozmosMapControlSize, KozmosMapControlSize),
                 onChoose = {}
             )
         }

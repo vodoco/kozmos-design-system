@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlSize
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.contracts.KozmosFloorPresentation
 import com.kozmos.tokens.KozmosColors
@@ -117,7 +119,7 @@ class KozmosFloorSwitcherPixelsTest {
                     userFloor = "2",
                     userFloorLabel = "your level",
                     resultCountLabel = { "$it results" },
-                    levelSize = DpSize(44.dp, 44.dp),
+                    levelSize = DpSize(KozmosMapControlSize, KozmosMapControlSize),
                     onChoose = {}
                 )
             }
@@ -126,5 +128,38 @@ class KozmosFloorSwitcherPixelsTest {
         // a mark is bigger than that.
         val marks = shapes.filter { it > 4 }
         assertEquals("the dot and the count are not two shapes: $shapes", 2, marks.size)
+    }
+
+    @Test
+    fun theColumnWearsTheMapControlSurfaceWithNoEdge() {
+        // Decision 40: the map-control surface has no edge, and the open
+        // column wears it, as the tile does. Drawn on black, where nothing
+        // but the column shows: its surface runs to its rim, and softening
+        // it leaves greys, never the border role's own blue-grey.
+        val edge = KozmosColors.semanticsBorderSubtle.toArgb()
+        val pixels = paparazzi.drawn(frames) {
+            CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
+                MaterialTheme {
+                    Box(Modifier.background(Color.Black).padding(16.dp)) {
+                        KozmosFloorSwitcherColumn(
+                            floors = levels,
+                            selectedFloor = "1",
+                            userFloor = null,
+                            userFloorLabel = "your level",
+                            resultCountLabel = { "$it results" },
+                            levelSize = DpSize(KozmosMapControlSize, KozmosMapControlSize),
+                            onChoose = {}
+                        )
+                    }
+                }
+            }
+        }
+        var edgePixels = 0
+        for (y in 0 until pixels.height) {
+            for (x in 0 until pixels.width) {
+                if (DrawnPixels.matches(pixels.argb(x, y), edge, tolerance = 3)) edgePixels++
+            }
+        }
+        assertEquals("the column draws an edge: $edgePixels pixels of the border role", 0, edgePixels)
     }
 }

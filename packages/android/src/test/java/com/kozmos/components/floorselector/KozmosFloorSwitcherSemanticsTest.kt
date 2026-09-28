@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlSize
 import com.kozmos.contracts.KozmosFloorPresentation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -137,7 +138,7 @@ class KozmosFloorSwitcherSemanticsTest {
                     userFloor = "2",
                     userFloorLabel = "your level",
                     resultCountLabel = english,
-                    levelSize = DpSize(44.dp, 44.dp),
+                    levelSize = DpSize(KozmosMapControlSize, KozmosMapControlSize),
                     onChoose = { chosen += it.id }
                 )
             }
