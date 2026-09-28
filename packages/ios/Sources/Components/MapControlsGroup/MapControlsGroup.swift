@@ -1,8 +1,9 @@
 import SwiftUI
 
 public struct KozmosMapControlsGroup: View {
-    /// Minimum comfortable hit target, and the width the group reports.
-    private static let controlSize: CGFloat = 44
+    /// The SDK's 48 square (decision 40), the width the group reports. 44
+    /// stays the floor of every target; this is above it.
+    private static let controlSize: CGFloat = KozmosDimensions.primitivesLayoutSizing600
 
     @Environment(\.kozmosAnalytics) private var trackEvent
 
@@ -24,6 +25,7 @@ public struct KozmosMapControlsGroup: View {
     private let locationPresentation: KozmosMapControlButtonPresentation
     private let locationLabel: String
     private let locationStateLabel: String?
+    private let locationHeadingDescription: String
     private let locationRevealOnChange: Bool
     private let locationLabelPlacement: KozmosMapControlButtonLabelPlacement
     private let onStepFreeChange: ((Bool) -> Void)?
@@ -43,6 +45,15 @@ public struct KozmosMapControlsGroup: View {
     ///     for each, pressed only while the map follows the visitor, and the
     ///     system's arc while it is locating. Pair it with a localized
     ///     `locationStateLabel` — the mark alone tells a screen reader nothing.
+    ///   - locationStateLabel: The state the control shows under its name: "Off",
+    ///     "On". The SDK reads heading "On", as it reads following (decision
+    ///     40). With no position (`.unavailable`, `.permissionDenied`) the
+    ///     control draws this alone, on one line — the SDK's "No Location" —
+    ///     and its name still starts what VoiceOver hears.
+    ///   - locationHeadingDescription: What heading adds to the name for
+    ///     VoiceOver, after the words it shows: heading reads "On" as following
+    ///     does, and only its mark tells the two apart on screen. The product
+    ///     translates it.
     ///   - locationIcons: The mark for any mode, in place of the group's own.
     ///     Pass the modes you have artwork for; the others keep the group's
     ///     marks. Drawn in the control's colour.
@@ -75,6 +86,7 @@ public struct KozmosMapControlsGroup: View {
         locationPresentation: KozmosMapControlButtonPresentation = .iconOnly,
         locationLabel: String = "Locate me",
         locationStateLabel: String? = nil,
+        locationHeadingDescription: String = "map turns with you",
         locationRevealOnChange: Bool = false,
         locationLabelPlacement: KozmosMapControlButtonLabelPlacement = .inline,
         onStepFreeChange: ((Bool) -> Void)? = nil,
@@ -97,6 +109,7 @@ public struct KozmosMapControlsGroup: View {
         self.locationPresentation = locationPresentation
         self.locationLabel = locationLabel
         self.locationStateLabel = locationStateLabel
+        self.locationHeadingDescription = locationHeadingDescription
         self.locationRevealOnChange = locationRevealOnChange
         self.locationLabelPlacement = locationLabelPlacement
         self.onStepFreeChange = onStepFreeChange
@@ -109,6 +122,8 @@ public struct KozmosMapControlsGroup: View {
 
     public var body: some View {
         VStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+            // Zoom: one surface, its two controls its segments — the map
+            // controls' surface, corner and shadows, and no edge round it.
             VStack(spacing: 0) {
                 controlButton(
                     systemName: "plus",
@@ -119,9 +134,10 @@ public struct KozmosMapControlsGroup: View {
 
                 // A `Divider` here would stretch the whole group across the
                 // map: it is horizontally greedy, and nothing else in the
-                // stack constrains the width.
+                // stack constrains the width. The hairline is the container
+                // edge's role, as React's and Compose's are.
                 Rectangle()
-                    .fill(KozmosColors.primitivesColorsForeground300)
+                    .fill(KozmosColors.semanticsBorderSubtle)
                     .frame(width: Self.controlSize, height: 1)
 
                 controlButton(
@@ -132,12 +148,8 @@ public struct KozmosMapControlsGroup: View {
                 )
             }
             .background(surfaceColor)
-            .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous)
-                    .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
-            )
-            .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+            .clipShape(controlShape)
+            .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: controlShape, fill: surfaceColor)
 
             if let onCompassReset {
                 controlButton(
@@ -148,14 +160,16 @@ public struct KozmosMapControlsGroup: View {
                 )
                 .rotationEffect(.degrees(compassBearing))
                 .background(surfaceColor)
-                .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous))
-                .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+                .clipShape(controlShape)
+                .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: controlShape, fill: surfaceColor)
             }
 
             if let control = modeControl {
                 KozmosMapControlButton(
                     label: control.label,
                     stateLabel: control.stateLabel,
+                    stateDescription: control.stateDescription,
+                    showsLabel: control.showsLabel,
                     presentation: control.presentation,
                     labelPlacement: control.labelPlacement,
                     revealOnChange: control.revealOnChange,
@@ -182,8 +196,15 @@ public struct KozmosMapControlsGroup: View {
         }
     }
 
+    /// The page's own surface, opaque, as the SDK's is. It was 88% of it.
     private var surfaceColor: Color {
-        KozmosColors.primitivesColorsBackground0.opacity(0.88)
+        KozmosColors.primitivesColorsBackground0
+    }
+
+    /// The Control corner, the SDK's 16. The zoom pair and the compass wore
+    /// the Container's 20.
+    private var controlShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
     }
 
     private func controlButton(
@@ -224,6 +245,10 @@ extension KozmosMapControlsGroup {
         let kind: Kind
         let label: String
         let stateLabel: String?
+        /// What heading adds to the name for VoiceOver; nil otherwise.
+        let stateDescription: String?
+        /// Off with no position: the SDK's "No Location" reads alone.
+        let showsLabel: Bool
         let icon: Image
         let pressed: Bool
         let isLoading: Bool
@@ -272,6 +297,8 @@ extension KozmosMapControlsGroup {
                 kind: .stepFree,
                 label: stepFreeLabel,
                 stateLabel: stepFree ? stepFreeOnLabel : stepFreeOffLabel,
+                stateDescription: nil,
+                showsLabel: true,
                 icon: stepFreeIcon ?? Image(systemName: Self.stepFreeSymbol),
                 pressed: stepFree,
                 isLoading: false,
@@ -289,6 +316,12 @@ extension KozmosMapControlsGroup {
             kind: .location,
             label: locationLabel,
             stateLabel: locationStateLabel,
+            // Heading reads "On", as following does and as the SDK's control
+            // does (decision 40); its mark tells them apart on screen, and
+            // this after the words tells VoiceOver.
+            stateDescription: locationState == .heading ? locationHeadingDescription : nil,
+            // With no position the SDK reads "No Location" alone, on one line.
+            showsLabel: !(locationState == .unavailable || locationState == .permissionDenied),
             icon: locationIcons[locationState] ?? Image(systemName: Self.locationSymbol(for: locationState)),
             // It was pressed whatever the state until row 77, so a map that was
             // not following at all drew a control that said it was.

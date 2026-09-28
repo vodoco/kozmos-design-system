@@ -149,6 +149,56 @@ final class KozmosMapControlsGroupTests: XCTestCase {
         XCTAssertEqual(plain?.presentation, .iconOnly)
     }
 
+    // MARK: - Decision 40: the SDK's words
+
+    /// With no position the control reads its state alone, on one line — the
+    /// SDK's "No Location" — and its name still starts the spoken name.
+    func testNoPositionReadsItsStateAlone() {
+        for state in KozmosUserLocationState.allCases {
+            let control = Group(
+                onMyLocation: {},
+                locationState: state,
+                locationLabel: "Focus",
+                locationStateLabel: "No Location"
+            ).modeControl
+            let noPosition = state == .unavailable || state == .permissionDenied
+            XCTAssertEqual(control?.showsLabel, !noPosition, "\(state)")
+        }
+    }
+
+    /// Heading reads "On", as following does and as the SDK's control does; its
+    /// mark tells them apart on screen, and a screen reader hears what the
+    /// group adds after the words. The product translates it.
+    func testHeadingSaysMoreThanItsWordsToAScreenReader() {
+        let heading = Group(
+            onMyLocation: {},
+            locationState: .heading,
+            locationLabel: "Focus",
+            locationStateLabel: "On"
+        ).modeControl
+        XCTAssertEqual(heading?.stateLabel, "On")
+        XCTAssertEqual(heading?.stateDescription, "map turns with you")
+
+        for state in KozmosUserLocationState.allCases where state != .heading {
+            XCTAssertNil(Group(onMyLocation: {}, locationState: state).modeControl?.stateDescription, "\(state)")
+        }
+
+        let translated = Group(
+            onMyLocation: {},
+            locationState: .heading,
+            locationStateLabel: "Ein",
+            locationHeadingDescription: "Karte dreht sich mit"
+        ).modeControl
+        XCTAssertEqual(translated?.stateDescription, "Karte dreht sich mit")
+    }
+
+    /// Step-free says everything in its words: no description, its name shown.
+    func testStepFreeNeedsNoDescription() {
+        let control = Group(onStepFreeChange: { _ in }, stepFree: true).modeControl
+        XCTAssertNil(control?.stateDescription)
+        XCTAssertEqual(control?.showsLabel, true)
+    }
+
     // MARK: - Step-free, in the location control's place during a route
 
     /// The same button, in the same place, during wayfinding. Passing the
