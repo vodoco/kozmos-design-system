@@ -1,4 +1,4 @@
-import { Meta, Story } from "@storybook/blocks";
+import { Canvas, Meta, Story } from "@storybook/blocks";
 import * as NavigationItemStories from "./NavigationItem.stories";
 import { PlatformSnippets } from "../PlatformSnippets";
 
@@ -55,6 +55,100 @@ label = "Explore",
 placement = KozmosNavigationItemPlacement.Side,
 selected = true,
 icon = { Icon(Icons.Default.Search, contentDescription = null) }
+)
+}
+`}
+/>
+
+## Rail
+
+A rail tile stacks its icon over its label. Every rail tile's label is **11px on a 14px line**
+and takes **up to two lines**, in both densities: one size for every tile, never some small and
+some large. A label that needs a third line is cut at the end of the second.
+
+The tile is **72px wide**, **64px** compact. A default tile is 72px tall whether its label takes
+one line or two; a compact one is 64px, and 68px with two lines.
+
+<Canvas>
+  <Story of={NavigationItemStories.Rail} />
+</Canvas>
+
+### A dashboard's rail
+
+A web dashboard gives its rail tiles **96px** with `className="w-24"`, as BottomNavigation widens
+its own tiles with `w-auto flex-1`. A 72px tile leaves its label 56px, and a word as long as
+"Configuration" is 73px at 11px and still 67px at 10px, so no legible size fits it there. In
+96px tiles each of these nine labels takes at most two lines and every tile stays 72px tall,
+measured in Chromium, Firefox and WebKit, in narrow and wide fonts (SF Pro and Verdana among
+them).
+
+<Canvas>
+  <Story of={NavigationItemStories.DashboardRail} />
+</Canvas>
+
+The native rails keep their 72pt and 72dp tiles (64 compact) and the same two lines: iOS draws the
+label in `caption2`, 11pt on 14pt lines at the default text size, and Android in `labelSmall`,
+11sp on 14sp lines. Both grow with the reader's text size.
+
+<PlatformSnippets
+    react={`
+import { Icon, NavigationItem } from "@kozmos-ds/react";
+
+export function AppRail() {
+  return (
+    <nav aria-label="Main">
+      <NavigationItem
+        content="icon-label"
+        icon={<Icon name="marker-pin-01" />}
+        placement="rail"
+      >
+        Nearby places
+      </NavigationItem>
+    </nav>
+  );
+}
+
+export function DashboardRail() {
+  return (
+    <nav aria-label="Settings">
+      <NavigationItem
+        className="w-24"
+        content="icon-label"
+        icon={<Icon name="settings-01" />}
+        placement="rail"
+      >
+        SDK Configuration
+      </NavigationItem>
+    </nav>
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+
+KozmosNavigationItem(
+label: "Nearby places",
+placement: .rail,
+content: .iconLabel
+) {
+Image(systemName: "mappin.and.ellipse")
+}
+`}
+    kotlin={`
+package com.kozmos.components.navigationitem
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+
+@Composable
+fun RailNavigationItemExample() {
+KozmosNavigationItem(
+label = "Nearby places",
+placement = KozmosNavigationItemPlacement.Rail,
+content = KozmosNavigationItemContent.IconLabel,
+icon = { Icon(Icons.Default.Place, contentDescription = null) }
 )
 }
 `}
