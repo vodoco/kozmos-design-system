@@ -15,8 +15,9 @@ export interface MapStatusPillProps extends React.HTMLAttributes<HTMLDivElement>
    *   "Established", "Up-to-date".
    * - `danger`: a warning triangle in the danger colour; the words stay ink —
    *   "Failed to Calculate Precise Position".
-   * - `warning`: the surface itself fills with the SDK's bright amber, and the
-   *   mark and the words are dark on it — "Turn Back".
+   * - `warning`: the surface fills with Emotion/alert/fill, the SDK's bright
+   *   amber, under its ink, Emotion/alert/onFill, black in both themes —
+   *   "Turn Back".
    *
    * The product chooses the tone and when it shows; the pill only draws it.
    */
