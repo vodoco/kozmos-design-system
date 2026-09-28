@@ -62,6 +62,33 @@ async function browseInsets(page) {
   });
 }
 
+// Decision 14: where a hosted route preview's first row sits in the panel —
+// its destination label ("To"), the row's first line — from the panel's top
+// edge and from its start edge (the right, right to left); and the top
+// padding of that row and of the options under it. Counted first, as the
+// details card is.
+async function routeInsets(page) {
+  const route = page.getByRole("region", { name: "Route preview" });
+  assert.equal(await route.count(), 1, "the route preview is drawn");
+  return route.evaluate((section) => {
+    const panel = section.closest("aside");
+    const row = section.querySelector("header");
+    const label = row.firstElementChild;
+    const b = label.getBoundingClientRect();
+    const p = panel.getBoundingClientRect();
+    const rtl = getComputedStyle(panel).direction === "rtl";
+    const round = (value) => Math.round(value * 10) / 10;
+    return {
+      label: label.textContent.trim(),
+      top: round(b.top - p.top),
+      start: round(rtl ? p.right - b.right : b.left - p.left),
+      row: parseFloat(getComputedStyle(row).paddingTop),
+      options: parseFloat(getComputedStyle(row.nextElementSibling).paddingTop),
+      grip: !!panel.querySelector('[role="slider"]'),
+    };
+  });
+}
+
 // WCAG 2.5.8: the targets inside the 24px circle on the grip's centre. The
 // grip is a 16px row, an undersized target, so the circle must meet no other.
 async function insideGripCircle(page) {
@@ -851,6 +878,127 @@ const cases = [
       const side = await listTop();
       assert(!side.grip, "a side panel draws no grip");
       assert.equal(side.padding, 0, "in a side panel the list adds nothing");
+    },
+  ],
+  [
+    "under a grip, a hosted route preview's first row is as far from the sheet's top as from its side, plus the grip's clearance",
+    async (page) => {
+      // Decision 14, as for the category browser: the route preview's header
+      // padded 16 on every side under the grip's 16 row, so its destination
+      // label sat 33 from the sheet's top and 17 from its side. The row tops
+      // its padding up to 16 instead of adding 16, and keeps the grip's
+      // clearance: 21 against 17.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showRoute();
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await settleLayout(page);
+      const at = await routeInsets(page);
+      assert(at.grip, "this sheet draws its grip");
+      assert.equal(at.label, "To");
+      assert(
+        Math.abs(at.start - 17) <= 1,
+        `the destination label starts ${at.start} in, not the panel's 1px border and the row's 16`,
+      );
+      assert(
+        Math.abs(at.top - (at.start + 4)) <= 1,
+        `destination label ${at.top} from the top and ${at.start} from the side`,
+      );
+    },
+  ],
+  [
+    "only a route preview's first row tops up: the options under it keep their 16",
+    async (page) => {
+      // The guard for topping up the wrong part: the options sit under the
+      // destination row and its rule, not under the grip.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showRoute();
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await settleLayout(page);
+      const at = await routeInsets(page);
+      assert(at.grip, "this sheet draws its grip");
+      assert.equal(at.options, 16, "the options keep their 16 under the row");
+    },
+  ],
+  [
+    "a single-detent sheet draws no grip, and the route preview keeps its own top padding",
+    async (page) => {
+      // The guard: with no grip the shell leaves nothing above the content,
+      // so the row keeps its 16 or the label meets the sheet's edge.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showRoute();
+        window.setAdaptiveOptions({
+          panelDetents: ["medium"],
+          panelDetent: "medium",
+        });
+      });
+      await settleLayout(page);
+      const at = await routeInsets(page);
+      assert(!at.grip, "a single detent draws no grip");
+      assert.equal(at.row, 16, "the destination row keeps its own 16");
+      assert(
+        Math.abs(at.top - at.start) <= 1,
+        `destination label ${at.top} from the top and ${at.start} from the side`,
+      );
+    },
+  ],
+  [
+    "a hosted route preview's first row is as far from the side panel's top as from its side",
+    async (page) => {
+      // The side panel leaves 16 above its content (GAP-012): the label sat
+      // 33 from its top and 17 from its side.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await widen(page);
+      await page.evaluate(() => window.showRoute());
+      await settleLayout(page);
+      const at = await routeInsets(page);
+      assert(!at.grip, "a side panel draws no grip");
+      assert(
+        Math.abs(at.top - at.start) <= 1,
+        `destination label ${at.top} from the top and ${at.start} from the side`,
+      );
+    },
+  ],
+  [
+    "right to left, the side panel's route preview has its first row as far from the top as from the right",
+    async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        document.getElementById("fixture").dir = "rtl";
+      });
+      await widen(page);
+      await page.evaluate(() => window.showRoute());
+      await settleLayout(page);
+      const at = await routeInsets(page);
+      assert(
+        Math.abs(at.top - at.start) <= 1,
+        `destination label ${at.top} from the top and ${at.start} from the right`,
+      );
+    },
+  ],
+  [
+    "under a panel header, the route preview keeps its own top padding",
+    async (page) => {
+      // A header sits between the grip and the content: the space above the
+      // preview is the header, not empty, so the row's 16 separates them.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        window.showRoute();
+        window.setAdaptiveOptions({ panelDetent: "large" });
+      });
+      await settleLayout(page);
+      const at = await routeInsets(page);
+      assert(at.grip, "this sheet draws its grip");
+      assert.equal(
+        at.row,
+        16,
+        "the destination row keeps its own 16 under a panel header",
+      );
     },
   ],
 ];

@@ -38,12 +38,12 @@ public extension EnvironmentValues {
     /// its content at its top edge. A part with its own top padding and no
     /// surface of its own tops it up to what it needs rather than adding to
     /// it, as `KozmosPOIDetailPanel` and `KozmosBrowseCategoriesPanel` do in
-    /// their sheet presentations; a part that draws its own bordered surface
-    /// keeps its padding inside the border, since this space lies outside it.
-    /// Zero outside a shell. It describes the panel's top: a product that puts
-    /// such a part under a row of its own sets this and
-    /// `kozmosPanelClearanceTop` to zero for it, or the part tops up to a
-    /// space that is not above it.
+    /// their sheet presentations and `KozmosRoutePreviewPanel` does; a part
+    /// that draws its own bordered surface keeps its padding inside the
+    /// border, since this space lies outside it. Zero outside a shell. It
+    /// describes the panel's top: a product that puts such a part under a row
+    /// of its own sets this and `kozmosPanelClearanceTop` to zero for it, or
+    /// the part tops up to a space that is not above it.
     var kozmosPanelInsetTop: CGFloat {
         get { self[KozmosPanelInsetTopKey.self] }
         set { self[KozmosPanelInsetTopKey.self] = newValue }
