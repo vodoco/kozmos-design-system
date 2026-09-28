@@ -122,7 +122,7 @@ The follow-up audit adds six browser checks: callback payload independence in bo
 invalid host values versus CSS safe areas (including live changes), zero-width hosts, large-panel
 control reachability, and enlarged text. Five assertions failed before their fixes; enlarged-text
 coverage passed already. The geometry unit test for measured chrome reservation also failed first.
-`pnpm test:adaptive` runs all fourteen checks per engine. See `foundation-audit-2026-09-17.md`.
+`pnpm test:adaptive` runs all fourteen checks per engine.
 
 ## Before beta
 
@@ -130,7 +130,7 @@ coverage passed already. The geometry unit test for measured chrome reservation 
    regressing iOS detents or measured chrome. Test native rotation/recreation and restoration.
 2. Connect a real Pointr map adapter and run POI/routing flows against installed package tarballs.
 3. Validate actual keyboard, safe-area, fold/posture and accessibility scenarios on devices.
-4. Complete theme/portal/CSS isolation, the API/export review and release safeguards from
-   `prepublish-architecture-review-2026-09-17.md`.
+4. Complete theme/portal/CSS isolation, the API/export review and release safeguards that the
+   pre-publication architecture review of 2026-09-17 called for.
 
 No npm publication, release token, package version, Figma node or remote branch was changed.

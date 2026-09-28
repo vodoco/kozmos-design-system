@@ -81,8 +81,8 @@ luminance half.
 2. **Whether existing steps may move.** Generation will not reproduce the
    hand-picked hexes exactly. Most will shift by a ΔE the eye cannot see; the
    two defects above will shift visibly, because fixing them is the point. This
-   is a library-wide visual change and wants Chromatic working before it lands
-   — see the snapshot limit in the handoff.
+   is a library-wide visual change: the visual review redraws every story, and
+   those drawings are what gets reviewed (`visual-review.md`).
 3. **Where generation runs.** Recommended: a script that writes _values_ into
    `tokens-light.json` and `tokens-dark.json` and preserves everything else,
    because those files carry `com.figma.variableId` in `$extensions` and the
@@ -123,14 +123,12 @@ Two sessions, in order:
    should reproduce every step within a stated ΔE tolerance except the two
    known defects, which it should report. That run is the proof the curve is
    right before anything moves.
-2. **The visual pass.** Regenerate, rebuild `packages/react`, publish
-   Storybook, and read the Chromatic diff. Then the Figma run, since every
-   colour variable in the file changes value.
+2. **The visual pass.** Regenerate, rebuild `packages/react`, record the
+   visual review's new baselines, and read them in the pull request. Then the
+   Figma run, since every colour variable in the file changes value.
 
-Prerequisites, both already recorded in the handoff: the Chromatic snapshot
-limit, because this touches every story; and `tokens:contrast:check` staying
-green across its 50 pairs in both themes, which the generator should run as its
-own last step.
+Prerequisite: `tokens:contrast:check` staying green across its pairs in both
+themes, which the generator should run as its own last step.
 
 ## What this is not
 

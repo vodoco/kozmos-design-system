@@ -252,7 +252,8 @@ struct SDKMapScreen: View {
         .animation(KozmosMotion.standard, value: contentState)
         // One container for the sheet, so its identifier and value are its
         // own and not every child's. The value is for the flow test, which
-        // picks its building by its place count (handoff item G).
+        // picks its building by its place count: the building the map opens
+        // on varies between launches.
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("search-sheet")
         .accessibilityValue(session.poiDataReady ? "\(session.pois.count) POIs loaded" : "loading")

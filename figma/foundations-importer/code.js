@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "637f9fb3747e";
+const PLUGIN_BUILD = "9b97a23c3bac";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -330,8 +330,8 @@ function cardPaddingLength(padding) {
 }
 const LIST_DENSITIES = ["Default", "Compact"];
 const TABLE_DENSITIES = ["Default", "Compact"];
-// Product / SDK lane. These compose Core primitives and stay domain-specific;
-// see docs/figma-core-gap-audit.md for why they are not promoted into Core.
+// Product / SDK lane. These compose Core primitives and stay domain-specific,
+// so they are not promoted into Core, which stays domain-neutral.
 // The fourteen cases of 2026-09-20, the same on every platform: the four
 // turns, the six level changes by lift, escalator and stairs, a plain level
 // change, a transition between buildings, and turning back.
@@ -43986,7 +43986,7 @@ async function updateToastComponent() {
 // Product / SDK lane
 //
 // These component sets are map, wayfinding, and venue compositions. They are
-// deliberately kept out of Core (see docs/figma-core-gap-audit.md) but still
+// deliberately kept out of Core, which stays domain-neutral, but still
 // need canonical Figma nodes so Code Connect can link React, SwiftUI, and
 // Compose. Each set uses one variant axis to avoid variant explosion, matching
 // the convention used by the Core layout and data-display sets.
