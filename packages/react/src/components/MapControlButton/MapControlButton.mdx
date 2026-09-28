@@ -10,19 +10,57 @@ Product/SDK map action with icon-only and labelled presentations. The localized
 `label` is always the accessible action name; `stateLabel` communicates a
 controlled state such as “Off” without relying on colour.
 
+It wears the SDK's map-control surface (decision 40), the Tracking Indicator of
+Pointr's Location Tracking Buttons (Figma `ce7phRJR1sCkH6zT8EMH8I`,
+`434:31572`), and so does every map control built on it — the zoom pair, the
+compass, the location control and the floor tile:
+
+- a **48px square**, 44px its floor, with 12px at the sides once labelled and
+  8px above and below;
+- the **page's own surface**, opaque, with the Control corner (16) and **no
+  border** in any state;
+- the **map controls' elevation**, three shadows (`shadow-map-control`,
+  `--semantics-elevation-map-control`), and the SDK's 32px backdrop blur;
+- a **24px mark**, 8px from the words, and the words **bold 16px on a 16px
+  line**.
+
+The surface is owned CSS (`kozmos-map-control`), so it holds in a host without
+`@scope`; a class passed in `className` still wins over it.
+
 <Canvas of={Stories.IconOnly} />
 <Canvas of={Stories.LabelledState} />
 
 ## How an active control reads
 
+A toggle's state is its tone, as the SDK's is. Leave `pressed` unset for a
+control that is not a toggle — zoom, compass — and it keeps the ink. `false` is
+a toggle that is off: the mark and the words grey (foreground/400). `true` is
+one that is on.
+
 `emphasis` decides what "on" looks like. `tinted` is the default: the map
-surface stays and only the icon and the edge take the theme colour, because a
+surface stays, the mark takes the theme's blue (theme/600) and the words navy
+(theme/1000), and nothing else changes — no edge and no other lift — because a
 control over a map has to remain legible against the tiles behind it and a
 solid fill hides the very thing it sits on. `filled` inverts the surface to the
 Button's primary tier, for callers that want the heavier emphasis.
 
 <Canvas of={Stories.StackedState} />
 <Canvas of={Stories.FilledEmphasis} />
+
+## A state that says it all
+
+`labelPlacement="stacked"` sets the name over the state, two equal lines — the
+SDK's "Focus⏎Off". `showLabel={false}` draws the state alone, for a state that
+says everything: the SDK's "No Location" has no "Focus" over it. The name still
+starts the accessible name — "Focus, No Location".
+
+<Canvas of={Stories.StateAlone} />
+
+`stateDescription` is said after the state and never drawn: what the words on
+the control leave out. The location control's heading mode shows "On", as
+following does, and a screen reader hears "Focus, On, map turns with you". It
+comes after the words, so the name still begins with what a voice-control user
+sees.
 
 ## Announcing a change, then getting out of the way
 
@@ -55,5 +93,88 @@ rather than while it is still wrong. `revealDuration` sets how long it holds.
 For anything that is not this component, `useRevealOnChange(value, { duration,
 delay })` is the same timing as a hook and returns whether the label should be
 showing.
+
+## Implementation
+
+import { PlatformSnippets } from '../PlatformSnippets';
+
+<div className="subheading">Platform Code</div>
+
+<PlatformSnippets
+  react={`
+import { MapControlButton } from "@kozmos-ds/react";
+import { LayersThree01 } from "@kozmos-ds/icons";
+
+// A map toggle: grey while off, the theme's blue and navy while on. It rests
+// icon-only and says its new state for a moment when it changes.
+export function LayersToggle({
+  showsLayers,
+  onShowsLayersChange,
+}: {
+  showsLayers: boolean;
+  onShowsLayersChange: (showsLayers: boolean) => void;
+}) {
+  return (
+    <MapControlButton
+      icon={<LayersThree01 />}
+      label="Layers"
+      labelPlacement="stacked"
+      pressed={showsLayers}
+      revealOnChange
+      stateLabel={showsLayers ? "On" : "Off"}
+      onClick={() => onShowsLayersChange(!showsLayers)}
+    />
+  );
+}
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+// A map toggle: grey while off, the theme's blue and navy while on. It rests
+// icon-only and says its new state for a moment when it changes.
+struct LayersToggle: View {
+    @Binding var showsLayers: Bool
+
+    var body: some View {
+        KozmosMapControlButton(
+            label: String(localized: "Layers"),
+            systemImage: "square.3.layers.3d",
+            stateLabel: showsLayers ? String(localized: "On") : String(localized: "Off"),
+            labelPlacement: .stacked,
+            revealOnChange: true,
+            pressed: showsLayers
+        ) {
+            showsLayers.toggle()
+        }
+    }
+}
+  `}
+  kotlin={`
+package com.kozmos.example
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Layers
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlacement
+
+// A map toggle: grey while off, the theme's blue and navy while on. It rests
+// icon-only and says its new state for a moment when it changes.
+@Composable
+fun LayersToggle(showsLayers: Boolean, onShowsLayersChange: (Boolean) -> Unit) {
+    KozmosMapControlButton(
+        label = "Layers",
+        onClick = { onShowsLayersChange(!showsLayers) },
+        icon = { Icon(Icons.Outlined.Layers, contentDescription = null) },
+        stateLabel = if (showsLayers) "On" else "Off",
+        labelPlacement = KozmosMapControlButtonLabelPlacement.Stacked,
+        pressed = showsLayers,
+        revealOnChange = true
+    )
+}
+  `}
+/>
 
 <Controls />

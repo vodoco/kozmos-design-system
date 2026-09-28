@@ -21,6 +21,10 @@ disabled controls.
 `compassBearing` rotates the compass glyph. Pass the renderer's current bearing;
 the component does not track it.
 
+Every control wears the SDK's map-control surface — `MapControlButton`'s: a
+48px square, no border, and the map controls' three shadows. The zoom pair is
+one such surface, its buttons its segments.
+
 `locationState` is a `UserLocationState` — `off`, `locating`, `following`,
 `heading`, `permission-denied`, `stale`, or `unavailable`. Several of these are
 not errors and should not read as failures: `locating` is in progress, and
@@ -43,20 +47,37 @@ Tracking Buttons revamp:
 | `heading`                               | `LocationHeading` — the upright pointer and the turn arc  |
 | `permission-denied`, `unavailable`      | the pointer struck through                                |
 
-The two symbols come from `@kozmos-ds/icons` and take the control's colour, so
-they tint with it when pressed. To draw your own mark for a state, pass that
-state in `locationIcons`; the others keep the group's marks.
+The marks are the SDK's 24px; the two symbols come from `@kozmos-ds/icons` and
+their cone and arc reach past that square, as the revamp's do. They take the
+control's colour: grey while the map is not following, the theme's blue while
+it follows or turns. To draw your own mark for a state, pass that state in
+`locationIcons`; the others keep the group's marks.
 
 ### The SDK's location control
 
-The SDK's control is icon-only over the map and widens to say its new mode for a
-moment when the mode changes — "Focus / On", the state set under the name. Ask
-for that with `locationRevealOnChange` and `locationLabelPlacement="stacked"`.
-Both are off by default, so a product that relies on a fixed presentation sees
-nothing move.
+The control reads as the SDK's Tracking Indicator (Figma
+`ce7phRJR1sCkH6zT8EMH8I`, `434:31572`; decision 40):
 
-Give `heading` its own `locationStateLabel` rather than a second "On": the name
-is all a screen reader has to tell following from a map that turns.
+- **"Focus" over "Off" or "On"**, two equal lines, bold 16px on a 16px line.
+  Off, the words and the mark are grey (foreground/400); on, the words are navy
+  (theme/1000) and the mark the theme's blue (theme/600). No border marks "On":
+  the words and the mark carry it.
+- **Heading reads "On"**, as following does. Its mark tells the two apart on
+  screen; a screen reader hears `locationHeadingDescription` after the words —
+  "Focus, On, map turns with you" — which the product translates.
+- **No position reads one line**: with `unavailable` or `permission-denied` the
+  control draws `locationStateLabel` alone — the SDK's "No Location" — and its
+  name still starts what a screen reader hears ("Focus, No Location").
+- `locating`, `stale` and `permission-denied` keep their meaning in the same
+  style: the spinner beside the outline for "Focus / Locating", the outline for
+  "Focus / Last known", the struck pointer for a state the product names.
+
+It is icon-only over the map and widens to say its new mode for a moment when
+the mode changes. Ask for that with `locationRevealOnChange` and
+`locationLabelPlacement="stacked"`. Both are off by default, so a product that
+relies on a fixed presentation sees nothing move. From following to heading the
+words stay "On", so nothing widens; the SDK says "Map Rotation: On" in a status
+message of its own, and a product that wants the same can show a `Toast`.
 
 ### Step-free during wayfinding
 
@@ -92,11 +113,24 @@ export function Example(
     | "locationState"
   >,
 ) {
+  // The SDK's words: "Focus" over "Off" or "On", and "No Location" alone.
+  // Every string is the product's to translate.
+  const state = props.locationState;
+  const stateLabel =
+    state === "following" || state === "heading"
+      ? "On"
+      : state === "unavailable" || state === "permission-denied"
+        ? "No Location"
+        : "Off";
   return (
     <MapControlsGroup
       {...props}
       label="Map controls"
-      locationLabel="My location"
+      locationLabel="Focus"
+      locationStateLabel={stateLabel}
+      locationHeadingDescription="map turns with you"
+      locationLabelPlacement="stacked"
+      locationRevealOnChange
     />
   );
 }
@@ -127,7 +161,12 @@ import { KozmosMapControlsGroup } from "@kozmos-ds/vue"
   <KozmosMapControlsGroup
     label="Map controls"
     :compassBearing="bearing"
-    locationLabel="My location"
+    :locationState="locationState"
+    locationLabel="Focus"
+    :locationStateLabel="locationStateLabel"
+    locationHeadingDescription="map turns with you"
+    locationLabelPlacement="stacked"
+    :locationRevealOnChange="true"
     @zoomIn="zoomIn"
     @zoomOut="zoomOut"
     @myLocation="recenter"
@@ -141,22 +180,42 @@ import Kozmos
 struct MapControls: View {
     let bearing: Double
     let locationState: KozmosUserLocationState
+    let zoomIn: () -> Void
+    let zoomOut: () -> Void
+    let resetBearing: () -> Void
+    let recenter: () -> Void
 
     var body: some View {
         KozmosMapControlsGroup(
             compassBearing: bearing,
-            onZoomIn: { zoomIn() },
-            onZoomOut: { zoomOut() },
-            onCompassReset: { resetBearing() },
-            onMyLocation: { recenter() },
+            onZoomIn: zoomIn,
+            onZoomOut: zoomOut,
+            onCompassReset: resetBearing,
+            onMyLocation: recenter,
             // Every name is the product's to translate.
             zoomInLabel: String(localized: "Zoom in"),
             zoomOutLabel: String(localized: "Zoom out"),
             compassResetLabel: String(localized: "Reset bearing"),
             locationState: locationState,
-            locationPresentation: .iconOnly,
-            locationLabel: String(localized: "My location")
+            // The SDK's control: "Focus" over "Off" or "On" for a moment when
+            // the mode changes, and "No Location" alone with no position.
+            locationLabel: String(localized: "Focus"),
+            locationStateLabel: stateLabel,
+            locationHeadingDescription: String(localized: "map turns with you"),
+            locationRevealOnChange: true,
+            locationLabelPlacement: .stacked
         )
+    }
+
+    private var stateLabel: String {
+        switch locationState {
+        case .following, .heading:
+            return String(localized: "On")
+        case .unavailable, .permissionDenied:
+            return String(localized: "No Location")
+        default:
+            return String(localized: "Off")
+        }
     }
 }
 
@@ -184,19 +243,36 @@ import com.kozmos.components.mapcontrolsgroup.KozmosMapControlsGroup
 import com.kozmos.contracts.KozmosUserLocationState
 
 @Composable
-fun MapControls(bearing: Float, locationState: KozmosUserLocationState) {
+fun MapControls(
+    bearing: Float,
+    locationState: KozmosUserLocationState,
+    zoomIn: () -> Unit,
+    zoomOut: () -> Unit,
+    resetBearing: () -> Unit,
+    recenter: () -> Unit
+) {
     KozmosMapControlsGroup(
         compassBearing = bearing,
-        onZoomIn = { zoomIn() },
-        onZoomOut = { zoomOut() },
-        onCompassReset = { resetBearing() },
-        onMyLocation = { recenter() },
-        locationLabel = "My location",
+        onZoomIn = zoomIn,
+        onZoomOut = zoomOut,
+        onCompassReset = resetBearing,
+        onMyLocation = recenter,
+        // The SDK's control: "Focus" over "Off" or "On" for a moment when the
+        // mode changes, and "No Location" alone with no position.
+        locationLabel = "Focus",
+        locationStateLabel = when (locationState) {
+            KozmosUserLocationState.Following, KozmosUserLocationState.Heading -> "On"
+            KozmosUserLocationState.Unavailable, KozmosUserLocationState.PermissionDenied -> "No Location"
+            else -> "Off"
+        },
+        locationHeadingDescription = "map turns with you",
         // Every name is the product's to translate.
         zoomInLabel = "Zoom in",
         zoomOutLabel = "Zoom out",
         compassResetLabel = "Reset bearing",
-        locationState = locationState
+        locationState = locationState,
+        locationRevealOnChange = true,
+        locationLabelPlacement = KozmosMapControlButtonLabelPlacement.Stacked
     )
 }
 
@@ -216,12 +292,18 @@ fun WayfindingControls(stepFree: Boolean, onStepFreeChange: (Boolean) -> Unit) {
 
 ## Accessibility
 
-- Every control keeps a 44px target, including in the icon-only presentation,
-  so the group satisfies the shared touch-target contract.
+- Every control is the SDK's 48px square, above the shared 44px touch target,
+  including in the icon-only presentation; nothing lets it shrink below 44px.
 - `label` names the cluster so it is announced as one group of controls rather
   than a run of unlabelled buttons.
 - `locationState` must be conveyed through `locationStateLabel`, not by the icon
-  treatment alone. The marks are decorative: the button's name carries the state.
+  treatment alone. The marks and the tones are decorative: the button's name
+  carries the state. Heading shows following's "On", so its name goes on with
+  `locationHeadingDescription`, after the words shown, so the name still begins
+  with what a voice-control user sees.
+- No border draws the control's edge; a keyboard focus ring does, in the ring's
+  colour (theme/600, over 6:1 against the surface in both themes). The zoom
+  pair's buttons draw theirs inside themselves, where the pair cannot cut them.
 - The step-free control is a toggle: it reports `aria-pressed`, and its name
   carries its state ("Step-free, On"), as the location control's does.
 - The compass glyph does not auto-mirror in RTL; a bearing is physical.
