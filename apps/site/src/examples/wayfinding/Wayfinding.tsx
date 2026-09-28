@@ -151,6 +151,8 @@ export default function Wayfinding() {
         }
         expanded={expanded}
         onToggle={() => setExpanded((value) => !value)}
+        // Glass, as the SDK's map screen draws it; Kozmos's default is solid.
+        surface="glass"
       >
         <Itinerary
           origin="Main entrance"
@@ -244,6 +246,7 @@ export default function Wayfinding() {
           arrivalText={arrivalTime(remainingSeconds)}
           endLabel="End"
           onEndRoute={reset}
+          surface="glass"
           progress={
             <RouteProgressRail
               progress={stepIndex / steps.length}
@@ -409,6 +412,10 @@ export default function Wayfinding() {
         controls={controls}
         panel={panel}
         panelLabel={panelLabels[stage]}
+        // The SDK's map screen puts its panel, its manoeuvre card and its
+        // summary on glass; the parts the panel holds paint no fill of their
+        // own, so the map shows through them (decisions 43 and 48).
+        panelSurface="glass"
         onLayoutChange={controlsEdge.onLayoutChange}
       />
     </Box>

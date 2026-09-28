@@ -376,11 +376,19 @@ export default function PhoneSearch() {
           panel={panel}
           panelLabel={selected ? selected.poi.name : "Places"}
           panelPresentation="bottom"
+          // The SDK's sheet is glass; Kozmos's default is solid. What the
+          // sheet holds paints no fill of its own, so the map shows through
+          // it (decisions 43 and 48).
+          panelSurface="glass"
           panelDetents={["collapsed", "medium", "large"]}
           panelDetent={detent}
           onPanelDetentChange={(next) => {
             if (isDetent(next as string)) setDetent(next as Detent);
           }}
+          // What the assistant covers is out of reach while it is open: a
+          // keyboard stepping back out of the panel otherwise lands on the
+          // sheet's tiles under it, where nobody can see them (GAP-93).
+          inert={assistantOpen}
         />
         {/* Kept mounted and opened with `open`, so it takes focus as it
             opens and hands it back to the AI search button as it closes. It
