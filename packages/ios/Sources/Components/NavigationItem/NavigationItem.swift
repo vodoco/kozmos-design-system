@@ -1,4 +1,9 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
 
 public enum KozmosNavigationItemPlacement {
     case top
@@ -242,6 +247,9 @@ public struct KozmosNavigationItem: View {
         }
     }
 
+    // Every rail tile's label is caption2, 11pt at the default text size, on
+    // 14pt lines and up to two of them, as React's is 11px on 14px (decision
+    // 36): one size for every tile. Two lines keep the tile 72pt tall.
     private var railContent: some View {
         VStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
             if shouldRenderIcon, let icon = icon {
@@ -251,15 +259,34 @@ public struct KozmosNavigationItem: View {
 
             if shouldRenderLabel, let label = label {
                 Text(label)
-                    .font(KozmosTypography.caption)
+                    .font(KozmosTypography.caption2)
                     .fontWeight(.semibold)
-                    .lineLimit(1)
+                    .lineSpacing(Self.railLabelLineSpacing)
+                    .lineLimit(2)
                     .truncationMode(.tail)
                     .multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: .infinity)
     }
+
+    /// What SwiftUI adds between a rail label's lines to set them 14pt apart
+    /// at the default text size: 14 less caption2's own line, 13.1pt of SF
+    /// Pro at 11pt. From the next size up, caption2's own line height is
+    /// taller than that (18pt for its 13pt) and SwiftUI sets the lines by it,
+    /// so the line grows with the text without this growing too.
+    static let railLabelLineSpacing: CGFloat = {
+        #if canImport(UIKit)
+        let caption2 = UIFont.preferredFont(
+            forTextStyle: .caption2,
+            compatibleWith: UITraitCollection(preferredContentSizeCategory: .large)
+        )
+        return max(0, 14 - caption2.lineHeight)
+        #else
+        let caption2 = NSFont.preferredFont(forTextStyle: .caption2)
+        return max(0, 14 - (caption2.ascender - caption2.descender + caption2.leading))
+        #endif
+    }()
 
     private var isSelected: Bool {
         selected || state == .selected
