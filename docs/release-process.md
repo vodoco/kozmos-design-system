@@ -1,13 +1,13 @@
 # Controlled npm releases
 
-Status: implemented locally on `astra/release-safeguards`, based on merged PR #53
-(`040f53d`). Not pushed or activated. No release is approved: `release/plan.json`
-intentionally contains an empty package list. No credentials, repository settings,
-package versions, npm tags or publications were changed.
+Status (2026-09-28): in use. It has published every release since 0.1.0 (2026-09-23);
+0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
+`workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
 
-This replaces the old `workflow_run` publisher. Adding `NPM_TOKEN` must never be
-enough to publish. The old workflow on main remains in effect until this change
-is reviewed and merged; do not add a token before then.
+**Before every dispatch, `pnpm release:preflight <sha> <ci-run-id>`**: it makes the release
+job's own checks against the live CI run and settings (the credential check included) and
+prints the dispatch command. **After a publish, `pnpm release:tag <sha>`**: the git tags and
+GitHub Releases.
 
 ## What the workflow requires
 
@@ -23,12 +23,13 @@ is reviewed and merged; do not add a token before then.
    checkout and candidate SHA must agree. The candidate must still be main HEAD
    at each verification, including at the start of the publish job.
 4. Repository variable `NPM_RELEASE_ENABLED=true` and an `npm-release`
-   environment carrying an exact `main` branch policy and holding `NPM_TOKEN`
-   as an environment secret. There is no approval wait; see "The approval gate
-   this plan cannot provide".
+   environment carrying an exact `main` branch policy, holding `NPM_TOKEN` as an
+   environment secret, and requiring Olcay's approval with administrator bypass
+   off; the policy refuses a release if either is undone. See "The approval gate".
 
 Global concurrency serializes releases without cancelling a running publish.
-There is no automatic version PR, publication, git tag or GitHub release. Changesets
+There is no automatic version PR, publication, git tag or GitHub release; tags and
+releases come from `pnpm release:tag <sha>` after a publish (Olcay's decision 33). Changesets
 still manage versions/changelogs through `pnpm changeset` and
 `pnpm version-packages` on a reviewed branch. `pnpm release` deliberately exits
 with instructions; do not replace it with direct `changeset publish`.
@@ -55,25 +56,33 @@ Before the first write, the publisher checks registry availability, version
 collisions and internal dependency availability. Selected dependencies publish
 before dependants; omitted internal dependencies must have a published version
 satisfying the packed range. Cycles fail for explicit investigation. Publishing
-uses the public npm registry, public access, the approved tag and disabled lifecycle
-scripts. Private-repository provenance remains disabled, per the existing ruling.
+uses the public npm registry, public access, the approved tag, disabled lifecycle
+scripts and npm provenance: the publish job alone may mint an OIDC token, and each
+package's `repository` must name this repository (a workflow test pins both). Provenance
+was off while the repository was private, since npm attests public repositories only; it is
+public now (decision 32), and the first release with provenance is the one after 0.5.0.
 
-This proves source identity and tested package bytes, **not** reproducible builds,
-provenance, visual approval or product/device readiness. CI does not build the exact
-artifact later produced by prepare; prepare independently tests what it will ship.
+This proves source identity, tested package bytes and, with provenance, where npm's copy
+was built — **not** reproducible builds, visual approval or product/device readiness. CI
+does not build the exact artifact later produced by prepare; prepare independently tests
+what it will ship.
 
 ## Owner setup — deliberately not performed by the agent
 
-- Keep `NPM_RELEASE_ENABLED` absent/false until the release checklist is complete.
-- Configure `npm-release` with a selected branch rule for `main` (not a wildcard
-  or tag). The REST environment response does not expose the administrator-bypass
-  setting, so code does not claim to verify it. Administrators and trusted
-  workflow authors remain a trust boundary.
+- `NPM_RELEASE_ENABLED` is `true`. Setting it to `false` stops every release at once.
+- `npm-release` has a selected branch rule for `main` (not a wildcard or tag), Olcay
+  as required reviewer (self-approval allowed) and administrator bypass off. The REST
+  environment response exposes the reviewer and the bypass setting, and the policy
+  asserts both. Administrators and
+  trusted workflow authors remain a trust boundary: automation that runs as Olcay's
+  account could approve a publish, so it never does. That is a rule; a separate
+  automation account without the right would make it a fence.
 - Provision a suitably restricted npm token as the **environment** secret
   `NPM_TOKEN`, never a repository-wide secret, and confirm ownership and publish
   access for the `@kozmos-ds` scope. The token must be granted on the _scope_,
   not on selected packages: before the first release no package exists to
-  select. Run `pnpm release:credential:check` before every dispatch: it asks
+  select. `pnpm release:preflight` runs `pnpm release:credential:check` before every
+  dispatch: it asks
   GitHub where `NPM_TOKEN` is configured — names and dates only, never a value —
   and fails if it is a repository secret, if the environment does not hold it,
   or if the environment admits any branch but `main`. The workflow cannot check
@@ -81,26 +90,17 @@ artifact later produced by prepare; prepare independently tests what it will shi
   permission and a step reading `secrets.NPM_TOKEN` to test it would break the
   rule that exactly one step in the workflow may reference that secret.
 
-### The approval gate this plan cannot provide
+### The approval gate
 
-This paragraph previously required named reviewers on `npm-release` and told the
-owner to stop rather than remove the gate. On 2026-09-23 that instruction was
-followed to its conclusion and the answer came back: it cannot be satisfied on
-this account. GitHub grants environments, environment secrets and deployment
-_branches_ to private repositories on Pro, but wait timers and required
-reviewers only to public repositories unless the plan is Enterprise. The REST
-API refuses both rules with a billing message and the settings page omits the
-section rather than disabling it. The repository is private on Pro.
-
-The owner (Olcay) was shown the evidence and chose, explicitly, to replace the
-approval with a fence around the credential rather than make the repository
-public or buy Enterprise. What that costs is real and is recorded here: the
-dispatch is now the only human act in a release, so whoever can dispatch can
-publish unattended. What replaces it: `NPM_TOKEN` moved from a repository secret
-that every workflow could read to an environment secret only the publish job, on
-`main`, can read, and a `prepare` step that fails if the token is reachable from
-outside the environment. Revisit this if the repository becomes public or the
-plan changes.
+Until 2026-09-28 this section explained why there was none. GitHub offers required
+reviewers on Free, Pro and Team only for public repositories, and the repository was
+private, so Olcay chose a fence around the credential instead (git keeps that text). The
+repository is public now, and on 2026-09-28 Olcay chose the approval (decision 27):
+`npm-release` requires Olcay's review, with self-approval allowed, since Olcay both
+dispatches and approves, and administrator bypass off. The dispatch is no longer the only
+human act: the publish job waits under "Review deployments" until Olcay approves. The
+credential fence stays too: `NPM_TOKEN` is an environment secret that only the publish job,
+on `main`, can read.
 
 - Protect main and the release workflow/plan from unreviewed edits as part of
   repository governance. Local scripts cannot prevent an administrator or someone
@@ -114,24 +114,25 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
 
 1. Close the browser/WebView policy, device/native/product integration,
    accessibility/motion, visual and package-type release blockers. Green CI alone
-   does not approve them. In particular, Chromatic's pending UI Tests is not a pass.
-2. Version through Changesets, then review the resulting manifests/changelogs and
-   exact release plan together. Begin with an explicitly chosen prerelease on `next`;
-   the checked-in empty plan is not an implied choice of versions.
-3. Merge after CI, wait for successful main-push CI and record its run ID/SHA.
-   A documentation-only main commit can have no push CI due to path exclusions;
-   do not substitute an older SHA or PR run. Prepare a reviewed release commit that
-   actually triggers CI instead.
-4. Run `pnpm release:credential:check`, then dispatch `Release Kozmos System`
-   from main with those inputs. There is no approval wait on this plan, so the
-   review of the plan and of what is about to ship happens **before** the
-   dispatch, not between the two jobs: publish follows prepare on its own. If
-   main advances mid-run, validation fails: repeat against newly tested main,
-   not a moving checkout.
-5. Check each package version, integrity and dist-tag. The script verifies these
-   after each publish; registry propagation/network trouble stops it for inspection.
-   Record the result in release notes. Git tags and GitHub releases need a separate
-   explicit action; this workflow has no write permission for them.
+   does not approve them; Visual Review is a required check on every pull request,
+   not an approval of the release as a whole.
+2. Version through Changesets on a reviewed branch, the **version PR**: `pnpm version-packages`
+   (private packages are not versioned), an exact `release/plan.json`, and
+   `pnpm skills:build` (the AI-facing changelog and inventory carry the versions). Review
+   the manifests, changelogs and plan together. A first release of something new begins
+   on `next`; the checked-in plan is never an implied choice of versions.
+3. Merge it once its checks pass on a branch up to date with `main`, and wait for the
+   successful main-push CI run of that merge. A documentation-only main commit has no push
+   CI because of path exclusions: do not substitute an older SHA or a PR run, and merge
+   nothing between the version PR and the dispatch.
+4. `pnpm release:preflight <sha> <ci-run-id>` runs the credential check and the release
+   job's own request, evidence and plan checks, then prints the dispatch command. Dispatch
+   `Release Kozmos System` with it, and approve the `npm-release` deployment when the
+   publish job asks. If main advances mid-run, validation fails: repeat against the newly
+   tested main, not a moving checkout.
+5. Check each package version, integrity and dist-tag (the script verifies these after
+   each publish), then from the registry: `npm view`, and a clean install into an empty
+   project. Then `pnpm release:tag <sha>` for the tags and GitHub Releases.
 
 ## Failure and recovery
 
@@ -205,3 +206,16 @@ about nine for the first name published into the brand-new scope. The publish
 job's `timeout-minutes` is set to cover that budget for every package at once,
 so the assertion reports which package the registry never showed rather than
 the runner killing the job first. Change one and change the other. Native/Figma/component behavior is unchanged by this batch.
+
+### 0.5.0
+
+On 2026-09-28, 0.5.0 was the first release through the approval gate:
+
+- **Pre-flight:** it was pre-flighted against its main-push CI run (`36397074950`, 17 of 17 jobs).
+- **Publish:** Olcay approved it, and it published icons 0.4.0, product-contracts 0.4.0 and
+  react 0.5.0 in dependency order.
+- **Registry check:** react pins its siblings exactly, and a clean install from the registry
+  resolves all four packages and server-renders a Button.
+- **Tags:** `pnpm release:tag` created the three tags and releases.
+- **A missed step:** its dispatch skipped the credential check, which passed when run afterwards.
+  That is why the pre-flight now runs it.
