@@ -217,11 +217,12 @@
      and the route preview fill their box with the background colour. In the
      map shell's panel, a sheet or a side panel, the panel's surface, solid
      or glass, is the one surface: the shell sets --kozmos-panel-part-fill to
-     transparent on it, and they paint nothing. A glass panel shows through
-     them, where each stood as an opaque block from under the grip's row
-     down; a solid one looks as it did, its fill being this same colour.
-     Their text keeps the theme's foreground. The fill is this rule's alone:
-     a bg-background beside it would outrank it. */
+     transparent on the panel's content and header, and they paint nothing
+     there. A glass panel shows through them, where each stood as an opaque
+     block from under the grip's row down; a solid one looks as it did, its
+     fill being this same colour. Their text keeps the theme's foreground.
+     The fill is this rule's alone: a bg-background beside it would outrank
+     it. */
   .kozmos-browse-categories,
   .kozmos-route-preview {
     background-color: var(
