@@ -869,6 +869,10 @@ const AdaptiveMapShell = React.forwardRef<
                 ? "kozmos-map-sheet rounded-t-container"
                 : "rounded-container",
             )}
+            // What names the panel to a check that reads axe's snippet of it
+            // (the website's GAP-17 exclusion): a value of 20 characters or
+            // fewer, which axe keeps whole however long the tag grows.
+            data-slot="map-shell-panel"
             data-dragging={dragHeight !== null ? "" : undefined}
             data-settling={isSheet && settling ? "" : undefined}
             data-detent={

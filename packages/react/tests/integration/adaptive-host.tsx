@@ -4,10 +4,16 @@ import {
   AdaptiveMapShell,
   BrowseCategoriesPanel,
   Button,
+  FeedbackCard,
   Input,
+  Itinerary,
+  ManoeuvreCard,
   POIDetailPanel,
+  POIMediaGallery,
   POIResultList,
   RoutePreviewPanel,
+  RouteSummary,
+  SaveLocationCard,
   SearchBar,
   Stack,
 } from "@kozmos-ds/react";
@@ -17,6 +23,14 @@ import type {
   POIResultListItem,
   RoutePreviewPanelProps,
 } from "@kozmos-ds/react";
+
+/** The cards that float over the map with a surface of their own. */
+type FloatingCard =
+  | "manoeuvre"
+  | "manoeuvre-open"
+  | "route-summary"
+  | "feedback"
+  | "save-location";
 
 declare global {
   interface Window {
@@ -52,10 +66,11 @@ declare global {
      */
     showRoute: () => void;
     /**
-     * Draw the category browser or the route preview standing alone, in a
-     * box of its own after the fixture, outside any shell.
+     * Draw the category browser, the route preview or the details card's
+     * sheet presentation with its body standing alone, in a box of its own
+     * after the fixture, outside any shell.
      */
-    showStandalone: (part: "browse" | "route") => void;
+    showStandalone: (part: "browse" | "route" | "details") => void;
     /**
      * Swap the map for the glass stories' two saturated rooms, the theme's
      * blue and the warning amber, as the map's two halves, so every line of
@@ -63,6 +78,22 @@ declare global {
      * or with `amberFirst` the amber.
      */
     showSaturatedMap: (amberFirst?: boolean) => void;
+    /**
+     * Swap the panel for a place's photos, the gallery hosted on its own as
+     * the panel's whole content.
+     */
+    showGallery: () => void;
+    /**
+     * Draw a card that floats over the map, on `surface`, over the saturated
+     * rooms, in a box of its own after the fixture: the manoeuvre closed or
+     * open on its itinerary, the route summary, the feedback card or the
+     * save-location card.
+     */
+    showFloatingCard: (
+      card: FloatingCard,
+      surface: "glass" | "solid",
+      amberFirst?: boolean,
+    ) => void;
   }
 }
 
@@ -249,6 +280,15 @@ function placeDetails(
       details={
         body
           ? {
+              summary: [
+                {
+                  id: "crowd",
+                  kind: "crowd",
+                  label: "Crowd",
+                  value: "Quiet",
+                  detail: "now",
+                },
+              ],
               groups: [
                 {
                   id: "dietary",
@@ -271,6 +311,76 @@ function placeDetails(
       onClose={onClose}
     />
   );
+}
+
+// A place's photos, the gallery alone. The photo's address resolves nowhere,
+// so the gallery draws its position over an unavailable photo.
+function gallery() {
+  return (
+    <POIMediaGallery
+      label="Harbour Coffee Co. photos"
+      media={[{ id: "front", src: "/harbour-coffee.jpg", alt: "The front" }]}
+      positionLabel={(current, total) => `Photo ${current} of ${total}`}
+    />
+  );
+}
+
+// A card that floats over the map, on `surface`: each draws text that is
+// muted elsewhere. The manoeuvre is closed on its detail, or open on its
+// itinerary.
+function floatingCard(card: FloatingCard, surface: "glass" | "solid") {
+  switch (card) {
+    case "manoeuvre":
+    case "manoeuvre-open":
+      return (
+        <ManoeuvreCard
+          type="straight"
+          instruction="Take the lift down to Level 1"
+          detail="58 m · Level 2"
+          expanded={card === "manoeuvre-open"}
+          onToggle={() => undefined}
+          surface={surface}
+        >
+          <Itinerary
+            origin="Harbour Coffee Co."
+            steps={[
+              {
+                id: "lift",
+                type: "straight",
+                instruction: "Take the lift down",
+                current: true,
+              },
+            ]}
+            destination="Gate 12"
+          />
+        </ManoeuvreCard>
+      );
+    case "route-summary":
+      return (
+        <RouteSummary
+          etaText="4 min"
+          distanceText="201 m"
+          onEndRoute={() => undefined}
+          surface={surface}
+        />
+      );
+    case "feedback":
+      return (
+        <FeedbackCard
+          title="How was your route?"
+          description="Tell us how it went."
+          surface={surface}
+        />
+      );
+    case "save-location":
+      return (
+        <SaveLocationCard
+          title="Gate 12"
+          description="Terminal 2, Level 1"
+          surface={surface}
+        />
+      );
+  }
 }
 
 // The glass stories' saturated rooms, as the map's two halves: the blue
@@ -296,7 +406,30 @@ window.showStandalone = (part) => {
   box.style.width = "390px";
   document.body.append(box);
   createRoot(box).render(
-    part === "browse" ? browser(true) : routePreview(() => undefined),
+    part === "browse"
+      ? browser(true)
+      : part === "details"
+        ? placeDetails("sheet", true, () => undefined)
+        : routePreview(() => undefined),
+  );
+};
+
+// A floating card over the saturated rooms, in a box of its own after the
+// fixture: the rooms fill the box, and the card sits 16px in from its edges.
+window.showFloatingCard = (card, surface, amberFirst = false) => {
+  const box = document.createElement("div");
+  box.dataset.floatingCard = card;
+  box.style.cssText = "position:relative;width:390px";
+  document.body.append(box);
+  createRoot(box).render(
+    <>
+      <div style={{ position: "absolute", inset: 0 }}>
+        <SaturatedMap amberFirst={amberFirst} />
+      </div>
+      <div style={{ position: "relative", padding: 16 }}>
+        {floatingCard(card, surface)}
+      </div>
+    </>,
   );
 };
 
@@ -312,10 +445,12 @@ function Host() {
   } | null>(null);
   const [browse, setBrowse] = useState<{ search: boolean } | null>(null);
   const [route, setRoute] = useState(false);
+  const [photos, setPhotos] = useState(false);
   const [saturated, setSaturated] = useState<{ amberFirst: boolean } | null>(
     null,
   );
   window.setAdaptiveOptions = setOptions;
+  window.showGallery = () => setPhotos(true);
   window.showSaturatedMap = (amberFirst = false) =>
     setSaturated({ amberFirst });
   window.showPanelHeader = () => setHeader(true);
@@ -338,6 +473,8 @@ function Host() {
       panel={
         route ? (
           routePreview(() => setRoute(false))
+        ) : photos ? (
+          gallery()
         ) : browse ? (
           browser(browse.search)
         ) : details ? (

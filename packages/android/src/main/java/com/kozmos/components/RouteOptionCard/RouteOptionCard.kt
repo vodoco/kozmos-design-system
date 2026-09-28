@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -63,8 +64,13 @@ fun KozmosRouteOptionCard(
             },
         enabled = isEnabled,
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusPanel),
+        // A card of its own: the background colour, and the chosen one the
+        // theme's 5% tint on it. The tint lay over nothing, so on a glass
+        // sheet the map showed through the chosen option while the others
+        // stood opaque.
         color = if (option.selected) {
             KozmosThemeTokens.primitivesColorsTheme500.copy(alpha = 0.05f)
+                .compositeOver(KozmosThemeTokens.primitivesColorsBackground0)
         } else {
             KozmosThemeTokens.primitivesColorsBackground0
         },

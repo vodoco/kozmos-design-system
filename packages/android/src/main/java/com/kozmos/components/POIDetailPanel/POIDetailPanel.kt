@@ -53,13 +53,14 @@ import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
-import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
-import com.kozmos.components.adaptivemapshell.kozmosMutedForeground
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.button.KozmosButtonEmotion
 import com.kozmos.components.button.KozmosButtonSize
 import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.components.poimediagallery.KozmosPOIMediaGallery
+import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.surface.LocalKozmosSurfaceStyle
+import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.contracts.KozmosPOIAccessRestrictions
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIAvailability
@@ -161,10 +162,10 @@ fun KozmosPOIDetailPanel(
         headerPadding
     }
 
-    // The panel's surface the card's text sits on: the panel's own in the
-    // sheet presentation, and none in the others, which draw a card of their
-    // own that the text sits on.
-    val textSurface = if (presentation == KozmosPOIDetailPanelPresentation.Sheet) LocalKozmosPanelSurface.current else null
+    // The surface the card's text sits on: in the sheet presentation the one
+    // under the card, the panel's, and in the others the card's own, a
+    // solid one (decision 48).
+    val textSurface = if (presentation == KozmosPOIDetailPanelPresentation.Sheet) LocalKozmosSurfaceStyle.current else KozmosSurfaceStyle.Solid
 
     val showsAccessRestrictions = poi.accessRestrictions != null &&
         poi.accessRestrictions != KozmosPOIAccessRestrictions.None &&
@@ -196,8 +197,8 @@ fun KozmosPOIDetailPanel(
     ) {
         // What the card holds is on the panel's surface in the sheet
         // presentation, and on the card's own in the others: its muted text
-        // takes the foreground colour only on a glass panel (decision 48).
-        CompositionLocalProvider(LocalKozmosPanelSurface provides textSurface) {
+        // takes the foreground colour only on glass (decision 48).
+        CompositionLocalProvider(LocalKozmosSurfaceStyle provides textSurface) {
         // The body scrolls under a pinned header, which requires a bounded
         // height. When the caller nests the panel somewhere unbounded (another
         // scroll container, wrapContentSize) Compose would throw, so fall back

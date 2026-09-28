@@ -30,11 +30,14 @@ On its own, outside a shell, nothing changes.
 If the search field lives in the shell's `panelHeader`, leave out `search` here: the browser's tiles
 then sit 16px under the header. If you place the browser under a row of your own inside the panel,
 set `--kozmos-panel-inset-top` and `--kozmos-panel-clearance-top` to `0px` on it, because it is not
-at the panel's top. On iOS, host it with `presentation: .sheet`.
+at the panel's top. On iOS either presentation follows the panel it is hosted in; the `sheet`
+presentation draws no rule under the search row.
 
 In the shell's panel, a sheet or a side panel, the browser paints no fill of its own: the panel's
 surface, solid or glass, is the one surface (decision 43). On a glass panel the map shows through it
 where it stood as a white block; on a solid one it looks as it did, and its text keeps the theme's
-foreground. On its own it keeps the background colour. iOS paints none in the `sheet` presentation,
-and Android none at all. On glass its empty state's text, muted elsewhere, takes the foreground
-colour, so it reads at 4.5:1 over any map (decision 48).
+foreground. On its own it keeps the background colour. iOS and Android do the same: iOS's `panel`
+presentation follows the panel too, so a product need not pass `sheet` for it, and tops its first row
+up as the `sheet` presentation does, keeping only its rule under the search row; Android's browser,
+which painted no fill even on its own, now keeps its fill there. On glass its empty state's text,
+muted elsewhere, takes the foreground colour, so it reads at 4.5:1 over any map (decision 48).

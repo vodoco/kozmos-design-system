@@ -138,9 +138,11 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
                         .font(.title3.weight(.bold))
                         .foregroundColor(KozmosColors.primitivesColorsForeground100)
 
+                    // Muted, and on glass the foreground colour (decision
+                    // 48): the card's surface says which.
                     Text(distanceText)
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .kozmosMutedText()
                 }
 
                 Spacer()

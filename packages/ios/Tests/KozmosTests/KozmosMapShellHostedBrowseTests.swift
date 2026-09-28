@@ -195,16 +195,18 @@ final class KozmosMapShellHostedBrowseTests: XCTestCase {
         XCTAssertEqual(under, 16 + 16, accuracy: 1, "the tiles are \(under) below the search field")
     }
 
-    /// The panel presentation draws a surface of its own, so the space the
-    /// panel leaves lies outside it, as a bordered card's does: it keeps its
-    /// 16 — the presentation for a browser on its own, not hosted.
-    @MainActor func testThePanelPresentationKeepsItsOwnPaddingUnderAGrabber() async throws {
+    /// Hosted, the panel presentation follows the panel's signal as the web's
+    /// browser does (2026-09-28): it paints no surface of its own there, so
+    /// the space the panel leaves is its own top, and its search field sits
+    /// where the sheet presentation's does, 16 plus the grabber's 4. It kept
+    /// its own 16, 32 from the sheet's top, a prop the product had to change.
+    @MainActor func testHostedThePanelPresentationTopsUpUnderAGrabberAsTheSheetPresentationDoes() async throws {
         let pixels = try await render(sheet { browser(ownSurface: true) }, size: phone, "decision-14-panel-presentation-under-grabber")
         let panel = try sheetPanel(in: pixels, size: phone)
         let field = try XCTUnwrap(pixels.boundingBox(in: panel, where: Self.isMagenta), "the search field is not drawn")
         let down = field.minY - panel.minY
         print("Decision 14 iOS, panel presentation under a grabber: the search field \(down) from the top")
-        XCTAssertEqual(down, 32, accuracy: 1, "the panel presentation's search field is \(down) from the sheet's top")
+        XCTAssertEqual(down, 16 + 4, accuracy: 1, "the panel presentation's search field is \(down) from the sheet's top")
     }
 
     // MARK: No grabber, a panel header, beside the map

@@ -1,5 +1,6 @@
 package com.kozmos.components.browsecategoriespanel
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
 import com.kozmos.components.categorytile.KozmosCategoryTile
 import com.kozmos.components.categorytile.KozmosCategoryTint
 import com.kozmos.components.surface.kozmosDashedEdge
@@ -35,10 +37,12 @@ import com.kozmos.tokens.KozmosThemeTokens
  * categories it is given; filtering, searching, and result counts belong to
  * the consuming app.
  *
- * It paints no surface of its own, so as the content of the map shell's panel
- * it is that panel's top: its first row — the search row, or the tiles when
- * there is none — tops its padding up to what the panel already leaves above
- * it ([LocalKozmosPanelInsetTop], [LocalKozmosPanelClearanceTop]) rather than
+ * Standing alone it fills with the background colour; in the map shell's
+ * panel it paints no fill of its own ([LocalKozmosPanelSurface]), the panel's
+ * surface being the one surface (decision 43). As that panel's content it is
+ * the panel's top: its first row — the search row, or the tiles when there is
+ * none — tops its padding up to what the panel already leaves above it
+ * ([LocalKozmosPanelInsetTop], [LocalKozmosPanelClearanceTop]) rather than
  * adding to it, so the search field sits as far from the panel's top as from
  * its side and keeps the handle's target clear (decision 14).
  */
@@ -64,9 +68,19 @@ fun KozmosBrowseCategoriesPanel(
     // handle's 16dp row: the search field sat 32 from the sheet's top and 16
     // from its side. Outside a shell both are 0, and it keeps its 16.
     val firstRowTop = maxOf(LocalKozmosPanelClearanceTop.current, padding - LocalKozmosPanelInsetTop.current)
+    // Standing alone the browser fills its box with the background colour,
+    // as the web's and iOS's do; in the shell's panel it paints none, the
+    // panel's surface being the one surface (decision 43). It painted none
+    // standing alone too.
+    val fill = if (LocalKozmosPanelSurface.current == null) {
+        KozmosThemeTokens.primitivesColorsBackground0
+    } else {
+        Color.Transparent
+    }
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .background(fill)
             .semantics { contentDescription = label }
     ) {
         if (hasHeader) {

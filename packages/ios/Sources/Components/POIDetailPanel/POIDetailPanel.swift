@@ -71,12 +71,12 @@ public struct KozmosPOIDetailPanel: View {
     private let onClose: (() -> Void)?
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
-    @Environment(\.kozmosPanelSurface) private var panelSurface
+    @Environment(\.kozmosSurfaceStyle) private var surfaceStyle
 
-    /// The panel's surface the card's text sits on: in the sheet
-    /// presentation the panel's own, and none in the panel and inline
-    /// presentations, which draw a card of their own that the text sits on.
-    private var textSurface: KozmosSurfaceStyle? { presentation == .sheet ? panelSurface : nil }
+    /// The surface the card's text sits on: in the sheet presentation the
+    /// one under the card, the panel's, and in the panel and inline
+    /// presentations the card's own, a solid one (decision 48).
+    private var textSurface: KozmosSurfaceStyle? { presentation == .sheet ? surfaceStyle : .solid }
 
     public init(
         poi: KozmosPOIPresentation,
@@ -192,9 +192,9 @@ public struct KozmosPOIDetailPanel: View {
         // Reset scroll/disclosure state only when selecting a different place.
         .id(poi.id)
         // What the card holds is on the panel's surface in the sheet
-        // presentation, and on the card's own in the others: its summaries
-        // and sections draw their muted text for it (decision 48).
-        .environment(\.kozmosPanelSurface, textSurface)
+        // presentation, and on the card's own in the others: its summaries,
+        // sections and gallery draw their muted text for it (decision 48).
+        .environment(\.kozmosSurfaceStyle, textSurface)
         .foregroundColor(KozmosColors.primitivesColorsForeground100)
         // In a sheet the panel paints no surface of its own: it sits on the
         // sheet's, as the browse panel does, with no border and no card.

@@ -127,7 +127,8 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
               <span className="text-xl font-bold tracking-tight text-foreground">
                 {etaText}
               </span>
-              <span className="text-sm font-medium text-muted-foreground">
+              {/* Muted, and on glass the foreground colour (decision 48). */}
+              <span className="kozmos-muted-text text-sm font-medium">
                 {distanceText}
               </span>
             </div>
