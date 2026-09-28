@@ -30,6 +30,10 @@ public struct KozmosPOIResultCard: View {
     /// The floor the map shows: a result on it carries a dot before its floor.
     private let currentFloorId: String?
     private let actionsLabel: String
+    /// The words for a walk shown as a band, when `result.travelEstimate.band`
+    /// is set (decision 50). English until the product gives its own, for one
+    /// band or all five.
+    private let travelTimeBandLabels: [KozmosTravelTimeBand: String]
     private let onSelect: (String) -> Void
     private let onAction: ((KozmosPOIResultAction, String) -> Void)?
 
@@ -40,6 +44,7 @@ public struct KozmosPOIResultCard: View {
         selectionLabel: String? = nil,
         currentFloorId: String? = nil,
         actionsLabel: String = "Actions for this result",
+        travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
         onSelect: @escaping (String) -> Void,
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil
     ) {
@@ -49,8 +54,41 @@ public struct KozmosPOIResultCard: View {
         self.selectionLabel = selectionLabel
         self.currentFloorId = currentFloorId
         self.actionsLabel = actionsLabel
+        self.travelTimeBandLabels = travelTimeBandLabels
         self.onSelect = onSelect
         self.onAction = onAction
+    }
+
+    /// What the result says about the walk: the band's words when the
+    /// product set a band (decision 50), the exact minutes when it did not.
+    var travelTimeText: String? {
+        guard let estimate = result.travelEstimate else { return nil }
+        guard let band = estimate.band else { return estimate.durationLabel }
+        return travelTimeBandLabels[band] ?? Self.englishLabel(band)
+    }
+
+    /// Nearby in the success emotion's Text role, which reads at 4.5:1 or
+    /// more on the card in both themes; every other band, and the exact
+    /// minutes, in the card's text colour. The word is Nearby, so the colour
+    /// is never the only signal.
+    private var travelTimeColor: Color {
+        switch result.travelEstimate?.band?.tone {
+        case .success:
+            return KozmosColors.semanticsEmotionSuccessText
+        case .neutral, nil:
+            return KozmosColors.primitivesColorsForeground100
+        }
+    }
+
+    /// The bands' words, and the only English the card holds for them.
+    static func englishLabel(_ band: KozmosTravelTimeBand) -> String {
+        switch band {
+        case .nearby: return "Nearby"
+        case .oneToTwoMinutes: return "1–2 min"
+        case .twoToFiveMinutes: return "2–5 min"
+        case .fiveToTenMinutes: return "5–10 min"
+        case .moreThanTenMinutes: return "More than 10 min"
+        }
     }
 
     private func handleAction(_ action: KozmosPOIResultAction) {
@@ -92,7 +130,7 @@ public struct KozmosPOIResultCard: View {
         }
     }
 
-    private var accessibilityDescription: String {
+    var accessibilityDescription: String {
         if let selectionLabel { return selectionLabel }
         return [
             result.featured ? featuredLabel : nil,
@@ -100,7 +138,7 @@ public struct KozmosPOIResultCard: View {
             poi.categoryLabel,
             poi.locationLabel,
             poi.availabilityLabel,
-            result.travelEstimate?.durationLabel,
+            travelTimeText,
             available ? nil : result.unavailableReason
         ]
         .compactMap { $0 }
@@ -216,10 +254,10 @@ public struct KozmosPOIResultCard: View {
                     VStack(alignment: .trailing, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                         logo
 
-                        if let travelEstimate = result.travelEstimate {
-                            Text(travelEstimate.durationLabel)
+                        if let travelTimeText {
+                            Text(travelTimeText)
                                 .font(KozmosTypography.subheadline)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                                .foregroundColor(travelTimeColor)
                         }
                     }
                 }

@@ -6,6 +6,89 @@ import {
   settleLayout,
 } from "./lib/built-react-fixture.mjs";
 
+/** A computed colour as sRGB channels in 0–1 and its alpha. */
+function readColour(css) {
+  const legacy = css.match(
+    /^rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?\)$/,
+  );
+  if (legacy)
+    return {
+      r: legacy[1] / 255,
+      g: legacy[2] / 255,
+      b: legacy[3] / 255,
+      a: legacy[4] === undefined ? 1 : Number(legacy[4]),
+    };
+  const srgb = css.match(
+    /^color\(srgb ([\d.e+-]+) ([\d.e+-]+) ([\d.e+-]+)(?: \/ ([\d.e+-]+))?\)$/,
+  );
+  if (srgb)
+    return {
+      r: Number(srgb[1]),
+      g: Number(srgb[2]),
+      b: Number(srgb[3]),
+      a: srgb[4] === undefined ? 1 : Number(srgb[4]),
+    };
+  throw new Error(`a colour this check cannot read: ${css}`);
+}
+
+/** What paints behind a node: its backgrounds, innermost first, over a white page. */
+function paintedBehind(layers) {
+  let behind = { r: 1, g: 1, b: 1 };
+  for (const layer of [...layers].reverse()) {
+    const { r, g, b, a } = readColour(layer);
+    behind = {
+      r: r * a + behind.r * (1 - a),
+      g: g * a + behind.g * (1 - a),
+      b: b * a + behind.b * (1 - a),
+    };
+  }
+  return behind;
+}
+
+/** The WCAG contrast ratio of two opaque sRGB colours. */
+function contrastRatio(one, two) {
+  const luminance = ({ r, g, b }) => {
+    const linear = (c) =>
+      c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  };
+  const [light, dark] = [luminance(one), luminance(two)].sort((a, b) => b - a);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * The Nearby of each of the result card's four surfaces in a root of the
+ * owned-css host: how many there are, the colour it draws in, and the
+ * backgrounds from it up to the page.
+ */
+async function nearbyOnEverySurface(page, id) {
+  const group = page.getByTestId(`${id}-travel-group`);
+  const surfaces = [
+    ["card", page.getByTestId(`${id}-travel-card`)],
+    ["selected card", page.getByTestId(`${id}-travel-card-selected`)],
+    ["grouped row", group.locator("article").nth(1)],
+    ["selected grouped row", group.locator("article").nth(0)],
+  ];
+  const drawn = [];
+  for (const [surface, card] of surfaces) {
+    const nearby = card.getByText("Nearby", { exact: true });
+    const found = await nearby.count();
+    drawn.push({
+      surface,
+      found,
+      ...(found === 1
+        ? await nearby.evaluate((node) => {
+            const layers = [];
+            for (let at = node; at; at = at.parentElement)
+              layers.push(getComputedStyle(at).backgroundColor);
+            return { color: getComputedStyle(node).color, layers };
+          })
+        : {}),
+    });
+  }
+  return drawn;
+}
+
 const { code, css } = await buildReactFixture("owned-css-host.tsx");
 const require = createRequire(`${process.cwd()}/packages/react/package.json`);
 const postcss = require("postcss");
@@ -78,6 +161,48 @@ try {
         return result;
       }, token);
     for (const id of ["outer", "nested"]) {
+      // Decision 50 (GAP-088): a walk in the Nearby tone draws in the success
+      // emotion's Text role on each of the result card's four surfaces, in
+      // this root's theme (outer is dark, nested light), with or without
+      // @scope and under the host's hostile rules, because the rule is owned.
+      // Its contrast is measured after these passes, on a page of its own.
+      {
+        const theme = id === "outer" ? "dark" : "light";
+        const success = await value(
+          `${id}-travel`,
+          "--semantics-emotion-success-text",
+        );
+        for (const { surface, found, color } of await nearbyOnEverySurface(
+          page,
+          id,
+        )) {
+          assert.equal(
+            found,
+            1,
+            `${mode}, ${theme}: the ${surface} does not read Nearby for a walk under a minute`,
+          );
+          assert.equal(
+            color,
+            success,
+            `${mode}, ${theme}: Nearby on the ${surface} is not the success text colour`,
+          );
+        }
+        if (mode === "full")
+          assert.equal(
+            (
+              await measure(
+                page
+                  .getByTestId(`${id}-travel-card-neutral`)
+                  .getByText("5–10 min", { exact: true }),
+              )
+            ).color,
+            await value(`${id}-travel`, "--primitives-colors-foreground-0"),
+            `${theme}: a band other than Nearby is not the card's text colour`,
+          );
+        console.log(
+          `PASS decision 50, ${theme}, ${mode}: Nearby is the success text colour ${success} on the card, the selected card, the grouped row and the selected grouped row${mode === "full" ? "; 5–10 min is the text colour" : ""}`,
+        );
+      }
       const poi = page.getByTestId(`${id}-poi`);
       const metadata = poi.locator("[data-slot=meta-strip]");
       assert.equal(
@@ -1508,6 +1633,49 @@ try {
       `PASS ${mode}: local reset, forms/states, consumer CSS, exported helpers, buttons, loading animation, nested themes, RTL, portal updates and keyboard dismissal`,
     );
     await page.close();
+  }
+
+  // Decision 50 (GAP-088): Nearby reads at 4.5:1 or more on each of the
+  // result card's four surfaces, in both themes. On a page with no rules of
+  // its own, so what paints behind the text is the card's: the passes above
+  // give every button the host's orange, and the card's select button has no
+  // owned fill to refuse it, which would measure the host rather than Kozmos.
+  {
+    const clean = await browser.newPage({
+      viewport: { width: 1100, height: 1100 },
+    });
+    const errors = [];
+    clean.on("pageerror", (error) => errors.push(error.message));
+    await clean.setContent(
+      `<!doctype html><html><head></head><body><div id="fixture"></div></body></html>`,
+    );
+    await clean.addStyleTag({ content: css });
+    await clean.addScriptTag({ content: code });
+    await clean.getByTestId("outer-travel").waitFor();
+    await settleLayout(clean);
+    const readings = [];
+    for (const [id, theme] of [
+      ["outer", "dark"],
+      ["nested", "light"],
+    ]) {
+      for (const {
+        surface,
+        found,
+        color,
+        layers,
+      } of await nearbyOnEverySurface(clean, id)) {
+        assert.equal(found, 1, `${theme}: the ${surface} does not read Nearby`);
+        const ratio = contrastRatio(readColour(color), paintedBehind(layers));
+        assert(
+          ratio >= 4.5,
+          `${theme}: Nearby on the ${surface} reads at ${ratio.toFixed(2)}:1, under 4.5:1`,
+        );
+        readings.push(`${theme} ${surface} ${ratio.toFixed(2)}:1`);
+      }
+    }
+    assert.deepEqual(errors, []);
+    console.log(`PASS decision 50: Nearby reads at ${readings.join(", ")}`);
+    await clean.close();
   }
 
   // GAP-50: the spinner, the skeleton and the loading button turned whatever

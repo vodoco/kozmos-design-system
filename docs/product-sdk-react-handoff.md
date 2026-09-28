@@ -75,6 +75,27 @@ const [selectedPoiId, setSelectedPoiId] = useState<string>();
 The map adapter should also pan or change floor from this same state transition.
 If the POI is on another floor, announce that change before switching floors.
 
+## Show A Walk As A Band In Result Lists
+
+The app passes the walking time it already has, with its exact, localized label.
+Kozmos owns the rule that turns it into the band a result list shows (decision
+50): Nearby under a minute, then 1–2, 2–5 and 5–10 min, and More than 10 min.
+
+```tsx
+import { travelTimeBand } from "@kozmos-ds/product-contracts";
+
+const travelEstimate = {
+  durationSeconds: walk.seconds,
+  durationLabel: copy.minutes(walk.seconds), // the details card shows this
+  band: travelTimeBand(walk.seconds), // the result card shows this
+};
+```
+
+`POIResultCard` draws the band's words, and Nearby in the success colour; pass
+`travelTimeBandLabels` to `POIResultList` for the visitor's language.
+`POIDetailPanel` keeps the exact minutes from the same estimate. Leave `band`
+out and a result shows `durationLabel`, as before.
+
 ## Compose The Adaptive Map Surface
 
 ```tsx

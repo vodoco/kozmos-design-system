@@ -5,7 +5,7 @@ import type {
   POIResultPresentation,
 } from "@kozmos-ds/product-contracts";
 import { ChevronDown } from "@kozmos-ds/icons";
-import { POIResultCard } from "../POIResultCard";
+import { POIResultCard, type POIResultCardProps } from "../POIResultCard";
 import { cn } from "../../utils";
 
 export interface POIResultGroupItem {
@@ -13,8 +13,10 @@ export interface POIResultGroupItem {
   result: POIResultPresentation;
 }
 
-export interface POIResultGroupProps
-  extends Omit<React.HTMLAttributes<HTMLElement>, "onSelect"> {
+export interface POIResultGroupProps extends Omit<
+  React.HTMLAttributes<HTMLElement>,
+  "onSelect"
+> {
   /**
    * Every member, representative first.
    *
@@ -39,6 +41,8 @@ export interface POIResultGroupProps
   featuredLabel?: string;
   actionsLabel?: string;
   currentFloorId?: string;
+  /** Each member's words for a walk shown as a band: POIResultCard's. */
+  travelTimeBandLabels?: POIResultCardProps["travelTimeBandLabels"];
 }
 
 /**
@@ -75,6 +79,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
       featuredLabel,
       actionsLabel,
       currentFloorId,
+      travelTimeBandLabels,
       ...props
     },
     ref,
@@ -119,6 +124,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
                 onSelect={onSelect}
                 poi={poi}
                 result={result}
+                travelTimeBandLabels={travelTimeBandLabels}
               />
             </li>
           ))}
@@ -135,7 +141,10 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
               {open ? hideLabel : showMoreLabel(hidden)}
               <ChevronDown
                 aria-hidden="true"
-                className={cn("h-4 w-4 transition-transform", open && "rotate-180")}
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  open && "rotate-180",
+                )}
               />
             </span>
           </button>

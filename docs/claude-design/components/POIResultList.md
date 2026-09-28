@@ -110,6 +110,10 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
 
   Told which group, so one handler can hold several open.
 
+- `travelTimeBandLabels`: `POIResultCardProps["travelTimeBandLabels"]`, optional.
+
+  Each result's words for a walk shown as a band: POIResultCard's.
+
 - `scrollSelectedIntoView`: `boolean`, optional, default `true`.
 
   Bring the selected result into view when `selectedPoiId` changes — by
@@ -156,6 +160,48 @@ From `@kozmos-ds/product-contracts`.
  * compiler was right to object to.
  */
 type POIResultAction = POIAction | "details";
+```
+
+### POIResultCardProps
+
+From `@kozmos-ds/react`.
+
+```ts
+interface POIResultCardProps extends Omit<
+  React.HTMLAttributes<HTMLElement>,
+  "onSelect"
+> {
+  poi: POIPresentation;
+  result: POIResultPresentation;
+  onSelect: (poiId: string) => void;
+  /**
+   * Run an action from the selected result. The card draws whatever
+   * `result.actions` carries and reports which was pressed; it never decides
+   * that a POI can be booked, only that the product said so.
+   */
+  onAction?: (action: POIResultAction, poiId: string) => void;
+  featuredLabel?: string;
+  selectionLabel?: string;
+  /** Names the action row for assistive technology. */
+  actionsLabel?: string;
+  /** The floor the map shows: a result on it carries a dot before its floor. */
+  currentFloorId?: string;
+  /**
+   * How the row draws its own edges.
+   *
+   * `card` is a standalone result with its own border and radius. `row` is a
+   * result inside a container that already has them — a POIResultGroup, where
+   * nine bordered cards inside one bordered box reads as a mistake, and the
+   * design separates them with dividers instead.
+   */
+  appearance?: "card" | "row";
+  /**
+   * The words for a walk shown as a band, when `result.travelEstimate.band`
+   * is set (decision 50). English by default; a product that translates
+   * passes its own, for one band or all five.
+   */
+  travelTimeBandLabels?: Partial<Record<TravelTimeBand, string>>;
+}
 ```
 
 ### POIResultListItem
@@ -297,6 +343,28 @@ interface POIResultPresentation {
 }
 ```
 
+### TravelTimeBand
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/**
+ * A walk as a result list shows it (decision 50): a band, not the exact
+ * minutes. Nearby is under a minute; then 1–2, 2–5 and 5–10 minutes, and
+ * more than 10.
+ *
+ * The product passes the walking time it already has and Kozmos's rule,
+ * `travelTimeBand`, turns it into one of these, so every product draws the
+ * edges in the same place. The words are the card's, and translatable.
+ */
+type TravelTimeBand =
+  | "nearby"
+  | "oneToTwoMinutes"
+  | "twoToFiveMinutes"
+  | "fiveToTenMinutes"
+  | "moreThanTenMinutes";
+```
+
 ### POIMediaPresentation
 
 From `@kozmos-ds/product-contracts`.
@@ -364,11 +432,22 @@ From `@kozmos-ds/product-contracts`.
 ```ts
 interface TravelEstimatePresentation {
   durationSeconds: number;
+  /** The exact time, already localized: "3 min". The details card shows it. */
   durationLabel: string;
   distanceMetres?: number;
   distanceLabel?: string;
   mode?: string;
   modeLabel?: string;
+  /**
+   * Set when a result list shows this walk as a band rather than the exact
+   * minutes (decision 50): `travelTimeBand(durationSeconds)` gives it.
+   *
+   * POIResultCard then draws the band's words, and Nearby in the success
+   * colour. POIDetailPanel ignores it and keeps `durationLabel`, the exact
+   * minutes, so one estimate serves the list and the details card alike.
+   * Absent, a result shows `durationLabel`, as before.
+   */
+  band?: TravelTimeBand;
 }
 ```
 

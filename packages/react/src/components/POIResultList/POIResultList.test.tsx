@@ -175,6 +175,44 @@ describe("POIResultList", () => {
     expect(screen.getAllByRole("article")).toHaveLength(2);
   });
 
+  it("gives every result the product's words for a walk's band, grouped or not", () => {
+    // Decision 50: the list shows the band, in the visitor's language. The
+    // card holds the words, so the list and its groups must hand them on,
+    // or a translated product reads "Nearby" in English in every list.
+    const walking = (item: POIResultListItem): POIResultListItem => ({
+      ...item,
+      result: {
+        ...item.result,
+        travelEstimate: {
+          durationSeconds: 30,
+          durationLabel: "1 min",
+          band: "nearby",
+        },
+      },
+    });
+    render(
+      <POIResultList
+        items={[
+          walking(createItem("one", 0)),
+          {
+            defaultExpanded: true,
+            id: "group",
+            label: "Burger King",
+            items: [
+              walking(createItem("two", 1)),
+              walking(createItem("three", 2)),
+            ],
+          },
+        ]}
+        onSelect={vi.fn()}
+        resultCountLabel="3 results"
+        travelTimeBandLabels={{ nearby: "近く" }}
+      />,
+    );
+    expect(screen.getAllByText("近く")).toHaveLength(3);
+    expect(screen.queryByText("Nearby")).not.toBeInTheDocument();
+  });
+
   it("renders a directed empty state", () => {
     render(
       <POIResultList

@@ -1,10 +1,12 @@
 import React from "react";
-import type {
-  POIAttributeKind,
-  POIAvailability,
-  POIPresentation,
-  POIResultAction,
-  POIResultPresentation,
+import {
+  travelTimeTone,
+  type POIAttributeKind,
+  type POIAvailability,
+  type POIPresentation,
+  type POIResultAction,
+  type POIResultPresentation,
+  type TravelTimeBand,
 } from "@kozmos-ds/product-contracts";
 import { Star01 as Star } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
@@ -42,7 +44,26 @@ export interface POIResultCardProps extends Omit<
    * design separates them with dividers instead.
    */
   appearance?: "card" | "row";
+  /**
+   * The words for a walk shown as a band, when `result.travelEstimate.band`
+   * is set (decision 50). English by default; a product that translates
+   * passes its own, for one band or all five.
+   */
+  travelTimeBandLabels?: Partial<Record<TravelTimeBand, string>>;
 }
+
+/**
+ * The bands' words, and the only English the card holds for them. The colour
+ * each is drawn in is the contract's rule, `travelTimeTone`: Nearby in the
+ * success colour, the others in the card's text colour.
+ */
+const travelTimeBandLabel: Record<TravelTimeBand, string> = {
+  nearby: "Nearby",
+  oneToTwoMinutes: "1–2 min",
+  twoToFiveMinutes: "2–5 min",
+  fiveToTenMinutes: "5–10 min",
+  moreThanTenMinutes: "More than 10 min",
+};
 
 /**
  * Availability is drawn in three tones, not two.
@@ -89,6 +110,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       actionsLabel = "Actions for this result",
       currentFloorId,
       appearance = "card",
+      travelTimeBandLabels,
       id = getPOIResultDomId(poi.id),
       ...props
     },
@@ -96,6 +118,12 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const available = result.available !== false;
+    // The list shows the band when the product sets one (decision 50); the
+    // exact minutes stay in the estimate for the details card. A band this
+    // version has no words for falls back to the exact minutes.
+    const band = result.travelEstimate?.band;
+    const bandLabel =
+      band && (travelTimeBandLabels?.[band] ?? travelTimeBandLabel[band]);
     const unavailableId = `${id}-unavailable`;
     // A unit is narrower than a floor and a visitor is told both, so it leads
     // the line: "Unit 214 · Level 2 · Terminal 2" (GAP-022).
@@ -299,8 +327,18 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
               />
             )}
             {result.travelEstimate && (
-              <span className="whitespace-nowrap text-sm text-foreground">
-                {result.travelEstimate.durationLabel}
+              <span
+                className={cn(
+                  "whitespace-nowrap text-sm",
+                  // The word says Nearby, so the tone is never the only
+                  // signal; the colour is an owned rule, so it holds where
+                  // the utilities do not.
+                  band && bandLabel && travelTimeTone(band) === "success"
+                    ? "kozmos-travel-time-success"
+                    : "text-foreground",
+                )}
+              >
+                {bandLabel || result.travelEstimate.durationLabel}
               </span>
             )}
           </span>

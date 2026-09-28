@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
-import type { POIPresentation } from "@kozmos-ds/product-contracts";
+import {
+  travelTimeBand,
+  type POIPresentation,
+} from "@kozmos-ds/product-contracts";
 import { POIResultCard } from "./POIResultCard";
 
 const poi: POIPresentation = {
@@ -102,4 +105,54 @@ export const AlternativeBadge: Story = {
       badge: { label: "Alternative" },
     },
   },
+};
+
+/**
+ * A result list shows the walk as a band (decision 50). The product passes
+ * the walking time it already has, with the band `travelTimeBand` gives it,
+ * and the card draws the band's words: Nearby, under a minute, in the success
+ * colour, and the other four in the card's text colour. The details card
+ * keeps the exact minutes from the same estimate.
+ */
+export const TravelTimeBands: Story = {
+  render: (args) => (
+    <div className="flex w-full flex-col items-center gap-3">
+      {(
+        [
+          ["Meeting Point", 45],
+          ["Meeting and Greet", 100],
+          ["Meeting Room (3B)", 240],
+          ["Meeting Room (5C)", 420],
+          ["Meeting Point 2B", 900],
+        ] as const
+      ).map(([name, seconds], index) => (
+        <POIResultCard
+          {...args}
+          key={name}
+          // The one green on these cards is Nearby's, so the availability
+          // label, green when open, is left out.
+          poi={{
+            ...poi,
+            id: `meeting-${index}`,
+            name,
+            categoryLabel: undefined,
+            availability: undefined,
+            availabilityLabel: undefined,
+          }}
+          result={{
+            poiId: `meeting-${index}`,
+            resultIndex: index + 1,
+            selected: false,
+            featured: false,
+            floorId: poi.floorId,
+            travelEstimate: {
+              durationSeconds: seconds,
+              durationLabel: `${Math.ceil(seconds / 60)} min`,
+              band: travelTimeBand(seconds),
+            },
+          }}
+        />
+      ))}
+    </div>
+  ),
 };
