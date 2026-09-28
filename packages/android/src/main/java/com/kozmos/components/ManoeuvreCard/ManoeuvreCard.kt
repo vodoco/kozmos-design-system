@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -36,6 +37,8 @@ import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.icon
 import com.kozmos.components.surface.KozmosSurfaceDefaults
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.surface.LocalKozmosSurfaceStyle
+import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 
@@ -76,6 +79,9 @@ fun KozmosManoeuvreCard(
         border = KozmosSurfaceDefaults.border(surface),
         shadowElevation = 8.dp
     ) {
+        // What the card holds is drawn on its surface: its muted text, and
+        // the itinerary's, reads it (decision 48).
+        CompositionLocalProvider(LocalKozmosSurfaceStyle provides surface) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -128,10 +134,12 @@ fun KozmosManoeuvreCard(
                             overflow = TextOverflow.Ellipsis
                         )
                         if (!detail.isNullOrEmpty()) {
+                            // Muted, and on glass the foreground colour
+                            // (decision 48).
                             Text(
                                 text = detail,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = KozmosThemeTokens.primitivesColorsForeground500
+                                color = kozmosMutedForeground()
                             )
                         }
                     }
@@ -167,6 +175,7 @@ fun KozmosManoeuvreCard(
                         .background(KozmosThemeTokens.primitivesColorsBackground300, CircleShape)
                 )
             }
+        }
         }
     }
 }

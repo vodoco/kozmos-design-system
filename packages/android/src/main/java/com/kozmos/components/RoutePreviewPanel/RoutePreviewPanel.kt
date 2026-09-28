@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
-import com.kozmos.components.adaptivemapshell.kozmosMutedForeground
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.components.iconbutton.KozmosIconButtonVariant
@@ -44,6 +43,7 @@ import com.kozmos.contracts.KozmosRouteReadiness
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.components.surface.kozmosDashedEdge
+import com.kozmos.components.surface.kozmosMutedForeground
 
 /**
  * A route preview with selectable options and a continue action.

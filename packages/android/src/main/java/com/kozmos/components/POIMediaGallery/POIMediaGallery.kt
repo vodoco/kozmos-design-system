@@ -32,8 +32,8 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.kozmos.components.adaptivemapshell.kozmosMutedForeground
 import com.kozmos.components.iconbutton.KozmosIconButton
+import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.contracts.KozmosPOIMediaPresentation
 import com.kozmos.tokens.KozmosDimensions
 import kotlinx.coroutines.launch

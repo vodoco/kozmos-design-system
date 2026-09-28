@@ -30,6 +30,7 @@ import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.components.surface.KozmosSurfaceDefaults
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.surface.kozmosMutedForeground
 
 /**
  * [surface] is what the card is made of, as React's `surface` prop:
@@ -89,10 +90,11 @@ fun KozmosFeedbackCard(
                     color = KozmosThemeTokens.primitivesColorsForeground100,
                     textAlign = TextAlign.Center
                 )
+                // Muted, and on glass the foreground colour (decision 48).
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = KozmosThemeTokens.primitivesColorsForeground500,
+                    color = kozmosMutedForeground(surface),
                     textAlign = TextAlign.Center
                 )
 

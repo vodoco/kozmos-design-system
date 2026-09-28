@@ -3,6 +3,7 @@ package com.kozmos.components.adaptivemapshell
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -19,12 +20,14 @@ import com.kozmos.components.KeptFrames
 import com.kozmos.components.browsecategoriespanel.KozmosBrowseCategoriesPanel
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.routeoptioncard.KozmosRouteOptionCard
 import com.kozmos.components.routepreviewpanel.KozmosRoutePreviewPanel
 import com.kozmos.components.surface.KozmosSurfaceStyle
 import com.kozmos.contracts.KozmosCategoryPresentation
 import com.kozmos.contracts.KozmosRouteOptionPresentation
 import com.kozmos.contracts.KozmosRoutePreference
 import com.kozmos.contracts.KozmosRouteReadiness
+import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertFalse
@@ -208,7 +211,64 @@ class KozmosAdaptiveMapShellHostedFillTest {
         assertNoFillOfItsOwn("the route preview in a side panel", KozmosSurfaceStyle.Glass, dark = false) { Route(located) }
     }
 
+    // A route option
+
+    /**
+     * The chosen route option is a card of its own: its 5% tint lay over
+     * nothing, so on glass the map showed through it while the other options
+     * stood opaque. Read 6dp inside its start edge, halfway down, clear of its
+     * text and its edge: on glass it draws what it draws on a solid sheet, the
+     * tint on the background colour.
+     */
+    @Test
+    fun onAGlassSheetTheChosenRouteOptionIsAsOpaqueAsOnASolidOne() {
+        for (dark in listOf(false, true)) {
+            fun sample(surface: KozmosSurfaceStyle): Int {
+                val drawn = shell(surface, dark) {
+                    KozmosRouteOptionCard(
+                        option = options[0],
+                        onSelect = {},
+                        modifier = located.padding(KozmosDimensions.primitivesLayoutSpacing200)
+                    )
+                }
+                val scale = drawn.width.toFloat() / root.width
+                return drawn.argb(
+                    ((part.left + (16 + 6) * density) * scale).toInt(),
+                    ((part.top + part.height / 2) * scale).toInt()
+                )
+            }
+            val solid = sample(KozmosSurfaceStyle.Solid)
+            val glass = sample(KozmosSurfaceStyle.Glass)
+            val theme = if (dark) "dark" else "light"
+            println("Route option Android, the chosen option, $theme: ${DrawnPixels.hex(glass)} on glass, ${DrawnPixels.hex(solid)} on a solid sheet")
+            assertTrue(
+                "$theme: the chosen option drew ${DrawnPixels.hex(glass)} on glass, ${DrawnPixels.hex(solid)} on a solid sheet",
+                DrawnPixels.matches(glass, solid)
+            )
+        }
+    }
+
     // Standing alone
+
+    /**
+     * Standing alone the browser fills its box with the background colour, as
+     * the web's and iOS's do. It painted none, so the red showed through it.
+     */
+    @Test
+    fun standingAloneTheCategoryBrowserKeepsItsFill() {
+        for (dark in listOf(false, true)) {
+            val drawn = draw(dark) {
+                Box(Modifier.fillMaxSize().background(red)) { Browser(located) }
+            }
+            val (x, y) = drawn.insidePart()
+            val theme = if (dark) "dark" else "light"
+            println("Decision 43 Android, the category browser standing alone, $theme: ${DrawnPixels.hex(drawn.argb(x, y))}")
+            assertTrue(
+                "standing alone, $theme: the category browser drew ${DrawnPixels.hex(drawn.argb(x, y))}, not its fill",
+                DrawnPixels.matches(drawn.argb(x, y), background(dark))
+            )
+        }
+    }
 
     /** The guard: outside a shell nothing says a surface is there, and the preview keeps its fill. */
     @Test

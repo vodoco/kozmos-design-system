@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
@@ -35,6 +36,30 @@ enum class KozmosSurfaceStyle {
     Solid,
     Glass
 }
+
+/**
+ * The Kozmos surface the content is drawn on: solid, glass, or null where
+ * there is none. The map shell provides it to its panel's header and
+ * content, a card with a `surface` provides it to what it holds, and a
+ * details card's bordered presentations provide solid, their own card. On
+ * glass, text that is muted elsewhere takes the foreground colour, so it
+ * reads at 4.5:1 over whatever shows through (decision 48), as the web's
+ * glass surface says with `--kozmos-surface-muted-foreground`.
+ */
+val LocalKozmosSurfaceStyle = compositionLocalOf<KozmosSurfaceStyle?> { null }
+
+/**
+ * Text that is muted elsewhere, as it is drawn on [surface] (decision 48): on
+ * glass the foreground colour, so it reads at 4.5:1 over any map, where muted
+ * it read under 3:1 over a saturated one; elsewhere the muted colour.
+ */
+@Composable
+internal fun kozmosMutedForeground(surface: KozmosSurfaceStyle? = LocalKozmosSurfaceStyle.current): Color =
+    if (surface == KozmosSurfaceStyle.Glass) {
+        KozmosThemeTokens.primitivesColorsForeground100
+    } else {
+        KozmosThemeTokens.primitivesColorsForeground500
+    }
 
 /**
  * The fill and the edge, read through the theme. They were `KozmosColors`,
