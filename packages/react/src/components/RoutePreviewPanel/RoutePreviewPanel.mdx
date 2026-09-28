@@ -41,6 +41,11 @@ foreground. On its own it keeps the background colour. iOS and Android read the 
 from the shell (`kozmosPanelSurface`, `LocalKozmosPanelSurface`); on iOS the preview's square fill
 also covered the panel's rounded top corners.
 
+On glass its muted text, "To", the count of options and the status box's text, takes the
+foreground colour, so it reads at 4.5:1 over any map (decision 48). Muted over a saturated map,
+"To" read 3.7:1 on the web and under 3:1 on iOS and Android; it now reads 8.5:1 or more on all
+three. The route options are cards of their own and keep their muted text.
+
 <PlatformSnippets
   react={`
 import type { ReactNode } from "react";
