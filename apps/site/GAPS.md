@@ -370,8 +370,11 @@ keep the table's four columns and its statuses as they are.
   examples, the home page's adaptive tile and the AdaptiveMapShell reference
   page, in both themes and all three engines. The tests' `SHELL_PANEL` entry
   expects exactly these panels, by their element, so they fail — and point
-  here — once Kozmos changes it. (The dashboard's and the Sidebar page's
-  entries are not this gap: a `Sidebar` is an aside by nature.)
+  here — once Kozmos changes it. It names them by the panel's
+  `data-slot="map-shell-panel"`, which axe keeps whole however long the
+  panel's opening tag grows; the class it matched until 2026-09-28 was cut to
+  20 characters once the tag passed 300. (The dashboard's and the Sidebar
+  page's entries are not this gap: a `Sidebar` is an aside by nature.)
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** a `section` with the same label (a region landmark), or an
   option for hosts that embed the shell.
