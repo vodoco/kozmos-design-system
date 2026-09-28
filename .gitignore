@@ -44,3 +44,6 @@ packages/android/.kotlin/
 # The visual review's report and its failed drawings (docs/visual-review.md)
 visual-report/
 visual-results/
+
+# Local session notes and handoffs live here; they are not part of the design system
+.notes/

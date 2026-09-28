@@ -8,7 +8,6 @@
  * would stop matching anything. So the rename is verified rather than trusted.
  *
  * Deliberately left as they were, and why:
- *   docs/archive/, the dated reports    records of what was true on a date
  *   .ai-skills/, docs/project-scope.md  renaming makes the hook reformat
  *                                       them, and prettier rewrites their
  *                                       malformed nested fences, which
@@ -23,10 +22,8 @@ const ALLOWED = [
   // because `git grep` only reads tracked files: a check that cannot see itself
   // is a check with a blind spot at its centre.
   /^scripts\/check-package-scope\.mjs$/,
-  /^docs\/archive\//,
   /^\.ai-skills\//,
   /^docs\/project-scope\.md$/,
-  /^docs\/[a-z0-9-]*\d{4}-\d{2}-\d{2}[a-z0-9-]*\.md$/,
 ];
 
 // `--untracked` as well: a file introduced by the change being checked is not
