@@ -69,9 +69,7 @@ some large. A label that needs a third line is cut at the end of the second.
 The tile is **72px wide**, **64px** compact. A default tile is 72px tall whether its label takes
 one line or two; a compact one is 64px, and 68px with two lines.
 
-<Canvas>
-  <Story of={NavigationItemStories.Rail} />
-</Canvas>
+<Canvas of={NavigationItemStories.Rail} />
 
 ### A dashboard's rail
 
@@ -82,9 +80,7 @@ its own tiles with `w-auto flex-1`. A 72px tile leaves its label 56px, and a wor
 measured in Chromium, Firefox and WebKit, in narrow and wide fonts (SF Pro and Verdana among
 them).
 
-<Canvas>
-  <Story of={NavigationItemStories.DashboardRail} />
-</Canvas>
+<Canvas of={NavigationItemStories.DashboardRail} />
 
 The native rails keep their 72pt and 72dp tiles (64 compact) and the same two lines: iOS draws the
 label in `caption2`, 11pt on 14pt lines at the default text size, and Android in `labelSmall`,
