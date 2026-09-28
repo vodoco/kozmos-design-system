@@ -298,6 +298,26 @@ describe("FloorSelector collapsible", () => {
     await waitFor(() => expect(rows[1]).toHaveFocus());
   });
 
+  it("sizes the column's levels to the tile, so its bottom level lies over it whatever size the map control takes", async () => {
+    // jsdom lays nothing out: the tile says it is 48 square, as the shared
+    // map-control surface may make it.
+    render(<Controlled />);
+    const tile = tileNamed("First floor");
+    Object.defineProperty(tile, "offsetWidth", {
+      configurable: true,
+      value: 48,
+    });
+    Object.defineProperty(tile, "offsetHeight", {
+      configurable: true,
+      value: 48,
+    });
+    fireEvent.click(tile);
+    const list = await screen.findByRole("dialog", { name: "Floor selector" });
+    for (const level of within(list).getAllByRole("button")) {
+      expect(level).toHaveStyle({ height: "48px", minWidth: "48px" });
+    }
+  });
+
   it("closes after a choice, hands focus back to the tile, and the tile names the new level", async () => {
     const onSelect = vi.fn();
     render(<Controlled onSelect={onSelect} />);

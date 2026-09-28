@@ -52,7 +52,7 @@ export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement>
    * The level the visitor is on, by the same id as `selectedFloor`. The
    * collapsible switcher marks it with a dot, as the SDK's level switcher
    * does (decision 38): on the closed tile while the tile shows that level,
-   * and on that level in the open list whichever level is shown. Left out,
+   * and on that level in the open column whichever level is shown. Left out,
    * nothing is marked. The product knows where the visitor is; the switcher
    * neither works it out nor chooses a level by it. Only the collapsible
    * draws it; the same parameter on iOS and Android.
@@ -219,8 +219,11 @@ const CollapsibleFloorSelector = React.forwardRef<
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const [open, setOpen] = React.useState(false);
-    // The column is placed by the tile's height, which text zoom changes.
-    const [tileHeight, setTileHeight] = React.useState(44);
+    // The map control's own size, read off the tile as the column opens: the
+    // column's levels take it and the column is placed by it, so its bottom
+    // level lies exactly over the tile whatever size the shared map-control
+    // surface — or text zoom — gives it. iOS and Android read it the same way.
+    const [tileSize, setTileSize] = React.useState({ width: 44, height: 44 });
     const tileRef = React.useRef<HTMLButtonElement>(null);
     const currentRef = React.useRef<HTMLButtonElement>(null);
 
@@ -229,7 +232,11 @@ const CollapsibleFloorSelector = React.forwardRef<
         trackEvent("FloorSelector", "floor_selector_expanded", {
           floor: selectedOption?.id ?? selectedFloor,
         });
-        setTileHeight(tileRef.current?.offsetHeight || 44);
+        const tile = tileRef.current;
+        setTileSize({
+          width: tile?.offsetWidth || 44,
+          height: tile?.offsetHeight || 44,
+        });
       }
       setOpen(next);
     };
@@ -277,7 +284,7 @@ const CollapsibleFloorSelector = React.forwardRef<
             aria-label={label}
             className="kozmos-floor-selector-list flex w-auto flex-col gap-1 rounded-container bg-background p-1 shadow-floating"
             side="top"
-            sideOffset={-(tileHeight + COLUMN_INSET)}
+            sideOffset={-(tileSize.height + COLUMN_INSET)}
             onCloseAutoFocus={(event) => {
               // Back to the tile after a choice, Escape, or a tap on the map
               // that took focus nowhere. Not after a tap that put it on
@@ -331,6 +338,7 @@ const CollapsibleFloorSelector = React.forwardRef<
                     setOpen(false);
                   }}
                   size="icon"
+                  style={{ height: tileSize.height, minWidth: tileSize.width }}
                   type="button"
                   variant="ghost"
                 >
