@@ -25,7 +25,7 @@
  */
 import { execFileSync } from "node:child_process";
 
-const REPOSITORY = "vodoco/kozmos-design-system-";
+const REPOSITORY = "vodoco/kozmos-design-system";
 const ENVIRONMENT = "npm-release";
 const SECRET = "NPM_TOKEN";
 

@@ -14,12 +14,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vodoco/kozmos-design-system-.git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system.git",
     "directory": "packages/react"
   },
-  "homepage": "https://github.com/vodoco/kozmos-design-system-/tree/main/packages/react#readme",
+  "homepage": "https://github.com/vodoco/kozmos-design-system/tree/main/packages/react#readme",
   "bugs": {
-    "url": "https://github.com/vodoco/kozmos-design-system-/issues"
+    "url": "https://github.com/vodoco/kozmos-design-system/issues"
   },
   "publishConfig": {
     "access": "public"
