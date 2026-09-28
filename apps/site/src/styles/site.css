@@ -1759,6 +1759,12 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* One component's four answers: a platform to a row, as wide as it needs
+   and no wider, so the words sit beside the platform they belong to. */
+.site-status-single {
+  max-inline-size: 28rem;
+}
+
 /* A status pill keeps its words together ("Not expected"): on a narrow
    screen the table scrolls inside its own frame instead, as Kozmos's Table
    lets it. Tag sets no white-space of its own. */

@@ -1,4 +1,5 @@
 import {
+  Box,
   Table,
   TableBody,
   TableCell,
@@ -41,24 +42,23 @@ export function StatusTag({ state }: { state: PlatformState }) {
 }
 
 /**
- * Components by platform, one row each: React, SwiftUI, Compose and Figma.
- * With `named`, each row starts with the component's name, a link to its
- * page, as the row's header; without, it is one component's row alone.
+ * Components by platform, one row each: the component's name, a link to its
+ * page, as the row's header, then React, SwiftUI, Compose and Figma. On a
+ * narrow screen the table scrolls inside its own frame, as Kozmos's Table
+ * lets it.
  */
 export function StatusTable({
   label,
   components,
-  named = true,
 }: {
   label: string;
   components: readonly ComponentSummary[];
-  named?: boolean;
 }) {
   return (
     <Table aria-label={label}>
       <TableHeader>
         <TableRow>
-          {named ? <TableHead scope="col">Component</TableHead> : null}
+          <TableHead scope="col">Component</TableHead>
           {platformOrder.map((platform) => (
             <TableHead key={platform} scope="col">
               {platformLabel[platform]}
@@ -69,15 +69,13 @@ export function StatusTable({
       <TableBody>
         {components.map((component) => (
           <TableRow key={component.slug}>
-            {named ? (
-              <TableHead scope="row">
-                <Text as="span" size="sm">
-                  <SiteLink to={`/components/${component.slug}`}>
-                    {component.name}
-                  </SiteLink>
-                </Text>
-              </TableHead>
-            ) : null}
+            <TableHead scope="row">
+              <Text as="span" size="sm">
+                <SiteLink to={`/components/${component.slug}`}>
+                  {component.name}
+                </SiteLink>
+              </Text>
+            </TableHead>
             {platformOrder.map((platform) => (
               <TableCell key={platform}>
                 <StatusTag state={component.platforms[platform]} />
@@ -87,5 +85,44 @@ export function StatusTable({
         ))}
       </TableBody>
     </Table>
+  );
+}
+
+/**
+ * One component's four answers, a platform to a row, so a phone shows all
+ * four without scrolling sideways, as a desktop does.
+ */
+export function PlatformStatus({
+  label,
+  component,
+}: {
+  label: string;
+  component: ComponentSummary;
+}) {
+  return (
+    <Box className="site-status-single">
+      <Table aria-label={label}>
+        <TableHeader>
+          <TableRow>
+            <TableHead scope="col">Platform</TableHead>
+            <TableHead scope="col">Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {platformOrder.map((platform) => (
+            <TableRow key={platform}>
+              <TableHead scope="row">
+                <Text as="span" size="sm" weight="medium">
+                  {platformLabel[platform]}
+                </Text>
+              </TableHead>
+              <TableCell>
+                <StatusTag state={component.platforms[platform]} />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Box>
   );
 }

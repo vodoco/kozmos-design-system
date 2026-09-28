@@ -3609,11 +3609,15 @@ function componentPageTest(
       colorScheme,
     );
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
-    await expect(
-      page
-        .getByRole("table", { name: `Where ${name} exists` })
-        .getByRole("cell"),
-    ).toHaveText(
+    // A platform to a row: each row's header, then what the data says.
+    const where = page.getByRole("table", { name: `Where ${name} exists` });
+    await expect(where.getByRole("rowheader")).toHaveText([
+      "React",
+      "SwiftUI",
+      "Compose",
+      "Figma",
+    ]);
+    await expect(where.getByRole("cell")).toHaveText(
       PLATFORMS.map((platform) => STATE_LABEL[component.platforms[platform]]),
     );
     if (component.storybook) {

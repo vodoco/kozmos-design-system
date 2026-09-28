@@ -3,7 +3,7 @@ import { Container, Stack, Tag, Text } from "@kozmos-ds/react";
 import type { Route } from "./+types/component";
 import { pageTitle } from "../../lib/site";
 import { componentBySlug, laneTitle, neighbours } from "../../reference/nav";
-import { StatusTable } from "../../reference/Status";
+import { PlatformStatus } from "../../reference/Status";
 import { SiteLink, StorybookButtonLink } from "../../site/links";
 import { PageHeader, Section } from "../../site/Section";
 import { withCode, withoutCode } from "../../site/inline-code";
@@ -84,10 +84,9 @@ export default function ComponentPage({
           </>
         }
       >
-        <StatusTable
+        <PlatformStatus
           label={`Where ${component.name} exists`}
-          components={[component]}
-          named={false}
+          component={component}
         />
       </Section>
 
