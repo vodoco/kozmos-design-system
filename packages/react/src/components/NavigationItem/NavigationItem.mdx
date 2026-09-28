@@ -33,11 +33,11 @@ export function Example() {
 import SwiftUI
 
 KozmosNavigationItem(
-  label: "Explore",
-  placement: .side,
-  selected: true
+label: "Explore",
+placement: .side,
+selected: true
 ) {
-  Image(systemName: "magnifyingglass")
+Image(systemName: "magnifyingglass")
 }
 `}
     kotlin={`
@@ -50,12 +50,12 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun NavigationItemExample() {
-  KozmosNavigationItem(
-    label = "Explore",
-    placement = KozmosNavigationItemPlacement.Side,
-    selected = true,
-    icon = { Icon(Icons.Default.Search, contentDescription = null) }
-  )
+KozmosNavigationItem(
+label = "Explore",
+placement = KozmosNavigationItemPlacement.Side,
+selected = true,
+icon = { Icon(Icons.Default.Search, contentDescription = null) }
+)
 }
-    `}
+`}
 />
