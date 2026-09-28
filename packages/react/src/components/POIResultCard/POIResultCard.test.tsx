@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type {
   POIPresentation,
   POIResultPresentation,
+  TravelTimeBand,
 } from "@kozmos-ds/product-contracts";
 import { describe, expect, it, vi } from "vitest";
 import { POIResultCard, getPOIResultDomId } from "./POIResultCard";
@@ -374,6 +375,110 @@ describe("POIResultCard", () => {
     const name = screen.getByText(poi.name);
     expect(name).not.toHaveAttribute("lang");
     expect(screen.queryByText(/·\s*$/)).toBeNull();
+  });
+
+  describe("a walk shown as a band (decision 50, GAP-088)", () => {
+    // The product passes the walking time it has, with the band Kozmos's rule
+    // gives it; the card draws the band. The exact minutes stay in the
+    // estimate for the details card.
+    const banded = (
+      band: TravelTimeBand,
+      durationLabel = "exact minutes",
+    ): POIResultPresentation => ({
+      ...result,
+      selected: false,
+      featured: false,
+      travelEstimate: { durationSeconds: 45, durationLabel, band },
+    });
+
+    it("reads Nearby for a place under a minute away, in the success colour", () => {
+      render(
+        <POIResultCard
+          poi={poi}
+          result={banded("nearby", "1 min")}
+          onSelect={vi.fn()}
+        />,
+      );
+      const nearby = screen.getByText("Nearby");
+      expect(nearby).toBeVisible();
+      // An owned rule, so the tone holds in a browser without @scope too:
+      // check-owned-css measures its colour and contrast in both themes.
+      expect(nearby).toHaveClass("kozmos-travel-time-success");
+      expect(nearby).not.toHaveClass("text-foreground");
+      expect(screen.queryByText("1 min")).not.toBeInTheDocument();
+    });
+
+    it("draws the other four bands in the card's normal colour", () => {
+      const words: [TravelTimeBand, string][] = [
+        ["oneToTwoMinutes", "1–2 min"],
+        ["twoToFiveMinutes", "2–5 min"],
+        ["fiveToTenMinutes", "5–10 min"],
+        ["moreThanTenMinutes", "More than 10 min"],
+      ];
+      for (const [band, label] of words) {
+        const { unmount } = render(
+          <POIResultCard poi={poi} result={banded(band)} onSelect={vi.fn()} />,
+        );
+        const node = screen.getByText(label);
+        expect(node).toHaveClass("text-foreground");
+        expect(node).not.toHaveClass("kozmos-travel-time-success");
+        expect(screen.queryByText("exact minutes")).not.toBeInTheDocument();
+        unmount();
+      }
+    });
+
+    it("says Nearby in words, so the tone is never carried by colour alone", () => {
+      render(
+        <POIResultCard
+          poi={poi}
+          result={banded("nearby")}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(
+        screen.getByRole("button", { name: /Burger King.*Nearby/ }),
+      ).toBeInTheDocument();
+    });
+
+    it("takes the product's words for a band, and keeps English for the rest", () => {
+      const { rerender } = render(
+        <POIResultCard
+          poi={poi}
+          result={banded("nearby")}
+          onSelect={vi.fn()}
+          travelTimeBandLabels={{ nearby: "À proximité" }}
+        />,
+      );
+      expect(screen.getByText("À proximité")).toHaveClass(
+        "kozmos-travel-time-success",
+      );
+      expect(screen.queryByText("Nearby")).not.toBeInTheDocument();
+      rerender(
+        <POIResultCard
+          poi={poi}
+          result={banded("twoToFiveMinutes")}
+          onSelect={vi.fn()}
+          travelTimeBandLabels={{ nearby: "À proximité" }}
+        />,
+      );
+      expect(screen.getByText("2–5 min")).toBeVisible();
+    });
+
+    it("keeps the exact minutes, as before, when the product sets no band", () => {
+      // The guard: every product that has not adopted bands draws as it did.
+      render(
+        <POIResultCard
+          poi={poi}
+          result={{
+            ...result,
+            travelEstimate: { durationSeconds: 45, durationLabel: "1 min" },
+          }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(screen.getByText("1 min")).toHaveClass("text-foreground");
+      expect(screen.queryByText("Nearby")).not.toBeInTheDocument();
+    });
   });
 
   it("is the current result, not a button stuck unpressed", () => {

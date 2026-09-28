@@ -1,5 +1,6 @@
 import { Meta, Canvas } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
+import { PlatformSnippets } from "../PlatformSnippets";
 import * as Stories from "./POIResultCard.stories";
 
 <Meta of={Stories} />
@@ -13,3 +14,136 @@ results remain readable but cannot invoke `onSelect`.
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.FeaturedSelected} />
 <Controls />
+
+## A walk shown as a band
+
+A result list shows the walk to a place as a band: **Nearby** under a minute, then **1–2 min**,
+**2–5 min**, **5–10 min** and **More than 10 min** (decision 50). The product passes the walking
+time it already has, with the band Kozmos's rule gives it, `travelTimeBand(durationSeconds)` from
+`@kozmos-ds/product-contracts`, and the card draws the band's words. Every product that uses the
+rule draws the edges in the same place.
+
+- **The edges.** Each band keeps its upper edge: a place exactly 2 minutes away reads 1–2 min, and
+  one 2 minutes 1 second away reads 2–5 min; exactly 5 and 10 minutes read 2–5 and 5–10. Past the
+  first minute that is the walk rounded up to whole minutes. A length below zero, or one that is not
+  a finite number, has no band, and the card shows the exact minutes.
+- **The tone.** Nearby is drawn in the success colour, which reads at 4.5:1 or more on the card in
+  both themes (7.1:1 light, 17.7:1 dark); the other bands are the card's text colour. The word
+  itself says Nearby, so the tone is never carried by colour alone.
+- **The words** are English until the product passes its own as `travelTimeBandLabels`, one band or
+  all five; `POIResultList` and `POIResultGroup` hand them to every result. The same name on iOS
+  and Android.
+- **The details card** keeps the exact minutes. The estimate carries both: `band` for the list and
+  `durationLabel` for `POIDetailPanel`, which ignores the band.
+- **Without a band** a result shows `durationLabel`, as it always has.
+
+<Canvas of={Stories.TravelTimeBands} />
+
+<PlatformSnippets
+    react={`
+import { POIResultCard } from "@kozmos-ds/react";
+import {
+  travelTimeBand,
+  type POIPresentation,
+  type POIResultPresentation,
+} from "@kozmos-ds/product-contracts";
+
+export function WalkingResult({
+  poi,
+  result,
+  walk,
+  onSelect,
+}: {
+  poi: POIPresentation;
+  result: POIResultPresentation;
+  // The walk the product already has, and its exact time in the visitor's words.
+  walk: { seconds: number; label: string };
+  onSelect: (poiId: string) => void;
+}) {
+  return (
+    <POIResultCard
+      poi={poi}
+      result={{
+        ...result,
+        // The list shows the band; the details card keeps durationLabel.
+        travelEstimate: {
+          durationSeconds: walk.seconds,
+          durationLabel: walk.label,
+          band: travelTimeBand(walk.seconds),
+        },
+      }}
+      onSelect={onSelect}
+      // English until the product passes its own words.
+      travelTimeBandLabels={{ nearby: "À proximité", moreThanTenMinutes: "Plus de 10 min" }}
+    />
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The walk the product already has, and its exact time in the visitor's words.
+struct WalkingResult: View {
+    let poi: KozmosPOIPresentation
+    let walkSeconds: Double
+    let walkLabel: String
+    let bandLabels: [KozmosTravelTimeBand: String]
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        KozmosPOIResultCard(
+            poi: poi,
+            result: KozmosPOIResultPresentation(
+                poiId: poi.id,
+                resultIndex: 0,
+                // The list shows the band; the details card keeps durationLabel.
+                travelEstimate: KozmosTravelEstimatePresentation(
+                    durationSeconds: walkSeconds,
+                    durationLabel: walkLabel,
+                    band: KozmosTravelTimeBand(durationSeconds: walkSeconds)
+                )
+            ),
+            // English until the product passes its own words.
+            travelTimeBandLabels: bandLabels,
+            onSelect: onSelect
+        )
+    }
+}
+    `}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.poiresultcard.KozmosPOIResultCard
+import com.kozmos.contracts.KozmosPOIPresentation
+import com.kozmos.contracts.KozmosPOIResultPresentation
+import com.kozmos.contracts.KozmosTravelEstimatePresentation
+import com.kozmos.contracts.KozmosTravelTimeBand
+
+// The walk the product already has, and its exact time in the visitor's words.
+@Composable
+fun WalkingResult(
+    poi: KozmosPOIPresentation,
+    walkSeconds: Double,
+    walkLabel: String,
+    bandLabels: Map<KozmosTravelTimeBand, String>,
+    onSelect: (String) -> Unit
+) {
+    KozmosPOIResultCard(
+        poi = poi,
+        result = KozmosPOIResultPresentation(
+            poiId = poi.id,
+            resultIndex = 0,
+            // The list shows the band; the details card keeps durationLabel.
+            travelEstimate = KozmosTravelEstimatePresentation(
+                durationSeconds = walkSeconds,
+                durationLabel = walkLabel,
+                band = KozmosTravelTimeBand.forDuration(walkSeconds)
+            )
+        ),
+        onSelect = onSelect,
+        // English until the product passes its own words.
+        travelTimeBandLabels = bandLabels
+    )
+}
+    `}
+/>
