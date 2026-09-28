@@ -291,6 +291,114 @@ try {
           "closing the panel hands focus back to the button that opened it",
         );
         console.log(`PASS AICompanionPanel focus ${theme} ${viewport.width}`);
+
+        // Decision 22: the AI chat's spoken conversation, from the keyboard.
+        // The name says what a press does, one polite region says what
+        // changed, and focus stays on the microphone throughout. The story
+        // plays the product: connected 1.5s after the press. Everything the
+        // region comes to hold is recorded as it happens, so the check reads
+        // the whole sequence, not whatever is there when it looks.
+        await visit("product-sdk-aiinputbar--voice-conversation");
+        const voiceRegion = page.locator(
+          '.kozmos-story-surface [role="status"]',
+        );
+        const voiceSaid = () =>
+          voiceRegion.evaluate((n) => n.kozmosSaid ?? null);
+        const startVoice = page.getByRole("button", {
+          name: "Start voice conversation",
+        });
+        const endVoice = page.getByRole("button", {
+          name: "End voice conversation",
+        });
+        assert.equal(
+          await startVoice.count(),
+          1,
+          "a product that can start a conversation gets a microphone",
+        );
+        assert.equal(await voiceRegion.count(), 1, "one region speaks for it");
+        assert.equal(await voiceRegion.getAttribute("aria-live"), "polite");
+        assert.equal(
+          await voiceRegion.evaluate((n) => n.textContent),
+          "",
+          "nothing is said as it first draws",
+        );
+        await voiceRegion.evaluate((n) => {
+          n.kozmosSaid = [];
+          new MutationObserver(() => n.kozmosSaid.push(n.textContent)).observe(
+            n,
+            { characterData: true, childList: true, subtree: true },
+          );
+        });
+        await startVoice.focus();
+        await page.keyboard.press("Enter");
+        await endVoice.waitFor();
+        await page.waitForFunction(
+          () =>
+            document.querySelector('.kozmos-story-surface [role="status"]')
+              ?.textContent === "Listening…",
+        );
+        assert.deepEqual(
+          await voiceSaid(),
+          ["Connecting…", "Listening…"],
+          "each state is said once, as it comes",
+        );
+        assert(
+          await endVoice.evaluate((n) => n === document.activeElement),
+          "focus stays on the microphone as the conversation starts",
+        );
+        assert.equal(
+          await endVoice.getAttribute("aria-pressed"),
+          null,
+          "a name that says the action carries no pressed state",
+        );
+        assert.equal(
+          await page
+            .getByRole("textbox", { name: "Ask the assistant" })
+            .getAttribute("placeholder"),
+          "Listening…",
+        );
+        await audit();
+        await page.keyboard.press("Space");
+        await startVoice.waitFor();
+        await page.waitForFunction(
+          () =>
+            document.querySelector('.kozmos-story-surface [role="status"]')
+              ?.textContent === "Voice conversation ended",
+        );
+        assert.deepEqual(await voiceSaid(), [
+          "Connecting…",
+          "Listening…",
+          "Voice conversation ended",
+        ]);
+        assert(
+          await startVoice.evaluate((n) => n === document.activeElement),
+          "focus stays on the microphone as the conversation ends",
+        );
+        await audit();
+        console.log(`PASS AIInputBar voice ${theme} ${viewport.width}`);
+
+        await visit("product-sdk-aiinputbar--voice-unavailable");
+        const unavailableVoice = page.getByRole("button", {
+          name: "Voice conversation unavailable",
+        });
+        assert.equal(
+          await unavailableVoice.count(),
+          1,
+          "an unavailable microphone is still there to be found",
+        );
+        assert.equal(
+          await unavailableVoice.getAttribute("aria-disabled"),
+          "true",
+        );
+        await unavailableVoice.focus();
+        assert(
+          await unavailableVoice.evaluate((n) => n === document.activeElement),
+          "an unavailable microphone keeps its place in the tab order",
+        );
+        await audit();
+        console.log(
+          `PASS AIInputBar voice unavailable ${theme} ${viewport.width}`,
+        );
         for (const id of [
           "product-sdk-routepreviewpanel--ready",
           "system-themeprovider--default",

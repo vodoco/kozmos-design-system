@@ -12,9 +12,11 @@ does.
 It never emits an empty or whitespace-only question, and hands over **trimmed**
 text — no product should have to trim what it is given.
 
-Voice is out of scope here: `trailing` is a slot inside the field that a
-product fills with its own microphone control, rather than a control this
-owns.
+Typing by voice is the keyboard's own microphone, in the field, and Kozmos
+adds nothing to it. What `AIInputBar` does draw, for a product with a voice
+model, is the microphone that starts a spoken conversation — below.
+`trailing` is a slot at the end of the field for a control of the product's
+own.
 
 The field draws a focus ring round the whole pill, as `SearchBar` does: the
 input inside is `outline-none`, and without the ring a keyboard visitor had no
@@ -30,4 +32,127 @@ when the assistant opens, after a send, after an error. The component's own
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.Empty} />
 <Canvas of={Stories.Disabled} />
+
+## A spoken conversation
+
+With a voice model the assistant can be talked to: the visitor speaks, and it
+answers aloud. Pass `onVoiceStart` and a microphone sits between the field and
+send; leave it out and there is none. That is how voice stays **off unless the
+product turns it on**, on each platform and in each app: an App Clip has no
+voice model, so PointrExpress never passes it.
+
+Kozmos draws the control, its states and what it announces. Everything else
+is the product's: the voice model and its connection, the microphone
+permission, recording and playing the audio, the transcripts, and keeping
+none of the audio afterwards.
+
+<Canvas of={Stories.VoiceConversation} />
+
+`voiceState` says where the conversation is, and the product moves it along:
+
+- **`idle`** — an outline microphone named "Start voice conversation"; a press
+  calls `onVoiceStart`. Back from a live state it announces "Voice
+  conversation ended".
+- **`connecting`** — tinted, a turning arc, named "End voice conversation"; a
+  press calls `onVoiceEnd`, calling it off. Announces "Connecting…".
+- **`listening`** — tinted, the microphone; a press ends it. Announces
+  "Listening…".
+- **`speaking`** — tinted, a speaker; a press ends it. Announces "Assistant is
+  speaking…".
+- **`unavailable`** — muted, the microphone struck out, named "Voice
+  conversation unavailable"; a press does nothing, and becoming unavailable
+  is announced in the same words. For voice this product has but cannot
+  start now: the microphone refused, the model out of reach. The product
+  moves it back to `idle` when that changes.
+- **`error`** — the microphone struck out, in danger's outline, named "Start
+  voice conversation"; a press tries again. Announces "Voice conversation
+  failed. Try again."
+
+<Canvas of={Stories.VoiceIdle} />
+<Canvas of={Stories.VoiceConnecting} />
+<Canvas of={Stories.VoiceListening} />
+<Canvas of={Stories.VoiceSpeaking} />
+<Canvas of={Stories.VoiceUnavailable} />
+<Canvas of={Stories.VoiceError} />
+
+### For a keyboard and a screen reader
+
+- **The name says what a press does**, so there is no `aria-pressed`: a
+  toggle's name must not change with its state, and "End voice conversation,
+  pressed" reads as a riddle.
+- **One polite region** announces each change of state, and nothing for the
+  state the bar is first drawn in. While the conversation connects, listens
+  or speaks, the empty field shows the same words in place of its
+  placeholder, so the state is written as well as coloured.
+- **One control through every state**, never `disabled`, so focus stays on it
+  whatever the product does to the state. `unavailable` is `aria-disabled`:
+  still in the tab order, so a keyboard or screen-reader visitor finds it and
+  hears why, and a press does nothing. It is 44px, as send is.
+- **Offline**, `disabled` shows a microphone that is not in use as
+  unavailable. One that is live can still be ended: a visitor is never left
+  with a microphone they cannot close.
+- **Every string is a prop**, English by default — the product has the
+  language: `voiceStartLabel`, `voiceEndLabel`, `voiceConnectingLabel`,
+  `voiceListeningLabel`, `voiceSpeakingLabel`, `voiceEndedLabel`,
+  `voiceUnavailableLabel` and `voiceErrorLabel`. An empty string leaves that
+  announcement out; the field then keeps the product's placeholder, and an
+  unavailable microphone keeps the start label as its name.
+
+In `AICompanionPanel`, turn the thread's own announcements off while the
+conversation is live, or a screen reader reads each turn over the assistant
+saying it — see its page.
+
+### Wiring a voice model
+
+`voiceState` is the product's to keep, moved by its voice session. The
+session here stands for whatever the product uses — a realtime speech model
+over WebRTC or a WebSocket, a platform speech service. Kozmos depends on none
+of them. It asks for the microphone and connects the model, and closing it
+releases both, even halfway through connecting: a visitor may end the
+conversation before it has begun, and nothing may start listening after
+that.
+
+```tsx
+const [voiceState, setVoiceState] = useState<AIVoiceState>("idle");
+const session = useRef<VoiceSession | null>(null);
+
+async function startVoice() {
+  setVoiceState("connecting");
+  const current = openVoiceSession({
+    onListening: () => setVoiceState("listening"),
+    onSpeaking: () => setVoiceState("speaking"),
+    onTranscript: addTurnToThread,
+    onDropped: () => setVoiceState("error"),
+  });
+  session.current = current;
+  try {
+    await current.ready;
+  } catch (error) {
+    // Ended while it connected: that ending stands.
+    if (session.current !== current) return;
+    session.current = null;
+    // A refused microphone is voice this visitor cannot use now.
+    const refused =
+      error instanceof DOMException && error.name === "NotAllowedError";
+    setVoiceState(refused ? "unavailable" : "error");
+  }
+}
+
+function endVoice() {
+  session.current?.close();
+  session.current = null;
+  setVoiceState("idle");
+}
+
+<AIInputBar
+  onSubmit={ask}
+  onValueChange={setValue}
+  value={value}
+  // Only where this app, on this platform, has a voice model.
+  onVoiceStart={hasVoiceModel ? startVoice : undefined}
+  onVoiceEnd={endVoice}
+  voiceState={voiceState}
+/>;
+```
+
 <Controls />

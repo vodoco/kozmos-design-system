@@ -99,4 +99,35 @@ callback is not called.
 Close is drawn at 36px, as the header was drawn round it, with a 44px target.
 
 <Canvas of={Stories.OpenAndClose} />
+
+## A spoken conversation
+
+Where the product has a voice model, the visitor can talk to the assistant
+and hear it answer aloud. `AIInputBar` draws the microphone when the product
+passes `onVoiceStart`, and says what the conversation is doing; its page has
+the states and the wiring. Where there is no voice model, as in an App Clip,
+leave `onVoiceStart` out and there is no microphone. The panel itself needs
+nothing new, and moves focus exactly as above.
+
+The thread still shows what was said, from the voice model's transcripts, as
+`UserMessage` and `AIMessage` turns. Two things are the product's to get
+right:
+
+- **One voice at a time.** The thread is a polite live region, so a screen
+  reader reads each turn as it arrives — while the assistant is already
+  saying it aloud, and the two talk over each other. Turn the thread's
+  announcements off while the conversation is live, and back on when it
+  ends. The microphone's own region still says whose turn it is.
+
+  ```tsx
+  const live = ["connecting", "listening", "speaking"].includes(voiceState);
+
+  <AIMessageList aria-live={live ? "off" : "polite"}>{turns}</AIMessageList>;
+  ```
+
+- **Closing ends it.** A panel closed while the conversation is live ends
+  the conversation too — in `onClose`, as `onVoiceEnd` does. A microphone
+  must never stay open behind a panel the visitor has closed.
+
+<Canvas of={Stories.VoiceConversation} />
 <Controls />
