@@ -147,10 +147,12 @@ pnpm test:visual:update
 #### Step 8: Full Test Suite
 
 ```bash
+# The application's own tests
 pnpm test
-pnpm test:e2e
-pnpm test:a11y
 ```
+
+Run the application's end-to-end and accessibility suites too, under whatever names its own
+`package.json` gives them: Kozmos has no `test:e2e` or `test:a11y` script to lend it.
 
 #### Step 9: Bundle Size Check
 
