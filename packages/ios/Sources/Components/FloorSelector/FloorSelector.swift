@@ -55,11 +55,12 @@ public struct KozmosFloorSelector: View {
     /// How the dot is said, joined to the level's own label: "Level 1, your
     /// level". English until the product passes its own words.
     let userFloorLabel: String
-    /// What VoiceOver hears the closed switcher tile does: "Shows every
-    /// level". On iOS 16 and 17, which report no expanded state, it is the
-    /// only sign that the tile opens a column; from iOS 18 it follows
-    /// "collapsed". Not heard while the column is open. English until the
-    /// product passes its own words. Only `.collapsible` says it.
+    /// The hint VoiceOver gives on the closed switcher tile, saying what
+    /// activating it does: "Shows every level". On iOS 16 and 17, which
+    /// report no expanded state, it is the only sign that the tile opens a
+    /// column; from iOS 18 it follows "collapsed". Not given while the column
+    /// is open. English until the product passes its own words. Only
+    /// `.collapsible` gives it.
     let expandHint: String
     /// How a level's result count is said, for a visitor who cannot see the
     /// marker. Joined to the level's own label: "Level 2, 3 results". A

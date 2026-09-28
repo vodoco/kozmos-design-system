@@ -498,8 +498,8 @@ internal fun KozmosFloorSwitcherColumn(
     val labelStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
     Column(
         modifier = modifier
-            // The map control's own shadow, as KozmosMapControlButton casts it.
-            .shadow(8.dp, edge)
+            // The floating elevation role, which the map control casts at rest.
+            .shadow(KozmosShadows.semanticsElevationFloating, edge)
             .background(KozmosThemeTokens.primitivesColorsBackground0, edge)
             .border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, edge)
             .padding(SwitcherInset)
