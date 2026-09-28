@@ -54,6 +54,7 @@ struct MapControls: View {
             locationLabel: String(localized: "Focus"),
             locationStateLabel: stateLabel,
             locationHeadingDescription: String(localized: "map turns with you"),
+            locationHeadingPausedDescription: String(localized: "press to turn the map with you again"),
             locationRevealOnChange: true,
             locationLabelPlacement: .stacked
         )
