@@ -1062,7 +1062,7 @@ try {
   //
   // So: a map board with its controls in MapOverlays, and the same board
   // with the same controls placed by hand at the overlay's insets. They must
-  // draw alike, pixel for pixel — in the dark theme (`outer`) and the light
+  // draw alike, every pixel to within a level — in the dark theme (`outer`) and the light
   // (`nested`), right to left and left to right, at rest and with a
   // control's focus ring showing. A third board's overlay is shorter than
   // its stack, so it scrolls: its controls keep their sides and top, and
@@ -1082,6 +1082,23 @@ try {
       "[data-testid$='-map-overlay-scrolling'] > div {scrollbar-width: none}",
   });
   await boards.getByTestId("outer-map-board-overlay").waitFor();
+  // Every board on whole pixels, pinned to the viewport. In the fixture's
+  // flow a board sits below text whose height is the host's font's: on
+  // Linux, Firefox captured a board 221 rows tall whose first row was the
+  // page above it, so the two drawings were compared a row out of register.
+  await boards.evaluate(() => {
+    ["outer", "nested"].forEach((id, row) =>
+      ["overlay", "by-hand", "scrolling"].forEach((layout, column) => {
+        const node = document.querySelector(
+          `[data-testid="${id}-map-board-${layout}"]`,
+        );
+        node.style.setProperty("position", "fixed", "important");
+        node.style.setProperty("top", `${16 + row * 240}px`, "important");
+        node.style.setProperty("left", `${16 + column * 224}px`, "important");
+        node.style.setProperty("z-index", "2147483647", "important");
+      }),
+    );
+  });
   await settleLayout(boards);
   const board = (id, layout) => boards.getByTestId(`${id}-map-board-${layout}`);
   const shoot = async (locator) =>
@@ -1117,9 +1134,12 @@ try {
           };
         });
     });
-  // Two drawings compared inside a region of each (the whole drawing unless
-  // given): how many pixels differ, by how much at most, the first that
-  // does; and how far chosen pixels of the second stand off the bare board.
+  // Two drawings of one size compared inside a region of each (the whole
+  // drawing unless given): how many pixels differ by more than a level, by
+  // how much at most, the first that does, and how many differ by one level
+  // alone; and how far chosen pixels of the second stand off the bare board.
+  // A level is rounding: the cut this is about differed by 28, and a room
+  // 4px short below by 2. The faint count is reported, never hidden.
   const compareShots = (
     shotA,
     shotB,
@@ -1147,6 +1167,7 @@ try {
         const ra = regionA ?? whole;
         const rb = regionB ?? ra;
         let differing = 0;
+        let faint = 0;
         let maxDelta = 0;
         let first = null;
         for (let y = 0; y < ra.height; y++)
@@ -1155,8 +1176,12 @@ try {
             const q = at(B, rb.x + x, rb.y + y);
             const delta = Math.max(...p.map((v, k) => Math.abs(v - q[k])));
             if (delta === 0) continue;
-            differing++;
             maxDelta = Math.max(maxDelta, delta);
+            if (delta === 1) {
+              faint++;
+              continue;
+            }
+            differing++;
             first ??= { x: ra.x + x, y: ra.y + y, a: p, b: q };
           }
         // The bare board, from a corner nothing is drawn near.
@@ -1165,6 +1190,7 @@ try {
           sizes: [A.width, A.height, B.width, B.height],
           compared: ra.width * ra.height,
           differing,
+          faint,
           maxDelta,
           first,
           ground,
@@ -1175,6 +1201,23 @@ try {
       },
       { shotA, shotB, regionA, regionB, samples },
     );
+  // Two drawings of boards, each exactly 200 by 220, or out of register.
+  const faint = [];
+  const compareBoards = async (
+    shotA,
+    shotB,
+    options,
+    { tally = true } = {},
+  ) => {
+    const result = await compareShots(shotA, shotB, options);
+    assert.deepEqual(
+      result.sizes,
+      [200, 220, 200, 220],
+      `a board was not drawn 200 by 220, so two drawings would be compared out of register: ${JSON.stringify(result.sizes)}`,
+    );
+    if (tally) faint.push(result.faint);
+    return result;
+  };
   const alike = [];
   const reads = [];
   for (const [id, theme] of [
@@ -1205,7 +1248,7 @@ try {
         [Math.floor(part.left) - 1, Math.round((part.top + part.bottom) / 2)],
         [Math.round((part.left + part.right) / 2), Math.ceil(part.bottom) + 3],
       ]);
-      const atRest = await compareShots(
+      const atRest = await compareBoards(
         await shoot(overlay),
         await shoot(byHand),
         { samples },
@@ -1217,7 +1260,7 @@ try {
       assert.equal(
         atRest.differing,
         0,
-        `${theme} ${dir}: controls in a MapOverlay draw differently from the same controls placed by hand — ${atRest.differing} of ${atRest.compared} pixels, by up to ${atRest.maxDelta} levels; the first at ${JSON.stringify(atRest.first)}, on a board of ${JSON.stringify(atRest.ground)}. The overlay cuts what floats in it.`,
+        `${theme} ${dir}: controls in a MapOverlay draw differently from the same controls placed by hand — ${atRest.differing} of ${atRest.compared} pixels differ by more than a level, by up to ${atRest.maxDelta}; the first at ${JSON.stringify(atRest.first)}, on a board of ${JSON.stringify(atRest.ground)}. The overlay cuts what floats in it.`,
       );
       // With the zoom control's focus ring showing, one board at a time. A
       // key first, so the focus is a keyboard's and the ring shows.
@@ -1236,19 +1279,21 @@ try {
         await control.blur();
         await settleBoards();
       }
-      const ringShows = await compareShots(
+      const ringShows = await compareBoards(
         focused["by-hand"],
         await shoot(byHand),
+        {},
+        { tally: false },
       );
       assert(
         ringShows.differing > 0,
         `${theme} ${dir}: focusing the control placed by hand draws nothing, so there is no ring to compare`,
       );
-      const withRing = await compareShots(focused.overlay, focused["by-hand"]);
+      const withRing = await compareBoards(focused.overlay, focused["by-hand"]);
       assert.equal(
         withRing.differing,
         0,
-        `${theme} ${dir}: a focused control in a MapOverlay draws its focus ring differently from the same control placed by hand — ${withRing.differing} pixels, by up to ${withRing.maxDelta} levels; the first at ${JSON.stringify(withRing.first)}. The overlay cuts the ring.`,
+        `${theme} ${dir}: a focused control in a MapOverlay draws its focus ring differently from the same control placed by hand — ${withRing.differing} pixels differ by more than a level, by up to ${withRing.maxDelta}; the first at ${JSON.stringify(withRing.first)}. The overlay cuts the ring.`,
       );
       alike.push(`${theme} ${dir}`);
       reads.push(atRest.samples.join("/"));
@@ -1287,7 +1332,7 @@ try {
     const [one] = await partsOf(byHand);
     // Beside and above the first control, down to its bottom edge: below it
     // the next control's shadow begins.
-    const sides = await compareShots(
+    const sides = await compareBoards(
       await shoot(scrolling),
       await shoot(byHand),
       {
@@ -1309,7 +1354,7 @@ try {
     assert.equal(
       sides.differing,
       0,
-      `${theme}: while its stack scrolls, a MapOverlay cuts its controls' sides and top — ${sides.differing} of ${sides.compared} pixels differ from the control placed by hand, by up to ${sides.maxDelta} levels; the first at ${JSON.stringify(sides.first)}`,
+      `${theme}: while its stack scrolls, a MapOverlay cuts its controls' sides and top — ${sides.differing} of ${sides.compared} pixels differ from the control placed by hand by more than a level, by up to ${sides.maxDelta}; the first at ${JSON.stringify(sides.first)}`,
     );
     // Scrolled to its end, the last control's shadow below it against the
     // shadow below the control placed by hand.
@@ -1328,7 +1373,7 @@ try {
       width: 44 + 24,
       height: 13,
     });
-    const end = await compareShots(
+    const end = await compareBoards(
       await shoot(scrolling),
       await shoot(byHand),
       {
@@ -1344,14 +1389,14 @@ try {
     assert.equal(
       end.differing,
       0,
-      `${theme}: scrolled to its end, a MapOverlay cuts the shadow below its last control — ${end.differing} of ${end.compared} pixels differ, by up to ${end.maxDelta} levels; the first at ${JSON.stringify(end.first)}`,
+      `${theme}: scrolled to its end, a MapOverlay cuts the shadow below its last control — ${end.differing} of ${end.compared} pixels differ by more than a level, by up to ${end.maxDelta}; the first at ${JSON.stringify(end.first)}`,
     );
     await stack.evaluate((node) => {
       node.scrollTop = 0;
     });
   }
   console.log(
-    `PASS GAP-082: controls in a MapOverlay draw exactly as placed by hand (${alike.join(", ")}; at rest and focused; edge and shadow ${reads.join(", ")} levels off the board), and a scrolling overlay keeps its controls' sides, top and last shadow`,
+    `PASS GAP-082: controls in a MapOverlay draw as placed by hand, to within a level (${alike.join(", ")}; at rest and focused; edge and shadow ${reads.join(", ")} levels off the board; ${faint.reduce((sum, count) => sum + count, 0)} pixels one level apart in all), and a scrolling overlay keeps its controls' sides, top and last shadow`,
   );
   await boards.close();
 
