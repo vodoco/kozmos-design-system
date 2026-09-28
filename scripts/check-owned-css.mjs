@@ -1138,10 +1138,13 @@ try {
   // drawing unless given): how many pixels differ by more than a level, by
   // how much at most, the first that does, and how many differ by one level
   // alone; and how far chosen pixels of the second stand off the bare board.
-  // A level is rounding: the cut this is about differed by 28, and a room
-  // 4px short below by 2. The faint count is reported, never hidden, with
-  // how many of those pixels lie beyond the overlay stacks' boxes in the
-  // first drawing (`rooms`), where only a trimmed shadow tail can differ.
+  // One level is below sight: the cut this is about differed by 28, and a
+  // room 4px short below by 2. It is also what the room trims on Linux,
+  // where Chromium and Firefox draw the floating shadow's tail a level past
+  // its blur distance: 2875 and 2728 pixels on CI, every one beyond the
+  // room, none in WebKit, none on macOS. So one-level pixels are counted and
+  // reported, never hidden, with how many lie beyond the overlay stacks'
+  // boxes in the first drawing (`rooms`), where only a trimmed tail can.
   const compareShots = (
     shotA,
     shotB,

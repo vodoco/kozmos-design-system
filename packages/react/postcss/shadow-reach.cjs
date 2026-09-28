@@ -7,8 +7,10 @@ const valueParser = require("postcss-value-parser");
 //
 // The blur distance is where a shadow ends: the CSS spec draws the blur as a
 // Gaussian of half that deviation and lets a browser round anything past it
-// away, and it is where Chromium's, Firefox's and WebKit's drawings of the
-// elevation roles end on both themes' maps (measured for GAP-082).
+// away. On macOS it is where Chromium, Firefox and WebKit stop drawing the
+// floating role on both themes' maps; on Linux, Chromium and Firefox draw a
+// tail one level (of 255) deep past it, which a room of this size leaves out
+// (measured for GAP-082). An opaque shadow reaches 1.5 blurs in Chromium.
 //
 // Read from the token's own declarations in the stylesheet being built — the
 // light theme's and the dark theme's — taking the largest, so a room made from
