@@ -31,6 +31,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.components.iconbutton.KozmosIconButtonVariant
@@ -47,6 +49,13 @@ import com.kozmos.components.surface.kozmosDashedEdge
  * Mirrors the React `RoutePreviewPanel`. The panel never changes its own
  * selected route, and continuation is disabled while the route status is
  * `Calculating`, `NoRoute`, `Error`, or `Idle`.
+ *
+ * It fills with the background colour and draws no border of its own, so as
+ * the content of the map shell's panel it is that panel's top: its
+ * destination row tops its padding up to what the panel already leaves above
+ * it ([LocalKozmosPanelInsetTop], [LocalKozmosPanelClearanceTop]) rather than
+ * adding to it, so the destination sits as far from the panel's top as from
+ * its side and keeps the handle's target clear (decision 14).
  */
 @Composable
 fun KozmosRoutePreviewPanel(
@@ -68,6 +77,15 @@ fun KozmosRoutePreviewPanel(
 ) {
     val selectedOption = options.firstOrNull { it.selected && it.available }
     val ready = status == KozmosRouteReadiness.Ready
+    val padding = KozmosDimensions.primitivesLayoutSpacing200
+    // The destination row's top padding. Hosted in the shell's panel, the
+    // space the panel leaves above it — the handle's row — is the preview's
+    // own top: the row tops its 16 up to it rather than adding 16 to it, and
+    // keeps the clearance the panel asks for under a handle. It padded 16
+    // under the handle's 16dp row: the destination sat 32 from the sheet's
+    // top and 16 from its side. Outside a shell both are 0, and it keeps its
+    // 16. The options under the row keep theirs.
+    val firstRowTop = maxOf(LocalKozmosPanelClearanceTop.current, padding - LocalKozmosPanelInsetTop.current)
 
     // The options list scrolls between a pinned header and a pinned footer,
     // which requires a bounded height. When the caller nests the panel
@@ -87,7 +105,7 @@ fun KozmosRoutePreviewPanel(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(KozmosDimensions.primitivesLayoutSpacing200),
+                .padding(start = padding, top = firstRowTop, end = padding, bottom = padding),
             verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
         ) {
             Text(
