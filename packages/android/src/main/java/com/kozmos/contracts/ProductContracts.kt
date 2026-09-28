@@ -330,11 +330,18 @@ enum class KozmosMapReadiness(val value: String) {
     Unsupported("unsupported")
 }
 
+/**
+ * What the map is doing with the visitor's position, as the location control
+ * shows it. [HeadingPaused] is heading remembered while the map has been moved
+ * away from them (decision 45): the SDK's rotational Off. The next press goes
+ * straight back to [Heading], which is the product's to do.
+ */
 enum class KozmosUserLocationState(val value: String) {
     Off("off"),
     Locating("locating"),
     Following("following"),
     Heading("heading"),
+    HeadingPaused("heading-paused"),
     PermissionDenied("permission-denied"),
     Stale("stale"),
     Unavailable("unavailable")

@@ -7,6 +7,7 @@ import {
   LocationFollowing,
   LocationHeading,
   NavigationPointer01,
+  NavigationPointer02,
   NavigationPointerOff01,
 } from "@kozmos-ds/icons";
 import type { UserLocationState } from "@kozmos-ds/product-contracts";
@@ -180,6 +181,9 @@ describe("MapControlsGroup", () => {
       ["stale", <NavigationPointer01 key="stale" />],
       ["following", <LocationFollowing key="following" />],
       ["heading", <LocationHeading key="heading" />],
+      // Decision 45: heading remembered while the map is moved — the SDK's
+      // rotational Off, the upright pointer in outline.
+      ["heading-paused", <NavigationPointer02 key="heading-paused" />],
       ["permission-denied", <NavigationPointerOff01 key="denied" />],
       ["unavailable", <NavigationPointerOff01 key="unavailable" />],
     ];
@@ -337,6 +341,52 @@ describe("MapControlsGroup", () => {
       });
       expect(within(heading).getByText("On")).toBeVisible();
       expect(within(heading).queryByText(/turns/)).toBeNull();
+    });
+
+    it("remembers heading while the map is moved away, and says a press brings it back", () => {
+      // Decision 45 (Olcay, 2026-09-28): the map turns with the visitor, they
+      // pan away, and the control shows the SDK's rotational Off — the upright
+      // pointer in outline, "Focus / Off" in the off grey. The next press goes
+      // straight back to heading, so a screen reader hears that after the words.
+      render(
+        <MapControlsGroup
+          locationLabel="Focus"
+          locationLabelPlacement="stacked"
+          locationPresentation="labelled"
+          locationState="heading-paused"
+          locationStateLabel="Off"
+          onMyLocation={() => undefined}
+        />,
+      );
+
+      const control = screen.getByRole("button", {
+        name: "Focus, Off, press to turn the map with you again",
+      });
+      expect(control).toHaveAttribute("aria-pressed", "false");
+      expect(control).toHaveAttribute("data-location-state", "heading-paused");
+      expect(within(control).getByText("Focus")).toBeVisible();
+      expect(within(control).getByText("Off")).toBeVisible();
+      expect(drawnIcons(control)).toContainEqual(
+        outlineOf(<NavigationPointer02 />),
+      );
+    });
+
+    it("lets the product translate what a paused heading adds", () => {
+      render(
+        <MapControlsGroup
+          locationHeadingPausedDescription="Tippen, damit sich die Karte wieder mitdreht"
+          locationLabel="Fokus"
+          locationState="heading-paused"
+          locationStateLabel="Aus"
+          onMyLocation={() => undefined}
+        />,
+      );
+
+      expect(
+        screen.getByRole("button", {
+          name: "Fokus, Aus, Tippen, damit sich die Karte wieder mitdreht",
+        }),
+      ).toHaveAttribute("aria-pressed", "false");
     });
 
     it("lets the product translate what heading adds", () => {

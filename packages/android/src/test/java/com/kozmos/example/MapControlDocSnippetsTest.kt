@@ -63,6 +63,7 @@ fun MapControls(
             else -> "Off"
         },
         locationHeadingDescription = "map turns with you",
+        locationHeadingPausedDescription = "press to turn the map with you again",
         // Every name is the product's to translate.
         zoomInLabel = "Zoom in",
         zoomOutLabel = "Zoom out",

@@ -64,6 +64,9 @@ final class KozmosMapControlsGroupTests: XCTestCase {
             .stale: "location",
             .following: "location.fill",
             .heading: "location.north.line.fill",
+            // Decision 45: heading remembered while the map is moved away —
+            // the SDK's rotational Off, the upright arrow in outline.
+            .headingPaused: "location.north.line",
             .permissionDenied: "location.slash",
             .unavailable: "location.slash",
         ]
@@ -179,7 +182,7 @@ final class KozmosMapControlsGroupTests: XCTestCase {
         XCTAssertEqual(heading?.stateLabel, "On")
         XCTAssertEqual(heading?.stateDescription, "map turns with you")
 
-        for state in KozmosUserLocationState.allCases where state != .heading {
+        for state in KozmosUserLocationState.allCases where state != .heading && state != .headingPaused {
             XCTAssertNil(Group(onMyLocation: {}, locationState: state).modeControl?.stateDescription, "\(state)")
         }
 
@@ -190,6 +193,33 @@ final class KozmosMapControlsGroupTests: XCTestCase {
             locationHeadingDescription: "Karte dreht sich mit"
         ).modeControl
         XCTAssertEqual(translated?.stateDescription, "Karte dreht sich mit")
+    }
+
+    /// Decision 45: heading is remembered while the map is moved away. The
+    /// control reads as off — "Focus / Off", grey, the upright arrow in outline
+    /// — and VoiceOver hears after the words that the next press brings the
+    /// turning map back. The product translates it.
+    func testAPausedHeadingReadsOffAndSaysAPressBringsItBack() {
+        let paused = Group(
+            onMyLocation: {},
+            locationState: .headingPaused,
+            locationLabel: "Focus",
+            locationStateLabel: "Off"
+        ).modeControl
+        XCTAssertEqual(paused?.pressed, false)
+        XCTAssertEqual(paused?.isLoading, false)
+        XCTAssertEqual(paused?.showsLabel, true)
+        XCTAssertEqual(paused?.stateLabel, "Off")
+        XCTAssertEqual(paused?.stateDescription, "press to turn the map with you again")
+        XCTAssertEqual(paused?.icon, Image(systemName: "location.north.line"))
+
+        let translated = Group(
+            onMyLocation: {},
+            locationState: .headingPaused,
+            locationStateLabel: "Aus",
+            locationHeadingPausedDescription: "Tippen, damit sich die Karte wieder mitdreht"
+        ).modeControl
+        XCTAssertEqual(translated?.stateDescription, "Tippen, damit sich die Karte wieder mitdreht")
     }
 
     /// Step-free says everything in its words: no description, its name shown.

@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.NearMeDisabled
 import androidx.compose.material3.Divider
@@ -58,6 +59,12 @@ import com.kozmos.tokens.KozmosThemeTokens
  * [locationStateLabel] alone, on one line — the SDK's "No Location" — and its
  * name still starts what TalkBack hears.
  *
+ * Heading is remembered while the map is moved away (decision 45):
+ * [KozmosUserLocationState.HeadingPaused] draws the upright pointer in outline
+ * and reads "Off", as off does, and TalkBack hears
+ * [locationHeadingPausedDescription] after the words — the next press brings
+ * the turning map back, which is the product's to do.
+ *
  * [locationRevealOnChange] lets the location control widen to say its new mode
  * whenever it changes, then collapse — [KozmosMapControlButton]'s
  * `revealOnChange`. With [locationLabelPlacement] stacked this is how the SDK's
@@ -86,6 +93,7 @@ fun KozmosMapControlsGroup(
     locationLabel: String = "Locate me",
     locationStateLabel: String? = null,
     locationHeadingDescription: String = "map turns with you",
+    locationHeadingPausedDescription: String = "press to turn the map with you again",
     zoomInLabel: String = "Zoom in",
     zoomOutLabel: String = "Zoom out",
     compassResetLabel: String = "Reset bearing",
@@ -207,10 +215,12 @@ fun KozmosMapControlsGroup(
                     // Heading reads "On", as following does and as the SDK's
                     // control does (decision 40); its mark tells them apart on
                     // screen, and this after the words tells TalkBack.
-                    stateDescription = if (locationState == KozmosUserLocationState.Heading) {
-                        locationHeadingDescription
-                    } else {
-                        null
+                    // A paused heading reads "Off", as off does, and says the
+                    // next press brings it back (decision 45).
+                    stateDescription = when (locationState) {
+                        KozmosUserLocationState.Heading -> locationHeadingDescription
+                        KozmosUserLocationState.HeadingPaused -> locationHeadingPausedDescription
+                        else -> null
                     },
                     // With no position the SDK reads "No Location" alone.
                     showLabel = locationState != KozmosUserLocationState.Unavailable &&
@@ -240,11 +250,13 @@ fun KozmosMapControlsGroup(
  * | Off, Stale, Locating          | `Icons.Outlined.NearMe`         | outline pointer                     |
  * | Following                     | `Icons.Filled.NearMe`           | solid pointer and its cone          |
  * | Heading                       | `Icons.Filled.Navigation`       | upright pointer and the turning arc |
+ * | HeadingPaused                 | `Icons.Outlined.Navigation`     | upright pointer in outline          |
  * | PermissionDenied, Unavailable | `Icons.Outlined.NearMeDisabled` | pointer struck through              |
  *
  * Stale keeps the outline because a last-known fix is not following anything;
- * Locating keeps it under the button's spinner. [icons] replaces any mode's
- * mark.
+ * Locating keeps it under the button's spinner. HeadingPaused is heading
+ * remembered while the map has been moved away, the revamp's rotational Off
+ * (decision 45). [icons] replaces any mode's mark.
  */
 internal fun locationMark(
     state: KozmosUserLocationState,
@@ -252,6 +264,7 @@ internal fun locationMark(
 ): ImageVector = icons[state] ?: when (state) {
     KozmosUserLocationState.Following -> Icons.Filled.NearMe
     KozmosUserLocationState.Heading -> Icons.Filled.Navigation
+    KozmosUserLocationState.HeadingPaused -> Icons.Outlined.Navigation
     KozmosUserLocationState.PermissionDenied,
     KozmosUserLocationState.Unavailable -> Icons.Outlined.NearMeDisabled
     KozmosUserLocationState.Off,
