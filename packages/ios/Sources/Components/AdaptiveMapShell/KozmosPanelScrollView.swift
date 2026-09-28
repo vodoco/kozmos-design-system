@@ -79,6 +79,18 @@ public extension EnvironmentValues {
     }
 }
 
+/// Text that is muted elsewhere, as a hosted part draws it on `surface`
+/// (decision 48): on glass the foreground colour, so it reads at 4.5:1 over
+/// any map, where muted it read under 3:1 over a saturated one; elsewhere
+/// `muted`, the muted colour unless the text has its own. A part passes its
+/// `kozmosPanelSurface`; a part that draws a card of its own tells what it
+/// holds it is on no panel's surface.
+func kozmosMutedForeground(
+    on surface: KozmosSurfaceStyle?, muted: Color = KozmosColors.primitivesColorsForeground500
+) -> Color {
+    surface == .glass ? KozmosColors.primitivesColorsForeground100 : muted
+}
+
 /// How far the sheet's content has scrolled from its top, in points; zero at
 /// the top. The shell reads it to decide whether a downward drag scrolls the
 /// content back or moves the sheet.

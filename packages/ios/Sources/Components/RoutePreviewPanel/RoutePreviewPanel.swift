@@ -13,7 +13,9 @@ import SwiftUI
 /// rather than adding to it, so the destination sits as far from the panel's
 /// top as from its side and keeps the grabber's target clear (decision 14).
 /// And it paints no fill there (`kozmosPanelSurface`): the panel's surface,
-/// solid or glass, is the one surface (decision 43).
+/// solid or glass, is the one surface (decision 43). On glass its muted
+/// text, "To" and the count of options, takes the foreground colour, so it
+/// reads at 4.5:1 over any map (decision 48).
 public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: View {
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
@@ -93,7 +95,7 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
                 Text(destinationLabel.uppercased())
                     .font(.caption.weight(.semibold))
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(kozmosMutedForeground(on: panelSurface))
 
                 Text(destinationName)
                     .font(.title3.weight(.semibold))
@@ -144,7 +146,7 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
                         if options.count > 1, let optionsCountLabel {
                             Text(optionsCountLabel)
                                 .font(KozmosTypography.caption)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(kozmosMutedForeground(on: panelSurface))
                         }
                     }
 
