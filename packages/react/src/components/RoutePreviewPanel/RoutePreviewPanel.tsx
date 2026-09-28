@@ -56,6 +56,12 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
       (option) => option.selected && option.available,
     );
     const ready = status === "ready";
+    // The destination row is the top of AdaptiveMapShell's panel when the
+    // preview is its content: `kozmos-route-preview-first-row` tops its 16 up
+    // to what the panel already leaves above it rather than adding 16 to it,
+    // and keeps the grip's clearance (decision 14, owned-components.css). Its
+    // top padding is that class's alone; a `p-4` or `pt-4` beside it would
+    // outrank it. The options under it keep their 16.
 
     return (
       <section
@@ -68,7 +74,7 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
         data-route-status={status}
         {...props}
       >
-        <header className="border-b border-border p-4">
+        <header className="kozmos-route-preview-first-row border-b border-border px-4 pb-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {destinationLabel}
           </p>
