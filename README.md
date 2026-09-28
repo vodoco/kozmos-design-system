@@ -80,7 +80,6 @@ platform, and which are linked to Figma.
 | `packages/android`           | The Jetpack Compose library                          |
 | `packages/vue`               | The Vue proxy (private)                              |
 | `apps/site`                  | The website, built from the published packages       |
-| `apps/docs`                  | Storybook, the component reference                   |
 | `apps/playground-*`          | A place to try web, Android and Vue                  |
 | `apps/Playground.swiftpm`    | The same for iOS, as a Swift Playground              |
 | `docs`                       | The written documentation                            |
