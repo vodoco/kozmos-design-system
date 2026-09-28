@@ -30,6 +30,48 @@ const positionClasses: Record<
     "bottom-[var(--map-overlay-bottom)] left-1/2 -translate-x-1/2",
 };
 
+const useLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
+/**
+ * Marks the stack `data-scrolls` while what it holds overflows it, and only
+ * then does the stack take presses (.kozmos-map-overlay-stack[data-scrolls]).
+ * Its room is for the shadows, so a press there reaches the map (decision 46),
+ * but Linux WebKit, as CI runs it, scrolls a box from a wheel only if the box
+ * takes presses itself: with none, a wheel over what the stack holds scrolled
+ * nothing. The mark follows the stack's size and what it holds: their sizes,
+ * and a part added or taken away. Setting it changes no layout.
+ */
+function useScrollsMark(stack: React.RefObject<HTMLDivElement | null>) {
+  useLayoutEffect(() => {
+    const node = stack.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const mark = () =>
+      node.toggleAttribute(
+        "data-scrolls",
+        node.scrollHeight > node.clientHeight + 1 ||
+          node.scrollWidth > node.clientWidth + 1,
+      );
+    const sizes = new ResizeObserver(mark);
+    const observe = () => {
+      sizes.disconnect();
+      sizes.observe(node);
+      for (const child of Array.from(node.children)) sizes.observe(child);
+    };
+    const parts = new MutationObserver(() => {
+      observe();
+      mark();
+    });
+    observe();
+    parts.observe(node, { childList: true });
+    mark();
+    return () => {
+      sizes.disconnect();
+      parts.disconnect();
+    };
+  }, [stack]);
+}
+
 const widthClasses: Record<NonNullable<MapOverlayProps["width"]>, string> = {
   auto: "w-auto max-w-[calc(100%_-_var(--map-overlay-left)_-_var(--map-overlay-right))]",
   sm: "w-[min(20rem,calc(100%_-_var(--map-overlay-left)_-_var(--map-overlay-right)))]",
@@ -51,6 +93,8 @@ const MapOverlay = React.forwardRef<HTMLDivElement, MapOverlayProps>(
     },
     ref,
   ) => {
+    const stack = React.useRef<HTMLDivElement>(null);
+    useScrollsMark(stack);
     const insetStyle = {
       "--map-overlay-top": `calc(env(safe-area-inset-top) + 1rem + ${collisionInsets?.top ?? 0}px)`,
       "--map-overlay-right": `calc(env(safe-area-inset-right) + 1rem + ${collisionInsets?.right ?? 0}px)`,
@@ -75,7 +119,9 @@ const MapOverlay = React.forwardRef<HTMLDivElement, MapOverlayProps>(
             Its rule keeps the floating shadow's reach clear around what it
             holds, so the scroll box's clip no longer cuts a control's shadow
             and edge (GAP-082); see .kozmos-map-overlay-stack. */}
-        <div className="kozmos-reset kozmos-map-overlay-stack">{children}</div>
+        <div ref={stack} className="kozmos-reset kozmos-map-overlay-stack">
+          {children}
+        </div>
       </div>
     );
   },
