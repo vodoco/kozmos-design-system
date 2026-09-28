@@ -464,6 +464,29 @@ try {
           );
           assert.equal(await floorTile.getAttribute("aria-expanded"), "false");
         }
+        // Parked at the top of the map, with no room above the tile, the
+        // column grows down instead: its top level lies over the tile, as on
+        // iOS and Android.
+        await floorTile.evaluate((n) => {
+          const group = n.closest('[role="group"]');
+          group.style.position = "fixed";
+          group.style.top = "16px";
+          group.style.right = "16px";
+        });
+        await floorTile.click();
+        const downList = page.getByRole("dialog", { name: "Floor selector" });
+        await downList.waitFor();
+        await downList.evaluate((n) =>
+          Promise.all(n.getAnimations().map((a) => a.finished)),
+        );
+        const highTile = await floorTile.boundingBox();
+        const topBox = await downList.getByRole("button").first().boundingBox();
+        for (const edge of ["x", "y", "width", "height"]) {
+          assert(
+            Math.abs(topBox[edge] - highTile[edge]) <= 1,
+            `parked at the top, the column's top level is not over the tile (${edge}: ${topBox[edge]} against ${highTile[edge]})`,
+          );
+        }
         // The visitor's dot and a result count on one level (decision 38):
         // one at the top trailing corner, one at the bottom, neither over the
         // other, in the level's own box.
