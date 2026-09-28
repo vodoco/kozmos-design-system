@@ -1,0 +1,84 @@
+/* Wayfinding: layout only. AdaptiveMapShell lays out the map, the manoeuvre
+   card, the controls and the panel; this places what stands in for the map
+   engine's drawing: the route's dots, the pins and the visitor's marker. */
+
+.ex-way {
+  block-size: 100%;
+}
+
+/* The layer keeps clear of the top bar, the controls and the panel with the
+   insets the shell measures, as the venue explorer's does. Physical offsets:
+   a map does not mirror in a right-to-left layout. */
+.ex-way-layer {
+  position: absolute;
+  top: var(--kozmos-map-inset-top, 0px);
+  right: var(--kozmos-map-inset-right, 0px);
+  bottom: var(--kozmos-map-inset-bottom, 0px);
+  left: var(--kozmos-map-inset-left, 0px);
+}
+
+.ex-way-pin {
+  position: absolute;
+  left: var(--pin-x);
+  top: var(--pin-y);
+  transform: translate(-50%, -100%);
+}
+
+.ex-way-user {
+  position: absolute;
+  left: var(--pin-x);
+  top: var(--pin-y);
+  transform: translate(-50%, -50%);
+}
+
+/* A map engine draws the route as a line; Kozmos has no token for it
+   (GAPS.md, GAP-33), so the dots take the theme's colour. */
+.ex-way-dot {
+  position: absolute;
+  left: var(--dot-x);
+  top: var(--dot-y);
+  inline-size: calc(var(--primitives-layout-sizing-100) * 1px);
+  block-size: calc(var(--primitives-layout-sizing-100) * 1px);
+  border-radius: calc(var(--semantics-radius-pill) * 1px);
+  background: var(--primitives-colors-theme-600);
+  transform: translate(-50%, -50%);
+}
+
+.ex-way-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: calc(var(--primitives-layout-spacing-150) * 1px);
+}
+
+/* The navigation and arrival panels: the summary or the feedback card, then
+   the example's own controls, with the panel's padding. */
+.ex-way-stack {
+  display: grid;
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+  padding: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+/* The panel's view takes focus when the stage changes (../focus.ts); it is
+   where the keyboard starts from, not a control, so it shows no ring. */
+.ex-way-panel-focus:focus {
+  outline: none;
+}
+
+/* The list of places brings no padding of its own; Kozmos's own panels pad
+   their content by 16px, so it sits in a box that does. */
+.ex-way-list {
+  padding: calc(var(--primitives-layout-spacing-200) * 1px);
+}
+
+/* Focus moves to the list when the view changes, and Chromium and WebKit
+   scroll a tall view's top edge to the panel's, even in a sheet that does not
+   scroll at its height. The margin keeps the padding above the list. */
+.ex-way-list > .ex-way-panel-focus {
+  scroll-margin-block-start: calc(var(--primitives-layout-spacing-200) * 1px);
+}
+
+/* A live region stays on the page; empty, it leaves the flow. */
+.ex-way-live:empty {
+  position: absolute;
+}

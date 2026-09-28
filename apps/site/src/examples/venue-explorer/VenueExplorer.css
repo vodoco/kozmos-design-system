@@ -1,0 +1,59 @@
+/* Venue explorer: layout only. AdaptiveMapShell lays out the map, its
+   controls and the panel; this places the pins on the illustrative map. */
+
+.ex-venue {
+  block-size: 100%;
+}
+
+/* Kozmos hosts a map engine and does not draw one; in a product, the engine's
+   own markers carry the pins. Here the pins sit on MapView at percentages,
+   spread from the centre by the zoom.
+
+   The layer keeps clear of the search bar, the controls and the panel with
+   the insets AdaptiveMapShell measures and publishes — the padding a real
+   engine would take as its camera padding. A map does not mirror in a
+   right-to-left layout, so these are physical, not logical, offsets. */
+.ex-venue-layer {
+  position: absolute;
+  top: var(--kozmos-map-inset-top, 0px);
+  right: var(--kozmos-map-inset-right, 0px);
+  bottom: var(--kozmos-map-inset-bottom, 0px);
+  left: var(--kozmos-map-inset-left, 0px);
+}
+
+.ex-venue-pin {
+  position: absolute;
+  left: calc(50% + (var(--pin-x) - 50%) * var(--zoom, 1));
+  top: calc(50% + (var(--pin-y) - 50%) * var(--zoom, 1));
+  transform: translate(-50%, -100%);
+}
+
+.ex-venue-user {
+  transform: translate(-50%, -50%);
+}
+
+.ex-venue-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: calc(var(--primitives-layout-spacing-150) * 1px);
+}
+
+/* The panel takes focus when its view changes (../focus.ts); it is where the
+   keyboard starts from, not a control, so it shows no ring. */
+.ex-venue-panel-focus:focus {
+  outline: none;
+}
+
+/* The list of places brings no padding of its own; Kozmos's own panels pad
+   their content by 16px, so it sits in a box that does. */
+.ex-venue-list {
+  padding: calc(var(--primitives-layout-spacing-200) * 1px);
+}
+
+/* Focus moves to the list when the view changes, and Chromium and WebKit
+   scroll a tall view's top edge to the panel's, even in a sheet that does not
+   scroll at its height. The margin keeps the padding above the list. */
+.ex-venue-list > .ex-venue-panel-focus {
+  scroll-margin-block-start: calc(var(--primitives-layout-spacing-200) * 1px);
+}

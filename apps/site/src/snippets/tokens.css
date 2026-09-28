@@ -1,0 +1,7 @@
+/* Inside a ThemeProvider, every token is a CSS variable, in the current theme. */
+.panel {
+  background: var(--primitives-colors-background-0);
+  /* Semantic radii are unitless, shared with iOS and Android. */
+  border-radius: calc(var(--semantics-radius-container) * 1px);
+  box-shadow: var(--semantics-elevation-raised);
+}

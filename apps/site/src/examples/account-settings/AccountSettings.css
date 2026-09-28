@@ -1,0 +1,60 @@
+/* Account settings: page layout only. Every visible part is a Kozmos
+   component; this arranges them. */
+
+.ex-settings {
+  background: var(--primitives-colors-background-25);
+}
+
+.ex-settings-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--primitives-layout-spacing-100) * 1px);
+}
+
+.ex-settings-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+  max-inline-size: 48rem;
+  padding-block: calc(var(--primitives-layout-spacing-600) * 1px)
+    calc(var(--primitives-layout-spacing-900) * 1px);
+}
+
+.ex-settings-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(var(--primitives-layout-spacing-100) * 1px);
+}
+
+.ex-settings-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+  padding-block-start: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+.ex-settings-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+/* Two fields side by side where there is room. */
+.ex-settings-pair {
+  display: grid;
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+
+.ex-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(var(--primitives-layout-spacing-150) * 1px);
+}
+
+/* A live region stays on the page; empty, it leaves the flow, so no gap
+   opens for it. */
+.ex-settings-live:empty {
+  position: absolute;
+}
