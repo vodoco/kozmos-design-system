@@ -7,9 +7,11 @@ public enum KozmosMapControlButtonPresentation {
 
 /// How an active map control reads.
 ///
-/// `tinted` keeps the map surface and colours the icon and the edge, which is
-/// what the SDK draws — a control over a map has to stay legible against the
-/// tiles behind it, and a solid fill hides the very thing it sits on.
+/// `tinted` keeps the map surface and lets the mark and the words carry the
+/// state, which is what the SDK draws — a control over a map has to stay
+/// legible against the tiles behind it, and a solid fill hides the very thing
+/// it sits on. Off, the mark and the words are grey; on, the mark is the
+/// theme's blue and the words navy. No edge, in either (decision 40).
 /// `filled` is the inverted treatment this component shipped before
 /// 2026-09-15, kept for callers that want the heavier emphasis.
 public enum KozmosMapControlButtonEmphasis {
@@ -30,43 +32,44 @@ public enum KozmosMapControlButtonLabelPlacement {
 /// What a map control's state resolves to, before any colour is chosen.
 ///
 /// Kept apart from the view because this decision is the part a design ruling
-/// changes — tinted became the default on 2026-09-15 — and it can be tested
-/// without rendering anything.
+/// changes — tinted became the default on 2026-09-15, and the SDK's tones and
+/// no edge on 2026-09-28 (decision 40) — and it can be tested without
+/// rendering anything.
 struct KozmosMapControlButtonAppearance: Equatable {
     enum Surface: Equatable { case chrome, filled }
-    enum Tone: Equatable { case ink, muted, theme, onFill }
-    enum Edge: Equatable { case subtle, theme }
+    /// `themeText` is the theme ramp's deepest step, the SDK's navy "On"; the
+    /// ramp turns over in the dark, where it is the palest.
+    enum Tone: Equatable { case ink, muted, theme, themeText, onFill }
 
     let surface: Surface
+    /// The mark's tone.
     let icon: Tone
+    /// Both lines' tone: the SDK sets the name and the state as equals.
     let label: Tone
-    /// The small line above a stacked state. Muted on the map's surface, but on
-    /// a filled one a muted grey would sit at about 1.9:1 against the theme.
-    let caption: Tone
-    let edge: Edge
 
-    init(pressed: Bool, emphasis: KozmosMapControlButtonEmphasis) {
+    init(pressed: Bool?, emphasis: KozmosMapControlButtonEmphasis) {
         switch (pressed, emphasis) {
-        case (true, .filled):
+        case (true?, .filled):
             surface = .filled
             icon = .onFill
             label = .onFill
-            caption = .onFill
-            edge = .subtle
-        case (true, .tinted):
-            // Only the glyph and the edge take the theme, so the label keeps
-            // its contrast against a surface that stays the map's.
+        case (true?, .tinted):
+            // The SDK's "Focus On": the mark in the theme's blue, the words
+            // navy, and no edge — the words and the mark carry the state.
             surface = .chrome
             icon = .theme
-            label = .ink
-            caption = .muted
-            edge = .theme
-        case (false, _):
+            label = .themeText
+        case (false?, _):
+            // The SDK's "Focus⏎Off": the mark and the words grey.
+            surface = .chrome
+            icon = .muted
+            label = .muted
+        case (nil, _):
+            // Not a toggle — zoom, compass — so neither off nor on: the ink,
+            // as the SDK's own floor tile keeps.
             surface = .chrome
             icon = .ink
             label = .ink
-            caption = .muted
-            edge = .subtle
         }
     }
 }
@@ -87,7 +90,15 @@ struct KozmosMapControlButtonRevealValue: Hashable {
 /// Mirrors the React `MapControlButton`. `label` is the localized action name
 /// and always becomes the accessible name; `stateLabel` is appended so screen
 /// reader users hear the current state without relying on visual styling.
+///
+/// It wears the SDK's Tracking Indicator (decision 40, Figma
+/// `ce7phRJR1sCkH6zT8EMH8I`, `434:31572`): a 48 square, the page's own
+/// surface with no edge, the Control corner and the map controls' three
+/// shadows, and its words bold on a 16 line, in the toggle's tone.
 public struct KozmosMapControlButton<Icon: View>: View {
+    /// The SDK's 48 square. 44 stays the floor of every target; this is above it.
+    static var size: CGFloat { KozmosDimensions.primitivesLayoutSizing600 }
+
     private let icon: Icon
     private let label: String
     private let stateLabel: String?
@@ -97,7 +108,9 @@ public struct KozmosMapControlButton<Icon: View>: View {
     let revealOnChange: Bool
     let revealDuration: TimeInterval
     let revealDelay: TimeInterval
-    private let pressed: Bool
+    private let stateDescription: String?
+    private let showsLabel: Bool
+    private let pressed: Bool?
     private let isDisabled: Bool
     let isLoading: Bool
     private let action: () -> Void
@@ -106,9 +119,24 @@ public struct KozmosMapControlButton<Icon: View>: View {
     /// state; they just should not watch the control grow to show it.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// The SDK's words sit on a 16 line: the callout's 16 at the default size,
+    /// scaled with it.
+    @ScaledMetric(relativeTo: .callout) private var lineHeight: CGFloat = 16
+
     @StateObject private var reveal = KozmosRevealOnChange()
 
     /// - Parameters:
+    ///   - stateDescription: Said after the state and never drawn: what the
+    ///     words on the control leave out. The location control's heading
+    ///     mode shows "On", as following does — the SDK's "Focus / On" — and
+    ///     its mark tells them apart on screen; VoiceOver hears "Focus, On, map
+    ///     turns with you". After the words, so the name still begins with what
+    ///     a Voice Control user sees. Not a change to reveal: the words did not
+    ///     change.
+    ///   - showsLabel: Draw the name beside the state. Off, a labelled control
+    ///     draws its state alone — the SDK's "No Location" has no "Focus" over
+    ///     it — and the name still starts the accessible name. With no state
+    ///     to draw, the name is drawn anyway.
     ///   - revealOnChange: Let the control resolve its own presentation:
     ///     icon-only at rest, widening to `labelled` for `revealDuration`
     ///     whenever `pressed` or `stateLabel` changes, then collapsing so it
@@ -120,19 +148,24 @@ public struct KozmosMapControlButton<Icon: View>: View {
     ///   - revealDelay: How long to wait before revealing. A change that takes
     ///     time to settle — a route being recalculated — reveals its new state
     ///     once the work is done rather than while it is still wrong.
+    ///   - pressed: A toggle's state. Leave it unset for a control that is not
+    ///     a toggle — zoom, compass — which keeps the ink; `false` is a toggle
+    ///     that is off, drawn grey, and `true` one that is on.
     ///   - isLoading: The system's arc turns in the icon's place, and the
     ///     control waits: React's Button disables itself while it loads, and
     ///     so does this. The name still says what is happening.
     public init(
         label: String,
         stateLabel: String? = nil,
+        stateDescription: String? = nil,
+        showsLabel: Bool = true,
         presentation: KozmosMapControlButtonPresentation = .iconOnly,
         emphasis: KozmosMapControlButtonEmphasis = .tinted,
         labelPlacement: KozmosMapControlButtonLabelPlacement = .inline,
         revealOnChange: Bool = false,
         revealDuration: TimeInterval = 2.5,
         revealDelay: TimeInterval = 0,
-        pressed: Bool = false,
+        pressed: Bool? = nil,
         isDisabled: Bool = false,
         isLoading: Bool = false,
         action: @escaping () -> Void,
@@ -140,6 +173,8 @@ public struct KozmosMapControlButton<Icon: View>: View {
     ) {
         self.label = label
         self.stateLabel = stateLabel
+        self.stateDescription = stateDescription
+        self.showsLabel = showsLabel
         self.presentation = presentation
         self.emphasis = emphasis
         self.labelPlacement = labelPlacement
@@ -153,17 +188,28 @@ public struct KozmosMapControlButton<Icon: View>: View {
         self.icon = icon()
     }
 
-    private var accessibleLabel: String {
-        guard let stateLabel else { return label }
-        return "\(label), \(stateLabel)"
+    /// The name VoiceOver hears: the name, the state, and what the words leave
+    /// out, in that order.
+    var accessibleLabel: String {
+        [label, stateLabel, stateDescription].compactMap { $0 }.joined(separator: ", ")
+    }
+
+    /// The words the control draws while labelled: the name over the state,
+    /// or the state alone when the name is not shown.
+    var drawnLines: [String] {
+        let name = showsLabel || stateLabel == nil ? [label] : []
+        return name + (stateLabel.map { [$0] } ?? [])
     }
 
     var appearance: KozmosMapControlButtonAppearance {
         KozmosMapControlButtonAppearance(pressed: pressed, emphasis: emphasis)
     }
 
+    /// `pressed` is read as a boolean, as React reads it, so a toggle going
+    /// from unset to `false` while its state loads does not announce a change
+    /// nobody made.
     var revealValue: KozmosMapControlButtonRevealValue {
-        KozmosMapControlButtonRevealValue(pressed: pressed, stateLabel: stateLabel)
+        KozmosMapControlButtonRevealValue(pressed: pressed ?? false, stateLabel: stateLabel)
     }
 
     /// While the control reveals on change it decides: icon-only at rest,
@@ -193,64 +239,58 @@ public struct KozmosMapControlButton<Icon: View>: View {
             return KozmosColors.primitivesColorsForeground400
         case .theme:
             return KozmosColors.primitivesColorsTheme600
+        case .themeText:
+            return KozmosColors.primitivesColorsTheme1000
         case .onFill:
             return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
         }
     }
 
-    private var backgroundColor: Color {
+    /// The page's own surface, opaque, as the SDK's is; the Button's primary
+    /// fill when filled. It was 90% of the surface.
+    private var surfaceColor: Color {
         appearance.surface == .filled
             ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
-            : KozmosColors.primitivesColorsBackground0.opacity(0.9)
+            : KozmosColors.primitivesColorsBackground0
     }
 
-    private var borderColor: Color {
-        appearance.edge == .theme
-            ? KozmosColors.primitivesColorsTheme600
-            : KozmosColors.primitivesColorsForeground300
+    private var surfaceShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
     }
 
     @ViewBuilder
     private var labelContent: some View {
         if shownPresentation == .labelled {
+            let lines = drawnLines
             if labelPlacement == .stacked {
+                // Two equal lines, the SDK's "Focus⏎Off".
                 VStack(alignment: .leading, spacing: 0) {
-                    // The SDK sets these at 11pt over 13pt semibold. The type
-                    // scale has no role at either size yet, so this reaches for
-                    // the nearest roles and the deviation is recorded in the
-                    // gap list rather than hard-coded here.
-                    Text(label)
-                        .font(KozmosTypography.caption)
-                        .foregroundColor(color(appearance.caption))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-
-                    if let stateLabel {
-                        Text(stateLabel)
-                            .font(KozmosTypography.footnote)
-                            .fontWeight(.semibold)
-                            .lineLimit(1)
+                    ForEach(lines.indices, id: \.self) { index in
+                        line(lines[index])
                     }
                 }
             } else {
-                Text(label)
-                    .font(KozmosTypography.subheadline)
-                    .fontWeight(.medium)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-
-                if let stateLabel {
-                    Text(stateLabel)
-                        .font(KozmosTypography.subheadline)
-                        .fontWeight(.semibold)
-                        .lineLimit(1)
+                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                    ForEach(lines.indices, id: \.self) { index in
+                        line(lines[index])
+                    }
                 }
             }
         }
     }
 
+    /// One line of the SDK's words: bold, the callout's 16, on a 16 line.
+    private func line(_ text: String) -> some View {
+        Text(text)
+            .font(KozmosTypography.font(.callout).weight(.bold))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(height: lineHeight)
+    }
+
     public var body: some View {
         let shown = shownPresentation
+        let shape = surfaceShape
 
         Button(action: action) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
@@ -271,23 +311,19 @@ public struct KozmosMapControlButton<Icon: View>: View {
                 labelContent
             }
             .foregroundColor(color(appearance.label))
-            .frame(
-                width: shown == .iconOnly ? 44 : nil,
-                height: 44
-            )
-            .frame(maxWidth: shown == .labelled ? 256 : nil)
+            // The SDK's padding: 12 at the sides once labelled, 8 above and
+            // below, round a 48 square that grows with its words.
             .padding(.horizontal, shown == .labelled ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
-            .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
-                    .stroke(borderColor, lineWidth: 1)
-            )
-            .kozmosElevation(
-                pressed
-                    ? KozmosShadows.semanticsElevationRaised
-                    : KozmosShadows.semanticsElevationFloating
-            )
+            .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
+            .frame(minWidth: Self.size, minHeight: Self.size)
+            .frame(width: shown == .iconOnly ? Self.size : nil)
+            .frame(maxWidth: shown == .labelled ? 256 : nil)
+            .background(surfaceColor)
+            .clipShape(shape)
+            .contentShape(shape)
+            // No edge in any state, and one lift: the words and the mark carry
+            // the state.
+            .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: shape, fill: surfaceColor)
         }
         .buttonStyle(.plain)
         .disabled(isDisabled || isLoading)
@@ -296,7 +332,7 @@ public struct KozmosMapControlButton<Icon: View>: View {
         // state is still said, and still said for as long.
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: shown == .labelled)
         .accessibilityLabel(accessibleLabel)
-        .accessibilityAddTraits(pressed ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAddTraits(pressed == true ? [.isButton, .isSelected] : .isButton)
         // The first value only sets the baseline; see `KozmosRevealOnChange`.
         .onAppear { observeReveal(revealValue, enabled: revealOnChange) }
         .onChange(of: revealValue) { observeReveal($0, enabled: revealOnChange) }
@@ -310,13 +346,15 @@ public extension KozmosMapControlButton where Icon == Image {
         label: String,
         systemImage: String,
         stateLabel: String? = nil,
+        stateDescription: String? = nil,
+        showsLabel: Bool = true,
         presentation: KozmosMapControlButtonPresentation = .iconOnly,
         emphasis: KozmosMapControlButtonEmphasis = .tinted,
         labelPlacement: KozmosMapControlButtonLabelPlacement = .inline,
         revealOnChange: Bool = false,
         revealDuration: TimeInterval = 2.5,
         revealDelay: TimeInterval = 0,
-        pressed: Bool = false,
+        pressed: Bool? = nil,
         isDisabled: Bool = false,
         isLoading: Bool = false,
         action: @escaping () -> Void
@@ -324,6 +362,8 @@ public extension KozmosMapControlButton where Icon == Image {
         self.init(
             label: label,
             stateLabel: stateLabel,
+            stateDescription: stateDescription,
+            showsLabel: showsLabel,
             presentation: presentation,
             emphasis: emphasis,
             labelPlacement: labelPlacement,

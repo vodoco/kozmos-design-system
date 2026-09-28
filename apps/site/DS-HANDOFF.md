@@ -63,7 +63,7 @@ Anything else is given from the repository root. Line numbers are those of
   wherever its owner says; the site rebases afterwards (its README,
   "Keeping up with the component branch").
 - **Parity:** a part that exists in SwiftUI, Compose or Figma changes there
-  too, as `docs/ds-handoff.md` and `pnpm components:contract:check` require.
+  too, as `pnpm components:contract:check` requires.
 - **CI:** everything the workflow runs must stay green — the main checks are
   on the site at `/get-started#checks` (`pnpm lint && pnpm build && pnpm
 test`, the contract, token, class, install, Figma, browser, Storybook, iOS
@@ -603,7 +603,7 @@ border-primary-foreground/20`.
   site maps the types to its own (its `tsconfig.json`). Move the package's
   dev types to 19.
 - **`scripts/skills/check-completion.ts` predates the newest components:**
-  `STATUS.md` lists 98 components against 104 folders, and the lanes it
+  `docs/status.md` lists 98 components against 104 folders, and the lanes it
   gives (which the site's reference uses) differ from Storybook's grouping
   for AISearchButton and CategoryField (Product SDK there) and for
   Itinerary, ManoeuvreCard and RouteProgressRail (Map there).

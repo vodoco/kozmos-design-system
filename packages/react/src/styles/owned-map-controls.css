@@ -1,0 +1,169 @@
+/* The map controls' own surface and words.
+
+   Decision 40 (Olcay, 2026-09-28): the map controls take the SDK's current
+   look, the Tracking Indicator of Pointr's Location Tracking Buttons (Figma
+   ce7phRJR1sCkH6zT8EMH8I, 434:31572). Every map control wears it: zoom,
+   compass, the location and step-free control, and the floor tile, which is a
+   MapControlButton too.
+
+   Owned rather than utilities: a host without @scope drops the utility layer,
+   and this is what a map control promises. Each rule weighs one class, or two
+   where it must outweigh the Button's own state rules, and a pressed or
+   presentation state sits in :where(), so a caller's utility still wins, as
+   it does over every owned rule. The file is imported after the Button's
+   rules and wins over them by order. */
+@kozmos-owned {
+  /* The surface. The SDK's 48 square, above the 44 every target keeps; the
+     Control corner (16); no stroke, in any state; the map controls'
+     elevation, three shadows; and the SDK's 32px blur of the map behind it.
+     Nothing shows through an opaque surface, so the blur is for a brand whose
+     surface is not. Its padding is the SDK's 8 above and below, and 12 at the
+     sides once it is labelled. */
+  .kozmos-map-control {
+    @apply shadow-map-control;
+    box-sizing: border-box;
+    height: auto;
+    min-width: calc(var(--primitives-layout-sizing-600) * 1px);
+    min-height: calc(var(--primitives-layout-sizing-600) * 1px);
+    max-width: 16rem;
+    padding-block: calc(var(--primitives-layout-spacing-100) * 1px);
+    padding-inline: 0;
+    gap: 0;
+    border-width: 0;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    -webkit-backdrop-filter: blur(32px);
+    backdrop-filter: blur(32px);
+    @apply transition-[max-width,padding,background-color,color] duration-300 ease-in-out motion-reduce:transition-none;
+  }
+  .kozmos-map-control:where([data-presentation="labelled"]) {
+    padding-inline: calc(var(--primitives-layout-spacing-150) * 1px);
+  }
+
+  /* The map's surface and ink, on the ghost tier only: a filled control's
+     fill and ink are the Button's primary tier (emphasis="filled"). Two
+     classes, so the ghost tier's own hover ink, which reads blue over a map,
+     does not win. A control that is not a toggle keeps the ink — zoom,
+     compass, the floor tile — as the SDK's own floor tile does. */
+  .kozmos-map-control.kozmos-button-ghost {
+    background-color: var(--primitives-colors-background-0);
+    color: var(--primitives-colors-foreground-0);
+  }
+  .kozmos-map-control.kozmos-button-ghost:hover {
+    background-color: var(--primitives-colors-background-100);
+  }
+
+  /* A toggle's state is its tone, as the SDK's is: off, the words and the
+     mark grey (foreground/400, #5D626F); on, the words navy (theme/1000,
+     #051C4F) and the mark the theme's blue (theme/600, #1051E8). Both ramps
+     follow the theme and the brand; the theme ramp turns over in the dark,
+     where theme/1000 is its palest step. No edge and no change of lift: the
+     words and the mark carry the state. */
+  .kozmos-map-control.kozmos-button-ghost:where([aria-pressed="false"]) {
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-map-control.kozmos-button-ghost:where([aria-pressed="true"]) {
+    color: var(--primitives-colors-theme-1000);
+  }
+  .kozmos-map-control.kozmos-button-ghost:where([aria-pressed="true"])
+    .kozmos-map-control-mark {
+    color: var(--primitives-colors-theme-600);
+  }
+
+  /* The mark: at least the SDK's 24 square, centred. A caller's wider mark,
+     the floor tile's level, widens it. */
+  .kozmos-map-control-mark {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    min-width: calc(var(--primitives-layout-sizing-300) * 1px);
+    min-height: calc(var(--primitives-layout-sizing-300) * 1px);
+  }
+  /* A symbol drawn around its pointer — the revamp's cone and arc — keeps the
+     24 square and overflows it, centred, as Figma's absolutely placed cone
+     does, so the words sit 8 from the pointer whatever the mark. */
+  .kozmos-map-control-glyph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--primitives-layout-sizing-300) * 1px);
+    height: calc(var(--primitives-layout-sizing-300) * 1px);
+  }
+  .kozmos-map-control-glyph > svg {
+    flex-shrink: 0;
+  }
+
+  /* The words: always mounted, and clipped while the control is icon-only,
+     so max-width has something to animate between. The control's name is
+     the accessible name either way, so clipped words are never what a
+     screen reader reads. Logical margins: the 8 from the mark is on the
+     mark's side in both directions. */
+  .kozmos-map-control-words {
+    display: flex;
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    text-align: start;
+    @apply transition-[max-width,opacity,margin] duration-300 ease-in-out motion-reduce:transition-none;
+  }
+  .kozmos-map-control:where([data-presentation="labelled"])
+    .kozmos-map-control-words {
+    max-width: 14rem;
+    opacity: 1;
+    margin-inline-start: calc(var(--primitives-layout-spacing-100) * 1px);
+  }
+  .kozmos-map-control-words-inline {
+    flex-direction: row;
+    align-items: center;
+    column-gap: calc(var(--primitives-layout-spacing-50) * 1px);
+  }
+  .kozmos-map-control-words-stacked {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  /* One style for both lines, the SDK's "Focus⏎Off": bold, the type scale's
+     16, on a line as tall as the type. */
+  .kozmos-map-control-line {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: calc(var(--primitives-typography-font-size-300) * 1px);
+    line-height: 1;
+    font-weight: 700;
+  }
+
+  /* Map controls stacked on one surface — the zoom pair: the control's
+     width, corner, surface, elevation and blur, clipped to its corner. Its
+     controls are its segments. They cast nothing of their own, since the
+     lower one's shadow would paint over the upper, and a focused one draws
+     its ring inside itself, where the pair's clip cannot cut it. A hairline
+     between them. */
+  .kozmos-map-control-stack {
+    @apply shadow-map-control;
+    display: flex;
+    flex-direction: column;
+    width: calc(var(--primitives-layout-sizing-600) * 1px);
+    overflow: hidden;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    background-color: var(--primitives-colors-background-0);
+    -webkit-backdrop-filter: blur(32px);
+    backdrop-filter: blur(32px);
+  }
+  .kozmos-map-control-stack > .kozmos-map-control {
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+    width: 100%;
+    border-radius: 0;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .kozmos-map-control-stack > .kozmos-map-control:focus-visible {
+    --tw-ring-inset: inset;
+  }
+  .kozmos-map-control-stack > .kozmos-map-control + .kozmos-map-control {
+    border-top: 1px solid var(--semantics-border-subtle);
+  }
+}

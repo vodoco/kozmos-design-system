@@ -2,8 +2,8 @@ import SwiftUI
 
 /// What a surface is made of. Solid — the background colour with the subtle
 /// border — is the default everywhere; glass, the glass surface role
-/// (ds-handoff §5.13) composed from `Semantics.Effect.glass`, is a choice a
-/// product makes per surface.
+/// composed from `Semantics.Effect.glass`, is a choice a product makes per
+/// surface.
 public enum KozmosSurfaceStyle: Sendable {
     case solid
     case glass

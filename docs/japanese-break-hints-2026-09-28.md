@@ -1,7 +1,7 @@
 # Japanese category names: break hints for the taxonomy (2026-09-28)
 
 A request from Kozmos to the owners of the Pointr taxonomy's Japanese translations. It follows
-Olcay's decision 18 (`docs/handoff-2026-09-27-night.md` §4): Kozmos keeps its two-line tiles, and
+Olcay's decision 18 (2026-09-27): Kozmos keeps its two-line tiles, and
 the names get break hints. The exact strings are in
 [japanese-break-hints-2026-09-28.json](japanese-break-hints-2026-09-28.json).
 

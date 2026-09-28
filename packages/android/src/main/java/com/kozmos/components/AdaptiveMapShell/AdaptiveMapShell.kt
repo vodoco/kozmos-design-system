@@ -325,9 +325,9 @@ fun KozmosAdaptiveMapShell(
 }
 
 /**
- * The docked sheet: the prototype's three detents and its drag rule
- * (docs/pointr-prototype-initial-sheet-2026-09-20.md §1–§2), shared with the
- * iOS and web shells. The whole sheet drags; a scrollable inside it takes
+ * The docked sheet: the Pointr prototype's three detents and its drag rule,
+ * as scripts/measure-prototype-sheet.cjs drove and measured them, shared with
+ * the iOS and web shells. The whole sheet drags; a scrollable inside it takes
  * part through nested scrolling, so it scrolls only at the largest detent
  * and a downward drag empties its scroll before the sheet moves; a release
  * snaps to the nearest detent, the fling's velocity counted.
