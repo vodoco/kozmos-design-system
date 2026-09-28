@@ -16,7 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Navigation
@@ -49,8 +49,9 @@ import coil.compose.AsyncImage
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonEmotion
+import com.kozmos.components.button.KozmosButtonSize
 import com.kozmos.components.button.KozmosButtonVariant
-import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.components.poimediagallery.KozmosPOIMediaGallery
 import com.kozmos.contracts.KozmosPOIAccessRestrictions
 import com.kozmos.contracts.KozmosPOIAction
@@ -86,6 +87,13 @@ enum class KozmosPOIDetailPanelPresentation {
  * Mirrors the React `POIDetailPanel`. Only the actions listed by
  * [KozmosPOIPresentation.actions] are rendered, and every label is supplied
  * already localized.
+ *
+ * Favourite and bookmark are icon toggles in the header, before the close
+ * button, as on iOS and the web. All three are drawn alike, 44dp squares 6dp
+ * apart, outlined in the neutral emotion; a pressed toggle is filled with the
+ * theme, and TalkBack hears it as selected. Each toggle is named by its
+ * [actionLabels] entry. The other actions are labelled buttons in the row
+ * under the header.
  *
  * In its sheet presentation, which paints no surface of its own, the card is
  * the top of the map shell's panel: its header tops its top padding up to what
@@ -145,6 +153,11 @@ fun KozmosPOIDetailPanel(
         poi.accessRestrictions != KozmosPOIAccessRestrictions.None &&
         poi.accessRestrictionsLabel != null
 
+    // Favourite and bookmark are the header's toggles; the row under it
+    // keeps the rest, each in the order the POI lists them.
+    val headerToggles = poi.actions.filter { it in HeaderToggleActions }
+    val rowActions = poi.actions.filterNot { it in HeaderToggleActions }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -173,7 +186,17 @@ fun KozmosPOIDetailPanel(
         val bodyScrollState = rememberScrollState()
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            Header(poi = poi, onClose = onClose, closeLabel = closeLabel, surface = insetSurface, top = headerTop)
+            Header(
+                poi = poi,
+                toggles = headerToggles,
+                actionLabels = actionLabels,
+                actionStates = actionStates,
+                onAction = onAction,
+                onClose = onClose,
+                closeLabel = closeLabel,
+                surface = insetSurface,
+                top = headerTop
+            )
 
             Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
@@ -202,7 +225,7 @@ fun KozmosPOIDetailPanel(
                     )
                 }
 
-                if (poi.actions.isNotEmpty()) {
+                if (rowActions.isNotEmpty()) {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(
@@ -212,16 +235,11 @@ fun KozmosPOIDetailPanel(
                             KozmosDimensions.primitivesLayoutSpacing100
                         )
                     ) {
-                        poi.actions.forEach { action ->
+                        rowActions.forEach { action ->
                             val state = actionStates[action]
-                            val isToggle = action == KozmosPOIAction.Favourite ||
-                                action == KozmosPOIAction.Bookmark
 
                             KozmosButton(
                                 onClick = { onAction(action, poi.id) },
-                                modifier = Modifier.semantics {
-                                    if (isToggle) selected = state?.pressed ?: false
-                                },
                                 variant = if (action == KozmosPOIAction.Navigate) {
                                     KozmosButtonVariant.Default
                                 } else {
@@ -304,10 +322,15 @@ fun KozmosPOIDetailPanel(
     }
 }
 
+/** The actions the header draws as icon toggles, beside close, as iOS and the web do. */
+private val HeaderToggleActions = setOf(KozmosPOIAction.Favourite, KozmosPOIAction.Bookmark)
+
+// The outline glyphs, as the web's Heart and Bookmark and iOS's "heart" and
+// "bookmark" are: a pressed toggle shows its state by its fill, not its glyph.
 private fun actionIcon(action: KozmosPOIAction): ImageVector = when (action) {
     KozmosPOIAction.Navigate -> Icons.Default.Navigation
     KozmosPOIAction.Favourite -> Icons.Default.FavoriteBorder
-    KozmosPOIAction.Bookmark -> Icons.Default.Bookmark
+    KozmosPOIAction.Bookmark -> Icons.Default.BookmarkBorder
     KozmosPOIAction.Share -> Icons.Default.Share
     KozmosPOIAction.Order -> Icons.Default.ShoppingCart
 }
@@ -315,12 +338,16 @@ private fun actionIcon(action: KozmosPOIAction): ImageVector = when (action) {
 @Composable
 private fun Header(
     poi: KozmosPOIPresentation,
+    toggles: List<KozmosPOIAction>,
+    actionLabels: Map<KozmosPOIAction, String>,
+    actionStates: Map<KozmosPOIAction, KozmosPOIActionState>,
+    onAction: (KozmosPOIAction, String) -> Unit,
     onClose: (() -> Unit)?,
     closeLabel: String,
     surface: Color = KozmosThemeTokens.primitivesColorsBackground100,
     top: Dp = KozmosDimensions.primitivesLayoutSpacing200
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
@@ -329,15 +356,18 @@ private fun Header(
                 end = KozmosDimensions.primitivesLayoutSpacing200,
                 bottom = KozmosDimensions.primitivesLayoutSpacing200
             ),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
+        verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
     ) {
-        POILogo(poi = poi, surface = surface)
-
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
+        // The name and the header's buttons share one row whatever the name's
+        // length: a long name wraps beside them, three lines at most, and
+        // never pushes them under it.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
         ) {
+            POILogo(poi = poi, surface = surface)
+
             Text(
                 text = poi.name,
                 style = MaterialTheme.typography.titleLarge,
@@ -346,9 +376,37 @@ private fun Header(
                 // Three lines at most, beside the buttons, as on iOS and the web.
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.semantics { heading() }
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { heading() }
             )
 
+            if (toggles.isNotEmpty() || onClose != null) {
+                // 6 apart, the web's 0.375rem and iOS's HStack spacing:
+                // the toggles in the POI's order, then close.
+                Row(horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing75)) {
+                    toggles.forEach { action ->
+                        val state = actionStates[action]
+                        HeaderButton(
+                            icon = actionIcon(action),
+                            label = actionLabels[action] ?: action.value,
+                            onClick = { onAction(action, poi.id) },
+                            pressed = state?.pressed ?: false,
+                            enabled = !(state?.disabled ?: false),
+                            loading = state?.loading ?: false
+                        )
+                    }
+                    if (onClose != null) {
+                        HeaderButton(icon = Icons.Default.Close, label = closeLabel, onClick = onClose)
+                    }
+                }
+            }
+        }
+
+        // Where it is, and whether it is open, under the name and the
+        // buttons at the header's whole width, as on iOS and the web: beside
+        // three buttons a location would be cut to a few letters.
+        Column(verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(
@@ -386,13 +444,40 @@ private fun Header(
                 )
             }
         }
+    }
+}
 
-        if (onClose != null) {
-            KozmosIconButton(
-                icon = Icons.Default.Close,
-                onClick = onClose,
-                contentDescription = closeLabel
-            )
+/**
+ * One of the header's buttons, drawn as the web's `IconButton` and iOS's
+ * quick buttons draw it: a 44dp square with the control radius, outlined in
+ * the neutral emotion with a 20dp glyph. A toggle ([pressed] not null) takes
+ * the themed fill while pressed, and TalkBack hears it as selected. The name
+ * is the button's own, so a loader in the icon's place leaves it named.
+ */
+@Composable
+private fun HeaderButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    pressed: Boolean? = null,
+    enabled: Boolean = true,
+    loading: Boolean = false
+) {
+    val filled = pressed == true
+    KozmosButton(
+        onClick = onClick,
+        modifier = Modifier.semantics {
+            contentDescription = label
+            if (pressed != null) selected = pressed
+        },
+        variant = if (filled) KozmosButtonVariant.Default else KozmosButtonVariant.Outline,
+        emotion = if (filled) KozmosButtonEmotion.Themed else KozmosButtonEmotion.Neutral,
+        size = KozmosButtonSize.Icon,
+        enabled = enabled,
+        isLoading = loading
+    ) {
+        if (!loading) {
+            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
         }
     }
 }
