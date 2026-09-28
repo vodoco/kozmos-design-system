@@ -1172,34 +1172,18 @@ function validateTheme(theme: Record<string, string>): ValidationResult {
 
 ### 9.2 CI Validation
 
-```yaml
-# .github/workflows/theme-validation.yml
-name: Validate Themes
+There is no theme-validation workflow and no `validate:themes` or `check:contrast` script. CI's
+`Web Build & Test` job (`.github/workflows/ci.yml`) checks themes on every pull request with these:
 
-on:
-  push:
-    paths:
-      - "packages/tokens/src/themes/**"
+```bash
+# Every contrast pair in packages/tokens/src/contrast-contract.json, in light and dark
+pnpm tokens:contrast:check
 
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+# The native palettes follow the theme: Compose reads its generated themed accessor
+pnpm tokens:theme:check
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Validate all themes
-        run: pnpm run validate:themes
-
-      - name: Check contrast ratios
-        run: pnpm run check:contrast
+# Themes and stylesheets stay scoped to their module, in a browser
+pnpm test:themes
 ```
 
 ---
