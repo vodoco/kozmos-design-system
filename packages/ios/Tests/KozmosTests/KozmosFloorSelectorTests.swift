@@ -248,62 +248,448 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertLessThanOrEqual(difference, 2, "the stepper draws something new")
     }
 
-    /// The collapsible's open list is a list of every level, which is where a
-    /// visitor chooses one: it marks them as the lists do. Its closed pill is
-    /// the level in view and marks nothing, as the stepper does not.
-    @MainActor func testTheOpenCollapsibleListMarksItsLevels() throws {
-        let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
-        let size = CGSize(width: 320, height: 240)
-        let view = VStack {
+    /// The switcher's open column is where a visitor chooses a level: it marks
+    /// the levels that hold results, as the lists do — at a level's bottom
+    /// trailing corner, because its top one is the visitor's dot's (decision
+    /// 38). Its closed tile is the level in view and marks nothing, as the
+    /// stepper does not.
+    @MainActor func testTheOpenCollapsibleListMarksItsLevels() async throws {
+        let primary = try near(KozmosColors.primitivesColorsTheme600)
+        // No level is current, so the only primary drawn is the marker's; the
+        // level with three results is the column's middle one.
+        let drawn = try await drawSwitcher(
+            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), variant: .collapsible, expanded: true)
+        )
+        let marker = try XCTUnwrap(drawn.boundingBox(whole, primary), "the open column marks no level")
+        XCTAssertEqual(marker.height, 16, accuracy: 1)
+        let level2 = slot(1, of: 3)
+        XCTAssertTrue(level2.insetBy(dx: -1, dy: -1).contains(marker), "the marker \(marker) is not on Level 2 \(level2)")
+        XCTAssertEqual(marker.maxX, level2.maxX, accuracy: 1, "the marker is not at the trailing edge")
+        XCTAssertEqual(marker.maxY, level2.maxY, accuracy: 1, "the marker is not at the bottom")
+
+        let closed = try await drawSwitcher(
+            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .collapsible)
+        )
+        XCTAssertNil(closed.boundingBox(whole, primary), "the closed tile drew a marker")
+    }
+
+    // MARK: - Row 79 (GAP-080): the SDK's level switcher (decision 38)
+
+    /// Top floor first (decision 29).
+    private let switcherLevels = [
+        KozmosFloorPresentation(id: "2", label: "Second floor", shortLabel: "2F"),
+        KozmosFloorPresentation(id: "1", label: "First floor", shortLabel: "1F"),
+        KozmosFloorPresentation(id: "g", label: "Ground floor", shortLabel: "GF"),
+    ]
+
+    /// The frame the switcher is drawn in, parked in its bottom-trailing
+    /// corner 16 in, as a map parks it.
+    private let corner = CGSize(width: 320, height: 300)
+    private var whole: CGRect { CGRect(origin: .zero, size: corner) }
+
+    /// The closed tile: a map control's 44 square, in that corner.
+    private var tileRect: CGRect {
+        CGRect(x: corner.width - 16 - 44, y: corner.height - 16 - 44, width: 44, height: 44)
+    }
+
+    /// Where the open column puts level `index` of `count`: a tile's size, 4
+    /// apart, the last one over the tile itself.
+    private func slot(_ index: Int, of count: Int) -> CGRect {
+        tileRect.offsetBy(dx: 0, dy: -CGFloat(count - 1 - index) * 48)
+    }
+
+    /// A drawing of the switcher, read back in points, on white.
+    private struct SwitcherDrawing {
+        let color: (CGPoint) -> (r: UInt8, g: UInt8, b: UInt8)
+        let boundingBox: (CGRect, (UInt8, UInt8, UInt8) -> Bool) -> CGRect?
+        let count: (CGRect, (UInt8, UInt8, UInt8) -> Bool) -> Int
+    }
+
+    /// The switcher parked in the corner, drawn as a device draws it. On iOS
+    /// its tile carries a UIKit element for VoiceOver, which `ImageRenderer`
+    /// cannot draw — it puts SwiftUI's yellow placeholder in its place — so
+    /// there the switcher is hosted and snapshotted; on a Mac, where the
+    /// element does not exist, `ImageRenderer` draws it. On white both ways,
+    /// so both read the same colours.
+    @MainActor private func drawSwitcher<V: View>(
+        _ view: V,
+        direction: LayoutDirection = .leftToRight
+    ) async throws -> SwitcherDrawing {
+        let content = VStack {
             Spacer()
             HStack {
                 Spacer()
-                KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), variant: .collapsible, expanded: true)
+                view
             }
         }
         .padding(16)
-        .frame(width: size.width, height: size.height)
-        let drawn = try DrawnPixels.draw(view)
-        let marker = try XCTUnwrap(drawn.boundingBox(where: DrawnPixels.matches(primary)), "the open list marks no level")
-        XCTAssertEqual(marker.height, 16, accuracy: 1)
-        let pillTop = size.height - 16 - KozmosDimensions.primitivesLayoutSizing500 - 12
-        XCTAssertLessThan(marker.maxY, pillTop, "the marker is on the closed pill, not in the open list")
-
-        let closed = try DrawnPixels.draw(
-            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .collapsible)
+        .frame(width: corner.width, height: corner.height)
+        .background(Color.white)
+        .environment(\.layoutDirection, direction)
+        #if os(iOS)
+        let pixels = try await RenderedPixels.render(content, size: corner)
+        return SwitcherDrawing(
+            color: { pixels.color(at: $0) },
+            boundingBox: { pixels.boundingBox(in: $0, where: $1) },
+            count: { pixels.count(in: $0, where: $1) }
         )
-        XCTAssertNil(closed.boundingBox(where: DrawnPixels.matches(primary)), "the closed pill drew a marker")
+        #else
+        let pixels = try DrawnPixels.draw(content)
+        return SwitcherDrawing(
+            color: { let p = pixels.pixel(at: $0); return (p.r, p.g, p.b) },
+            boundingBox: { region, matches in pixels.boundingBox(in: region) { r, g, b, _ in matches(r, g, b) } },
+            count: { region, matches in pixels.count(in: region) { r, g, b, _ in matches(r, g, b) } }
+        )
+        #endif
+    }
+
+    /// Close to a token as the light theme draws it: within 6 a level, so the
+    /// old list's theme-500 fill, up to 10 levels from the theme's primary, is
+    /// not taken for it, and a snapshot's colour conversion still is.
+    @MainActor private func near(_ color: Color, tolerance: Int = 6) throws -> (UInt8, UInt8, UInt8) -> Bool {
+        let token = try DrawnPixels.resolved(color, in: .light)
+        return { r, g, b in
+            abs(Int(r) - Int(token.r)) <= tolerance
+                && abs(Int(g) - Int(token.g)) <= tolerance
+                && abs(Int(b) - Int(token.b)) <= tolerance
+        }
+    }
+
+    /// At rest the switcher is one map control — the SDK's level switcher's
+    /// tile — not a panel around a filled square: drawn beside a
+    /// `KozmosMapControlButton` in the same place, it has the map control's
+    /// outline, edge and surface, and no theme fill. It is drawn by the map
+    /// control itself, so it follows the shared map-control surface wherever
+    /// that goes.
+    @MainActor func testTheClosedSwitcherIsOneMapControlTile() async throws {
+        let tile = try await drawSwitcher(
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible)
+        )
+        let control = try await drawSwitcher(KozmosMapControlButton(label: "Zoom in", systemImage: "plus") {})
+        let edge = try near(KozmosColors.primitivesColorsForeground300)
+        let tileOutline = try XCTUnwrap(tile.boundingBox(whole, edge), "the switcher has no map-control edge")
+        let controlOutline = try XCTUnwrap(control.boundingBox(whole, edge), "the map control has no edge")
+        XCTAssertEqual(tileOutline.width, controlOutline.width, accuracy: 0.5, "the switcher is not a map control's width")
+        XCTAssertEqual(tileOutline.height, controlOutline.height, accuracy: 0.5, "the switcher is not a map control's height")
+        // The middle of the leading edge, just inside it, and the surface
+        // beside the level, clear of its label.
+        for point in [CGPoint(x: tileRect.minX + 0.25, y: tileRect.midY), CGPoint(x: tileRect.minX + 5, y: tileRect.midY)] {
+            let drawn = tile.color(point), expected = control.color(point)
+            XCTAssertEqual([drawn.r, drawn.g, drawn.b], [expected.r, expected.g, expected.b],
+                           "at \(point) the switcher is not drawn as a map control is")
+        }
+        XCTAssertNil(tile.boundingBox(whole, try near(KozmosColors.primitivesColorsTheme500)),
+                     "the closed switcher is filled with the theme")
+    }
+
+    /// Opened, the tile grows into a column of every level over itself: the
+    /// column's bottom level lies where the tile was, the column reaching past
+    /// it by its 4pt inset, one tile wide — each level its short label, as the
+    /// tile shows it, and no name beside it. Measured by its edge.
+    @MainActor func testTheTileGrowsIntoAColumnOverItself() async throws {
+        let drawn = try await drawSwitcher(
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible, expanded: true)
+        )
+        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.primitivesColorsForeground300)),
+                                   "no column drawn")
+        XCTAssertEqual(column.maxX, tileRect.maxX + 4, accuracy: 1, "the column's trailing edge: \(column)")
+        XCTAssertEqual(column.maxY, tileRect.maxY + 4, accuracy: 1, "the column's bottom edge: \(column)")
+        XCTAssertEqual(column.width, 44 + 8, accuracy: 1.5, "the column is not one tile wide: \(column)")
+        XCTAssertEqual(column.height, 3 * 44 + 2 * 4 + 8, accuracy: 1.5, "the column does not hold three tiles: \(column)")
+    }
+
+    /// The current level is outlined in the theme's primary — the board's
+    /// active floor — where the old list filled its square; no other level is.
+    @MainActor func testTheColumnOutlinesTheCurrentLevel() async throws {
+        let primary = try near(KozmosColors.primitivesColorsTheme600)
+        let drawn = try await drawSwitcher(
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible, expanded: true)
+        )
+        func outlined(_ level: CGRect) -> Bool {
+            // The middles of its four sides, just inside.
+            [
+                CGRect(x: level.midX - 6, y: level.minY, width: 12, height: 1.5),
+                CGRect(x: level.midX - 6, y: level.maxY - 1.5, width: 12, height: 1.5),
+                CGRect(x: level.minX, y: level.midY - 6, width: 1.5, height: 12),
+                CGRect(x: level.maxX - 1.5, y: level.midY - 6, width: 1.5, height: 12),
+            ].allSatisfy { drawn.count($0, primary) > 0 }
+        }
+        XCTAssertTrue(outlined(slot(1, of: 3)), "the current level is not outlined")
+        XCTAssertFalse(outlined(slot(0, of: 3)), "the second floor is outlined")
+        XCTAssertFalse(outlined(slot(2, of: 3)), "the ground floor is outlined")
+        // Not filled: inside each level, between its edge and its label, where
+        // the old list's fill was — not anywhere, since an outline's softened
+        // edge comes within a few levels of the theme's lighter step.
+        let fill = try near(KozmosColors.primitivesColorsTheme500)
+        for index in 0..<3 {
+            let level = slot(index, of: 3)
+            let inside = CGRect(x: level.minX + 3, y: level.midY - 3, width: 6, height: 6)
+            XCTAssertEqual(drawn.count(inside, fill), 0, "level \(index) is filled with the theme")
+        }
+    }
+
+    /// Right to left the column keeps to the tile's trailing edge — its left —
+    /// and the visitor's dot moves to each level's left top corner with it.
+    @MainActor func testTheColumnMirrorsRightToLeft() async throws {
+        let primary = try near(KozmosColors.primitivesColorsTheme600)
+        let drawn = try await drawSwitcher(
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible,
+                                userFloor: "2", expanded: true),
+            direction: .rightToLeft
+        )
+        let tile = CGRect(x: 16, y: corner.height - 16 - 44, width: 44, height: 44)
+        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.primitivesColorsForeground300)),
+                                   "no column drawn")
+        XCTAssertEqual(column.minX, tile.minX - 4, accuracy: 1, "the column is not on the tile's trailing edge: \(column)")
+        XCTAssertEqual(column.maxY, tile.maxY + 4, accuracy: 1, "the column's bottom edge: \(column)")
+        let top = tile.offsetBy(dx: 0, dy: -2 * 48)
+        XCTAssertGreaterThan(drawn.count(CGRect(x: top.minX, y: top.minY, width: 16, height: 16), primary), 0,
+                             "the dot is not at the level's left top corner")
+        XCTAssertEqual(drawn.count(CGRect(x: top.maxX - 16, y: top.minY, width: 16, height: 16), primary), 0,
+                       "the dot stayed on the right")
+    }
+
+    /// The level the visitor is on (decision 38): the closed tile carries the
+    /// dot only while it shows that level, and never without one.
+    @MainActor func testTheTileMarksTheVisitorsLevelOnlyWhileItShowsIt() async throws {
+        let primary = try near(KozmosColors.primitivesColorsTheme600)
+        let dotCorner = CGRect(x: tileRect.maxX - 16, y: tileRect.minY, width: 16, height: 16)
+        func dotted(selected: String, userFloor: String?) async throws -> Bool {
+            let drawn = try await drawSwitcher(
+                KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant(selected), variant: .collapsible,
+                                    userFloor: userFloor)
+            )
+            return drawn.count(dotCorner, primary) > 0
+        }
+        let onTheirLevel = try await dotted(selected: "g", userFloor: "g")
+        XCTAssertTrue(onTheirLevel, "the tile on the visitor's level has no dot")
+        let elsewhere = try await dotted(selected: "1", userFloor: "g")
+        XCTAssertFalse(elsewhere, "the tile marks the visitor's level while showing another")
+        let unknown = try await dotted(selected: "g", userFloor: nil)
+        XCTAssertFalse(unknown, "the tile draws a dot with no visitor's level")
+    }
+
+    /// In the open column the dot is on the visitor's level, whichever level
+    /// is shown, and on no other.
+    @MainActor func testTheColumnMarksTheVisitorsLevelWhicheverIsShown() async throws {
+        let primary = try near(KozmosColors.primitivesColorsTheme600)
+        let drawn = try await drawSwitcher(
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible,
+                                userFloor: "2", expanded: true)
+        )
+        func dotCorner(_ level: CGRect) -> CGRect { CGRect(x: level.maxX - 16, y: level.minY, width: 16, height: 16) }
+        XCTAssertGreaterThan(drawn.count(dotCorner(slot(0, of: 3)), primary), 0, "the visitor's level has no dot")
+        XCTAssertEqual(drawn.count(dotCorner(slot(2, of: 3)), primary), 0, "the ground floor has a dot")
+    }
+
+    /// A result count and the dot on one level keep apart: the dot at the top
+    /// trailing corner, the count at the bottom, a clear band between them.
+    @MainActor func testTheDotAndTheCountKeepApart() async throws {
+        let primary = try near(KozmosColors.primitivesColorsTheme600)
+        let levels = [KozmosFloorPresentation(id: "2", label: "Second floor", shortLabel: "2F", resultCount: 3)]
+            + switcherLevels.dropFirst()
+        let drawn = try await drawSwitcher(
+            KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible,
+                                userFloor: "2", expanded: true)
+        )
+        let level = slot(0, of: 3)
+        let trailing = level.maxX - 16
+        XCTAssertGreaterThan(drawn.count(CGRect(x: trailing, y: level.minY, width: 16, height: 15), primary), 0,
+                             "no dot at the top")
+        XCTAssertGreaterThan(drawn.count(CGRect(x: trailing, y: level.maxY - 16, width: 16, height: 16), primary), 0,
+                             "no count at the bottom")
+        XCTAssertEqual(drawn.count(CGRect(x: trailing, y: level.minY + 15, width: 16, height: 12), primary), 0,
+                       "the dot and the count run into each other")
+    }
+
+    /// What VoiceOver hears for a level in the column: its name, the visitor's
+    /// level in the product's words, then its count. Only the switcher marks
+    /// the visitor's level, so only it says so.
+    func testTheVisitorsLevelIsSaidWithItsName() {
+        let levels = [KozmosFloorPresentation(id: "2", label: "Second floor", shortLabel: "2F", resultCount: 3)]
+            + switcherLevels.dropFirst()
+        let switcher = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible, userFloor: "2")
+        XCTAssertEqual(switcher.spokenLabel(levels[0]), "Second floor, your level, 3 results")
+        XCTAssertEqual(switcher.spokenLabel(levels[1]), "First floor")
+        let german = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible,
+                                         userFloor: "g", userFloorLabel: "Ihre Ebene")
+        XCTAssertEqual(german.spokenLabel(levels[2]), "Ground floor, Ihre Ebene")
+        let list = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .verticalList, userFloor: "2")
+        XCTAssertEqual(list.spokenLabel(levels[0]), "Second floor, 3 results", "a list says a dot it does not draw")
+    }
+
+    /// The switcher example in FloorSelector.mdx, compiled here as it is
+    /// written there: the docs' native snippets are compiled nowhere else.
+    func testTheDocsSwitcherExampleIsTheSwitcher() {
+        let view =
+            KozmosFloorSelector(
+                floors: [
+                    KozmosFloorPresentation(id: "L2", label: "Level 2", shortLabel: "L2"),
+                    KozmosFloorPresentation(id: "L1", label: "Level 1", shortLabel: "L1"),
+                    KozmosFloorPresentation(id: "G", label: "Ground", shortLabel: "G")
+                ],
+                selectedFloor: .constant("L1"),
+                variant: .collapsible,
+                userFloor: "G",
+                userFloorLabel: String(localized: "your level")
+            )
+        XCTAssertEqual(view.variant, .collapsible)
+        XCTAssertEqual(view.spokenLabel(view.floors[2]), "Ground, your level")
+        XCTAssertEqual(view.tileLabel, "Level 1")
     }
 
     #if os(iOS)
-    /// The open list names every level: "L2" alone told a visitor nothing the
-    /// closed pill did not. Rendered: the list is wider than the pill, and
-    /// its rows are wider than a square.
-    @MainActor func testTheOpenCollapsibleListNamesEveryLevel() async throws {
-        let floors = [
-            KozmosFloorPresentation(id: "b:1", label: "First Floor", shortLabel: "L1"),
-            KozmosFloorPresentation(id: "b:2", label: "Second Floor", shortLabel: "L2"),
-        ]
-        let size = CGSize(width: 320, height: 240)
-        let view = VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                KozmosFloorSelector(floors: floors, selectedFloor: .constant("b:2"), variant: .collapsible, expanded: true)
-            }
-        }
-        .padding(16)
-        .background(Color.white)
-        let pixels = try await RenderedPixels.render(view, size: size)
-        let control = KozmosDimensions.primitivesLayoutSizing500
-        // The pill itself is hidden while the list is open; what is drawn above
-        // the pill's row is the list.
-        let list = try XCTUnwrap(pixels.boundingBox(in: CGRect(x: 0, y: 0, width: size.width, height: size.height - 16 - control - 12),
-                                                    where: RenderedPixels.isInk), "no open list drawn")
-        XCTAssertGreaterThan(list.width, control * 2.5, "the open list is no wider than a column of squares: it carries no names")
-        XCTAssertGreaterThan(list.maxX, size.width - 16 - control - 24, "the list is not anchored to the pill's trailing edge")
+    // MARK: Hosted in a window, where VoiceOver finds it
+
+    /// No safe areas, as the snapshot strategy's own window has none.
+    private final class Window: UIWindow {
+        override var safeAreaInsets: UIEdgeInsets { .zero }
     }
 
+    @MainActor private func host<V: View>(_ view: V) async -> UIWindow {
+        let window = Window(frame: CGRect(origin: .zero, size: corner))
+        window.rootViewController = UIHostingController(
+            rootView: VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    view
+                }
+            }
+            .padding(16)
+            .frame(width: corner.width, height: corner.height)
+        )
+        window.makeKeyAndVisible()
+        await settle()
+        return window
+    }
+
+    @MainActor private func settle() async {
+        for _ in 0..<10 {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.03))
+            await Task.yield()
+        }
+    }
+
+    /// The view assistive technology is given for a name, found as UIKit
+    /// finds it — a SwiftUI element is not a view of its own.
+    private func accessibleView(named name: String, in view: UIView) -> UIView? {
+        if view.isAccessibilityElement, view.accessibilityLabel == name { return view }
+        for subview in view.subviews {
+            if let found = accessibleView(named: name, in: subview) { return found }
+        }
+        return nil
+    }
+
+    /// VoiceOver hears the tile as a button named by its level, and whether
+    /// its column is open — `accessibilityExpandedStatus`, which SwiftUI has
+    /// no modifier for: its own `DisclosureGroup` reports none on iOS 26.5
+    /// (measured, 2026-09-28). Activating the tile opens the column and the
+    /// escape gesture closes it; closed, the tile leaves the gesture alone.
+    @MainActor func testTheTileSaysWhetherItsListIsOpen() async throws {
+        let window = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible))
+        defer { window.isHidden = true }
+        let tile = try XCTUnwrap(accessibleView(named: "First floor", in: window), "VoiceOver finds no tile named by its level")
+        XCTAssertTrue(tile.accessibilityTraits.contains(.button))
+        if #available(iOS 18.0, *) {
+            XCTAssertEqual(tile.accessibilityExpandedStatus, .collapsed, "the closed tile does not say it is closed")
+        }
+        XCTAssertFalse(tile.accessibilityPerformEscape(), "a closed tile took the escape gesture")
+
+        XCTAssertTrue(tile.accessibilityActivate(), "activating the tile did nothing")
+        await settle()
+        if #available(iOS 18.0, *) {
+            XCTAssertEqual(tile.accessibilityExpandedStatus, .expanded, "the tile does not say its column is open")
+        }
+        XCTAssertTrue(tile.accessibilityPerformEscape(), "the escape gesture did not close the column")
+        await settle()
+        if #available(iOS 18.0, *) {
+            XCTAssertEqual(tile.accessibilityExpandedStatus, .collapsed, "the column did not close")
+        }
+    }
+
+    /// The tile says the visitor's level with its own while it shows it, in
+    /// the product's words, and says nothing of it while it shows another.
+    @MainActor func testTheTileSaysWhenItShowsTheVisitorsLevel() async throws {
+        let theirs = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("g"), variant: .collapsible,
+                                                    userFloor: "g", userFloorLabel: "Ihre Ebene"))
+        defer { theirs.isHidden = true }
+        XCTAssertNotNil(accessibleView(named: "Ground floor, Ihre Ebene", in: theirs),
+                        "the tile on the visitor's level does not say so")
+        let another = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible,
+                                                     userFloor: "g"))
+        defer { another.isHidden = true }
+        XCTAssertNotNil(accessibleView(named: "First floor", in: another),
+                        "the tile says the visitor's level while showing another")
+    }
+
+    /// A tap anywhere outside the open column closes it. The switcher watches
+    /// the window for one only while its column is open, and lets the tap go
+    /// on to whatever it landed on — a tap on the map still reaches the map.
+    @MainActor func testATapOutsideIsWatchedForOnlyWhileTheListIsOpen() async throws {
+        let window = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible))
+        defer { window.isHidden = true }
+        let before = window.gestureRecognizers ?? []
+        let tile = try XCTUnwrap(accessibleView(named: "First floor", in: window), "VoiceOver finds no tile named by its level")
+        XCTAssertTrue(tile.accessibilityActivate())
+        await settle()
+        let added = (window.gestureRecognizers ?? []).filter { recognizer in !before.contains { $0 === recognizer } }
+        XCTAssertEqual(added.count, 1, "the open column does not watch for a tap outside")
+        let watcher = try XCTUnwrap(added.first as? UITapGestureRecognizer)
+        XCTAssertFalse(watcher.cancelsTouchesInView, "a tap outside is taken from what it landed on")
+        XCTAssertTrue(tile.accessibilityPerformEscape())
+        await settle()
+        XCTAssertFalse((window.gestureRecognizers ?? []).contains { $0 === watcher }, "still watching after the column closed")
+    }
+
+    /// What the watch takes for a tap outside, in the tile's own coordinates —
+    /// not the tile, not the column over it, but the map beside them — and
+    /// that such a tap closes the column. No UIKit touch can be made in a
+    /// test, so the watch's decision and its action are called as UIKit
+    /// would call them.
+    @MainActor func testATapOutsideTheColumnClosesIt() async throws {
+        let window = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible))
+        defer { window.isHidden = true }
+        let element = try XCTUnwrap(
+            accessibleView(named: "First floor", in: window) as? KozmosFloorSwitcherElement.ElementView,
+            "VoiceOver finds no tile named by its level"
+        )
+        XCTAssertTrue(element.accessibilityActivate())
+        await settle()
+        // The column reaches from 4 beyond the tile's sides to 100 above it.
+        XCTAssertFalse(element.isOutside(CGPoint(x: 22, y: 22)), "a tap on the tile is taken for one outside")
+        XCTAssertFalse(element.isOutside(CGPoint(x: 22, y: -60)), "a tap on the column is taken for one outside")
+        XCTAssertTrue(element.isOutside(CGPoint(x: -100, y: 22)), "a tap on the map beside it is not taken for one outside")
+        element.tapped()
+        await settle()
+        if #available(iOS 18.0, *) {
+            XCTAssertEqual(element.accessibilityExpandedStatus, .collapsed, "a tap outside left the column open")
+        }
+    }
+
+    /// A hardware keyboard's Escape closes the open column: while it is open
+    /// the window offers Escape as a key command, and not while it is closed.
+    @MainActor func testEscapeOnAKeyboardIsOfferedWhileTheColumnIsOpen() async throws {
+        let window = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible))
+        defer { window.isHidden = true }
+        func offered() -> Bool {
+            var responder: UIResponder? = window.rootViewController
+            var commands: [UIKeyCommand] = []
+            while let current = responder {
+                commands += current.keyCommands ?? []
+                responder = current.next
+            }
+            return commands.contains { $0.input == UIKeyCommand.inputEscape }
+        }
+        XCTAssertFalse(offered(), "Escape is taken while the column is closed")
+        let tile = try XCTUnwrap(accessibleView(named: "First floor", in: window), "VoiceOver finds no tile named by its level")
+        XCTAssertTrue(tile.accessibilityActivate())
+        await settle()
+        XCTAssertTrue(offered(), "Escape is not offered while the column is open")
+    }
+    #endif
+
+    #if os(iOS)
     /// Row 69: the marker grows with the text, as the square it sits in does —
     /// at the largest sizes a 16pt marker would be a speck on a square more
     /// than twice as big. iOS only: Dynamic Type does not reach

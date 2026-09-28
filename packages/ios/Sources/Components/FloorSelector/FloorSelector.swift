@@ -5,9 +5,13 @@ public enum KozmosFloorSelectorVariant: String, CaseIterable, Sendable {
     case verticalList = "vertical-list"
     case horizontalList = "horizontal-list"
     case compactStepper = "compact-stepper"
-    /// Shows the current level only, and opens the full list when touched.
-    /// For a control parked in a corner of a map, where a permanent column of
-    /// every level costs more of the map than it is worth.
+    /// The SDK's level switcher (row 79, decision 38), for a control parked in
+    /// a corner of a map, where a permanent column of every level costs more
+    /// of the map than it is worth: at rest one map control showing the
+    /// current level's short label; activated, it grows into a column of
+    /// every level over itself, the current one outlined in the theme's
+    /// primary. A choice, the escape gesture, Escape or a tap outside closes
+    /// the column.
     case collapsible = "collapsible"
 }
 
@@ -40,6 +44,17 @@ public struct KozmosFloorSelector: View {
     /// which React and Compose say too.
     let previousFloorLabel: String
     let nextFloorLabel: String
+    /// The level the visitor is on, by the same id as `selectedFloor` (decision
+    /// 38). The switcher marks it with a dot, as the SDK's level switcher does:
+    /// on the closed tile while the tile shows that level, and on that level in
+    /// the open column whichever level is shown. `nil` marks nothing. The
+    /// product knows where the visitor is; the switcher neither works it out
+    /// nor chooses a level by it. Only `.collapsible` draws it, as React's and
+    /// Compose's do.
+    let userFloor: String?
+    /// How the dot is said, joined to the level's own label: "Level 1, your
+    /// level". English until the product passes its own words.
+    let userFloorLabel: String
     /// How a level's result count is said, for a visitor who cannot see the
     /// marker. Joined to the level's own label: "Level 2, 3 results". A
     /// function because a count needs a plural rule, and the design system has
@@ -47,6 +62,9 @@ public struct KozmosFloorSelector: View {
     /// singular for one, as React's and Compose's are.
     let resultCountLabel: (Int) -> String
     @Environment(\.kozmosAnalytics) private var trackEvent
+    /// Someone who has asked iOS to reduce motion still needs the column; they
+    /// just should not watch it spring out of the tile.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// A fixed 40pt button truncates every level to an ellipsis once Dynamic
     /// Type is turned up, which leaves the control unreadable — and a floor
@@ -66,6 +84,15 @@ public struct KozmosFloorSelector: View {
     private var markerPadding: CGFloat = KozmosDimensions.primitivesLayoutSpacing50
 
     @State private var isExpanded = false
+    /// The map control's own size, read off the tile: the column's levels take
+    /// it, so the column's bottom level lies exactly over the tile whatever
+    /// size the shared map-control surface gives it.
+    @State private var tileSize = CGSize(width: 44, height: 44)
+    /// Bumped when the column closes on a choice or on Escape: VoiceOver goes
+    /// back to the tile, which names the level now shown.
+    @State private var tileFocusRequest = 0
+    /// Where VoiceOver lands when the column opens: the current level.
+    @AccessibilityFocusState private var focusedLevel: String?
 
     public init(
         floors: [KozmosFloorPresentation],
@@ -74,6 +101,8 @@ public struct KozmosFloorSelector: View {
         label: String = "Floor selector",
         previousFloorLabel: String = "Floor up",
         nextFloorLabel: String = "Floor down",
+        userFloor: String? = nil,
+        userFloorLabel: String = "your level",
         resultCountLabel: @escaping (Int) -> String = { $0 == 1 ? "1 result" : "\($0) results" }
     ) {
         self.floors = floors
@@ -82,18 +111,21 @@ public struct KozmosFloorSelector: View {
         self.label = label
         self.previousFloorLabel = previousFloorLabel
         self.nextFloorLabel = nextFloorLabel
+        self.userFloor = userFloor
+        self.userFloorLabel = userFloorLabel
         self.resultCountLabel = resultCountLabel
     }
 
-    /// For tests and previews: the collapsible list already open.
+    /// For tests and previews: the switcher's column already open.
     init(
         floors: [KozmosFloorPresentation],
         selectedFloor: Binding<String>,
         variant: KozmosFloorSelectorVariant,
         label: String = "Floor selector",
+        userFloor: String? = nil,
         expanded: Bool
     ) {
-        self.init(floors: floors, selectedFloor: selectedFloor, variant: variant, label: label)
+        self.init(floors: floors, selectedFloor: selectedFloor, variant: variant, label: label, userFloor: userFloor)
         self._isExpanded = State(initialValue: expanded)
     }
 
@@ -104,7 +136,9 @@ public struct KozmosFloorSelector: View {
         variant: KozmosFloorSelectorVariant = .verticalList,
         label: String = "Floor selector",
         previousFloorLabel: String = "Floor up",
-        nextFloorLabel: String = "Floor down"
+        nextFloorLabel: String = "Floor down",
+        userFloor: String? = nil,
+        userFloorLabel: String = "your level"
     ) {
         self.init(
             floors: floors.map {
@@ -114,14 +148,16 @@ public struct KozmosFloorSelector: View {
             variant: variant,
             label: label,
             previousFloorLabel: previousFloorLabel,
-            nextFloorLabel: nextFloorLabel
+            nextFloorLabel: nextFloorLabel,
+            userFloor: userFloor,
+            userFloorLabel: userFloorLabel
         )
     }
 
     private func select(_ floor: KozmosFloorPresentation) {
         guard !floor.disabled else { return }
         if variant == .collapsible {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isExpanded = false }
+            close(returningFocus: true)
         }
         trackEvent(
             KozmosAnalyticsEvent(
@@ -133,6 +169,29 @@ public struct KozmosFloorSelector: View {
         withAnimation { selectedFloor = floor.id }
     }
 
+    /// Opens or closes the switcher's column.
+    private func setExpanded(_ open: Bool) {
+        guard open != isExpanded else { return }
+        if open, let floor = selectedPresentation {
+            trackEvent(
+                KozmosAnalyticsEvent(
+                    eventName: "floor_selector_expanded",
+                    component: "FloorSelector",
+                    properties: ["floor": floor.id]
+                )
+            )
+        }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.85)) { isExpanded = open }
+    }
+
+    /// Closes the column; after a choice or Escape, VoiceOver goes back to the
+    /// tile. Not after a tap outside: whatever the visitor touched is where
+    /// they are.
+    private func close(returningFocus: Bool) {
+        setExpanded(false)
+        if returningFocus { tileFocusRequest += 1 }
+    }
+
     var selectedIndex: Int {
         floors.firstIndex { $0.id == selectedFloor } ?? 0
     }
@@ -141,60 +200,31 @@ public struct KozmosFloorSelector: View {
         floors.first { $0.id == selectedFloor } ?? floors.first
     }
 
-    /// While the list is open the closed control would only repeat the level
-    /// already highlighted in it, so it is hidden — but it keeps its space, or
-    /// the control would change size and move the map after all.
-    private var baseIsHidden: Bool {
-        variant == .collapsible && isExpanded
+    /// Whether the closed tile shows the level the visitor is on: it carries
+    /// the dot only then.
+    var tileShowsUserFloor: Bool {
+        guard let userFloor, let shown = selectedPresentation else { return false }
+        return shown.id == userFloor
+    }
+
+    /// What VoiceOver calls the closed tile: the level it shows, and whether
+    /// the visitor is on it. No count: the tile marks none.
+    var tileLabel: String {
+        guard let shown = selectedPresentation else { return selectedFloor }
+        return tileShowsUserFloor ? "\(shown.label), \(userFloorLabel)" : shown.label
     }
 
     public var body: some View {
-        container
-            .opacity(baseIsHidden ? 0 : 1)
-            // Invisible is not enough: at opacity zero the pill would still be
-            // an element VoiceOver could land on behind the open list.
-            .accessibilityHidden(baseIsHidden)
-            .padding(KozmosDimensions.primitivesLayoutSpacing75)
-            .background(baseIsHidden ? Color.clear : KozmosColors.primitivesColorsBackground0.opacity(0.9))
-            .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
-            .kozmosElevation(baseIsHidden ? KozmosShadows.none : KozmosShadows.semanticsElevationFloating)
-            // Overlaid rather than stacked, so opening the list does not change
-            // what this control measures. A map shell reports the space its
-            // chrome covers, and a camera that re-frames every time a picker
-            // opens is worse than one that ignores it. Trailing-aligned: the
-            // list is wider than the control it opens from, and grows away
-            // from the map's edge the control sits at.
-            .overlay(alignment: .bottomTrailing) { expandedList }
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(label)
-    }
-
-    /// The full list, floating above the closed control: every level's short
-    /// label in its square with the level's name beside it, the current one
-    /// filled. A column of "L1, L2" alone told a visitor nothing they could
-    /// not read off the closed pill.
-    @ViewBuilder
-    private var expandedList: some View {
-        if variant == .collapsible, isExpanded {
-            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                ForEach(floors) { floor in
-                    namedFloorButton(floor)
-                }
-            }
-            .padding(KozmosDimensions.primitivesLayoutSpacing75)
-            // Opaque, unlike the closed control: the named rows make the list
-            // wide enough to cover the map's other controls, and a zoom button
-            // showing through a translucent row read as part of it.
-            .background(KozmosColors.primitivesColorsBackground0)
-            .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
-            .kozmosElevation(KozmosShadows.semanticsElevationFloating)
-            .fixedSize()
-            .offset(
-                y: -(controlSize
-                     + KozmosDimensions.primitivesLayoutSpacing75 * 2
-                     + KozmosDimensions.primitivesLayoutSpacing100)
-            )
-            .transition(.opacity.combined(with: .scale(scale: 0.92, anchor: .bottom)))
+        if variant == .collapsible {
+            switcher
+        } else {
+            container
+                .padding(KozmosDimensions.primitivesLayoutSpacing75)
+                .background(KozmosColors.primitivesColorsBackground0.opacity(0.9))
+                .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
+                .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(label)
         }
     }
 
@@ -222,11 +252,8 @@ public struct KozmosFloorSelector: View {
                 stepperButton(systemImage: "chevron.down", step: 1)
             }
         case .collapsible:
-            // Only ever the current level. The list that opens is an overlay,
-            // not part of this footprint — see `expandedList`.
-            if let selectedPresentation {
-                collapsedButton(selectedPresentation)
-            }
+            // Drawn by `switcher`, not in a panel of its own.
+            EmptyView()
         }
     }
 
@@ -268,84 +295,193 @@ public struct KozmosFloorSelector: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    /// A row of the open list: the short label in its square, the name beside
-    /// it when the venue gives one. One button, so a tap anywhere on the row
-    /// selects, and assistive technology hears the name once.
-    private func namedFloorButton(_ floor: KozmosFloorPresentation) -> some View {
-        let isSelected = floor.id == selectedFloor
-        return Button {
-            select(floor)
-        } label: {
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                Text(floor.shortLabel)
-                    .font(KozmosTypography.subheadline)
-                    .bold()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .frame(width: controlSize, height: controlSize)
-                    .background(isSelected ? KozmosColors.primitivesColorsTheme500 : Color.clear)
-                    .foregroundColor(
-                        isSelected
-                            ? KozmosColors.primitivesColorsBackground0
-                            : KozmosColors.primitivesColorsForeground100
-                    )
-                    .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
-                    .overlay(alignment: .topTrailing) { resultMarker(for: floor) }
-                if floor.label != floor.shortLabel {
-                    Text(floor.label)
-                        .font(KozmosTypography.subheadline)
-                        .fontWeight(isSelected ? .semibold : .regular)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground100)
-                        .lineLimit(1)
-                        .padding(.trailing, KozmosDimensions.primitivesLayoutSpacing100)
-                }
-            }
-            .contentShape(
-                RoundedRectangle(
-                    cornerRadius: KozmosDimensions.semanticsRadiusPanel,
-                    style: .continuous
-                )
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(floor.disabled)
-        .opacity(floor.disabled ? 0.4 : 1)
-        .accessibilityLabel(spokenLabel(floor))
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    // MARK: - The switcher (row 79, decision 38)
+
+    /// How far the column's levels sit inside its edge, and apart: the tile's
+    /// 16pt corners inside the column's 20, concentric.
+    private static let columnInset = KozmosDimensions.primitivesLayoutSpacing50
+
+    /// The open column in the tile's own coordinates — one tile wide and a
+    /// tile per level, `columnInset` apart and around them, its bottom level
+    /// on the tile — so the watch can tell a tap on it from a tap outside.
+    /// Worked out from the numbers the column is laid out with rather than
+    /// measured: a preference from the column, which opens inside an overlay
+    /// on a spring, never reached the switcher (measured on iOS 26.5). The
+    /// same both ways round: the column reaches past the tile equally on
+    /// either side.
+    var columnFrameOverTile: CGRect {
+        let inset = Self.columnInset
+        let levels = CGFloat(floors.count)
+        let height = levels * tileSize.height + (levels + 1) * inset
+        return CGRect(x: -inset, y: tileSize.height + inset - height, width: tileSize.width + 2 * inset, height: height)
     }
 
-    /// The closed state: the level you are on, and a way in to the rest.
-    private func collapsedButton(_ floor: KozmosFloorPresentation) -> some View {
-        Button {
-            trackEvent(
-                KozmosAnalyticsEvent(
-                    eventName: "floor_selector_expanded",
-                    component: "FloorSelector",
-                    properties: ["floor": floor.id]
+    /// The closed tile, with the column over it while it is open.
+    @ViewBuilder
+    private var switcher: some View {
+        if let shown = selectedPresentation {
+            tile(shown)
+                .overlay(alignment: .bottomTrailing) {
+                    column
+                        // Reaching past the tile by its inset, so the bottom
+                        // level lies on the tile. Alignment guides mirror right
+                        // to left, as an offset would not — set here, on the
+                        // column as a whole: set inside its `if`, they never
+                        // reach this overlay (measured).
+                        .alignmentGuide(.bottom) { $0[.bottom] - Self.columnInset }
+                        .alignmentGuide(.trailing) { $0[.trailing] - Self.columnInset }
+                }
+                .onPreferenceChange(KozmosFloorTileSizeKey.self) { tileSize = $0 }
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(label)
+        }
+    }
+
+    /// The closed state: the map's own control, `KozmosMapControlButton`,
+    /// showing the level's short label — the SDK's level switcher tile. It is
+    /// drawn by the map control itself, not a lookalike, so it follows the
+    /// shared map-control surface wherever that goes, the location control
+    /// beside it with it. It marks no result count: it is the level in view.
+    @ViewBuilder
+    private func tile(_ floor: KozmosFloorPresentation) -> some View {
+        let control = KozmosMapControlButton(label: tileLabel, action: { setExpanded(!isExpanded) }) {
+            Text(floor.shortLabel)
+                .font(KozmosTypography.subheadline)
+                .bold()
+                .lineLimit(1)
+                // The map control's square does not grow with the text, as the
+                // lists' squares do: the label shrinks further before it would
+                // truncate. Recorded in the pull request for the map control.
+                .minimumScaleFactor(0.5)
+        }
+        .overlay(alignment: .topTrailing) {
+            if tileShowsUserFloor { userFloorDot }
+        }
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(key: KozmosFloorTileSizeKey.self, value: proxy.size)
+            }
+        )
+        #if os(iOS)
+        control
+            // VoiceOver is given the UIKit element laid over the tile instead:
+            // it can say whether the column is open, which SwiftUI has no
+            // modifier for.
+            .accessibilityHidden(true)
+            .overlay(
+                KozmosFloorSwitcherElement(
+                    label: tileLabel,
+                    isExpanded: isExpanded,
+                    columnFrame: isExpanded ? columnFrameOverTile : .zero,
+                    focusRequest: tileFocusRequest,
+                    toggle: { setExpanded(!isExpanded) },
+                    escape: { close(returningFocus: true) },
+                    tappedOutside: { close(returningFocus: false) }
                 )
             )
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isExpanded = true }
+        #else
+        control
+            .accessibilityHint("Shows every level")
+        #endif
+    }
+
+    /// The open state: every level in a column over the tile, top floor first,
+    /// its bottom level where the tile was — the tile grows into it. The map
+    /// control's surface, edge and shadow, opaque where the tile is nine
+    /// tenths: the column lies over the tile, and the tile's own label showing
+    /// through its bottom level read as part of it.
+    @ViewBuilder
+    private var column: some View {
+        if variant == .collapsible, isExpanded {
+            let edge = RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous)
+            VStack(spacing: Self.columnInset) {
+                ForEach(floors) { floor in
+                    columnLevel(floor)
+                }
+            }
+            .padding(Self.columnInset)
+            .background(KozmosColors.primitivesColorsBackground0, in: edge)
+            .overlay(edge.stroke(KozmosColors.primitivesColorsForeground300, lineWidth: 1))
+            .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+            .fixedSize()
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(label)
+            .accessibilityAction(.escape) { close(returningFocus: true) }
+            // Escape on a hardware keyboard, as the escape gesture above.
+            .background(
+                Button { close(returningFocus: true) } label: { EmptyView() }
+                    .keyboardShortcut(.cancelAction)
+                    .opacity(0)
+                    .accessibilityHidden(true)
+            )
+            .onAppear { focusedLevel = selectedFloor }
+            .transition(
+                reduceMotion
+                    ? .opacity
+                    : .opacity.combined(with: .scale(scale: 0.92, anchor: .bottomTrailing))
+            )
+        }
+    }
+
+    /// One level of the column, the tile's size: its short label, as the
+    /// tile shows it. The board's states: the current level outlined in the
+    /// theme's primary, its label in the primary; a closed level on the muted
+    /// surface in the muted ink. The visitor's dot at the top trailing corner,
+    /// a result count at the bottom one, so neither covers the other.
+    private func columnLevel(_ floor: KozmosFloorPresentation) -> some View {
+        let isCurrent = floor.id == selectedFloor
+        let shape = RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
+        return Button {
+            select(floor)
         } label: {
             Text(floor.shortLabel)
                 .font(KozmosTypography.subheadline)
                 .bold()
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .frame(width: controlSize, height: controlSize)
-                .background(KozmosColors.primitivesColorsTheme500)
-                .foregroundColor(KozmosColors.primitivesColorsBackground0)
-                .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
-                .contentShape(
-                    RoundedRectangle(
-                        cornerRadius: KozmosDimensions.semanticsRadiusPanel,
-                        style: .continuous
-                    )
+                .minimumScaleFactor(0.5)
+                .foregroundColor(
+                    isCurrent
+                        ? KozmosColors.primitivesColorsTheme600
+                        : floor.disabled
+                            ? KozmosColors.primitivesColorsForeground400
+                            : KozmosColors.primitivesColorsForeground100
                 )
+                .frame(width: tileSize.width, height: tileSize.height)
+                .background(floor.disabled ? KozmosColors.primitivesColorsBackground100 : Color.clear, in: shape)
+                .overlay {
+                    if isCurrent { shape.strokeBorder(KozmosColors.primitivesColorsTheme600, lineWidth: 1) }
+                }
+                .overlay(alignment: .topTrailing) {
+                    if floor.id == userFloor { userFloorDot }
+                }
+                .overlay(alignment: .bottomTrailing) { resultMarker(for: floor) }
+                .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(floor.label)
-        .accessibilityHint("Shows every level")
-        .accessibilityAddTraits(.isButton)
+        .disabled(floor.disabled)
+        .accessibilityLabel(spokenLabel(floor))
+        .accessibilityAddTraits(isCurrent ? [.isButton, .isSelected] : .isButton)
+        #if os(iOS)
+        // VoiceOver lands on the current level when the column opens. iOS
+        // only: on a Mac `ImageRenderer` draws no column at all once a level
+        // carries this (measured), and VoiceOver on a Mac is not what the
+        // switcher is for.
+        .accessibilityFocused($focusedLevel, equals: floor.id)
+        #endif
+    }
+
+    /// The visitor's level (decision 38): a dot in the theme's primary with a
+    /// halo of the surface, at the top trailing corner, as the SDK's level
+    /// switcher marks it — 10pt across, 4pt in, as React's is. Hidden from
+    /// VoiceOver: the level's name says it.
+    private var userFloorDot: some View {
+        Circle()
+            .fill(KozmosColors.primitivesColorsTheme600)
+            .padding(2)
+            .background(KozmosColors.primitivesColorsBackground0, in: Circle())
+            .frame(width: 10, height: 10)
+            .padding(KozmosDimensions.primitivesLayoutSpacing50)
+            .accessibilityHidden(true)
     }
 
     /// The next selectable floor in list order, skipping any that are closed.
@@ -363,22 +499,30 @@ public struct KozmosFloorSelector: View {
     ///
     /// Only a count above zero: `nil` is unknown, which is not the same as
     /// none, and a level with a real zero reads as itself. Only where the
-    /// levels are listed — the two lists and the collapsible's open list. The
+    /// levels are listed — the two lists and the switcher's open column. The
     /// stepper shows one level at a time, so a marker on the level already in
-    /// view says nothing; the collapsible's closed pill shows that level too,
-    /// and is drawn without one.
+    /// view says nothing; the switcher's closed tile shows that level too, and
+    /// is drawn without one.
     func markedResultCount(_ floor: KozmosFloorPresentation) -> Int? {
         guard variant != .compactStepper, let count = floor.resultCount, count > 0 else { return nil }
         return count
     }
 
-    /// What assistive technology hears for a level: its label, and the count
-    /// its button marks in the product's words — "Level 2, 3 results". Said
-    /// here, on the button, so the marker itself is hidden: hearing "3" after
-    /// that is noise.
+    /// What assistive technology hears for a level: its label, whether the
+    /// visitor is on it where the switcher marks that, and the count its
+    /// button marks in the product's words — "Level 2, your level, 3 results".
+    /// Said here, on the button, so the marks themselves are hidden: hearing
+    /// "3" after that is noise. Only the switcher draws the dot, so only it
+    /// says it.
     func spokenLabel(_ floor: KozmosFloorPresentation) -> String {
-        guard let count = markedResultCount(floor) else { return floor.label }
-        return "\(floor.label), \(resultCountLabel(count))"
+        var parts = [floor.label]
+        if variant == .collapsible, let userFloor, floor.id == userFloor {
+            parts.append(userFloorLabel)
+        }
+        if let count = markedResultCount(floor) {
+            parts.append(resultCountLabel(count))
+        }
+        return parts.joined(separator: ", ")
     }
 
     /// The count, drawn once and said once: a pill in the theme's primary in
@@ -430,3 +574,145 @@ public struct KozmosFloorSelector: View {
         .accessibilityLabel(stepperLabel(step: step))
     }
 }
+
+/// The switcher's tile's size, read off the map control.
+private struct KozmosFloorTileSizeKey: PreferenceKey {
+    static let defaultValue = CGSize(width: 44, height: 44)
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) { value = nextValue() }
+}
+
+#if os(iOS)
+import UIKit
+
+/// The switcher's tile as VoiceOver hears it, and the watch for a tap outside
+/// its open column.
+///
+/// SwiftUI has no modifier for whether a control's list is open: its own
+/// `DisclosureGroup` reports no expanded status to VoiceOver on iOS 26.5
+/// (measured, 2026-09-28). UIKit does, as `accessibilityExpandedStatus`
+/// (iOS 18), so the tile is given to VoiceOver as this view laid over it,
+/// which says "collapsed" or "expanded" in the visitor's own language. It
+/// takes no touches — they reach the map control underneath — and acts only
+/// for VoiceOver: activation opens or closes the column, the escape gesture
+/// closes it.
+///
+/// While the column is open it also watches its window for a tap outside the
+/// tile and the column, which SwiftUI cannot hear beyond a view's own bounds.
+/// The watch takes nothing from the tap: a tap on the map still reaches the
+/// map, as a press outside Radix's popover still reaches what it landed on.
+struct KozmosFloorSwitcherElement: UIViewRepresentable {
+    let label: String
+    let isExpanded: Bool
+    let columnFrame: CGRect
+    let focusRequest: Int
+    let toggle: () -> Void
+    let escape: () -> Void
+    let tappedOutside: () -> Void
+
+    func makeUIView(context: Context) -> ElementView {
+        ElementView(focusRequest: focusRequest)
+    }
+
+    func updateUIView(_ view: ElementView, context: Context) {
+        view.accessibilityLabel = label
+        view.accessibilityHint = isExpanded ? nil : "Shows every level"
+        view.toggle = toggle
+        view.escape = escape
+        view.tappedOutside = tappedOutside
+        view.columnFrame = columnFrame
+        view.isExpanded = isExpanded
+        if view.focusRequest != focusRequest {
+            view.focusRequest = focusRequest
+            view.takeVoiceOverFocus()
+        }
+    }
+
+    final class ElementView: UIView, UIGestureRecognizerDelegate {
+        var toggle: () -> Void = {}
+        var escape: () -> Void = {}
+        var tappedOutside: () -> Void = {}
+        /// The open column, in this view's coordinates, which are the tile's.
+        var columnFrame: CGRect = .zero
+        var focusRequest: Int
+        var isExpanded = false {
+            didSet {
+                guard isExpanded != oldValue else { return }
+                if #available(iOS 18.0, *) { accessibilityExpandedStatus = isExpanded ? .expanded : .collapsed }
+                watchForTapsOutside()
+            }
+        }
+        private var watch: UITapGestureRecognizer?
+
+        init(focusRequest: Int) {
+            self.focusRequest = focusRequest
+            super.init(frame: .zero)
+            backgroundColor = .clear
+            isUserInteractionEnabled = false
+            isAccessibilityElement = true
+            accessibilityTraits = .button
+            if #available(iOS 18.0, *) { accessibilityExpandedStatus = .collapsed }
+        }
+
+        required init?(coder: NSCoder) { nil }
+
+        override func accessibilityActivate() -> Bool {
+            toggle()
+            return true
+        }
+
+        override func accessibilityPerformEscape() -> Bool {
+            guard isExpanded else { return false }
+            escape()
+            return true
+        }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            watchForTapsOutside()
+        }
+
+        /// Watches the window while the column is open, and nothing otherwise.
+        private func watchForTapsOutside() {
+            let host = isExpanded ? window : nil
+            if let watch, watch.view === host { return }
+            if let watch { watch.view?.removeGestureRecognizer(watch) }
+            watch = nil
+            guard let host else { return }
+            let tap = UITapGestureRecognizer(target: self, action: #selector(tapped))
+            tap.cancelsTouchesInView = false
+            tap.delaysTouchesEnded = false
+            tap.delegate = self
+            host.addGestureRecognizer(tap)
+            watch = tap
+        }
+
+        /// The watch's action: a tap outside closes the column.
+        @objc func tapped() { tappedOutside() }
+
+        /// Outside both the tile and its column, in this view's coordinates.
+        func isOutside(_ point: CGPoint) -> Bool {
+            !bounds.contains(point) && !columnFrame.contains(point)
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            isOutside(touch.location(in: self))
+        }
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
+
+        /// VoiceOver back on the tile once the column has gone, where it hears
+        /// the level now shown.
+        func takeVoiceOverFocus() {
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.window != nil else { return }
+                UIAccessibility.post(notification: .layoutChanged, argument: self)
+            }
+        }
+    }
+}
+#endif

@@ -61,6 +61,21 @@ struct RenderedPixels {
                       width: CGFloat(maxX - minX + 1) / scale, height: CGFloat(maxY - minY + 1) / scale)
     }
 
+    /// How many pixels inside `region` (in points) match.
+    func count(in region: CGRect, where matches: (UInt8, UInt8, UInt8) -> Bool) -> Int {
+        let x0 = max(0, Int(region.minX * scale)), x1 = min(width, Int(region.maxX * scale))
+        let y0 = max(0, Int(region.minY * scale)), y1 = min(height, Int(region.maxY * scale))
+        guard x0 < x1, y0 < y1 else { return 0 }
+        var found = 0
+        for y in y0..<y1 {
+            for x in x0..<x1 {
+                let i = (y * width + x) * 4
+                if matches(rgba[i], rgba[i + 1], rgba[i + 2]) { found += 1 }
+            }
+        }
+        return found
+    }
+
     /// The colour drawn at a point, in points.
     func color(at point: CGPoint) -> (r: UInt8, g: UInt8, b: UInt8) {
         let x = min(max(Int(point.x * scale), 0), width - 1), y = min(max(Int(point.y * scale), 0), height - 1)
