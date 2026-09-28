@@ -545,7 +545,7 @@ jobs:
         working-directory: packages/ios
         run: swift test
 
-      - name: Test Native POI Rendering on iOS Simulator
+      - name: Test the iOS Package on the Simulator
         run: node scripts/check-ios-poi.mjs
 
       - name: Preserve Native POI Render Evidence

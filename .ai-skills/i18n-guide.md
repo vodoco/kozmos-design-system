@@ -807,6 +807,10 @@ Arabic has 6 plural forms: zero, one, two, few, many, other
 
 ## 8. Translation Workflow
 
+None of this section exists in the repository yet: there is no `packages/locales`, no
+translation-management service is connected, and no workflow or script extracts, syncs or validates
+translations. Read it as a design, not as instructions.
+
 ### 8.1 Translation Management
 
 ```
@@ -851,41 +855,9 @@ lokalise2 file upload \
 
 ### 8.3 CI/CD Integration
 
-```yaml
-# .github/workflows/translations.yml
-name: Translation Sync
-
-on:
-  push:
-    paths:
-      - "packages/locales/**"
-  schedule:
-    - cron: "0 6 * * 1" # Weekly sync
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Pull translations from TMS
-        run: |
-          lokalise2 file download \
-            --project-id ${{ secrets.LOKALISE_PROJECT_ID }} \
-            --token ${{ secrets.LOKALISE_API_TOKEN }} \
-            --format json \
-            --dest packages/locales
-
-      - name: Validate translations
-        run: pnpm run validate:translations
-
-      - name: Create PR if changes
-        uses: peter-evans/create-pull-request@v5
-        with:
-          title: "chore: update translations"
-          branch: translations/update
-          commit-message: "chore: sync translations from Lokalise"
-```
+No workflow syncs or validates translations. There is no `translations.yml`, no workflow reads a
+translation-management secret, and no package declares a `validate:translations` script; the
+workflows that exist are listed in [ci-cd-configuration.md](./ci-cd-configuration.md).
 
 ### 8.4 Translation Validation
 

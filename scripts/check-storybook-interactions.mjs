@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import AxeBuilder from "@axe-core/playwright";
-import { launchFixtureBrowser } from "./lib/built-react-fixture.mjs";
+import {
+  launchFixtureBrowser,
+  settleLayout,
+} from "./lib/built-react-fixture.mjs";
 
 const base = process.env.STORYBOOK_URL ?? "http://127.0.0.1:6006";
 const browser = await launchFixtureBrowser();
@@ -255,6 +258,39 @@ try {
           null,
         );
         console.log(`PASS expanded ColorPicker ${theme} ${viewport.width}`);
+
+        // Decision 16: the assistant takes focus when the visitor opens it,
+        // and not when it is on screen from the start. Opened from the
+        // keyboard: WebKit on macOS does not focus a button that is clicked,
+        // so a click would leave the page, not the button, to hand back to.
+        await visit("product-sdk-aicompanionpanel--conversation");
+        await page.getByRole("region", { name: "Assistant" }).waitFor();
+        await settleLayout(page);
+        assert.equal(
+          await page.evaluate(() => document.activeElement?.tagName),
+          "BODY",
+          "a panel on screen from the start leaves focus where it was",
+        );
+        await visit("product-sdk-aicompanionpanel--open-and-close");
+        const ask = page.getByRole("button", { name: "AI search" });
+        const assistant = page.getByRole("region", { name: "Assistant" });
+        await ask.focus();
+        await page.keyboard.press("Enter");
+        await assistant.waitFor();
+        await settleLayout(page);
+        assert(
+          await assistant.evaluate((n) => n === document.activeElement),
+          "opening the panel moves focus into it",
+        );
+        await audit();
+        await page.keyboard.press("Escape");
+        await assistant.waitFor({ state: "detached" });
+        await settleLayout(page);
+        assert(
+          await ask.evaluate((n) => n === document.activeElement),
+          "closing the panel hands focus back to the button that opened it",
+        );
+        console.log(`PASS AICompanionPanel focus ${theme} ${viewport.width}`);
         for (const id of [
           "product-sdk-routepreviewpanel--ready",
           "system-themeprovider--default",

@@ -5,6 +5,14 @@ import SwiftUI
 /// Mirrors the React `BrowseCategoriesPanel`. The panel renders whatever
 /// categories it is given; filtering, searching, and result counts belong to
 /// the consuming app.
+///
+/// In its sheet presentation, which paints no surface of its own, the panel
+/// is the top of the map shell's panel when it is that panel's content: its
+/// first row — the search row, or the tiles when there is none — tops its
+/// padding up to what the panel already leaves above it
+/// (`kozmosPanelInsetTop`, `kozmosPanelClearanceTop`) rather than adding to
+/// it, so the search field sits as far from the panel's top as from its side
+/// and keeps the grabber's target clear (decision 14).
 public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: View, EmptyStateContent: View>: View {
     /// Where the panel is drawn: on its own, with its own surface and a rule
     /// under the search row; or inside the shell's sheet, which draws the
@@ -14,6 +22,9 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
         case panel
         case sheet
     }
+
+    @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
+    @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
 
     private let categories: [KozmosCategoryPresentation]
     private let presentation: Presentation
@@ -60,6 +71,20 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
         self.hasActions = Actions.self != EmptyView.self
     }
 
+    /// The first row's top padding: the search row's, or the tiles' when there
+    /// is none. Hosted in the shell's panel in the sheet presentation, the
+    /// space the panel leaves above it — a grabber's row — is the browser's
+    /// own top: the row tops its 16 up to it rather than adding 16 to it, and
+    /// keeps the clearance the panel asks for under a grabber. It padded 16
+    /// under the grabber's 16-point row: the search field sat 32 from the
+    /// sheet's top and 16 from its side. The panel presentation draws a
+    /// surface of its own, and that space lies outside it: it keeps its 16.
+    private var firstRowTopPadding: CGFloat {
+        let padding = KozmosDimensions.primitivesLayoutSpacing200
+        guard presentation == .sheet else { return padding }
+        return max(panelClearanceTop, padding - panelInsetTop)
+    }
+
     public var body: some View {
         VStack(spacing: 0) {
             if hasSearch || hasActions {
@@ -71,7 +96,8 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
                         actions.layoutPriority(1)
                     }
                 }
-                .padding(KozmosDimensions.primitivesLayoutSpacing200)
+                .padding([.horizontal, .bottom], KozmosDimensions.primitivesLayoutSpacing200)
+                .padding(.top, firstRowTopPadding)
 
                 // The container edge's role, as React's border-b draws it and
                 // as the prototype draws every rule (a light grey). It was
@@ -111,7 +137,10 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
                     }
                 }
                 }
-                .padding(KozmosDimensions.primitivesLayoutSpacing200)
+                // Under the search row the tiles sit under that row, not
+                // under whatever the panel leaves: they keep their 16.
+                .padding([.horizontal, .bottom], KozmosDimensions.primitivesLayoutSpacing200)
+                .padding(.top, hasSearch || hasActions ? KozmosDimensions.primitivesLayoutSpacing200 : firstRowTopPadding)
             }
         }
         .frame(maxWidth: .infinity)

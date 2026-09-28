@@ -953,29 +953,22 @@ export default {
 
 ### 10.4 CI/CD Integration
 
-```yaml
-# .github/workflows/accessibility.yml
-name: Accessibility Tests
+There is no separate accessibility workflow and no `test:a11y` script. Accessibility is checked
+inside the workflows every pull request runs:
 
-on: [push, pull_request]
+- **`ci.yml`:** React's unit tests (`pnpm test`) include `vitest-axe` checks; the "Stories &
+  Interactions (chromium)" shard runs axe on every story in light and dark at 320 and 1280 px
+  (`pnpm test:storybook-audit`) and fails on any violation; "Core Pipeline & POI Gallery" runs
+  `scripts/skills/check-a11y.ts` on five stories.
+- **`lighthouse.yml`:** Lighthouse CI over four stories of the built Storybook
+  (`lighthouserc.json`) fails below an accessibility score of 100.
 
-jobs:
-  a11y:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+Locally, against a running Storybook (`pnpm --filter @kozmos-ds/docs storybook`):
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run axe tests
-        run: pnpm test:a11y
-
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v10
-        with:
-          configPath: "./.lighthouserc.json"
-          uploadArtifacts: true
+```bash
+# Every story, as CI runs it (without STORY_SCOPE=all, one story per component)
+STORY_SCOPE=all STORYBOOK_URL=http://127.0.0.1:6006 pnpm test:storybook-audit
+STORYBOOK_URL=http://127.0.0.1:6006 pnpm exec tsx scripts/skills/check-a11y.ts
 ```
 
 ---
@@ -1036,7 +1029,7 @@ jobs:
 ### Automated Tests
 
 - [ ] axe-core tests passing
-- [ ] Lighthouse accessibility score ≥ 90
+- [ ] Lighthouse accessibility score 100 (the `lighthouse` check)
 - [ ] No unintended changes in Visual Review (`pnpm test:visual`)
 
 ### Manual Testing

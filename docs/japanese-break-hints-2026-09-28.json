@@ -1,0 +1,606 @@
+{
+  "taxonomyVersion": "10.13.0",
+  "separator": "U+200B",
+  "names": [
+    {
+      "name_ja": "ウェルネス・祈り",
+      "where": ["quick access \"Wellness & Spirituality\" (70 files)"],
+      "hinted": "ウェルネス・\u200b祈り",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "案内・サポート",
+      "where": ["quick access \"Information & Help\" (70 files)"],
+      "hinted": "案内・\u200bサポート",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "バリアフリー施設",
+      "where": ["quick access \"Accessible Places\" (70 files)"],
+      "hinted": "バリアフリー\u200b施設",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ヴィーガン・ベジタリアン",
+      "where": ["quick access \"Vegan & Vegetarian\" (70 files)"],
+      "hinted": "ヴィーガン・\u200bベジタリアン",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "保安検査・入国審査",
+      "where": ["quick access \"Security & Immigration\" (7 files)"],
+      "hinted": "保安検査・\u200b入国審査",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "カスタマーサービス",
+      "where": ["quick access \"Customer Service\" (7 files)"],
+      "hinted": "カスタマー\u200bサービス",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "駐車場・地上交通",
+      "where": ["quick access \"Parking & Ground Transport\" (7 files)"],
+      "hinted": "駐車場・\u200b地上交通",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "リハビリ・治療",
+      "where": ["quick access \"Rehab & Therapy\" (6 files)"],
+      "hinted": "リハビリ・\u200b治療",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "店舗・ショッピング",
+      "where": ["quick access \"Stores & Shopping\" (7 files)"],
+      "hinted": "店舗・\u200bショッピング",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "フード・ドリンク",
+      "where": ["quick access \"Food & Drink\" (14 files)"],
+      "hinted": "フード・\u200bドリンク",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "オンライン注文・店舗受取",
+      "where": ["quick access \"Click & Collect\" (7 files)"],
+      "hinted": null,
+      "fitsTwoLines": false,
+      "note": "hints would make it three lines: a shorter name, no hints"
+    },
+    {
+      "name_ja": "エンターテインメント",
+      "where": ["quick access \"Entertainment\" (7 files)"],
+      "hinted": "エンター\u200bテインメント",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "ワークスペース",
+      "where": ["quick access \"Workspaces\" (4 files)", "Types.work-space"],
+      "hinted": "ワーク\u200bスペース",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "サービス・サポート",
+      "where": ["quick access \"Services & Support\" (7 files)"],
+      "hinted": "サービス・\u200bサポート",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "フード・カフェ",
+      "where": ["quick access \"Food & Cafés\" (7 files)"],
+      "hinted": "フード・\u200bカフェ",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "コラボレーション・イベント",
+      "where": ["quick access \"Collaboration & Events\" (7 files)"],
+      "hinted": null,
+      "fitsTwoLines": false,
+      "note": "needs three lines even with hints: a shorter name"
+    },
+    {
+      "name_ja": "滞在・くつろぎ",
+      "where": ["quick access \"Stay & Comfort\" (7 files)"],
+      "hinted": "滞在・\u200bくつろぎ",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "リラックス・遊び",
+      "where": ["quick access \"Relax & Play\" (7 files)"],
+      "hinted": "リラックス・\u200b遊び",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ゲストサービス",
+      "where": ["quick access \"Guest Services\" (7 files)"],
+      "hinted": "ゲスト\u200bサービス",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "チケット・案内",
+      "where": ["quick access \"Tickets & Info\" (7 files)"],
+      "hinted": "チケット・\u200b案内",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "トラベルサービス",
+      "where": ["quick access \"Travel Services\" (7 files)"],
+      "hinted": "トラベル\u200bサービス",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "駐車場・乗り継ぎ",
+      "where": ["quick access \"Parking & Connections\" (7 files)"],
+      "hinted": "駐車場・\u200b乗り継ぎ",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "アパートメント",
+      "where": ["Types.accommodation-space_apartment"],
+      "hinted": "アパート\u200bメント",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "アクティビティスペース",
+      "where": ["Types.activity-space"],
+      "hinted": "アクティビ\u200bティ\u200bスペース",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "ボウリングレーン",
+      "where": ["Types.activity-space_bowling-alley"],
+      "hinted": "ボウリング\u200bレーン",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "クライミングウォール",
+      "where": ["Types.activity-space_climbing-wall"],
+      "hinted": "クライミング\u200bウォール",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "フィットネススタジオ",
+      "where": ["Types.activity-space_fitness-studio"],
+      "hinted": "フィットネス\u200bスタジオ",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "キッズスペース",
+      "where": ["Types.activity-space_play-area"],
+      "hinted": "キッズ\u200bスペース",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "スポーツコート",
+      "where": ["Types.activity-space_sports-court"],
+      "hinted": "スポーツ\u200bコート",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "サービススペース",
+      "where": ["Types.amenity-space"],
+      "hinted": "サービス\u200bスペース",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "エレベーターホール",
+      "where": ["Types.circulation-space_elevator-lobby"],
+      "hinted": "エレベーター\u200bホール",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "装飾・環境要素",
+      "where": ["Types.decorative-environmental-feature"],
+      "hinted": "装飾・\u200b環境要素",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ランドマーク / アトラクション",
+      "where": ["Types.decorative-environmental-feature_landmark-attraction"],
+      "hinted": null,
+      "fitsTwoLines": false,
+      "note": "needs three lines even with hints: a shorter name"
+    },
+    {
+      "name_ja": "コンピューター室",
+      "where": ["Types.education-space_computer-lab"],
+      "hinted": "コンピュー\u200bター室",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "緊急・安全スペース",
+      "where": ["Types.emergency-safety-space"],
+      "hinted": "緊急・\u200b安全\u200bスペース",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "エンターテインメントスペース",
+      "where": ["Types.entertainment-space"],
+      "hinted": null,
+      "fitsTwoLines": false,
+      "note": "needs three lines even with hints: a shorter name"
+    },
+    {
+      "name_ja": "ゲームセンター",
+      "where": ["Types.entertainment-space_arcade"],
+      "hinted": "ゲーム\u200bセンター",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "コンサートホール",
+      "where": ["Types.entertainment-space_concert-hall"],
+      "hinted": "コンサート\u200bホール",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "手荷物ターンテーブル",
+      "where": ["Types.equipment_baggage-reclaim-carousel"],
+      "hinted": "手荷物\u200bターン\u200bテーブル",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "充電ステーション",
+      "where": ["Types.equipment_charging-station"],
+      "hinted": "充電\u200bステーション",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "消毒液ディスペンサー",
+      "where": ["Types.equipment_sanitizer-dispenser"],
+      "hinted": "消毒液\u200bディス\u200bペンサー",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "スポーツ用品・アクセサリー",
+      "where": ["Types.equipment_sports-equipment-accessories"],
+      "hinted": null,
+      "fitsTwoLines": false,
+      "note": "needs three lines even with hints: a shorter name"
+    },
+    {
+      "name_ja": "スプリンクラー",
+      "where": ["Types.equipment_sprinkler"],
+      "hinted": "スプリン\u200bクラー",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "X 線検査コンベア",
+      "where": ["Types.equipment_x-ray-conveyor-belt"],
+      "hinted": "X 線検査\u200bコンベア",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "イベントスペース",
+      "where": ["Types.event-space"],
+      "hinted": "イベント\u200bスペース",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "多宗教対応の祈祷室",
+      "where": ["Types.faith-worship-space_multi-faith-room"],
+      "hinted": "多宗教\u200b対応の\u200b祈祷室",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "セルフサービス食堂",
+      "where": ["Types.food-beverage-space_cafeteria"],
+      "hinted": "セルフ\u200bサービス\u200b食堂",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ドリンクスタンド",
+      "where": ["Types.food-beverage-space_drink-stall"],
+      "hinted": "ドリンク\u200bスタンド",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ファストフード",
+      "where": ["Types.food-beverage-space_fast-food"],
+      "hinted": "ファスト\u200bフード",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "フード・ドリンクスタンド",
+      "where": ["Types.food-beverage-space_food-drink-stall"],
+      "hinted": null,
+      "fitsTwoLines": false,
+      "note": "needs three lines even with hints: a shorter name"
+    },
+    {
+      "name_ja": "フードスタンド",
+      "where": ["Types.food-beverage-space_food-stall"],
+      "hinted": "フード\u200bスタンド",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ジュース・スムージーバー",
+      "where": ["Types.food-beverage-space_juice-smoothie-bar"],
+      "hinted": null,
+      "fitsTwoLines": false,
+      "note": "needs three lines even with hints: a shorter name"
+    },
+    {
+      "name_ja": "ゲームテーブル",
+      "where": ["Types.furniture_game-table"],
+      "hinted": "ゲーム\u200bテーブル",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ビーコンジオフェンス",
+      "where": ["Types.geofence_beacon-geofence"],
+      "hinted": "ビーコン\u200bジオフェンス",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "位置合わせ基準点",
+      "where": ["Types.georeferencing-anchor"],
+      "hinted": "位置合わせ\u200b基準点",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "下地・仕上げ工場",
+      "where": ["Types.industrial-space_preparation-and-finishing-workshop"],
+      "hinted": "下地・\u200b仕上げ\u200b工場",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "品質保証エリア",
+      "where": ["Types.industrial-space_quality-assurance-space"],
+      "hinted": "品質保証\u200bエリア",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "再生・改修エリア",
+      "where": ["Types.industrial-space_refurbishment"],
+      "hinted": "再生・\u200b改修\u200bエリア",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "心臓カテーテル室",
+      "where": ["Types.medical-space_cath-lab"],
+      "hinted": "心臓\u200bカテーテル室",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "高気圧酸素治療室",
+      "where": ["Types.medical-space_hyperbaric-chamber"],
+      "hinted": "高気圧\u200b酸素\u200b治療室",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "治療・リハビリ室",
+      "where": ["Types.medical-space_therapy-rehabilitation-room"],
+      "hinted": "治療・\u200bリハビリ室",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "オーディトリアム",
+      "where": ["Types.meeting-space_auditorium"],
+      "hinted": "オーディ\u200bトリアム",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "管理・設備スペース",
+      "where": ["Types.operational-space"],
+      "hinted": "管理・\u200b設備\u200bスペース",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "データセンター",
+      "where": ["Types.operational-space_data-center"],
+      "hinted": "データ\u200bセンター",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "自動車サービス",
+      "where": ["Types.parking-space_car-repair-services"],
+      "hinted": "自動車\u200bサービス",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "トイレ・水回り",
+      "where": ["Types.restroom-space"],
+      "hinted": "トイレ・\u200b水回り",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ベビーケア・衛生",
+      "where": ["Types.restroom-space_baby-care-hygiene"],
+      "hinted": "ベビーケア・\u200b衛生",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ギフト包装カウンター",
+      "where": ["Types.retail-space_gift-wrap-station"],
+      "hinted": "ギフト\u200b包装\u200bカウンター",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "アイランド什器",
+      "where": ["Types.retail-space_island-display"],
+      "hinted": "アイランド\u200b什器",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "パーソナルショッパー",
+      "where": ["Types.retail-space_personal-shopper-assist"],
+      "hinted": "パーソナル\u200bショッパー",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ポップアップストア",
+      "where": ["Types.retail-space_pop-up"],
+      "hinted": "ポップアップ\u200bストア",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "返品カウンター",
+      "where": ["Types.retail-space_returns-desk"],
+      "hinted": "返品\u200bカウンター",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "試食・試用コーナー",
+      "where": ["Types.retail-space_sample-station"],
+      "hinted": "試食・\u200b試用\u200bコーナー",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "税関・入国審査",
+      "where": ["Types.section_customs-immigration"],
+      "hinted": "税関・\u200b入国審査",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "保安カウンター",
+      "where": ["Types.security-space_security-desk"],
+      "hinted": "保安\u200bカウンター",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "待ち合わせ場所",
+      "where": ["Types.social-space_meeting-point"],
+      "hinted": "待ち合わせ\u200b場所",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "給茶・軽食コーナー",
+      "where": ["Types.social-space_refreshment-room"],
+      "hinted": "給茶・\u200b軽食\u200bコーナー",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "サポートスペース",
+      "where": ["Types.support-space"],
+      "hinted": "サポート\u200bスペース",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ナースステーション",
+      "where": ["Types.support-space_nurse-station"],
+      "hinted": "ナース\u200bステーション",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "エスカレーター",
+      "where": ["Types.transition_escalator"],
+      "hinted": "エスカ\u200bレーター",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "車椅子用リフト",
+      "where": ["Types.transition_wheelchair-lift"],
+      "hinted": "車椅子用\u200bリフト",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "到着出迎えエリア",
+      "where": ["Types.transportation-space_arrivals-greeting-area"],
+      "hinted": "到着\u200b出迎え\u200bエリア",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "手荷物預け・チェックイン",
+      "where": ["Types.transportation-space_bag-drop-checkin"],
+      "hinted": "手荷物\u200b預け・\u200bチェックイン",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "バスターミナル",
+      "where": ["Types.transportation-space_bus-station"],
+      "hinted": "バス\u200bターミナル",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "配車サービス乗り場",
+      "where": ["Types.transportation-space_rideshare-pickup"],
+      "hinted": "配車\u200bサービス\u200b乗り場",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "シャトルバス乗り場",
+      "where": ["Types.transportation-space_shuttle-station"],
+      "hinted": "シャトル\u200bバス\u200b乗り場",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "カスタム移動ノード",
+      "where": ["Types.wayfinding-network_custom-transition"],
+      "hinted": "カスタム\u200b移動\u200bノード",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "エレベーターノード",
+      "where": ["Types.wayfinding-network_elevator-node"],
+      "hinted": "エレベーター\u200bノード",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "エスカレーターノード",
+      "where": ["Types.wayfinding-network_escalator-node"],
+      "hinted": null,
+      "fitsTwoLines": false,
+      "note": "hints would make it three lines: a shorter name, no hints"
+    },
+    {
+      "name_ja": "ウェルネススペース",
+      "where": ["Types.wellness-space"],
+      "hinted": "ウェルネス\u200bスペース",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "スパトリートメント室",
+      "where": ["Types.wellness-space_spa-treatment-room"],
+      "hinted": "スパ\u200bトリート\u200bメント室",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "スチームサウナ",
+      "where": ["Types.wellness-space_steam-room"],
+      "hinted": "スチーム\u200bサウナ",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "パーティション席",
+      "where": ["Types.work-space_office-cubicle"],
+      "hinted": "パーティ\u200bション席",
+      "fitsTwoLines": true,
+      "note": "hint inside one loanword, at a syllable boundary"
+    },
+    {
+      "name_ja": "オープンオフィス",
+      "where": ["Types.work-space_open-plan-office"],
+      "hinted": "オープン\u200bオフィス",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "シェアオフィス",
+      "where": ["Types.work-space_shared-office"],
+      "hinted": "シェア\u200bオフィス",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "タッチダウン席",
+      "where": ["Types.work-space_touchdown"],
+      "hinted": "タッチ\u200bダウン席",
+      "fitsTwoLines": true
+    },
+    {
+      "name_ja": "ワークステーション",
+      "where": ["Types.work-space_workstation"],
+      "hinted": "ワーク\u200bステーション",
+      "fitsTwoLines": true
+    }
+  ]
+}
