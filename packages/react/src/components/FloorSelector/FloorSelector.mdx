@@ -22,6 +22,19 @@ Displays the FloorSelector interface topology natively.
 opens the full list on touch, each row the level's short label beside its name, the current one
 filled. React and Compose do not have that variant yet.
 
+## The order of the levels
+
+List the levels **top floor first**, on every variant: the highest level first and the basements
+last, as on a lift panel and in the SDK's level switcher. The lists draw `floors` in the order you
+pass it, and the stepper steps through it in that order, so one top-first list serves every
+variant.
+
+## Which level to start on
+
+Start on the venue's **default level** (a property on Pointr's levels); when there is none, start on
+the **ground level**. That choice is the product's: FloorSelector is controlled, so pass the level
+you chose as `selectedFloor` and move it in `onFloorSelect`. Kozmos never picks a level itself.
+
 ## The stepper's buttons
 
 The compact stepper's two buttons are called "Floor up" and "Floor down" on every platform, for a
