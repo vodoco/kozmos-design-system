@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -130,6 +131,21 @@ val LocalKozmosPanelClearanceTop = compositionLocalOf { 0.dp }
  * keeps it. Provided to the panel's header and its content alike.
  */
 val LocalKozmosPanelSurface = compositionLocalOf<KozmosSurfaceStyle?> { null }
+
+/**
+ * Text that is muted elsewhere, as a hosted part draws it on [surface]
+ * (decision 48): on glass the foreground colour, so it reads at 4.5:1 over
+ * any map, where muted it read under 3:1 over a saturated one; elsewhere the
+ * muted colour. A part that draws a card of its own provides null for
+ * [LocalKozmosPanelSurface] to what it holds: that text is on the card.
+ */
+@Composable
+internal fun kozmosMutedForeground(surface: KozmosSurfaceStyle? = LocalKozmosPanelSurface.current): Color =
+    if (surface == KozmosSurfaceStyle.Glass) {
+        KozmosThemeTokens.primitivesColorsForeground100
+    } else {
+        KozmosThemeTokens.primitivesColorsForeground500
+    }
 
 /** The handle's row: deliberately shallow, an affordance at the sheet's top edge. */
 private val SheetHandleRowHeight = KozmosDimensions.primitivesLayoutSpacing200

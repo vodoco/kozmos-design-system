@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
+import com.kozmos.components.adaptivemapshell.kozmosMutedForeground
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.components.iconbutton.KozmosIconButtonVariant
@@ -58,7 +59,9 @@ import com.kozmos.components.surface.kozmosDashedEdge
  * rather than adding to it, so the destination sits as far from the panel's
  * top as from its side and keeps the handle's target clear (decision 14). And
  * it paints no fill there ([LocalKozmosPanelSurface]): the panel's surface,
- * solid or glass, is the one surface (decision 43).
+ * solid or glass, is the one surface (decision 43). On glass its muted text,
+ * "To" and the count of options, takes the foreground colour, so it reads at
+ * 4.5:1 over any map (decision 48).
  */
 @Composable
 fun KozmosRoutePreviewPanel(
@@ -123,7 +126,7 @@ fun KozmosRoutePreviewPanel(
                 text = destinationLabel.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = KozmosThemeTokens.primitivesColorsForeground500
+                color = kozmosMutedForeground()
             )
             Text(
                 text = destinationName,
@@ -204,7 +207,7 @@ fun KozmosRoutePreviewPanel(
                     Text(
                         text = optionsCountLabel,
                         style = MaterialTheme.typography.bodySmall,
-                        color = KozmosThemeTokens.primitivesColorsForeground500
+                        color = kozmosMutedForeground()
                     )
                 }
             }
