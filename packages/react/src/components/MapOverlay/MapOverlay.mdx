@@ -26,6 +26,15 @@ not a cosmetic preference.
 frame and modifier sizing instead, which is recorded as intentional in the
 variant analyzer rather than counted as a parity gap.
 
+What the overlay holds scrolls when it is taller than the map leaves room for.
+The overlay keeps the floating elevation's reach clear around what it holds, so
+a control's shadow, its edge and its focus ring are drawn whole at the overlay's
+edges; while it scrolls, only what has scrolled out of view is cut. The room is
+read from the elevation token when the package is built, and it takes no space
+from the layout: the content sits where it would without it. Like the space
+between the overlay's items, the room is the overlay's, so a press on it does
+not reach the map.
+
 ## Implementation
 
 import { PlatformSnippets } from '../PlatformSnippets';
@@ -123,3 +132,6 @@ fun MapScreen() {
 
 ### Bottom Center
 <Canvas of={MapOverlayStories.BottomCenter} />
+
+### Map Controls
+<Canvas of={MapOverlayStories.MapControls} />
