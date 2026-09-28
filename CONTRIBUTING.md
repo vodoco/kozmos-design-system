@@ -209,12 +209,21 @@ Fixes #123
 
 ### Review Process
 
-1. **Automated checks** must pass. Branch protection on `main` requires all 18 checks a pull
-   request runs: CI's web build and tests, its twelve browser shards and the Android build, the
-   bundle budget (`analyze-bundle`), Lighthouse's accessibility audit (`lighthouse`) and "Visual
-   Review". (iOS builds only on `main`.) Auto-merge waits for all of them. A pull request opened
-   against another branch and then retargeted to `main` has no `analyze-bundle` or `lighthouse`
-   run, because both run only for pull requests into `main`: push to it, or close and reopen it.
+1. **Automated checks** must pass. Branch protection on `main` requires all 19 checks a pull
+   request runs: CI's web build and tests, its twelve browser shards, the Android build and the iOS
+   build, the bundle budget (`analyze-bundle`), Lighthouse's accessibility audit (`lighthouse`) and
+   "Visual Review". The iOS build runs when a pull request touches what it builds (`packages/ios`,
+   `packages/tokens`, its scripts, `ci.yml` or the dependencies) and is skipped, which counts as
+   passing, otherwise; every push to `main` builds it. A pull request opened against another
+   branch and then retargeted to `main` has no `analyze-bundle` or `lighthouse` run, because both
+   run only for pull requests into `main`: push to it, or close and reopen it.
+
+   Pull requests merge through a **merge queue**: when one is ready, the checks run again on it
+   combined with the latest `main` (and any pull requests queued ahead of it), and it merges only
+   if they pass, so two pull requests that are each green cannot break `main` together. Join the
+   queue with auto-merge (`gh pr merge <n> --auto`, or "Merge when ready"); `--merge` on its own is
+   refused.
+
 2. **Code review** by at least one maintainer
 3. **Visual review** for component changes: the "Visual Review" check compares every story with
    its committed baseline, and intended changes show in "Files changed" (see
