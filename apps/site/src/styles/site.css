@@ -203,8 +203,11 @@ body {
 }
 
 /* The header's one row: the logo, the page links at the header's centre,
-   the tools at the far end. Below 48rem the links move into the drawer and
-   only the tools remain. */
+   the tools at the far end. Below 64rem, where the docs pages' sidebar goes
+   into a drawer too, the links move into the drawer and only the tools
+   remain: the five links, Storybook's among them, need a page 848px wide to
+   sit centred between the logo and the tools (868px in a wide sans,
+   measured on 2026-09-28), which a 48rem tablet is not. */
 .site-header-bar {
   flex: 1 1 auto;
   display: flex;
@@ -230,7 +233,7 @@ body {
   padding: var(--site-space-200);
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 64rem) {
   .site-header-links {
     display: flex;
   }
@@ -246,12 +249,15 @@ body {
    does not push them off it, and out of the row's flow they cannot push the
    tools. The room is the bar's. Centred, the row needs the links' width and
    twice the tools', which grow with the text, less the logo, which does
-   not: measured on 2026-09-22 at 16px text, 424px of links and 141px of
-   tools, and at 32px, 789 and 266, so the bar needs 37rem less 22px at any
-   text size (WCAG 1.4.4). Short of that the links stay in the row, after
-   the logo, and the row wraps before anything touches. The header tests
-   measure both, at 100% and 200% text. */
-@container (min-width: calc(37rem - 22px)) {
+   not. Measured on 2026-09-28 with Storybook's link, at 16px text: 524px of
+   links and 141px of tools, 544 and 144 in a wide sans (Verdana), and the
+   narrowest bar that holds them centred 655px, or 675; at 32px, 974 and
+   274, or 1055 and 284, and 1347px, or 1447. 50rem less 110px is 690px and
+   1490px: room at any text size, in either face (WCAG 1.4.4). Short of that
+   the links stay in the row, after the logo, and the row wraps before
+   anything touches. The header tests measure both, at 100%, 150% and 200%
+   text. */
+@container (min-width: calc(50rem - 110px)) {
   .site-header-links {
     position: absolute;
     left: 50%;
