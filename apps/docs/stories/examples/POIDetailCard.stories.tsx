@@ -27,7 +27,7 @@ import {
  * Source: POI Details Card Revamp, `HbFSXhCPxKUy2fWa5x9TKO`, node `241:4772`
  * (375×3183, 886 nodes), read over the Figma REST API on 2026-09-14.
  *
- * The rule this example is built under (`docs/ds-handoff.md` §11): only what
+ * The rule every Kozmos example is built under: only what
  * `@kozmos-ds/react` exports, its tokens and its roles. No hand-rolled markup
  * standing in for a missing component, no raw hex, no one-off class that
  * quietly reinvents a part — a workaround would destroy the evidence this
@@ -35,7 +35,8 @@ import {
  *
  * So where the design system cannot express a part, this file says so in an
  * `Alert` and renders nothing in its place. Those holes are the finding.
- * Every deviation is listed in `docs/poi-detail-card-gaps-2026-09-14.md`.
+ * Where a part is built but differs from the source, the comment beside it
+ * says how.
  */
 
 const IMAGE = (label: string, hue: number) =>
@@ -218,7 +219,7 @@ const meta: Meta = {
         component:
           "The SDK's `fullPOIDetailCard` (`HbFSXhCPxKUy2fWa5x9TKO`, node `241:4772`) " +
           "rebuilt from Kozmos components only. The `Alert`s mark parts the design " +
-          "system cannot express today; see docs/poi-detail-card-gaps-2026-09-14.md.",
+          "system cannot express today.",
       },
     },
   },

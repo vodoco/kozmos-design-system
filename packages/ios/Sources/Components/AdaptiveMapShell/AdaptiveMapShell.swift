@@ -33,8 +33,8 @@ public enum KozmosMapPanelDetent: Hashable, Sendable {
     func height(in shellHeight: CGFloat) -> CGFloat {
         let maximum = shellHeight * CGFloat(Self.usableFractions.upperBound)
         switch self {
-        // The prototype's three detents, driven and measured: a fifth of the
-        // frame, 54 % and 94 % (docs/pointr-prototype-initial-sheet-2026-09-20.md §1).
+        // The Pointr prototype's three detents, driven and measured by
+        // scripts/measure-prototype-sheet.cjs: a fifth of the frame, 54 % and 94 %.
         case .collapsed:
             // Proportional on a tall phone, but never so short on a landscape
             // or split-screen shell that the handle and header stop fitting.

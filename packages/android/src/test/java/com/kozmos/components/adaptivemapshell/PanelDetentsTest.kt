@@ -4,7 +4,7 @@ import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** The prototype's detents and drag rule (docs/pointr-prototype-initial-sheet-2026-09-20.md). */
+/** The Pointr prototype's detents and drag rule, as scripts/measure-prototype-sheet.cjs measured them. */
 class PanelDetentsTest {
     private val shell = 800.dp
 
