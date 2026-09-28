@@ -19,10 +19,10 @@ selected route is ready and available.
 As the whole content of `AdaptiveMapShell`'s panel, the route preview is the panel's top. Its
 destination row tops its 16px up to what the panel already leaves above it, rather than adding 16px
 to it. Under a sheet's grip it keeps 4px more, so nothing in the row sits inside the grip's target
-circle (WCAG 2.5.8). "To" used to sit 33px from the panel's top and 17px from its side; it now sits
-21px down under a grip, and 17px down in a side panel or a sheet with a single detent. The options
-under the row keep their 16px. On its own, outside a shell, nothing changes. `AdaptiveMapShell`'s
-`SheetWithRoutePreview` story shows it under a grip.
+circle (WCAG 2.5.8). Under a grip and in a side panel, "To" used to sit 33px from the panel's top and
+17px from its side; it now sits 21px down under a grip and 17px down in a side panel, as it already
+did in a sheet with a single detent. The options under the row keep their 16px. On its own, outside a
+shell, nothing changes. `AdaptiveMapShell`'s `SheetWithRoutePreview` story shows it under a grip.
 
 If you place the preview under a row of your own inside the panel, it is not at the panel's top: move
 that row into the shell's `panelHeader`, or set `--kozmos-panel-inset-top` and
