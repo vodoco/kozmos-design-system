@@ -589,6 +589,8 @@ const ELEVATION_ROLE_DOC = {
     "A control floating over content it does not belong to: map chrome, a search bar over a map, a content card presented on top of the map, a status message.",
   Overlay:
     "Above everything, with what is behind it dimmed or ignored: dialogs, drawers, tooltips, popovers, detail panels, and the map panels that take focus.",
+  "Map Control":
+    "A control over a map: zoom, compass, the location and step-free control, the floor tile. The SDK's own map controls cast it (decision 40): three layers, the key light first.",
 };
 
 function isElevationRole(token) {
@@ -655,6 +657,22 @@ function parseShadow(value, where) {
   };
 }
 
+// A shadow can be several, as CSS lists them: "0 8px 8px rgba(…), 0 0 32px
+// rgba(…)". The map controls' role is three (decision 40). Split on the commas
+// between layers, not the ones inside a colour.
+function parseShadowLayers(value, where) {
+  const layers = String(value)
+    .split(/,(?![^(]*\))/)
+    .map((layer) => layer.trim())
+    .filter(Boolean);
+  return layers.map((layer, index) =>
+    parseShadow(
+      layer,
+      layers.length > 1 ? `${where} layer ${index + 1}` : where,
+    ),
+  );
+}
+
 function elevationRoles(dictionary) {
   return dictionary.allTokens.filter(isElevationRole).map((token) => {
     const name = toCamelCase(token.path);
@@ -662,9 +680,17 @@ function elevationRoles(dictionary) {
     const lightValue = token.value || token.$value;
     const darkValue =
       (token.attributes && token.attributes.darkValue) || lightValue;
-    const light = parseShadow(lightValue, `${name} light`);
-    const dark = parseShadow(darkValue, `${name} dark`);
-    if (light.x !== dark.x || light.y !== dark.y || light.blur !== dark.blur) {
+    const lightLayers = parseShadowLayers(lightValue, `${name} light`);
+    const darkLayers = parseShadowLayers(darkValue, `${name} dark`);
+    if (
+      lightLayers.length !== darkLayers.length ||
+      lightLayers.some(
+        (light, i) =>
+          light.x !== darkLayers[i].x ||
+          light.y !== darkLayers[i].y ||
+          light.blur !== darkLayers[i].blur,
+      )
+    ) {
       throw new Error(
         `shadows: ${name} changes geometry between modes (${lightValue} / ${darkValue}); a role holds one geometry`,
       );
@@ -674,8 +700,11 @@ function elevationRoles(dictionary) {
       role,
       alias: aliasOf(token),
       doc: ELEVATION_ROLE_DOC[role] || `The ${role} elevation role.`,
-      light,
-      dark,
+      // The key light: a single-layer role's only layer, a layered role's first.
+      light: lightLayers[0],
+      dark: darkLayers[0],
+      lightLayers,
+      darkLayers,
     };
   });
 }
@@ -695,6 +724,7 @@ StyleDictionary.registerFormat({
     const roles = elevationRoles(dictionary);
     const aliases = aliasList(roles);
     const blurs = roles.map((r) => r.light.blur).join(" / ");
+    const layered = roles.filter((r) => r.lightLayers.length > 1);
     const header = [
       ...wrapWords(
         `The ${roles.length === 3 ? "three " : ""}elevation roles, mirroring \`Semantics.Elevation\` in \`packages/tokens\`${aliases ? ` — which aliases ${aliases} — ` : " "}and which \`pnpm tokens:elevation:check\` holds to these values.`,
@@ -705,6 +735,20 @@ StyleDictionary.registerFormat({
         `Compose models a shadow as a single elevation in dp rather than as an offset, blur and alpha, so these carry the blur radius of each role: ${blurs}.`,
         76,
       ),
+      ...(layered.length
+        ? [
+            "",
+            ...wrapWords(
+              `A role of several layers carries its key light's, the first: ${layered
+                .map(
+                  (r) =>
+                    `${r.role} is ${r.lightLayers.map((l) => l.blur).join(" / ")} and carries ${r.light.blur}`,
+                )
+                .join("; ")}. Compose here has no layered shadow (Modifier.dropShadow arrived in Compose 1.9); Material's ambient light draws the soft wide part.`,
+              76,
+            ),
+          ]
+        : []),
     ];
     const members = roles.map((r) => {
       const doc = wrapWords(r.doc, 72);
@@ -739,8 +783,9 @@ StyleDictionary.registerFormat({
     const roles = elevationRoles(dictionary);
     const tuple = (c) => `(${c.r}, ${c.g}, ${c.b}, ${c.a})`;
     const aliases = aliasList(roles);
-    const lightAlphas = roles.map((r) => r.light.a).join(" / ");
-    const darkAlphas = roles.map((r) => r.dark.a).join(" / ");
+    const alphas = (layers) => layers.map((l) => l.a).join("+");
+    const lightAlphas = roles.map((r) => alphas(r.lightLayers)).join(" / ");
+    const darkAlphas = roles.map((r) => alphas(r.darkLayers)).join(" / ");
     const doc = (text, indent = "") =>
       wrapWords(text, 76 - indent.length)
         .map((l) => `${indent}/// ${l}`)
@@ -760,10 +805,29 @@ StyleDictionary.registerFormat({
         "    ",
       )}
     public static let none = ShadowToken(color: .clear, radius: 0, x: 0, y: 0)`,
-      ...roles.map(
-        (r) =>
-          `${doc(r.doc, "    ")}
-    public static let ${r.name} = ShadowToken(color: kozmosShadowColor(light: ${tuple(r.light)}, dark: ${tuple(r.dark)}), radius: ${r.light.blur}, x: ${r.light.x}, y: ${r.light.y})`,
+      ...roles.map((r) =>
+        r.lightLayers.length === 1
+          ? `${doc(r.doc, "    ")}
+    public static let ${r.name} = ShadowToken(color: kozmosShadowColor(light: ${tuple(r.light)}, dark: ${tuple(r.dark)}), radius: ${r.light.blur}, x: ${r.light.x}, y: ${r.light.y})`
+          : // SwiftUI's radius draws as a CSS blur twice its size — radius 8
+            // reached 18pt where a CSS blur of 8 reaches 11px (measured
+            // 2026-09-28 with ImageRenderer) — so a layer carries half its
+            // blur, and draws as the web and Figma do. The single-layer roles
+            // still carry the blur itself, as they always have.
+            `${doc(r.doc, "    ")}
+    ///
+${doc(
+  "Apply it with `kozmosElevation(_:in:fill:)`. Each layer's radius is half its CSS blur: SwiftUI's radius draws as a blur twice its size.",
+  "    ",
+)}
+    public static let ${r.name}: [ShadowToken] = [
+${r.lightLayers
+  .map(
+    (light, i) =>
+      `        ShadowToken(color: kozmosShadowColor(light: ${tuple(light)}, dark: ${tuple(r.darkLayers[i])}), radius: ${light.blur / 2}, x: ${light.x}, y: ${light.y}),`,
+  )
+  .join("\n")}
+    ]`,
       ),
     ];
     return `// Do not edit directly, this file was auto-generated.
@@ -820,6 +884,33 @@ extension View {
     /// first place, and \`pnpm tokens:elevation:check\` counts what is left.
     public func kozmosElevation(_ token: ShadowToken) -> some View {
         shadow(color: token.color, radius: token.radius, x: token.x, y: token.y)
+    }
+
+    /// Apply a layered elevation role to a surface of this shape and fill.
+    ///
+    /// Each layer is cast by its own copy of the surface, behind the view.
+    /// SwiftUI's \`.shadow\` shadows everything before it, shadows included, so
+    /// layers stacked on one view would cast shadows of shadows. The copies are
+    /// filled as the surface is, so where one shows, the surface does.
+    public func kozmosElevation<S: Shape, F: ShapeStyle>(
+        _ layers: [ShadowToken],
+        in shape: S,
+        fill: F
+    ) -> some View {
+        background {
+            ZStack {
+                ForEach(layers.indices, id: \\.self) { index in
+                    shape
+                        .fill(fill)
+                        .shadow(
+                            color: layers[index].color,
+                            radius: layers[index].radius,
+                            x: layers[index].x,
+                            y: layers[index].y
+                        )
+                }
+            }
+        }
     }
 }
 `;
