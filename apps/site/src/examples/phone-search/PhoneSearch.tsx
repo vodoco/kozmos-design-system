@@ -376,10 +376,6 @@ export default function PhoneSearch() {
           panel={panel}
           panelLabel={selected ? selected.poi.name : "Places"}
           panelPresentation="bottom"
-          // The SDK's sheet is glass; Kozmos's default is solid. What the
-          // sheet holds paints no fill of its own, so the map shows through
-          // it (decisions 43 and 48).
-          panelSurface="glass"
           panelDetents={["collapsed", "medium", "large"]}
           panelDetent={detent}
           onPanelDetentChange={(next) => {
