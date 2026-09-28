@@ -1,9 +1,4 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#else
-import AppKit
-#endif
 
 public enum KozmosNavigationItemPlacement {
     case top
@@ -11,6 +6,9 @@ public enum KozmosNavigationItemPlacement {
     case rail
 }
 
+/// How roomy a top or side item is. A rail item has one size and draws the
+/// same with `.compact` as without it: the 64pt compact tile is retired, and
+/// a rail item fills its rail (decision 42).
 public enum KozmosNavigationItemDensity {
     case `default`
     case compact
@@ -195,13 +193,24 @@ public struct KozmosNavigationItem: View {
                 }
             }
             .padding(contentPadding)
-            .frame(width: fixedWidth)
             .frame(minHeight: minHeight)
             .background(backgroundColor)
             .foregroundColor(foregroundColor)
             .clipShape(shape)
+            // The selected rail item's 2pt bar, down its trailing edge: the
+            // right, and the left in a right-to-left layout.
+            .overlay(alignment: .trailing) {
+                if placement == .rail && isSelected {
+                    Rectangle()
+                        .fill(KozmosColors.primitivesColorsTheme600)
+                        .frame(width: 2)
+                }
+            }
+            // A rail item rings its focus inside itself: it fills a rail that
+            // scrolls, which would clip a ring drawn across its edge.
             .overlay(
-                shape.stroke(focusRingColor, lineWidth: isFocusVisible ? 2 : 0)
+                shape.inset(by: placement == .rail ? 1 : 0)
+                    .stroke(focusRingColor, lineWidth: isFocusVisible ? 2 : 0)
             )
         }
         .buttonStyle(.plain)
@@ -247,11 +256,12 @@ public struct KozmosNavigationItem: View {
         }
     }
 
-    // Every rail tile's label is caption2, 11pt at the default text size, on
-    // 14pt lines and up to two of them, as React's is 11px on 14px (decision
-    // 36): one size for every tile. Two lines keep the tile 72pt tall.
+    // Decision 42: the dashboard side menu's item. It fills its rail, a 96pt
+    // one, and grows with its label: a 24pt icon 6pt above a regular caption2
+    // label (11pt at the default text size) on 14pt lines, up to two, as
+    // React's is 11px on 14px.
     private var railContent: some View {
-        VStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+        VStack(spacing: 6) {
             if shouldRenderIcon, let icon = icon {
                 icon
                     .frame(width: 24, height: 24)
@@ -260,8 +270,8 @@ public struct KozmosNavigationItem: View {
             if shouldRenderLabel, let label = label {
                 Text(label)
                     .font(KozmosTypography.caption2)
-                    .fontWeight(.semibold)
-                    .lineSpacing(Self.railLabelLineSpacing)
+                    .fontWeight(.regular)
+                    .lineSpacing(KozmosTypography.caption2On14ptLineSpacing)
                     .lineLimit(2)
                     .truncationMode(.tail)
                     .multilineTextAlignment(.center)
@@ -269,24 +279,6 @@ public struct KozmosNavigationItem: View {
         }
         .frame(maxWidth: .infinity)
     }
-
-    /// What SwiftUI adds between a rail label's lines to set them 14pt apart
-    /// at the default text size: 14 less caption2's own line, 13.1pt of SF
-    /// Pro at 11pt. From the next size up, caption2's own line height is
-    /// taller than that (18pt for its 13pt) and SwiftUI sets the lines by it,
-    /// so the line grows with the text without this growing too.
-    static let railLabelLineSpacing: CGFloat = {
-        #if canImport(UIKit)
-        let caption2 = UIFont.preferredFont(
-            forTextStyle: .caption2,
-            compatibleWith: UITraitCollection(preferredContentSizeCategory: .large)
-        )
-        return max(0, 14 - caption2.lineHeight)
-        #else
-        let caption2 = NSFont.preferredFont(forTextStyle: .caption2)
-        return max(0, 14 - (caption2.ascender - caption2.descender + caption2.leading))
-        #endif
-    }()
 
     private var isSelected: Bool {
         selected || state == .selected
@@ -316,38 +308,35 @@ public struct KozmosNavigationItem: View {
         content == .trailing && trailing != nil
     }
 
-    private var minHeight: CGFloat {
-        if placement == .rail {
-            return density == .compact ? 64 : 72
-        }
-        return 44
-    }
-
-    private var fixedWidth: CGFloat? {
-        switch placement {
-        case .rail:
-            return density == .compact ? 64 : 72
-        case .side:
-            return nil
-        case .top:
-            return nil
-        }
+    /// A rail item grows with its label; top and side items are 44 at least.
+    /// No placement has a width of its own: a rail item fills its rail.
+    private var minHeight: CGFloat? {
+        placement == .rail ? nil : 44
     }
 
     private var contentPadding: EdgeInsets {
         if placement == .rail {
-            return EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
+            return EdgeInsets(top: 16, leading: 8, bottom: 16, trailing: 8)
         }
 
         let horizontal = density == .compact ? 10.0 : 12.0
         return EdgeInsets(top: 8, leading: horizontal, bottom: 8, trailing: horizontal)
     }
 
+    /// A rail item is square, so its selected bar runs the whole height of
+    /// its trailing edge.
     private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+        RoundedRectangle(cornerRadius: placement == .rail ? 0 : KozmosDimensions.semanticsRadiusControl)
     }
 
     private var backgroundColor: Color {
+        // Selected, a rail item is on theme/0, the lightest theme step: with
+        // theme/600 on it, a pair the contrast contract holds at 4.5:1 in
+        // both themes. Theme/500 is one colour in both, and on dark theme/0
+        // it would be 2.9:1.
+        if placement == .rail && isSelected {
+            return KozmosColors.primitivesColorsTheme0
+        }
         if isSelected || state == .hover || state == .focus {
             return KozmosColors.primitivesColorsBackground100
         }
@@ -357,6 +346,9 @@ public struct KozmosNavigationItem: View {
     private var foregroundColor: Color {
         if isDisabled {
             return KozmosColors.primitivesColorsForeground500
+        }
+        if placement == .rail {
+            return isSelected ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground400
         }
         if isSelected {
             return KozmosColors.primitivesColorsTheme500

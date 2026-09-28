@@ -7,6 +7,7 @@ import {
   Input,
   POIDetailPanel,
   POIResultList,
+  RoutePreviewPanel,
   SearchBar,
   Stack,
 } from "@kozmos-ds/react";
@@ -14,6 +15,7 @@ import type {
   AdaptiveMapShellProps,
   AdaptiveMapLayoutSnapshot,
   POIResultListItem,
+  RoutePreviewPanelProps,
 } from "@kozmos-ds/react";
 
 declare global {
@@ -39,6 +41,11 @@ declare global {
      * and a button — or, with `search: false`, the tiles alone.
      */
     showBrowse: (options?: { search?: boolean }) => void;
+    /**
+     * Swap the panel for a route preview, hosted as a product hosts it: the
+     * whole of the panel's content, its destination row first.
+     */
+    showRoute: () => void;
   }
 }
 
@@ -136,6 +143,32 @@ const categories = [
   selected: false,
 }));
 
+// Two ways there, the quicker one chosen, as a route preview opens.
+const routeOptions: RoutePreviewPanelProps["options"] = [
+  {
+    id: "quickest",
+    label: "Quickest",
+    durationSeconds: 240,
+    durationLabel: "4 min",
+    distanceMetres: 150,
+    distanceLabel: "150 m",
+    preference: "quickest",
+    selected: true,
+    available: true,
+  },
+  {
+    id: "step-free",
+    label: "Step-free",
+    durationSeconds: 360,
+    durationLabel: "6 min",
+    distanceMetres: 173,
+    distanceLabel: "173 m",
+    preference: "step-free",
+    selected: false,
+    available: true,
+  },
+];
+
 function Host() {
   const [options, setOptions] = useState(window.adaptiveOptions ?? {});
   const [header, setHeader] = useState(false);
@@ -144,18 +177,31 @@ function Host() {
   } | null>(null);
   const [details, setDetails] = useState<"sheet" | "panel" | null>(null);
   const [browse, setBrowse] = useState<{ search: boolean } | null>(null);
+  const [route, setRoute] = useState(false);
   window.setAdaptiveOptions = setOptions;
   window.showPanelHeader = () => setHeader(true);
   window.showResults = (selectedPoiId) => setShownResults({ selectedPoiId });
   window.showDetails = (presentation) => setDetails(presentation);
   window.showBrowse = (browseOptions) =>
     setBrowse({ search: browseOptions?.search ?? true });
+  window.showRoute = () => setRoute(true);
   return (
     <AdaptiveMapShell
       style={{ height: "100%" }}
       map={<MapSlot />}
       panel={
-        browse ? (
+        route ? (
+          <RoutePreviewPanel
+            backLabel="Back"
+            continueLabel="Start"
+            destinationName="Harbour Coffee Co."
+            onBack={() => setRoute(false)}
+            onContinue={() => undefined}
+            onOptionSelect={() => undefined}
+            options={routeOptions}
+            status="ready"
+          />
+        ) : browse ? (
           <BrowseCategoriesPanel
             categories={categories}
             onSelect={() => undefined}

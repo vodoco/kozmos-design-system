@@ -10,21 +10,38 @@ const browser = await launchFixtureBrowser();
 const failures = [];
 
 /**
- * Every rail tile in the story, measured where it is drawn: the label's type,
- * the lines it takes (a clamped line still counts: it is cut), the widest
- * reach of each line, and the tile's content box. A line is the characters
- * that share a top; whitespace is skipped, so a space hanging at a wrap does
- * not widen a line.
+ * Every rail item in the story, measured where it is drawn: its box against
+ * the rail it sits in, its padding and gap, its icon, its label's type, the
+ * lines the label takes (a clamped line still counts: it is cut) and the line
+ * each word sits on, its colours, and the selected item's bar. A line is the
+ * characters that share a top; whitespace is skipped, so a space hanging at a
+ * wrap does not widen a line. The tokens it is held to are resolved in the
+ * same Kozmos root, in the theme the story is drawn in.
  */
 function measureRailTiles() {
+  // A token as it resolves inside `root`, as a computed colour.
+  const resolve = (root, token, property = "color") => {
+    const probe = document.createElement("span");
+    probe.style[property] = `var(${token})`;
+    root.append(probe);
+    const value = getComputedStyle(probe)[property];
+    probe.remove();
+    return value;
+  };
   return [
     ...document.querySelectorAll(
       '.kozmos-story-surface [data-placement="rail"]',
     ),
   ].map((tile) => {
-    const label = [...tile.children].find(
+    const root = tile.closest("[data-kozmos-root]");
+    const children = [...tile.children];
+    const label = children.find(
       (child) => child.tagName === "SPAN" && !child.hasAttribute("aria-hidden"),
     );
+    const icon = children.find(
+      (child) => child.hasAttribute("aria-hidden") && !child.dataset.slot,
+    );
+    const bar = tile.querySelector('[data-slot="navigation-item-indicator"]');
     const style = getComputedStyle(tile);
     const box = tile.getBoundingClientRect();
     const contentLeft =
@@ -35,10 +52,20 @@ function measureRailTiles() {
       tile.clientWidth -
       parseFloat(style.paddingRight);
     const lines = [];
+    const words = [];
+    let word = null;
     const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
     for (let text = walker.nextNode(); text; text = walker.nextNode()) {
       for (let i = 0; i < text.length; i++) {
-        if (/\s/.test(text.data[i])) continue;
+        if (/\s/.test(text.data[i])) {
+          word = null;
+          continue;
+        }
+        if (!word) {
+          word = { text: "", lines: new Set() };
+          words.push(word);
+        }
+        word.text += text.data[i];
         const range = document.createRange();
         range.setStart(text, i);
         range.setEnd(text, i + 1);
@@ -51,53 +78,163 @@ function measureRailTiles() {
           }
           line.left = Math.min(line.left, rect.left);
           line.right = Math.max(line.right, rect.right);
+          word.lines.add(line);
         }
       }
     }
     const labelStyle = getComputedStyle(label);
+    const barBox = bar?.getBoundingClientRect();
     return {
       label: label.textContent,
+      dir: style.direction,
+      selected: tile.hasAttribute("data-selected"),
+      width: box.width,
+      height: box.height,
+      top: box.top,
+      left: box.left,
+      right: box.right,
+      // The rail: Sidebar's, or the story's own <nav>. It is 96px with its
+      // 1px edge, as the Cloud Dashboard's is, so an item fills the 95 inside.
+      rail: (() => {
+        const rail =
+          tile.closest('[data-slot="sidebar"]') ?? tile.closest("nav");
+        const railStyle = getComputedStyle(rail);
+        return {
+          width: rail.getBoundingClientRect().width,
+          inside:
+            rail.clientWidth -
+            parseFloat(railStyle.paddingLeft) -
+            parseFloat(railStyle.paddingRight),
+        };
+      })(),
+      padding: [
+        style.paddingTop,
+        style.paddingRight,
+        style.paddingBottom,
+        style.paddingLeft,
+      ].join(" "),
+      gap: style.rowGap,
+      iconHeight: icon ? icon.getBoundingClientRect().height : null,
       fontSize: labelStyle.fontSize,
       lineHeight: labelStyle.lineHeight,
+      fontWeight: labelStyle.fontWeight,
       lines: lines
         .sort((a, b) => a.top - b.top)
         .map((l) => ({ left: l.left, right: l.right })),
+      splitWords: words.filter((w) => w.lines.size > 1).map((w) => w.text),
       contentLeft,
       contentRight,
-      width: box.width,
-      height: box.height,
+      color: style.color,
+      background: style.backgroundColor,
+      bar: bar
+        ? {
+            top: barBox.top,
+            left: barBox.left,
+            right: barBox.right,
+            width: barBox.width,
+            height: barBox.height,
+            background: getComputedStyle(bar).backgroundColor,
+          }
+        : null,
+      tokens: {
+        tint: resolve(root, "--primitives-colors-theme-0", "backgroundColor"),
+        primary: resolve(root, "--primitives-colors-theme-600"),
+        muted: resolve(root, "--primitives-colors-foreground-400"),
+      },
     };
   });
 }
 
 /**
- * Decision 36 (row 25 / GAP-013): every rail label is 11px on a 14px line and
- * takes at most two lines, none wider than its tile's content box, and every
- * tile stays 72px tall, a two-line one too (the 16px line made it 76).
+ * Decision 42: a rail is 96px, its 1px edge included, and an item fills it;
+ * it is padded 16px by 8px, its 24px icon sits 6px above an 11px label on 14px
+ * lines at regular weight, and it grows with its label, up to two lines (62px
+ * and 14 a line: 76, or 90 with two). No label is cut and no word splits
+ * across lines. At rest it is the muted foreground; selected, it is primary on
+ * theme/0's tint with a 2px primary bar along its inline-end edge, right in
+ * LTR and left in RTL.
  */
 function railProblems(id, tiles) {
   const problems = [];
   for (const tile of tiles) {
-    const name = `${id} "${tile.label}"`;
-    if (tile.fontSize !== "11px" || tile.lineHeight !== "14px")
-      problems.push(
-        `${name}: the label is ${tile.fontSize} on ${tile.lineHeight}, not 11px on 14px`,
+    const fail = (what) => problems.push(`${id} "${tile.label}": ${what}`);
+    if (Math.abs(tile.rail.width - 96) > 0.5)
+      fail(`its rail is ${tile.rail.width.toFixed(1)}px wide, not 96`);
+    if (Math.abs(tile.width - tile.rail.inside) > 0.5)
+      fail(
+        `the item is ${tile.width.toFixed(1)}px wide, not filling the ${tile.rail.inside.toFixed(1)}px inside its rail`,
+      );
+    if (tile.padding !== "16px 8px 16px 8px")
+      fail(`the padding is ${tile.padding}, not 16px 8px`);
+    if (tile.gap !== "6px")
+      fail(`the icon is ${tile.gap} above the label, not 6px`);
+    if (tile.iconHeight !== 24)
+      fail(`the icon is ${tile.iconHeight}px, not 24`);
+    if (
+      tile.fontSize !== "11px" ||
+      tile.lineHeight !== "14px" ||
+      tile.fontWeight !== "400"
+    )
+      fail(
+        `the label is ${tile.fontSize} on ${tile.lineHeight} at weight ${tile.fontWeight}, not 11px on 14px regular`,
       );
     if (tile.lines.length < 1 || tile.lines.length > 2)
-      problems.push(`${name}: the label takes ${tile.lines.length} lines`);
+      fail(`the label takes ${tile.lines.length} lines`);
     tile.lines.forEach((line, index) => {
       if (
         line.left < tile.contentLeft - 0.5 ||
         line.right > tile.contentRight + 0.5
       )
-        problems.push(
-          `${name}: line ${index + 1} is ${(line.right - line.left).toFixed(1)}px wide in a ${(tile.contentRight - tile.contentLeft).toFixed(1)}px content box`,
+        fail(
+          `line ${index + 1} is ${(line.right - line.left).toFixed(1)}px wide in a ${(tile.contentRight - tile.contentLeft).toFixed(1)}px content box`,
         );
     });
-    if (Math.abs(tile.height - 72) > 0.5)
-      problems.push(
-        `${name}: a ${tile.lines.length}-line tile is ${tile.height.toFixed(1)}px tall, not 72`,
+    if (tile.splitWords.length)
+      fail(`splits ${tile.splitWords.map((w) => `"${w}"`).join(", ")}`);
+    const height = 16 + 24 + 6 + 14 * tile.lines.length + 16;
+    if (Math.abs(tile.height - height) > 0.5)
+      fail(
+        `a ${tile.lines.length}-line item is ${tile.height.toFixed(1)}px tall, not ${height}`,
       );
+    if (tile.selected) {
+      if (tile.background !== tile.tokens.tint)
+        fail(
+          `the selected fill is ${tile.background}, not theme/0 ${tile.tokens.tint}`,
+        );
+      if (tile.color !== tile.tokens.primary)
+        fail(
+          `the selected label is ${tile.color}, not primary ${tile.tokens.primary}`,
+        );
+      const side = tile.dir === "rtl" ? "left" : "right";
+      if (!tile.bar) fail(`the selected item has no bar on its ${side}`);
+      else {
+        const offEdge =
+          side === "left"
+            ? Math.abs(tile.bar.left - tile.left)
+            : Math.abs(tile.bar.right - tile.right);
+        if (
+          Math.abs(tile.bar.width - 2) > 0.1 ||
+          Math.abs(tile.bar.height - tile.height) > 0.5 ||
+          Math.abs(tile.bar.top - tile.top) > 0.5 ||
+          offEdge > 0.5
+        )
+          fail(
+            `the bar is ${tile.bar.width.toFixed(1)} by ${tile.bar.height.toFixed(1)}px at ${tile.bar.left.toFixed(1)}–${tile.bar.right.toFixed(1)}, not 2px down the ${side} edge of ${tile.left.toFixed(1)}–${tile.right.toFixed(1)}`,
+          );
+        if (tile.bar.background !== tile.tokens.primary)
+          fail(
+            `the bar is ${tile.bar.background}, not primary ${tile.tokens.primary}`,
+          );
+      }
+    } else {
+      if (tile.color !== tile.tokens.muted)
+        fail(
+          `at rest the label is ${tile.color}, not the muted foreground ${tile.tokens.muted}`,
+        );
+      if (tile.background !== "rgba(0, 0, 0, 0)")
+        fail(`at rest it has a ${tile.background} fill`);
+      if (tile.bar) fail("an item at rest has a bar");
+    }
   }
   return problems;
 }
@@ -415,28 +552,146 @@ try {
             `PASS explicit contrast completeness ${id} ${theme} ${viewport.width}`,
           );
         }
-        // The standard rail, whose "Nearby places" takes two lines, and a web
-        // dashboard's, whose nine labels are the Cloud Dashboard's in 96px
-        // tiles (className "w-24"). Both are measured before either is
-        // judged, so a failure lists every tile that is wrong.
+        // The rails (decision 42): the standard one, whose "Accessible routes"
+        // takes two lines; the same right to left, whose bar is on the left;
+        // the Cloud Dashboard's nine labels; and Sidebar's rail, Kozmos's own
+        // rail container. Every story is measured before any is judged, so a
+        // failure lists every item that is wrong.
         const rails = [];
-        for (const [id, count, width] of [
-          ["navigation-navigationitem--rail", 4, 72],
-          ["navigation-navigationitem--dashboard-rail", 9, 96],
+        for (const [id, count, dir, twoLines] of [
+          ["navigation-navigationitem--rail", 5, "ltr", true],
+          ["navigation-navigationitem--rail-right-to-left", 5, "rtl", true],
+          ["navigation-navigationitem--dashboard-rail", 9, "ltr", true],
+          ["navigation-sidebar--rail", 5, "ltr", false],
         ]) {
           await visit(id);
           await page.evaluate(() => document.fonts.ready);
           const tiles = await page.evaluate(measureRailTiles);
-          const widths = tiles.map((tile) => Math.round(tile.width));
-          if (widths.join() !== Array(count).fill(width).join())
-            rails.push(`${id}: tiles ${widths} wide, not ${count} of ${width}`);
-          if (!tiles.some((tile) => tile.lines.length === 2))
-            rails.push(`${id}: no tile takes two lines`);
+          if (tiles.length !== count)
+            rails.push(`${id}: ${tiles.length} rail items, not ${count}`);
+          if (tiles.some((tile) => tile.dir !== dir))
+            rails.push(`${id}: not all ${dir}`);
+          if (twoLines && !tiles.some((tile) => tile.lines.length === 2))
+            rails.push(`${id}: no item takes two lines`);
+          if (tiles.filter((tile) => tile.selected).length !== 1)
+            rails.push(`${id}: not one selected item`);
           rails.push(...railProblems(id, tiles));
+          if (id === "navigation-sidebar--rail")
+            rails.push(
+              ...(await page.evaluate(() => {
+                // The rail itself: 96px, on the surface, with a 1px edge in
+                // the border role at its inline end and none at its start.
+                const aside = document.querySelector(
+                  '.kozmos-story-surface [data-slot="sidebar"]',
+                );
+                const root = aside.closest("[data-kozmos-root]");
+                const resolve = (token, property) => {
+                  const probe = document.createElement("span");
+                  probe.style[property] = `var(${token})`;
+                  root.append(probe);
+                  const value = getComputedStyle(probe)[property];
+                  probe.remove();
+                  return value;
+                };
+                const s = getComputedStyle(aside);
+                const found = [];
+                const width = aside.getBoundingClientRect().width;
+                if (Math.abs(width - 96) > 0.5)
+                  found.push(`the Sidebar rail is ${width}px wide, not 96`);
+                const surface = resolve(
+                  "--semantics-surface-0",
+                  "backgroundColor",
+                );
+                if (s.backgroundColor !== surface)
+                  found.push(
+                    `the Sidebar rail is ${s.backgroundColor}, not the surface ${surface}`,
+                  );
+                const edge = resolve("--semantics-border-subtle", "color");
+                if (
+                  s.borderRightWidth !== "1px" ||
+                  s.borderRightStyle !== "solid" ||
+                  s.borderRightColor !== edge ||
+                  s.borderLeftWidth !== "0px"
+                )
+                  found.push(
+                    `the Sidebar rail's edges are ${s.borderLeftWidth} left and ${s.borderRightWidth} ${s.borderRightStyle} ${s.borderRightColor} right, not 1px of the border role ${edge} at its inline end`,
+                  );
+                return found;
+              })),
+            );
           await audit();
         }
+        // BottomNavigation keeps its own items (decision 42): they share the
+        // bar, 6px in from their edges, and a selected one is the muted fill
+        // with no bar. Their labels stay 11px on 14px lines.
+        await visit("navigation-bottomnavigation--default");
+        rails.push(
+          ...(await page.evaluate(() => {
+            const nav = document.querySelector(
+              '.kozmos-story-surface [data-slot="bottom-navigation"]',
+            );
+            const root = nav.closest("[data-kozmos-root]");
+            const probe = document.createElement("span");
+            probe.style.backgroundColor =
+              "var(--primitives-colors-background-100)";
+            root.append(probe);
+            const mutedFill = getComputedStyle(probe).backgroundColor;
+            probe.remove();
+            const found = [];
+            const items = [...nav.children];
+            const widths = items.map(
+              (item) => item.getBoundingClientRect().width,
+            );
+            if (
+              items.length !== 3 ||
+              Math.max(...widths) - Math.min(...widths) > 1 ||
+              widths.some((width) => Math.abs(width - 96) < 1)
+            )
+              found.push(
+                `BottomNavigation's items are ${widths.map((w) => w.toFixed(1))} wide, not three equal shares of the bar`,
+              );
+            for (const item of items) {
+              const s = getComputedStyle(item);
+              const label = [...item.children].find(
+                (child) =>
+                  child.tagName === "SPAN" &&
+                  !child.hasAttribute("aria-hidden"),
+              );
+              const l = getComputedStyle(label);
+              const name = `BottomNavigation "${label.textContent}"`;
+              const padding = [
+                s.paddingTop,
+                s.paddingRight,
+                s.paddingBottom,
+                s.paddingLeft,
+              ].join(" ");
+              if (padding !== "6px 6px 6px 6px")
+                found.push(`${name}: the padding is ${padding}, not 6px`);
+              if (item.hasAttribute("data-placement"))
+                found.push(`${name}: it is a ${item.dataset.placement} item`);
+              if (item.querySelector('[data-slot="navigation-item-indicator"]'))
+                found.push(`${name}: it has the rail's bar`);
+              if (l.fontSize !== "11px" || l.lineHeight !== "14px")
+                found.push(
+                  `${name}: the label is ${l.fontSize} on ${l.lineHeight}, not 11px on 14px`,
+                );
+              if (
+                item.getAttribute("aria-current") === "page" &&
+                s.backgroundColor !== mutedFill
+              )
+                found.push(
+                  `${name}: selected, it is ${s.backgroundColor}, not the muted fill ${mutedFill}`,
+                );
+            }
+            return found;
+          })),
+        );
+        await audit();
+        // Every problem, in full: an assertion's message is cut short.
+        for (const problem of rails)
+          console.error(`FAIL rails ${theme} ${viewport.width}: ${problem}`);
         assert.deepEqual(rails, []);
-        console.log(`PASS rail labels ${theme} ${viewport.width}`);
+        console.log(`PASS rails ${theme} ${viewport.width}`);
         if (viewport.width === 1280) {
           await visit("data-display-chip--variants");
           const chips = page.locator(

@@ -44,4 +44,25 @@ describe("Sidebar", () => {
       "true",
     );
   });
+
+  it("is a 96px rail on the surface, its edge at the inline end", () => {
+    // Decision 42: rail items fill their rail, so the rail's navigation
+    // spans all of its 96px; the header and footer stay centred.
+    render(<Sidebar variant="rail" navigation={<span>Explore</span>} />);
+
+    const aside = screen.getByText("Explore").closest("aside");
+    expect(aside).toHaveClass("w-24", "bg-surface-0", "border-e");
+    expect(aside).not.toHaveClass("w-20", "px-2", "border-r");
+    expect(
+      screen.getByText("Explore").closest('[data-slot="sidebar-navigation"]'),
+    ).toHaveClass("self-stretch");
+  });
+
+  it("draws the expanded sidebar's edge at the inline end too", () => {
+    render(<Sidebar navigation={<span>Explore</span>} />);
+
+    const aside = screen.getByText("Explore").closest("aside");
+    expect(aside).toHaveClass("w-64", "px-4", "border-e");
+    expect(aside).not.toHaveClass("border-r");
+  });
 });

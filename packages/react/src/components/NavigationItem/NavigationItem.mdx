@@ -62,89 +62,118 @@ icon = { Icon(Icons.Default.Search, contentDescription = null) }
 
 ## Rail
 
-A rail tile stacks its icon over its label. Every rail tile's label is **11px on a 14px line**
-and takes **up to two lines**, in both densities: one size for every tile, never some small and
-some large. A label that needs a third line is cut at the end of the second.
+A rail is a column of rail items, drawn as the dashboard side menu is. An item **fills the width of
+its rail**, and the rail is **96px**, its 1px edge included. The item grows with its label: **16px
+by 8px of padding**, a **24px icon 6px above an 11px regular label on 14px lines**, up to two lines,
+so it is 76px tall, or 90px with two lines. A label that needs a third line is cut at the end of the
+second.
 
-The tile is **72px wide**, **64px** compact. A default tile is 72px tall whether its label takes
-one line or two; a compact one is 64px, and 68px with two lines.
+At rest an item is the muted foreground, with no fill. Selected, it is primary on the lightest theme
+tint (theme/0), with a **2px primary bar down its inline end**: the right, and the left right to
+left. The item is square, so the bar runs its whole height, and it draws its focus ring inside
+itself, where a rail that scrolls cannot clip it.
+
+`density` sizes top and side items. A rail item has one size, and draws the same with `compact`:
+the fixed 72px and 64px tiles are retired.
 
 <Canvas of={NavigationItemStories.Rail} />
 
-### A dashboard's rail
+### The rail itself
 
-A web dashboard gives its rail tiles **96px** with `className="w-24"`, as BottomNavigation widens
-its own tiles with `w-auto flex-1`. A 72px tile leaves its label 56px, and a word as long as
-"Configuration" is 73px at 11px and still 67px at 10px, so no legible size fits it there. In
-96px tiles each of these nine labels takes at most two lines and every tile stays 72px tall,
-measured in Chromium, Firefox and WebKit, in narrow and wide fonts (SF Pro and Verdana among
-them).
+Kozmos's rail is Sidebar's `rail` variant: 96px on the surface, with a 1px edge in the border role at
+its inline end and no horizontal padding, so its items fill it. A rail of your own needs the same: 96px
+wide, its items in a column with no gap between them.
+
+<Canvas of={NavigationItemStories.RailRightToLeft} />
+
+### Long labels
+
+These nine labels, a web dashboard's, are the longest a rail has been asked to hold. In the 96px rail
+each takes at most two lines and no word splits across them, measured in Chromium, Firefox and
+WebKit, in narrow and wide fonts. A 72px tile left its label 56px, and "Configuration" is 73px at
+11px, which is why the rail is 96px.
 
 <Canvas of={NavigationItemStories.DashboardRail} />
 
-The native rails keep their 72pt and 72dp tiles (64 compact) and the same two lines: iOS draws the
-label in `caption2`, 11pt on 14pt lines at the default text size, and Android in `labelSmall`,
-11sp on 14sp lines. Both grow with the reader's text size.
+The native rails are the same: iOS sets the label in `caption2` (11pt at the default text size) on
+14pt lines and Android in `labelSmall` (11sp) on 14sp lines, both growing with the reader's text
+size, and `KozmosSidebar`'s rail is 96 wide on both.
 
 <PlatformSnippets
     react={`
-import { Icon, NavigationItem } from "@kozmos-ds/react";
+import { Icon, NavigationItem, Sidebar } from "@kozmos-ds/react";
 
 export function AppRail() {
   return (
-    <nav aria-label="Main">
-      <NavigationItem
-        content="icon-label"
-        icon={<Icon name="marker-pin-01" />}
-        placement="rail"
-      >
-        Nearby places
-      </NavigationItem>
-    </nav>
-  );
-}
-
-export function DashboardRail() {
-  return (
-    <nav aria-label="Settings">
-      <NavigationItem
-        className="w-24"
-        content="icon-label"
-        icon={<Icon name="settings-01" />}
-        placement="rail"
-      >
-        SDK Configuration
-      </NavigationItem>
-    </nav>
+    <Sidebar
+      variant="rail"
+      navigation={
+        <div className="flex flex-col">
+          <NavigationItem
+            content="icon-label"
+            icon={<Icon name="home-line" />}
+            placement="rail"
+            selected
+          >
+            Home
+          </NavigationItem>
+          <NavigationItem
+            content="icon-label"
+            icon={<Icon name="navigation-pointer-01" />}
+            placement="rail"
+          >
+            Accessible routes
+          </NavigationItem>
+        </div>
+      }
+    />
   );
 }
     `}
     swift={`
 import SwiftUI
 
-KozmosNavigationItem(
-label: "Nearby places",
-placement: .rail,
-content: .iconLabel
-) {
-Image(systemName: "mappin.and.ellipse")
+KozmosSidebar(variant: .rail) {
+VStack(spacing: 0) {
+KozmosNavigationItem(label: "Home", placement: .rail, content: .iconLabel, selected: true) {
+Image(systemName: "house")
+}
+KozmosNavigationItem(label: "Accessible routes", placement: .rail, content: .iconLabel) {
+Image(systemName: "figure.roll")
+}
+}
 }
 `}
     kotlin={`
 package com.kozmos.components.navigationitem
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import com.kozmos.components.sidebar.KozmosSidebar
+import com.kozmos.components.sidebar.KozmosSidebarVariant
 
 @Composable
-fun RailNavigationItemExample() {
+fun RailNavigationExample() {
+KozmosSidebar(
+variant = KozmosSidebarVariant.Rail,
+navigation = {
 KozmosNavigationItem(
-label = "Nearby places",
+label = "Home",
+placement = KozmosNavigationItemPlacement.Rail,
+content = KozmosNavigationItemContent.IconLabel,
+selected = true,
+icon = { Icon(Icons.Default.Home, contentDescription = null) }
+)
+KozmosNavigationItem(
+label = "Accessible routes",
 placement = KozmosNavigationItemPlacement.Rail,
 content = KozmosNavigationItemContent.IconLabel,
 icon = { Icon(Icons.Default.Place, contentDescription = null) }
+)
+}
 )
 }
 `}
