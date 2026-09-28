@@ -12,12 +12,12 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vodoco/kozmos-design-system-.git",
+    "url": "git+https://github.com/vodoco/kozmos-design-system.git",
     "directory": "packages/icons"
   },
-  "homepage": "https://github.com/vodoco/kozmos-design-system-/tree/main/packages/icons#readme",
+  "homepage": "https://github.com/vodoco/kozmos-design-system/tree/main/packages/icons#readme",
   "bugs": {
-    "url": "https://github.com/vodoco/kozmos-design-system-/issues"
+    "url": "https://github.com/vodoco/kozmos-design-system/issues"
   },
   "publishConfig": {
     "access": "public"

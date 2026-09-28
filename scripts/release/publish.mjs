@@ -48,7 +48,7 @@ await publishPrepared(
         "--access=public",
         `--tag=${tag}`,
         "--ignore-scripts",
-        "--provenance=false",
+        "--provenance",
       ],
       { stdio: "inherit" },
     );
