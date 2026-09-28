@@ -31,6 +31,7 @@ clear of the handle's target (WCAG 2.5.8). In a side panel it is the panel's fir
 
 <Canvas of={Stories.SheetPanelHeader} />
 <Canvas of={Stories.SheetWithPlaceDetails} />
+<Canvas of={Stories.SheetWithBrowseCategories} />
 
 The panel tells its content how much space it already leaves above it, so a part that brings its
 own top padding can top it up rather than add to it:
@@ -41,8 +42,20 @@ own top padding can top it up rather than add to it:
   so the grip's 16px target keeps its WCAG 2.5.8 spacing: 4px under a grip, `0px` elsewhere. A
   panel header keeps the same clearance itself.
 
-`POIDetailPanel` in its `sheet` presentation, which paints no surface of its own, uses both, so its
-close button sits as far from the panel's top as from its side (GAP-083).
+Every part at the top of the panel keeps the grip's clearance, so no first control sits inside the
+grip's 24px circle:
+
+- `POIDetailPanel` in its `sheet` presentation, which paints no surface of its own, and
+  `BrowseCategoriesPanel`, whose first row is its search row (or its tiles when it has none), top
+  their 16px up to what the panel leaves, `max(clearance, 16px − inset)`. The close button and the
+  search field sit as far from the panel's top as from its side, and 4px further under a grip
+  (GAP-083 and decision 14; the search field sat 33px down and 17px in).
+- `POIResultList` brings no top padding of its own, so it keeps only the clearance. Under a grip
+  its first result used to sit inside the grip's circle.
+
+The two values describe the panel's top. A part you place under a row of your own is not at the
+top: put that row in `panelHeader`, which keeps the grip clear itself, or set both properties to
+`0px` on what follows the row.
 
 iOS and Android take the same header: `panelHeader:` on `KozmosAdaptiveMapShell` in
 SwiftUI, and `panelHeader =` in Compose. On iOS, put the content that scrolls in a
@@ -145,7 +158,13 @@ side panel, which starts its content at its top edge, both are zero. `KozmosPOID
 in its sheet presentation, which paints no surface of its own, uses both, so its close
 button sits as far from the panel's top as from its side. The panel and inline presentations
 draw their own bordered card and keep their padding inside it: the space the panel leaves
-lies outside that border.
+lies outside that border. `KozmosBrowseCategoriesPanel` uses both for its first row too: in
+its sheet presentation on iOS (the panel presentation paints its own surface and keeps its
+16), and always on Android, where it paints no surface. Under the grab handle the
+`panelHeader` itself starts 4 points (4dp) below the handle's row, as the web's does. For a
+part you place under a row of your own, set both values to zero: `.environment(\.kozmosPanelInsetTop, 0)`
+and `.environment(\.kozmosPanelClearanceTop, 0)` in SwiftUI, and `0.dp` for both
+CompositionLocals in Compose.
 
 `usableRegions` accepts host-provided hinge-free rectangles in shell-local CSS pixels.
 Auto mode can separate map and panel across those regions without remounting either.

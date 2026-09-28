@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { Heart, ShoppingBag01 as ShoppingBag } from "@kozmos-ds/icons";
 import { describe, expect, it, vi } from "vitest";
 import { BrowseCategoriesPanel } from "./BrowseCategoriesPanel";
@@ -29,6 +30,38 @@ describe("BrowseCategoriesPanel", () => {
     ).toEqual(["Search places", "Filters", "Favourites", "Shopping"]);
     fireEvent.click(screen.getByRole("button", { name: "Shopping" }));
     expect(onSelect).toHaveBeenCalledWith("shopping");
+  });
+
+  it("tops up only its first row to what a map shell's panel leaves above it", () => {
+    // Decision 14: hosted at the top of AdaptiveMapShell's panel, the first
+    // row — the search row, or the tiles when there is none — tops its 16 up
+    // to what the panel leaves (owned CSS, measured in
+    // scripts/check-adaptive-edge-cases.mjs). The tiles under a search row
+    // sit under that row and keep their 16, which a `pt-4` would outrank.
+    const panel = (search?: ReactNode) =>
+      render(
+        <BrowseCategoriesPanel
+          categories={[{ id: "gates", label: "Gates", selected: false }]}
+          onSelect={() => undefined}
+          renderIcon={() => <svg />}
+          search={search}
+        />,
+      ).container.querySelector("section")!;
+    const firstRow = "kozmos-browse-categories-first-row";
+
+    const withSearch = panel(<input aria-label="Search places" />);
+    const [header, tiles] = Array.from(withSearch.children);
+    expect(header.tagName).toBe("HEADER");
+    expect(header.classList.contains(firstRow)).toBe(true);
+    expect(header.className).not.toMatch(/\b(p|pt|py)-/);
+    expect(tiles.classList.contains(firstRow)).toBe(false);
+    expect(tiles.className).toMatch(/\bpt-4\b/);
+
+    cleanup();
+    const alone = panel();
+    expect(alone.children).toHaveLength(1);
+    expect(alone.firstElementChild!.classList.contains(firstRow)).toBe(true);
+    expect(alone.firstElementChild!.className).not.toMatch(/\b(p|pt|py)-/);
   });
 
   it("renders a directed empty state", () => {

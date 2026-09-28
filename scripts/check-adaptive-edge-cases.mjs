@@ -34,6 +34,61 @@ async function closeInsets(page) {
   });
 }
 
+// Decision 14: where a hosted category browser's first control sits in the
+// panel — its search field, or with no search row its first tile — from the
+// panel's top edge and from its start edge (the right, right to left); and
+// each of its rows' top padding, the search row's and then the tiles'.
+// Counted first, as the details card is.
+async function browseInsets(page) {
+  const browse = page.getByRole("region", { name: "Browse categories" });
+  assert.equal(await browse.count(), 1, "the category browser is drawn");
+  return browse.evaluate((section) => {
+    const panel = section.closest("aside");
+    const field = section.querySelector('[role="search"]');
+    const first = field ?? section.querySelector(".kozmos-category-tile");
+    const b = first.getBoundingClientRect();
+    const p = panel.getBoundingClientRect();
+    const rtl = getComputedStyle(panel).direction === "rtl";
+    const round = (value) => Math.round(value * 10) / 10;
+    return {
+      control: field ? "search field" : "first tile",
+      top: round(b.top - p.top),
+      start: round(rtl ? p.right - b.right : b.left - p.left),
+      rows: [...section.children].map((row) =>
+        parseFloat(getComputedStyle(row).paddingTop),
+      ),
+      grip: !!panel.querySelector('[role="slider"]'),
+    };
+  });
+}
+
+// WCAG 2.5.8: the targets inside the 24px circle on the grip's centre. The
+// grip is a 16px row, an undersized target, so the circle must meet no other.
+async function insideGripCircle(page) {
+  return page.evaluate(() => {
+    const grip = document.querySelector(".kozmos-map-sheet-handle");
+    const g = grip.getBoundingClientRect();
+    const cx = g.left + g.width / 2;
+    const cy = g.top + g.height / 2;
+    return [
+      ...grip
+        .closest("aside")
+        .querySelectorAll("button, a[href], input, [role='slider']"),
+    ]
+      .filter((target) => target !== grip)
+      .map((target) => {
+        const r = target.getBoundingClientRect();
+        const dx = Math.max(r.left - cx, 0, cx - r.right);
+        const dy = Math.max(r.top - cy, 0, cy - r.bottom);
+        return {
+          name: target.getAttribute("aria-label") ?? target.textContent.trim(),
+          d: Math.hypot(dx, dy),
+        };
+      })
+      .filter(({ d }) => d < 12);
+  });
+}
+
 // The side panel, as a wide host lays it out: the fixture made 1024 wide.
 async function widen(page) {
   await page.evaluate(() => {
@@ -437,28 +492,7 @@ const cases = [
         1,
         "the details card is drawn",
       );
-      const inside = await page.evaluate(() => {
-        const grip = document.querySelector(".kozmos-map-sheet-handle");
-        const g = grip.getBoundingClientRect();
-        const cx = g.left + g.width / 2;
-        const cy = g.top + g.height / 2;
-        const targets = [
-          ...grip
-            .closest("aside")
-            .querySelectorAll("button, a[href], input, [role='slider']"),
-        ].filter((target) => target !== grip);
-        return targets
-          .map((target) => {
-            const r = target.getBoundingClientRect();
-            const dx = Math.max(r.left - cx, 0, cx - r.right);
-            const dy = Math.max(r.top - cy, 0, cy - r.bottom);
-            return {
-              name: target.getAttribute("aria-label") ?? target.textContent,
-              d: Math.hypot(dx, dy),
-            };
-          })
-          .filter(({ d }) => d < 12);
-      });
+      const inside = await insideGripCircle(page);
       assert.deepEqual(
         inside,
         [],
@@ -558,6 +592,265 @@ const cases = [
         16,
         "the header keeps its own 16 under a panel header",
       );
+    },
+  ],
+  [
+    "under a grip, a hosted category browser's search field is as far from the sheet's top as from its side, plus the grip's clearance",
+    async (page) => {
+      // Decision 14: every part at the top of the panel keeps the grip's
+      // 4px, not only the panel header and the details card. The browser's
+      // search row padded 16 on every side under the grip's 16 row: the field
+      // sat 33 from the sheet's top and 17 from its side, the details card's
+      // GAP-083. The row tops its padding up to 16 instead of adding 16, and
+      // keeps the grip's clearance: 21 against 17.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showBrowse();
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await settleLayout(page);
+      const at = await browseInsets(page);
+      assert(at.grip, "this sheet draws its grip");
+      assert.equal(at.control, "search field");
+      assert(
+        Math.abs(at.start - 17) <= 1,
+        `the search field starts ${at.start} in, not the panel's 1px border and the row's 16`,
+      );
+      assert(
+        Math.abs(at.top - (at.start + 4)) <= 1,
+        `search field ${at.top} from the top and ${at.start} from the side`,
+      );
+    },
+  ],
+  [
+    "under a grip, a category browser with no search row keeps its first tiles as far down as in, plus the grip's clearance",
+    async (page) => {
+      // The tiles are the first row then, and the same rule holds: the
+      // first tile sat 33 from the sheet's top and 17 from its side.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showBrowse({ search: false });
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await settleLayout(page);
+      const at = await browseInsets(page);
+      assert(at.grip, "this sheet draws its grip");
+      assert.equal(at.control, "first tile");
+      assert(
+        Math.abs(at.start - 17) <= 1,
+        `the first tile starts ${at.start} in`,
+      );
+      assert(
+        Math.abs(at.top - (at.start + 4)) <= 1,
+        `first tile ${at.top} from the top and ${at.start} from the side`,
+      );
+    },
+  ],
+  [
+    "at 320 wide, a hosted category browser keeps the grip's target clear (WCAG 2.5.8)",
+    async (page) => {
+      // The tiles span the row, so one always sits under the grip's centre.
+      // Flush under the grip — a row topped up to exactly 16 from the top,
+      // with no clearance — they sat 8 from its centre, inside the circle.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        document.getElementById("fixture").style.width = "320px";
+        window.showBrowse({ search: false });
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await page.waitForFunction(
+        () => window.adaptiveSnapshot?.mapBounds.width === 320,
+      );
+      await settleLayout(page);
+      assert.equal(
+        (await browseInsets(page)).control,
+        "first tile",
+        "the category browser is drawn",
+      );
+      const inside = await insideGripCircle(page);
+      assert.deepEqual(
+        inside,
+        [],
+        `inside the grip's 24px circle: ${JSON.stringify(inside)}`,
+      );
+    },
+  ],
+  [
+    "only a category browser's first row tops up: the tiles under its own search row keep their 16",
+    async (page) => {
+      // The guard for topping up the wrong row: under the search row the
+      // tiles sit under that row, not under the grip.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showBrowse();
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await settleLayout(page);
+      const at = await browseInsets(page);
+      assert.equal(at.rows.length, 2, "a search row and the tiles");
+      assert.equal(at.rows[1], 16, "the tiles keep their 16 under the row");
+    },
+  ],
+  [
+    "a single-detent sheet draws no grip, and the category browser keeps its own top padding",
+    async (page) => {
+      // The guard: with no grip the shell leaves nothing above the content,
+      // so the search row keeps its 16 or the field meets the sheet's edge.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showBrowse();
+        window.setAdaptiveOptions({
+          panelDetents: ["medium"],
+          panelDetent: "medium",
+        });
+      });
+      await settleLayout(page);
+      const at = await browseInsets(page);
+      assert(!at.grip, "a single detent draws no grip");
+      assert.equal(at.rows[0], 16, "the search row keeps its own 16");
+      assert(
+        Math.abs(at.top - at.start) <= 1,
+        `search field ${at.top} from the top and ${at.start} from the side`,
+      );
+    },
+  ],
+  [
+    "a hosted category browser's search field is as far from the side panel's top as from its side",
+    async (page) => {
+      // The side panel leaves 16 above its content (GAP-012): the field sat
+      // 33 from its top and 17 from its side.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await widen(page);
+      await page.evaluate(() => window.showBrowse());
+      await settleLayout(page);
+      const at = await browseInsets(page);
+      assert(
+        Math.abs(at.top - at.start) <= 1,
+        `search field ${at.top} from the top and ${at.start} from the side`,
+      );
+    },
+  ],
+  [
+    "right to left, the side panel's category browser has its search field as far from the top as from the right",
+    async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        document.getElementById("fixture").dir = "rtl";
+      });
+      await widen(page);
+      await page.evaluate(() => window.showBrowse());
+      await settleLayout(page);
+      const at = await browseInsets(page);
+      assert(
+        Math.abs(at.top - at.start) <= 1,
+        `search field ${at.top} from the top and ${at.start} from the right`,
+      );
+    },
+  ],
+  [
+    "under a panel header holding the search, the category browser keeps its own 16 and the header's field keeps the grip's clearance",
+    async (page) => {
+      // Many products put the search field in the panel header now; the
+      // browser then has no search row of its own, and its tiles sit under
+      // the header, not the grip. The header itself starts 4 under the grip.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showPanelHeader();
+        window.showBrowse({ search: false });
+        window.setAdaptiveOptions({ panelDetent: "large" });
+      });
+      await settleLayout(page);
+      const at = await browseInsets(page);
+      assert.equal(at.control, "first tile");
+      assert.equal(at.rows[0], 16, "the tiles keep their own 16");
+      const field = await page
+        .getByRole("textbox", { name: "Search this sheet" })
+        .evaluate((input) => {
+          const panel = input.closest("aside").getBoundingClientRect();
+          const header = input
+            .closest("[data-kozmos-panel-header]")
+            .getBoundingClientRect();
+          const tile = document
+            .querySelector(".kozmos-category-tile")
+            .getBoundingClientRect();
+          return {
+            top:
+              Math.round((input.getBoundingClientRect().top - panel.top) * 10) /
+              10,
+            tileUnderHeader: Math.round((tile.top - header.bottom) * 10) / 10,
+          };
+        });
+      assert.equal(
+        field.top,
+        21,
+        "the header's field: the border, the grip's 16 and its 4",
+      );
+      assert.equal(
+        field.tileUnderHeader,
+        16,
+        "the first tile sits 16 under the header",
+      );
+    },
+  ],
+  [
+    "under a grip, a hosted result list keeps its first result clear of the grip's target (WCAG 2.5.8)",
+    async (page) => {
+      // A result list brings no top padding of its own, so its first result
+      // sat flush under the grip's row, 9 from the grip's centre: inside the
+      // 24px circle its 16px target must keep clear. It keeps the grip's
+      // clearance, as every part at the top of the panel does (decision 14).
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showResults();
+        window.setAdaptiveOptions({ panelDetent: "medium" });
+      });
+      await settleLayout(page);
+      assert.equal(
+        await page.getByRole("region", { name: "Points of interest" }).count(),
+        1,
+        "the result list is drawn",
+      );
+      const inside = await insideGripCircle(page);
+      assert.deepEqual(
+        inside,
+        [],
+        `inside the grip's 24px circle: ${JSON.stringify(inside)}`,
+      );
+    },
+  ],
+  [
+    "in a side panel, and with a single detent, a hosted result list adds nothing above its first result",
+    async (page) => {
+      // The guard: with no grip there is no clearance to keep, and the list
+      // starts where the panel's content starts, as it always has.
+      const listTop = () =>
+        page
+          .getByRole("region", { name: "Points of interest" })
+          .evaluate((list) => ({
+            padding: parseFloat(getComputedStyle(list).paddingTop),
+            grip: !!list.closest("aside").querySelector('[role="slider"]'),
+          }));
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.evaluate(() => {
+        window.showResults();
+        window.setAdaptiveOptions({
+          panelDetents: ["medium"],
+          panelDetent: "medium",
+        });
+      });
+      await settleLayout(page);
+      const single = await listTop();
+      assert(!single.grip, "a single detent draws no grip");
+      assert.equal(
+        single.padding,
+        0,
+        "with a single detent the list adds nothing",
+      );
+      await page.evaluate(() => window.setAdaptiveOptions({}));
+      await widen(page);
+      const side = await listTop();
+      assert(!side.grip, "a side panel draws no grip");
+      assert.equal(side.padding, 0, "in a side panel the list adds nothing");
     },
   ],
 ];

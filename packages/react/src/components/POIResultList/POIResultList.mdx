@@ -37,4 +37,12 @@ Pass `scrollSelectedIntoView={false}` if the product already scrolls the panel
 itself.
 
 <Canvas of={Stories.SelectionComesIntoView} />
+
+## At the top of a map sheet
+
+The list brings no padding of its own; whatever holds it pads it. At the top of
+`AdaptiveMapShell`'s sheet, under the grip, it keeps the grip's 4px clearance
+(`--kozmos-panel-clearance-top`), so its first result stays out of the grip's
+target circle (WCAG 2.5.8). Anywhere else it adds nothing.
+
 <Controls />

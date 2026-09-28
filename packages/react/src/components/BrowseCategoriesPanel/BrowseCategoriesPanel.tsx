@@ -38,6 +38,13 @@ const BrowseCategoriesPanel = React.forwardRef<
     },
     ref,
   ) => {
+    const hasHeader = Boolean(search || actions);
+    // The first row is the top of AdaptiveMapShell's panel when the browser
+    // is its content: `kozmos-browse-categories-first-row` tops its 16 up to
+    // what the panel already leaves above it rather than adding 16 to it, and
+    // keeps the grip's clearance (owned-components.css). Its top padding is
+    // that class's alone; a `pt-4` beside it would outrank it. The tiles
+    // under a search row sit under that row, and keep their 16.
     return (
       <section
         ref={ref}
@@ -48,13 +55,18 @@ const BrowseCategoriesPanel = React.forwardRef<
         )}
         {...props}
       >
-        {(search || actions) && (
-          <header className="flex items-center gap-2 border-b border-border p-4">
+        {hasHeader && (
+          <header className="kozmos-browse-categories-first-row flex items-center gap-2 border-b border-border px-4 pb-4">
             {search && <div className="min-w-0 flex-1">{search}</div>}
             {actions && <div className="flex shrink-0 gap-2">{actions}</div>}
           </header>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]",
+            hasHeader ? "pt-4" : "kozmos-browse-categories-first-row",
+          )}
+        >
           {categories.length === 0 ? (
             <div className="rounded-container border border-dashed border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
               {emptyState}
