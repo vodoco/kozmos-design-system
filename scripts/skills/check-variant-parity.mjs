@@ -410,9 +410,7 @@ function reactAxes(component) {
       new RegExp(`export interface ${component}Props[\\s\\S]*?\\n\\}`),
     ) ??
     file.match(new RegExp(`interface ${component}Props[\\s\\S]*?\\n\\}`)) ??
-    file.match(
-      new RegExp(`type ${component}Props[^=]*=[\\s\\S]*?\\n\\};?`),
-    );
+    file.match(new RegExp(`type ${component}Props[^=]*=[\\s\\S]*?\\n\\};?`));
   if (propsMatch) {
     // A prop whose type is one of those named unions.
     for (const match of propsMatch[0].matchAll(

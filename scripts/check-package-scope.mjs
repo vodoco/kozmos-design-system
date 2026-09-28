@@ -31,17 +31,28 @@ const ALLOWED = [
 // `--untracked` as well: a file introduced by the change being checked is not
 // tracked yet when it is run by hand, and a check that only sees what is
 // already committed reports a clean tree right up until the commit lands.
-const files = execFileSync("git", ["grep", "-l", "--untracked", "@kozmos/", "--", "."], {
-  encoding: "utf8",
-})
+const files = execFileSync(
+  "git",
+  ["grep", "-l", "--untracked", "@kozmos/", "--", "."],
+  {
+    encoding: "utf8",
+  },
+)
   .split("\n")
   .filter(Boolean);
 
 const unexpected = files.filter((f) => !ALLOWED.some((r) => r.test(f)));
-console.log(`Package scope\n\n  ${files.length} file(s) mention @kozmos/; ${files.length - unexpected.length} are records the rename left alone.\n`);
+console.log(
+  `Package scope\n\n  ${files.length} file(s) mention @kozmos/; ${files.length - unexpected.length} are records the rename left alone.\n`,
+);
 for (const f of unexpected) {
-  const hits = execFileSync("git", ["grep", "-c", "--untracked", "@kozmos/", "--", f], { encoding: "utf8" }).trim();
+  const hits = execFileSync(
+    "git",
+    ["grep", "-c", "--untracked", "@kozmos/", "--", f],
+    { encoding: "utf8" },
+  ).trim();
   console.log(`  FAIL  ${hits.split(":").pop()} reference(s) in ${f}`);
 }
-if (!unexpected.length) console.log("  ok    only the records still say @kozmos/");
+if (!unexpected.length)
+  console.log("  ok    only the records still say @kozmos/");
 process.exitCode = unexpected.length ? 1 : 0;
