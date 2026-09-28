@@ -34,6 +34,18 @@ iOS and Android read the same two values from the shell: `kozmosPanelInsetTop` a
 in; a native side panel leaves nothing above its content, so there the row keeps its 16. For a
 preview under a row of your own, set both values to zero.
 
+In the shell's panel, a sheet or a side panel, the preview paints no fill of its own: the panel's
+surface, solid or glass, is the one surface (decision 43). On a glass panel the map shows through it
+where it stood as a white block; on a solid one it looks as it did, and its text keeps the theme's
+foreground. On its own it keeps the background colour. iOS and Android read the panel's surface
+from the shell (`kozmosPanelSurface`, `LocalKozmosPanelSurface`); on iOS the preview's square fill
+also covered the panel's rounded top corners.
+
+On glass its muted text, "To", the count of options and the status box's text, takes the
+foreground colour, so it reads at 4.5:1 over any map (decision 48). Muted over a saturated map,
+"To" read 3.7:1 on the web and under 3:1 on iOS and Android; it now reads 8.5:1 or more on all
+three. The route options are cards of their own and keep their muted text.
+
 <PlatformSnippets
   react={`
 import type { ReactNode } from "react";
