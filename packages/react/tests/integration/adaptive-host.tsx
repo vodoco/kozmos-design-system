@@ -259,7 +259,14 @@ function placeDetails(
             }
           : undefined
       }
-      actionLabels={{ favourite: "Favourite", bookmark: "Save" }}
+      actionLabels={{
+        navigate: "Go",
+        favourite: "Favourite",
+        bookmark: "Save",
+        share: "Share",
+        order: "Order",
+      }}
+      onAction={() => undefined}
       presentation={presentation}
       onClose={onClose}
     />
