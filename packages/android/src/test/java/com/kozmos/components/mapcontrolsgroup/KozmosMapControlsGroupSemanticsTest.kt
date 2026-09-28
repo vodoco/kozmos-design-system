@@ -87,8 +87,13 @@ class KozmosMapControlsGroupSemanticsTest {
             }
             val following = state == KozmosUserLocationState.Following ||
                 state == KozmosUserLocationState.Heading
-            // Heading's name goes on after the words (decision 40).
-            val name = if (state == KozmosUserLocationState.Heading) "Focus, map turns with you" else "Focus"
+            // Heading's name goes on after the words (decision 40), and a
+            // paused heading's too (decision 45).
+            val name = when (state) {
+                KozmosUserLocationState.Heading -> "Focus, map turns with you"
+                KozmosUserLocationState.HeadingPaused -> "Focus, press to turn the map with you again"
+                else -> "Focus"
+            }
             assertEquals("$state", following, tree.named(name).selected)
         }
     }
@@ -215,6 +220,38 @@ class KozmosMapControlsGroupSemanticsTest {
             )
         }
         translated.named("Fokus, Ein, Karte dreht sich mit")
+    }
+
+    @Test
+    fun aPausedHeadingReadsOffAndSaysAPressBringsItBack() {
+        // Decision 45: heading is remembered while the map is moved away. The
+        // control reads as off — "Focus / Off", not selected — and TalkBack
+        // hears after the words that the next press brings the turning map
+        // back. The product translates it.
+        val tree = read {
+            KozmosMapControlsGroup(
+                onMyLocation = {},
+                locationPresentation = KozmosMapControlButtonPresentation.Labelled,
+                locationLabelPlacement = KozmosMapControlButtonLabelPlacement.Stacked,
+                locationLabel = "Focus",
+                locationStateLabel = "Off",
+                locationState = KozmosUserLocationState.HeadingPaused
+            )
+        }
+        assertEquals(false, tree.named("Focus, Off, press to turn the map with you again").selected)
+        assertTrue("Focus is not drawn", tree.unmerged.any { "Focus" in it.texts })
+        assertTrue("Off is not drawn", tree.unmerged.any { "Off" in it.texts })
+
+        val translated = read {
+            KozmosMapControlsGroup(
+                onMyLocation = {},
+                locationLabel = "Fokus",
+                locationStateLabel = "Aus",
+                locationState = KozmosUserLocationState.HeadingPaused,
+                locationHeadingPausedDescription = "Tippen, damit sich die Karte wieder mitdreht"
+            )
+        }
+        translated.named("Fokus, Aus, Tippen, damit sich die Karte wieder mitdreht")
     }
 
     @Test

@@ -26,6 +26,7 @@ public struct KozmosMapControlsGroup: View {
     private let locationLabel: String
     private let locationStateLabel: String?
     private let locationHeadingDescription: String
+    private let locationHeadingPausedDescription: String
     private let locationRevealOnChange: Bool
     private let locationLabelPlacement: KozmosMapControlButtonLabelPlacement
     private let onStepFreeChange: ((Bool) -> Void)?
@@ -54,6 +55,10 @@ public struct KozmosMapControlsGroup: View {
     ///     VoiceOver, after the words it shows: heading reads "On" as following
     ///     does, and only its mark tells the two apart on screen. The product
     ///     translates it.
+    ///   - locationHeadingPausedDescription: What a paused heading adds to the
+    ///     name for VoiceOver, after the words it shows: `.headingPaused` reads
+    ///     "Off", as off does, and the next press brings the turning map back
+    ///     (decision 45). The product translates it.
     ///   - locationIcons: The mark for any mode, in place of the group's own.
     ///     Pass the modes you have artwork for; the others keep the group's
     ///     marks. Drawn in the control's colour.
@@ -87,6 +92,7 @@ public struct KozmosMapControlsGroup: View {
         locationLabel: String = "Locate me",
         locationStateLabel: String? = nil,
         locationHeadingDescription: String = "map turns with you",
+        locationHeadingPausedDescription: String = "press to turn the map with you again",
         locationRevealOnChange: Bool = false,
         locationLabelPlacement: KozmosMapControlButtonLabelPlacement = .inline,
         onStepFreeChange: ((Bool) -> Void)? = nil,
@@ -110,6 +116,7 @@ public struct KozmosMapControlsGroup: View {
         self.locationLabel = locationLabel
         self.locationStateLabel = locationStateLabel
         self.locationHeadingDescription = locationHeadingDescription
+        self.locationHeadingPausedDescription = locationHeadingPausedDescription
         self.locationRevealOnChange = locationRevealOnChange
         self.locationLabelPlacement = locationLabelPlacement
         self.onStepFreeChange = onStepFreeChange
@@ -272,7 +279,9 @@ extension KozmosMapControlsGroup {
     /// - the filled arrow while the map follows — the revamp's solid pointer
     ///   and its cone;
     /// - the arrow pointing north over a line while the map turns with the
-    ///   visitor — the revamp's upright pointer and turning arc;
+    ///   visitor — the revamp's upright pointer and turning arc — and the same
+    ///   in outline while heading is paused, the revamp's rotational Off
+    ///   (decision 45);
     /// - the arrow struck through when there is no position to show.
     static func locationSymbol(for state: KozmosUserLocationState) -> String {
         switch state {
@@ -282,6 +291,8 @@ extension KozmosMapControlsGroup {
             return "location.fill"
         case .heading:
             return "location.north.line.fill"
+        case .headingPaused:
+            return "location.north.line"
         case .permissionDenied, .unavailable:
             return "location.slash"
         }
@@ -318,8 +329,12 @@ extension KozmosMapControlsGroup {
             stateLabel: locationStateLabel,
             // Heading reads "On", as following does and as the SDK's control
             // does (decision 40); its mark tells them apart on screen, and
-            // this after the words tells VoiceOver.
-            stateDescription: locationState == .heading ? locationHeadingDescription : nil,
+            // this after the words tells VoiceOver. A paused heading reads
+            // "Off", as off does, and says the next press brings it back
+            // (decision 45).
+            stateDescription: locationState == .heading
+                ? locationHeadingDescription
+                : locationState == .headingPaused ? locationHeadingPausedDescription : nil,
             // With no position the SDK reads "No Location" alone, on one line.
             showsLabel: !(locationState == .unavailable || locationState == .permissionDenied),
             icon: locationIcons[locationState] ?? Image(systemName: Self.locationSymbol(for: locationState)),

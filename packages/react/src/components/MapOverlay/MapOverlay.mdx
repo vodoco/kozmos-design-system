@@ -27,13 +27,27 @@ frame and modifier sizing instead, which is recorded as intentional in the
 variant analyzer rather than counted as a parity gap.
 
 What the overlay holds scrolls when it is taller than the map leaves room for.
-The overlay keeps the floating elevation's reach clear around what it holds, so
-a control's shadow, its edge and its focus ring are drawn whole at the overlay's
-edges; while it scrolls, only what has scrolled out of view is cut. The room is
-read from the elevation token when the package is built, and it takes no space
-from the layout: the content sits where it would without it. Like the space
-between the overlay's items, the room is the overlay's, so a press on it does
-not reach the map.
+The overlay keeps the reach of the shadows it holds clear around them — the
+floating elevation's and the map controls' own, the larger of the two on each
+side: 32px above and beside, 48px below — so a control's shadow and its focus
+ring are drawn whole at the overlay's edges; while it scrolls, only what has
+scrolled out of view is cut. The room is read from the elevation tokens when the
+package is built, and it takes no space from the layout: the content sits where
+it would without it.
+
+The room is for the shadows, not for presses (decision 46, which replaces
+decision 31's cost). While what the overlay holds fits, only what it holds takes
+a press. A press or a drag in the room, or in the space between the overlay's
+items, reaches the map beneath, so the map pans from right beside a control.
+
+While what it holds overflows, and only then, the room takes presses again, as
+decision 31 had it: a wheel or a touch over what the overlay holds scrolls it,
+and a scrollbar a platform draws in the room takes its drag. Linux WebKit, which
+CI runs, scrolls a box from a wheel only if the box itself takes presses; with a
+room that took none, the overlay did not scroll there. Focus moving into the
+overlay scrolls it either way. The overlay marks its stack
+`data-scrolls` while it overflows, from the sizes of the stack and of what it
+holds.
 
 ## Implementation
 

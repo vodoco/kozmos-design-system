@@ -261,4 +261,14 @@ final class ProductContractsTests: XCTestCase {
         XCTAssertEqual(KozmosRouteReadiness.noRoute.rawValue, "no-route")
         XCTAssertEqual(KozmosUserLocationState.permissionDenied.rawValue, "permission-denied")
     }
+
+    /// Decision 45 (Olcay, 2026-09-28): heading is remembered while the map is
+    /// moved away — the SDK's rotational Off — and the next press resumes it.
+    /// One more value on the wire, "heading-paused", spelled as the others are.
+    func testTheLocationStateCarriesAPausedHeading() {
+        let paused = KozmosUserLocationState(rawValue: "heading-paused")
+        XCTAssertNotNil(paused, "the contract has no heading-paused")
+        XCTAssertEqual(paused?.rawValue, "heading-paused")
+        XCTAssertEqual(KozmosUserLocationState.allCases.count, 8)
+    }
 }

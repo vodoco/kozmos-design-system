@@ -27,10 +27,11 @@ import org.junit.Test
  * The location control's mark for each mode (row 77), and step-free in its
  * place, drawn in each theme on the page surface.
  *
- * Off, locating (the arc in the mark's place), following, heading, no position;
- * then step-free off and on; then the SDK's stacked presentation, where the
- * state sits under the name. Following, heading and step-free on are the
- * pressed ones: their mark and edge take the theme. The surface is drawn
+ * Off, locating (the arc in the mark's place), following, heading and heading
+ * paused (decision 45: the upright pointer in outline); then no position and
+ * step-free off and on; then the SDK's stacked presentation, where the state
+ * sits under the name. Following, heading and step-free on are the pressed
+ * ones: their mark takes the theme's blue and their words navy. The surface is drawn
  * explicitly because Paparazzi's own window is dark, and a pressed tint that
  * only read on it would pass unseen.
  */
@@ -59,9 +60,10 @@ class KozmosMapControlsGroupPaparazziTest {
                             Location(KozmosUserLocationState.Locating)
                             Location(KozmosUserLocationState.Following)
                             Location(KozmosUserLocationState.Heading)
-                            Location(KozmosUserLocationState.Unavailable)
+                            Location(KozmosUserLocationState.HeadingPaused)
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Location(KozmosUserLocationState.Unavailable)
                             KozmosMapControlsGroup(onStepFreeChange = {}, stepFree = false)
                             KozmosMapControlsGroup(onStepFreeChange = {}, stepFree = true)
                         }

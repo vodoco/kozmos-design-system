@@ -69,6 +69,13 @@ function MapBoard({
         background: "var(--primitives-colors-background-100)",
       }}
     >
+      {/* The map itself, as a renderer's canvas is: behind the chrome, a
+          sibling of it, and what a press the chrome does not take reaches
+          (decision 46). It paints nothing. */}
+      <div
+        data-testid={`${id}-map-board-${layout}-map`}
+        style={{ position: "absolute", inset: 0 }}
+      />
       {layout === "by-hand" ? (
         <>
           <div
@@ -342,27 +349,33 @@ function Controls({ id }: { id: string }) {
         onZoomOut={() => undefined}
         data-testid={`${id}-map-zoom`}
       />
-      {(["off", "following", "heading", "unavailable"] as const).map(
-        (state) => (
-          <MapControlsGroup
-            key={state}
-            label={`${id} location ${state}`}
-            locationLabel="Focus"
-            locationLabelPlacement="stacked"
-            locationPresentation="labelled"
-            locationState={state}
-            locationStateLabel={
-              state === "off"
-                ? "Off"
-                : state === "unavailable"
-                  ? "No Location"
-                  : "On"
-            }
-            onMyLocation={() => undefined}
-            data-testid={`${id}-location-${state}`}
-          />
-        ),
-      )}
+      {(
+        [
+          "off",
+          "following",
+          "heading",
+          "heading-paused",
+          "unavailable",
+        ] as const
+      ).map((state) => (
+        <MapControlsGroup
+          key={state}
+          label={`${id} location ${state}`}
+          locationLabel="Focus"
+          locationLabelPlacement="stacked"
+          locationPresentation="labelled"
+          locationState={state}
+          locationStateLabel={
+            state === "off" || state === "heading-paused"
+              ? "Off"
+              : state === "unavailable"
+                ? "No Location"
+                : "On"
+          }
+          onMyLocation={() => undefined}
+          data-testid={`${id}-location-${state}`}
+        />
+      ))}
       <MapBoard id={id} layout="overlay" />
       <MapBoard id={id} layout="by-hand" />
       <MapBoard id={id} layout="scrolling" />
