@@ -168,12 +168,14 @@ function UserLevelDot() {
 }
 
 /**
- * How far the column's first level sits inside its edge: its 1px border and
- * its 4px padding. The column is placed so that its bottom level lies exactly
- * over the tile — the tile grows into the column — and its corners stay
- * concentric with the tile's: 16 inside 20, 4 apart.
+ * How far the column's levels sit inside its edge: its padding, the 4px
+ * spacing step, and no border — the map-control surface has none (decision
+ * 40). The column is placed so that its bottom level lies exactly over the
+ * tile — the tile grows into the column — and its corner is the tile's grown
+ * by this inset, so the two stay concentric. Its surface is the owned
+ * `.kozmos-floor-selector-list` rule.
  */
-const COLUMN_INSET = 5;
+const COLUMN_INSET = 4;
 
 interface CollapsibleFloorSelectorProps extends React.HTMLAttributes<HTMLDivElement> {
   options: FloorPresentation[];
@@ -282,7 +284,7 @@ const CollapsibleFloorSelector = React.forwardRef<
             align="end"
             alignOffset={-COLUMN_INSET}
             aria-label={label}
-            className="kozmos-floor-selector-list flex w-auto flex-col gap-1 rounded-container bg-background p-1 shadow-floating"
+            className="kozmos-floor-selector-list"
             side="top"
             sideOffset={-(tileSize.height + COLUMN_INSET)}
             onCloseAutoFocus={(event) => {

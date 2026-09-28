@@ -26,10 +26,12 @@ one outlined in the theme's primary and a closed level muted. The column grows u
 over the tile; parked where it has no room above, it grows down instead. A choice, Escape or a tap
 outside closes the column, and focus goes back to the tile, which names the level now shown. The
 tile is the map's own control (`MapControlButton`, `KozmosMapControlButton` on iOS and Android), so
-it follows the shared map-control surface; screen readers hear whether its column is open. On iOS
-the closed tile also has a hint, "Shows every level", which on iOS 16 and 17, where VoiceOver hears
-no expanded state, is the only sign that it opens a column; a product that translates passes its own
-words as `expandHint`. The web and Android say the state in the screen reader's own words.
+it follows the shared map-control surface, and the open column wears that surface too: the page's
+own, no edge, the map controls' elevation, and the tile's corner grown by the column's 4px inset.
+Screen readers hear whether the column is open. On iOS the closed tile also has a hint, "Shows
+every level", which on iOS 16 and 17, where VoiceOver hears no expanded state, is the only sign
+that it opens a column; a product that translates passes its own words as `expandHint`. The web and
+Android say the state in the screen reader's own words.
 
 <Canvas of={FloorSelectorStories.Collapsible} />
 

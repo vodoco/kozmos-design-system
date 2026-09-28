@@ -666,6 +666,82 @@ try {
           `the dot and the count overlap: ${JSON.stringify(marks)}`,
         );
         await audit();
+        // Decision 40: the tile is the map's own control, so it draws the
+        // map-control surface as the compass beside the zoom pair does — at
+        // rest, hovered and pressed, nothing restyled. The open column wears
+        // the same surface: the page's own, the map controls' elevation and
+        // blur, no edge, and the tile's corner grown by the column's inset,
+        // so the levels' corners stay concentric with it.
+        const surfaceKeys = [
+          "backgroundColor",
+          "color",
+          "boxShadow",
+          "borderTopWidth",
+          "borderTopLeftRadius",
+          "backdropFilter",
+          "width",
+          "height",
+          "transform",
+        ];
+        const surfaceOf = (locator) =>
+          locator.evaluate(async (node, keys) => {
+            await Promise.all(node.getAnimations().map((a) => a.finished));
+            const s = getComputedStyle(node);
+            return Object.fromEntries(
+              [...keys, "paddingTop"].map((key) => [key, s[key]]),
+            );
+          }, surfaceKeys);
+        const surfaceStates = async (locator) => {
+          await page.mouse.move(1, 1);
+          const rest = await surfaceOf(locator);
+          await locator.hover();
+          const hover = await surfaceOf(locator);
+          await page.mouse.down();
+          const pressed = await surfaceOf(locator);
+          await page.mouse.up();
+          await page.mouse.move(1, 1);
+          return { rest, hover, pressed };
+        };
+        await visit("map-mapcontrolsgroup--default");
+        const compass = await surfaceStates(
+          page.getByRole("button", { name: "Reset bearing" }),
+        );
+        await visit("product-sdk-floorselector--collapsible");
+        const surfaceTile = page
+          .getByRole("group", { name: "Floor selector" })
+          .getByRole("button", { name: "First floor" });
+        // Pressing the tile, then letting go, opens its column.
+        const tileSurface = await surfaceStates(surfaceTile);
+        assert.deepEqual(
+          tileSurface,
+          compass,
+          "the floor tile is not drawn as a map control is, at rest, hovered and pressed",
+        );
+        const surfaceColumn = page.getByRole("dialog", {
+          name: "Floor selector",
+        });
+        await surfaceColumn.waitFor();
+        const columnSurface = await surfaceOf(surfaceColumn);
+        for (const key of ["backgroundColor", "boxShadow", "backdropFilter"]) {
+          assert.equal(
+            columnSurface[key],
+            tileSurface.rest[key],
+            `the floor column's ${key} is not the map control's`,
+          );
+        }
+        assert.equal(
+          columnSurface.borderTopWidth,
+          "0px",
+          "the floor column draws an edge",
+        );
+        assert.equal(
+          parseFloat(columnSurface.borderTopLeftRadius),
+          parseFloat(tileSurface.rest.borderTopLeftRadius) +
+            parseFloat(columnSurface.paddingTop),
+          "the floor column's corner is not the map control's grown by its inset",
+        );
+        await page.keyboard.press("Escape");
+        await surfaceColumn.waitFor({ state: "detached" });
         console.log(`PASS floor switcher ${theme} ${viewport.width}`);
         for (const id of [
           "product-sdk-routepreviewpanel--ready",
