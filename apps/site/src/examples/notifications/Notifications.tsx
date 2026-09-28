@@ -169,11 +169,11 @@ export default function Notifications() {
 
         {/* A toast would sit at the browser's corner, outside the page
             (GAPS.md, GAP-36), so the confirmation stays inline, in a status
-            region that is always there; the Alert inside is only its look
-            (Alert is always role="alert", GAP-12). */}
+            region that is always there; the Alert inside keeps its default,
+            no live region of its own, so it is only the look. */}
         <Box role="status" className="ex-inbox-live">
           {undo ? (
-            <Alert variant="success" role="none">
+            <Alert variant="success">
               <AlertDescription>
                 <Stack
                   direction="row"

@@ -231,8 +231,8 @@ export default function FeedbackSurvey() {
           tabIndex={-1}
           className="ex-survey-focus"
         >
-          {/* Alert is always role="alert" (GAPS.md, GAP-12); thanks are a status. */}
-          <Alert variant="success" role="status">
+          {/* Thanks are a status: polite, not an interruption. */}
+          <Alert variant="success" live="polite">
             <AlertDescription>
               <Text as="span" weight="semibold">
                 Thank you.

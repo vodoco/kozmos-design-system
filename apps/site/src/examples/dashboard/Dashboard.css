@@ -8,10 +8,11 @@
   background: var(--primitives-colors-background-50);
 }
 
-/* One column; from 64rem the sidebar joins beside the content. Below that
-   its sections open in a drawer from the navbar. The wrappers are what show
-   and hide: a class on the Sidebar itself cannot outrank its own display,
-   one of Kozmos's scoped utilities (GAPS.md, GAP-04). */
+/* One column; from 48rem the rail joins beside the content — 96px, so a
+   tablet keeps the rest for the table. Below that its sections open in a
+   drawer from the navbar. The wrappers are what show and hide: a class on
+   the Sidebar itself cannot outrank its own display, one of Kozmos's scoped
+   utilities (GAPS.md, GAP-04). */
 .ex-dash-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -26,7 +27,7 @@
   padding: calc(var(--primitives-layout-spacing-200) * 1px);
 }
 
-@media (min-width: 64rem) {
+@media (min-width: 48rem) {
   .ex-dash-body {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -52,8 +53,10 @@
   border-radius: calc(var(--semantics-radius-container) * 1px);
 }
 
-/* A phone keeps the width for the content, not the frame around it. */
-@media (max-width: 40rem) {
+/* A phone or a tablet keeps the width for the content, not the frame around
+   it: beside the rail at 48rem, the full frame left the venue table 31px
+   short, and the table scrolled. */
+@media (max-width: 64rem) {
   .ex-dash-main {
     margin: calc(var(--primitives-layout-spacing-150) * 1px);
     padding: calc(var(--primitives-layout-spacing-300) * 1px)
@@ -95,4 +98,3 @@
 .ex-dash-title:focus {
   outline: none;
 }
-

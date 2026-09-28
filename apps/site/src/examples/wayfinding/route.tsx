@@ -6,6 +6,7 @@ import styles from "./Wayfinding.css?raw";
 import source from "./Wayfinding.tsx?raw";
 import data from "./data.ts?raw";
 import focusSource from "../focus.ts?raw";
+import controlsEdgeSource from "../controls-edge.ts?raw";
 
 const example = getExample("wayfinding");
 
@@ -25,6 +26,7 @@ export default function WayfindingExample() {
         { name: "data.ts", code: data },
         { name: "Wayfinding.css", code: styles },
         { name: "focus.ts", code: focusSource },
+        { name: "controls-edge.ts", code: controlsEdgeSource },
       ]}
     >
       <Wayfinding />

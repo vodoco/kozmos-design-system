@@ -306,10 +306,15 @@ would otherwise land after the new page had taken it.
 **Focus and announcements in the examples.** Where a view replaces another
 in place — a step, a place's details, a confirmation — the control that was
 pressed goes with it, so `src/examples/focus.ts` moves focus to the new
-view's heading or panel. A status message goes into a region that is always
-on the page (a `Box role="status"`, or a `Text`), with `role="none"` on the
-`Alert` drawn inside it: a live region that arrives with its message is often
-missed (GAP-51). Empty, the region leaves the flow, so it opens no gap.
+view's heading or panel. In a map shell's panel it puts the panel's scroller
+(`data-kozmos-scroller`) back at its top and focuses the view without
+scrolling: focus alone scrolled a tall list's top edge to the scroller's, and
+the panel's inset with it. A status message goes into a region that is always
+on the page (a `Box role="status"`, or a `Text`), and the `Alert` drawn
+inside it keeps its default, no live role of its own: a live region that
+arrives with its message is often missed (GAP-51). Empty, the region leaves
+the flow, so it opens no gap. An `Alert` that says something as it appears
+takes `live="polite"`.
 
 **One route per component.** `src/routes.ts` registers
 `components/<slug>` for each component in the generated index, not one
@@ -633,13 +638,14 @@ signal to close its gap. The same
 holds for GAP-20: the search-field test is marked `test.fail` in WebKit
 only, so Playwright reports it the day Kozmos fixes the field.
 
-**Design-system gaps, measured.** Seventeen tests measure what Kozmos draws
-today. Five of them now measure a fix rather than a defect: the sheet
+**Design-system gaps, measured.** Nineteen tests measure what Kozmos draws
+today. Six of them now measure a fix rather than a defect: the sheet
 handle's 16px row and 40 × 4 grip (GAP-38), the spinner and the skeleton
 resting under the reduced-motion preference (GAP-50, in the states
 example's loading view), SearchBar hiding the browser's own clear (GAP-37),
-an empty state centring its wrapped words (GAP-66) and MapOverlay keeping
-the shadow of what floats in it (GAP-72); a sixth, the Button's 8px between
+an empty state centring its wrapped words (GAP-66), MapOverlay keeping
+the shadow of what floats in it (GAP-72) and the assistant's voice control
+drawing its own marks (GAP-86); a seventh, the Button's 8px between
 icon and label (GAP-56), is held by the test of every button the site
 draws. Beside them, emotion text now reads on every neutral surface
 (GAP-31), whose four known-violation allowances are deleted. The rest still
@@ -651,7 +657,8 @@ its own trail in right to left (GAP-61), MapView's missing isolation
 (GAP-40), CardTitle's 1.0 line height (GAP-42), where a touch 20px from the
 slider's thumb lands (GAP-43), the header's white first paint for a
 dark-mode visitor with the scripts blocked (GAP-03), the two-row header at
-320px (GAP-41) and brand variant 1's 4.20:1 (GAP-45). Each measures what a
+320px (GAP-41), brand variant 1's 4.20:1 (GAP-45) and the map shell's boxes
+cutting the shadows of what they hold (GAP-91). Each measures what a
 visitor gets, so any honest fix flips it; [`DS-HANDOFF.md`](./DS-HANDOFF.md)
 says what to flip it to. The tests that read a component page's demo — the
 toast with no fill (GAP-58), the island on a black page and without room for

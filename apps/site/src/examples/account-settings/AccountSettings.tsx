@@ -188,10 +188,11 @@ function ProfileSettings() {
               </Text>
             </Box>
             {/* Always on the page, so a screen reader hears the message put in
-                it; the Alert inside is only its look (Alert is role="alert", GAP-12). */}
+                it; the Alert inside keeps its default, no live region of its
+                own, so it is only the look. */}
             <Box role="status" className="ex-settings-live">
               {saved ? (
-                <Alert variant="success" role="none">
+                <Alert variant="success">
                   <AlertDescription>Your profile is saved.</AlertDescription>
                 </Alert>
               ) : null}
@@ -274,10 +275,11 @@ function NotificationSettings() {
               onCheckedChange={(checked) => changed(setNews)(checked === true)}
             />
             {/* Always on the page, so a screen reader hears the message put in
-                it; the Alert inside is only its look (Alert is role="alert", GAP-12). */}
+                it; the Alert inside keeps its default, no live region of its
+                own, so it is only the look. */}
             <Box role="status" className="ex-settings-live">
               {saved ? (
-                <Alert variant="success" role="none">
+                <Alert variant="success">
                   <AlertDescription>
                     Your notification choices are saved.
                   </AlertDescription>
@@ -365,10 +367,11 @@ function SecuritySettings() {
                 onChange={(event) => setConfirm(event.target.value)}
               />
               {/* Always on the page, so a screen reader hears the message put in
-                  it; the Alert inside is only its look (Alert is role="alert", GAP-12). */}
+                  it; the Alert inside keeps its default, no live region of its
+                  own, so it is only the look. */}
               <Box role="status" className="ex-settings-live">
                 {changed ? (
-                  <Alert variant="success" role="none">
+                  <Alert variant="success">
                     <AlertDescription>
                       Your password is changed.
                     </AlertDescription>

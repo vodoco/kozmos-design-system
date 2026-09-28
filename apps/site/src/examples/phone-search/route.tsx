@@ -4,6 +4,8 @@ import { getExample } from "../manifest";
 import PhoneSearch from "./PhoneSearch";
 import styles from "./PhoneSearch.css?raw";
 import source from "./PhoneSearch.tsx?raw";
+import assistantSource from "./Assistant.tsx?raw";
+import answers from "./answers.ts?raw";
 import data from "./data.ts?raw";
 import focusSource from "../focus.ts?raw";
 
@@ -22,6 +24,8 @@ export default function PhoneSearchExample() {
       example={example}
       files={[
         { name: "PhoneSearch.tsx", code: source },
+        { name: "Assistant.tsx", code: assistantSource },
+        { name: "answers.ts", code: answers },
         { name: "data.ts", code: data },
         { name: "PhoneSearch.css", code: styles },
         { name: "focus.ts", code: focusSource },
