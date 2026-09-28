@@ -1279,6 +1279,9 @@ const styles = StyleSheet.create({
 
 ### Token Validation Script
 
+No `scripts/validate-tokens.ts` exists and no package has a `validate` script; the sketch below is
+not run by anything. What CI checks is under [CI Token Build Test](#ci-token-build-test).
+
 ```typescript
 // scripts/validate-tokens.ts
 import tokens from "../src/tokens.json";
@@ -1348,40 +1351,19 @@ if (errors.length > 0) {
 
 ### CI Token Build Test
 
-```yaml
-# .github/workflows/tokens.yml
-name: Tokens
+There is no `tokens.yml`. The tokens are built and checked inside `.github/workflows/ci.yml`:
 
-on:
-  push:
-    paths:
-      - "packages/tokens/**"
-  pull_request:
-    paths:
-      - "packages/tokens/**"
+- **`Web Build & Test`** builds them with everything else (`pnpm build`), checks that
+  `packages/tokens/dist/css/variables-light.css` came out, and runs the token checks, among them
+  `pnpm tokens:contrast:check`, `tokens:radius:check`, `tokens:border:check`,
+  `tokens:theme:check`, `tokens:copies:check`, `tokens:elevation:check`, `tokens:raw:check`,
+  `tokens:unitless:check`, `tokens:typography:check` and `tokens:motion:check`.
+- **`iOS Build`** and **`Android Build`** build them first
+  (`pnpm --filter @kozmos-ds/tokens build`) and check that `KozmosColors.swift` and
+  `KozmosColors.kt` came out.
 
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install
-      - run: pnpm --filter @kozmos/tokens validate
-      - run: pnpm --filter @kozmos/tokens build
-
-      - name: Check generated files
-        run: |
-          test -f packages/tokens/build/css/tokens.css
-          test -f packages/tokens/build/js/tokens.js
-          test -f packages/tokens/build/ios/KozmosTokens.swift
-          test -f packages/tokens/build/android/KozmosTokens.kt
-```
+Tokens change from Figma through `.github/workflows/figma-tokens.yml`, a manual workflow that opens
+a pull request ([ci-cd-configuration.md](./ci-cd-configuration.md)).
 
 ---
 
@@ -1390,19 +1372,21 @@ jobs:
 ### Build Commands
 
 ```bash
-pnpm tokens:build     # Build all token outputs
-pnpm tokens:validate  # Validate token structure
-pnpm tokens:sync      # Sync from Figma
+pnpm tokens:build            # Build all token outputs (pnpm --filter @kozmos-ds/tokens build)
+pnpm tokens:contrast:check   # The contrast contract, light and dark
+pnpm tokens:native:copy      # Copy the native token files into packages/ios and packages/android
+pnpm tokens:copies:check     # Those copies match the build
+pnpm tokens:sync             # Sync from Figma (FIGMA_ACCESS_TOKEN and FIGMA_FILE_KEY in the environment)
 ```
 
 ### File Locations
 
 ```
-Source:       packages/tokens/src/tokens.json
-CSS Output:   packages/tokens/build/css/tokens.css
-JS Output:    packages/tokens/build/js/tokens.js
-Swift Output: packages/tokens/build/ios/KozmosTokens.swift
-Kotlin Output: packages/tokens/build/android/KozmosTokens.kt
+Source:         packages/tokens/src/tokens.json, tokens-light.json, tokens-dark.json
+CSS Output:     packages/tokens/dist/css/variables-light.css, variables-dark.css
+JS Output:      packages/tokens/dist/js/tokens.js (and tokens.mjs, with declarations)
+Swift Output:   packages/tokens/dist/ios/KozmosColors.swift and the other Kozmos*.swift files
+Kotlin Output:  packages/tokens/dist/android/src/main/java/com/kozmos/tokens/KozmosColors.kt and the rest
 ```
 
 ---
