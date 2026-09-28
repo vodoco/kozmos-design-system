@@ -99,8 +99,9 @@ describe("AdaptiveMapShell", () => {
 });
 
 // The bottom sheet's detents, the Pointr prototype's (measured by
-// scripts/measure-prototype-sheet.cjs): jsdom lays nothing out, so the shell is told it is 390 x 600 through the
-// same properties it reads live, and the sheet's height is read from its style.
+// scripts/measure-prototype-sheet.cjs): jsdom lays nothing out, so the shell
+// is told it is 390 x 600 through the same properties it reads live, and the
+// sheet's height is read from its style.
 describe("AdaptiveMapShell sheet detents", () => {
   const spies: ReturnType<typeof vi.spyOn>[] = [];
   beforeEach(() => {

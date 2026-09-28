@@ -59,10 +59,10 @@ widgets, Shadow DOM support or isolation from every third-party overlay manager.
 
 **Migration continuation:** the component-owned CSS migration of 2026-09-17
 supersedes the implementation description below for Input, Textarea, Button,
-Popover, FieldWrapper and Label. Their recipes, token foundations and animation definitions no longer
-require native scope. The remaining library still does; this is not a completed
-cross-browser release. The paragraphs below retain the original foundation design
-and the finding that prompted its replacement.
+Popover, FieldWrapper and Label. Their recipes, token foundations and animation
+definitions no longer require native scope. The remaining library still does;
+this is not a completed cross-browser release. The paragraphs below retain the
+original foundation design and the finding that prompted its replacement.
 
 **2026-09-17 follow-up:** the existing green browser suite missed native form
 controls. The built Input/Textarea fixture now reproduces scoped-style failures in
