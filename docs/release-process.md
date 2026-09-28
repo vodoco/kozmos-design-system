@@ -118,9 +118,10 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    not an approval of the release as a whole.
 2. Version through Changesets on a reviewed branch, the **version PR**: `pnpm version-packages`
    (private packages are not versioned), an exact `release/plan.json`, and
-   `pnpm skills:build` (the AI-facing changelog and inventory carry the versions). Review
-   the manifests, changelogs and plan together. A first release of something new begins
-   on `next`; the checked-in plan is never an implied choice of versions.
+   `pnpm skills:build` (the AI-facing changelog and inventory carry the versions, and the
+   Claude Design page names React's; it reads the built types, so build React first).
+   Review the manifests, changelogs and plan together. A first release of something new
+   begins on `next`; the checked-in plan is never an implied choice of versions.
 3. Merge it once its checks pass on a branch up to date with `main`, and wait for the
    successful main-push CI run of that merge. A documentation-only main commit has no push
    CI because of path exclusions: do not substitute an older SHA or a PR run, and merge

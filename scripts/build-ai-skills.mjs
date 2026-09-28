@@ -20,11 +20,21 @@
  *
  * `--check` fails when the written file is stale, so the inventory cannot
  * drift again without a red build.
+ *
+ * It also writes docs/claude-design/, what the Kozmos artifact in Claude
+ * Design carries (decision 52): the consuming page and one API card per
+ * component, from the built declarations — so it needs
+ * `pnpm --filter "@kozmos-ds/react..." build` first, and says so without one.
+ * See scripts/skills/claude-design-docs.mjs.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import prettier from "prettier";
+import {
+  CARDS_DIR,
+  buildClaudeDesignDocs,
+} from "./skills/claude-design-docs.mjs";
 
 /**
  * Written the way the repository writes markdown.
@@ -250,24 +260,45 @@ const changelogNext = await formatted(
 );
 const changelogCurrent = read(CHANGELOG_OUT);
 
+// ------------------------------------------------------------ Claude Design
+
+/**
+ * docs/claude-design: the consuming page and a card per component. A card
+ * whose component has gone is stale too, so a removed component cannot leave
+ * its card behind for an assistant to mount.
+ */
+const claudeDesign = await buildClaudeDesignDocs(root);
+const cardsDir = path.join(root, CARDS_DIR);
+const retired = (fs.existsSync(cardsDir) ? fs.readdirSync(cardsDir) : [])
+  .filter((file) => file.endsWith(".md"))
+  .map((file) => `${CARDS_DIR}/${file}`)
+  .filter((file) => !claudeDesign.files.has(file));
+
 const stale = [];
 if (current !== next) stale.push(path.relative(root, OUT));
 if (changelogCurrent !== changelogNext) stale.push(path.relative(root, CHANGELOG_OUT));
+for (const [file, content] of claudeDesign.files)
+  if (read(path.join(root, file)) !== content) stale.push(file);
+for (const file of retired) stale.push(`${file} (its component is gone)`);
 
 if (process.argv.includes("--check")) {
   if (stale.length) {
     console.error(
-      `Stale AI-facing docs: ${stale.join(", ")}.\nRun \`pnpm skills:build\` and commit them.`,
+      `Stale AI-facing docs (${stale.length}): ${stale.join(", ")}.\nRun \`pnpm skills:build\` and commit them.`,
     );
     process.exit(1);
   }
   console.log(
-    `AI-facing generated docs ok: ${components.length} components across ${byCategory.size} categories, ${Object.keys(manifests).length} package changelogs.`,
+    `AI-facing generated docs ok: ${components.length} components across ${byCategory.size} categories, ${Object.keys(manifests).length} package changelogs, and the Claude Design page and ${claudeDesign.cards.length} component cards.`,
   );
 } else {
   fs.writeFileSync(OUT, next);
   fs.writeFileSync(CHANGELOG_OUT, changelogNext);
+  fs.mkdirSync(cardsDir, { recursive: true });
+  for (const [file, content] of claudeDesign.files)
+    fs.writeFileSync(path.join(root, file), content);
+  for (const file of retired) fs.rmSync(path.join(root, file));
   console.log(
-    `Wrote the inventory (${components.length} components, ${byCategory.size} categories) and the changelog (${Object.keys(manifests).length} packages).`,
+    `Wrote the inventory (${components.length} components, ${byCategory.size} categories), the changelog (${Object.keys(manifests).length} packages), and the Claude Design page and ${claudeDesign.cards.length} component cards${retired.length ? `, removing ${retired.length} whose component is gone` : ""}.`,
   );
 }
