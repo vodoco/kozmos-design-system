@@ -11,6 +11,11 @@ since, on the same packages at `f30c0f9`, the site's current base, on
 GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
 the same day.
 
+**Numbers** are the site's own register, two digits, separate from the
+design system's change list and its three-digit GAP-0nn: the site's GAP-91 is
+not the change list's GAP-091 (row 90). Where an entry names one of the
+change list's, it says so, as GAP-72's "its GAP-082" does.
+
 **Lanes** are the design system's: Core (domain-neutral components), Product / SDK,
 Platform / form factor, or Site (a need of this website, not of a product).
 
