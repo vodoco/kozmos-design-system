@@ -25,12 +25,33 @@ function originOf(file) {
 
 /**
  * The bundler's names, as a reader would write them. API Extractor imports
- * React as `default_2` and `React_2`, and renames an export that collides
- * with a global (`Text_2 as Text`); a card says `React.ReactNode` and `Text`.
+ * React under names of its own (`default_2`, `React_2`, `JSX_2` today), and
+ * renames an export that collides with a global (`Text_2 as Text`); a card
+ * says `React.ReactNode`, `JSX.Element` and `Text`. The names are read from
+ * the bundle's own imports and exports, not assumed.
  */
 function renamer(dts) {
+  const namespaces = new Map(); // a local name → what a reader calls it
   const renames = new Map();
-  for (const statement of dts.statements)
+  for (const statement of dts.statements) {
+    if (
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.importClause?.namedBindings
+    ) {
+      const from = statement.moduleSpecifier.text;
+      const bindings = statement.importClause.namedBindings;
+      if (from === "react" && ts.isNamespaceImport(bindings))
+        namespaces.set(bindings.name.text, "React");
+      else if (ts.isNamedImports(bindings))
+        for (const element of bindings.elements) {
+          const imported = (element.propertyName ?? element.name).text;
+          if (from === "react" && imported === "default")
+            namespaces.set(element.name.text, "React");
+          if (from === "react/jsx-runtime" && imported === "JSX")
+            namespaces.set(element.name.text, "JSX");
+        }
+    }
     if (
       ts.isExportDeclaration(statement) &&
       !statement.moduleSpecifier &&
@@ -40,11 +61,13 @@ function renamer(dts) {
       for (const element of statement.exportClause.elements)
         if (element.propertyName)
           renames.set(element.propertyName.text, element.name.text);
+  }
   return (text) =>
     text
-      .replace(/\b(?:default_2|React_2)\./g, "React.")
-      .replace(/\bJSX_2\./g, "JSX.")
-      .replace(/\b[A-Za-z]\w*_\d\b/g, (name) => renames.get(name) ?? name);
+      .replace(/\b([A-Za-z_]\w*)\./g, (whole, name) =>
+        namespaces.has(name) ? `${namespaces.get(name)}.` : whole,
+      )
+      .replace(/\b[A-Za-z]\w*_\d+\b/g, (name) => renames.get(name) ?? name);
 }
 
 /** A type on one line: comments dropped, whitespace collapsed. */
