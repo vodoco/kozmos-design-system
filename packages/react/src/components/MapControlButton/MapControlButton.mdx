@@ -28,6 +28,12 @@ compass, the location control and the floor tile:
 The surface is owned CSS (`kozmos-map-control`), so it holds in a host without
 `@scope`; a class passed in `className` still wins over it.
 
+**In the dark theme it stays borderless** (decision 47): the surface is the
+page's own, `background/0`, and no edge is drawn round it, as in the light. The
+Figma file draws the light theme only, so the dark shadow is Kozmos's own: the
+same three layers, the key light at the Floating role's dark alpha and the other
+two in the SDK's proportions — 40%, 20% and 30%.
+
 <Canvas of={Stories.IconOnly} />
 <Canvas of={Stories.LabelledState} />
 

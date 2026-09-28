@@ -724,7 +724,13 @@ try {
 
         // The location control's words.
         const words = {};
-        for (const state of ["off", "following", "heading", "unavailable"]) {
+        for (const state of [
+          "off",
+          "following",
+          "heading",
+          "heading-paused",
+          "unavailable",
+        ]) {
           const control = page
             .getByTestId(`${id}-location-${state}`)
             .getByRole("button");
@@ -781,6 +787,9 @@ try {
           off: { text: ["Focus", "Off"], ink: grey, mark: grey },
           following: { text: ["Focus", "On"], ink: navy, mark: blue },
           heading: { text: ["Focus", "On"], ink: navy, mark: blue },
+          // Decision 45: heading remembered while the map is moved away — the
+          // SDK's rotational Off, grey.
+          "heading-paused": { text: ["Focus", "Off"], ink: grey, mark: grey },
           unavailable: { text: ["No Location"], ink: grey, mark: grey },
         };
         for (const [state, want] of Object.entries(expected)) {
@@ -849,6 +858,13 @@ try {
           words.heading.name.startsWith("Focus, On, ") &&
             words.heading.name.length > "Focus, On, ".length,
           `${where}: heading's name does not tell it from following's: ${words.heading.name}`,
+        );
+        // A paused heading shows off's words, and its name says a press
+        // brings the turning map back, after them.
+        assert(
+          words["heading-paused"].name.startsWith("Focus, Off, ") &&
+            words["heading-paused"].name.length > "Focus, Off, ".length,
+          `${where}: a paused heading's name does not tell it from off's: ${words["heading-paused"].name}`,
         );
         console.log(
           `PASS ${where}: map controls are the SDK's 48 square, 16 corner, no edge, three shadows and 32px blur; the labels bold 16/16, grey off and navy on; the ring shows at ${contrast.toFixed(2)}:1`,
@@ -1897,6 +1913,167 @@ try {
   }
   console.log(
     `PASS GAP-082: controls in a MapOverlay draw as placed by hand, to within a level (${alike.join(", ")}; at rest and focused; edge and shadow ${reads.join(", ")} levels off the board; ${sum(faint)} pixels one level apart in all, ${sum(faintBeyond)} of them beyond an overlay's room), and a scrolling overlay keeps its controls' sides, top and last shadow`,
+  );
+
+  // Decision 46 (Olcay, 2026-09-28): the room round what an overlay holds is
+  // for its shadows, not for presses. Since #127 it took them: a press beside
+  // or below a control, inside the room, reached the overlay's stack and never
+  // the map, and the map controls' shadow made the room 32px beside and 48px
+  // below. Now only what the overlay holds takes a press; the map gets
+  // everything else in the room, a press and a drag alike, and the overlay
+  // still scrolls when what it holds overflows.
+  //
+  // Each board has a map stand-in behind its chrome, as a renderer's canvas
+  // is. Points in the room are chosen from the stacks' boxes, inside the board
+  // and outside everything a stack holds. Real presses, through the engine's
+  // own hit testing.
+  await boards.evaluate(() => {
+    window.__mapPresses = [];
+    for (const map of document.querySelectorAll("[data-testid$='-map']"))
+      for (const type of ["pointerdown", "pointermove", "pointerup"])
+        map.addEventListener(type, (event) => {
+          // As a map canvas does, so a drag stays the map's wherever it goes.
+          if (type === "pointerdown") map.setPointerCapture(event.pointerId);
+          window.__mapPresses.push({
+            type,
+            map: map.getAttribute("data-testid"),
+            target: event.target === map,
+          });
+        });
+  });
+  const bandPoints = (id, layout) =>
+    boards.evaluate(
+      ({ id, layout }) => {
+        const board = document.querySelector(
+          `[data-testid="${id}-map-board-${layout}"]`,
+        );
+        const b = board.getBoundingClientRect();
+        const points = [];
+        for (const stack of board.querySelectorAll(
+          ".kozmos-map-overlay-stack",
+        )) {
+          const s = stack.getBoundingClientRect();
+          const held = [...stack.children].map((child) =>
+            child.getBoundingClientRect(),
+          );
+          const inside = (x, y, r) =>
+            x >= r.left && x < r.right && y >= r.top && y < r.bottom;
+          for (const r of held) {
+            const cx = (r.left + r.right) / 2;
+            const cy = (r.top + r.bottom) / 2;
+            for (const [x, y, where] of [
+              [r.left - 8, cy, "beside"],
+              [r.right + 8, cy, "beside"],
+              [cx, r.top - 12, "above"],
+              [cx, r.bottom + 20, "below"],
+            ])
+              if (
+                inside(x, y, s) &&
+                inside(x, y, b) &&
+                !held.some((other) => inside(x, y, other))
+              )
+                points.push({ x: Math.round(x), y: Math.round(y), where });
+          }
+        }
+        return points;
+      },
+      { id, layout },
+    );
+  const pressed = [];
+  for (const id of ["outer", "nested"]) {
+    for (const layout of ["overlay", "scrolling"]) {
+      const points = await bandPoints(id, layout);
+      assert(
+        points.length >= 2,
+        `${id} ${layout}: no point in an overlay's room to press: ${JSON.stringify(points)}`,
+      );
+      const map = `${id}-map-board-${layout}-map`;
+      for (const point of points) {
+        const hit = await boards.evaluate(({ x, y }) => {
+          const el = document.elementFromPoint(x, y);
+          return (
+            el?.getAttribute("data-testid") ||
+            el?.className ||
+            el?.tagName ||
+            null
+          );
+        }, point);
+        assert.equal(
+          hit,
+          map,
+          `${id} ${layout}: a press ${point.where} a control, in the overlay's room at ${point.x},${point.y}, lands on ${hit}, not the map`,
+        );
+        // A press, then a drag, as a visitor panning the map would.
+        await boards.evaluate(() => (window.__mapPresses = []));
+        await boards.mouse.click(point.x, point.y);
+        await boards.mouse.move(point.x, point.y);
+        await boards.mouse.down();
+        await boards.mouse.move(point.x + 24, point.y + 16, { steps: 4 });
+        await boards.mouse.up();
+        const got = await boards.evaluate(() => window.__mapPresses);
+        const on = (type) =>
+          got.filter((e) => e.type === type && e.map === map && e.target)
+            .length;
+        assert(
+          on("pointerdown") >= 2 &&
+            on("pointerup") >= 2 &&
+            on("pointermove") >= 1,
+          `${id} ${layout}: a press and a drag ${point.where} a control, in the overlay's room, did not reach the map: ${JSON.stringify(got)}`,
+        );
+        pressed.push(`${id} ${layout} ${point.where}`);
+      }
+    }
+    // What the overlay holds still takes its own presses.
+    const zoom = board(id, "overlay").locator("button").first();
+    const box = await zoom.boundingBox();
+    const target = await boards.evaluate(
+      ({ x, y }) =>
+        document
+          .elementFromPoint(x, y)
+          ?.closest("button")
+          ?.getAttribute("aria-label") ?? null,
+      { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+    );
+    assert.equal(
+      target,
+      await zoom.getAttribute("aria-label"),
+      `${id}: a press on a control in an overlay no longer reaches it`,
+    );
+    // And an overlay taller than its room still scrolls, from a wheel over
+    // what it holds.
+    const stack = boards
+      .getByTestId(`${id}-map-overlay-scrolling`)
+      .locator(":scope > div");
+    await stack.evaluate((node) => (node.scrollTop = 0));
+    const first = await board(id, "scrolling")
+      .locator("button")
+      .first()
+      .boundingBox();
+    await boards.mouse.move(
+      first.x + first.width / 2,
+      first.y + first.height / 2,
+    );
+    await boards.mouse.wheel(0, 40);
+    const scrolled = await boards
+      .waitForFunction(
+        (testId) =>
+          document.querySelector(`[data-testid="${testId}"] > div`).scrollTop >
+          0,
+        `${id}-map-overlay-scrolling`,
+        { timeout: 3000 },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+    assert(
+      scrolled,
+      `${id}: an overlay that overflows no longer scrolls from a wheel over what it holds`,
+    );
+    await stack.evaluate((node) => (node.scrollTop = 0));
+  }
+  console.log(
+    `PASS decision 46: a press or a drag in an overlay's room reaches the map (${pressed.length} points: ${[...new Set(pressed)].join(", ")}); a control in it still takes its press, and an overlay that overflows still scrolls from a wheel over what it holds`,
   );
   await boards.close();
 

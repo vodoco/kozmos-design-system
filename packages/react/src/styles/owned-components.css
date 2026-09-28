@@ -224,7 +224,13 @@
      stack scrolls, what scrolls shows through the same room. Content-box
      sizing keeps the max height the content's; `kozmos-reset` on the element
      keeps the scoped preflight's border-box off it. A shadow does not turn
-     round right to left, so the inline room is the same on both sides. */
+     round right to left, so the inline room is the same on both sides.
+     The room is for the shadows, not for presses (decision 46). The stack
+     takes none itself, so a press or a drag in its room, or between what it
+     holds, reaches the map; what it holds takes its own. It still scrolls:
+     a wheel or a touch over what it holds scrolls the nearest scroll box
+     above it, which is this one, and focus moving in scrolls it too. A
+     scrollbar the platform draws in the room is the map's as well. */
   .kozmos-map-overlay-stack {
     box-sizing: content-box;
     display: flex;
@@ -236,7 +242,7 @@
     );
     overflow-y: auto;
     overscroll-behavior: contain;
-    pointer-events: auto;
+    pointer-events: none;
     padding-block: kozmos-shadow-reach(
         --semantics-elevation-floating --semantics-elevation-map-control top
       )
@@ -266,6 +272,9 @@
             inline
         )
     );
+  }
+  .kozmos-map-overlay-stack > * {
+    pointer-events: auto;
   }
   /* How the system's parts enter, on the motion tokens — the same few moves
      everywhere, so a row changing form reads as one thing happening. A part

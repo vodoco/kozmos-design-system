@@ -27,13 +27,21 @@ frame and modifier sizing instead, which is recorded as intentional in the
 variant analyzer rather than counted as a parity gap.
 
 What the overlay holds scrolls when it is taller than the map leaves room for.
-The overlay keeps the floating elevation's reach clear around what it holds, so
-a control's shadow, its edge and its focus ring are drawn whole at the overlay's
-edges; while it scrolls, only what has scrolled out of view is cut. The room is
-read from the elevation token when the package is built, and it takes no space
-from the layout: the content sits where it would without it. Like the space
-between the overlay's items, the room is the overlay's, so a press on it does
-not reach the map.
+The overlay keeps the reach of the shadows it holds clear around them — the
+floating elevation's and the map controls' own, the larger of the two on each
+side: 32px above and beside, 48px below — so a control's shadow and its focus
+ring are drawn whole at the overlay's edges; while it scrolls, only what has
+scrolled out of view is cut. The room is read from the elevation tokens when the
+package is built, and it takes no space from the layout: the content sits where
+it would without it.
+
+The room is for the shadows, not for presses (decision 46, which replaces
+decision 31's cost). Only what the overlay holds takes a press. A press or a
+drag in the room, or in the space between the overlay's items, reaches the map
+beneath, so the map pans from right beside a control. It still scrolls: a wheel
+or a touch over what it holds scrolls the overlay, and so does focus moving
+into it. Where a platform draws a scrollbar that takes room of its own, the bar
+sits in the room and passes presses to the map like the rest of it.
 
 ## Implementation
 
