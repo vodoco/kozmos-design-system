@@ -2,6 +2,11 @@
 
 > **Purpose:** This document provides configuration templates and integration guides for using Kozmos Design System with various AI coding assistants including Claude, Cursor, Anti Gravity, GitHub Copilot, and others.
 
+> **Status:** Neither the `kozmos-ai-setup` command nor an MCP server package exists. No package in
+> this repository provides them and npm has no package under either name, so an `npx` of them would
+> run whatever npm served under that name one day. The setup commands below are a design that
+> follows [mcp-server-specification.md](./mcp-server-specification.md), not something to run.
+
 ---
 
 ## Table of Contents
