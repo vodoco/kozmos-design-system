@@ -1,5 +1,6 @@
 import { Meta, Canvas } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
+import { PlatformSnippets } from "../PlatformSnippets";
 import * as Stories from "./RoutePreviewPanel.stories";
 
 <Meta of={Stories} />
@@ -12,4 +13,145 @@ selected route is ready and available.
 
 <Canvas of={Stories.Ready} />
 <Canvas of={Stories.Calculating} />
+
+## In the map shell's panel
+
+As the whole content of `AdaptiveMapShell`'s panel, the route preview is the panel's top. Its
+destination row tops its 16px up to what the panel already leaves above it, rather than adding 16px
+to it. Under a sheet's grip it keeps 4px more, so nothing in the row sits inside the grip's target
+circle (WCAG 2.5.8). "To" used to sit 33px from the panel's top and 17px from its side; it now sits
+21px down under a grip, and 17px down in a side panel or a sheet with a single detent. The options
+under the row keep their 16px. On its own, outside a shell, nothing changes. `AdaptiveMapShell`'s
+`SheetWithRoutePreview` story shows it under a grip.
+
+If you place the preview under a row of your own inside the panel, it is not at the panel's top: move
+that row into the shell's `panelHeader`, or set `--kozmos-panel-inset-top` and
+`--kozmos-panel-clearance-top` to `0px` on the preview.
+
+iOS and Android read the same two values from the shell: `kozmosPanelInsetTop` and
+`kozmosPanelClearanceTop` in the SwiftUI environment, `LocalKozmosPanelInsetTop` and
+`LocalKozmosPanelClearanceTop` in Compose. Under the grab handle "To" sits 20 points (dp) down and 16
+in; a native side panel leaves nothing above its content, so there the row keeps its 16. For a
+preview under a row of your own, set both values to zero.
+
+<PlatformSnippets
+  react={`
+import type { ReactNode } from "react";
+import {
+  AdaptiveMapShell,
+  RoutePreviewPanel,
+  type RoutePreviewPanelProps,
+} from "@kozmos-ds/react";
+
+// The route preview is the sheet's whole content: under the grip its
+// destination row starts as far down as it sits in, plus the grip's 4px.
+export function RoutePreviewSheet({
+  map,
+  destination,
+  options,
+  status,
+  onSelect,
+  onBack,
+  onStart,
+}: {
+  map: ReactNode;
+  destination: string;
+  options: RoutePreviewPanelProps["options"];
+  status: RoutePreviewPanelProps["status"];
+  onSelect: (routeId: string) => void;
+  onBack: () => void;
+  onStart: (routeId: string) => void;
+}) {
+  return (
+    <AdaptiveMapShell
+      map={map}
+      panelLabel="Directions"
+      panel={
+        <RoutePreviewPanel
+          destinationName={destination}
+          options={options}
+          status={status}
+          backLabel="Back"
+          continueLabel="Start"
+          onOptionSelect={onSelect}
+          onBack={onBack}
+          onContinue={onStart}
+        />
+      }
+    />
+  );
+}
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+// The route preview is the sheet's whole content: under the grab handle its
+// destination row starts as far down as it sits in, plus the handle's 4 points.
+struct RoutePreviewSheet<MapContent: View>: View {
+    let destination: String
+    let options: [KozmosRouteOptionPresentation]
+    let status: KozmosRouteReadiness
+    let map: MapContent
+    let onSelect: (String) -> Void
+    let onBack: () -> Void
+    let onStart: (String) -> Void
+
+    var body: some View {
+        KozmosAdaptiveMapShell(panelLabel: String(localized: "Directions")) {
+            map
+        } panel: {
+            KozmosRoutePreviewPanel(
+                destinationName: destination,
+                options: options,
+                status: status,
+                backLabel: String(localized: "Back"),
+                continueLabel: String(localized: "Start"),
+                onOptionSelect: onSelect,
+                onBack: onBack,
+                onContinue: onStart
+            )
+        }
+    }
+}
+  `}
+  kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.adaptivemapshell.KozmosAdaptiveMapShell
+import com.kozmos.components.routepreviewpanel.KozmosRoutePreviewPanel
+import com.kozmos.contracts.KozmosRouteOptionPresentation
+import com.kozmos.contracts.KozmosRouteReadiness
+
+// The route preview is the sheet's whole content: under the handle its
+// destination row starts as far down as it sits in, plus the handle's 4dp.
+@Composable
+fun RoutePreviewSheet(
+    destination: String,
+    options: List<KozmosRouteOptionPresentation>,
+    status: KozmosRouteReadiness,
+    map: @Composable () -> Unit,
+    onSelect: (String) -> Unit,
+    onBack: () -> Unit,
+    onStart: (String) -> Unit
+) {
+    KozmosAdaptiveMapShell(
+        map = map,
+        panelLabel = "Directions",
+        panel = {
+            KozmosRoutePreviewPanel(
+                destinationName = destination,
+                options = options,
+                status = status,
+                backLabel = "Back",
+                continueLabel = "Start",
+                onOptionSelect = onSelect,
+                onBack = onBack,
+                onContinue = onStart
+            )
+        }
+    )
+}
+  `}
+/>
+
 <Controls />
