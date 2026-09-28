@@ -101,7 +101,8 @@ const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
               <Heading className="font-semibold text-lg text-foreground tracking-tight">
                 {title}
               </Heading>
-              <p className="text-sm text-muted-foreground">{description}</p>
+              {/* Muted, and on glass the foreground colour (decision 48). */}
+              <p className="kozmos-muted-text text-sm">{description}</p>
             </div>
 
             <div className="flex justify-center py-4">

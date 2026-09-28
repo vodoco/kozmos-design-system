@@ -51,4 +51,21 @@ describe("SaveLocationCard", () => {
     expect(onRouteToLocation).toHaveBeenCalledTimes(1);
     expect(onEditNote).toHaveBeenCalledTimes(1);
   });
+
+  it("draws its description muted through the class a glass surface turns to ink", () => {
+    // Decision 48, on every glass surface: text that is muted elsewhere
+    // takes the foreground colour on glass (measured over a saturated map
+    // in check-adaptive-edge-cases.mjs). A `text-muted-foreground` beside
+    // the class would outrank it.
+    render(
+      <SaveLocationCard
+        title="Gate 12"
+        description="Terminal 2, Level 1"
+        surface="glass"
+      />,
+    );
+    const description = screen.getByText("Terminal 2, Level 1");
+    expect(description.classList.contains("kozmos-muted-text")).toBe(true);
+    expect(description.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
 });

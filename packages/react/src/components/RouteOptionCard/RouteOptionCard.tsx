@@ -47,9 +47,11 @@ const RouteOptionCard = React.forwardRef<
         aria-describedby={warningId}
         aria-pressed={option.selected}
         className={cn(
-          "flex min-h-24 w-full min-w-52 flex-col justify-between rounded-container border bg-background p-3 text-left text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          // The fill is owned: the background colour, and for the chosen
+          // option the theme's 5% tint on it (kozmos-route-option).
+          "kozmos-route-option flex min-h-24 w-full min-w-52 flex-col justify-between rounded-container border p-3 text-left text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           option.selected
-            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+            ? "border-primary ring-1 ring-primary/20"
             : "border-border hover:bg-muted/60",
           className,
         )}

@@ -242,6 +242,20 @@ describe("AdaptiveMapShell sheet detents", () => {
     }
   });
 
+  it("names its panel with a short data-slot, which axe keeps however long the panel's tag", () => {
+    // GAP-17's exclusion on the website names the panel by this attribute.
+    // Past 300 characters axe cuts every attribute value in a node's
+    // snippet to 20, and the class it first matched lost its words; a value
+    // of 20 or fewer keeps them.
+    for (const panelPresentation of ["bottom", "side"] as const) {
+      const aside = sheet({ panelPresentation });
+      const slot = aside.getAttribute("data-slot");
+      expect(slot).toBe("map-shell-panel");
+      expect(slot!.length).toBeLessThanOrEqual(20);
+      cleanup();
+    }
+  });
+
   it("steps the detents from the keyboard and cycles them on a tap", () => {
     const onPanelDetentChange = vi.fn();
     sheet({ onPanelDetentChange });

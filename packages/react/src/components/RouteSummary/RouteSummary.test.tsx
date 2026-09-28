@@ -112,4 +112,22 @@ describe("RouteSummary", () => {
     );
     expect(screen.getByRole("button", { name: "Beenden" })).toBeInTheDocument();
   });
+
+  it("draws its distance muted through the class a glass surface turns to ink", () => {
+    // Decision 48, on every glass surface: text that is muted elsewhere
+    // takes the foreground colour on glass (measured over a saturated map
+    // in check-adaptive-edge-cases.mjs). A `text-muted-foreground` beside
+    // the class would outrank it.
+    render(
+      <RouteSummary
+        etaText="4 min"
+        distanceText="201 m"
+        onEndRoute={vi.fn()}
+        surface="glass"
+      />,
+    );
+    const distance = screen.getByText("201 m");
+    expect(distance.classList.contains("kozmos-muted-text")).toBe(true);
+    expect(distance.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
 });
