@@ -6,6 +6,7 @@ import styles from "./VenueExplorer.css?raw";
 import source from "./VenueExplorer.tsx?raw";
 import data from "./data.ts?raw";
 import focusSource from "../focus.ts?raw";
+import controlsEdgeSource from "../controls-edge.ts?raw";
 
 const example = getExample("venue-explorer");
 
@@ -25,6 +26,7 @@ export default function VenueExplorerExample() {
         { name: "data.ts", code: data },
         { name: "VenueExplorer.css", code: styles },
         { name: "focus.ts", code: focusSource },
+        { name: "controls-edge.ts", code: controlsEdgeSource },
       ]}
     >
       <VenueExplorer />

@@ -16,6 +16,7 @@ import {
   UserLocationMarker,
   type POIActionState,
 } from "@kozmos-ds/react";
+import { useControlsEdge } from "../controls-edge";
 import { useFocusOnChange } from "../focus";
 import type {
   CategoryPresentation,
@@ -27,6 +28,8 @@ import {
   categoryFor,
   floorLabel,
   floors,
+  locationStateLabel,
+  nextLocationState,
   places,
   tint,
   userLocation,
@@ -70,6 +73,7 @@ export default function VenueExplorer() {
     () => new Set(),
   );
   const [notice, setNotice] = useState<{ poiId: string; action: POIAction }>();
+  const controlsEdge = useControlsEdge();
 
   const category = categoryFor(categoryId);
   const browsing = !category && !query.trim();
@@ -286,7 +290,7 @@ export default function VenueExplorer() {
             </Box>
           );
         })}
-        {locationState === "following" && floorId === userLocation.floorId ? (
+        {locationState !== "off" && floorId === userLocation.floorId ? (
           <Box
             className="ex-venue-pin ex-venue-user"
             style={{
@@ -294,7 +298,13 @@ export default function VenueExplorer() {
               "--pin-y": `${userLocation.position.y}%`,
             }}
           >
-            <UserLocationMarker aria-label="You are here" />
+            {/* Turning with the visitor, a map engine rotates the map; this
+                stand-in cannot, so the marker shows which way they face. */}
+            <UserLocationMarker
+              aria-label="You are here"
+              heading={0}
+              showHeading={locationState === "heading"}
+            />
           </Box>
         ) : null}
       </Box>
@@ -302,7 +312,7 @@ export default function VenueExplorer() {
   );
 
   const controls = (
-    <Box className="ex-venue-controls">
+    <Box className="ex-venue-controls" data-edge={controlsEdge.edge}>
       <FloorSelector
         label="Floor"
         floors={floors}
@@ -310,8 +320,12 @@ export default function VenueExplorer() {
         onFloorSelect={(id) => {
           setFloorId(id);
           if (selected && selected.poi.floorId !== id) setSelectedId(undefined);
+          // Another floor than the visitor's: the map stops following them.
+          if (id !== userLocation.floorId) setLocationState("off");
         }}
       />
+      {/* The SDK's location control (decision 40): icon-only over the map,
+          "Focus" over "On" or "Off" for a moment when the mode changes. */}
       <MapControlsGroup
         label="Map controls"
         onZoomIn={() =>
@@ -321,11 +335,15 @@ export default function VenueExplorer() {
           setZoom((value) => Math.max(MIN_ZOOM, value - ZOOM_STEP))
         }
         onMyLocation={() => {
-          setLocationState("following");
-          setFloorId(userLocation.floorId);
+          const next = nextLocationState(locationState);
+          setLocationState(next);
+          if (next !== "off") setFloorId(userLocation.floorId);
         }}
         locationState={locationState}
-        locationLabel="Show my location"
+        locationLabel="Focus"
+        locationStateLabel={locationStateLabel(locationState)}
+        locationLabelPlacement="stacked"
+        locationRevealOnChange
       />
     </Box>
   );
@@ -339,6 +357,7 @@ export default function VenueExplorer() {
         controls={controls}
         panel={panel}
         panelLabel={selected ? selected.poi.name : "Places"}
+        onLayoutChange={controlsEdge.onLayoutChange}
       />
     </Box>
   );

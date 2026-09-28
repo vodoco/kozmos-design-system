@@ -22,8 +22,16 @@ import {
   UserLocationMarker,
   type RoutePoint,
 } from "@kozmos-ds/react";
+import type { UserLocationState } from "@kozmos-ds/product-contracts";
+import { useControlsEdge } from "../controls-edge";
 import { useFocusOnChange } from "../focus";
-import { categoryFor, tint, venueName } from "../venue-explorer/data";
+import {
+  categoryFor,
+  locationStateLabel,
+  nextLocationState,
+  tint,
+  venueName,
+} from "../venue-explorer/data";
 import {
   arrivalTime,
   dotsOn,
@@ -61,6 +69,8 @@ export default function Wayfinding() {
   const [floorId, setFloorId] = useState(ground);
   const [expanded, setExpanded] = useState(false);
   const [note, setNote] = useState<string>();
+  const [locationState, setLocationState] = useState<UserLocationState>("off");
+  const controlsEdge = useControlsEdge();
 
   const destination = places.find((place) => place.poi.id === destinationId);
   const routes = destination ? routesTo(destination) : [];
@@ -342,19 +352,46 @@ export default function Wayfinding() {
     </MapView>
   );
 
+  // While a route is on the map — its options, then the walk — the step-free
+  // control takes the location control's place, and says whether the route
+  // shown is step-free; pressing it asks for the other one. The routes share
+  // their legs, so a walk carries on at the same one with the new route's
+  // instructions (a product reroutes from the device's position).
+  const routeShown = (stage === "preview" || navigating) && Boolean(route);
+
   const controls = (
-    <Box className="ex-way-controls">
+    <Box className="ex-way-controls" data-edge={controlsEdge.edge}>
       <FloorSelector
         label="Floor"
         floors={floors}
         selectedFloor={floorId}
-        onFloorSelect={setFloorId}
+        onFloorSelect={(id) => {
+          setFloorId(id);
+          // Another floor than the visitor's: the map stops following them.
+          if (id !== marker.floorId) setLocationState("off");
+        }}
       />
+      {/* The SDK's corner (decision 40): the location control, "Focus" over
+          "On" or "Off" for a moment when the mode changes, and step-free in
+          its place during a route. */}
       <MapControlsGroup
         label="Map controls"
-        onMyLocation={() => setFloorId(marker.floorId)}
-        locationState={navigating ? "following" : "off"}
-        locationLabel="Show my location"
+        onMyLocation={() => {
+          const next = nextLocationState(locationState);
+          setLocationState(next);
+          if (next !== "off") setFloorId(marker.floorId);
+        }}
+        locationState={locationState}
+        locationLabel="Focus"
+        locationStateLabel={locationStateLabel(locationState)}
+        locationLabelPlacement="stacked"
+        locationRevealOnChange
+        onStepFreeChange={
+          routeShown
+            ? (stepFree) => setRouteId(stepFree ? "step-free" : "quickest")
+            : undefined
+        }
+        stepFree={preference === "step-free"}
       />
     </Box>
   );
@@ -372,6 +409,7 @@ export default function Wayfinding() {
         controls={controls}
         panel={panel}
         panelLabel={panelLabels[stage]}
+        onLayoutChange={controlsEdge.onLayoutChange}
       />
     </Box>
   );
