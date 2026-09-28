@@ -1,0 +1,98 @@
+/* Dashboard: the console's frame — a Navbar, a Sidebar and the content — and
+   the toolbar's row. Layout only. */
+
+.ex-dash {
+  min-block-size: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--primitives-colors-background-50);
+}
+
+/* One column; from 64rem the sidebar joins beside the content. Below that
+   its sections open in a drawer from the navbar. The wrappers are what show
+   and hide: a class on the Sidebar itself cannot outrank its own display,
+   one of Kozmos's scoped utilities (GAPS.md, GAP-04). */
+.ex-dash-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-block-size: 0;
+}
+
+.ex-dash-aside {
+  display: none;
+}
+
+.ex-dash-drawer-nav {
+  padding: calc(var(--primitives-layout-spacing-200) * 1px);
+}
+
+@media (min-width: 64rem) {
+  .ex-dash-body {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ex-dash-aside {
+    display: flex;
+  }
+
+  .ex-dash-menu {
+    display: none;
+  }
+}
+
+/* The content on a solid surface: the emotion colours (a Live tag, a
+   success alert) are tuned to it, and fall under 4.5:1 on the muted
+   background around it (GAPS.md, GAP-31). */
+.ex-dash-main {
+  min-inline-size: 0;
+  margin: calc(var(--primitives-layout-spacing-300) * 1px);
+  padding: calc(var(--primitives-layout-spacing-400) * 1px)
+    calc(var(--primitives-layout-spacing-400) * 1px)
+    calc(var(--primitives-layout-spacing-900) * 1px);
+  border-radius: calc(var(--semantics-radius-container) * 1px);
+}
+
+/* A phone keeps the width for the content, not the frame around it. */
+@media (max-width: 40rem) {
+  .ex-dash-main {
+    margin: calc(var(--primitives-layout-spacing-150) * 1px);
+    padding: calc(var(--primitives-layout-spacing-300) * 1px)
+      calc(var(--primitives-layout-spacing-200) * 1px)
+      calc(var(--primitives-layout-spacing-600) * 1px);
+  }
+}
+
+.ex-dash-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: calc(var(--primitives-layout-spacing-200) * 1px);
+}
+
+.ex-dash-city {
+  inline-size: min(100%, 14rem);
+}
+
+/* A loading row: one line per cell, the row's own height. */
+.ex-dash-skeleton {
+  block-size: calc(var(--primitives-layout-sizing-200) * 1px);
+  inline-size: 100%;
+}
+
+.ex-dash-form {
+  display: grid;
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+/* A live region stays on the page; empty, it leaves the flow, so the
+   stack's gap does not open for it. */
+.ex-dash-live:empty {
+  position: absolute;
+}
+
+/* The heading "Back to venues" moves focus to (../focus.ts): where the
+   keyboard starts from, not a control, so it shows no ring. */
+.ex-dash-title:focus {
+  outline: none;
+}
+

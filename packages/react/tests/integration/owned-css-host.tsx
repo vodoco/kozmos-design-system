@@ -16,6 +16,7 @@ import {
   PasswordInput,
   NumberInput,
   MapControlButton,
+  MapControlsGroup,
   MapOverlay,
   FloorSelector,
   AIMessage,
@@ -326,6 +327,42 @@ function Controls({ id }: { id: string }) {
         stateLabel="On"
         data-testid={`${id}-map-control-labelled`}
       />
+      {/* Decision 40: the map controls take the SDK's surface and labels
+          (Figma ce7phRJR1sCkH6zT8EMH8I, Tracking Indicator 434:31572). */}
+      <MapControlButton
+        icon={<span aria-hidden="true">+</span>}
+        label={`${id} surface`}
+        data-testid={`${id}-map-surface`}
+      />
+      <MapControlsGroup
+        label={`${id} zoom`}
+        zoomInLabel={`${id} zoom in`}
+        zoomOutLabel={`${id} zoom out`}
+        onZoomIn={() => undefined}
+        onZoomOut={() => undefined}
+        data-testid={`${id}-map-zoom`}
+      />
+      {(["off", "following", "heading", "unavailable"] as const).map(
+        (state) => (
+          <MapControlsGroup
+            key={state}
+            label={`${id} location ${state}`}
+            locationLabel="Focus"
+            locationLabelPlacement="stacked"
+            locationPresentation="labelled"
+            locationState={state}
+            locationStateLabel={
+              state === "off"
+                ? "Off"
+                : state === "unavailable"
+                  ? "No Location"
+                  : "On"
+            }
+            onMyLocation={() => undefined}
+            data-testid={`${id}-location-${state}`}
+          />
+        ),
+      )}
       <MapBoard id={id} layout="overlay" />
       <MapBoard id={id} layout="by-hand" />
       <MapBoard id={id} layout="scrolling" />

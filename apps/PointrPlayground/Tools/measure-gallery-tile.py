@@ -3,8 +3,8 @@
 
 Reads the first tile of `KozmosPOIMediaGallery` from a screenshot or a test
 attachment where the tile shows its background (an unloaded or unavailable
-tile), and fits a circle to its top-left corner. The numbers behind the
-"314.7 × 236.0pt, 4:3, radius 16.0pt" line in docs/pointr-ios-pass1-2026-09-19.md.
+tile), and fits a circle to its top-left corner. On the render test's
+attachment, 2026-09-19, it read 314.7 × 236.0pt, 4:3, radius 16.0pt.
 
     python3 apps/PointrPlayground/Tools/measure-gallery-tile.py shot.png \
         --width 402 --region 8 335 74 330

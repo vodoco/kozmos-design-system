@@ -80,7 +80,7 @@ final class BrowseSheetUITests: XCTestCase {
 
         // A query lists places; Cancel goes. No Filters: the AI companion filters.
         // The named place's first word; the building the map opened on varies
-        // between launches (handoff item G) and may not have it, so a vowel
+        // between launches and may not have it, so a vowel
         // stands in until some place matches.
         let destination = ProcessInfo.processInfo.environment["KOZMOS_QA_DESTINATION"] ?? ""
         var query = destination.split(separator: " ").first.map(String.init) ?? "a"

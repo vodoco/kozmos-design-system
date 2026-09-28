@@ -1,6 +1,5 @@
 package com.kozmos.components.mapcontrolsgroup
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
@@ -25,7 +24,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
@@ -33,6 +31,7 @@ import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlaceme
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonPresentation
 import com.kozmos.contracts.KozmosUserLocationState
 import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.tokens.KozmosShadows
 import com.kozmos.tokens.KozmosThemeTokens
 
 /**
@@ -49,6 +48,15 @@ import com.kozmos.tokens.KozmosThemeTokens
  * while it is locating. Pair it with a localized [locationStateLabel] — the
  * mark alone tells TalkBack nothing. [locationIcons] replaces the mark for any
  * mode it names; the others keep the group's own.
+ *
+ * Every control wears the SDK's surface (decision 40): the map controls' 48
+ * square, no edge, the Control corner. The SDK reads heading "On", as it reads
+ * following; its mark tells them apart on screen, and TalkBack hears
+ * [locationHeadingDescription] after the words, for the product to translate.
+ * With no position ([KozmosUserLocationState.Unavailable],
+ * [KozmosUserLocationState.PermissionDenied]) the control draws
+ * [locationStateLabel] alone, on one line — the SDK's "No Location" — and its
+ * name still starts what TalkBack hears.
  *
  * [locationRevealOnChange] lets the location control widen to say its new mode
  * whenever it changes, then collapse — [KozmosMapControlButton]'s
@@ -77,6 +85,7 @@ fun KozmosMapControlsGroup(
         KozmosMapControlButtonPresentation.IconOnly,
     locationLabel: String = "Locate me",
     locationStateLabel: String? = null,
+    locationHeadingDescription: String = "map turns with you",
     zoomInLabel: String = "Zoom in",
     zoomOutLabel: String = "Zoom out",
     compassResetLabel: String = "Reset bearing",
@@ -98,12 +107,12 @@ fun KozmosMapControlsGroup(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
     ) {
+        // Zoom: one surface, its two controls its segments — the map controls'
+        // surface, corner and elevation (decision 40), and no edge round it.
         Surface(
-            shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer),
-            color = KozmosThemeTokens.primitivesColorsBackground0.copy(alpha = 0.9f),
-            tonalElevation = 6.dp,
-            shadowElevation = 8.dp,
-            border = BorderStroke(1.dp, KozmosThemeTokens.semanticsBorderSubtle)
+            shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
+            color = KozmosThemeTokens.primitivesColorsBackground0,
+            shadowElevation = KozmosShadows.semanticsElevationMapControl
         ) {
             Column {
                 MapControlIconButton(
@@ -119,7 +128,7 @@ fun KozmosMapControlsGroup(
                 // map. SwiftUI's rule is drawn to the control's width for the
                 // same reason.
                 Divider(
-                    modifier = Modifier.width(44.dp),
+                    modifier = Modifier.width(KozmosDimensions.primitivesLayoutSizing600),
                     color = KozmosThemeTokens.semanticsBorderSubtle
                 )
                 MapControlIconButton(
@@ -135,11 +144,10 @@ fun KozmosMapControlsGroup(
 
         onCompassReset?.let { reset ->
             Surface(
-                modifier = Modifier.size(44.dp),
-                shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer),
-                color = KozmosThemeTokens.primitivesColorsBackground0.copy(alpha = 0.9f),
-                tonalElevation = 6.dp,
-                shadowElevation = 8.dp
+                modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing600),
+                shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
+                color = KozmosThemeTokens.primitivesColorsBackground0,
+                shadowElevation = KozmosShadows.semanticsElevationMapControl
             ) {
                 MapControlIconButton(
                     modifier = Modifier.rotate(compassBearing),
@@ -196,6 +204,17 @@ fun KozmosMapControlsGroup(
                         )
                     },
                     stateLabel = locationStateLabel,
+                    // Heading reads "On", as following does and as the SDK's
+                    // control does (decision 40); its mark tells them apart on
+                    // screen, and this after the words tells TalkBack.
+                    stateDescription = if (locationState == KozmosUserLocationState.Heading) {
+                        locationHeadingDescription
+                    } else {
+                        null
+                    },
+                    // With no position the SDK reads "No Location" alone.
+                    showLabel = locationState != KozmosUserLocationState.Unavailable &&
+                        locationState != KozmosUserLocationState.PermissionDenied,
                     presentation = locationPresentation,
                     labelPlacement = locationLabelPlacement,
                     // Selected whatever the state until row 77, so a map that
@@ -254,7 +273,7 @@ private fun MapControlIconButton(
     IconButton(
         onClick = onClick,
         modifier = modifier
-            .size(44.dp)
+            .size(KozmosDimensions.primitivesLayoutSizing600)
             .semantics { this.contentDescription = contentDescription }
     ) {
         Icon(

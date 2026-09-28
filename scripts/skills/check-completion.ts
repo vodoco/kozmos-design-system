@@ -6,15 +6,15 @@ import prettier from "prettier";
 /**
  * Scans component implementation status across Web, iOS, and Android.
  *
- * Default: writes STATUS.md.
- * --check: fails when STATUS.md is stale without mutating the workspace.
+ * Default: writes docs/status.md.
+ * --check: fails when docs/status.md is stale without mutating the workspace.
  * --no-write: prints only.
  */
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "../../");
-const STATUS_PATH = path.join(ROOT_DIR, "STATUS.md");
+const STATUS_PATH = path.join(ROOT_DIR, "docs/status.md");
 const args = new Set(process.argv.slice(2));
 const INTERNAL_COMPONENT_NAMES = new Set(["GlassSettingsPanel"]);
 // Folders under a platform's components root that hold no component. Compose
@@ -314,14 +314,14 @@ async function runCheck() {
       : "";
     if (current !== markdown) {
       console.error(
-        "\n❌ STATUS.md is out of date. Run `pnpm tsx scripts/skills/check-completion.ts --write` and commit the result.",
+        "\n❌ docs/status.md is out of date. Run `pnpm tsx scripts/skills/check-completion.ts --write` and commit the result.",
       );
       process.exit(1);
     }
-    console.log("\n✅ STATUS.md is up to date.");
+    console.log("\n✅ docs/status.md is up to date.");
   } else if (args.has("--write") || !args.has("--no-write")) {
     fs.writeFileSync(STATUS_PATH, markdown);
-    console.log("\n✅ STATUS.md updated.");
+    console.log("\n✅ docs/status.md updated.");
   }
 
   printSummary(statuses);

@@ -13,13 +13,31 @@ export interface MapControlButtonProps extends Omit<
   label: string;
   /** Optional localized state appended to the accessible name. */
   stateLabel?: string;
+  /**
+   * Said after the state and never drawn: what the words on the control
+   * leave out. The location control's heading mode shows "On", as following
+   * does — the SDK's "Focus / On" — and its mark tells the two apart on
+   * screen; a screen reader hears "Focus, On, map turns with you". It comes
+   * after the words, so the name still begins with what a voice-control user
+   * sees (WCAG 2.5.3). It is not a change to reveal: the words did not change.
+   */
+  stateDescription?: string;
+  /**
+   * Draw the name beside the state. Default true. Off, a labelled control
+   * draws its state alone — the SDK's "No Location" has no "Focus" over it —
+   * and the name still starts the accessible name. With no state to draw,
+   * the name is drawn anyway.
+   */
+  showLabel?: boolean;
   presentation?: "icon-only" | "labelled";
   /**
    * How an active control reads.
    *
-   * `tinted` keeps the map surface and colours the icon and the edge, which is
-   * what the SDK draws — a control over a map has to stay legible against the
-   * tiles behind it, and a solid fill hides the very thing it sits on.
+   * `tinted` keeps the map surface and lets the mark and the words carry the
+   * state, which is what the SDK draws — a control over a map has to stay
+   * legible against the tiles behind it, and a solid fill hides the very
+   * thing it sits on. Off, the mark and the words are grey; on, the mark is
+   * the theme's blue and the words navy. No edge, in either (decision 40).
    * `filled` inverts the surface to the Button's primary tier, for callers
    * that want the heavier emphasis. It is what iOS and Android drew for a
    * pressed control before 2026-09-15; in React it was specified but never
@@ -54,6 +72,11 @@ export interface MapControlButtonProps extends Omit<
    * its new state when the work is done rather than while it is still wrong.
    */
   revealDelay?: number;
+  /**
+   * A toggle's state. Leave it unset for a control that is not a toggle —
+   * zoom, compass, the floor tile — which keeps the ink; `false` is a toggle
+   * that is off, drawn grey, and `true` one that is on.
+   */
   pressed?: boolean;
 }
 
@@ -67,6 +90,8 @@ const MapControlButton = React.forwardRef<
       icon,
       label,
       stateLabel,
+      stateDescription,
+      showLabel = true,
       presentation = "icon-only",
       emphasis = "tinted",
       labelPlacement = "inline",
@@ -80,7 +105,9 @@ const MapControlButton = React.forwardRef<
     },
     ref,
   ) => {
-    const accessibleLabel = stateLabel ? `${label}, ${stateLabel}` : label;
+    const accessibleLabel = [label, stateLabel, stateDescription]
+      .filter(Boolean)
+      .join(", ");
     // Either half of the state can be what changed: a toggle flips `pressed`,
     // while a control that cycles through modes only changes its stateLabel.
     // `pressed` is read as a boolean, so a caller going from unset to `false`
@@ -98,37 +125,26 @@ const MapControlButton = React.forwardRef<
         ? "labelled"
         : "icon-only"
       : presentation;
-    const isLabelled = resolvedPresentation === "labelled";
     // A filled control inverts its surface, so it needs the Button's primary
-    // tier. A tinted one keeps the map chrome and recolours only its icon and
-    // ring, so it stays on the ghost tier in both states.
+    // tier. A tinted one keeps the map chrome and lets its mark and words
+    // carry the state, so it stays on the ghost tier in both states.
     const isFilled = emphasis === "filled" && pressed;
     const resolvedVariant = variant ?? (isFilled ? "default" : "ghost");
+    const drawsLabel = showLabel || !stateLabel;
 
     return (
       <Button
         ref={ref}
         aria-label={accessibleLabel}
         aria-pressed={pressed}
-        className={cn(
-          "min-h-11 min-w-11 justify-center rounded-control shadow-floating ring-1 ring-border backdrop-blur-xl",
-          // The map's own surface and ink — but not on a filled control, whose
-          // fill, ink and hover come from the Button's primary tier. They used
-          // to be unconditional, and tailwind-merge let them beat the tier's
-          // classes, so `filled` never rendered a fill: it was white with black
-          // text. `bg-background/90` was here before that and painted nothing,
-          // because `background` is a plain `var(...)` that an opacity modifier
-          // cannot be applied to; the library's other inert opacity classes
-          // are recorded in the gap list, not fixed here.
-          !isFilled && "bg-background text-foreground hover:bg-muted",
-          // The label reveals and collapses rather than snapping, because the
-          // control announces a state change and then gets out of the way.
-          "gap-0 transition-[max-width,padding] duration-300 ease-in-out motion-reduce:transition-none",
-          isLabelled ? "max-w-64 px-3.5" : "px-0",
-          pressed && "shadow-raised",
-          pressed && !isFilled && "ring-primary",
-          className,
-        )}
+        // The surface, its size and padding, the collapse and the tones are
+        // the owned map-control rules (styles/owned-map-controls.css), keyed
+        // to `data-presentation` and `aria-pressed`: the SDK's Tracking
+        // Indicator (decision 40). No utility here restates them, because a
+        // scoped utility outweighs an owned rule — the ring that drew a map
+        // control's edge also drew its focus ring in the edge's grey. A
+        // caller's className still wins, as over every owned rule.
+        className={cn("kozmos-map-control", className)}
         data-presentation={resolvedPresentation}
         type={type}
         variant={resolvedVariant}
@@ -136,10 +152,7 @@ const MapControlButton = React.forwardRef<
       >
         <span
           aria-hidden="true"
-          className={cn(
-            "flex shrink-0 items-center",
-            pressed && !isFilled && "text-primary",
-          )}
+          className="kozmos-reset kozmos-map-control-mark"
         >
           {icon}
         </span>
@@ -147,53 +160,26 @@ const MapControlButton = React.forwardRef<
           Always mounted, and clipped when icon-only, so max-width has something
           to animate between. The button's aria-label is the accessible name in
           both presentations, so clipped text is never what a screen reader
-          reads.
+          reads. Two equal lines when stacked, the SDK's "Focus⏎Off": bold 16
+          on a 16 line, in the control's tone.
         */}
         <span
           className={cn(
-            // Logical, not physical: `ml-2` and `text-left` put the gap on the
-            // far side of the words right to left, where the mark sits on the
-            // right, and the two touched.
-            "flex min-w-0 overflow-hidden text-start transition-[max-width,opacity,margin] duration-300 ease-in-out motion-reduce:transition-none",
+            "kozmos-reset kozmos-map-control-words",
             labelPlacement === "stacked"
-              ? "flex-col items-start leading-tight"
-              : "flex-row items-center gap-2",
-            isLabelled ? "ms-2 max-w-56 opacity-100" : "max-w-0 opacity-0",
+              ? "kozmos-map-control-words-stacked"
+              : "kozmos-map-control-words-inline",
           )}
         >
-          {labelPlacement === "stacked" ? (
-            <>
-              {/*
-                The SDK sets these at 11px over 13px/600. The type scale has no
-                role at either size yet — §5.11 rounds 11.008 and 13.008 and
-                adds 12 and 15 — so this reaches for the nearest roles and the
-                deviation is recorded in the gap list rather than hard-coded
-                here.
-              */}
-              <span
-                className={cn(
-                  "truncate text-xs",
-                  // Muted only on the map's surface: on a filled one a muted
-                  // grey sits at about 1.9:1 against the theme, so the caption
-                  // inherits the on-fill colour as the state line does.
-                  !isFilled && "text-muted-foreground",
-                )}
-              >
-                {label}
-              </span>
-              {stateLabel && (
-                <span className="truncate text-sm font-semibold">
-                  {stateLabel}
-                </span>
-              )}
-            </>
-          ) : (
-            <>
-              <span className="min-w-0 truncate">{label}</span>
-              {stateLabel && (
-                <span className="shrink-0 font-semibold">{stateLabel}</span>
-              )}
-            </>
+          {drawsLabel && (
+            <span className="kozmos-reset kozmos-map-control-line">
+              {label}
+            </span>
+          )}
+          {stateLabel && (
+            <span className="kozmos-reset kozmos-map-control-line">
+              {stateLabel}
+            </span>
           )}
         </span>
       </Button>

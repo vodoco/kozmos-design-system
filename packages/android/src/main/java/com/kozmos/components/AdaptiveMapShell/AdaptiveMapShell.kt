@@ -102,12 +102,13 @@ val KozmosDefaultPanelDetents: List<KozmosMapPanelDetent> =
  * there instead, or beside the map, where a side panel starts its content at
  * its top edge. A part with its own top padding and no surface of its own tops
  * it up to what it needs rather than adding to it, as `KozmosPOIDetailPanel`
- * does in its sheet presentation and `KozmosBrowseCategoriesPanel` does; a
- * part that draws its own bordered surface keeps its padding inside the
- * border, since this space lies outside it. 0 outside a shell. It describes
- * the panel's top: a product that puts such a part under a row of its own
- * provides 0 for this and [LocalKozmosPanelClearanceTop] to it, or the part
- * tops up to a space that is not above it.
+ * does in its sheet presentation and `KozmosBrowseCategoriesPanel` and
+ * `KozmosRoutePreviewPanel` do; a part that draws its own bordered surface
+ * keeps its padding inside the border, since this space lies outside it. 0
+ * outside a shell. It describes the panel's top: a product that puts such a
+ * part under a row of its own provides 0 for this and
+ * [LocalKozmosPanelClearanceTop] to it, or the part tops up to a space that
+ * is not above it.
  */
 val LocalKozmosPanelInsetTop = compositionLocalOf { 0.dp }
 
@@ -143,8 +144,8 @@ private val HandleClearance = (MinimumTargetSpacing - SheetHandleRowHeight) / 2
  * far its first control must keep below that — [LocalKozmosPanelInsetTop] and
  * [LocalKozmosPanelClearanceTop] — so a part with its own top padding and no
  * surface of its own, as `KozmosPOIDetailPanel` is in its sheet presentation
- * and `KozmosBrowseCategoriesPanel` is, tops it up rather than adding to it
- * (GAP-083, decision 14).
+ * and `KozmosBrowseCategoriesPanel` and `KozmosRoutePreviewPanel` are, tops it
+ * up rather than adding to it (GAP-083, decision 14).
  */
 @Composable
 fun KozmosAdaptiveMapShell(
@@ -324,9 +325,9 @@ fun KozmosAdaptiveMapShell(
 }
 
 /**
- * The docked sheet: the prototype's three detents and its drag rule
- * (docs/pointr-prototype-initial-sheet-2026-09-20.md §1–§2), shared with the
- * iOS and web shells. The whole sheet drags; a scrollable inside it takes
+ * The docked sheet: the Pointr prototype's three detents and its drag rule,
+ * as scripts/measure-prototype-sheet.cjs drove and measured them, shared with
+ * the iOS and web shells. The whole sheet drags; a scrollable inside it takes
  * part through nested scrolling, so it scrolls only at the largest detent
  * and a downward drag empties its scroll before the sheet moves; a release
  * snaps to the nearest detent, the fling's velocity counted.

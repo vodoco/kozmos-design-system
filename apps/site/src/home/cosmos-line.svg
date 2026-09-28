@@ -1,0 +1,4 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- A circle's line, for the home page's cover (site.css, Home: the cover): its orbits are painted in token colours through this as a mask. The line is 1.5 CSS pixels wide at any size (vector-effect), and every engine smooths an SVG stroke; WebKit draws a gradient's thin edge in steps. -->
+<circle cx="50" cy="50" r="49" stroke="white" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+</svg>

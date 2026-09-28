@@ -4,8 +4,8 @@
 The Pointr QA app's camera padding (`SDKCameraPadding`) reserves a measured
 height for the highlighted pin above its anchor. This reads that height, and
 the pin's clearance below the search bar, from a screenshot — the evidence
-behind the numbers in docs/pointr-ios-pass1-2026-09-19.md. Re-run it after a
-PointrKit or map-style update and update `selectedPinHeight` if it moved.
+behind `SDKCameraPadding.selectedPinHeight`. Re-run it after a PointrKit or
+map-style update and update `selectedPinHeight` if it moved.
 
     xcrun simctl io <udid> screenshot shot.png
     python3 apps/PointrPlayground/Tools/measure-selected-pin.py shot.png

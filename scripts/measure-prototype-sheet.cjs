@@ -3,7 +3,8 @@
 // its gestures and taps, and after every step records the sheet's box, its
 // scroller, its visible buttons and rows, and the prototype's own React state.
 // Output: <out-dir>/states.jsonl (one line per step) and a PNG of the phone
-// frame per step. Reported in docs/pointr-prototype-initial-sheet-2026-09-20.md.
+// frame per step. Its run of 2026-09-20 gave Kozmos's map shells their detents
+// (a fifth of the frame, 54 % and 94 %) and their drag rule.
 //
 //   node scripts/measure-prototype-sheet.cjs /tmp/prototype-sheet
 //

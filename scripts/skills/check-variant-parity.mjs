@@ -235,28 +235,28 @@ const INTENTIONAL = {
     android:
       "Typography stays a platform primitive: native uses .font()/MaterialTheme.typography with Kozmos type tokens and text styles, not component variants. Same reasoning as Stack and Grid.",
     figma:
-      "Text is a typography token/style, not a Figma component set (STATUS.md).",
+      "Text is a typography token/style, not a Figma component set (docs/status.md).",
   },
   "Text.weight": {
     ios: "Typography stays a platform primitive: native uses .font()/MaterialTheme.typography with Kozmos type tokens and text styles, not component variants. Same reasoning as Stack and Grid.",
     android:
       "Typography stays a platform primitive: native uses .font()/MaterialTheme.typography with Kozmos type tokens and text styles, not component variants. Same reasoning as Stack and Grid.",
     figma:
-      "Text is a typography token/style, not a Figma component set (STATUS.md).",
+      "Text is a typography token/style, not a Figma component set (docs/status.md).",
   },
   "Text.align": {
     ios: "Typography stays a platform primitive: native uses .font()/MaterialTheme.typography with Kozmos type tokens and text styles, not component variants. Same reasoning as Stack and Grid.",
     android:
       "Typography stays a platform primitive: native uses .font()/MaterialTheme.typography with Kozmos type tokens and text styles, not component variants. Same reasoning as Stack and Grid.",
     figma:
-      "Text is a typography token/style, not a Figma component set (STATUS.md).",
+      "Text is a typography token/style, not a Figma component set (docs/status.md).",
   },
   "Text.color": {
     ios: "Typography stays a platform primitive: native uses .font()/MaterialTheme.typography with Kozmos type tokens and text styles, not component variants. Same reasoning as Stack and Grid.",
     android:
       "Typography stays a platform primitive: native uses .font()/MaterialTheme.typography with Kozmos type tokens and text styles, not component variants. Same reasoning as Stack and Grid.",
     figma:
-      "Text is a typography token/style, not a Figma component set (STATUS.md).",
+      "Text is a typography token/style, not a Figma component set (docs/status.md).",
   },
 };
 
@@ -410,9 +410,7 @@ function reactAxes(component) {
       new RegExp(`export interface ${component}Props[\\s\\S]*?\\n\\}`),
     ) ??
     file.match(new RegExp(`interface ${component}Props[\\s\\S]*?\\n\\}`)) ??
-    file.match(
-      new RegExp(`type ${component}Props[^=]*=[\\s\\S]*?\\n\\};?`),
-    );
+    file.match(new RegExp(`type ${component}Props[^=]*=[\\s\\S]*?\\n\\};?`));
   if (propsMatch) {
     // A prop whose type is one of those named unions.
     for (const match of propsMatch[0].matchAll(

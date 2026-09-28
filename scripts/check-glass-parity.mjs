@@ -5,7 +5,7 @@
  * the web's glass utility computed its own blur from a design-config slider,
  * three map cards each hand-wrote "bg-white/70 backdrop-blur-3xl", and iOS
  * and Android drew their glass buttons as white at 16 % with no blur at all.
- * The glass surface role (ds-handoff §5.13) composes from the token; this
+ * The glass surface role composes from the token; this
  * asserts the token, its native emission, the web's rule and the consumers
  * still agree.
  */

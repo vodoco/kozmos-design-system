@@ -33,8 +33,8 @@ public enum KozmosMapPanelDetent: Hashable, Sendable {
     func height(in shellHeight: CGFloat) -> CGFloat {
         let maximum = shellHeight * CGFloat(Self.usableFractions.upperBound)
         switch self {
-        // The prototype's three detents, driven and measured: a fifth of the
-        // frame, 54 % and 94 % (docs/pointr-prototype-initial-sheet-2026-09-20.md §1).
+        // The Pointr prototype's three detents, driven and measured by
+        // scripts/measure-prototype-sheet.cjs: a fifth of the frame, 54 % and 94 %.
         case .collapsed:
             // Proportional on a tall phone, but never so short on a landscape
             // or split-screen shell that the handle and header stop fitting.
@@ -147,10 +147,11 @@ struct KozmosMapShellContentPanelHeightKey: PreferenceKey {
 /// far its first control must keep below that — `kozmosPanelInsetTop` and
 /// `kozmosPanelClearanceTop` in the environment — so a part with its own top
 /// padding and no surface of its own, as `KozmosPOIDetailPanel` and
-/// `KozmosBrowseCategoriesPanel` are in their sheet presentations, tops it up
-/// rather than adding to it (GAP-083, decision 14). The values describe the
-/// panel's top: a part a product places under its own row there is not at
-/// the top, and is told so by setting both to zero.
+/// `KozmosBrowseCategoriesPanel` are in their sheet presentations and
+/// `KozmosRoutePreviewPanel` is, tops it up rather than adding to it
+/// (GAP-083, decision 14). The values describe the panel's top: a part a
+/// product places under its own row there is not at the top, and is told so
+/// by setting both to zero.
 public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Panel: View, MapStatusContent: View>: View {
     public enum PanelPlacement {
         case start

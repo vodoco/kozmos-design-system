@@ -9,8 +9,7 @@
 // sheet's result rows and the map's pins. It also fetches the bundle and the
 // stylesheet and writes the response rules and the animation keyframes out.
 // Output: <out-dir>/states.jsonl (one line per step), <out-dir>/bundle.json,
-// and a PNG of the phone frame per step. Reported in
-// docs/pointr-prototype-ai-companion-2026-09-21.md.
+// and a PNG of the phone frame per step.
 //
 //   node scripts/measure-prototype-ai.cjs /tmp/prototype-ai
 //

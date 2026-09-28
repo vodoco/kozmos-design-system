@@ -1056,9 +1056,9 @@ STORYBOOK_URL=http://127.0.0.1:6006 pnpm exec tsx scripts/skills/check-a11y.ts
 
 ## Related Documents
 
-- [Testing Patterns](./.ai-skills/testing-patterns.md) — Includes accessibility test examples
-- [Design Philosophy](./.ai-skills/design-philosophy.md) — Inclusive design principles
-- [Component Creation Guide](./.ai-skills/component-creation-guide.md) — Accessibility requirements in component scaffold
+- [Testing Patterns](./testing-patterns.md) — Includes accessibility test examples
+- [Design Philosophy](./design-philosophy.md) — Inclusive design principles
+- [Component Creation Guide](./component-creation-guide.md) — Accessibility requirements in component scaffold
 
 ---
 

@@ -21,9 +21,10 @@ import {
  * seven `dayItem` rows that expand behind it. The scan counted 275 summaries
  * across five surfaces and 135 day rows across four.
  *
- * `docs/poi-detail-card-gaps-2026-09-14.md` reported it as missing; the ruling
- * was to build it as a Product / SDK example rather than a set, per §5.5 of
- * `docs/ds-handoff.md`. Days and times below are the file's own.
+ * Kozmos had no part for it when the card was first rebuilt from Kozmos
+ * components; the ruling was to build it as a Product / SDK example rather
+ * than a set, because Product / SDK compositions are examples by policy. Days
+ * and times below are the file's own.
  */
 const DAYS = [
   { day: "Monday", opens: "08:30 am", closes: "10:30 pm" },
@@ -43,7 +44,7 @@ const meta: Meta = {
       description: {
         component:
           "The SDK's `openingHours` rebuilt from Kozmos components only. " +
-          "See docs/poi-detail-card-gaps-2026-09-14.md for what it could not express.",
+          "Kozmos has no part for a day row, so the rows are composed from `Stack` and `Text`.",
       },
     },
   },

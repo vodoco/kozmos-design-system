@@ -1,0 +1,33 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "react-router.config.ts",
+    "vite.config.ts",
+    "playwright.config.ts",
+    ".react-router/types/**/*"
+  ],
+  "compilerOptions": {
+    "types": ["node", "vite/client"],
+    "rootDirs": [".", "./.react-router/types"],
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "allowJs": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    // @kozmos-ds/react is linked from the workspace, so its declarations would
+    // otherwise read React's types from its own devDependencies (18.3), and a
+    // React 19 ReactNode would not fit its props. Installed from npm, they
+    // read the consumer's; this makes the workspace do the same. It is the
+    // types' counterpart of `resolve.dedupe` in vite.config.ts.
+    "paths": {
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "react-dom": ["./node_modules/@types/react-dom"],
+      "react-dom/*": ["./node_modules/@types/react-dom/*"]
+    }
+  }
+}

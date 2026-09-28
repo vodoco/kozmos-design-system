@@ -7,8 +7,8 @@ import {
   panelDetentHeight,
 } from "./panel-detents";
 
-// The prototype's numbers on its 874-pixel frame, driven and measured
-// (docs/pointr-prototype-initial-sheet-2026-09-20.md §1).
+// The Pointr prototype's numbers on its 874-pixel frame, driven and measured
+// by scripts/measure-prototype-sheet.cjs.
 describe("panel detents", () => {
   it("rests at a fifth, 54 % and 94 % of the shell", () => {
     expect(panelDetentHeight("collapsed", 874)).toBeCloseTo(174.8, 5);
