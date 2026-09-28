@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - main
+  # Required checks run in the merge queue too (decision 25).
+  merge_group:
   push:
     branches:
       - main
