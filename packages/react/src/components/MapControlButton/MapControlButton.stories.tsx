@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import {
   NavigationPointer01 as Focus,
+  NavigationPointerOff01 as NoPosition,
   InfoCircle as Info,
 } from "@kozmos-ds/icons";
 import { Accessibility } from "@kozmos-ds/icons";
@@ -20,14 +21,14 @@ type Story = StoryObj<typeof meta>;
 
 export const IconOnly: Story = {
   args: {
-    icon: <Info className="h-5 w-5" />,
+    icon: <Info />,
     label: "Map information",
   },
 };
 
 export const LabelledState: Story = {
   args: {
-    icon: <Focus className="h-5 w-5" />,
+    icon: <Focus />,
     label: "Focus",
     presentation: "labelled",
     pressed: false,
@@ -37,7 +38,7 @@ export const LabelledState: Story = {
 
 export const StackedState: Story = {
   args: {
-    icon: <Focus className="h-5 w-5" />,
+    icon: <Focus />,
     label: "Focus",
     labelPlacement: "stacked",
     presentation: "labelled",
@@ -46,10 +47,27 @@ export const StackedState: Story = {
   },
 };
 
+/**
+ * A state that says it all, drawn alone: the SDK's "No Location" has no
+ * "Focus" over it. The name still starts what a screen reader hears —
+ * "Focus, No Location".
+ */
+export const StateAlone: Story = {
+  args: {
+    icon: <NoPosition />,
+    label: "Focus",
+    labelPlacement: "stacked",
+    presentation: "labelled",
+    pressed: false,
+    showLabel: false,
+    stateLabel: "No Location",
+  },
+};
+
 export const FilledEmphasis: Story = {
   args: {
     emphasis: "filled",
-    icon: <Focus className="h-5 w-5" />,
+    icon: <Focus />,
     label: "Focus",
     presentation: "labelled",
     pressed: true,
@@ -65,7 +83,7 @@ export const FilledEmphasis: Story = {
  */
 export const RevealsOnChange: Story = {
   args: {
-    icon: <Focus className="h-5 w-5" />,
+    icon: <Focus />,
     label: "Focus",
     labelPlacement: "stacked",
     revealOnChange: true,
@@ -76,7 +94,7 @@ export const RevealsOnChange: Story = {
     return (
       <MapControlButton
         {...args}
-        icon={<Focus className="h-5 w-5" />}
+        icon={<Focus />}
         pressed={on}
         stateLabel={on ? "On" : "Off"}
         onClick={() => setOn((value) => !value)}

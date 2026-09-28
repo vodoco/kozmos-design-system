@@ -26,33 +26,38 @@ import { useKozmosAnalytics } from "../../utils/analytics";
  * says the rest. `stale` keeps it too: the revamp has no stale mark, and a
  * last-known fix is not following anything.
  *
+ * The SDK's marks are 24 squares (decision 40, Tracking Indicator 434:31572).
  * The two symbols sit on a 36-unit canvas with the pointer in the middle 24,
- * so they are drawn at 30px to put their pointer at the 20px of the outlines.
+ * so they are drawn at 36 to put their pointer at the outlines' 24.
  */
 function defaultLocationMark(state: UserLocationState): React.ReactNode {
   switch (state) {
     case "following":
-      return <LocationFollowing size={30} />;
+      return <LocationFollowing size={36} />;
     case "heading":
-      return <LocationHeading size={30} />;
+      return <LocationHeading size={36} />;
     case "permission-denied":
     case "unavailable":
-      return <NavigationPointerOff01 className="h-5 w-5" />;
+      return <NavigationPointerOff01 />;
     default:
-      return <NavigationPointer01 className="h-5 w-5" />;
+      return <NavigationPointer01 />;
   }
 }
 
 /**
- * One box for every mark the location control can draw, so a labelled
- * control's text does not move when a 20px outline becomes a 30px symbol.
+ * One 24 box for every mark the location control can draw, so a labelled
+ * control's words stay 8 from the pointer whatever the mark: a symbol's cone
+ * and arc overflow it, centred, as Figma's absolutely placed cone does.
  */
 function LocationMarkBox({ children }: { children: React.ReactNode }) {
   return (
-    <span className="flex h-[30px] w-[30px] items-center justify-center">
-      {children}
-    </span>
+    <span className="kozmos-reset kozmos-map-control-glyph">{children}</span>
   );
+}
+
+/** No position to show: the SDK draws "No Location" alone, on one line. */
+function hasNoPosition(state: UserLocationState) {
+  return state === "permission-denied" || state === "unavailable";
 }
 
 export interface MapControlsGroupProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -75,7 +80,21 @@ export interface MapControlsGroupProps extends React.HTMLAttributes<HTMLDivEleme
   compassResetLabel?: string;
   locationState?: UserLocationState;
   locationLabel?: string;
+  /**
+   * The state the control shows under its name: "Off", "On". The SDK reads
+   * heading "On", as it reads following (decision 40). With no position
+   * (`unavailable`, `permission-denied`) the control draws this alone, on one
+   * line — the SDK's "No Location" — and its name still starts the accessible
+   * name.
+   */
   locationStateLabel?: string;
+  /**
+   * What heading adds to the name, for a screen reader: heading shows "On"
+   * as following does, and only its mark tells the two apart on screen.
+   * Read after the words the control shows. Default "map turns with you";
+   * the product translates it.
+   */
+  locationHeadingDescription?: string;
   locationPresentation?: "icon-only" | "labelled";
   /**
    * The mark for any location state, in place of the group's own.
@@ -147,6 +166,7 @@ const MapControlsGroup = React.forwardRef<
       locationState = "off",
       locationLabel = "Focus location",
       locationStateLabel,
+      locationHeadingDescription = "map turns with you",
       locationPresentation = "icon-only",
       locationIcons,
       locationRevealOnChange = false,
@@ -184,27 +204,24 @@ const MapControlsGroup = React.forwardRef<
         role="group"
         {...props}
       >
-        {/* Zoom Cluster */}
+        {/* Zoom: one surface, its two controls its segments. The surface,
+            the hairline between them and their inset focus rings are the
+            owned map-control rules. */}
         {(onZoomIn || onZoomOut) && (
-          <div className="flex w-11 flex-col overflow-hidden rounded-container bg-background shadow-floating ring-1 ring-border backdrop-blur-2xl">
+          <div className="kozmos-reset kozmos-map-control-stack">
             {onZoomIn && (
               <MapControlButton
-                icon={<Plus className="h-5 w-5" />}
+                icon={<Plus />}
                 label={zoomInLabel}
                 variant="ghost"
-                className={cn(
-                  "w-full rounded-none",
-                  onZoomOut && "border-b border-border",
-                )}
                 onClick={handleZoomIn}
               />
             )}
             {onZoomOut && (
               <MapControlButton
-                icon={<Minus className="h-5 w-5" />}
+                icon={<Minus />}
                 label={zoomOutLabel}
                 variant="ghost"
-                className="w-full rounded-none"
                 onClick={handleZoomOut}
               />
             )}
@@ -216,7 +233,7 @@ const MapControlsGroup = React.forwardRef<
           <MapControlButton
             icon={
               <Compass
-                className="h-5 w-5 transition-transform duration-300"
+                className="transition-transform duration-300"
                 style={{ transform: `rotate(${compassBearing}deg)` }}
               />
             }
@@ -239,7 +256,7 @@ const MapControlsGroup = React.forwardRef<
             data-map-control="step-free"
             icon={
               <LocationMarkBox>
-                {stepFreeIcon ?? <Accessibility className="h-5 w-5" />}
+                {stepFreeIcon ?? <Accessibility />}
               </LocationMarkBox>
             }
             label={stepFreeLabel}
@@ -275,6 +292,12 @@ const MapControlsGroup = React.forwardRef<
                 locationState === "following" || locationState === "heading"
               }
               revealOnChange={locationRevealOnChange}
+              showLabel={!hasNoPosition(locationState)}
+              stateDescription={
+                locationState === "heading"
+                  ? locationHeadingDescription
+                  : undefined
+              }
               stateLabel={locationStateLabel}
               onClick={() => {
                 trackEvent("MapControls", "my_location_triggered", {});

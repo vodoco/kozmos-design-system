@@ -191,14 +191,16 @@
      padding edge. With no padding, that edge sat on the map chrome itself and
      cut the floating shadow off on every side, and with it the 1px ring that
      is a map control's edge (GAP-082, row 81).
-     So the stack is padded by the floating shadow's reach, which the build
-     reads from the elevation token (postcss/shadow-reach.cjs), and margins of
-     the same size take the room back. The content box is the stack as it
-     was, so nothing moves; only the clip steps out. While the stack scrolls,
-     what scrolls shows through the same room. Content-box sizing keeps the
-     max height the content's; `kozmos-reset` on the element keeps the scoped
-     preflight's border-box off it. A shadow does not turn round right to
-     left, so the inline room is the same on both sides. */
+     So the stack is padded by the reach of the shadows what it holds casts,
+     which the build reads from the elevation tokens
+     (postcss/shadow-reach.cjs): the floating role's, and the map controls'
+     own, heavier one (decision 40), the larger of the two on each side.
+     Margins of the same size take the room back. The content box is the
+     stack as it was, so nothing moves; only the clip steps out. While the
+     stack scrolls, what scrolls shows through the same room. Content-box
+     sizing keeps the max height the content's; `kozmos-reset` on the element
+     keeps the scoped preflight's border-box off it. A shadow does not turn
+     round right to left, so the inline room is the same on both sides. */
   .kozmos-map-overlay-stack {
     box-sizing: content-box;
     display: flex;
@@ -211,15 +213,34 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     pointer-events: auto;
-    padding-block: kozmos-shadow-reach(--semantics-elevation-floating top)
-      kozmos-shadow-reach(--semantics-elevation-floating bottom);
-    padding-inline: kozmos-shadow-reach(--semantics-elevation-floating inline);
-    margin-block: calc(
-        -1 * kozmos-shadow-reach(--semantics-elevation-floating top)
+    padding-block: kozmos-shadow-reach(
+        --semantics-elevation-floating --semantics-elevation-map-control top
       )
-      calc(-1 * kozmos-shadow-reach(--semantics-elevation-floating bottom));
+      kozmos-shadow-reach(
+        --semantics-elevation-floating --semantics-elevation-map-control bottom
+      );
+    padding-inline: kozmos-shadow-reach(
+      --semantics-elevation-floating --semantics-elevation-map-control inline
+    );
+    margin-block: calc(
+        -1 *
+          kozmos-shadow-reach(
+            --semantics-elevation-floating --semantics-elevation-map-control top
+          )
+      )
+      calc(
+        -1 *
+          kozmos-shadow-reach(
+            --semantics-elevation-floating --semantics-elevation-map-control
+              bottom
+          )
+      );
     margin-inline: calc(
-      -1 * kozmos-shadow-reach(--semantics-elevation-floating inline)
+      -1 *
+        kozmos-shadow-reach(
+          --semantics-elevation-floating --semantics-elevation-map-control
+            inline
+        )
     );
   }
   /* How the system's parts enter, on the motion tokens — the same few moves

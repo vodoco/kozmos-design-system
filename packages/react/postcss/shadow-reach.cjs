@@ -17,6 +17,10 @@ const valueParser = require("postcss-value-parser");
 // it is the token's room and follows it when the token changes. `inline` is
 // the larger of left and right: a shadow does not turn round right to left,
 // so the same room on both inline sides is right in both directions.
+//
+// Several tokens before the side make one room, the largest over all of them:
+// `kozmos-shadow-reach(--floating --map-control top)`. MapOverlay holds cards
+// that float and map controls that cast their own, heavier role (decision 40).
 const NAME = "kozmos-shadow-reach";
 const SIDES = new Set(["top", "right", "bottom", "left", "inline"]);
 const COLOUR_FUNCTIONS = new Set([
@@ -110,14 +114,25 @@ module.exports = () => ({
         const args = node.nodes.filter(
           (arg) => arg.type === "word" || arg.type === "function",
         );
-        const [property, side] = args.map((arg) => arg.value);
-        if (args.length !== 2 || !property.startsWith("--") || !SIDES.has(side))
+        const values = args.map((arg) => arg.value);
+        const properties = values.slice(0, -1);
+        const side = values[values.length - 1];
+        if (
+          properties.length < 1 ||
+          !properties.every((property) => property.startsWith("--")) ||
+          !SIDES.has(side)
+        )
           throw decl.error(
-            `${NAME}() takes a custom property and one of ${[...SIDES].join(", ")}: ${valueParser.stringify(node)}`,
+            `${NAME}() takes one or more custom properties and one of ${[...SIDES].join(", ")}: ${valueParser.stringify(node)}`,
           );
-        const reach = reachFor(property, decl);
-        const px =
-          side === "inline" ? Math.max(reach.left, reach.right) : reach[side];
+        const px = Math.max(
+          ...properties.map((property) => {
+            const reach = reachFor(property, decl);
+            return side === "inline"
+              ? Math.max(reach.left, reach.right)
+              : reach[side];
+          }),
+        );
         node.type = "word";
         node.value = `${px}px`;
         delete node.nodes;
