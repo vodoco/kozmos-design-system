@@ -1996,8 +1996,11 @@ test.describe("design-system gaps, measured", () => {
   }) => {
     // Fixed in the design system on 2026-09-25 (`b9467b1f`): both of the
     // empty state's words take align="center". It only showed once the
-    // description wrapped, so it is read where it does: the components
-    // page's empty state on a 320px phone.
+    // description wrapped, and where a line breaks is the font's decision:
+    // in CI's WebKit the components page's one line fits a 320px phone. So
+    // the description is narrowed until it wraps whatever the face, and
+    // each line is measured against the box: a centred line sits on its
+    // centre, a ragged one does not.
     await page.setViewportSize({ width: 320, height: 700 });
     await page.goto("/components");
     await hydrated(page);
@@ -2007,15 +2010,33 @@ test.describe("design-system gaps, measured", () => {
     const description = page.getByText("Try another word, or clear the lane.");
     await expect(description).toBeVisible();
     const drawn = await description.evaluate((node) => {
+      (node as HTMLElement).style.maxInlineSize = "14ch";
+      const box = node.getBoundingClientRect();
       const range = document.createRange();
       range.selectNodeContents(node);
-      const lines = new Set(
-        Array.from(range.getClientRects()).map((rect) => Math.round(rect.top)),
-      ).size;
-      return { lines, align: getComputedStyle(node).textAlign };
+      const lines = new Map<number, { left: number; right: number }>();
+      for (const rect of Array.from(range.getClientRects())) {
+        const top = Math.round(rect.top);
+        const line = lines.get(top) ?? { left: rect.left, right: rect.right };
+        line.left = Math.min(line.left, rect.left);
+        line.right = Math.max(line.right, rect.right);
+        lines.set(top, line);
+      }
+      const centre = (box.left + box.right) / 2;
+      return {
+        lines: lines.size,
+        align: getComputedStyle(node).textAlign,
+        offCentre: Math.max(
+          ...Array.from(lines.values()).map((line) =>
+            Math.abs((line.left + line.right) / 2 - centre),
+          ),
+        ),
+      };
     });
     expect(drawn.lines, "the description wraps").toBeGreaterThan(1);
     expect(drawn.align).toBe("center");
+    // Every line on the box's centre, to a pixel and a half of rounding.
+    expect(drawn.offCentre).toBeLessThanOrEqual(1.5);
   });
 
   test("GAP-72 is fixed: MapOverlay keeps what floats in it whole", async ({
