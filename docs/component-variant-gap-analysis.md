@@ -24,12 +24,12 @@ cannot".
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 112    |
-| Declaring at least one React variant axis | 48     |
-| Variations that are compositional only    | 64     |
-| Components with variant gaps — iOS        | 13/48  |
-| Components with variant gaps — Android    | 13/48  |
-| Components with variant gaps — Figma      | 12/48  |
-| Components with variant gaps — Vue        | 3/48   |
+| Declaring at least one React variant axis | 49     |
+| Variations that are compositional only    | 63     |
+| Components with variant gaps — iOS        | 14/49  |
+| Components with variant gaps — Android    | 14/49  |
+| Components with variant gaps — Figma      | 13/49  |
+| Components with variant gaps — Vue        | 4/49   |
 | Components absent entirely — iOS          | 9/112  |
 | Components absent entirely — Android      | 8/112  |
 | Components absent entirely — Figma        | 16/112 |
@@ -52,6 +52,11 @@ component gains an axis on one platform before another.
 <!-- generated:gaps -->
 
 ```
+AIInputBar
+  - ios: component/set absent
+  - android: component/set absent
+  - figma: component/set absent
+  - vue: component absent
 AIMessage
   - ios: component/set absent
   - android: component/set absent
