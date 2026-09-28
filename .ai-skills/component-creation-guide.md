@@ -50,62 +50,65 @@ If you prefer manual creation, follow the detailed sections below for each platf
 
 ```typescript
 // scripts/new-component.ts
-import { mkdir, writeFile } from 'fs/promises';
-import { join } from 'path';
-import { parseArgs } from 'util';
+import { mkdir, writeFile } from "fs/promises";
+import { join } from "path";
+import { parseArgs } from "util";
 
 const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
   options: {
-    compound: { type: 'boolean', default: false },
-    platforms: { type: 'string', default: 'all' },
+    compound: { type: "boolean", default: false },
+    platforms: { type: "string", default: "all" },
   },
   allowPositionals: true,
 });
 
 const componentName = positionals[0];
 if (!componentName) {
-  console.error('Usage: pnpm new-component <ComponentName> [--compound] [--platforms react,ios,android,rn,vue]');
+  console.error(
+    "Usage: pnpm new-component <ComponentName> [--compound] [--platforms react,ios,android,rn,vue]",
+  );
   process.exit(1);
 }
 
 const isCompound = values.compound;
-const platforms = values.platforms === 'all'
-  ? ['react', 'ios', 'android', 'react-native', 'vue']
-  : values.platforms!.split(',');
+const platforms =
+  values.platforms === "all"
+    ? ["react", "ios", "android", "react-native", "vue"]
+    : values.platforms!.split(",");
 
 async function createComponent() {
   console.log(`\n📦 Creating component: ${componentName}`);
   console.log(`   Compound: ${isCompound}`);
-  console.log(`   Platforms: ${platforms.join(', ')}\n`);
+  console.log(`   Platforms: ${platforms.join(", ")}\n`);
 
-  if (platforms.includes('react')) {
+  if (platforms.includes("react")) {
     await createReactComponent(componentName, isCompound);
   }
 
-  if (platforms.includes('ios')) {
+  if (platforms.includes("ios")) {
     await createIOSComponent(componentName, isCompound);
   }
 
-  if (platforms.includes('android')) {
+  if (platforms.includes("android")) {
     await createAndroidComponent(componentName, isCompound);
   }
 
-  if (platforms.includes('react-native')) {
+  if (platforms.includes("react-native")) {
     await createReactNativeComponent(componentName, isCompound);
   }
 
-  if (platforms.includes('vue')) {
+  if (platforms.includes("vue")) {
     await createVueComponent(componentName, isCompound);
   }
 
-  console.log('\n✅ Component created successfully!');
-  console.log('\nNext steps:');
-  console.log('1. Implement component logic');
-  console.log('2. Add Storybook stories');
-  console.log('3. Write tests');
-  console.log('4. Create Code Connect mapping');
-  console.log('5. Update barrel exports');
+  console.log("\n✅ Component created successfully!");
+  console.log("\nNext steps:");
+  console.log("1. Implement component logic");
+  console.log("2. Add Storybook stories");
+  console.log("3. Write tests");
+  console.log("4. Create Code Connect mapping");
+  console.log("5. Update barrel exports");
 }
 
 // Implementation functions below...
@@ -160,43 +163,41 @@ touch Tooltip.tsx Tooltip.test.tsx Tooltip.stories.tsx Tooltip.figma.tsx Tooltip
 
 ```tsx
 // packages/react/src/components/Tooltip/Tooltip.tsx
-import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { clsx } from 'clsx';
-import './Tooltip.css';
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { clsx } from "clsx";
+import "./Tooltip.css";
 
 // ============================================================================
 // Styles
 // ============================================================================
 
-const tooltipStyles = cva(
-  'kozmos-tooltip',
-  {
-    variants: {
-      position: {
-        top: 'kozmos-tooltip--top',
-        bottom: 'kozmos-tooltip--bottom',
-        left: 'kozmos-tooltip--left',
-        right: 'kozmos-tooltip--right',
-      },
-      variant: {
-        default: 'kozmos-tooltip--default',
-        dark: 'kozmos-tooltip--dark',
-      },
+const tooltipStyles = cva("kozmos-tooltip", {
+  variants: {
+    position: {
+      top: "kozmos-tooltip--top",
+      bottom: "kozmos-tooltip--bottom",
+      left: "kozmos-tooltip--left",
+      right: "kozmos-tooltip--right",
     },
-    defaultVariants: {
-      position: 'top',
-      variant: 'default',
+    variant: {
+      default: "kozmos-tooltip--default",
+      dark: "kozmos-tooltip--dark",
     },
-  }
-);
+  },
+  defaultVariants: {
+    position: "top",
+    variant: "default",
+  },
+});
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface TooltipProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof tooltipStyles> {
   /** Content to display in the tooltip */
   content: React.ReactNode;
@@ -227,7 +228,7 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
       className,
       ...props
     },
-    ref
+    ref,
   ) => {
     const [isVisible, setIsVisible] = React.useState(false);
     const showTimeoutRef = React.useRef<NodeJS.Timeout>();
@@ -260,7 +261,7 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
       onMouseLeave: handleMouseLeave,
       onFocus: handleMouseEnter,
       onBlur: handleMouseLeave,
-      'aria-describedby': isVisible ? 'tooltip' : undefined,
+      "aria-describedby": isVisible ? "tooltip" : undefined,
     });
 
     return (
@@ -280,10 +281,10 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
-Tooltip.displayName = 'Tooltip';
+Tooltip.displayName = "Tooltip";
 
 export default Tooltip;
 ```
@@ -391,8 +392,8 @@ export default Tooltip;
 
 ```typescript
 // packages/react/src/components/Tooltip/index.ts
-export { Tooltip, type TooltipProps } from './Tooltip';
-export { default } from './Tooltip';
+export { Tooltip, type TooltipProps } from "./Tooltip";
+export { default } from "./Tooltip";
 ```
 
 ### Step 5: Update Main Barrel
@@ -400,7 +401,7 @@ export { default } from './Tooltip';
 ```typescript
 // packages/react/src/index.ts
 // Add this line with other component exports
-export * from './components/Tooltip';
+export * from "./components/Tooltip";
 ```
 
 ---
@@ -760,7 +761,7 @@ touch packages/react-native/src/components/Tooltip/index.ts
 
 ```tsx
 // packages/react-native/src/components/Tooltip/Tooltip.tsx
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -770,15 +771,15 @@ import {
   LayoutChangeEvent,
   ViewStyle,
   TextStyle,
-} from 'react-native';
-import { tokens } from '../../tokens';
+} from "react-native";
+import { tokens } from "../../tokens";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
-export type TooltipVariant = 'default' | 'dark';
+export type TooltipPosition = "top" | "bottom" | "left" | "right";
+export type TooltipVariant = "default" | "dark";
 
 export interface TooltipProps {
   /** Content to display in the tooltip */
@@ -801,8 +802,8 @@ export interface TooltipProps {
 
 export const Tooltip: React.FC<TooltipProps> = ({
   message,
-  position = 'top',
-  variant = 'default',
+  position = "top",
+  variant = "default",
   delayShow = 200,
   disabled = false,
   children,
@@ -848,31 +849,31 @@ export const Tooltip: React.FC<TooltipProps> = ({
     const spacing = tokens.space[200];
 
     switch (position) {
-      case 'top':
+      case "top":
         return {
-          bottom: '100%',
-          left: '50%',
+          bottom: "100%",
+          left: "50%",
           transform: [{ translateX: -tooltipLayout.width / 2 }],
           marginBottom: spacing,
         };
-      case 'bottom':
+      case "bottom":
         return {
-          top: '100%',
-          left: '50%',
+          top: "100%",
+          left: "50%",
           transform: [{ translateX: -tooltipLayout.width / 2 }],
           marginTop: spacing,
         };
-      case 'left':
+      case "left":
         return {
-          right: '100%',
-          top: '50%',
+          right: "100%",
+          top: "50%",
           transform: [{ translateY: -tooltipLayout.height / 2 }],
           marginRight: spacing,
         };
-      case 'right':
+      case "right":
         return {
-          left: '100%',
-          top: '50%',
+          left: "100%",
+          top: "50%",
           transform: [{ translateY: -tooltipLayout.height / 2 }],
           marginLeft: spacing,
         };
@@ -881,7 +882,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
   const getVariantStyles = (): { container: ViewStyle; text: TextStyle } => {
     switch (variant) {
-      case 'dark':
+      case "dark":
         return {
           container: { backgroundColor: tokens.color.neutral[900] },
           text: { color: tokens.color.neutral[50] },
@@ -931,10 +932,10 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: 'relative',
+    position: "relative",
   },
   tooltip: {
-    position: 'absolute',
+    position: "absolute",
     paddingHorizontal: tokens.space[300],
     paddingVertical: tokens.space[200],
     borderRadius: tokens.radius[200],
@@ -953,8 +954,13 @@ export default Tooltip;
 
 ```typescript
 // packages/react-native/src/components/Tooltip/index.ts
-export { Tooltip, type TooltipProps, type TooltipPosition, type TooltipVariant } from './Tooltip';
-export { default } from './Tooltip';
+export {
+  Tooltip,
+  type TooltipProps,
+  type TooltipPosition,
+  type TooltipVariant,
+} from "./Tooltip";
+export { default } from "./Tooltip";
 ```
 
 ---
@@ -965,10 +971,10 @@ export { default } from './Tooltip';
 
 ```typescript
 // packages/vue/src/components/kozmos-tooltip.ts
-import { LitElement, html, css, PropertyValues } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { LitElement, html, css, PropertyValues } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 
-@customElement('kozmos-tooltip')
+@customElement("kozmos-tooltip")
 export class KozmosTooltip extends LitElement {
   static styles = css`
     :host {
@@ -985,7 +991,9 @@ export class KozmosTooltip extends LitElement {
       white-space: nowrap;
       opacity: 0;
       visibility: hidden;
-      transition: opacity 150ms ease-out, visibility 150ms ease-out;
+      transition:
+        opacity 150ms ease-out,
+        visibility 150ms ease-out;
     }
 
     .tooltip--visible {
@@ -1018,9 +1026,10 @@ export class KozmosTooltip extends LitElement {
     }
   `;
 
-  @property({ type: String }) message = '';
-  @property({ type: String }) position: 'top' | 'bottom' | 'left' | 'right' = 'top';
-  @property({ type: String }) variant: 'default' | 'dark' = 'default';
+  @property({ type: String }) message = "";
+  @property({ type: String }) position: "top" | "bottom" | "left" | "right" =
+    "top";
+  @property({ type: String }) variant: "default" | "dark" = "default";
   @property({ type: Number }) delay = 200;
   @property({ type: Boolean }) disabled = false;
 
@@ -1051,11 +1060,11 @@ export class KozmosTooltip extends LitElement {
 
   render() {
     const tooltipClasses = [
-      'tooltip',
+      "tooltip",
       `tooltip--${this.position}`,
       `tooltip--${this.variant}`,
-      this._isVisible ? 'tooltip--visible' : '',
-    ].join(' ');
+      this._isVisible ? "tooltip--visible" : "",
+    ].join(" ");
 
     return html`
       <div
@@ -1079,7 +1088,7 @@ export class KozmosTooltip extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'kozmos-tooltip': KozmosTooltip;
+    "kozmos-tooltip": KozmosTooltip;
   }
 }
 ```
@@ -1101,19 +1110,19 @@ declare global {
 </template>
 
 <script setup lang="ts">
-import '../components/kozmos-tooltip';
+import "../components/kozmos-tooltip";
 
 export interface Props {
   message: string;
-  position?: 'top' | 'bottom' | 'left' | 'right';
-  variant?: 'default' | 'dark';
+  position?: "top" | "bottom" | "left" | "right";
+  variant?: "default" | "dark";
   delay?: number;
   disabled?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
-  position: 'top',
-  variant: 'default',
+  position: "top",
+  variant: "default",
   delay: 200,
   disabled: false,
 });
@@ -1128,33 +1137,37 @@ withDefaults(defineProps<Props>(), {
 
 ```tsx
 // packages/react/src/components/Tooltip/Tooltip.figma.tsx
-import figma from '@figma/code-connect';
-import { Tooltip } from './Tooltip';
+import figma from "@figma/code-connect";
+import { Tooltip } from "./Tooltip";
 
-figma.connect(Tooltip, 'https://www.figma.com/file/xxx/Kozmos?node-id=123:456', {
-  props: {
-    message: figma.string('Label'),
-    position: figma.enum('Position', {
-      Top: 'top',
-      Bottom: 'bottom',
-      Left: 'left',
-      Right: 'right',
-    }),
-    variant: figma.enum('Variant', {
-      Default: 'default',
-      Dark: 'dark',
-    }),
+figma.connect(
+  Tooltip,
+  "https://www.figma.com/file/xxx/Kozmos?node-id=123:456",
+  {
+    props: {
+      message: figma.string("Label"),
+      position: figma.enum("Position", {
+        Top: "top",
+        Bottom: "bottom",
+        Left: "left",
+        Right: "right",
+      }),
+      variant: figma.enum("Variant", {
+        Default: "default",
+        Dark: "dark",
+      }),
+    },
+    example: (props) => (
+      <Tooltip
+        message={props.message}
+        position={props.position}
+        variant={props.variant}
+      >
+        <Button>Hover me</Button>
+      </Tooltip>
+    ),
   },
-  example: (props) => (
-    <Tooltip
-      message={props.message}
-      position={props.position}
-      variant={props.variant}
-    >
-      <Button>Hover me</Button>
-    </Tooltip>
-  ),
-});
+);
 ```
 
 ### iOS Code Connect
@@ -1195,101 +1208,105 @@ struct KozmosTooltipCodeConnect: FigmaConnect {
 
 ```tsx
 // packages/react/src/components/Tooltip/Tooltip.test.tsx
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { axe, toHaveNoViolations } from 'jest-axe';
-import { Tooltip } from './Tooltip';
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { axe, toHaveNoViolations } from "jest-axe";
+import { Tooltip } from "./Tooltip";
 
 expect.extend(toHaveNoViolations);
 
-describe('Tooltip', () => {
-  it('renders children', () => {
+describe("Tooltip", () => {
+  it("renders children", () => {
     render(
       <Tooltip message="Tooltip text">
         <button>Trigger</button>
-      </Tooltip>
+      </Tooltip>,
     );
 
-    expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Trigger" })).toBeInTheDocument();
   });
 
-  it('shows tooltip on hover', async () => {
+  it("shows tooltip on hover", async () => {
     const user = userEvent.setup();
 
     render(
       <Tooltip message="Tooltip text" delayShow={0}>
         <button>Trigger</button>
-      </Tooltip>
+      </Tooltip>,
     );
 
-    await user.hover(screen.getByRole('button'));
+    await user.hover(screen.getByRole("button"));
 
     await waitFor(() => {
-      expect(screen.getByRole('tooltip')).toHaveTextContent('Tooltip text');
+      expect(screen.getByRole("tooltip")).toHaveTextContent("Tooltip text");
     });
   });
 
-  it('hides tooltip on mouse leave', async () => {
+  it("hides tooltip on mouse leave", async () => {
     const user = userEvent.setup();
 
     render(
       <Tooltip message="Tooltip text" delayShow={0}>
         <button>Trigger</button>
-      </Tooltip>
+      </Tooltip>,
     );
 
-    await user.hover(screen.getByRole('button'));
-    await waitFor(() => expect(screen.getByRole('tooltip')).toBeInTheDocument());
+    await user.hover(screen.getByRole("button"));
+    await waitFor(() =>
+      expect(screen.getByRole("tooltip")).toBeInTheDocument(),
+    );
 
-    await user.unhover(screen.getByRole('button'));
-    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+    await user.unhover(screen.getByRole("button"));
+    await waitFor(() =>
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument(),
+    );
   });
 
-  it('does not show when disabled', async () => {
+  it("does not show when disabled", async () => {
     const user = userEvent.setup();
 
     render(
       <Tooltip message="Tooltip text" disabled delayShow={0}>
         <button>Trigger</button>
-      </Tooltip>
+      </Tooltip>,
     );
 
-    await user.hover(screen.getByRole('button'));
+    await user.hover(screen.getByRole("button"));
 
     await waitFor(() => {
-      expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+      expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
     });
   });
 
-  it('passes accessibility audit', async () => {
+  it("passes accessibility audit", async () => {
     const { container } = render(
       <Tooltip message="Tooltip text">
         <button>Trigger</button>
-      </Tooltip>
+      </Tooltip>,
     );
 
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
 
-  it.each(['top', 'bottom', 'left', 'right'] as const)(
-    'renders in %s position',
+  it.each(["top", "bottom", "left", "right"] as const)(
+    "renders in %s position",
     async (position) => {
       const user = userEvent.setup();
 
       render(
         <Tooltip message="Tooltip text" position={position} delayShow={0}>
           <button>Trigger</button>
-        </Tooltip>
+        </Tooltip>,
       );
 
-      await user.hover(screen.getByRole('button'));
+      await user.hover(screen.getByRole("button"));
 
       await waitFor(() => {
-        const tooltip = screen.getByRole('tooltip');
+        const tooltip = screen.getByRole("tooltip");
         expect(tooltip).toHaveClass(`kozmos-tooltip--${position}`);
       });
-    }
+    },
   );
 });
 ```
@@ -1302,35 +1319,36 @@ describe('Tooltip', () => {
 
 ```tsx
 // packages/react/src/components/Tooltip/Tooltip.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react';
-import { Tooltip } from './Tooltip';
-import { Button } from '../Button';
+import type { Meta, StoryObj } from "@storybook/react";
+import { Tooltip } from "./Tooltip";
+import { Button } from "../Button";
 
 const meta: Meta<typeof Tooltip> = {
-  title: 'Components/Tooltip',
+  title: "Components/Tooltip",
   component: Tooltip,
   parameters: {
-    layout: 'centered',
+    layout: "centered",
     docs: {
       description: {
-        component: 'Tooltips display informative text when users hover over or focus on an element.',
+        component:
+          "Tooltips display informative text when users hover over or focus on an element.",
       },
     },
   },
   argTypes: {
     position: {
-      control: 'select',
-      options: ['top', 'bottom', 'left', 'right'],
+      control: "select",
+      options: ["top", "bottom", "left", "right"],
     },
     variant: {
-      control: 'select',
-      options: ['default', 'dark'],
+      control: "select",
+      options: ["default", "dark"],
     },
     delayShow: {
-      control: 'number',
+      control: "number",
     },
     disabled: {
-      control: 'boolean',
+      control: "boolean",
     },
   },
 };
@@ -1340,14 +1358,14 @@ type Story = StoryObj<typeof Tooltip>;
 
 export const Default: Story = {
   args: {
-    message: 'This is a tooltip',
+    message: "This is a tooltip",
     children: <Button>Hover me</Button>,
   },
 };
 
 export const Positions: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: '2rem', padding: '4rem' }}>
+    <div style={{ display: "flex", gap: "2rem", padding: "4rem" }}>
       <Tooltip message="Top tooltip" position="top">
         <Button>Top</Button>
       </Tooltip>
@@ -1366,7 +1384,7 @@ export const Positions: Story = {
 
 export const Variants: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: '2rem' }}>
+    <div style={{ display: "flex", gap: "2rem" }}>
       <Tooltip message="Default variant" variant="default">
         <Button>Default</Button>
       </Tooltip>
@@ -1379,7 +1397,7 @@ export const Variants: Story = {
 
 export const Disabled: Story = {
   args: {
-    message: 'This tooltip is disabled',
+    message: "This tooltip is disabled",
     disabled: true,
     children: <Button>No tooltip</Button>,
   },
@@ -1454,9 +1472,9 @@ export const Disabled: Story = {
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial component creation guide |
+| Version | Date       | Changes                          |
+| ------- | ---------- | -------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial component creation guide |
 
 ---
 
