@@ -55,6 +55,12 @@ public struct KozmosFloorSelector: View {
     /// How the dot is said, joined to the level's own label: "Level 1, your
     /// level". English until the product passes its own words.
     let userFloorLabel: String
+    /// What VoiceOver hears the closed switcher tile does: "Shows every
+    /// level". On iOS 16 and 17, which report no expanded state, it is the
+    /// only sign that the tile opens a column; from iOS 18 it follows
+    /// "collapsed". Not heard while the column is open. English until the
+    /// product passes its own words. Only `.collapsible` says it.
+    let expandHint: String
     /// How a level's result count is said, for a visitor who cannot see the
     /// marker. Joined to the level's own label: "Level 2, 3 results". A
     /// function because a count needs a plural rule, and the design system has
@@ -113,6 +119,7 @@ public struct KozmosFloorSelector: View {
         nextFloorLabel: String = "Floor down",
         userFloor: String? = nil,
         userFloorLabel: String = "your level",
+        expandHint: String = "Shows every level",
         resultCountLabel: @escaping (Int) -> String = { $0 == 1 ? "1 result" : "\($0) results" }
     ) {
         self.floors = floors
@@ -123,6 +130,7 @@ public struct KozmosFloorSelector: View {
         self.nextFloorLabel = nextFloorLabel
         self.userFloor = userFloor
         self.userFloorLabel = userFloorLabel
+        self.expandHint = expandHint
         self.resultCountLabel = resultCountLabel
     }
 
@@ -148,7 +156,8 @@ public struct KozmosFloorSelector: View {
         previousFloorLabel: String = "Floor up",
         nextFloorLabel: String = "Floor down",
         userFloor: String? = nil,
-        userFloorLabel: String = "your level"
+        userFloorLabel: String = "your level",
+        expandHint: String = "Shows every level"
     ) {
         self.init(
             floors: floors.map {
@@ -160,7 +169,8 @@ public struct KozmosFloorSelector: View {
             previousFloorLabel: previousFloorLabel,
             nextFloorLabel: nextFloorLabel,
             userFloor: userFloor,
-            userFloorLabel: userFloorLabel
+            userFloorLabel: userFloorLabel,
+            expandHint: expandHint
         )
     }
 
@@ -401,6 +411,7 @@ public struct KozmosFloorSelector: View {
                 KozmosFloorSwitcherElement(
                     anchor: anchor,
                     label: tileLabel,
+                    hint: expandHint,
                     isExpanded: isExpanded,
                     columnFrame: isExpanded ? columnFrameOverTile : .zero,
                     focusRequest: tileFocusRequest,
@@ -411,7 +422,7 @@ public struct KozmosFloorSelector: View {
             )
         #else
         control
-            .accessibilityHint("Shows every level")
+            .accessibilityHint(expandHint)
         #endif
     }
 
@@ -634,6 +645,8 @@ import UIKit
 struct KozmosFloorSwitcherElement: UIViewRepresentable {
     let anchor: KozmosFloorSwitcherAnchor
     let label: String
+    /// Heard while the column is closed: what activating the tile does.
+    let hint: String
     let isExpanded: Bool
     let columnFrame: CGRect
     let focusRequest: Int
@@ -650,7 +663,7 @@ struct KozmosFloorSwitcherElement: UIViewRepresentable {
     func updateUIView(_ view: ElementView, context: Context) {
         anchor.view = view
         view.accessibilityLabel = label
-        view.accessibilityHint = isExpanded ? nil : "Shows every level"
+        view.accessibilityHint = isExpanded ? nil : hint
         view.toggle = toggle
         view.escape = escape
         view.tappedOutside = tappedOutside

@@ -518,6 +518,18 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertEqual(list.spokenLabel(levels[0]), "Second floor, 3 results", "a list says a dot it does not draw")
     }
 
+    /// Both public initialisers take the closed tile's hint in the product's
+    /// words, and keep the English it was until the product passes its own.
+    func testBothInitialisersTakeTheTilesHint() {
+        let presented = KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible,
+                                            expandHint: "Zeigt alle Ebenen")
+        XCTAssertEqual(presented.expandHint, "Zeigt alle Ebenen")
+        let named = KozmosFloorSelector(floors: ["2", "1"], selectedFloor: .constant("1"), variant: .collapsible,
+                                        expandHint: "Zeigt alle Ebenen")
+        XCTAssertEqual(named.expandHint, "Zeigt alle Ebenen")
+        XCTAssertEqual(KozmosFloorSelector(floors: ["2", "1"], selectedFloor: .constant("1")).expandHint, "Shows every level")
+    }
+
     /// The switcher example in FloorSelector.mdx, compiled here as it is
     /// written there: the docs' native snippets are compiled nowhere else.
     func testTheDocsSwitcherExampleIsTheSwitcher() {
@@ -531,11 +543,13 @@ final class KozmosFloorSelectorTests: XCTestCase {
                 selectedFloor: .constant("L1"),
                 variant: .collapsible,
                 userFloor: "G",
-                userFloorLabel: String(localized: "your level")
+                userFloorLabel: String(localized: "your level"),
+                expandHint: String(localized: "Shows every level")
             )
         XCTAssertEqual(view.variant, .collapsible)
         XCTAssertEqual(view.spokenLabel(view.floors[2]), "Ground, your level")
         XCTAssertEqual(view.tileLabel, "Level 1")
+        XCTAssertEqual(view.expandHint, "Shows every level")
     }
 
     #if os(iOS)
@@ -609,6 +623,26 @@ final class KozmosFloorSelectorTests: XCTestCase {
         if #available(iOS 18.0, *) {
             XCTAssertEqual(tile.accessibilityExpandedStatus, .collapsed, "the column did not close")
         }
+    }
+
+    /// The hint VoiceOver hears on the closed tile — what activating it does —
+    /// is the product's words, `expandHint`, and "Shows every level" until it
+    /// passes its own. On iOS 16 and 17, which report no expanded state, it
+    /// is the only sign that the tile opens a column. None while it is open.
+    @MainActor func testTheTilesHintIsTheProductsWords() async throws {
+        let english = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible))
+        defer { english.isHidden = true }
+        let tile = try XCTUnwrap(accessibleView(named: "First floor", in: english), "VoiceOver finds no tile named by its level")
+        XCTAssertEqual(tile.accessibilityHint, "Shows every level", "the tile's hint is not the English it was")
+
+        let german = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible,
+                                                    expandHint: "Zeigt alle Ebenen"))
+        defer { german.isHidden = true }
+        let translated = try XCTUnwrap(accessibleView(named: "First floor", in: german), "VoiceOver finds no tile named by its level")
+        XCTAssertEqual(translated.accessibilityHint, "Zeigt alle Ebenen", "the tile's hint is not the product's words")
+        XCTAssertTrue(translated.accessibilityActivate())
+        await settle()
+        XCTAssertNil(translated.accessibilityHint, "the open tile still says it shows every level")
     }
 
     /// The tile says the visitor's level with its own while it shows it, in
