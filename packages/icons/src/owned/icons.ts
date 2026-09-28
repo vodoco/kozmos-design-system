@@ -166,3 +166,31 @@ export const LocationHeading = /* @__PURE__ */ createSymbolIcon(
     },
   ],
 );
+
+/**
+ * A walking figure: the mark the SDK's position status draws beside "Walking
+ * improves accuracy".
+ *
+ * From Pointr's Location Tracking Buttons file (Figma
+ * `ce7phRJR1sCkH6zT8EMH8I`), the PositionStatus instance `434:31713`
+ * (`type=walking`), whose mark is the SDK's `follow-the-line` component (key
+ * `dacdc7d0eb0990f19abafe90f2280c4241b9d104`, layer `I434:31713;9089:18969`),
+ * exported over REST on 2026-09-28. The Pointr Icon Library has no walking
+ * figure: the 1,176 names in its catalog were searched for walk, pedestrian,
+ * person, figure, foot and step.
+ *
+ * It is a solid mark, not an outline: it fills with `color`, as a taxonomy
+ * symbol does, and ignores `strokeWidth`. The SDK draws it on a 28-unit
+ * canvas in the theme's blue; here it draws in `currentColor`, and the viewBox
+ * squares the figure's own bounding box — measured by Chromium, not guessed —
+ * so its longer side spans 20 of 24, the live area an icon is drawn in.
+ */
+export const Walking = /* @__PURE__ */ createTaxonomyIcon(
+  "Walking",
+  "1.56 -1.401 30.8 30.8",
+  [
+    {
+      d: "M12.9102 6.75586C13.652 6.29932 14.6211 6.55508 15.0488 7.29688C15.078 7.35371 16.7888 10.1783 19.4121 11.29C20.2107 11.6321 20.5821 12.5446 20.2412 13.3711C19.9838 13.9413 19.3853 14.3115 18.7861 14.3115C18.5856 14.3115 18.3859 14.284 18.1865 14.1982C17.3879 13.8563 16.6746 13.4289 16.0186 12.9443C15.9907 13.6862 15.9619 14.4851 15.8193 15.3115C14.9349 21.1851 9.80165 26.2047 9.57324 26.4053C9.28809 26.6902 8.88936 26.833 8.51855 26.833C8.1187 26.833 7.74867 26.6901 7.43457 26.376C6.83655 25.7477 6.8646 24.8073 7.46387 24.208C7.52784 24.1442 12.0543 19.6984 12.8525 14.7979C13.1087 13.2294 13.0241 11.8313 12.8525 10.7764C12.1397 11.5752 11.3411 12.8295 10.7998 14.626C10.5436 15.4535 9.68826 15.9094 8.88965 15.6533C8.06197 15.3971 7.60609 14.5409 7.8623 13.7422C9.14561 9.52151 11.6559 7.58222 12.625 6.95508C12.7107 6.89826 12.7967 6.81261 12.9102 6.75586ZM25.9688 24.9316C26.4938 24.9316 26.9199 25.3578 26.9199 25.8828C26.9197 26.4076 26.4936 26.833 25.9688 26.833H23.1172C22.5924 26.8329 22.1672 26.4076 22.167 25.8828C22.167 25.3578 22.5922 24.9317 23.1172 24.9316H25.9688ZM21.2939 24.6943C21.6358 25.4072 21.3799 26.2629 20.667 26.6338C20.4386 26.7196 20.2391 26.7764 20.0107 26.7764C19.4695 26.7764 18.9838 26.4912 18.7275 26.0068L15.4189 19.5039C15.9892 18.3052 16.4172 16.994 16.6455 15.625L21.2939 24.6943ZM13.6797 1.16602C15.0018 1.16625 16.0742 2.23941 16.0742 3.56152C16.0741 4.88467 15.0017 5.9568 13.6797 5.95703C12.3564 5.95703 11.2833 4.88481 11.2832 3.56152C11.2832 2.23926 12.3563 1.16602 13.6797 1.16602Z",
+    },
+  ],
+);

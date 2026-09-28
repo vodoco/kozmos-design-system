@@ -45,7 +45,7 @@ Select **Pagination** and click **Build** for paged lists, tables, and search re
 
 Select **Accordion** and click **Build** for disclosure groups. It creates Closed and Open examples with editable trigger/content text while leaving Radix interaction behavior, collapsibility, and animation in product code.
 
-Select **Curated Icons** and click **Build** to create the curated Kozmos icon source set on the `Icons` page. The first pass imports the icons `packages/icons/src/registry.ts` names (56 today) from `docs/figma-pointr-icon-catalog.json` by Pointr component key — the plugin's `KOSMOS_ICON_DEFINITIONS` is the registry's twin, and `pnpm components:contract:check` holds both to the catalog — then applies them as preferred values for Button and IconButton `Icon` instance-swap slots.
+Select **Curated Icons** and click **Build** to create the curated Kozmos icon source set on the `Icons` page. The first pass imports the icons `packages/icons/src/registry.ts` names (57 today) from `docs/figma-pointr-icon-catalog.json` by Pointr component key — the plugin's `KOSMOS_ICON_DEFINITIONS` is the registry's twin, and `pnpm components:contract:check` holds both to the catalog — then applies them as preferred values for Button and IconButton `Icon` instance-swap slots.
 
 Select **Curated Icons** and click **Update** when the curated registry or Pointr source components change. It updates icon source components in place, preserves their node IDs, and keeps each nested `Pointr Source` stretched to the 24px icon bounds so resized Button/IconButton slots do not clip or overflow the source artwork.
 
