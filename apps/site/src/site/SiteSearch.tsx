@@ -44,7 +44,7 @@ const entries: readonly Entry[] = [
   {
     to: "/components",
     label: "Components",
-    description: `${componentIndex.components.length} components in four lanes, live.`,
+    description: `${componentIndex.components.length} components in four lanes, and where each one exists.`,
     group: "Pages",
   },
   {

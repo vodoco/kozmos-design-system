@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  attachedStories,
   generate,
-  isComponentName,
-  laneOf,
+  platformsOf,
   readDescription,
-  readLaneSets,
-  readSnippets,
+  readDocComment,
+  readStories,
+  sanitize,
   slugOf,
+  storyNameFromExport,
 } from "./generate-reference.mjs";
 
 test("slugs keep acronyms whole", () => {
@@ -19,23 +21,79 @@ test("slugs keep acronyms whole", () => {
   assert.equal(slugOf("POICard"), "poi-card");
 });
 
-test("lane sets are read from the status script's source", () => {
-  const sets = readLaneSets(`
-    const INTERNAL_COMPONENT_NAMES = new Set(["GlassSettingsPanel"]);
-    const PRODUCT_SDK_COMPONENT_NAMES = new Set([
-      "AdaptiveMapShell",
-      "MapView",
-    ]);
-    const CODE_ONLY_UTILITY_COMPONENT_NAMES = new Set(["Text"]);
-    const PLATFORM_FORM_FACTOR_COMPONENT_NAMES = new Set(["DynamicIsland"]);
-  `);
-  assert.equal(laneOf("MapView", sets), "product-sdk");
-  assert.equal(laneOf("Text", sets), "code-only");
-  assert.equal(laneOf("DynamicIsland", sets), "platform-form-factor");
-  assert.equal(laneOf("Button", sets), "core");
-  assert.throws(
-    () => readLaneSets("nothing here"),
-    /INTERNAL_COMPONENT_NAMES not found/,
+/** A status as the status script reports it, everything found unless changed. */
+function status(changes = {}) {
+  const base = {
+    name: "Thing",
+    lane: "core",
+    codeConnectApplicable: true,
+    web: {
+      component: true,
+      story: true,
+      test: true,
+      figmaFile: true,
+      codeConnect: true,
+      barrel: true,
+      exported: true,
+    },
+    ios: { component: true, figmaFile: true, codeConnect: true },
+    android: { component: true, figmaFile: true, codeConnect: true },
+  };
+  return {
+    ...base,
+    ...changes,
+    web: { ...base.web, ...changes.web },
+    ios: { ...base.ios, ...changes.ios },
+    android: { ...base.android, ...changes.android },
+  };
+}
+
+test("a platform has a component where its library has it; Figma, where Code Connect links it", () => {
+  assert.deepEqual(platformsOf(status()), {
+    react: "implemented",
+    swiftui: "implemented",
+    compose: "implemented",
+    figma: "linked",
+  });
+  // Not yet on iOS or Android, and not linked in Figma: AICompanionPanel's case.
+  assert.deepEqual(
+    platformsOf(
+      status({
+        web: { codeConnect: false, figmaFile: false },
+        ios: { component: false, codeConnect: false, figmaFile: false },
+        android: { component: false, codeConnect: false, figmaFile: false },
+      }),
+    ),
+    {
+      react: "implemented",
+      swiftui: "not-yet",
+      compose: "not-yet",
+      figma: "not-yet",
+    },
+  );
+  // A component the package does not export is not implemented in React.
+  assert.equal(
+    platformsOf(status({ web: { exported: false } })).react,
+    "not-yet",
+  );
+  // A provider has no Figma component set by design: not expected there.
+  assert.equal(
+    platformsOf(
+      status({
+        codeConnectApplicable: false,
+        web: { codeConnect: false },
+        ios: { codeConnect: false },
+        android: { codeConnect: false },
+      }),
+    ).figma,
+    "not-expected",
+  );
+  // A mapping on any platform links the Figma component.
+  assert.equal(
+    platformsOf(
+      status({ web: { codeConnect: false }, android: { codeConnect: false } }),
+    ).figma,
+    "linked",
   );
 });
 
@@ -59,153 +117,144 @@ platform.
   assert.equal(readDescription("# Tag\n\n<Canvas />\n"), "");
 });
 
-test("snippets come from the PlatformSnippets block, dedented, first of each platform", () => {
-  const mdx = `
-<PlatformSnippets
-    react={\`
-import { Button } from "@kozmos-ds/react";
-export function Example() {
-  return <Button>Go</Button>;
-}
-    \`}
-    swift={\`
-import SwiftUI
-
-KozmosButton("Go")
-    \`}
-    kotlin={\`
-KozmosButton(text = "Go")
-    \`}
-/>
-<PlatformSnippets react={\`second\`} />
-`;
-  const snippets = readSnippets(mdx);
-  assert.deepEqual(Object.keys(snippets).sort(), ["kotlin", "react", "swift"]);
+test("the docs' placeholder sentence is no description (GAP-81)", () => {
   assert.equal(
-    snippets.react,
-    `import { Button } from "@kozmos-ds/react";\nexport function Example() {\n  return <Button>Go</Button>;\n}`,
+    readDescription(
+      "# Backdrop\n\nDisplays the Backdrop interface topology natively.\n",
+    ),
+    "",
   );
-  assert.equal(snippets.swift, 'import SwiftUI\n\nKozmosButton("Go")');
+  // Only the placeholder itself: a real sentence that starts the same way stays.
+  assert.equal(
+    readDescription("# Map\n\nDisplays the venue's floors, natively.\n"),
+    "Displays the venue's floors, natively.",
+  );
 });
 
-test("helpers and constants are not components", () => {
-  assert.equal(isComponentName("Button"), true);
-  assert.equal(isComponentName("CardHeader"), true);
-  assert.equal(isComponentName("buttonVariants"), false);
-  assert.equal(isComponentName("BUTTON_EMOTIONS"), false);
-  assert.equal(isComponentName("POIDetailPanel"), true);
+test("the doc comment is the one on the component's own declaration, first paragraph", () => {
+  const source = `
+/** A helper, not the component. */
+const helper = () => null;
+
+/**
+ * The search field's form once a category is chosen,
+ * as the prototype draws it.
+ *
+ * Details a page does not need.
+ */
+const CategoryField = React.forwardRef(() => null);
+
+/** A function component. */
+export function Plain() { return null; }
+`;
+  assert.equal(
+    readDocComment(source, "CategoryField"),
+    "The search field's form once a category is chosen, as the prototype draws it.",
+  );
+  assert.equal(readDocComment(source, "Plain"), "A function component.");
+  assert.equal(readDocComment(source, "Missing"), "");
+});
+
+test("Storybook's ids are made from a title and a story's export as Storybook makes them", () => {
+  // Ids read from a Storybook build's index.json.
+  assert.equal(
+    sanitize("Product SDK/AICompanionPanel"),
+    "product-sdk-aicompanionpanel",
+  );
+  assert.equal(sanitize("Data Display/Accordion"), "data-display-accordion");
+  assert.equal(sanitize("Components/Button"), "components-button");
+  assert.equal(storyNameFromExport("InTheSearchRow"), "In The Search Row");
+  assert.equal(
+    sanitize(storyNameFromExport("InTheSearchRow")),
+    "in-the-search-row",
+  );
+  assert.equal(sanitize(storyNameFromExport("Default")), "default");
+});
+
+test("the docs name the stories file they attach to, and it names its title", () => {
+  const mdx = `import { Meta } from "@storybook/blocks";
+import * as ButtonStories from "./Button.stories";
+import * as Other from "./Other.stories";
+
+<Meta of={ButtonStories} />
+`;
+  assert.equal(attachedStories(mdx), "./Button.stories");
+  assert.equal(attachedStories("# No meta\n"), null);
+
+  const stories = `import type { Meta, StoryObj } from "@storybook/react";
+const meta = {
+  title: "Components/Button",
+  component: Button,
+} satisfies Meta<typeof Button>;
+export default meta;
+
+export const Default: Story = { args: { title: "Not the meta" } };
+export const Outline: Story = {};
+`;
+  assert.deepEqual(readStories(stories, "Button.stories.tsx"), {
+    title: "Components/Button",
+    first: "Default",
+  });
+  assert.throws(
+    () => readStories("export default {};", "Bare.stories.tsx"),
+    /Bare\.stories\.tsx: no "Group\/Name" title/,
+  );
+});
+
+test("a lane the site does not name stops the build", () => {
+  assert.throws(
+    () =>
+      generate({
+        lanes: [{ id: "watch", title: "Watch", description: "" }],
+        components: [],
+      }),
+    /lanes the site does not name: watch/,
+  );
 });
 
 /**
- * The real thing: the generator over the repository. Slow (a TypeScript
- * program over every component), so one test checks several known facts.
+ * The real thing: the generator over the repository, through the status
+ * script. One test checks several facts that hold today.
  */
-test("the generator reads the repository's components as they are", async () => {
-  const { index, components } = await generate();
+test("the generator reads the repository's components as they are", () => {
+  const { lanes, components } = generate();
   const byName = new Map(
     components.map((component) => [component.name, component]),
   );
-  assert.ok(
-    index.components.length >= 100,
-    `only ${index.components.length} components`,
-  );
+  assert.ok(components.length >= 100, `only ${components.length} components`);
+  assert.match(lanes.core.description, /Figma/);
 
-  // A cva-driven part: its own members plus the variants, with defaults.
-  const button = byName
-    .get("Button")
-    .parts.find((part) => part.name === "Button");
-  const names = button.props.map((prop) => prop.name);
-  assert.deepEqual(names, ["emotion", "isLoading", "size", "variant"]);
-  // Every string default is written as the type column writes a string:
-  // double-quoted, from cva's defaultVariants as from destructuring.
-  assert.equal(
-    button.props.find((p) => p.name === "variant").defaultValue,
-    '"default"',
-  );
-  const spinner = byName
-    .get("Spinner")
-    .parts.find((part) => part.name === "Spinner");
-  assert.equal(
-    spinner.props.find((p) => p.name === "size").defaultValue,
-    '"md"',
-  );
-  assert.match(
-    button.props.find((p) => p.name === "variant").type,
-    /"outline"/,
-  );
-  assert.match(
-    button.props.find((p) => p.name === "emotion").description,
-    /What the button means/,
-  );
-
-  // An alias to a union of literals is spelled out.
-  const surface = byName
-    .get("Surface")
-    .parts.find((part) => part.name === "Surface");
-  assert.equal(
-    surface.props.find((p) => p.name === "variant").type,
-    '"solid" | "glass"',
-  );
-  assert.equal(
-    surface.props.find((p) => p.name === "variant").defaultValue,
-    '"solid"',
-  );
-
-  // Omit<> hides the element's attributes from docgen; not from this reader.
-  const island = byName
-    .get("DynamicIsland")
-    .parts.find((part) => part.name === "DynamicIsland");
-  assert.deepEqual(
-    island.props.map((prop) => prop.name),
-    [
-      "compactLeading",
-      "compactTrailing",
-      "expandedContent",
-      "islandState",
-      "minimalContent",
-    ],
-  );
-
-  // Required props and sub-parts.
-  const metaStrip = byName.get("MetaStrip");
-  const item = metaStrip.parts.find((part) => part.name === "MetaStripItem");
-  assert.equal(item.props.find((p) => p.name === "label").required, true);
-  assert.equal(item.props.find((p) => p.name === "showLabel").type, "boolean");
-
-  // Only what the package exports is a part.
-  assert.ok(
-    !byName.get("Dialog").parts.some((part) => part.name === "ThemePortal"),
-  );
-  assert.ok(byName.get("Card").parts.some((part) => part.name === "CardTitle"));
-});
-
-test("fenced code under a platform's heading fills in what PlatformSnippets lacks", () => {
-  const mdx = [
-    "## React Usage",
-    "",
-    "```tsx",
-    "<Chip>All</Chip>",
-    "```",
-    "",
-    "## iOS SwiftUI",
-    "",
-    "```swift",
-    'KozmosChip(text: "All")',
-    "```",
-    "",
-    "## Android Jetpack Compose",
-    "",
-    "```kotlin",
-    'KozmosChip(text = "All")',
-    "```",
-  ].join("\n");
-  assert.deepEqual(readSnippets(mdx), {
-    react: "<Chip>All</Chip>",
-    swift: 'KozmosChip(text: "All")',
-    kotlin: 'KozmosChip(text = "All")',
+  assert.deepEqual(byName.get("Button").platforms, {
+    react: "implemented",
+    swiftui: "implemented",
+    compose: "implemented",
+    figma: "linked",
   });
-  // PlatformSnippets wins where it has the platform.
-  const both = `<PlatformSnippets swift={\`Snippet()\`} />\n\n${mdx}`;
-  assert.equal(readSnippets(both).swift, "Snippet()");
-  assert.equal(readSnippets(both).kotlin, 'KozmosChip(text = "All")');
+  assert.equal(byName.get("Button").storybook, "/docs/components-button--docs");
+  // Not on iOS yet, which is what a SwiftUI tab once failed to say.
+  assert.equal(byName.get("AICompanionPanel").platforms.swiftui, "not-yet");
+  // A provider: no Figma component set, by design.
+  assert.equal(byName.get("ThemeProvider").platforms.figma, "not-expected");
+  // No docs page: its first story instead.
+  assert.equal(
+    byName.get("CategoryField").storybook,
+    "/story/product-sdk-categoryfield--default",
+  );
+  // Every component has a slug, a lane the site names and a Storybook page.
+  for (const component of components) {
+    assert.ok(
+      lanes[component.lane],
+      `${component.name}: lane ${component.lane}`,
+    );
+    assert.match(
+      component.storybook ?? "",
+      /^\/(docs|story)\/[a-z0-9-]+--[a-z0-9-]+$/,
+      component.name,
+    );
+    assert.doesNotMatch(
+      component.description,
+      /interface topology/,
+      component.name,
+    );
+  }
 });
