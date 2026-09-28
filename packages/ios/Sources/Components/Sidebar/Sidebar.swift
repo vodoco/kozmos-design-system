@@ -63,13 +63,18 @@ public struct KozmosSidebar<Content: View>: View {
             }
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing300)
+            // The edge is inside the width, as a CSS border is, so what the
+            // sidebar holds ends where the edge begins.
+            .padding(.trailing, 1)
             .frame(width: width)
             .frame(maxHeight: .infinity)
-            .background(KozmosColors.primitivesColorsBackground0)
+            .background(KozmosColors.semanticsSurface0)
+            // Its 1pt edge, in the border role, at the trailing side: the
+            // right, and the left in a right-to-left layout.
             .overlay(
                 Rectangle()
                     .frame(width: 1)
-                    .foregroundColor(KozmosColors.primitivesColorsBackground300),
+                    .foregroundColor(KozmosColors.semanticsBorderSubtle),
                 alignment: .trailing
             )
 
@@ -77,12 +82,14 @@ public struct KozmosSidebar<Content: View>: View {
         }
     }
 
+    /// The rail is 96pt, its edge included, and its KozmosNavigationItems
+    /// fill it (decision 42), so it has no horizontal padding.
     private var width: CGFloat {
-        variant == .rail ? 80 : 256
+        variant == .rail ? 96 : 256
     }
 
     private var horizontalPadding: CGFloat {
-        variant == .rail ? KozmosDimensions.primitivesLayoutSpacing100 : KozmosDimensions.primitivesLayoutSpacing200
+        variant == .rail ? 0 : KozmosDimensions.primitivesLayoutSpacing200
     }
 
     private var stackAlignment: HorizontalAlignment {
