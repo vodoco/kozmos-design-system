@@ -59,6 +59,20 @@ The two values describe the panel's top. A part you place under a row of your ow
 top: put that row in `panelHeader`, which keeps the grip clear itself, or set both properties to
 `0px` on what follows the row.
 
+The panel's surface, solid or glass, is the one surface: a part it hosts paints no fill of its own
+(decision 43). The panel sets `--kozmos-panel-part-fill` to `transparent` on itself, in a sheet and
+a side panel alike, for its header and its content. `BrowseCategoriesPanel` and
+`RoutePreviewPanel`, which fill their box with the background colour when they stand alone, paint
+nothing there, so a glass panel shows through them. On a solid panel they look as they did, since
+its fill is that same colour, and their text keeps the theme's foreground. `POIResultList` and
+`POIDetailPanel`'s `sheet` presentation paint no fill anywhere, and cards keep theirs: each result,
+and a `panel` or `inline` details card.
+
+<Canvas of={Stories.GlassSheetWithBrowseCategories} />
+<Canvas of={Stories.GlassSheetWithRoutePreview} />
+<Canvas of={Stories.GlassSheetWithResults} />
+<Canvas of={Stories.GlassSheetWithPlaceDetails} />
+
 iOS and Android take the same header: `panelHeader:` on `KozmosAdaptiveMapShell` in
 SwiftUI, and `panelHeader =` in Compose. On iOS, put the content that scrolls in a
 `KozmosPanelScrollView`, so the sheet can take a drag from it.
@@ -168,6 +182,14 @@ for its destination row on both platforms. Under the grab handle the
 part you place under a row of your own, set both values to zero: `.environment(\.kozmosPanelInsetTop, 0)`
 and `.environment(\.kozmosPanelClearanceTop, 0)` in SwiftUI, and `0.dp` for both
 CompositionLocals in Compose.
+
+The shell also tells what it hosts which surface it sits on, `kozmosPanelSurface` in the
+SwiftUI environment and `LocalKozmosPanelSurface` in Compose (solid or glass, nil outside a
+shell), so a part paints no fill of its own there (decision 43). `KozmosRoutePreviewPanel`
+paints none in the panel on both platforms; standing alone it keeps its background colour.
+The category browser paints none in its iOS sheet presentation and none at all on Android,
+and the details card's sheet presentation none on either. On iOS the route preview's square
+fill also covered the panel's rounded top corners; they show the map again.
 
 `usableRegions` accepts host-provided hinge-free rectangles in shell-local CSS pixels.
 Auto mode can separate map and panel across those regions without remounting either.

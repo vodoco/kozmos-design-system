@@ -31,3 +31,9 @@ If the search field lives in the shell's `panelHeader`, leave out `search` here:
 then sit 16px under the header. If you place the browser under a row of your own inside the panel,
 set `--kozmos-panel-inset-top` and `--kozmos-panel-clearance-top` to `0px` on it, because it is not
 at the panel's top. On iOS, host it with `presentation: .sheet`.
+
+In the shell's panel, a sheet or a side panel, the browser paints no fill of its own: the panel's
+surface, solid or glass, is the one surface (decision 43). On a glass panel the map shows through it
+where it stood as a white block; on a solid one it looks as it did, and its text keeps the theme's
+foreground. On its own it keeps the background colour. iOS paints none in the `sheet` presentation,
+and Android none at all.
