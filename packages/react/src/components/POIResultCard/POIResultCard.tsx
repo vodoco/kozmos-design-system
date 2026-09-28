@@ -1,11 +1,12 @@
 import React from "react";
-import type {
-  POIAttributeKind,
-  POIAvailability,
-  POIPresentation,
-  POIResultAction,
-  POIResultPresentation,
-  TravelTimeBand,
+import {
+  travelTimeTone,
+  type POIAttributeKind,
+  type POIAvailability,
+  type POIPresentation,
+  type POIResultAction,
+  type POIResultPresentation,
+  type TravelTimeBand,
 } from "@kozmos-ds/product-contracts";
 import { Star01 as Star } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
@@ -52,13 +53,9 @@ export interface POIResultCardProps extends Omit<
 }
 
 /**
- * The bands' words, and the only English the card holds for them.
- *
- * Nearby is drawn in the success colour and the rest in the card's text
- * colour: the contract's `travelTimeTone`, written here as the one band it
- * names rather than imported, because importing it would take 27 of the 44
- * bytes this left under the bundle budget, as CI measures it (2026-09-28).
- * The card's tests and the contract's hold the two to the same rule.
+ * The bands' words, and the only English the card holds for them. The colour
+ * each is drawn in is the contract's rule, `travelTimeTone`: Nearby in the
+ * success colour, the others in the card's text colour.
  */
 const travelTimeBandLabel: Record<TravelTimeBand, string> = {
   nearby: "Nearby",
@@ -336,7 +333,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                   // The word says Nearby, so the tone is never the only
                   // signal; the colour is an owned rule, so it holds where
                   // the utilities do not.
-                  bandLabel && band === "nearby"
+                  band && bandLabel && travelTimeTone(band) === "success"
                     ? "kozmos-travel-time-success"
                     : "text-foreground",
                 )}
