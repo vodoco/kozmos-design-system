@@ -25,9 +25,9 @@ const paths = [
   ["foundations-colour", "/foundations/colour"],
   ["components", "/components"],
   ["component-button", "/components/button"],
-  ["component-adaptive-map-shell", "/components/adaptive-map-shell"],
-  ["component-poi-detail-panel", "/components/poi-detail-panel"],
-  ["component-tree", "/components/tree"],
+  ["component-ai-companion-panel", "/components/ai-companion-panel"],
+  ["component-theme-provider", "/components/theme-provider"],
+  ["component-category-field", "/components/category-field"],
   ["not-found", "/no-such-page"],
 ] as const;
 

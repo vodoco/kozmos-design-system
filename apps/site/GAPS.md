@@ -19,6 +19,13 @@ from Kozmos parts and says so), _left visible_ (the defect shows on the page on
 purpose, because hiding it would hide the evidence), _fixed_ (Kozmos changed,
 and the site check that pinned the defect was flipped).
 
+**Since 2026-09-28** (decision 44), Storybook is the component reference, and
+the site's component pages are short pages with no live examples. A gap the
+site found through a component page's demo is no longer shown on the site: its
+entry keeps what was measured, and where, its status is _open_ unless an
+example, a tile or the site's own frame still shows it, and its **Now** says
+which.
+
 `DS-HANDOFF.md` turns these into work for `packages/`, in priority order.
 The site's roadmap page (`/roadmap`) is this table under the handoff's
 priorities, read at build time, so a row changed here changes the page;
@@ -51,11 +58,11 @@ keep the table's four columns and its statuses as they are.
 | GAP-23 | Component-layer colours are baked values, not ramp aliases       | Core                   | composed     |
 | GAP-24 | `DynamicIsland` pins itself to the viewport                      | Platform / form factor | open         |
 | GAP-25 | `MapView` insists on 400px of height                             | Product / SDK          | composed     |
-| GAP-26 | `Text` cannot inherit its colour                                 | Core                   | composed     |
+| GAP-26 | `Text` cannot inherit its colour                                 | Core                   | open         |
 | GAP-27 | `useTheme` does not report the direction                         | Core                   | composed     |
-| GAP-28 | `SearchBar`'s search landmark cannot be named                    | Product / SDK          | left visible |
-| GAP-29 | `BottomNavigation` is always fixed to the viewport               | Core                   | composed     |
-| GAP-30 | `Sidebar`'s navigation landmark cannot be named                  | Core                   | left visible |
+| GAP-28 | `SearchBar`'s search landmark cannot be named                    | Product / SDK          | open         |
+| GAP-29 | `BottomNavigation` is always fixed to the viewport               | Core                   | open         |
+| GAP-30 | `Sidebar`'s navigation landmark cannot be named                  | Core                   | open         |
 | GAP-31 | Emotion text is under 4.5:1 on every surface but white           | Core                   | fixed        |
 | GAP-32 | `ChipGroup` carries no role                                      | Core                   | composed     |
 | GAP-33 | No token for the route line on the map                           | Product / SDK          | composed     |
@@ -83,38 +90,38 @@ keep the table's four columns and its statuses as they are.
 | GAP-55 | A `Listbox`'s column is as wide as its widest option             | Core                   | composed     |
 | GAP-56 | `Button` puts no space between an icon and its label             | Core                   | fixed        |
 | GAP-57 | A `Button`'s label cannot wrap                                   | Core                   | composed     |
-| GAP-58 | `Toast` draws no background of its own                           | Core                   | left visible |
-| GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it   | Platform / form factor | left visible |
-| GAP-60 | `DynamicIsland` keeps no room for the camera it wraps            | Platform / form factor | left visible |
+| GAP-58 | `Toast` draws no background of its own                           | Core                   | open         |
+| GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it   | Platform / form factor | open         |
+| GAP-60 | `DynamicIsland` keeps no room for the camera it wraps            | Platform / form factor | open         |
 | GAP-61 | No glyph mirrors for right to left                               | Core                   | left visible |
-| GAP-62 | `Combobox` and `MultiSelect` draw their list in the page         | Core                   | left visible |
-| GAP-63 | `ColorPicker`'s swatch is a circle around a rectangle            | Core                   | left visible |
-| GAP-64 | `ChipGroup` always wraps, and never centres its chips            | Core                   | left visible |
+| GAP-62 | `Combobox` and `MultiSelect` draw their list in the page         | Core                   | open         |
+| GAP-63 | `ColorPicker`'s swatch is a circle around a rectangle            | Core                   | open         |
+| GAP-64 | `ChipGroup` always wraps, and never centres its chips            | Core                   | open         |
 | GAP-65 | `Textarea`'s resize grip paints outside its rounded corner       | Core                   | left visible |
-| GAP-66 | `EmptyState`'s words are left-aligned in a centred block         | Core                   | left visible |
+| GAP-66 | `EmptyState`'s words are left-aligned in a centred block         | Core                   | fixed        |
 | GAP-67 | `Menu` opens centred on its trigger                              | Core                   | left visible |
-| GAP-68 | `BottomNavigation`'s taller density overflows its own bar        | Core                   | left visible |
+| GAP-68 | `BottomNavigation`'s taller density overflows its own bar        | Core                   | open         |
 | GAP-69 | Lift, escalator and stairs share one arrow                       | Product / SDK          | left visible |
-| GAP-70 | `SelectTrigger` hides a second `FieldWrapper`                    | Core                   | composed     |
-| GAP-71 | `AISearchButton` has no hover state                              | Core                   | left visible |
-| GAP-72 | `MapOverlay` clips what floats on it                             | Product / SDK          | left visible |
-| GAP-73 | `SplitButton`'s outline variant loses its border                 | Core                   | left visible |
-| GAP-74 | `Tooltip` draws a line across its tail                           | Core                   | left visible |
-| GAP-75 | `ToggleButton` puts no space between icon and label              | Core                   | left visible |
+| GAP-70 | `SelectTrigger` hides a second `FieldWrapper`                    | Core                   | open         |
+| GAP-71 | `AISearchButton` has no hover state                              | Core                   | open         |
+| GAP-72 | `MapOverlay` clips what floats on it                             | Product / SDK          | fixed        |
+| GAP-73 | `SplitButton`'s outline variant loses its border                 | Core                   | open         |
+| GAP-74 | `Tooltip` draws a line across its tail                           | Core                   | open         |
+| GAP-75 | `ToggleButton` puts no space between icon and label              | Core                   | composed     |
 | GAP-76 | Dates and times are the browser's controls                       | Core                   | left visible |
 | GAP-77 | No drag and drop: no handle, no dragging state, no target        | Core                   | open         |
 | GAP-78 | `Switch` cannot lead with its label                              | Core                   | open         |
 | GAP-79 | The Pointr icons ship, but cannot be asked for by name           | Product / SDK          | open         |
 | GAP-80 | No row actions: nothing shows on hover outside `Tree`            | Core                   | open         |
-| GAP-81 | 37 of 104 components carry placeholder documentation             | Core                   | left visible |
+| GAP-81 | 36 of 112 components carry placeholder documentation             | Core                   | left visible |
 | GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible |
-| GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | composed     |
-| GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | left visible |
-| GAP-85 | `POIResultGroup`'s label makes every group a landmark            | Product / SDK          | composed     |
-| GAP-86 | No microphone or speaker glyph for the assistant's controls      | Core                   | composed     |
-| GAP-87 | `AIInputBar`'s `disabled` does not reach its `trailing` slot     | Core                   | left visible |
-| GAP-88 | `ActionCard`'s title is a paragraph, not a heading               | Core                   | left visible |
-| GAP-89 | `BrowseCategoriesPanel`'s tiles overlap below about 360px        | Product / SDK          | left visible |
+| GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | open         |
+| GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | open         |
+| GAP-85 | `POIResultGroup`'s label makes every group a landmark            | Product / SDK          | open         |
+| GAP-86 | No microphone or speaker glyph for the assistant's controls      | Core                   | open         |
+| GAP-87 | `AIInputBar`'s `disabled` does not reach its `trailing` slot     | Core                   | open         |
+| GAP-88 | `ActionCard`'s title is a paragraph, not a heading               | Core                   | open         |
+| GAP-89 | `BrowseCategoriesPanel`'s tiles overlap below about 360px        | Product / SDK          | open         |
 | GAP-90 | The brand family is named but no font is shipped                 | Core                   | composed     |
 
 ---
@@ -367,11 +374,12 @@ keep the table's four columns and its statuses as they are.
   larger app, or this site — nests it there, and axe reports
   `landmark-complementary-is-top-level` (best practice, moderate).
 - **Evidence:** axe on the venue explorer, wayfinding and phone search
-  examples, the home page's adaptive tile and the AdaptiveMapShell reference
-  page, in both themes and all three engines. The tests' `SHELL_PANEL` entry
-  expects exactly these panels, by their element, so they fail — and point
-  here — once Kozmos changes it. (The dashboard's and the Sidebar page's
-  entries are not this gap: a `Sidebar` is an aside by nature.)
+  examples and the home page's adaptive tile — and on the AdaptiveMapShell
+  reference page until the demos moved to Storybook on 2026-09-28 — in both
+  themes and all three engines. The tests' `SHELL_PANEL` entry expects exactly
+  these panels, by their element, so they fail — and point here — once Kozmos
+  changes it. (The dashboard's entry is not this gap: a `Sidebar` is an aside
+  by nature.)
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** a `section` with the same label (a region landmark), or an
   option for hosts that embed the shell.
@@ -411,9 +419,9 @@ keep the table's four columns and its statuses as they are.
   `Textarea`, `PasswordInput` and `NumberInput` were moved to component-owned
   CSS (the React README lists them). `SearchBar` was not moved. The account
   settings fields, which are migrated, render correctly in WebKit.
-- **Why it matters:** Safari and iOS web views are WebKit, and the Pointr SDK's
-  iOS hosts are among them. Visible on the home page's demo and in the venue
-  explorer.
+- **Why it matters:** Safari and iOS web views are WebKit, and the Pointr
+  SDK's iOS hosts are among them. Visible in the examples' search fields and
+  in the components page's own.
 - **Now:** left visible. `tests/site.spec.ts` expects the field's style to fail
   in WebKit only, so the test tells us when it is fixed.
 - **Lane:** Product / SDK (`SearchBar`).
@@ -484,13 +492,11 @@ keep the table's four columns and its statuses as they are.
 - **What:** `DynamicIsland` renders `position: fixed; top: 1rem; left: 50%`,
   so it can only ever sit at the top of the browser window. It cannot be
   placed in a map scene, a card or an example's frame.
-- **Now:** the DynamicIsland page holds the island in a screen — a box with
-  paint containment, which is the containing block for its fixed children, so
-  the island sits at the screen's top as it would at a phone's
-  (`src/reference/Screen.tsx`). The wayfinding example shows its manoeuvres in
-  `ManoeuvreCard`. (Until the cover took the home page's first screen on
-  2026-09-22, the hero's map scene showed a manoeuvre in a glass `Surface`
-  around `DirectionStep` instead.)
+- **Now:** the site no longer shows a `DynamicIsland`. Its component page held
+  the island in a screen — a box with paint containment, the containing block
+  for its fixed children (`src/reference/Screen.tsx`) — until the demos moved
+  to Storybook on 2026-09-28. The wayfinding example shows its manoeuvres in
+  `ManoeuvreCard`.
 - **Lane:** Platform / form factor.
 - **Fix in Kozmos:** let the host decide: a `placement` prop in
   `FloatingActionButton`'s words (`"fixed" | "inline"`), fixed by default
@@ -512,8 +518,9 @@ keep the table's four columns and its statuses as they are.
   paints the foreground colour as its background and expects its content to
   be the background colour; a `Text` inside it disappears in the light theme.
   The same holds for anything on a filled button or a tinted category fill.
-- **Now:** the `DynamicIsland` demo puts plain strings and a `Box` in the
-  island's slots, without `Text`'s sizes and weights.
+- **Now:** open. The `DynamicIsland` demo that put plain strings and a `Box`
+  in the island's slots, without `Text`'s sizes and weights, moved to
+  Storybook with the demos on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `color="inherit"` value (or no colour class when
   `color` is not given), so `Text` can sit on any surface a component paints.
@@ -524,8 +531,10 @@ keep the table's four columns and its statuses as they are.
   `resolvedTheme` and `setTheme` only. A component that must know whether it
   sits in a right-to-left subtree — to mirror an icon, order a pair of
   buttons — cannot ask the provider and has to read the DOM.
-- **Now:** the `ThemeProvider` demo passes the direction it set to the sample
-  beside the provider.
+- **Now:** the theming page's direction sample picks its arrows from the
+  direction it set the provider to, since the provider cannot say; the
+  `ThemeProvider` demo did the same until the demos moved to Storybook on
+  2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** return `dir` from `useTheme()`, resolved from the
   nearest provider.
@@ -537,8 +546,9 @@ keep the table's four columns and its statuses as they are.
   on one page — a venue search in the top bar and a search inside a browse
   sheet, or the reference's inline and floating examples — are two search
   landmarks a screen reader lists as the same thing (axe `landmark-unique`).
-- **Now:** the SearchBar and AdaptiveMapShell pages carry the violation, named
-  in `knownViolations` in `tests/site.spec.ts`.
+- **Now:** open. The SearchBar and AdaptiveMapShell pages carried the
+  violation (`knownViolations`) until the demos moved to Storybook on
+  2026-09-28; no page the site shows now has two search landmarks.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** a `landmarkLabel` prop on the wrapper, or name the
   landmark from the field's label.
@@ -548,9 +558,9 @@ keep the table's four columns and its statuses as they are.
 - **What:** `BottomNavigation` renders `fixed bottom-0 left-0 right-0`, as
   `DynamicIsland` does at the top (GAP-24). It cannot sit in a phone frame,
   a card or an example, and two of them overlap.
-- **Now:** its demo puts the bar in a screen that contains it
-  (`src/reference/Screen.tsx`, as for GAP-24), so it is as wide as the app it
-  belongs to instead of the browser.
+- **Now:** open. Its demo put the bar in a screen that contained it
+  (`src/reference/Screen.tsx`, as for GAP-24) until the demos moved to
+  Storybook on 2026-09-28; no page the site shows now has one.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `placement` prop in `FloatingActionButton`'s words
   (`"fixed" | "inline"`; `FloatingActionButton` itself defaults to inline),
@@ -562,8 +572,9 @@ keep the table's four columns and its statuses as they are.
   name it; only the `<aside>` takes `aria-label`. A page with the site's own
   sidebar and a demoed one has two unnamed navigation landmarks (axe
   `landmark-unique`); `Navbar` has `navigationLabel` for exactly this.
-- **Now:** the Sidebar page carries the violation, named in
-  `knownViolations`.
+- **Now:** open. The Sidebar page carried the violation until the demos moved
+  to Storybook on 2026-09-28; on the dashboard, axe finds no second navigation
+  to confuse its `Sidebar`'s with.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `navigationLabel` prop, as `Navbar` has.
 
@@ -606,10 +617,11 @@ keep the table's four columns and its statuses as they are.
 - **What:** `ChipGroup` is a plain `div`; an `aria-label` on it names
   nothing, so a group of filter chips has no name a screen reader can read.
 - **Now:** every labelled `ChipGroup` on the site passes `role="group"`: the
-  components index, the dashboard, onboarding, the home page's "Make it
-  yours", the foundations' direction sample, the icons page and the Chip
-  demos. axe only flags an unnamed group as "needs review", so it never
-  failed a test; a code review found three without it.
+  components page, the dashboard, onboarding, the home page's "Make it yours",
+  the foundations' direction sample and the icons page, as the Chip demos did
+  until they moved to Storybook (2026-09-28). axe only flags an unnamed group
+  as "needs review", so it never failed a test; a code review found three
+  without it.
 - **Lane:** Core.
 - **Fix in Kozmos:** `role="group"` on the wrapper.
 
@@ -634,10 +646,10 @@ keep the table's four columns and its statuses as they are.
   panel while it loads, a card while a dialog inside it is open — cannot use
   it; like `DynamicIsland` (GAP-24) and `BottomNavigation` (GAP-29), the host
   cannot decide where it goes.
-- **Now:** the Backdrop page shows the scrim over a screen that contains it
-  (`src/reference/Screen.tsx`, as for GAP-24), which is the demo a module
-  wants; the kiosk directory's attract screen is still a glass `Surface` laid
-  over the directory by the example's own CSS.
+- **Now:** the kiosk directory's attract screen is a glass `Surface` laid over
+  the directory by the example's own CSS. The Backdrop page showed the scrim
+  over a screen that contained it (`src/reference/Screen.tsx`, as for GAP-24)
+  until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `placement` prop (`"fixed" | "inline"`, as for
   GAP-24), fixed by default, with the scrim colour and blur unchanged.
@@ -661,11 +673,11 @@ keep the table's four columns and its statuses as they are.
   A page shown in a frame — an example on this site, a module in a larger
   product, a preview — cannot keep its toasts inside itself: they appear
   outside it, over whatever the host is showing.
-- **Now:** the Toast page's viewport sits in a screen that contains it
-  (`src/reference/Screen.tsx`, as for GAP-24), so the toast stays in the app
-  it belongs to; the dashboard, the inbox and saved places still confirm with
-  an inline `Alert` in a status region, with the undo beside it (GAP-51),
-  because an example's own frame does not contain one yet.
+- **Now:** the dashboard, the inbox and saved places confirm with an inline
+  `Alert` in a status region, with the undo beside it (GAP-51), because an
+  example's own frame does not contain a toast viewport yet. The Toast page's
+  viewport sat in a screen that contained it (`src/reference/Screen.tsx`, as
+  for GAP-24) until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `placement` prop (`"fixed" | "inline"`), as for
   `Backdrop` (GAP-34), `BottomNavigation` (GAP-29) and `DynamicIsland`
@@ -744,11 +756,12 @@ keep the table's four columns and its statuses as they are.
   it comes later in the document. Measured on the MapOverlay reference
   page and the kiosk example (and on the home page's map scene, until the
   cover replaced it on 2026-09-22).
-- **Now:** the site isolates every frame that hosts a map
-  (`isolation: isolate` on demo stages, index previews and example
-  canvases), and a test scrolls each stacked element under the header and
-  checks nothing draws over it. The test that pins the gap reads a map on
-  the MapOverlay page.
+- **Now:** the site isolates every frame that hosts a map (`isolation:
+isolate` on the example canvases, as on the component pages' demo stages and
+  the index's previews until the demos moved to Storybook on 2026-09-28), and
+  a test scrolls each stacked element under the header and checks nothing
+  draws over it. The test that pins the gap reads the kiosk directory's map,
+  whose `MapOverlay` holds its floor list.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** `isolate` on `MapView`'s root, as `AdaptiveMapShell`'s
   has; and a layer scale in which the page's navigation sits above a map's
@@ -763,8 +776,8 @@ keep the table's four columns and its statuses as they are.
   227px tall — 27 % of the screen, and sticky. There is no way to collapse
   the navigation into a menu.
 - **Now:** the site puts everything in the navigation slot: the links,
-  shown from 48rem, and three small tools — a theme menu, search, and a
-  button that opens the links in a `Drawer` below 48rem. That slot keeps a
+  shown from 64rem, and three small tools — a theme menu, search, and a
+  button that opens the links in a `Drawer` below 64rem. That slot keeps a
   16rem basis of its own, which leaves the logo little room beside it: the
   header shows the full logo from 48rem and its K below. One 64px row from
   360px up; at 320px the tools still drop to a second row (a test measures
@@ -827,11 +840,12 @@ keep the table's four columns and its statuses as they are.
   pass in the light theme. The contrast contract measures the default ramp
   only.
 - **Evidence:** axe on the ThemeProvider page in the dark theme (its token
-  override re-points the theme's 600 to variant 1), and on the home page's
-  "Make it yours" with variant 1 and the module dark (the selected chip).
-  Found once the tests walked every component page in the dark theme too.
-- **Now:** left visible; the ThemeProvider entry in `knownViolations` is
-  marked `theme: "dark"`, and a test measures the ratio.
+  override re-pointed the theme's 600 to variant 1), until the demos moved to
+  Storybook on 2026-09-28, and on the home page's "Make it yours" with variant
+  1 and the module dark (the selected chip). Found once the tests walked every
+  component page in the dark theme too.
+- **Now:** left visible in "Make it yours", with variant 1 and the module
+  dark; a test measures the ratio.
 - **Lane:** Core (tokens).
 - **Fix in Kozmos:** lighten variant 1's dark 600 until it passes, and add
   both variants' primary-action and primary-text pairs to the contract, so
@@ -909,9 +923,11 @@ keep the table's four columns and its statuses as they are.
   both now say it rests.
 - **Lane:** Core (accessibility).
 - **Evidence:** "GAP-50 is fixed: the spinner and the skeleton rest under
-  reduced motion" reads each animation with the preference and without it,
-  so it cannot pass on an animation that was never there. There was no test
-  before, which is why the fix went unnoticed for four days.
+  reduced motion" reads each animation with the preference and without it, so
+  it cannot pass on an animation that was never there. It reads them in the
+  states example's loading view since the Skeleton and Spinner pages' demos
+  moved to Storybook (2026-09-28). There was no test before, which is why the
+  fix went unnoticed for four days.
 
 ## GAP-51 · No polite announcer
 
@@ -948,11 +964,12 @@ keep the table's four columns and its statuses as they are.
   to the Link's own. The check meant to catch this missed them (GAP-04).
 - **Now:** where an edge matters it comes from Kozmos. Swatches, samples and
   shapes are `Surface`s, whose solid surface has the subtle border, with the
-  colour filled from inside; the bands, the example canvas and the demo stage
-  are edged with `Separator`s. In the dark theme those tints are 1.04:1 and
-  1.1:1 against the page, so the hairlines are what set them apart. The
-  adaptive host and the phone frame draw nothing of their own (the map's edge
-  shows their extent), and the skip link keeps the Link's radius.
+  colour filled from inside; the bands and the example canvas are edged with
+  `Separator`s, as the demo stage was until the demos moved to Storybook
+  (2026-09-28). In the dark theme those tints are 1.04:1 and 1.1:1 against the
+  page, so the hairlines are what set them apart. The adaptive host and the
+  phone frame draw nothing of their own (the map's edge shows their extent),
+  and the skip link keeps the Link's radius.
 - **Lane:** Core.
 - **Fix in Kozmos:** tell the initialiser from the preflight by what it
   declares (only `--tw-*` custom properties), not by its selector, so the
@@ -975,8 +992,8 @@ keep the table's four columns and its statuses as they are.
   own corner radius, so the map's edge is the screen's outline; the sheet's
   cut corners show, and the example lists this gap. The home page's adaptive
   tile does not round its host, so its sheet keeps square corners there. The
-  BottomNavigation demo's screen keeps its radius, so the sliced corner shows
-  there too.
+  BottomNavigation demo's screen showed the second half, the sliced corner,
+  until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** an edge-to-edge form of the shell: the map without a
   border or radius, and a sheet with only its top edge, its sides and bottom
@@ -1043,8 +1060,10 @@ keep the table's four columns and its statuses as they are.
   its label, node `77:857`). An `Icon` a caller puts beside the label — the
   way Code Connect maps Figma's Button (`figma.children(["Icon", "Label
 Text"])`) and the Get started page shows — touches it.
-- **Evidence:** "GAP-56: a Button's icon touches its label" measures 0px on
-  the Button page's "Directions" demo.
+- **Evidence:** "GAP-56: a Button's icon touches its label" measured 0px on
+  the Button page's "Directions" demo. Since the fix, "a button that holds an
+  icon and words keeps them 8px apart" measures 8px on the site's own buttons;
+  the Button page's demos moved to Storybook on 2026-09-28.
 - **Fixed** in the design system on 2026-09-22 (`7775c73`): `.kozmos-button`
   takes the spacing scale's 100 — the 8px Figma and iOS keep — and the
   loader's physical `mr-2` went with it. The site's `site-button-icon` class,
@@ -1071,12 +1090,13 @@ Text"])`) and the Get started page shows — touches it.
   classes on Box"), so the class goes on the text inside, where `white-space`
   is only inherited.
 - **Evidence:** "GAP-57: a Button's label cannot wrap" measures `white-space`
-  on a Button: `nowrap`, on 2026-09-27's packages. Until then it measured the
-  icons page, where the set's longest name,
-  `taxonomy-transportation-space-boarding-gate`, asked for 372px inside a
-  288px button and scrolled a phone sideways. The icon set has since lost its
-  taxonomy names — 56 icons, the longest 21 characters — so that page no
-  longer shows the defect, which is itself unchanged.
+  on a Button: `nowrap`. It reads the home page's emotions tile's first since
+  the Button page's demos moved to Storybook (2026-09-28), and read that
+  page's before. Until 2026-09-27 it measured the icons page, where the set's
+  longest name, `taxonomy-transportation-space-boarding-gate`, asked for 372px
+  inside a 288px button and scrolled a phone sideways. The icon set has since
+  lost its taxonomy names — 56 icons, the longest 21 characters — so that page
+  no longer shows the defect, which is itself unchanged.
 - **Now:** composed on the icons page: the name takes `site-icon-name`
   (`white-space: normal; overflow-wrap: anywhere`), properties `Text` does
   not set. `anywhere` also lets the box shrink below its longest word, so the
@@ -1100,9 +1120,8 @@ Text"])`) and the Get started page shows — touches it.
   the toast's background on the Toast page. The site only saw it once the
   toast stopped floating over an empty page: the screen that contains the
   viewport (GAP-36) puts the app's own list behind it.
-- **Now:** left visible on the Toast page, whose demo shows the component as
-  it draws and says what to look at. Nothing else on the site shows a toast
-  (GAP-36).
+- **Now:** open. Only the Toast page's demo showed a toast (GAP-36), and it
+  moved to Storybook with the demos on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** `bg-background` on the toast's root, beside its border
   and shadow, as `Card`, `Dialog` and `Menu` have. A `destructive` variant, if
@@ -1120,9 +1139,8 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** "GAP-59: the island's capsule disappears into a dark page"
   measures the capsule's background against the screen behind it on the
   DynamicIsland page in the dark theme.
-- **Now:** left visible on the DynamicIsland page, whose demo shows the part
-  as it draws and says what to look at; the page is walked in both themes by
-  the tests.
+- **Now:** open. The DynamicIsland page's demo showed it, in both themes,
+  until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Platform / form factor.
 - **Fix in Kozmos:** on a phone the island is drawn on the bezel, where black
   on black is the point; in a page it needs a shape of its own. A hairline in
@@ -1152,10 +1170,9 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** "GAP-60: the island keeps no room for the camera" measures the
   clear middle of the compact capsule and the width of the expanded content on
   the DynamicIsland page.
-- **Now:** left visible on the DynamicIsland page, whose demo shows the part as
-  it draws and says what to look at. The site's screen is deliberately a
-  phone's shape and not a phone (README), so it draws no camera of its own:
-  the room belongs inside the component, as it does on the device.
+- **Now:** open. The DynamicIsland page's demo showed it until the demos moved
+  to Storybook on 2026-09-28. The room belongs inside the component, as it
+  does on the device.
 - **Lane:** Platform / form factor.
 - **Fix in Kozmos:** lay the presentations out around a sensor region, as
   ActivityKit does — compact as leading and trailing slots with the camera's
@@ -1226,8 +1243,8 @@ Text"])`) and the Get started page shows — touches it.
   every option after the first, is cut**. Nothing in the site's demo clips:
   the card and its stage are ordinary host chrome, which is what any product
   card would be.
-- **Now:** left visible on both pages. The site will not pull the demos out of
-  their cards to hide it.
+- **Now:** open. The Combobox and MultiSelect pages' demos showed it until the
+  demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** portal the list as the other six do, with the same
   provider-aware portal, and keep it positioned against the field.
@@ -1243,7 +1260,8 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** measured on the ColorPicker page — swatch 32×32, computed
   `border-radius: 16px` on all four corners, 1px `#747b8b` ring; the ink
   spans x 4→28, y 6→26 inside it.
-- **Now:** left visible on the page.
+- **Now:** open. The ColorPicker page's demo showed it until the demos moved
+  to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** decide the shape and draw all of it — either a round
   swatch with the native fill styled round and filling the ring, or a square
@@ -1265,8 +1283,8 @@ Text"])`) and the Get started page shows — touches it.
   scrolls. On the MultiSelect page, the `sm` chip inside the field is 28px in
   a 32px line and sits **2px above** the field's centre, while the input, the
   clear button and the caret are exact.
-- **Now:** left visible in MultiSelect. The ScrollArea page's sideways demo
-  uses a `Stack` with `wrap="nowrap"` instead, and says why.
+- **Now:** open. MultiSelect's demos and the ScrollArea page's sideways one
+  showed it until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `wrap` prop on `ChipGroup` in `Stack`'s words, and
   `items-center` on the line.
@@ -1283,7 +1301,10 @@ Text"])`) and the Get started page shows — touches it.
   overshooting the outline by up to 2.16px. Forcing `border-radius: 0` in the
   browser leaves the ink identical, which proves the grip is not clipped —
   the corner simply is not where the grip is.
-- **Now:** left visible on the page.
+- **Now:** left visible in the examples' text areas — account settings' bio,
+  the booking note, the feedback survey and saved places — which keep Kozmos's
+  vertical resize grip. It was measured on the Textarea page, whose demos
+  moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** either reserve the corner (padding at the end, so the
   grip sits inside the rounded shape), draw a grip of Kozmos's own, or square
@@ -1301,7 +1322,12 @@ Text"])`) and the Get started page shows — touches it.
   only when the text wraps: the second demo's description hits its 280px cap,
   so its second line ends 144px short of the right edge, ragged under a
   centred icon and title.
-- **Now:** left visible on the page.
+- **Fixed** in the design system on 2026-09-25 (`b9467b1f`): both of the empty
+  state's words take `align="center"`, so a wrapped description centres under
+  the title. Found on 2026-09-28, reading the component; "GAP-66 is fixed: an
+  empty state's wrapped description is centred" measures it on the components
+  page's empty state at 320px, where the description takes two lines.
+- **Was:** left visible on the EmptyState page.
 - **Lane:** Core.
 - **Fix in Kozmos:** pass `align="center"` from `EmptyState`, or let a
   `Text` inherit alignment when its caller does not name one.
@@ -1315,7 +1341,8 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** measured on the Menu page — trigger 313→420 (108 wide),
   content 282→452 (170 wide), `data-align="center"`, so the menu starts
   **31px left of the button that opened it**.
-- **Now:** left visible on the page and in the site's own header menu.
+- **Now:** left visible in the site's own header menu (Theme). The Menu page's
+  demo showed it too until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** default `align="start"` on `MenuContent`, which is what a
   dropdown under a trigger means, and leave the prop open for the rest.
@@ -1332,7 +1359,8 @@ Text"])`) and the Get started page shows — touches it.
   padding 8 — 3.5px above the bar's top border and 4.5px below it, with the
   selected item's fill crossing the border. Nothing else changes: icon 24,
   label 12/16, gap 4, badge 12, bar 64 in both.
-- **Now:** left visible on the page, whose demo says what the switch does.
+- **Now:** open. The BottomNavigation page's demo showed it until the demos
+  moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** let the bar take its height from its items (`min-h-16`
   rather than `h-16`), and stop overriding the density's width.
@@ -1348,7 +1376,10 @@ Text"])`) and the Get started page shows — touches it.
   not match the rest of the set's weight.
 - **Evidence:** read from the map itself; the fourteen manoeuvres are shown
   on the DirectionStep page, where the three up arrows are identical.
-- **Now:** left visible on the DirectionStep and Itinerary pages.
+- **Now:** left visible in the wayfinding example: the quickest route goes up
+  by escalator and the step-free one by lift. The DirectionStep and Itinerary
+  pages showed all fourteen manoeuvres until the demos moved to Storybook on
+  2026-09-28.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** a glyph per manoeuvre — lift, escalator, stairs, ramp,
   level change — drawn in the set's own weight. The taxonomy sprites already
@@ -1365,8 +1396,9 @@ Text"])`) and the Get started page shows — touches it.
   is announced anyway.
 - **Evidence:** measured on the Select page before the site's own fix: two
   `p[role=alert]` reading "Choose a venue.", at y 877 and y 903.
-- **Now:** composed — the site's demo passes the error to the trigger alone,
-  and says why. The nesting itself is unchanged.
+- **Now:** open. The Select page's demo passed the error to the trigger alone
+  until the demos moved to Storybook on 2026-09-28; no example's select shows
+  an error. The nesting itself is unchanged.
 - **Lane:** Core.
 - **Fix in Kozmos:** give `SelectTrigger` a `label` so one wrapper does, or
   have it inherit the wrapper it is already inside instead of making another.
@@ -1380,7 +1412,8 @@ Text"])`) and the Get started page shows — touches it.
   presses the assistant.
 - **Evidence:** read from the source and the built stylesheet; the only
   `kozmos-ai-search` rules are the ring's animation.
-- **Now:** left visible on the page.
+- **Now:** open. The AISearchButton page's demo showed it until the demos
+  moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a hover state in the system's own idiom — the ring
   brightening, or the surface a step warmer — and the same on the ring's
@@ -1398,7 +1431,13 @@ Text"])`) and the Get started page shows — touches it.
   **the whole shadow is cut** — 4px each side, 8px below. Sampled at dpr 2
   under the bar, the next row is the plain map fill; the same bar outside an
   overlay fades over about 11px.
-- **Now:** left visible on the three pages.
+- **Fixed** in the design system on 2026-09-28 (`ded56bc5`, its GAP-082): the
+  overlay's stack is padded by the floating shadow's reach, so its scroll box
+  no longer cuts a control's shadow. "GAP-72 is fixed: MapOverlay keeps what
+  floats in it whole" measures the kiosk directory's overlay: 4px above its
+  floor list, 8 either side and 12 below, the reach of its `0 4px 8px` shadow.
+- **Was:** left visible on the SearchBar, MapOverlay and AdaptiveMapShell
+  pages.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** scroll only when there is something to scroll
   (`overflow: visible` until a max height is reached), or pad the overlay by
@@ -1417,7 +1456,8 @@ Text"])`) and the Get started page shows — touches it.
   **1.00:1** against its own white fill, while the chevron keeps its blue
   border. A pixel scan across the middle finds no edge at the left of "Save"
   and a blue line only at the seam.
-- **Now:** left visible on the page.
+- **Now:** open. The SplitButton page's demo showed it until the demos moved
+  to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** tint the seam with a side-specific colour
   (`border-r-primary-foreground/20`) so the rest of the border survives.
@@ -1433,7 +1473,8 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** measured on the Tooltip page — content bottom 538.0, arrow
   top 538.0, zero overlap; a pixel column down the arrow's centre reads a
   solid 1px `#c7cad1` band at the join, 12.8:1 against the white either side.
-- **Now:** left visible on the page.
+- **Now:** open. The Tooltip page's demo showed it until the demos moved to
+  Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** draw the arrow with the body's border — an outlined
   polygon pulled 1px into the content so the two outlines join — or take the
@@ -1450,9 +1491,9 @@ Text"])`) and the Get started page shows — touches it.
   at 394.00 and the label's text box starts at 394.00: **0px**, with 2px of
   apparent space that is only the glyph's ink inset. `column-gap` computes
   `normal`.
-- **Now:** left visible on the page. The site's own toggles carry
-  `site-button-icon` where a ToggleButton holds both (the cover's pause
-  button).
+- **Now:** composed on the site's own toggle, the cover's pause button, which
+  carries `site-button-icon`. The ToggleButton page's demo showed the gap
+  until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** the spacing scale's 100, as GAP-56 asks for `Button`.
   Fix both together, and check `Chip`, `Tag` and `SegmentedControl` for the
@@ -1470,8 +1511,9 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** on the DateRangePicker page in the light theme, opening a
   field brings up the browser's dark panel, which also overlaps the demo
   below it. Nothing in the DOM belongs to Kozmos.
-- **Now:** left visible on the three pages; the site does not hand-build a
-  calendar.
+- **Now:** left visible in the booking example's date and time; the site does
+  not hand-build a calendar. The DatePicker, TimePicker and DateRangePicker
+  pages showed it until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a calendar and a clock of Kozmos's own, in the tokens,
   with the shapes a product needs: a range in one field, a two-month panel,
@@ -1542,7 +1584,7 @@ Text"])`) and the Get started page shows — touches it.
   and is reachable from the keyboard — with an overflow button among the
   icons.
 
-## GAP-81 · 37 of 104 components carry placeholder documentation
+## GAP-81 · 36 of 112 components carry placeholder documentation
 
 - **What:** 37 components describe themselves as "Displays the X interface
   topology natively" — a placeholder that says nothing about what the part is
@@ -1551,10 +1593,14 @@ Text"])`) and the Get started page shows — touches it.
   `Radio` for longer lists and `Tabs` when the selection changes which
   content is visible. `Tabs` itself carries the placeholder, so the pair
   cannot be told apart from the documentation.
-- **Evidence:** counted from the generated component data the site reads:
-  37 of 104.
-- **Now:** left visible — every component page prints the description it is
-  given, placeholder and all.
+- **Evidence:** counted from the component docs the site reads: 36 of 112 open
+  with "Displays the <Name> interface topology natively." on 2026-09-28 (37 of
+  104 on 2026-09-24).
+- **Now:** left visible: each of their pages says "Its docs have no
+  description yet." where it used to print the placeholder, and the search
+  shows its lane instead. ThemeProvider's page reads the component's own doc
+  comment. The generator counts the placeholder as no description
+  (`scripts/generate-reference.mjs`).
 - **Lane:** Core.
 - **Fix in Kozmos:** a sentence per component saying what it is for and when
   to choose it over its neighbour, in `SegmentedControl`'s manner. The site's
@@ -1571,8 +1617,11 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** measured on the CategoryField page in the light theme: the
   turquoise pill reads **2.52:1** against its field, green 3.02:1, blue
   3.74:1. Their text passes throughout (4.57, 4.82 and 5.88:1 at 12px/600).
-- **Now:** left visible on the page. The site paints nothing here: the tints
-  are the tokens', through the shared `tint()` helper.
+- **Now:** left visible in the venue explorer and phone search examples, once
+  a category is chosen: Information is the turquoise one. The site paints
+  nothing here: the tints are the tokens', through the shared `tint()` helper.
+  It was measured on the CategoryField page, whose demos moved to Storybook on
+  2026-09-28.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** hold a category's fill to 3:1 against the wash it sits
   on, the way `pnpm tokens:contrast:check` already holds its ink to 4.5:1 —
@@ -1587,7 +1636,8 @@ Text"])`) and the Get started page shows — touches it.
   `scrollable-region-focusable`, serious.
 - **Evidence:** the AIMessageList page failed axe until the demo passed
   `tabIndex={0}` itself.
-- **Now:** composed — the demos set it and say so.
+- **Now:** open. The AIMessageList demos set it, and said so, until the demos
+  moved to Storybook on 2026-09-28; no example has a thread yet.
 - **Lane:** Core.
 - **Fix in Kozmos:** give the scroller a tabindex, as `ScrollArea` does.
 
@@ -1598,8 +1648,8 @@ Text"])`) and the Get started page shows — touches it.
   `hideLabel`, `expanded` or `onExpandedChange` — while the component's own
   docs tell a product to hand groups straight to the list. So inside a list
   the group says "Show 3 more" in English, and a product cannot drive it.
-- **Now:** left visible on the POIResultGroup page, which shows both the
-  standalone group and one inside a list.
+- **Now:** open. The POIResultGroup page showed both the standalone group and
+  one inside a list until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** forward the rest of the group's props.
 
@@ -1609,7 +1659,8 @@ Text"])`) and the Get started page shows — touches it.
   so two groups with the same name are two identical landmarks, and a list of
   groups nests landmarks inside the list's own section. axe's
   `landmark-unique` fails.
-- **Now:** composed — the demos name their groups differently.
+- **Now:** open. The demos named their groups differently until the demos
+  moved to Storybook on 2026-09-28; no example has a group.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** a group is a list section, not a landmark; use a heading
   and `aria-labelledby`, or take the region role off.
@@ -1619,8 +1670,9 @@ Text"])`) and the Get started page shows — touches it.
 - **What:** `AIInputBar`'s docs name `trailing` as the place for a voice
   control and `AIMessage` names a read-aloud control, and the icon registry's
   56 names carry neither a microphone nor a speaker.
-- **Now:** composed — the demo uses `stars-01` for "Suggest a question" and
-  says why. Related: GAP-07, GAP-15, GAP-79.
+- **Now:** open. The AIInputBar demo used `stars-01` for "Suggest a question",
+  and said why, until the demos moved to Storybook on 2026-09-28. Related:
+  GAP-07, GAP-15, GAP-79.
 - **Lane:** Core.
 - **Fix in Kozmos:** a microphone, a speaker and a stop, in the set's weight.
 
@@ -1629,7 +1681,8 @@ Text"])`) and the Get started page shows — touches it.
 - **What:** `disabled` stops the field and the send button
   (`AIInputBar.tsx:61`) and leaves whatever sits in `trailing` live, so a bar
   that looks disabled still takes a press. Undocumented.
-- **Now:** left visible on the page, whose demo says it.
+- **Now:** open. The AIInputBar page's demo said it until the demos moved to
+  Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** pass the state to the slot, or document that a caller
   must disable its own control.
@@ -1639,7 +1692,8 @@ Text"])`) and the Get started page shows — touches it.
 - **What:** the card's `title` renders as a `<p>` (`ActionCard.tsx:20`), so a
   card holding a result list is not reachable by heading navigation — the same
   shape as GAP-11 for `EmptyState`.
-- **Now:** left visible on the page.
+- **Now:** open. The ActionCard page's demo showed it until the demos moved to
+  Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a heading level, as `AlertTitle` now takes (GAP-12).
 
@@ -1652,8 +1706,9 @@ Text"])`) and the Get started page shows — touches it.
   45.5px, the icon 64px, and neighbouring icons overlap by 10.5px, badges
   clipped and labels broken mid-word ("Transp / ort"). At 360px they touch
   (-0.5px); at 390px there is 7px between them.
-- **Now:** left visible on the page — a phone at 320px is the narrowest
-  screen WCAG 1.4.10 asks for, and the panel is a phone component.
+- **Now:** open. The BrowseCategoriesPanel page showed it at 320px until the
+  demos moved to Storybook on 2026-09-28. In the phone search example at 320px
+  its six tiles are 61px wide and do not overlap (measured 2026-09-28).
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** size the track from the tile, not the count —
   `repeat(auto-fit, minmax(4rem, 1fr))` — so the row rewraps instead of

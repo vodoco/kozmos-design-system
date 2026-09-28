@@ -51,10 +51,14 @@ repository to depend on. Today both are consumed from a checkout —
 
 ## Documentation
 
-The website — every component running, with its props, its code on three
-platforms, and the measured gaps — publishes from `main` to
+The website — getting started, the foundations, the examples, every
+component and where it exists on React, SwiftUI, Compose and Figma, and the
+measured gaps — publishes from `main` to
 <https://vodoco.github.io/kozmos-design-system/>. Its source is
-[`apps/site`](./apps/site/README.md).
+[`apps/site`](./apps/site/README.md). Storybook, the component reference —
+each component's docs, stories, controls and code on every platform —
+publishes with it, to <https://vodoco.github.io/kozmos-design-system/storybook/>,
+from [`apps/docs`](./apps/docs).
 
 [`docs/README.md`](./docs/README.md) maps the written documentation, with a
 line on when to read each document: how the styles, Figma, the map shell and
@@ -78,7 +82,7 @@ design or build with Kozmos.
 | `packages/ios`               | The SwiftUI library                                  |
 | `packages/android`           | The Jetpack Compose library                          |
 | `packages/vue`               | The Vue proxy (private)                              |
-| `apps/site`                  | The website, built from the published packages       |
+| `apps/site`                  | The website, built from the workspace's packages     |
 | `apps/playground-*`          | A place to try web, Android and Vue                  |
 | `apps/Playground.swiftpm`    | The same for iOS, as a Swift Playground              |
 | `apps/docs`                  | Storybook: every component's stories and docs        |

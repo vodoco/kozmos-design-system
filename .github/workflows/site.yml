@@ -17,14 +17,20 @@ on:
     branches: ["main"]
     paths:
       - "apps/site/**"
+      - "apps/docs/**"
       - "packages/**"
+      # The status script: where each component exists, which the site shows.
+      - "scripts/skills/check-completion.ts"
       - ".github/workflows/site.yml"
       - "pnpm-lock.yaml"
   pull_request:
     types: [opened, synchronize]
     paths:
       - "apps/site/**"
+      - "apps/docs/**"
       - "packages/**"
+      # The status script: where each component exists, which the site shows.
+      - "scripts/skills/check-completion.ts"
       - ".github/workflows/site.yml"
       - "pnpm-lock.yaml"
 
@@ -62,6 +68,16 @@ jobs:
 
       - name: Build
         run: pnpm --filter @kozmos-ds/site build
+
+      # Every component page links to its page in Storybook, the component
+      # reference (decision 44). The site names those pages from the stories'
+      # titles as Storybook does; this builds Storybook and fails on a link to
+      # a page the build does not have.
+      - name: Build Storybook
+        run: pnpm --filter @kozmos-ds/docs build-storybook
+
+      - name: Every component page's Storybook link lands
+        run: pnpm --filter @kozmos-ds/site exec node scripts/check-storybook-links.mjs
 
       - name: Install the browsers
         run: pnpm --filter @kozmos-ds/site exec playwright install --with-deps chromium firefox webkit
