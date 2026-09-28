@@ -22,21 +22,17 @@
 
 ## 1. Quick Start
 
-### Using the CLI (Recommended)
+### Using the CLI
 
 ```bash
-# Create a simple component
-pnpm new-component Tooltip
-
-# Create a compound component
-pnpm new-component Modal --compound
-
-# Create for specific platforms only
-pnpm new-component Badge --platforms react,ios
-
-# Create with all options
-pnpm new-component Accordion --compound --platforms all
+# Scaffold a React component in packages/react/src/components/<Name>
+pnpm new-component <Name>
 ```
+
+`pnpm new-component` (`scripts/skills/generate-component.ts`) takes one argument, the component's
+name, and refuses a name that already has a directory. It scaffolds the React component only: there
+are no `--compound` or `--platforms` options, and the SwiftUI and Compose versions are written by
+hand (§4 and §5).
 
 ### Manual Creation
 
@@ -46,106 +42,21 @@ If you prefer manual creation, follow the detailed sections below for each platf
 
 ## 2. Component Scaffolding CLI
 
-### CLI Script
+### What It Writes
 
-```typescript
-// scripts/new-component.ts
-import { mkdir, writeFile } from "fs/promises";
-import { join } from "path";
-import { parseArgs } from "util";
-
-const { values, positionals } = parseArgs({
-  args: process.argv.slice(2),
-  options: {
-    compound: { type: "boolean", default: false },
-    platforms: { type: "string", default: "all" },
-  },
-  allowPositionals: true,
-});
-
-const componentName = positionals[0];
-if (!componentName) {
-  console.error(
-    "Usage: pnpm new-component <ComponentName> [--compound] [--platforms react,ios,android,rn,vue]",
-  );
-  process.exit(1);
-}
-
-const isCompound = values.compound;
-const platforms =
-  values.platforms === "all"
-    ? ["react", "ios", "android", "react-native", "vue"]
-    : values.platforms!.split(",");
-
-async function createComponent() {
-  console.log(`\n📦 Creating component: ${componentName}`);
-  console.log(`   Compound: ${isCompound}`);
-  console.log(`   Platforms: ${platforms.join(", ")}\n`);
-
-  if (platforms.includes("react")) {
-    await createReactComponent(componentName, isCompound);
-  }
-
-  if (platforms.includes("ios")) {
-    await createIOSComponent(componentName, isCompound);
-  }
-
-  if (platforms.includes("android")) {
-    await createAndroidComponent(componentName, isCompound);
-  }
-
-  if (platforms.includes("react-native")) {
-    await createReactNativeComponent(componentName, isCompound);
-  }
-
-  if (platforms.includes("vue")) {
-    await createVueComponent(componentName, isCompound);
-  }
-
-  console.log("\n✅ Component created successfully!");
-  console.log("\nNext steps:");
-  console.log("1. Implement component logic");
-  console.log("2. Add Storybook stories");
-  console.log("3. Write tests");
-  console.log("4. Create Code Connect mapping");
-  console.log("5. Update barrel exports");
-}
-
-// Implementation functions below...
-```
-
-### Generated Files
-
-When you run `pnpm new-component Tooltip`, it creates:
+Run from the repository root, `pnpm new-component <Name>` writes four files and adds one line to
+`packages/react/src/index.ts` (`export * from './components/<Name>/<Name>';`):
 
 ```
-packages/
-├── react/src/components/Tooltip/
-│   ├── Tooltip.tsx              # Main component
-│   ├── Tooltip.test.tsx         # Tests
-│   ├── Tooltip.stories.tsx      # Storybook
-│   ├── Tooltip.figma.tsx        # Code Connect
-│   ├── Tooltip.css              # Styles
-│   └── index.ts                 # Barrel export
-│
-├── ios/Sources/KozmosSwiftUI/Components/Tooltip/
-│   ├── KozmosTooltip.swift      # Main component
-│   ├── KozmosTooltip.figma.swift # Code Connect
-│   └── TooltipModifiers.swift   # View modifiers
-│
-├── android/kozmos/src/main/kotlin/com/kozmos/compose/components/
-│   ├── Tooltip.kt               # Main component
-│   └── Tooltip.figma.kt         # Code Connect
-│
-├── react-native/src/components/Tooltip/
-│   ├── Tooltip.tsx              # Main component
-│   ├── Tooltip.test.tsx         # Tests
-│   └── index.ts                 # Barrel export
-│
-└── vue/src/components/
-    ├── kozmos-tooltip.ts        # Lit Web Component
-    └── KozmosTooltip.vue        # Vue wrapper
+packages/react/src/components/<Name>/
+├── <Name>.tsx              # A cva-based component
+├── <Name>.stories.tsx      # Storybook
+├── <Name>.test.tsx         # Tests
+└── index.ts                # Barrel export
 ```
+
+Everything else is yours to add: the Code Connect file, the SwiftUI and Compose versions, and a
+changeset (`pnpm changeset`), since a new component changes what `@kozmos-ds/react` ships.
 
 ---
 
