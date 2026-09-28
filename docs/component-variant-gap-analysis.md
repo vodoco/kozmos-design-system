@@ -28,7 +28,7 @@ cannot".
 | Variations that are compositional only    | 63     |
 | Components with variant gaps — iOS        | 14/49  |
 | Components with variant gaps — Android    | 14/49  |
-| Components with variant gaps — Figma      | 13/49  |
+| Components with variant gaps — Figma      | 14/49  |
 | Components with variant gaps — Vue        | 4/49   |
 | Components absent entirely — iOS          | 9/112  |
 | Components absent entirely — Android      | 8/112  |
@@ -81,6 +81,8 @@ DynamicIsland
   - figma missing axes -> islandState (compact, expanded, minimal)
 FieldWrapper
   - figma: component/set absent
+FloorSelector
+  - figma missing values -> variant: collapsible
 Icon
   - figma: component/set absent
 Link

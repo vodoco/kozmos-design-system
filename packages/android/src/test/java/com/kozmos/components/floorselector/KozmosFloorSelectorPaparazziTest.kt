@@ -15,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
 import com.kozmos.components.CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlSize
 import com.kozmos.contracts.KozmosFloorPresentation
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -53,6 +55,55 @@ class KozmosFloorSelectorPaparazziTest {
     @Test
     fun theResultMarkersRightToLeftAtTwiceTheTextSize() =
         snapshotIn(dark = false, rtl = true, fontScale = 2f) { ListAndStepper() }
+
+    // Row 79 (GAP-080), decision 38: the SDK's level switcher. The closed
+    // tile; the tile on the visitor's level, with its dot; and the open column,
+    // drawn as its popup holds it — the current level outlined, the visitor's
+    // level with its dot and a count in the other corner, a closed level muted.
+    private val switcherLevels = listOf(
+        KozmosFloorPresentation(id = "3", label = "Third floor", shortLabel = "3F"),
+        KozmosFloorPresentation(id = "2", label = "Second floor", shortLabel = "2F", resultCount = 3),
+        KozmosFloorPresentation(id = "1", label = "First floor", shortLabel = "1F"),
+        KozmosFloorPresentation(id = "0", label = "Ground", shortLabel = "G", disabled = true)
+    )
+
+    @Test
+    fun theSwitcherInLightMode() = snapshotIn(dark = false) { Switcher() }
+
+    @Test
+    fun theSwitcherInDarkMode() = snapshotIn(dark = true) { Switcher() }
+
+    @Test
+    fun theSwitcherRightToLeftAtTwiceTheTextSize() =
+        snapshotIn(dark = false, rtl = true, fontScale = 2f) { Switcher() }
+
+    @Composable
+    private fun Switcher() {
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
+            KozmosFloorSelector(
+                floors = switcherLevels,
+                selectedFloor = "1",
+                onFloorSelect = {},
+                variant = KozmosFloorSelectorVariant.Collapsible
+            )
+            KozmosFloorSelector(
+                floors = switcherLevels,
+                selectedFloor = "1",
+                onFloorSelect = {},
+                variant = KozmosFloorSelectorVariant.Collapsible,
+                userFloor = "1"
+            )
+            KozmosFloorSwitcherColumn(
+                floors = switcherLevels,
+                selectedFloor = "1",
+                userFloor = "2",
+                userFloorLabel = "your level",
+                resultCountLabel = { "$it results" },
+                levelSize = DpSize(KozmosMapControlSize, KozmosMapControlSize),
+                onChoose = {}
+            )
+        }
+    }
 
     @Composable
     private fun AllThree() {

@@ -7,6 +7,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
@@ -57,7 +58,13 @@ data class ReadNode(
     val role: Role?,
     val bounds: Rect,
     val tag: String?,
-    val click: (() -> Boolean)?
+    val click: (() -> Boolean)?,
+    /** Offered while closed: TalkBack reads it as the control's collapsed state. */
+    val expand: (() -> Boolean)? = null,
+    /** Offered while open: TalkBack reads it as the control's expanded state. */
+    val collapse: (() -> Boolean)? = null,
+    /** Set, TalkBack says the node's new description when it changes. */
+    val liveRegion: LiveRegionMode? = null
 )
 
 /**
@@ -111,5 +118,8 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     role = node.config.getOrNull(SemanticsProperties.Role),
     bounds = node.boundsInRoot,
     tag = node.config.getOrNull(SemanticsProperties.TestTag),
-    click = node.config.getOrNull(SemanticsActions.OnClick)?.action
+    click = node.config.getOrNull(SemanticsActions.OnClick)?.action,
+    expand = node.config.getOrNull(SemanticsActions.Expand)?.action,
+    collapse = node.config.getOrNull(SemanticsActions.Collapse)?.action,
+    liveRegion = node.config.getOrNull(SemanticsProperties.LiveRegion)
 )

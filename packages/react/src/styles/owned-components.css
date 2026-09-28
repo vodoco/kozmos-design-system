@@ -655,6 +655,39 @@
     @apply fill-popover;
     display: block;
   }
+  /* The floor switcher's open column (row 79) wears the map-control surface
+     its tile does (decision 40): the page's own surface, opaque; no edge; the
+     map controls' elevation; and the SDK's 32px blur of the map behind it.
+     `kozmos-map-control` itself sizes and pads a button, so the column takes
+     its tokens rather than the class. Its corner is the Control corner grown
+     by the column's 4px inset, so the levels' Control corners inside it stay
+     concentric. Two classes, so it outweighs the popover's own surface;
+     owned, so the column holds in a host without @scope. */
+  .kozmos-popover.kozmos-floor-selector-list {
+    @apply shadow-map-control;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+    width: auto;
+    padding: calc(var(--primitives-layout-spacing-50) * 1px);
+    border-width: 0;
+    border-radius: calc(
+      var(--semantics-radius-control) * 1px +
+        var(--primitives-layout-spacing-50) * 1px
+    );
+    background-color: var(--primitives-colors-background-0);
+    -webkit-backdrop-filter: blur(32px);
+    backdrop-filter: blur(32px);
+  }
+  /* It arrives without the popover's zoom and slide when the system asks for
+     reduced motion: the popover reads only the design config's duration
+     scale, which the portal carries, and not the media query. Two classes,
+     so it outweighs the popover's own `[data-state]` rule. */
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-popover.kozmos-floor-selector-list {
+      animation: none;
+    }
+  }
   /* Last in the owned block on purpose: these rules and the animations
      they stop are all one class, so source order is what decides, and a
      `@apply animate-spin` declared later would simply win. */

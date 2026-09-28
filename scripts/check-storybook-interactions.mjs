@@ -536,6 +536,213 @@ try {
         console.log(
           `PASS AIInputBar voice unavailable ${theme} ${viewport.width}`,
         );
+
+        // Row 79: the floor switcher grows from a map-control tile into a
+        // column of levels, says so, and hands focus back to the tile on
+        // Escape and on a tap outside — checked in each engine, because
+        // clicking is where they differ on focus (WebKit does not focus a
+        // button it clicks).
+        await visit("product-sdk-floorselector--collapsible");
+        // Scoped to its group: open, the column has a "First floor" too.
+        const floorTile = page
+          .getByRole("group", { name: "Floor selector" })
+          .getByRole("button", { name: "First floor" });
+        for (const close of ["Escape", "a tap outside"]) {
+          await floorTile.click();
+          const floorList = page.getByRole("dialog", {
+            name: "Floor selector",
+          });
+          await floorList.waitFor();
+          assert.equal(
+            await floorTile.getAttribute("aria-expanded"),
+            "true",
+            "the floor tile says its column is open",
+          );
+          await page.waitForFunction(
+            () =>
+              document.activeElement?.getAttribute("aria-pressed") === "true",
+          );
+          assert.deepEqual(
+            await floorList.evaluate((n) => ({
+              theme: n
+                .closest("[data-kozmos-portal]")
+                ?.getAttribute("data-theme"),
+              focused: document.activeElement?.getAttribute("aria-label"),
+            })),
+            { theme, focused: "First floor" },
+            "the floor column opens in the themed portal, on the current level",
+          );
+          // The tile grows into the column: its bottom level lies exactly
+          // over the tile — measured once the popover has finished zooming
+          // in from 95%.
+          await floorList.evaluate((n) =>
+            Promise.all(n.getAnimations().map((a) => a.finished)),
+          );
+          const tileBox = await floorTile.boundingBox();
+          const bottomBox = await floorList
+            .getByRole("button")
+            .last()
+            .boundingBox();
+          for (const edge of ["x", "y", "width", "height"]) {
+            assert(
+              Math.abs(bottomBox[edge] - tileBox[edge]) <= 1,
+              `the column's bottom level is not over the tile (${edge}: ${bottomBox[edge]} against ${tileBox[edge]})`,
+            );
+          }
+          // Also gives Radix the moment it takes to listen for Escape and for
+          // a press outside after the column opens.
+          await audit();
+          if (close === "Escape") await page.keyboard.press("Escape");
+          else await page.mouse.click(2, 2);
+          await floorList.waitFor({ state: "detached" });
+          await page.waitForFunction(
+            (n) => n === document.activeElement,
+            await floorTile.elementHandle(),
+          );
+          assert.equal(await floorTile.getAttribute("aria-expanded"), "false");
+        }
+        // Parked at the top of the map, with no room above the tile, the
+        // column grows down instead: its top level lies over the tile, as on
+        // iOS and Android.
+        await floorTile.evaluate((n) => {
+          const group = n.closest('[role="group"]');
+          group.style.position = "fixed";
+          group.style.top = "16px";
+          group.style.right = "16px";
+        });
+        await floorTile.click();
+        const downList = page.getByRole("dialog", { name: "Floor selector" });
+        await downList.waitFor();
+        await downList.evaluate((n) =>
+          Promise.all(n.getAnimations().map((a) => a.finished)),
+        );
+        const highTile = await floorTile.boundingBox();
+        const topBox = await downList.getByRole("button").first().boundingBox();
+        for (const edge of ["x", "y", "width", "height"]) {
+          assert(
+            Math.abs(topBox[edge] - highTile[edge]) <= 1,
+            `parked at the top, the column's top level is not over the tile (${edge}: ${topBox[edge]} against ${highTile[edge]})`,
+          );
+        }
+        // The visitor's dot and a result count on one level (decision 38):
+        // one at the top trailing corner, one at the bottom, neither over the
+        // other, in the level's own box.
+        await visit("product-sdk-floorselector--collapsible-open");
+        const theirLevel = page.getByRole("dialog").getByRole("button", {
+          name: "Second floor, your level, 3 results",
+        });
+        await theirLevel.waitFor();
+        await theirLevel.evaluate((n) =>
+          Promise.all(
+            n
+              .closest("[role=dialog]")
+              .getAnimations()
+              .map((a) => a.finished),
+          ),
+        );
+        const marks = await theirLevel.evaluate((n) => {
+          const box = (el) => {
+            const r = el.getBoundingClientRect();
+            return { l: r.left, t: r.top, r: r.right, b: r.bottom };
+          };
+          return {
+            level: box(n),
+            dot: box(n.querySelector("[data-floor-selector-user-level]")),
+            count: box(n.querySelector("[data-floor-selector-result-count]")),
+          };
+        });
+        const inside = (a, b) =>
+          a.l >= b.l - 0.5 &&
+          a.r <= b.r + 0.5 &&
+          a.t >= b.t - 0.5 &&
+          a.b <= b.b + 0.5;
+        assert(inside(marks.dot, marks.level), "the dot is outside its level");
+        assert(
+          inside(marks.count, marks.level),
+          "the count is outside its level",
+        );
+        assert(
+          marks.dot.b <= marks.count.t || marks.count.b <= marks.dot.t,
+          `the dot and the count overlap: ${JSON.stringify(marks)}`,
+        );
+        await audit();
+        // Decision 40: the tile is the map's own control, so it draws the
+        // map-control surface as the compass beside the zoom pair does — at
+        // rest, hovered and pressed, nothing restyled. The open column wears
+        // the same surface: the page's own, the map controls' elevation and
+        // blur, no edge, and the tile's corner grown by the column's inset,
+        // so the levels' corners stay concentric with it.
+        const surfaceKeys = [
+          "backgroundColor",
+          "color",
+          "boxShadow",
+          "borderTopWidth",
+          "borderTopLeftRadius",
+          "backdropFilter",
+          "width",
+          "height",
+          "transform",
+        ];
+        const surfaceOf = (locator) =>
+          locator.evaluate(async (node, keys) => {
+            await Promise.all(node.getAnimations().map((a) => a.finished));
+            const s = getComputedStyle(node);
+            return Object.fromEntries(
+              [...keys, "paddingTop"].map((key) => [key, s[key]]),
+            );
+          }, surfaceKeys);
+        const surfaceStates = async (locator) => {
+          await page.mouse.move(1, 1);
+          const rest = await surfaceOf(locator);
+          await locator.hover();
+          const hover = await surfaceOf(locator);
+          await page.mouse.down();
+          const pressed = await surfaceOf(locator);
+          await page.mouse.up();
+          await page.mouse.move(1, 1);
+          return { rest, hover, pressed };
+        };
+        await visit("map-mapcontrolsgroup--default");
+        const compass = await surfaceStates(
+          page.getByRole("button", { name: "Reset bearing" }),
+        );
+        await visit("product-sdk-floorselector--collapsible");
+        const surfaceTile = page
+          .getByRole("group", { name: "Floor selector" })
+          .getByRole("button", { name: "First floor" });
+        // Pressing the tile, then letting go, opens its column.
+        const tileSurface = await surfaceStates(surfaceTile);
+        assert.deepEqual(
+          tileSurface,
+          compass,
+          "the floor tile is not drawn as a map control is, at rest, hovered and pressed",
+        );
+        const surfaceColumn = page.getByRole("dialog", {
+          name: "Floor selector",
+        });
+        await surfaceColumn.waitFor();
+        const columnSurface = await surfaceOf(surfaceColumn);
+        for (const key of ["backgroundColor", "boxShadow", "backdropFilter"]) {
+          assert.equal(
+            columnSurface[key],
+            tileSurface.rest[key],
+            `the floor column's ${key} is not the map control's`,
+          );
+        }
+        assert.equal(
+          columnSurface.borderTopWidth,
+          "0px",
+          "the floor column draws an edge",
+        );
+        assert.equal(
+          parseFloat(columnSurface.borderTopLeftRadius),
+          parseFloat(tileSurface.rest.borderTopLeftRadius) +
+            parseFloat(columnSurface.paddingTop),
+          "the floor column's corner is not the map control's grown by its inset",
+        );
+        await page.keyboard.press("Escape");
+        await surfaceColumn.waitFor({ state: "detached" });
+        console.log(`PASS floor switcher ${theme} ${viewport.width}`);
         for (const id of [
           "product-sdk-routepreviewpanel--ready",
           "system-themeprovider--default",

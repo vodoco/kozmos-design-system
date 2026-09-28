@@ -95,6 +95,26 @@ struct DrawnPixels {
         return bands
     }
 
+    /// The bounding box, in points, of the pixels inside `region` (in points)
+    /// that match; nil when none does.
+    func boundingBox(in region: CGRect, where matches: (UInt8, UInt8, UInt8, UInt8) -> Bool) -> CGRect? {
+        let x0 = max(0, Int(region.minX * scale)), x1 = min(width, Int(region.maxX * scale))
+        let y0 = max(0, Int(region.minY * scale)), y1 = min(height, Int(region.maxY * scale))
+        guard x0 < x1, y0 < y1 else { return nil }
+        var minX = Int.max, minY = Int.max, maxX = -1, maxY = -1
+        for y in y0..<y1 {
+            for x in x0..<x1 {
+                let i = (y * width + x) * 4
+                if matches(rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]) {
+                    minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+                }
+            }
+        }
+        guard maxX >= 0 else { return nil }
+        return CGRect(x: CGFloat(minX) / scale, y: CGFloat(minY) / scale,
+                      width: CGFloat(maxX - minX + 1) / scale, height: CGFloat(maxY - minY + 1) / scale)
+    }
+
     /// The darkest opaque pixel inside `region` (in points): on a plain fill,
     /// the colour of the text drawn on it, where a stroke covers a pixel whole.
     func darkest(in region: CGRect) -> (r: UInt8, g: UInt8, b: UInt8, a: UInt8)? {
