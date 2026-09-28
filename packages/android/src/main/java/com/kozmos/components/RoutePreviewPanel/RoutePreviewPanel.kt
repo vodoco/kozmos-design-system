@@ -33,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
 import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
+import com.kozmos.components.adaptivemapshell.kozmosMutedForeground
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.components.iconbutton.KozmosIconButtonVariant
@@ -50,12 +52,16 @@ import com.kozmos.components.surface.kozmosDashedEdge
  * selected route, and continuation is disabled while the route status is
  * `Calculating`, `NoRoute`, `Error`, or `Idle`.
  *
- * It fills with the background colour and draws no border of its own, so as
- * the content of the map shell's panel it is that panel's top: its
- * destination row tops its padding up to what the panel already leaves above
- * it ([LocalKozmosPanelInsetTop], [LocalKozmosPanelClearanceTop]) rather than
- * adding to it, so the destination sits as far from the panel's top as from
- * its side and keeps the handle's target clear (decision 14).
+ * Standing alone it fills with the background colour, and it draws no border
+ * of its own. As the content of the map shell's panel it is that panel's
+ * top: its destination row tops its padding up to what the panel already
+ * leaves above it ([LocalKozmosPanelInsetTop], [LocalKozmosPanelClearanceTop])
+ * rather than adding to it, so the destination sits as far from the panel's
+ * top as from its side and keeps the handle's target clear (decision 14). And
+ * it paints no fill there ([LocalKozmosPanelSurface]): the panel's surface,
+ * solid or glass, is the one surface (decision 43). On glass its muted text,
+ * "To" and the count of options, takes the foreground colour, so it reads at
+ * 4.5:1 over any map (decision 48).
  */
 @Composable
 fun KozmosRoutePreviewPanel(
@@ -86,6 +92,14 @@ fun KozmosRoutePreviewPanel(
     // top and 16 from its side. Outside a shell both are 0, and it keeps its
     // 16. The options under the row keep theirs.
     val firstRowTop = maxOf(LocalKozmosPanelClearanceTop.current, padding - LocalKozmosPanelInsetTop.current)
+    // Its fill: the background colour standing alone, and nothing on the
+    // shell's panel, whose surface is the one surface (decision 43). On a
+    // glass sheet it was an opaque block from under the handle's row down.
+    val fill = if (LocalKozmosPanelSurface.current == null) {
+        Modifier.background(KozmosThemeTokens.primitivesColorsBackground0)
+    } else {
+        Modifier
+    }
 
     // The options list scrolls between a pinned header and a pinned footer,
     // which requires a bounded height. When the caller nests the panel
@@ -99,7 +113,7 @@ fun KozmosRoutePreviewPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(KozmosThemeTokens.primitivesColorsBackground0)
+            .then(fill)
             .semantics { contentDescription = "Route preview" }
     ) {
         Column(
@@ -112,7 +126,7 @@ fun KozmosRoutePreviewPanel(
                 text = destinationLabel.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = KozmosThemeTokens.primitivesColorsForeground500
+                color = kozmosMutedForeground()
             )
             Text(
                 text = destinationName,
@@ -193,7 +207,7 @@ fun KozmosRoutePreviewPanel(
                     Text(
                         text = optionsCountLabel,
                         style = MaterialTheme.typography.bodySmall,
-                        color = KozmosThemeTokens.primitivesColorsForeground500
+                        color = kozmosMutedForeground()
                     )
                 }
             }

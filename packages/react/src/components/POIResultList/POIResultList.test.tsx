@@ -188,6 +188,25 @@ describe("POIResultList", () => {
     expect(screen.getByText("Try removing a filter.")).toBeVisible();
   });
 
+  it("draws its empty state muted through the class a glass surface turns to ink", () => {
+    // Decision 48: on glass, text that is muted elsewhere takes the
+    // foreground colour; the empty state's box is see-through, so its text
+    // sits on the glass. A `text-muted-foreground` beside the class would
+    // outrank it. The results themselves are cards of their own, and keep
+    // their muted text: it is on the card, not the glass.
+    render(
+      <POIResultList
+        emptyState="Try removing a filter."
+        items={[]}
+        onSelect={() => undefined}
+        resultCountLabel="No results"
+      />,
+    );
+    const box = screen.getByText("Try removing a filter.");
+    expect(box.classList.contains("kozmos-muted-text")).toBe(true);
+    expect(box.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
+
   describe("bringing the selected result into view (row 70)", () => {
     // jsdom lays nothing out, so the geometry is stated: a 200px tall view
     // at y=100 over a list that is 1000px tall.

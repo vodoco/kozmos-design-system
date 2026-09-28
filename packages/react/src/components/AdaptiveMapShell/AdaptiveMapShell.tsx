@@ -905,16 +905,21 @@ const AdaptiveMapShell = React.forwardRef<
                 ref={panelHeaderElement}
                 className={cn("flex-none", !isSheet && "pt-4")}
                 data-kozmos-panel-header=""
-                style={{
-                  paddingLeft: isSheet ? chrome.left : undefined,
-                  paddingRight: isSheet ? chrome.right : undefined,
-                  // The search field a header usually starts with keeps the
-                  // handle's target clear (WCAG 2.5.8).
-                  paddingTop: drawsHandle ? gripClearance : undefined,
-                  // A vertical drag here is the sheet's; a sideways one stays
-                  // with the header, for a row of chips that scrolls.
-                  touchAction: isSheet ? "pan-x" : undefined,
-                }}
+                style={
+                  {
+                    paddingLeft: isSheet ? chrome.left : undefined,
+                    paddingRight: isSheet ? chrome.right : undefined,
+                    // The search field a header usually starts with keeps the
+                    // handle's target clear (WCAG 2.5.8).
+                    paddingTop: drawsHandle ? gripClearance : undefined,
+                    // A vertical drag here is the sheet's; a sideways one stays
+                    // with the header, for a row of chips that scrolls.
+                    touchAction: isSheet ? "pan-x" : undefined,
+                    // What the header holds sits on the panel's surface too
+                    // (decision 43; the content's style says why).
+                    "--kozmos-panel-part-fill": "transparent",
+                  } as React.CSSProperties
+                }
               >
                 {panelHeader}
               </div>
@@ -971,6 +976,15 @@ const AdaptiveMapShell = React.forwardRef<
                   "--kozmos-panel-clearance-top": hasPanelHeader
                     ? "0px"
                     : gripClearance,
+                  // Decision 43: the panel's surface, solid or glass, is the
+                  // one surface. A part that fills its own box standing alone
+                  // (the category browser, the route preview) paints nothing
+                  // on it, in a sheet or a side panel; on a solid panel
+                  // nothing changes, its fill being the parts' colour. Said
+                  // here and on the header, not on the aside: its opening tag
+                  // is what axe reports for the landmark it is, and past 300
+                  // characters axe cuts every attribute value to 20.
+                  "--kozmos-panel-part-fill": "transparent",
                 } as React.CSSProperties
               }
               onScroll={onContentScroll}

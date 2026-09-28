@@ -59,6 +59,38 @@ public extension EnvironmentValues {
     }
 }
 
+struct KozmosPanelSurfaceKey: EnvironmentKey {
+    static let defaultValue: KozmosSurfaceStyle? = nil
+}
+
+public extension EnvironmentValues {
+    /// The surface of the shell's panel under what it hosts, a sheet's or a
+    /// side panel's, solid or glass; nil outside a shell. The panel's surface
+    /// is the one surface (decision 43): a part that fills its own box
+    /// standing alone, as `KozmosRoutePreviewPanel` does, paints no fill on
+    /// it, so a glass panel shows through it and a solid one looks as it
+    /// did, its fill being the same background colour. A part that draws a
+    /// bordered card of its own, as `KozmosPOIDetailPanel`'s panel
+    /// presentation does, keeps it. Set for the panel's header and its
+    /// content alike.
+    var kozmosPanelSurface: KozmosSurfaceStyle? {
+        get { self[KozmosPanelSurfaceKey.self] }
+        set { self[KozmosPanelSurfaceKey.self] = newValue }
+    }
+}
+
+/// Text that is muted elsewhere, as a hosted part draws it on `surface`
+/// (decision 48): on glass the foreground colour, so it reads at 4.5:1 over
+/// any map, where muted it read under 3:1 over a saturated one; elsewhere
+/// `muted`, the muted colour unless the text has its own. A part passes its
+/// `kozmosPanelSurface`; a part that draws a card of its own tells what it
+/// holds it is on no panel's surface.
+func kozmosMutedForeground(
+    on surface: KozmosSurfaceStyle?, muted: Color = KozmosColors.primitivesColorsForeground500
+) -> Color {
+    surface == .glass ? KozmosColors.primitivesColorsForeground100 : muted
+}
+
 /// How far the sheet's content has scrolled from its top, in points; zero at
 /// the top. The shell reads it to decide whether a downward drag scrolls the
 /// content back or moves the sheet.

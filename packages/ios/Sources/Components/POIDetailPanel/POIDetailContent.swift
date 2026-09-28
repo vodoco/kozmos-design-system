@@ -64,6 +64,9 @@ struct POIDetailTags: View {
 /// the intrinsic icon/text cluster centered avoids the web's flex-wrap gap.
 struct POIDetailSummary: View {
     let items: [KozmosPOIDetailSummary]
+    /// On the shell's glass panel its muted text takes the foreground colour
+    /// (decision 48); the card says which surface it sits on.
+    @Environment(\.kozmosPanelSurface) private var panelSurface
 
     var body: some View {
         POISummaryLayout {
@@ -118,7 +121,7 @@ struct POIDetailSummary: View {
     @ViewBuilder private func detail(_ item: KozmosPOIDetailSummary) -> some View {
         if let detail = item.detail {
             Text(detail).font(KozmosTypography.caption)
-                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                .foregroundColor(kozmosMutedForeground(on: panelSurface))
         }
     }
 
@@ -127,7 +130,7 @@ struct POIDetailSummary: View {
             (Text(String(repeating: "$", count: price))
                 .foregroundColor(KozmosColors.primitivesColorsForeground100)
              + Text(String(repeating: "$", count: 4 - price))
-                .foregroundColor(KozmosColors.primitivesColorsForeground500))
+                .foregroundColor(kozmosMutedForeground(on: panelSurface)))
                 .font(KozmosTypography.body.weight(.semibold))
         } else {
             Text(item.value).foregroundColor(color(item.tone))
@@ -195,13 +198,17 @@ struct POIDetailExtendedContent: View {
     let readLessLabel: String
     let tagsLabel: String
     @State private var expanded = false
+    /// On the shell's glass panel its headings and the opening hours' note
+    /// take the foreground colour (decision 48); the card says which surface
+    /// it sits on.
+    @Environment(\.kozmosPanelSurface) private var panelSurface
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             ForEach(details.groups.filter { !$0.items.isEmpty }) { group in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(group.heading).font(KozmosTypography.footnote)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(kozmosMutedForeground(on: panelSurface))
                         .accessibilityAddTraits(.isHeader)
                     POIDetailTags(items: group.items)
                 }
@@ -215,7 +222,9 @@ struct POIDetailExtendedContent: View {
                                 VStack(alignment: .leading) { Text(row.day); Text(row.hours) }
                             }
                         }
-                        if let note = hours.note { Text(note).foregroundColor(.secondary) }
+                        if let note = hours.note {
+                            Text(note).foregroundColor(kozmosMutedForeground(on: panelSurface, muted: .secondary))
+                        }
                     }
                     .font(KozmosTypography.footnote).padding(.top, 8)
                 } label: {

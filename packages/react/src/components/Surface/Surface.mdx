@@ -11,6 +11,8 @@ What a surface over content is made of. **Solid** — the background colour with
 
 The shape is the caller's — `rounded-container`, `rounded-panel` — and the elevation too; the variant is the material. With transparency reduced — the design config's `accessibility.reduceTransparency`, or the system's preference — glass is the plain colour, opaque and unblurred: a preference, not a look.
 
+Glass also says what text that is muted elsewhere draws in on it: `--kozmos-surface-muted-foreground`, the foreground colour, so that text reads at 4.5:1 whatever shows through (decision 48). Solid resets it. The parts `AdaptiveMapShell` hosts read it for the muted text they draw straight on its panel; muted text on a card of its own keeps its colour.
+
 The manoeuvre card, the route summary, FeedbackCard, SaveLocationCard and RoutingInputGroup take a `surface` prop with the same two values. On iOS the modifier is `kozmosSurface(_:style:)` — glass is the same tint over the system's thin material, whose blur and saturation are the system's. On Android it is `Modifier.kozmosSurface(shape, style)` and `KozmosSurfaceDefaults` — glass is the tint and the edge alone, since Compose blurs a node's own content, not what lies behind it.
 
 <Canvas>

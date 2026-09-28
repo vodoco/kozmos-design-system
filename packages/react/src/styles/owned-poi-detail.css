@@ -24,6 +24,22 @@
   .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-action-message {
     @apply bg-background;
   }
+  /* In the sheet presentation the card's muted lines, its level and hours,
+     its prices' units, its summaries' notes, its section headings and its
+     gallery's position, sit on the panel's surface. On glass they take what
+     the glass says, the foreground colour (decision 48): muted, the level
+     line read 3.7:1 over a saturated map. Elsewhere, and in a bordered card,
+     they stay muted. */
+  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-location,
+  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-price > span,
+  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-summary-text small,
+  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-section-heading,
+  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-gallery-position {
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
+    );
+  }
   .kozmos-poi-detail > * {
     flex-shrink: 0;
   }

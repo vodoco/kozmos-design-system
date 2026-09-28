@@ -32,9 +32,14 @@ declare global {
     showResults: (selectedPoiId?: string) => void;
     /**
      * Swap the panel for a place's details, hosted as a product hosts them:
-     * the card alone, with its close button, in this presentation.
+     * the card alone, with its close button, in this presentation. With
+     * `body`, its body too: a photo, a service and a group of attributes,
+     * each under its heading.
      */
-    showDetails: (presentation: "sheet" | "panel") => void;
+    showDetails: (
+      presentation: "sheet" | "panel",
+      options?: { body?: boolean },
+    ) => void;
     /**
      * Swap the panel for the category browser, hosted as a product hosts it:
      * the whole of the panel's content, with its own search row — a field
@@ -46,6 +51,18 @@ declare global {
      * whole of the panel's content, its destination row first.
      */
     showRoute: () => void;
+    /**
+     * Draw the category browser or the route preview standing alone, in a
+     * box of its own after the fixture, outside any shell.
+     */
+    showStandalone: (part: "browse" | "route") => void;
+    /**
+     * Swap the map for the glass stories' two saturated rooms, the theme's
+     * blue and the warning amber, as the map's two halves, so every line of
+     * text in the panel sits over one of them (decision 48): the blue first,
+     * or with `amberFirst` the amber.
+     */
+    showSaturatedMap: (amberFirst?: boolean) => void;
   }
 }
 
@@ -169,73 +186,164 @@ const routeOptions: RoutePreviewPanelProps["options"] = [
   },
 ];
 
+// The category browser as a product hosts it, with its own search row — a
+// field and a button — or, with `search` false, the tiles alone.
+function browser(search: boolean) {
+  return (
+    <BrowseCategoriesPanel
+      categories={categories}
+      onSelect={() => undefined}
+      renderIcon={() => (
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8" fill="currentColor" />
+        </svg>
+      )}
+      search={
+        search ? (
+          <SearchBar aria-label="Search places" placeholder="Search" />
+        ) : undefined
+      }
+      actions={search ? <Button variant="outline">Saved</Button> : undefined}
+    />
+  );
+}
+
+function routePreview(onBack: () => void) {
+  return (
+    <RoutePreviewPanel
+      backLabel="Back"
+      continueLabel="Start"
+      destinationName="Harbour Coffee Co."
+      onBack={onBack}
+      onContinue={() => undefined}
+      onOptionSelect={() => undefined}
+      options={routeOptions}
+      optionsCountLabel="2 route options"
+      status="ready"
+    />
+  );
+}
+
+// A place's details as a product hosts them: the card alone, with its close
+// button, in this presentation; with `body`, its body too, each part of it
+// under its heading. The photo's address resolves nowhere, so the gallery
+// draws its position over an unavailable photo.
+function placeDetails(
+  presentation: "sheet" | "panel",
+  body: boolean,
+  onClose: () => void,
+) {
+  return (
+    <POIDetailPanel
+      poi={{
+        id: "harbour-coffee",
+        name: "Harbour Coffee Co.",
+        floorId: "2",
+        floorLabel: "Level 2",
+        media: body
+          ? [{ id: "front", src: "/harbour-coffee.jpg", alt: "The front" }]
+          : [],
+        services: body ? [{ id: "wifi", label: "Wi-Fi" }] : [],
+        actions: ["favourite", "bookmark"],
+      }}
+      details={
+        body
+          ? {
+              groups: [
+                {
+                  id: "dietary",
+                  heading: "Dietary options",
+                  items: [{ id: "vegan", label: "Vegan" }],
+                },
+              ],
+            }
+          : undefined
+      }
+      actionLabels={{
+        navigate: "Go",
+        favourite: "Favourite",
+        bookmark: "Save",
+        share: "Share",
+        order: "Order",
+      }}
+      onAction={() => undefined}
+      presentation={presentation}
+      onClose={onClose}
+    />
+  );
+}
+
+// The glass stories' saturated rooms, as the map's two halves: the blue
+// first, or the amber.
+function SaturatedMap({ amberFirst }: { amberFirst: boolean }) {
+  const rooms = amberFirst
+    ? ["bg-warning", "bg-primary"]
+    : ["bg-primary", "bg-warning"];
+  return (
+    <div style={{ display: "flex", width: "100%", height: "100%" }}>
+      {rooms.map((room) => (
+        <div key={room} className={room} style={{ flex: 1 }} />
+      ))}
+    </div>
+  );
+}
+
+// A part standing alone, in a box of its own after the fixture, outside any
+// shell: what it paints when nothing hosts it.
+window.showStandalone = (part) => {
+  const box = document.createElement("div");
+  box.dataset.standalone = part;
+  box.style.width = "390px";
+  document.body.append(box);
+  createRoot(box).render(
+    part === "browse" ? browser(true) : routePreview(() => undefined),
+  );
+};
+
 function Host() {
   const [options, setOptions] = useState(window.adaptiveOptions ?? {});
   const [header, setHeader] = useState(false);
   const [shownResults, setShownResults] = useState<{
     selectedPoiId?: string;
   } | null>(null);
-  const [details, setDetails] = useState<"sheet" | "panel" | null>(null);
+  const [details, setDetails] = useState<{
+    presentation: "sheet" | "panel";
+    body: boolean;
+  } | null>(null);
   const [browse, setBrowse] = useState<{ search: boolean } | null>(null);
   const [route, setRoute] = useState(false);
+  const [saturated, setSaturated] = useState<{ amberFirst: boolean } | null>(
+    null,
+  );
   window.setAdaptiveOptions = setOptions;
+  window.showSaturatedMap = (amberFirst = false) =>
+    setSaturated({ amberFirst });
   window.showPanelHeader = () => setHeader(true);
   window.showResults = (selectedPoiId) => setShownResults({ selectedPoiId });
-  window.showDetails = (presentation) => setDetails(presentation);
+  window.showDetails = (presentation, detailsOptions) =>
+    setDetails({ presentation, body: detailsOptions?.body ?? false });
   window.showBrowse = (browseOptions) =>
     setBrowse({ search: browseOptions?.search ?? true });
   window.showRoute = () => setRoute(true);
   return (
     <AdaptiveMapShell
       style={{ height: "100%" }}
-      map={<MapSlot />}
+      map={
+        saturated ? (
+          <SaturatedMap amberFirst={saturated.amberFirst} />
+        ) : (
+          <MapSlot />
+        )
+      }
       panel={
         route ? (
-          <RoutePreviewPanel
-            backLabel="Back"
-            continueLabel="Start"
-            destinationName="Harbour Coffee Co."
-            onBack={() => setRoute(false)}
-            onContinue={() => undefined}
-            onOptionSelect={() => undefined}
-            options={routeOptions}
-            status="ready"
-          />
+          routePreview(() => setRoute(false))
         ) : browse ? (
-          <BrowseCategoriesPanel
-            categories={categories}
-            onSelect={() => undefined}
-            renderIcon={() => (
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="8" fill="currentColor" />
-              </svg>
-            )}
-            search={
-              browse.search ? (
-                <SearchBar aria-label="Search places" placeholder="Search" />
-              ) : undefined
-            }
-            actions={
-              browse.search ? (
-                <Button variant="outline">Saved</Button>
-              ) : undefined
-            }
-          />
+          browser(browse.search)
         ) : details ? (
-          <POIDetailPanel
-            poi={{
-              id: "harbour-coffee",
-              name: "Harbour Coffee Co.",
-              floorId: "2",
-              floorLabel: "Level 2",
-              media: [],
-              services: [],
-              actions: ["favourite", "bookmark"],
-            }}
-            actionLabels={{ favourite: "Favourite", bookmark: "Save" }}
-            presentation={details}
-            onClose={() => setDetails(null)}
-          />
+          placeDetails(details.presentation, details.body, () =>
+            setDetails(null),
+          )
         ) : shownResults ? (
           <POIResultList
             items={results}

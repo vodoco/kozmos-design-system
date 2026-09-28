@@ -116,6 +116,164 @@ async function insideGripCircle(page) {
   });
 }
 
+// The page every case starts from: the shell 390 wide and 600 tall, left to
+// right, in the light theme. A case that tries several parts in turn starts
+// each from it again.
+async function fresh(page) {
+  await page.setContent(
+    `<!doctype html><html><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture" style="width:390px;height:600px"></div></body></html>`,
+  );
+  await page.addScriptTag({ content: code });
+  await page.waitForFunction(
+    () => window.adaptiveSnapshot?.mapBounds.width === 390,
+  );
+  await settleLayout(page);
+}
+
+// Decision 43: the parts the shell hosts at the top of its panel, each found
+// by its own root. The category browser and the route preview paint a fill
+// of their own standing alone; the result list and the details card's sheet
+// presentation paint none anywhere.
+const PARTS = {
+  browse: 'section[aria-label="Browse categories"]',
+  route: 'section[aria-label="Route preview"]',
+  results: 'section[aria-label="Points of interest"]',
+  details: '.kozmos-poi-detail[data-presentation="sheet"]',
+};
+const TRANSPARENT = "rgba(0, 0, 0, 0)";
+
+// Hosts `part` as the panel's whole content, with these shell options.
+async function showPart(page, part, options = {}) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.evaluate(
+    ({ part, options }) => {
+      if (part === "browse") window.showBrowse();
+      if (part === "route") window.showRoute();
+      if (part === "results") window.showResults();
+      if (part === "details") window.showDetails("sheet");
+      if (part === "details-body") window.showDetails("sheet", { body: true });
+      window.setAdaptiveOptions(options);
+    },
+    { part, options },
+  );
+  await settleLayout(page);
+}
+
+// The fill `part` paints behind itself and the colour of its text, as the
+// browser computes them, beside the theme's own background and foreground
+// resolved in the same place; and the panel's fill, when a shell hosts it.
+// Counted first, as the details card is.
+async function partFill(page, part) {
+  const found = page.locator(PARTS[part]);
+  assert.equal(await found.count(), 1, `the ${part} part is drawn once`);
+  return found.evaluate((element) => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--primitives-colors-foreground-0)";
+    probe.style.backgroundColor = "var(--primitives-colors-background-0)";
+    element.append(probe);
+    const theme = getComputedStyle(probe);
+    const panel = element.closest("aside");
+    const measured = {
+      fill: getComputedStyle(element).backgroundColor,
+      text: getComputedStyle(element).color,
+      themeBackground: theme.backgroundColor,
+      themeForeground: theme.color,
+      panel: panel && getComputedStyle(panel).backgroundColor,
+      presentation: panel
+        ? document.querySelector("[data-panel-presentation]").dataset
+            .panelPresentation
+        : null,
+    };
+    probe.remove();
+    return measured;
+  });
+}
+
+// WCAG 2's relative luminance of an sRGB colour, and the contrast of two.
+function luminance(rgb) {
+  const [r, g, b] = rgb.map((channel) => {
+    const c = channel / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+// Decision 48: text a hosted part draws on glass reads at 4.5:1 over any
+// map. Each part's title and the text that is muted elsewhere, found by its
+// place in the part: for the details card's body, its gallery's position
+// and the headings of its services and of a group of attributes, read with
+// the sheet at its largest detent, where its content scrolls.
+const GLASS_TEXT = {
+  route: [
+    'section[aria-label="Route preview"] header > p',
+    'section[aria-label="Route preview"] header > h2',
+    'section[aria-label="Route preview"] [role="group"] > p',
+  ],
+  details: [
+    ".kozmos-poi-detail .kozmos-poi-location > p",
+    ".kozmos-poi-detail .kozmos-poi-title",
+  ],
+  "details-body": [
+    ".kozmos-poi-detail .kozmos-poi-gallery-position",
+    '.kozmos-poi-detail section[aria-label="Service options"] > .kozmos-poi-section-heading',
+    '.kozmos-poi-detail section[aria-label="Dietary options"] > .kozmos-poi-section-heading',
+  ],
+  browse: [
+    'section[aria-label="Browse categories"] button[data-category-id="gates"] > .line-clamp-2',
+  ],
+};
+const GLASS_DETENT = { "details-body": "large" };
+
+// The contrast of `selector`'s text with what is drawn behind it. The text
+// is made transparent and its box photographed, and the photograph is read
+// back through a canvas in the page: the ratio of the text's own colour to
+// the least contrasting pixel behind it, the worst a reader meets.
+async function textContrast(page, selector) {
+  const node = page.locator(selector);
+  assert.equal(await node.count(), 1, `${selector} is drawn once`);
+  await node.scrollIntoViewIfNeeded();
+  const { colour, text } = await node.evaluate((element) => {
+    const measured = {
+      colour: getComputedStyle(element).color,
+      text: element.textContent.trim(),
+    };
+    for (const e of [element, ...element.querySelectorAll("*")])
+      e.style.setProperty("color", "transparent", "important");
+    return measured;
+  });
+  const box = await node.boundingBox();
+  const photo = await page.screenshot({ clip: box });
+  await node.evaluate((element) => {
+    for (const e of [element, ...element.querySelectorAll("*")])
+      e.style.removeProperty("color");
+  });
+  const pixels = await page.evaluate(async (png) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${png}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext("2d");
+    context.drawImage(image, 0, 0);
+    return Array.from(
+      context.getImageData(0, 0, image.width, image.height).data,
+    );
+  }, photo.toString("base64"));
+  const ink = colour
+    .match(/[\d.]+/g)
+    .slice(0, 3)
+    .map(Number);
+  let lowest = Infinity;
+  for (let i = 0; i < pixels.length; i += 4)
+    lowest = Math.min(lowest, contrast(ink, pixels.slice(i, i + 3)));
+  return { colour, text, lowest };
+}
+
 // The side panel, as a wide host lays it out: the fixture made 1024 wide.
 async function widen(page) {
   await page.evaluate(() => {
@@ -1001,6 +1159,222 @@ const cases = [
       );
     },
   ],
+  [
+    "on a glass sheet, a hosted part paints no fill of its own, and its text follows the theme (decision 43)",
+    async (page) => {
+      // Decision 43: in the shell's panel, the panel's surface is the one
+      // surface. The category browser and the route preview filled their
+      // box with the background colour wherever they were, so on a glass
+      // sheet each was an opaque block from under the grip's row down. The
+      // result list and the details card's sheet presentation paint none
+      // already. Light and dark: the text keeps the theme's foreground.
+      const painted = [];
+      const text = [];
+      for (const theme of ["light", "dark"]) {
+        for (const part of Object.keys(PARTS)) {
+          await fresh(page);
+          await page.evaluate((t) => (document.body.dataset.theme = t), theme);
+          await showPart(page, part, {
+            panelSurface: "glass",
+            panelDetent: "medium",
+          });
+          const at = await partFill(page, part);
+          assert.equal(at.presentation, "bottom", `${part}: not the sheet`);
+          assert.match(
+            at.panel,
+            /^rgba\(.+, 0?\.\d+\)$/,
+            `${part}: the sheet is not glass (${at.panel})`,
+          );
+          if (at.fill !== TRANSPARENT)
+            painted.push(`${part} ${theme} ${at.fill}`);
+          if (part in { browse: 1, route: 1 } && at.text !== at.themeForeground)
+            text.push(`${part} ${theme} ${at.text}, not ${at.themeForeground}`);
+        }
+      }
+      assert.deepEqual(
+        painted,
+        [],
+        `a fill of their own on a glass sheet: ${painted.join("; ")}`,
+      );
+      assert.deepEqual(
+        text,
+        [],
+        `text off the theme on a glass sheet: ${text.join("; ")}`,
+      );
+    },
+  ],
+  [
+    "on a solid sheet, a hosted part paints no fill of its own, and the sheet's fill shows as before",
+    async (page) => {
+      // The sheet's solid fill is the background colour the parts painted,
+      // so a part that paints none looks as it did.
+      const painted = [];
+      for (const part of Object.keys(PARTS)) {
+        await fresh(page);
+        await showPart(page, part, { panelDetent: "medium" });
+        const at = await partFill(page, part);
+        assert.equal(at.presentation, "bottom", `${part}: not the sheet`);
+        assert.equal(
+          at.panel,
+          at.themeBackground,
+          `${part}: the solid sheet is not the background colour`,
+        );
+        if (at.fill !== TRANSPARENT) painted.push(`${part} ${at.fill}`);
+      }
+      assert.deepEqual(
+        painted,
+        [],
+        `a fill of their own on a solid sheet: ${painted.join("; ")}`,
+      );
+    },
+  ],
+  [
+    "in a side panel, glass or solid, a hosted part paints no fill of its own",
+    async (page) => {
+      // A side panel's surface can be glass too: the same opaque block
+      // stood in it. On a solid side panel a part that paints none looks as
+      // it did, its fill being the panel's.
+      const painted = [];
+      for (const surface of ["glass", "solid"]) {
+        for (const part of Object.keys(PARTS)) {
+          await fresh(page);
+          await showPart(page, part, { panelSurface: surface });
+          await widen(page);
+          const at = await partFill(page, part);
+          assert.equal(at.presentation, "side", `${part}: not the side panel`);
+          if (at.fill !== TRANSPARENT)
+            painted.push(`${part} ${surface} ${at.fill}`);
+        }
+      }
+      assert.deepEqual(
+        painted,
+        [],
+        `a fill of their own in a side panel: ${painted.join("; ")}`,
+      );
+    },
+  ],
+  [
+    "standing alone, the category browser and the route preview keep their own fill, light and dark",
+    async (page) => {
+      // The guard: outside a shell nothing says a surface is there, and a
+      // part keeps its fill, the theme's background, under the theme's text.
+      const wrong = [];
+      for (const theme of ["light", "dark"]) {
+        for (const part of ["browse", "route"]) {
+          await fresh(page);
+          await page.evaluate((t) => (document.body.dataset.theme = t), theme);
+          await page.evaluate((p) => window.showStandalone(p), part);
+          await page.waitForSelector(`[data-standalone="${part}"] section`);
+          await settleLayout(page);
+          const at = await partFill(page, part);
+          assert.equal(at.panel, null, `${part}: hosted in a panel`);
+          if (at.fill !== at.themeBackground)
+            wrong.push(`${part} ${theme} fill ${at.fill}`);
+          if (at.text !== at.themeForeground)
+            wrong.push(`${part} ${theme} text ${at.text}`);
+        }
+      }
+      assert.deepEqual(wrong, [], `standing alone: ${wrong.join("; ")}`);
+    },
+  ],
+  [
+    "on a glass sheet over a saturated map, a hosted part's text reads at 4.5:1 or more, light and dark (decision 48)",
+    async (page) => {
+      // Decision 48: on glass, text that is muted elsewhere takes the
+      // foreground colour, so it passes 4.5:1 over any map. Muted over the
+      // glass stories' saturated rooms, the route preview's "To" and the
+      // details card's level line read about 3.7:1, light and dark. The
+      // glass itself stays as it is. Each text is read over each room.
+      const low = [];
+      for (const theme of ["light", "dark"]) {
+        for (const amberFirst of [false, true]) {
+          const room = amberFirst ? "amber" : "blue";
+          for (const [part, selectors] of Object.entries(GLASS_TEXT)) {
+            await fresh(page);
+            await page.evaluate(
+              (t) => (document.body.dataset.theme = t),
+              theme,
+            );
+            await page.evaluate((a) => window.showSaturatedMap(a), amberFirst);
+            await showPart(page, part, {
+              panelSurface: "glass",
+              panelDetent: GLASS_DETENT[part] ?? "medium",
+            });
+            for (const selector of selectors) {
+              const at = await textContrast(page, selector);
+              if (at.lowest < 4.5)
+                low.push(
+                  `${part} ${theme} over ${room} "${at.text}" ${at.lowest.toFixed(2)}:1 in ${at.colour}`,
+                );
+            }
+          }
+        }
+      }
+      assert.deepEqual(low, [], `below 4.5:1 on glass: ${low.join("; ")}`);
+    },
+  ],
+  [
+    "on a solid sheet and standing alone, text that is muted keeps its muted colour",
+    async (page) => {
+      // The guard: only glass turns muted text to ink. On a solid sheet, and
+      // with no surface around it, it keeps the theme's muted colour; and so
+      // does the details card's bordered presentation on a glass sheet, a
+      // card of its own that its text sits on.
+      const muted = (selector) =>
+        page.locator(selector).evaluate((element) => {
+          const probe = document.createElement("span");
+          probe.style.color = "var(--primitives-colors-foreground-400)";
+          element.append(probe);
+          const measured = {
+            colour: getComputedStyle(element).color,
+            muted: getComputedStyle(probe).color,
+          };
+          probe.remove();
+          return measured;
+        });
+      const wrong = [];
+      for (const [part, selector] of [
+        ["route", GLASS_TEXT.route[0]],
+        ["details", GLASS_TEXT.details[0]],
+        ...GLASS_TEXT["details-body"].map((selector) => [
+          "details-body",
+          selector,
+        ]),
+      ]) {
+        await fresh(page);
+        await showPart(page, part, { panelDetent: "medium" });
+        const at = await muted(selector);
+        if (at.colour !== at.muted)
+          wrong.push(`${part} on a solid sheet ${selector} ${at.colour}`);
+      }
+      await fresh(page);
+      await page.evaluate(() => {
+        window.showDetails("panel", { body: true });
+        window.setAdaptiveOptions({
+          panelSurface: "glass",
+          panelDetent: "medium",
+        });
+      });
+      await settleLayout(page);
+      for (const selector of [
+        GLASS_TEXT.details[0],
+        ...GLASS_TEXT["details-body"],
+      ]) {
+        const at = await muted(selector);
+        if (at.colour !== at.muted)
+          wrong.push(
+            `the bordered card on a glass sheet ${selector} ${at.colour}`,
+          );
+      }
+      await fresh(page);
+      await page.evaluate(() => window.showStandalone("route"));
+      await page.waitForSelector('[data-standalone="route"] section');
+      const alone = await muted(`[data-standalone="route"] header > p`);
+      if (alone.colour !== alone.muted)
+        wrong.push(`route standing alone ${alone.colour}`);
+      assert.deepEqual(wrong, [], `not muted: ${wrong.join("; ")}`);
+    },
+  ],
 ];
 try {
   for (const [name, test] of cases) {
@@ -1008,14 +1382,7 @@ try {
       viewport: { width: 1024, height: 768 },
     });
     try {
-      await page.setContent(
-        `<!doctype html><html><head><style>${css}</style></head><body data-kozmos-root data-theme="light"><div id="fixture" style="width:390px;height:600px"></div></body></html>`,
-      );
-      await page.addScriptTag({ content: code });
-      await page.waitForFunction(
-        () => window.adaptiveSnapshot?.mapBounds.width === 390,
-      );
-      await settleLayout(page);
+      await fresh(page);
       await test(page);
       console.log(`PASS ${name}`);
     } catch (error) {
