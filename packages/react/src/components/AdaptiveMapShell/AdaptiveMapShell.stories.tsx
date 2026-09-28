@@ -1,9 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { InfoCircle as Info } from "@kozmos-ds/icons";
+import {
+  Accessibility,
+  Heart,
+  InfoCircle as Info,
+  ShoppingBag01 as ShoppingBag,
+  Utensils,
+} from "@kozmos-ds/icons";
 import { AdaptiveMapShell, panelPeekAnchorProps } from "./AdaptiveMapShell";
+import { BrowseCategoriesPanel } from "../BrowseCategoriesPanel";
 import { MapControlButton } from "../MapControlButton";
 import { Input } from "../Input";
 import { POIDetailPanel } from "../POIDetailPanel";
+import { SearchBar } from "../SearchBar";
 
 const meta = {
   title: "Product SDK/AdaptiveMapShell",
@@ -216,6 +224,49 @@ export const SheetWithPlaceDetails: Story = {
         }}
         onAction={() => undefined}
         onClose={() => undefined}
+      />
+    ),
+  },
+};
+
+const browseIcons = {
+  accessible: <Accessibility className="h-8 w-8" />,
+  dining: <Utensils className="h-8 w-8" />,
+  favourites: <Heart className="h-8 w-8" />,
+  information: <Info className="h-8 w-8" />,
+  shopping: <ShoppingBag className="h-8 w-8" />,
+};
+
+/**
+ * The category browser hosted in the sheet, as a product shows it at rest:
+ * its search row is the top of the sheet, so the row tops its padding up to
+ * what the grip's row already leaves rather than adding to it, and keeps the
+ * 4px that keeps the grip's target clear (decision 14). The search field sits
+ * as far from the sheet's side as from its top, plus those 4.
+ */
+export const SheetWithBrowseCategories: Story = {
+  args: {
+    className: "h-[42rem] max-w-[402px]",
+    panelPresentation: "bottom",
+    panelLabel: "Places",
+    panel: (
+      <BrowseCategoriesPanel
+        categories={[
+          { id: "favourites", label: "Favourites", selected: false },
+          { id: "shopping", label: "Shopping", selected: false },
+          { id: "dining", label: "Dining", selected: false },
+          { id: "accessible", label: "Accessible places", selected: false },
+          {
+            id: "information",
+            label: "Information and help",
+            selected: false,
+          },
+        ]}
+        onSelect={() => undefined}
+        renderIcon={(category) =>
+          browseIcons[category.id as keyof typeof browseIcons]
+        }
+        search={<SearchBar aria-label="Search places" placeholder="Search" />}
       />
     ),
   },

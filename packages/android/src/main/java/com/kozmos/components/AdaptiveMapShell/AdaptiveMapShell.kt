@@ -102,9 +102,12 @@ val KozmosDefaultPanelDetents: List<KozmosMapPanelDetent> =
  * there instead, or beside the map, where a side panel starts its content at
  * its top edge. A part with its own top padding and no surface of its own tops
  * it up to what it needs rather than adding to it, as `KozmosPOIDetailPanel`
- * does in its sheet presentation; a part that draws its own bordered surface
- * keeps its padding inside the border, since this space lies outside it. 0
- * outside a shell.
+ * does in its sheet presentation and `KozmosBrowseCategoriesPanel` does; a
+ * part that draws its own bordered surface keeps its padding inside the
+ * border, since this space lies outside it. 0 outside a shell. It describes
+ * the panel's top: a product that puts such a part under a row of its own
+ * provides 0 for this and [LocalKozmosPanelClearanceTop] to it, or the part
+ * tops up to a space that is not above it.
  */
 val LocalKozmosPanelInsetTop = compositionLocalOf { 0.dp }
 
@@ -125,6 +128,9 @@ private val SheetHandleRowHeight = KozmosDimensions.primitivesLayoutSpacing200
  */
 private val MinimumTargetSpacing = 24.dp
 
+/** How far the first control under the handle's row keeps below it: half of what the row falls short of a 24dp target, 4. */
+private val HandleClearance = (MinimumTargetSpacing - SheetHandleRowHeight) / 2
+
 /**
  * Adaptive container that layers a map, its controls, and a detail panel.
  *
@@ -136,8 +142,9 @@ private val MinimumTargetSpacing = 24.dp
  * The [panel]'s content is told what the panel leaves empty above it, and how
  * far its first control must keep below that — [LocalKozmosPanelInsetTop] and
  * [LocalKozmosPanelClearanceTop] — so a part with its own top padding and no
- * surface of its own, as `KozmosPOIDetailPanel` is in its sheet presentation,
- * tops it up rather than adding to it (GAP-083).
+ * surface of its own, as `KozmosPOIDetailPanel` is in its sheet presentation
+ * and `KozmosBrowseCategoriesPanel` is, tops it up rather than adding to it
+ * (GAP-083, decision 14).
  */
 @Composable
 fun KozmosAdaptiveMapShell(
@@ -158,8 +165,10 @@ fun KozmosAdaptiveMapShell(
      * collapsed sheet is tall enough to show all of it. A vertical drag on it
      * moves the sheet whatever the content has scrolled — nothing in it
      * scrolls vertically, so the sheet's own drag takes it — and a sideways
-     * one stays with it, for a row of chips that scrolls. In a side panel it
-     * is the panel's first row.
+     * one stays with it, for a row of chips that scrolls. Under the handle it
+     * starts 4dp below the handle's row, so its first control keeps the
+     * handle's target clear (WCAG 2.5.8). In a side panel it is the panel's
+     * first row.
      */
     panelHeader: (@Composable () -> Unit)? = null,
     panelLabel: String = "Map details",
@@ -429,7 +438,7 @@ private fun BottomSheet(
         // row, and its target's clearance — unless a header sits there.
         val underHandle = showsHandle && panelHeader == null
         val insetTop = if (underHandle) SheetHandleRowHeight else 0.dp
-        val clearanceTop = if (underHandle) (MinimumTargetSpacing - SheetHandleRowHeight) / 2 else 0.dp
+        val clearanceTop = if (underHandle) HandleClearance else 0.dp
         Layout(
             content = {
                 if (showsHandle) {
@@ -478,10 +487,18 @@ private fun BottomSheet(
             val loose = constraints.copy(minWidth = 0, minHeight = 0)
             fun part(id: SheetPart) = measurables.firstOrNull { it.layoutId == id }
             val handle = part(SheetPart.Handle)?.measure(loose.copy(maxHeight = handleHeight))
+            // Under the handle the header starts the handle's clearance below
+            // its row (decision 14): its first control — the search field a
+            // header usually starts with — sat flush under the row, 8 from
+            // the handle's centre, inside the 24dp circle its target keeps
+            // clear (WCAG 2.5.8). As the web's header has since #109.
+            val headerClearance = if (handle != null && part(SheetPart.Header) != null) HandleClearance.roundToPx() else 0
             val largestNow = orderPanelDetents(offered, shellHeight, measures).last().height(shellHeight, measures).roundToPx()
             val header = part(SheetPart.Header)?.measure(loose.copy(maxHeight = largestNow))
-            val content = part(SheetPart.Content)!!.measure(loose.copy(maxHeight = (largestNow - (header?.height ?: 0)).coerceAtLeast(0)))
-            val headerTop = handle?.height ?: 0
+            val content = part(SheetPart.Content)!!.measure(
+                loose.copy(maxHeight = (largestNow - (header?.height ?: 0) - headerClearance).coerceAtLeast(0))
+            )
+            val headerTop = (handle?.height ?: 0) + headerClearance
             val contentTop = headerTop + (header?.height ?: 0)
             // An anchor in the header outranks one in the content, as React's
             // `measurePeekBottom` has it. The header's own bottom edge is not

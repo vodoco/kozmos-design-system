@@ -1,6 +1,6 @@
 # Kozmos Design System - CI/CD Configuration Guide
 
-> **Purpose:** This document provides ready-to-use CI/CD workflow configurations for the Kozmos Design System, including GitHub Actions, secrets management, and deployment pipelines.
+> **Purpose:** What GitHub Actions runs for Kozmos, what a pull request must pass, where the secrets live and how a release reaches npm. Every workflow named here is a file in `.github/workflows/`, and `pnpm skills:check` fails when one of these documents names a workflow, a secret or a `pnpm` command that does not exist.
 
 ---
 
@@ -21,757 +21,153 @@
 
 ## 1. CI/CD Overview
 
-### Pipeline Architecture
+### Pipeline
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        PULL REQUEST                             │
-└─────────────────────────────┬───────────────────────────────────┘
-                              │
-          ┌───────────────────┼───────────────────┐
-          ▼                   ▼                   ▼
-    ┌──────────┐        ┌──────────┐        ┌──────────┐
-    │  Build   │        │   Test   │        │   Lint   │
-    └────┬─────┘        └────┬─────┘        └────┬─────┘
-         │                   │                   │
-         └───────────────────┼───────────────────┘
-                             │
-          ┌──────────────────┼──────────────────┐
-          ▼                  ▼                  ▼
-    ┌──────────┐       ┌──────────┐       ┌──────────┐
-    │  Visual  │       │ Bundle   │       │ Security │
-    │  Review  │       │  Size    │       │   Scan   │
-    └────┬─────┘       └────┬─────┘       └────┬─────┘
-         │                  │                  │
-         └──────────────────┼──────────────────┘
-                            │
-                            ▼
-                   ┌────────────────┐
-                   │  PR Approved   │
-                   └───────┬────────┘
-                           │
-                           ▼
-                   ┌────────────────┐
-                   │  Merge to Main │
-                   └───────┬────────┘
-                           │
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-    ┌──────────┐     ┌──────────┐     ┌──────────┐
-    │ npm Pub  │     │ iOS Pub  │     │ Android  │
-    │          │     │   SPM    │     │  Maven   │
-    └──────────┘     └──────────┘     └──────────┘
-```
+- A pull request runs CI (`ci.yml`) and Visual Regression (`visual.yml`); one into `main` also runs
+  Lighthouse CI (`lighthouse.yml`) and Bundle Size Analysis (`bundle-size.yml`). The 19 checks
+  listed under "GitHub Status Checks" (§10) are required on `main`, matched by name, and a pull
+  request must be up to date with `main` to merge.
+- A push to `main` runs the four again, except that CI, Lighthouse CI and the bundle check skip a
+  push that changes only documentation (`**.md`, `docs/**`, `.vscode/**`, `LICENSE`).
+- Nothing publishes on a merge. A release is a manual dispatch of `release.yml` that Olcay approves
+  (§9), and only the npm packages are published (§6).
 
-### Workflow Files Structure
+### Workflow Files
 
 ```
 .github/
-├── workflows/
-│   ├── ci.yml              # Main CI pipeline
-│   ├── test.yml            # Comprehensive testing
-│   ├── publish.yml         # Package publishing
-│   ├── visual.yml          # Visual Review: every story × light/dark
-│   ├── codeql.yml          # Security scanning
-│   ├── release.yml         # Release automation
-│   ├── tokens-sync.yml     # Figma token sync
-│   └── docs.yml            # Documentation deployment
-├── actions/
-│   └── setup/
-│       └── action.yml      # Reusable setup action
-├── ISSUE_TEMPLATE/
-│   ├── bug_report.md
-│   ├── feature_request.md
-│   └── component_request.md
-├── PULL_REQUEST_TEMPLATE.md
-└── CODEOWNERS
+└── workflows/
+    ├── ci.yml             # CI: web, twelve browser shards, core pipeline, iOS, Android
+    ├── visual.yml         # Visual Regression: the "Visual Review" check, and recording baselines
+    ├── lighthouse.yml     # Lighthouse CI over the built Storybook
+    ├── bundle-size.yml    # Bundle Size Analysis: the "analyze-bundle" check
+    ├── figma-tokens.yml   # Figma Token Synchronization: manual, and off unless enabled
+    └── release.yml        # Release Kozmos System: the guarded, approved npm publish
 ```
+
+`.github/` holds nothing else: no shared actions, issue or pull request templates, Dependabot
+configuration or CODEOWNERS file.
 
 ---
 
 ## 2. GitHub Actions Workflows
 
-### Reusable Setup Action
+### Job Setup
 
-```yaml
-# .github/actions/setup/action.yml
-name: "Setup"
-description: "Setup Node.js, pnpm, and dependencies"
+There is no shared setup action. Each job checks out the repository, sets up pnpm 9 and Node 20
+itself and installs with `pnpm install --frozen-lockfile` (Lighthouse CI and the bundle check run a
+plain `pnpm install`; the release jobs add `--ignore-scripts`).
 
-inputs:
-  node-version:
-    description: "Node.js version"
-    required: false
-    default: "20"
+### CI (`ci.yml`)
 
-runs:
-  using: "composite"
-  steps:
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 9
+Runs on every pull request and on pushes to `main`. A newer push to the same branch cancels the run
+in progress, which a job reports as "The operation was canceled".
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ inputs.node-version }}
-        cache: "pnpm"
+| Job (check name)              | Runner        | What it runs                                                                                                                                                                                                                                                                        |
+| ----------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Web Build & Test`            | ubuntu-latest | `pnpm test:release`; the changeset rule (pull requests); lint; `pnpm build`; `pnpm test`; the contract, token and parity checks; `pnpm skills:check`; the package-install check; the Figma plugin and Code Connect checks; the built-library checks in Chromium, Firefox and WebKit |
+| Twelve browser shards         | ubuntu-latest | Each serves the built Storybook and runs one suite in one browser: stories and interactions, documentation, POI reference, and map, search and navigation, in Chromium, Firefox and WebKit                                                                                          |
+| `Core Pipeline & POI Gallery` | ubuntu-latest | React's Playwright tests, `scripts/skills/check-a11y.ts` and `pnpm test:storybook-regressions` (three browsers) against a running Storybook, then `pnpm test:poi-gallery`                                                                                                           |
+| `Changes`                     | ubuntu-latest | Decides whether `iOS Build` builds: on a pull request that touches `packages/ios`, `packages/tokens`, their scripts, `ci.yml`, `package.json` or the lockfile, and on every push to `main`                                                                                          |
+| `iOS Build`                   | macos-latest  | `swift build` and `swift test` in `packages/ios`, the POI render tests on a simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                           |
+| `Android Build`               | ubuntu-latest | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                          |
 
-    - name: Install dependencies
-      shell: bash
-      run: pnpm install --frozen-lockfile
-
-    - name: Turbo Cache
-      uses: actions/cache@v4
-      with:
-        path: .turbo
-        key: turbo-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          turbo-${{ runner.os }}-
-```
-
-### Main CI Workflow
-
-```yaml
-# .github/workflows/ci.yml
-name: CI
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  # =========================================================================
-  # Build
-  # =========================================================================
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Build all packages
-        run: pnpm build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            packages/*/dist
-            packages/*/build
-          retention-days: 7
-
-  # =========================================================================
-  # Lint & Typecheck
-  # =========================================================================
-  lint:
-    name: Lint & Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Format check
-        run: pnpm format:check
-
-  # =========================================================================
-  # Test - React
-  # =========================================================================
-  test-react:
-    name: Test React
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-
-      - name: Run tests
-        run: pnpm --filter @kozmos/react test -- --coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          files: packages/react/coverage/coverage-final.json
-          flags: react
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-  # =========================================================================
-  # Test - iOS
-  # =========================================================================
-  test-ios:
-    name: Test iOS
-    runs-on: macos-14
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app
-
-      - name: Build
-        run: |
-          cd packages/ios
-          swift build
-
-      - name: Test
-        run: |
-          cd packages/ios
-          swift test
-
-  # =========================================================================
-  # Test - Android
-  # =========================================================================
-  test-android:
-    name: Test Android
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Build and Test
-        run: |
-          cd packages/android
-          ./gradlew test
-
-  # =========================================================================
-  # Bundle Size
-  # =========================================================================
-  bundle-size:
-    name: Bundle Size
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-
-      - name: Check bundle size
-        uses: preactjs/compressed-size-action@v2
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: "packages/*/dist/**/*.js"
-          exclude: "{**/*.map,**/node_modules/**}"
-
-  # =========================================================================
-  # Accessibility
-  # =========================================================================
-  accessibility:
-    name: Accessibility
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Run a11y tests
-        run: pnpm --filter @kozmos/react test -- --grep "accessibility"
-
-  # =========================================================================
-  # Required Status Check
-  # =========================================================================
-  ci-ok:
-    name: CI OK
-    runs-on: ubuntu-latest
-    needs:
-      [
-        build,
-        lint,
-        test-react,
-        test-ios,
-        test-android,
-        bundle-size,
-        accessibility,
-      ]
-    if: always()
-    steps:
-      - name: Check all jobs
-        run: |
-          if [[ "${{ needs.build.result }}" != "success" ]] ||
-             [[ "${{ needs.lint.result }}" != "success" ]] ||
-             [[ "${{ needs.test-react.result }}" != "success" ]] ||
-             [[ "${{ needs.test-ios.result }}" != "success" ]] ||
-             [[ "${{ needs.test-android.result }}" != "success" ]] ||
-             [[ "${{ needs.bundle-size.result }}" != "success" ]] ||
-             [[ "${{ needs.accessibility.result }}" != "success" ]]; then
-            echo "One or more required jobs failed"
-            exit 1
-          fi
-          echo "All required jobs passed!"
-```
+`node scripts/ci-local.mjs --job web|ios|android` runs a job's steps on your machine. It uses fixed
+ports, so only one session at a time may run it, and it covers only the job's own steps: the
+browser shards, the bundle check and Visual Review run on GitHub.
 
 ---
 
 ## 3. Secrets Management
 
-### Required Secrets
+### What the Workflows Read
 
-| Secret               | Purpose          | How to Get                |
-| -------------------- | ---------------- | ------------------------- |
-| `NPM_TOKEN`          | npm publishing   | npm.com → Access Tokens   |
-| `FIGMA_ACCESS_TOKEN` | Figma API access | Figma → Account Settings  |
-| `CODECOV_TOKEN`      | Code coverage    | codecov.io → Settings     |
-| `SLACK_WEBHOOK_URL`  | Notifications    | Slack → Incoming Webhooks |
+| Secret               | Read by                                                  | Notes                                                                                                                                     |
+| -------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `FIGMA_ACCESS_TOKEN` | `ci.yml` (Web, iOS and Android jobs), `figma-tokens.yml` | CI's steps that need it, the nested-radius check against the live Figma file and the Code Connect dry runs, skip with a notice without it |
+| `FIGMA_FILE_KEY`     | `figma-tokens.yml`                                       | The Figma file the token sync reads                                                                                                       |
+| `NPM_TOKEN`          | `release.yml`, publish job only                          | An **environment** secret of `npm-release`, never a repository secret (§9)                                                                |
+| `GITHUB_TOKEN`       | every workflow                                           | Given to every run; `figma-tokens.yml` opens its pull request with it                                                                     |
 
-### Setting Up Secrets
+No workflow reads anything else: there are no Codecov, Slack, Maven or signing credentials.
 
-```bash
-# Using GitHub CLI
-gh secret set NPM_TOKEN --body "npm_xxxxxxxxxxxx"
-gh secret set FIGMA_ACCESS_TOKEN --body "figd_xxxxxxxxxxxx"
-gh secret set CODECOV_TOKEN --body "xxxxxxxxxxxx"
-gh secret set SLACK_WEBHOOK_URL --body "https://hooks.slack.com/services/xxx"
-```
+### Setting Secrets
 
-### Environment-Specific Secrets
+Secrets are Olcay's to set. An assistant never reads, prints, sets or deletes one. GitHub's API
+returns secret names and dates, never values, and `pnpm release:credential:check` uses exactly that
+to report where `NPM_TOKEN` is configured: it fails if `NPM_TOKEN` is a repository secret, if
+`npm-release` does not hold it, or if that environment admits any branch but `main`.
 
-```yaml
-# Define environments in repo settings
-# Settings → Environments → New environment
+### The `npm-release` Environment
 
-# Production environment
-# - Required reviewers: 2
-# - Wait timer: 10 minutes
-# - Deployment branches: main only
-```
+Only the publish job in `release.yml` names an environment, `npm-release`:
+
+- Olcay (account `vodoco`) is the required reviewer, and may approve a release they dispatched;
+- administrator bypass is off;
+- it deploys from `main` only;
+- it holds `NPM_TOKEN`.
+
+`scripts/release/policy.mjs` asserts the reviewer and the bypass setting, so a release refuses to
+run if either is undone.
 
 ---
 
 ## 4. Build Workflows
 
-### Token Build Workflow
+No workflow only builds. `pnpm build` (Turborepo over every package) runs inside CI's web, browser
+and core-pipeline jobs, and the iOS and Android jobs build the design tokens first
+(`pnpm --filter @kozmos-ds/tokens build`) and check that the native token files came out.
 
-```yaml
-# .github/workflows/tokens.yml
-name: Tokens
+### Token Synchronization (`figma-tokens.yml`)
 
-on:
-  push:
-    paths:
-      - "packages/tokens/**"
-  pull_request:
-    paths:
-      - "packages/tokens/**"
-  workflow_dispatch:
-    inputs:
-      sync-from-figma:
-        description: "Sync tokens from Figma"
-        type: boolean
-        default: false
+"Figma Token Synchronization" runs on a manual dispatch or a `repository_dispatch` of type
+`update-tokens`, and only when the repository variable `FIGMA_VARIABLES_API_ENABLED` is `true`. It
+reads the Figma variables (`scripts/sync-figma.ts`, with `FIGMA_ACCESS_TOKEN` and
+`FIGMA_FILE_KEY`), applies the iOS dark overrides, builds `@kozmos-ds/tokens`, copies the native
+token files into the iOS and Android packages (`pnpm tokens:native:copy`, checked by
+`pnpm tokens:copies:check`) and opens a pull request with the result.
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+### Storybook
 
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Sync from Figma
-        if: inputs.sync-from-figma
-        run: pnpm tokens:sync
-        env:
-          FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
-          FIGMA_FILE_KEY: ${{ secrets.FIGMA_FILE_KEY }}
-
-      - name: Validate tokens
-        run: pnpm --filter @kozmos/tokens validate
-
-      - name: Build tokens
-        run: pnpm --filter @kozmos/tokens build
-
-      - name: Verify outputs
-        run: |
-          test -f packages/tokens/build/css/tokens.css
-          test -f packages/tokens/build/js/tokens.js
-          test -f packages/tokens/build/ios/KozmosTokens.swift
-          test -f packages/tokens/build/android/KozmosTokens.kt
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: token-artifacts
-          path: packages/tokens/build
-```
-
-### Storybook Build Workflow
-
-```yaml
-# .github/workflows/storybook.yml
-name: Storybook
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - "packages/react/**"
-  pull_request:
-    paths:
-      - "packages/react/**"
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Build Storybook
-        run: pnpm --filter @kozmos/react build-storybook
-
-      - name: Upload Storybook
-        uses: actions/upload-artifact@v4
-        with:
-          name: storybook
-          path: packages/react/storybook-static
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Download Storybook
-        uses: actions/download-artifact@v4
-        with:
-          name: storybook
-          path: storybook-static
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: storybook-static
-```
+Storybook lives in `apps/docs` (package `@kozmos-ds/docs`). CI, Visual Regression and Lighthouse CI
+build it in order to test it; it is not hosted anywhere yet. Olcay's decision 34 is to host it with
+the website on GitHub Pages, and that work has not started.
 
 ---
 
 ## 5. Test Workflows
 
-### Comprehensive Test Workflow
+There is no separate test workflow: the tests run in `ci.yml`.
 
-```yaml
-# .github/workflows/test.yml
-name: Test
+- **Unit tests:** `pnpm test` in `Web Build & Test` (Vitest; React's suite includes `vitest-axe`
+  checks).
+- **Storybook suites:** the twelve browser shards run `pnpm test:storybook-audit` (axe on every
+  story, light and dark, at 320 and 1280 px), `pnpm test:storybook-interactions`,
+  `pnpm test:storybook-docs`, `pnpm test:storybook-audit-fixes`, `pnpm test:poi-details`,
+  `pnpm test:map-sheet`, `pnpm test:search-sheet` and `pnpm test:navigation` against the built
+  Storybook.
+- **Core pipeline:** React's Playwright tests, `scripts/skills/check-a11y.ts` and
+  `pnpm test:storybook-regressions`, then `pnpm test:poi-gallery`.
+- **iOS:** `swift test`, and the POI render tests on a simulator.
+- **Android:** the Paparazzi snapshots (`./gradlew verifyPaparazziDebug`).
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  # =========================================================================
-  # Unit Tests - All Platforms
-  # =========================================================================
-  unit-tests:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - package: "@kozmos/react"
-            runner: ubuntu-latest
-          - package: "@kozmos/vue"
-            runner: ubuntu-latest
-          - package: "@kozmos/react-native"
-            runner: ubuntu-latest
-          - package: "ios"
-            runner: macos-14
-          - package: "android"
-            runner: ubuntu-latest
-
-    name: Test ${{ matrix.package }}
-    runs-on: ${{ matrix.runner }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      # Node.js packages
-      - name: Setup Node
-        if: matrix.package != 'ios' && matrix.package != 'android'
-        uses: ./.github/actions/setup
-
-      - name: Run Node tests
-        if: matrix.package != 'ios' && matrix.package != 'android'
-        run: pnpm --filter ${{ matrix.package }} test -- --coverage
-
-      # iOS
-      - name: Select Xcode
-        if: matrix.package == 'ios'
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app
-
-      - name: Run iOS tests
-        if: matrix.package == 'ios'
-        run: |
-          cd packages/ios
-          swift test
-
-      # Android
-      - name: Setup Java
-        if: matrix.package == 'android'
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Run Android tests
-        if: matrix.package == 'android'
-        run: |
-          cd packages/android
-          ./gradlew test
-
-  # =========================================================================
-  # Integration Tests
-  # =========================================================================
-  integration:
-    runs-on: ubuntu-latest
-    needs: unit-tests
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Build all
-        run: pnpm build
-
-      - name: Run integration tests
-        run: pnpm test:integration
-
-  # =========================================================================
-  # E2E Tests
-  # =========================================================================
-  e2e:
-    runs-on: ubuntu-latest
-    needs: integration
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Install Playwright
-        run: npx playwright install --with-deps
-
-      - name: Build Storybook
-        run: pnpm --filter @kozmos/react build-storybook
-
-      - name: Run E2E tests
-        run: npx playwright test
-        env:
-          CI: true
-
-      - name: Upload results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
-          path: test-results
-```
+Nothing collects coverage: `@vitest/coverage-v8` is not installed, so `--coverage` fails.
 
 ---
 
 ## 6. Publishing Workflows
 
-### npm Publishing Workflow
+`release.yml` is the only workflow that publishes, and it publishes only to npm (§9):
 
-```yaml
-# .github/workflows/publish.yml
-name: Publish
-
-on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "**.md"
-      - ".github/**"
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Build
-        run: pnpm build
-
-      - name: Create Release Pull Request or Publish
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          version: pnpm changeset version
-          publish: pnpm release
-          commit: "chore: release packages"
-          title: "chore: release packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish Code Connect
-        if: steps.changesets.outputs.published == 'true'
-        run: |
-          pnpm figma:publish
-        env:
-          FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
-
-      - name: Notify Slack
-        if: steps.changesets.outputs.published == 'true'
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "🚀 Kozmos packages published!",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "New versions published:\n${{ steps.changesets.outputs.publishedPackages }}"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-```
-
-### iOS (Swift Package) Publishing
-
-```yaml
-# .github/workflows/publish-ios.yml
-name: Publish iOS
-
-on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to publish"
-        required: true
-
-jobs:
-  publish:
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app
-
-      - name: Build
-        run: |
-          cd packages/ios
-          swift build -c release
-
-      - name: Create XCFramework
-        run: |
-          cd packages/ios
-          xcodebuild -create-xcframework \
-            -library .build/release/libKozmosSwiftUI.a \
-            -output KozmosSwiftUI.xcframework
-
-      - name: Create Release Tag
-        run: |
-          cd packages/ios
-          git tag ios-v${{ inputs.version || github.event.release.tag_name }}
-          git push origin ios-v${{ inputs.version || github.event.release.tag_name }}
-```
-
-### Android (Maven) Publishing
-
-```yaml
-# .github/workflows/publish-android.yml
-name: Publish Android
-
-on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to publish"
-        required: true
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Publish to Maven Central
-        run: |
-          cd packages/android
-          ./gradlew publishToMavenCentral --no-configuration-cache
-        env:
-          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
-          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
-          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-```
+- **npm:** `@kozmos-ds/react`, `@kozmos-ds/icons`, `@kozmos-ds/product-contracts` and
+  `@kozmos-ds/tokens`.
+- **iOS and Android:** not published. No workflow, script or tag releases the Swift package
+  (`packages/ios`) or the Compose library (`packages/android`); they ship as source in this
+  repository.
+- **Figma Code Connect:** no workflow publishes it. CI parses it on all three platforms and, when
+  `FIGMA_ACCESS_TOKEN` is set, runs each publish as a dry run (`pnpm figma:publish:linked:dry`,
+  `pnpm figma:publish:ios:linked:dry`, `pnpm figma:publish:android:linked:dry`). A real publish
+  writes to the live Figma file and is run by hand.
 
 ---
 
@@ -792,188 +188,57 @@ both in Docker. `docs/visual-review.md` explains how to read a difference.
 
 ## 8. Security Scanning
 
-### CodeQL Analysis
-
-```yaml
-# .github/workflows/codeql.yml
-name: CodeQL
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: "0 0 * * 0" # Weekly on Sunday
-
-jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ["javascript-typescript", "swift", "java-kotlin"]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
-```
-
-### Dependency Scanning
-
-```yaml
-# .github/workflows/dependency-review.yml
-name: Dependency Review
-
-on:
-  pull_request:
-    branches: [main]
-
-jobs:
-  dependency-review:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-          deny-licenses: GPL-3.0, AGPL-3.0
-
-      - name: Audit npm packages
-        run: pnpm audit --audit-level=high
-```
+No workflow scans for security: there is no CodeQL analysis and no dependency-review workflow.
+GitHub's Dependabot alerts are the dependency scanning, and `pnpm audit` can be run by hand.
 
 ---
 
 ## 9. Release Automation
 
-### Changeset Release Workflow
+Releases are deliberate, never automatic: nothing publishes on a merge, there is no Changesets
+bot, and `pnpm release` deliberately exits with instructions. Nobody publishes from a laptop.
+[docs/release-process.md](../docs/release-process.md) is the full procedure.
 
-```yaml
-# .github/workflows/release.yml
-name: Release
+### `release.yml`
 
-on:
-  push:
-    branches: [main]
+"Release Kozmos System" runs only on `workflow_dispatch`, from `main`, with three inputs: `sha` (the
+full SHA of `main` HEAD), `ci_run_id` (the successful main-push CI run for that SHA) and
+`confirmation` (`publish <sha>`). The repository variable `NPM_RELEASE_ENABLED` must be `true`;
+setting it to `false` stops every release.
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    outputs:
-      published: ${{ steps.changesets.outputs.published }}
-      publishedPackages: ${{ steps.changesets.outputs.publishedPackages }}
+- **`guard`** fails unless the dispatch names `main` HEAD, so a release that published nothing
+  cannot look like one that worked.
+- **`prepare`** verifies the request, the CI run, `release/plan.json` and the environment's
+  protection, runs `pnpm test:release`, builds the packages without npm credentials, and tests and
+  keeps the exact tarballs it will ship.
+- **`publish`** runs in `npm-release` and waits for Olcay's approval, verifies again, then publishes
+  those tarballs, dependencies first. It is the only job that can read `NPM_TOKEN`. npm provenance
+  is on from the next release (#132).
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+### The Operator's Steps
 
-      - name: Setup
-        uses: ./.github/actions/setup
+1. **A version PR:** `pnpm version-packages` consumes the changesets (private packages are not
+   versioned), `release/plan.json` names the exact packages, versions and npm tag, and
+   `pnpm skills:build` refreshes the AI-facing changelog and inventory. It is reviewed and merged
+   like any pull request.
+2. **Pre-flight:** once `main`'s CI on that merge is green, `pnpm release:preflight <sha> <ci-run-id>`
+   makes the release job's own checks in advance, the credential check among them, and prints the
+   dispatch command.
+3. **Dispatch and approval:** Olcay dispatches Release Kozmos System and approves the `npm-release`
+   deployment.
+4. **Tags:** after the publish, `pnpm release:tag <sha>` creates the git tags and GitHub Releases,
+   with each version's changelog as the notes.
 
-      - name: Build
-        run: pnpm build
-
-      - name: Create Release PR or Publish
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          version: pnpm changeset version
-          publish: pnpm release
-          commit: |
-            chore: release
-
-            [skip ci]
-          title: "chore: version packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  # Trigger platform-specific releases
-  release-ios:
-    needs: release
-    if: needs.release.outputs.published == 'true'
-    uses: ./.github/workflows/publish-ios.yml
-    secrets: inherit
-
-  release-android:
-    needs: release
-    if: needs.release.outputs.published == 'true'
-    uses: ./.github/workflows/publish-android.yml
-    secrets: inherit
-
-  # Update documentation
-  update-docs:
-    needs: release
-    if: needs.release.outputs.published == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Build docs
-        run: pnpm --filter docs build
-
-      - name: Deploy docs
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: apps/docs/dist
-```
+Changesets only version here. A pull request that changes what a published package ships adds a
+changeset with `pnpm changeset` (CI's `scripts/release/changeset-required.mjs` asks for one), and
+`pnpm version-packages` runs `changeset version`.
 
 ---
 
 ## 10. Monitoring & Notifications
 
-### Slack Notifications
-
-```yaml
-# Reusable notification job
-notify:
-  runs-on: ubuntu-latest
-  needs: [build, test]
-  if: failure()
-  steps:
-    - name: Notify Slack on failure
-      uses: slackapi/slack-github-action@v1
-      with:
-        payload: |
-          {
-            "text": "❌ CI Failed",
-            "blocks": [
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*CI Failed* on `${{ github.ref_name }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
-                }
-              }
-            ]
-          }
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-```
+No workflow sends a notification: there is no Slack or other webhook. A run's result shows on the
+pull request and in the repository's Actions tab.
 
 ### GitHub Status Checks
 
@@ -996,20 +261,7 @@ notify:
 
 ### CODEOWNERS
 
-```
-# .github/CODEOWNERS
-# Default owners
-* @AcmeCorp/kozmos-core
-
-# Package-specific owners
-/packages/react/ @AcmeCorp/kozmos-react
-/packages/ios/ @AcmeCorp/kozmos-ios
-/packages/android/ @AcmeCorp/kozmos-android
-/packages/tokens/ @AcmeCorp/kozmos-design
-
-# CI/CD
-/.github/ @AcmeCorp/kozmos-devops
-```
+There is no CODEOWNERS file, and nothing assigns reviewers automatically.
 
 ---
 
@@ -1018,41 +270,35 @@ notify:
 ### Workflow Commands
 
 ```bash
-# Trigger workflow manually
-gh workflow run ci.yml
+# The checks on a pull request, and the runs on a branch
+gh pr checks <pr-number>
+gh run list --branch <branch>
 
-# View workflow runs
-gh run list
-
-# View specific run
+# View a run, and re-run its failed jobs
 gh run view <run-id>
-
-# Re-run failed jobs
 gh run rerun <run-id> --failed
+
+# Record Visual Review baselines on a branch, then push again (a workflow's commit starts no checks)
+gh workflow run visual.yml --ref <branch> -f record=true
 ```
 
-### Secrets Commands
+Only `visual.yml`, `figma-tokens.yml` and `release.yml` can be dispatched. `release.yml` is
+Olcay's, with the command `pnpm release:preflight` prints (§9).
 
-```bash
-# List secrets
-gh secret list
+### Secrets
 
-# Set secret
-gh secret set SECRET_NAME
-
-# Delete secret
-gh secret delete SECRET_NAME
-```
+Secrets are Olcay's to manage (§3); an assistant never reads, prints, sets or deletes one.
 
 ---
 
 ## Version History
 
-| Version | Date       | Changes                           |
-| ------- | ---------- | --------------------------------- |
-| 1.0.0   | 2026-02-07 | Initial CI/CD configuration guide |
+| Version | Date       | Changes                                                    |
+| ------- | ---------- | ---------------------------------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial CI/CD configuration guide                          |
+| 2.0.0   | 2026-09-28 | Rewritten to the workflows, secrets and release that exist |
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last Updated:** 2026-02-07
+**Last Updated:** 2026-09-28

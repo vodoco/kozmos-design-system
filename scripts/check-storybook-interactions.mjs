@@ -8,6 +8,99 @@ import {
 const base = process.env.STORYBOOK_URL ?? "http://127.0.0.1:6006";
 const browser = await launchFixtureBrowser();
 const failures = [];
+
+/**
+ * Every rail tile in the story, measured where it is drawn: the label's type,
+ * the lines it takes (a clamped line still counts: it is cut), the widest
+ * reach of each line, and the tile's content box. A line is the characters
+ * that share a top; whitespace is skipped, so a space hanging at a wrap does
+ * not widen a line.
+ */
+function measureRailTiles() {
+  return [
+    ...document.querySelectorAll(
+      '.kozmos-story-surface [data-placement="rail"]',
+    ),
+  ].map((tile) => {
+    const label = [...tile.children].find(
+      (child) => child.tagName === "SPAN" && !child.hasAttribute("aria-hidden"),
+    );
+    const style = getComputedStyle(tile);
+    const box = tile.getBoundingClientRect();
+    const contentLeft =
+      box.left + tile.clientLeft + parseFloat(style.paddingLeft);
+    const contentRight =
+      box.left +
+      tile.clientLeft +
+      tile.clientWidth -
+      parseFloat(style.paddingRight);
+    const lines = [];
+    const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
+    for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+      for (let i = 0; i < text.length; i++) {
+        if (/\s/.test(text.data[i])) continue;
+        const range = document.createRange();
+        range.setStart(text, i);
+        range.setEnd(text, i + 1);
+        for (const rect of range.getClientRects()) {
+          if (!rect.width) continue;
+          let line = lines.find((l) => Math.abs(l.top - rect.top) < 4);
+          if (!line) {
+            line = { top: rect.top, left: rect.left, right: rect.right };
+            lines.push(line);
+          }
+          line.left = Math.min(line.left, rect.left);
+          line.right = Math.max(line.right, rect.right);
+        }
+      }
+    }
+    const labelStyle = getComputedStyle(label);
+    return {
+      label: label.textContent,
+      fontSize: labelStyle.fontSize,
+      lineHeight: labelStyle.lineHeight,
+      lines: lines
+        .sort((a, b) => a.top - b.top)
+        .map((l) => ({ left: l.left, right: l.right })),
+      contentLeft,
+      contentRight,
+      width: box.width,
+      height: box.height,
+    };
+  });
+}
+
+/**
+ * Decision 36 (row 25 / GAP-013): every rail label is 11px on a 14px line and
+ * takes at most two lines, none wider than its tile's content box, and every
+ * tile stays 72px tall, a two-line one too (the 16px line made it 76).
+ */
+function railProblems(id, tiles) {
+  const problems = [];
+  for (const tile of tiles) {
+    const name = `${id} "${tile.label}"`;
+    if (tile.fontSize !== "11px" || tile.lineHeight !== "14px")
+      problems.push(
+        `${name}: the label is ${tile.fontSize} on ${tile.lineHeight}, not 11px on 14px`,
+      );
+    if (tile.lines.length < 1 || tile.lines.length > 2)
+      problems.push(`${name}: the label takes ${tile.lines.length} lines`);
+    tile.lines.forEach((line, index) => {
+      if (
+        line.left < tile.contentLeft - 0.5 ||
+        line.right > tile.contentRight + 0.5
+      )
+        problems.push(
+          `${name}: line ${index + 1} is ${(line.right - line.left).toFixed(1)}px wide in a ${(tile.contentRight - tile.contentLeft).toFixed(1)}px content box`,
+        );
+    });
+    if (Math.abs(tile.height - 72) > 0.5)
+      problems.push(
+        `${name}: a ${tile.lines.length}-line tile is ${tile.height.toFixed(1)}px tall, not 72`,
+      );
+  }
+  return problems;
+}
 try {
   for (const theme of ["light", "dark"]) {
     for (const viewport of [
@@ -322,6 +415,28 @@ try {
             `PASS explicit contrast completeness ${id} ${theme} ${viewport.width}`,
           );
         }
+        // The standard rail, whose "Nearby places" takes two lines, and a web
+        // dashboard's, whose nine labels are the Cloud Dashboard's in 96px
+        // tiles (className "w-24"). Both are measured before either is
+        // judged, so a failure lists every tile that is wrong.
+        const rails = [];
+        for (const [id, count, width] of [
+          ["navigation-navigationitem--rail", 4, 72],
+          ["navigation-navigationitem--dashboard-rail", 9, 96],
+        ]) {
+          await visit(id);
+          await page.evaluate(() => document.fonts.ready);
+          const tiles = await page.evaluate(measureRailTiles);
+          const widths = tiles.map((tile) => Math.round(tile.width));
+          if (widths.join() !== Array(count).fill(width).join())
+            rails.push(`${id}: tiles ${widths} wide, not ${count} of ${width}`);
+          if (!tiles.some((tile) => tile.lines.length === 2))
+            rails.push(`${id}: no tile takes two lines`);
+          rails.push(...railProblems(id, tiles));
+          await audit();
+        }
+        assert.deepEqual(rails, []);
+        console.log(`PASS rail labels ${theme} ${viewport.width}`);
         if (viewport.width === 1280) {
           await visit("data-display-chip--variants");
           const chips = page.locator(
