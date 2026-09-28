@@ -70,21 +70,33 @@ export function validateEvidence({
     );
   }
   assert.equal(environment.name, "npm-release");
-  // GitHub sells required reviewers and wait timers for a PRIVATE repository
-  // only with Enterprise: on Free, Pro and Team they exist for public
-  // repositories alone, and the settings page omits the section rather than
-  // disabling it. This repository is private on Pro, so the approval click
-  // cannot be required here and asserting it would refuse every release for
-  // ever. The branch rule is the one protection this plan does enforce, so it
-  // is asserted. What replaces the approval is a fence around the credential
-  // rather than around the deployment: NPM_TOKEN is an environment secret, so
-  // only the publish job, running on main, can read it, and the prepare job
-  // fails if that token is reachable from outside the environment. REST does
-  // not expose the administrator-bypass setting either. Do not invent evidence
-  // for what the plan cannot give.
+  // Three fences. The branch rule: only main may deploy. The credential:
+  // NPM_TOKEN is an environment secret, so only the publish job can read it,
+  // and the prepare job fails if it is reachable from outside the environment.
+  // And a person: GitHub offers required reviewers on a public repository (on
+  // Free, Pro and Team it does not for a private one, which is why this
+  // comment once said the click could not be required). This repository is
+  // public, and since 2026-09-28 npm-release waits for Olcay's approval with
+  // administrator bypass off (Olcay's choice), so both are asserted: a release
+  // refuses to run if someone removes the reviewer or turns bypass back on.
+  // An absent bypass field is refused too rather than read as false.
   assert.ok(
     environment.protection_rules?.some((rule) => rule.type === "branch_policy"),
     "Restrict the environment with a branch protection rule",
+  );
+  assert.ok(
+    environment.protection_rules?.some(
+      (rule) =>
+        rule.type === "required_reviewers" &&
+        Array.isArray(rule.reviewers) &&
+        rule.reviewers.length > 0,
+    ),
+    "Require a reviewer's approval on the npm-release environment",
+  );
+  assert.equal(
+    environment.can_admins_bypass,
+    false,
+    "Administrators must not be able to bypass the npm-release approval",
   );
   assert.equal(
     environment.deployment_branch_policy?.custom_branch_policies,

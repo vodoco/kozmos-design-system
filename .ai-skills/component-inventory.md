@@ -7,9 +7,9 @@
 
 | package                        | version |
 | ------------------------------ | ------- |
-| `@kozmos-ds/icons`             | 0.3.0   |
-| `@kozmos-ds/product-contracts` | 0.3.0   |
-| `@kozmos-ds/react`             | 0.4.0   |
+| `@kozmos-ds/icons`             | 0.4.0   |
+| `@kozmos-ds/product-contracts` | 0.4.0   |
+| `@kozmos-ds/react`             | 0.5.0   |
 | `@kozmos-ds/tokens`            | 0.1.0   |
 
 `@kozmos-ds/vue` exists in the workspace but is **private**: an internal
