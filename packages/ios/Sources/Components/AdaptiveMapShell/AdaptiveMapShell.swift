@@ -147,10 +147,11 @@ struct KozmosMapShellContentPanelHeightKey: PreferenceKey {
 /// far its first control must keep below that — `kozmosPanelInsetTop` and
 /// `kozmosPanelClearanceTop` in the environment — so a part with its own top
 /// padding and no surface of its own, as `KozmosPOIDetailPanel` and
-/// `KozmosBrowseCategoriesPanel` are in their sheet presentations, tops it up
-/// rather than adding to it (GAP-083, decision 14). The values describe the
-/// panel's top: a part a product places under its own row there is not at
-/// the top, and is told so by setting both to zero.
+/// `KozmosBrowseCategoriesPanel` are in their sheet presentations and
+/// `KozmosRoutePreviewPanel` is, tops it up rather than adding to it
+/// (GAP-083, decision 14). The values describe the panel's top: a part a
+/// product places under its own row there is not at the top, and is told so
+/// by setting both to zero.
 public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Panel: View, MapStatusContent: View>: View {
     public enum PanelPlacement {
         case start

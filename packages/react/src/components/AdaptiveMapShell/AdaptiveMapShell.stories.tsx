@@ -11,6 +11,7 @@ import { BrowseCategoriesPanel } from "../BrowseCategoriesPanel";
 import { MapControlButton } from "../MapControlButton";
 import { Input } from "../Input";
 import { POIDetailPanel } from "../POIDetailPanel";
+import { RoutePreviewPanel } from "../RoutePreviewPanel";
 import { SearchBar } from "../SearchBar";
 
 const meta = {
@@ -267,6 +268,57 @@ export const SheetWithBrowseCategories: Story = {
           browseIcons[category.id as keyof typeof browseIcons]
         }
         search={<SearchBar aria-label="Search places" placeholder="Search" />}
+      />
+    ),
+  },
+};
+
+/**
+ * A route preview hosted in the sheet, as a product shows one after Go: its
+ * destination row is the top of the sheet, so the row tops its padding up to
+ * what the grip's row already leaves rather than adding to it, and keeps the
+ * 4px that keeps the grip's target clear (decision 14). "To" sits as far
+ * from the sheet's side as from its top, plus those 4.
+ */
+export const SheetWithRoutePreview: Story = {
+  args: {
+    className: "h-[42rem] max-w-[402px]",
+    panelPresentation: "bottom",
+    panelLabel: "Directions",
+    panel: (
+      <RoutePreviewPanel
+        backLabel="Back"
+        continueLabel="Start"
+        destinationName="Harbour Coffee Co."
+        onBack={() => undefined}
+        onContinue={() => undefined}
+        onOptionSelect={() => undefined}
+        options={[
+          {
+            id: "quickest",
+            label: "Quickest",
+            durationSeconds: 240,
+            durationLabel: "4 min",
+            distanceMetres: 150,
+            distanceLabel: "150 m",
+            preference: "quickest",
+            selected: true,
+            available: true,
+          },
+          {
+            id: "step-free",
+            label: "Step-free",
+            durationSeconds: 360,
+            durationLabel: "6 min",
+            distanceMetres: 173,
+            distanceLabel: "173 m",
+            preference: "step-free",
+            selected: false,
+            available: true,
+          },
+        ]}
+        optionsCountLabel="2 route options"
+        status="ready"
       />
     ),
   },
