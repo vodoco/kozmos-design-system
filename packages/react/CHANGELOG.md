@@ -1,5 +1,205 @@
 # @kozmos-ds/react
 
+## 0.5.0
+
+### Minor Changes
+
+- 415e486: The assistant's parts can be found, named and told apart.
+
+  **`AICompanionPanel` is a region named by its title**, and the title is a heading: an `h2` by
+  default, set with `titleLevel` (2 to 6) to fit the page's outline. It was a `p`. The panel moves
+  focus into itself when it mounts and hands it back when it closes; `onOpenAutoFocus` and
+  `onCloseAutoFocus` let a product send focus elsewhere, or keep it where it is with
+  `event.preventDefault()`.
+
+  **`AIMessage` and `UserMessage` say who spoke.** Each begins with a visually hidden "Assistant said"
+  or "You said", so a screen reader reading the log can tell the turns apart. The defaults are
+  English; pass a translated `speakerLabel`.
+
+  **`AIInputBar`** draws its focus ring around the whole bar while the field has focus, draws a
+  disabled field as disabled, takes `inputRef` to reach the field, and its send button is 44px.
+
+- 415e486: A one-of-several choice is a radio group, two small marks become targets you can hit, a notice can
+  interrupt, and Skeleton holds a shape.
+
+  **`ChipGroup selectionMode="single"`** is a radio group: one Tab stop, and the arrow keys move the
+  choice, mirrored right to left (`dir`). It takes `value`, `defaultValue` and `onValueChange`, and
+  each `Chip` a `value`. `"multiple"` stays the default and behaves as before.
+
+  ```tsx
+  <ChipGroup
+    selectionMode="single"
+    value={sort}
+    onValueChange={setSort}
+    aria-label={t("sort.label")}
+  >
+    <Chip value="distance">{t("sort.nearest")}</Chip>
+    <Chip value="name">{t("sort.name")}</Chip>
+  </ChipGroup>
+  ```
+
+  **Chip's remove mark is 24px.** It was 20px at every chip size, under WCAG 2.5.8's minimum. Its
+  44px-tall target is laid on by owned CSS, so the chip itself doesn't grow.
+
+  **`Notice` can interrupt.** It gains `live`: `"off"`, `"polite"` (the default) or `"assertive"`, the
+  same words `Alert` takes, so an emergency notice can cut in while a dietary one waits its turn. A
+  caller's own `role` still wins.
+
+  **`Skeleton` holds a shape and a size.** `shape` is `"line"` (text-high, filling its row),
+  `"block"` (no default height: it is as tall as what it stands in for) or `"circle"` (`width` is its
+  diameter), with `width` and `height`. Its grey is Figma's `background/200`, one step darker than the
+  `background/100` it was, and the same on iOS and Android.
+
+- 415e486: The levels say where the results are.
+
+  `FloorPresentation` gains `resultCount` (in the iOS and Android contracts too), and `FloorSelector`
+  marks each level that holds results and says so in the level's name, worded by
+  `resultCountLabel`. By default that is "1 result" or "3 results"; a count of zero or less is neither
+  drawn nor said.
+
+  ```tsx
+  <FloorSelector
+    floors={floors.map((floor) => ({
+      ...floor,
+      resultCount: counts[floor.id],
+    }))}
+    resultCountLabel={(count) => t("floors.results", { count })}
+  />
+  ```
+
+- 415e486: The map's controls take the product's words, the location control shows its mode, and step-free
+  has a control of its own.
+
+  **Every label is the product's.** `MapControlsGroup` gains `zoomInLabel`, `zoomOutLabel` and
+  `compassResetLabel` (`locationLabel` already existed), `UserLocationMarker` gains `label`, and
+  `FloorSelector` gains `previousFloorLabel` and `nextFloorLabel`. The defaults stay English: a design
+  system has no locale of its own, and the product now has somewhere to put one.
+
+  **The location control draws each mode.** A mark per `locationState` — `off`, `locating`,
+  `following`, `heading`, `permission-denied`, `stale`, `unavailable` — replaceable with
+  `locationIcons`. `locationRevealOnChange` shows the mode's label when it changes, and
+  `locationLabelPlacement` puts that label `inline` or `stacked`. `@kozmos-ds/icons` gains
+  `LocationFollowing` and `LocationHeading`, which the control draws, so this react needs this icons.
+
+  ```tsx
+  <MapControlsGroup
+    locationState={locationState}
+    locationRevealOnChange
+    zoomInLabel={t("map.zoomIn")}
+    zoomOutLabel={t("map.zoomOut")}
+    onStepFreeChange={onRoute ? setStepFree : undefined}
+    stepFree={stepFree}
+    stepFreeLabel={t("map.stepFree")}
+  />
+  ```
+
+  **Step-free takes the location control's place on a route.** With `onStepFreeChange` the control
+  is a step-free toggle (`stepFree`, `stepFreeLabel`, `stepFreeOnLabel`, `stepFreeOffLabel`,
+  `stepFreeIcon`). It is keyed apart from the location control, so assistive technology meets a new
+  control rather than the old one changing its name.
+
+  **The marker admits it is elsewhere.** `UserLocationMarker` gains `offFloor` and `offFloorLabel`.
+  Off the level in view it is hollow, without its halo, ping or heading cone — shape carries the
+  state, not colour alone — where the map page used to hide it and the visitor lost their position.
+
+  **Pins sit on their place right to left.** `LocationPin` anchors to a physical origin, to match its
+  physical translate. In Arabic every pin drew one pin-width to the left of the place it marks.
+
+  **The map fills its shell.** `MapView` gains `variant="fill"`: no border, radius or 400px minimum,
+  and `role="group"` rather than a second landmark inside `AdaptiveMapShell`'s map region. The
+  default, `"framed"`, draws what it always drew. The labels beside map controls keep their gap right
+  to left.
+
+- 415e486: `AdaptiveMapShell` learns the chrome it cannot see, stops padding the camera for its controls, and
+  gains a header that stays put.
+
+  **`deviceSafeAreaInsets`.** The device's safe areas as a prop, merged with CSS `env()` so the larger
+  wins: passing them can only add room. `env()` isn't always the truth — inside a device frame on a
+  canvas, or a web view whose host paints its own bar — and the controls ended up under the status bar.
+
+  **`controlsPadCamera`, off by default.** Collision insets are edge bands, so a 44px column of
+  controls handed the camera the whole edge it sat on, at every height (120px, measured), and a map
+  following the visitor centred itself off to one side. The controls stay in the snapshot's
+  `occlusions` with their true bounds, so a product that wants to fit around them still can;
+  `controlsPadCamera` brings the old padding back.
+
+  **The controls sit where map apps put them on a sheet.** They were placed opposite the panel — right
+  for a docked side panel, wrong for a bottom sheet, which spans the width. On a sheet they now sit at
+  the inline end, mirrored right to left.
+
+  **`panelHeader` stays put while the content scrolls.** It is drawn under the grip and above the
+  scrolling content, and counted in the detent heights (`PanelDetentMeasures.headerBottom`). Its first
+  control keeps 4px under the grip, so the grip's 16px target keeps the spacing WCAG 2.5.8 asks for. A
+  sheet fitted to its content now counts its grip as well: it is 16px taller when `content` is offered
+  with another detent.
+
+- 61b121d: `AdaptiveMapShell` now tells its panel content how much space it leaves above it, through two custom properties on that content (GAP-083):
+  - `--kozmos-panel-inset-top`: the grip's row on a sheet, `1rem` in a side panel, `0px` with no grip or under a `panelHeader`;
+  - `--kozmos-panel-clearance-top`: how far the first control must still sit below that — 4px under a grip, which keeps the grip's target clear (WCAG 2.5.8); `0px` otherwise.
+
+  A `POIDetailPanel` hosted there with `presentation="sheet"` pads its header's top to `max(clearance, 16px − inset)` instead of adding 16px to what the panel leaves. Its close button used to sit 33px from the panel's top and 17px from its side; it now sits 17px down in a side panel and 21px down under a sheet's grip. The bordered `panel` and `inline` presentations keep their own padding. Host the card with `presentation="sheet"` in the shell.
+
+- 415e486: A result says more of what it knows, and the search field stops fighting the product.
+
+  **The result card draws the whole contract.** `unitLabel` and `nameLanguage` have been in the
+  contract since 0.4.0, and `POIResultCard` drew neither. The unit now leads the location line
+  (`Unit 214 · Level 2 · Building A`), and the name carries its own `lang`, so a screen reader reads an
+  authored Japanese name in Japanese. `POIResultPresentation` gains `summary`: one generated line,
+  already localised, clamped to two lines so a long one can't push the cards below it around.
+
+  **The current result is current, not a button stuck unpressed.** The selected card says
+  `aria-current="location"` — the word `LocationPin` uses for the same state — instead of
+  `aria-pressed`: a second tap never released the selection, so "not pressed" described a toggle that
+  was never there. A test that queries `{ pressed: true }` should query `{ current: "location" }`.
+
+  **It moves between its states on owned rules.** Selecting a card transitions its border,
+  background and shadow; its action row grows open and leaves when the selection does. It has no
+  closing move on purpose: collapsed actions must not stay tabbable. Both honour reduced motion.
+
+  **The list carries its notice, and speaks the product's words.** `POIResultList` gains a `header`
+  slot inside its own region, so a notice that qualifies the results goes when they go. A grouped list
+  now passes its two words on — `showMoreLabel` and `hideLabel`, set once on the list — and a group's
+  `expanded` state can live in the product through `onGroupExpandedChange`, so it survives the panel
+  closing.
+
+  ```tsx
+  <POIResultList
+    header={allergenNotice}
+    showMoreLabel={(hidden) => t("results.showMore", { count: hidden })}
+    hideLabel={t("results.hide")}
+    onGroupExpandedChange={(groupId, expanded) =>
+      setExpanded(groupId, expanded)
+    }
+  />
+  ```
+
+  **The selected result comes into view.** `scrollSelectedIntoView` is on by default: a result
+  selected from the map scrolls into the list, even at a sheet detent where a finger can't scroll. A
+  product that scrolled the panel itself should pass `false`.
+
+  **The browser's own clear is gone.** A `type="search"` field drew a second, unlabelled × in
+  Chrome, Edge and Safari that emptied the field behind the product's back: the DOM cleared, the
+  product's state didn't, and the next render put the text back. `SearchBar`, `Search` and the inputs
+  built on `.kozmos-input` hide it; the component's own clear, which calls `onClear`, stays.
+
+  **A search response says what it was limited to.** `SearchResponsePresentation` gains
+  `appliedScope`, a `SearchScopePresentation` with `kind` (`SearchScopeKind`: `"building"` or
+  `"area"`), `id`, `label` and an optional `queryWithoutScope`. Absent means the whole venue. The React
+  parts draw nothing from it yet; the iOS and Android contracts carry the same fields.
+
+### Patch Changes
+
+- 273e562: `FloorSelector`'s compact stepper now calls its two buttons "Floor up" and "Floor down", as iOS and Android do. They were "Previous floor" and "Next floor". "Floor up" is the up chevron, which steps to the previous level in `floors`, so list the levels top first and up goes up.
+
+  This is a behaviour change products may match on in their own tests: a query such as `getByRole("button", { name: "Previous floor" })` no longer finds the button, so use the new names. A product that passes `previousFloorLabel` and `nextFloorLabel` keeps its own words.
+
+- ded56bc: `MapOverlay` no longer cuts what floats in it (GAP-082). Its content scrolls when it is taller than the map leaves room for, and that scroll box clipped at the content's own edges, so a `MapControlButton`'s or `FloorSelector`'s floating shadow was cut off on every side, and with it the 1px ring that draws a map control's edge. The scroll box now keeps the floating elevation's reach clear around its content (4px above, 8px at each side, 12px below, read from `--semantics-elevation-floating` when the package is built) and takes the same space back with negative margins, so nothing moves: content sits where it did, and controls in an overlay draw as the same controls placed by hand, focus rings included. The only pixels left out are a shadow tail one level (of 255) deep, which Chromium and Firefox draw a little past the blur distance on Linux. While the content scrolls, it shows through that room too, and a press on the room, as on the space between the overlay's items, does not reach the map.
+- Updated dependencies [415e486]
+- Updated dependencies [415e486]
+- Updated dependencies [415e486]
+  - @kozmos-ds/product-contracts@0.4.0
+  - @kozmos-ds/icons@0.4.0
+
 ## 0.4.0
 
 ### Minor Changes
