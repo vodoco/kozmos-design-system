@@ -293,7 +293,8 @@ fun WayfindingControls(stepFree: Boolean, onStepFreeChange: (Boolean) -> Unit) {
 ## Accessibility
 
 - Every control is the SDK's 48px square, above the shared 44px touch target,
-  including in the icon-only presentation; nothing lets it shrink below 44px.
+  including in the icon-only presentation: its minimum width and height are
+  48px, and only a class the product passes can make it smaller.
 - `label` names the cluster so it is announced as one group of controls rather
   than a run of unlabelled buttons.
 - `locationState` must be conveyed through `locationStateLabel`, not by the icon

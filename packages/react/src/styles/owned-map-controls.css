@@ -13,7 +13,7 @@
    it does over every owned rule. The file is imported after the Button's
    rules and wins over them by order. */
 @kozmos-owned {
-  /* The surface. The SDK's 48 square, 44 its floor as for every target; the
+  /* The surface. The SDK's 48 square, above the 44 every target keeps; the
      Control corner (16); no stroke, in any state; the map controls'
      elevation, three shadows; and the SDK's 32px blur of the map behind it.
      Nothing shows through an opaque surface, so the blur is for a brand whose
