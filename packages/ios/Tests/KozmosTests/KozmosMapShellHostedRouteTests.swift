@@ -131,6 +131,7 @@ final class KozmosMapShellHostedRouteTests: XCTestCase {
             .frame(width: size.width, height: size.height, alignment: .top)
             .background(Color.white)
             .environment(\.layoutDirection, direction)
+            .environment(\.colorScheme, .light)
         let pixels = try await render(view, size: size, "decision-14-label-style-\(direction)")
         let ink = try glyphs(in: pixels, on: CGRect(origin: .zero, size: size), from: 0, direction)
         let side = direction == .rightToLeft ? size.width - ink.maxX : ink.minX
