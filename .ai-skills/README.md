@@ -49,6 +49,7 @@
 | ------------------------------------------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
 | [mcp-server-specification.md](./mcp-server-specification.md) | MCP server design for `@kozmos-ds/mcp-server` package                  | Building AI-powered tooling, integrating with Claude/Cursor |
 | [ai-integration-guide.md](./ai-integration-guide.md)         | Context files for Claude, Cursor, Anti Gravity, Copilot, Codeium, etc. | Setting up AI agents in consuming projects                  |
+| [docs/claude-design](../docs/claude-design/README.md)        | Consuming Kozmos, and one API card per component, generated            | Designing with Kozmos in Claude Design, mounting a part     |
 
 ### Master Reference
 
