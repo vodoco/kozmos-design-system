@@ -10,10 +10,12 @@ import {
   Icon,
   IconButton,
   Link,
+  NavigationItem,
   Navbar,
   Stack,
 } from "@kozmos-ds/react";
 import { LOGO_TEXT, SITE_NAME } from "../lib/site";
+import { storybookHref } from "../lib/storybook";
 import { SiteLink, SiteNavItem, useNavigateAfterClose } from "./links";
 import { SiteSearch } from "./SiteSearch";
 import { ThemeMenu } from "./ThemeMenu";
@@ -26,13 +28,24 @@ export const primaryNavigation = [
 ] as const;
 
 /**
+ * Storybook, the component reference, last among the site's pages: it is
+ * published beside them but is not one of them, so its link is a plain
+ * link that leaves the app (src/lib/storybook.ts).
+ */
+export const storybookNavigation = {
+  href: storybookHref(),
+  label: "Storybook",
+} as const;
+
+/**
  * One row from 360px up. Kozmos's Navbar gives its leading group a 32rem
  * basis, so anything in its trailing slot drops to a second row on a phone
  * (GAPS.md, GAP-41). Everything therefore goes in the navigation slot: the
- * page links, which a narrow screen moves into a drawer, and the three small
- * tools — theme, search, and the drawer's button. That slot keeps a 16rem
- * basis of its own, so beside it the logo is the full logo from 48rem and
- * its K below; at 320px nothing fits beside it and the tools wrap.
+ * page links, which a screen narrower than 64rem moves into a drawer, and
+ * the three small tools — theme, search, and the drawer's button. That slot
+ * keeps a 16rem basis of its own, so beside it the logo is the full logo
+ * from 48rem and its K below; at 320px nothing fits beside it and the tools
+ * wrap.
  */
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -64,6 +77,9 @@ export function SiteHeader() {
                 {item.label}
               </SiteNavItem>
             ))}
+            <NavigationItem href={storybookNavigation.href} placement="top">
+              {storybookNavigation.label}
+            </NavigationItem>
           </Box>
           <Box className="site-header-tools">
             <ThemeMenu />
@@ -100,6 +116,14 @@ export function SiteHeader() {
                           {item.label}
                         </SiteNavItem>
                       ))}
+                      {/* A plain link: it leaves the app, so nothing waits
+                          for the drawer to close. */}
+                      <NavigationItem
+                        href={storybookNavigation.href}
+                        placement="side"
+                      >
+                        {storybookNavigation.label}
+                      </NavigationItem>
                     </Stack>
                   </nav>
                 </DrawerContent>

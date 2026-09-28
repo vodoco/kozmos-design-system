@@ -763,8 +763,8 @@ keep the table's four columns and its statuses as they are.
   227px tall — 27 % of the screen, and sticky. There is no way to collapse
   the navigation into a menu.
 - **Now:** the site puts everything in the navigation slot: the links,
-  shown from 48rem, and three small tools — a theme menu, search, and a
-  button that opens the links in a `Drawer` below 48rem. That slot keeps a
+  shown from 64rem, and three small tools — a theme menu, search, and a
+  button that opens the links in a `Drawer` below 64rem. That slot keeps a
   16rem basis of its own, which leaves the logo little room beside it: the
   header shows the full logo from 48rem and its K below. One 64px row from
   360px up; at 320px the tools still drop to a second row (a test measures

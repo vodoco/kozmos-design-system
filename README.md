@@ -54,7 +54,10 @@ repository to depend on. Today both are consumed from a checkout —
 The website — every component running, with its props, its code on three
 platforms, and the measured gaps — publishes from `main` to
 <https://vodoco.github.io/kozmos-design-system/>. Its source is
-[`apps/site`](./apps/site/README.md).
+[`apps/site`](./apps/site/README.md). Storybook, the component reference —
+each component's docs, stories, controls and code on every platform —
+publishes with it, to <https://vodoco.github.io/kozmos-design-system/storybook/>,
+from [`apps/docs`](./apps/docs).
 
 [`docs/README.md`](./docs/README.md) maps the written documentation, with a
 line on when to read each document: how the styles, Figma, the map shell and

@@ -1383,7 +1383,8 @@ test.describe("the header", () => {
       };
     });
 
-  for (const width of [768, 1024, 1280, 1440]) {
+  // From 64rem: narrower, the five links are in the drawer (site.css).
+  for (const width of [1024, 1280, 1440]) {
     test(`centres the page links on the page at ${width}px, clear of the logo and the tools`, async ({
       page,
     }) => {
@@ -1456,27 +1457,91 @@ test.describe("the header", () => {
   }
 });
 
-test("on a phone, the site's pages are in the header's drawer", async ({
+// Below 64rem: a phone, and a tablet held upright.
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
+]) {
+  test(`at ${viewport.width}px, the site's pages are in the header's drawer`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    // A page with no known axe findings: behind an open drawer the page is
+    // hidden, and so would be the findings the home page is known for.
+    await page.goto("/get-started");
+    await hydrated(page);
+    const banner = page.getByRole("banner");
+    await expect(banner.getByRole("link", { name: "Examples" })).toBeHidden();
+    await banner.getByRole("button", { name: "Site menu" }).click();
+    const drawer = page.getByRole("dialog", { name: "Kozmos" });
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByRole("link")).toHaveText([
+      "Foundations",
+      "Components",
+      "Examples",
+      "Get started",
+      "Storybook",
+    ]);
+    // Open, the drawer is the page: its navigation is the only one exposed.
+    await hydrated(page);
+    expect(await axeViolations(page)).toEqual([]);
+    await drawer.getByRole("link", { name: "Examples" }).click();
+    await expect(page).toHaveURL(/\/examples$/);
+    await expect(drawer).toBeHidden();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Examples",
+    );
+    await focusStaysOnContent(page);
+  });
+}
+
+test("Storybook's link leaves the app, from the header, the drawer and the footer", async ({
   page,
 }) => {
+  // Storybook is published beside the site, in a folder of its own
+  // (.github/workflows/pages.yml), and is no route of it: each link must
+  // load a new document, never ask the router, which would find the
+  // not-found page. This server has no Storybook, so the new document is
+  // the site's own 404 page; that it is a new one is the point.
+  const leaves = async (link: Locator) => {
+    await expect(link).toHaveAttribute("href", "/storybook/");
+    await page.evaluate(() => {
+      (window as unknown as { sameDocument: boolean }).sameDocument = true;
+    });
+    await link.click();
+    await page.waitForURL(/\/storybook\/$/);
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { sameDocument?: boolean }).sameDocument,
+      ),
+    ).toBeUndefined();
+  };
+  await page.goto("/components");
+  await hydrated(page);
+  await leaves(
+    page
+      .getByRole("navigation", { name: "Site" })
+      .getByRole("link", { name: "Storybook" }),
+  );
+  await page.goto("/components");
+  await hydrated(page);
+  await leaves(
+    page
+      .getByRole("navigation", { name: "Footer" })
+      .getByRole("link", { name: "Storybook" }),
+  );
   await page.setViewportSize({ width: 390, height: 844 });
-  // A page with no known axe findings: behind an open drawer the page is
-  // hidden, and so would be the findings the home page is known for.
-  await page.goto("/get-started");
+  await page.goto("/components");
   await hydrated(page);
-  const banner = page.getByRole("banner");
-  await expect(banner.getByRole("link", { name: "Examples" })).toBeHidden();
-  await banner.getByRole("button", { name: "Site menu" }).click();
-  const drawer = page.getByRole("dialog", { name: "Kozmos" });
-  await expect(drawer).toBeVisible();
-  // Open, the drawer is the page: its navigation is the only one exposed.
-  await hydrated(page);
-  expect(await axeViolations(page)).toEqual([]);
-  await drawer.getByRole("link", { name: "Examples" }).click();
-  await expect(page).toHaveURL(/\/examples$/);
-  await expect(drawer).toBeHidden();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Examples");
-  await focusStaysOnContent(page);
+  await page
+    .getByRole("banner")
+    .getByRole("button", { name: "Site menu" })
+    .click();
+  await leaves(
+    page
+      .getByRole("dialog", { name: "Kozmos" })
+      .getByRole("link", { name: "Storybook" }),
+  );
 });
 
 test.describe("home layout", () => {
@@ -3207,6 +3272,9 @@ test("the search opens from the keyboard or the header and takes you there", asy
 test("a button that holds an icon and words keeps them 8px apart", async ({
   page,
 }) => {
+  // Nine pages, each loaded and scrolled end to end: 16–22s in WebKit on CI,
+  // and 31s, past the 30s limit, on a slower runner (run 36432507904).
+  test.slow();
   // GAP-56: Kozmos's Button sets no gap; the site's buttons carry the 8px
   // Figma's Button keeps between its indicator and its label.
   const cases: [string, (page: Page) => Locator, number?][] = [

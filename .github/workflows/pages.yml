@@ -1,10 +1,17 @@
-# The website, published to GitHub Pages.
+# The website, and Storybook beside it, published to GitHub Pages.
 #
 # A project site is served from a subpath — https://vodoco.github.io/
 # kozmos-design-system/ — so the build takes that prefix through BASE_PATH.
 # React Router then writes the pages into a folder of that name, while the
 # assets stay at the build's root, and the artifact is the two merged: the
 # published root is what Pages serves at the subpath.
+#
+# Storybook, the component reference (decision 44), goes in the same
+# artifact, in storybook/: a repository has one Pages deployment, so this is
+# the only workflow that deploys, and a second would replace the first.
+# Storybook's build addresses everything from its own page (its Vite base is
+# "./"), so it works in any folder with no base of its own; the assembly
+# checks that it still does.
 #
 # Pages resolves a directory to its index.html and serves 404.html for a miss,
 # which is what the prerendered build expects. (A plain blob container does
@@ -18,6 +25,9 @@ on:
     branches: ["main"]
     paths:
       - "apps/site/**"
+      # Storybook: its config, its own pages and stories. The components'
+      # stories and docs are under packages/.
+      - "apps/docs/**"
       - "packages/**"
       - ".github/workflows/pages.yml"
       - "pnpm-lock.yaml"
@@ -57,18 +67,25 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Build the packages the site uses
-        run: pnpm turbo run build --filter=@kozmos-ds/site^...
+      # The site's packages, and React's, whose stylesheet Storybook loads
+      # from its dist (the stories themselves read the source).
+      - name: Build the packages the site and Storybook use
+        run: pnpm turbo run build --filter=@kozmos-ds/site^... --filter=@kozmos-ds/react...
 
       - name: Build the site for its subpath
         run: pnpm --filter @kozmos-ds/site build
 
+      - name: Build Storybook
+        run: pnpm --filter @kozmos-ds/docs build-storybook
+
       # The pages sit under the prefix; the assets do not. The artifact is the
-      # site's root, so both belong at the top of it.
+      # site's root, so both belong at the top of it, and Storybook in its
+      # folder beside the pages.
       - name: Assemble the artifact
         run: |
           set -euo pipefail
           client="apps/site/build/client"
+          storybook="apps/docs/storybook-static"
           out="apps/site/build/pages"
           # The folder React Router wrote the pages into is the prefix itself,
           # so it is read from BASE_PATH rather than spelled twice.
@@ -83,7 +100,29 @@ jobs:
           done
           test -f "$out/index.html"
           test -f "$out/404.html"
-          echo "artifact: $(find "$out" -type f | wc -l | tr -d ' ') files"
+          # Storybook's folder is its own: a site page there would be merged
+          # into it, silently, so one fails the build instead.
+          if [ -e "$out/storybook" ]; then
+            echo "The site has a page at storybook/, which is Storybook's folder."
+            exit 1
+          fi
+          for file in index.html iframe.html index.json; do
+            if [ ! -f "$storybook/$file" ]; then
+              echo "Storybook's build has no $file."
+              exit 1
+            fi
+          done
+          cp -R "$storybook" "$out/storybook"
+          # Served from a folder, Storybook must address nothing from the
+          # domain's root: /assets/… would ask vodoco.github.io for a file
+          # that only exists under the folder.
+          stray=$(grep -ho -E '(href|src)="/[^"]*"' "$out/storybook/index.html" "$out/storybook/iframe.html" | sort -u || true)
+          if [ -n "$stray" ]; then
+            echo "Storybook addresses the domain's root, not its folder:"
+            echo "$stray"
+            exit 1
+          fi
+          echo "artifact: $(find "$out" -type f | wc -l | tr -d ' ') files, $(find "$out/storybook" -type f | wc -l | tr -d ' ') of them Storybook's"
 
       - uses: actions/configure-pages@v5
 
