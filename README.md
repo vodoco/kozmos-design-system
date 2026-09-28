@@ -56,14 +56,16 @@ platforms, and the measured gaps — publishes from `main` to
 <https://vodoco.github.io/kozmos-design-system/>. Its source is
 [`apps/site`](./apps/site/README.md).
 
-[`docs/README.md`](./docs/README.md) maps the written documentation. Start with
-[`docs/ds-handoff.md`](./docs/ds-handoff.md): the scope, the priorities in
-order, the measured state and the open decisions. Superseded material,
-including the May 2026 agent-tracking passes, is under
-[`docs/archive/`](./docs/archive/README.md).
-
+[`docs/README.md`](./docs/README.md) maps the written documentation, with a
+line on when to read each document: how the styles, Figma, the map shell and
+releases work, and the Product / SDK guides.
 [`docs/status.md`](./docs/status.md) is generated: which components exist on
 which platform, and which are linked to Figma.
+
+Working here with a coding agent? [`AGENTS.md`](./AGENTS.md) is the short guide
+it reads first: the layout, the commands and the rules every change follows.
+[`.ai-skills/`](./.ai-skills/README.md) is the reference for assistants that
+design or build with Kozmos.
 
 ## The repository
 
@@ -79,6 +81,8 @@ which platform, and which are linked to Figma.
 | `apps/site`                  | The website, built from the published packages       |
 | `apps/playground-*`          | A place to try web, Android and Vue                  |
 | `apps/Playground.swiftpm`    | The same for iOS, as a Swift Playground              |
+| `apps/docs`                  | Storybook: every component's stories and docs        |
+| `figma`                      | The Figma plugin that paints the Core Library        |
 | `docs`                       | The written documentation                            |
 | `scripts`                    | The checks — tokens, parity, Figma, releases         |
 
