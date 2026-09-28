@@ -1,10 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import {
+  AlertCircle,
   Bell01 as Bell,
   ChevronRight,
+  Globe01 as Globe,
   Home01 as Home,
+  Map01 as MapIcon,
+  MarkerPin01 as MarkerPin,
+  NavigationPointer01 as NavigationPointer,
   SearchMd as Search,
   Settings01 as Settings,
+  Users01 as Users,
+  Wifi,
 } from "@kozmos-ds/icons";
 import { NavigationItem } from "./NavigationItem";
 
@@ -73,6 +80,15 @@ export const Rail: Story = {
       >
         Search
       </NavigationItem>
+      {/* Two words that each fit the tile but not together: the label takes
+          its second line and the tile stays 72px tall. */}
+      <NavigationItem
+        content="icon-label"
+        icon={<MarkerPin className="h-6 w-6" />}
+        placement="rail"
+      >
+        Nearby places
+      </NavigationItem>
       <NavigationItem
         content="icon-label"
         icon={<Settings className="h-6 w-6" />}
@@ -80,6 +96,42 @@ export const Rail: Story = {
       >
         Settings
       </NavigationItem>
+    </nav>
+  ),
+};
+
+// A web dashboard's rail is wider than an app's: its tiles are 96px, given
+// with `className="w-24"`, as BottomNavigation widens its own. At 72px no
+// legible size fits "Configuration" in the tile's 56px; at 96px every one of
+// these nine labels fits two 11px lines, in every engine and font measured.
+const dashboardRail = [
+  { icon: MapIcon, label: "Map Content" },
+  { icon: MarkerPin, label: "Geofences" },
+  { icon: NavigationPointer, label: "Wayfinding Network" },
+  { icon: Wifi, label: "IoT Devices" },
+  { icon: AlertCircle, label: "Metadata" },
+  { icon: Settings, label: "SDK Configuration" },
+  { icon: Users, label: "User Management" },
+  { icon: Globe, label: "UI Translation Manager" },
+  { icon: Settings, label: "System Settings", selected: true },
+];
+
+export const DashboardRail: Story = {
+  name: "Dashboard rail",
+  render: () => (
+    <nav className="flex w-28 flex-col items-center gap-2 rounded-control border bg-background p-2">
+      {dashboardRail.map((item) => (
+        <NavigationItem
+          key={item.label}
+          className="w-24"
+          content="icon-label"
+          icon={<item.icon className="h-6 w-6" />}
+          placement="rail"
+          selected={item.selected}
+        >
+          {item.label}
+        </NavigationItem>
+      ))}
     </nav>
   ),
 };

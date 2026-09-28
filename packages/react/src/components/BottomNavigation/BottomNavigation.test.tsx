@@ -36,4 +36,18 @@ describe("BottomNavigation", () => {
       "page",
     );
   });
+
+  it("labels its tiles as the rail does: 11px on 14px lines", () => {
+    // Decision 36: it reuses the rail tile, so its labels change with the
+    // rail's. Its tiles share the bar's width instead of the rail's 64px.
+    render(
+      <BottomNavigation items={[{ icon: <Home />, label: "Settings" }]} />,
+    );
+
+    const tile = screen.getByRole("button", { name: "Settings" });
+    expect(tile).toHaveClass("text-[11px]", "w-auto", "flex-1");
+    expect(tile).not.toHaveClass("text-xs");
+    expect(tile).not.toHaveClass("w-16");
+    expect(screen.getByText("Settings")).toHaveClass("leading-[14px]");
+  });
 });
