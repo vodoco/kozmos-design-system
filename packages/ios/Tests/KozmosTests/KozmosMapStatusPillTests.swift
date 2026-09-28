@@ -306,6 +306,25 @@ final class KozmosMapStatusPillTests: XCTestCase {
         }
     }
 
+    /// No Bluetooth passes Kozmos's own bluetooth-off by name, and it draws in
+    /// the tone's colour, not the icon's own ink: a `KozmosIcon` left at its
+    /// default colour takes the colour of the part it is in, as a Compose
+    /// icon takes `LocalContentColor`. Pointr's outline spans 3 to 21 across
+    /// and 2 to 22 down on its 24 grid, and its round line reaches 1 beyond.
+    @MainActor func testKozmosBluetoothOffDrawsInTheTonesColour() throws {
+        let danger = try DrawnPixels.resolved(KozmosColors.semanticsEmotionDangerText, in: .light)
+        let drawn = try onTheMap(KozmosMapStatusPill("No Bluetooth", tone: .danger) {
+            KozmosIcon("bluetooth-off", size: .lg)
+        })
+        let box = try surfaceBox(drawn, try surfaceColor(.danger, .light))
+        let markArea = CGRect(x: box.minX, y: box.minY, width: 12 + 24, height: box.height)
+        let mark = try XCTUnwrap(drawn.boundingBox(in: markArea, where: DrawnPixels.matches(danger, tolerance: 12)),
+                                 "Kozmos's bluetooth-off is not drawn in the danger colour")
+        XCTAssertEqual(mark.width, 20, accuracy: 1.5, "the mark is \(mark.width) wide")
+        XCTAssertEqual(mark.height, 22, accuracy: 1.5, "the mark is \(mark.height) tall")
+        XCTAssertEqual(mark.minX - box.minX, 12 + 2, accuracy: 1.5, "the mark starts \(mark.minX - box.minX) in")
+    }
+
     /// With nothing to say it draws nothing, and takes no room.
     @MainActor func testWithNoWordsItDrawsNothing() throws {
         let drawn = try onTheMap(KozmosMapStatusPill("", tone: .progress))
