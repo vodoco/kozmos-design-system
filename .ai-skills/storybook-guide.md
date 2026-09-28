@@ -45,43 +45,37 @@
 
 ### 2.1 Installation
 
+Storybook is already set up, in its own workspace package: `@kozmos-ds/docs` (`apps/docs`), on
+Storybook 8 with the Vite builder. Nothing needs initialising; `pnpm install` at the root installs
+it. To add an addon, add it to that package:
+
 ```bash
-# In packages/react directory
-cd packages/react
-
-# Install Storybook
-pnpm dlx storybook@latest init --builder vite
-
-# Install additional addons
-pnpm add -D @storybook/addon-a11y \
-  @storybook/addon-designs \
-  @storybook/addon-storysource \
-  @storybook/test
+pnpm --filter @kozmos-ds/docs add -D <addon>
 ```
 
 ### 2.2 Directory Structure
 
 ```
-packages/react/
+apps/docs/
 ├── .storybook/
-│   ├── main.ts              # Storybook configuration
-│   ├── preview.ts           # Global decorators & parameters
+│   ├── main.ts              # Stories, addons, framework
+│   ├── preview.tsx          # Global decorators & parameters
 │   ├── preview-head.html    # Custom head elements
-│   ├── manager.ts           # Manager UI customization
-│   └── theme.ts             # Custom Storybook theme
-├── src/
-│   ├── components/
-│   │   ├── Button/
-│   │   │   ├── Button.tsx
-│   │   │   ├── Button.stories.tsx
-│   │   │   ├── Button.test.tsx
-│   │   │   └── index.ts
-│   │   └── ...
-│   └── stories/
-│       ├── Introduction.mdx      # Welcome page
-│       ├── GettingStarted.mdx    # Setup guide
-│       └── DesignTokens.mdx      # Token documentation
+│   └── preview.css
+├── .storybook-vue/          # The private Vue harness's Storybook
+├── src/                     # Documentation pages and stories
+└── stories/                 # Example stories
+packages/react/src/components/Button/
+├── Button.tsx
+├── Button.stories.tsx       # Stories live beside their component
+├── Button.mdx
+├── Button.test.tsx
+├── Button.figma.tsx
+└── index.ts
 ```
+
+`apps/docs/.storybook/main.ts` reads stories and MDX from `apps/docs/src`, `apps/docs/stories` and
+`packages/react/src`.
 
 ---
 
@@ -983,51 +977,32 @@ export const decorators = [
 
 ### 8.1 Test Runner
 
+The Storybook test runner (`test-storybook`) is not used, and there is no `storybook:test` script.
+The suites are Playwright scripts at the root that visit a served Storybook, named by
+`STORYBOOK_URL`:
+
 ```bash
-# Install test runner
-pnpm add -D @storybook/test-runner
+# Serve a Storybook first (the dev server listens on port 6006)
+pnpm --filter @kozmos-ds/docs storybook
 
-# Run tests
-pnpm storybook:test
+# Interactions, in light and dark at three viewports
+STORYBOOK_URL=http://127.0.0.1:6006 pnpm test:storybook-interactions
 
-# Run in CI
-pnpm storybook:test --ci
+# Two more of the suites CI runs against Storybook
+STORYBOOK_URL=http://127.0.0.1:6006 pnpm test:storybook-docs
+STORYBOOK_URL=http://127.0.0.1:6006 pnpm test:storybook-regressions
 ```
 
-```json
-// package.json
-{
-  "scripts": {
-    "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build",
-    "storybook:test": "test-storybook"
-  }
-}
-```
+In CI the browser shards serve the built Storybook and run these suites in Chromium, Firefox and
+WebKit ([ci-cd-configuration.md](./ci-cd-configuration.md)); locally, `ADAPTIVE_BROWSER=firefox`
+or `ADAPTIVE_BROWSER=webkit` picks the browser.
 
 ### 8.2 Accessibility Tests
 
-```typescript
-// .storybook/test-runner.ts
-import type { TestRunnerConfig } from "@storybook/test-runner";
-import { injectAxe, checkA11y } from "axe-playwright";
-
-const config: TestRunnerConfig = {
-  async preVisit(page) {
-    await injectAxe(page);
-  },
-  async postVisit(page) {
-    await checkA11y(page, "#storybook-root", {
-      detailedReport: true,
-      detailedReportOptions: {
-        html: true,
-      },
-    });
-  },
-};
-
-export default config;
-```
+`pnpm test:storybook-audit` runs axe on stories through Playwright (`@axe-core/playwright`), in
+light and dark at 320 and 1280 px, and fails on any violation; `STORY_SCOPE=all` audits every story,
+as CI does, instead of one per component. `scripts/skills/check-a11y.ts` is a smaller axe check of
+five stories. The `@storybook/addon-a11y` panel shows axe's findings while you work.
 
 ### 8.3 Visual Regression
 
@@ -1045,62 +1020,16 @@ how to accept one.
 ### 9.1 Static Build
 
 ```bash
-# Build static Storybook
-pnpm storybook:build
-
-# Output in storybook-static/
-# Deploy to any static host
+# Build static Storybook into apps/docs/storybook-static
+pnpm --filter @kozmos-ds/docs build-storybook
 ```
+
+CI, Visual Regression and Lighthouse CI build it this way to test it.
 
 ### 9.2 GitHub Pages
 
-```yaml
-# .github/workflows/deploy-storybook.yml
-name: Deploy Storybook
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - "packages/react/**"
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build Storybook
-        run: pnpm --filter @kozmos/react storybook:build
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./packages/react/storybook-static
-```
-
-### 9.3 Versioned Documentation
-
-```typescript
-// storybook-static/.storybook/versions.json
-{
-  "current": "2.0.0",
-  "versions": [
-    { "version": "2.0.0", "url": "/v2" },
-    { "version": "1.5.0", "url": "/v1.5" },
-    { "version": "1.0.0", "url": "/v1" }
-  ]
-}
-```
+Storybook is not hosted anywhere yet, and no workflow deploys it. Olcay's decision 34 is to host it
+with the website on GitHub Pages; that work has not started.
 
 ---
 

@@ -1,0 +1,103 @@
+# The website, published to GitHub Pages.
+#
+# A project site is served from a subpath — https://vodoco.github.io/
+# kozmos-design-system/ — so the build takes that prefix through BASE_PATH.
+# React Router then writes the pages into a folder of that name, while the
+# assets stay at the build's root, and the artifact is the two merged: the
+# published root is what Pages serves at the subpath.
+#
+# Pages resolves a directory to its index.html and serves 404.html for a miss,
+# which is what the prerendered build expects. (A plain blob container does
+# neither, which is why this is Pages and not object storage.)
+#
+# Nothing here reads event data, so there is no untrusted input to quote.
+name: Pages
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/site/**"
+      - "packages/**"
+      - ".github/workflows/pages.yml"
+      - "pnpm-lock.yaml"
+  # So the site can be published from a branch before it lands on main.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push waits rather than racing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    # The subpath the project site is served from, named once: the build takes
+    # it as Vite's base, and the assembly reads the folder name back out of it.
+    env:
+      BASE_PATH: /kozmos-design-system/
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the packages the site uses
+        run: pnpm turbo run build --filter=@kozmos-ds/site^...
+
+      - name: Build the site for its subpath
+        run: pnpm --filter @kozmos-ds/site build
+
+      # The pages sit under the prefix; the assets do not. The artifact is the
+      # site's root, so both belong at the top of it.
+      - name: Assemble the artifact
+        run: |
+          set -euo pipefail
+          client="apps/site/build/client"
+          out="apps/site/build/pages"
+          # The folder React Router wrote the pages into is the prefix itself,
+          # so it is read from BASE_PATH rather than spelled twice.
+          prefix="${BASE_PATH#/}"
+          prefix="${prefix%/}"
+          rm -rf "$out"
+          mkdir -p "$out"
+          test -d "$client/$prefix"
+          cp -R "$client/$prefix/." "$out/"
+          for item in assets media favicon.ico favicon.svg apple-touch-icon.png __spa-fallback.html; do
+            if [ -e "$client/$item" ]; then cp -R "$client/$item" "$out/"; fi
+          done
+          test -f "$out/index.html"
+          test -f "$out/404.html"
+          echo "artifact: $(find "$out" -type f | wc -l | tr -d ' ') files"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/site/build/pages
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

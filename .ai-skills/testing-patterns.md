@@ -1402,75 +1402,19 @@ describe('Performance', () => {
 
 ## 10. CI Integration
 
-### Complete Test Workflow
+### Where the Tests Run
 
-```yaml
-# .github/workflows/test.yml
-name: Test
+There is no `test.yml`: the tests run in `.github/workflows/ci.yml`
+([ci-cd-configuration.md](./ci-cd-configuration.md)).
 
-on:
-  push:
-    branches: [main]
-  pull_request:
+- **`Web Build & Test`:** `pnpm test` (Vitest, React's suite with its `vitest-axe` checks), and the
+  built-library checks in Chromium, Firefox and WebKit.
+- **Twelve browser shards:** the Storybook suites against the built Storybook, one browser each.
+- **`Core Pipeline & POI Gallery`:** React's Playwright tests and the Storybook regressions.
+- **`iOS Build`:** `swift test` in `packages/ios` and the POI render tests on a simulator.
+- **`Android Build`:** `./gradlew verifyPaparazziDebug` in `packages/android`.
 
-jobs:
-  test-react:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install
-      - run: pnpm --filter @kozmos/react test -- --coverage
-      - run: pnpm --filter @kozmos/react typecheck
-
-      - uses: codecov/codecov-action@v3
-        with:
-          files: packages/react/coverage/coverage-final.json
-
-  test-ios:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build and Test
-        run: |
-          cd packages/ios
-          swift build
-          swift test
-
-  test-android:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Build and Test
-        run: |
-          cd packages/android
-          ./gradlew test
-
-  test-react-native:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - run: pnpm install
-      - run: pnpm --filter @kozmos/react-native test
-```
+Nothing uploads coverage, and there is no React Native package to test.
 
 ---
 
@@ -1482,18 +1426,17 @@ jobs:
 # Run all tests
 pnpm test
 
-# Run tests in watch mode
-pnpm test:watch
-
-# Run tests with coverage
-pnpm test -- --coverage
+# Run React's tests in watch mode
+pnpm --filter @kozmos-ds/react test:watch
 
 # Run specific package tests
-pnpm --filter @kozmos/react test
+pnpm --filter @kozmos-ds/react test
 
-# Run a11y tests only
-pnpm test -- --grep "accessibility"
+# Run the React tests whose names match a pattern (Vitest's -t; it has no --grep)
+pnpm --filter @kozmos-ds/react test -- -t "<pattern>"
 ```
+
+There is no coverage run: `@vitest/coverage-v8` is not installed, so `--coverage` fails.
 
 ### Test File Naming
 
