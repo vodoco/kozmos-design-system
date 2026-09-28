@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
-import { BluetoothOff } from "@kozmos-ds/icons";
+import { BluetoothOff, Walking } from "@kozmos-ds/icons";
 import { MapStatusPill } from "./MapStatusPill";
 import { MapOverlay } from "../MapOverlay";
 import { MapControlsGroup } from "../MapControlsGroup";
@@ -50,9 +50,16 @@ export const FailedToCalculatePrecisePosition: Story = {
   args: { tone: "danger", children: "Failed to Calculate Precise Position" },
 };
 
-/** The words alone. */
+/**
+ * The SDK's walking figure, `Walking`, in the arc's place: the progress tone
+ * draws it in the theme's blue, as the SDK does.
+ */
 export const WalkingImprovesAccuracy: Story = {
-  args: { tone: "neutral", children: "Walking improves accuracy" },
+  args: {
+    tone: "progress",
+    icon: <Walking />,
+    children: "Walking improves accuracy",
+  },
 };
 
 /** A check, and the words, in the success colour. */
@@ -80,8 +87,8 @@ export const NoBluetooth: Story = {
 
 /**
  * The SDK marks this with a walking figure struck through beside a pin, and
- * `@kozmos-ds/icons` has no such icon: it comes from Figma through the icons
- * pipeline. Until it does, this draws no mark rather than a stand-in.
+ * `@kozmos-ds/icons` has no such icon: neither Figma file Kozmos reads for the
+ * SDK draws it. Until one does, this draws no mark rather than a stand-in.
  */
 export const WayfindingUnavailable: Story = {
   args: { tone: "danger", icon: null, children: "Wayfinding Unavailable" },
@@ -104,8 +111,9 @@ export const UpToDate: Story = {
 // The Turn Back indicator.
 
 /**
- * The filled warning: the SDK's bright amber, alert/600, under dark words, in
- * both themes. The SDK's U-turn arrow is not in `@kozmos-ds/icons` yet, so
+ * The filled warning: Emotion/alert/fill, the SDK's bright amber, under its
+ * ink, Emotion/alert/onFill, in both themes. The SDK's U-turn arrow is not in
+ * `@kozmos-ds/icons`, nor in either Figma file Kozmos reads for the SDK, so
  * this draws no mark rather than a stand-in.
  */
 export const TurnBack: Story = {

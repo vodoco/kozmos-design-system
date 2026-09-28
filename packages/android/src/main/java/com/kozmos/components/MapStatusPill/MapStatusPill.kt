@@ -37,9 +37,10 @@ import com.kozmos.tokens.KozmosThemeTokens
 /**
  * How a map status reads (decision 39). Mirrors React's `MapStatusPill.tone`.
  *
- * [Neutral] is the words alone — "Walking improves accuracy". [Progress] is
- * the system's arc, turning in the theme's blue — "Calculating Precise
- * Position", "Calculating step-free route". [Success] is a check, and the
+ * [Neutral] is the words alone, for a status with nothing to mark. [Progress]
+ * is the system's arc, turning in the theme's blue — "Calculating Precise
+ * Position", "Calculating step-free route"; "Walking improves accuracy" puts a
+ * walking figure in its place. [Success] is a check, and the
  * words, in the success colour — "Established". [Danger] is a warning
  * triangle in the danger colour, the words staying ink — "Failed to Calculate
  * Precise Position". [Warning] fills the surface with Emotion/alert/fill, the
@@ -142,9 +143,10 @@ private val MapStatusPillMaxWidth = 256.dp
  * are the type scale's 13 on a 16 line, in foreground/300, and wrap at a map
  * control's longest, 256, rather than being cut.
  *
- * [icon] replaces the tone's own mark — "No Bluetooth" passes the product's
- * Bluetooth-off — drawn at 24 in the tone's colour and never announced: the
- * words say it. `null` draws no mark.
+ * [icon] replaces the tone's own mark — "No Bluetooth" passes
+ * `KozmosIcon(name = "bluetooth-off")`, and "Walking improves accuracy"
+ * Material's `DirectionsWalk` — drawn at 24 in the tone's colour and never
+ * announced: the words say it. `null` draws no mark.
  *
  * It is a live region: TalkBack says its words when they change, politely
  * unless [live] says otherwise, and the turning arc says no "Loading" of its
