@@ -219,8 +219,9 @@ setting it to `false` stops every release.
 
 1. **A version PR:** `pnpm version-packages` consumes the changesets (private packages are not
    versioned), `release/plan.json` names the exact packages, versions and npm tag, and
-   `pnpm skills:build` refreshes the AI-facing changelog and inventory. It is reviewed and merged
-   like any pull request.
+   `pnpm skills:build` refreshes the AI-facing changelog and inventory and the Claude Design docs
+   (which read the built React types, so build first). It is reviewed and merged like any pull
+   request.
 2. **Pre-flight:** once `main`'s CI on that merge is green, `pnpm release:preflight <sha> <ci-run-id>`
    makes the release job's own checks in advance, the credential check among them, and prints the
    dispatch command.

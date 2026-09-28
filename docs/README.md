@@ -35,6 +35,10 @@ three platforms. [`AGENTS.md`](../AGENTS.md) is the short guide to working in th
 
 ## Generated or checked
 
+- [`claude-design/`](claude-design/README.md) — what the Kozmos artifact in Claude Design carries:
+  consuming the system, and one API card per component with every prop and an example that
+  compiles. `pnpm skills:build` writes it from the built React types and the stories;
+  `pnpm skills:check` fails when it is stale or an example stops compiling.
 - [`status.md`](status.md) — which components exist on which platform, and which link to Figma.
   `pnpm exec tsx scripts/skills/check-completion.ts` writes it; CI fails when it is stale.
 - [`component-variant-gap-analysis.md`](component-variant-gap-analysis.md) — which variant axes
