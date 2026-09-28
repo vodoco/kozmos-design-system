@@ -115,14 +115,18 @@ keep the table's four columns and its statuses as they are.
 | GAP-80 | No row actions: nothing shows on hover outside `Tree`            | Core                   | open         |
 | GAP-81 | 36 of 112 components carry placeholder documentation             | Core                   | left visible |
 | GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible |
-| GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | open         |
+| GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | composed     |
 | GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | open         |
 | GAP-85 | `POIResultGroup`'s label makes every group a landmark            | Product / SDK          | open         |
-| GAP-86 | No microphone or speaker glyph for the assistant's controls      | Core                   | open         |
+| GAP-86 | No microphone or speaker glyph for the assistant's controls      | Core                   | fixed        |
 | GAP-87 | `AIInputBar`'s `disabled` does not reach its `trailing` slot     | Core                   | open         |
-| GAP-88 | `ActionCard`'s title is a paragraph, not a heading               | Core                   | open         |
+| GAP-88 | `ActionCard`'s title is a paragraph, not a heading               | Core                   | left visible |
 | GAP-89 | `BrowseCategoriesPanel`'s tiles overlap below about 360px        | Product / SDK          | open         |
 | GAP-90 | The brand family is named but no font is shipped                 | Core                   | composed     |
+| GAP-91 | `AdaptiveMapShell` cuts its top bar's and controls' shadows      | Product / SDK          | left visible |
+| GAP-92 | `AdaptiveMapShell` does not say which edge its controls sit on   | Product / SDK          | composed     |
+| GAP-93 | `AICompanionPanel` leaves what it covers in the tab order        | Core                   | composed     |
+| GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | open         |
 
 ---
 
@@ -319,13 +323,17 @@ keep the table's four columns and its statuses as they are.
 - **Fixed** in the design system (`AlertTitle` takes a `level`, `none` by
   default, so the title is a paragraph and no heading is skipped). The site's
   `heading-order` allowance for the Alert page is deleted and the page passes
-  axe without it.
-- **Was:** the site passes `role="note"` for static notes. A confirmation sits
-  in a status region that is always on the page, with `role="none"` on the
-  `Alert` inside it (GAP-51); props reach the element after the default. The
-  examples use bold `Text` for a title; only the Alert reference's demo uses
-  `AlertTitle`, where its `h5` is the finding (`knownViolations`,
-  `heading-order`).
+  axe without it. Since 2026-09-25 `Alert` takes `live` too (`Alert.tsx:57`):
+  `off` by default, with no role, `polite` a status and `assertive` an alert.
+  On 2026-09-28 the examples dropped their roles: an `Alert` inside a status
+  region that is always on the page (GAP-51) takes the default, and one that
+  says something as it appears — signing in, a booking, the survey's thanks,
+  the end of onboarding — says `live="polite"`.
+- **Was:** the site passed `role="note"` for static notes, `role="status"` for
+  a confirmation, and `role="none"` on the `Alert` inside an always-present
+  status region; props reach the element after the default. The examples use
+  bold `Text` for a title; only the Alert reference's demo used `AlertTitle`,
+  where its `h5` was the finding.
 - **Lane:** Core.
 - **Fix in Kozmos:** a `live` or `tone` prop that picks the role, and a title
   level (or no heading).
@@ -870,9 +878,11 @@ isolate` on the example canvases, as on the component pages' demo stages and
   switches it by the space it has, and it has no drawer form. A console that
   puts its sections in a sidebar has no navigation left on a phone once the
   sidebar goes.
-- **Now:** below 64rem the dashboard hides its sidebar (a wrapper `Box`,
-  GAP-04) and opens the same sections in a `Drawer` from a menu button in
-  its `Navbar`, as the site's own header does.
+- **Now:** since 2026-09-28 the dashboard's sections go down the rail
+  (decision 42), from 48rem. Below that the dashboard hides it (a wrapper
+  `Box`, GAP-04) and opens the same sections in a `Drawer` from a menu button
+  in its `Navbar`, as the site's own header does. The example's media query
+  makes the switch; the rail does not.
 - **Lane:** Core.
 - **Fix in Kozmos:** a sidebar that turns into a rail or a drawer by the
   width of its container, as `AdaptiveMapShell` measures its own.
@@ -938,8 +948,9 @@ isolate` on the example canvases, as on the component pages' demo stages and
   instructions; a "saved" or "removed" confirmation should be polite.
 - **Now:** the examples keep a status region on the page at all times — a
   `Box` with `role="status"`, or a `Text` — and put each confirmation in it;
-  the `Alert` inside takes `role="none"` (GAP-12). Empty, the region leaves
-  the flow (`position: absolute` on `:empty`), so no gap opens for it.
+  the `Alert` inside keeps its default, no live role of its own (GAP-12).
+  Empty, the region leaves the flow (`position: absolute` on `:empty`), so no
+  gap opens for it.
 - **Lane:** Core (accessibility).
 - **Fix in Kozmos:** a polite announcer (or an `Alert` with a `live` prop that
   keeps its region mounted), and a visually-hidden primitive (GAP-06).
@@ -1434,8 +1445,12 @@ Text"])`) and the Get started page shows — touches it.
 - **Fixed** in the design system on 2026-09-28 (`ded56bc5`, its GAP-082): the
   overlay's stack is padded by the floating shadow's reach, so its scroll box
   no longer cuts a control's shadow. "GAP-72 is fixed: MapOverlay keeps what
-  floats in it whole" measures the kiosk directory's overlay: 4px above its
-  floor list, 8 either side and 12 below, the reach of its `0 4px 8px` shadow.
+  floats in it whole" measures the kiosk directory's overlay. The room was 4px
+  above its floor list, 8 either side and 12 below, the reach of the floating
+  `0 4px 8px` shadow; since the map controls took the SDK's heavier shadow
+  (#143) it is 32 above and either side and 48 below. The fix was
+  `MapOverlay`'s alone: the shell's two boxes still cut what they hold
+  (GAP-91).
 - **Was:** left visible on the SearchBar, MapOverlay and AdaptiveMapShell
   pages.
 - **Lane:** Product / SDK.
@@ -1636,8 +1651,10 @@ Text"])`) and the Get started page shows — touches it.
   `scrollable-region-focusable`, serious.
 - **Evidence:** the AIMessageList page failed axe until the demo passed
   `tabIndex={0}` itself.
-- **Now:** open. The AIMessageList demos set it, and said so, until the demos
-  moved to Storybook on 2026-09-28; no example has a thread yet.
+- **Now:** composed in the phone search example, whose assistant passes
+  `tabIndex={0}` to its thread, with a comment that says why; axe passes with
+  the assistant open. The AIMessageList demos did the same until they moved
+  to Storybook on 2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** give the scroller a tabindex, as `ScrollArea` does.
 
@@ -1670,9 +1687,18 @@ Text"])`) and the Get started page shows — touches it.
 - **What:** `AIInputBar`'s docs name `trailing` as the place for a voice
   control and `AIMessage` names a read-aloud control, and the icon registry's
   56 names carry neither a microphone nor a speaker.
-- **Now:** open. The AIInputBar demo used `stars-01` for "Suggest a question",
-  and said why, until the demos moved to Storybook on 2026-09-28. Related:
-  GAP-07, GAP-15, GAP-79.
+- **Fixed** in the design system on 2026-09-28 (#140): `AIInputBar` draws the
+  voice control itself, between the field and send, with the Pointr set's
+  `Microphone01` at rest and listening, `VolumeMax` while the assistant speaks,
+  `MicrophoneOff01` when voice is unavailable or failed, and the spinner while
+  it connects. The phone search's assistant shows them, and "GAP-86 is fixed:
+  the assistant's voice control draws its own marks" reads each state's mark.
+  What is left is a speaker for a read-aloud control in `AIMessage`'s
+  `trailing` slot: `VolumeMax` is exported, but `Icon name` cannot reach it
+  (GAP-79).
+- **Was:** the AIInputBar demo used `stars-01` for "Suggest a question", and
+  said why, until the demos moved to Storybook on 2026-09-28. Related: GAP-07,
+  GAP-15, GAP-79.
 - **Lane:** Core.
 - **Fix in Kozmos:** a microphone, a speaker and a stop, in the set's weight.
 
@@ -1692,8 +1718,11 @@ Text"])`) and the Get started page shows — touches it.
 - **What:** the card's `title` renders as a `<p>` (`ActionCard.tsx:20`), so a
   card holding a result list is not reachable by heading navigation — the same
   shape as GAP-11 for `EmptyState`.
-- **Now:** open. The ActionCard page's demo showed it until the demos moved to
-  Storybook on 2026-09-28.
+- **Now:** left visible in the phone search example: the assistant's answers
+  put their places in an `ActionCard` titled "1 place" or "3 places", and the
+  title is a paragraph, so heading navigation passes the places by. The
+  ActionCard page's demo showed it until the demos moved to Storybook on
+  2026-09-28.
 - **Lane:** Core.
 - **Fix in Kozmos:** a heading level, as `AlertTitle` now takes (GAP-12).
 
@@ -1733,3 +1762,93 @@ Text"])`) and the Get started page shows — touches it.
   (`packages/tokens` names `scripts/measure-font-metrics.mjs` for this), or
   give the family a metric-compatible fallback stack so the type is the same
   everywhere it is not installed.
+
+## GAP-91 · `AdaptiveMapShell` cuts its top bar's and controls' shadows
+
+- **What:** the shell holds its `topBar` and its `controls` in boxes that
+  scroll (`overflow-auto`, `AdaptiveMapShell.tsx:827` and `:842`), each the
+  size of what it holds, so whatever those cast outside their own box is cut
+  at its edge: a search bar's or a routing card's floating shadow, the floor
+  selector's, and the map controls' heavier one (decision 40), which reaches
+  32px either side and 48px below. GAP-72 named these boxes with
+  `MapOverlay`'s; the fix that padded MapOverlay by the shadows' reach
+  (`ded56bc5`) left the shell's as they were.
+- **Evidence:** measured on 2026-09-28 at dpr 2 in the venue explorer and the
+  wayfinding preview at 1280. The controls' box is 54px wide, the floor
+  selector's width, and its bottom is the location control's: past those
+  edges the map's fill starts at once. With the box's overflow made visible
+  (a probe, not the page), the same shadows run on for about 24px to the
+  side and further below. The routing card in the top bar loses its shadow
+  along its bottom and its end the same way.
+- **Now:** left visible in the venue explorer, the wayfinding and the phone
+  search examples. "GAP-91: the map shell's boxes cut the shadows of what
+  they hold" measures the room round each box's first part against its
+  shadow's reach, and fails once there is room.
+- **Lane:** Product / SDK.
+- **Fix in Kozmos:** what `MapOverlay`'s stack does now: pad both boxes by the
+  reach of the shadows what they hold casts, read from the elevation tokens,
+  and take it back with negative margins; or let them scroll only once they
+  reach their maximum size.
+
+## GAP-92 · `AdaptiveMapShell` does not say which edge its controls sit on
+
+- **What:** the shell sets its `controls` against the inline start beside a
+  side panel at the end, and against the inline end over a sheet
+  (`AdaptiveMapShell.tsx:485`, `controlsOnLeft`), and anchors their box there;
+  but it tells what it holds nothing of it. A column of controls — the floor
+  selector over the map controls — has to line up on that edge itself, or a
+  control that widens to say its mode (`MapControlsGroup`'s
+  `locationRevealOnChange`) moves the others: with the column lined up on
+  the inline end beside a side panel, the floor selector jumped 48px to the
+  right in the venue explorer, and 77px in the wayfinding while step-free
+  said "On", and back 2.5s later.
+- **Now:** composed. The venue explorer and the wayfinding read the
+  presentation from `onLayoutChange` and line their column up on the edge it
+  gives (`src/examples/controls-edge.ts`), which repeats the shell's rule for
+  a panel placed at the end. "The map controls keep their place when one
+  widens to say its mode" measures the floor selector while it does, and the
+  wayfinding's step-free test does the same.
+- **Lane:** Product / SDK.
+- **Fix in Kozmos:** publish the edge — a `data-controls-edge` on the
+  controls' box, or a property such as `--kozmos-map-controls-align` — or line
+  what the box holds up on that edge itself.
+
+## GAP-93 · `AICompanionPanel` leaves what it covers in the tab order
+
+- **What:** the panel covers the frame, as its docs ask, and moves focus into
+  itself as it opens, but what it covers stays in the tab order and the
+  accessibility tree. Stepping back out of the panel with Shift+Tab lands on
+  controls under it that nobody can see — WCAG 2.2's 2.4.11, Focus Not
+  Obscured. The system has the pattern: `Select` makes the rest of the page
+  inert while it is open (`utils/modal-inert`).
+- **Evidence:** in the phone search with the assistant open, on 2026-09-28,
+  Shift+Tab from the panel went to the sheet's category tiles, "Wi-Fi
+  zones", then "Offices", then "Events", all under the panel.
+- **Now:** composed. The phone search passes `inert` to the map shell while
+  the assistant is open, so Shift+Tab leaves the frame for the sheet
+  switcher above it, and the panel still hands focus back to the AI button
+  as it closes. The phone search's "the assistant keeps the keyboard out of
+  what it covers" walks it.
+- **Lane:** Core.
+- **Fix in Kozmos:** a way to say what the panel covers — a `covers` ref it
+  makes inert while open — or a line in its docs that the product must.
+
+## GAP-94 · `Text`'s muted colour does not follow a glass surface
+
+- **What:** on glass, text that is muted elsewhere takes the foreground
+  colour, so it reads at 4.5:1 over any map (decision 48). The glass says so
+  through `--kozmos-surface-muted-foreground`, and the parts the map shell
+  hosts read it (`.kozmos-muted-text`); `Text`'s `color="muted"`
+  (`.kozmos-text-muted`, `owned-typography.css:64`) does not, so a product's
+  own muted words on a glass panel stay the muted grey.
+- **Evidence:** the wayfinding's panel is glass since 2026-09-28. Under "Next
+  step" its note is `Text color="muted"`: measured on the panel as drawn, it
+  is 5.69:1 in light and 7.44:1 in dark over the site's plain stand-in map.
+  In the preview before it, the route preview's "To" follows the glass and
+  draws in the foreground colour. The same muted grey over a saturated map
+  read as low as 3.6:1 on the parts #145 measured.
+- **Now:** open. The note passes where the site draws it, since its map is a
+  flat colour; a product's map would not be.
+- **Lane:** Core.
+- **Fix in Kozmos:** let `.kozmos-text-muted` read the surface's property, as
+  `.kozmos-muted-text` does, falling back to the muted colour.
