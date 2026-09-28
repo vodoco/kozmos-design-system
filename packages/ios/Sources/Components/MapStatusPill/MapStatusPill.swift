@@ -18,8 +18,8 @@ public enum KozmosMapStatusPillTone: String, CaseIterable, Sendable {
     /// A warning triangle in the danger colour; the words stay ink: "Failed
     /// to Calculate Precise Position".
     case danger
-    /// The surface fills with the SDK's bright amber, alert/600, under dark
-    /// words and mark: "Turn Back".
+    /// The surface fills with Emotion/alert/fill, the SDK's bright amber, under
+    /// its ink, Emotion/alert/onFill: "Turn Back".
     case warning
 }
 
@@ -41,8 +41,8 @@ public enum KozmosMapStatusPillLive: String, CaseIterable, Sendable {
 struct KozmosMapStatusPillAppearance: Equatable {
     enum Surface: Equatable { case page, warning }
     /// `ink` is the SDK's words, foreground/300; the others are Kozmos's
-    /// emotion roles for text and glyphs on the page, and the ink that stays
-    /// dark on Turn Back's amber in both themes.
+    /// emotion roles for text and glyphs on the page, and `onWarning` the
+    /// alert fill's own ink, Emotion/alert/onFill.
     enum Ink: Equatable { case ink, themed, success, danger, onWarning }
     enum Mark: Equatable { case none, spinner, check, triangle }
 
@@ -126,10 +126,6 @@ public struct KozmosMapStatusPill: View {
     private let showsIcon: Bool
     private let icon: AnyView?
 
-    /// Turn Back's ink is the one colour here a token cannot carry: dark in
-    /// both themes (see `color(_:)`).
-    @Environment(\.colorScheme) private var colorScheme
-
     /// - Parameters:
     ///   - text: The product's words, in the visitor's language.
     ///   - tone: How the status reads. The product chooses it.
@@ -179,21 +175,16 @@ public struct KozmosMapStatusPill: View {
         case .themed: return KozmosColors.semanticsEmotionThemedText
         case .success: return KozmosColors.semanticsEmotionSuccessText
         case .danger: return KozmosColors.semanticsEmotionDangerText
-        // Dark on the amber in both themes: alert/600 stays bright in both, and
-        // no one primitive is dark in both, since the ramps turn over. Black
-        // is foreground/0 in the light file and foreground/1000 in the dark.
-        case .onWarning:
-            return colorScheme == .dark
-                ? KozmosColors.primitivesColorsForeground1000
-                : KozmosColors.primitivesColorsForeground0
+        // Black on the amber in both themes: the named pair's ink.
+        case .onWarning: return KozmosColors.semanticsEmotionAlertOnfill
         }
     }
 
-    /// The page's own surface, as the map controls'; Turn Back's is the SDK's
-    /// bright amber, alert/600.
+    /// The page's own surface, as the map controls'; Turn Back's is the named
+    /// pair's fill, the SDK's bright amber in both themes.
     private var surfaceColor: Color {
         appearance.surface == .warning
-            ? KozmosColors.primitivesColorsEmotionalAlert600
+            ? KozmosColors.semanticsEmotionAlertFill
             : KozmosColors.primitivesColorsBackground0
     }
 

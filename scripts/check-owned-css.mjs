@@ -622,7 +622,7 @@ try {
         // controls' elevation and the 32px blur — at least 48 tall, 8 above
         // and below and 12 at the sides, the SDK's words (13 on 16, in
         // foreground/300) and a 24 mark 8 before them, on the side reading
-        // starts from. Turn Back is the SDK's bright amber under dark words.
+        // starts from. Turn Back is the named alert fill pair.
         const statusLook = (testId) =>
           page.getByTestId(testId).evaluate((node) => {
             const s = getComputedStyle(node);
@@ -724,28 +724,26 @@ try {
           Math.abs(status.markInset - 12) < 0.5 && Math.abs(status.gap - 8) < 0.5,
           `${where}: the mark is ${status.markInset} in and ${status.gap} from the words, not 12 and 8`,
         );
-        // The board's Turn Back: bright amber, alert/600, in both themes, so
-        // its words are dark in both — foreground/0 in the light file and
-        // foreground/1000 in the dark, set on each root, and the nested light
-        // theme here takes its own.
+        // The board's Turn Back: the named alert fill pair (Olcay,
+        // 2026-09-28), the SDK's bright amber under black words in both
+        // themes; the nested light theme here reads its own.
         const turnBack = await statusLook(`${id}-map-status-warning`);
+        const alertFill = await value(
+          `${id}-map-status-warning`,
+          "--semantics-emotion-alert-fill",
+        );
         assert.equal(
           turnBack.background,
-          await value(
-            `${id}-map-status-warning`,
-            "--primitives-colors-emotional-alert-600",
-          ),
-          `${where}: Turn Back does not fill with alert/600`,
+          alertFill,
+          `${where}: Turn Back does not fill with Emotion/alert/fill (${alertFill})`,
         );
         assert.equal(
           turnBack.color,
           await value(
             `${id}-map-status-warning`,
-            id === "nested"
-              ? "--primitives-colors-foreground-0"
-              : "--primitives-colors-foreground-1000",
+            "--semantics-emotion-alert-on-fill",
           ),
-          `${where}: Turn Back's words are not the dark end of this theme's ramp`,
+          `${where}: Turn Back's words are not Emotion/alert/onFill`,
         );
         assert(
           luminance(channels(turnBack.color)) < 0.05,
@@ -1009,7 +1007,7 @@ try {
           `PASS ${where}: map controls are the SDK's 48 square, 16 corner, no edge, three shadows and 32px blur; the labels bold 16/16, grey off and navy on; the ring shows at ${contrast.toFixed(2)}:1`,
         );
         console.log(
-          `PASS ${where}: the map status pill wears their surface, 48 tall and padded 8 by 12, its words 13/16 in foreground/300 after a 24 mark 12 in and 8 before them; Turn Back is alert/600 under dark words`,
+          `PASS ${where}: the map status pill wears their surface, 48 tall and padded 8 by 12, its words 13/16 in foreground/300 after a 24 mark 12 in and 8 before them; Turn Back is Emotion/alert/fill under its onFill`,
         );
       }
       // The search row: the field and what follows it on one line, in a

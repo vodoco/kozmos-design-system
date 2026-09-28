@@ -42,8 +42,8 @@ import com.kozmos.tokens.KozmosThemeTokens
  * Position", "Calculating step-free route". [Success] is a check, and the
  * words, in the success colour — "Established". [Danger] is a warning
  * triangle in the danger colour, the words staying ink — "Failed to Calculate
- * Precise Position". [Warning] fills the surface with the SDK's bright amber,
- * alert/600, under dark words and mark — "Turn Back".
+ * Precise Position". [Warning] fills the surface with Emotion/alert/fill, the
+ * SDK's bright amber, under its ink, Emotion/alert/onFill — "Turn Back".
  *
  * The product chooses the tone and when the pill shows; Kozmos draws it. The
  * doc sits above the declaration: the variant-parity check reads the body.
@@ -74,8 +74,8 @@ internal data class KozmosMapStatusPillAppearance(
 
     /**
      * [Ink] is the SDK's words, foreground/300; the others are Kozmos's
-     * emotion roles for text and glyphs on the page, and the ink that stays
-     * dark on the amber of Turn Back in both themes.
+     * emotion roles for text and glyphs on the page, and [OnWarning] the alert
+     * fill's own ink, Emotion/alert/onFill.
      */
     enum class Ink { Ink, Themed, Success, Danger, OnWarning }
 
@@ -100,11 +100,8 @@ private fun KozmosMapStatusPillAppearance.Ink.color() = when (this) {
     KozmosMapStatusPillAppearance.Ink.Themed -> KozmosThemeTokens.semanticsEmotionThemedText
     KozmosMapStatusPillAppearance.Ink.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
     KozmosMapStatusPillAppearance.Ink.Danger -> KozmosThemeTokens.semanticsEmotionDangerText
-    // Dark on the amber in both themes: alert/600 stays bright in both, and
-    // no one primitive is dark in both, since the ramps turn over. Black is
-    // foreground/0 in the light file and foreground/1000 in the dark.
-    KozmosMapStatusPillAppearance.Ink.OnWarning ->
-        if (KozmosThemeTokens.isDark) KozmosThemeTokens.primitivesColorsForeground1000 else KozmosThemeTokens.primitivesColorsForeground0
+    // Black on the amber in both themes: the named pair's ink.
+    KozmosMapStatusPillAppearance.Ink.OnWarning -> KozmosThemeTokens.semanticsEmotionAlertOnfill
 }
 
 /**
@@ -175,9 +172,9 @@ fun KozmosMapStatusPill(
         if (text.isNotEmpty()) {
             val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
             // The page's own surface, as the map controls'; Turn Back's is the
-            // SDK's bright amber, alert/600, under dark words.
+            // named pair's fill, the SDK's bright amber in both themes.
             val surface = if (appearance.surface == KozmosMapStatusPillAppearance.Surface.Warning) {
-                KozmosThemeTokens.primitivesColorsEmotionalAlert600
+                KozmosThemeTokens.semanticsEmotionAlertFill
             } else {
                 KozmosThemeTokens.primitivesColorsBackground0
             }

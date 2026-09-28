@@ -61,7 +61,7 @@ final class KozmosMapStatusPillTests: XCTestCase {
     @MainActor
     private func surfaceColor(_ tone: KozmosMapStatusPillTone, _ scheme: ColorScheme) throws -> Pixel {
         try DrawnPixels.resolved(
-            tone == .warning ? KozmosColors.primitivesColorsEmotionalAlert600 : KozmosColors.primitivesColorsBackground0,
+            tone == .warning ? KozmosColors.semanticsEmotionAlertFill : KozmosColors.primitivesColorsBackground0,
             in: scheme
         )
     }
@@ -166,11 +166,9 @@ final class KozmosMapStatusPillTests: XCTestCase {
     /// appearance into that animation (measured 2026-09-28; the loading
     /// Button's hosted reference draws its label beside the same arc).
     @MainActor func testEachToneDrawsItsWordsAndMarkInItsColourAndTheyReadInBothThemes() async throws {
-        // Turn Back's words and mark are black on its amber in both themes:
-        // foreground/0 in the light file, foreground/1000 in the dark.
-        let turnBackInk = { (scheme: ColorScheme) in
-            scheme == .dark ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsForeground0
-        }
+        // Turn Back reads the named pair, Emotion/alert/fill under onFill, and
+        // its ratio is pinned: 10.56 in the light, 13.14 in the dark.
+        let turnBack: [ColorScheme: Double] = [.light: 10.56, .dark: 13.14]
         let canvas = CGSize(width: 320, height: 160)
         var measured: [String] = []
         for scheme in [ColorScheme.light, .dark] {
@@ -179,13 +177,13 @@ final class KozmosMapStatusPillTests: XCTestCase {
                 .progress: KozmosColors.primitivesColorsForeground300,
                 .success: KozmosColors.semanticsEmotionSuccessText,
                 .danger: KozmosColors.primitivesColorsForeground300,
-                .warning: turnBackInk(scheme),
+                .warning: KozmosColors.semanticsEmotionAlertOnfill,
             ]
             let marks: [KozmosMapStatusPillTone: Color] = [
                 .progress: KozmosColors.semanticsEmotionThemedText,
                 .success: KozmosColors.semanticsEmotionSuccessText,
                 .danger: KozmosColors.semanticsEmotionDangerText,
-                .warning: turnBackInk(scheme),
+                .warning: KozmosColors.semanticsEmotionAlertOnfill,
             ]
             for tone in KozmosMapStatusPillTone.allCases {
                 let view = KozmosMapStatusPill("Wayfinding", tone: tone)
@@ -213,6 +211,10 @@ final class KozmosMapStatusPillTests: XCTestCase {
                               "\(scheme) \(tone): the words drew \(describe(inWords)), not \(describe(wordsColour))")
                 let wordsRatio = Self.contrast(inWords, surface)
                 XCTAssertGreaterThanOrEqual(wordsRatio, 4.5, "\(scheme) \(tone): the words read at \(wordsRatio):1")
+                if let pinned = tone == .warning ? turnBack[scheme] : nil {
+                    XCTAssertEqual(wordsRatio, pinned, accuracy: 0.005,
+                                   "\(scheme) Turn Back reads at \(wordsRatio):1, not its pinned \(pinned):1")
+                }
                 var line = "\(scheme) \(tone): words \(String(format: "%.2f", wordsRatio))"
                 if let mark = marks[tone] {
                     let markRegion = CGRect(x: box.minX + 12, y: box.midY - 12, width: 24, height: 24)
@@ -281,6 +283,27 @@ final class KozmosMapStatusPillTests: XCTestCase {
         let ink = try DrawnPixels.resolved(KozmosColors.semanticsEmotionSuccessText, in: .light)
         let words = try XCTUnwrap(bare.boundingBox(in: bareBox, where: DrawnPixels.matches(ink, tolerance: 60)), "no words were drawn")
         XCTAssertEqual(words.minX - bareBox.minX, 12, accuracy: 2, "with no mark the words start \(words.minX - bareBox.minX) in")
+    }
+
+    /// Turn Back is the named pair (Olcay, 2026-09-28), Emotion/alert/fill
+    /// under onFill, not a black picked per theme: the pill draws the pair,
+    /// and the pair reads at its pinned 10.56:1 in the light and 13.14:1 in
+    /// the dark.
+    @MainActor func testTurnBackDrawsTheNamedAlertFillPairAtItsPinnedContrast() throws {
+        for (scheme, pinned) in [(ColorScheme.light, 10.56), (.dark, 13.14)] {
+            let fill = try DrawnPixels.resolved(KozmosColors.semanticsEmotionAlertFill, in: scheme)
+            let ink = try DrawnPixels.resolved(KozmosColors.semanticsEmotionAlertOnfill, in: scheme)
+            XCTAssertEqual(Self.contrast(ink, fill), pinned, accuracy: 0.005,
+                           "\(scheme): Emotion/alert/onFill on fill reads at \(Self.contrast(ink, fill)):1")
+            XCTAssertGreaterThan(Self.luminance(fill), 0.4, "\(scheme): the fill \(describe(fill)) is not a bright amber")
+
+            let drawn = try onTheMap(KozmosMapStatusPill("Turn Back", tone: .warning, showsIcon: false), scheme)
+            let box = try surfaceBox(drawn, fill)
+            XCTAssertEqual(box.height, 48, accuracy: 1, "\(scheme): Turn Back is \(box.height) tall")
+            let words = try XCTUnwrap(drawn.boundingBox(in: box, where: DrawnPixels.matches(ink, tolerance: 6)),
+                                      "\(scheme): Turn Back's words are not drawn in Emotion/alert/onFill")
+            XCTAssertEqual(words.minX - box.minX, 12, accuracy: 2, "\(scheme): the words start \(words.minX - box.minX) in")
+        }
     }
 
     /// With nothing to say it draws nothing, and takes no room.

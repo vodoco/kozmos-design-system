@@ -70,37 +70,9 @@ function declared(
   return value;
 }
 
-/**
- * A variable the owned rules set on each Kozmos root, as it resolves in a
- * theme: the dark root's own when it sets one, else the root's. A light
- * theme nested in a dark one is a root of its own and takes the light value.
- */
-function rootVariable(name: string, mode: "light" | "dark") {
-  const roots =
-    mode === "dark"
-      ? ['[data-kozmos-root][data-theme="dark"]', "[data-kozmos-root]"]
-      : ["[data-kozmos-root]"];
-  for (const root of roots) {
-    let found: string | undefined;
-    postcss.parse(OWNED).walkRules((rule: Rule) => {
-      if (!rule.selectors.includes(root)) return;
-      rule.walkDecls(`--${name}`, (decl) => {
-        found = decl.value;
-      });
-    });
-    if (found) return found;
-  }
-  return undefined;
-}
-
 function resolve(value: string | undefined, mode: "light" | "dark"): string {
   const name = value?.match(/^var\(--([\w-]+)\)$/)?.[1];
   expect(name, `${value} is not one token`).toBeTruthy();
-  if (name!.startsWith("kozmos-")) {
-    const set = rootVariable(name!, mode);
-    expect(set, `--${name} is set on no ${mode} Kozmos root`).toBeTruthy();
-    return resolve(set, mode);
-  }
   const hex = TOKENS[mode][name!];
   expect(hex, `--${name} is not a ${mode} token`).toMatch(/^#[0-9a-f]{6}$/i);
   return hex;
@@ -157,18 +129,26 @@ describe("MapStatusPill's owned rules", () => {
     expect(measured).toHaveLength(10);
   });
 
-  it("fills Turn Back with the SDK's bright amber under dark words, in both themes", () => {
-    // The board's Turn Back: amber, filled, its words and mark dark. alert/600
-    // is a bright amber in both files, so its ink must be dark in both; the
-    // ramps turn over between the files, so no one primitive is.
+  it("fills Turn Back with the named alert fill pair: the SDK's amber under black, 10.56:1 and 13.14:1", () => {
+    // Olcay, 2026-09-28: Turn Back is the SDK's bright amber under black
+    // words, from a named token pair in both themes, not a black each
+    // platform picks per theme. Semantics.Emotion.alert.fill stays a bright
+    // amber in both files, and its onFill stays black in both.
+    expect(declared("warning", "background-color", "pill")).toBe(
+      "var(--semantics-emotion-alert-fill)",
+    );
+    expect(declared("warning", "color", "pill")).toBe(
+      "var(--semantics-emotion-alert-on-fill)",
+    );
+    const pinned = { light: "10.56", dark: "13.14" };
     for (const mode of ["light", "dark"] as const) {
       const fill = resolve(
         declared("warning", "background-color", "pill"),
         mode,
       );
       const ink = resolve(declared("warning", "color", "pill"), mode);
-      expect(fill, `${mode} fill`).toBe(
-        TOKENS[mode]["primitives-colors-emotional-alert-600"],
+      expect(contrast(ink, fill).toFixed(2), `${mode} ${ink} on ${fill}`).toBe(
+        pinned[mode],
       );
       expect(
         luminance(fill),

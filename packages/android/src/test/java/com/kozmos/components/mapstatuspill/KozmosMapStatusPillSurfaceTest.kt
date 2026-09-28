@@ -202,10 +202,10 @@ class KozmosMapStatusPillSurfaceTest {
     fun eachToneDrawsItsWordsAndMarkInItsColourAndTheyReadInBothThemes() {
         val measured = mutableListOf<String>()
         for (dark in listOf(false, true)) {
-            // Turn Back's words and mark are black on its amber in both
-            // themes: foreground/0 in the light file, foreground/1000 in the dark.
-            val turnBackInk: @Composable () -> Color =
-                if (dark) ({ KozmosThemeTokens.primitivesColorsForeground1000 }) else ({ KozmosThemeTokens.primitivesColorsForeground0 })
+            // Turn Back reads the named pair, Emotion/alert/fill under onFill,
+            // and its ratio is pinned: 10.56 in the light, 13.14 in the dark.
+            val turnBackInk: @Composable () -> Color = { KozmosThemeTokens.semanticsEmotionAlertOnfill }
+            val turnBackPinned = if (dark) 13.14 else 10.56
             val words: Map<KozmosMapStatusPillTone, @Composable () -> Color> = mapOf(
                 KozmosMapStatusPillTone.Neutral to { KozmosThemeTokens.primitivesColorsForeground300 },
                 KozmosMapStatusPillTone.Progress to { KozmosThemeTokens.primitivesColorsForeground300 },
@@ -222,7 +222,7 @@ class KozmosMapStatusPillSurfaceTest {
             for (tone in KozmosMapStatusPillTone.entries) {
                 val scheme = if (dark) "dark" else "light"
                 val surface = swatch(dark) {
-                    if (tone == KozmosMapStatusPillTone.Warning) KozmosThemeTokens.primitivesColorsEmotionalAlert600
+                    if (tone == KozmosMapStatusPillTone.Warning) KozmosThemeTokens.semanticsEmotionAlertFill
                     else KozmosThemeTokens.primitivesColorsBackground0
                 }
                 val board = onTheMap("Wayfinding", dark) { KozmosMapStatusPill(text = "Wayfinding", tone = tone) }
@@ -242,6 +242,9 @@ class KozmosMapStatusPillSurfaceTest {
                     DrawnPixels.matches(inWords, wordsColour, tolerance = 40))
                 val wordsRatio = contrast(inWords, surface)
                 assertTrue("$scheme $tone: the words read at $wordsRatio:1", wordsRatio >= 4.5)
+                if (tone == KozmosMapStatusPillTone.Warning) {
+                    assertEquals("$scheme Turn Back reads at $wordsRatio:1, not its pinned $turnBackPinned:1", turnBackPinned, wordsRatio, 0.005)
+                }
                 var line = "$scheme $tone: words ${"%.2f".format(wordsRatio)}"
 
                 val mark = marks[tone]
@@ -282,6 +285,34 @@ class KozmosMapStatusPillSurfaceTest {
         assertTrue("the pill wrapped at ${width}dp, short of its 256", width > 200f)
         assertTrue("the pill is ${board.dp(board.pill.height)}dp tall: its words did not wrap onto a third line",
             board.dp(board.pill.height) > 48f + 4f)
+    }
+
+    /**
+     * Turn Back is the named pair (Olcay, 2026-09-28), Emotion/alert/fill
+     * under onFill, not a black picked per theme: the pill draws the pair, and
+     * the pair reads at its pinned 10.56:1 in the light and 13.14:1 in the dark.
+     */
+    @Test
+    fun turnBackDrawsTheNamedAlertFillPairAtItsPinnedContrast() {
+        for ((dark, pinned) in listOf(false to 10.56, true to 13.14)) {
+            val scheme = if (dark) "dark" else "light"
+            val fill = swatch(dark) { KozmosThemeTokens.semanticsEmotionAlertFill }
+            val ink = swatch(dark) { KozmosThemeTokens.semanticsEmotionAlertOnfill }
+            assertEquals("$scheme: Emotion/alert/onFill on fill", pinned, contrast(ink, fill), 0.005)
+            assertTrue("$scheme: the fill ${DrawnPixels.hex(fill)} is not a bright amber", luminance(fill) > 0.4)
+
+            val board = onTheMap("Turn Back", dark) {
+                KozmosMapStatusPill(text = "Turn Back", tone = KozmosMapStatusPillTone.Warning, icon = null)
+            }
+            val pill = board.pill
+            assertEquals("$scheme: Turn Back is ${board.dp(pill.height)}dp tall", 48f, board.dp(pill.height), 0.5f)
+            val inside = board.at(pill.left + 4 * board.density, pill.center.y)
+            assertTrue("$scheme: Turn Back filled ${DrawnPixels.hex(inside)}, not Emotion/alert/fill ${DrawnPixels.hex(fill)}",
+                DrawnPixels.matches(inside, fill, tolerance = 2))
+            val words = board.box(pill) { DrawnPixels.matches(it, ink, tolerance = 6) }
+            checkNotNull(words) { "$scheme: Turn Back's words are not drawn in Emotion/alert/onFill" }
+            assertEquals("$scheme: the words start ${board.dp(words.left - pill.left)}dp in", 12f, board.dp(words.left - pill.left), 2f)
+        }
     }
 
     /** The product's mark takes the tone's place, at 24 and in the tone's colour. */

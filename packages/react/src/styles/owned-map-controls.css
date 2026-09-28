@@ -236,20 +236,12 @@
     .kozmos-map-status-pill-mark {
     color: var(--semantics-emotion-danger-text);
   }
-  /* The filled warning, Turn Back: the SDK's bright amber under dark words.
-     alert/600 stays a bright amber in both themes (#F9A707, #FBC459), so its
-     ink stays dark in both: black, which is foreground/0 in the light file
-     and foreground/1000 in the dark. No role says "dark in both", so the ink
-     is set on each Kozmos root, as the tokens are, and a light theme nested
-     in a dark one takes its own. The mark takes the ink with the words. */
-  [data-kozmos-root] {
-    --kozmos-map-status-warning-ink: var(--primitives-colors-foreground-0);
-  }
-  [data-kozmos-root][data-theme="dark"] {
-    --kozmos-map-status-warning-ink: var(--primitives-colors-foreground-1000);
-  }
+  /* The filled warning, Turn Back: the SDK's bright amber under black words,
+     from the named pair Emotion/alert/fill and onFill. The fill stays a
+     bright amber in both themes and its ink stays black in both, 10.56:1 and
+     13.14:1. The mark takes the ink with the words. */
   .kozmos-map-status-pill:where([data-tone="warning"]) {
-    background-color: var(--primitives-colors-emotional-alert-600);
-    color: var(--kozmos-map-status-warning-ink);
+    background-color: var(--semantics-emotion-alert-fill);
+    color: var(--semantics-emotion-alert-on-fill);
   }
 }
