@@ -40,8 +40,17 @@ const replies = {
   "git/ref/heads/main": { object: { sha } },
   "environments/npm-release": {
     name: "npm-release",
-    protection_rules: [{ type: "branch_policy" }],
+    // As GitHub returns npm-release since 2026-09-28 (read back live).
+    protection_rules: [
+      { type: "branch_policy" },
+      {
+        type: "required_reviewers",
+        prevent_self_review: false,
+        reviewers: [{ type: "User", reviewer: { login: "vodoco" } }],
+      },
+    ],
     deployment_branch_policy: { custom_branch_policies: true },
+    can_admins_bypass: false,
   },
   "environments/npm-release/deployment-branch-policies?per_page=100": {
     total_count: 1,
