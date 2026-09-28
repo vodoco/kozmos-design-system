@@ -13,14 +13,25 @@
    it does over every owned rule. The file is imported after the Button's
    rules and wins over them by order. */
 @kozmos-owned {
-  /* The surface. The SDK's 48 square, above the 44 every target keeps; the
-     Control corner (16); no stroke, in any state; the map controls'
-     elevation, three shadows; and the SDK's 32px blur of the map behind it.
-     Nothing shows through an opaque surface, so the blur is for a brand whose
-     surface is not. Its padding is the SDK's 8 above and below, and 12 at the
-     sides once it is labelled. */
-  .kozmos-map-control {
+  /* The surface, worn by every map control and by the map's status pill
+     (decision 39), from this one rule: the Control corner (16); no stroke, in
+     any state; the map controls' elevation, three shadows; and the SDK's 32px
+     blur of the map behind it. Nothing shows through an opaque surface, so
+     the blur is for a brand whose surface is not. Its fill is each part's
+     own: a map control's is the ghost tier's, below, and the pill's is set
+     with its tones. */
+  .kozmos-map-control,
+  .kozmos-map-status-pill {
     @apply shadow-map-control;
+    border-width: 0;
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+    -webkit-backdrop-filter: blur(32px);
+    backdrop-filter: blur(32px);
+  }
+  /* A control's size: the SDK's 48 square, above the 44 every target keeps.
+     Its padding is the SDK's 8 above and below, and 12 at the sides once it
+     is labelled. */
+  .kozmos-map-control {
     box-sizing: border-box;
     height: auto;
     min-width: calc(var(--primitives-layout-sizing-600) * 1px);
@@ -29,10 +40,6 @@
     padding-block: calc(var(--primitives-layout-spacing-100) * 1px);
     padding-inline: 0;
     gap: 0;
-    border-width: 0;
-    border-radius: calc(var(--semantics-radius-control) * 1px);
-    -webkit-backdrop-filter: blur(32px);
-    backdrop-filter: blur(32px);
     @apply transition-[max-width,padding,background-color,color] duration-300 ease-in-out motion-reduce:transition-none;
   }
   .kozmos-map-control:where([data-presentation="labelled"]) {
@@ -165,5 +172,84 @@
   }
   .kozmos-map-control-stack > .kozmos-map-control + .kozmos-map-control {
     border-top: 1px solid var(--semantics-border-subtle);
+  }
+
+  /* The map's status pill (decision 39): PositionStatus, Downloading Content
+     and Turn Back in one part, and the step-free route being calculated
+     (GAP-102). It wears the map controls' surface, above, at least their 48
+     tall: the SDK's 8 above and below and 12 at the sides, and 8 between the
+     mark and the words. It is as wide as what it says, up to a map control's
+     longest (16rem), and then wraps rather than cutting the product's words:
+     a longer status grows taller. */
+  .kozmos-map-status-pill {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-100) * 1px);
+    width: fit-content;
+    max-width: 16rem;
+    min-height: calc(var(--primitives-layout-sizing-600) * 1px);
+    padding-block: calc(var(--primitives-layout-spacing-100) * 1px);
+    padding-inline: calc(var(--primitives-layout-spacing-150) * 1px);
+    background-color: var(--primitives-colors-background-0);
+    /* The SDK's words: #464A53 is foreground/300, regular, the type scale's
+       13 on the scale's 16. No brand font ships; the system's sans draws
+       them, as it does every map control's. */
+    color: var(--primitives-colors-foreground-300);
+    font-size: calc(var(--primitives-typography-font-size-200) * 1px);
+    line-height: calc(var(--primitives-typography-font-size-300) * 1px);
+    font-weight: 400;
+    text-align: start;
+  }
+  /* The mark: the icons' 24 square, the size every map control's mark is
+     drawn at (the SDK's box is 28; Kozmos's icon and spinner scales step from
+     24 to 32). An icon the product passes is drawn at it too. */
+  .kozmos-map-status-pill-mark {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--primitives-layout-sizing-300) * 1px);
+    height: calc(var(--primitives-layout-sizing-300) * 1px);
+  }
+  .kozmos-map-status-pill-mark > svg {
+    width: 100%;
+    height: 100%;
+  }
+  .kozmos-map-status-pill-words {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  /* The tones, in Kozmos's emotion roles for text and glyphs on the page
+     (Semantics.Emotion.*.text): the SDK's own green and red read 3.6:1 and
+     4.3:1 as words on white. Progress and danger colour the mark only, as
+     the SDK does, and keep the words ink; success colours both. Each rule
+     sits in :where(), so a caller's class still wins. */
+  .kozmos-map-status-pill:where([data-tone="progress"])
+    .kozmos-map-status-pill-mark {
+    color: var(--semantics-emotion-themed-text);
+  }
+  .kozmos-map-status-pill:where([data-tone="success"]) {
+    color: var(--semantics-emotion-success-text);
+  }
+  .kozmos-map-status-pill:where([data-tone="danger"])
+    .kozmos-map-status-pill-mark {
+    color: var(--semantics-emotion-danger-text);
+  }
+  /* The filled warning, Turn Back: the SDK's bright amber under dark words.
+     alert/600 stays a bright amber in both themes (#F9A707, #FBC459), so its
+     ink stays dark in both: black, which is foreground/0 in the light file
+     and foreground/1000 in the dark. No role says "dark in both", so the ink
+     is set on each Kozmos root, as the tokens are, and a light theme nested
+     in a dark one takes its own. The mark takes the ink with the words. */
+  [data-kozmos-root] {
+    --kozmos-map-status-warning-ink: var(--primitives-colors-foreground-0);
+  }
+  [data-kozmos-root][data-theme="dark"] {
+    --kozmos-map-status-warning-ink: var(--primitives-colors-foreground-1000);
+  }
+  .kozmos-map-status-pill:where([data-tone="warning"]) {
+    background-color: var(--primitives-colors-emotional-alert-600);
+    color: var(--kozmos-map-status-warning-ink);
   }
 }

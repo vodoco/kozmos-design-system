@@ -110,6 +110,7 @@ export * from "./components/Surface";
 export * from "./components/DynamicIsland";
 export * from "./components/MapControlsGroup";
 export * from "./components/MapControlButton";
+export * from "./components/MapStatusPill";
 export * from "./components/SaveLocationCard";
 export * from "./components/FeedbackCard";
 export * from "./components/NavigationAnnouncer/NavigationAnnouncer";

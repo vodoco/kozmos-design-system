@@ -18,6 +18,7 @@ import {
   MapControlButton,
   MapControlsGroup,
   MapOverlay,
+  MapStatusPill,
   FloorSelector,
   AIMessage,
   Listbox,
@@ -341,6 +342,18 @@ function Controls({ id }: { id: string }) {
         label={`${id} surface`}
         data-testid={`${id}-map-surface`}
       />
+      {/* Decision 39: the map's status pill wears the map controls' surface,
+          and Turn Back fills with the warning role. */}
+      <MapStatusPill tone="progress" data-testid={`${id}-map-status`}>
+        {`${id} calculating`}
+      </MapStatusPill>
+      <MapStatusPill
+        icon={null}
+        tone="warning"
+        data-testid={`${id}-map-status-warning`}
+      >
+        {`${id} turn back`}
+      </MapStatusPill>
       <MapControlsGroup
         label={`${id} zoom`}
         zoomInLabel={`${id} zoom in`}
