@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BluetoothDisabled
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
@@ -99,7 +100,7 @@ private fun resolveIconName(name: String): String = when (name) {
     else -> name
 }
 
-private fun resolveIconVector(rawName: String): ImageVector {
+internal fun resolveIconVector(rawName: String): ImageVector {
     return when (resolveIconName(rawName)) {
         "activity" -> Icons.AutoMirrored.Filled.ShowChart
         "alert-circle" -> Icons.Default.Info
@@ -107,6 +108,7 @@ private fun resolveIconVector(rawName: String): ImageVector {
         "arrow-left" -> Icons.AutoMirrored.Filled.ArrowBack
         "arrow-right" -> Icons.AutoMirrored.Filled.ArrowForward
         "bell-01" -> Icons.Default.Notifications
+        "bluetooth-off" -> Icons.Default.BluetoothDisabled
         "building-01" -> Icons.Default.Business
         "bus" -> Icons.Default.DirectionsBus
         "calendar" -> Icons.Default.CalendarToday
