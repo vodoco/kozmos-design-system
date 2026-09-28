@@ -35,6 +35,7 @@ import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.components.surface.KozmosSurfaceDefaults
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.surface.kozmosMutedForeground
 
 /**
  * [surface] is what the card is made of, as React's `surface` prop:
@@ -93,7 +94,8 @@ fun KozmosSaveLocationCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = title, style = MaterialTheme.typography.titleMedium, color = KozmosThemeTokens.primitivesColorsForeground100)
-                    Text(text = description, style = MaterialTheme.typography.bodyMedium, color = KozmosThemeTokens.primitivesColorsForeground500)
+                    // Muted, and on glass the foreground colour (decision 48).
+                    Text(text = description, style = MaterialTheme.typography.bodyMedium, color = kozmosMutedForeground(surface))
                 }
 
                 if (isSaved && onEditNote != null) {

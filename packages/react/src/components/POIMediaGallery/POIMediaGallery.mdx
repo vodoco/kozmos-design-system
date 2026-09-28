@@ -26,11 +26,11 @@ All labels, including the controls group, can be localized. No timed autoplay or
 forced smooth scrolling is used. Gallery CSS is component-owned and tested with
 legacy CSS scope removed. Real-device touch gestures still need manual acceptance.
 
-In `POIDetailPanel`'s `sheet` presentation on `AdaptiveMapShell`'s glass panel,
-the position, muted elsewhere, takes the foreground colour, so it reads at 4.5:1
-over any map (decision 48). An unavailable photo's label sits on its own tile and
-stays muted. iOS and Android read the panel's surface from the shell, so there the
-position follows wherever the gallery sits on a glass panel.
+On a glass surface the position, muted elsewhere, takes the foreground colour, so
+it reads at 4.5:1 over any map (decision 48): hosted on its own in
+`AdaptiveMapShell`'s glass panel, or in `POIDetailPanel`'s `sheet` presentation
+there. In a bordered details card it stays muted, on the card. An unavailable
+photo's label sits on its own tile and stays muted. iOS and Android do the same.
 
 <Canvas of={Stories.Default} />
 <Controls />

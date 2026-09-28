@@ -161,10 +161,15 @@ async function widen(page: Page, stack: string) {
 type KnownEntry = { id: string; only?: RegExp; theme?: "light" | "dark" };
 type KnownViolation = string | KnownEntry;
 
-/** GAP-17: AdaptiveMapShell's panel, an <aside> nested in the page's main. */
+/**
+ * GAP-17: AdaptiveMapShell's panel, an <aside> nested in the page's main,
+ * named by its `data-slot`. Axe cuts every attribute value in a snippet to
+ * 20 characters once the opening tag passes 300, and the class this matched
+ * until 2026-09-28 lost its words that way; the slot's value is shorter.
+ */
 const SHELL_PANEL: KnownEntry = {
   id: "landmark-complementary-is-top-level",
-  only: /<aside[^>]*class="[^"]*kozmos-surface-/,
+  only: /<aside[^>]*\bdata-slot="map-shell-panel"/,
 };
 
 /** Not a gap: a Sidebar is an aside by nature, shown inside a page's main. */
@@ -711,6 +716,23 @@ for (const colorScheme of ["light", "dark"] as const) {
     }
   });
 }
+
+// GAP-17's exclusion must still name the shell's panel when the panel's
+// opening tag grows. Past 300 characters axe cuts every attribute value in a
+// node's snippet to 20: the class the exclusion first matched lost its
+// words, and on 2026-09-28 nine tests failed for a style that grew. Here the
+// tag is made long on purpose.
+test("GAP-17's exclusion still names the shell's panel when its tag is long", async ({
+  page,
+}) => {
+  await page.goto("/examples/phone-search");
+  await hydrated(page);
+  await scrolled(page);
+  await page
+    .locator('aside[class*="kozmos-surface-"]')
+    .evaluate((aside) => aside.setAttribute("data-long", "x".repeat(400)));
+  expect(await axeViolations(page)).toEqual([]);
+});
 
 // 320 CSS pixels is the width WCAG's reflow criterion (1.4.10) measures at.
 test.describe("on a narrow phone", () => {

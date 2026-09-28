@@ -45,10 +45,11 @@ final class KozmosMapShellHostedFillTests: XCTestCase {
     }
 
     /// The tiles alone, in the sheet presentation, as a product hosts them
-    /// under a panel header's search.
-    private func browser() -> some View {
+    /// under a panel header's search; or in the panel presentation, the
+    /// default, as a product that did not pass one hosts them.
+    private func browser(_ presentation: KozmosBrowseCategoriesPanel<Color, EmptyView, EmptyView, EmptyView>.Presentation = .sheet) -> some View {
         KozmosBrowseCategoriesPanel(
-            categories: categories, presentation: .sheet, onSelect: { _ in },
+            categories: categories, presentation: presentation, onSelect: { _ in },
             renderIcon: { _ in Color.clear }, emptyState: { EmptyView() }
         )
     }
@@ -150,6 +151,34 @@ final class KozmosMapShellHostedFillTests: XCTestCase {
         try await assertNoFillOfItsOwn("category-browser", .glass) { browser() }
     }
 
+    /// Hosted, the browser's panel presentation follows the panel's signal as
+    /// the web's browser does: it painted the background colour over the
+    /// glass, a prop the product had to remember to change.
+    @MainActor func testOnAGlassSheetTheBrowsersPanelPresentationPaintsNoFillOfItsOwn() async throws {
+        try await assertNoFillOfItsOwn("category-browser-panel", .glass) { browser(.panel) }
+    }
+
+    /// And its first row tops up under the grabber as the sheet
+    /// presentation's does (decision 14): its first tiles sit where the
+    /// sheet presentation's sit, not 16 lower.
+    @MainActor func testUnderTheGrabberTheBrowsersPanelPresentationTopsUpItsFirstRow() async throws {
+        func firstTileTop(_ pixels: RenderedPixels) throws -> CGFloat {
+            let panel = try sheetPanel(in: pixels)
+            // The first thing drawn on the white sheet down the first tile's
+            // column, below the sheet's edge and clear of the grabber, which
+            // is centred.
+            let tile = try XCTUnwrap(pixels.boundingBox(
+                in: CGRect(x: panel.minX + 40, y: panel.minY + 20, width: 1, height: 200),
+                where: { r, g, b in r < 245 || g < 245 || b < 245 }
+            ), "no tile under the grabber")
+            return tile.minY - panel.minY
+        }
+        let sheet = try firstTileTop(try await render(shell(.solid) { browser(.sheet) }, size: phone, "decision-14-browser-sheet"))
+        let panel = try firstTileTop(try await render(shell(.solid) { browser(.panel) }, size: phone, "decision-14-browser-panel"))
+        print("Decision 14 iOS, the browser's first tile under the grabber: \(sheet) in the sheet presentation, \(panel) in the panel presentation")
+        XCTAssertEqual(panel, sheet, accuracy: 1, "the panel presentation's first tile sits \(panel) below the panel's top, the sheet presentation's \(sheet)")
+    }
+
     /// On a solid sheet a part that paints no fill looks as it did: the
     /// sheet's fill is the background colour the route preview painted.
     @MainActor func testOnASolidSheetTheRoutePreviewLooksAsItDid() async throws {
@@ -178,7 +207,48 @@ final class KozmosMapShellHostedFillTests: XCTestCase {
                       "the side panel's rounded top corner draws \(describe(corner)), not the map behind it")
     }
 
+    // MARK: A route option
+
+    /// The chosen route option is a card of its own: its 5% tint lay over
+    /// nothing, so on glass the map showed through it while the other
+    /// options stood opaque. Read 6 points inside its leading edge, halfway
+    /// down, clear of its text and its edge: on glass it draws what it draws
+    /// on a solid sheet, the tint on the background colour.
+    @MainActor func testOnAGlassSheetTheChosenRouteOptionIsAsOpaqueAsOnASolidOne() async throws {
+        let chosen = KozmosRouteOptionCard(option: options[0], onSelect: { _ in })
+        func sample(_ surface: KozmosSurfaceStyle) async throws -> (r: UInt8, g: UInt8, b: UInt8) {
+            let pixels = try await render(
+                shell(surface) { chosen.padding(16) }, size: phone, "route-option-chosen-\(surface)")
+            let panel = try sheetPanel(in: pixels)
+            // The option's top edge: its theme-coloured stroke, down a column
+            // inside it.
+            let stroke = try XCTUnwrap(pixels.boundingBox(
+                in: CGRect(x: panel.minX + 60, y: panel.minY, width: 1, height: 200),
+                where: RenderedPixels.isTheme), "no chosen option drawn")
+            return pixels.color(at: CGPoint(x: panel.minX + 16 + 6, y: stroke.minY + 48))
+        }
+        let solid = try await sample(.solid)
+        let glass = try await sample(.glass)
+        print("Route option iOS, the chosen option: \(describe(glass)) on glass, \(describe(solid)) on a solid sheet")
+        XCTAssertTrue(same(glass, solid), "the chosen option drew \(describe(glass)) on glass, \(describe(solid)) on a solid sheet")
+    }
+
     // MARK: Standing alone
+
+    /// The guard: outside a shell nothing says a surface is there, and the
+    /// browser's panel presentation keeps its fill.
+    @MainActor func testStandingAloneTheBrowsersPanelPresentationKeepsItsFill() async throws {
+        let size = CGSize(width: 390, height: 500)
+        let view = ZStack { Color.red; browser(.panel) }
+            .frame(width: size.width, height: size.height)
+            .environment(\.layoutDirection, .leftToRight)
+            .environment(\.colorScheme, .light)
+        let pixels = try await render(view, size: size, "decision-43-browser-panel-standing-alone")
+        let point = insidePart(of: CGRect(origin: .zero, size: size))
+        print("Decision 43 iOS, the browser's panel presentation standing alone: \(describe(pixels.color(at: point)))")
+        XCTAssertTrue(isWhite(pixels.color(at: point)),
+                      "standing alone, the browser's panel presentation drew \(describe(pixels.color(at: point))), not its fill")
+    }
 
     /// The guard: outside a shell nothing says a surface is there, and the
     /// preview keeps its fill.

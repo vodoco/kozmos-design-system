@@ -10,6 +10,8 @@ import * as RouteSummaryStories from './RouteSummary.stories';
 
 The `RouteSummary` serves as the primary bottom-anchored modal sheet during active turn-by-turn Wayfinding sessions. It safely structures ETAs, unit distances, and core routing logic into a distinct hardware-independent layer.
 
+On `surface="glass"` the distance, muted elsewhere, takes the foreground colour, so it reads at 4.5:1 over any map (decision 48). The navigation layout draws its text in the foreground colour already.
+
 ## React
 
 ```tsx

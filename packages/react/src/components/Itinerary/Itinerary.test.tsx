@@ -82,4 +82,27 @@ describe("Itinerary", () => {
     expect(screen.getByText("Von")).toBeInTheDocument();
     expect(screen.getByText("Nach")).toBeInTheDocument();
   });
+
+  it("draws its captions and its origin muted through the class a glass surface turns to ink", () => {
+    // Decision 48, on every glass surface: inside a glass manoeuvre card,
+    // text that is muted elsewhere takes the foreground colour (measured
+    // over a saturated map in check-adaptive-edge-cases.mjs). A
+    // `text-muted-foreground` beside the class would outrank it. The
+    // destination is emphasised, in the foreground colour already.
+    render(
+      <Itinerary
+        origin="Harbour Coffee Co."
+        steps={steps}
+        destination="Gate 12"
+      />,
+    );
+    for (const text of ["From", "Harbour Coffee Co.", "To"]) {
+      const node = screen.getByText(text);
+      expect(node.classList.contains("kozmos-muted-text")).toBe(true);
+      expect(node.className).not.toMatch(/\btext-muted-foreground\b/);
+    }
+    expect(screen.getByText("Gate 12").className).toMatch(
+      /\btext-foreground\b/,
+    );
+  });
 });

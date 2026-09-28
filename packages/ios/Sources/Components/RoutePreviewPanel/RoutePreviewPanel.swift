@@ -15,7 +15,8 @@ import SwiftUI
 /// And it paints no fill there (`kozmosPanelSurface`): the panel's surface,
 /// solid or glass, is the one surface (decision 43). On glass its muted
 /// text, "To" and the count of options, takes the foreground colour, so it
-/// reads at 4.5:1 over any map (decision 48).
+/// reads at 4.5:1 over any map (decision 48): it reads the surface under it,
+/// `kozmosSurfaceStyle`, which the panel's surface says.
 public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: View {
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
@@ -95,7 +96,7 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
                 Text(destinationLabel.uppercased())
                     .font(.caption.weight(.semibold))
-                    .foregroundColor(kozmosMutedForeground(on: panelSurface))
+                    .kozmosMutedText()
 
                 Text(destinationName)
                     .font(.title3.weight(.semibold))
@@ -146,7 +147,7 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
                         if options.count > 1, let optionsCountLabel {
                             Text(optionsCountLabel)
                                 .font(KozmosTypography.caption)
-                                .foregroundColor(kozmosMutedForeground(on: panelSurface))
+                                .kozmosMutedText()
                         }
                     }
 

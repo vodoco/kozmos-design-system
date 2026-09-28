@@ -24,20 +24,23 @@
   .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-action-message {
     @apply bg-background;
   }
-  /* In the sheet presentation the card's muted lines, its level and hours,
-     its prices' units, its summaries' notes, its section headings and its
-     gallery's position, sit on the panel's surface. On glass they take what
-     the glass says, the foreground colour (decision 48): muted, the level
-     line read 3.7:1 over a saturated map. Elsewhere, and in a bordered card,
-     they stay muted. */
-  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-location,
-  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-price > span,
-  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-summary-text small,
-  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-section-heading,
-  .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-gallery-position {
-    color: var(
-      --kozmos-surface-muted-foreground,
-      var(--primitives-colors-foreground-400)
+  /* The card's muted lines, its level and hours, its prices' units, its
+     summaries' notes and its section headings, read what the surface under
+     them says (decision 48): on glass the foreground colour, where muted the
+     level line read 3.7:1 over a saturated map. In the sheet presentation
+     that is the panel's surface. The panel and inline presentations are a
+     card of their own, so their text keeps its muted colour, even on a glass
+     sheet. */
+  .kozmos-poi-detail:not([data-presentation="sheet"]) {
+    --kozmos-surface-muted-foreground: initial;
+  }
+  /* In the shell's panel the summary strip paints no fill of its own, as the
+     card's sheet presentation paints none (decision 43): on a glass sheet it
+     was an opaque band. On its own it keeps its fill. */
+  .kozmos-poi-detail .kozmos-poi-summary {
+    background-color: var(
+      --kozmos-panel-part-fill,
+      var(--primitives-colors-background-0)
     );
   }
   .kozmos-poi-detail > * {
@@ -104,7 +107,10 @@
     gap: 0.375rem;
   }
   .kozmos-poi-location {
-    @apply text-muted-foreground;
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
+    );
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
@@ -233,7 +239,10 @@
     font-weight: 600;
   }
   .kozmos-poi-price > span {
-    @apply text-muted-foreground;
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
+    );
   }
   .kozmos-poi-property-icon {
     display: inline-block;
@@ -253,7 +262,11 @@
     opacity: 0;
   }
   .kozmos-poi-summary-text small {
-    @apply text-xs text-muted-foreground;
+    @apply text-xs;
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
+    );
     min-inline-size: 0;
   }
   .kozmos-poi-body {
@@ -271,7 +284,11 @@
     gap: 1.25rem;
   }
   .kozmos-poi-section-heading {
-    @apply text-sm font-normal text-muted-foreground;
+    @apply text-sm font-normal;
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
+    );
     margin: 0 0 0.5rem;
   }
   .kozmos-poi-chips {

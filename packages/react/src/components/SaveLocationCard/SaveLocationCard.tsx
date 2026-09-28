@@ -66,7 +66,8 @@ const SaveLocationCard = React.forwardRef<
             <span className="font-semibold text-base text-foreground tracking-tight">
               {title}
             </span>
-            <span className="text-sm text-muted-foreground">{description}</span>
+            {/* Muted, and on glass the foreground colour (decision 48). */}
+            <span className="kozmos-muted-text text-sm">{description}</span>
           </div>
           {isSaved && onEditNote && (
             <Button

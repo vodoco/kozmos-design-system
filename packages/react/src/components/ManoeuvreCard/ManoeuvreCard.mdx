@@ -11,6 +11,8 @@ The current manoeuvre, floating over the map during navigation: its arrow, the i
 
 Open, the card is as tall as the itinerary up to a cap (320 by default), past which the itinerary scrolls: a long route must not cover the map. The closed card is one button that reads the instruction, then the detail; the grab bar is silent then, and becomes the way to close the card once it is open.
 
+On `surface="glass"` the detail, muted elsewhere, takes the foreground colour, and so do the itinerary's captions and origin inside it, so they read at 4.5:1 over any map (decision 48). Muted over a saturated map they read as low as 2.5:1 on iOS and Android and 3.6:1 on the web. On iOS and Android the card tells what it holds which surface it is on (`kozmosSurfaceStyle`, `LocalKozmosSurfaceStyle`).
+
 <Canvas>
   <Story of={ManoeuvreCardStories.Closed} />
 </Canvas>

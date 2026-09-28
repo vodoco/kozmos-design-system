@@ -115,4 +115,25 @@ describe("ManoeuvreCard", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Rechts" })).toBeInTheDocument();
   });
+
+  it("draws its detail muted through the class a glass surface turns to ink", () => {
+    // Decision 48, on every glass surface: text that is muted elsewhere
+    // takes the foreground colour on glass (owned CSS reads the glass
+    // surface's --kozmos-surface-muted-foreground; measured over a
+    // saturated map in check-adaptive-edge-cases.mjs). A
+    // `text-muted-foreground` beside the class would outrank it.
+    render(
+      <ManoeuvreCard
+        type="left"
+        instruction="Turn left"
+        detail="58 m · 1 min"
+        expanded={false}
+        onToggle={() => undefined}
+        surface="glass"
+      />,
+    );
+    const detail = screen.getByText("58 m · 1 min");
+    expect(detail.classList.contains("kozmos-muted-text")).toBe(true);
+    expect(detail.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
 });

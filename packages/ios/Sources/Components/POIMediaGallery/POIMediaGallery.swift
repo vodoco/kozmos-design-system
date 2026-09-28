@@ -31,9 +31,6 @@ public struct KozmosPOIMediaGallery: View {
     private let onActiveIndexChange: ((Int) -> Void)?
 
     @Environment(\.layoutDirection) private var layoutDirection
-    /// On the shell's glass panel the position takes the foreground colour
-    /// (decision 48); a details card says which surface it sits on.
-    @Environment(\.kozmosPanelSurface) private var panelSurface
     @State private var internalIndex: Int
     /// The tile nearest the strip's leading edge, as last measured. When the
     /// index moves to it, the strip is already there and must not be moved.
@@ -119,9 +116,11 @@ public struct KozmosPOIMediaGallery: View {
 
     private func toolbar(_ proxy: ScrollViewProxy) -> some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
+            // Muted, and on glass the foreground colour (decision 48),
+            // wherever the gallery sits: a details card says which surface.
             Text(positionLabel(currentIndex + 1, media.count))
                 .font(KozmosTypography.caption)
-                .foregroundColor(kozmosMutedForeground(on: panelSurface))
+                .kozmosMutedText()
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.updatesFrequently)
 

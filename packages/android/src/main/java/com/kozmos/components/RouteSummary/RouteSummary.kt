@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.surface.KozmosSurfaceDefaults
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.components.button.KozmosButtonEmotion
 import com.kozmos.components.button.KozmosButtonSize
 import com.kozmos.components.button.KozmosButtonVariant
@@ -90,10 +91,11 @@ fun KozmosRouteSummary(
                         style = MaterialTheme.typography.titleLarge,
                         color = KozmosThemeTokens.primitivesColorsForeground100
                     )
+                    // Muted, and on glass the foreground colour (decision 48).
                     Text(
                         text = distanceText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = KozmosThemeTokens.primitivesColorsForeground500
+                        color = kozmosMutedForeground(surface)
                     )
                 }
 
