@@ -1921,7 +1921,11 @@ try {
   // the map, and the map controls' shadow made the room 32px beside and 48px
   // below. Now only what the overlay holds takes a press; the map gets
   // everything else in the room, a press and a drag alike, and the overlay
-  // still scrolls when what it holds overflows.
+  // still scrolls when what it holds overflows. While it overflows, and only
+  // then, the room is the scroll box's again: in Linux WebKit, as CI runs
+  // it, a wheel scrolls a box only if the box takes presses itself, and with
+  // a room that took none, the overlay did not scroll there (#148's first CI
+  // run).
   //
   // Each board has a map stand-in behind its chrome, as a renderer's canvas
   // is. Points in the room are chosen from the stacks' boxes, inside the board
@@ -1979,50 +1983,69 @@ try {
       },
       { id, layout },
     );
-  const pressed = [];
-  for (const id of ["outer", "nested"]) {
-    for (const layout of ["overlay", "scrolling"]) {
-      const points = await bandPoints(id, layout);
-      assert(
-        points.length >= 2,
-        `${id} ${layout}: no point in an overlay's room to press: ${JSON.stringify(points)}`,
+  const hitAt = (point) =>
+    boards.evaluate(({ x, y }) => {
+      const el = document.elementFromPoint(x, y);
+      return (
+        el?.getAttribute("data-testid") || el?.className || el?.tagName || null
       );
-      const map = `${id}-map-board-${layout}-map`;
-      for (const point of points) {
-        const hit = await boards.evaluate(({ x, y }) => {
-          const el = document.elementFromPoint(x, y);
-          return (
-            el?.getAttribute("data-testid") ||
-            el?.className ||
-            el?.tagName ||
-            null
-          );
-        }, point);
-        assert.equal(
-          hit,
-          map,
-          `${id} ${layout}: a press ${point.where} a control, in the overlay's room at ${point.x},${point.y}, lands on ${hit}, not the map`,
-        );
-        // A press, then a drag, as a visitor panning the map would.
-        await boards.evaluate(() => (window.__mapPresses = []));
-        await boards.mouse.click(point.x, point.y);
-        await boards.mouse.move(point.x, point.y);
-        await boards.mouse.down();
-        await boards.mouse.move(point.x + 24, point.y + 16, { steps: 4 });
-        await boards.mouse.up();
-        const got = await boards.evaluate(() => window.__mapPresses);
-        const on = (type) =>
-          got.filter((e) => e.type === type && e.map === map && e.target)
-            .length;
-        assert(
-          on("pointerdown") >= 2 &&
-            on("pointerup") >= 2 &&
-            on("pointermove") >= 1,
-          `${id} ${layout}: a press and a drag ${point.where} a control, in the overlay's room, did not reach the map: ${JSON.stringify(got)}`,
-        );
-        pressed.push(`${id} ${layout} ${point.where}`);
-      }
+    }, point);
+  // Presses and drags at the room's points, and every one must reach the map.
+  const pressed = [];
+  // The points of a scrolling overlay's room, which its scroll box takes.
+  let scrollBoxTook = 0;
+  const pressInRoom = async (id, layout, state) => {
+    const points = await bandPoints(id, layout);
+    assert(
+      points.length >= 2,
+      `${id} ${layout}${state}: no point in an overlay's room to press: ${JSON.stringify(points)}`,
+    );
+    const map = `${id}-map-board-${layout}-map`;
+    for (const point of points) {
+      const hit = await hitAt(point);
+      assert.equal(
+        hit,
+        map,
+        `${id} ${layout}${state}: a press ${point.where} a control, in the overlay's room at ${point.x},${point.y}, lands on ${hit}, not the map`,
+      );
+      // A press, then a drag, as a visitor panning the map would.
+      await boards.evaluate(() => (window.__mapPresses = []));
+      await boards.mouse.click(point.x, point.y);
+      await boards.mouse.move(point.x, point.y);
+      await boards.mouse.down();
+      await boards.mouse.move(point.x + 24, point.y + 16, { steps: 4 });
+      await boards.mouse.up();
+      const got = await boards.evaluate(() => window.__mapPresses);
+      const on = (type) =>
+        got.filter((e) => e.type === type && e.map === map && e.target).length;
+      assert(
+        on("pointerdown") >= 2 &&
+          on("pointerup") >= 2 &&
+          on("pointermove") >= 1,
+        `${id} ${layout}${state}: a press and a drag ${point.where} a control, in the overlay's room, did not reach the map: ${JSON.stringify(got)}`,
+      );
+      pressed.push(`${id} ${layout}${state} ${point.where}`);
     }
+  };
+  // Whether MapOverlay has marked a stack as scrolling, once its observers
+  // have seen the change.
+  const marked = (testId, want) =>
+    boards
+      .waitForFunction(
+        ({ testId, want }) =>
+          document
+            .querySelector(`[data-testid="${testId}"] > div`)
+            .hasAttribute("data-scrolls") === want,
+        { testId, want },
+        { timeout: 3000 },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+  for (const id of ["outer", "nested"]) {
+    // An overlay that fits takes no press in its room.
+    await pressInRoom(id, "overlay", "");
     // What the overlay holds still takes its own presses.
     const zoom = board(id, "overlay").locator("button").first();
     const box = await zoom.boundingBox();
@@ -2040,10 +2063,11 @@ try {
       `${id}: a press on a control in an overlay no longer reaches it`,
     );
     // And an overlay taller than its room still scrolls, from a wheel over
-    // what it holds.
-    const stack = boards
-      .getByTestId(`${id}-map-overlay-scrolling`)
-      .locator(":scope > div");
+    // what it holds. Linux WebKit, as CI runs it, scrolls a box from a wheel
+    // only if the box takes presses itself: with none, this failed there.
+    const scrolling = `${id}-map-overlay-scrolling`;
+    const overlay = boards.getByTestId(scrolling);
+    const stack = overlay.locator(":scope > div");
     await stack.evaluate((node) => (node.scrollTop = 0));
     const first = await board(id, "scrolling")
       .locator("button")
@@ -2071,9 +2095,47 @@ try {
       `${id}: an overlay that overflows no longer scrolls from a wheel over what it holds`,
     );
     await stack.evaluate((node) => (node.scrollTop = 0));
+    // So while it overflows, the stack is marked as scrolling and takes the
+    // presses in its room: the room is the scroll box's while there is
+    // something to scroll.
+    assert(
+      await marked(scrolling, true),
+      `${id}: an overlay that overflows is not marked as scrolling (data-scrolls on its stack)`,
+    );
+    const whileScrolling = await bandPoints(id, "scrolling");
+    assert(
+      whileScrolling.length >= 2,
+      `${id}: no point in a scrolling overlay's room to press: ${JSON.stringify(whileScrolling)}`,
+    );
+    for (const point of whileScrolling) {
+      const onStack = await boards.evaluate(
+        ({ x, y, testId }) =>
+          document.elementFromPoint(x, y) ===
+          document.querySelector(`[data-testid="${testId}"] > div`),
+        { ...point, testId: scrolling },
+      );
+      assert(
+        onStack,
+        `${id}: while an overlay overflows, a press ${point.where} a control in its room, at ${point.x},${point.y}, lands on ${await hitAt(point)}, not its scroll box, which must take presses for a wheel to scroll it in Linux WebKit`,
+      );
+      scrollBoxTook += 1;
+    }
+    // Given the room, the same overlay fits: it is no longer marked, and a
+    // press in its room reaches the map again.
+    await overlay.evaluate((node) => (node.style.maxHeight = "none"));
+    assert(
+      await marked(scrolling, false),
+      `${id}: an overlay given the room it needs is still marked as scrolling`,
+    );
+    await pressInRoom(id, "scrolling", " (given room)");
+    await overlay.evaluate((node) => (node.style.maxHeight = "120px"));
+    assert(
+      await marked(scrolling, true),
+      `${id}: an overlay that overflows again is not marked as scrolling`,
+    );
   }
   console.log(
-    `PASS decision 46: a press or a drag in an overlay's room reaches the map (${pressed.length} points: ${[...new Set(pressed)].join(", ")}); a control in it still takes its press, and an overlay that overflows still scrolls from a wheel over what it holds`,
+    `PASS decision 46: a press or a drag in the room of an overlay that fits reaches the map (${pressed.length} points: ${[...new Set(pressed)].join(", ")}); a control in it still takes its press; an overlay that overflows scrolls from a wheel over what it holds, and is marked as scrolling and takes the presses in its room (${scrollBoxTook} points) only while it overflows`,
   );
   await boards.close();
 
