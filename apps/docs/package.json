@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/docs",
-  "version": "0.0.6",
+  "version": "0.0.5",
   "private": true,
   "scripts": {
     "dev": "pnpm storybook:react",

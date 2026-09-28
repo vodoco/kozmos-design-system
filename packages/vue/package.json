@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/vue",
-  "version": "0.0.6",
+  "version": "0.0.5",
   "private": true,
   "description": "Internal: Vue wrappers that mount the Kozmos React components. Not published — it mounts a React root per instance, so it cannot server-render and would make every consumer ship React.",
   "license": "MIT",

@@ -1,21 +1,5 @@
 # playground-web
 
-## 0.0.5
-
-### Patch Changes
-
-- Updated dependencies [415e486]
-- Updated dependencies [415e486]
-- Updated dependencies [273e562]
-- Updated dependencies [415e486]
-- Updated dependencies [415e486]
-- Updated dependencies [ded56bc]
-- Updated dependencies [415e486]
-- Updated dependencies [61b121d]
-- Updated dependencies [415e486]
-  - @kozmos-ds/react@0.5.0
-  - @kozmos-ds/icons@0.4.0
-
 ## 0.0.4
 
 ### Patch Changes
