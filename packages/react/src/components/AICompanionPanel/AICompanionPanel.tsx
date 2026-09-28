@@ -7,6 +7,14 @@ export interface AICompanionPanelProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
   "title"
 > {
+  /**
+   * Whether the panel is on screen; `true` when left out. Keep the panel
+   * mounted and turn `open` on when the visitor opens it — from
+   * AISearchButton, usually: that is when it takes focus. A panel that is
+   * open as it mounts, on screen from the start, was opened by nobody and
+   * leaves focus where it is. Closed, it draws nothing.
+   */
+  open?: boolean;
   title?: React.ReactNode;
   /**
    * The heading level the title takes. It follows whatever heading sits above
@@ -22,21 +30,26 @@ export interface AICompanionPanelProps extends Omit<
   /** Above the thread: the Story 14 notice, an offline EmptyState. */
   banner?: React.ReactNode;
   /**
-   * The panel opens when it mounts, and takes focus then. Called first:
-   * `event.preventDefault()` keeps focus where you put it instead — in the
-   * field, through AIInputBar's `inputRef`. Focus that a part inside has
-   * already taken is left alone.
+   * The panel takes focus when the visitor opens it: when `open` turns true
+   * after it has mounted. Called first: `event.preventDefault()` keeps focus
+   * where you put it instead — in the field, through AIInputBar's `inputRef`.
+   * Not called for a panel that mounts open, which takes no focus, nor when a
+   * part inside has already taken focus, which is left alone.
    */
   onOpenAutoFocus?: (event: Event) => void;
   /**
-   * The panel closes when it unmounts, and hands focus back to whatever had
-   * it when it opened: AISearchButton, usually. Called first:
-   * `event.preventDefault()`, then focus what should have it. Not called at
-   * all when the product has already put focus somewhere outside the panel —
-   * that choice stands.
+   * The panel closes when `open` turns false or it unmounts, and hands focus
+   * back to whatever had it when it opened: AISearchButton, usually. Called
+   * first: `event.preventDefault()`, then focus what should have it. Not
+   * called at all when the product has already put focus somewhere outside
+   * the panel — that choice stands.
    */
   onCloseAutoFocus?: (event: Event) => void;
 }
+
+/** Whatever has focus in the page, where there is a page to ask. */
+const focusedElement = () =>
+  typeof document === "undefined" ? null : document.activeElement;
 
 /**
  * The assistant surface.
@@ -53,7 +66,9 @@ export interface AICompanionPanelProps extends Omit<
  * It is a region named by its title, and it moves focus in and out itself
  * (row 60). Opening left focus on the button beneath, which is focus on
  * something the visitor can no longer see; closing removed whatever held it,
- * and focus fell to the page.
+ * and focus fell to the page. It moves focus in only when the visitor opens
+ * it (decision 16): a panel on screen from the start takes nothing from the
+ * page, which may have put focus somewhere on purpose.
  */
 const AICompanionPanel = React.forwardRef<
   HTMLDivElement,
@@ -62,6 +77,7 @@ const AICompanionPanel = React.forwardRef<
   (
     {
       className,
+      open = true,
       title = "Assistant",
       titleLevel = 2,
       onClose,
@@ -78,13 +94,22 @@ const AICompanionPanel = React.forwardRef<
   ) => {
     const titleId = React.useId();
     const root = React.useRef<HTMLDivElement>(null);
-    React.useImperativeHandle(ref, () => root.current!, []);
+    // Closed, there is no panel: the handle follows `open`.
+    React.useImperativeHandle(ref, () => root.current!, [open]);
 
-    // What had focus as the panel opened, read while it first renders: after
-    // that, a part inside may already have taken focus as it mounted.
-    const [opener] = React.useState(() =>
-      typeof document === "undefined" ? null : document.activeElement,
-    );
+    // What had focus as the panel opened, read while it renders open: once it
+    // commits, a part inside may already have taken focus as it mounted. Each
+    // open has its own opener, so it is read again whenever `open` turns true.
+    const [shown, setShown] = React.useState(() => ({
+      open,
+      opener: open ? focusedElement() : null,
+    }));
+    if (shown.open !== open)
+      setShown({ open, opener: open ? focusedElement() : null });
+    const { opener } = shown;
+    // Whether the panel was open when it last committed. It starts as `open`:
+    // a panel that mounts open is one nobody opened.
+    const wasOpen = React.useRef(open);
     // The close comes renders after the open, so it calls the handler the
     // panel has by then, not the one it opened with.
     const closeAutoFocus = React.useRef(onCloseAutoFocus);
@@ -92,12 +117,16 @@ const AICompanionPanel = React.forwardRef<
       closeAutoFocus.current = onCloseAutoFocus;
     }, [onCloseAutoFocus]);
 
-    // Mount and unmount only: they are the panel's open and close.
+    // `open` changing is the panel's open and close; so is unmounting open.
     React.useEffect(() => {
+      // Only `open` turning true is the visitor opening it. Mounting open is
+      // not, nor is StrictMode running this again as the panel mounts.
+      const opened = open && !wasOpen.current;
+      wasOpen.current = open;
       const node = root.current;
-      if (!node) return;
+      if (!open || !node) return;
       const doc = node.ownerDocument;
-      if (!node.contains(doc.activeElement)) {
+      if (opened && !node.contains(doc.activeElement)) {
         const opening = new Event("kozmos.aiCompanionPanel.openAutoFocus", {
           cancelable: true,
         });
@@ -129,9 +158,9 @@ const AICompanionPanel = React.forwardRef<
         if (target && target !== doc.body && target.isConnected)
           target.focus?.({ preventScroll: true });
       };
-      // Deliberately empty. `onOpenAutoFocus` is read once, at the open; the
-      // close reads its handler through the ref above.
-    }, []);
+      // `open` alone. `onOpenAutoFocus` and the opener are read at the open;
+      // the close reads its handler through the ref above.
+    }, [open]);
 
     // A surface that covers the frame has to be dismissible from the
     // keyboard, or it is a trap for anyone not using a pointer. Bound on the
@@ -143,6 +172,7 @@ const AICompanionPanel = React.forwardRef<
       onClose();
     };
 
+    if (!open) return null;
     return (
       <div
         aria-label={ariaLabel}
