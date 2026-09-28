@@ -10,48 +10,48 @@
 >
 > **Core References:**
 >
-> - [Design Philosophy](./.ai-skills/design-philosophy.md) — Visual language, interaction patterns
-> - [Component Lifecycle](./.ai-skills/component-lifecycle.md) — From proposal to deprecation
-> - [Code Patterns](./.ai-skills/code-patterns.md) — Templates for all 6 platforms
+> - [Design Philosophy](../.ai-skills/design-philosophy.md) — Visual language, interaction patterns
+> - [Component Lifecycle](../.ai-skills/component-lifecycle.md) — From proposal to deprecation
+> - [Code Patterns](../.ai-skills/code-patterns.md) — Templates for all 6 platforms
 >
 > **Operations:**
 >
-> - [Incident Playbook](./.ai-skills/incident-playbook.md) — Production issues, hotfixes
-> - [Troubleshooting Guide](./.ai-skills/troubleshooting.md) — Common issues and solutions
+> - [Incident Playbook](../.ai-skills/incident-playbook.md) — Production issues, hotfixes
+> - [Troubleshooting Guide](../.ai-skills/troubleshooting.md) — Common issues and solutions
 >
 > **Maintenance & Evolution:**
 >
-> - [Migration Guide](./.ai-skills/migration-guide.md) — Version upgrades and migrations
-> - [API Changelog](./.ai-skills/api-changelog.md) — Breaking changes and deprecations
-> - [Decision Log](./.ai-skills/decision-log.md) — Architecture Decision Records
+> - [Migration Guide](../.ai-skills/migration-guide.md) — Version upgrades and migrations
+> - [API Changelog](../.ai-skills/api-changelog.md) — Breaking changes and deprecations
+> - [Decision Log](../.ai-skills/decision-log.md) — Architecture Decision Records
 >
 > **Quality & Performance:**
 >
-> - [Performance Benchmarks](./.ai-skills/performance-benchmarks.md) — Budgets and baselines
-> - [Platform Mapping](./.ai-skills/platform-mapping.md) — Cross-platform component reference
-> - [Figma Audit](./.ai-skills/figma-audit.md) — Designer checklists
+> - [Performance Benchmarks](../.ai-skills/performance-benchmarks.md) — Budgets and baselines
+> - [Platform Mapping](../.ai-skills/platform-mapping.md) — Cross-platform component reference
+> - [Figma Audit](../.ai-skills/figma-audit.md) — Designer checklists
 >
 > **Technical Implementation (Executable):**
 >
-> - [Getting Started](./.ai-skills/getting-started.md) — Environment setup, project structure
-> - [Component Creation Guide](./.ai-skills/component-creation-guide.md) — Step-by-step for all platforms
-> - [Token Implementation](./.ai-skills/token-implementation.md) — Style Dictionary, DTCG format
-> - [Testing Patterns](./.ai-skills/testing-patterns.md) — Platform-specific test examples
-> - [CI/CD Configuration](./.ai-skills/ci-cd-configuration.md) — GitHub Actions workflows
-> - [Publishing Guide](./.ai-skills/publishing-guide.md) — npm, SPM, Maven publishing
-> - [Storybook Guide](./.ai-skills/storybook-guide.md) — Storybook setup, addons, documentation
+> - [Getting Started](../.ai-skills/getting-started.md) — Environment setup, project structure
+> - [Component Creation Guide](../.ai-skills/component-creation-guide.md) — Step-by-step for all platforms
+> - [Token Implementation](../.ai-skills/token-implementation.md) — Style Dictionary, DTCG format
+> - [Testing Patterns](../.ai-skills/testing-patterns.md) — Platform-specific test examples
+> - [CI/CD Configuration](../.ai-skills/ci-cd-configuration.md) — GitHub Actions workflows
+> - [Publishing Guide](../.ai-skills/publishing-guide.md) — npm, SPM, Maven publishing
+> - [Storybook Guide](../.ai-skills/storybook-guide.md) — Storybook setup, addons, documentation
 >
 > **Quality & Compliance:**
 >
-> - [Accessibility Guide](./.ai-skills/accessibility-guide.md) — WCAG 2.1 AA compliance, component checklists
-> - [i18n Guide](./.ai-skills/i18n-guide.md) — Internationalization, RTL support, translations
-> - [Theming Guide](./.ai-skills/theming-guide.md) — White-labeling, customer themes, dark mode
-> - [Security Guide](./.ai-skills/security-guide.md) — Security hardening, vulnerability prevention
+> - [Accessibility Guide](../.ai-skills/accessibility-guide.md) — WCAG 2.1 AA compliance, component checklists
+> - [i18n Guide](../.ai-skills/i18n-guide.md) — Internationalization, RTL support, translations
+> - [Theming Guide](../.ai-skills/theming-guide.md) — White-labeling, customer themes, dark mode
+> - [Security Guide](../.ai-skills/security-guide.md) — Security hardening, vulnerability prevention
 >
 > **AI Integration (For Consuming Projects):**
 >
-> - [MCP Server Specification](./.ai-skills/mcp-server-specification.md) — `@kozmos/mcp-server` design for Cursor and similar assistants
-> - [AI Integration Guide](./.ai-skills/ai-integration-guide.md) — Context files for Cursor, Anti Gravity, Copilot, Codeium and more
+> - [MCP Server Specification](../.ai-skills/mcp-server-specification.md) — `@kozmos/mcp-server` design for Cursor and similar assistants
+> - [AI Integration Guide](../.ai-skills/ai-integration-guide.md) — Context files for Cursor, Anti Gravity, Copilot, Codeium and more
 
 ---
 
@@ -549,7 +549,7 @@ All components must:
 
 ## 4. Design Philosophy & Principles
 
-> **Full document:** [.ai-skills/design-philosophy.md](./.ai-skills/design-philosophy.md)
+> **Full document:** [.ai-skills/design-philosophy.md](../.ai-skills/design-philosophy.md)
 
 ### 4.0.1 Core Pillars
 
@@ -591,7 +591,7 @@ When making design decisions, ask in order:
 
 > **Tracking:** A comprehensive inventory and status tracker is available in `check-completion.ts`.
 > Run `npx tsx scripts/skills/check-completion.ts` to see the current implementation status across all platforms.
-> See also: [Extensive Component Inventory](./.ai-skills/component-inventory.md)
+> See also: [Extensive Component Inventory](../.ai-skills/component-inventory.md)
 
 #### Phase 1 - Foundation Components
 
@@ -1732,7 +1732,7 @@ Components/props scheduled for removal include:
 
 ### 13.6 Production Incident Response
 
-> **Full document:** [.ai-skills/incident-playbook.md](./.ai-skills/incident-playbook.md)
+> **Full document:** [.ai-skills/incident-playbook.md](../.ai-skills/incident-playbook.md)
 
 When a released component breaks production, follow the incident playbook:
 
@@ -2239,7 +2239,7 @@ Proposal → RFC → Design Review → Implementation → Code Review → Releas
 
 ### 24.2 Component Lifecycle
 
-> **Full document:** [.ai-skills/component-lifecycle.md](./.ai-skills/component-lifecycle.md)
+> **Full document:** [.ai-skills/component-lifecycle.md](../.ai-skills/component-lifecycle.md)
 
 Components move through a defined lifecycle with clear ownership and exit criteria:
 

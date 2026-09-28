@@ -8,11 +8,12 @@
  * would stop matching anything. So the rename is verified rather than trusted.
  *
  * Deliberately left as they were, and why:
- *   docs/archive/, the dated reports  records of what was true on a date
- *   .ai-skills/, PROJECT_SCOPE.md     renaming makes the hook reformat them,
- *                                     and prettier rewrites their malformed
- *                                     nested fences, which changes how they
- *                                     render — a docs change of its own
+ *   docs/archive/, the dated reports    records of what was true on a date
+ *   .ai-skills/, docs/project-scope.md  renaming makes the hook reformat
+ *                                       them, and prettier rewrites their
+ *                                       malformed nested fences, which
+ *                                       changes how they render — a docs
+ *                                       change of its own
  */
 import { execFileSync } from "node:child_process";
 
@@ -24,7 +25,7 @@ const ALLOWED = [
   /^scripts\/check-package-scope\.mjs$/,
   /^docs\/archive\//,
   /^\.ai-skills\//,
-  /^PROJECT_SCOPE\.md$/,
+  /^docs\/project-scope\.md$/,
   /^docs\/[a-z0-9-]*\d{4}-\d{2}-\d{2}[a-z0-9-]*\.md$/,
 ];
 
