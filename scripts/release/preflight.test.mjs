@@ -83,13 +83,22 @@ function tree({ pending = [] } = {}) {
 
 const ok = () => undefined;
 
-test("a candidate the release job would accept passes, and yields the dispatch command", () => {
-  const result = preflight({
+// npm as it answers before the release: react exists, but not at 0.6.0.
+const registry =
+  (versions = ["0.5.0"]) =>
+  async (name) =>
+    name === "@kozmos-ds/react"
+      ? { versions: Object.fromEntries(versions.map((v) => [v, {}])) }
+      : null;
+
+test("a candidate the release job would accept passes, and yields the dispatch command", async () => {
+  const result = await preflight({
     sha,
     runId: 7,
     gh: github(),
     git: tree(),
     credentialCheck: ok,
+    getPackage: registry(),
   });
   assert.equal(result.plan.packages[0].version, "0.6.0");
   assert.equal(
@@ -98,9 +107,9 @@ test("a candidate the release job would accept passes, and yields the dispatch c
   );
 });
 
-test("the credential check runs, and its failure stops the pre-flight", () => {
+test("the credential check runs, and its failure stops the pre-flight", async () => {
   let ran = false;
-  preflight({
+  await preflight({
     sha,
     runId: 7,
     gh: github(),
@@ -108,33 +117,55 @@ test("the credential check runs, and its failure stops the pre-flight", () => {
     credentialCheck: () => {
       ran = true;
     },
+    getPackage: registry(),
   });
   assert.equal(ran, true);
-  assert.throws(
-    () =>
-      preflight({
-        sha,
-        runId: 7,
-        gh: github(),
-        git: tree(),
-        credentialCheck: () => {
-          throw new Error("NPM_TOKEN is a repository secret");
-        },
-      }),
+  await assert.rejects(
+    preflight({
+      sha,
+      runId: 7,
+      gh: github(),
+      git: tree(),
+      credentialCheck: () => {
+        throw new Error("NPM_TOKEN is a repository secret");
+      },
+      getPackage: registry(),
+    }),
     /repository secret/,
   );
 });
 
-for (const [label, input] of [
+test("a plan npm already has is refused, whole or in part, and a first release passes", async () => {
+  const run = (getPackage) =>
+    preflight({
+      sha,
+      runId: 7,
+      gh: github(),
+      git: tree(),
+      credentialCheck: ok,
+      getPackage,
+    });
+  await assert.rejects(
+    run(registry(["0.5.0", "0.6.0"])),
+    /npm already has @kozmos-ds\/react@0\.6\.0\. A new release needs a version PR/,
+  );
+  // A package npm has never seen (404) is a first release, not a refusal.
+  const first = await run(async () => null);
+  assert.equal(first.plan.packages[0].version, "0.6.0");
+});
+
+for (const [label, input, message] of [
   [
     "main has moved on",
     {
       gh: github({ "git/ref/heads/main": { object: { sha: "d".repeat(40) } } }),
     },
+    /no longer main HEAD/,
   ],
   [
     "a changeset is still pending at the commit",
     { git: tree({ pending: [".changeset/x.md"] }) },
+    /Version pending changesets/,
   ],
   [
     "a CI job did not succeed",
@@ -152,6 +183,7 @@ for (const [label, input] of [
         },
       }),
     },
+    /skipped jobs are not evidence/,
   ],
   [
     "npm-release no longer needs an approval",
@@ -165,17 +197,21 @@ for (const [label, input] of [
         },
       }),
     },
+    /Require a reviewer's approval/,
   ],
 ])
-  test(`the pre-flight refuses when ${label}`, () => {
-    assert.throws(() =>
+  test(`the pre-flight refuses when ${label}`, async () => {
+    // Each case names its own refusal, so none can pass on an unrelated error.
+    await assert.rejects(
       preflight({
         sha,
         runId: 7,
         gh: github(),
         git: tree(),
         credentialCheck: ok,
+        getPackage: registry(),
         ...input,
       }),
+      message,
     );
   });

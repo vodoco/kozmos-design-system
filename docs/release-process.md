@@ -5,8 +5,8 @@ Status (2026-09-28): in use. It has published every release since 0.1.0 (2026-09
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
 
 **Before every dispatch, `pnpm release:preflight <sha> <ci-run-id>`**: it makes the release
-job's own checks against the live CI run and settings (the credential check included) and
-prints the dispatch command. **After a publish, `pnpm release:tag <sha>`**: the git tags and
+job's own checks against the live CI run and settings (the credential check included),
+refuses a plan npm already has, and prints the dispatch command. **After a publish, `pnpm release:tag <sha>`**: the git tags and
 GitHub Releases.
 
 ## What the workflow requires
@@ -126,7 +126,9 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    CI because of path exclusions: do not substitute an older SHA or a PR run, and merge
    nothing between the version PR and the dispatch.
 4. `pnpm release:preflight <sha> <ci-run-id>` runs the credential check and the release
-   job's own request, evidence and plan checks, then prints the dispatch command. Dispatch
+   job's own request, evidence and plan checks, refuses if npm already has any planned version
+   (a partly published release is recovered as below, never re-dispatched), then prints the
+   dispatch command. Dispatch
    `Release Kozmos System` with it, and approve the `npm-release` deployment when the
    publish job asks. If main advances mid-run, validation fails: repeat against the newly
    tested main, not a moving checkout.

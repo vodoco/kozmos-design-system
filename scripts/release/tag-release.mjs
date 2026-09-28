@@ -129,4 +129,6 @@ function main() {
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main();
+// Run as a command, not when imported (tests, `node -e`, where argv[1] is unset).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main();

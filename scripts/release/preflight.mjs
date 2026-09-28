@@ -13,6 +13,11 @@
 //    verify-request.mjs reads — fetched with `gh`, which holds the credentials.
 // 3. The plan at that commit (not the working tree): validatePlan over the
 //    commit's release/plan.json, manifests and pending changesets.
+// 4. That npm has none of the planned versions yet. A dispatch is for a new
+//    release; one already out needs a version PR, and one partly out needs the
+//    recovery in docs/release-process.md (a rerun of the failed job, or a
+//    reviewed plan), never a fresh dispatch whose rebuilt tarballs may differ
+//    from the bytes npm already has.
 //
 // It never dispatches, and it never approves: it prints the command for a
 // person to run.
@@ -44,12 +49,34 @@ export function planAt(sha, git) {
   return validatePlan(plan, manifests, pending);
 }
 
+/** Refuses a plan any of whose versions npm already has (see 4. above). */
+export async function assertUnpublished(plan, getPackage) {
+  const published = [];
+  for (const { name, version } of plan.packages)
+    if ((await getPackage(name))?.versions?.[version])
+      published.push(`${name}@${version}`);
+  if (published.length)
+    throw new Error(
+      `npm already has ${published.join(", ")}. A new release needs a version PR; ` +
+        "a partly published one needs the recovery in docs/release-process.md, not a new dispatch.",
+    );
+}
+
 /**
- * Every check, in the order the release job makes them. `gh(route)` returns a
- * parsed GitHub response for `repos/<repository>/<route>`; `git(args)` returns
- * git's stdout; `credentialCheck()` throws if the credential is misplaced.
+ * Every check, in the order the release job makes them, then the registry.
+ * `gh(route)` returns a parsed GitHub response for `repos/<repository>/<route>`;
+ * `git(args)` returns git's stdout; `credentialCheck()` throws if the
+ * credential is misplaced; `getPackage(name)` resolves to npm's packument, or
+ * null for a package npm has never seen.
  */
-export function preflight({ sha, runId, gh, git, credentialCheck }) {
+export async function preflight({
+  sha,
+  runId,
+  gh,
+  git,
+  credentialCheck,
+  getPackage,
+}) {
   const request = {
     event: "workflow_dispatch",
     ref: "refs/heads/main",
@@ -85,6 +112,7 @@ export function preflight({ sha, runId, gh, git, credentialCheck }) {
     enabled: gh("actions/variables/NPM_RELEASE_ENABLED").value,
   });
   const plan = planAt(sha, git);
+  await assertUnpublished(plan, getPackage);
   return {
     request,
     run,
@@ -96,7 +124,7 @@ export function preflight({ sha, runId, gh, git, credentialCheck }) {
   };
 }
 
-function main() {
+async function main() {
   const [sha, runId] = process.argv.slice(2);
   if (!sha || !runId) {
     console.error("Usage: pnpm release:preflight <sha> <ci-run-id>");
@@ -105,7 +133,7 @@ function main() {
   const here = path.dirname(fileURLToPath(import.meta.url));
   let result;
   try {
-    result = preflight({
+    result = await preflight({
       sha,
       runId,
       gh: (route) =>
@@ -126,6 +154,22 @@ function main() {
           [path.join(here, "check-credential-placement.mjs")],
           { stdio: "inherit" },
         ),
+      // As publish.mjs reads it: uncached, and a 404 is a package npm never saw.
+      getPackage: async (name) => {
+        const response = await fetch(
+          `https://registry.npmjs.org/${encodeURIComponent(name)}`,
+          {
+            signal: AbortSignal.timeout(30000),
+            headers: { "Cache-Control": "no-cache" },
+          },
+        );
+        if (response.status === 404) return null;
+        if (!response.ok)
+          throw new Error(
+            `Registry lookup failed: ${name}, HTTP ${response.status}`,
+          );
+        return response.json();
+      },
     });
   } catch (error) {
     // One line, as the release job would put it: what refused, and why.
@@ -135,11 +179,14 @@ function main() {
   console.log(
     `\nPre-flight passed: ${sha}, CI run ${result.request.runId} attempt ` +
       `${result.run.run_attempt} (${result.jobs.length} jobs, all succeeded); ` +
-      `${result.plan.packages.map((p) => `${p.name}@${p.version}`).join(", ")} → ${result.plan.tag}.\n\n` +
+      `${result.plan.packages.map((p) => `${p.name}@${p.version}`).join(", ")} → ${result.plan.tag}, ` +
+      "none of them on npm yet.\n\n" +
       `Dispatch it:\n\n  ${result.command}\n\n` +
       "Then approve the npm-release deployment in the run (Review deployments). " +
       "Nothing may merge to main between here and the dispatch.",
   );
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main();
+// Run as a command, not when imported (tests, `node -e`, where argv[1] is unset).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  await main();
