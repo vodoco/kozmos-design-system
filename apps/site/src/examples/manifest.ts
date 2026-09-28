@@ -60,6 +60,7 @@ export const examples: readonly ExampleEntry[] = [
       "GAP-83 · The assistant’s thread scrolls and takes no focus of its own, so the example gives it a tab stop.",
       "GAP-88 · The title over an answer’s places is a paragraph, not a heading, so heading navigation passes them by.",
       "GAP-93 · The assistant covers the frame but leaves what it covers in reach of the keyboard, so the example makes the map and the sheet inert while it is open.",
+      "GAP-95 · The level switcher's column is placed against the browser window, so it grows up out of the phone's frame over the page.",
     ],
   },
   {
