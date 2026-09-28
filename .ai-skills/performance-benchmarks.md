@@ -32,108 +32,92 @@
 
 ### Performance Budget Tiers
 
-| Tier | Description | Bundle Limit | TTI Impact |
-|------|-------------|--------------|------------|
-| **P0** | Core primitives (Button, Text, Box) | <5KB per component | <10ms |
-| **P1** | Common components (Input, Select, Modal) | <10KB per component | <20ms |
-| **P2** | Complex components (DatePicker, DataTable) | <25KB per component | <50ms |
-| **P3** | SDK modules (MapView, AICompanion) | <50KB per module | <100ms |
+| Tier   | Description                                | Bundle Limit        | TTI Impact |
+| ------ | ------------------------------------------ | ------------------- | ---------- |
+| **P0** | Core primitives (Button, Text, Box)        | <5KB per component  | <10ms      |
+| **P1** | Common components (Input, Select, Modal)   | <10KB per component | <20ms      |
+| **P2** | Complex components (DatePicker, DataTable) | <25KB per component | <50ms      |
+| **P3** | SDK modules (MapView, AICompanion)         | <50KB per module    | <100ms     |
 
 ---
 
 ## 2. Bundle Size Budgets
 
+### What CI Enforces
+
+The required `analyze-bundle` check (`.github/workflows/bundle-size.yml`) runs
+`scripts/performance/bundle-analyzer.ts`. It builds `@kozmos-ds/react`, bundles it the way a Vite
+app would (Rollup, honouring the package's `sideEffects`, its dependencies left out), and holds four
+budgets, gzipped:
+
+| Measure                              | Budget |
+| ------------------------------------ | ------ |
+| Any one public export, bundled alone | 8 KB   |
+| `Button` alone                       | 2 KB   |
+| Every export at once                 | 64 KB  |
+| The stylesheet                       | 30 KB  |
+
+No check enforces the tables below.
+
 ### Package-Level Budgets
 
-| Package | Budget (minified) | Budget (gzip) | Current | Status |
-|---------|-------------------|---------------|---------|--------|
-| `@kozmos/tokens` | 8KB | 2KB | — | 🟢 |
-| `@kozmos/react` (full) | 80KB | 25KB | — | 🟢 |
-| `@kozmos/react` (core only) | 20KB | 6KB | — | 🟢 |
-| `@kozmos/icons` (full) | 150KB | 40KB | — | 🟢 |
-| `@kozmos/icons` (per icon) | 1KB | 0.3KB | — | 🟢 |
-| `@kozmos/vue` | 60KB | 18KB | — | 🟢 |
-| `@kozmos/react-native` | 100KB | 30KB | — | 🟢 |
+| Package                     | Budget (minified) | Budget (gzip) | Current | Status |
+| --------------------------- | ----------------- | ------------- | ------- | ------ |
+| `@kozmos/tokens`            | 8KB               | 2KB           | —       | 🟢     |
+| `@kozmos/react` (full)      | 80KB              | 25KB          | —       | 🟢     |
+| `@kozmos/react` (core only) | 20KB              | 6KB           | —       | 🟢     |
+| `@kozmos/icons` (full)      | 150KB             | 40KB          | —       | 🟢     |
+| `@kozmos/icons` (per icon)  | 1KB               | 0.3KB         | —       | 🟢     |
+| `@kozmos/vue`               | 60KB              | 18KB          | —       | 🟢     |
+| `@kozmos/react-native`      | 100KB             | 30KB          | —       | 🟢     |
 
 ### Component-Level Budgets (React)
 
-| Component | Budget (min) | Budget (gzip) | Dependencies |
-|-----------|--------------|---------------|--------------|
-| **Primitives** | | | |
-| Box | 1KB | 0.4KB | — |
-| Text | 1.5KB | 0.5KB | — |
-| Button | 3KB | 1KB | CVA |
-| Icon | 1KB | 0.4KB | — |
-| **Form Controls** | | | |
-| Input | 4KB | 1.5KB | — |
-| Checkbox | 3KB | 1KB | — |
-| Radio | 3KB | 1KB | — |
-| Select | 8KB | 3KB | Floating UI |
-| Switch | 3KB | 1KB | — |
-| **Feedback** | | | |
-| Modal | 6KB | 2KB | Focus Lock |
-| Toast | 5KB | 1.8KB | — |
-| Tooltip | 4KB | 1.5KB | Floating UI |
-| Alert | 3KB | 1KB | — |
-| **Layout** | | | |
-| Stack | 2KB | 0.7KB | — |
-| Grid | 2KB | 0.7KB | — |
-| Divider | 0.5KB | 0.2KB | — |
-| **Complex** | | | |
-| DatePicker | 20KB | 7KB | date-fns |
-| DataTable | 25KB | 8KB | — |
-| Accordion | 5KB | 1.8KB | — |
-| Tabs | 5KB | 1.8KB | — |
+| Component         | Budget (min) | Budget (gzip) | Dependencies |
+| ----------------- | ------------ | ------------- | ------------ |
+| **Primitives**    |              |               |              |
+| Box               | 1KB          | 0.4KB         | —            |
+| Text              | 1.5KB        | 0.5KB         | —            |
+| Button            | 3KB          | 1KB           | CVA          |
+| Icon              | 1KB          | 0.4KB         | —            |
+| **Form Controls** |              |               |              |
+| Input             | 4KB          | 1.5KB         | —            |
+| Checkbox          | 3KB          | 1KB           | —            |
+| Radio             | 3KB          | 1KB           | —            |
+| Select            | 8KB          | 3KB           | Floating UI  |
+| Switch            | 3KB          | 1KB           | —            |
+| **Feedback**      |              |               |              |
+| Modal             | 6KB          | 2KB           | Focus Lock   |
+| Toast             | 5KB          | 1.8KB         | —            |
+| Tooltip           | 4KB          | 1.5KB         | Floating UI  |
+| Alert             | 3KB          | 1KB           | —            |
+| **Layout**        |              |               |              |
+| Stack             | 2KB          | 0.7KB         | —            |
+| Grid              | 2KB          | 0.7KB         | —            |
+| Divider           | 0.5KB        | 0.2KB         | —            |
+| **Complex**       |              |               |              |
+| DatePicker        | 20KB         | 7KB           | date-fns     |
+| DataTable         | 25KB         | 8KB           | —            |
+| Accordion         | 5KB          | 1.8KB         | —            |
+| Tabs              | 5KB          | 1.8KB         | —            |
 
 ### Dependency Budget
 
-| Dependency Type | Budget | Notes |
-|-----------------|--------|-------|
-| Runtime (required) | 0KB | No runtime dependencies |
-| Peer (user provides) | 50KB | React, React DOM |
-| Optional (tree-shakeable) | 20KB | Floating UI, date-fns |
+| Dependency Type           | Budget | Notes                   |
+| ------------------------- | ------ | ----------------------- |
+| Runtime (required)        | 0KB    | No runtime dependencies |
+| Peer (user provides)      | 50KB   | React, React DOM        |
+| Optional (tree-shakeable) | 20KB   | Floating UI, date-fns   |
 
 ### Measuring Bundle Size
 
 ```bash
-# Analyze bundle composition
-pnpm build
-npx source-map-explorer dist/index.js --html bundle-report.html
-
-# Check individual component size
-npx esbuild packages/react/src/Button/index.ts \
-  --bundle --minify --outfile=/dev/null \
-  --metafile=meta.json
-cat meta.json | jq '.outputs[].bytes'
-
-# Compare with baseline
-npx bundlewatch --config bundlewatch.config.json
+# The budgets CI enforces; builds @kozmos-ds/react first
+pnpm tsx scripts/performance/bundle-analyzer.ts
 ```
 
-### bundlewatch.config.json
-
-```json
-{
-  "files": [
-    {
-      "path": "packages/react/dist/index.js",
-      "maxSize": "80KB"
-    },
-    {
-      "path": "packages/tokens/dist/index.js",
-      "maxSize": "8KB"
-    },
-    {
-      "path": "packages/icons/dist/index.js",
-      "maxSize": "150KB"
-    }
-  ],
-  "ci": {
-    "trackBranches": ["main"],
-    "repoBranchBase": "main"
-  }
-}
-```
+It prints the median export and the five heaviest, `Button`, everything together and the
+stylesheet, each against its budget.
 
 ---
 
@@ -141,36 +125,36 @@ npx bundlewatch --config bundlewatch.config.json
 
 ### JavaScript Execution Time
 
-| Operation | Budget | Measurement |
-|-----------|--------|-------------|
-| Component import | <5ms | Time to first paint after import |
-| ThemeProvider mount | <10ms | Provider initialization |
-| Button render | <1ms | Single component render |
-| Modal open | <16ms | One frame (60fps) |
-| Select dropdown open | <16ms | One frame (60fps) |
-| Form with 20 inputs | <50ms | Full form render |
-| List with 100 items | <100ms | Virtualized list render |
-| Theme switch | <50ms | Full re-render with new theme |
+| Operation            | Budget | Measurement                      |
+| -------------------- | ------ | -------------------------------- |
+| Component import     | <5ms   | Time to first paint after import |
+| ThemeProvider mount  | <10ms  | Provider initialization          |
+| Button render        | <1ms   | Single component render          |
+| Modal open           | <16ms  | One frame (60fps)                |
+| Select dropdown open | <16ms  | One frame (60fps)                |
+| Form with 20 inputs  | <50ms  | Full form render                 |
+| List with 100 items  | <100ms | Virtualized list render          |
+| Theme switch         | <50ms  | Full re-render with new theme    |
 
 ### Animation Performance
 
-| Animation Type | Budget | Requirement |
-|----------------|--------|-------------|
-| Hover transitions | 60fps | No dropped frames |
-| Modal enter/exit | 60fps | CSS-only, no JS animation |
-| Loading spinners | 60fps | CSS animation, no repaints |
-| Scroll interactions | 60fps | Passive listeners |
-| Drag operations | 60fps | requestAnimationFrame |
+| Animation Type      | Budget | Requirement                |
+| ------------------- | ------ | -------------------------- |
+| Hover transitions   | 60fps  | No dropped frames          |
+| Modal enter/exit    | 60fps  | CSS-only, no JS animation  |
+| Loading spinners    | 60fps  | CSS animation, no repaints |
+| Scroll interactions | 60fps  | Passive listeners          |
+| Drag operations     | 60fps  | requestAnimationFrame      |
 
 ### Interaction Latency
 
-| Interaction | Budget | Measurement |
-|-------------|--------|-------------|
-| Button click to response | <50ms | Event to visual feedback |
-| Input keystroke | <16ms | Input to character display |
-| Dropdown open | <100ms | Click to fully visible |
-| Modal open | <150ms | Trigger to content visible |
-| Page navigation | <200ms | Click to new content |
+| Interaction              | Budget | Measurement                |
+| ------------------------ | ------ | -------------------------- |
+| Button click to response | <50ms  | Event to visual feedback   |
+| Input keystroke          | <16ms  | Input to character display |
+| Dropdown open            | <100ms | Click to fully visible     |
+| Modal open               | <150ms | Trigger to content visible |
+| Page navigation          | <200ms | Click to new content       |
 
 ---
 
@@ -178,13 +162,13 @@ npx bundlewatch --config bundlewatch.config.json
 
 ### React Render Metrics
 
-| Scenario | Max Renders | Max Render Time |
-|----------|-------------|-----------------|
-| Controlled input typing | 1 per keystroke | <2ms |
-| Select option change | 2 (value + display) | <5ms |
-| Theme change | 1 (memoized children) | <50ms |
-| Form submission | 1 | <10ms |
-| Modal open | 1 | <10ms |
+| Scenario                | Max Renders           | Max Render Time |
+| ----------------------- | --------------------- | --------------- |
+| Controlled input typing | 1 per keystroke       | <2ms            |
+| Select option change    | 2 (value + display)   | <5ms            |
+| Theme change            | 1 (memoized children) | <50ms           |
+| Form submission         | 1                     | <10ms           |
+| Modal open              | 1                     | <10ms           |
 
 ### Preventing Unnecessary Renders
 
@@ -195,25 +179,28 @@ export const Button = React.memo(function Button(props: ButtonProps) {
 });
 
 // ✅ Good: Stable callbacks
-const handleClick = useCallback((e: React.MouseEvent) => {
-  onClick?.(e);
-}, [onClick]);
+const handleClick = useCallback(
+  (e: React.MouseEvent) => {
+    onClick?.(e);
+  },
+  [onClick],
+);
 
 // ✅ Good: Memoized expensive computations
-const sortedItems = useMemo(() =>
-  items.sort((a, b) => a.label.localeCompare(b.label)),
-  [items]
+const sortedItems = useMemo(
+  () => items.sort((a, b) => a.label.localeCompare(b.label)),
+  [items],
 );
 ```
 
 ### React DevTools Profiler Targets
 
-| Metric | Target |
-|--------|--------|
-| Commit duration (simple component) | <2ms |
-| Commit duration (complex component) | <10ms |
-| Render count (controlled input) | 1 per change |
-| Wasted renders | 0 |
+| Metric                              | Target       |
+| ----------------------------------- | ------------ |
+| Commit duration (simple component)  | <2ms         |
+| Commit duration (complex component) | <10ms        |
+| Render count (controlled input)     | 1 per change |
+| Wasted renders                      | 0            |
 
 ---
 
@@ -221,13 +208,13 @@ const sortedItems = useMemo(() =>
 
 ### JavaScript Heap
 
-| Scenario | Budget | Notes |
-|----------|--------|-------|
-| Kozmos import (idle) | <2MB | After full import |
-| 10 simple components | <0.5MB | Buttons, Text, etc. |
-| Complex form (20 inputs) | <1MB | With validation |
-| Data table (1000 rows) | <5MB | Virtualized |
-| Full application | <50MB | Typical SDK usage |
+| Scenario                 | Budget | Notes               |
+| ------------------------ | ------ | ------------------- |
+| Kozmos import (idle)     | <2MB   | After full import   |
+| 10 simple components     | <0.5MB | Buttons, Text, etc. |
+| Complex form (20 inputs) | <1MB   | With validation     |
+| Data table (1000 rows)   | <5MB   | Virtualized         |
+| Full application         | <50MB  | Typical SDK usage   |
 
 ### Memory Leak Prevention
 
@@ -254,12 +241,12 @@ useEffect(() => {
 
 ### Detached DOM Nodes
 
-| Scenario | Max Detached Nodes |
-|----------|-------------------|
-| Modal close | 0 (within 1 frame) |
-| List item removal | 0 (within 1 frame) |
-| Tab switch | 0 (lazy unmount OK) |
-| Route change | 0 (within 100ms) |
+| Scenario          | Max Detached Nodes  |
+| ----------------- | ------------------- |
+| Modal close       | 0 (within 1 frame)  |
+| List item removal | 0 (within 1 frame)  |
+| Tab switch        | 0 (lazy unmount OK) |
+| Route change      | 0 (within 100ms)    |
 
 ---
 
@@ -267,37 +254,37 @@ useEffect(() => {
 
 ### Asset Loading
 
-| Asset Type | Strategy | Cache Policy |
-|------------|----------|--------------|
-| CSS Variables | Inline in ThemeProvider | — |
-| Component CSS | Bundled, tree-shaken | Immutable (1yr) |
-| Icons (used) | Bundled, tree-shaken | Immutable (1yr) |
-| Fonts | System fonts only | — |
-| Images | Consumer responsibility | — |
+| Asset Type    | Strategy                | Cache Policy    |
+| ------------- | ----------------------- | --------------- |
+| CSS Variables | Inline in ThemeProvider | —               |
+| Component CSS | Bundled, tree-shaken    | Immutable (1yr) |
+| Icons (used)  | Bundled, tree-shaken    | Immutable (1yr) |
+| Fonts         | System fonts only       | —               |
+| Images        | Consumer responsibility | —               |
 
 ### Code Splitting Strategy
 
 ```tsx
 // Automatic code splitting for heavy components
-const DatePicker = lazy(() => import('@kozmos/react/DatePicker'));
-const DataTable = lazy(() => import('@kozmos/react/DataTable'));
-const RichTextEditor = lazy(() => import('@kozmos/react/RichTextEditor'));
+const DatePicker = lazy(() => import("@kozmos/react/DatePicker"));
+const DataTable = lazy(() => import("@kozmos/react/DataTable"));
+const RichTextEditor = lazy(() => import("@kozmos/react/RichTextEditor"));
 
 // Usage with Suspense
 <Suspense fallback={<Skeleton />}>
   <DatePicker />
-</Suspense>
+</Suspense>;
 ```
 
 ### Preloading Strategy
 
 ```tsx
 // Preload on hover for modals
-const preloadModal = () => import('@kozmos/react/Modal');
+const preloadModal = () => import("@kozmos/react/Modal");
 
 <Button onMouseEnter={preloadModal} onClick={openModal}>
   Open Settings
-</Button>
+</Button>;
 ```
 
 ---
@@ -306,13 +293,13 @@ const preloadModal = () => import('@kozmos/react/Modal');
 
 ### iOS (SwiftUI)
 
-| Metric | Budget | Measurement |
-|--------|--------|-------------|
-| App launch impact | <50ms | Time added to cold start |
-| View render | <16ms | One frame |
-| Animation frame rate | 60fps | Core Animation |
-| Memory footprint | <10MB | Instruments |
-| Energy impact | Low | Xcode Energy Gauge |
+| Metric               | Budget | Measurement              |
+| -------------------- | ------ | ------------------------ |
+| App launch impact    | <50ms  | Time added to cold start |
+| View render          | <16ms  | One frame                |
+| Animation frame rate | 60fps  | Core Animation           |
+| Memory footprint     | <10MB  | Instruments              |
+| Energy impact        | Low    | Xcode Energy Gauge       |
 
 ```swift
 // Measuring render performance
@@ -332,13 +319,13 @@ func measureRender<T: View>(_ view: T) -> some View {
 
 ### Android (Compose)
 
-| Metric | Budget | Measurement |
-|--------|--------|-------------|
-| App launch impact | <50ms | Time added to cold start |
-| Composition | <16ms | One frame |
-| Frame rate | 60fps (90fps capable) | Android Studio Profiler |
-| Memory footprint | <15MB | Android Profiler |
-| Jank frames | <1% | Systrace |
+| Metric            | Budget                | Measurement              |
+| ----------------- | --------------------- | ------------------------ |
+| App launch impact | <50ms                 | Time added to cold start |
+| Composition       | <16ms                 | One frame                |
+| Frame rate        | 60fps (90fps capable) | Android Studio Profiler  |
+| Memory footprint  | <15MB                 | Android Profiler         |
+| Jank frames       | <1%                   | Systrace                 |
 
 ```kotlin
 // Measuring composition performance
@@ -364,17 +351,17 @@ fun MeasuredButton(onClick: () -> Unit, content: @Composable () -> Unit) {
 
 ### React Native
 
-| Metric | Budget | Measurement |
-|--------|--------|-------------|
-| JS bundle impact | <100KB | Metro bundler |
-| Bridge calls per frame | <10 | Flipper |
-| Frame rate | 60fps | Perf Monitor |
-| TTI impact | <200ms | React DevTools |
-| Memory | <20MB | Flipper |
+| Metric                 | Budget | Measurement    |
+| ---------------------- | ------ | -------------- |
+| JS bundle impact       | <100KB | Metro bundler  |
+| Bridge calls per frame | <10    | Flipper        |
+| Frame rate             | 60fps  | Perf Monitor   |
+| TTI impact             | <200ms | React DevTools |
+| Memory                 | <20MB  | Flipper        |
 
 ```tsx
 // Measuring JS-to-Native bridge calls
-import { InteractionManager } from 'react-native';
+import { InteractionManager } from "react-native";
 
 function measureInteraction(name: string, fn: () => void) {
   const start = performance.now();
@@ -388,13 +375,13 @@ function measureInteraction(name: string, fn: () => void) {
 
 ### Web (Core Web Vitals)
 
-| Metric | Budget | Priority |
-|--------|--------|----------|
-| LCP (Largest Contentful Paint) | <2.5s | High |
-| FID (First Input Delay) | <100ms | High |
-| CLS (Cumulative Layout Shift) | <0.1 | High |
-| INP (Interaction to Next Paint) | <200ms | High |
-| TTFB (Time to First Byte) | <800ms | Medium |
+| Metric                          | Budget | Priority |
+| ------------------------------- | ------ | -------- |
+| LCP (Largest Contentful Paint)  | <2.5s  | High     |
+| FID (First Input Delay)         | <100ms | High     |
+| CLS (Cumulative Layout Shift)   | <0.1   | High     |
+| INP (Interaction to Next Paint) | <200ms | High     |
+| TTFB (Time to First Byte)       | <800ms | Medium   |
 
 ---
 
@@ -402,25 +389,22 @@ function measureInteraction(name: string, fn: () => void) {
 
 ### Bundle Analysis
 
-| Tool | Purpose | Command |
-|------|---------|---------|
-| source-map-explorer | Bundle composition | `npx source-map-explorer dist/*.js` |
-| bundlewatch | Size regression CI | `npx bundlewatch` |
-| webpack-bundle-analyzer | Visual treemap | Built into Storybook |
-| esbuild metafile | Per-component size | Custom script |
-| size-limit | PR size diff | GitHub Action |
+| Tool                                     | Purpose                                              | Command                                           |
+| ---------------------------------------- | ---------------------------------------------------- | ------------------------------------------------- |
+| `scripts/performance/bundle-analyzer.ts` | The budgets CI enforces, per export and in total     | `pnpm tsx scripts/performance/bundle-analyzer.ts` |
+| Lighthouse CI                            | Performance and accessibility scores of four stories | `.github/workflows/lighthouse.yml`                |
 
 ### Runtime Profiling
 
-| Tool | Platform | Purpose |
-|------|----------|---------|
-| React DevTools Profiler | React | Render timing |
-| Chrome DevTools Performance | Web | JS execution, paint |
-| Lighthouse | Web | Core Web Vitals |
-| Safari Web Inspector | Web/iOS | Memory, timeline |
-| Xcode Instruments | iOS | Time Profiler, Allocations |
-| Android Studio Profiler | Android | CPU, Memory, Network |
-| Flipper | React Native | All metrics |
+| Tool                        | Platform     | Purpose                    |
+| --------------------------- | ------------ | -------------------------- |
+| React DevTools Profiler     | React        | Render timing              |
+| Chrome DevTools Performance | Web          | JS execution, paint        |
+| Lighthouse                  | Web          | Core Web Vitals            |
+| Safari Web Inspector        | Web/iOS      | Memory, timeline           |
+| Xcode Instruments           | iOS          | Time Profiler, Allocations |
+| Android Studio Profiler     | Android      | CPU, Memory, Network       |
+| Flipper                     | React Native | All metrics                |
 
 ### Automated Testing
 
@@ -469,91 +453,24 @@ describe('Performance', () => {
 
 ### Bundle Size Check (GitHub Actions)
 
-```yaml
-# .github/workflows/bundle-size.yml
-name: Bundle Size
-
-on:
-  pull_request:
-    paths:
-      - 'packages/**'
-
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build
-        run: pnpm build
-
-      - name: Check bundle size
-        uses: preactjs/compressed-size-action@v2
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: 'packages/*/dist/**/*.js'
-
-      - name: Bundlewatch
-        run: npx bundlewatch
-        env:
-          BUNDLEWATCH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+`.github/workflows/bundle-size.yml` ("Bundle Size Analysis") runs on pull requests into `main` and on
+pushes to `main` that change more than documentation. Its one job, `analyze-bundle`, is a required
+check: it installs the workspace and runs `pnpm tsx scripts/performance/bundle-analyzer.ts`, which
+fails when a budget in §2 is exceeded. Raise a budget only with the measurement that justifies it.
 
 ### Performance Regression Test
 
-```yaml
-# .github/workflows/perf.yml
-name: Performance
-
-on:
-  pull_request:
-    paths:
-      - 'packages/react/**'
-
-jobs:
-  lighthouse:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build Storybook
-        run: pnpm build-storybook
-
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v10
-        with:
-          configPath: ./lighthouserc.json
-          uploadArtifacts: true
-```
+There is no `perf.yml`. `.github/workflows/lighthouse.yml` ("Lighthouse CI"), on the same triggers,
+builds Storybook (`pnpm turbo run build --filter=@kozmos-ds/docs`) and runs Lighthouse CI; its
+`lighthouse` job is a required check.
 
 ### lighthouserc.json
 
-```json
-{
-  "ci": {
-    "collect": {
-      "staticDistDir": "./storybook-static",
-      "url": [
-        "http://localhost/iframe.html?id=button--default",
-        "http://localhost/iframe.html?id=form--complex"
-      ]
-    },
-    "assert": {
-      "assertions": {
-        "categories:performance": ["error", { "minScore": 0.9 }],
-        "first-contentful-paint": ["error", { "maxNumericValue": 1000 }],
-        "interactive": ["error", { "maxNumericValue": 2000 }],
-        "total-blocking-time": ["error", { "maxNumericValue": 200 }]
-      }
-    }
-  }
-}
-```
+[`lighthouserc.json`](../lighthouserc.json) takes four stories from `apps/docs/storybook-static`
+(the default Button, Dialog, Toast and POICard stories), one run each, and asserts:
+
+- `categories:accessibility` of at least 1 (a score of 100), as an error;
+- `categories:performance` of at least 0.5, as a warning only.
 
 ---
 
@@ -562,28 +479,28 @@ jobs:
 ### Bundle Size Trend
 
 | Version | @kozmos/react | @kozmos/tokens | @kozmos/icons |
-|---------|---------------|----------------|---------------|
-| v1.0.0 | 45KB | 5KB | 80KB |
-| v2.0.0 | 62KB | 6KB | 120KB |
-| v2.5.0 | 68KB | 7KB | 135KB |
-| v3.0.0 | 75KB | 7.5KB | 145KB |
+| ------- | ------------- | -------------- | ------------- |
+| v1.0.0  | 45KB          | 5KB            | 80KB          |
+| v2.0.0  | 62KB          | 6KB            | 120KB         |
+| v2.5.0  | 68KB          | 7KB            | 135KB         |
+| v3.0.0  | 75KB          | 7.5KB          | 145KB         |
 
 ### Render Performance Trend
 
 | Version | Button Render | Form (20 inputs) | Modal Open |
-|---------|---------------|------------------|------------|
-| v1.0.0 | 1.2ms | 65ms | 180ms |
-| v2.0.0 | 0.9ms | 52ms | 140ms |
-| v2.5.0 | 0.8ms | 48ms | 130ms |
-| v3.0.0 | 0.7ms | 42ms | 120ms |
+| ------- | ------------- | ---------------- | ---------- |
+| v1.0.0  | 1.2ms         | 65ms             | 180ms      |
+| v2.0.0  | 0.9ms         | 52ms             | 140ms      |
+| v2.5.0  | 0.8ms         | 48ms             | 130ms      |
+| v3.0.0  | 0.7ms         | 42ms             | 120ms      |
 
 ### Core Web Vitals (Storybook)
 
-| Version | LCP | FID | CLS |
-|---------|-----|-----|-----|
-| v2.0.0 | 1.8s | 45ms | 0.05 |
-| v2.5.0 | 1.6s | 38ms | 0.03 |
-| v3.0.0 | 1.4s | 32ms | 0.02 |
+| Version | LCP  | FID  | CLS  |
+| ------- | ---- | ---- | ---- |
+| v2.0.0  | 1.8s | 45ms | 0.05 |
+| v2.5.0  | 1.6s | 38ms | 0.03 |
+| v3.0.0  | 1.4s | 32ms | 0.02 |
 
 ---
 
@@ -617,8 +534,8 @@ const DatePicker = lazy(() => import('@kozmos/react/DatePicker'));
 ```tsx
 // 1. Memoize expensive computations
 const filteredItems = useMemo(
-  () => items.filter(item => item.category === category),
-  [items, category]
+  () => items.filter((item) => item.category === category),
+  [items, category],
 );
 
 // 2. Use stable callback references
@@ -627,16 +544,16 @@ const handleChange = useCallback((value: string) => {
 }, []);
 
 // 3. Virtualize long lists
-import { VirtualList } from '@kozmos/react';
+import { VirtualList } from "@kozmos/react";
 
 <VirtualList
   items={thousandItems}
   itemHeight={48}
   renderItem={(item) => <ListItem {...item} />}
-/>
+/>;
 
 // 4. Defer non-critical updates
-import { useDeferredValue } from 'react';
+import { useDeferredValue } from "react";
 
 const deferredSearch = useDeferredValue(searchQuery);
 ```
@@ -653,7 +570,9 @@ const deferredSearch = useDeferredValue(searchQuery);
 .kozmos-modal-enter-active {
   transform: translateY(0);
   opacity: 1;
-  transition: transform 200ms ease-out, opacity 200ms ease-out;
+  transition:
+    transform 200ms ease-out,
+    opacity 200ms ease-out;
 }
 
 /* 2. Use will-change sparingly */
@@ -663,8 +582,12 @@ const deferredSearch = useDeferredValue(searchQuery);
 
 /* 3. Prefer CSS animations over JS */
 @keyframes kozmos-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 ```
 
@@ -675,8 +598,7 @@ const deferredSearch = useDeferredValue(searchQuery);
 useEffect(() => {
   const controller = new AbortController();
 
-  fetch('/api/data', { signal: controller.signal })
-    .then(handleResponse);
+  fetch("/api/data", { signal: controller.signal }).then(handleResponse);
 
   return () => controller.abort();
 }, []);
@@ -689,7 +611,7 @@ const elementCache = new WeakMap<HTMLElement, CachedData>();
   <TabPanel unmountOnHide>
     <HeavyComponent />
   </TabPanel>
-</Tabs>
+</Tabs>;
 ```
 
 ---
@@ -698,11 +620,11 @@ const elementCache = new WeakMap<HTMLElement, CachedData>();
 
 ### Before PR Merge
 
-- [ ] Bundle size within budget (bundlewatch passes)
+- [ ] Bundle budgets hold (the `analyze-bundle` check, §2)
 - [ ] No unnecessary re-renders (React DevTools Profiler)
 - [ ] Animations at 60fps (Performance tab)
 - [ ] No memory leaks (Heap snapshot comparison)
-- [ ] Lighthouse score ≥90 (for affected stories)
+- [ ] Lighthouse CI passes (the `lighthouse` check: accessibility 100 on its four stories)
 
 ### Before Release
 
@@ -716,9 +638,9 @@ const elementCache = new WeakMap<HTMLElement, CachedData>();
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial performance benchmarks |
+| Version | Date       | Changes                        |
+| ------- | ---------- | ------------------------------ |
+| 1.0.0   | 2026-02-07 | Initial performance benchmarks |
 
 ---
 

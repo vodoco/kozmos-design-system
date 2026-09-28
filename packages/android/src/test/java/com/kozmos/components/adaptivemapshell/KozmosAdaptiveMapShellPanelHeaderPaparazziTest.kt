@@ -93,7 +93,8 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
 
     /**
      * At the largest detent, over a list that has scrolled: the header under
-     * the handle's 16, its own 72 tall, and the list starting under it.
+     * the handle's 16 and its 4 of clearance (decision 14), its own 72 tall,
+     * and the list starting under it.
      */
     @Test
     fun theHeaderSitsUnderTheHandleAboveTheContent() {
@@ -115,7 +116,7 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
         )
         val header = part("header")
         val sheetTop = shellBottom - KozmosMapPanelDetent.Large.height(shellHeight).value
-        assertEquals("the header is not under the handle's row", sheetTop + 16f, dp(header.top), 0.5f)
+        assertEquals("the header is not under the handle's row", sheetTop + 16f + 4f, dp(header.top), 0.5f)
         assertEquals("the header is not its own height", 72f, dp(header.height), 0.5f)
         assertEquals("the content does not start under the header", dp(header.bottom), dp(part("content").top), 0.5f)
     }
@@ -154,7 +155,7 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
             )
         )
         val fifth = KozmosMapPanelDetent.Collapsed.height(shellHeight).value
-        assertEquals("the collapsed sheet is not a fifth of the shell", shellBottom - fifth + 16f, dp(part("header").top), 0.5f)
+        assertEquals("the collapsed sheet is not a fifth of the shell", shellBottom - fifth + 16f + 4f, dp(part("header").top), 0.5f)
     }
 
     /**
@@ -182,15 +183,16 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
                 }
             )
         )
-        val anchored = KozmosMapPanelDetent.anchoredCollapsedHeight(76.dp, shellHeight).value
-        assertEquals("the sheet does not rest on the header's anchor", shellBottom - anchored + 16f, dp(part("row").top), 0.5f)
+        val anchored = KozmosMapPanelDetent.anchoredCollapsedHeight((16 + 4 + 60).dp, shellHeight).value
+        assertEquals("the sheet does not rest on the header's anchor", shellBottom - anchored + 16f + 4f, dp(part("row").top), 0.5f)
     }
 
     /**
-     * Fitted to its content, the sheet counts the handle, the 80 header and
-     * the 300 panel: 396. Offered with large only: with a shorter detent on
-     * offer the sheet eases from its unmeasured medium to the measured height
-     * after the first frame, and a snapshot draws the start of that ease.
+     * Fitted to its content, the sheet counts the handle and its 4 of
+     * clearance, the 80 header and the 300 panel: 400. Offered with large
+     * only: with a shorter detent on offer the sheet eases from its
+     * unmeasured medium to the measured height after the first frame, and a
+     * snapshot draws the start of that ease.
      */
     @Test
     fun theContentFittedSheetCountsTheHeader() {
@@ -203,7 +205,7 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
             )
         )
         val header = part("header")
-        assertEquals("the fitted sheet does not count the header", shellBottom - 396f + 16f, dp(header.top), 0.5f)
+        assertEquals("the fitted sheet does not count the header", shellBottom - 400f + 16f + 4f, dp(header.top), 0.5f)
         assertEquals("the content does not follow the header", dp(header.bottom), dp(part("content").top), 0.5f)
         assertEquals("the content is cut", shellBottom, dp(part("content").bottom), 0.5f)
     }

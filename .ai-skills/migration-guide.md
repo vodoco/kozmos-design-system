@@ -2,6 +2,12 @@
 
 > **Purpose:** This document provides migration guidance for consumers upgrading between Kozmos versions, and for teams migrating from existing implementations to Kozmos.
 
+> **Status:** Every Kozmos package is on 0.x, and there has never been a breaking-change migration
+> ([api-changelog.md](./api-changelog.md)). The packages are scoped `@kozmos-ds`, and neither
+> `@kozmos/cli` nor `@kozmos/codemod` exists, in this repository or on npm: do not run the `npx`
+> commands below, which would fetch whatever npm served under those names one day. The v2 → v3
+> walkthrough shows the process, not a real upgrade.
+
 ---
 
 ## Table of Contents
@@ -147,10 +153,12 @@ pnpm test:visual:update
 #### Step 8: Full Test Suite
 
 ```bash
+# The application's own tests
 pnpm test
-pnpm test:e2e
-pnpm test:a11y
 ```
+
+Run the application's end-to-end and accessibility suites too, under whatever names its own
+`package.json` gives them: Kozmos has no `test:e2e` or `test:a11y` script to lend it.
 
 #### Step 9: Bundle Size Check
 

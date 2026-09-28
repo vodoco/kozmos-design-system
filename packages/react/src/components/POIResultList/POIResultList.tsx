@@ -275,7 +275,10 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       <section
         ref={setSection}
         aria-label={label}
-        className={cn("min-w-0", className)}
+        // `kozmos-poi-result-list` keeps the grip's clearance above the first
+        // result when the list is the top of AdaptiveMapShell's sheet (owned
+        // CSS); it adds nothing anywhere else.
+        className={cn("kozmos-poi-result-list min-w-0", className)}
         {...props}
       >
         <p aria-live="polite" className="sr-only">

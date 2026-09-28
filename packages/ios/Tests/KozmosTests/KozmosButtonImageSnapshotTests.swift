@@ -16,17 +16,22 @@ import XCTest
 /// layout, which is how the radius change from 8pt to 16pt swept the whole
 /// library with nothing on iOS able to notice.
 ///
-/// Recording is deliberate and manual:
+/// Recording is deliberate and manual, on the device
+/// `scripts/check-ios-poi.mjs` pins for every simulator run, CI's included:
 ///
 ///     xcodebuild test -scheme Kozmos \
-///       -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.4' \
+///       -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
 ///       -only-testing:KozmosTests/KozmosButtonImageSnapshotTests
 ///
 /// Delete `__Snapshots__` to re-record. The references are tied to the
 /// simulator's iOS version, so pin the same device and OS everywhere they run —
 /// baselines taken on one iOS version will not match another, and a gate that
 /// is red for that reason gets switched off, which is how the previous one
-/// ended up verifying nothing.
+/// ended up verifying nothing. Until 2026-09-28 this class ran nowhere: CI's
+/// simulator step listed its classes and this one was not on the list, so the
+/// loading reference kept the system spinner for a week after the button's
+/// own arc replaced it. They were recorded again then, on iPhone 17 Pro and
+/// iOS 26.5.
 final class KozmosButtonImageSnapshotTests: XCTestCase {
     private func assertRendered(
         _ view: some View,

@@ -25,11 +25,11 @@
 
 Kozmos supports three levels of customization:
 
-| Level | What's Customizable | Use Case |
-|-------|---------------------|----------|
-| **Brand Colors** | Primary, secondary, accent colors | All customers |
-| **Full Theme** | Colors, typography, spacing, radii | Enterprise customers |
-| **Component Override** | Individual component styles | Custom integrations |
+| Level                  | What's Customizable                | Use Case             |
+| ---------------------- | ---------------------------------- | -------------------- |
+| **Brand Colors**       | Primary, secondary, accent colors  | All customers        |
+| **Full Theme**         | Colors, typography, spacing, radii | Enterprise customers |
+| **Component Override** | Individual component styles        | Custom integrations  |
 
 ### Key Principles
 
@@ -138,8 +138,12 @@ packages/tokens/
 {
   "color": {
     "primary": { "$value": "{brand.primary}" },
-    "primary-hover": { "$value": "oklch(from {brand.primary} calc(l - 0.05) c h)" },
-    "primary-active": { "$value": "oklch(from {brand.primary} calc(l - 0.10) c h)" },
+    "primary-hover": {
+      "$value": "oklch(from {brand.primary} calc(l - 0.05) c h)"
+    },
+    "primary-active": {
+      "$value": "oklch(from {brand.primary} calc(l - 0.10) c h)"
+    },
     "on-primary": { "$value": "#ffffff" },
 
     "secondary": { "$value": "{brand.secondary}" },
@@ -209,7 +213,9 @@ packages/tokens/
 {
   "typography": {
     "fontFamily": {
-      "sans": { "$value": "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" },
+      "sans": {
+        "$value": "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+      },
       "mono": { "$value": "'JetBrains Mono', monospace" }
     },
     "fontSize": {
@@ -272,23 +278,23 @@ packages/tokens/
 
 ```typescript
 // kozmos.config.ts
-import { defineConfig } from '@kozmos/tokens';
+import { defineConfig } from "@kozmos/tokens";
 
 export default defineConfig({
   // Customer identification
-  customer: 'customer-a',
+  customer: "customer-a",
 
   // Theme overrides
   theme: {
     brand: {
-      primary: 'oklch(0.65 0.18 145)',    // Customer green
-      secondary: 'oklch(0.55 0.12 280)',  // Customer purple
-      accent: 'oklch(0.70 0.20 45)',      // Customer orange
+      primary: "oklch(0.65 0.18 145)", // Customer green
+      secondary: "oklch(0.55 0.12 280)", // Customer purple
+      accent: "oklch(0.70 0.20 45)", // Customer orange
     },
 
     // Optional: Override specific semantic tokens
     semantic: {
-      'color.success': 'oklch(0.60 0.20 150)',
+      "color.success": "oklch(0.60 0.20 150)",
     },
 
     // Optional: Override typography
@@ -300,7 +306,7 @@ export default defineConfig({
 
     // Optional: Override radius scale
     radius: {
-      md: '4px',  // Sharper corners
+      md: "4px", // Sharper corners
     },
   },
 
@@ -325,46 +331,52 @@ export default defineConfig({
 
 ```typescript
 // scripts/build-theme.ts
-import StyleDictionary from 'style-dictionary';
-import { loadConfig } from './config-loader';
+import StyleDictionary from "style-dictionary";
+import { loadConfig } from "./config-loader";
 
 async function buildCustomerTheme(customerId: string) {
   const config = await loadConfig(customerId);
 
   const sd = new StyleDictionary({
     source: [
-      'src/primitives/**/*.json',
-      'src/semantic/**/*.json',
+      "src/primitives/**/*.json",
+      "src/semantic/**/*.json",
       `src/themes/${customerId}/**/*.json`,
     ],
     platforms: {
       css: {
-        transformGroup: 'css',
+        transformGroup: "css",
         buildPath: `dist/${customerId}/`,
-        files: [{
-          destination: 'tokens.css',
-          format: 'css/variables',
-          options: {
-            selector: `:root, [data-theme="${customerId}"]`,
+        files: [
+          {
+            destination: "tokens.css",
+            format: "css/variables",
+            options: {
+              selector: `:root, [data-theme="${customerId}"]`,
+            },
           },
-        }],
+        ],
       },
       swift: {
-        transformGroup: 'swift',
+        transformGroup: "swift",
         buildPath: `dist/${customerId}/ios/`,
-        files: [{
-          destination: 'KozmosTokens.swift',
-          format: 'ios-swift/class.swift',
-          className: 'KozmosTokens',
-        }],
+        files: [
+          {
+            destination: "KozmosTokens.swift",
+            format: "ios-swift/class.swift",
+            className: "KozmosTokens",
+          },
+        ],
       },
       kotlin: {
-        transformGroup: 'compose',
+        transformGroup: "compose",
         buildPath: `dist/${customerId}/android/`,
-        files: [{
-          destination: 'KozmosTokens.kt',
-          format: 'compose/object',
-        }],
+        files: [
+          {
+            destination: "KozmosTokens.kt",
+            format: "compose/object",
+          },
+        ],
       },
     },
   });
@@ -392,16 +404,16 @@ function applyThemeOverrides(overrides: ThemeOverrides) {
   const root = document.documentElement;
 
   if (overrides.brand?.primary) {
-    root.style.setProperty('--kozmos-color-primary', overrides.brand.primary);
+    root.style.setProperty("--kozmos-color-primary", overrides.brand.primary);
     // Also update derived colors
     root.style.setProperty(
-      '--kozmos-color-primary-hover',
-      adjustLightness(overrides.brand.primary, -0.05)
+      "--kozmos-color-primary-hover",
+      adjustLightness(overrides.brand.primary, -0.05),
     );
   }
 
   if (overrides.radius?.md) {
-    root.style.setProperty('--kozmos-radius-md', overrides.radius.md);
+    root.style.setProperty("--kozmos-radius-md", overrides.radius.md);
   }
 }
 ```
@@ -414,10 +426,10 @@ function applyThemeOverrides(overrides: ThemeOverrides) {
 
 ```tsx
 // ThemeProvider.tsx
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = 'light' | 'dark' | 'system';
-type ColorScheme = 'light' | 'dark';
+type Theme = "light" | "dark" | "system";
+type ColorScheme = "light" | "dark";
 
 interface ThemeContextValue {
   theme: Theme;
@@ -430,7 +442,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function KozmosThemeProvider({
   children,
-  defaultTheme = 'system',
+  defaultTheme = "system",
   customTokens,
 }: {
   children: React.ReactNode;
@@ -438,7 +450,7 @@ export function KozmosThemeProvider({
   customTokens?: Record<string, string>;
 }) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [colorScheme, setColorScheme] = useState<ColorScheme>('light');
+  const [colorScheme, setColorScheme] = useState<ColorScheme>("light");
 
   useEffect(() => {
     // Apply custom tokens
@@ -451,25 +463,28 @@ export function KozmosThemeProvider({
   }, [customTokens]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const updateColorScheme = () => {
       const resolvedScheme =
-        theme === 'system'
-          ? (mediaQuery.matches ? 'dark' : 'light')
-          : theme;
+        theme === "system" ? (mediaQuery.matches ? "dark" : "light") : theme;
 
       setColorScheme(resolvedScheme as ColorScheme);
-      document.documentElement.setAttribute('data-color-scheme', resolvedScheme);
+      document.documentElement.setAttribute(
+        "data-color-scheme",
+        resolvedScheme,
+      );
     };
 
     updateColorScheme();
-    mediaQuery.addEventListener('change', updateColorScheme);
-    return () => mediaQuery.removeEventListener('change', updateColorScheme);
+    mediaQuery.addEventListener("change", updateColorScheme);
+    return () => mediaQuery.removeEventListener("change", updateColorScheme);
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, colorScheme, setTheme, customTokens }}>
+    <ThemeContext.Provider
+      value={{ theme, colorScheme, setTheme, customTokens }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -477,7 +492,8 @@ export function KozmosThemeProvider({
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (!context) throw new Error('useTheme must be used within KozmosThemeProvider');
+  if (!context)
+    throw new Error("useTheme must be used within KozmosThemeProvider");
   return context;
 }
 ```
@@ -487,38 +503,38 @@ export function useTheme() {
 :root,
 [data-color-scheme="light"] {
   --kozmos-color-primary: oklch(0.55 0.22 264);
-  --kozmos-color-primary-hover: oklch(0.50 0.22 264);
+  --kozmos-color-primary-hover: oklch(0.5 0.22 264);
   --kozmos-color-primary-active: oklch(0.45 0.22 264);
   --kozmos-color-on-primary: #ffffff;
 
   --kozmos-color-background-default: oklch(0.99 0 0);
   --kozmos-color-background-subtle: oklch(0.97 0 0);
   --kozmos-color-foreground-default: oklch(0.15 0 0);
-  --kozmos-color-foreground-muted: oklch(0.40 0 0);
+  --kozmos-color-foreground-muted: oklch(0.4 0 0);
 
-  --kozmos-color-border-default: oklch(0.90 0 0);
+  --kozmos-color-border-default: oklch(0.9 0 0);
 
   --kozmos-radius-md: 8px;
   --kozmos-spacing-4: 16px;
 }
 
 [data-color-scheme="dark"] {
-  --kozmos-color-primary: oklch(0.65 0.20 264);
-  --kozmos-color-primary-hover: oklch(0.70 0.20 264);
+  --kozmos-color-primary: oklch(0.65 0.2 264);
+  --kozmos-color-primary-hover: oklch(0.7 0.2 264);
   --kozmos-color-on-primary: #000000;
 
   --kozmos-color-background-default: oklch(0.15 0 0);
-  --kozmos-color-background-subtle: oklch(0.20 0 0);
+  --kozmos-color-background-subtle: oklch(0.2 0 0);
   --kozmos-color-foreground-default: oklch(0.95 0 0);
-  --kozmos-color-foreground-muted: oklch(0.70 0 0);
+  --kozmos-color-foreground-muted: oklch(0.7 0 0);
 
-  --kozmos-color-border-default: oklch(0.30 0 0);
+  --kozmos-color-border-default: oklch(0.3 0 0);
 }
 
 /* Customer theme override example */
 [data-theme="customer-a"] {
   --kozmos-color-primary: oklch(0.65 0.18 145);
-  --kozmos-color-primary-hover: oklch(0.60 0.18 145);
+  --kozmos-color-primary-hover: oklch(0.6 0.18 145);
 }
 ```
 
@@ -752,8 +768,8 @@ fun KozmosButton(text: String, onClick: () -> Unit) {
 
 ```tsx
 // theme/index.tsx
-import { createContext, useContext, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import { createContext, useContext, useMemo } from "react";
+import { useColorScheme } from "react-native";
 
 interface KozmosTheme {
   colors: {
@@ -786,16 +802,16 @@ interface KozmosTheme {
 
 const lightTheme: KozmosTheme = {
   colors: {
-    primary: '#2563EB',
-    primaryHover: '#1D4ED8',
-    onPrimary: '#FFFFFF',
-    secondary: '#7C3AED',
-    background: '#FAFAFA',
-    foreground: '#171717',
-    border: '#E5E5E5',
-    success: '#22C55E',
-    warning: '#F59E0B',
-    error: '#EF4444',
+    primary: "#2563EB",
+    primaryHover: "#1D4ED8",
+    onPrimary: "#FFFFFF",
+    secondary: "#7C3AED",
+    background: "#FAFAFA",
+    foreground: "#171717",
+    border: "#E5E5E5",
+    success: "#22C55E",
+    warning: "#F59E0B",
+    error: "#EF4444",
   },
   spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },
   radius: { sm: 4, md: 8, lg: 12, full: 9999 },
@@ -805,16 +821,16 @@ const lightTheme: KozmosTheme = {
 const darkTheme: KozmosTheme = {
   ...lightTheme,
   colors: {
-    primary: '#60A5FA',
-    primaryHover: '#93C5FD',
-    onPrimary: '#000000',
-    secondary: '#A78BFA',
-    background: '#171717',
-    foreground: '#FAFAFA',
-    border: '#404040',
-    success: '#4ADE80',
-    warning: '#FBBF24',
-    error: '#F87171',
+    primary: "#60A5FA",
+    primaryHover: "#93C5FD",
+    onPrimary: "#000000",
+    secondary: "#A78BFA",
+    background: "#171717",
+    foreground: "#FAFAFA",
+    border: "#404040",
+    success: "#4ADE80",
+    warning: "#FBBF24",
+    error: "#F87171",
   },
   isDark: true,
 };
@@ -836,7 +852,7 @@ export function KozmosThemeProvider({
   forceDark?: boolean;
 }) {
   const colorScheme = useColorScheme();
-  const isDark = forceDark ?? colorScheme === 'dark';
+  const isDark = forceDark ?? colorScheme === "dark";
 
   const theme = useMemo(() => {
     const baseTheme = isDark ? darkTheme : lightTheme;
@@ -854,9 +870,7 @@ export function KozmosThemeProvider({
   }, [isDark, overrides]);
 
   return (
-    <ThemeContext.Provider value={theme}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
   );
 }
 
@@ -876,9 +890,7 @@ function NavigationButton() {
         borderRadius: theme.radius.md,
       }}
     >
-      <Text style={{ color: theme.colors.onPrimary }}>
-        Start Navigation
-      </Text>
+      <Text style={{ color: theme.colors.onPrimary }}>Start Navigation</Text>
     </TouchableOpacity>
   );
 }
@@ -1035,7 +1047,7 @@ function NavigationButton() {
 
 ```tsx
 // ThemeSwitcher.tsx
-import { useTheme } from '@kozmos/react';
+import { useTheme } from "@kozmos/react";
 
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
@@ -1045,9 +1057,9 @@ export function ThemeSwitcher() {
       value={theme}
       onChange={setTheme}
       options={[
-        { value: 'light', label: 'Light', icon: <SunIcon /> },
-        { value: 'dark', label: 'Dark', icon: <MoonIcon /> },
-        { value: 'system', label: 'System', icon: <MonitorIcon /> },
+        { value: "light", label: "Light", icon: <SunIcon /> },
+        { value: "dark", label: "Dark", icon: <MoonIcon /> },
+        { value: "system", label: "System", icon: <MonitorIcon /> },
       ]}
       aria-label="Color theme"
     />
@@ -1059,15 +1071,15 @@ export function ThemeSwitcher() {
 
 ```typescript
 // hooks/usePersistedTheme.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = "light" | "dark" | "system";
 
-const STORAGE_KEY = 'kozmos-theme-preference';
+const STORAGE_KEY = "kozmos-theme-preference";
 
-export function usePersistedTheme(defaultTheme: Theme = 'system') {
+export function usePersistedTheme(defaultTheme: Theme = "system") {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return defaultTheme;
+    if (typeof window === "undefined") return defaultTheme;
     return (localStorage.getItem(STORAGE_KEY) as Theme) || defaultTheme;
   });
 
@@ -1084,13 +1096,14 @@ export function usePersistedTheme(defaultTheme: Theme = 'system') {
 ```html
 <!-- Add to <head> before any stylesheets -->
 <script>
-  (function() {
-    const theme = localStorage.getItem('kozmos-theme-preference');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const colorScheme = theme === 'system' || !theme
-      ? (prefersDark ? 'dark' : 'light')
-      : theme;
-    document.documentElement.setAttribute('data-color-scheme', colorScheme);
+  (function () {
+    const theme = localStorage.getItem("kozmos-theme-preference");
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    const colorScheme =
+      theme === "system" || !theme ? (prefersDark ? "dark" : "light") : theme;
+    document.documentElement.setAttribute("data-color-scheme", colorScheme);
   })();
 </script>
 ```
@@ -1103,7 +1116,7 @@ export function usePersistedTheme(defaultTheme: Theme = 'system') {
 
 ```typescript
 // scripts/validate-theme.ts
-import { oklch, wcagContrast } from 'culori';
+import { oklch, wcagContrast } from "culori";
 
 interface ValidationResult {
   valid: boolean;
@@ -1117,37 +1130,35 @@ function validateTheme(theme: Record<string, string>): ValidationResult {
 
   // Check text contrast
   const textOnBackground = wcagContrast(
-    theme['color-foreground-default'],
-    theme['color-background-default']
+    theme["color-foreground-default"],
+    theme["color-background-default"],
   );
 
   if (textOnBackground < 4.5) {
     errors.push(
-      `Text contrast too low: ${textOnBackground.toFixed(2)} (needs 4.5:1)`
+      `Text contrast too low: ${textOnBackground.toFixed(2)} (needs 4.5:1)`,
     );
   }
 
   // Check primary button contrast
   const textOnPrimary = wcagContrast(
-    theme['color-on-primary'],
-    theme['color-primary']
+    theme["color-on-primary"],
+    theme["color-primary"],
   );
 
   if (textOnPrimary < 4.5) {
-    errors.push(
-      `Primary button contrast too low: ${textOnPrimary.toFixed(2)}`
-    );
+    errors.push(`Primary button contrast too low: ${textOnPrimary.toFixed(2)}`);
   }
 
   // Check focus ring contrast
   const focusOnBackground = wcagContrast(
-    theme['color-focus-ring'],
-    theme['color-background-default']
+    theme["color-focus-ring"],
+    theme["color-background-default"],
   );
 
   if (focusOnBackground < 3) {
     warnings.push(
-      `Focus ring contrast could be improved: ${focusOnBackground.toFixed(2)}`
+      `Focus ring contrast could be improved: ${focusOnBackground.toFixed(2)}`,
     );
   }
 
@@ -1161,34 +1172,18 @@ function validateTheme(theme: Record<string, string>): ValidationResult {
 
 ### 9.2 CI Validation
 
-```yaml
-# .github/workflows/theme-validation.yml
-name: Validate Themes
+There is no theme-validation workflow and no `validate:themes` or `check:contrast` script. CI's
+`Web Build & Test` job (`.github/workflows/ci.yml`) checks themes on every pull request with these:
 
-on:
-  push:
-    paths:
-      - 'packages/tokens/src/themes/**'
+```bash
+# Every contrast pair in packages/tokens/src/contrast-contract.json, in light and dark
+pnpm tokens:contrast:check
 
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+# The native palettes follow the theme: Compose reads its generated themed accessor
+pnpm tokens:theme:check
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Validate all themes
-        run: pnpm run validate:themes
-
-      - name: Check contrast ratios
-        run: pnpm run check:contrast
+# Themes and stylesheets stay scoped to their module, in a browser
+pnpm test:themes
 ```
 
 ---
@@ -1197,18 +1192,20 @@ jobs:
 
 ### 10.1 Quick Start Guide
 
-```markdown
+````markdown
 # Setting Up Your Brand Theme
 
 ## Step 1: Prepare Your Colors
 
 Provide your brand colors in any format:
+
 - Hex: #2563EB
 - RGB: rgb(37, 99, 235)
 - HSL: hsl(220, 83%, 53%)
 - oklch: oklch(0.55 0.22 264) (recommended)
 
 We need:
+
 - **Primary**: Main brand color (buttons, links)
 - **Secondary**: Accent color (optional)
 - **Accent**: Highlight color (optional)
@@ -1225,6 +1222,7 @@ We need:
   }
 }
 ```
+````
 
 ## Step 3: Generate Theme
 
@@ -1235,13 +1233,14 @@ npx @kozmos/tokens build --theme your-company
 ## Step 4: Use in Your App
 
 ```tsx
-import '@kozmos/tokens/themes/your-company.css';
+import "@kozmos/tokens/themes/your-company.css";
 
 <KozmosThemeProvider theme="your-company">
   <App />
-</KozmosThemeProvider>
+</KozmosThemeProvider>;
 ```
-```
+
+````
 
 ### 10.2 Theme Request Template
 
@@ -1271,7 +1270,7 @@ import '@kozmos/tokens/themes/your-company.css';
 
 ## Notes
 Additional requirements or preferences:
-```
+````
 
 ---
 

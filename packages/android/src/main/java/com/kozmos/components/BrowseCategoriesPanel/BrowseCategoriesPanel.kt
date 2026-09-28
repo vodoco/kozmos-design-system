@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelClearanceTop
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelInsetTop
 import com.kozmos.components.categorytile.KozmosCategoryTile
 import com.kozmos.components.categorytile.KozmosCategoryTint
 import com.kozmos.components.surface.kozmosDashedEdge
@@ -32,6 +34,13 @@ import com.kozmos.tokens.KozmosThemeTokens
  * Mirrors the React `BrowseCategoriesPanel`. The panel renders whatever
  * categories it is given; filtering, searching, and result counts belong to
  * the consuming app.
+ *
+ * It paints no surface of its own, so as the content of the map shell's panel
+ * it is that panel's top: its first row — the search row, or the tiles when
+ * there is none — tops its padding up to what the panel already leaves above
+ * it ([LocalKozmosPanelInsetTop], [LocalKozmosPanelClearanceTop]) rather than
+ * adding to it, so the search field sits as far from the panel's top as from
+ * its side and keeps the handle's target clear (decision 14).
  */
 @Composable
 fun KozmosBrowseCategoriesPanel(
@@ -46,16 +55,25 @@ fun KozmosBrowseCategoriesPanel(
     actions: (@Composable () -> Unit)? = null,
     emptyState: (@Composable () -> Unit)? = null
 ) {
+    val padding = KozmosDimensions.primitivesLayoutSpacing200
+    val hasHeader = search != null || actions != null
+    // The first row's top padding. Hosted in the shell's panel, the space the
+    // panel leaves above it — the handle's row — is the browser's own top: the
+    // row tops its 16 up to it rather than adding 16 to it, and keeps the
+    // clearance the panel asks for under a handle. It padded 16 under the
+    // handle's 16dp row: the search field sat 32 from the sheet's top and 16
+    // from its side. Outside a shell both are 0, and it keeps its 16.
+    val firstRowTop = maxOf(LocalKozmosPanelClearanceTop.current, padding - LocalKozmosPanelInsetTop.current)
     Column(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = label }
     ) {
-        if (search != null || actions != null) {
+        if (hasHeader) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(KozmosDimensions.primitivesLayoutSpacing200),
+                    .padding(start = padding, top = firstRowTop, end = padding, bottom = padding),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
             ) {
@@ -80,6 +98,9 @@ fun KozmosBrowseCategoriesPanel(
             Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
         }
 
+        // Under the search row the tiles sit under that row, not under whatever
+        // the panel leaves: they keep their 16.
+        val tilesTop = if (hasHeader) padding else firstRowTop
         if (categories.isEmpty()) {
             // Dashed, in the same role, as React's and SwiftUI's empty states
             // are; it was a solid foreground/300 edge until 2026-09-22.
@@ -87,7 +108,7 @@ fun KozmosBrowseCategoriesPanel(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(KozmosDimensions.primitivesLayoutSpacing200)
+                    .padding(start = padding, top = tilesTop, end = padding, bottom = padding)
                     .kozmosDashedEdge(KozmosThemeTokens.semanticsBorderSubtle, radius),
                 shape = RoundedCornerShape(radius),
                 color = KozmosThemeTokens.primitivesColorsBackground100.copy(alpha = 0.4f)
@@ -107,7 +128,10 @@ fun KozmosBrowseCategoriesPanel(
                 columns = GridCells.Fixed(4),
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    KozmosDimensions.primitivesLayoutSpacing200
+                    start = padding,
+                    top = tilesTop,
+                    end = padding,
+                    bottom = padding
                 ),
                 horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
                 verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)

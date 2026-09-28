@@ -45,11 +45,9 @@ Error: Cannot resolve reference: {color.blue.500}
 **Debug Command:**
 
 ```bash
-# Validate token files
-pnpm --filter @kozmos/tokens validate
-
-# Build with verbose output
-pnpm --filter @kozmos/tokens build -- --verbose
+# Build the tokens: Style Dictionary already logs verbosely and names the unresolved reference.
+# There is no token validation script.
+pnpm --filter @kozmos-ds/tokens build
 ```
 
 ---
@@ -66,14 +64,13 @@ pnpm --filter @kozmos/tokens build -- --verbose
 1. **Rebuild tokens:**
 
    ```bash
-   pnpm --filter @kozmos/tokens build
+   pnpm --filter @kozmos-ds/tokens build
    ```
 
-2. **Clear Turbo cache:**
+2. **Rebuild without Turborepo's cache** (Turborepo has no `clean` command):
 
    ```bash
-   pnpm turbo clean
-   pnpm build
+   pnpm build --force
    ```
 
 3. **Check CSS import order:**
@@ -109,27 +106,19 @@ pnpm --filter @kozmos/tokens build -- --verbose
 1. **Re-sync from Figma:**
 
    ```bash
-   pnpm sync-tokens
+   # Reads FIGMA_ACCESS_TOKEN and FIGMA_FILE_KEY from the environment
+   pnpm tokens:sync
    ```
 
-2. **Check Figma API token:**
+   In CI the sync is `.github/workflows/figma-tokens.yml`, a manual workflow that runs only when
+   the repository variable `FIGMA_VARIABLES_API_ENABLED` is `true`.
 
-   ```bash
-   # Verify token has correct permissions
-   echo $FIGMA_ACCESS_TOKEN
-
-   # Test API access
-   curl -H "X-Figma-Token: $FIGMA_ACCESS_TOKEN" \
-     "https://api.figma.com/v1/files/YOUR_FILE_KEY/variables/local"
-   ```
+2. **Check the Figma token without printing it:** never echo it. Figma reads go through
+   `scripts/figma-rest/with-figma-token.sh <command>`, which passes `FIGMA_ACCESS_TOKEN` from the
+   main checkout's `.env` to that one command and never prints the value.
 
 3. **Check Figma file version:**
    - Ensure you're syncing from the published library, not a branch
-
-4. **Validate DTCG schema:**
-   ```bash
-   npx ajv validate -s dtcg-schema.json -d src/**/*.tokens.json
-   ```
 
 ---
 
@@ -190,20 +179,12 @@ Error: useState only works in Client Components. Add the "use client" directive.
    import * as React from "react";
    ```
 
-2. **Check tsup config:**
-
-   ```typescript
-   // tsup.config.ts
-   export default defineConfig({
-     banner: {
-       js: '"use client";',
-     },
-   });
-   ```
+2. **Check the Vite build:** React builds with Vite, not tsup. `packages/react/vite.config.mts`
+   sets `banner: '"use client";'` on both Rollup outputs.
 
 3. **Verify build output:**
    ```bash
-   head -1 dist/index.mjs
+   head -1 packages/react/dist/kozmos-react.mjs
    # Should output: "use client";
    ```
 
@@ -214,16 +195,16 @@ Error: useState only works in Client Components. Add the "use client" directive.
 **Symptoms:**
 
 ```
-Error: @kozmos/react bundle size (65KB) exceeds budget (50KB)
+❌ ERROR: everything costs 64.20 KB, over 64 KB
 ```
 
 **Solutions:**
 
-1. **Analyze bundle:**
+1. **Analyze bundle** (what the required `analyze-bundle` check runs):
 
    ```bash
-   pnpm --filter @kozmos/react analyze
-   # Opens bundle visualization
+   pnpm tsx scripts/performance/bundle-analyzer.ts
+   # Prints the median export and the five heaviest, Button, everything and the stylesheet
    ```
 
 2. **Check for unnecessary dependencies:**
@@ -274,29 +255,12 @@ SyntaxError: Cannot use import statement outside a module
 
 **Solutions:**
 
-1. **Check package.json exports:**
+1. **Check package.json exports:** `packages/react/package.json` sends `import` to
+   `dist/kozmos-react.mjs` (types `dist/index.d.mts`) and `require` to `dist/kozmos-react.umd.cjs`
+   (types `dist/index.d.cts`).
 
-   ```json
-   {
-     "exports": {
-       ".": {
-         "import": "./dist/index.mjs",
-         "require": "./dist/index.cjs",
-         "types": "./dist/index.d.ts"
-       }
-     }
-   }
-   ```
-
-2. **Verify tsup output:**
-
-   ```typescript
-   // tsup.config.ts
-   export default defineConfig({
-     format: ["esm", "cjs"],
-     dts: true,
-   });
-   ```
+2. **Verify the Vite output:** `packages/react/vite.config.mts` builds an ES output (one file per
+   module under `dist/esm/`) and a UMD CommonJS bundle; `vite-plugin-dts` writes the declarations.
 
 3. **Check consumer's bundler config:**
    ```javascript
@@ -334,7 +298,7 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
 2. **Rebuild declarations:**
 
    ```bash
-   pnpm --filter @kozmos/tokens build
+   pnpm --filter @kozmos-ds/tokens build
    ```
 
 3. **Check tsconfig paths:**
@@ -952,27 +916,16 @@ Error: Failed to publish Code Connect
 1. **Validate before publishing:**
 
    ```bash
-   npx figma connect parse --dry-run
+   pnpm figma:parse:linked
+   pnpm figma:publish:linked:dry
    ```
 
-2. **Check figma.config.json:**
+2. **Check the linked config:** what is published is named by `figma.linked.config.json` (React),
+   `packages/ios/figma.linked.config.json` and `packages/android/figma.linked.config.json`.
 
-   ```json
-   {
-     "codeConnect": {
-       "include": ["src/**/*.figma.tsx"],
-       "parser": "react",
-       "label": "React"
-     }
-   }
-   ```
-
-3. **Verify token in CI:**
-   ```yaml
-   - run: npx figma connect publish
-     env:
-       FIGMA_ACCESS_TOKEN: ${{ secrets.FIGMA_ACCESS_TOKEN }}
-   ```
+3. **CI never publishes:** it parses on all three platforms and, when `FIGMA_ACCESS_TOKEN` is set,
+   runs the dry runs only. A publish is run by hand
+   ([publishing-guide.md](./publishing-guide.md)).
 
 ---
 
@@ -1055,25 +1008,19 @@ Error: Failed to publish Code Connect
 
 **Solutions:**
 
-1. **Check addon installation:**
+1. **Check addon installation:** Storybook's addons belong to `@kozmos-ds/docs`, which already
+   has `@storybook/addon-a11y`. Another is added there:
 
    ```bash
-   pnpm add -D @storybook/addon-a11y
+   pnpm --filter @kozmos-ds/docs add -D <addon>
    ```
 
-2. **Register in main.ts:**
+2. **Register in main.ts:** `apps/docs/.storybook/main.ts` registers links, essentials,
+   interactions, a11y and `storybook-addon-performance`; there is no designs addon.
 
-   ```typescript
-   addons: [
-     '@storybook/addon-essentials',
-     '@storybook/addon-a11y',
-     '@storybook/addon-designs',
-   ],
-   ```
-
-3. **Restart Storybook:**
+3. **Restart Storybook** (Storybook 8's `dev` has no `--no-cache` option):
    ```bash
-   pnpm storybook --no-cache
+   pnpm --filter @kozmos-ds/docs storybook
    ```
 
 ---
@@ -1197,27 +1144,14 @@ Error: The operation was canceled.
 
 **Solutions:**
 
-1. **Increase timeout:**
-
-   ```yaml
-   jobs:
-     build-ios:
-       timeout-minutes: 30
-   ```
-
-2. **Use correct runner:**
-
-   ```yaml
-   runs-on: macos-14 # M1 runner, faster
-   ```
-
-3. **Cache CocoaPods:**
-   ```yaml
-   - uses: actions/cache@v4
-     with:
-       path: ios/Pods
-       key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-   ```
+1. **Check for a newer push:** CI cancels its run in progress when the same branch is pushed again
+   (`cancel-in-progress`), and each cancelled job says exactly this. The newer run is the one that
+   counts.
+2. **Know what `iOS Build` runs:** the only macOS job (`macos-latest`) builds and tests
+   `packages/ios` with SwiftPM (`swift build`, `swift test`) and renders the POI tests on a
+   simulator. There is no CocoaPods to cache.
+3. **A deliberate skip passes:** on a pull request that touches no iOS input, the `Changes` job
+   skips `iOS Build`, and the skipped check counts as passing.
 
 ---
 
@@ -1226,32 +1160,20 @@ Error: The operation was canceled.
 **Symptoms:**
 
 ```
-npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
+npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos-ds/react
 ```
 
 **Solutions:**
 
-1. **Check npm token:**
+Only `release.yml`'s publish job publishes, with the `NPM_TOKEN` of the `npm-release`
+environment; there is no other token to check. Do not re-run it blindly: in the first release, a
+re-run asked npm to publish over a version it already had, and npm answered 403. A release that
+failed part-way is recovered by [docs/release-process.md](../docs/release-process.md), "Failure and
+recovery". See what npm holds:
 
-   ```yaml
-   env:
-     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-   ```
-
-2. **Verify package access:**
-
-   ```json
-   {
-     "publishConfig": {
-       "access": "public"
-     }
-   }
-   ```
-
-3. **Check version not already published:**
-   ```bash
-   npm view @kozmos/react versions
-   ```
+```bash
+npm view @kozmos-ds/react versions
+```
 
 ---
 
@@ -1264,29 +1186,14 @@ npm ERR! 403 Forbidden - PUT https://registry.npmjs.org/@kozmos/react
 
 **Solutions:**
 
-1. **Check turbo.json:**
-
-   ```json
-   {
-     "pipeline": {
-       "build": {
-         "outputs": ["dist/**"],
-         "dependsOn": ["^build"]
-       }
-     }
-   }
-   ```
-
-2. **Enable remote caching:**
-
+1. **Check turbo.json:** the root `turbo.json` lists each task's `inputs`, `outputs` and
+   `dependsOn` under `tasks`, and `.env` and `tsconfig.base.json` are global dependencies: a
+   change to either invalidates every task.
+2. **Remote caching is not set up:** no workflow sets `TURBO_TOKEN` or `TURBO_TEAM`, and each CI
+   run starts with an empty cache.
+3. **Ignore the local cache for one run:**
    ```bash
-   npx turbo login
-   npx turbo link
-   ```
-
-3. **Clear local cache:**
-   ```bash
-   npx turbo clean
+   pnpm build --force
    ```
 
 ---
