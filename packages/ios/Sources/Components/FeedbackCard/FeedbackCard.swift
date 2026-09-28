@@ -58,9 +58,11 @@ public struct KozmosFeedbackCard: View {
                         .font(.headline.weight(.semibold))
                         .foregroundColor(KozmosColors.primitivesColorsForeground100)
 
+                    // Muted, and on glass the foreground colour (decision
+                    // 48): the card's surface says which.
                     Text(description)
                         .font(KozmosTypography.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .kozmosMutedText()
                         .multilineTextAlignment(.center)
                 }
 

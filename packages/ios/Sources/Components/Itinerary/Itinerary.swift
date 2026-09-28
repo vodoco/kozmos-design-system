@@ -59,15 +59,17 @@ public struct KozmosItinerary: View {
         .accessibilityLabel(label)
     }
 
+    /// The captions and the origin are muted, and on glass, in a glass
+    /// manoeuvre card, the foreground colour (decision 48).
     private func endpoint(_ label: String, name: String, emphasised: Bool) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             Text(label.uppercased())
                 .font(KozmosTypography.caption2)
-                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                .kozmosMutedText()
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, alignment: .leading)
             Text(name)
                 .font(emphasised ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-                .foregroundColor(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
+                .kozmosMutedText(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }

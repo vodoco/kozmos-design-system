@@ -25,6 +25,16 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
 
     @Environment(\.kozmosPanelInsetTop) private var panelInsetTop
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
+    @Environment(\.kozmosPanelSurface) private var panelSurface
+
+    /// Whether the browser sits on a surface it does not draw: in the sheet
+    /// presentation, and in the map shell's panel whatever the presentation.
+    /// The panel says so (`kozmosPanelSurface`), as the web's browser reads
+    /// it, so a product need not remember to pass the sheet presentation.
+    /// There the browser paints no fill of its own (decision 43) and its
+    /// first row tops up to what the panel leaves (decision 14). The panel
+    /// presentation keeps its rule under the search row.
+    private var onPanelSurface: Bool { presentation == .sheet || panelSurface != nil }
 
     private let categories: [KozmosCategoryPresentation]
     private let presentation: Presentation
@@ -72,16 +82,16 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
     }
 
     /// The first row's top padding: the search row's, or the tiles' when there
-    /// is none. Hosted in the shell's panel in the sheet presentation, the
+    /// is none. Hosted in the shell's panel, in either presentation, the
     /// space the panel leaves above it — a grabber's row — is the browser's
     /// own top: the row tops its 16 up to it rather than adding 16 to it, and
     /// keeps the clearance the panel asks for under a grabber. It padded 16
     /// under the grabber's 16-point row: the search field sat 32 from the
-    /// sheet's top and 16 from its side. The panel presentation draws a
-    /// surface of its own, and that space lies outside it: it keeps its 16.
+    /// sheet's top and 16 from its side. Standing alone, the panel
+    /// presentation draws a surface of its own: it keeps its 16.
     private var firstRowTopPadding: CGFloat {
         let padding = KozmosDimensions.primitivesLayoutSpacing200
-        guard presentation == .sheet else { return padding }
+        guard onPanelSurface else { return padding }
         return max(panelClearanceTop, padding - panelInsetTop)
     }
 
@@ -144,7 +154,7 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
             }
         }
         .frame(maxWidth: .infinity)
-        .background(presentation == .panel ? KozmosColors.primitivesColorsBackground0 : Color.clear)
+        .background(onPanelSurface ? Color.clear : KozmosColors.primitivesColorsBackground0)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(label)
     }

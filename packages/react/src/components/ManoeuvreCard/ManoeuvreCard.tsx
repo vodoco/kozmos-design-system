@@ -99,8 +99,9 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
               <span className="line-clamp-2 text-xl font-semibold leading-tight text-foreground">
                 {instruction}
               </span>
+              {/* Muted, and on glass the foreground colour (decision 48). */}
               {detail ? (
-                <span className="text-sm text-muted-foreground">{detail}</span>
+                <span className="kozmos-muted-text text-sm">{detail}</span>
               ) : null}
             </span>
           </button>

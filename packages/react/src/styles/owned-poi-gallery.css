@@ -11,8 +11,15 @@
     gap: 0.5rem;
     margin-block-end: 0.5rem;
   }
+  /* Muted, and on a glass surface the foreground colour (decision 48),
+     wherever the gallery sits: hosted on its own, or in a details card's
+     sheet presentation. A card of its own around it keeps it muted. */
   .kozmos-poi-gallery-position {
-    @apply text-xs text-muted-foreground;
+    @apply text-xs;
+    color: var(
+      --kozmos-surface-muted-foreground,
+      var(--primitives-colors-foreground-400)
+    );
     overflow-wrap: anywhere;
   }
   .kozmos-poi-gallery-controls {

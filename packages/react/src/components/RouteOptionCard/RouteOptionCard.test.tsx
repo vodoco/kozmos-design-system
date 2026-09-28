@@ -41,4 +41,24 @@ describe("RouteOptionCard", () => {
       screen.getByText("This route is temporarily unavailable."),
     ).toBeVisible();
   });
+
+  it("paints its fill, and the chosen option's tint, through the owned class", () => {
+    // The chosen option's 5% tint was `bg-primary/5`, over nothing: on a
+    // glass sheet the map showed through it while the others stood opaque.
+    // The owned class paints the background colour, and the tint on it;
+    // a `bg-*` utility beside it would outrank it (measured on glass in
+    // check-adaptive-edge-cases.mjs).
+    for (const selected of [true, false]) {
+      const { unmount } = render(
+        <RouteOptionCard
+          option={{ ...option, selected }}
+          onSelect={() => undefined}
+        />,
+      );
+      const card = screen.getByRole("button", { name: /Quickest/ });
+      expect(card.classList.contains("kozmos-route-option")).toBe(true);
+      expect(card.className).not.toMatch(/(^|\s)bg-/);
+      unmount();
+    }
+  });
 });

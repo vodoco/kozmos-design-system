@@ -238,17 +238,35 @@
       var(--primitives-colors-background-0)
     );
   }
-  /* Text a hosted part draws muted, straight on its surface: the route
-     preview's "To" and its count of options, and the empty states of the
-     category browser, the route preview and the result list. On glass it
-     takes what the glass says, the foreground colour (decision 48); on
-     anything else it is the theme's muted colour, as text-muted-foreground
-     draws it. Text inside a card of its own keeps muted: it is on the card,
-     not the glass. */
+  /* Text a part draws muted, straight on the surface it sits on: the route
+     preview's "To" and its count of options; the empty states of the
+     category browser, the route preview and the result list; the
+     manoeuvre's detail and its itinerary's captions and origin; the route
+     summary's distance; the feedback and save-location cards'
+     descriptions. On glass it takes what the glass says, the foreground
+     colour (decision 48); on anything else it is the theme's muted colour,
+     as text-muted-foreground draws it. Text inside a card of its own keeps
+     muted: it is on the card, not the glass. */
   .kozmos-muted-text {
     color: var(
       --kozmos-surface-muted-foreground,
       var(--primitives-colors-foreground-400)
+    );
+  }
+  /* A route option is a card of its own: the background colour, and the
+     chosen one the theme's 5% tint on it. The tint was bg-primary/5 over
+     nothing, so on a glass sheet the map showed through the chosen option
+     while the others stood opaque. On a solid sheet the two draw alike: the
+     tint over the sheet's background colour is this mix. */
+  .kozmos-route-option {
+    background-color: var(--primitives-colors-background-0);
+  }
+  .kozmos-route-option[aria-pressed="true"] {
+    background-color: color-mix(
+      in srgb,
+      var(--primitives-colors-theme-600)
+        calc(var(--primitives-opacity-5) * 100%),
+      var(--primitives-colors-background-0)
     );
   }
   /* MapOverlay's stack. It scrolls when what it holds is taller than the map

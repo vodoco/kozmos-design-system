@@ -9,6 +9,12 @@ import * as Stories from "./RouteOptionCard.stories";
 Controlled route alternative with localized duration and distance labels,
 selection semantics, availability, and warning support.
 
+An option is a card of its own: the background colour, and the chosen one
+the theme's 5% tint on it. The tint lay over nothing, so on a glass sheet the
+map showed through the chosen option while the others stood opaque; it now
+reads like them, and on a solid sheet it looks as it did. The same on iOS and
+Android.
+
 <Canvas of={Stories.Selected} />
 <Canvas of={Stories.Unavailable} />
 <Controls />

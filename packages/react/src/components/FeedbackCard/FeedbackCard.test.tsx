@@ -78,4 +78,21 @@ describe("FeedbackCard", () => {
     render(<FeedbackCard titleLevel={2} />);
     expect(screen.getByRole("heading", { level: 2 })).toBeVisible();
   });
+
+  it("draws its description muted through the class a glass surface turns to ink", () => {
+    // Decision 48, on every glass surface: text that is muted elsewhere
+    // takes the foreground colour on glass (measured over a saturated map
+    // in check-adaptive-edge-cases.mjs). A `text-muted-foreground` beside
+    // the class would outrank it.
+    render(
+      <FeedbackCard
+        title="How was your route?"
+        description="Tell us how it went."
+        surface="glass"
+      />,
+    );
+    const description = screen.getByText("Tell us how it went.");
+    expect(description.classList.contains("kozmos-muted-text")).toBe(true);
+    expect(description.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
 });

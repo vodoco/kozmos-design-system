@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.icon
+import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 
@@ -69,16 +70,18 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
             .semantics(mergeDescendants = true) { contentDescription = "$label, $name" },
         verticalAlignment = Alignment.Top
     ) {
+        // The caption and the origin are muted, and on glass, in a glass
+        // manoeuvre card, the foreground colour (decision 48).
         Text(
             text = label.uppercase(),
             style = MaterialTheme.typography.labelSmall,
-            color = KozmosThemeTokens.primitivesColorsForeground500,
+            color = kozmosMutedForeground(),
             modifier = Modifier.width(KozmosDimensions.primitivesLayoutSizing500).padding(top = 3.dp)
         )
         Text(
             text = name,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (emphasised) FontWeight.SemiBold else FontWeight.Normal),
-            color = if (emphasised) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.primitivesColorsForeground500,
+            color = if (emphasised) KozmosThemeTokens.primitivesColorsForeground100 else kozmosMutedForeground(),
             modifier = Modifier.padding(start = KozmosDimensions.primitivesLayoutSpacing150)
         )
     }

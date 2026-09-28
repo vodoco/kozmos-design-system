@@ -152,6 +152,7 @@ async function showPart(page, part, options = {}) {
       if (part === "results") window.showResults();
       if (part === "details") window.showDetails("sheet");
       if (part === "details-body") window.showDetails("sheet", { body: true });
+      if (part === "gallery") window.showGallery();
       window.setAdaptiveOptions(options);
     },
     { part, options },
@@ -204,9 +205,10 @@ function contrast(a, b) {
 
 // Decision 48: text a hosted part draws on glass reads at 4.5:1 over any
 // map. Each part's title and the text that is muted elsewhere, found by its
-// place in the part: for the details card's body, its gallery's position
-// and the headings of its services and of a group of attributes, read with
-// the sheet at its largest detent, where its content scrolls.
+// place in the part: for the details card's body, its summary's note, its
+// gallery's position and the headings of its services and of a group of
+// attributes, read with the sheet at its largest detent, where its content
+// scrolls; and the gallery hosted on its own.
 const GLASS_TEXT = {
   route: [
     'section[aria-label="Route preview"] header > p',
@@ -221,37 +223,61 @@ const GLASS_TEXT = {
     ".kozmos-poi-detail .kozmos-poi-gallery-position",
     '.kozmos-poi-detail section[aria-label="Service options"] > .kozmos-poi-section-heading',
     '.kozmos-poi-detail section[aria-label="Dietary options"] > .kozmos-poi-section-heading',
+    ".kozmos-poi-detail .kozmos-poi-summary-text small",
   ],
+  gallery: [".kozmos-poi-gallery-position"],
   browse: [
     'section[aria-label="Browse categories"] button[data-category-id="gates"] > .line-clamp-2',
   ],
 };
 const GLASS_DETENT = { "details-body": "large" };
 
-// The contrast of `selector`'s text with what is drawn behind it. The text
-// is made transparent and its box photographed, and the photograph is read
-// back through a canvas in the page: the ratio of the text's own colour to
-// the least contrasting pixel behind it, the worst a reader meets.
-async function textContrast(page, selector) {
-  const node = page.locator(selector);
-  assert.equal(await node.count(), 1, `${selector} is drawn once`);
-  await node.scrollIntoViewIfNeeded();
-  const { colour, text } = await node.evaluate((element) => {
+// Decision 48 on every glass surface: the cards that float over the map, and
+// each one's text that is muted elsewhere, by its words. The itinerary's
+// captions are upper case on screen and by their words here.
+const FLOATING_TEXT = {
+  manoeuvre: ["58 m · Level 2"],
+  "manoeuvre-open": [/^From$/i, "Harbour Coffee Co.", /^To$/i],
+  "route-summary": ["201 m"],
+  feedback: ["Tell us how it went."],
+  "save-location": ["Terminal 2, Level 1"],
+};
+
+// The floating card's text by its words, found only inside that card.
+function floatingText(page, card, words) {
+  return page
+    .locator(`[data-floating-card="${card}"]`)
+    .getByText(words, { exact: true });
+}
+
+// The colour drawn at one point of the page, viewport pixels.
+async function pixelAt(page, x, y) {
+  const [r, g, b] = await photograph(page, { x, y, width: 1, height: 1 });
+  return [r, g, b];
+}
+
+// The text colour of the one element `node` finds, beside the theme's muted
+// colour resolved in the same place.
+async function mutedColour(node) {
+  assert.equal(await node.count(), 1, `${node} is drawn once`);
+  return node.evaluate((element) => {
+    const probe = document.createElement("span");
+    probe.style.color = "var(--primitives-colors-foreground-400)";
+    element.append(probe);
     const measured = {
       colour: getComputedStyle(element).color,
-      text: element.textContent.trim(),
+      muted: getComputedStyle(probe).color,
     };
-    for (const e of [element, ...element.querySelectorAll("*")])
-      e.style.setProperty("color", "transparent", "important");
+    probe.remove();
     return measured;
   });
-  const box = await node.boundingBox();
+}
+
+// The pixels drawn in `box` (viewport pixels), as flat RGBA: the page's
+// photograph of it, read back through a canvas in the page.
+async function photograph(page, box) {
   const photo = await page.screenshot({ clip: box });
-  await node.evaluate((element) => {
-    for (const e of [element, ...element.querySelectorAll("*")])
-      e.style.removeProperty("color");
-  });
-  const pixels = await page.evaluate(async (png) => {
+  return page.evaluate(async (png) => {
     const image = new Image();
     image.src = `data:image/png;base64,${png}`;
     await image.decode();
@@ -264,6 +290,31 @@ async function textContrast(page, selector) {
       context.getImageData(0, 0, image.width, image.height).data,
     );
   }, photo.toString("base64"));
+}
+
+// The contrast of `target`'s text, a selector or a locator, with what is
+// drawn behind it. The text is made transparent and its box photographed:
+// the ratio of the text's own colour to the least contrasting pixel behind
+// it, the worst a reader meets.
+async function textContrast(page, target) {
+  const node = typeof target === "string" ? page.locator(target) : target;
+  assert.equal(await node.count(), 1, `${target} is drawn once`);
+  await node.scrollIntoViewIfNeeded();
+  const { colour, text } = await node.evaluate((element) => {
+    const measured = {
+      colour: getComputedStyle(element).color,
+      text: element.textContent.trim(),
+    };
+    for (const e of [element, ...element.querySelectorAll("*")])
+      e.style.setProperty("color", "transparent", "important");
+    return measured;
+  });
+  const box = await node.boundingBox();
+  const pixels = await photograph(page, box);
+  await node.evaluate((element) => {
+    for (const e of [element, ...element.querySelectorAll("*")])
+      e.style.removeProperty("color");
+  });
   const ink = colour
     .match(/[\d.]+/g)
     .slice(0, 3)
@@ -1320,18 +1371,6 @@ const cases = [
       // with no surface around it, it keeps the theme's muted colour; and so
       // does the details card's bordered presentation on a glass sheet, a
       // card of its own that its text sits on.
-      const muted = (selector) =>
-        page.locator(selector).evaluate((element) => {
-          const probe = document.createElement("span");
-          probe.style.color = "var(--primitives-colors-foreground-400)";
-          element.append(probe);
-          const measured = {
-            colour: getComputedStyle(element).color,
-            muted: getComputedStyle(probe).color,
-          };
-          probe.remove();
-          return measured;
-        });
       const wrong = [];
       for (const [part, selector] of [
         ["route", GLASS_TEXT.route[0]],
@@ -1340,10 +1379,11 @@ const cases = [
           "details-body",
           selector,
         ]),
+        ["gallery", GLASS_TEXT.gallery[0]],
       ]) {
         await fresh(page);
         await showPart(page, part, { panelDetent: "medium" });
-        const at = await muted(selector);
+        const at = await mutedColour(page.locator(selector));
         if (at.colour !== at.muted)
           wrong.push(`${part} on a solid sheet ${selector} ${at.colour}`);
       }
@@ -1360,7 +1400,7 @@ const cases = [
         GLASS_TEXT.details[0],
         ...GLASS_TEXT["details-body"],
       ]) {
-        const at = await muted(selector);
+        const at = await mutedColour(page.locator(selector));
         if (at.colour !== at.muted)
           wrong.push(
             `the bordered card on a glass sheet ${selector} ${at.colour}`,
@@ -1369,10 +1409,151 @@ const cases = [
       await fresh(page);
       await page.evaluate(() => window.showStandalone("route"));
       await page.waitForSelector('[data-standalone="route"] section');
-      const alone = await muted(`[data-standalone="route"] header > p`);
+      const alone = await mutedColour(
+        page.locator(`[data-standalone="route"] header > p`),
+      );
       if (alone.colour !== alone.muted)
         wrong.push(`route standing alone ${alone.colour}`);
       assert.deepEqual(wrong, [], `not muted: ${wrong.join("; ")}`);
+    },
+  ],
+  [
+    "in the shell's panel, glass or solid, the details card's summary strip paints no fill of its own; on its own it keeps it (decision 43)",
+    async (page) => {
+      // The strip is the one band inside the card's sheet presentation that
+      // painted a fill: an opaque band across a glass sheet. On a solid one
+      // its fill was the sheet's own colour.
+      const strip = (root) =>
+        page.locator(`${root} .kozmos-poi-summary`).evaluate((element) => {
+          const probe = document.createElement("span");
+          probe.style.backgroundColor = "var(--primitives-colors-background-0)";
+          element.append(probe);
+          const measured = {
+            fill: getComputedStyle(element).backgroundColor,
+            theme: getComputedStyle(probe).backgroundColor,
+          };
+          probe.remove();
+          return measured;
+        });
+      const wrong = [];
+      for (const surface of ["glass", "solid"]) {
+        await fresh(page);
+        await showPart(page, "details-body", {
+          panelSurface: surface,
+          panelDetent: "large",
+        });
+        const at = await strip(".kozmos-poi-detail");
+        if (at.fill !== TRANSPARENT)
+          wrong.push(`on a ${surface} sheet ${at.fill}`);
+      }
+      await fresh(page);
+      await page.evaluate(() => window.showStandalone("details"));
+      await page.waitForSelector(
+        '[data-standalone="details"] .kozmos-poi-summary',
+      );
+      const alone = await strip('[data-standalone="details"]');
+      if (alone.fill !== alone.theme)
+        wrong.push(`standing alone ${alone.fill}, not ${alone.theme}`);
+      assert.deepEqual(wrong, [], `the summary strip: ${wrong.join("; ")}`);
+    },
+  ],
+  [
+    "on glass over a saturated map, a floating card's text that is muted elsewhere reads at 4.5:1 or more, light and dark (decision 48)",
+    async (page) => {
+      // Decision 48 on every glass surface: the manoeuvre, its itinerary,
+      // the route summary, the feedback card and the save-location card,
+      // each over each room.
+      const low = [];
+      for (const theme of ["light", "dark"]) {
+        for (const amberFirst of [false, true]) {
+          const room = amberFirst ? "amber" : "blue";
+          for (const [card, texts] of Object.entries(FLOATING_TEXT)) {
+            await fresh(page);
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.evaluate(
+              (t) => (document.body.dataset.theme = t),
+              theme,
+            );
+            await page.evaluate(
+              ({ card, amberFirst }) =>
+                window.showFloatingCard(card, "glass", amberFirst),
+              { card, amberFirst },
+            );
+            await page.waitForSelector(`[data-floating-card="${card}"] > *`);
+            await settleLayout(page);
+            for (const words of texts) {
+              const at = await textContrast(
+                page,
+                floatingText(page, card, words),
+              );
+              if (at.lowest < 4.5)
+                low.push(
+                  `${card} ${theme} over ${room} "${at.text}" ${at.lowest.toFixed(2)}:1 in ${at.colour}`,
+                );
+            }
+          }
+        }
+      }
+      assert.deepEqual(low, [], `below 4.5:1 on glass: ${low.join("; ")}`);
+    },
+  ],
+  [
+    "on a solid card, a floating card's text that is muted keeps its muted colour",
+    async (page) => {
+      // The guard: a solid card draws its muted text muted, as before.
+      const wrong = [];
+      for (const [card, texts] of Object.entries(FLOATING_TEXT)) {
+        await fresh(page);
+        await page.evaluate(
+          (card) => window.showFloatingCard(card, "solid"),
+          card,
+        );
+        await page.waitForSelector(`[data-floating-card="${card}"] > *`);
+        await settleLayout(page);
+        for (const words of texts) {
+          const at = await mutedColour(floatingText(page, card, words));
+          if (at.colour !== at.muted)
+            wrong.push(`${card} "${words}" ${at.colour}, not ${at.muted}`);
+        }
+      }
+      assert.deepEqual(wrong, [], `not muted: ${wrong.join("; ")}`);
+    },
+  ],
+  [
+    "on a glass sheet, the selected route option is as opaque as the others: its tint sits on the background colour",
+    async (page) => {
+      // The selected option's 5% tint lay over nothing, so on glass the map
+      // showed through it while the others stood opaque. Read 6px inside
+      // its start edge, halfway down, clear of its text and its edge: on
+      // glass it must draw what it draws on a solid sheet, the tint on the
+      // background colour.
+      const sample = async (theme, surface) => {
+        await fresh(page);
+        await page.evaluate((t) => (document.body.dataset.theme = t), theme);
+        await page.evaluate(() => window.showSaturatedMap());
+        await showPart(page, "route", {
+          panelSurface: surface,
+          panelDetent: "medium",
+        });
+        const option = page.locator('button[data-route-id="quickest"]');
+        await option.scrollIntoViewIfNeeded();
+        const box = await option.boundingBox();
+        return pixelAt(
+          page,
+          Math.round(box.x + 6),
+          Math.round(box.y + box.height / 2),
+        );
+      };
+      const wrong = [];
+      for (const theme of ["light", "dark"]) {
+        const solid = await sample(theme, "solid");
+        const glass = await sample(theme, "glass");
+        if (glass.some((channel, i) => Math.abs(channel - solid[i]) > 4))
+          wrong.push(
+            `${theme}: on glass rgb(${glass.join(", ")}), on a solid sheet rgb(${solid.join(", ")})`,
+          );
+      }
+      assert.deepEqual(wrong, [], `see-through: ${wrong.join("; ")}`);
     },
   ],
 ];
