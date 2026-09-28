@@ -64,18 +64,20 @@ fill of its own (decision 43). The panel sets `--kozmos-panel-part-fill` to `tra
 content and its header. `BrowseCategoriesPanel` and `RoutePreviewPanel`, which fill their box with
 the background colour when they stand alone, paint nothing there, so a glass panel shows through
 them. On a solid panel they look as they did, since its fill is that same colour. `POIResultList`
-and `POIDetailPanel`'s `sheet` presentation paint no fill anywhere, and cards keep theirs: each
-result, and a `panel` or `inline` details card.
+and `POIDetailPanel`'s `sheet` presentation paint no fill anywhere, and neither, in the panel, does
+the details card's summary strip, which was an opaque band across a glass sheet. Cards keep their
+fill: each result, each route option, and a `panel` or `inline` details card.
 
 On glass, text that is muted elsewhere takes the foreground colour, so it reads at 4.5:1 over any
 map (decision 48); the glass itself is unchanged. The glass surface says so: `.kozmos-surface-glass`
 sets `--kozmos-surface-muted-foreground` to the foreground colour, and the solid surface resets it.
 A hosted part's muted text that sits on the panel reads the property: the route preview's "To"
 and count of options, the details card's level line, hours, prices, notes, section headings and
-gallery position in its `sheet` presentation, and the empty states of the browser, the route
-preview and the result list. Over a saturated map it read about 3.7:1 muted; it now reads 9.7:1 or
-more. Muted text in a card of its own, a result, a route option or a `panel` or `inline` details
-card, stays muted: it sits on the card.
+gallery position in its `sheet` presentation, a gallery hosted on its own, and the empty states of
+the browser, the route preview and the result list. Over a saturated map it read about 3.7:1 muted;
+it now reads 9.7:1 or more. Muted text in a card of its own, a result, a route option or a `panel`
+or `inline` details card, stays muted: it sits on the card, which says so. The same holds on every
+glass surface, the floating cards' too (see Surface).
 
 <Canvas of={Stories.GlassSheetWithBrowseCategories} />
 <Canvas of={Stories.GlassSheetWithRoutePreview} />
@@ -183,9 +185,10 @@ side panel, which starts its content at its top edge, both are zero. `KozmosPOID
 in its sheet presentation, which paints no surface of its own, uses both, so its close
 button sits as far from the panel's top as from its side. The panel and inline presentations
 draw their own bordered card and keep their padding inside it: the space the panel leaves
-lies outside that border. `KozmosBrowseCategoriesPanel` uses both for its first row too: in
-its sheet presentation on iOS (the panel presentation paints its own surface and keeps its
-16), and always on Android, where it paints no surface. `KozmosRoutePreviewPanel` uses both
+lies outside that border. `KozmosBrowseCategoriesPanel` uses both for its first row too, in
+the panel on both platforms: on iOS in either presentation, since the panel presentation
+follows the panel's signal when hosted (standing alone it paints its own surface and keeps
+its 16). `KozmosRoutePreviewPanel` uses both
 for its destination row on both platforms. Under the grab handle the
 `panelHeader` itself starts 4 points (4dp) below the handle's row, as the web's does. For a
 part you place under a row of your own, set both values to zero: `.environment(\.kozmosPanelInsetTop, 0)`
@@ -196,12 +199,17 @@ The shell also tells what it hosts which surface it sits on, `kozmosPanelSurface
 SwiftUI environment and `LocalKozmosPanelSurface` in Compose (solid or glass, nil outside a
 shell), so a part paints no fill of its own there (decision 43). `KozmosRoutePreviewPanel`
 paints none in the panel on both platforms; standing alone it keeps its background colour.
-The category browser paints none in its iOS sheet presentation and none at all on Android,
-and the details card's sheet presentation none on either. On iOS the route preview's square
-fill also covered the panel's rounded top corners; they show the map again. The same value
-says when their muted text takes the foreground colour: on a glass panel (decision 48), for
-the route preview's "To" and count of options and the details card's muted lines in its
-sheet presentation, which tells what it holds that a bordered card is a surface of its own.
+The category browser paints none in the panel on either platform, in both of its iOS
+presentations, and keeps its fill standing alone, as the web's does. The details card's
+sheet presentation paints none on either. On iOS the route preview's square fill also covered
+the panel's rounded top corners; they show the map again.
+
+The panel's surface also says when their muted text takes the foreground colour: on glass
+(decision 48). On iOS every `kozmosSurface(_:style:)` tells what it holds which surface it is
+(`kozmosSurfaceStyle` in the environment), the panel's included; in Compose the shell and the
+cards with a `surface` provide `LocalKozmosSurfaceStyle`. The route preview's "To" and count of
+options and the details card's muted lines read it; in the panel and inline presentations the
+card says it is a surface of its own.
 
 `usableRegions` accepts host-provided hinge-free rectangles in shell-local CSS pixels.
 Auto mode can separate map and panel across those regions without remounting either.
