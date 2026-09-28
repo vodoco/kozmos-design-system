@@ -319,11 +319,16 @@ export default function PhoneSearch() {
 
   const controls = (
     <Box className="ex-phone-controls">
+      {/* The SDK's level switcher (decision 38): one tile with the level on
+          the map, which opens a column of every level, top floor first; the
+          visitor's level carries a dot and "your level". */}
       <FloorSelector
         label="Floor"
-        variant="compact-stepper"
+        variant="collapsible"
         floors={floors}
         selectedFloor={floorId}
+        userFloor={userLocation.floorId}
+        userFloorLabel="your level"
         onFloorSelect={(id) => {
           setFloorId(id);
           if (selected && selected.poi.floorId !== id) setSelectedId(undefined);

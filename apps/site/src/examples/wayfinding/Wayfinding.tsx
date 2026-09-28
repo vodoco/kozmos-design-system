@@ -361,10 +361,16 @@ export default function Wayfinding() {
 
   const controls = (
     <Box className="ex-way-controls" data-edge={controlsEdge.edge}>
+      {/* The SDK's level switcher (decision 38), as in the phone search.
+          The visitor's level is where the marker stands, so the dot moves
+          with them as they walk the route between floors. */}
       <FloorSelector
         label="Floor"
+        variant="collapsible"
         floors={floors}
         selectedFloor={floorId}
+        userFloor={marker.floorId}
+        userFloorLabel="your level"
         onFloorSelect={(id) => {
           setFloorId(id);
           // Another floor than the visitor's: the map stops following them.
