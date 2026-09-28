@@ -16,6 +16,8 @@ import {
   PasswordInput,
   NumberInput,
   MapControlButton,
+  MapOverlay,
+  FloorSelector,
   AIMessage,
   Listbox,
   Text,
@@ -29,6 +31,80 @@ import {
   ToggleButton,
   SegmentedControl,
 } from "@kozmos-ds/react";
+
+/* GAP-082 (row 81): map chrome floating in MapOverlays, or the same chrome
+   placed by hand at the same insets. The two boards must draw alike: the
+   overlay's scroll box cut its controls' shadows, and their rings, at its own
+   edges. The last board is an overlay whose stack is taller than the room it
+   is given, so it scrolls. */
+function MapBoard({
+  id,
+  layout,
+}: {
+  id: string;
+  layout: "overlay" | "by-hand" | "scrolling";
+}) {
+  const control = (name: string) => (
+    <MapControlButton
+      icon={<span aria-hidden="true">+</span>}
+      label={`${id} ${name}, ${layout}`}
+    />
+  );
+  const floors = (
+    <FloorSelector
+      floors={["3", "2", "1"]}
+      selectedFloor="2"
+      onFloorSelect={() => undefined}
+      label={`${id} floors, ${layout}`}
+    />
+  );
+  return (
+    <div
+      data-testid={`${id}-map-board-${layout}`}
+      style={{
+        position: "relative",
+        width: 200,
+        height: 220,
+        background: "var(--primitives-colors-background-100)",
+      }}
+    >
+      {layout === "by-hand" ? (
+        <>
+          <div
+            style={{ position: "absolute", top: 16, left: 16, display: "flex" }}
+          >
+            {control("zoom in")}
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 16,
+              right: 16,
+              display: "flex",
+            }}
+          >
+            {floors}
+          </div>
+        </>
+      ) : layout === "overlay" ? (
+        <>
+          <MapOverlay position="top-left">{control("zoom in")}</MapOverlay>
+          <MapOverlay position="bottom-right">{floors}</MapOverlay>
+        </>
+      ) : (
+        <MapOverlay
+          position="top-left"
+          data-testid={`${id}-map-overlay-scrolling`}
+          style={{ maxHeight: 120 }}
+        >
+          {control("zoom in")}
+          {control("zoom out")}
+          {control("locate")}
+        </MapOverlay>
+      )}
+    </div>
+  );
+}
 
 function Controls({ id }: { id: string }) {
   return (
@@ -250,6 +326,9 @@ function Controls({ id }: { id: string }) {
         stateLabel="On"
         data-testid={`${id}-map-control-labelled`}
       />
+      <MapBoard id={id} layout="overlay" />
+      <MapBoard id={id} layout="by-hand" />
+      <MapBoard id={id} layout="scrolling" />
       <AIMessage status="streaming" data-testid={`${id}-ai-streaming`}>
         Looking through this building…
       </AIMessage>

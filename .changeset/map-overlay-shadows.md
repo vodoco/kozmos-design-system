@@ -1,0 +1,5 @@
+---
+"@kozmos-ds/react": patch
+---
+
+`MapOverlay` no longer cuts what floats in it (GAP-082). Its content scrolls when it is taller than the map leaves room for, and that scroll box clipped at the content's own edges, so a `MapControlButton`'s or `FloorSelector`'s floating shadow was cut off on every side, and with it the 1px ring that draws a map control's edge. The scroll box now keeps the floating elevation's reach clear around its content (4px above, 8px at each side, 12px below, read from `--semantics-elevation-floating` when the package is built) and takes the same space back with negative margins, so nothing moves: content sits where it did, and controls in an overlay draw as the same controls placed by hand, focus rings included. The only pixels left out are a shadow tail one level (of 255) deep, which Chromium and Firefox draw a little past the blur distance on Linux. While the content scrolls, it shows through that room too, and a press on the room, as on the space between the overlay's items, does not reach the map.
