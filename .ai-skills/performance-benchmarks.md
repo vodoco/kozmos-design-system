@@ -43,6 +43,22 @@
 
 ## 2. Bundle Size Budgets
 
+### What CI Enforces
+
+The required `analyze-bundle` check (`.github/workflows/bundle-size.yml`) runs
+`scripts/performance/bundle-analyzer.ts`. It builds `@kozmos-ds/react`, bundles it the way a Vite
+app would (Rollup, honouring the package's `sideEffects`, its dependencies left out), and holds four
+budgets, gzipped:
+
+| Measure                              | Budget |
+| ------------------------------------ | ------ |
+| Any one public export, bundled alone | 8 KB   |
+| `Button` alone                       | 2 KB   |
+| Every export at once                 | 64 KB  |
+| The stylesheet                       | 30 KB  |
+
+No check enforces the tables below.
+
 ### Package-Level Budgets
 
 | Package                     | Budget (minified) | Budget (gzip) | Current | Status |
@@ -96,44 +112,12 @@
 ### Measuring Bundle Size
 
 ```bash
-# Analyze bundle composition
-pnpm build
-npx source-map-explorer dist/index.js --html bundle-report.html
-
-# Check individual component size
-npx esbuild packages/react/src/Button/index.ts \
-  --bundle --minify --outfile=/dev/null \
-  --metafile=meta.json
-cat meta.json | jq '.outputs[].bytes'
-
-# Compare with baseline
-npx bundlewatch --config bundlewatch.config.json
+# The budgets CI enforces; builds @kozmos-ds/react first
+pnpm tsx scripts/performance/bundle-analyzer.ts
 ```
 
-### bundlewatch.config.json
-
-```json
-{
-  "files": [
-    {
-      "path": "packages/react/dist/index.js",
-      "maxSize": "80KB"
-    },
-    {
-      "path": "packages/tokens/dist/index.js",
-      "maxSize": "8KB"
-    },
-    {
-      "path": "packages/icons/dist/index.js",
-      "maxSize": "150KB"
-    }
-  ],
-  "ci": {
-    "trackBranches": ["main"],
-    "repoBranchBase": "main"
-  }
-}
-```
+It prints the median export and the five heaviest, `Button`, everything together and the
+stylesheet, each against its budget.
 
 ---
 
@@ -405,13 +389,10 @@ function measureInteraction(name: string, fn: () => void) {
 
 ### Bundle Analysis
 
-| Tool                    | Purpose            | Command                             |
-| ----------------------- | ------------------ | ----------------------------------- |
-| source-map-explorer     | Bundle composition | `npx source-map-explorer dist/*.js` |
-| bundlewatch             | Size regression CI | `npx bundlewatch`                   |
-| webpack-bundle-analyzer | Visual treemap     | Built into Storybook                |
-| esbuild metafile        | Per-component size | Custom script                       |
-| size-limit              | PR size diff       | GitHub Action                       |
+| Tool                                     | Purpose                                              | Command                                           |
+| ---------------------------------------- | ---------------------------------------------------- | ------------------------------------------------- |
+| `scripts/performance/bundle-analyzer.ts` | The budgets CI enforces, per export and in total     | `pnpm tsx scripts/performance/bundle-analyzer.ts` |
+| Lighthouse CI                            | Performance and accessibility scores of four stories | `.github/workflows/lighthouse.yml`                |
 
 ### Runtime Profiling
 
@@ -472,91 +453,24 @@ describe('Performance', () => {
 
 ### Bundle Size Check (GitHub Actions)
 
-```yaml
-# .github/workflows/bundle-size.yml
-name: Bundle Size
-
-on:
-  pull_request:
-    paths:
-      - "packages/**"
-
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build
-        run: pnpm build
-
-      - name: Check bundle size
-        uses: preactjs/compressed-size-action@v2
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          pattern: "packages/*/dist/**/*.js"
-
-      - name: Bundlewatch
-        run: npx bundlewatch
-        env:
-          BUNDLEWATCH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
+`.github/workflows/bundle-size.yml` ("Bundle Size Analysis") runs on pull requests into `main` and on
+pushes to `main` that change more than documentation. Its one job, `analyze-bundle`, is a required
+check: it installs the workspace and runs `pnpm tsx scripts/performance/bundle-analyzer.ts`, which
+fails when a budget in §2 is exceeded. Raise a budget only with the measurement that justifies it.
 
 ### Performance Regression Test
 
-```yaml
-# .github/workflows/perf.yml
-name: Performance
-
-on:
-  pull_request:
-    paths:
-      - "packages/react/**"
-
-jobs:
-  lighthouse:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build Storybook
-        run: pnpm build-storybook
-
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v10
-        with:
-          configPath: ./lighthouserc.json
-          uploadArtifacts: true
-```
+There is no `perf.yml`. `.github/workflows/lighthouse.yml` ("Lighthouse CI"), on the same triggers,
+builds Storybook (`pnpm turbo run build --filter=@kozmos-ds/docs`) and runs Lighthouse CI; its
+`lighthouse` job is a required check.
 
 ### lighthouserc.json
 
-```json
-{
-  "ci": {
-    "collect": {
-      "staticDistDir": "./storybook-static",
-      "url": [
-        "http://localhost/iframe.html?id=button--default",
-        "http://localhost/iframe.html?id=form--complex"
-      ]
-    },
-    "assert": {
-      "assertions": {
-        "categories:performance": ["error", { "minScore": 0.9 }],
-        "first-contentful-paint": ["error", { "maxNumericValue": 1000 }],
-        "interactive": ["error", { "maxNumericValue": 2000 }],
-        "total-blocking-time": ["error", { "maxNumericValue": 200 }]
-      }
-    }
-  }
-}
-```
+[`lighthouserc.json`](../lighthouserc.json) takes four stories from `apps/docs/storybook-static`
+(the default Button, Dialog, Toast and POICard stories), one run each, and asserts:
+
+- `categories:accessibility` of at least 1 (a score of 100), as an error;
+- `categories:performance` of at least 0.5, as a warning only.
 
 ---
 
@@ -706,11 +620,11 @@ const elementCache = new WeakMap<HTMLElement, CachedData>();
 
 ### Before PR Merge
 
-- [ ] Bundle size within budget (bundlewatch passes)
+- [ ] Bundle budgets hold (the `analyze-bundle` check, §2)
 - [ ] No unnecessary re-renders (React DevTools Profiler)
 - [ ] Animations at 60fps (Performance tab)
 - [ ] No memory leaks (Heap snapshot comparison)
-- [ ] Lighthouse score ≥90 (for affected stories)
+- [ ] Lighthouse CI passes (the `lighthouse` check: accessibility 100 on its four stories)
 
 ### Before Release
 
