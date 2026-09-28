@@ -59,6 +59,26 @@ public extension EnvironmentValues {
     }
 }
 
+struct KozmosPanelSurfaceKey: EnvironmentKey {
+    static let defaultValue: KozmosSurfaceStyle? = nil
+}
+
+public extension EnvironmentValues {
+    /// The surface of the shell's panel under what it hosts, a sheet's or a
+    /// side panel's, solid or glass; nil outside a shell. The panel's surface
+    /// is the one surface (decision 43): a part that fills its own box
+    /// standing alone, as `KozmosRoutePreviewPanel` does, paints no fill on
+    /// it, so a glass panel shows through it and a solid one looks as it
+    /// did, its fill being the same background colour. A part that draws a
+    /// bordered card of its own, as `KozmosPOIDetailPanel`'s panel
+    /// presentation does, keeps it. Set for the panel's header and its
+    /// content alike.
+    var kozmosPanelSurface: KozmosSurfaceStyle? {
+        get { self[KozmosPanelSurfaceKey.self] }
+        set { self[KozmosPanelSurfaceKey.self] = newValue }
+    }
+}
+
 /// How far the sheet's content has scrolled from its top, in points; zero at
 /// the top. The shell reads it to decide whether a downward drag scrolls the
 /// content back or moves the sheet.

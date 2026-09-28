@@ -151,7 +151,9 @@ struct KozmosMapShellContentPanelHeightKey: PreferenceKey {
 /// `KozmosRoutePreviewPanel` is, tops it up rather than adding to it
 /// (GAP-083, decision 14). The values describe the panel's top: a part a
 /// product places under its own row there is not at the top, and is told so
-/// by setting both to zero.
+/// by setting both to zero. The panel's surface is told too,
+/// `kozmosPanelSurface`: it is the one surface, and a part that fills its own
+/// box standing alone paints no fill on it (decision 43).
 public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Panel: View, MapStatusContent: View>: View {
     public enum PanelPlacement {
         case start
@@ -635,6 +637,9 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
 
                 if hasPanel {
                     panelContainer(in: geometry, safeArea: safeArea)
+                        // What the panel hosts, its header and its content,
+                        // sits on its surface: the one surface (decision 43).
+                        .environment(\.kozmosPanelSurface, panelSurface)
                         .zIndex(4)
                 }
             }
