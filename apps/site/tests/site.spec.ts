@@ -2334,6 +2334,41 @@ test.describe("design-system gaps, measured", () => {
     expect(drawn.glass.text, "a muted Text on glass").toBe(drawn.page.text);
   });
 
+  test("GAP-95: the level switcher's column grows out of the phone's frame", async ({
+    page,
+  }) => {
+    // FloorSelector's collapsible column is a Popover placed against the
+    // window, and nothing gives it the map as its boundary. In the phone
+    // search the tile sits under the search bar, the column grows up, and it
+    // rises out of the phone's frame over the page. The same reading on the
+    // wayfinding, whose map fills its canvas, finds the column inside. A fix
+    // keeps the column in the frame: it would grow down, or stop at the edge.
+    const aboveFrame = async (path: string, frame: string) => {
+      await page.goto(path);
+      await hydrated(page);
+      await page.locator(frame).scrollIntoViewIfNeeded();
+      await page
+        .locator(".site-example-canvas")
+        .getByRole("group", { name: "Floor" })
+        .getByRole("button")
+        .click();
+      const column = page.getByRole("dialog", { name: "Floor" });
+      await expect(column).toBeVisible();
+      await hydrated(page);
+      const drawn = await column.boundingBox();
+      const edge = await page.locator(frame).boundingBox();
+      return Math.round((edge?.y ?? 0) - (drawn?.y ?? 0));
+    };
+    expect(
+      await aboveFrame("/examples/wayfinding", ".site-example-canvas"),
+      "the wayfinding's column, above its canvas",
+    ).toBeLessThanOrEqual(0);
+    expect(
+      await aboveFrame("/examples/phone-search", ".ex-phone"),
+      "the phone search's column, above the phone's frame",
+    ).toBeGreaterThan(0);
+  });
+
   test("GAP-86 is fixed: the assistant's voice control draws its own marks", async ({
     page,
   }) => {
@@ -2739,6 +2774,34 @@ test.describe("account settings example", () => {
 });
 
 test.describe("every example", () => {
+  test("the SDK's map screens switch levels from one tile; the venue explorer and the kiosk list them (decision 38)", async ({
+    page,
+  }) => {
+    // The phone search and the wayfinding are the SDK's map screens, and
+    // take FloorSelector's collapsible level switcher (#144): one tile at
+    // rest. The venue explorer and the kiosk directory keep every level on
+    // screen.
+    for (const [path, switcher] of [
+      ["/examples/phone-search", true],
+      ["/examples/wayfinding", true],
+      ["/examples/venue-explorer", false],
+      ["/examples/kiosk-directory", false],
+    ] as const) {
+      await page.goto(path);
+      await hydrated(page);
+      const levels = page
+        .locator(".site-example-canvas")
+        .getByRole("group", { name: "Floor" })
+        .getByRole("button");
+      if (switcher) {
+        await expect(levels, `${path}: one tile`).toHaveCount(1);
+        await expect(levels).toHaveAttribute("aria-expanded", "false");
+      } else {
+        await expect(levels, `${path}: every level`).toHaveCount(3);
+      }
+    }
+  });
+
   test("draws solid: no example puts a glass surface on the page (decision 49)", async ({
     page,
   }) => {
@@ -3196,6 +3259,12 @@ test.describe("wayfinding example", () => {
     await hydrated(page);
     const example = app(page);
 
+    // The level switcher's tile shows the ground floor, the visitor's.
+    const floorTile = example
+      .getByRole("group", { name: "Floor" })
+      .getByRole("button");
+    await expect(floorTile).toHaveAccessibleName("Ground floor, your level");
+
     // Plan: every place is offered, and typing narrows the list.
     await expect(example.getByText("11 places")).toBeVisible();
     await example.getByPlaceholder("Where to?").fill("book");
@@ -3234,10 +3303,14 @@ test.describe("wayfinding example", () => {
       example.getByText("Take the lift to the first floor").first(),
     ).toBeVisible();
     await next.click();
-    // Up the lift: the map follows the visitor to the first floor.
+    // Up the lift: the map follows the visitor to the first floor, and the
+    // tile marks it as theirs.
+    await expect(floorTile).toHaveAccessibleName("First floor, your level");
     await expect(
-      example.getByRole("button", { name: "First floor", exact: true }),
-    ).toHaveAttribute("aria-pressed", "true");
+      example.getByRole("region", {
+        name: "Riverside Centre, First floor. Illustrative map",
+      }),
+    ).toBeVisible();
     await expect(example.getByLabel("Step 4 of 5")).toBeAttached();
     expect(await axeViolations(page)).toEqual([]);
     await next.click();
@@ -3273,6 +3346,75 @@ test.describe("phone search example", () => {
       expectPanelContract(inset);
       expect(await clippedEdges(page)).toEqual([]);
     }
+  });
+
+  test("the floor control is the SDK's level switcher, with the visitor's level marked", async ({
+    page,
+  }) => {
+    // Decision 38 (#144): at rest one map-control tile with the current
+    // level's short label; pressed, a column of every level over it, top
+    // floor first; the visitor's level carries a dot and "your level".
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const example = phone(page);
+    const tile = example
+      .getByRole("group", { name: "Floor" })
+      .getByRole("button");
+    const dot = "[data-floor-selector-user-level]";
+    // The tile's mark is the short label; its name, which the map control
+    // also keeps as clipped words, is the level's full one.
+    const mark = tile.locator(".kozmos-map-control-mark");
+    await expect(tile).toHaveAccessibleName("Ground floor, your level");
+    await expect(tile).toHaveAttribute("data-presentation", "icon-only");
+    await expect(mark).toHaveText("G");
+    await expect(tile).toHaveAttribute("aria-expanded", "false");
+    await expect(tile.locator(dot)).toHaveCount(1);
+
+    await tile.click();
+    const column = page.getByRole("dialog", { name: "Floor" });
+    await expect(column).toBeVisible();
+    await expect(tile).toHaveAttribute("aria-expanded", "true");
+    const levels = column.getByRole("button");
+    await expect(levels).toHaveText(["2", "1", "G"]);
+    expect(
+      await levels.evaluateAll((buttons) =>
+        buttons.map((button) => button.getAttribute("aria-label")),
+      ),
+    ).toEqual(["Second floor", "First floor", "Ground floor, your level"]);
+    const ground = column.getByRole("button", {
+      name: "Ground floor, your level",
+    });
+    await expect(ground).toHaveAttribute("aria-pressed", "true");
+    await expect(ground).toBeFocused();
+    expect(await axeViolations(page)).toEqual([]);
+
+    // Another level: the column closes, and focus is back on the tile, which
+    // names the level now shown and marks nothing, the visitor not being on it.
+    await column
+      .getByRole("button", { name: "First floor", exact: true })
+      .click();
+    await expect(column).toBeHidden();
+    await expect(tile).toBeFocused();
+    await expect(tile).toHaveAccessibleName("First floor");
+    await expect(mark).toHaveText("1");
+    await expect(tile.locator(dot)).toHaveCount(0);
+    await expect(
+      example.getByRole("region", {
+        name: "Riverside Centre, First floor. Illustrative map",
+      }),
+    ).toBeVisible();
+
+    // Open again: the visitor's level keeps its dot while another is shown,
+    // and Escape closes the column and gives focus back.
+    await tile.click();
+    await expect(ground).toHaveAttribute("aria-pressed", "false");
+    await expect(ground.locator(dot)).toHaveCount(1);
+    await expect(
+      column.getByRole("button", { name: "First floor", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Escape");
+    await expect(column).toBeHidden();
+    await expect(tile).toBeFocused();
   });
 
   test("the map's location control is the SDK's, as in the venue explorer", async ({
