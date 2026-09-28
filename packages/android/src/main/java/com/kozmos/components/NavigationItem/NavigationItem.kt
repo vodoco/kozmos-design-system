@@ -26,10 +26,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -236,13 +239,29 @@ private fun RailNavigationItemContent(
         }
 
         if (shouldRenderLabel(content) && label != null) {
+            // Every rail tile's label is labelSmall, 11sp, on 14sp lines and
+            // up to two of them, as React's is 11px on 14px (decision 36); a
+            // third line is cut at the end of the second. labelSmall's own
+            // 16sp line made a two-line tile 76dp tall; 14 keeps it 72.
+            // The lines are set as CSS sets them, the leading split evenly
+            // above and below each: Material 3 1.1 pads each line with the
+            // font's own padding, which a 14sp line cannot hold (two lines
+            // took 29dp and the tile 73), and Compose trims the leading above
+            // the first line and below the last (27dp); two lines are 28.
             Text(
                 text = label,
                 color = LocalContentColor.current,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall,
+                lineHeight = 14.sp,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    lineHeightStyle = LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Center,
+                        trim = LineHeightStyle.Trim.None
+                    )
+                ),
                 fontWeight = FontWeight.SemiBold
             )
         }

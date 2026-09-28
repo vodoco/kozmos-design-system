@@ -1,6 +1,74 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { NavigationItem } from "./NavigationItem";
+import { NavigationItem, navigationItemVariants } from "./NavigationItem";
+
+/**
+ * Decision 36 (row 25 / GAP-013): every rail tile's label is 11px on a 14px
+ * line, up to two lines, in both densities — "one smaller size for every tile,
+ * not some small some large" (decision 17). The tiles stay 72px wide (64
+ * compact). The browser check measures the lines and the heights; these pin
+ * the classes that draw them.
+ */
+describe("NavigationItem rail tile", () => {
+  it("sets the label at 11px in both densities", () => {
+    for (const density of ["default", "compact"] as const) {
+      const classes = navigationItemVariants({
+        placement: "rail",
+        density,
+      }).split(/\s+/);
+      expect(classes, density).toContain("text-[11px]");
+      expect(classes, density).not.toContain("text-xs");
+    }
+  });
+
+  it("draws an 11px tile, whichever density it is given", () => {
+    const { rerender } = render(
+      <NavigationItem icon={<svg />} placement="rail">
+        Settings
+      </NavigationItem>,
+    );
+    const tile = screen.getByRole("button", { name: "Settings" });
+    expect(tile).toHaveClass("text-[11px]", "w-[72px]", "min-h-[72px]");
+    expect(tile).not.toHaveClass("text-xs");
+
+    rerender(
+      <NavigationItem density="compact" icon={<svg />} placement="rail">
+        Settings
+      </NavigationItem>,
+    );
+    expect(tile).toHaveClass("text-[11px]", "w-16", "min-h-16");
+    expect(tile).not.toHaveClass("text-xs");
+  });
+
+  it("gives the label two balanced lines of 14px", () => {
+    render(
+      <NavigationItem icon={<svg />} placement="rail">
+        SDK Configuration
+      </NavigationItem>,
+    );
+    const label = screen.getByText("SDK Configuration");
+    // 14px keeps a two-line tile 72px tall: 8 + 24 + 4 + 2 × 14 + 8. The
+    // 16px line it had made it 76.
+    expect(label).toHaveClass("line-clamp-2", "text-balance", "leading-[14px]");
+    expect(label).not.toHaveClass("leading-4");
+  });
+
+  it("takes a dashboard rail's 96px from className, as the docs say", () => {
+    // Holds before the change and after it: w-24 replaces the tile's own
+    // width rather than losing to it, which is what makes the documented
+    // `className="w-24"` work.
+    render(
+      <NavigationItem className="w-24" icon={<svg />} placement="rail">
+        UI Translation Manager
+      </NavigationItem>,
+    );
+    const tile = screen.getByRole("button", {
+      name: "UI Translation Manager",
+    });
+    expect(tile).toHaveClass("w-24");
+    expect(tile).not.toHaveClass("w-[72px]");
+  });
+});
 
 describe("NavigationItem", () => {
   it("renders a selected navigation link", () => {
