@@ -1845,10 +1845,12 @@ Text"])`) and the Get started page shows — touches it.
 
 - **What:** on glass, text that is muted elsewhere takes the foreground
   colour, so it reads at 4.5:1 over any map (decision 48). The glass says so
-  through `--kozmos-surface-muted-foreground`, and the parts the map shell
-  hosts read it (`.kozmos-muted-text`); `Text`'s `color="muted"`
-  (`.kozmos-text-muted`, `owned-typography.css:64`) does not, so a product's
-  own muted words on a glass panel stay the muted grey.
+  through `--kozmos-surface-muted-foreground`. The parts the map shell hosts
+  read it (`.kozmos-muted-text`), and since #151 so do the cards that take
+  `surface`, and Surface's docs say every Kozmos part's muted text does; but
+  `Text`'s `color="muted"` (`.kozmos-text-muted`, `owned-typography.css:64`)
+  does not, so a product's own muted words on a glass panel stay the muted
+  grey.
 - **Evidence:** the wayfinding's panel is glass since 2026-09-28. Under "Next
   step" its note is `Text color="muted"`: measured on the panel as drawn, it
   is 5.69:1 in light and 7.44:1 in dark over the site's plain stand-in map.
