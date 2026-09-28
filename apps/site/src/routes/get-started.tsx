@@ -3,12 +3,14 @@ import {
   Alert,
   AlertDescription,
   Container,
+  Link,
   List,
   ListItem,
   Text,
 } from "@kozmos-ds/react";
 import { Pipeline } from "../home/Pipeline";
 import { PACKAGES_PUBLISHED, PUBLIC_PACKAGES, pageTitle } from "../lib/site";
+import { storybookHref } from "../lib/storybook";
 import { CodeBlock } from "../site/CodeBlock";
 import { PageHeader, Section } from "../site/Section";
 import analyticsSnippet from "../snippets/analytics.tsx?raw";
@@ -103,6 +105,12 @@ export default function GetStarted() {
         lead="Emotion says what an action means: themed, neutral, success, danger, informative or alert."
       >
         <CodeBlock label="SaveButton.tsx" code={firstComponentSnippet} />
+        {/* Storybook is published beside the site, and no route of it: a
+            plain link (src/lib/storybook.ts). */}
+        <Text size="sm">
+          Every component’s props, stories and controls, and its code on each
+          platform, are in <Link href={storybookHref()}>Storybook</Link>.
+        </Text>
       </Section>
 
       <Section
