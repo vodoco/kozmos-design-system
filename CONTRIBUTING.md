@@ -230,7 +230,8 @@ Fixes #123
    its committed baseline, and intended changes show in "Files changed" (see
    [docs/visual-review.md](docs/visual-review.md))
 4. **Approval** from maintainer
-5. **Squash and merge** to main
+5. **Merge with a merge commit** once all 19 checks pass on a branch that is up to date with `main`
+   (`gh pr merge <n> --merge`, or auto-merge, which waits for them)
 
 ---
 
@@ -511,11 +512,18 @@ A Dependabot pull request that bumps a published package's runtime `dependencies
 
 ### Release Workflow
 
-1. PRs merged to `main` accumulate changesets
-2. Release PR auto-created by Changesets bot
-3. Maintainer reviews and merges release PR
-4. CI publishes packages to npm
-5. GitHub release created automatically
+Releases are deliberate, not automatic; [docs/release-process.md](docs/release-process.md) is the
+full procedure. In short:
+
+1. PRs merged to `main` accumulate changesets (private packages are not versioned).
+2. A **version PR** runs `pnpm version-packages`, writes `release/plan.json` (the exact packages,
+   versions and npm tag it approves) and `pnpm skills:build`; it is reviewed and merged like any PR.
+3. Once `main`'s CI on that merge is green, `pnpm release:preflight <sha> <ci-run-id>` makes the
+   release job's checks in advance and prints the dispatch command.
+4. The owner dispatches **Release Kozmos System** and approves the `npm-release` deployment; the
+   workflow publishes the tested tarballs with npm provenance.
+5. `pnpm release:tag <sha>` creates the git tags and GitHub Releases, with each version's
+   changelog as the notes.
 
 ---
 
