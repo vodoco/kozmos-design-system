@@ -2288,6 +2288,52 @@ test.describe("design-system gaps, measured", () => {
     }
   });
 
+  test("GAP-94: Text's muted colour stays grey on a glass Surface", async ({
+    page,
+  }) => {
+    // Decision 48: on glass, text that is muted elsewhere takes the
+    // foreground colour, so it reads over whatever shows through. The glass
+    // says so through --kozmos-surface-muted-foreground, and Kozmos's own
+    // parts read it (.kozmos-muted-text); a Text color="muted" does not.
+    // Read on the elevation page's glass card, over the category colours,
+    // since the examples are solid (decision 49): a muted Text's own
+    // element, cloned from the page, beside an owned muted line, on the
+    // glass and off it. A fix turns the Text to the foreground on the glass.
+    await page.goto("/foundations/elevation");
+    await hydrated(page);
+    const drawn = await page.locator(".site-glass-card").evaluate((glass) => {
+      const muted = document.querySelector(".kozmos-text-muted");
+      if (!muted || !glass.classList.contains("kozmos-surface-glass"))
+        return null;
+      const probe = (host: Element) => {
+        const text = muted.cloneNode(false) as HTMLElement;
+        text.textContent = "Muted words";
+        const owned = document.createElement("p");
+        owned.className = "kozmos-reset kozmos-muted-text";
+        owned.textContent = "Muted words";
+        host.append(text, owned);
+        const colours = {
+          text: getComputedStyle(text).color,
+          owned: getComputedStyle(owned).color,
+        };
+        text.remove();
+        owned.remove();
+        return colours;
+      };
+      return {
+        glass: probe(glass),
+        page: probe(glass.parentElement ?? document.body),
+      };
+    });
+    expect(drawn, "a muted Text, and the page's glass card").not.toBeNull();
+    if (!drawn) return;
+    // Off the glass the two are the same muted grey.
+    expect(drawn.page.text).toBe(drawn.page.owned);
+    // On it the owned line takes the foreground colour; the Text stays grey.
+    expect(drawn.glass.owned).not.toBe(drawn.page.owned);
+    expect(drawn.glass.text, "a muted Text on glass").toBe(drawn.page.text);
+  });
+
   test("GAP-86 is fixed: the assistant's voice control draws its own marks", async ({
     page,
   }) => {
@@ -2692,6 +2738,116 @@ test.describe("account settings example", () => {
   });
 });
 
+test.describe("every example", () => {
+  test("draws solid: no example puts a glass surface on the page (decision 49)", async ({
+    page,
+  }) => {
+    // Decision 49 (Olcay, 2026-09-28): every example takes Kozmos's solid
+    // default, so the site shows one surface, not a mix. Before it the phone
+    // search's sheet and the wayfinding's panel, manoeuvre card and route
+    // summary were glass (#150), and so was the kiosk's attract screen,
+    // while the venue explorer was solid. Each example is read as it loads,
+    // and the map examples in the states that draw their other surfaces: a
+    // place's details, a route and its walk, the attract screen; then the
+    // miniatures that show examples on the home page and the index.
+    test.slow();
+    const found: string[] = [];
+    const canvas = () => page.locator(".site-example-canvas");
+    const read = async (where: string) => {
+      const glass = await canvas().locator(".kozmos-surface-glass").count();
+      if (glass > 0) found.push(`${where}: ${glass} glass`);
+      for (const panel of await canvas()
+        .locator('aside[data-slot="map-shell-panel"]')
+        .all()) {
+        const solid = await panel.evaluate((node) =>
+          node.classList.contains("kozmos-surface-solid"),
+        );
+        if (!solid) found.push(`${where}: the map shell's panel is not solid`);
+      }
+    };
+    const open = async (path: string) => {
+      await page.goto(path);
+      await hydrated(page);
+      return canvas();
+    };
+
+    const examplePaths = pages
+      .map(({ path }) => path)
+      .filter((path) => path.startsWith("/examples/"));
+    expect(examplePaths, "every example").toHaveLength(13);
+    for (const path of examplePaths) {
+      await open(path);
+      await read(path);
+    }
+
+    let example = await open("/examples/venue-explorer");
+    await example
+      .getByRole("searchbox", { name: "Search Riverside Centre" })
+      .fill("book");
+    await example
+      .getByRole("button", { name: /Bookshop/ })
+      .first()
+      .click();
+    await expect(
+      example.getByRole("heading", { level: 2, name: "Bookshop" }),
+    ).toBeVisible();
+    await read("venue explorer, a place");
+
+    example = await open("/examples/wayfinding");
+    await example
+      .getByRole("button", { name: /Bookshop/ })
+      .first()
+      .click();
+    await expect(example.getByRole("button", { name: "Start" })).toBeVisible();
+    await read("wayfinding, a route");
+    await example.getByRole("button", { name: "Start" }).click();
+    await expect(
+      example.getByText("Head towards the atrium").first(),
+    ).toBeVisible();
+    await read("wayfinding, walking");
+    for (let step = 0; step < 5; step += 1)
+      await example.getByRole("button", { name: "Next step" }).click();
+    await expect(example.getByText("You have arrived")).toBeVisible();
+    await read("wayfinding, arrived");
+
+    example = await open("/examples/phone-search");
+    await example.getByRole("button", { name: "Shops 3 places" }).click();
+    await example
+      .getByRole("button", { name: /Bookshop/ })
+      .first()
+      .click();
+    await expect(
+      example.getByRole("heading", { level: 2, name: "Bookshop" }),
+    ).toBeVisible();
+    await read("phone search, a place");
+
+    example = await open("/examples/kiosk-directory");
+    await example.getByRole("button", { name: "Shops 3 places" }).click();
+    await example
+      .getByRole("button", { name: /Bookshop/ })
+      .first()
+      .click();
+    await example.getByRole("button", { name: "Take me there" }).click();
+    await expect(example.getByText("Head towards the atrium")).toBeVisible();
+    await read("kiosk, a route");
+    await example.getByRole("button", { name: "Start over" }).click();
+    await expect(
+      example.getByRole("button", { name: "Touch to start" }),
+    ).toBeVisible();
+    await read("kiosk, the attract screen");
+
+    for (const path of ["/", "/examples"]) {
+      await page.goto(path);
+      await scrolled(page);
+      const glass = await page
+        .locator(".site-miniature-canvas .kozmos-surface-glass")
+        .count();
+      if (glass > 0) found.push(`${path}, the miniatures: ${glass} glass`);
+    }
+    expect(found, "glass in the examples").toEqual([]);
+  });
+});
+
 test.describe("venue explorer example", () => {
   test("the list of places sits in the panel as the shell's own parts do", async ({
     page,
@@ -3033,59 +3189,6 @@ test.describe("wayfinding example", () => {
     ).toHaveCount(0);
   });
 
-  test("the panel, the manoeuvre card and the summary are glass, as the SDK draws them", async ({
-    page,
-  }) => {
-    // Decision 43 (#145): the panel is the one surface, and what it holds
-    // paints no fill of its own; on glass, text muted elsewhere takes the
-    // foreground colour (decision 48).
-    await page.goto("/examples/wayfinding");
-    await hydrated(page);
-    const example = app(page);
-    const panel = example.getByRole("complementary", {
-      name: "Where to",
-      exact: true,
-    });
-    await expect(panel).toHaveClass(/kozmos-surface-glass/);
-    await example
-      .getByRole("button", { name: /Bookshop/ })
-      .first()
-      .click();
-    const preview = example.getByRole("complementary", {
-      name: "Route options",
-    });
-    const colours = await preview.evaluate((aside) => {
-      const to = Array.from(aside.querySelectorAll("p")).find(
-        (node) => node.textContent?.trim().toLowerCase() === "to",
-      );
-      const part = aside.querySelector(".kozmos-route-preview");
-      return {
-        to: to ? getComputedStyle(to).color : null,
-        foreground: getComputedStyle(aside).color,
-        fill: part ? getComputedStyle(part).backgroundColor : null,
-      };
-    });
-    expect(colours.fill, "the route preview paints no fill").toBe(
-      "rgba(0, 0, 0, 0)",
-    );
-    expect(colours.to, "“To” in the foreground colour").toBe(
-      colours.foreground,
-    );
-    await example.getByRole("button", { name: "Start" }).click();
-    await expect(
-      example.locator(".kozmos-surface-glass").filter({
-        hasText: "Head towards the atrium",
-      }),
-    ).not.toHaveCount(0);
-    await expect(
-      example
-        .getByRole("complementary", { name: "Navigation" })
-        .locator(".kozmos-surface-glass")
-        .filter({ hasText: "Bookshop" }),
-    ).not.toHaveCount(0);
-    expect(await axeViolations(page)).toEqual([]);
-  });
-
   test("choose a place, compare the routes, walk the step-free one and rate it", async ({
     page,
   }) => {
@@ -3170,23 +3273,6 @@ test.describe("phone search example", () => {
       expectPanelContract(inset);
       expect(await clippedEdges(page)).toEqual([]);
     }
-  });
-
-  test("the sheet is glass, and what it holds paints no fill", async ({
-    page,
-  }) => {
-    // The SDK's sheet is glass (decision 43, #145); Kozmos's default is
-    // solid. The category browser filled its box before, an opaque block
-    // from under the grip down.
-    await page.goto("/examples/phone-search");
-    await hydrated(page);
-    const sheet = phone(page).getByRole("complementary", { name: "Places" });
-    await expect(sheet).toHaveClass(/kozmos-surface-glass/);
-    expect(
-      await sheet
-        .locator(".kozmos-browse-categories")
-        .evaluate((part) => getComputedStyle(part).backgroundColor),
-    ).toBe("rgba(0, 0, 0, 0)");
   });
 
   test("the map's location control is the SDK's, as in the venue explorer", async ({
@@ -3428,6 +3514,70 @@ test.describe("phone search example", () => {
 });
 
 test.describe("kiosk directory example", () => {
+  test("the attract screen covers the whole directory, its map's floor list too", async ({
+    page,
+  }) => {
+    // Solid since decision 49, the attract screen hides what it covers, so
+    // anything drawn over it shows. The map's floor list sits in a
+    // MapOverlay at z-index 50, which MapView does not contain (GAP-40), so
+    // the screen takes the top layer token over it. Read as drawn: every
+    // pixel where the selected floor's tile was, the theme's blue with its
+    // letter, is the screen's own fill. (The tile's centre alone is its
+    // white letter, which matches a white screen whatever is on top.)
+    await page.goto("/examples/kiosk-directory");
+    await hydrated(page);
+    const example = page.getByRole("region", {
+      name: "Kiosk directory example",
+    });
+    await example.getByRole("button", { name: "Start over" }).click();
+    const attract = example.locator(".ex-kiosk-attract");
+    await expect(attract).toBeVisible();
+    await hydrated(page);
+    // Where the tile is while the screen rests over it: the directory lays
+    // out again behind it. (Inert, but still in the layout.) Focus on
+    // "Touch to start" scrolled the page, which would put the tile under
+    // the sticky header, so the page goes back to its top first.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const tile = await example
+      .getByRole("button", { name: "Ground floor", exact: true })
+      .boundingBox();
+    expect(tile, "the selected floor's tile").not.toBeNull();
+    if (!tile) return;
+    const fill = await attract.evaluate(
+      (node) => getComputedStyle(node).backgroundColor,
+    );
+    const picture = await page.screenshot({ clip: tile });
+    const other = await page.evaluate(
+      async ({ png, fill }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${png}`;
+        await image.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d")!;
+        context.drawImage(image, 0, 0);
+        const { data } = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+        const colours = new Set<string>();
+        for (let index = 0; index < data.length; index += 4) {
+          const colour = `rgb(${data[index]}, ${data[index + 1]}, ${data[index + 2]})`;
+          if (colour !== fill) colours.add(colour);
+        }
+        return [...colours].slice(0, 5);
+      },
+      { png: picture.toString("base64"), fill },
+    );
+    expect(
+      other,
+      `drawn where the selected floor's tile is, not ${fill}`,
+    ).toEqual([]);
+  });
+
   test("browse a category, read a place, take the route and send it, then rest", async ({
     page,
   }) => {

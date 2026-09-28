@@ -662,8 +662,9 @@ keep the table's four columns and its statuses as they are.
   panel while it loads, a card while a dialog inside it is open — cannot use
   it; like `DynamicIsland` (GAP-24) and `BottomNavigation` (GAP-29), the host
   cannot decide where it goes.
-- **Now:** the kiosk directory's attract screen is a glass `Surface` laid over
-  the directory by the example's own CSS. The Backdrop page showed the scrim
+- **Now:** the kiosk directory's attract screen is a `Surface` laid over the
+  directory by the example's own CSS, solid since decision 49 as every
+  example is. The Backdrop page showed the scrim
   over a screen that contained it (`src/reference/Screen.tsx`, as for GAP-24)
   until the demos moved to Storybook on 2026-09-28.
 - **Lane:** Core.
@@ -777,7 +778,11 @@ isolate` on the example canvases, as on the component pages' demo stages and
   the index's previews until the demos moved to Storybook on 2026-09-28), and
   a test scrolls each stacked element under the header and checks nothing
   draws over it. The test that pins the gap reads the kiosk directory's map,
-  whose `MapOverlay` holds its floor list.
+  whose `MapOverlay` holds its floor list. Inside the kiosk's canvas the
+  attract screen takes the same top layer token as the overlay
+  (`--primitives-layer-50`) and covers it by coming later: solid since
+  decision 49, it drew the floor list over itself, and "the attract screen
+  covers the whole directory" reads the pixels where the list's tile is.
 - **Lane:** Product / SDK.
 - **Fix in Kozmos:** `isolate` on `MapView`'s root, as `AdaptiveMapShell`'s
   has; and a layer scale in which the page's navigation sits above a map's
@@ -1851,14 +1856,18 @@ Text"])`) and the Get started page shows — touches it.
   `Text`'s `color="muted"` (`.kozmos-text-muted`, `owned-typography.css:64`)
   does not, so a product's own muted words on a glass panel stay the muted
   grey.
-- **Evidence:** the wayfinding's panel is glass since 2026-09-28. Under "Next
-  step" its note is `Text color="muted"`: measured on the panel as drawn, it
-  is 5.69:1 in light and 7.44:1 in dark over the site's plain stand-in map.
-  In the preview before it, the route preview's "To" follows the glass and
-  draws in the foreground colour. The same muted grey over a saturated map
-  read as low as 3.6:1 on the parts #145 measured.
-- **Now:** open. The note passes where the site draws it, since its map is a
-  flat colour; a product's map would not be.
+- **Evidence:** measured on 2026-09-28 on the elevation page
+  (`/foundations/elevation`), whose glass card (`src/foundations/GlassStage.tsx`,
+  a `Surface variant="glass"`) sits over the category colours. A muted `Text`'s
+  own element, cloned from the page into the card, draws in the muted grey
+  (93,98,111 in light, 162,157,144 in dark); a `.kozmos-muted-text` line
+  beside it draws in the foreground colour. Against the glass as drawn behind
+  each line, over the turquoise, the grey is at worst 4.51:1 in light and
+  4.85:1 in dark, the foreground 15.5:1 and 13.1:1, in Chromium, Firefox and
+  WebKit. #145 measured the same grey as low as 3.6:1 over a saturated map.
+- **Now:** open. No example is glass since decision 49, so none shows it.
+  "GAP-94: Text's muted colour stays grey on a glass Surface" reads it on the
+  elevation page's card, and fails once the `Text` follows the glass.
 - **Lane:** Core.
 - **Fix in Kozmos:** let `.kozmos-text-muted` read the surface's property, as
   `.kozmos-muted-text` does, falling back to the muted colour.

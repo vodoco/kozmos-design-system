@@ -373,9 +373,10 @@ export default function KioskDirectory() {
       </Dialog>
 
       {resting ? (
-        // The attract screen: glass over the directory until someone touches
-        // it. A Backdrop would cover the browser instead (GAPS.md, GAP-34).
-        <Surface variant="glass" className="ex-kiosk-attract">
+        // The attract screen: a Surface over the directory until someone
+        // touches it. A Backdrop would cover the browser instead (GAPS.md,
+        // GAP-34).
+        <Surface className="ex-kiosk-attract">
           <Stack gap={3} align="center">
             <Heading level={2}>Find your way</Heading>
             <Text size="lg" color="muted" align="center">

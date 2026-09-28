@@ -39,7 +39,6 @@ export const examples: readonly ExampleEntry[] = [
       "GAP-33 · Kozmos has no token for the route line a map engine draws; the dots that stand in for it take the theme’s colour.",
       "GAP-91 · The map shell’s top bar and controls sit in boxes that scroll, which cut their shadows off at the box’s edge.",
       "GAP-92 · The map shell does not say which edge it sets its controls against, so the example reads it from the layout the shell reports.",
-      "GAP-94 · The note under Next step stays the muted grey on the glass panel: Text’s muted colour does not follow the glass, as the panel’s parts do.",
     ],
   },
   {
@@ -72,7 +71,7 @@ export const examples: readonly ExampleEntry[] = [
     gaps: [
       "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Kozmos has no icon for them.",
       "GAP-33 · Kozmos has no token for the route line a map engine draws; the dots that stand in for it take the theme’s colour.",
-      "GAP-34 · The attract screen is a glass Surface: Backdrop pins itself to the browser’s viewport and would cover the site.",
+      "GAP-34 · The attract screen is a Surface laid over the directory: Backdrop pins itself to the browser’s viewport and would cover the site.",
       "GAP-35 · The category grid is four columns at any width, so the directory column is kept wide enough for the names to fit.",
     ],
   },
