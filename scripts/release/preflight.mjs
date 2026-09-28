@@ -114,7 +114,12 @@ function main() {
             encoding: "utf8",
           }),
         ),
-      git: (args) => execFileSync("git", args, { encoding: "utf8" }),
+      git: (args) =>
+        execFileSync("git", args, {
+          encoding: "utf8",
+          // A package directory without a manifest (ios, android) is expected.
+          stdio: ["ignore", "pipe", "pipe"],
+        }),
       credentialCheck: () =>
         execFileSync(
           process.execPath,
