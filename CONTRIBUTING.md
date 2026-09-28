@@ -52,7 +52,7 @@ Report violations to: kozmos-maintainers@pointr.tech
 
 ```bash
 # Clone the repository
-git clone https://github.com/AirGateway/kozmos-design-system.git
+git clone https://github.com/vodoco/kozmos-design-system.git
 cd kozmos-design-system
 
 # Install dependencies

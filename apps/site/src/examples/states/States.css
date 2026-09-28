@@ -1,0 +1,24 @@
+/* States: one card and the switch above it; the loading rows are shapes.
+   Layout only. */
+
+.ex-states {
+  min-block-size: 100%;
+  padding: calc(var(--primitives-layout-spacing-600) * 1px)
+    calc(var(--primitives-layout-spacing-300) * 1px)
+    calc(var(--primitives-layout-spacing-900) * 1px);
+  max-inline-size: 44rem;
+  margin-inline: auto;
+}
+
+.ex-states-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: calc(var(--primitives-layout-spacing-200) * 1px);
+}
+
+/* The heading a replaced view hands focus to (../focus.ts): where the
+   keyboard starts from, not a control, so it shows no ring. */
+.ex-states-title:focus {
+  outline: none;
+}

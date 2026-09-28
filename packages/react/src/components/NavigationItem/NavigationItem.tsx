@@ -54,15 +54,19 @@ const navigationItemVariants = cva(
         density: "compact",
         className: "min-h-11 px-2.5 py-1.5 text-sm",
       },
+      // One label size for every rail tile, 11px as CategoryTile's and
+      // Counter's (decision 36). A dashboard rail widens its tiles with
+      // `className="w-24"`: in a 72px tile no legible size fits a word as
+      // long as "Configuration".
       {
         placement: "rail",
         density: "default",
-        className: "min-h-[72px] w-[72px] px-2 py-2 text-xs",
+        className: "min-h-[72px] w-[72px] px-2 py-2 text-[11px]",
       },
       {
         placement: "rail",
         density: "compact",
-        className: "min-h-16 w-16 px-1.5 py-1.5 text-xs",
+        className: "min-h-16 w-16 px-1.5 py-1.5 text-[11px]",
       },
     ],
     defaultVariants: {
@@ -198,10 +202,12 @@ const NavigationItem = React.forwardRef<HTMLElement, NavigationItemProps>(
               // A rail is narrow on purpose, and truncating there loses the
               // word rather than shortening it: "Overvi…", "Wayfin…". Two
               // lines fit the 72px tile and the Cloud Dashboard already wraps
-              // "SDK Configuration" this way. Elsewhere the row is wide and a
-              // single truncated line is the right compromise.
+              // "SDK Configuration" this way. A 14px line keeps a two-line
+              // tile 72px tall, as a one-line tile is; the 16px line made it
+              // 76. Elsewhere the row is wide and a single truncated line is
+              // the right compromise.
               isRail
-                ? "line-clamp-2 max-w-full text-balance leading-4"
+                ? "line-clamp-2 max-w-full text-balance leading-[14px]"
                 : "flex-1 truncate",
             )}
           >

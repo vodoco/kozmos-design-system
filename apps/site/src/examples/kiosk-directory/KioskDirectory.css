@@ -1,0 +1,97 @@
+/* Kiosk directory: a landscape screen in three columns — the directory, the
+   map, the place — and the attract screen over it all. Layout only; the
+   parts are Kozmos's. */
+
+.ex-kiosk {
+  position: relative;
+  block-size: 100%;
+  display: grid;
+  /* The directory column stays wide enough for four category tiles with
+     their names whole: the panel's grid is four columns at any width
+     (GAPS.md, GAP-35). */
+  grid-template-columns: minmax(22rem, 24rem) minmax(0, 1fr) minmax(
+      20rem,
+      24rem
+    );
+  background: var(--primitives-colors-background-50);
+}
+
+.ex-kiosk-side,
+.ex-kiosk-panel {
+  min-block-size: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: calc(var(--primitives-layout-spacing-300) * 1px);
+  padding: calc(var(--primitives-layout-spacing-300) * 1px);
+}
+
+.ex-kiosk-map {
+  position: relative;
+  min-block-size: 0;
+  padding: calc(var(--primitives-layout-spacing-300) * 1px) 0;
+}
+
+.ex-kiosk-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.ex-kiosk-pin {
+  position: absolute;
+  left: var(--pin-x);
+  top: var(--pin-y);
+  transform: translate(-50%, -100%);
+}
+
+.ex-kiosk-you {
+  position: absolute;
+  left: var(--pin-x);
+  top: var(--pin-y);
+  transform: translate(-50%, -50%);
+}
+
+/* The route's stand-in dots, in the theme's colour (GAPS.md, GAP-33). */
+.ex-kiosk-dot {
+  position: absolute;
+  left: var(--dot-x);
+  top: var(--dot-y);
+  inline-size: calc(var(--primitives-layout-sizing-100) * 1px);
+  block-size: calc(var(--primitives-layout-sizing-100) * 1px);
+  border-radius: calc(var(--semantics-radius-pill) * 1px);
+  background: var(--primitives-colors-theme-600);
+  transform: translate(-50%, -50%);
+}
+
+.ex-kiosk-attract {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: calc(var(--primitives-layout-spacing-600) * 1px);
+}
+
+/* A kiosk is a fixed screen; on anything narrower, the columns stack. */
+@media (max-width: 64rem) {
+  .ex-kiosk {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(24rem, 1fr) auto;
+    overflow: auto;
+  }
+
+  /* Stacked, the columns keep their content height: with a minimum of zero
+     the auto rows would shrink to fit the canvas and the tiles would spill
+     over the map. */
+  .ex-kiosk-side,
+  .ex-kiosk-panel {
+    min-block-size: auto;
+    overflow: visible;
+  }
+}
+
+/* The panel takes focus when its view changes (a place replaces the list);
+   it is where the keyboard starts from, not a control, so it shows no ring. */
+.ex-kiosk-panel:focus,
+.ex-kiosk-title:focus {
+  outline: none;
+}
