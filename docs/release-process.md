@@ -134,7 +134,8 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    tested main, not a moving checkout.
 5. Check each package version, integrity and dist-tag (the script verifies these after
    each publish), then from the registry: `npm view`, and a clean install into an empty
-   project. Then `pnpm release:tag <sha>` for the tags and GitHub Releases.
+   project. Then `pnpm release:tag <sha>` for the tags and GitHub Releases; it refuses a
+   commit that no successful Release run published, or whose versions npm lacks.
 
 ## Failure and recovery
 

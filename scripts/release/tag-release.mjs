@@ -11,6 +11,10 @@
 // working tree. Tags are `<package>@<version>`, as Changesets names them;
 // dependencies are released first and the React package is marked Latest.
 // A release that already exists is left as it is, so running it twice is safe.
+//
+// It tags only what was published from <sha>: a successful Release run for
+// that commit, and every planned version on npm. npm keeps no commit for a
+// tarball publish (no gitHead), so the run is the link between the two.
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -70,7 +74,32 @@ export function releasesAt(sha, git) {
   return entries.sort((a, b) => Number(a.latest) - Number(b.latest));
 }
 
-function main() {
+/**
+ * Refuses unless `runs` (release.yml's runs for `sha`) holds a successful one
+ * and `getPackage(name)` shows every entry's version on npm.
+ */
+export async function assertPublished(sha, entries, runs, getPackage) {
+  const run = runs.find(
+    (r) =>
+      r.head_sha === sha &&
+      r.path === ".github/workflows/release.yml" &&
+      r.conclusion === "success",
+  );
+  if (!run)
+    throw new Error(
+      `No successful Release run for ${sha}: tag a release after it has published, never before`,
+    );
+  const missing = [];
+  for (const { name, version, tag } of entries)
+    if (!(await getPackage(name))?.versions?.[version]) missing.push(tag);
+  if (missing.length)
+    throw new Error(
+      `npm does not have ${missing.join(", ")}, although run ${run.id} succeeded; inspect before tagging`,
+    );
+  return run;
+}
+
+async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
   const sha = args.find((arg) => /^[0-9a-f]{40}$/.test(arg));
@@ -86,7 +115,42 @@ function main() {
     });
   const gh = (ghArgs, options = {}) =>
     execFileSync("gh", ghArgs, { encoding: "utf8", ...options });
-  for (const entry of releasesAt(sha, git)) {
+  const entries = releasesAt(sha, git);
+  let run;
+  try {
+    run = await assertPublished(
+      sha,
+      entries,
+      JSON.parse(
+        gh([
+          "api",
+          `repos/${REPOSITORY}/actions/workflows/release.yml/runs?head_sha=${sha}&per_page=100`,
+        ]),
+      ).workflow_runs,
+      async (name) => {
+        const response = await fetch(
+          `https://registry.npmjs.org/${encodeURIComponent(name)}`,
+          {
+            signal: AbortSignal.timeout(30000),
+            headers: { "Cache-Control": "no-cache" },
+          },
+        );
+        if (response.status === 404) return null;
+        if (!response.ok)
+          throw new Error(
+            `Registry lookup failed: ${name}, HTTP ${response.status}`,
+          );
+        return response.json();
+      },
+    );
+  } catch (error) {
+    console.error(`Refused: ${error.message}`);
+    process.exit(1);
+  }
+  console.log(
+    `Release run ${run.id} published ${sha.slice(0, 8)}; npm has every version.`,
+  );
+  for (const entry of entries) {
     let exists = true;
     try {
       gh(["release", "view", entry.tag, "--repo", REPOSITORY], {
@@ -131,4 +195,4 @@ function main() {
 
 // Run as a command, not when imported (tests, `node -e`, where argv[1] is unset).
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
-  main();
+  await main();
