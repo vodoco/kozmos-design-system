@@ -168,7 +168,7 @@ value it accepts — these are the only values that compile.
 | Component                 | iOS | Android | Variants                                                                                                                           |
 | ------------------------- | :-: | :-----: | ---------------------------------------------------------------------------------------------------------------------------------- |
 | **AICompanionPanel**      |  —  |    —    | —                                                                                                                                  |
-| **AIInputBar**            |  —  |    —    | —                                                                                                                                  |
+| **AIInputBar**            |  —  |    —    | `voiceState`: idle \| connecting \| listening \| speaking \| unavailable \| error                                                  |
 | **AIMessage**             |  —  |    —    | `status`: complete \| streaming \| timedOut                                                                                        |
 | **AIMessageList**         |  —  |    —    | —                                                                                                                                  |
 | **AISearchButton**        | ✅  |   ✅    | —                                                                                                                                  |
