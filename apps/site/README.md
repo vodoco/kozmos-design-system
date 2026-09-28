@@ -103,9 +103,10 @@ server after rebuilding if it predates a change to `serve-static.mjs`.
 
 **What is on the page is Kozmos.** Every visible part is a component from
 `@kozmos-ds/react`; every colour, radius, shadow, size and spacing value is a
-Kozmos token. It is the rule `docs/ds-handoff.md` §11 set for examples,
-applied to the whole site, for the same reason: the site is the best test the
-system gets before it is published, and a workaround destroys the evidence.
+Kozmos token. It is the rule Kozmos sets for its examples (only what the
+design system exports, its tokens and its roles), applied to the whole site,
+for the same reason: the site is the best test the system gets before it is
+published, and a workaround destroys the evidence.
 
 One allowance, decided on 2026-09-21: **site CSS may set typography from the
 typography tokens** — a size, line height, family or spacing named by a token

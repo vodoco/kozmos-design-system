@@ -63,7 +63,7 @@ Anything else is given from the repository root. Line numbers are those of
   wherever its owner says; the site rebases afterwards (its README,
   "Keeping up with the component branch").
 - **Parity:** a part that exists in SwiftUI, Compose or Figma changes there
-  too, as `docs/ds-handoff.md` and `pnpm components:contract:check` require.
+  too, as `pnpm components:contract:check` requires.
 - **CI:** everything the workflow runs must stay green — the main checks are
   on the site at `/get-started#checks` (`pnpm lint && pnpm build && pnpm
 test`, the contract, token, class, install, Figma, browser, Storybook, iOS

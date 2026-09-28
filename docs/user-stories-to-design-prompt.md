@@ -6,8 +6,7 @@ pastes into a new chat; the chat then reads this file and does the work.
 
 ## 0 · What to paste
 
-> Read `docs/user-stories-to-design-prompt.md` completely and follow it. Then read
-> `docs/ds-handoff.md` §0–§2, §5, §8 and §11.
+> Read `docs/user-stories-to-design-prompt.md` completely and follow it. Then read `AGENTS.md`.
 >
 > The user stories: <attached | pasted below | path | Drive link>.
 > Target: <platform(s) and form factor — e.g. iOS phone; web desktop; both>.
@@ -37,10 +36,10 @@ engineering team can act on, **using the Kozmos design system as it is**:
 5. a functional prototype built from `@kozmos-ds/react` with mock data, that the flows drive;
 6. a handoff document that carries all of it, plus the gaps the design system has.
 
-The gaps are a deliverable, not a failure. The rule that makes this exercise worth anything is
-`docs/ds-handoff.md` §11: **only what the design system exports, its tokens and its roles**. A
-workaround hides exactly the evidence being collected. A part that Kozmos cannot express is
-recorded, shown as a labelled placeholder, and asked about.
+The gaps are a deliverable, not a failure. The rule that makes this exercise worth anything is the
+one every Kozmos example follows: **only what the design system exports, its tokens and its
+roles**. A workaround hides exactly the evidence being collected. A part that Kozmos cannot
+express is recorded, shown as a labelled placeholder, and asked about.
 
 ## 2 · Where the design system is
 
@@ -53,19 +52,19 @@ how something _outside_ the repository consumes it. Pick the case that applies.
 `https://github.com/vodoco/kozmos-design-system.git` (public). The packages resolve as
 `workspace:*`; nothing changes here when they are published.
 
-| What                    | Where                                                                                                                                                                                                                                                                        |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The components          | `packages/react/src/components/` — 98 in `STATUS.md` (Core 69 · Code-only 5 · Product/SDK 22 · Platform 2); the barrel is `packages/react/src/index.ts`                                                                                                                      |
-| Props and variants      | `docs/figma-library-manifest.json` → `components.items[]` (props, variant values, Code Connect node); regenerate with `pnpm figma:manifest`                                                                                                                                  |
-| Tokens and roles        | `packages/tokens/src/tokens-light.json`, `tokens-dark.json`; the roles and the one rule in `docs/style-playbook.md`                                                                                                                                                          |
-| Icons                   | `@kozmos-ds/icons` (`kozmosIconNames`); the set is small — count it before promising an icon                                                                                                                                                                                 |
-| Presentation models     | `@kozmos-ds/product-contracts` (`POIPresentation`, `RouteOptionPresentation`, `FloorPresentation`…); the ownership boundary in `docs/product-sdk-react-handoff.md`                                                                                                           |
-| Native                  | `packages/ios` (SwiftUI, package `Kozmos`), `packages/android` (Compose) — the same component names                                                                                                                                                                          |
-| Storybook               | `apps/docs` (`storybook-react` in `.claude/launch.json`, port 6006); examples in `apps/docs/stories/examples/`                                                                                                                                                               |
-| Figma Core Library      | `Kozmos DS - Core Library`, file `Yj4O8p6Y9h2Sa9zJVoAiVY`; Components page `4:4`, Examples page `286:1601`; 95 sets; painted by `figma/foundations-importer`                                                                                                                 |
-| Code Connect            | 92 of 98 linked to that file (`figma.linked.config.json`); the native configs under `packages/{ios,android}/`                                                                                                                                                                |
-| What Kozmos still lacks | `docs/ds-scope-2026-09-12.md` §4, `docs/product-ui-coverage-2026-09-14.md` §3–§4, the gap reports listed in `docs/README.md`                                                                                                                                                 |
-| Unmerged work           | branch `claude/pointr-browse-repairs` (worktree `/private/tmp/kozmos-browser-compat.uqPMBD`, pushed, nothing merged): the navigation parts, the sheet detents, `CategoryField`, `AISearchButton`, glass and category tokens. Its handoff: `docs/handoff-2026-09-21.md` there |
+| What                    | Where                                                                                                                                                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The components          | `packages/react/src/components/` — 98 in `STATUS.md` (Core 69 · Code-only 5 · Product/SDK 22 · Platform 2); the barrel is `packages/react/src/index.ts`                                                     |
+| Props and variants      | `docs/figma-library-manifest.json` → `components.items[]` (props, variant values, Code Connect node); regenerate with `pnpm figma:manifest`                                                                 |
+| Tokens and roles        | `packages/tokens/src/tokens-light.json`, `tokens-dark.json`; the roles and the one rule in `docs/style-playbook.md`                                                                                         |
+| Icons                   | `@kozmos-ds/icons` (`kozmosIconNames`); the set is small — count it before promising an icon                                                                                                                |
+| Presentation models     | `@kozmos-ds/product-contracts` (`POIPresentation`, `RouteOptionPresentation`, `FloorPresentation`…); the ownership boundary in `docs/product-sdk-react-handoff.md`                                          |
+| Native                  | `packages/ios` (SwiftUI, package `Kozmos`), `packages/android` (Compose) — the same component names                                                                                                         |
+| Storybook               | `apps/docs` (`storybook-react` in `.claude/launch.json`, port 6006); examples in `apps/docs/stories/examples/`                                                                                              |
+| Figma Core Library      | `Kozmos DS - Core Library`, file `Yj4O8p6Y9h2Sa9zJVoAiVY`; Components page `4:4`, Examples page `286:1601`; 95 sets; painted by `figma/foundations-importer`                                                |
+| Code Connect            | 92 of 98 linked to that file (`figma.linked.config.json`); the native configs under `packages/{ios,android}/`                                                                                               |
+| What Kozmos still lacks | `apps/site/GAPS.md` (numbered gaps, shown on the website's `/roadmap`), `docs/component-variant-gap-analysis.md` (variant axes per platform), `docs/sdk-module-primitives.md` (what the SDK's modules need) |
+| Unmerged work           | none: `claude/pointr-browse-repairs` (the navigation parts, the sheet detents, `CategoryField`, `AISearchButton`, glass and category tokens) has merged into `main`                                         |
 
 Build before reading anything at runtime: `pnpm install --frozen-lockfile` then
 `pnpm --filter "@kozmos-ds/react..." build` (a fresh worktree has no built packages).
@@ -85,11 +84,11 @@ not in git — the account running Figma needs access to `Yj4O8p6Y9h2Sa9zJVoAiVY
 As of 2026-09-21 the registry has nothing: `npm view @kozmos-ds/react` is a 404, and `release.yml`
 skips publish while `NPM_TOKEN` is unset. When that changes, a consumer installs
 `@kozmos-ds/react @kozmos-ds/tokens @kozmos-ds/icons @kozmos-ds/product-contracts` (`@kozmos-ds/vue` is private
-by decision §5.15), imports `@kozmos-ds/react/dist/style.css`, wraps the app in `ThemeProvider`, and
-reads the READMEs that ship in the packages (the repository stays private, §5.21). In a prototype
-under `apps/`, the only line that changes is `"@kozmos-ds/react": "workspace:*"` → the published
-version. Everything else in this brief is unchanged, because the docs, the manifest and the Figma
-library live in the repository either way.
+and not published), imports `@kozmos-ds/react/dist/style.css`, wraps the app in `ThemeProvider`, and
+reads the READMEs that ship in the packages. In a prototype under `apps/`, the only line that
+changes is `"@kozmos-ds/react": "workspace:*"` → the published version. Everything else in this
+brief is unchanged, because the docs, the manifest and the Figma library live in the repository
+either way.
 
 ## 3 · What Olcay provides with the paste
 
@@ -125,8 +124,8 @@ for the Figma part only; the rest of the work continues regardless.
    Work in a `git worktree` under the scratchpad on a new branch `claude/<slug>-design`; the shared
    checkout stays on `main`.
 4. **The build is green.** `pnpm install --frozen-lockfile && pnpm --filter "@kozmos-ds/react..." build
-&& pnpm --filter @kozmos-ds/react typecheck`. A broad, uniform type error is the install, not the
-   code (§8 of the handoff).
+&& pnpm --filter @kozmos-ds/react typecheck`. A broad, uniform type error in files nobody touched
+   is the install, not the code: reinstall, or build the same commit elsewhere, before believing it.
 5. **The stories are read** — count them and echo the count and their titles back, so a missing
    page is caught in the first message.
 6. **The Figma REST token** is in `.env` (`FIGMA_ACCESS_TOKEN`, expires 2026-11-24; never print
@@ -179,18 +178,16 @@ verdict:
 | **missing** | no Kozmos equivalent — a gap, shown as a labelled placeholder, never approximated                                       |
 
 Look things up, in this order: `docs/figma-library-manifest.json` (props, variants),
-`docs/product-ui-coverage-2026-09-14.md` §3 (30 control groups already given verdicts),
 `docs/product-sdk-react-handoff.md` (what a Product / SDK component owns and what the app owns),
-`docs/ds-scope-2026-09-12.md` §4 and the gap reports (what is already known missing — do not
-rediscover it, cite it). Prefer the Product / SDK set (`POIDetailPanel`, `POIResultList`,
+`apps/site/GAPS.md` and `docs/component-variant-gap-analysis.md` (what is already known missing —
+do not rediscover it, cite it). Prefer the Product / SDK set (`POIDetailPanel`, `POIResultList`,
 `FloorSelector`, `RoutePreviewPanel`, `AdaptiveMapShell`, `BrowseCategoriesPanel`…) over composing
 Core parts into a lookalike.
 
-Every **missing** and every **partial** goes on the gap list with the four things §11 asks for:
-the part and the story that needs it; what was tried; the lane it belongs to (Core, Product / SDK,
-or an example); the evidence (how often the product draws it, from the coverage scan where it
-already counted it, or the count from these stories). Gaps are numbered `GAP-01`… and cited by
-number everywhere they appear.
+Every **missing** and every **partial** goes on the gap list with four things: the part and the
+story that needs it; what was tried; the lane it belongs to (Core, Product / SDK, or an example);
+the evidence (how often the product draws it, or the count from these stories). Gaps are
+numbered `GAP-01`… and cited by number everywhere they appear.
 
 ### 5.3 · The flows
 
@@ -211,11 +208,11 @@ Figma prototype and the code cannot drift on what a screen does.
 
 ### 5.4 · The Figma file
 
-**A new design file, never the Core Library.** Decision §5.8: the library file is painted by the
-plugin and is not written by hand or by MCP. Its components are instantiated _from_ it; nothing in
-it is touched, and **Rebuild** is never run (§5.4 of the handoff). Load `figma:figma-create-new-file`
-before `create_new_file`, and `figma:figma-use` (with `figma:figma-generate-design`) before any
-`use_figma` call.
+**A new design file, never the Core Library.** The library file is painted by the plugin
+(`figma/foundations-importer`) and is not written by hand or by MCP. Its components are instantiated
+_from_ it; nothing in it is touched, and **Rebuild** is never run: it mints new node ids, and Code
+Connect pins the old ones. Load `figma:figma-create-new-file` before `create_new_file`, and
+`figma:figma-use` (with `figma:figma-generate-design`) before any `use_figma` call.
 
 - **Name** `<Project> — user stories <date> (Kozmos)`, in the destination from §3.
 - **Pages** `Cover` (the stories table and the legend), `Flows`, one `Screens / <epic>` page per
@@ -234,11 +231,11 @@ before `create_new_file`, and `figma:figma-use` (with `figma:figma-generate-desi
   says so; the transitions the library's motion tokens name, otherwise instant. Read the reactions
   back through `use_figma` after wiring and list them in the handoff; a reaction nobody read back
   does not count as built.
-- **Traps that have cost real time** (the memory files in the handoff's §8): a page reads empty
-  until `setCurrentPageAsync`; a hidden instance reads layerless; imported variables vanish
-  between calls; opacity is lost on bind; `clone()` of a section child lands on the page; text
-  boxes set to auto-height wrap; the `⌘Q` rule applies to the plugin, not to this. When a look
-  cannot be explained by anything the API can read, ask before changing it.
+- **Traps that have cost real time**: a page reads empty until `setCurrentPageAsync`; a hidden
+  instance reads layerless; imported variables vanish between calls; opacity is lost on bind;
+  `clone()` of a section child lands on the page; text boxes set to auto-height wrap; relaunching
+  Figma (⌘Q) to load a changed plugin applies to the plugin, not to this. When a look cannot be
+  explained by anything the API can read, ask before changing it.
 
 If a story needs a component the library does not have, the Figma answer is the gap placeholder —
 not a new component drawn in the product file. A component change is a design-system PR, proposed
@@ -265,7 +262,7 @@ click-through; this is where behaviour lives.
   app and serve `dist`, or the wrong tree is being reviewed), then: `read_console_messages`
   clean; axe on every screen (`@axe-core/playwright` is in the repo); widths 320, 390, 1024 and
   1440 where the target is the web; dark mode; a keyboard walk of each flow. Screenshots to
-  `docs/<slug>-assets/`, referenced from the handoff.
+  `apps/<slug>-prototype/screenshots/`, referenced from the handoff.
 - **A flow test** under the app (`scripts/` or `tests/`, Playwright): each flow's edges as steps.
   Break one route on purpose and run it once so it is seen to fail; then fix and run it green. A
   green that never failed proves nothing.
@@ -283,10 +280,10 @@ change, because this brief changes no package; if one does, that is a finding.
 
 ### 5.6 · The handoff document
 
-`docs/<slug>-handoff-<date>.md`, indexed in `docs/README.md` under **Current**. Written for two
-readers at once: the person who will build this for real, and the person who will change the
-prototype or the Figma file themselves — so every number carries the command that measured it, and
-every change carries how to redo it by hand.
+`apps/<slug>-prototype/HANDOFF.md`, beside the prototype it describes: dated handoffs and session
+notes do not go in `docs/`. Written for two readers at once: the person who will build this for
+real, and the person who will change the prototype or the Figma file themselves — so every number
+carries the command that measured it, and every change carries how to redo it by hand.
 
 1. **The one-paragraph answer**: what the stories asked for, what the design system covers, the
    count of covered / partial / missing parts, the one or two gaps that matter most.
@@ -310,13 +307,15 @@ every change carries how to redo it by hand.
 
 ## 6 · Rules in force — do not relax them
 
-- **Only the design system.** `docs/ds-handoff.md` §11: what `@kozmos-ds/react` exports, its tokens,
-  its roles. A missing part is a labelled gap, reported and asked about; never approximated, never
-  deferred silently. A partial is built and its deviation recorded.
+- **Only the design system**: what `@kozmos-ds/react` exports, its tokens, its roles. A missing
+  part is a labelled gap, reported and asked about; never approximated, never deferred silently.
+  A partial is built and its deviation recorded.
 - **The Core Library is read-only in this work.** No edits, no Rebuild, no page added to it. The
   design lives in a new file; the system's changes are PR candidates in the handoff.
-- **§5 of the handoff is decided — do not reopen it.** The roles, the emotion axis, the brand
-  blue, the lanes, the slot rule, the plugin paints the file.
+- **The system's settled decisions are not reopened**: the roles (radius, border, elevation), the
+  `emotion` axis, the brand colour at `theme/500`, the lanes (Core is domain-neutral; Product / SDK
+  compositions are examples), the slot rule (only a `SLOT` node carries a slot binding), and the
+  plugin painting the Core Library.
 - **The scope is the design and its prototype**, not the product: no SDK integration, no map
   renderer, no API. `MAP-595` and `apps/mapscale-review` stay parked.
 - **Measure, never eyeball**: REST, DOM, computed styles, counts — and the command beside every
@@ -344,7 +343,7 @@ Done when every item below is true or is named as not done, with the reason:
 - [ ] the prototype runs, its flow test failed once and passes now, axe and the console are clean,
       the screenshots are in the repo;
 - [ ] the gates in §5.5 pass and their output is in the handoff;
-- [ ] the handoff document is indexed in `docs/README.md`;
+- [ ] the handoff document is in `apps/<slug>-prototype/`, beside the prototype;
 - [ ] the self-audit is written and its findings are fixed or listed.
 
 The closing report, in the chat, in this order and nothing else: what was built, with links (the
@@ -356,8 +355,7 @@ them when told. A handoff a new chat can start from is part of done.
 ## 8 · When this brief is stale
 
 The dated facts: 98 components, 92 Code Connect links, 95 Figma sets, 641 + 641 tokens,
-packages at `0.0.1` and unpublished, `claude/pointr-browse-repairs` unmerged, Figma MCP read-only
-in the writing session. Re-measure rather than trust: `STATUS.md` (`pnpm exec tsx
+packages at `0.0.1` and unpublished, Figma MCP read-only in the writing session. Re-measure rather than trust: `STATUS.md` (`pnpm exec tsx
 scripts/skills/check-completion.ts --check`), `pnpm figma:manifest`, `pnpm figma:verify`,
 `npm view @kozmos-ds/react version`, `git branch -r --merged origin/main`. If a number here disagrees
 with a measurement, the measurement wins and this file gets the correction in the same commit.

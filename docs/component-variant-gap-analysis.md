@@ -119,8 +119,8 @@ Tree
 Two kinds of thing appear here. "component/set absent" means the platform has
 no such component at all — for Figma that is usually a painter nobody has
 written yet. "missing axes" means the component exists and cannot express an
-axis React has, which is the more interesting gap: `Link` and `Spinner` are the
-standing examples, both recorded in `ds-handoff.md` §4.4.
+axis React has, which is the more interesting gap: `Link` is the standing
+example, its `variant` on iOS and Android.
 
 ### Corrections made while validating
 
