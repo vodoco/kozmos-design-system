@@ -306,7 +306,10 @@ would otherwise land after the new page had taken it.
 **Focus and announcements in the examples.** Where a view replaces another
 in place — a step, a place's details, a confirmation — the control that was
 pressed goes with it, so `src/examples/focus.ts` moves focus to the new
-view's heading or panel. A status message goes into a region that is always
+view's heading or panel. In a map shell's panel it puts the panel's scroller
+(`data-kozmos-scroller`) back at its top and focuses the view without
+scrolling: focus alone scrolled a tall list's top edge to the scroller's, and
+the panel's inset with it. A status message goes into a region that is always
 on the page (a `Box role="status"`, or a `Text`), and the `Alert` drawn
 inside it keeps its default, no live role of its own: a live region that
 arrives with its message is often missed (GAP-51). Empty, the region leaves

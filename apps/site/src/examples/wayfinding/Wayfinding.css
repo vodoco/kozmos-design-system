@@ -104,32 +104,6 @@
   );
 }
 
-/* Focus moves to the list when the view changes, and Chromium and WebKit
-   scroll a tall view's top edge to the panel's scroll box, even in a sheet
-   that does not scroll at its height. The margin is what stays above the
-   list then, so it does not move: the box's own top padding, and in a side
-   panel the panel's 16 too, which sits inside the scroll box. Under a grip
-   the grip's row is outside it, and the shell sets a clearance only there,
-   so a clearance takes the panel's part to nothing. */
-.ex-way-list > .ex-way-panel-focus {
-  scroll-margin-block-start: calc(
-    max(
-        0px,
-        calc(
-          var(--primitives-layout-spacing-200) * 1px -
-            var(--kozmos-panel-inset-top, 0px)
-        )
-      ) +
-      max(
-        0px,
-        calc(
-          var(--kozmos-panel-inset-top, 0px) -
-            var(--kozmos-panel-clearance-top, 0px) * 1000
-        )
-      )
-  );
-}
-
 /* A live region stays on the page; empty, it leaves the flow. */
 .ex-way-live:empty {
   position: absolute;

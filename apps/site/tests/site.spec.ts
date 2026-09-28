@@ -2675,8 +2675,10 @@ test.describe("venue explorer example", () => {
     page,
   }) => {
     // A side panel at 1280, a sheet with its grip at 390. A short list shows
-    // the holder's padding; a list long enough to scroll shows its scroll
-    // margin, since focus moving into it scrolls its top to the panel's.
+    // the holder's padding. A list long enough to scroll takes focus as the
+    // results replace the categories, and focus alone would scroll its top
+    // to the panel's scroll box, padding and all: ../focus.ts puts the box
+    // back at its top and focuses the list where it is.
     for (const width of [1280, 390]) {
       for (const query of ["book", "o"]) {
         await page.setViewportSize({ width, height: 900 });
@@ -3132,7 +3134,9 @@ test.describe("phone search example", () => {
   test("the list of places sits in the sheet as the shell's own parts do", async ({
     page,
   }) => {
-    // A short list shows the holder's padding, a long one its scroll margin.
+    // A short list shows the holder's padding; a long one, which takes focus
+    // as the results replace the categories, that focus does not scroll it
+    // (../focus.ts).
     for (const query of ["book", "o"]) {
       await page.goto("/examples/phone-search");
       await hydrated(page);
