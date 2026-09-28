@@ -297,5 +297,15 @@ class ProductContractsTest {
         assertEquals("permission-denied", KozmosUserLocationState.PermissionDenied.value)
     }
 
+    @Test
+    fun theLocationStateCarriesAPausedHeading() {
+        // Decision 45 (Olcay, 2026-09-28): heading is remembered while the map
+        // is moved away — the SDK's rotational Off — and the next press resumes
+        // it. One more value on the wire, "heading-paused".
+        val paused = KozmosUserLocationState.values().firstOrNull { it.value == "heading-paused" }
+        assertEquals("heading-paused", paused?.value)
+        assertEquals(8, KozmosUserLocationState.values().size)
+    }
+
     // endregion
 }

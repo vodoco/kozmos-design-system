@@ -34,6 +34,7 @@ const locationStates: [UserLocationState, string][] = [
   ["locating", "Locating"],
   ["following", "On"],
   ["heading", "On"],
+  ["heading-paused", "Off"],
   ["stale", "Last known"],
   ["permission-denied", "No access"],
   ["unavailable", "No Location"],
@@ -45,8 +46,9 @@ const locationStates: [UserLocationState, string][] = [
  * while on. The marks are the Location Tracking Buttons revamp's: the outline
  * pointer while the map is not following, the solid pointer with its cone
  * while it follows, the upright pointer with the turning arc for heading —
- * "On", as following reads — and the pointer struck through when there is no
- * position, which reads its state alone, on one line.
+ * "On", as following reads — the upright pointer in outline while heading is
+ * paused by a pan (decision 45), and the pointer struck through when there is
+ * no position, which reads its state alone, on one line.
  */
 export const LocationStates: Story = {
   render: () => (

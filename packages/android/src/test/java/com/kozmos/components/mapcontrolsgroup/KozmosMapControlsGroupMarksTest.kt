@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.NearMeDisabled
 import com.kozmos.contracts.KozmosUserLocationState
@@ -28,6 +29,9 @@ class KozmosMapControlsGroupMarksTest {
             KozmosUserLocationState.Stale to Icons.Outlined.NearMe,
             KozmosUserLocationState.Following to Icons.Filled.NearMe,
             KozmosUserLocationState.Heading to Icons.Filled.Navigation,
+            // Decision 45: heading remembered while the map is moved away — the
+            // SDK's rotational Off, the upright pointer in outline.
+            KozmosUserLocationState.HeadingPaused to Icons.Outlined.Navigation,
             KozmosUserLocationState.PermissionDenied to Icons.Outlined.NearMeDisabled,
             KozmosUserLocationState.Unavailable to Icons.Outlined.NearMeDisabled
         )

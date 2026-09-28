@@ -505,11 +505,16 @@ public enum KozmosMapReadiness: String, Sendable, Hashable, CaseIterable {
     case unsupported
 }
 
+/// What the map is doing with the visitor's position, as the location control
+/// shows it. `headingPaused` is heading remembered while the map has been moved
+/// away from them (decision 45): the SDK's rotational Off. The next press goes
+/// straight back to `heading`, which is the product's to do.
 public enum KozmosUserLocationState: String, Sendable, Hashable, CaseIterable {
     case off
     case locating
     case following
     case heading
+    case headingPaused = "heading-paused"
     case permissionDenied = "permission-denied"
     case stale
     case unavailable

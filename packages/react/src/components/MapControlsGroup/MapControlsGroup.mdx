@@ -26,9 +26,10 @@ Every control wears the SDK's map-control surface — `MapControlButton`'s: a
 one such surface, its buttons its segments.
 
 `locationState` is a `UserLocationState` — `off`, `locating`, `following`,
-`heading`, `permission-denied`, `stale`, or `unavailable`. Several of these are
-not errors and should not read as failures: `locating` is in progress, and
-`stale` still has a usable last-known fix.
+`heading`, `heading-paused`, `permission-denied`, `stale`, or `unavailable`.
+Several of these are not errors and should not read as failures: `locating` is
+in progress, `stale` still has a usable last-known fix, and `heading-paused` is
+heading waiting to resume.
 
 Pair `locationState` with a localized `locationStateLabel`. The visual treatment
 alone does not tell a screen reader user whether location is following, denied,
@@ -45,6 +46,7 @@ Tracking Buttons revamp:
 | `locating`                              | the outline pointer, with the button's spinner            |
 | `following`                             | `LocationFollowing` — the solid pointer and its cone      |
 | `heading`                               | `LocationHeading` — the upright pointer and the turn arc  |
+| `heading-paused`                        | `NavigationPointer02` — the upright pointer in outline    |
 | `permission-denied`, `unavailable`      | the pointer struck through                                |
 
 The marks are the SDK's 24px; the two symbols come from `@kozmos-ds/icons` and
@@ -78,6 +80,18 @@ the mode changes. Ask for that with `locationRevealOnChange` and
 relies on a fixed presentation sees nothing move. From following to heading the
 words stay "On", so nothing widens; the SDK says "Map Rotation: On" in a status
 message of its own, and a product that wants the same can show a `Toast`.
+
+### Heading is remembered
+
+When the map is turning with the visitor and they pan it away, the SDK keeps
+heading in mind (decision 45): the control shows the rotational Off — the
+upright pointer in outline, "Focus / Off" in the off grey — and the next press
+goes straight back to heading. Pass `locationState="heading-paused"` for it; a
+press is still the product's to act on, and it should bring `heading` back.
+
+A screen reader hears `locationHeadingPausedDescription` after the words —
+"Focus, Off, press to turn the map with you again" — so the difference from a
+plain `off` is not in the mark alone. The product translates it.
 
 ### Step-free during wayfinding
 
@@ -129,6 +143,7 @@ export function Example(
       locationLabel="Focus"
       locationStateLabel={stateLabel}
       locationHeadingDescription="map turns with you"
+      locationHeadingPausedDescription="press to turn the map with you again"
       locationLabelPlacement="stacked"
       locationRevealOnChange
     />
@@ -165,6 +180,7 @@ import { KozmosMapControlsGroup } from "@kozmos-ds/vue"
     locationLabel="Focus"
     :locationStateLabel="locationStateLabel"
     locationHeadingDescription="map turns with you"
+    locationHeadingPausedDescription="press to turn the map with you again"
     locationLabelPlacement="stacked"
     :locationRevealOnChange="true"
     @zoomIn="zoomIn"
@@ -202,6 +218,7 @@ struct MapControls: View {
             locationLabel: String(localized: "Focus"),
             locationStateLabel: stateLabel,
             locationHeadingDescription: String(localized: "map turns with you"),
+            locationHeadingPausedDescription: String(localized: "press to turn the map with you again"),
             locationRevealOnChange: true,
             locationLabelPlacement: .stacked
         )
@@ -266,6 +283,7 @@ fun MapControls(
             else -> "Off"
         },
         locationHeadingDescription = "map turns with you",
+        locationHeadingPausedDescription = "press to turn the map with you again",
         // Every name is the product's to translate.
         zoomInLabel = "Zoom in",
         zoomOutLabel = "Zoom out",

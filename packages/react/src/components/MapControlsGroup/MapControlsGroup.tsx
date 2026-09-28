@@ -9,6 +9,7 @@ import {
   LocationHeading,
   Minus,
   NavigationPointer01,
+  NavigationPointer02,
   NavigationPointerOff01,
   Plus,
 } from "@kozmos-ds/icons";
@@ -24,7 +25,9 @@ import { useKozmosAnalytics } from "../../utils/analytics";
  *
  * `locating` keeps the outline, as it always has, and the Button's spinner
  * says the rest. `stale` keeps it too: the revamp has no stale mark, and a
- * last-known fix is not following anything.
+ * last-known fix is not following anything. `heading-paused` is the revamp's
+ * rotational Off (434:31576): the upright pointer in outline, heading
+ * remembered while the map has been moved away (decision 45).
  *
  * The SDK's marks are 24 squares (decision 40, Tracking Indicator 434:31572).
  * The two symbols sit on a 36-unit canvas with the pointer in the middle 24,
@@ -36,6 +39,8 @@ function defaultLocationMark(state: UserLocationState): React.ReactNode {
       return <LocationFollowing size={36} />;
     case "heading":
       return <LocationHeading size={36} />;
+    case "heading-paused":
+      return <NavigationPointer02 />;
     case "permission-denied":
     case "unavailable":
       return <NavigationPointerOff01 />;
@@ -95,6 +100,14 @@ export interface MapControlsGroupProps extends React.HTMLAttributes<HTMLDivEleme
    * the product translates it.
    */
   locationHeadingDescription?: string;
+  /**
+   * What a paused heading adds to the name, for a screen reader: with
+   * `heading-paused` the control shows "Off", as off does, and the next press
+   * brings the turning map back (decision 45). Read after the words the
+   * control shows. Default "press to turn the map with you again"; the product
+   * translates it.
+   */
+  locationHeadingPausedDescription?: string;
   locationPresentation?: "icon-only" | "labelled";
   /**
    * The mark for any location state, in place of the group's own.
@@ -167,6 +180,7 @@ const MapControlsGroup = React.forwardRef<
       locationLabel = "Focus location",
       locationStateLabel,
       locationHeadingDescription = "map turns with you",
+      locationHeadingPausedDescription = "press to turn the map with you again",
       locationPresentation = "icon-only",
       locationIcons,
       locationRevealOnChange = false,
@@ -296,7 +310,9 @@ const MapControlsGroup = React.forwardRef<
               stateDescription={
                 locationState === "heading"
                   ? locationHeadingDescription
-                  : undefined
+                  : locationState === "heading-paused"
+                    ? locationHeadingPausedDescription
+                    : undefined
               }
               stateLabel={locationStateLabel}
               onClick={() => {
