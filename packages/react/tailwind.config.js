@@ -199,6 +199,8 @@ module.exports = {
         raised: "var(--semantics-elevation-raised)",
         floating: "var(--semantics-elevation-floating)",
         overlay: "var(--semantics-elevation-overlay)",
+        // The map controls' own, three layers: the SDK's (decision 40).
+        "map-control": "var(--semantics-elevation-map-control)",
       },
       transitionDuration: {
         DEFAULT: "calc(150ms * var(--semantics-motion-duration-scale, 1))", // Updated to semantics

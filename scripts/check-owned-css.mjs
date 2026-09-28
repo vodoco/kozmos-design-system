@@ -424,6 +424,436 @@ try {
           `right to left the replying dots sit ${dotsGap}px from the words`,
         );
       }
+      // Decision 40 (Olcay, 2026-09-28): the map controls take the SDK's
+      // current look, the Tracking Indicator of Pointr's Location Tracking
+      // Buttons (Figma ce7phRJR1sCkH6zT8EMH8I, 434:31572). A 48 square with a
+      // 16 corner, no stroke, the page's surface, three drop shadows and a
+      // 32px backdrop blur; its words bold 16 on a 16 line, two equal lines,
+      // grey while off and navy while on, with no primary edge. In both modes:
+      // the surface is what every map control promises, so it cannot live in
+      // the utility layer a host without @scope drops.
+      {
+        const where = `${mode} ${id}`;
+        // A computed box-shadow as layers, without the transparent zero
+        // layers a ring composes in when it is not drawn.
+        const layersOf = (boxShadow) =>
+          boxShadow === "none"
+            ? []
+            : boxShadow
+                .split(/,(?![^(]*\))/)
+                .map((layer) => {
+                  const rgba = layer.match(/rgba?\(([^)]*)\)/);
+                  const channels = rgba
+                    ? rgba[1].split(",").map((v) => parseFloat(v))
+                    : [0, 0, 0, 1];
+                  const lengths = layer
+                    .replace(/rgba?\([^)]*\)/, "")
+                    .match(/-?[\d.]+px/g)
+                    .map((v) => parseFloat(v));
+                  const [x, y, blur = 0, spread = 0] = lengths;
+                  return {
+                    rgb: channels.slice(0, 3),
+                    a: channels.length > 3 ? channels[3] : 1,
+                    x,
+                    y,
+                    blur,
+                    spread,
+                  };
+                })
+                .filter((layer) => layer.a > 0);
+        const sameLayers = (got, want) =>
+          got.length === want.length &&
+          got.every(
+            (layer, i) =>
+              layer.rgb.every((v, k) => v === want[i].rgb[k]) &&
+              Math.abs(layer.a - want[i].a) < 0.005 &&
+              layer.x === want[i].x &&
+              layer.y === want[i].y &&
+              layer.blur === want[i].blur &&
+              layer.spread === want[i].spread,
+          );
+        // A token as it resolves in this control's theme.
+        const tokenShadow = (testId, name) =>
+          page.getByTestId(testId).evaluate((node, name) => {
+            const probe = document.createElement("span");
+            probe.style.boxShadow = `var(${name})`;
+            node.append(probe);
+            const result = getComputedStyle(probe).boxShadow;
+            probe.remove();
+            return result;
+          }, name);
+        const elevation = layersOf(
+          await tokenShadow(
+            `${id}-map-surface`,
+            "--semantics-elevation-map-control",
+          ),
+        );
+        // The Figma file's own numbers, light theme ("Shadows/Foating
+        // Components BG", as the file spells it).
+        const sdkShadow = [
+          { rgb: [0, 0, 0], a: 0.16, x: 0, y: 8, blur: 8, spread: 0 },
+          { rgb: [0, 0, 0], a: 0.08, x: 0, y: 24, blur: 24, spread: 0 },
+          { rgb: [0, 0, 0], a: 0.12, x: 0, y: 0, blur: 32, spread: 0 },
+        ];
+        if (id === "nested")
+          assert(
+            sameLayers(elevation, sdkShadow),
+            `${where}: the map controls' elevation is not the SDK's three shadows in the light theme: ${JSON.stringify(elevation)}`,
+          );
+        else
+          assert(
+            elevation.length === 3 && !sameLayers(elevation, sdkShadow),
+            `${where}: the map controls' elevation does not follow the dark theme: ${JSON.stringify(elevation)}`,
+          );
+
+        const surface = page.getByTestId(`${id}-map-surface`);
+        const look = await surface.evaluate((node) => {
+          const s = getComputedStyle(node);
+          return {
+            size: [s.width, s.height],
+            minimum: [s.minWidth, s.minHeight],
+            radius: [
+              s.borderTopLeftRadius,
+              s.borderTopRightRadius,
+              s.borderBottomRightRadius,
+              s.borderBottomLeftRadius,
+            ],
+            border: [
+              s.borderTopWidth,
+              s.borderRightWidth,
+              s.borderBottomWidth,
+              s.borderLeftWidth,
+            ],
+            background: s.backgroundColor,
+            boxShadow: s.boxShadow,
+            backdrop: s.backdropFilter || s.webkitBackdropFilter,
+          };
+        });
+        assert.deepEqual(
+          look.size,
+          ["48px", "48px"],
+          `${where}: a map control is not the SDK's 48 square: ${JSON.stringify(look)}`,
+        );
+        assert(
+          look.minimum.every((length) => parseFloat(length) >= 44),
+          `${where}: a map control can shrink below the 44px target: ${JSON.stringify(look.minimum)}`,
+        );
+        assert.deepEqual(
+          look.radius,
+          ["16px", "16px", "16px", "16px"],
+          `${where}: a map control's corner is not 16: ${JSON.stringify(look.radius)}`,
+        );
+        assert.deepEqual(
+          look.border,
+          ["0px", "0px", "0px", "0px"],
+          `${where}: a map control draws a border: ${JSON.stringify(look.border)}`,
+        );
+        assert.equal(
+          look.background,
+          await value(`${id}-map-surface`, "--primitives-colors-background-0"),
+          `${where}: a map control is not the page's surface`,
+        );
+        assert(
+          sameLayers(layersOf(look.boxShadow), elevation),
+          `${where}: a map control does not cast the map controls' elevation, and nothing else — no ring for an edge: ${look.boxShadow}`,
+        );
+        assert.equal(
+          look.backdrop,
+          "blur(32px)",
+          `${where}: a map control does not blur the map behind it by 32px`,
+        );
+
+        // Focused from the keyboard, the ring shows on the borderless
+        // surface, in the ring's colour and at 3:1 or more against it, and
+        // the elevation stays under it. Tabbed to from the control before it:
+        // this page has been clicked, and Firefox then shows a programmatic
+        // focus without its ring, whatever key went before.
+        await page.getByTestId(`${id}-map-control-labelled`).focus();
+        await page.keyboard.press("Tab");
+        const focused = await surface.evaluate((node) => ({
+          visible:
+            node === document.activeElement && node.matches(":focus-visible"),
+          boxShadow: getComputedStyle(node).boxShadow,
+        }));
+        await surface.blur();
+        assert.equal(focused.visible, true, `${where}: no keyboard focus`);
+        const ringColour = await value(
+          `${id}-map-surface`,
+          "--primitives-colors-theme-600",
+        );
+        const channels = (colour) =>
+          colour
+            .match(/[\d.]+/g)
+            .slice(0, 3)
+            .map((v) => parseFloat(v));
+        const focusedLayers = layersOf(focused.boxShadow);
+        const ring = focusedLayers.find(
+          (layer) =>
+            layer.spread >= 2 &&
+            layer.rgb.every((v, k) => v === channels(ringColour)[k]),
+        );
+        assert(
+          ring,
+          `${where}: a focused map control draws no ring in the ring's colour: ${focused.boxShadow}`,
+        );
+        assert(
+          sameLayers(focusedLayers.slice(-3), elevation),
+          `${where}: focusing a map control drops its elevation: ${focused.boxShadow}`,
+        );
+        const luminance = (rgb) => {
+          const [r, g, b] = rgb.map((v) => {
+            const c = v / 255;
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+        const [lighter, darker] = [
+          luminance(ring.rgb),
+          luminance(channels(look.background)),
+        ].sort((a, b) => b - a);
+        const contrast = (lighter + 0.05) / (darker + 0.05);
+        assert(
+          contrast >= 3,
+          `${where}: a map control's focus ring is ${contrast.toFixed(2)}:1 against its surface`,
+        );
+
+        // The zoom pair is one surface: 48 wide, the control's corner and
+        // elevation, and the two buttons in it cast nothing of their own —
+        // the lower one's shadow would darken the upper.
+        const zoom = await page
+          .getByTestId(`${id}-map-zoom`)
+          .evaluate((group) => {
+            const cluster = group.firstElementChild;
+            const s = getComputedStyle(cluster);
+            return {
+              width: s.width,
+              radius: s.borderTopLeftRadius,
+              border: s.borderTopWidth,
+              background: s.backgroundColor,
+              boxShadow: s.boxShadow,
+              backdrop: s.backdropFilter || s.webkitBackdropFilter,
+              buttons: [...cluster.querySelectorAll("button")].map((button) => {
+                const b = getComputedStyle(button);
+                return {
+                  size: [b.width, b.height],
+                  boxShadow: b.boxShadow,
+                };
+              }),
+            };
+          });
+        assert.equal(
+          zoom.width,
+          "48px",
+          `${where}: the zoom pair is not 48 wide`,
+        );
+        assert.equal(zoom.radius, "16px", `${where}: the zoom pair's corner`);
+        assert.equal(
+          zoom.border,
+          "0px",
+          `${where}: the zoom pair draws a border`,
+        );
+        assert.equal(
+          zoom.background,
+          look.background,
+          `${where}: the zoom pair is not the map controls' surface`,
+        );
+        assert(
+          sameLayers(layersOf(zoom.boxShadow), elevation),
+          `${where}: the zoom pair does not cast the map controls' elevation: ${zoom.boxShadow}`,
+        );
+        assert.equal(
+          zoom.backdrop,
+          "blur(32px)",
+          `${where}: the zoom pair's blur`,
+        );
+        assert.equal(zoom.buttons.length, 2);
+        for (const button of zoom.buttons) {
+          assert.deepEqual(
+            button.size,
+            ["48px", "48px"],
+            `${where}: a zoom button is not 48 square: ${JSON.stringify(zoom.buttons)}`,
+          );
+          assert.deepEqual(
+            layersOf(button.boxShadow),
+            [],
+            `${where}: a zoom button casts a shadow inside the pair: ${button.boxShadow}`,
+          );
+        }
+        // Hovered, the muted step: background/100, not the border's grey.
+        await surface.hover();
+        const hovered = await surface.evaluate(async (node) => {
+          await Promise.all(node.getAnimations().map((a) => a.finished));
+          return getComputedStyle(node).backgroundColor;
+        });
+        await page.mouse.move(0, 0);
+        assert.equal(
+          hovered,
+          await value(
+            `${id}-map-surface`,
+            "--primitives-colors-background-100",
+          ),
+          `${where}: a hovered map control is not the muted step`,
+        );
+        // Tabbed to, a zoom button draws its ring inside itself, where the
+        // pair's clip cannot cut it.
+        await surface.focus();
+        await page.keyboard.press("Tab");
+        const segment = await page
+          .getByTestId(`${id}-map-zoom`)
+          .evaluate((group) => {
+            const button = group.querySelector("button");
+            const result = {
+              focused:
+                button === document.activeElement &&
+                button.matches(":focus-visible"),
+              boxShadow: getComputedStyle(button).boxShadow,
+            };
+            button.blur();
+            return result;
+          });
+        assert(segment.focused, `${where}: Tab does not reach the zoom pair`);
+        assert(
+          /inset/.test(segment.boxShadow) &&
+            layersOf(segment.boxShadow).some(
+              (layer) =>
+                layer.spread >= 2 &&
+                layer.rgb.every((v, k) => v === channels(ringColour)[k]),
+            ),
+          `${where}: a focused zoom button's ring is not drawn inside it: ${segment.boxShadow}`,
+        );
+
+        // The location control's words.
+        const words = {};
+        for (const state of ["off", "following", "heading", "unavailable"]) {
+          const control = page
+            .getByTestId(`${id}-location-${state}`)
+            .getByRole("button");
+          words[state] = await control.evaluate((button) => {
+            const s = getComputedStyle(button);
+            const lines = [...button.querySelectorAll("*")]
+              .filter((el) =>
+                [...el.childNodes].some(
+                  (n) => n.nodeType === 3 && n.textContent.trim(),
+                ),
+              )
+              .map((el) => {
+                const t = getComputedStyle(el);
+                const r = el.getBoundingClientRect();
+                return {
+                  text: el.textContent.trim(),
+                  font: [t.fontSize, t.lineHeight, t.fontWeight],
+                  colour: t.color,
+                  top: r.top,
+                  bottom: r.bottom,
+                  left: r.left,
+                  right: r.right,
+                };
+              });
+            const mark = button.querySelector("svg");
+            const box = mark.parentElement.getBoundingClientRect();
+            return {
+              height: s.height,
+              padding: [s.paddingInlineStart, s.paddingInlineEnd],
+              border: s.borderTopWidth,
+              boxShadow: s.boxShadow,
+              name: button.getAttribute("aria-label"),
+              text: button.innerText.replace(/\s+/g, " ").trim(),
+              lines,
+              mark: getComputedStyle(mark).color,
+              markBox: { left: box.left, right: box.right, width: box.width },
+              rtl: s.direction === "rtl",
+            };
+          });
+        }
+        const grey = await value(
+          `${id}-location-off`,
+          "--primitives-colors-foreground-400",
+        );
+        const navy = await value(
+          `${id}-location-off`,
+          "--primitives-colors-theme-1000",
+        );
+        const blue = await value(
+          `${id}-location-off`,
+          "--primitives-colors-theme-600",
+        );
+        const expected = {
+          off: { text: ["Focus", "Off"], ink: grey, mark: grey },
+          following: { text: ["Focus", "On"], ink: navy, mark: blue },
+          heading: { text: ["Focus", "On"], ink: navy, mark: blue },
+          unavailable: { text: ["No Location"], ink: grey, mark: grey },
+        };
+        for (const [state, want] of Object.entries(expected)) {
+          const read = words[state];
+          const at = `${where} ${state}`;
+          assert.deepEqual(
+            read.lines.map((line) => line.text),
+            want.text,
+            `${at}: the control reads ${JSON.stringify(read.text)}`,
+          );
+          for (const line of read.lines) {
+            assert.deepEqual(
+              line.font,
+              ["16px", "16px", "700"],
+              `${at}: "${line.text}" is not bold 16 on a 16 line: ${JSON.stringify(line.font)}`,
+            );
+            assert.equal(
+              line.colour,
+              want.ink,
+              `${at}: "${line.text}" is not the ${want.ink === navy ? "on navy" : "off grey"}`,
+            );
+          }
+          if (read.lines.length === 2)
+            assert(
+              read.lines[1].top >= read.lines[0].bottom - 0.5,
+              `${at}: the state is not set under the name: ${JSON.stringify(read.lines)}`,
+            );
+          assert.equal(
+            read.mark,
+            want.mark,
+            `${at}: the mark is not the ${want.mark === blue ? "theme blue" : "off grey"}`,
+          );
+          assert.equal(
+            read.height,
+            "48px",
+            `${at}: the labelled control's height`,
+          );
+          assert.deepEqual(
+            read.padding,
+            ["12px", "12px"],
+            `${at}: the labelled control's inline padding`,
+          );
+          assert.equal(read.border, "0px", `${at}: the control draws an edge`);
+          assert(
+            sameLayers(layersOf(read.boxShadow), elevation),
+            `${at}: the control's state changes its edge or its shadow: ${read.boxShadow}`,
+          );
+          const nearest = read.rtl
+            ? Math.min(
+                ...read.lines.map((line) => read.markBox.left - line.right),
+              )
+            : Math.min(
+                ...read.lines.map((line) => line.left - read.markBox.right),
+              );
+          assert(
+            read.markBox.width === 24 && Math.abs(nearest - 8) < 0.5,
+            `${at}: the mark is not a 24 box 8 from the words: ${JSON.stringify(read.markBox)}, gap ${nearest}`,
+          );
+        }
+        assert.equal(words.off.name, "Focus, Off");
+        assert.equal(words.following.name, "Focus, On");
+        assert.equal(words.unavailable.name, "Focus, No Location");
+        // Heading shows following's words; its mark tells them apart on
+        // screen, and its name says more, after the words it shows.
+        assert(
+          words.heading.name.startsWith("Focus, On, ") &&
+            words.heading.name.length > "Focus, On, ".length,
+          `${where}: heading's name does not tell it from following's: ${words.heading.name}`,
+        );
+        console.log(
+          `PASS ${where}: map controls are the SDK's 48 square, 16 corner, no edge, three shadows and 32px blur; the labels bold 16/16, grey off and navy on; the ring shows at ${contrast.toFixed(2)}:1`,
+        );
+      }
       // The search row: the field and what follows it on one line, in a
       // container that puts them on two when the pair is composed by hand.
       //
@@ -1361,18 +1791,32 @@ try {
       scroll.scrollable > 0,
       `${theme}: the scrolling board's stack fits, so it tests nothing: ${JSON.stringify(scroll)}`,
     );
+    const [one] = await partsOf(byHand);
+    // The overlay is as wide as the control it holds.
     assert.deepEqual(
       await scrollingOverlay.evaluate((node) => {
         const r = node.getBoundingClientRect();
         const o = node.parentElement.getBoundingClientRect();
         return [r.left - o.left, r.top - o.top, r.width, r.height];
       }),
-      [16, 16, 44, 120],
+      [16, 16, one.right - one.left, 120],
       `${theme}: the scrolling overlay is no longer where, or as large as, it was`,
     );
-    const [one] = await partsOf(byHand);
-    // Beside and above the first control, down to its bottom edge: below it
-    // the next control's shadow begins.
+    // The stack's room, which is the reach of the shadows it holds, and its
+    // gap: the regions below are read from them, not from one shadow's
+    // numbers, so they follow the tokens.
+    const room = await stack.evaluate((node) => {
+      const s = getComputedStyle(node);
+      return {
+        top: parseFloat(s.paddingTop),
+        bottom: parseFloat(s.paddingBottom),
+        inline: parseFloat(s.paddingLeft),
+        gap: parseFloat(s.rowGap),
+      };
+    });
+    // Beside and above the first control, down to where the next control's
+    // shadow begins: it reaches the room's top above that control, which sits
+    // a gap below this one.
     const sides = await compareBoards(
       await shoot(scrolling),
       await shoot(byHand),
@@ -1381,8 +1825,10 @@ try {
         regionA: {
           x: 0,
           y: 0,
-          width: Math.ceil(one.right) + 16,
-          height: Math.floor(one.bottom),
+          width: Math.ceil(one.right) + room.inline,
+          height: Math.floor(
+            Math.min(one.bottom, one.bottom + room.gap - room.top),
+          ),
         },
         samples: [
           [Math.floor(one.left) - 1, Math.round((one.top + one.bottom) / 2)],
@@ -1407,14 +1853,23 @@ try {
       const origin = node.getBoundingClientRect();
       const buttons = node.querySelectorAll("button");
       const r = buttons[buttons.length - 1].getBoundingClientRect();
-      return { left: r.left - origin.left, bottom: r.bottom - origin.top };
+      return {
+        left: r.left - origin.left,
+        right: r.right - origin.left,
+        bottom: r.bottom - origin.top,
+      };
     });
-    const below = (part) => ({
-      x: Math.floor(part.left) - 12,
-      y: Math.ceil(part.bottom),
-      width: 44 + 24,
-      height: 13,
-    });
+    // Below a control, the room's depth and as wide as the room reaches to
+    // either side, within the board.
+    const below = (part) => {
+      const x = Math.max(0, Math.floor(part.left) - room.inline);
+      return {
+        x,
+        y: Math.ceil(part.bottom),
+        width: Math.min(200, Math.ceil(part.right) + room.inline) - x,
+        height: room.bottom + 1,
+      };
+    };
     const end = await compareBoards(
       await shoot(scrolling),
       await shoot(byHand),
@@ -1422,7 +1877,9 @@ try {
         rooms: await roomsOf(scrolling),
         regionA: below(last),
         regionB: below(one),
-        samples: [[Math.round(one.left) + 22, Math.ceil(one.bottom) + 3]],
+        samples: [
+          [Math.round((one.left + one.right) / 2), Math.ceil(one.bottom) + 3],
+        ],
       },
     );
     assert(
