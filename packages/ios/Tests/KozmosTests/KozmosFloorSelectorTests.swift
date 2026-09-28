@@ -287,18 +287,29 @@ final class KozmosFloorSelectorTests: XCTestCase {
     private let corner = CGSize(width: 320, height: 300)
     private var whole: CGRect { CGRect(origin: .zero, size: corner) }
 
-    /// The closed tile: a map control's 44 square, in that corner.
+    /// The map control's square (decision 40): the tile is one, and each of
+    /// the column's levels takes its size.
+    private let tileSide = KozmosDimensions.primitivesLayoutSizing600
+
+    /// The closed tile: a map control's square, in that corner.
     private var tileRect: CGRect {
-        CGRect(x: corner.width - 16 - 44, y: corner.height - 16 - 44, width: 44, height: 44)
+        CGRect(x: corner.width - 16 - tileSide, y: corner.height - 16 - tileSide, width: tileSide, height: tileSide)
     }
 
     /// Where the open column puts level `index` of `count`: a tile's size, 4
     /// apart, the last one over the tile itself.
     private func slot(_ index: Int, of count: Int) -> CGRect {
-        tileRect.offsetBy(dx: 0, dy: -CGFloat(count - 1 - index) * 48)
+        tileRect.offsetBy(dx: 0, dy: -CGFloat(count - 1 - index) * (tileSide + 4))
     }
 
-    /// A drawing of the switcher, read back in points, on white.
+    /// The open column over the tile in that corner, as it is laid out: a
+    /// tile wide and a tile per level, 4 apart and 4 around them.
+    private func columnRect(levels count: Int, over tile: CGRect) -> CGRect {
+        let height = CGFloat(count) * tileSide + CGFloat(count + 1) * 4
+        return CGRect(x: tile.minX - 4, y: tile.maxY + 4 - height, width: tileSide + 8, height: height)
+    }
+
+    /// A drawing of the switcher, read back in points.
     private struct SwitcherDrawing {
         let color: (CGPoint) -> (r: UInt8, g: UInt8, b: UInt8)
         let boundingBox: (CGRect, (UInt8, UInt8, UInt8) -> Bool) -> CGRect?
@@ -309,11 +320,14 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// its tile carries a UIKit element for VoiceOver, which `ImageRenderer`
     /// cannot draw — it puts SwiftUI's yellow placeholder in its place — so
     /// there the switcher is hosted and snapshotted; on a Mac, where the
-    /// element does not exist, `ImageRenderer` draws it. On white both ways,
-    /// so both read the same colours.
+    /// element does not exist, `ImageRenderer` draws it. On white both ways
+    /// unless a test asks for another backdrop: the map-control surface is
+    /// the page's own and has no edge, so on white only its shadow shows, and
+    /// a test that measures the surface draws it on black.
     @MainActor private func drawSwitcher<V: View>(
         _ view: V,
-        direction: LayoutDirection = .leftToRight
+        direction: LayoutDirection = .leftToRight,
+        backdrop: Color = .white
     ) async throws -> SwitcherDrawing {
         let content = VStack {
             Spacer()
@@ -324,7 +338,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         }
         .padding(16)
         .frame(width: corner.width, height: corner.height)
-        .background(Color.white)
+        .background(backdrop)
         .environment(\.layoutDirection, direction)
         #if os(iOS)
         let pixels = try await RenderedPixels.render(content, size: corner)
@@ -356,47 +370,89 @@ final class KozmosFloorSelectorTests: XCTestCase {
     }
 
     /// At rest the switcher is one map control — the SDK's level switcher's
-    /// tile — not a panel around a filled square: drawn beside a
-    /// `KozmosMapControlButton` in the same place, it has the map control's
-    /// outline, edge and surface, and no theme fill. It is drawn by the map
+    /// tile — not a panel around a filled square. It is drawn by the map
     /// control itself, so it follows the shared map-control surface wherever
-    /// that goes.
+    /// that goes: drawn in the same place as a `KozmosMapControlButton`, every
+    /// point of it and of its shadow is the map control's but its mark, on
+    /// white, where the shadow shows, and on black, where the surface does.
     @MainActor func testTheClosedSwitcherIsOneMapControlTile() async throws {
-        let tile = try await drawSwitcher(
-            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible)
+        // The 24 square the mark sits in, where the level's label and the
+        // control's symbol differ; everything else, 40 round, is compared.
+        let mark = CGRect(x: tileRect.midX - 12, y: tileRect.midY - 12, width: 24, height: 24)
+        let around = tileRect.insetBy(dx: -40, dy: -40).intersection(whole)
+        for backdrop in [Color.white, Color.black] {
+            let tile = try await drawSwitcher(
+                KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible),
+                backdrop: backdrop
+            )
+            let control = try await drawSwitcher(KozmosMapControlButton(label: "Zoom in", systemImage: "plus") {},
+                                                 backdrop: backdrop)
+            var largest = 0, at = CGPoint.zero
+            for y in stride(from: around.minY + 0.25, to: around.maxY, by: 0.5) {
+                for x in stride(from: around.minX + 0.25, to: around.maxX, by: 0.5) {
+                    let point = CGPoint(x: x, y: y)
+                    guard !mark.contains(point) else { continue }
+                    let a = tile.color(point), b = control.color(point)
+                    let difference = max(abs(Int(a.r) - Int(b.r)), abs(Int(a.g) - Int(b.g)), abs(Int(a.b) - Int(b.b)))
+                    if difference > largest { largest = difference; at = point }
+                }
+            }
+            XCTAssertLessThanOrEqual(largest, 2, "on \(backdrop) the switcher is not drawn as a map control is: \(largest) at \(at)")
+            XCTAssertNil(tile.boundingBox(whole, try near(KozmosColors.primitivesColorsTheme500)),
+                         "the closed switcher is filled with the theme")
+        }
+    }
+
+    /// The open column wears the map-control surface its tile does (decision
+    /// 40): no edge — at the middle of its sides and its top the surface runs
+    /// to its rim — and the map controls' elevation: at the same distances
+    /// above their top edges, the column's shadow is a map control's. Above
+    /// it, where the tile's own shadow does not reach.
+    @MainActor func testTheColumnWearsTheMapControlsSurface() async throws {
+        let column = columnRect(levels: 3, over: tileRect)
+        let onBlack = try await drawSwitcher(
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible, expanded: true),
+            backdrop: .black
+        )
+        let surface = try near(KozmosColors.primitivesColorsBackground0)
+        for rim in [
+            CGPoint(x: column.minX + 0.25, y: column.midY),
+            CGPoint(x: column.maxX - 0.25, y: column.midY),
+            CGPoint(x: column.midX, y: column.minY + 0.25),
+        ] {
+            let drawn = onBlack.color(rim)
+            XCTAssertTrue(surface(drawn.r, drawn.g, drawn.b), "the column draws an edge at \(rim): \(drawn)")
+        }
+        let open = try await drawSwitcher(
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible, expanded: true)
         )
         let control = try await drawSwitcher(KozmosMapControlButton(label: "Zoom in", systemImage: "plus") {})
-        let edge = try near(KozmosColors.primitivesColorsForeground300)
-        let tileOutline = try XCTUnwrap(tile.boundingBox(whole, edge), "the switcher has no map-control edge")
-        let controlOutline = try XCTUnwrap(control.boundingBox(whole, edge), "the map control has no edge")
-        XCTAssertEqual(tileOutline.width, controlOutline.width, accuracy: 0.5, "the switcher is not a map control's width")
-        XCTAssertEqual(tileOutline.height, controlOutline.height, accuracy: 0.5, "the switcher is not a map control's height")
-        // The middle of the leading edge, just inside it, and the surface
-        // beside the level, clear of its label.
-        for point in [CGPoint(x: tileRect.minX + 0.25, y: tileRect.midY), CGPoint(x: tileRect.minX + 5, y: tileRect.midY)] {
-            let drawn = tile.color(point), expected = control.color(point)
-            XCTAssertEqual([drawn.r, drawn.g, drawn.b], [expected.r, expected.g, expected.b],
-                           "at \(point) the switcher is not drawn as a map control is")
+        for above in [CGFloat(3), 6, 10] {
+            let a = open.color(CGPoint(x: column.midX, y: column.minY - above))
+            let b = control.color(CGPoint(x: tileRect.midX, y: tileRect.minY - above))
+            let difference = max(abs(Int(a.r) - Int(b.r)), abs(Int(a.g) - Int(b.g)), abs(Int(a.b) - Int(b.b)))
+            XCTAssertLessThanOrEqual(difference, 3,
+                                     "\(above) above it the column's shadow is \(a), a map control's \(b)")
         }
-        XCTAssertNil(tile.boundingBox(whole, try near(KozmosColors.primitivesColorsTheme500)),
-                     "the closed switcher is filled with the theme")
     }
 
     /// Opened, the tile grows into a column of every level over itself: the
     /// column's bottom level lies where the tile was, the column reaching past
     /// it by its 4pt inset, one tile wide — each level its short label, as the
-    /// tile shows it, and no name beside it. Measured by its edge, the subtle
-    /// border role a container is drawn with.
+    /// tile shows it, and no name beside it. Measured by its surface, drawn on
+    /// black: it has no edge.
     @MainActor func testTheTileGrowsIntoAColumnOverItself() async throws {
         let drawn = try await drawSwitcher(
-            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible, expanded: true)
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible, expanded: true),
+            backdrop: .black
         )
-        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.semanticsBorderSubtle)),
+        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.primitivesColorsBackground0)),
                                    "no column drawn")
         XCTAssertEqual(column.maxX, tileRect.maxX + 4, accuracy: 1, "the column's trailing edge: \(column)")
         XCTAssertEqual(column.maxY, tileRect.maxY + 4, accuracy: 1, "the column's bottom edge: \(column)")
-        XCTAssertEqual(column.width, 44 + 8, accuracy: 1.5, "the column is not one tile wide: \(column)")
-        XCTAssertEqual(column.height, 3 * 44 + 2 * 4 + 8, accuracy: 1.5, "the column does not hold three tiles: \(column)")
+        XCTAssertEqual(column.width, tileSide + 8, accuracy: 1.5, "the column is not one tile wide: \(column)")
+        XCTAssertEqual(column.height, 3 * tileSide + 2 * 4 + 8, accuracy: 1.5,
+                       "the column does not hold three tiles: \(column)")
     }
 
     /// The current level is outlined in the theme's primary — the board's
@@ -436,14 +492,15 @@ final class KozmosFloorSelectorTests: XCTestCase {
         let drawn = try await drawSwitcher(
             KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible,
                                 userFloor: "2", expanded: true),
-            direction: .rightToLeft
+            direction: .rightToLeft,
+            backdrop: .black
         )
-        let tile = CGRect(x: 16, y: corner.height - 16 - 44, width: 44, height: 44)
-        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.semanticsBorderSubtle)),
+        let tile = CGRect(x: 16, y: corner.height - 16 - tileSide, width: tileSide, height: tileSide)
+        let column = try XCTUnwrap(drawn.boundingBox(whole, try near(KozmosColors.primitivesColorsBackground0)),
                                    "no column drawn")
         XCTAssertEqual(column.minX, tile.minX - 4, accuracy: 1, "the column is not on the tile's trailing edge: \(column)")
         XCTAssertEqual(column.maxY, tile.maxY + 4, accuracy: 1, "the column's bottom edge: \(column)")
-        let top = tile.offsetBy(dx: 0, dy: -2 * 48)
+        let top = tile.offsetBy(dx: 0, dy: -2 * (tileSide + 4))
         XCTAssertGreaterThan(drawn.count(CGRect(x: top.minX, y: top.minY, width: 16, height: 16), primary), 0,
                              "the dot is not at the level's left top corner")
         XCTAssertEqual(drawn.count(CGRect(x: top.maxX - 16, y: top.minY, width: 16, height: 16), primary), 0,
@@ -563,7 +620,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
 
     /// The switcher in a window of its own, parked 16 in from the bottom
     /// trailing corner, as a map parks it — or from the top trailing one.
-    @MainActor private func host<V: View>(_ view: V, parkedAtTop: Bool = false) async -> UIWindow {
+    @MainActor private func host<V: View>(_ view: V, parkedAtTop: Bool = false, backdrop: Color = .clear) async -> UIWindow {
         let window = Window(frame: CGRect(origin: .zero, size: corner))
         window.rootViewController = UIHostingController(
             rootView: VStack {
@@ -576,6 +633,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
             }
             .padding(16)
             .frame(width: corner.width, height: corner.height)
+            .background(backdrop)
         )
         window.makeKeyAndVisible()
         await settle()
@@ -694,7 +752,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         )
         XCTAssertTrue(element.accessibilityActivate())
         await settle()
-        // The column reaches from 4 beyond the tile's sides to 100 above it.
+        // The column reaches from 4 beyond the tile's sides to 108 above it.
         XCTAssertFalse(element.isOutside(CGPoint(x: 22, y: 22)), "a tap on the tile is taken for one outside")
         XCTAssertFalse(element.isOutside(CGPoint(x: 22, y: -60)), "a tap on the column is taken for one outside")
         XCTAssertTrue(element.isOutside(CGPoint(x: -100, y: 22)), "a tap on the map beside it is not taken for one outside")
@@ -726,13 +784,42 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertTrue(offered(), "Escape is not offered while the column is open")
     }
 
+    /// The column's levels take the tile's measured size, not the map
+    /// control's usual square: at the largest text the tile grows taller, and
+    /// the column opened from it grows with it, its bottom level still on the
+    /// tile. Hosted, so the tile is measured before the column opens, as a
+    /// visitor opens it.
+    @MainActor func testTheColumnTakesTheTilesMeasuredSize() async throws {
+        let window = await host(
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible)
+                .environment(\.dynamicTypeSize, .accessibility3),
+            backdrop: .black
+        )
+        defer { window.isHidden = true }
+        let element = try XCTUnwrap(
+            accessibleView(named: "First floor", in: window) as? KozmosFloorSwitcherElement.ElementView,
+            "VoiceOver finds no tile named by its level"
+        )
+        let tile = element.convert(element.bounds, to: window)
+        XCTAssertGreaterThan(tile.height, tileSide + 2, "the tile did not grow with the text: \(tile)")
+        XCTAssertTrue(element.accessibilityActivate())
+        for _ in 0..<4 { await settle() }
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { window.layer.render(in: $0.cgContext) }
+        let drawn = try RenderedPixels(image, pointWidth: corner.width)
+        let column = try XCTUnwrap(drawn.boundingBox(in: whole, where: try near(KozmosColors.primitivesColorsBackground0)),
+                                   "no column drawn")
+        XCTAssertEqual(column.height, 3 * tile.height + 2 * 4 + 8, accuracy: 1.5,
+                       "the column's levels are not the tile's size: \(column) over \(tile)")
+        XCTAssertEqual(column.maxY, tile.maxY + 4, accuracy: 1, "the column's bottom level is not on the tile: \(column)")
+    }
+
     /// Parked at the top of the map, where the column has no room to grow up,
     /// it grows down over the tile instead — its top level on the tile — as
     /// React's and Compose's do, and the watch for a tap outside follows it.
     /// Drawn from the window itself once the column has sprung open.
     @MainActor func testWithNoRoomAboveTheColumnGrowsDownOverTheTile() async throws {
         let window = await host(KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible),
-                                parkedAtTop: true)
+                                parkedAtTop: true, backdrop: .black)
         defer { window.isHidden = true }
         let element = try XCTUnwrap(
             accessibleView(named: "First floor", in: window) as? KozmosFloorSwitcherElement.ElementView,
@@ -742,11 +829,12 @@ final class KozmosFloorSelectorTests: XCTestCase {
         for _ in 0..<4 { await settle() }
         let image = UIGraphicsImageRenderer(bounds: window.bounds).image { window.layer.render(in: $0.cgContext) }
         let drawn = try RenderedPixels(image, pointWidth: corner.width)
-        let tile = CGRect(x: corner.width - 16 - 44, y: 16, width: 44, height: 44)
-        let column = try XCTUnwrap(drawn.boundingBox(in: whole, where: try near(KozmosColors.semanticsBorderSubtle)),
+        let tile = CGRect(x: corner.width - 16 - tileSide, y: 16, width: tileSide, height: tileSide)
+        // By its surface, on black: it has no edge.
+        let column = try XCTUnwrap(drawn.boundingBox(in: whole, where: try near(KozmosColors.primitivesColorsBackground0)),
                                    "no column drawn")
         XCTAssertEqual(column.minY, tile.minY - 4, accuracy: 1, "the column does not reach down from the tile: \(column)")
-        XCTAssertEqual(column.height, 3 * 44 + 2 * 4 + 8, accuracy: 1.5, "the column is cut short: \(column)")
+        XCTAssertEqual(column.height, 3 * tileSide + 2 * 4 + 8, accuracy: 1.5, "the column is cut short: \(column)")
         XCTAssertEqual(column.maxX, tile.maxX + 4, accuracy: 1, "the column's trailing edge: \(column)")
         // Below the tile is the column now; above it, the map.
         XCTAssertFalse(element.isOutside(CGPoint(x: 22, y: 100)), "a tap on the column is taken for one outside")

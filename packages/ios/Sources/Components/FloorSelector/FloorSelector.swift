@@ -93,8 +93,11 @@ public struct KozmosFloorSelector: View {
     @State private var isExpanded = false
     /// The map control's own size, read off the tile: the column's levels take
     /// it, so the column's bottom level lies exactly over the tile whatever
-    /// size the shared map-control surface gives it.
-    @State private var tileSize = CGSize(width: 44, height: 44)
+    /// size the shared map-control surface gives it. Until the tile has been
+    /// measured, the map control's own square, so a column drawn open from
+    /// the start is already the right size.
+    @State private var tileSize = CGSize(width: KozmosMapControlButton<Text>.size,
+                                         height: KozmosMapControlButton<Text>.size)
     /// Whether the open column grows down from the tile, its top level over
     /// it, rather than up: only where it has no room above the tile — parked
     /// at the top of the map — as React's and Compose's do. Decided as the
@@ -321,8 +324,9 @@ public struct KozmosFloorSelector: View {
 
     // MARK: - The switcher (row 79, decision 38)
 
-    /// How far the column's levels sit inside its edge, and apart: the tile's
-    /// 16pt corners inside the column's 20, concentric.
+    /// How far the column's levels sit inside its edge, and apart. The
+    /// column's corner is the map control's Control corner grown by it, so
+    /// the levels' corners stay concentric with it.
     private static let columnInset = KozmosDimensions.primitivesLayoutSpacing50
 
     /// The open column's height: a tile per level, `columnInset` apart and
@@ -371,7 +375,7 @@ public struct KozmosFloorSelector: View {
                         .alignmentGuide(.bottom) { $0[.bottom] - Self.columnInset }
                         .alignmentGuide(.trailing) { $0[.trailing] - Self.columnInset }
                 }
-                .onPreferenceChange(KozmosFloorTileSizeKey.self) { tileSize = $0 }
+                .onPreferenceChange(KozmosFloorTileSizeKey.self) { if let measured = $0 { tileSize = measured } }
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel(label)
         }
@@ -429,24 +433,24 @@ public struct KozmosFloorSelector: View {
 
     /// The open state: every level in a column over the tile, top floor first,
     /// its bottom level where the tile was — or its top one, where there is no
-    /// room above the tile — the tile grows into it. The map control's
-    /// surface and shadow, opaque where the tile is nine tenths: the column
-    /// lies over the tile, and the tile's own label showing through the level
-    /// over it read as part of it. Its edge is a container's, the subtle
-    /// border role, as the web's popover draws the same column.
+    /// room above the tile — the tile grows into it. It wears the map-control
+    /// surface its tile does (decision 40): the page's own surface, opaque, no
+    /// edge, and the map controls' elevation. Its corner is the Control corner
+    /// grown by the column's inset, so the levels' corners stay concentric.
     @ViewBuilder
     private var column: some View {
         if variant == .collapsible, isExpanded {
-            let edge = RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous)
+            let edge = RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl + Self.columnInset,
+                                        style: .continuous)
+            let surface = KozmosColors.primitivesColorsBackground0
             VStack(spacing: Self.columnInset) {
                 ForEach(floors) { floor in
                     columnLevel(floor)
                 }
             }
             .padding(Self.columnInset)
-            .background(KozmosColors.primitivesColorsBackground0, in: edge)
-            .overlay(edge.stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1))
-            .kozmosElevation(KozmosShadows.semanticsElevationFloating)
+            .background(surface, in: edge)
+            .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: edge, fill: surface)
             .fixedSize()
             .accessibilityElement(children: .contain)
             .accessibilityLabel(label)
@@ -619,10 +623,14 @@ public struct KozmosFloorSelector: View {
     }
 }
 
-/// The switcher's tile's size, read off the map control.
+/// The switcher's tile's size, read off the map control. Nil where nothing
+/// measured it, and the first measure kept: the open column beside the tile
+/// sets no size, and taking the last value let its default overwrite the
+/// tile's the moment the column opened (measured, once the map control
+/// became 48 and the default no longer matched it).
 private struct KozmosFloorTileSizeKey: PreferenceKey {
-    static let defaultValue = CGSize(width: 44, height: 44)
-    static func reduce(value: inout CGSize, nextValue: () -> CGSize) { value = nextValue() }
+    static let defaultValue: CGSize? = nil
+    static func reduce(value: inout CGSize?, nextValue: () -> CGSize?) { value = value ?? nextValue() }
 }
 
 #if os(iOS)
