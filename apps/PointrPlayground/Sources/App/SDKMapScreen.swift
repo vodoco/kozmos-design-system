@@ -241,6 +241,13 @@ struct SDKMapScreen: View {
                 }
             }
             .transition(KozmosTransitions.crossfade)
+            // The search row is the sheet's top, not what follows it: the
+            // shell's inset and the grabber's clearance are for the part at
+            // the top, and the tiles would top their 16 up to them and sit 4
+            // under the row. Told the panel leaves nothing above them, they
+            // keep their 16.
+            .environment(\.kozmosPanelInsetTop, 0)
+            .environment(\.kozmosPanelClearanceTop, 0)
         }
         .animation(KozmosMotion.standard, value: contentState)
         // One container for the sheet, so its identifier and value are its
