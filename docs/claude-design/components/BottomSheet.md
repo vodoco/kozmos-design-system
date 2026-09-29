@@ -74,7 +74,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `DialogTriggerProps`.
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BottomSheetClose
 
@@ -83,7 +83,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `DialogCloseProps`.
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BottomSheetContent
 
@@ -145,7 +145,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `BottomSheetContentProps`
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BottomSheetHeader
 
@@ -153,7 +153,7 @@ Its props are `React.HTMLAttributes<HTMLDivElement>`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BottomSheetFooter
 
@@ -161,7 +161,7 @@ Its props are `React.HTMLAttributes<HTMLDivElement>`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BottomSheetTitle
 
@@ -170,7 +170,7 @@ It forwards its ref to `HTMLHeadingElement`. Its props are `Omit<DialogTitleProp
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BottomSheetDescription
 
@@ -179,7 +179,7 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `Omit<DialogDescrip
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 
