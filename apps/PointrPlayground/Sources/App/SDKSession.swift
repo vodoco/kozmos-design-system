@@ -51,21 +51,38 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     @Published private(set) var failure: String?
     @Published private(set) var widget: PTRMapWidgetViewController?
     @Published private(set) var building: PTRBuilding?
-    @Published private(set) var pois: [PTRPoi] = []
+    /// Every assignment keeps the lookup by identifier and the map filter's
+    /// places in step.
+    @Published private(set) var pois: [PTRPoi] = [] {
+        didSet {
+            poisById = Dictionary(pois.map { ($0.identifier, $0) }, uniquingKeysWith: { first, _ in first })
+            mapFilter.load(pois.map { .init(id: $0.identifier, name: $0.name, freeText: SDKPOIAdapter.freeText($0)) })
+        }
+    }
+    private var poisById: [String: PTRPoi] = [:]
     @Published private(set) var selected: PTRPoi?
     /// The selected place mapped for the card, with the contact addresses the
     /// host keeps and the diagnostics it logs.
     @Published private(set) var selectedDetails: SDKPOIDetails?
     /// What the card shows on a contact action after it was tried.
     @Published private(set) var actionStates: [String: KozmosPOIActionState] = [:]
+    /// Which opening of a place's card is showing: a contact action's outcome
+    /// is written to the card it was tried on, not to one opened since.
+    private(set) var card: SDKCardIdentity?
+    private var cardSerial = 0
     @Published private(set) var selectedFloorId = ""
     @Published private(set) var poiDataReady = false
     @Published var query = ""
-    @Published var saved = Set<String>()
-    @Published var favourites = Set<String>()
+    /// The tile chosen, the places, the favourites and the bookmarks: what the
+    /// results list and the map's filter are both read from.
+    @Published private(set) var mapFilter = SDKMapFilter() {
+        didSet { if mapFilter.shown != oldValue.shown { showFilteredPlaces() } }
+    }
+    var saved: Set<String> { mapFilter.saved }
+    var favourites: Set<String> { mapFilter.favourites }
     /// The quick-access tile chosen, replacing the search field with its chip
     /// until cleared; nil while browsing or searching by text.
-    @Published var category: QuickAccessCategory?
+    var category: QuickAccessCategory? { mapFilter.category }
     /// Each taxonomy tile's places in the loaded venue, counted once per
     /// load; nil until the venue's places have arrived. The personal tiles
     /// count live from what this session has marked (`count(of:)`).
@@ -102,19 +119,26 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     /// When `start()` ran, for the readiness timings in the log.
     var startedAt = Date()
     private var loadingBuilding = false
+    /// Whether a building is being loaded: read by the lifecycle tests.
+    var isLoadingBuilding: Bool { loadingBuilding }
     private var buildingTask: Task<Void, Never>?
-    private var generation = UUID()
+    /// The session the SDK's callbacks belong to: `start()` begins one and
+    /// `stop()` ends it.
+    nonisolated let generation = SDKSessionGeneration()
 
-    func start() {
+    /// Starts the SDK with the QA configuration `loadConfiguration` reads:
+    /// the bundled file, or, in the lifecycle tests, one that fails, so they
+    /// never reach the SDK.
+    func start(loadConfiguration: () throws -> QAConfiguration = QAConfiguration.load) {
         guard !started else { return }
         started = true
         startedAt = Date()
-        do { configuration = try .load() } catch {
+        let token = generation.begin()
+        do { configuration = try loadConfiguration() } catch {
             failure = "QA configuration is missing or invalid. Run the local setup script."
             return
         }
         guard let configuration else { return }
-        let requestGeneration = generation
         // Browse-only milestone: do not request location/motion permissions.
         Pointr.shared.permissionManager?.delegate = self
         Pointr.shared.addListener(self)
@@ -128,14 +152,14 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         log.notice("SDK asked for language \(params.preferredLanguage ?? "none", privacy: .public); app locale \(Locale.current.identifier, privacy: .public); device languages \(Locale.preferredLanguages.prefix(3).joined(separator: ","), privacy: .public)")
         Pointr.shared.start(with: params) { [weak self] state in
             Task { @MainActor in
-                guard self?.generation == requestGeneration else { return }
+                guard self?.generation.current == token else { return }
                 self?.handle(state)
             }
         }
     }
 
     func stop() {
-        generation = UUID()
+        generation.end()
         buildingTask?.cancel()
         buildingTask = nil
         widget?.removeListener(self)
@@ -148,6 +172,8 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         widget = nil
         building = nil
         selected = nil
+        card = nil
+        mapFilter.open(nil)
         selectedDetails = nil
         actionStates = [:]
         framesSelection = false
@@ -159,15 +185,28 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         started = false
     }
 
-    func retry() {
+    func retry() { retry(loadConfiguration: QAConfiguration.load) }
+
+    func retry(loadConfiguration: () throws -> QAConfiguration) {
         stop()
         failure = nil
         status = "Connecting to Design-QA…"
-        start()
+        start(loadConfiguration: loadConfiguration)
+    }
+
+    /// Queues an SDK callback's work onto the main actor under the session
+    /// token current when the SDK called. The work runs only if `generation`
+    /// still accepts that token when its turn comes.
+    nonisolated func onMain(_ work: @escaping @MainActor (SDKSession) -> Void) {
+        let token = generation.current
+        Task { @MainActor [weak self] in
+            guard let self, self.generation.accepts(token) else { return }
+            work(self)
+        }
     }
 
     nonisolated func pointrStateDidChange(to state: PointrState) {
-        Task { @MainActor in self.handle(state) }
+        onMain { $0.handle(state) }
     }
 
     private func handle(_ state: PointrState) {
@@ -194,7 +233,9 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
             return
         }
         building = target
-        selectedFloorId = SDKPOIAdapter.floorId(target.defaultLevel ?? target.levels.first)
+        let start = SDKFloorPolicy.startLevel(
+            target.levels.map(SDKFloorPolicy.Level.init), sdkDefault: target.defaultLevel.map(SDKFloorPolicy.Level.init))
+        selectedFloorId = start?.id ?? ""
         let policy = SDKMapPolicy.make()
         let controller = PTRMapWidgetViewController(location: target.mapWidgetLocation, configuration: policy)
         controller.addListener(self)
@@ -226,7 +267,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     /// its places besides their names — the words a companion could filter on.
     private func countTiles() {
         guard !pois.isEmpty else { tileCounts = nil; return }
-        let places = pois.map { (name: $0.name, freeText: SDKPOIAdapter.freeText($0)) }
+        let places = mapFilter.places.map { (name: $0.name, freeText: $0.freeText) }
         tileCounts = QuickAccess.counts(of: QuickAccess.categories, places: places)
         guard places.count != loggedPlaceCount else { return }
         loggedPlaceCount = places.count
@@ -258,6 +299,9 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
 
     func select(_ poi: PTRPoi) {
         selected = poi
+        cardSerial += 1
+        card = SDKCardIdentity(poiId: poi.identifier, serial: cardSerial)
+        mapFilter.open(poi.identifier)
         recents = [poi] + recents.filter { $0.identifier != poi.identifier }
         if recents.count > 3 { recents.removeLast(recents.count - 3) }
         let details = SDKPOIAdapter.details(poi)
@@ -285,7 +329,6 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     /// or the personal tiles by what this session has marked.
     func choose(category: QuickAccessCategory) {
         query = ""
-        self.category = category
         // The prototype fades the map's other pins to 22 %; the SDK offers to
         // show a set of places, so the map shows the category's alone.
         // The map shows the category's places alone, as the SDK's own icon
@@ -293,8 +336,8 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         // a rounder marker and repainted every room's fill black (Olcay,
         // 21st: "no need to alter fill layers"); the SDK draws no view of
         // ours (`PTRMapMarker`), so the markers are the SDK's, in its palette.
+        mapFilter.choose(category)
         let shown = places(in: category)
-        widget?.mapViewController.poisToShow = shown.isEmpty ? nil : Set(shown)
         // The map follows the category: the places are site-wide, so when
         // none is on the level shown, the level of the first — zoomed to it —
         // as opening a place does.
@@ -304,21 +347,24 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
             widget?.mapViewController.showLevel(level, shouldZoomToLevel: true)
         }
     }
-    func clearCategory() {
-        category = nil
-        widget?.mapViewController.poisToShow = nil
+    func clearCategory() { mapFilter.clearCategory() }
+    func toggleFavourite(_ id: String) { mapFilter.toggleFavourite(id) }
+    func toggleSaved(_ id: String) { mapFilter.toggleSaved(id) }
+
+    /// Gives the map the filter's places; nil shows every place.
+    private func showFilteredPlaces() {
+        widget?.mapViewController.poisToShow = mapFilter.shown.map { ids in Set(ids.compactMap { poisById[$0] }) }
     }
 
-
-    /// The places a tile shows, on every floor, by name.
+    /// The places a tile shows, on every floor, by name: the filter's, as the
+    /// SDK's places.
     func places(in category: QuickAccessCategory) -> [PTRPoi] {
-        let matching: [PTRPoi]
-        switch category.id {
-        case QuickAccess.favouritesId: matching = pois.filter { favourites.contains($0.identifier) }
-        case QuickAccess.bookmarksId: matching = pois.filter { saved.contains($0.identifier) }
-        default: matching = pois.filter { QuickAccess.matches(category, name: $0.name, freeText: SDKPOIAdapter.freeText($0)) }
-        }
-        return matching.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        mapFilter.places(in: category).compactMap { poisById[$0.id] }
+    }
+
+    /// The building's levels as the selector lists them (`SDKFloorPolicy`).
+    var floors: [KozmosFloorPresentation] {
+        SDKFloorPolicy.presentations((building?.levels ?? []).map(SDKFloorPolicy.Level.init))
     }
     func selectFloor(_ id: String) {
         guard let level = building?.levels.first(where: { SDKPOIAdapter.floorId($0) == id }) else { return }
@@ -331,7 +377,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     /// place was mapped; the device decides whether it can open it — a
     /// simulator has no phone — and the card is told either way.
     func perform(action: String, poiId: String) {
-        guard selected?.identifier == poiId, let contact = selectedDetails?.contacts[action] else { return }
+        guard selected?.identifier == poiId, let card, let contact = selectedDetails?.contacts[action] else { return }
         let url = contact.url
         guard UIApplication.shared.canOpenURL(url) else {
             let what: String
@@ -345,12 +391,16 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         }
         actionStates[action] = .init(loading: true)
         UIApplication.shared.open(url) { [weak self] opened in
-            self?.actionStates[action] = opened ? .init() : .init(message: "That couldn't be opened.", messageTone: .error)
+            guard let self else { return }
+            self.actionStates = SDKContactOutcome.completing(
+                self.actionStates, action: action, opened: opened, triedOn: card, showing: self.card)
         }
     }
 
     func clearSelection(animated: Bool) {
         selected = nil
+        card = nil
+        mapFilter.open(nil)
         selectedDetails = nil
         actionStates = [:]
         framesSelection = false
@@ -406,37 +456,40 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     // The visitor moving the map. Measured on Design-QA: a pan reports
     // `mapDidReceivePan`, a pinch `didZoom`, and a `focusPoi` flight neither.
     nonisolated func mapDidReceivePan(_ map: PTRMapViewController) {
-        Task { @MainActor in self.framesSelection = false }
+        onMain { $0.framesSelection = false }
     }
     nonisolated func map(_ map: PTRMapViewController, didZoom zoomValue: Double) {
-        Task { @MainActor in self.framesSelection = false }
+        onMain { $0.framesSelection = false }
     }
     nonisolated func mapDidReceiveSignificantRotationGesture(_ map: PTRMapViewController) {
-        Task { @MainActor in self.framesSelection = false }
+        onMain { $0.framesSelection = false }
     }
 
     nonisolated func map(_ map: PTRMapViewController, didReceiveTapOnFeature feature: PTRFeature) {
-        Task { @MainActor in
-            if let poi = feature as? PTRPoi { self.select(poi) }
-            else if let poi = self.pois.first(where: { $0.identifier == feature.identifier }) { self.select(poi) }
+        onMain { session in
+            if let poi = feature as? PTRPoi { session.select(poi) }
+            else if let poi = session.pois.first(where: { $0.identifier == feature.identifier }) { session.select(poi) }
         }
     }
     nonisolated func map(_ map: PTRMapViewController, didChangeLevel level: PTRLevel) {
-        Task { @MainActor in self.updateLevel(level) }
+        onMain { $0.updateLevel(level) }
     }
     nonisolated func mapDidEndLoading(_ map: PTRMapViewController) {
-        Task { @MainActor in self.status = "Ready"; self.refreshPOIs() }
+        onMain { session in
+            session.status = "Ready"
+            session.refreshPOIs()
+        }
     }
     nonisolated func map(_ map: PTRMapViewController, didFailToLoadWith error: Error) {
-        Task { @MainActor in self.failure = "The map could not load. Check QA availability and try again." }
+        onMain { $0.failure = "The map could not load. Check QA availability and try again." }
     }
     @objc(onPoiManagerChangedPoisForSite:)
     nonisolated func onPoiManagerChangedPois(for site: PTRSite) {
-        Task { @MainActor in self.refreshPOIs() }
+        onMain { $0.refreshPOIs() }
     }
     @objc(onDataManagerReadyForSite:)
     nonisolated func onDataManagerReady(for site: PTRSite) {
-        Task { @MainActor in self.refreshPOIs() }
+        onMain { $0.refreshPOIs() }
     }
     nonisolated func permissionManagerShouldRequestLocationAuthorizationPermissionForWhenInUse(_ permissionManager: any PTRPermissionManagerInterface) -> Bool { false }
     nonisolated func permissionManagerShouldRequestLocationAuthorizationPermissionForAlways(_ permissionManager: any PTRPermissionManagerInterface) -> Bool { false }
