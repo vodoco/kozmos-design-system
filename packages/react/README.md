@@ -24,12 +24,13 @@ It holds the token variables for both themes and the styles the components
 use, so there is no Tailwind configuration to add. `@kozmos-ds/react/dist/style.css`
 resolves to the same file, for code that already imports that path.
 
-Token definitions belong to provider boundaries. Input, Textarea, Button, Popover,
-FieldWrapper, Label, PasswordInput and NumberInput use precompiled component-owned styles and local resets;
-the remaining utility-based components still require native CSS `@scope`.
-This is an unfinished compatibility migration, **not a broadly compatible release**.
-The production browser/WebView support matrix must be approved and tested before
-release. Unsupported engines will render the unmigrated parts incorrectly.
+Token definitions belong to provider boundaries. Some components carry their own
+precompiled styles and local resets — Input, Textarea, Button, Popover,
+FieldWrapper, Label, PasswordInput and NumberInput among them — and the rest are
+styled by utilities inside native CSS `@scope`. That sets the package's browser
+floor: Chrome and Edge 118, Safari and iOS 17.4, Firefox 128 and Android WebView
+118, declared in its `browserslist` ([Browsers](#browsers), below). Below the
+floor, the utility-styled components lose their layout and colour.
 
 `inputVariants` and `buttonVariants` retain their arguments but return opaque,
 namespaced recipe classes. Do not depend on the individual class strings.

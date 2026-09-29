@@ -35,7 +35,7 @@ describe the same shape.
 Since this is an Android Library (`com.android.library`), we cannot run memory leak detection natively within this package on its own.
 
 **Consumer Requirement:**
-Any host application (e.g., the Pointr SDK consumer app, or a future `playground-android` app) MUST include `LeakCanary` to detect Composable retention leaks during development.
+Any host application (e.g., the Pointr SDK consumer app, or this repository's own `apps/playground-android`) MUST include `LeakCanary` to detect Composable retention leaks during development. The playground does not include it yet.
 
 Add the following to your application's `app/build.gradle.kts`:
 

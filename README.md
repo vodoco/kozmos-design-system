@@ -109,8 +109,11 @@ pnpm lint
 
 `pnpm dev` runs every app's dev server through Turborepo. The checks under
 `scripts/` are run by name — `pnpm tokens:theme:check`, `pnpm figma:verify`,
-`pnpm components:classes:check` and the rest; `pnpm ci:local` runs the set CI
-runs.
+`pnpm components:classes:check` and the rest. `pnpm ci:local` runs the steps of
+one CI job here, by default the web job ("Web Build & Test"): `--list` shows
+what it skips, and `--job <id>` runs another of `ci.yml`'s jobs (`browsers`,
+`pipeline`, `ios`, `android`). It reads only `ci.yml`, so the bundle budget,
+Lighthouse and Visual Review, which are workflows of their own, are not in it.
 
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) has the working agreements: how a
 component is added, how tokens are changed, and how a release is cut.

@@ -5,13 +5,16 @@
 Report anything you believe is a security problem privately, not as a public
 issue or pull request.
 
-Use GitHub's private advisory form —
-<https://github.com/vodoco/kozmos-design-system/security/advisories/new> —
-which is visible only to the maintainers.
+Private vulnerability reporting is not enabled on this repository yet, so
+GitHub's advisory form is not open to reporters. Until it is, email the
+maintainers at kozmos-maintainers@pointr.tech, the address in
+[`CONTRIBUTING.md`](./CONTRIBUTING.md). Once it is enabled, the form —
+<https://github.com/vodoco/kozmos-design-system/security/advisories/new> — is
+the way, and is visible only to the maintainers.
 
-If that form is not open to you, open an ordinary issue saying only that you
-have a security report and how we can reach you privately. Do not put the
-details in it.
+If you cannot email, open an ordinary issue saying only that you have a
+security report and how we can reach you privately. Do not put the details in
+it.
 
 Please include what you found, where (a file, a package and version, or a
 URL), and what an attacker could do with it. A proof of concept helps. If you
