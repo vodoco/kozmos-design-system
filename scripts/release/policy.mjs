@@ -5,7 +5,11 @@ import semver from "semver";
 // 2026-09-28). The numeric id is what is compared, not the login: a login can
 // be renamed and later registered by someone else, an account id cannot.
 // From `gh api users/vodoco --jq .id`.
-export const RELEASE_APPROVER = { type: "User", login: "vodoco", id: 10688082 };
+export const RELEASE_APPROVER = Object.freeze({
+  type: "User",
+  login: "vodoco",
+  id: 10688082,
+});
 
 /** A required reviewer as a person reads it, for a refusal message. */
 function reviewerName(entry) {

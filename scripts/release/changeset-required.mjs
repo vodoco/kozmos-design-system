@@ -200,7 +200,13 @@ export function buildInputs(dir, manifest, source) {
     if (seen.has(file) || !insideRepository(file) || !source.exists(file))
       return;
     seen.add(file);
-    if (!file.startsWith(`${dir}/`)) outside.add(file);
+    // A manifest, this package's, a sibling's or the root's, is compared
+    // field by field (a version bump alone is exempt), never as a whole.
+    if (
+      !file.startsWith(`${dir}/`) &&
+      path.posix.basename(file) !== "package.json"
+    )
+      outside.add(file);
     const text =
       MODULE.test(file) || /tsconfig[^/]*\.json$/.test(file)
         ? source.read(file)
@@ -217,15 +223,15 @@ export function buildInputs(dir, manifest, source) {
   // `--config ../shared/vite.config.mts`, `node build.mjs`.
   for (const command of Object.values(shippingScripts(manifest)))
     for (const word of command.split(/\s+/)) {
-      const value = word.replace(/^--?[\w-]+=/, "").replace(/^["']|["']$/g, "");
+      const value = word
+        .replace(/^--?[\w-]+=/, "")
+        .replace(/^[("']+|[)"';]+$/g, "");
       if (/^\.\.?\//.test(value) || MODULE.test(value)) visit(join(dir, value));
     }
   // The package's own build configs, for what they import from outside it.
   for (const file of source.files(dir))
     if (BUILD_FILES.test(file.slice(dir.length + 1))) visit(file);
   for (const name of TSCONFIGS) visit(`${dir}/${name}`);
-  // Its own package.json is compared field by field, never as a whole.
-  outside.delete(`${dir}/package.json`);
   return [...outside].sort();
 }
 

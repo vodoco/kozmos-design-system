@@ -307,6 +307,89 @@ test("an edit to a file outside a package that its build runs needs that package
   assert.equal(result.status, 0, result.stdout + result.stderr);
 });
 
+// A workspace whose react build config imports a root script and reads two
+// manifests, the tokens package's and the root's.
+const configWorkspace = (t) =>
+  workspace(t, {
+    "package.json": manifest({
+      name: "kozmos-design-system",
+      private: true,
+      scripts: { test: "turbo run test" },
+    }),
+    "packages/react/package.json": manifest({
+      name: "@kozmos-ds/react",
+      version: "0.4.0",
+      // A path the shell ends with `;` is still a path.
+      scripts: { build: "node ../../scripts/emit.mjs; vite build" },
+    }),
+    "packages/react/vite.config.mts": [
+      'import shared from "../../scripts/vite-shared.mjs";',
+      'const tokens = require("../tokens/package.json");',
+      'const root = require("../../package.json");',
+      "export default shared(tokens, root);",
+      "",
+    ].join("\n"),
+    "packages/tokens/package.json": manifest({
+      name: "@kozmos-ds/tokens",
+      version: "0.1.0",
+      scripts: { build: "node build.mjs" },
+    }),
+    "packages/tokens/build.mjs": "console.log('tokens');\n",
+    "scripts/emit.mjs": "console.log('d.ts');\n",
+    "scripts/vite-shared.mjs": "export default () => ({});\n",
+  });
+const shipping = (result) =>
+  [...result.stderr.matchAll(/^(@kozmos-ds\/[a-z-]+) ships changes/gm)].map(
+    (match) => match[1],
+  );
+
+test("what a package's build config imports from outside it counts, as does a path a build script ends with `;`", (t) => {
+  const { run, commit, reset } = configWorkspace(t);
+  commit(
+    "scripts/vite-shared.mjs",
+    "export default () => ({ minify: false });\n",
+  );
+  let result = run();
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.deepEqual(shipping(result), ["@kozmos-ds/react"]);
+
+  reset();
+  commit("scripts/emit.mjs", "console.log('d.mts');\n");
+  result = run();
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.deepEqual(shipping(result), ["@kozmos-ds/react"]);
+});
+
+test("a manifest a build config reads never counts as a whole: a version PR asks nothing more", (t) => {
+  const { run, commit, reset } = configWorkspace(t);
+  // A version PR bumps the tokens manifest react's config reads: the bump
+  // is the release, and asks nothing of react.
+  let result;
+  commit(
+    "packages/tokens/package.json",
+    manifest({
+      name: "@kozmos-ds/tokens",
+      version: "0.2.0",
+      scripts: { build: "node build.mjs" },
+    }),
+  );
+  result = run();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+
+  // Nor does a new root script.
+  reset();
+  commit(
+    "package.json",
+    manifest({
+      name: "kozmos-design-system",
+      private: true,
+      scripts: { test: "turbo run test", lint: "turbo run lint" },
+    }),
+  );
+  result = run();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
 test("each consumer-facing package.json field needs a changeset; a version bump or a script a person runs does not", (t) => {
   const base = {
     name: "@kozmos-ds/react",
