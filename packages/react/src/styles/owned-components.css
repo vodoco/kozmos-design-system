@@ -262,6 +262,28 @@
       var(--primitives-colors-foreground-400)
     );
   }
+  /* The manoeuvre card's instruction, whole: two lines cut ordinary
+     instructions short of the level, the side, or in German the turn
+     itself (GAP-094, US1-EC8), so the card grows with it. A word longer
+     than the line breaks rather than running out of the card. Only a
+     product that asks for a limit, `instructionLines`, gets one: the
+     ellipsis at that many lines. */
+  .kozmos-manoeuvre-instruction {
+    overflow-wrap: anywhere;
+  }
+  .kozmos-manoeuvre-instruction[data-lines] {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--kozmos-manoeuvre-instruction-lines);
+    overflow: hidden;
+  }
+  /* The open card's itinerary scrolls past its cap and takes focus
+     (GAP-100); the ring is drawn inside it, where the card's edge cannot
+     cut it. */
+  .kozmos-manoeuvre-itinerary:focus-visible {
+    @apply outline outline-2 outline-ring;
+    outline-offset: -2px;
+  }
   /* A route option is a card of its own: the background colour, and the
      chosen one the theme's 5% tint on it. The tint was bg-primary/5 over
      nothing, so on a glass sheet the map showed through the chosen option

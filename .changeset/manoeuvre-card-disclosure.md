@@ -1,0 +1,11 @@
+---
+"@kozmos-ds/react": patch
+---
+
+`ManoeuvreCard` shows the whole instruction, and the card grows with it (GAP-094). It cut the instruction at two lines, which lost ordinary words: "Take the escalator near Fountain Court up to…" lost the level, and German "Biegen Sie bei Marlow Apotheke auf der linke…" lost the turn itself, "rechts ab". This is a deliberate change of default, asked for by MAP-111 (US1-EC8): a card with a long instruction is now taller. A product that wants a limit passes the new `instructionLines`, the most lines drawn before an ellipsis (`instructionLines={2}` draws what 0.5 drew; under one line is no limit). Assistive technology hears the whole instruction either way, as it did. The itinerary keeps its own cap, `maxItineraryHeight`.
+
+Open, the itinerary that scrolls past the cap is a stop in the tab order (GAP-100): a group named after the itinerary it holds, by the new `itineraryLabel` ("Itinerary" until the product passes its own words, as `Itinerary`'s `label` is). It could not take focus, so a keyboard could not reach the steps past the cap (axe's `scrollable-region-focusable`, serious). It is a group, not a second landmark, and it draws the focus ring.
+
+Focus goes with the disclosure (review T4). Opening removed the instruction button that had focus, and focus fell to the page; closing from the grab bar left focus on the bar, hidden from assistive technology and out of the tab order. Now focus on the part that goes moves to the part in its place: from the instruction to the itinerary as the card opens, from Hide or from inside the itinerary to the instruction as it closes. Focus anywhere else is left where it is, whether a key, a pointer or the product changed `expanded`, and a pointer never puts focus on the closed, silent bar. Every existing prop and callback is unchanged.
+
+**Native (iOS and Android):** `KozmosManoeuvreCard` shows the whole instruction by default too, with `instructionLines` to cut it. Focus goes with the disclosure: VoiceOver's on iOS, and the keyboard's on Android, which TalkBack follows. A call written against 0.5.0 still compiles, on Android through an overload with 0.5.0's parameters.
