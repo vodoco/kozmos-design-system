@@ -43,4 +43,4 @@ It forwards its ref to `HTMLButtonElement`. Its props are `AISearchButtonProps`,
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

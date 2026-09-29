@@ -58,7 +58,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `EmptyStateProps`, which 
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## EmptyStateDensity
 
@@ -68,4 +68,4 @@ Its props are `"default" | "compact" | undefined`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 1 attributes React's DOM types give it.
+It also takes the attributes React's DOM types give it.

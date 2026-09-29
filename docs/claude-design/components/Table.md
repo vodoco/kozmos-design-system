@@ -64,7 +64,7 @@ It forwards its ref to `HTMLTableElement`. Its props are `React.HTMLAttributes<H
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TableHeader
 
@@ -72,7 +72,7 @@ It forwards its ref to `HTMLTableSectionElement`. Its props are `React.HTMLAttri
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TableBody
 
@@ -80,7 +80,7 @@ It forwards its ref to `HTMLTableSectionElement`. Its props are `React.HTMLAttri
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TableFooter
 
@@ -88,7 +88,7 @@ It forwards its ref to `HTMLTableSectionElement`. Its props are `React.HTMLAttri
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TableHead
 
@@ -96,7 +96,7 @@ It forwards its ref to `HTMLTableCellElement`. Its props are `React.ThHTMLAttrib
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 269 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TableRow
 
@@ -104,7 +104,7 @@ It forwards its ref to `HTMLTableRowElement`. Its props are `React.HTMLAttribute
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TableCell
 
@@ -112,7 +112,7 @@ It forwards its ref to `HTMLTableCellElement`. Its props are `React.TdHTMLAttrib
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 272 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TableCaption
 
@@ -120,4 +120,4 @@ It forwards its ref to `HTMLTableCaptionElement`. Its props are `React.HTMLAttri
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

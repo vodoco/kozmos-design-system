@@ -35,7 +35,7 @@ It forwards its ref to `SVGSVGElement`. Its props are `IconProps`, which extends
 - `color`: `"default" | "muted" | "primary" | "destructive" | null`, optional, default `"default"`.
 - `size`: `"sm" | "md" | "lg" | "xs" | "xl" | null`, optional, default `"md"`.
 
-It also takes the 471 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

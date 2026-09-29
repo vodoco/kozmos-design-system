@@ -40,7 +40,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DynamicIslandProps,
 - `expandedContent`: `React.ReactNode`, optional.
 - `minimalContent`: `React.ReactNode`, optional.
 
-It also takes the 258 attributes React's DOM types give it (`className`, `id`, `aria-*`, the event handlers among them), and the 60 animation props of framer-motion's `motion` elements.
+It also takes the attributes React's DOM types give it (`className`, `id`, `aria-*`, the event handlers among them), and the animation props of framer-motion's `motion` elements.
 
 ## Types these props take
 

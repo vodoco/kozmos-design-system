@@ -69,4 +69,4 @@ It forwards its ref to `HTMLDivElement`. Its props are `POICardProps`, which ext
 - `selectionLabel`: `string`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 261 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

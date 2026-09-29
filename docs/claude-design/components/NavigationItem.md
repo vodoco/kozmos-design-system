@@ -77,7 +77,7 @@ It forwards its ref to `HTMLElement`. Its props are `NavigationItemProps`, which
 - `trailing`: `React.ReactNode`, optional.
 - `placement`: `"top" | "side" | "rail" | null`, optional, default `"side"`.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

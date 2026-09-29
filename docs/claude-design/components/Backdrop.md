@@ -37,4 +37,4 @@ It forwards its ref to `HTMLDivElement`. Its props are `React.HTMLAttributes<HTM
 - `visible`: `boolean`, optional, default `true`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

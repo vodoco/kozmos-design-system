@@ -63,7 +63,7 @@ Its props are `React.ComponentProps<"nav">`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## PaginationContent
 
@@ -71,7 +71,7 @@ It forwards its ref to `HTMLUListElement`. Its props are `Omit<React.DetailedHTM
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## PaginationLink
 
@@ -81,7 +81,7 @@ Its props are `PaginationLinkProps`, which is `{ isActive?: boolean } & Pick<But
 - `size`: `"sm" | "lg" | "default" | "icon" | null`, optional, default `"icon"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 271 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## PaginationItem
 
@@ -89,7 +89,7 @@ It forwards its ref to `HTMLLIElement`. Its props are `Omit<React.DetailedHTMLPr
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 264 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## PaginationPrevious
 
@@ -99,7 +99,7 @@ Its props are `React.ComponentProps<typeof PaginationLink>`.
 - `size`: `"sm" | "lg" | "default" | "icon" | null`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 271 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## PaginationNext
 
@@ -109,7 +109,7 @@ Its props are `React.ComponentProps<typeof PaginationLink>`.
 - `size`: `"sm" | "lg" | "default" | "icon" | null`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 271 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## PaginationEllipsis
 
@@ -117,4 +117,4 @@ Its props are `React.ComponentProps<"span">`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

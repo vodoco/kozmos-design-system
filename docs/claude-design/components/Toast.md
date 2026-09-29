@@ -76,7 +76,7 @@ It forwards its ref to `HTMLLIElement`. Its props are `Omit<ToastPrimitive.Toast
 - `onSwipeEnd`: `(event: SwipeEvent) => void`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## ToastProvider
 
@@ -116,7 +116,7 @@ It forwards its ref to `HTMLOListElement`. Its props are `Omit<ToastPrimitive.To
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 266 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## ToastTitle
 
@@ -125,7 +125,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<ToastPrimitive.Toas
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## ToastDescription
 
@@ -134,7 +134,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<ToastPrimitive.Toas
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## ToastClose
 
@@ -143,7 +143,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `Omit<ToastPrimitive.T
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## ToastAction
 
@@ -157,7 +157,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `Omit<ToastPrimitive.T
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Also exported
 
