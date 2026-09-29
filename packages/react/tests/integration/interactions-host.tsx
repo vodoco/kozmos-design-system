@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import {
+  AdaptiveMapShell,
   AICompanionPanel,
   AISearchButton,
   Menu,
@@ -10,6 +11,7 @@ import {
   MapStatusPill,
   MenuTrigger,
   MultiSelect,
+  POIDetailPanel,
   POIResultList,
   SegmentedControl,
   ThemeProvider,
@@ -328,6 +330,70 @@ function AssistantResponsive() {
   );
 }
 
+/** A place's details, as a product hosts them: the card and its close button. */
+function placeDetails(testId: string) {
+  return (
+    <POIDetailPanel
+      actionLabels={{
+        navigate: "Go",
+        favourite: "Favourite",
+        bookmark: "Save",
+        share: "Share",
+        order: "Order",
+      }}
+      data-testid={testId}
+      onAction={() => undefined}
+      onClose={() => undefined}
+      poi={{
+        id: "harbour-coffee",
+        name: "Harbour Coffee Co.",
+        floorId: "2",
+        floorLabel: "Level 2",
+        media: [],
+        actions: ["favourite", "bookmark"],
+      }}
+      presentation="sheet"
+    />
+  );
+}
+
+/**
+ * Fix 4 of 0.6.0: a product whose own layout is a 1000px size container,
+ * with the shell inside it. In the shell's panel, beside the hosted details
+ * card, a product note reads the product's container with an unnamed query
+ * and a `cqi` width. The card's sheet presentation also stands alone, in a
+ * box that shrinks to fit, as Storybook's centred layout draws it.
+ */
+function ShellProductContainer() {
+  return (
+    <>
+      <style>{`
+        .product-app { container-type: inline-size; width: 1000px; height: 700px; }
+        .product-note { color: rgb(0, 0, 255); inline-size: 50cqi; margin: 0; }
+        @container (min-width: 600px) { .product-note { color: rgb(255, 0, 0); } }
+      `}</style>
+      <div className="product-app">
+        <AdaptiveMapShell
+          map={<div style={{ width: "100%", height: "100%" }} />}
+          panel={
+            <>
+              <p className="product-note" data-testid="product-note">
+                Product content
+              </p>
+              {placeDetails("hosted-details")}
+            </>
+          }
+          panelPlacement="end"
+          style={{ height: "100%" }}
+        />
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", width: 1000 }}>
+        {placeDetails("standalone-details")}
+      </div>
+    </>
+  );
+}
+
 /** R3: a multi-select with two choices made, to clear from the keyboard. */
 function ToolsSelect() {
   return (
@@ -362,6 +428,7 @@ const scenarios: Record<string, () => ReactElement> = {
   "multi-select": () => <ToolsSelect />,
   "assistant-mount-to-open": () => <AssistantMountToOpen />,
   "assistant-responsive": () => <AssistantResponsive />,
+  "shell-product-container": () => <ShellProductContainer />,
 };
 
 window.interactions = {

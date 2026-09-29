@@ -207,15 +207,10 @@
      panel's top and 17 from its side, in a sheet and a side panel alike.
      The route preview's destination row does the same: its "To" sat 33 and
      17 too. */
-  /* And how wide it is: the panel's content box is a size container named
-     kozmos-panel, so a hosted part can place itself by the panel's width in
-     a container query, as the details card's header does under a grip
-     (decision 51). Inline-size containment only: the panel's width is the
-     shell's, never its content's, and fixed and absolute parts inside it
-     place as they did. */
-  [data-slot="map-shell-panel"] > [data-kozmos-scroller] {
-    container: kozmos-panel / inline-size;
-  }
+  /* The panel's content box is no size container: a product's own unnamed
+     container queries, and its cqi and cqw units, in content hosted here
+     read the product's own containers, not the panel. The details card is
+     its own container under the shell (owned-poi-detail.css). */
   .kozmos-browse-categories-first-row,
   .kozmos-route-preview-first-row {
     padding-top: max(

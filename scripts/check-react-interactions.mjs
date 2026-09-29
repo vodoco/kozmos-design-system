@@ -567,6 +567,81 @@ await scenario(
   { viewport: { width: 900, height: 800 } },
 );
 
+// Fix 4 of 0.6.0: the shell's panel no longer captures a product's own
+// container queries; only the hosted details card is a size container.
+await scenario(
+  "Containers: in the shell's panel, a product's unnamed query and cqi read the product's own container; only the details card is one",
+  "shell-product-container",
+  async (page) => {
+    const read = await page.evaluate(() => {
+      const note = document.querySelector('[data-testid="product-note"]');
+      const scroller = note.closest("[data-kozmos-scroller]");
+      const hosted = document.querySelector('[data-testid="hosted-details"]');
+      const alone = document.querySelector(
+        '[data-testid="standalone-details"]',
+      );
+      const style = (node) => getComputedStyle(node);
+      const contentWidth = (node) => {
+        const s = style(node);
+        return (
+          node.clientWidth -
+          parseFloat(s.paddingLeft) -
+          parseFloat(s.paddingRight)
+        );
+      };
+      return {
+        noteColour: style(note).color,
+        noteWidth: Math.round(note.getBoundingClientRect().width),
+        scrollerContainer: style(scroller).containerType,
+        scrollerWidth: Math.round(contentWidth(scroller)),
+        hostedContainer: style(hosted).containerType,
+        hostedWidth: Math.round(hosted.getBoundingClientRect().width),
+        aloneContainer: style(alone).containerType,
+        aloneWidth: Math.round(alone.getBoundingClientRect().width),
+      };
+    });
+    assert.equal(
+      read.noteColour,
+      "rgb(255, 0, 0)",
+      `a product's unnamed @container query read a ${read.scrollerWidth}px box, not its own 1000px container`,
+    );
+    assert.equal(
+      read.noteWidth,
+      500,
+      "50cqi of the product's 1000px container",
+    );
+    assert.equal(read.scrollerContainer, "normal", "the panel is a container");
+    // The hosted card is the container its header reads (decision 51), and
+    // fills the panel's content box, which is what that header measured.
+    assert.equal(read.hostedContainer, "inline-size");
+    assert.equal(read.hostedWidth, read.scrollerWidth);
+    // On its own, in a box that shrinks to fit, it is no container and does
+    // not collapse.
+    assert.equal(read.aloneContainer, "normal");
+    assert.ok(
+      read.aloneWidth > 200,
+      `the lone card collapsed to ${read.aloneWidth}px`,
+    );
+    // A container of inline size only is no containing block: a fixed part
+    // inside the card still places against the viewport.
+    const fixed = await page.evaluate(() => {
+      const part = document.createElement("div");
+      part.style.cssText =
+        "position: fixed; top: 0; left: 0; width: 10px; height: 10px;";
+      document.querySelector('[data-testid="hosted-details"]').append(part);
+      const { top, left } = part.getBoundingClientRect();
+      part.remove();
+      return { top: Math.round(top), left: Math.round(left) };
+    });
+    assert.deepEqual(
+      fixed,
+      { top: 0, left: 0 },
+      "a fixed part placed against the card",
+    );
+  },
+  { viewport: { width: 1000, height: 1400 } },
+);
+
 // R3: clearing every choice from the keyboard hands focus to the field.
 for (const key of ["Enter", "Space"]) {
   await scenario(

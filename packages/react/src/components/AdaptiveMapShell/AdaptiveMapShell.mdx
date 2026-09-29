@@ -42,9 +42,9 @@ own top padding can top it up rather than add to it:
 - `--kozmos-panel-clearance-top` is how far the content's first control must still sit below that
   so the grip's 16px target keeps its WCAG 2.5.8 spacing: 4px under a grip, `0px` elsewhere. A
   panel header keeps the same clearance itself.
-- The content box is a size container named `kozmos-panel` (inline size only), so a part can place
-  itself by the panel's width with `@container kozmos-panel (…)`. The panel's width is the shell's,
-  never its content's, and fixed and absolutely positioned parts inside it place as they did.
+- The content box is no size container, so a product's own container queries in content it hosts,
+  unnamed ones and `cqi` or `cqw` units among them, read the product's own containers. Only the
+  details card below is a container, of itself.
 
 Every part at the top of the panel keeps the grip's clearance, so no first control sits inside the
 grip's 24px circle:
@@ -60,8 +60,9 @@ grip's 24px circle:
   header's 16px up to the inset and drops the clearance wherever its header's buttons stay clear of
   the grip's circle anyway: its close button sits 17px from the top and 17px from the side. Where
   they would not, on a narrow panel (under 340px wide with favourite, save and close), it keeps the
-  clearance too, 21px and 17px (decision 51, refining decision 14 for this header). It reads the
-  panel's width from `kozmos-panel`.
+  clearance too, 21px and 17px (decision 51, refining decision 14 for this header). Hosted here,
+  the card is an inline-size container of its own and fills the content box, and its header reads
+  the card's width.
 
 The two values describe the panel's top. A part you place under a row of your own is not at the
 top: put that row in `panelHeader`, which keeps the grip clear itself, or set both properties to

@@ -82,10 +82,23 @@
      20rem + 18px (a 340px panel, its border counted), two 13.75rem + 18px,
      close alone 7.5rem + 18px. Narrower, the header keeps the grip's 4px
      clearance, as every other part at the panel's top does (decision 14):
-     21 and 17. The shell's panel is the container (kozmos-panel); its
-     content is centred under the grip on a phone, whose scrollbars overlay
-     it. With no grip the clearance is 0, and nothing here moves. */
-  @container kozmos-panel (width < calc(20rem + 18px)) {
+     21 and 17. The card is the container (kozmos-poi-detail, below), and
+     it is centred under the grip on a phone, whose scrollbars overlay the
+     panel. With no grip the clearance is 0, and nothing here moves. */
+  /* Under the shell the card is the size container its header reads,
+     inline size only, and fills the panel's content box, as the panel's
+     content does. The card's width, not the panel's, is what places its
+     buttons: in a wrapper that pads both sides it is narrower, and nearer
+     the grip's centre. Only here: the shell's panel is no container, so a
+     product's own container queries in it read its own containers, and the
+     card alone, in a box that shrinks to fit, keeps its width. */
+  [data-slot="map-shell-panel"]
+    > [data-kozmos-scroller]
+    .kozmos-poi-detail[data-presentation="sheet"] {
+    container: kozmos-poi-detail / inline-size;
+    inline-size: 100%;
+  }
+  @container kozmos-poi-detail (width < calc(20rem + 18px)) {
     .kozmos-poi-detail[data-presentation="sheet"]
       > .kozmos-poi-header:has(> .kozmos-poi-header-actions > :nth-child(3)) {
       padding-top: max(
@@ -94,7 +107,7 @@
       );
     }
   }
-  @container kozmos-panel (width < calc(13.75rem + 18px)) {
+  @container kozmos-poi-detail (width < calc(13.75rem + 18px)) {
     .kozmos-poi-detail[data-presentation="sheet"]
       > .kozmos-poi-header:has(> .kozmos-poi-header-actions > :nth-child(2)) {
       padding-top: max(
@@ -103,7 +116,7 @@
       );
     }
   }
-  @container kozmos-panel (width < calc(7.5rem + 18px)) {
+  @container kozmos-poi-detail (width < calc(7.5rem + 18px)) {
     .kozmos-poi-detail[data-presentation="sheet"]
       > .kozmos-poi-header:has(> .kozmos-poi-header-actions > *) {
       padding-top: max(
