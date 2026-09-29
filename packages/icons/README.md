@@ -36,6 +36,13 @@ Names are stable keys such as `arrow-left`, `bell-01` and `calendar`.
 `back`, `close`, `delete` — into its key. Icons with their own outlines are also
 named exports, for example `import { Heart } from "@kozmos-ds/icons"`.
 
+A named export brings in that icon alone: 0.4 to 1.9 KB gzip with the code
+that draws it. A lookup by name brings in every icon the registry names, about
+12 KB gzip today, because any of them could be asked for. That covers
+`getIconComponent`, `getIconDefinition`, `isKozmosIconKey`, the registry itself,
+and `Icon`'s `name` in `@kozmos-ds/react`. Import the icon when you know which
+one you need, and look it up when the name comes from data.
+
 ## Location symbols
 
 `LocationFollowing` and `LocationHeading` are the marks the map's location
