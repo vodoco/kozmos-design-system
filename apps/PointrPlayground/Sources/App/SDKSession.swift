@@ -74,7 +74,9 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     @Published private(set) var poiDataReady = false
     @Published var query = ""
     /// The tile chosen, the places, the favourites and the bookmarks: what the
-    /// results list and the map's filter are both read from.
+    /// results list and the map's filter are both read from. Every change goes
+    /// through the session's own methods, and whenever it changes which places
+    /// the map shows, the map is told; nothing else, and never the camera.
     @Published private(set) var mapFilter = SDKMapFilter() {
         didSet { if mapFilter.shown != oldValue.shown { showFilteredPlaces() } }
     }
@@ -243,6 +245,9 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         let controller = PTRMapWidgetViewController(location: target.mapWidgetLocation, configuration: policy)
         controller.addListener(self)
         widget = controller
+        // A tile chosen before a retry is still chosen: the new map shows its
+        // places, not every place, before the places are even counted.
+        showFilteredPlaces()
         Pointr.shared.poiManager?.addListener(self)
         Pointr.shared.dataManager?.addListener(self)
         Pointr.shared.wayfindingManager?.addListener(self)
@@ -354,7 +359,8 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     func toggleFavourite(_ id: String) { mapFilter.toggleFavourite(id) }
     func toggleSaved(_ id: String) { mapFilter.toggleSaved(id) }
 
-    /// Gives the map the filter's places; nil shows every place.
+    /// Gives the map the filter's places: nil shows every place, and an empty
+    /// set none (`SDKMapFilter.shown`).
     private func showFilteredPlaces() {
         widget?.mapViewController.poisToShow = mapFilter.shown.map { ids in Set(ids.compactMap { poisById[$0] }) }
     }

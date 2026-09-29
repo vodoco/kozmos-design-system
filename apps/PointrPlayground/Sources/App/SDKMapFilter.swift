@@ -1,8 +1,16 @@
 import Foundation
 
 /// The quick-access tile's filter on the map, held with its inputs: the tile
-/// chosen, the loaded places, the favourites and the bookmarks. The places are
-/// plain values, so the rules are testable without a `PTRPoi`.
+/// chosen, the loaded places, the favourites and the bookmarks, and the place
+/// whose card is open. What the map shows is worked out from those inputs
+/// every time it is read, so no input can change without the map following,
+/// and the results list reads the same places. The places are plain values,
+/// so the rules are testable without a `PTRPoi`.
+///
+/// Nothing here moves the camera. Choosing a tile may take the map to the
+/// level of its places (`SDKSession.choose(category:)`); a favourite, a
+/// bookmark or the venue's places arriving again only change which places the
+/// map shows.
 struct SDKMapFilter: Equatable {
     /// A loaded place as the filter needs it.
     struct Place: Equatable {
@@ -18,8 +26,23 @@ struct SDKMapFilter: Equatable {
     private(set) var saved = Set<String>()
     /// The place whose card is open, if any.
     private(set) var openPlace: String?
-    /// The places the map shows, by identifier: nil shows every place.
-    private(set) var shown: Set<String>?
+
+    /// The places the map shows, by identifier, for PointrKit's `poisToShow`:
+    /// nil with no tile chosen, which shows every place; otherwise exactly the
+    /// tile's places. A tile with none is an empty set, which shows none. The
+    /// SDK's reference: "If non-nil, the map will only display the pois that
+    /// match the identifiers from the set. Default value is nil."
+    ///
+    /// The place whose card is open stays on the map while its card does, so
+    /// removing its favourite does not take it from under the card; it leaves
+    /// when the card closes. The list is not on screen while a card is.
+    var shown: Set<String>? {
+        category.map { category in
+            var ids = Set(places(in: category).map(\.id))
+            if let openPlace { ids.insert(openPlace) }
+            return ids
+        }
+    }
 
     /// A tile's places, on every floor, by name: its places by the stand-in
     /// word match (`QuickAccess.matches`), or the personal tiles by what this
@@ -36,13 +59,10 @@ struct SDKMapFilter: Equatable {
 
     mutating func choose(_ category: QuickAccessCategory) {
         self.category = category
-        let matching = places(in: category)
-        shown = matching.isEmpty ? nil : Set(matching.map(\.id))
     }
 
     mutating func clearCategory() {
         category = nil
-        shown = nil
     }
 
     mutating func load(_ places: [Place]) {
