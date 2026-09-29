@@ -384,9 +384,19 @@ public struct KozmosPOIResultCard: View {
     /// The one tab, at the card's leading edge. Featured and a badge are read
     /// as their words, as they always were; a number is hidden, because it
     /// leads the result's own description.
+    ///
+    /// A capsule with circular ends, for the clip and the outline alike: its
+    /// corners never exceed half its height, which is what Android's
+    /// Control-radius shape clamps to, and they are circular arcs, as
+    /// Android's are. The Control radius itself is larger than half a 22pt
+    /// tab, and on a one-digit number, about as wide as it is tall, the
+    /// outline came out as a circle with straight stubs out of its sides and
+    /// bottom (K3, the review of #167). The continuous style does the same on
+    /// a capsule that nearly square, so the style is named, not left to the
+    /// default.
     @ViewBuilder
     private func tabView(_ tab: Tab, _ paint: TabPaint) -> some View {
-        let shape = RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
+        let shape = Capsule(style: .circular)
         let words: String = {
             switch tab {
             case .featured: return featuredLabel

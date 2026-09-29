@@ -223,6 +223,90 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
         XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
     }
 
+    /// K3 (review of #167): the number's quiet tab at rest is outlined as a
+    /// capsule, whose corners never exceed half its height, as Android draws
+    /// it. The Control radius on a tab this small drew a circle with straight
+    /// stubs out of its sides and its bottom. So every outline pixel must lie
+    /// in the 1pt band just inside the capsule inscribed in the tab's frame,
+    /// give or take a pixel of antialiasing, light and dark.
+    @MainActor func testTheNumbersQuietTabIsOutlinedAsACapsuleWithNoStubs() async throws {
+        let size = CGSize(width: 390, height: 140)
+        typealias RGB = (r: UInt8, g: UInt8, b: UInt8)
+        func distance(_ a: RGB, _ b: RGB) -> Int {
+            abs(Int(a.r) - Int(b.r)) + abs(Int(a.g) - Int(b.g)) + abs(Int(a.b) - Int(b.b))
+        }
+        var wrong: [String] = []
+        for scheme in [ColorScheme.light, .dark] {
+            let view = KozmosPOIResultCard(poi: poi, result: result(), numbered: true, onSelect: { _ in })
+                .frame(width: size.width, height: size.height, alignment: .top)
+                .background(KozmosColors.primitivesColorsBackground0)
+                .environment(\.layoutDirection, .leftToRight)
+                .environment(\.colorScheme, scheme)
+            let drawn = try await RenderedPixels.render(view, size: size)
+            let attachment = XCTAttachment(image: drawn.image)
+            attachment.name = "k3-number-at-rest-\(scheme)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+            func swatch(_ colour: Color) async throws -> RGB {
+                try await RenderedPixels.render(colour.environment(\.colorScheme, scheme), size: size).color(at: centre)
+            }
+            let edge = try await swatch(KozmosColors.semanticsBorderSubtle)
+            let fill = try await swatch(KozmosColors.primitivesColorsBackground0)
+            let words = try await swatch(KozmosColors.primitivesColorsForeground400)
+
+            // The tab stands 16pt in from the card's leading edge, on its top
+            // edge. The window leaves out the card's own top border and its
+            // rounded corner, which the tab's top meets.
+            let pixel = 1 / drawn.scale
+            var ink: [CGPoint] = []
+            for py in 0..<drawn.height {
+                for px in 0..<drawn.width {
+                    let point = CGPoint(x: (CGFloat(px) + 0.5) * pixel, y: (CGFloat(py) + 0.5) * pixel)
+                    guard point.x >= 15, point.x <= 64, point.y >= 2, point.y <= 34 else { continue }
+                    let colour = drawn.color(at: point)
+                    // An outline pixel: at least half-way from the card's fill
+                    // to the edge colour, and nearer the edge than the words.
+                    if distance(colour, edge) < distance(colour, fill),
+                       distance(colour, edge) < distance(colour, words),
+                       distance(colour, fill) * 2 >= distance(edge, fill) {
+                        ink.append(point)
+                    }
+                }
+            }
+            guard let minX = ink.map(\.x).min(), let maxX = ink.map(\.x).max(), let maxY = ink.map(\.y).max() else {
+                wrong.append("\(scheme): the number's tab has no outline")
+                continue
+            }
+            // The frame the outline was drawn in, and the capsule inscribed in it.
+            let frame = CGRect(x: minX - pixel / 2, y: 0, width: maxX - minX + pixel, height: maxY + pixel / 2)
+            let radius = min(frame.width, frame.height) / 2
+            let (from, to): (CGPoint, CGPoint) = frame.width >= frame.height
+                ? (CGPoint(x: frame.minX + radius, y: frame.midY), CGPoint(x: frame.maxX - radius, y: frame.midY))
+                : (CGPoint(x: frame.midX, y: frame.minY + radius), CGPoint(x: frame.midX, y: frame.maxY - radius))
+            /// How far a point lies outside the capsule's edge; negative inside.
+            func beyond(_ p: CGPoint) -> CGFloat {
+                let (dx, dy) = (to.x - from.x, to.y - from.y)
+                let length = dx * dx + dy * dy
+                let t = length == 0 ? 0 : max(0, min(1, ((p.x - from.x) * dx + (p.y - from.y) * dy) / length))
+                let (nx, ny) = (from.x + t * dx - p.x, from.y + t * dy - p.y)
+                return (nx * nx + ny * ny).squareRoot() - radius
+            }
+            // Outside the edge, or deeper inside than the stroke, but short of
+            // the digit, which sits more than 4pt in.
+            let slack = max(0.35, pixel)
+            let stray = ink.filter { point in
+                let d = beyond(point)
+                return d > slack || (d < -1 - slack && d > -3)
+            }
+            let worst = ink.map { beyond($0) }.max() ?? 0
+            let line = "\(scheme): the tab's frame is \(String(format: "%.1f × %.1f", frame.width, frame.height))pt at x \(String(format: "%.1f", frame.minX)); \(stray.count) of \(ink.count) outline pixels stray from its capsule, the furthest \(String(format: "%.2f", worst))pt outside"
+            print("K3 iOS: \(line)")
+            if stray.count > 0 { wrong.append(line) }
+        }
+        XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
+    }
+
     func testTheListsOneSelectionFillsThatResultsNumber() {
         let item = KozmosPOIResultListItem(poi: poi, result: result())
         let list = KozmosPOIResultList(
