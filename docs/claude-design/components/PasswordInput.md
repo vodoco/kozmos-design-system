@@ -46,7 +46,7 @@ It forwards its ref to `HTMLInputElement`. Its props are `PasswordInputProps`, w
 - `wrapperClassName`: `string`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 292 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

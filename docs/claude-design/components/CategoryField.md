@@ -78,7 +78,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `CategoryFieldProps`, whi
 
   Classes for the row `trailing` creates, not for the field inside it.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

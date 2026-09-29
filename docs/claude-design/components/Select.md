@@ -73,7 +73,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `SelectPrimitive.SelectGr
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## SelectValue
 
@@ -83,7 +83,7 @@ It forwards its ref to `HTMLSpanElement`. Its props are `SelectPrimitive.SelectV
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## SelectTrigger
 
@@ -94,7 +94,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `Omit<SelectPrimitive.
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## SelectContent
 
@@ -131,7 +131,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.Sel
 - `position`: `'item-aligned' | 'popper'`, optional, default `"popper"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## SelectLabel
 
@@ -140,7 +140,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.Sel
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## SelectItem
 
@@ -152,7 +152,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.Sel
 - `textValue`: `string`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## SelectSeparator
 
@@ -161,7 +161,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.Sel
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## SelectScrollUpButton
 
@@ -170,7 +170,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.Sel
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## SelectScrollDownButton
 
@@ -179,4 +179,4 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<SelectPrimitive.Sel
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

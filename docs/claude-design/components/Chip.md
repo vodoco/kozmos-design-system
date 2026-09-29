@@ -99,7 +99,7 @@ It forwards its ref to `HTMLSpanElement`. Its props are `ChipProps`, which exten
 - `variant`: `"destructive" | "neutral" | "brand" | null`, optional, default `"neutral"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## ChipGroup
 
@@ -131,7 +131,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `ChipGroupProps`, which e
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 261 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Also exported
 
