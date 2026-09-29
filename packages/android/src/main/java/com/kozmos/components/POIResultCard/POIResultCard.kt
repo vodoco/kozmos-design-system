@@ -74,6 +74,11 @@ fun kozmosPOIResultIdentifier(poiId: String): String = buildString {
  *
  * Mirrors the React `POIResultCard`. Selection is reported upward only; the
  * card renders exactly the state described by [poi] and [result].
+ *
+ * The selected result shows the actions `result.actions` carries; one pressed
+ * reaches [onAction] with the action and the POI's ID, and never selects.
+ * Without [onAction] they are drawn disabled, never as enabled buttons that do
+ * nothing.
  */
 @Composable
 fun KozmosPOIResultCard(

@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -65,6 +68,7 @@ class KozmosPOIDetailPanelActionStripTest {
     private fun Panel(
         fontScale: Float = 1f,
         states: Map<KozmosPOIAction, KozmosPOIActionState> = emptyMap(),
+        place: KozmosPOIPresentation = poi,
         onAction: (KozmosPOIAction, String) -> Unit = { _, _ -> }
     ) {
         val density = LocalDensity.current
@@ -72,7 +76,7 @@ class KozmosPOIDetailPanelActionStripTest {
             MaterialTheme {
                 Box(Modifier.padding(20.dp).width(320.dp)) {
                     KozmosPOIDetailPanel(
-                        poi = poi,
+                        poi = place,
                         actionLabels = german,
                         onAction = onAction,
                         actionStates = states,
@@ -153,6 +157,26 @@ class KozmosPOIDetailPanelActionStripTest {
 
             for (label in strip) read().showing(label).click!!.invoke()
             assertEquals(listOf("navigate harbour-coffee", "share harbour-coffee", "order harbour-coffee"), pressed)
+        }
+    }
+
+    /**
+     * A new place's strip starts at its first action, as iOS's and the web's
+     * do, wherever the last place's was scrolled to: it kept its scroll.
+     */
+    @Test
+    fun aNewPlacesStripStartsAtItsFirstAction() {
+        var place by mutableStateOf(poi)
+        paparazzi.live(content = { Panel(fontScale = 2f, place = place) }) {
+            read().merged.single { it.horizontalScroll != null }.scrollBy!!.invoke(10_000f, 0f)
+            frames(10)
+            val scrolled = read().merged.single { it.horizontalScroll != null }.horizontalScroll!!.first
+            assertTrue("the strip did not scroll: $scrolled", scrolled > 0f)
+
+            place = poi.copy(id = "harbour-tea", name = "Harbour Tea")
+            frames(5)
+            assertEquals("the new place's strip kept the last one's scroll",
+                0f, read().merged.single { it.horizontalScroll != null }.horizontalScroll!!.first)
         }
     }
 

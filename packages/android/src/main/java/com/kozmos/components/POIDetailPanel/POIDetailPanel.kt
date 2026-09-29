@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,6 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -261,7 +263,9 @@ fun KozmosPOIDetailPanel(
                         modifier = Modifier
                             .fillMaxWidth()
                             .bleedHorizontally(KozmosDimensions.primitivesLayoutSpacing200)
-                            .horizontalScroll(rememberScrollState())
+                            // A new place's strip starts at its first action,
+                            // as iOS's and the web's do.
+                            .horizontalScroll(remember(poi.id) { ScrollState(0) })
                             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing200),
                         horizontalArrangement = Arrangement.spacedBy(
                             KozmosDimensions.primitivesLayoutSpacing100
