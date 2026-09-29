@@ -13,6 +13,7 @@ import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultAction
 import com.kozmos.contracts.KozmosPOIResultActionPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
+import com.kozmos.docsnippets.ResultsWithActions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -94,6 +95,18 @@ class KozmosPOIResultListActionTest {
         tree.showing("Details").click!!.invoke()
         assertEquals(listOf("navigate gate/12", "details gate/12"), received.actions)
         assertEquals("pressing an action selected its result", emptyList<String>(), received.selections)
+    }
+
+    /** The docs' example, as POIResultList.mdx writes it (docsnippets): Go reaches the app. */
+    @Test
+    fun theDocsExampleReachesTheApp() {
+        val received = Received()
+        val tree = paparazzi.readSemantics {
+            MaterialTheme { ResultsWithActions(items(listOf(go)), "gate/12", received::select, received::action) }
+        }
+        tree.showing("Go").click!!.invoke()
+        assertEquals(listOf("navigate gate/12"), received.actions)
+        assertEquals(emptyList<String>(), received.selections)
     }
 
     /**

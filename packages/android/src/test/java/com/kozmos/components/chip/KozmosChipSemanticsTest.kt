@@ -13,9 +13,11 @@ import com.kozmos.components.ReadSemantics
 import com.kozmos.components.live
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.docsnippets.CategoryFilters
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -128,6 +130,34 @@ class KozmosChipSemanticsTest {
         assertEquals(Role.Button, removeTag.role)
         removeTag.click!!.invoke()
         assertEquals(listOf("Coffee", "remove Coffee", "remove Open now"), ran)
+    }
+
+    /**
+     * The docs' example, as Chip.mdx writes it (docsnippets), with the
+     * parent's state: the chosen category is read as selected, and "Open now"
+     * is taken away by its own button.
+     */
+    @Test
+    fun theDocsExampleSaysWhichCategoryIsSelected() {
+        var category by mutableStateOf("all")
+        var openNow by mutableStateOf(true)
+        paparazzi.live(content = {
+            MaterialTheme {
+                CategoryFilters(category, { category = it }, openNow, { openNow = false })
+            }
+        }) {
+            assertEquals(true, read().showing("All").selected)
+            assertEquals(false, read().showing("Coffee").selected)
+            read().showing("Coffee").click!!.invoke()
+            frames(3)
+            assertEquals(true, read().showing("Coffee").selected)
+            assertEquals(false, read().showing("All").selected)
+
+            assertNull(read().showing("Open now").click)
+            read().named("Remove Open now").click!!.invoke()
+            frames(3)
+            assertTrue("removing the filter left it", read().merged.none { "Open now" in it.texts })
+        }
     }
 
     /**

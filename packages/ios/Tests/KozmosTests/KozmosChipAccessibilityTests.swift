@@ -106,6 +106,35 @@ final class KozmosChipAccessibilityTests: HostedAccessibilityTestCase {
         XCTAssertEqual(ran, ["Coffee", "remove Coffee", "remove Open now"])
     }
 
+    /// The docs' example, as Chip.mdx writes it (DocSnippets), with the
+    /// parent's state: the chosen category is heard as selected, and "Open
+    /// now" is taken away by its own button.
+    private struct Filters: View {
+        @State var category = "all"
+        @State var openNow = true
+
+        var body: some View {
+            CategoryFilters(category: $category, openNow: $openNow)
+        }
+    }
+
+    @MainActor func testTheDocsExampleSaysWhichCategoryIsSelected() async throws {
+        let window = await host(Filters())
+        defer { window.isHidden = true }
+
+        XCTAssertTrue(try element(named: "All", in: window).accessibilityTraits.contains(.selected))
+        XCTAssertFalse(try element(named: "Coffee", in: window).accessibilityTraits.contains(.selected))
+        XCTAssertTrue(try element(named: "Coffee", in: window).accessibilityActivate())
+        await settle()
+        XCTAssertTrue(try element(named: "Coffee", in: window).accessibilityTraits.contains(.selected))
+        XCTAssertFalse(try element(named: "All", in: window).accessibilityTraits.contains(.selected))
+
+        XCTAssertFalse(try element(named: "Open now", in: window).accessibilityTraits.contains(.button))
+        XCTAssertTrue(try element(named: "Remove Open now", in: window).accessibilityActivate())
+        await settle()
+        XCTAssertFalse(labels(in: window).contains("Open now"), "removing the filter left it: \(labels(in: window))")
+    }
+
     /// Disabled is heard, not only drawn at half strength: the chip and its
     /// remove are dimmed to VoiceOver, keep their selection, and run nothing.
     @MainActor func testADisabledChipIsHeardAsDimmedAndRunsNothing() async throws {

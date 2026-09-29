@@ -68,6 +68,20 @@ final class KozmosPOIResultListActionTests: HostedAccessibilityTestCase {
         XCTAssertEqual(received.selections, [], "pressing an action selected its result")
     }
 
+    /// The docs' example, as POIResultList.mdx writes it (DocSnippets): Go
+    /// reaches the app.
+    @MainActor func testTheDocsExampleReachesTheApp() async throws {
+        let received = Received()
+        let window = await host(ResultsWithActions(
+            items: items([go]), selectedPoiId: "gate/12", onSelect: received.select, onAction: received.action
+        ))
+        defer { window.isHidden = true }
+
+        XCTAssertTrue(try element(named: "Go", in: window).accessibilityActivate())
+        XCTAssertEqual(received.actions, ["navigate gate/12"])
+        XCTAssertEqual(received.selections, [])
+    }
+
     /// The initialiser without an empty state hands actions on too.
     @MainActor func testTheShortInitialiserHandsActionsOnToo() async throws {
         let received = Received()

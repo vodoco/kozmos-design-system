@@ -1,5 +1,6 @@
 import { Meta, Canvas } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
+import { PlatformSnippets } from "../PlatformSnippets";
 import * as Stories from "./POIResultList.stories";
 
 <Meta of={Stories} />
@@ -12,6 +13,102 @@ change. The empty state should tell the person how to recover.
 
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.Empty} />
+
+## Actions on the selected result
+
+The selected result shows the actions its `result.actions` carries, in the order given. One that
+is pressed reaches `onAction` with the action and the POI's ID, and never selects anything. The
+list hands `onAction` and `actionsLabel`, the action row's name, to every result, groups included.
+The same names on iOS and Android, where both are optional and come after the list's other
+parameters.
+
+Give the list `onAction` whenever its results carry actions. On iOS and Android an action with
+nothing to run it is drawn disabled, as `POIDetailPanel` draws a supplementary action it has no
+handler for, never as an enabled button that does nothing. A disabled action, and every action of
+an unavailable result, stays inert however it is pressed.
+
+<PlatformSnippets
+    react={`
+import { POIResultList, type POIResultListItem } from "@kozmos-ds/react";
+import type { POIResultAction } from "@kozmos-ds/product-contracts";
+
+export function ResultsWithActions({
+  items,
+  selectedPoiId,
+  onSelect,
+  onAction,
+}: {
+  items: POIResultListItem[];
+  selectedPoiId?: string;
+  onSelect: (poiId: string) => void;
+  // Told which action was pressed, and the POI's own ID.
+  onAction: (action: POIResultAction, poiId: string) => void;
+}) {
+  return (
+    <POIResultList
+      items={items}
+      resultCountLabel={\`\${items.length} results\`}
+      selectedPoiId={selectedPoiId}
+      onSelect={onSelect}
+      onAction={onAction}
+      // The selected result's action row, named in the visitor's words.
+      actionsLabel="Actions for this result"
+    />
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+struct ResultsWithActions: View {
+    let items: [KozmosPOIResultListItem]
+    let selectedPoiId: String?
+    let onSelect: (String) -> Void
+    // Told which action was pressed, and the POI's own ID.
+    let onAction: (KozmosPOIResultAction, String) -> Void
+
+    var body: some View {
+        KozmosPOIResultList(
+            items: items,
+            resultCountLabel: "\\(items.count) results",
+            selectedPoiId: selectedPoiId,
+            // The selected result's action row, named in the visitor's words.
+            actionsLabel: "Actions for this result",
+            onSelect: onSelect,
+            // Without it the actions are drawn disabled.
+            onAction: onAction
+        )
+    }
+}
+    `}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.poiresultlist.KozmosPOIResultList
+import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
+import com.kozmos.contracts.KozmosPOIResultAction
+
+@Composable
+fun ResultsWithActions(
+    items: List<KozmosPOIResultListItem>,
+    selectedPoiId: String?,
+    onSelect: (String) -> Unit,
+    // Told which action was pressed, and the POI's own ID.
+    onAction: (KozmosPOIResultAction, String) -> Unit
+) {
+    KozmosPOIResultList(
+        items = items,
+        resultCountLabel = "\${items.size} results",
+        onSelect = onSelect,
+        selectedPoiId = selectedPoiId,
+        // The selected result's action row, named in the visitor's words.
+        actionsLabel = "Actions for this result",
+        // Without it the actions are drawn disabled.
+        onAction = onAction
+    )
+}
+    `}
+/>
 
 ## The selected result comes into view
 
