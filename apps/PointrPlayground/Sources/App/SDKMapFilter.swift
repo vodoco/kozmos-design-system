@@ -53,9 +53,14 @@ struct SDKMapFilter: Equatable {
         }
     }
 
-    /// `shown` as PointrKit is told it.
+    /// `shown` as PointrKit is told it. None is every loaded place hidden, not
+    /// an empty `poisToShow`: PointrKit 10.3.0 draws an empty `poisToShow` as
+    /// every place (measured on Design-QA, 2026-09-29), although its reference
+    /// says a non-nil set shows only the places in it. The hidden set follows
+    /// the places as they load.
     var mapPlaces: SDKMapPlaces {
-        shown.map { .only($0) } ?? .every
+        guard let shown else { return .every }
+        return shown.isEmpty ? .hide(Set(places.map(\.id))) : .only(shown)
     }
 
     /// A tile's places, on every floor, by name: its places by the stand-in
