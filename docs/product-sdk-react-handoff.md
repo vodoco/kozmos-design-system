@@ -75,6 +75,12 @@ const [selectedPoiId, setSelectedPoiId] = useState<string>();
 The map adapter should also pan or change floor from this same state transition.
 If the POI is on another floor, announce that change before switching floors.
 
+A page that shows the same place in more than one list, such as the search's
+results and an assistant's answer, gives each list but one an `idPrefix`, and
+its pins name the card with the same prefix:
+`resultId={getPOIResultDomId(poi.id, "assistant")}` for the list given
+`idPrefix="assistant"`. Without a prefix the ids are unchanged.
+
 ## Show A Walk As A Band In Result Lists
 
 The app passes the walking time it already has, with its exact, localized label.

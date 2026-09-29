@@ -46,7 +46,9 @@ const replies = {
       {
         type: "required_reviewers",
         prevent_self_review: false,
-        reviewers: [{ type: "User", reviewer: { login: "vodoco" } }],
+        reviewers: [
+          { type: "User", reviewer: { login: "vodoco", id: 10688082 } },
+        ],
       },
     ],
     deployment_branch_policy: { custom_branch_policies: true },
