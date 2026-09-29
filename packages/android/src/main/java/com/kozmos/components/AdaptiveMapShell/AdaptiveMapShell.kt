@@ -117,7 +117,10 @@ val LocalKozmosPanelInsetTop = compositionLocalOf { 0.dp }
  * How far the panel content's first control must still sit below
  * [LocalKozmosPanelInsetTop] (GAP-083): 4dp under a handle — half of what its
  * 16dp row falls short of 24 — so the handle's target keeps its WCAG 2.5.8
- * spacing; 0 everywhere else.
+ * spacing; 0 everywhere else. It is also how far below the row the 24dp
+ * circle on the handle's centre reaches, so a part that knows where its
+ * controls sit across the panel may keep it only where they would meet that
+ * circle: `KozmosPOIDetailPanel`'s header does (decision 51).
  */
 val LocalKozmosPanelClearanceTop = compositionLocalOf { 0.dp }
 

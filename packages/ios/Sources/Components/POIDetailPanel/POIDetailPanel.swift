@@ -33,9 +33,12 @@ public struct KozmosPOIActionState: Sendable, Hashable {
 ///
 /// In its sheet presentation, which paints no surface of its own, the card is
 /// the top of the map shell's panel: its header tops its top padding up to
-/// what the panel already leaves above it (`kozmosPanelInsetTop`,
-/// `kozmosPanelClearanceTop`) rather than adding to it, so its close button
-/// sits as far from the panel's top as from its side (GAP-083). The panel and
+/// what the panel already leaves above it (`kozmosPanelInsetTop`) rather than
+/// adding to it, so its close button sits as far from the panel's top as from
+/// its side (GAP-083), 16 and 16 under a grabber. Where its quick buttons
+/// would then meet the grabber's target — three of them on a card under 338
+/// points wide — its first row keeps the grabber's clearance
+/// (`kozmosPanelClearanceTop`) too, 20 and 16 (decision 51). The panel and
 /// inline presentations draw their own bordered card and keep their padding
 /// inside it.
 public struct KozmosPOIDetailPanel: View {
@@ -208,15 +211,36 @@ public struct KozmosPOIDetailPanel: View {
     /// The header's top padding. In the sheet presentation the card paints no
     /// surface of its own, so the space the shell's panel leaves above it is
     /// the card's own top: the header tops it up to 16 rather than adding 16
-    /// to it, and keeps the clearance the panel asks for under a grabber — the
-    /// close button sat 32 from the sheet's top and 16 from its side
-    /// (GAP-083). The panel and inline presentations draw their own bordered
-    /// card, and that space lies outside the border: they keep their 16
-    /// inside it, or the header meets the card's own top edge.
+    /// to it, and under a grabber sits flush under the grabber's row — the
+    /// close button as far from the sheet's top as from its side, 16 and 16.
+    /// It sat 32 and 16 (GAP-083), then 20 and 16; where its buttons would
+    /// meet the grabber's target, its first row still keeps the grabber's
+    /// clearance (`grabberReach`, decision 51). The panel and inline
+    /// presentations draw their own bordered card, and that space lies
+    /// outside the border: they keep their 16 inside it, or the header meets
+    /// the card's own top edge.
     private var headerTopPadding: CGFloat {
         let padding = KozmosDimensions.primitivesLayoutSpacing200
         guard presentation == .sheet else { return padding }
-        return max(panelClearanceTop, padding - panelInsetTop)
+        return max(0, padding - panelInsetTop)
+    }
+
+    /// How far from the middle of the header's first row its quick buttons
+    /// must start to stay out of the grabber's target, flush under its row
+    /// (decision 51); 0 with no grabber. The grabber's row is an undersized
+    /// target, and WCAG 2.5.8 keeps a 24-point circle on its centre clear of
+    /// every other target. The shell's clearance is how far below the row
+    /// that circle reaches, so its radius is half the row and the clearance;
+    /// flush, the buttons' top edge is half the row under its centre, and
+    /// the button nearest the middle must start √(12² − 8²) ≈ 8.9 past it,
+    /// rounded up to 9 as the web rounds it. The row is centred under the
+    /// grabber, as the card spans the sheet.
+    private var grabberReach: CGFloat {
+        guard presentation == .sheet, panelClearanceTop > 0 else { return 0 }
+        let radius = panelInsetTop / 2 + panelClearanceTop
+        let depth = panelInsetTop / 2 + headerTopPadding
+        guard depth < radius else { return 0 }
+        return (radius * radius - depth * depth).squareRoot().rounded(.up)
     }
 
     /// An inset block's surface: the muted grey on the panel's own white, and
@@ -233,8 +257,12 @@ public struct KozmosPOIDetailPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             // The name and the quick buttons share one row whatever the name's
             // length: a long name wraps beside them, three lines at most, and
-            // never pushes them under it.
-            HStack(alignment: .top, spacing: 8) { identity; quickButtons }
+            // never pushes them under it. Under a grabber the row keeps the
+            // grabber's clearance only where its buttons need it.
+            POIDetailHeaderRow(spacing: 8, clearance: grabberReach > 0 ? panelClearanceTop : 0, reach: grabberReach) {
+                identity
+                quickButtons
+            }
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     location; Spacer(minLength: 4); availability
@@ -392,8 +420,12 @@ struct POIDetailActionButton: View {
             .frame(minWidth: 44, minHeight: primary && estimate != nil ? 56 : 44)
             .background(filled ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+            // Inside the frame, as the web's border and Compose's BorderStroke
+            // are: a stroke on the frame's edge put half of it outside, and
+            // under a grabber, with the header flush under its row (decision
+            // 51), the sheet's scroll view cut that half off the top edge.
             .overlay(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                .stroke(filled ? Color.clear : KozmosColors.semanticsBorderSubtle, lineWidth: 1))
+                .strokeBorder(filled ? Color.clear : KozmosColors.semanticsBorderSubtle, lineWidth: 1))
         }
         .buttonStyle(.plain)
         .disabled(state.disabled || state.loading)
@@ -401,6 +433,47 @@ struct POIDetailActionButton: View {
         .accessibilityLabel(label)
         .accessibilityValue(state.loading ? Text(loadingLabel) : Text(estimate ?? ""))
         .accessibilityAddTraits(state.pressed ? [.isSelected] : [])
+    }
+}
+
+/// The details header's first row: the name, taking what the quick buttons
+/// leave, and the quick buttons at its end, both from its top — as
+/// `HStack(alignment: .top, spacing:)` lays them out. Under a grabber
+/// (decision 51) it also keeps the buttons out of the grabber's target: where
+/// their start edge would come within `reach` of the row's middle, which is
+/// under the grabber's centre, the whole row starts `clearance` lower. It
+/// measures its buttons, which grow with the text size, rather than counting
+/// them: at the largest sizes they reach the circle on wider phones too.
+struct POIDetailHeaderRow: Layout {
+    var spacing: CGFloat
+    var clearance: CGFloat = 0
+    var reach: CGFloat = 0
+
+    private func arrange(width proposed: CGFloat?, subviews: Subviews)
+        -> (width: CGFloat, name: CGSize, buttons: CGSize, drop: CGFloat) {
+        let buttons = subviews[1].sizeThatFits(.unspecified)
+        let width: CGFloat
+        if let proposed, proposed.isFinite {
+            width = proposed
+        } else {
+            width = subviews[0].sizeThatFits(.unspecified).width + spacing + buttons.width
+        }
+        let name = subviews[0].sizeThatFits(ProposedViewSize(width: max(0, width - spacing - buttons.width), height: nil))
+        let meets = clearance > 0 && buttons.width > 0 && width / 2 - buttons.width < reach
+        return (width, name, buttons, meets ? clearance : 0)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let row = arrange(width: proposal.width, subviews: subviews)
+        return CGSize(width: row.width, height: row.drop + max(row.name.height, row.buttons.height))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let row = arrange(width: bounds.width, subviews: subviews)
+        subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.minY + row.drop), anchor: .topLeading,
+                          proposal: ProposedViewSize(width: max(0, bounds.width - spacing - row.buttons.width), height: nil))
+        subviews[1].place(at: CGPoint(x: bounds.maxX, y: bounds.minY + row.drop), anchor: .topTrailing,
+                          proposal: .unspecified)
     }
 }
 

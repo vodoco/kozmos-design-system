@@ -24,8 +24,9 @@ GitHub Releases.
    at each verification, including at the start of the publish job.
 4. Repository variable `NPM_RELEASE_ENABLED=true` and an `npm-release`
    environment carrying an exact `main` branch policy, holding `NPM_TOKEN` as an
-   environment secret, and requiring Olcay's approval with administrator bypass
-   off; the policy refuses a release if either is undone. See "The approval gate".
+   environment secret, and requiring Olcay's approval (its one required reviewer is
+   his account, `vodoco`, User id 10688082) with administrator bypass off; the
+   policy refuses a release if either is undone. See "The approval gate".
 
 Global concurrency serializes releases without cancelling a running publish.
 There is no automatic version PR, publication, git tag or GitHub release; tags and
@@ -71,9 +72,9 @@ what it will ship.
 
 - `NPM_RELEASE_ENABLED` is `true`. Setting it to `false` stops every release at once.
 - `npm-release` has a selected branch rule for `main` (not a wildcard or tag), Olcay
-  as required reviewer (self-approval allowed) and administrator bypass off. The REST
-  environment response exposes the reviewer and the bypass setting, and the policy
-  asserts both. Administrators and
+  as its only required reviewer (self-approval allowed) and administrator bypass off.
+  The REST environment response exposes the reviewers and the bypass setting, and the
+  policy asserts both, exactly as "The approval gate" says. Administrators and
   trusted workflow authors remain a trust boundary: automation that runs as Olcay's
   account could approve a publish, so it never does. That is a rule; a separate
   automation account without the right would make it a fence.
@@ -101,6 +102,22 @@ dispatches and approves, and administrator bypass off. The dispatch is no longer
 human act: the publish job waits under "Review deployments" until Olcay approves. The
 credential fence stays too: `NPM_TOKEN` is an environment secret that only the publish job,
 on `main`, can read.
+
+What `scripts/release/policy.mjs` checks, in the pre-flight and again in both release jobs,
+against GitHub's live `environments/npm-release` response:
+
+- **Exactly one required reviewer, Olcay's account:** one entry across the environment's
+  required-reviewer rules, of type `User`, whose account id is `10688082` (`vodoco`). Only
+  his account may approve (Olcay's decision, 2026-09-28). The id is compared, not the login:
+  a login can be renamed and later registered by someone else, and an account id cannot.
+  Another account, a team, a second reviewer beside him, or an entry without that id is
+  refused. So is a rule with no reviewers, or no rule at all.
+- **Administrator bypass off:** `can_admins_bypass` must be `false`. A response without the
+  field is refused, not read as off.
+- **A branch rule restricted to `main`:** a `branch_policy` rule, custom branch policies, and
+  exactly one policy, the branch `main`.
+
+What no check here can do:
 
 - Protect main and the release workflow/plan from unreviewed edits as part of
   repository governance. Local scripts cannot prevent an administrator or someone
@@ -135,8 +152,31 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    tested main, not a moving checkout.
 5. Check each package version, integrity and dist-tag (the script verifies these after
    each publish), then from the registry: `npm view`, and a clean install into an empty
-   project. Then `pnpm release:tag <sha>` for the tags and GitHub Releases; it refuses a
-   commit that no successful Release run published, or whose versions npm lacks.
+   project. Then `pnpm release:tag <sha>` for the tags and GitHub Releases (`--dry-run`
+   first); it refuses a commit that no successful Release run published, or whose versions
+   npm lacks, and it checks every tag and release already there before it makes any (below).
+
+## Tags and GitHub Releases
+
+`pnpm release:tag <sha>` makes one git tag and one GitHub Release per package the plan at
+`<sha>` shipped: `<package>@<version>`, with that version's changelog section as the notes,
+dependencies first and React last.
+
+- **The channel carries over.** A semver prerelease (`0.6.0-beta.1`) is made a GitHub
+  prerelease (`--prerelease`). Only a stable React release on `latest` is marked Latest;
+  every other release gets `--latest=false`, so a prerelease, or anything on `next`, is
+  never Latest. A plan that names neither `next` nor `latest` is refused.
+- **Existing tags and releases are checked first, all of them.** Before the first release
+  is made, each planned tag is looked up and resolved to its commit, through any annotated
+  tags, and must be `<sha>`. A release that already exists must be on such a tag. A tag or a
+  release at another commit, a draft release, or a release without its tag refuses the whole
+  run, naming each conflict, and nothing is created. It never moves or deletes a tag or a
+  release: a conflict is settled by hand.
+- **A failed lookup is not an absence.** Only GitHub's 404 means "there is none". Any other
+  answer (401, 403, 5xx) or no answer at all (the network) refuses the run.
+- **Running it again is safe.** A tag and release that already exist at `<sha>` are left as
+  they are, and only the missing ones are made. `--dry-run` makes every check and creates
+  nothing.
 
 ## Failure and recovery
 
