@@ -52,7 +52,11 @@ public extension EnvironmentValues {
     /// How far the panel content's first control must still sit below
     /// `kozmosPanelInsetTop` (GAP-083): 4 points under a grabber — half of
     /// what its 16-point row falls short of 24 — so the grabber's target keeps
-    /// its WCAG 2.5.8 spacing; zero everywhere else.
+    /// its WCAG 2.5.8 spacing; zero everywhere else. It is also how far below
+    /// the row the 24-point circle on the grabber's centre reaches, so a part
+    /// that knows where its controls sit across the panel may keep it only
+    /// where they would meet that circle: `KozmosPOIDetailPanel`'s header does
+    /// (decision 51).
     var kozmosPanelClearanceTop: CGFloat {
         get { self[KozmosPanelClearanceTopKey.self] }
         set { self[KozmosPanelClearanceTopKey.self] = newValue }
