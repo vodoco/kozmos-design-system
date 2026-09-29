@@ -182,9 +182,9 @@ const knownViolations: Record<string, readonly KnownViolation[]> = {
   "/examples/venue-explorer": [SHELL_PANEL],
   "/examples/wayfinding": [SHELL_PANEL],
   "/examples/phone-search": [SHELL_PANEL],
-  // The assistant open over the phone's frame: the map shell under it is
-  // inert (GAP-93), and axe leaves inert content out, so the shell's panel
-  // is not measured then.
+  // The assistant open over the phone's frame: the panel makes the map shell
+  // under it inert (GAP-93, fixed), and axe leaves inert content out, so the
+  // shell's panel is not measured then.
   "/examples/phone-search#assistant": [],
   "/examples/dashboard": [SIDEBAR],
   // The adaptive tile's shell.
@@ -3569,6 +3569,44 @@ test.describe("phone search example", () => {
       .toBe("Bookshop");
   });
 
+  test("a place in the assistant's answer and in the sheet's list draws no id twice", async ({
+    page,
+  }) => {
+    // T1: a result card's id came from its place's id alone, so the Bookshop
+    // the answer shows and the Bookshop the sheet lists drew one id twice, and
+    // the answer's references could resolve into the sheet. Each answer's
+    // cards take a prefix of their own (idPrefix).
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const example = phone(page);
+    await example
+      .getByRole("searchbox", { name: "Search Riverside Centre" })
+      .fill("book");
+    await expect(
+      example.getByRole("button", { name: /^Bookshop/ }).first(),
+    ).toBeVisible();
+    await example
+      .getByRole("button", { name: "Ask the assistant" })
+      .press("Enter");
+    const assistant = example.getByRole("region", { name: "Assistant" });
+    const field = assistant.getByRole("textbox", { name: "Ask the assistant" });
+    await field.fill("Where can I buy a book?");
+    await field.press("Enter");
+    await expect(
+      assistant.getByRole("button", { name: /^Bookshop/ }),
+    ).toBeVisible();
+    const twice = await page.evaluate(() => {
+      const seen = new Set<string>();
+      const repeated = new Set<string>();
+      for (const node of document.querySelectorAll("[id]")) {
+        if (seen.has(node.id)) repeated.add(node.id);
+        seen.add(node.id);
+      }
+      return [...repeated];
+    });
+    expect(twice, "ids drawn twice").toEqual([]);
+  });
+
   test("the assistant's voice conversation, from its script", async ({
     page,
   }) => {
@@ -3647,9 +3685,10 @@ test.describe("phone search example", () => {
   test("the assistant keeps the keyboard out of what it covers", async ({
     page,
   }) => {
-    // GAP-93, composed: the panel covers the frame but leaves what it covers
-    // in the tab order, so the example makes the map shell inert while it is
-    // open. Shift+Tab from the panel went to the sheet's tiles under it.
+    // GAP-93, fixed: the panel covered the frame but left what it covered in
+    // the tab order, and Shift+Tab from it went to the sheet's tiles under it.
+    // The example made the map shell inert itself; the panel does it now, and
+    // the example passes nothing.
     await page.goto("/examples/phone-search");
     await hydrated(page);
     const example = phone(page);

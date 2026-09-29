@@ -262,6 +262,14 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:select-accessibility
           ADAPTIVE_BROWSER=firefox pnpm test:select-accessibility
 
+      # What only a real browser proves, on the built package in each engine:
+      # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs).
+      - name: Verify Built Focus, Keyboard and Scrolling
+        run: |
+          pnpm test:react-interactions
+          ADAPTIVE_BROWSER=webkit pnpm test:react-interactions
+          ADAPTIVE_BROWSER=firefox pnpm test:react-interactions
+
       - name: Verify Module Theme and Stylesheet Isolation
         run: |
           pnpm test:themes

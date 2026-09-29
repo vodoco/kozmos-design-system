@@ -420,6 +420,16 @@ try {
           "opening the panel moves focus into it",
         );
         await audit();
+        // GAP-93: what the open panel covers is out of reach, the button
+        // that opened it included; focus stays in the panel.
+        assert.equal(
+          await ask.evaluate((n) => {
+            n.focus();
+            return n === document.activeElement;
+          }),
+          false,
+          "the button the open panel covers took focus",
+        );
         await page.keyboard.press("Escape");
         await assistant.waitFor({ state: "detached" });
         await settleLayout(page);

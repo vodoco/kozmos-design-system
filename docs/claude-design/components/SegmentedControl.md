@@ -59,6 +59,14 @@ It forwards its ref to `HTMLDivElement`. Its props are `SegmentedControlProps`, 
 
 - `size`: `"sm" | "default" | "lg"`, optional, default `"default"`.
 - `value`: `string`, optional.
+
+  The chosen segment, for a product that holds the choice itself. Passed at
+  all, `value` holds it: `undefined` is nothing chosen, the value
+  `onValueChange` hands over when the choice is taken back, so a control
+  that starts empty passes `value={undefined}` too. Leave it out, and give
+  `defaultValue`, for a control that keeps its own choice; an `undefined`
+  value beside a `defaultValue` leaves the choice to the control as well.
+
 - `wrapperClassName`: `string`, optional.
 - `dir`: `RovingFocusGroupProps['dir']`, optional.
 - `asChild`: `boolean`, optional.
