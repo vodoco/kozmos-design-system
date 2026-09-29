@@ -26,11 +26,14 @@
 - A pull request runs CI (`ci.yml`) and Visual Regression (`visual.yml`); one into `main` also runs
   Lighthouse CI (`lighthouse.yml`) and Bundle Size Analysis (`bundle-size.yml`). The 19 checks
   listed under "GitHub Status Checks" (§10) are required on `main`, matched by name, and a pull
-  request must be up to date with `main` to merge.
+  request must be up to date with `main` to merge. One that changes the website, Storybook or a
+  package also runs Site (`site.yml`), the website's own checks, which are not required.
 - A push to `main` runs the four again, except that CI, Lighthouse CI and the bundle check skip a
-  push that changes only documentation (`**.md`, `docs/**`, `.vscode/**`, `LICENSE`).
-- Nothing publishes on a merge. A release is a manual dispatch of `release.yml` that Olcay approves
-  (§9), and only the npm packages are published (§6).
+  push that changes only documentation (`**.md`, `docs/**`, `.vscode/**`, `LICENSE`). When it
+  changes the website, Storybook or a package, Pages (`pages.yml`) publishes the website and
+  Storybook to GitHub Pages (§4).
+- No package publishes on a merge. A release is a manual dispatch of `release.yml` that Olcay
+  approves (§9), and only the npm packages are published (§6).
 
 ### Workflow Files
 
@@ -41,6 +44,8 @@
     ├── visual.yml         # Visual Regression: the "Visual Review" check, and recording baselines
     ├── lighthouse.yml     # Lighthouse CI over the built Storybook
     ├── bundle-size.yml    # Bundle Size Analysis: the "analyze-bundle" check
+    ├── site.yml           # Site: the website's checks, on changes to it (not required)
+    ├── pages.yml          # Pages: publishes the website and Storybook from main
     ├── figma-tokens.yml   # Figma Token Synchronization: manual, and off unless enabled
     └── release.yml        # Release Kozmos System: the guarded, approved npm publish
 ```
@@ -72,9 +77,12 @@ in progress, which a job reports as "The operation was canceled".
 | `iOS Build`                   | macos-latest  | `swift build` and `swift test` in `packages/ios`, the POI render tests on a simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                           |
 | `Android Build`               | ubuntu-latest | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                          |
 
-`node scripts/ci-local.mjs --job web|ios|android` runs a job's steps on your machine. It uses fixed
-ports, so only one session at a time may run it, and it covers only the job's own steps: the
-browser shards, the bundle check and Visual Review run on GitHub.
+`node scripts/ci-local.mjs --job <job>` runs one of `ci.yml`'s jobs on your machine: `web` (the
+default), `browsers`, `pipeline`, `ios` or `android`. `--job browsers` runs the twelve shards one
+after another, and `--shard` picks one by its name (`--shard "Documentation (webkit)"`). It uses
+fixed ports, so only one session at a time may run it, and it reads only `ci.yml`: the bundle check
+(`pnpm tsx scripts/performance/bundle-analyzer.ts`), Lighthouse CI and Visual Review are run by
+their own commands.
 
 ---
 
@@ -129,15 +137,15 @@ token files into the iOS and Android packages (`pnpm tokens:native:copy`, checke
 
 ### Storybook
 
-Storybook lives in `apps/docs` (package `@kozmos-ds/docs`). CI, Visual Regression and Lighthouse CI
-build it in order to test it; it is not hosted anywhere yet. Olcay's decision 34 is to host it with
-the website on GitHub Pages, and that work has not started.
+Storybook lives in `apps/docs` (package `@kozmos-ds/docs`). `pages.yml` publishes it with the
+website on GitHub Pages, at <https://vodoco.github.io/kozmos-design-system/storybook/>, as the
+component reference (decision 44). CI, Visual Regression and Lighthouse CI build it too, to test it.
 
 ---
 
 ## 5. Test Workflows
 
-There is no separate test workflow: the tests run in `ci.yml`.
+The components' tests run in `ci.yml`; `site.yml` tests the website alone.
 
 - **Unit tests:** `pnpm test` in `Web Build & Test` (Vitest; React's suite includes `vitest-axe`
   checks).
@@ -148,7 +156,8 @@ There is no separate test workflow: the tests run in `ci.yml`.
   Storybook.
 - **Core pipeline:** React's Playwright tests, `scripts/skills/check-a11y.ts` and
   `pnpm test:storybook-regressions`, then `pnpm test:poi-gallery`.
-- **iOS:** `swift test`, and the POI render tests on a simulator.
+- **iOS:** `swift test`, then the whole test target on the pinned simulator
+  (`node scripts/check-ios-poi.mjs`), since `swift test` on macOS compiles the iOS-only tests out.
 - **Android:** the Paparazzi snapshots (`./gradlew verifyPaparazziDebug`).
 
 Nothing collects coverage: `@vitest/coverage-v8` is not installed, so `--coverage` fails.
@@ -157,7 +166,8 @@ Nothing collects coverage: `@vitest/coverage-v8` is not installed, so `--coverag
 
 ## 6. Publishing Workflows
 
-`release.yml` is the only workflow that publishes, and it publishes only to npm (§9):
+`release.yml` is the only workflow that publishes a package, and it publishes only to npm (§9).
+`pages.yml` publishes the website and Storybook (§4).
 
 - **npm:** `@kozmos-ds/react`, `@kozmos-ds/icons`, `@kozmos-ds/product-contracts` and
   `@kozmos-ds/tokens`.
@@ -283,8 +293,10 @@ gh run rerun <run-id> --failed
 gh workflow run visual.yml --ref <branch> -f record=true
 ```
 
-Only `visual.yml`, `figma-tokens.yml` and `release.yml` can be dispatched. `release.yml` is
-Olcay's, with the command `pnpm release:preflight` prints (§9).
+Only `visual.yml`, `figma-tokens.yml`, `pages.yml` and `release.yml` can be dispatched.
+`release.yml` is Olcay's, with the command `pnpm release:preflight` prints (§9). The `github-pages`
+environment deploys from `main` only, so a dispatch of `pages.yml` on another branch builds the site
+but does not publish it.
 
 ### Secrets
 
@@ -294,12 +306,13 @@ Secrets are Olcay's to manage (§3); an assistant never reads, prints, sets or d
 
 ## Version History
 
-| Version | Date       | Changes                                                    |
-| ------- | ---------- | ---------------------------------------------------------- |
-| 1.0.0   | 2026-02-07 | Initial CI/CD configuration guide                          |
-| 2.0.0   | 2026-09-28 | Rewritten to the workflows, secrets and release that exist |
+| Version | Date       | Changes                                                                |
+| ------- | ---------- | ---------------------------------------------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial CI/CD configuration guide                                      |
+| 2.0.0   | 2026-09-28 | Rewritten to the workflows, secrets and release that exist             |
+| 2.1.0   | 2026-09-29 | Eight workflows with Site and Pages; local shards; Storybook is hosted |
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last Updated:** 2026-09-28
+**Last Updated:** 2026-09-29
