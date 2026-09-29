@@ -16,9 +16,9 @@ const browser = await launchFixtureBrowser();
 const failures = [];
 
 /** One scenario on a fresh page; any page error or React warning fails it. */
-async function scenario(name, mount, run, { reducedMotion } = {}) {
+async function scenario(name, mount, run, { reducedMotion, viewport } = {}) {
   const page = await browser.newPage({
-    viewport: { width: 800, height: 600 },
+    viewport: viewport ?? { width: 800, height: 600 },
     reducedMotion: reducedMotion ? "reduce" : "no-preference",
   });
   const errors = [];
@@ -472,6 +472,67 @@ await scenario(
     assert.equal(await page.getByRole("region").count(), 0, "unmounted");
     assert.equal((await focusIn(page)).name, "Ask the assistant");
   },
+);
+
+// Fix 2 of 0.6.0: what the assistant covers follows the layout while it is
+// open. A media query lays it over the frame below 700px, and beside the
+// search from 700px.
+await scenario(
+  "GAP-93: covering, then beside the search as the layout changes, it gives the search back to the pointer and the keyboard",
+  "assistant-responsive",
+  async (page) => {
+    await openAssistant(page);
+    assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+
+    await page.setViewportSize({ width: 900, height: 800 });
+    await settleLayout(page);
+    assert.equal(
+      await takesFocus(page, "Shops"),
+      true,
+      "the tile beside the panel stayed out of reach",
+    );
+    const tile = await page
+      .getByRole("button", { name: "Shops", exact: true })
+      .boundingBox();
+    await page.mouse.click(tile.x + tile.width / 2, tile.y + tile.height / 2);
+    await settleLayout(page);
+    assert.equal(
+      await page.getByTestId("presses").textContent(),
+      "1",
+      "a press on the tile beside the panel did nothing",
+    );
+  },
+  { viewport: { width: 390, height: 800 } },
+);
+
+await scenario(
+  "GAP-93: beside the search, then covering it as the layout changes, it keeps the keyboard out and takes focus from what it covered",
+  "assistant-responsive",
+  async (page) => {
+    await openAssistant(page);
+    // Beside the panel, the visitor goes back to a tile.
+    assert.equal(await takesFocus(page, "Shops"), true);
+
+    await page.setViewportSize({ width: 390, height: 800 });
+    await settleLayout(page);
+    assert.equal(
+      (await focusIn(page)).name,
+      "Assistant",
+      "focus stayed on the tile the panel now covers",
+    );
+    assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+    await page.getByRole("textbox", { name: "Ask" }).focus();
+    for (let step = 0; step < 3; step += 1) {
+      await page.keyboard.press("Shift+Tab");
+      const at = await focusIn(page);
+      assert.equal(
+        at.inFrame && !at.inPanel,
+        false,
+        `Shift+Tab landed under the panel, on "${at.name}"`,
+      );
+    }
+  },
+  { viewport: { width: 900, height: 800 } },
 );
 
 // R3: clearing every choice from the keyboard hands focus to the field.

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AICompanionPanel } from "./AICompanionPanel";
 
 /** A control outside the panel, as AISearchButton is in the SDK's sheet. */
@@ -326,6 +326,92 @@ describe("AICompanionPanel", () => {
       rerender(<Phone coverItself open={false} />);
       expect(screen.getByTestId("search")).not.toHaveAttribute("inert");
       expect(document.querySelector("[inert]")).toBeNull();
+    });
+
+    describe("while it is open, as the layout changes", () => {
+      // What it covered was decided once, as it opened. A layout that moved
+      // it from covering the frame to half of it left the other half inert
+      // and out of reach; the other way, the covered half stayed in reach.
+      // A stand-in ResizeObserver, told when the stated layout changes.
+      let observers: {
+        callback: ResizeObserverCallback;
+        targets: Set<Element>;
+      }[] = [];
+      beforeEach(() => {
+        observers = [];
+        vi.stubGlobal(
+          "ResizeObserver",
+          class {
+            targets = new Set<Element>();
+            constructor(public callback: ResizeObserverCallback) {
+              observers.push(this);
+            }
+            observe(target: Element) {
+              this.targets.add(target);
+            }
+            unobserve(target: Element) {
+              this.targets.delete(target);
+            }
+            disconnect() {
+              this.targets.clear();
+            }
+          },
+        );
+      });
+      afterEach(() => vi.unstubAllGlobals());
+      const resized = () =>
+        observers.forEach((observer) =>
+          observer.callback([], observer as unknown as ResizeObserver),
+        );
+
+      it("gives what it no longer covers back, and takes it again when it covers it again", () => {
+        const layout = { ...frameSize, left: 0 };
+        layOut(layout);
+        const { rerender } = render(<Phone open={false} />);
+        screen.getByRole("button", { name: "Ask the assistant" }).focus();
+        rerender(<Phone open />);
+        expect(inert("Shops")).toBe(true);
+        // It watches itself and the box it is laid against.
+        expect(
+          observers.some(
+            (observer) =>
+              observer.targets.has(
+                screen.getByRole("region", { name: "Assistant" }),
+              ) && observer.targets.has(screen.getByTestId("frame")),
+          ),
+        ).toBe(true);
+
+        // A narrower layout lays it over half the frame: the other half is
+        // there to use.
+        Object.assign(layout, { width: 180, left: 180 });
+        resized();
+        expect(document.querySelector("[inert]")).toBeNull();
+
+        // And back.
+        Object.assign(layout, { width: frameSize.width, left: 0 });
+        resized();
+        expect(inert("Shops")).toBe(true);
+        expect(inert("Toolbar")).toBe(false);
+
+        rerender(<Phone open={false} />);
+        expect(document.querySelector("[inert]")).toBeNull();
+      });
+
+      it("takes focus from a control it has just covered, which nobody can see now", () => {
+        const layout = { ...frameSize, width: 180, left: 180 };
+        layOut(layout);
+        const { rerender } = render(<Phone open={false} />);
+        screen.getByRole("button", { name: "Ask the assistant" }).focus();
+        rerender(<Phone open />);
+        expect(document.querySelector("[inert]")).toBeNull();
+        // Beside the panel, the visitor goes back to a tile.
+        screen.getByRole("button", { name: "Shops" }).focus();
+
+        Object.assign(layout, { width: frameSize.width, left: 0 });
+        resized();
+        expect(inert("Shops")).toBe(true);
+        expect(screen.getByRole("region", { name: "Assistant" })).toHaveFocus();
+      });
     });
 
     it("covers the page when it is fixed over the whole viewport, and keeps the page's popups in reach", () => {

@@ -129,9 +129,13 @@ where nobody could see them (WCAG 2.2, 2.4.11).
 - **Placed in flow**, as in the stories above, or over only part of its box,
   it covers nothing, and what sits beside it stays in reach.
 
-It measures what it covers as it opens, from the layout, so a transform that
-animates it in does not change the answer. A product that made the covered box
-inert itself before Kozmos did can stop: its own `inert` is left to it.
+It measures what it covers from the layout, so a transform that animates it in
+does not change the answer: as it opens, and again whenever it or the box it is
+laid against changes size while it is open. A layout that moves it from covering
+its frame to half of it gives the other half back; the other way, it takes what
+it now covers, and focus on a control it has just covered goes into the panel.
+A product that made the covered box inert itself before Kozmos did can stop:
+its own `inert` is left to it.
 
 ## A spoken conversation
 

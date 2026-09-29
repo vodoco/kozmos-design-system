@@ -284,6 +284,46 @@ function AssistantMountToOpen() {
   );
 }
 
+/**
+ * Fix 2 of 0.6.0: a layout that changes while the assistant is open. Below
+ * 700px the panel covers its frame; from 700px it is the frame's right half,
+ * beside the search. A media query decides, as a product's would.
+ */
+function AssistantResponsive() {
+  const [open, setOpen] = useState(false);
+  const [presses, setPresses] = useState(0);
+  return (
+    <>
+      <style>{`
+        .responsive-frame { position: relative; width: 100%; height: 560px; overflow: hidden; }
+        .responsive-frame > .responsive-panel.responsive-panel { position: absolute; inset: 0; width: 100%; background: white; }
+        @media (min-width: 700px) {
+          .responsive-frame > .responsive-panel.responsive-panel { left: auto; right: 0; width: 50%; }
+        }
+      `}</style>
+      <div className="responsive-frame" data-testid="frame">
+        <div data-testid="search" style={{ width: 300 }}>
+          <AISearchButton
+            label="Ask the assistant"
+            onClick={() => setOpen(true)}
+          />
+          <button onClick={() => setPresses((n) => n + 1)} type="button">
+            Shops
+          </button>
+          <output data-testid="presses">{presses}</output>
+        </div>
+        <AICompanionPanel
+          className="responsive-panel"
+          onClose={() => setOpen(false)}
+          open={open}
+        >
+          <input aria-label="Ask" />
+        </AICompanionPanel>
+      </div>
+    </>
+  );
+}
+
 /** R3: a multi-select with two choices made, to clear from the keyboard. */
 function ToolsSelect() {
   return (
@@ -317,6 +357,7 @@ const scenarios: Record<string, () => ReactElement> = {
   "assistant-fixed": () => <AssistantCover placement="fixed" />,
   "multi-select": () => <ToolsSelect />,
   "assistant-mount-to-open": () => <AssistantMountToOpen />,
+  "assistant-responsive": () => <AssistantResponsive />,
 };
 
 window.interactions = {
