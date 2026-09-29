@@ -44,9 +44,13 @@ final class SDKSessionGeneration: @unchecked Sendable {
         live = false
     }
 
-    /// Whether work queued under `token` may still run.
+    /// Whether work queued under `token` may still run: only in the session
+    /// it was queued in, and only while that session is running. Work queued
+    /// before a stop, before a retry, or between the two is refused; a
+    /// `started` flag alone would let the retried session take an old
+    /// session's work.
     func accepts(_ token: Token) -> Bool {
-        true
+        token.live && token == current
     }
 }
 
@@ -61,11 +65,15 @@ struct SDKCardIdentity: Equatable {
 /// address.
 enum SDKContactOutcome {
     /// The card's action states with the outcome of `action`, tried on
-    /// `card`, written in.
+    /// `card`, written in, if that card is still the one showing. Opening a
+    /// website, a call or an email returns later; by then the visitor may have
+    /// opened another place, or closed this one and opened it again, and that
+    /// card never tried the action.
     static func completing(
         _ states: [String: KozmosPOIActionState], action: String, opened: Bool,
         triedOn card: SDKCardIdentity, showing current: SDKCardIdentity?
     ) -> [String: KozmosPOIActionState] {
+        guard current == card else { return states }
         var next = states
         next[action] = opened ? .init() : .init(message: "That couldn't be opened.", messageTone: .error)
         return next

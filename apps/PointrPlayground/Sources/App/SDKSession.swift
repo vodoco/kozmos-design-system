@@ -154,8 +154,8 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         log.notice("SDK asked for language \(params.preferredLanguage ?? "none", privacy: .public); app locale \(Locale.current.identifier, privacy: .public); device languages \(Locale.preferredLanguages.prefix(3).joined(separator: ","), privacy: .public)")
         Pointr.shared.start(with: params) { [weak self] state in
             Task { @MainActor in
-                guard self?.generation.current == token else { return }
-                self?.handle(state)
+                guard let self, self.generation.accepts(token) else { return }
+                self.handle(state)
             }
         }
     }
@@ -198,7 +198,10 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
 
     /// Queues an SDK callback's work onto the main actor under the session
     /// token current when the SDK called. The work runs only if `generation`
-    /// still accepts that token when its turn comes.
+    /// still accepts that token when its turn comes: a state change, a map
+    /// error, a level change or wayfinding's readiness queued before `stop()`
+    /// or a retry never reaches the stopped session or the new one. Every
+    /// listener method goes through here.
     nonisolated func onMain(_ work: @escaping @MainActor (SDKSession) -> Void) {
         let token = generation.current
         Task { @MainActor [weak self] in
