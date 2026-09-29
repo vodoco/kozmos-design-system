@@ -156,7 +156,7 @@ function describeLeak(kept, wanted) {
   const inRegistry = extra.filter((name) =>
     registryNames.includes(name),
   ).length;
-  return `${kept.length} icons survived where ${wanted.length} were imported: ${extra.length} extra (${extra.slice(0, 6).join(", ")}${extra.length > 6 ? ", …" : ""}), ${inRegistry} of them from the registry`;
+  return `${kept.length} icons survived where ${wanted.length} ${wanted.length === 1 ? "was" : "were"} imported: ${extra.length} extra (${extra.slice(0, 6).join(", ")}${extra.length > 6 ? ", …" : ""}), ${inRegistry} of them from the registry`;
 }
 
 const kb = (bytes) => (bytes / 1024).toFixed(2);
