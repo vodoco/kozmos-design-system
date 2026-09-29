@@ -18,13 +18,16 @@ The facts are generated from the code: the
 [component inventory](../../.ai-skills/component-inventory.md), the
 [API cards](../claude-design/README.md) and the platform [status](../status.md).
 
-| Proposal                                             | What it describes                                                                                     |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| [mcp-server.md](mcp-server.md)                       | An MCP server, `@kozmos-ds/mcp-server`, answering questions about components, tokens and patterns.    |
-| [ai-editor-setup.md](ai-editor-setup.md)             | A setup command, `kozmos-ai-setup`, and editor and agent configurations that start that server.       |
-| [other-platforms.md](other-platforms.md)             | React Native, and Lit Web Components with Vue wrappers: platforms in the original scope, never built. |
-| [platform-mapping-plan.md](platform-mapping-plan.md) | The cross-platform component, prop and token mapping planned before the code, across six platforms.   |
-| [token-pipeline-plan.md](token-pipeline-plan.md)     | The token pipeline planned before the code: its files, configuration and outputs.                     |
-| [migration-plan.md](migration-plan.md)               | Upgrades across major versions that were never released, with a CLI and codemods that do not exist.   |
-| [i18n-plan.md](i18n-plan.md)                         | Kozmos's own translation files, a locales package, an i18n provider and a translation workflow.       |
-| [storybook-plan.md](storybook-plan.md)               | Storybook customisations never added: a manager theme, the designs and pseudo-states addons.          |
+| Proposal                                                 | What it describes                                                                                     |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [mcp-server.md](mcp-server.md)                           | An MCP server, `@kozmos-ds/mcp-server`, answering questions about components, tokens and patterns.    |
+| [ai-editor-setup.md](ai-editor-setup.md)                 | A setup command, `kozmos-ai-setup`, and editor and agent configurations that start that server.       |
+| [other-platforms.md](other-platforms.md)                 | React Native, and Lit Web Components with Vue wrappers: platforms in the original scope, never built. |
+| [platform-mapping-plan.md](platform-mapping-plan.md)     | The cross-platform component, prop and token mapping planned before the code, across six platforms.   |
+| [token-pipeline-plan.md](token-pipeline-plan.md)         | The token pipeline planned before the code: its files, configuration and outputs.                     |
+| [migration-plan.md](migration-plan.md)                   | Upgrades across major versions that were never released, with a CLI and codemods that do not exist.   |
+| [i18n-plan.md](i18n-plan.md)                             | Kozmos's own translation files, a locales package, an i18n provider and a translation workflow.       |
+| [storybook-plan.md](storybook-plan.md)                   | Storybook customisations never added: a manager theme, the designs and pseudo-states addons.          |
+| [code-patterns-plan.md](code-patterns-plan.md)           | Component, token, story and test templates for six platforms, written before the code.                |
+| [component-creation-plan.md](component-creation-plan.md) | A Tooltip built step by step on every platform, unlike the real one.                                  |
+| [testing-plan.md](testing-plan.md)                       | Test suites, helpers and budgets planned before the code, with `jest-axe` and invented paths.         |

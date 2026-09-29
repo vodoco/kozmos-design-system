@@ -1,6 +1,8 @@
 # Kozmos Design System - Testing Patterns Guide
 
-> **Purpose:** This document provides comprehensive testing patterns and examples for all platforms in the Kozmos Design System.
+> **Purpose:** how Kozmos is tested on its three platforms, React, SwiftUI and Jetpack Compose,
+> with excerpts from the real tests. The suites planned before the code are kept as a proposal in
+> [docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
 
 ---
 
@@ -21,28 +23,22 @@
 
 ## 1. Testing Philosophy
 
-### Testing Pyramid
+### The Layers
 
-```
-           /\
-          /  \        E2E Tests (5%)
-         /----\       - Critical user flows
-        /      \      - Cross-browser
-       /--------\     Integration Tests (15%)
-      /          \    - Component interactions
-     /------------\   - API integration
-    /              \  Unit Tests (80%)
-   /----------------\ - Component behavior
-  /                  \- Utility functions
-```
+| Layer         | What runs                                                                        | Where                                                   |
+| ------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Unit          | Vitest in jsdom, with Testing Library and `vitest-axe`                           | beside each React component                             |
+| Unit          | XCTest, and image snapshots with `swift-snapshot-testing`                        | `packages/ios/Tests/KozmosTests`                        |
+| Unit          | Paparazzi snapshots and JUnit tests                                              | `packages/android/src/test/java/com/kozmos/components/` |
+| Built package | Playwright against the built library and Storybook, in Chromium, Firefox, WebKit | `scripts/check-*.mjs`, run by their `package.json` name |
+| Accessibility | axe on stories, in light and dark, at 320 and 1280 px wide                       | `pnpm test:storybook-audit`                             |
+| Visual        | every story in light and dark, against committed baselines                       | `tests/visual`                                          |
 
-### Test Requirements by Component Maturity
+### Component Maturity
 
-| Maturity | Unit Tests | A11y Tests | Visual Tests | Integration |
-| -------- | ---------- | ---------- | ------------ | ----------- |
-| Alpha    | Optional   | Required   | Optional     | Optional    |
-| Beta     | Required   | Required   | Required     | Optional    |
-| Stable   | Required   | Required   | Required     | Required    |
+Kozmos marks no component alpha, beta or stable, so nothing is tested by maturity. Every React
+component directory has a test and a story (113 of 113), and in CI every story is audited by axe
+and drawn by the visual review, with nothing to register.
 
 ### What to Test
 
@@ -60,1012 +56,219 @@
 
 ### Setup
 
+React's tests run with Vitest in jsdom, from `packages/react/vitest.config.ts`:
+
 ```typescript
-// packages/react/vitest.config.ts
+// kozmos-skills: template — abridged from packages/react/vitest.config.ts
+/// <reference types="vitest" />
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}"],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-      exclude: [
-        "node_modules/",
-        "src/test/",
-        "**/*.stories.tsx",
-        "**/*.figma.tsx",
-      ],
+    setupFiles: "./src/test/setup.ts",
+    include: ["src/**/*.test.{ts,tsx}", "tests/**/*.spec.{ts,tsx}"],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "tests/visual/**",
+      "tests/e2e/**",
+    ],
+    alias: {
+      "@kozmos-ds/react": resolve(__dirname, "./src"),
     },
   },
 });
 ```
 
+The alias points the package's own name at its source, so a test never reads a stale build.
+
 ### Test Setup File
 
+`packages/react/src/test/setup.ts` adds Testing Library's DOM matchers and `vitest-axe`'s
+`toHaveNoViolations` (typed by `src/test/vitest-axe.d.ts`), and stands in for the browser APIs
+jsdom lacks, `ResizeObserver` and pointer capture:
+
 ```typescript
-// packages/react/src/test/setup.ts
+// kozmos-skills: template — abridged from packages/react/src/test/setup.ts
 import "@testing-library/jest-dom";
-import { expect, afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
-import * as matchers from "@testing-library/jest-dom/matchers";
-import { axe, toHaveNoViolations } from "jest-axe";
+import * as matchers from "vitest-axe/matchers";
+import { expect } from "vitest";
 
-// Extend Vitest's expect
 expect.extend(matchers);
-expect.extend(toHaveNoViolations);
 
-// Cleanup after each test
-afterEach(() => {
-  cleanup();
-});
-
-// Mock matchMedia
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }),
-});
-
-// Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
+global.ResizeObserver = class {
   observe() {}
   unobserve() {}
   disconnect() {}
 };
+
+if (!Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = function setPointerCapture() {};
+  Element.prototype.releasePointerCapture = function releasePointerCapture() {};
+  Element.prototype.hasPointerCapture = function hasPointerCapture() {
+    return false;
+  };
+}
 ```
 
 ### Test Utilities
 
-```tsx
-// packages/react/src/test/utils.tsx
-import * as React from "react";
-import { render, RenderOptions } from "@testing-library/react";
-import { ThemeProvider } from "../theme/ThemeProvider";
-
-interface WrapperProps {
-  children: React.ReactNode;
-}
-
-function AllTheProviders({ children }: WrapperProps) {
-  return <ThemeProvider defaultTheme="light">{children}</ThemeProvider>;
-}
-
-const customRender = (
-  ui: React.ReactElement,
-  options?: Omit<RenderOptions, "wrapper">,
-) => render(ui, { wrapper: AllTheProviders, ...options });
-
-export * from "@testing-library/react";
-export { customRender as render };
-```
+There is no shared render helper: a test renders its component directly, inside a
+`ThemeProvider` where it needs one.
 
 ### Button Component Tests
 
+From `packages/react/src/components/Button/Button.test.tsx`:
+
 ```tsx
-// packages/react/src/components/Button/Button.test.tsx
+// kozmos-skills: template — a test beside Button in packages/react, importing its source
+import { createRef } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "../../test/utils";
-import userEvent from "@testing-library/user-event";
-import { axe } from "jest-axe";
 import { Button } from "./Button";
 
 describe("Button", () => {
-  // =========================================================================
-  // Rendering
-  // =========================================================================
-
-  describe("Rendering", () => {
-    it("renders children correctly", () => {
-      render(<Button>Click me</Button>);
-      expect(
-        screen.getByRole("button", { name: "Click me" }),
-      ).toBeInTheDocument();
-    });
-
-    it("renders as a button element by default", () => {
-      render(<Button>Click</Button>);
-      expect(screen.getByRole("button")).toBeInTheDocument();
-    });
-
-    it("forwards ref to button element", () => {
-      const ref = React.createRef<HTMLButtonElement>();
-      render(<Button ref={ref}>Click</Button>);
-      expect(ref.current).toBeInstanceOf(HTMLButtonElement);
-    });
-
-    it("spreads additional props to button", () => {
-      render(<Button data-testid="custom-button">Click</Button>);
-      expect(screen.getByTestId("custom-button")).toBeInTheDocument();
-    });
+  it("renders correctly", () => {
+    render(<Button>Click me</Button>);
+    expect(
+      screen.getByRole("button", { name: /click me/i }),
+    ).toBeInTheDocument();
   });
 
-  // =========================================================================
-  // Variants
-  // =========================================================================
-
-  describe("Variants", () => {
-    it.each(["solid", "outline", "ghost", "link"] as const)(
-      "renders %s variant",
-      (variant) => {
-        render(<Button variant={variant}>Click</Button>);
-        expect(screen.getByRole("button")).toHaveClass(
-          `kozmos-button--${variant}`,
-        );
-      },
+  it("renders loading state correctly", () => {
+    render(
+      <Button disabled={undefined} isLoading>
+        Loading...
+      </Button>,
     );
-
-    it.each(["sm", "md", "lg"] as const)("renders %s size", (size) => {
-      render(<Button size={size}>Click</Button>);
-      expect(screen.getByRole("button")).toHaveClass(`kozmos-button--${size}`);
-    });
-
-    it("applies default variant and size", () => {
-      render(<Button>Click</Button>);
-      const button = screen.getByRole("button");
-      expect(button).toHaveClass("kozmos-button--solid");
-      expect(button).toHaveClass("kozmos-button--md");
-    });
+    const button = screen.getByRole("button");
+    expect(button).toBeDisabled();
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    expect(button.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
-  // =========================================================================
-  // Interactions
-  // =========================================================================
-
-  describe("Interactions", () => {
-    it("calls onClick when clicked", async () => {
-      const handleClick = vi.fn();
-      const user = userEvent.setup();
-
-      render(<Button onClick={handleClick}>Click</Button>);
-      await user.click(screen.getByRole("button"));
-
-      expect(handleClick).toHaveBeenCalledTimes(1);
-    });
-
-    it("does not call onClick when disabled", async () => {
-      const handleClick = vi.fn();
-      const user = userEvent.setup();
-
-      render(
-        <Button onClick={handleClick} disabled>
-          Click
-        </Button>,
-      );
-      await user.click(screen.getByRole("button"));
-
-      expect(handleClick).not.toHaveBeenCalled();
-    });
-
-    it("does not call onClick when loading", async () => {
-      const handleClick = vi.fn();
-      const user = userEvent.setup();
-
-      render(
-        <Button onClick={handleClick} loading>
-          Click
-        </Button>,
-      );
-      await user.click(screen.getByRole("button"));
-
-      expect(handleClick).not.toHaveBeenCalled();
-    });
-
-    it("supports keyboard navigation", async () => {
-      const handleClick = vi.fn();
-      const user = userEvent.setup();
-
-      render(<Button onClick={handleClick}>Click</Button>);
-      const button = screen.getByRole("button");
-
-      await user.tab();
-      expect(button).toHaveFocus();
-
-      await user.keyboard("{Enter}");
-      expect(handleClick).toHaveBeenCalledTimes(1);
-
-      await user.keyboard(" ");
-      expect(handleClick).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  // =========================================================================
-  // States
-  // =========================================================================
-
-  describe("States", () => {
-    it("shows disabled state", () => {
-      render(<Button disabled>Click</Button>);
-      expect(screen.getByRole("button")).toBeDisabled();
-    });
-
-    it("shows loading state with spinner", () => {
-      render(<Button loading>Click</Button>);
-      const button = screen.getByRole("button");
-
-      expect(button).toHaveAttribute("aria-busy", "true");
-      expect(screen.getByRole("status")).toBeInTheDocument();
-    });
-
-    it("hides text when loading", () => {
-      render(<Button loading>Click</Button>);
-      expect(screen.getByText("Click")).toHaveClass(
-        "kozmos-button__text--hidden",
-      );
-    });
-
-    it("is disabled when loading", () => {
-      render(<Button loading>Click</Button>);
-      expect(screen.getByRole("button")).toBeDisabled();
-    });
-  });
-
-  // =========================================================================
-  // Accessibility
-  // =========================================================================
-
-  describe("Accessibility", () => {
-    it("has no accessibility violations", async () => {
-      const { container } = render(<Button>Click</Button>);
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-
-    it("has no violations when disabled", async () => {
-      const { container } = render(<Button disabled>Click</Button>);
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-
-    it("has no violations when loading", async () => {
-      const { container } = render(<Button loading>Click</Button>);
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-
-    it("supports aria-label", () => {
-      render(<Button aria-label="Submit form">→</Button>);
-      expect(
-        screen.getByRole("button", { name: "Submit form" }),
-      ).toBeInTheDocument();
-    });
-
-    it("supports aria-describedby", () => {
-      render(
-        <>
-          <Button aria-describedby="help">Click</Button>
-          <span id="help">This button submits the form</span>
-        </>,
-      );
-      expect(screen.getByRole("button")).toHaveAttribute(
-        "aria-describedby",
-        "help",
-      );
-    });
-  });
-
-  // =========================================================================
-  // Type Attribute
-  // =========================================================================
-
-  describe("Type Attribute", () => {
-    it('defaults to type="button"', () => {
-      render(<Button>Click</Button>);
-      expect(screen.getByRole("button")).toHaveAttribute("type", "button");
-    });
-
-    it('supports type="submit"', () => {
-      render(<Button type="submit">Submit</Button>);
-      expect(screen.getByRole("button")).toHaveAttribute("type", "submit");
-    });
-
-    it('supports type="reset"', () => {
-      render(<Button type="reset">Reset</Button>);
-      expect(screen.getByRole("button")).toHaveAttribute("type", "reset");
-    });
-  });
-
-  // =========================================================================
-  // Polymorphism (if supported)
-  // =========================================================================
-
-  describe("Polymorphism", () => {
-    it("renders as anchor when asChild with Link", () => {
-      render(
-        <Button asChild>
-          <a href="/test">Link Button</a>
-        </Button>,
-      );
-
-      const link = screen.getByRole("link", { name: "Link Button" });
-      expect(link).toHaveAttribute("href", "/test");
-      expect(link).toHaveClass("kozmos-button");
-    });
+  it("forwards the native button ref and click event", () => {
+    const ref = createRef<HTMLButtonElement>();
+    const onClick = vi.fn((event) =>
+      expect(event.currentTarget).toBe(ref.current),
+    );
+    render(
+      <Button ref={ref} type="button" onClick={onClick}>
+        Click me
+      </Button>,
+    );
+    const button = screen.getByRole("button", { name: /click me/i });
+    expect(ref.current).toBe(button);
+    expect(button).toHaveAttribute("type", "button");
+    fireEvent.click(button);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });
 ```
+
+The file goes on to test that a disabled or loading Button ignores a click, and what each
+`emotion` points the button's colours at.
 
 ### Input Component Tests
 
-```tsx
-// packages/react/src/components/Input/Input.test.tsx
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "../../test/utils";
-import userEvent from "@testing-library/user-event";
-import { axe } from "jest-axe";
-import { Input } from "./Input";
-
-describe("Input", () => {
-  describe("Controlled Input", () => {
-    it("renders with controlled value", () => {
-      render(<Input value="test" onChange={() => {}} />);
-      expect(screen.getByRole("textbox")).toHaveValue("test");
-    });
-
-    it("calls onChange with new value", async () => {
-      const handleChange = vi.fn();
-      const user = userEvent.setup();
-
-      render(<Input value="" onChange={handleChange} />);
-      await user.type(screen.getByRole("textbox"), "hello");
-
-      expect(handleChange).toHaveBeenCalled();
-      expect(handleChange.mock.calls[0][0].target.value).toBe("h");
-    });
-  });
-
-  describe("Uncontrolled Input", () => {
-    it("renders with defaultValue", () => {
-      render(<Input defaultValue="default" />);
-      expect(screen.getByRole("textbox")).toHaveValue("default");
-    });
-
-    it("updates value on user input", async () => {
-      const user = userEvent.setup();
-
-      render(<Input defaultValue="" />);
-      await user.type(screen.getByRole("textbox"), "typed");
-
-      expect(screen.getByRole("textbox")).toHaveValue("typed");
-    });
-  });
-
-  describe("Validation", () => {
-    it("shows error state", () => {
-      render(<Input invalid errorMessage="This field is required" />);
-
-      expect(screen.getByRole("textbox")).toHaveAttribute(
-        "aria-invalid",
-        "true",
-      );
-      expect(screen.getByText("This field is required")).toBeInTheDocument();
-    });
-
-    it("associates error message with input", () => {
-      render(<Input invalid errorMessage="Error" id="test-input" />);
-
-      const input = screen.getByRole("textbox");
-      const errorId = input.getAttribute("aria-describedby");
-      expect(screen.getByText("Error")).toHaveAttribute("id", errorId);
-    });
-  });
-
-  describe("Accessibility", () => {
-    it("has no violations", async () => {
-      const { container } = render(<Input aria-label="Test input" />);
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-
-    it("has no violations with label", async () => {
-      const { container } = render(
-        <>
-          <label htmlFor="input">Name</label>
-          <Input id="input" />
-        </>,
-      );
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-
-    it("has no violations in error state", async () => {
-      const { container } = render(
-        <Input aria-label="Test" invalid errorMessage="Error" />,
-      );
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
-});
-```
+`packages/react/src/components/Input/Input.test.tsx` covers the field's label and placeholder, its
+error and helper text and the `aria-describedby` and `aria-invalid` it sets from them, its warning
+and success tones, and `disabled` and `readOnly` reaching the native input.
 
 ### Modal Component Tests
 
-```tsx
-// packages/react/src/components/Modal/Modal.test.tsx
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "../../test/utils";
-import userEvent from "@testing-library/user-event";
-import { axe } from "jest-axe";
-import { Modal } from "./Modal";
-
-describe("Modal", () => {
-  describe("Opening and Closing", () => {
-    it("renders when open", () => {
-      render(
-        <Modal open onOpenChange={() => {}}>
-          <Modal.Content>
-            <Modal.Title>Test Modal</Modal.Title>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
-      expect(screen.getByText("Test Modal")).toBeInTheDocument();
-    });
-
-    it("does not render when closed", () => {
-      render(
-        <Modal open={false} onOpenChange={() => {}}>
-          <Modal.Content>
-            <Modal.Title>Test Modal</Modal.Title>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    });
-
-    it("calls onOpenChange when close button clicked", async () => {
-      const handleOpenChange = vi.fn();
-      const user = userEvent.setup();
-
-      render(
-        <Modal open onOpenChange={handleOpenChange}>
-          <Modal.Content>
-            <Modal.Title>Test</Modal.Title>
-            <Modal.Close>Close</Modal.Close>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      await user.click(screen.getByRole("button", { name: "Close" }));
-      expect(handleOpenChange).toHaveBeenCalledWith(false);
-    });
-
-    it("closes on Escape key", async () => {
-      const handleOpenChange = vi.fn();
-      const user = userEvent.setup();
-
-      render(
-        <Modal open onOpenChange={handleOpenChange}>
-          <Modal.Content>
-            <Modal.Title>Test</Modal.Title>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      await user.keyboard("{Escape}");
-      expect(handleOpenChange).toHaveBeenCalledWith(false);
-    });
-
-    it("closes on overlay click", async () => {
-      const handleOpenChange = vi.fn();
-      const user = userEvent.setup();
-
-      render(
-        <Modal open onOpenChange={handleOpenChange}>
-          <Modal.Content>
-            <Modal.Title>Test</Modal.Title>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      // Click the overlay (outside the content)
-      const overlay = document.querySelector(".kozmos-modal__overlay");
-      if (overlay) await user.click(overlay);
-
-      expect(handleOpenChange).toHaveBeenCalledWith(false);
-    });
-  });
-
-  describe("Focus Management", () => {
-    it("focuses first focusable element when opened", async () => {
-      render(
-        <Modal open onOpenChange={() => {}}>
-          <Modal.Content>
-            <Modal.Title>Test</Modal.Title>
-            <button>First</button>
-            <button>Second</button>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "First" })).toHaveFocus();
-      });
-    });
-
-    it("traps focus within modal", async () => {
-      const user = userEvent.setup();
-
-      render(
-        <Modal open onOpenChange={() => {}}>
-          <Modal.Content>
-            <Modal.Title>Test</Modal.Title>
-            <button>First</button>
-            <button>Last</button>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "First" })).toHaveFocus();
-      });
-
-      // Tab to last button
-      await user.tab();
-      expect(screen.getByRole("button", { name: "Last" })).toHaveFocus();
-
-      // Tab should wrap to first
-      await user.tab();
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: "First" })).toHaveFocus();
-      });
-    });
-
-    it("returns focus to trigger after close", async () => {
-      const user = userEvent.setup();
-
-      function TestComponent() {
-        const [open, setOpen] = React.useState(false);
-        return (
-          <>
-            <button onClick={() => setOpen(true)}>Open</button>
-            <Modal open={open} onOpenChange={setOpen}>
-              <Modal.Content>
-                <Modal.Title>Test</Modal.Title>
-                <Modal.Close>Close</Modal.Close>
-              </Modal.Content>
-            </Modal>
-          </>
-        );
-      }
-
-      render(<TestComponent />);
-
-      const trigger = screen.getByRole("button", { name: "Open" });
-      await user.click(trigger);
-
-      await waitFor(() => {
-        expect(screen.getByRole("dialog")).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole("button", { name: "Close" }));
-
-      await waitFor(() => {
-        expect(trigger).toHaveFocus();
-      });
-    });
-  });
-
-  describe("Accessibility", () => {
-    it("has no violations", async () => {
-      const { container } = render(
-        <Modal open onOpenChange={() => {}}>
-          <Modal.Content>
-            <Modal.Title>Accessible Modal</Modal.Title>
-            <Modal.Description>This is the description</Modal.Description>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-
-    it("has correct ARIA attributes", () => {
-      render(
-        <Modal open onOpenChange={() => {}}>
-          <Modal.Content>
-            <Modal.Title>Test</Modal.Title>
-            <Modal.Description>Description</Modal.Description>
-          </Modal.Content>
-        </Modal>,
-      );
-
-      const dialog = screen.getByRole("dialog");
-      expect(dialog).toHaveAttribute("aria-modal", "true");
-      expect(dialog).toHaveAttribute("aria-labelledby");
-      expect(dialog).toHaveAttribute("aria-describedby");
-    });
-  });
-});
-```
+Kozmos has no Modal: `Dialog` is the dialog, and its tests are
+`packages/react/src/components/Dialog/Dialog.test.tsx`. The Modal tests written before the code are
+kept in [docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
 
 ---
 
 ## 3. iOS Testing
 
-### Test Setup
+SwiftUI's tests are XCTest cases in `packages/ios/Tests/KozmosTests`, one file per subject
+(`KozmosButtonAPITests.swift`, `KozmosDialogTests.swift`), importing the package with
+`@testable import Kozmos`. Images are compared with `swift-snapshot-testing`
+(`KozmosButtonImageSnapshotTests.swift`, built for iOS only). From `KozmosButtonAPITests.swift`:
 
 ```swift
-// packages/ios/Tests/KozmosSwiftUITests/TestHelpers.swift
 import XCTest
 import SwiftUI
-import ViewInspector
-@testable import KozmosSwiftUI
+@testable import Kozmos
 
-extension Inspection: InspectionEmissary {}
+final class KozmosButtonAPITests: XCTestCase {
+    func testButtonDefaultVariant() {
+        let view = KozmosButton("Label Binding", action: {})
 
-final class TestHelpers {
-    static func render<V: View>(_ view: V) -> V {
-        return view
+        XCTAssertEqual(view.label, "Label Binding")
+        XCTAssertEqual(view.variant, .default)
+        XCTAssertEqual(view.size, .default)
+        XCTAssertFalse(view.isDisabled)
+        XCTAssertFalse(view.isLoading)
     }
 
-    static func snapshot<V: View>(_ view: V, named name: String) {
-        // Snapshot testing implementation
+    func testButtonDestructiveVariant() {
+        let view = KozmosButton("Delete Item", variant: .destructive, action: {})
+        XCTAssertEqual(view.label, "Delete Item")
+        XCTAssertEqual(view.variant, .destructive)
     }
 }
 ```
 
-### Button Tests (Swift)
-
-```swift
-// packages/ios/Tests/KozmosSwiftUITests/Components/ButtonTests.swift
-import XCTest
-import SwiftUI
-import ViewInspector
-@testable import KozmosSwiftUI
-
-final class KozmosButtonTests: XCTestCase {
-
-    // MARK: - Rendering
-
-    func testRendersWithLabel() throws {
-        let sut = KozmosButton("Click me") {}
-
-        let text = try sut.inspect().find(text: "Click me")
-        XCTAssertNotNil(text)
-    }
-
-    func testRendersVariants() throws {
-        let variants: [ButtonVariant] = [.solid, .outline, .ghost]
-
-        for variant in variants {
-            let sut = KozmosButton("Test", variant: variant) {}
-            // Verify variant-specific styling
-            XCTAssertNotNil(sut)
-        }
-    }
-
-    func testRendersSizes() throws {
-        let sizes: [ButtonSize] = [.sm, .md, .lg]
-
-        for size in sizes {
-            let sut = KozmosButton("Test", size: size) {}
-            XCTAssertNotNil(sut)
-        }
-    }
-
-    // MARK: - Interactions
-
-    func testCallsActionOnTap() throws {
-        var tapped = false
-        let sut = KozmosButton("Tap me") {
-            tapped = true
-        }
-
-        try sut.inspect().button().tap()
-        XCTAssertTrue(tapped)
-    }
-
-    func testDisabledStatePreventsTap() throws {
-        var tapped = false
-        let sut = KozmosButton("Tap me") {
-            tapped = true
-        }
-        .disabled(true)
-
-        // Verify button is disabled
-        let button = try sut.inspect().button()
-        XCTAssertTrue(try button.isDisabled())
-    }
-
-    // MARK: - Loading State
-
-    func testShowsLoadingIndicator() throws {
-        let sut = KozmosButton("Submit") {}
-            .loading(true)
-
-        let progressView = try sut.inspect().find(ViewType.ProgressView.self)
-        XCTAssertNotNil(progressView)
-    }
-
-    func testHidesLabelWhenLoading() throws {
-        let sut = KozmosButton("Submit") {}
-            .loading(true)
-
-        // Label should be hidden but still accessible
-        let text = try? sut.inspect().find(text: "Submit")
-        // Verify opacity is 0 or similar
-    }
-
-    // MARK: - Accessibility
-
-    func testAccessibilityLabel() throws {
-        let sut = KozmosButton("Submit form") {}
-
-        let button = try sut.inspect().button()
-        let label = try button.accessibilityLabel().string()
-        XCTAssertEqual(label, "Submit form")
-    }
-
-    func testAccessibilityHint() throws {
-        let sut = KozmosButton("Delete") {}
-            .accessibilityHint("Double tap to delete item")
-
-        let button = try sut.inspect().button()
-        let hint = try button.accessibilityHint().string()
-        XCTAssertEqual(hint, "Double tap to delete item")
-    }
-
-    // MARK: - Snapshot Tests
-
-    func testSnapshotDefault() {
-        let sut = KozmosButton("Default Button") {}
-        assertSnapshot(matching: sut, as: .image)
-    }
-
-    func testSnapshotAllVariants() {
-        let variants: [(ButtonVariant, String)] = [
-            (.solid, "Solid"),
-            (.outline, "Outline"),
-            (.ghost, "Ghost"),
-        ]
-
-        for (variant, name) in variants {
-            let sut = KozmosButton(name, variant: variant) {}
-            assertSnapshot(matching: sut, as: .image, named: "Button_\(name)")
-        }
-    }
-}
-```
+`swift test` on macOS compiles the iOS-only tests out, so `node scripts/check-ios-poi.mjs` runs the
+whole target on the pinned simulator, as CI's iOS job does; read the test names back from its
+results ([AGENTS.md](../AGENTS.md)). The tests written before the code are kept in
+[docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
 
 ---
 
 ## 4. Android Testing
 
-### Test Setup
+Compose's tests are Paparazzi snapshots and JUnit tests in
+`packages/android/src/test/java/com/kozmos/components/<name>/`, in the package of the component
+they test. From `button/KozmosButtonPaparazziTest.kt`:
 
 ```kotlin
-// packages/android/kozmos/src/test/kotlin/com/kozmos/compose/TestHelpers.kt
-package com.kozmos.compose
+package com.kozmos.components.button
 
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.*
-import org.junit.Rule
-
-abstract class ComposeTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
-}
-```
-
-### Button Tests (Kotlin)
-
-```kotlin
-// packages/android/kozmos/src/test/kotlin/com/kozmos/compose/components/ButtonTest.kt
-package com.kozmos.compose.components
-
-import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
-import com.kozmos.compose.ComposeTest
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
 import org.junit.Test
 
-class KozmosButtonTest : ComposeTest() {
-
-    // =========================================================================
-    // Rendering
-    // =========================================================================
+class KozmosButtonPaparazziTest {
+    @get:Rule
+    val paparazzi = Paparazzi(maxPercentDifference = 0.0)
 
     @Test
-    fun rendersWithText() {
-        composeTestRule.setContent {
-            KozmosButton(text = "Click me", onClick = {})
-        }
-
-        composeTestRule
-            .onNodeWithText("Click me")
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun rendersAllVariants() {
-        val variants = listOf(
-            ButtonVariant.Solid,
-            ButtonVariant.Outline,
-            ButtonVariant.Ghost
-        )
-
-        variants.forEach { variant ->
-            composeTestRule.setContent {
-                KozmosButton(
-                    text = "Test",
-                    variant = variant,
-                    onClick = {}
-                )
+    fun defaultButtonSnapshot() {
+        paparazzi.snapshot {
+            MaterialTheme {
+                Box(modifier = Modifier.padding(24.dp)) {
+                    KozmosButton(onClick = {}) {
+                        Text("Snapshot Verification")
+                    }
+                }
             }
-
-            composeTestRule
-                .onNodeWithText("Test")
-                .assertIsDisplayed()
         }
-    }
-
-    @Test
-    fun rendersAllSizes() {
-        val sizes = listOf(ButtonSize.Sm, ButtonSize.Md, ButtonSize.Lg)
-
-        sizes.forEach { size ->
-            composeTestRule.setContent {
-                KozmosButton(
-                    text = "Test",
-                    size = size,
-                    onClick = {}
-                )
-            }
-
-            composeTestRule
-                .onNodeWithText("Test")
-                .assertIsDisplayed()
-        }
-    }
-
-    // =========================================================================
-    // Interactions
-    // =========================================================================
-
-    @Test
-    fun callsOnClickWhenTapped() {
-        var clicked = false
-
-        composeTestRule.setContent {
-            KozmosButton(
-                text = "Click me",
-                onClick = { clicked = true }
-            )
-        }
-
-        composeTestRule
-            .onNodeWithText("Click me")
-            .performClick()
-
-        assert(clicked)
-    }
-
-    @Test
-    fun doesNotCallOnClickWhenDisabled() {
-        var clicked = false
-
-        composeTestRule.setContent {
-            KozmosButton(
-                text = "Click me",
-                enabled = false,
-                onClick = { clicked = true }
-            )
-        }
-
-        composeTestRule
-            .onNodeWithText("Click me")
-            .performClick()
-
-        assert(!clicked)
-    }
-
-    @Test
-    fun doesNotCallOnClickWhenLoading() {
-        var clicked = false
-
-        composeTestRule.setContent {
-            KozmosButton(
-                text = "Click me",
-                loading = true,
-                onClick = { clicked = true }
-            )
-        }
-
-        composeTestRule
-            .onNodeWithContentDescription("Loading")
-            .assertIsDisplayed()
-
-        // Button should not be clickable
-        assert(!clicked)
-    }
-
-    // =========================================================================
-    // States
-    // =========================================================================
-
-    @Test
-    fun showsDisabledState() {
-        composeTestRule.setContent {
-            KozmosButton(
-                text = "Disabled",
-                enabled = false,
-                onClick = {}
-            )
-        }
-
-        composeTestRule
-            .onNodeWithText("Disabled")
-            .assertIsNotEnabled()
-    }
-
-    @Test
-    fun showsLoadingIndicator() {
-        composeTestRule.setContent {
-            KozmosButton(
-                text = "Loading",
-                loading = true,
-                onClick = {}
-            )
-        }
-
-        composeTestRule
-            .onNodeWithContentDescription("Loading")
-            .assertIsDisplayed()
-    }
-
-    // =========================================================================
-    // Accessibility
-    // =========================================================================
-
-    @Test
-    fun hasCorrectSemantics() {
-        composeTestRule.setContent {
-            KozmosButton(
-                text = "Submit Form",
-                onClick = {}
-            )
-        }
-
-        composeTestRule
-            .onNodeWithText("Submit Form")
-            .assertHasClickAction()
-            .assert(hasContentDescription("Submit Form"))
-    }
-
-    @Test
-    fun announcesLoadingState() {
-        composeTestRule.setContent {
-            KozmosButton(
-                text = "Submit",
-                loading = true,
-                onClick = {}
-            )
-        }
-
-        composeTestRule
-            .onNode(hasContentDescription("Loading"))
-            .assertIsDisplayed()
     }
 }
 ```
+
+A snapshot allows no difference, or, where a golden recorded on macOS is verified on CI's Linux,
+`CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE` from `PaparazziTolerance.kt`. `./gradlew
+verifyPaparazziDebug` in `packages/android` compares the snapshots, as CI's Android job does; read
+the test names back from the JUnit XML under `build/test-results/`. The tests written before the
+code are kept in [docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
 
 ---
 
@@ -1103,55 +306,50 @@ masked.
 
 ### axe-core Integration
 
-```typescript
-// packages/react/src/test/a11y.ts
-import { axe, toHaveNoViolations } from "jest-axe";
+`packages/react/tests/a11y/components.a11y.spec.tsx` runs axe on Button in each variant,
+IconButton, Card and Input, and holds Button's token pairs to their WCAG contrast in light and dark,
+reading the built token CSS. Tooltip's and MapStatusPill's own tests run axe too. From the spec:
 
-expect.extend(toHaveNoViolations);
+```tsx
+// kozmos-skills: template — a spec in packages/react/tests/a11y, importing the package's source
+import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
+import { axe } from "vitest-axe";
+import * as matchers from "vitest-axe/matchers";
+import { Button } from "../../src/components/Button/Button";
 
-export async function checkA11y(container: HTMLElement) {
-  const results = await axe(container, {
-    rules: {
-      // Customize rules as needed
-      "color-contrast": { enabled: true },
-      label: { enabled: true },
+expect.extend(matchers);
+
+describe("WCAG 2.1 Native A11y Validations", () => {
+  it.each([
+    "default",
+    "destructive",
+    "outline",
+    "secondary",
+    "ghost",
+    "link",
+    "glass",
+  ] as const)(
+    "Button %s variant has no structural axe violations",
+    async (variant) => {
+      const { container } = render(
+        <Button variant={variant}>WCAG Accessible Button</Button>,
+      );
+      const results = await axe(container);
+      expect(results).toHaveNoViolations();
     },
-  });
-
-  expect(results).toHaveNoViolations();
-}
+  );
+});
 ```
 
 ### Automated A11y Tests for All Components
 
-```tsx
-// packages/react/src/test/a11y.test.tsx
-import { describe, it } from "vitest";
-import { render } from "@testing-library/react";
-import { axe } from "jest-axe";
-import * as Components from "../index";
-
-const componentTestCases = [
-  { name: "Button", component: <Components.Button>Click</Components.Button> },
-  { name: "Input", component: <Components.Input aria-label="Test input" /> },
-  { name: "Checkbox", component: <Components.Checkbox label="Accept terms" /> },
-  {
-    name: "Select",
-    component: <Components.Select aria-label="Choose" options={[]} />,
-  },
-  // Add all components...
-];
-
-describe("Accessibility", () => {
-  componentTestCases.forEach(({ name, component }) => {
-    it(`${name} has no accessibility violations`, async () => {
-      const { container } = render(component);
-      const results = await axe(container);
-      expect(results).toHaveNoViolations();
-    });
-  });
-});
-```
+Every component is audited through its stories, with nothing to register:
+`pnpm test:storybook-audit` runs axe through Playwright on each component's Default story, or on
+every story with `STORY_SCOPE=all` as CI runs it, in light and dark at 320 and 1280 px wide. It
+fails on any violation, and on a page wider than its viewport. It reads a built Storybook at
+`STORYBOOK_URL` (`http://127.0.0.1:6008` by default).
+[accessibility-guide.md](./accessibility-guide.md) §10 has the rest.
 
 ---
 
@@ -1159,84 +357,21 @@ describe("Accessibility", () => {
 
 ### Bundle Size Tests
 
-```typescript
-// scripts/test-bundle-size.ts
-import { readFileSync } from "fs";
-import { gzipSync } from "zlib";
+The bundle budgets are one check, `scripts/performance/bundle-analyzer.ts`, which the
+`analyze-bundle` job in `.github/workflows/bundle-size.yml` runs. It bundles `@kozmos-ds/react` the
+way a Vite app builds and holds four budgets, gzipped: any one export alone, `Button` alone, every
+export at once, and the stylesheet. [performance-benchmarks.md](./performance-benchmarks.md) has
+their values.
 
-const BUDGETS = {
-  "@kozmos-ds/react": 80 * 1024, // 80KB
-  "@kozmos-ds/tokens": 8 * 1024, // 8KB
-};
-
-function getGzipSize(filePath: string): number {
-  const content = readFileSync(filePath);
-  return gzipSync(content).length;
-}
-
-function testBundleSize(packageName: string, bundlePath: string) {
-  const size = getGzipSize(bundlePath);
-  const budget = BUDGETS[packageName];
-
-  if (size > budget) {
-    console.error(
-      `❌ ${packageName}: ${(size / 1024).toFixed(2)}KB exceeds budget of ${(budget / 1024).toFixed(2)}KB`,
-    );
-    process.exit(1);
-  }
-
-  console.log(
-    `✅ ${packageName}: ${(size / 1024).toFixed(2)}KB (budget: ${(budget / 1024).toFixed(2)}KB)`,
-  );
-}
-
-testBundleSize("@kozmos-ds/react", "packages/react/dist/index.js");
-testBundleSize("@kozmos-ds/tokens", "packages/tokens/build/js/tokens.js");
+```bash
+pnpm tsx scripts/performance/bundle-analyzer.ts
 ```
 
 ### Render Performance Tests
 
-```tsx
-// packages/react/src/test/performance.test.tsx
-import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
-import { Button } from "../components/Button";
-
-describe("Performance", () => {
-  it("Button renders within 1ms", () => {
-    const iterations = 100;
-    const start = performance.now();
-
-    for (let i = 0; i < iterations; i++) {
-      const { unmount } = render(<Button>Click</Button>);
-      unmount();
-    }
-
-    const duration = performance.now() - start;
-    const perRender = duration / iterations;
-
-    console.log(`Button render: ${perRender.toFixed(2)}ms`);
-    expect(perRender).toBeLessThan(1);
-  });
-
-  it("Form with 20 inputs renders within 50ms", () => {
-    const start = performance.now();
-
-    render(
-      <form>
-        {Array.from({ length: 20 }, (_, i) => (
-          <Input key={i} label={`Field ${i}`} />
-        ))}
-      </form>,
-    );
-
-    const duration = performance.now() - start;
-
-    console.log(`Form render: ${duration.toFixed(2)}ms`);
-    expect(duration).toBeLessThan(50);
-  });
-});
-```
+There are no render-timing tests. Storybook's performance addon
+(`storybook-addon-performance`) shows a story's render timings while you work. The timing tests
+written before the code are kept in [docs/proposals/testing-plan.md](../docs/proposals/testing-plan.md).
 
 ---
 
@@ -1251,7 +386,8 @@ There is no `test.yml`: the tests run in `.github/workflows/ci.yml`
   built-library checks in Chromium, Firefox and WebKit.
 - **Twelve browser shards:** the Storybook suites against the built Storybook, one browser each.
 - **`Core Pipeline & POI Gallery`:** React's Playwright tests and the Storybook regressions.
-- **`iOS Build`:** `swift test` in `packages/ios` and the POI render tests on a simulator.
+- **`iOS Build`:** `swift test` in `packages/ios`, then the whole test target on the pinned
+  simulator (`node scripts/check-ios-poi.mjs`).
 - **`Android Build`:** `./gradlew verifyPaparazziDebug` in `packages/android`.
 
 Nothing uploads coverage, and there is no React Native package to test.
@@ -1281,20 +417,23 @@ There is no coverage run: `@vitest/coverage-v8` is not installed, so `--coverage
 ### Test File Naming
 
 ```
-Component.test.tsx     # Unit tests
-Component.a11y.test.tsx # A11y-specific tests
-Component.perf.test.tsx # Performance tests
+Component.test.tsx             # Unit tests, beside every React component
+Component.isolation.test.tsx   # A provider's scoping: ThemeProvider, DesignConfigContext
+module.test.ts                 # A hook, a utility or a layout module
+tests/a11y/*.a11y.spec.tsx     # The axe and contrast spec
+tests/contracts/*.spec.ts      # The POI card's consumer contract, with Pact
 ```
 
 ---
 
 ## Version History
 
-| Version | Date       | Changes                        |
-| ------- | ---------- | ------------------------------ |
-| 1.0.0   | 2026-02-07 | Initial testing patterns guide |
+| Version | Date       | Changes                                                      |
+| ------- | ---------- | ------------------------------------------------------------ |
+| 1.0.0   | 2026-02-07 | Initial testing patterns guide                               |
+| 1.1.0   | 2026-09-29 | The tests as they are; the planned suites move to a proposal |
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last Updated:** 2026-02-07
+**Last Updated:** 2026-09-29
