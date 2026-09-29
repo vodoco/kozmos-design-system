@@ -7,12 +7,11 @@
  * `changeset version` looks up, and one of them `ci.yml`, whose turbo filters
  * would stop matching anything. So the rename is verified rather than trusted.
  *
- * Deliberately left as they were, and why:
- *   .ai-skills/, docs/project-scope.md  renaming makes the hook reformat
- *                                       them, and prettier rewrites their
- *                                       malformed nested fences, which
- *                                       changes how they render — a docs
- *                                       change of its own
+ * `.ai-skills/` and `docs/project-scope.md` were left as they were until
+ * 2026-09-29, because renaming them meant a reformat of their broken nested
+ * fences. Both are renamed now: the knowledge base's fences were repaired
+ * first, and Prettier leaves the project scope as it is. Nothing is excused
+ * but the two files below, which must spell the old scope to look for it.
  */
 import { execFileSync } from "node:child_process";
 
@@ -25,8 +24,6 @@ const ALLOWED = [
   // The test that `pnpm skills:check` refuses the old scope in AI-facing
   // code: it has to write the import it refuses.
   /^scripts\/skills\/ai-snippets\.test\.mjs$/,
-  /^\.ai-skills\//,
-  /^docs\/project-scope\.md$/,
 ];
 
 // `--untracked` as well: a file introduced by the change being checked is not

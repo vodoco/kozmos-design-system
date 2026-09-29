@@ -31,3 +31,5 @@ The facts are generated from the code: the
 | [code-patterns-plan.md](code-patterns-plan.md)           | Component, token, story and test templates for six platforms, written before the code.                |
 | [component-creation-plan.md](component-creation-plan.md) | A Tooltip built step by step on every platform, unlike the real one.                                  |
 | [testing-plan.md](testing-plan.md)                       | Test suites, helpers and budgets planned before the code, with `jest-axe` and invented paths.         |
+| [performance-plan.md](performance-plan.md)               | Budgets and runtime targets no check measures, and a benchmark history of releases never made.        |
+| [theming-plan.md](theming-plan.md)                       | Customer themes: theme files, a theme build, high-contrast tokens and a white-label onboarding.       |

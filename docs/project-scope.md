@@ -4,15 +4,26 @@
 
 **Version:** 1.7.0 | **Last Updated:** 2026-02-08
 
+> **What shipped, as of 2026-09-29.** This is the scope written at the start, kept as planning
+> history, and much of it was never built. Kozmos is React (`@kozmos-ds/react`), SwiftUI
+> (`packages/ios`) and Jetpack Compose (`packages/android`), and publishes `@kozmos-ds/react`,
+> `@kozmos-ds/tokens`, `@kozmos-ds/icons` and `@kozmos-ds/product-contracts` to npm; the package
+> names below were updated when the packages took that name. Vue waits (decision 2):
+> `@kozmos-ds/vue` is a private harness. There is no React Native package, no Lit Web Components,
+> no MCP server, no customer themes and no wide-gamut colour; the tokens are built with Style
+> Dictionary 5. [AGENTS.md](../AGENTS.md) says what ships, and [proposals/](proposals/README.md)
+> holds the plans that were not built.
+
 ---
 
-> **AI Agents:** For detailed operational documents, see the `.ai-skills/` directory (25 skill files):
+> **AI Agents:** For detailed operational documents, see the `.ai-skills/` directory, whose
+> [README](../.ai-skills/README.md) lists them:
 >
 > **Core References:**
 >
 > - [Design Philosophy](../.ai-skills/design-philosophy.md) — Visual language, interaction patterns
 > - [Component Lifecycle](../.ai-skills/component-lifecycle.md) — From proposal to deprecation
-> - [Code Patterns](../.ai-skills/code-patterns.md) — Templates for all 6 platforms
+> - [Code Patterns](../.ai-skills/code-patterns.md) — The real components to follow, on each platform
 >
 > **Operations:**
 >
@@ -38,20 +49,20 @@
 > - [Token Implementation](../.ai-skills/token-implementation.md) — Style Dictionary, DTCG format
 > - [Testing Patterns](../.ai-skills/testing-patterns.md) — Platform-specific test examples
 > - [CI/CD Configuration](../.ai-skills/ci-cd-configuration.md) — GitHub Actions workflows
-> - [Publishing Guide](../.ai-skills/publishing-guide.md) — npm, SPM, Maven publishing
+> - [Publishing Guide](../.ai-skills/publishing-guide.md) — npm, through `release.yml`
 > - [Storybook Guide](../.ai-skills/storybook-guide.md) — Storybook setup, addons, documentation
 >
 > **Quality & Compliance:**
 >
 > - [Accessibility Guide](../.ai-skills/accessibility-guide.md) — WCAG 2.1 AA compliance, component checklists
-> - [i18n Guide](../.ai-skills/i18n-guide.md) — Internationalization, RTL support, translations
-> - [Theming Guide](../.ai-skills/theming-guide.md) — White-labeling, customer themes, dark mode
+> - [i18n Guide](../.ai-skills/i18n-guide.md) — Direction, and the words a product passes
+> - [Theming Guide](../.ai-skills/theming-guide.md) — Light and dark, and the web's token overrides
 > - [Security Guide](../.ai-skills/security-guide.md) — Security hardening, vulnerability prevention
 >
 > **AI Integration (For Consuming Projects):**
 >
-> - [MCP Server Specification](../.ai-skills/mcp-server-specification.md) — `@kozmos/mcp-server` design for Cursor and similar assistants
-> - [AI Integration Guide](../.ai-skills/ai-integration-guide.md) — Context files for Cursor, Anti Gravity, Copilot, Codeium and more
+> - [MCP server](proposals/mcp-server.md) — Proposal, not built: an `@kozmos-ds/mcp-server` for Cursor and similar assistants
+> - [AI Integration Guide](../.ai-skills/ai-integration-guide.md) — What an assistant can read today, and how
 
 ---
 
@@ -223,7 +234,7 @@ Figma Variables (Source of Truth)
         ▼
   Platform Libraries Import Generated Tokens
         │
-        ├──▶ @kozmos/react   imports web tokens
+        ├──▶ @kozmos-ds/react   imports web tokens
         ├──▶ KozmosUI.swift  imports iOS tokens
         └──▶ kozmos-ui.kt    imports Android tokens
 ```
@@ -981,7 +992,7 @@ Use **Figma Code Connect CLI** to publish production code snippets from all thre
     "parser": "react",
     "label": "React",
     "importPaths": {
-      "@kozmos/react/*": "@kozmos/react"
+      "@kozmos-ds/react/*": "@kozmos-ds/react"
     }
   }
 }
@@ -1222,7 +1233,7 @@ jobs:
 - Works with SSR/SSG without hydration issues
 - Tailwind-compatible ecosystem (familiar to developers)
 - Easy to override via CSS cascade
-- Already partially implemented in `@kozmos/react` package
+- Already partially implemented in `@kozmos-ds/react` package
 
 **Cons:**
 
@@ -1254,7 +1265,7 @@ jobs:
 
 **Option A (CSS Variables + CVA)** is recommended because:
 
-1. Already partially implemented in the `@kozmos/react` package
+1. Already partially implemented in the `@kozmos-ds/react` package
 2. Zero runtime = best performance for SDK products
 3. CSS custom properties work natively for theming (light/dark)
 4. Decouples tokens from styling framework - tokens generate CSS vars, components consume them
@@ -1277,10 +1288,10 @@ jobs:
 
 All interactive components include `"use client"` directives. The package provides two entry points:
 
-| Entry Point            | Contents                                       | RSC-Safe             |
-| ---------------------- | ---------------------------------------------- | -------------------- |
-| `@kozmos/react`        | All components (re-exports client components)  | No (client boundary) |
-| `@kozmos/react/tokens` | Token constants, `cn()` utility, static config | Yes                  |
+| Entry Point               | Contents                                       | RSC-Safe             |
+| ------------------------- | ---------------------------------------------- | -------------------- |
+| `@kozmos-ds/react`        | All components (re-exports client components)  | No (client boundary) |
+| `@kozmos-ds/react/tokens` | Token constants, `cn()` utility, static config | Yes                  |
 
 **Key requirements:**
 
@@ -1303,7 +1314,7 @@ Since Pointr SDK components embed into customer applications, CSS isolation is c
 
 Document the recommended setup:
 
-1. Import `@kozmos/react/tokens/tokens.css` in root `layout.tsx`
+1. Import `@kozmos-ds/react/tokens/tokens.css` in root `layout.tsx`
 2. Wrap app in `<KozmosThemeProvider>` at the layout level (client boundary)
 3. Theme detection: default to CSS `@media (prefers-color-scheme)`, with optional JS override via `useEffect` to avoid hydration mismatch
 4. FOUC prevention: inline critical token CSS via `<link rel="preload">`
@@ -1341,7 +1352,7 @@ Ensure maximum dead code elimination for consuming bundlers:
 
 ```tsx
 // Tree-shakes everything except Button
-import { Button } from "@kozmos/react/Button";
+import { Button } from "@kozmos-ds/react/Button";
 ```
 
 **Barrel file strategy:** Main `index.ts` re-exports all components but bundlers can tree-shake unused ones when `sideEffects: false` is set (except CSS).
@@ -1531,7 +1542,7 @@ Merge to main
   └── Deploy Storybook + docs
 
 Release (changeset publish)
-  ├── npm publish (@kozmos/react, @kozmos/tokens)
+  ├── npm publish (@kozmos-ds/react, @kozmos-ds/tokens)
   ├── Swift Package release tag
   ├── Maven/Gradle artifact publish
   └── CDN asset deployment
@@ -1541,9 +1552,9 @@ Release (changeset publish)
 
 **Workspace protocol:**
 
-- All internal references use `workspace:*` (e.g., `"@kozmos/tokens": "workspace:*"`)
+- All internal references use `workspace:*` (e.g., `"@kozmos-ds/tokens": "workspace:*"`)
 - pnpm automatically replaces with actual version numbers during `pnpm publish`
-- Changesets `linked` groups ensure `@kozmos/tokens` and `@kozmos/react` version in lockstep
+- Changesets `linked` groups ensure `@kozmos-ds/tokens` and `@kozmos-ds/react` version in lockstep
 
 **npm provenance & supply chain security:**
 
@@ -1556,9 +1567,9 @@ Release (changeset publish)
 ```
 Changesets "Version Packages" PR merged
   ├── npm publish (parallel):
-  │     ├── @kozmos/tokens
-  │     ├── @kozmos/react
-  │     └── @kozmos/icons
+  │     ├── @kozmos-ds/tokens
+  │     ├── @kozmos-ds/react
+  │     └── @kozmos-ds/icons
   ├── Swift Package release:
   │     └── git tag vX.Y.Z on ios branch → SPM resolves
   └── Maven/Gradle publish:
@@ -1568,7 +1579,7 @@ Changesets "Version Packages" PR merged
 **Peer dependency strategy:**
 
 - `react` and `react-dom` are peer dependencies: `"^18.0.0 || ^19.0.0"`
-- `@kozmos/tokens` is a direct dependency of `@kozmos/react` (not peer)
+- `@kozmos-ds/tokens` is a direct dependency of `@kozmos-ds/react` (not peer)
 - Shared dev dependencies hoisted to workspace root (TypeScript, ESLint, Prettier, Vitest)
 
 **`publishConfig` in each package:**
@@ -1626,8 +1637,8 @@ Figma Variables Updated (webhook/manual)
 
 All packages follow SemVer independently:
 
-- `@kozmos/tokens` - Token changes are MINOR if additive, MAJOR if removing/renaming
-- `@kozmos/react` - Component API changes follow standard SemVer
+- `@kozmos-ds/tokens` - Token changes are MINOR if additive, MAJOR if removing/renaming
+- `@kozmos-ds/react` - Component API changes follow standard SemVer
 - `KozmosUI` (Swift) - Tagged releases matching SemVer
 - `kozmos-ui` (Kotlin) - Maven artifact versioning
 
@@ -1674,7 +1685,7 @@ packages/codemods/
 **Invocation:**
 
 ```bash
-npx @kozmos/codemods v1-to-v2 --path ./src
+npx @kozmos-ds/codemods v1-to-v2 --path ./src
 ```
 
 **CI requirement:** Every breaking change PR must include an accompanying codemod with fixture-based tests.
@@ -1704,12 +1715,12 @@ Changesets generates `CHANGELOG.md` per package with:
 #### Release Notes Structure
 
 ```markdown
-## @kozmos/react v2.0.0 (2025-03-15)
+## @kozmos-ds/react v2.0.0 (2025-03-15)
 
 ### Breaking Changes
 
 - **Button**: `type` prop renamed to `variant` (#123)
-  - Migration: Run `npx @kozmos/codemods v1-to-v2`
+  - Migration: Run `npx @kozmos-ds/codemods v1-to-v2`
 
 ### Features
 
@@ -1759,7 +1770,7 @@ When a released component breaks production, follow the incident playbook:
 
 ```bash
 # Deprecate broken version
-npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
+npm deprecate @kozmos-ds/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 
 # Never re-use version numbers — publish fix as next patch
 ```
@@ -1770,7 +1781,7 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 
 | Metric                         | Target         |
 | ------------------------------ | -------------- |
-| `@kozmos/react` full bundle    | < 50KB gzipped |
+| `@kozmos-ds/react` full bundle | < 50KB gzipped |
 | Individual component           | < 10KB gzipped |
 | Token CSS file                 | < 5KB gzipped  |
 | First paint (component render) | < 16ms         |
@@ -1872,11 +1883,11 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 - [ ] Figma Variables API sync script
 - [ ] W3C DTCG format JSON schema
 - [ ] CI pipeline (build, test, lint) with GitHub-hosted macOS runners
-- [ ] Base React package structure (`@kozmos/react`)
-- [ ] Base Vue/Web Components package structure (`@kozmos/vue`)
+- [ ] Base React package structure (`@kozmos-ds/react`)
+- [ ] Base Vue/Web Components package structure (`@kozmos-ds/vue`)
 - [ ] Base iOS Swift Package structure (`KozmosUI`)
 - [ ] Base Android Gradle module structure (`kozmos-ui`)
-- [ ] Base React Native package structure (`@kozmos/react-native`)
+- [ ] Base React Native package structure (`@kozmos-ds/react-native`)
 - [ ] Figma Code Connect configuration (all 5 platforms)
 - [ ] Shared ESLint/Prettier/TypeScript configs
 - [ ] **Customer theming API** (brand color, bg/fg, emotional colors)
@@ -1911,7 +1922,7 @@ npm deprecate @kozmos/react@1.2.3 "Critical bug - use 1.2.2 or 1.2.4"
 - [ ] Documentation site v1
 - [ ] Code Connect for all Phase 3 components
 - [ ] npm/SPM/Maven first stable release (v1.0.0)
-- [ ] **SDK layout module integration** (search, search results consume `@kozmos/*`)
+- [ ] **SDK layout module integration** (search, search results consume `@kozmos-ds/*`)
 - [ ] Contract testing setup (Pact)
 
 ### Phase 4: Advanced & SDK-Specific
@@ -2480,7 +2491,7 @@ packages/vue/
 │       ├── KozmosInput.vue
 │       └── ...
 ├── figma.config.json         # --label "Vue"
-└── package.json              # @kozmos/vue
+└── package.json              # @kozmos-ds/vue
 ```
 
 **Key decisions:**
@@ -2499,7 +2510,7 @@ packages/vue/
 </template>
 
 <script setup>
-import { KozmosButton } from "@kozmos/vue";
+import { KozmosButton } from "@kozmos-ds/vue";
 </script>
 ```
 
@@ -2522,7 +2533,7 @@ packages/react-native/
 │   └── theme/
 │       └── ThemeProvider.tsx   # React Context-based theming
 ├── *.figma.tsx                 # Code Connect (--label "React Native")
-└── package.json                # @kozmos/react-native
+└── package.json                # @kozmos-ds/react-native
 ```
 
 **Key decisions:**
@@ -2536,7 +2547,7 @@ packages/react-native/
 **React Native component example:**
 
 ```tsx
-import { Button } from "@kozmos/react-native";
+import { Button } from "@kozmos-ds/react-native";
 
 <Button variant="primary" onPress={handlePress}>
   Press me
@@ -2567,25 +2578,25 @@ Advanced capabilities for scale:
 
 The following questions have been resolved:
 
-| #   | Question                         | Decision                                            | Notes                                                    |
-| --- | -------------------------------- | --------------------------------------------------- | -------------------------------------------------------- |
-| 1   | **Figma plan tier**              | ✅ **Organisation**                                 | Code Connect enabled, proceed with Phase 1               |
-| 2   | **Styling approach**             | ✅ **CSS Variables + CVA**                          | Zero runtime, best for SDK                               |
-| 3   | **Icon source**                  | ✅ **Custom SVG with platform mappings**            | Consistent cross-platform                                |
-| 4   | **Token authoring tool**         | ✅ **Figma Variables + Tokens Studio**              | Tokens Studio for composites                             |
-| 5   | **SDK component boundary**       | ✅ **SDK uses Kozmos as dependency**                | Layout modules (search, results) consume `@kozmos/react` |
-| 6   | **Multi-brand / white-labeling** | ✅ **Yes, required**                                | Currently supports theme color, bg/fg, emotional colors  |
-| 7   | **Vue.js support**               | ✅ **Yes, via Web Components**                      | Lit-based layer per Section 28.1                         |
-| 8   | **React Native**                 | ✅ **Yes, add `packages/react-native/`**            | 4th platform alongside native iOS/Android                |
-| 9   | **CI runner infrastructure**     | ✅ **GitHub-hosted macos-latest**                   | Re-evaluate if costs exceed budget                       |
-| 10  | **Team resourcing**              | ✅ **Minimum viable team**                          | 1 React, 1 iOS, 1 Android, 1 Design                      |
-| 11  | **Figma MCP adoption**           | ✅ **Yes, invest in completeness**                  | Primary AI-assisted workflow                             |
-| 12  | **npm scope**                    | ✅ **`@kozmos` by Pointr Design**                   | Branding decision finalized                              |
-| 13  | **Wide gamut colors**            | ✅ **Phase 1 priority**                             | Include P3/oklch from start                              |
-| 14  | **Animation library**            | ✅ **CSS-only for SDK, cross-platform consistency** | See Section 28.1 below                                   |
-| 15  | **Contract testing**             | ✅ **Phase 3**                                      | Implement Pact as consumer base grows                    |
-| 16  | **Figma branching**              | ✅ **Use branching**                                | For breaking changes                                     |
-| 17  | **Error tracking**               | ✅ **Callback prop pattern**                        | Let SDK consumers choose service                         |
+| #   | Question                         | Decision                                            | Notes                                                       |
+| --- | -------------------------------- | --------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | **Figma plan tier**              | ✅ **Organisation**                                 | Code Connect enabled, proceed with Phase 1                  |
+| 2   | **Styling approach**             | ✅ **CSS Variables + CVA**                          | Zero runtime, best for SDK                                  |
+| 3   | **Icon source**                  | ✅ **Custom SVG with platform mappings**            | Consistent cross-platform                                   |
+| 4   | **Token authoring tool**         | ✅ **Figma Variables + Tokens Studio**              | Tokens Studio for composites                                |
+| 5   | **SDK component boundary**       | ✅ **SDK uses Kozmos as dependency**                | Layout modules (search, results) consume `@kozmos-ds/react` |
+| 6   | **Multi-brand / white-labeling** | ✅ **Yes, required**                                | Currently supports theme color, bg/fg, emotional colors     |
+| 7   | **Vue.js support**               | ✅ **Yes, via Web Components**                      | Lit-based layer per Section 28.1                            |
+| 8   | **React Native**                 | ✅ **Yes, add `packages/react-native/`**            | 4th platform alongside native iOS/Android                   |
+| 9   | **CI runner infrastructure**     | ✅ **GitHub-hosted macos-latest**                   | Re-evaluate if costs exceed budget                          |
+| 10  | **Team resourcing**              | ✅ **Minimum viable team**                          | 1 React, 1 iOS, 1 Android, 1 Design                         |
+| 11  | **Figma MCP adoption**           | ✅ **Yes, invest in completeness**                  | Primary AI-assisted workflow                                |
+| 12  | **npm scope**                    | ✅ **`@kozmos` by Pointr Design**                   | Branding decision finalized                                 |
+| 13  | **Wide gamut colors**            | ✅ **Phase 1 priority**                             | Include P3/oklch from start                                 |
+| 14  | **Animation library**            | ✅ **CSS-only for SDK, cross-platform consistency** | See Section 28.1 below                                      |
+| 15  | **Contract testing**             | ✅ **Phase 3**                                      | Implement Pact as consumer base grows                       |
+| 16  | **Figma branching**              | ✅ **Use branching**                                | For breaking changes                                        |
+| 17  | **Error tracking**               | ✅ **Callback prop pattern**                        | Let SDK consumers choose service                            |
 
 ### 28.1 Animation Strategy Decision
 
@@ -2681,7 +2692,7 @@ Since Kozmos may be open-sourced:
 | Consideration       | Recommendation                                                        |
 | ------------------- | --------------------------------------------------------------------- |
 | **License**         | MIT (most permissive) or Apache 2.0 (patent protection)               |
-| **Naming**          | `@kozmos/*` is generic enough for open source                         |
+| **Naming**          | `@kozmos-ds/*` is generic enough for open source                      |
 | **Branding**        | Remove Pointr-specific references from public package                 |
 | **Documentation**   | Public docs site (Storybook + Docusaurus)                             |
 | **Contribution**    | CONTRIBUTING.md, Code of Conduct, PR templates                        |
@@ -2691,7 +2702,7 @@ Since Kozmos may be open-sourced:
 
 The dashboard migration strategy:
 
-1. **Phase 1**: Build `@kozmos/vue` with Vue 3 + Web Components
+1. **Phase 1**: Build `@kozmos-ds/vue` with Vue 3 + Web Components
 2. **Phase 2**: Dashboard team adopts Kozmos components incrementally
 3. **Migration**: Replace custom Vue 2 components with Kozmos Vue 3 components
 4. **Tooling**: Provide Vue 2 → Vue 3 migration guide for dashboard-specific patterns
@@ -3242,7 +3253,7 @@ module.exports = {
 
 ```bash
 # Development with Storybook
-pnpm --filter @kozmos/react-native storybook
+pnpm --filter @kozmos-ds/react-native storybook
 
 # Or via Expo
 cd packages/react-native && expo start
@@ -3518,7 +3529,8 @@ module.exports = {
   "*.kt": ["ktlint --format"],
 
   // Tokens - rebuild on change
-  "packages/tokens/src/**/*.json": () => "pnpm --filter @kozmos/tokens build",
+  "packages/tokens/src/**/*.json": () =>
+    "pnpm --filter @kozmos-ds/tokens build",
 
   // Prevent secrets
   "*": ["secretlint"],
@@ -3753,13 +3765,13 @@ export const parameters = {
 
 ## Affected Packages
 
-- [ ] `@kozmos/tokens`
-- [ ] `@kozmos/react`
-- [ ] `@kozmos/vue`
-- [ ] `@kozmos/react-native`
+- [ ] `@kozmos-ds/tokens`
+- [ ] `@kozmos-ds/react`
+- [ ] `@kozmos-ds/vue`
+- [ ] `@kozmos-ds/react-native`
 - [ ] `KozmosUI` (iOS)
 - [ ] `kozmos-ui` (Android)
-- [ ] `@kozmos/icons`
+- [ ] `@kozmos-ds/icons`
 
 ## Checklist
 
