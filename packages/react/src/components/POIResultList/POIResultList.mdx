@@ -28,13 +28,20 @@ Any other box that hides its overflow is clipping, and is left alone.
 
 - A list that appears with a result already selected, as when a pin's tap
   opens it, brings that result in too.
+- A selection that comes before its results, as when a pin's tap arrives while
+  they are still loading, waits for them: the list brings the result in when a
+  batch of `items` has it.
+- Each selection is brought in once. A new array of the same results, as a
+  product that builds `items` in its render passes every time, moves nothing;
+  a result that leaves the list and comes back is brought in again.
 - A selected card opens its action row as it animates, so the list brings it in
   again once the row is open.
 - A result inside a collapsed group brings in its group.
 - With reduced motion the list jumps rather than glides.
 
 Pass `scrollSelectedIntoView={false}` if the product already scrolls the panel
-itself.
+itself. A selection made while it is off waits too: turned back on, the list
+brings in the one it has not brought in yet.
 
 <Canvas of={Stories.SelectionComesIntoView} />
 
