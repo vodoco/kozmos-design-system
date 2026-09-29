@@ -2,13 +2,16 @@ import { useState, type CSSProperties, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import {
+  AdaptiveMapShell,
   AICompanionPanel,
   AISearchButton,
   Menu,
   MenuContent,
   MenuItem,
+  MapStatusPill,
   MenuTrigger,
   MultiSelect,
+  POIDetailPanel,
   POIResultList,
   SegmentedControl,
   ThemeProvider,
@@ -101,10 +104,36 @@ function HeldChoice() {
         ]}
         label="View"
         onValueChange={setValue}
-        value={value}
+        // Nothing chosen is `null`: `undefined` leaves the choice to the
+        // control, as in 0.5.0.
+        value={value ?? null}
       />
       <output data-testid="held">{value ?? "nothing"}</output>
     </>
+  );
+}
+
+/**
+ * Fix 1 of 0.6.0: a product's own toggle that passes its optional `value`
+ * on, used without one, as 0.5.0 allowed. The control keeps its own choice.
+ */
+function ForwardedToggle({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (value: string | undefined) => void;
+}) {
+  return (
+    <SegmentedControl
+      items={[
+        { value: "list", label: "List" },
+        { value: "map", label: "Map" },
+      ]}
+      label="View"
+      onValueChange={onChange}
+      value={value}
+    />
   );
 }
 
@@ -201,6 +230,9 @@ function AssistantCover({
           <button type="button">Shops</button>
           <button type="button">Offices</button>
           <p aria-live="polite">3 places</p>
+          {/* A status the map shows under the assistant: live by its role
+              alone, with no aria-live. */}
+          <MapStatusPill tone="warning">Turn back</MapStatusPill>
         </div>
         <AICompanionPanel
           onClose={() => setOpen(false)}
@@ -258,6 +290,110 @@ function AssistantMountToOpen() {
   );
 }
 
+/**
+ * Fix 2 of 0.6.0: a layout that changes while the assistant is open. Below
+ * 700px the panel covers its frame; from 700px it is the frame's right half,
+ * beside the search. A media query decides, as a product's would.
+ */
+function AssistantResponsive() {
+  const [open, setOpen] = useState(false);
+  const [presses, setPresses] = useState(0);
+  return (
+    <>
+      <style>{`
+        .responsive-frame { position: relative; width: 100%; height: 560px; overflow: hidden; }
+        .responsive-frame > .responsive-panel.responsive-panel { position: absolute; inset: 0; width: 100%; background: white; }
+        @media (min-width: 700px) {
+          .responsive-frame > .responsive-panel.responsive-panel { left: auto; right: 0; width: 50%; }
+        }
+      `}</style>
+      <div className="responsive-frame" data-testid="frame">
+        <div data-testid="search" style={{ width: 300 }}>
+          <AISearchButton
+            label="Ask the assistant"
+            onClick={() => setOpen(true)}
+          />
+          <button onClick={() => setPresses((n) => n + 1)} type="button">
+            Shops
+          </button>
+          <output data-testid="presses">{presses}</output>
+        </div>
+        <AICompanionPanel
+          className="responsive-panel"
+          onClose={() => setOpen(false)}
+          open={open}
+        >
+          <input aria-label="Ask" />
+        </AICompanionPanel>
+      </div>
+    </>
+  );
+}
+
+/** A place's details, as a product hosts them: the card and its close button. */
+function placeDetails(testId: string) {
+  return (
+    <POIDetailPanel
+      actionLabels={{
+        navigate: "Go",
+        favourite: "Favourite",
+        bookmark: "Save",
+        share: "Share",
+        order: "Order",
+      }}
+      data-testid={testId}
+      onAction={() => undefined}
+      onClose={() => undefined}
+      poi={{
+        id: "harbour-coffee",
+        name: "Harbour Coffee Co.",
+        floorId: "2",
+        floorLabel: "Level 2",
+        media: [],
+        actions: ["favourite", "bookmark"],
+      }}
+      presentation="sheet"
+    />
+  );
+}
+
+/**
+ * Fix 4 of 0.6.0: a product whose own layout is a 1000px size container,
+ * with the shell inside it. In the shell's panel, beside the hosted details
+ * card, a product note reads the product's container with an unnamed query
+ * and a `cqi` width. The card's sheet presentation also stands alone, in a
+ * box that shrinks to fit, as Storybook's centred layout draws it.
+ */
+function ShellProductContainer() {
+  return (
+    <>
+      <style>{`
+        .product-app { container-type: inline-size; width: 1000px; height: 700px; }
+        .product-note { color: rgb(0, 0, 255); inline-size: 50cqi; margin: 0; }
+        @container (min-width: 600px) { .product-note { color: rgb(255, 0, 0); } }
+      `}</style>
+      <div className="product-app">
+        <AdaptiveMapShell
+          map={<div style={{ width: "100%", height: "100%" }} />}
+          panel={
+            <>
+              <p className="product-note" data-testid="product-note">
+                Product content
+              </p>
+              {placeDetails("hosted-details")}
+            </>
+          }
+          panelPlacement="end"
+          style={{ height: "100%" }}
+        />
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", width: 1000 }}>
+        {placeDetails("standalone-details")}
+      </div>
+    </>
+  );
+}
+
 /** R3: a multi-select with two choices made, to clear from the keyboard. */
 function ToolsSelect() {
   return (
@@ -277,6 +413,7 @@ const scenarios: Record<string, () => ReactElement> = {
   "late-results": () => <LateResults reveal />,
   "reveal-later": () => <LateResults reveal={false} />,
   "held-choice": () => <HeldChoice />,
+  "forwarded-toggle": () => <ForwardedToggle />,
   "assistant-escape": () => <AssistantEscape />,
   "assistant-cover": () => <AssistantCover placement="cover" />,
   "assistant-cover-focus-under": () => (
@@ -290,6 +427,8 @@ const scenarios: Record<string, () => ReactElement> = {
   "assistant-fixed": () => <AssistantCover placement="fixed" />,
   "multi-select": () => <ToolsSelect />,
   "assistant-mount-to-open": () => <AssistantMountToOpen />,
+  "assistant-responsive": () => <AssistantResponsive />,
+  "shell-product-container": () => <ShellProductContainer />,
 };
 
 window.interactions = {

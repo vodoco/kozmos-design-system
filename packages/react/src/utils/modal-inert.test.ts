@@ -180,3 +180,52 @@ describe("modal inert within a frame (GAP-93)", () => {
     expect($("sheet-b")).toHaveAttribute("inert", "product");
   });
 });
+
+describe("live regions named by their role (0.6.0)", () => {
+  // Kept reachable only with `aria-live`, the regions Kozmos's own parts draw
+  // with a role alone went inert and silent: MapStatusPill, Alert, Notice
+  // and Spinner are `role="status"` or `role="alert"`, with no aria-live.
+  const live = [
+    ["status", "status"],
+    ["alert", "alert"],
+    ["log", "log"],
+    ["marquee", "marquee"],
+    ["timer", "timer"],
+    ["a role list", "status region"],
+    ["output", null],
+  ] as const;
+
+  function page() {
+    const main = document.createElement("main");
+    const tile = document.createElement("button");
+    tile.textContent = "Shops";
+    main.append(tile);
+    const regions = live.map(([name, role]) => {
+      const region = document.createElement(role ? "div" : "output");
+      if (role) region.setAttribute("role", role);
+      region.textContent = `${name} says something`;
+      main.append(region);
+      return region;
+    });
+    const panel = document.createElement("div");
+    document.body.replaceChildren(main, panel);
+    return { tile, panel, regions };
+  }
+  const inert = (node: Element) => node.closest("[inert]") !== null;
+
+  live.forEach(([name], index) =>
+    it(`keeps ${name} speaking under a popup over the page and under a panel over a frame`, () => {
+      const { tile, panel, regions } = page();
+      const region = regions[index];
+
+      const release = start(panel);
+      expect(inert(tile)).toBe(true);
+      expect(inert(region), `${name} under a page-modal popup`).toBe(false);
+      release();
+
+      start(panel, document.body);
+      expect(inert(tile)).toBe(true);
+      expect(inert(region), `${name} under a panel`).toBe(false);
+    }),
+  );
+});

@@ -110,7 +110,8 @@ function coveredBy(panel: HTMLElement): Element | null {
  * box it fills, `absolute inset-0` in its positioned container, it makes the
  * rest of that box inert, and gives it back as it closes, before it hands
  * focus back. The keyboard cannot step back out of it onto controls nobody
- * can see. Placed in flow, or over part of its box, it covers nothing.
+ * can see. Placed in flow, or over part of its box, it covers nothing. It
+ * measures again whenever it or that box changes size while it is open.
  */
 const AICompanionPanel = React.forwardRef<
   HTMLDivElement,
@@ -187,11 +188,44 @@ const AICompanionPanel = React.forwardRef<
       // speak, and the page's portals, where a part inside opens its popups,
       // stay in reach. After focus has moved in, so the button that opened
       // it does not lose focus to the page on the way.
-      const covered = coveredBy(node);
-      const release = covered
-        ? inertOutside(node, { within: covered, keep: "[data-kozmos-portal]" })
-        : undefined;
+      //
+      // Measured again whenever the panel or the box it is laid against
+      // changes size while it is open: a layout that moves it from covering
+      // its frame to half of it gives the other half back, and the other way
+      // takes it (it was decided once, as it opened).
+      let covered: Element | null = null;
+      let release: (() => void) | undefined;
+      const measure = (moved: boolean) => {
+        const next = coveredBy(node);
+        if (next === covered) return;
+        release?.();
+        covered = next;
+        release = next
+          ? inertOutside(node, { within: next, keep: "[data-kozmos-portal]" })
+          : undefined;
+        // Focus on a control the panel has just covered is on something
+        // nobody can see, and inert would drop it to the page: it goes in.
+        const active = doc.activeElement;
+        if (moved && next && active !== node && next.contains(active))
+          node.focus({ preventScroll: true });
+      };
+      measure(false);
+      let against = node.offsetParent;
+      const observer =
+        typeof ResizeObserver === "undefined"
+          ? undefined
+          : new ResizeObserver(() => {
+              if (node.offsetParent !== against) {
+                if (against) observer?.unobserve(against);
+                against = node.offsetParent;
+                if (against) observer?.observe(against);
+              }
+              measure(true);
+            });
+      observer?.observe(node);
+      if (against) observer?.observe(against);
       return () => {
+        observer?.disconnect();
         // Given back first: the control focus returns to was under the panel.
         release?.();
         // StrictMode's rehearsal runs this with the panel still in the

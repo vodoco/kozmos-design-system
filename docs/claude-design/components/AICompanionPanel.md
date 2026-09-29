@@ -117,7 +117,8 @@ While it is open, what it covers is out of reach (GAP-93): laid over the
 box it fills, `absolute inset-0` in its positioned container, it makes the
 rest of that box inert, and gives it back as it closes, before it hands
 focus back. The keyboard cannot step back out of it onto controls nobody
-can see. Placed in flow, or over part of its box, it covers nothing.
+can see. Placed in flow, or over part of its box, it covers nothing. It
+measures again whenever it or that box changes size while it is open.
 
 It forwards its ref to `HTMLDivElement`. Its props are `AICompanionPanelProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "title">`.
 
