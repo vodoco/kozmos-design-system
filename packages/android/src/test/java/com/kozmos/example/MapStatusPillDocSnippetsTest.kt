@@ -4,11 +4,13 @@
 package com.kozmos.example
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BluetoothDisabled
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.LiveRegionMode
+import com.kozmos.components.icon.KozmosIcon
+import com.kozmos.components.icon.KozmosIconSize
 import com.kozmos.components.mapstatuspill.KozmosMapStatusPill
 import com.kozmos.components.mapstatuspill.KozmosMapStatusPillTone
 import com.kozmos.components.readSemantics
@@ -26,13 +28,23 @@ fun PositioningStatus(isCalculating: Boolean) {
     )
 }
 
-// The product's own mark in place of the tone's.
+// A mark in place of the tone's, by its Kozmos name, as on every platform.
 @Composable
 fun BluetoothStatus() {
     KozmosMapStatusPill(
         text = "No Bluetooth",
         tone = KozmosMapStatusPillTone.Danger,
-        icon = { Icon(Icons.Filled.BluetoothDisabled, contentDescription = null) }
+        icon = { KozmosIcon(name = "bluetooth-off", size = KozmosIconSize.Lg) }
+    )
+}
+
+// Material's walking figure, in the progress tone's blue.
+@Composable
+fun WalkingStatus() {
+    KozmosMapStatusPill(
+        text = "Walking improves accuracy",
+        tone = KozmosMapStatusPillTone.Progress,
+        icon = { Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null) }
     )
 }
 
@@ -52,5 +64,7 @@ class MapStatusPillDocSnippetsTest {
         }
         val bluetooth = paparazzi.readSemantics { MaterialTheme { BluetoothStatus() } }
         assertEquals(listOf("No Bluetooth"), bluetooth.merged.single { it.liveRegion != null }.texts)
+        val walking = paparazzi.readSemantics { MaterialTheme { WalkingStatus() } }
+        assertEquals(listOf("Walking improves accuracy"), walking.merged.single { it.liveRegion != null }.texts)
     }
 }

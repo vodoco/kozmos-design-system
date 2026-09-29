@@ -47,9 +47,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `MapStatusPillProps`, whi
 
   How the pill reads (decision 39). Written out rather than named, so the
   variant-parity check can read the axis.
-  - `neutral`: the words alone — "Walking improves accuracy".
+  - `neutral`: the words alone, for a status with nothing to mark.
   - `progress`: the system's arc turning in the theme's blue — "Calculating
-    Precise Position", "Preparing Content", "Calculating step-free route".
+    Precise Position", "Preparing Content", "Calculating step-free route";
+    "Walking improves accuracy" puts the SDK's walking figure in its place.
   - `success`: a check, and the words, in the success colour —
     "Established", "Up-to-date".
   - `danger`: a warning triangle in the danger colour; the words stay ink —
@@ -62,7 +63,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `MapStatusPillProps`, whi
 
 - `icon`: `React.ReactNode`, optional.
 
-  Replaces the tone's own mark: "No Bluetooth" passes `BluetoothOff`. It is
+  Replaces the tone's own mark: "No Bluetooth" passes `BluetoothOff`, and
+  "Walking improves accuracy" `Walking`, both from `@kozmos-ds/icons`. It is
   drawn at 24px in the tone's colour and never announced — the words say it.
   `null` draws no mark at all.
 
@@ -77,4 +79,4 @@ It forwards its ref to `HTMLDivElement`. Its props are `MapStatusPillProps`, whi
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

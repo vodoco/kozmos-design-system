@@ -62,7 +62,7 @@ wraps: longer words, or a longer language, make it taller rather than cut.
       </td>
       <td>none</td>
       <td>ink</td>
-      <td>Walking improves accuracy</td>
+      <td>a status with nothing to mark</td>
     </tr>
     <tr>
       <td>
@@ -70,7 +70,10 @@ wraps: longer words, or a longer language, make it taller rather than cut.
       </td>
       <td>the system's arc, turning, in the theme's blue</td>
       <td>ink</td>
-      <td>Calculating Precise Position, Preparing Content</td>
+      <td>
+        Calculating Precise Position, Preparing Content; Walking improves
+        accuracy, with the SDK's walking figure in the arc's place
+      </td>
     </tr>
     <tr>
       <td>
@@ -127,11 +130,18 @@ colour. `icon={null}` draws none. The mark is never announced: the words say
 what is happening, which is also why the turning arc is decorative and not a
 second status.
 
+Both marks here come from `@kozmos-ds/icons`. Walking improves accuracy passes
+`Walking`, the SDK's walking figure, which the progress tone draws in the
+theme's blue as the SDK does. No Bluetooth passes `BluetoothOff`, the Pointr
+Icon Library's outline. `bluetooth-off` is in the icon name list, so
+`Icon name="bluetooth-off"` reaches it too, and SwiftUI's and Compose's
+`KozmosIcon` draw it by that name.
+
 <Canvas of={Stories.NoBluetooth} />
 
-Two of the SDK's marks are not in `@kozmos-ds/icons` yet, and icons come from
-Figma through the icons pipeline rather than being drawn here. Until they
-arrive, these stories draw no mark rather than a stand-in:
+Two of the SDK's marks are not in `@kozmos-ds/icons`: neither Figma file Kozmos
+reads for the SDK draws them, and icons come from Figma rather than being drawn
+here. Until they are, these stories draw no mark rather than a stand-in:
 
 - **Wayfinding Unavailable**: the SDK's walking figure, struck through, beside
   a pin;
@@ -183,9 +193,9 @@ import { PlatformSnippets } from '../PlatformSnippets';
   react={`
 import type { ReactNode } from "react";
 import { MapOverlay, MapStatusPill, type MapStatusPillProps } from "@kozmos-ds/react";
-import { BluetoothOff } from "@kozmos-ds/icons";
+import { BluetoothOff, Walking } from "@kozmos-ds/icons";
 
-type Positioning = "calculating" | "established" | "noBluetooth";
+type Positioning = "calculating" | "walking" | "established" | "noBluetooth";
 
 // The product's words, in the visitor's language, and its tone for each.
 const STATUS: Record<
@@ -193,6 +203,7 @@ const STATUS: Record<
   { tone: MapStatusPillProps["tone"]; words: string; icon?: ReactNode }
 > = {
   calculating: { tone: "progress", words: "Calculating Precise Position" },
+  walking: { tone: "progress", words: "Walking improves accuracy", icon: <Walking /> },
   established: { tone: "success", words: "Established" },
   noBluetooth: { tone: "danger", words: "No Bluetooth", icon: <BluetoothOff /> },
 };
@@ -228,12 +239,21 @@ struct PositioningStatus: View {
     }
 }
 
-// The product's own mark in place of the tone's. iOS has no Bluetooth
-// symbol, so the mark is the app's own asset.
+// A mark in place of the tone's. Kozmos names Bluetooth-off on every
+// platform; SF Symbols has no Bluetooth glyph, so iOS draws Pointr's outline.
 struct BluetoothStatus: View {
     var body: some View {
         KozmosMapStatusPill(String(localized: "No Bluetooth"), tone: .danger) {
-            Image("bluetooth-off")
+            KozmosIcon("bluetooth-off", size: .lg)
+        }
+    }
+}
+
+// The system's walking figure, in the progress tone's blue.
+struct WalkingStatus: View {
+    var body: some View {
+        KozmosMapStatusPill(String(localized: "Walking improves accuracy"), tone: .progress) {
+            Image(systemName: "figure.walk").resizable().scaledToFit()
         }
     }
 }
@@ -242,9 +262,11 @@ struct BluetoothStatus: View {
 package com.kozmos.example
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BluetoothDisabled
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import com.kozmos.components.icon.KozmosIcon
+import com.kozmos.components.icon.KozmosIconSize
 import com.kozmos.components.mapstatuspill.KozmosMapStatusPill
 import com.kozmos.components.mapstatuspill.KozmosMapStatusPillTone
 
@@ -257,13 +279,23 @@ fun PositioningStatus(isCalculating: Boolean) {
     )
 }
 
-// The product's own mark in place of the tone's.
+// A mark in place of the tone's, by its Kozmos name, as on every platform.
 @Composable
 fun BluetoothStatus() {
     KozmosMapStatusPill(
         text = "No Bluetooth",
         tone = KozmosMapStatusPillTone.Danger,
-        icon = { Icon(Icons.Filled.BluetoothDisabled, contentDescription = null) }
+        icon = { KozmosIcon(name = "bluetooth-off", size = KozmosIconSize.Lg) }
+    )
+}
+
+// Material's walking figure, in the progress tone's blue.
+@Composable
+fun WalkingStatus() {
+    KozmosMapStatusPill(
+        text = "Walking improves accuracy",
+        tone = KozmosMapStatusPillTone.Progress,
+        icon = { Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null) }
     )
 }
   `}

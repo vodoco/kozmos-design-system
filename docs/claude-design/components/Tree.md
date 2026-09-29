@@ -68,7 +68,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeProps`, which extend
 - `renderMeta`: `(context: TreeItemRenderContext) => React.ReactNode`, optional.
 - `renderActions`: `(context: TreeItemRenderContext) => React.ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TreeChildItemRow
 
@@ -89,7 +89,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeChildItemRowProps`, 
 - `selected`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TreeItemRow
 
@@ -112,7 +112,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeItemRowProps`, which
 - `selected`: `boolean`, optional, default `false`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## TreeParentItemRow
 
@@ -134,7 +134,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `TreeParentItemRowProps`,
 - `selected`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 
