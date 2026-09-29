@@ -110,8 +110,9 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
     // already be gone, and focus with it, to the page. The same reading
     // AICompanionPanel makes of its opener.
     const focusedPart = (): FocusedPart | null => {
-      const active =
-        typeof document === "undefined" ? null : document.activeElement;
+      // The card's own document: the bar is always drawn, so once the card
+      // has mounted it says which.
+      const active = barRef.current?.ownerDocument.activeElement;
       if (!active) return null;
       if (instructionRef.current?.contains(active)) return "instruction";
       if (itineraryRef.current?.contains(active)) return "itinerary";
@@ -128,8 +129,7 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
     useLayoutEffect(() => {
       const from = change.focused;
       if (!from) return;
-      const doc = (instructionRef.current ?? itineraryRef.current)
-        ?.ownerDocument;
+      const doc = barRef.current?.ownerDocument;
       if (!doc) return;
       const active = doc.activeElement;
       // Focus the change took away: dropped to the page with the part that
