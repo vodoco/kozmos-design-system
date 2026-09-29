@@ -43,7 +43,7 @@ It forwards its ref to `HTMLSpanElement`. Its props are `CounterProps`, which ex
 - `tone`: `"destructive" | "neutral" | "brand" | "inverse" | null`, optional, default `"neutral"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

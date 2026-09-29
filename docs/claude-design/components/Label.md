@@ -32,4 +32,4 @@ It forwards its ref to `HTMLLabelElement`. Its props are `LabelProps`, which ext
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 265 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

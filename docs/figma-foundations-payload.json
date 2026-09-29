@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T15:42:03.085Z",
+  "generatedAt": "2026-09-28T22:23:57.468Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,9 +36,9 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 670,
-    "variableTokens": 621,
-    "styleOnlyTokens": 49,
+    "totalTokens": 674,
+    "variableTokens": 623,
+    "styleOnlyTokens": 51,
     "bySourceType": {
       "borderRadius": 8,
       "dimension": 18,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 453,
+      "color": 455,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -55,7 +55,7 @@
       "cubicBezier": 5,
       "fontFamilies": 7,
       "fontWeights": 5,
-      "shadow": 6,
+      "shadow": 8,
       "duration": 3
     },
     "note": "Variables REST is unavailable without file_variables:read, so this payload is intended for a Figma plugin/MCP import path."
@@ -7066,6 +7066,54 @@
         "dark": {
           "kind": "alias",
           "path": "Primitives/Colors/emotional/alert/900"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Emotion/alert/fill",
+      "figmaName": "Emotion/alert/fill",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-emotion-alert-fill",
+      "syntax": {
+        "web": "var(--semantics-emotion-alert-fill)",
+        "ios": "semanticsEmotionAlertFill",
+        "android": "semanticsEmotionAlertFill"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/emotional/alert/600"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Emotion/alert/onFill",
+      "figmaName": "Emotion/alert/onFill",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-emotion-alert-on-fill",
+      "syntax": {
+        "web": "var(--semantics-emotion-alert-on-fill)",
+        "ios": "semanticsEmotionAlertOnfill",
+        "android": "semanticsEmotionAlertOnfill"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },
@@ -15784,6 +15832,30 @@
       }
     },
     {
+      "canonicalName": "Semantics/Elevation/Map Control",
+      "figmaName": "Elevation/Map Control",
+      "collection": "Kozmos Semantics",
+      "sourceType": "shadow",
+      "figmaType": null,
+      "cssVariable": "--semantics-elevation-map-control",
+      "syntax": {
+        "web": "var(--semantics-elevation-map-control)",
+        "ios": "semanticsElevationMapControl",
+        "android": "semanticsElevationMapControl"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "shadow/xl"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "shadow/xl"
+        }
+      }
+    },
+    {
       "canonicalName": "Semantics/Typography/Family/System",
       "figmaName": "Typography/Family/System",
       "collection": "Kozmos Semantics",
@@ -16140,6 +16212,30 @@
         "dark": {
           "kind": "raw",
           "value": "0 8px 16px rgba(0,0,0,0.5)"
+        }
+      }
+    },
+    {
+      "canonicalName": "shadow/xl",
+      "figmaName": "xl",
+      "collection": "Kozmos Effects",
+      "sourceType": "shadow",
+      "figmaType": null,
+      "cssVariable": "--shadow-xl",
+      "syntax": {
+        "web": "var(--shadow-xl)",
+        "ios": "shadowXl",
+        "android": "shadowXl"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "0 8px 8px rgba(0,0,0,0.16), 0 24px 24px rgba(0,0,0,0.08), 0 0 32px rgba(0,0,0,0.12)"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "0 8px 8px rgba(0,0,0,0.4), 0 24px 24px rgba(0,0,0,0.2), 0 0 32px rgba(0,0,0,0.3)"
         }
       }
     }

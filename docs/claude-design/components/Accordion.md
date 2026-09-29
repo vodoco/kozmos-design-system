@@ -88,7 +88,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `AccordionRootProps`, whi
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 261 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## AccordionItem
 
@@ -105,7 +105,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<AccordionPrimitive.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## AccordionTrigger
 
@@ -114,7 +114,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `Omit<AccordionPrimiti
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## AccordionContent
 
@@ -128,4 +128,4 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<AccordionPrimitive.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
