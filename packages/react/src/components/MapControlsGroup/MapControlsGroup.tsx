@@ -211,8 +211,10 @@ const MapControlsGroup = React.forwardRef<
       <div
         ref={ref}
         aria-label={label}
+        // Only its controls take presses: the 8px between them are the map's
+        // (decision 46; .kozmos-map-controls-group, owned-components.css).
         className={cn(
-          "relative flex flex-col gap-2 pointer-events-auto",
+          "kozmos-map-controls-group relative flex flex-col gap-2",
           className,
         )}
         role="group"

@@ -676,6 +676,115 @@ try {
           `the dot and the count overlap: ${JSON.stringify(marks)}`,
         );
         await audit();
+        // Decision 38's board, on the open column's levels: at rest a level
+        // is the page's ink with no outline; hovered, a light primary
+        // outline (the theme's primary at 40%) and primary words; pressed,
+        // the full primary outline; the current level is outlined in the
+        // primary at rest. Nothing measured these states (the night audit's
+        // X5): a level that lost its hover outline, or drew the pressed one
+        // on hover, passed. Read once each transition has finished, the
+        // tokens resolved in the column's own themed portal.
+        const column = page.getByRole("dialog", { name: "Floor selector" });
+        const levelLook = (name) =>
+          column
+            .getByRole("button", { name, exact: true })
+            .evaluate(async (level) => {
+              await Promise.all(level.getAnimations().map((a) => a.finished));
+              const host =
+                level.closest("[data-kozmos-portal]") ??
+                level.closest("[data-kozmos-root]");
+              const resolve = (token) => {
+                const probe = document.createElement("span");
+                probe.style.color = `var(${token})`;
+                host.append(probe);
+                const value = getComputedStyle(probe).color;
+                probe.remove();
+                return value;
+              };
+              const s = getComputedStyle(level);
+              return {
+                outline: s.borderTopColor,
+                width: s.borderTopWidth,
+                words: s.color,
+                primary: resolve("--primitives-colors-theme-600"),
+                ink: resolve("--primitives-colors-foreground-0"),
+              };
+            });
+        // rgb()/rgba() or color(srgb …), as each engine writes a computed
+        // colour, in 0–255 channels and an alpha.
+        const channelsOf = (css) => {
+          const srgb = css.match(
+            /^color\(srgb ([\d.e+-]+) ([\d.e+-]+) ([\d.e+-]+)(?: \/ ([\d.e+-]+))?\)$/,
+          );
+          if (srgb)
+            return [
+              ...srgb.slice(1, 4).map((v) => Number(v) * 255),
+              srgb[4] === undefined ? 1 : Number(srgb[4]),
+            ];
+          const rgb = css.match(
+            /^rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?\)$/,
+          );
+          assert(rgb, `a colour this check cannot read: ${css}`);
+          return [
+            ...rgb.slice(1, 4).map(Number),
+            rgb[4] === undefined ? 1 : Number(rgb[4]),
+          ];
+        };
+        const sameColour = (css, want, alpha = 1) => {
+          const [r, g, b, a] = channelsOf(css);
+          const [wr, wg, wb] = channelsOf(want);
+          return (
+            Math.max(Math.abs(r - wr), Math.abs(g - wg), Math.abs(b - wb)) <=
+              2 && Math.abs(a - alpha) <= 0.02
+          );
+        };
+        const level = column.getByRole("button", {
+          name: "Third floor",
+          exact: true,
+        });
+        await page.mouse.move(1, 1);
+        const atRest = await levelLook("Third floor");
+        await level.hover();
+        const hovered = await levelLook("Third floor");
+        await page.mouse.down();
+        const pressed = await levelLook("Third floor");
+        // Let go on the column's own inset, off every level, so no level is
+        // chosen and the column stays open.
+        const columnBox = await column.boundingBox();
+        await page.mouse.move(columnBox.x + 1, columnBox.y + 1);
+        await page.mouse.up();
+        await page.mouse.move(1, 1);
+        const current = await levelLook("First floor");
+        const looks = { atRest, hovered, pressed, current };
+        assert.equal(
+          await column.count(),
+          1,
+          `pressing a level and letting go off it closed the column: ${JSON.stringify(looks)}`,
+        );
+        assert(
+          atRest.width === "1px" &&
+            channelsOf(atRest.outline)[3] === 0 &&
+            sameColour(atRest.words, atRest.ink),
+          `a level at rest is not the ink with no outline: ${JSON.stringify(atRest)}`,
+        );
+        assert(
+          sameColour(hovered.outline, hovered.primary, 0.4) &&
+            sameColour(hovered.words, hovered.primary),
+          `a hovered level is not outlined in the primary at 40% with primary words: ${JSON.stringify(hovered)}`,
+        );
+        assert(
+          sameColour(pressed.outline, pressed.primary) &&
+            sameColour(pressed.words, pressed.primary),
+          `a pressed level is not outlined in the full primary with primary words: ${JSON.stringify(pressed)}`,
+        );
+        assert(
+          sameColour(current.outline, current.primary) &&
+            sameColour(current.words, current.primary),
+          `the current level is not outlined in the primary: ${JSON.stringify(current)}`,
+        );
+        console.log(
+          `PASS floor switcher levels ${theme} ${viewport.width}: at rest ${atRest.outline} on ${atRest.words}, hovered ${hovered.outline}, pressed ${pressed.outline}, current ${current.outline}`,
+        );
         // Decision 40: the tile is the map's own control, so it draws the
         // map-control surface as the compass beside the zoom pair does — at
         // rest, hovered and pressed, nothing restyled. The open column wears

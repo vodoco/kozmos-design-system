@@ -1852,6 +1852,23 @@ try {
         node.style.setProperty("z-index", "2147483647", "important");
       }),
     );
+    // The group boards, 300 tall, in a row below: for each root, one whose
+    // overlay fits and one whose overlay overflows (decision 46).
+    ["outer", "nested"].forEach((id, row) =>
+      ["group", "group-scrolling"].forEach((layout, column) => {
+        const node = document.querySelector(
+          `[data-testid="${id}-map-board-${layout}"]`,
+        );
+        node.style.setProperty("position", "fixed", "important");
+        node.style.setProperty("top", "496px", "important");
+        node.style.setProperty(
+          "left",
+          `${16 + (row * 2 + column) * 224}px`,
+          "important",
+        );
+        node.style.setProperty("z-index", "2147483647", "important");
+      }),
+    );
   });
   await settleLayout(boards);
   const board = (id, layout) => boards.getByTestId(`${id}-map-board-${layout}`);
@@ -2298,6 +2315,26 @@ try {
         el?.getAttribute("data-testid") || el?.className || el?.tagName || null
       );
     }, point);
+  // A press, then a drag, at a point, as a visitor panning the map would:
+  // whether both reached `map` (a board's map stand-in), and what did.
+  const pressAndDrag = async (point, map) => {
+    await boards.evaluate(() => (window.__mapPresses = []));
+    await boards.mouse.click(point.x, point.y);
+    await boards.mouse.move(point.x, point.y);
+    await boards.mouse.down();
+    await boards.mouse.move(point.x + 24, point.y + 16, { steps: 4 });
+    await boards.mouse.up();
+    const got = await boards.evaluate(() => window.__mapPresses);
+    const on = (type) =>
+      got.filter((e) => e.type === type && e.map === map && e.target).length;
+    return {
+      reached:
+        on("pointerdown") >= 2 &&
+        on("pointerup") >= 2 &&
+        on("pointermove") >= 1,
+      got,
+    };
+  };
   // Presses and drags at the room's points, and every one must reach the map.
   const pressed = [];
   // The points of a scrolling overlay's room, which its scroll box takes.
@@ -2316,20 +2353,9 @@ try {
         map,
         `${id} ${layout}${state}: a press ${point.where} a control, in the overlay's room at ${point.x},${point.y}, lands on ${hit}, not the map`,
       );
-      // A press, then a drag, as a visitor panning the map would.
-      await boards.evaluate(() => (window.__mapPresses = []));
-      await boards.mouse.click(point.x, point.y);
-      await boards.mouse.move(point.x, point.y);
-      await boards.mouse.down();
-      await boards.mouse.move(point.x + 24, point.y + 16, { steps: 4 });
-      await boards.mouse.up();
-      const got = await boards.evaluate(() => window.__mapPresses);
-      const on = (type) =>
-        got.filter((e) => e.type === type && e.map === map && e.target).length;
+      const { reached, got } = await pressAndDrag(point, map);
       assert(
-        on("pointerdown") >= 2 &&
-          on("pointerup") >= 2 &&
-          on("pointermove") >= 1,
+        reached,
         `${id} ${layout}${state}: a press and a drag ${point.where} a control, in the overlay's room, did not reach the map: ${JSON.stringify(got)}`,
       );
       pressed.push(`${id} ${layout}${state} ${point.where}`);
@@ -2444,6 +2470,182 @@ try {
   }
   console.log(
     `PASS decision 46: a press or a drag in the room of an overlay that fits reaches the map (${pressed.length} points: ${[...new Set(pressed)].join(", ")}); a control in it still takes its press; an overlay that overflows scrolls from a wheel over what it holds, and is marked as scrolling and takes the presses in its room (${scrollBoxTook} points) only while it overflows`,
+  );
+
+  // Decision 46 inside a MapControlsGroup (the night audit's M3): the gaps
+  // between its controls are outside the controls too, so a press or a drag
+  // there reaches the map. The group's box took them: the zoom pair, the
+  // compass and the location control stand 8px apart in a column that took
+  // every press, and only the controls should. The group stays one named
+  // group whose controls Tab reaches in order: none of that is presses.
+  //
+  // While the overlay holding it overflows, a press in a gap lands on the
+  // overlay's scroll box, which takes its room then, and never on the group:
+  // in Linux WebKit, as CI runs it, a wheel scrolls a box only if the box
+  // takes presses itself (#148's data-scrolls), so a wheel over a gap still
+  // scrolls the overlay.
+  const gapPoints = (id, layout) =>
+    boards.evaluate(
+      ({ id, layout }) => {
+        const board = document.querySelector(
+          `[data-testid="${id}-map-board-${layout}"]`,
+        );
+        const group = board.querySelector('[role="group"]');
+        const g = group.getBoundingClientRect();
+        const parts = [...group.children].map((child) =>
+          child.getBoundingClientRect(),
+        );
+        const points = [];
+        for (let i = 1; i < parts.length; i += 1) {
+          const [above, below] = [parts[i - 1], parts[i]];
+          if (below.top - above.bottom < 4) continue;
+          const y = Math.round((above.bottom + below.top) / 2);
+          for (const x of [g.left + 6, (g.left + g.right) / 2, g.right - 6])
+            points.push({ x: Math.round(x), y, where: `in gap ${i}` });
+        }
+        return points;
+      },
+      { id, layout },
+    );
+  const gapsPressed = [];
+  let groupRoomPressed = 0;
+  let gapsOnTheScrollBox = 0;
+  for (const id of ["outer", "nested"]) {
+    const map = `${id}-map-board-group-map`;
+    const points = await gapPoints(id, "group");
+    assert.equal(
+      points.length,
+      6,
+      `${id}: a MapControlsGroup of four controls does not have its two 8px gaps: ${JSON.stringify(points)}`,
+    );
+    for (const point of points) {
+      const hit = await hitAt(point);
+      assert.equal(
+        hit,
+        map,
+        `${id}: a press ${point.where} between a MapControlsGroup's controls, at ${point.x},${point.y}, lands on ${hit}, not the map`,
+      );
+      const { reached, got } = await pressAndDrag(point, map);
+      assert(
+        reached,
+        `${id}: a press and a drag ${point.where} between a MapControlsGroup's controls did not reach the map: ${JSON.stringify(got)}`,
+      );
+      gapsPressed.push(`${id} ${point.where}`);
+    }
+    // The room round the group reaches the map as well.
+    const before = pressed.length;
+    await pressInRoom(id, "group", "");
+    groupRoomPressed += pressed.length - before;
+    // Every control in it still takes its own press, the zoom pair's two
+    // halves included.
+    const controls = board(id, "group").locator('[role="group"] button');
+    const names = await controls.evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute("aria-label")),
+    );
+    assert.deepEqual(
+      names,
+      [
+        `${id} zoom in, group`,
+        `${id} zoom out, group`,
+        `${id} reset bearing, group`,
+        `${id} locate, group`,
+      ],
+      `${id}: the group's controls are not the four it was given`,
+    );
+    for (const [index, name] of names.entries()) {
+      const box = await controls.nth(index).boundingBox();
+      const took = await boards.evaluate(
+        ({ x, y }) =>
+          document
+            .elementFromPoint(x, y)
+            ?.closest("button")
+            ?.getAttribute("aria-label") ?? null,
+        { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+      );
+      assert.equal(
+        took,
+        name,
+        `${id}: a press on ${name} in a MapControlsGroup lands on ${took}`,
+      );
+    }
+    // Its keyboard: one named group, its controls reached by Tab in order.
+    assert.equal(
+      await board(id, "group")
+        .getByRole("group", { name: `${id} map controls, group` })
+        .count(),
+      1,
+      `${id}: the MapControlsGroup is no longer one named group`,
+    );
+    await controls.first().focus();
+    const reached = [];
+    for (const [index] of names.entries()) {
+      reached.push(
+        await boards.evaluate(() =>
+          document.activeElement?.getAttribute("aria-label"),
+        ),
+      );
+      if (index < names.length - 1) await boards.keyboard.press("Tab");
+    }
+    await boards.evaluate(() => document.activeElement?.blur());
+    assert.deepEqual(
+      reached,
+      names,
+      `${id}: Tab no longer walks a MapControlsGroup's controls in order`,
+    );
+
+    // The overlay that overflows: a press in a gap is its scroll box's, never
+    // the group's, and a wheel there scrolls it.
+    const scrolling = `${id}-map-overlay-group-scrolling`;
+    assert(
+      await marked(scrolling, true),
+      `${id}: an overlay holding a MapControlsGroup taller than its room is not marked as scrolling`,
+    );
+    const stack = boards.getByTestId(scrolling).locator(":scope > div");
+    await stack.evaluate((node) => (node.scrollTop = 0));
+    // The gaps in the part of it the overlay shows.
+    const shown = await boards.getByTestId(scrolling).boundingBox();
+    const whileScrolling = (await gapPoints(id, "group-scrolling")).filter(
+      (point) => point.y > shown.y && point.y < shown.y + shown.height,
+    );
+    assert(
+      whileScrolling.length >= 3,
+      `${id}: no gap of a MapControlsGroup in the visible part of an overlay that overflows: ${JSON.stringify(whileScrolling)}`,
+    );
+    for (const point of whileScrolling) {
+      const onStack = await boards.evaluate(
+        ({ x, y, testId }) =>
+          document.elementFromPoint(x, y) ===
+          document.querySelector(`[data-testid="${testId}"] > div`),
+        { ...point, testId: scrolling },
+      );
+      assert(
+        onStack,
+        `${id}: while its overlay overflows, a press ${point.where} between a MapControlsGroup's controls, at ${point.x},${point.y}, lands on ${await hitAt(point)}, not the overlay's scroll box`,
+      );
+      gapsOnTheScrollBox += 1;
+    }
+    await boards.mouse.move(whileScrolling[1].x, whileScrolling[1].y);
+    await boards.mouse.wheel(0, 40);
+    const scrolled = await boards
+      .waitForFunction(
+        (testId) =>
+          document.querySelector(`[data-testid="${testId}"] > div`).scrollTop >
+          0,
+        scrolling,
+        { timeout: 3000 },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+    assert(
+      scrolled,
+      `${id}: a wheel over a gap between a MapControlsGroup's controls no longer scrolls the overlay that overflows`,
+    );
+    await stack.evaluate((node) => (node.scrollTop = 0));
+  }
+  console.log(
+    `PASS decision 46 in a MapControlsGroup: a press or a drag in the gaps between its controls reaches the map (${gapsPressed.length} points: ${[...new Set(gapsPressed)].join(", ")}), and so does one in the room round it (${groupRoomPressed} points); each of its four controls takes its own press, and Tab walks them in order in one named group; while its overlay overflows, a press in a gap is the overlay's scroll box's (${gapsOnTheScrollBox} points), never the group's, and a wheel there scrolls it`,
   );
   await boards.close();
 

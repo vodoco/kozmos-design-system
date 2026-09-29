@@ -36,8 +36,10 @@ presentation draws no rule under the search row.
 In the shell's panel, a sheet or a side panel, the browser paints no fill of its own: the panel's
 surface, solid or glass, is the one surface (decision 43). On a glass panel the map shows through it
 where it stood as a white block; on a solid one it looks as it did, and its text keeps the theme's
-foreground. On its own it keeps the background colour. iOS and Android do the same: iOS's `panel`
-presentation follows the panel too, so a product need not pass `sheet` for it, and tops its first row
-up as the `sheet` presentation does, keeping only its rule under the search row; Android's browser,
-which painted no fill even on its own, now keeps its fill there. On glass its empty state's text,
-muted elsewhere, takes the foreground colour, so it reads at 4.5:1 over any map (decision 48).
+foreground. On its own it keeps the background colour. iOS and Android do the same. On iOS both
+presentations follow the panel they are in, so a product need not pass `sheet` for it: hosted, either
+paints no fill and tops its first row up, and on its own either paints the background colour. The two
+differ only in the rule the `panel` presentation keeps under the search row. Until now the `sheet`
+presentation painted no fill even on its own, and Android's browser did the same; both keep their
+fill there now. On glass its empty state's text, muted elsewhere, takes the foreground colour, so it
+reads at 4.5:1 over any map (decision 48).
