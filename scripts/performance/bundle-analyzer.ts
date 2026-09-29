@@ -28,9 +28,13 @@ import { gzipSync } from "zlib";
 // (the single-choice ChipGroup, row 37) and +0.70 (the selected result scrolling into view,
 // row 70). That is growth by features, not a tree-shaking regression: the per-export and Button
 // budgets, which catch one, did not move.
+//
+// Everything went from 64 to 68 KB on 2026-09-28 (decision 53, Olcay's). Main measured 63.61 KB
+// here after that day's features, and the map status pill (decision 39) measured 63.77, leaving
+// 0.23 KB for the next. The per-export, Button and stylesheet budgets are unchanged.
 const MAX_EXPORT_GZIP_KB = 8;
 const MAX_BUTTON_GZIP_KB = 2;
-const MAX_TOTAL_GZIP_KB = 64;
+const MAX_TOTAL_GZIP_KB = 68;
 const MAX_CSS_GZIP_KB = 30;
 const MIN_ESM_MODULES = 50;
 

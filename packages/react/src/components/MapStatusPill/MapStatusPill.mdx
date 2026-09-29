@@ -1,0 +1,272 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./MapStatusPill.stories";
+
+<Meta of={Stories} />
+
+# MapStatusPill
+
+One status on the map, drawn as a compact pill in one of five tones (decision
+39). The SDK draws three parts for this — PositionStatus, Downloading Content
+and the Turn Back indicator — and the step-free route being calculated is a
+fourth (GAP-102). Kozmos draws them all with this one part.
+
+**The words, the tone and when it shows are the product's.** Kozmos decides
+none of them: it draws what it is given, and a new state is new words and a
+tone, not a new component.
+
+It wears the **map controls' surface** (decision 40), from the same owned rule
+as `MapControlButton`, so the two cannot drift:
+
+- the **page's own surface**, opaque, with the Control corner (16) and **no
+  border**, in the light theme and the dark (decision 47);
+- the **map controls' elevation**, three shadows (`shadow-map-control`,
+  `--semantics-elevation-map-control`), and the SDK's 32px backdrop blur;
+- at least **48px tall**, with 8px above and below, 12px at the sides and 8px
+  between the mark and the words;
+- a **24px mark**, the size every map control's mark is drawn at. The SDK's box
+  is 28; Kozmos's icon and spinner scales go from 24 to 32;
+- the words **regular, 13px on a 16px line**, in `foreground/300` — the SDK's
+  `#464A53` in the light theme. No brand font ships, so the system's sans draws
+  them, as it draws the map controls'.
+
+It is as wide as its words, up to a map control's longest (16rem), and then
+wraps: longer words, or a longer language, make it taller rather than cut.
+
+<Canvas of={Stories.CalculatingPrecisePosition} />
+
+## Tones
+
+{/* Four columns do not fit a phone: the table scrolls in its own region, as
+    the properties table does, rather than widening the page. */}
+
+<div
+  className="kozmos-docs-properties"
+  role="region"
+  aria-label="Tones"
+  tabIndex={0}
+>
+<table>
+  <thead>
+    <tr>
+      <th>Tone</th>
+      <th>Mark</th>
+      <th>Words</th>
+      <th>For</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <code>neutral</code>
+      </td>
+      <td>none</td>
+      <td>ink</td>
+      <td>Walking improves accuracy</td>
+    </tr>
+    <tr>
+      <td>
+        <code>progress</code>
+      </td>
+      <td>the system's arc, turning, in the theme's blue</td>
+      <td>ink</td>
+      <td>Calculating Precise Position, Preparing Content</td>
+    </tr>
+    <tr>
+      <td>
+        <code>success</code>
+      </td>
+      <td>a check</td>
+      <td>the success colour</td>
+      <td>Established, Up-to-date</td>
+    </tr>
+    <tr>
+      <td>
+        <code>danger</code>
+      </td>
+      <td>a warning triangle in the danger colour</td>
+      <td>ink</td>
+      <td>Failed to Calculate Precise Position, No Bluetooth</td>
+    </tr>
+    <tr>
+      <td>
+        <code>warning</code>
+      </td>
+      <td>a warning triangle, dark</td>
+      <td>dark, on a filled amber</td>
+      <td>Turn Back</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+The colours are Kozmos's emotion roles for text and glyphs on the page
+(`Semantics.Emotion.*.text`): the SDK's own green and red read 3.6:1 and 4.3:1
+as words on white, under the 4.5:1 text needs.
+
+`warning` fills the surface with a named token pair: `Emotion/alert/fill`, the
+SDK's bright amber (`alert/600`, bright in both themes), under
+`Emotion/alert/onFill`, the ink its words and mark are drawn in. The fill does
+not turn over with the theme, so its ink stays black in both: 10.56:1 in the
+light theme and 13.14:1 in the dark. React, SwiftUI and Compose all read the
+pair.
+
+<Canvas of={Stories.FailedToCalculatePrecisePosition} />
+<Canvas of={Stories.WalkingImprovesAccuracy} />
+<Canvas of={Stories.Established} />
+<Canvas of={Stories.UpdatingRoute} />
+<Canvas of={Stories.PreparingContent} />
+<Canvas of={Stories.UpdatingContent} />
+<Canvas of={Stories.UpToDate} />
+<Canvas of={Stories.CalculatingStepFreeRoute} />
+
+## The product's mark
+
+`icon` replaces the tone's own mark, and is drawn at 24px in the tone's
+colour. `icon={null}` draws none. The mark is never announced: the words say
+what is happening, which is also why the turning arc is decorative and not a
+second status.
+
+<Canvas of={Stories.NoBluetooth} />
+
+Two of the SDK's marks are not in `@kozmos-ds/icons` yet, and icons come from
+Figma through the icons pipeline rather than being drawn here. Until they
+arrive, these stories draw no mark rather than a stand-in:
+
+- **Wayfinding Unavailable**: the SDK's walking figure, struck through, beside
+  a pin;
+- **Turn Back**: the SDK's U-turn arrow.
+
+<Canvas of={Stories.WayfindingUnavailable} />
+<Canvas of={Stories.TurnBack} />
+
+## Announcing
+
+The pill is a live region. `live` takes Alert's and Notice's three values:
+
+- **`polite`**, the default, for every tone: `role="status"`, read when the
+  screen reader next pauses. None of these states is an emergency, and a status
+  that interrupted would cut across the route instruction being read —
+  `NavigationAnnouncer` reads those assertively, and the pill's states change
+  often: calculating, established, calculating again.
+- **`assertive`**: `role="alert"`, for a state that cannot wait.
+- **`off`**: announces nothing, for words said somewhere else.
+
+**Keep it rendered, and change its words.** A status that appears with its
+words already in it is not read by every screen reader — NVDA reads a live
+region's changes, not its arrival. With no words the pill draws nothing and
+keeps its region, so its first words are read too:
+
+```tsx
+<MapStatusPill tone={status?.tone}>{status?.words}</MapStatusPill>
+```
+
+## Placement
+
+Where it goes is the product's (decision 21): here, a `MapOverlay` at the
+bottom centre, clear of the controls in the corner.
+
+<Canvas of={Stories.OnTheMap} />
+
+The mark stays on the side reading starts from.
+
+<Canvas of={Stories.RightToLeft} />
+<Canvas of={Stories.LongerWordsWrap} />
+
+## Implementation
+
+import { PlatformSnippets } from '../PlatformSnippets';
+
+<div className="subheading">Platform Code</div>
+
+<PlatformSnippets
+  react={`
+import type { ReactNode } from "react";
+import { MapOverlay, MapStatusPill, type MapStatusPillProps } from "@kozmos-ds/react";
+import { BluetoothOff } from "@kozmos-ds/icons";
+
+type Positioning = "calculating" | "established" | "noBluetooth";
+
+// The product's words, in the visitor's language, and its tone for each.
+const STATUS: Record<
+  Positioning,
+  { tone: MapStatusPillProps["tone"]; words: string; icon?: ReactNode }
+> = {
+  calculating: { tone: "progress", words: "Calculating Precise Position" },
+  established: { tone: "success", words: "Established" },
+  noBluetooth: { tone: "danger", words: "No Bluetooth", icon: <BluetoothOff /> },
+};
+
+// Rendered all the time, with no words while there is nothing to say, so
+// its first words are read as well as every change after them.
+export function PositioningStatus({ positioning }: { positioning?: Positioning }) {
+  const status = positioning ? STATUS[positioning] : undefined;
+  return (
+    <MapOverlay position="bottom-center">
+      <MapStatusPill icon={status?.icon} tone={status?.tone}>
+        {status?.words}
+      </MapStatusPill>
+    </MapOverlay>
+  );
+}
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+// The product's words, in the visitor's language, and its tone for each.
+struct PositioningStatus: View {
+    let isCalculating: Bool
+
+    var body: some View {
+        KozmosMapStatusPill(
+            isCalculating
+                ? String(localized: "Calculating Precise Position")
+                : String(localized: "Established"),
+            tone: isCalculating ? .progress : .success
+        )
+    }
+}
+
+// The product's own mark in place of the tone's. iOS has no Bluetooth
+// symbol, so the mark is the app's own asset.
+struct BluetoothStatus: View {
+    var body: some View {
+        KozmosMapStatusPill(String(localized: "No Bluetooth"), tone: .danger) {
+            Image("bluetooth-off")
+        }
+    }
+}
+  `}
+  kotlin={`
+package com.kozmos.example
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BluetoothDisabled
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
+import com.kozmos.components.mapstatuspill.KozmosMapStatusPill
+import com.kozmos.components.mapstatuspill.KozmosMapStatusPillTone
+
+// The product's words, in the visitor's language, and its tone for each.
+@Composable
+fun PositioningStatus(isCalculating: Boolean) {
+    KozmosMapStatusPill(
+        text = if (isCalculating) "Calculating Precise Position" else "Established",
+        tone = if (isCalculating) KozmosMapStatusPillTone.Progress else KozmosMapStatusPillTone.Success
+    )
+}
+
+// The product's own mark in place of the tone's.
+@Composable
+fun BluetoothStatus() {
+    KozmosMapStatusPill(
+        text = "No Bluetooth",
+        tone = KozmosMapStatusPillTone.Danger,
+        icon = { Icon(Icons.Filled.BluetoothDisabled, contentDescription = null) }
+    )
+}
+  `}
+/>
+
+<Controls />
