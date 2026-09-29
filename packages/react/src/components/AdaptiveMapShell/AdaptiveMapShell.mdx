@@ -42,18 +42,26 @@ own top padding can top it up rather than add to it:
 - `--kozmos-panel-clearance-top` is how far the content's first control must still sit below that
   so the grip's 16px target keeps its WCAG 2.5.8 spacing: 4px under a grip, `0px` elsewhere. A
   panel header keeps the same clearance itself.
+- The content box is a size container named `kozmos-panel` (inline size only), so a part can place
+  itself by the panel's width with `@container kozmos-panel (…)`. The panel's width is the shell's,
+  never its content's, and fixed and absolutely positioned parts inside it place as they did.
 
 Every part at the top of the panel keeps the grip's clearance, so no first control sits inside the
 grip's 24px circle:
 
-- `POIDetailPanel` in its `sheet` presentation, which paints no surface of its own,
-  `BrowseCategoriesPanel`, whose first row is its search row (or its tiles when it has none), and
+- `BrowseCategoriesPanel`, whose first row is its search row (or its tiles when it has none), and
   `RoutePreviewPanel`, whose first row is its destination, top their 16px up to what the panel
-  leaves, `max(clearance, 16px − inset)`. The close button, the search field and the destination
-  sit as far from the panel's top as from their side, and 4px further under a grip (GAP-083 and
-  decision 14; the search field and "To" sat 33px down and 17px in).
+  leaves, `max(clearance, 16px − inset)`. The search field and the destination sit as far from the
+  panel's top as from their side, and 4px further under a grip (GAP-083 and decision 14; they sat
+  33px down and 17px in).
 - `POIResultList` brings no top padding of its own, so it keeps only the clearance. Under a grip
   its first result used to sit inside the grip's circle.
+- `POIDetailPanel` in its `sheet` presentation, which paints no surface of its own, tops its
+  header's 16px up to the inset and drops the clearance wherever its header's buttons stay clear of
+  the grip's circle anyway: its close button sits 17px from the top and 17px from the side. Where
+  they would not, on a narrow panel (under 340px wide with favourite, save and close), it keeps the
+  clearance too, 21px and 17px (decision 51, refining decision 14 for this header). It reads the
+  panel's width from `kozmos-panel`.
 
 The two values describe the panel's top. A part you place under a row of your own is not at the
 top: put that row in `panelHeader`, which keeps the grip clear itself, or set both properties to
@@ -183,7 +191,10 @@ handle they are its 16-point row and 4 points of clearance, so the handle's targ
 its WCAG 2.5.8 spacing; with no handle (a single detent), under a `panelHeader`, and in a
 side panel, which starts its content at its top edge, both are zero. `KozmosPOIDetailPanel`
 in its sheet presentation, which paints no surface of its own, uses both, so its close
-button sits as far from the panel's top as from its side. The panel and inline presentations
+button sits as far from the panel's top as from its side: 16 and 16 under a handle, where
+its header's buttons stay clear of the handle's circle, and 20 and 16 where they would not,
+from its own width (decision 51; under 338 points or dp with favourite, save and close). The
+panel and inline presentations
 draw their own bordered card and keep their padding inside it: the space the panel leaves
 lies outside that border. `KozmosBrowseCategoriesPanel` uses both for its first row too, in
 the panel on both platforms: on iOS in either presentation, since the panel presentation
