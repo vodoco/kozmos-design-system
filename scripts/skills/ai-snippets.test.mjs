@@ -268,3 +268,47 @@ test("prose and other fences are held to the same facts, across lines", () => {
     found.join("\n"),
   );
 });
+
+test("a React tag named Kozmos-something must be an export: the prefix is SwiftUI's and Compose's", () => {
+  // KozmosButton is Button in React; KozmosSkipLink is nothing at all. The one
+  // React export with the prefix, KozmosTheme, is let through.
+  const found = messages(
+    doc(
+      "tsx",
+      `// kozmos-skills: template — tags only, shown on their own\n<KozmosTheme><KozmosButton variant="default">Go</KozmosButton><KozmosSkipLink href="#main" /></KozmosTheme>`,
+    ),
+  );
+  assert.ok(
+    found.some((m) => /KozmosButton/.test(m) && /\bButton\b/.test(m)),
+    found.join("\n"),
+  );
+  assert.ok(
+    found.some((m) => /KozmosSkipLink/.test(m)),
+    found.join("\n"),
+  );
+  assert.ok(!found.some((m) => /KozmosTheme/.test(m)), found.join("\n"));
+  // In prose too.
+  const prose = messages("Wrap it in a `<KozmosModal open>` first.\n");
+  assert.ok(
+    prose.some((m) => /KozmosModal/.test(m)),
+    prose.join("\n"),
+  );
+});
+
+test("no command runs a Kozmos package through npx: none provides one", () => {
+  // Each of these would fetch and run whatever npm served under the name.
+  const found = messages(
+    `# Setup\n\n${fence}bash\nnpx kozmos-ai-setup --all\npnpm dlx @kozmos-ds/mcp-server\nnpx @kozmos/codemod v2-to-v3 --path ./src\nnpx tsc --noEmit\n${fence}\n\nOr run \`bunx @kozmos-ds/cli analyze\`.\n`,
+  );
+  for (const name of [
+    "kozmos-ai-setup",
+    "@kozmos-ds/mcp-server",
+    "@kozmos/codemod",
+    "@kozmos-ds/cli",
+  ])
+    assert.ok(
+      found.some((m) => m.includes(name) && /npx|dlx|bunx/.test(m)),
+      `${name}: ${found.join("\n")}`,
+    );
+  assert.ok(!found.some((m) => /\btsc\b/.test(m)), found.join("\n"));
+});

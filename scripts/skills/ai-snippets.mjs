@@ -17,7 +17,13 @@
  *     other package must be installed somewhere in the workspace;
  *   - a Kozmos component in JSX — imported, aliased, reached through a
  *     namespace import, or named without an import in a fragment — may only
- *     take props it has, and a literal value only where its type takes it.
+ *     take props it has, and a literal value only where its type takes it;
+ *   - a React tag named `Kozmos…` must be an export: the prefix is the
+ *     SwiftUI and Compose naming, and guides had invented React components
+ *     under it (`KozmosSkipLink`, `KozmosModal`);
+ *   - no command may run a Kozmos package through npx, dlx or bunx: none
+ *     provides one, so the command would run whatever npm served under the
+ *     name.
  *
  * A block that is a whole module is also compiled against the build, with
  * the setup the Claude Design cards are compiled with
@@ -63,6 +69,18 @@ export const LANGUAGES = {
   cjs: ".js",
   jsx: ".jsx",
 };
+
+/** Fences of SwiftUI and Compose code, where `List<KozmosItem>` is a type, not a tag. */
+const NATIVE = new Set([
+  "swift",
+  "kotlin",
+  "kt",
+  "java",
+  "objc",
+  "objective-c",
+  "groovy",
+  "gradle",
+]);
 
 /** What is compiled when it is whole; JavaScript is only parsed. */
 const COMPILED = new Set([".ts", ".tsx"]);
@@ -209,6 +227,22 @@ function checkAttributes(component, attributes, facts, report) {
         `<${component} ${written}>: ${component}'s ${name} takes ${takes(accepted)}`,
       );
   }
+}
+
+/**
+ * A React tag named `Kozmos…` that the package does not export. The prefix is
+ * the SwiftUI and Compose names (`KozmosButton`); React's are unprefixed
+ * (`Button`), and its one prefixed export is `KozmosTheme`. A guide that
+ * writes `<KozmosSkipLink>` in React has invented a component.
+ */
+function prefixProblem(ctx, name) {
+  if (!/^Kozmos[A-Z]/.test(name)) return null;
+  const react = ctx.facts.packages.get("@kozmos-ds/react")?.exports;
+  if (!react || react.has(name)) return null;
+  const bare = name.slice("Kozmos".length);
+  return ctx.facts.components.has(bare)
+    ? `<${name}>: React's components have no Kozmos prefix, which is SwiftUI's and Compose's naming; this is ${bare}`
+    : `<${name}>: @kozmos-ds/react exports no ${name}, and no ${bare}`;
 }
 
 const isRelative = (specifier) => /^\.{1,2}(\/|$)|^\//.test(specifier);
@@ -453,6 +487,15 @@ function checkCode(ctx, code, extension) {
       const component = componentOf(node.tagName);
       if (component)
         checkAttributes(component, node.attributes, ctx.facts, report);
+      const tag = node.tagName;
+      if (
+        ts.isIdentifier(tag) &&
+        !imports.has(tag.text) &&
+        !declared.has(tag.text)
+      ) {
+        const problem = prefixProblem(ctx, tag.text);
+        if (problem) report(tag, problem);
+      }
     }
     ts.forEachChild(node, visit);
   };
@@ -476,8 +519,22 @@ const lineAt = (text, offset) => text.slice(0, offset).split("\n").length;
  * The same checks over prose and the fences that are not TypeScript: every
  * import statement and every tag, wherever its lines break.
  */
-function checkLoose(ctx, text) {
+function checkLoose(ctx, text, withoutNative = text) {
   const problems = [];
+  // A Kozmos package run through npx, dlx or bunx: none provides a command,
+  // so each would fetch and run whatever npm served under the name one day.
+  for (const m of text.matchAll(
+    /\b(npx|pnpm\s+dlx|yarn\s+dlx|bunx)\s+(?:-{1,2}[\w-]+(?:=\S+)?\s+)*(@kozmos(?:-ds)?\/[\w.-]+|kozmos[\w.-]*)/g,
+  ))
+    problems.push({
+      line: lineAt(text, m.index),
+      message: `runs ${m[2]} with ${m[1].replace(/\s+/, " ")}: no Kozmos package provides a command, so it would fetch and run whatever npm served under that name`,
+    });
+  for (const m of withoutNative.matchAll(/<(Kozmos[A-Z]\w*)(?=[\s/>])/g)) {
+    const problem = prefixProblem(ctx, m[1]);
+    if (problem)
+      problems.push({ line: lineAt(text, m.index), message: problem });
+  }
   const IMPORT =
     /\b(import|export)\s+(?:type\s+)?(?:([\w$]+)\s*,?\s*)?(\{[^}]*\}|\*\s*as\s+[\w$]+)?\s*from\s*["']([^"'\n]+)["']/g;
   for (const m of text.matchAll(IMPORT)) {
@@ -639,8 +696,18 @@ export function checkDocuments(root, docs, facts) {
     // HTML comments are notes and directives, not prose.
     for (const m of doc.text.matchAll(/<!--[\s\S]*?-->/g))
       ranges.push([m.index, m.index + m[0].length]);
+    const native = blocks
+      .filter((block) => NATIVE.has(block.lang))
+      .map((block) => [
+        offsetOfLine(block.line + 1),
+        block.end ? offsetOfLine(block.end) : doc.text.length,
+      ]);
     own.push(
-      ...checkLoose(ctx, blank(doc.text, ranges)).map((p) => ({
+      ...checkLoose(
+        ctx,
+        blank(doc.text, ranges),
+        blank(doc.text, [...ranges, ...native]),
+      ).map((p) => ({
         file: doc.file,
         ...p,
       })),
