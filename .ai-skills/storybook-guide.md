@@ -84,175 +84,75 @@ packages/react/src/components/Button/
 ### 3.1 Main Configuration
 
 ```typescript
-// .storybook/main.ts
+// kozmos-skills: template — abridged from apps/docs/.storybook/main.ts, whose packages are apps/docs's own
 import type { StorybookConfig } from "@storybook/react-vite";
 
 const config: StorybookConfig = {
-  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
-
+  stories: [
+    "../src/**/*.mdx",
+    "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+    "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+    "../../../packages/react/src/**/*.stories.@(js|jsx|mjs|ts|tsx)",
+    "../../../packages/react/src/**/*.mdx",
+  ],
   addons: [
-    "@storybook/addon-onboarding",
     "@storybook/addon-links",
     "@storybook/addon-essentials",
     "@storybook/addon-interactions",
     "@storybook/addon-a11y",
-    "@storybook/addon-designs",
-    "@storybook/addon-storysource",
+    "storybook-addon-performance",
   ],
-
-  framework: {
-    name: "@storybook/react-vite",
-    options: {},
-  },
-
-  docs: {
-    autodocs: "tag",
-    defaultName: "Documentation",
-  },
-
-  staticDirs: ["../public"],
-
-  typescript: {
-    reactDocgen: "react-docgen-typescript",
-    reactDocgenTypescriptOptions: {
-      shouldExtractLiteralValuesFromEnum: true,
-      shouldRemoveUndefinedFromOptional: true,
-      propFilter: (prop) => {
-        // Filter out HTML attributes unless explicitly defined
-        if (prop.parent) {
-          return !prop.parent.fileName.includes("node_modules/@types/react");
-        }
-        return true;
-      },
-    },
-  },
-
-  viteFinal: async (config) => {
-    // Customize Vite config if needed
-    return config;
-  },
+  framework: { name: "@storybook/react-vite", options: {} },
+  docs: { autodocs: "tag" },
+  typescript: { reactDocgen: "react-docgen-typescript" },
 };
 
 export default config;
 ```
 
+The real file resolves each addon to an absolute path, aliases `@kozmos-ds/react` to the package's
+source (so the stories and the decorator share one set of React contexts), and has Vite pre-bundle
+the dependencies.
+
 ### 3.2 Preview Configuration
 
-```typescript
-// .storybook/preview.ts
+```tsx
+// kozmos-skills: template — abridged from apps/docs/.storybook/preview.tsx, whose packages are apps/docs's own
 import type { Preview } from "@storybook/react";
-import { themes } from "@storybook/theming";
-import { withThemeByDataAttribute } from "@storybook/addon-themes";
-
-// Import Kozmos tokens and global styles
-import "@kozmos-ds/tokens/css/tokens.css";
-import "../src/styles/global.css";
+import { DesignConfigProvider } from "@kozmos-ds/react";
+import "../../../packages/react/dist/style.css";
 
 const preview: Preview = {
-  parameters: {
-    // Autodocs configuration
-    docs: {
-      toc: true, // Table of contents
-      source: {
-        type: "code",
-        language: "tsx",
-      },
-    },
-
-    // Actions configuration
-    actions: { argTypesRegex: "^on[A-Z].*" },
-
-    // Controls configuration
-    controls: {
-      expanded: true,
-      matchers: {
-        color: /(background|color)$/i,
-        date: /Date$/i,
-      },
-      sort: "requiredFirst",
-    },
-
-    // Backgrounds
-    backgrounds: {
-      default: "light",
-      values: [
-        { name: "light", value: "#ffffff" },
-        { name: "dark", value: "#1a1a1a" },
-        { name: "gray", value: "#f5f5f5" },
-      ],
-    },
-
-    // Viewports
-    viewport: {
-      viewports: {
-        mobile: {
-          name: "Mobile",
-          styles: { width: "375px", height: "667px" },
-        },
-        tablet: {
-          name: "Tablet",
-          styles: { width: "768px", height: "1024px" },
-        },
-        desktop: {
-          name: "Desktop",
-          styles: { width: "1280px", height: "800px" },
-        },
-        wide: {
-          name: "Wide Desktop",
-          styles: { width: "1920px", height: "1080px" },
-        },
-      },
-    },
-
-    // Layout
-    layout: "centered", // 'centered' | 'fullscreen' | 'padded'
-
-    // Options
-    options: {
-      storySort: {
-        order: [
-          "Introduction",
-          "Getting Started",
-          "Design Tokens",
-          "Primitives",
-          ["Button", "Input", "Select", "Checkbox", "Radio", "Switch"],
-          "Components",
-          "Patterns",
-          "SDK Components",
+  // A Theme toolbar: light or dark, for the components and the canvas together.
+  globalTypes: {
+    theme: {
+      description: "Kozmos component theme (tokens and canvas)",
+      toolbar: {
+        title: "Theme",
+        icon: "paintbrush",
+        dynamicTitle: true,
+        items: [
+          { value: "light", title: "Light" },
+          { value: "dark", title: "Dark" },
         ],
       },
     },
   },
-
-  // Global decorators
+  initialGlobals: { theme: "light" },
+  // Every story sits inside a provider, as an app's does.
   decorators: [
-    withThemeByDataAttribute({
-      themes: {
-        light: "light",
-        dark: "dark",
-      },
-      defaultTheme: "light",
-      attributeName: "data-color-scheme",
-    }),
+    (Story, context) => (
+      <DesignConfigProvider
+        theme={context.globals.theme === "dark" ? "dark" : "light"}
+      >
+        <Story />
+      </DesignConfigProvider>
+    ),
   ],
-
-  // Global arg types
-  argTypes: {
-    // Common props across components
-    className: {
-      control: "text",
-      description: "Additional CSS classes",
-      table: { category: "Styling" },
-    },
-    style: {
-      control: "object",
-      description: "Inline styles",
-      table: { category: "Styling" },
-    },
+  parameters: {
+    // A canvas paint selector is not a component theme.
+    backgrounds: { disable: true },
   },
-
-  // Tags
-  tags: ["autodocs"],
 };
 
 export default preview;
@@ -260,87 +160,15 @@ export default preview;
 
 ### 3.3 Manager Configuration
 
-```typescript
-// .storybook/manager.ts
-import { addons } from "@storybook/manager-api";
-import { kozmosTheme } from "./theme";
-
-addons.setConfig({
-  theme: kozmosTheme,
-  sidebar: {
-    showRoots: true,
-    collapsedRoots: ["examples"],
-  },
-  toolbar: {
-    title: { hidden: false },
-    zoom: { hidden: false },
-    eject: { hidden: true },
-    copy: { hidden: false },
-    fullscreen: { hidden: false },
-  },
-});
-```
+Storybook runs with its default manager UI: `apps/docs/.storybook` has no `manager.ts`. The
+configuration planned before the code is kept in
+[docs/proposals/storybook-plan.md](../docs/proposals/storybook-plan.md).
 
 ### 3.4 Custom Theme
 
-```typescript
-// .storybook/theme.ts
-import { create } from "@storybook/theming/create";
-
-export const kozmosTheme = create({
-  base: "light",
-
-  // Brand
-  brandTitle: "Kozmos Design System",
-  brandUrl: "https://kozmos.pointr.tech",
-  brandImage: "/kozmos-logo.svg",
-  brandTarget: "_self",
-
-  // Colors
-  colorPrimary: "#2563EB",
-  colorSecondary: "#7C3AED",
-
-  // UI
-  appBg: "#F5F5F5",
-  appContentBg: "#FFFFFF",
-  appPreviewBg: "#FFFFFF",
-  appBorderColor: "#E5E5E5",
-  appBorderRadius: 8,
-
-  // Typography
-  fontBase: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-  fontCode: '"JetBrains Mono", monospace',
-
-  // Text colors
-  textColor: "#171717",
-  textInverseColor: "#FAFAFA",
-  textMutedColor: "#737373",
-
-  // Toolbar
-  barTextColor: "#737373",
-  barSelectedColor: "#2563EB",
-  barHoverColor: "#2563EB",
-  barBg: "#FFFFFF",
-
-  // Form colors
-  inputBg: "#FFFFFF",
-  inputBorder: "#E5E5E5",
-  inputTextColor: "#171717",
-  inputBorderRadius: 6,
-});
-
-export const kozmosDarkTheme = create({
-  base: "dark",
-  brandTitle: "Kozmos Design System",
-  brandUrl: "https://kozmos.pointr.tech",
-  brandImage: "/kozmos-logo-dark.svg",
-  colorPrimary: "#60A5FA",
-  colorSecondary: "#A78BFA",
-  appBg: "#1A1A1A",
-  appContentBg: "#262626",
-  appPreviewBg: "#1A1A1A",
-});
-```
+Storybook's own chrome keeps its default theme: there is no `theme.ts`. The Kozmos components inside
+it take the Theme toolbar's light or dark (3.2). The custom theme planned before the code is kept in
+[docs/proposals/storybook-plan.md](../docs/proposals/storybook-plan.md).
 
 ---
 
@@ -353,11 +181,13 @@ export const kozmosDarkTheme = create({
 | `@storybook/addon-essentials`   | Controls, Actions, Docs, Viewport, Backgrounds, Measure, Outline |
 | `@storybook/addon-links`        | Link between stories                                             |
 | `@storybook/addon-interactions` | Test interactions                                                |
-| `@storybook/addon-onboarding`   | First-time user guide                                            |
+| `@storybook/addon-a11y`         | axe's findings for the story in view                             |
+| `storybook-addon-performance`   | Render timings for a story                                       |
 
 ### 4.2 Accessibility Addon
 
 ```typescript
+// kozmos-skills: template — the parameters key of a story or a meta, shown on its own
 // Configure a11y addon
 parameters: {
   a11y: {
@@ -377,24 +207,9 @@ parameters: {
 
 ### 4.3 Designs Addon (Figma)
 
-```typescript
-// Link to Figma designs
-parameters: {
-  design: {
-    type: 'figma',
-    url: 'https://www.figma.com/file/xxx/Kozmos?node-id=123-456',
-  },
-},
-
-// Or embed Figma
-parameters: {
-  design: {
-    type: 'figma',
-    url: 'https://www.figma.com/embed?embed_host=share&url=...',
-    allowFullscreen: true,
-  },
-},
-```
+`@storybook/addon-designs` is not installed, so a story does not embed its Figma frame. A Kozmos
+component reaches its Figma component through Code Connect instead. The designs addon, as planned
+before the code, is kept in [docs/proposals/storybook-plan.md](../docs/proposals/storybook-plan.md).
 
 ### 4.4 Visual Review (Visual Testing)
 
@@ -405,6 +220,7 @@ seeds `Math.random`, prefers reduced motion and masks map canvases. A story that
 deterministically opts out with a tag:
 
 ```typescript
+// kozmos-skills: template — a story of a stories file that declares Story
 export const LiveFeed: Story = {
   tags: ["no-visual"],
 };
@@ -414,22 +230,9 @@ See `docs/visual-review.md` for recording baselines and reading a difference.
 
 ### 4.5 Pseudo States Addon
 
-```bash
-pnpm add -D storybook-addon-pseudo-states
-```
-
-```typescript
-// Preview hover, focus, active states
-export const States: Story = {
-  parameters: {
-    pseudo: {
-      hover: true,
-      focus: true,
-      active: true,
-    },
-  },
-};
-```
+`storybook-addon-pseudo-states` is not installed: a story that shows a state renders the state
+itself. The addon, as planned before the code, is kept in
+[docs/proposals/storybook-plan.md](../docs/proposals/storybook-plan.md).
 
 ---
 
@@ -438,6 +241,7 @@ export const States: Story = {
 ### 5.1 Basic Story Structure
 
 ```tsx
+// kozmos-skills: template — a story file beside Button in packages/react/src/components/Button, importing its source
 // Button.stories.tsx
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
@@ -462,34 +266,34 @@ const meta = {
     onClick: fn(),
   },
 
-  // Arg types for controls
+  // Arg types for controls: Button's own values
   argTypes: {
     variant: {
       control: "select",
-      options: ["primary", "secondary", "ghost", "destructive"],
+      options: [
+        "default",
+        "destructive",
+        "outline",
+        "secondary",
+        "ghost",
+        "link",
+        "glass",
+      ],
       description: "Visual style variant",
       table: {
         type: { summary: "string" },
-        defaultValue: { summary: "primary" },
+        defaultValue: { summary: "default" },
       },
     },
     size: {
       control: "radio",
-      options: ["sm", "md", "lg"],
+      options: ["default", "sm", "lg", "icon"],
     },
     disabled: {
       control: "boolean",
     },
-    loading: {
+    isLoading: {
       control: "boolean",
-    },
-  },
-
-  // Parameters for this component
-  parameters: {
-    design: {
-      type: "figma",
-      url: "https://figma.com/file/.../Button",
     },
   },
 } satisfies Meta<typeof Button>;
@@ -501,10 +305,11 @@ type Story = StoryObj<typeof meta>;
 ### 5.2 Story Variants
 
 ```tsx
-// Primary variant (default)
+// kozmos-skills: template — stories of the Button file above, which declares Story
+// Default variant
 export const Primary: Story = {
   args: {
-    variant: "primary",
+    variant: "default",
     children: "Primary Button",
   },
 };
@@ -533,7 +338,7 @@ export const Sizes: Story = {
     </div>
   ),
   args: {
-    variant: "primary",
+    variant: "default",
   },
 };
 
@@ -549,18 +354,21 @@ export const AllVariants: Story = {
   ),
 };
 
-// With icon
+// With icon: Button takes it as a child
 export const WithIcon: Story = {
   args: {
-    children: "Navigate",
-    startIcon: <ArrowRightIcon />,
+    children: (
+      <>
+        <Icon name="arrow-right" size="sm" /> Navigate
+      </>
+    ),
   },
 };
 
 // Loading state
 export const Loading: Story = {
   args: {
-    loading: true,
+    isLoading: true,
     children: "Loading...",
   },
 };
@@ -577,6 +385,7 @@ export const Disabled: Story = {
 ### 5.3 Interactive Stories
 
 ```typescript
+// kozmos-skills: template — stories of the Button file above, which declares Story
 import { within, userEvent, expect } from "@storybook/test";
 
 export const ClickInteraction: Story = {
@@ -616,6 +425,7 @@ export const KeyboardNavigation: Story = {
 ### 5.4 Form Stories
 
 ```tsx
+// kozmos-skills: template — stories of an Input stories file, which imports Input, Button and useState
 // Input.stories.tsx
 export const WithValidation: Story = {
   render: () => {
@@ -639,7 +449,7 @@ export const WithValidation: Story = {
           validate(e.target.value);
         }}
         error={error}
-        hint="Enter your username"
+        helperText="Enter your username"
       />
     );
   },
@@ -684,7 +494,6 @@ Install the package:
 ```bash
 npm install @kozmos-ds/react
 ```
-````
 
 Import and use components:
 
@@ -706,15 +515,14 @@ function App() {
 2. **Responsive** — Mobile-first approach
 3. **Themeable** — Full white-labeling support
 4. **Performant** — Zero runtime CSS-in-JS
-
 ````
 
 ### 6.2 Component Documentation
 
-```mdx
+````mdx
 {/* Button.mdx */}
 import { Meta, ArgTypes, Canvas, Controls, Story } from '@storybook/blocks';
-import * as ButtonStories from './Button.stories';
+import \* as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
 
@@ -725,8 +533,8 @@ Buttons allow users to take actions and make choices with a single tap.
 ## Import
 
 ```tsx
-import { Button } from '@kozmos-ds/react';
-````
+import { Button } from "@kozmos-ds/react";
+```
 
 ## Usage
 
@@ -776,7 +584,7 @@ Use for tertiary actions or in toolbars.
 
 - Uses native `<button>` element
 - Supports keyboard navigation (Tab, Enter, Space)
-- Announces loading state to screen readers
+- Is disabled while loading, and keeps its label: the label should say what is happening
 - Focus visible outline meets WCAG contrast requirements
 
 ## Props
@@ -786,95 +594,64 @@ Use for tertiary actions or in toolbars.
 ## Design Specs
 
 See [Figma designs](https://figma.com/...) for detailed specifications.
-
 ````
 
 ### 6.3 Design Token Documentation
 
 ```mdx
 {/* DesignTokens.mdx */}
-import { Meta } from '@storybook/blocks';
-import { ColorPalette, ColorItem, Typeset } from '@storybook/blocks';
+import { Meta, ColorPalette, ColorItem } from '@storybook/blocks';
 
 <Meta title="Design Tokens" />
 
 # Design Tokens
 
-Kozmos uses a three-tier token system: primitives, semantic, and component tokens.
+Kozmos's tokens come in three collections: primitives, semantics and components. The swatches read
+the variables, so they follow the Theme toolbar.
 
 ## Colors
 
-### Brand Colors
-
 <ColorPalette>
   <ColorItem
-    title="Primary"
-    subtitle="--kozmos-color-primary"
-    colors={{ Primary: '#2563EB' }}
-  />
-  <ColorItem
-    title="Secondary"
-    subtitle="--kozmos-color-secondary"
-    colors={{ Secondary: '#7C3AED' }}
-  />
-</ColorPalette>
-
-### Semantic Colors
-
-<ColorPalette>
-  <ColorItem
-    title="Background"
-    subtitle="--kozmos-color-background-*"
+    title="Theme"
+    subtitle="--primitives-colors-theme-*"
     colors={{
-      Default: '#FFFFFF',
-      Subtle: '#F5F5F5',
-      Muted: '#E5E5E5',
+      500: "var(--primitives-colors-theme-500)",
+      600: "var(--primitives-colors-theme-600)",
+      700: "var(--primitives-colors-theme-700)",
     }}
   />
   <ColorItem
-    title="Foreground"
-    subtitle="--kozmos-color-foreground-*"
+    title="Surface"
+    subtitle="--semantics-surface-*"
     colors={{
-      Default: '#171717',
-      Muted: '#737373',
-      Subtle: '#A3A3A3',
+      0: "var(--semantics-surface-0)",
+      100: "var(--semantics-surface-100)",
+      200: "var(--semantics-surface-200)",
     }}
   />
-</ColorPalette>
-
-### Status Colors
-
-<ColorPalette>
   <ColorItem
-    title="Status"
+    title="Emotion text"
+    subtitle="--semantics-emotion-*-text"
     colors={{
-      Success: '#22C55E',
-      Warning: '#F59E0B',
-      Error: '#EF4444',
-      Info: '#3B82F6',
+      Success: "var(--semantics-emotion-success-text)",
+      Alert: "var(--semantics-emotion-alert-text)",
+      Danger: "var(--semantics-emotion-danger-text)",
+      Informative: "var(--semantics-emotion-informative-text)",
     }}
   />
 </ColorPalette>
-
-## Typography
-
-<Typeset
-  fontSizes={['0.75rem', '0.875rem', '1rem', '1.125rem', '1.25rem', '1.5rem', '1.875rem']}
-  fontWeight={400}
-  sampleText="The quick brown fox jumps over the lazy dog"
-  fontFamily="Inter, sans-serif"
-/>
 
 ## Spacing
 
-| Token | Value | Preview |
-|-------|-------|---------|
-| `--kozmos-spacing-1` | 4px | <div style={{width: '4px', height: '16px', background: '#2563EB'}} /> |
-| `--kozmos-spacing-2` | 8px | <div style={{width: '8px', height: '16px', background: '#2563EB'}} /> |
-| `--kozmos-spacing-4` | 16px | <div style={{width: '16px', height: '16px', background: '#2563EB'}} /> |
-| `--kozmos-spacing-6` | 24px | <div style={{width: '24px', height: '16px', background: '#2563EB'}} /> |
-| `--kozmos-spacing-8` | 32px | <div style={{width: '32px', height: '16px', background: '#2563EB'}} /> |
-````
+The spacing tokens are unitless numbers, shared with iOS and Android, so a rule multiplies them.
+
+| Token                             | Value                                              |
+| --------------------------------- | -------------------------------------------------- |
+| `--primitives-layout-spacing-100` | `calc(var(--primitives-layout-spacing-100) * 1px)` |
+| `--primitives-layout-spacing-200` | `calc(var(--primitives-layout-spacing-200) * 1px)` |
+| `--primitives-layout-spacing-300` | `calc(var(--primitives-layout-spacing-300) * 1px)` |
+```
 
 ---
 
@@ -882,43 +659,14 @@ Kozmos uses a three-tier token system: primitives, semantic, and component token
 
 ### 7.1 Dark Mode Toggle
 
-```typescript
-// .storybook/preview.ts
-import { withThemeByDataAttribute } from "@storybook/addon-themes";
-
-export const decorators = [
-  withThemeByDataAttribute({
-    themes: {
-      light: "light",
-      dark: "dark",
-    },
-    defaultTheme: "light",
-    attributeName: "data-color-scheme",
-  }),
-];
-
-// Add toolbar button
-export const globalTypes = {
-  theme: {
-    description: "Global theme for components",
-    defaultValue: "light",
-    toolbar: {
-      title: "Theme",
-      icon: "circlehollow",
-      items: [
-        { value: "light", icon: "sun", title: "Light" },
-        { value: "dark", icon: "moon", title: "Dark" },
-      ],
-      dynamicTitle: true,
-    },
-  },
-};
-```
+The Theme toolbar in `apps/docs/.storybook/preview.tsx` (3.2) is the toggle: it sets the
+`DesignConfigProvider`'s theme for every story, and so its canvas and portals too. There is no
+`@storybook/addon-themes`.
 
 ### 7.2 RTL Toggle
 
 ```tsx
-// Add RTL support
+// kozmos-skills: template — a sketch of a preview's globals and decorator, for a Direction toolbar Kozmos's Storybook does not have yet
 export const globalTypes = {
   direction: {
     description: "Text direction",
@@ -934,22 +682,22 @@ export const globalTypes = {
   },
 };
 
+// DesignConfigProvider's dir reaches Radix's keyboard handling, which a bare
+// <div dir> does not.
 export const decorators = [
-  (Story, context) => {
-    const dir = context.globals.direction;
-    return (
-      <div dir={dir} style={{ direction: dir }}>
-        <Story />
-      </div>
-    );
-  },
+  (Story, context) => (
+    <DesignConfigProvider dir={context.globals.direction}>
+      <Story />
+    </DesignConfigProvider>
+  ),
 ];
 ```
 
 ### 7.3 Customer Theme Preview
 
 ```tsx
-// Preview different customer themes
+// kozmos-skills: template — a sketch of a Customer toolbar Kozmos's Storybook does not have; customerTokens is the app's
+// Preview different customer themes through the provider's tokens
 export const globalTypes = {
   customerTheme: {
     description: "Customer theme",
@@ -967,13 +715,13 @@ export const globalTypes = {
 };
 
 export const decorators = [
-  (Story, context) => {
-    const theme = context.globals.customerTheme;
-    useEffect(() => {
-      document.documentElement.setAttribute("data-theme", theme);
-    }, [theme]);
-    return <Story />;
-  },
+  (Story, context) => (
+    <DesignConfigProvider
+      tokens={customerTokens[context.globals.customerTheme]}
+    >
+      <Story />
+    </DesignConfigProvider>
+  ),
 ];
 ```
 
@@ -1034,8 +782,9 @@ CI, Visual Regression and Lighthouse CI build it this way to test it.
 
 ### 9.2 GitHub Pages
 
-Storybook is not hosted anywhere yet, and no workflow deploys it. Olcay's decision 34 is to host it
-with the website on GitHub Pages; that work has not started.
+Storybook is published with the website on GitHub Pages, from `main`, by `pages.yml`, at
+<https://vodoco.github.io/kozmos-design-system/storybook/>. It is the component reference: each
+component's docs, stories, controls and code on every platform.
 
 ---
 
@@ -1044,11 +793,12 @@ with the website on GitHub Pages; that work has not started.
 ### 10.1 Story Organization
 
 ```typescript
+// kozmos-skills: template — story titles, good and bad, not a module
 // ✅ Good: Organized by component type
 "Primitives/Button";
 "Primitives/Input";
 "Components/Card";
-"Components/Modal";
+"Components/Dialog";
 "Patterns/Forms";
 "SDK Components/MapView";
 
@@ -1061,6 +811,7 @@ with the website on GitHub Pages; that work has not started.
 ### 10.2 Naming Conventions
 
 ```typescript
+// kozmos-skills: template — story names, good and bad; each … is a story's body
 // ✅ Good: Descriptive story names
 export const PrimaryDefault: Story = { ... };
 export const PrimaryWithIcon: Story = { ... };
@@ -1075,10 +826,11 @@ export const Test: Story = { ... };
 ### 10.3 Args Best Practices
 
 ```tsx
+// kozmos-skills: template — stories of a Button stories file, the good way and the bad
 // ✅ Good: Use args for reusability
 export const Primary: Story = {
   args: {
-    variant: "primary",
+    variant: "default",
     children: "Button",
   },
 };
@@ -1091,7 +843,7 @@ export const PrimarySmall: Story = {
 };
 
 // ❌ Bad: Hardcoded in render
-export const Primary: Story = {
+export const PrimaryHardcoded: Story = {
   render: () => <Button variant="default">Button</Button>,
 };
 ```
@@ -1115,6 +867,7 @@ export const Primary: Story = {
 ### 10.5 Performance
 
 ```tsx
+// kozmos-skills: template — stories of a stories file; Visualization is the app's
 // Lazy load heavy stories
 export const ComplexVisualization: Story = {
   loaders: [

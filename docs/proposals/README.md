@@ -27,3 +27,4 @@ The facts are generated from the code: the
 | [token-pipeline-plan.md](token-pipeline-plan.md)     | The token pipeline planned before the code: its files, configuration and outputs.                     |
 | [migration-plan.md](migration-plan.md)               | Upgrades across major versions that were never released, with a CLI and codemods that do not exist.   |
 | [i18n-plan.md](i18n-plan.md)                         | Kozmos's own translation files, a locales package, an i18n provider and a translation workflow.       |
+| [storybook-plan.md](storybook-plan.md)               | Storybook customisations never added: a manager theme, the designs and pseudo-states addons.          |
