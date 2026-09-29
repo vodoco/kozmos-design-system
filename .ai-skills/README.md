@@ -98,23 +98,23 @@ Kozmos is a multi-platform design system for **Pointr's indoor navigation SDK**.
 
 ### Key Technical Decisions
 
-| Area              | Decision                                                                      |
-| ----------------- | ----------------------------------------------------------------------------- |
-| Styling (Web)     | CSS Variables + CVA (zero runtime)                                            |
-| Tokens            | Style Dictionary 5 + DTCG format                                              |
-| Monorepo          | Turborepo + pnpm                                                              |
-| Build (React)     | Vite library mode (ES modules + UMD)                                          |
-| Testing           | Vitest + Testing Library + axe-core                                           |
-| Visual Regression | Own visual review (`tests/visual`)                                            |
-| Figma             | Code Connect for React, SwiftUI and Compose                                   |
-| i18n              | RTL through `dir="rtl"` on `ThemeProvider`; a component's words are its props |
+| Area              | Decision                                                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Styling (Web)     | Token CSS variables; CVA recipes of Tailwind role classes and owned CSS, in one stylesheet scoped to `ThemeProvider` |
+| Tokens            | Style Dictionary 5 + DTCG format                                                                                     |
+| Monorepo          | Turborepo + pnpm                                                                                                     |
+| Build (React)     | Vite library mode (ES modules + UMD)                                                                                 |
+| Testing           | Vitest + Testing Library + axe-core                                                                                  |
+| Visual Regression | Own visual review (`tests/visual`)                                                                                   |
+| Figma             | Code Connect for React, SwiftUI and Compose                                                                          |
+| i18n              | RTL through `dir="rtl"` on `ThemeProvider`; a component's words are its props                                        |
 
 ### npm Packages
 
 ```
 @kozmos-ds/tokens            - Design tokens (CSS vars, Swift, Kotlin)
 @kozmos-ds/react             - React components
-@kozmos-ds/icons             - Cross-platform icons
+@kozmos-ds/icons             - React icon components and the icon name registry
 @kozmos-ds/product-contracts - The presentation contracts the SDK components take
 ```
 
@@ -156,16 +156,16 @@ the code, the facts and the code are right.
 
 When generating component code, reference:
 
-1. **code-patterns.md** - Templates for React, SwiftUI and Compose
-2. **design-philosophy.md** - For interaction patterns and visual guidelines
-3. **docs/project-scope.md §5** - For component API patterns (CVA, compound components)
-4. **docs/project-scope.md §8** - For platform-specific patterns
+1. **docs/claude-design/** - Every component's props and an example that compiles, generated
+2. **code-patterns.md** - The real component to follow for each shape, on each platform
+3. **component-creation-guide.md** - The steps, commands and checks for a new component
+4. **design-philosophy.md** - For interaction patterns and visual guidelines
 
 ### For Decision Making
 
 When making architectural decisions, reference:
 
-1. **docs/project-scope.md §28** - Decisions already made
+1. **decision-log.md** - The architecture decisions, and what was built of each
 2. **design-philosophy.md** - Design decision framework
 3. **component-lifecycle.md** - For component maturity decisions
 
@@ -175,7 +175,7 @@ When debugging or fixing issues, reference:
 
 1. **troubleshooting.md** - Quick solutions for common issues
 2. **incident-playbook.md** - For severity assessment and response process
-3. **docs/project-scope.md §15** - For security considerations
+3. **security-guide.md** - For security considerations
 4. **ci-cd-configuration.md** - For what CI runs and how a release is made
    (docs/project-scope.md's Appendix G describes workflows and secrets this repository does not
    have)
@@ -192,17 +192,16 @@ When planning or executing version migrations:
 
 When optimizing or measuring performance:
 
-1. **performance-benchmarks.md** - Budgets and baselines
-2. **code-patterns.md** - Performance-optimized patterns
-3. **troubleshooting.md §13** - Performance issue solutions
+1. **performance-benchmarks.md** - The budgets CI enforces, and what is not measured
+2. **troubleshooting.md §13** - Performance issue solutions
 
 ### For Cross-Platform Development
 
 When implementing across multiple platforms:
 
 1. **platform-mapping.md** - Component and prop equivalents
-2. **code-patterns.md** - Platform-specific templates
-3. **docs/project-scope.md §8** - Platform considerations
+2. **code-patterns.md** - The conventions on each platform
+3. **docs/status.md** - Which components exist on which platform, generated
 
 ### For Figma/Design Work
 
@@ -210,7 +209,7 @@ When preparing Figma components or reviewing designs:
 
 1. **figma-audit.md** - Component quality checklists
 2. **design-philosophy.md** - Visual language principles
-3. **docs/project-scope.md §6** - Code Connect requirements
+3. **component-creation-guide.md §8** - Code Connect setup, and the commands that parse it
 
 ### For AI Integration in Consuming Projects
 
@@ -230,8 +229,8 @@ server or setup command: see docs/proposals.
 ### Creating a New Component
 
 ```
-Using the Kozmos design system patterns from .ai-skills/code-patterns.md
-and docs/project-scope.md §5, create a Carousel component for React that:
+Using .ai-skills/code-patterns.md and .ai-skills/component-creation-guide.md,
+create a Carousel component for React that:
 - Uses CVA for variants
 - Follows the compound component pattern
 - Includes proper ARIA attributes
@@ -245,8 +244,8 @@ and docs/project-scope.md §5, create a Carousel component for React that:
 Review this PR against:
 1. Kozmos design philosophy (.ai-skills/design-philosophy.md)
 2. Component lifecycle requirements (.ai-skills/component-lifecycle.md)
-3. Accessibility requirements (docs/project-scope.md §12)
-4. Testing requirements (docs/project-scope.md §9)
+3. Accessibility requirements (.ai-skills/accessibility-guide.md)
+4. Testing requirements (.ai-skills/testing-patterns.md)
 ```
 
 ### Handling an Incident
