@@ -127,6 +127,12 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultGroupProps`, which
   POIResultCard's `numbered`, given to every member. POIResultList passes
   its own.
 
+- `idPrefix`: `string`, optional.
+
+  Names the members' ids apart from another rendering of the same places
+  on the page: POIResultCard's, given to every member. POIResultList passes
+  its own.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -215,6 +221,18 @@ interface POIResultCardProps extends Omit<
    * number itself.
    */
   numbered?: boolean;
+  /**
+   * Names this card apart from another card for the same place on the page:
+   * the search's results and an assistant's answer can both show it. The
+   * card's id becomes `getPOIResultDomId(poi.id, idPrefix)`, and its action
+   * row's and unavailable note's ids follow it, so each card's references
+   * stay its own. Left out, the id is `getPOIResultDomId(poi.id)`, as it has
+   * always been. An `id` given to the card wins over both.
+   *
+   * Keep it the same on the server and in the browser: a word, or an id from
+   * React's `useId()`. `POIResultList` and `POIResultGroup` pass theirs on.
+   */
+  idPrefix?: string;
 }
 ```
 

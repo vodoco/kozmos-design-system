@@ -12,7 +12,14 @@ untouched beneath, so closing it returns the visitor to the search they left.
 `onClose` is optional: a host app may turn the assistant off, and the panel
 has to tolerate `AISearchButton` being absent. Escape closes it when there is
 something to close — a surface covering the frame that can only be dismissed
-by clicking its × is a trap for anyone not using a pointer.
+by clicking its × is a trap for anyone not using a pointer. It closes this
+panel only, and goes no further.
+
+A product's own `onKeyDown` runs first, and Escape still closes the panel
+after it. An Escape already handled is left alone: one the product's handler
+keeps with `event.preventDefault()`, or one a part inside has used to dismiss
+something of its own, a field clearing itself or a list of suggestions
+closing, and marked the same way.
 
 Put the thread and its input inside, in that order. `banner` sits above the
 thread, for a `Notice` or an offline `EmptyState`.
@@ -36,16 +43,18 @@ mounted and pass `open`; closed, it draws nothing.
 - When `open` turns **false**, or the panel unmounts, it hands focus back to
   whatever had it when it opened — usually `AISearchButton`, which the panel
   covered rather than replaced.
-- A panel that is **open as it mounts** — on screen from the start, with
-  `open` left out or true from the first render — was opened by nobody, so it
-  leaves focus where the page put it. Closed and opened again, it takes focus
-  like any other open.
+- A panel mounted with `open` **true from the first render** is on screen
+  from the start: nobody opened it, so it leaves focus where the page put it.
+  Closed and opened again, it takes focus like any other open.
+- A panel given **no `open`** is opened by mounting it, as it was before
+  `open` existed (0.5.0): it takes focus as it mounts, calling
+  `onOpenAutoFocus` first, and hands focus back as it unmounts.
 
-A product that mounts the panel to open it is showing it from the start, as
-far as the panel can tell, and focus stays on the button beneath. Keep it
-mounted and turn `open` on instead. Place the panel itself, through its
-`className`: a wrapper kept mounted around it would stay over the sheet,
-empty, once it closes.
+Keep the panel mounted and pass `open`: that is how it tells the visitor
+opening it from a panel on screen from the start. A product that mounts the
+panel to open it, and passes no `open`, keeps working as it did in 0.5.0.
+Place the panel itself, through its `className`: a wrapper kept mounted around
+it would stay over the sheet, empty, once it closes.
 
 ```tsx
 const [open, setOpen] = useState(false);
@@ -89,16 +98,40 @@ const field = useRef<HTMLInputElement>(null);
 </AICompanionPanel>;
 ```
 
-`onOpenAutoFocus` is called only when `open` turns true, never for a panel
-that mounts open, so a panel on screen from the start needs no
-`preventDefault()` to keep the page's focus. `onCloseAutoFocus` works the same
-way at the close. Focus the product has already moved out of the panel — to
+`onOpenAutoFocus` is called when `open` turns true, or as a panel with no
+`open` mounts; never for one mounted with `open` already true, so a panel on
+screen from the start needs no `preventDefault()` to keep the page's focus.
+`onCloseAutoFocus` works the same way at the close. Focus the product has already moved out of the panel — to
 the details of a place picked from the thread — is never taken back, and the
 callback is not called.
 
 Close is drawn at 36px, as the header was drawn round it, with a 44px target.
 
 <Canvas of={Stories.OpenAndClose} />
+
+## What it covers is out of reach
+
+While the panel is open, nothing it covers can be reached: not with Tab or
+Shift+Tab, not with a pointer, and not by a screen reader moving through the
+page. Stepping back out of it used to land on the search's tiles beneath,
+where nobody could see them (WCAG 2.2, 2.4.11).
+
+- **What it covers** is the box it is laid over and fills: its positioned
+  container, when it is placed there with `absolute inset-0`, as in the
+  example above. The rest of that box is inert while the panel is open, and
+  nothing beyond it: the page around a phone's frame stays as it was. Fixed
+  over the whole viewport, it covers the page.
+- **Live regions beneath** still speak, and a menu or popover opened from a
+  part inside the panel, drawn in the page's portal, stays in reach.
+- **As it closes** it gives everything back, then hands focus back to the
+  button that opened it, which it covered. `onCloseAutoFocus` can put focus on
+  anything it covered: that is in reach again by then.
+- **Placed in flow**, as in the stories above, or over only part of its box,
+  it covers nothing, and what sits beside it stays in reach.
+
+It measures what it covers as it opens, from the layout, so a transform that
+animates it in does not change the answer. A product that made the covered box
+inert itself before Kozmos did can stop: its own `inert` is left to it.
 
 ## A spoken conversation
 

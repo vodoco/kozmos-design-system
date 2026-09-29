@@ -12,8 +12,15 @@ import { Star01 as Star } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
-export function getPOIResultDomId(poiId: string) {
-  return `poi-result-${encodeURIComponent(poiId)}`;
+/**
+ * The DOM id of a place's result card: what `LocationPin`'s `resultId` names
+ * to say which card a pin controls. Pass the `idPrefix` the card's list was
+ * given when a page shows the same place in more than one list; left out, it
+ * is the id every result card has always had.
+ */
+export function getPOIResultDomId(poiId: string, idPrefix?: string) {
+  const id = `poi-result-${encodeURIComponent(poiId)}`;
+  return idPrefix ? `${idPrefix}-${id}` : id;
 }
 
 export interface POIResultCardProps extends Omit<
@@ -65,6 +72,18 @@ export interface POIResultCardProps extends Omit<
    * number itself.
    */
   numbered?: boolean;
+  /**
+   * Names this card apart from another card for the same place on the page:
+   * the search's results and an assistant's answer can both show it. The
+   * card's id becomes `getPOIResultDomId(poi.id, idPrefix)`, and its action
+   * row's and unavailable note's ids follow it, so each card's references
+   * stay its own. Left out, the id is `getPOIResultDomId(poi.id)`, as it has
+   * always been. An `id` given to the card wins over both.
+   *
+   * Keep it the same on the server and in the browser: a word, or an id from
+   * React's `useId()`. `POIResultList` and `POIResultGroup` pass theirs on.
+   */
+  idPrefix?: string;
 }
 
 /**
@@ -127,7 +146,8 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       appearance = "card",
       travelTimeBandLabels,
       numbered = false,
-      id = getPOIResultDomId(poi.id),
+      idPrefix,
+      id = getPOIResultDomId(poi.id, idPrefix),
       ...props
     },
     ref,

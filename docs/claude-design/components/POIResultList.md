@@ -128,6 +128,21 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
   pins are numbered. A number takes the place of a badge. POIResultCard's
   `numbered`, given to every card.
 
+- `idPrefix`: `string`, optional.
+
+  Names this list's results apart from another list's on the same page
+  that shows one of the same places: the search's results and an
+  assistant's answer, say. Every result's id becomes
+  `getPOIResultDomId(poiId, idPrefix)`, with its action row's and
+  unavailable note's following it, so each list's references stay inside
+  it, and a map pin names the card in the list it belongs to with the same
+  call.
+
+  Left out, the ids are `getPOIResultDomId(poiId)`, as they have always
+  been: on a page with more than one list, give every list but one its
+  own. Keep it the same on the server and in the browser: a word, or an id
+  from React's `useId()`.
+
 - `scrollSelectedIntoView`: `boolean`, optional, default `true`.
 
   Bring the selected result into view when `selectedPoiId` changes — by
@@ -143,7 +158,14 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
   `data-kozmos-scroller`, as AdaptiveMapShell's sheet does; with nothing
   around the list that scrolls, the page does.
 
-  Turn it off for a product that already scrolls the panel itself.
+  Each selection is brought in once, when its result is in `items`: a
+  selection that comes before its results waits for them, and a new array
+  of the same results moves nothing. A result that leaves the list and
+  comes back is brought in again.
+
+  Turn it off for a product that already scrolls the panel itself. A
+  selection made while it is off waits too: turned back on, the list
+  brings in the one it has not brought in yet.
 
 - `children`: `ReactNode`, optional.
 
@@ -230,6 +252,18 @@ interface POIResultCardProps extends Omit<
    * number itself.
    */
   numbered?: boolean;
+  /**
+   * Names this card apart from another card for the same place on the page:
+   * the search's results and an assistant's answer can both show it. The
+   * card's id becomes `getPOIResultDomId(poi.id, idPrefix)`, and its action
+   * row's and unavailable note's ids follow it, so each card's references
+   * stay its own. Left out, the id is `getPOIResultDomId(poi.id)`, as it has
+   * always been. An `id` given to the card wins over both.
+   *
+   * Keep it the same on the server and in the browser: a word, or an id from
+   * React's `useId()`. `POIResultList` and `POIResultGroup` pass theirs on.
+   */
+  idPrefix?: string;
 }
 ```
 

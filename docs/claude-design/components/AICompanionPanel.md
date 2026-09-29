@@ -48,7 +48,7 @@ export function AICompanionPanelExample() {
     const [value, setValue] = useState("");
     return (
       <Frame>
-        <AICompanionPanel onClose={() => {}}>
+        <AICompanionPanel onClose={() => {}} open>
           <AIMessageList>
             <AIMessage>
               Hello! What are you looking for? Describe it in your own words,
@@ -113,15 +113,25 @@ and focus fell to the page. It moves focus in only when the visitor opens
 it (decision 16): a panel on screen from the start takes nothing from the
 page, which may have put focus somewhere on purpose.
 
+While it is open, what it covers is out of reach (GAP-93): laid over the
+box it fills, `absolute inset-0` in its positioned container, it makes the
+rest of that box inert, and gives it back as it closes, before it hands
+focus back. The keyboard cannot step back out of it onto controls nobody
+can see. Placed in flow, or over part of its box, it covers nothing.
+
 It forwards its ref to `HTMLDivElement`. Its props are `AICompanionPanelProps`, which extends `Omit<React.HTMLAttributes<HTMLDivElement>, "title">`.
 
-- `open`: `boolean`, optional, default `true`.
+- `open`: `boolean`, optional.
 
-  Whether the panel is on screen; `true` when left out. Keep the panel
-  mounted and turn `open` on when the visitor opens it — from
-  AISearchButton, usually: that is when it takes focus. A panel that is
-  open as it mounts, on screen from the start, was opened by nobody and
-  leaves focus where it is. Closed, it draws nothing.
+  Whether the panel is on screen. Pass it, keep the panel mounted, and turn
+  it on when the visitor opens the panel — from AISearchButton, usually:
+  that is when it takes focus. Given as `true` from the first render, the
+  panel is on screen from the start, was opened by nobody, and leaves focus
+  where it is (decision 16). Closed, it draws nothing.
+
+  Left out, the panel is open, and mounting it is its opening, as it was
+  before `open` existed (0.5.0): it takes focus as it mounts, and hands it
+  back as it unmounts.
 
 - `title`: `React.ReactNode`, optional, default `"Assistant"`.
 - `titleLevel`: `2 | 3 | 4 | 5 | 6`, optional, default `2`.
@@ -144,10 +154,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `AICompanionPanelProps`, 
 - `onOpenAutoFocus`: `(event: Event) => void`, optional.
 
   The panel takes focus when the visitor opens it: when `open` turns true
-  after it has mounted. Called first: `event.preventDefault()` keeps focus
-  where you put it instead — in the field, through AIInputBar's `inputRef`.
-  Not called for a panel that mounts open, which takes no focus, nor when a
-  part inside has already taken focus, which is left alone.
+  after it has mounted, or, with `open` left out, as it mounts. Called
+  first: `event.preventDefault()` keeps focus where you put it instead — in
+  the field, through AIInputBar's `inputRef`. Not called for a panel
+  mounted with `open` already true, which takes no focus, nor when a part
+  inside has already taken focus, which is left alone.
 
 - `onCloseAutoFocus`: `(event: Event) => void`, optional.
 
