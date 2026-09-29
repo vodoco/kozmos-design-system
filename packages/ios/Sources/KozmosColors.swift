@@ -1928,6 +1928,32 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var semanticsEmotionAlertFill: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FBC459") : UIColor(hex: "#F9A707")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FBC459") : NSColor(hex: "#F9A707")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var semanticsEmotionAlertOnfill: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#000000") : UIColor(hex: "#000000")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#000000") : NSColor(hex: "#000000")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
     public static var semanticsEmotionInformativeSurface: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in
