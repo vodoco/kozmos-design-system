@@ -69,6 +69,8 @@ import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIServicePresentation
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
+import kotlin.math.ceil
+import kotlin.math.sqrt
 
 /** Controlled state for a single POI action button. */
 data class KozmosPOIActionState(
@@ -110,11 +112,13 @@ enum class KozmosPOIDetailPanelPresentation {
  *
  * In its sheet presentation, which paints no surface of its own, the card is
  * the top of the map shell's panel: its header tops its top padding up to what
- * the panel already leaves above it ([LocalKozmosPanelInsetTop],
- * [LocalKozmosPanelClearanceTop]) rather than adding to it, so its close
- * button sits as far from the panel's top as from its side (GAP-083). The
- * panel and inline presentations draw their own bordered card and keep their
- * padding inside it.
+ * the panel already leaves above it ([LocalKozmosPanelInsetTop]) rather than
+ * adding to it, so its close button sits as far from the panel's top as from
+ * its side (GAP-083), 16 and 16 under a handle. Where its buttons would then
+ * meet the handle's target — three of them on a card under 338dp wide — it
+ * keeps the handle's clearance ([LocalKozmosPanelClearanceTop]) too, 20 and
+ * 16 (decision 51, [sheetHeaderTop]). The panel and inline presentations draw
+ * their own bordered card and keep their padding inside it.
  *
  * The web component's `titleLevel` prop has no counterpart here: Compose
  * semantics expose `heading()` as a boolean with no rank, so TalkBack cannot
@@ -147,20 +151,11 @@ fun KozmosPOIDetailPanel(
         RoundedCornerShape(radius)
     }
 
-    // The header's top padding. In the sheet presentation the card paints no
-    // surface of its own, so the space the shell's panel leaves above it is
-    // the card's own top: the header tops it up to 16 rather than adding 16
-    // to it, and keeps the clearance the panel asks for under a handle — the
-    // close button sat 32 from the sheet's top and 16 from its side
-    // (GAP-083). The panel and inline presentations draw their own bordered
-    // card, and that space lies outside the border: they keep their 16
-    // inside it, or the header meets the card's own top edge.
-    val headerPadding = KozmosDimensions.primitivesLayoutSpacing200
-    val headerTop = if (presentation == KozmosPOIDetailPanelPresentation.Sheet) {
-        maxOf(LocalKozmosPanelClearanceTop.current, headerPadding - LocalKozmosPanelInsetTop.current)
-    } else {
-        headerPadding
-    }
+    // What the shell's panel leaves above the card, and the clearance it asks
+    // for below that (GAP-083): read here, for the header's top padding,
+    // which also needs the card's width (sheetHeaderTop).
+    val panelInsetTop = LocalKozmosPanelInsetTop.current
+    val panelClearanceTop = LocalKozmosPanelClearanceTop.current
 
     // The surface the card's text sits on: in the sheet presentation the one
     // under the card, the panel's, and in the others the card's own, a
@@ -206,6 +201,19 @@ fun KozmosPOIDetailPanel(
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val bodyScrolls = constraints.hasBoundedHeight
         val bodyScrollState = rememberScrollState()
+        // The panel and inline presentations draw their own bordered card,
+        // and the space the panel leaves lies outside the border: they keep
+        // their 16 inside it, or the header meets the card's own top edge.
+        val headerTop = if (presentation == KozmosPOIDetailPanelPresentation.Sheet) {
+            sheetHeaderTop(
+                inset = panelInsetTop,
+                clearance = panelClearanceTop,
+                cardWidth = maxWidth,
+                buttons = headerToggles.size + if (onClose != null) 1 else 0
+            )
+        } else {
+            KozmosDimensions.primitivesLayoutSpacing200
+        }
 
         Column(modifier = Modifier.fillMaxWidth()) {
             Header(
@@ -347,6 +355,46 @@ fun KozmosPOIDetailPanel(
 
 /** The actions the header draws as icon toggles, beside close, as iOS and the web do. */
 private val HeaderToggleActions = setOf(KozmosPOIAction.Favourite, KozmosPOIAction.Bookmark)
+
+/** The header's buttons ([HeaderButton]): [KozmosButtonSize.Icon]'s 44dp squares, 6dp apart. */
+private val HeaderButtonSize = 44.dp
+private val HeaderButtonSpacing = KozmosDimensions.primitivesLayoutSpacing75
+
+/**
+ * The sheet presentation's header top padding, in a card [cardWidth] wide
+ * whose header holds [buttons] buttons (GAP-083, decision 51).
+ *
+ * The card paints no surface of its own, so the space the shell's panel
+ * leaves above it ([inset]) is the card's own top: the header tops its 16 up
+ * to it rather than adding 16, and under a handle sits flush under the
+ * handle's row — the close button as far from the sheet's top as from its
+ * side, 16 and 16. It sat 32 and 16 (GAP-083), then 20 and 16.
+ *
+ * Unless its buttons would then meet the handle's target. The handle's row
+ * is an undersized target, and WCAG 2.5.8 keeps a 24dp circle on its centre
+ * clear of every other target: the shell's [clearance] is how far below the
+ * row that circle reaches, so its radius is half the row and the clearance.
+ * Flush, the buttons' top edge is half the row under the centre, and the
+ * button nearest the middle must start √(12² − 8²) ≈ 8.9 past it, rounded up
+ * to 9 as the web rounds it. Where it would not — three buttons, favourite,
+ * save and close, on a card under 338 wide; two under 238; close alone under
+ * 138 — the header keeps the clearance: 20 and 16, as every other part at
+ * the panel's top does (decision 14). With no handle the clearance is 0, and
+ * the header keeps its 16 under whatever is above it.
+ */
+internal fun sheetHeaderTop(inset: Dp, clearance: Dp, cardWidth: Dp, buttons: Int): Dp {
+    val padding = KozmosDimensions.primitivesLayoutSpacing200
+    val flush = maxOf(0.dp, padding - inset)
+    if (clearance <= 0.dp || buttons == 0) return flush
+    val radius = inset / 2 + clearance
+    val depth = inset / 2 + flush
+    if (depth >= radius) return flush
+    val reach = ceil(sqrt(radius.value * radius.value - depth.value * depth.value)).dp
+    val run = HeaderButtonSize * buttons + HeaderButtonSpacing * (buttons - 1)
+    // From the card's middle, under the handle's centre, to the nearest
+    // button's edge: the buttons stand at the header's end, 16 in.
+    return if (cardWidth / 2 - padding - run >= reach) flush else maxOf(clearance, padding - inset)
+}
 
 // The outline glyphs, as the web's Heart and Bookmark and iOS's "heart" and
 // "bookmark" are: a pressed toggle shows its state by its fill, not its glyph.
