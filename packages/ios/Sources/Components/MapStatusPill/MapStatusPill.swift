@@ -7,10 +7,11 @@ import UIKit
 ///
 /// The product chooses the tone and when the pill shows; Kozmos draws it.
 public enum KozmosMapStatusPillTone: String, CaseIterable, Sendable {
-    /// The words alone: "Walking improves accuracy".
+    /// The words alone, for a status with nothing to mark.
     case neutral
     /// The system's arc, turning in the theme's blue: "Calculating Precise
-    /// Position", "Preparing Content", "Calculating step-free route".
+    /// Position", "Preparing Content", "Calculating step-free route";
+    /// "Walking improves accuracy" puts a walking figure in its place.
     case progress
     /// A check, and the words, in the success colour: "Established",
     /// "Up-to-date".
@@ -145,8 +146,10 @@ public struct KozmosMapStatusPill: View {
     }
 
     /// The product's own mark in place of the tone's — "No Bluetooth" draws
-    /// the product's Bluetooth-off. It is drawn at 24 in the tone's colour
-    /// and hidden from VoiceOver: the words say it.
+    /// `KozmosIcon("bluetooth-off")`, and "Walking improves accuracy" the
+    /// system's `figure.walk`. It is drawn at 24 in the tone's colour, which a
+    /// `KozmosIcon` at its default colour takes too, and hidden from
+    /// VoiceOver: the words say it.
     public init<Icon: View>(
         _ text: String,
         tone: KozmosMapStatusPillTone = .neutral,
@@ -227,6 +230,9 @@ public struct KozmosMapStatusPill: View {
                     mark
                         .frame(width: Self.markSize, height: Self.markSize)
                         .foregroundColor(color(appearance.mark))
+                        // A KozmosIcon passed at its default colour, such as
+                        // No Bluetooth's bluetooth-off, takes the tone's too.
+                        .environment(\.kozmosIconHostInk, color(appearance.mark))
                         .accessibilityHidden(true)
                 }
                 Text(text)

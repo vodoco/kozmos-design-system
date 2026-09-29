@@ -64,6 +64,19 @@ import { LocationHeading, NavigationPointer01 } from "@kozmos-ds/icons";
 
 They draw in `currentColor`, so they take the colour of the text around them.
 
+## The walking figure
+
+`Walking` is the figure the SDK's position status draws beside "Walking
+improves accuracy", from Pointr's Location Tracking Buttons file: the icon
+library has no walking figure. It is a solid mark, not an outline, squared on
+the icon grid so it stands 20 of 24 tall, and it draws in `currentColor`.
+
+```tsx
+import { Walking } from "@kozmos-ds/icons";
+
+<Walking />; // 24px, in the colour of the text around it
+```
+
 ## Category symbols are not here
 
 A venue's quick-access category artwork is the taxonomy's, not the design
