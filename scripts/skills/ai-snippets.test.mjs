@@ -25,7 +25,8 @@ const root = path.resolve(
 const facts = readKozmosFacts(root);
 
 const fence = "```";
-const doc = (lang, code) => `# A fixture\n\nSome prose.\n\n${fence}${lang}\n${code}\n${fence}\n`;
+const doc = (lang, code) =>
+  `# A fixture\n\nSome prose.\n\n${fence}${lang}\n${code}\n${fence}\n`;
 const check = (text) =>
   checkDocuments(root, [{ file: "fixture.md", text }], facts);
 const messages = (text) => check(text).map((p) => p.message);
@@ -62,7 +63,9 @@ test("an import of something the package does not export is found, on one line o
   );
   for (const found of [oneLine, multiline])
     assert.ok(
-      found.some((m) => /NonexistentWidget/.test(m) && /does not export/.test(m)),
+      found.some(
+        (m) => /NonexistentWidget/.test(m) && /does not export/.test(m),
+      ),
       found.join("\n"),
     );
 });
@@ -72,7 +75,10 @@ test("a component the package does not export is refused, whatever its directory
   // RadioGroupItem; SpinnerArc is internal to Spinner.
   for (const name of ["Radio", "SpinnerArc"]) {
     const found = messages(
-      doc("tsx", `import { ${name} } from "@kozmos-ds/react";\nexport const x = <${name} />;`),
+      doc(
+        "tsx",
+        `import { ${name} } from "@kozmos-ds/react";\nexport const x = <${name} />;`,
+      ),
     );
     assert.ok(
       found.some((m) => m.includes(name) && /does not export/.test(m)),
@@ -113,7 +119,7 @@ test("a value written as an expression string is checked too", () => {
     const found = messages(
       doc(
         "tsx",
-        `// kozmos-skills: template — one tag\n<Button variant=${value}>Save</Button>`,
+        `// kozmos-skills: template — one tag, shown on its own\n<Button variant=${value}>Save</Button>`,
       ),
     );
     assert.ok(
@@ -165,14 +171,17 @@ test("a prop the component does not take is found", () => {
   const found = messages(
     doc(
       "tsx",
-      `// kozmos-skills: template — one tag\n<Button colour="red" data-testid="save" aria-label="Save">Save</Button>`,
+      `// kozmos-skills: template — one tag, shown on its own\n<Button colour="red" data-testid="save" aria-label="Save">Save</Button>`,
     ),
   );
   assert.ok(
     found.some((m) => /Button/.test(m) && /colour/.test(m)),
     found.join("\n"),
   );
-  assert.ok(!found.some((m) => /data-testid|aria-label/.test(m)), found.join("\n"));
+  assert.ok(
+    !found.some((m) => /data-testid|aria-label/.test(m)),
+    found.join("\n"),
+  );
 });
 
 test("a package under the old @kozmos scope, or one the workspace does not have, is refused", () => {
@@ -182,8 +191,14 @@ test("a package under the old @kozmos scope, or one the workspace does not have,
       `// kozmos-skills: template — imports only\nimport { Button } from "@kozmos/react";\nimport { View } from "react-native";`,
     ),
   );
-  assert.ok(found.some((m) => /@kozmos\/react/.test(m)), found.join("\n"));
-  assert.ok(found.some((m) => /react-native/.test(m)), found.join("\n"));
+  assert.ok(
+    found.some((m) => /@kozmos\/react/.test(m)),
+    found.join("\n"),
+  );
+  assert.ok(
+    found.some((m) => /react-native/.test(m)),
+    found.join("\n"),
+  );
 });
 
 test("a complete block is compiled against the build, and a template needs a reason", () => {
@@ -192,17 +207,26 @@ test("a complete block is compiled against the build, and a template needs a rea
   const compiled = messages(
     doc(
       "tsx",
-      `import { Button } from "@kozmos-ds/react";\nexport const x = <Button onClick={42}>Save</Button>;`,
+      `import { Button } from "@kozmos-ds/react";\nexport const x = <Button onClick={true}>Save</Button>;`,
     ),
   );
-  assert.ok(compiled.some((m) => /TS2322/.test(m)), compiled.join("\n"));
+  assert.ok(
+    compiled.some((m) => /TS2322/.test(m)),
+    compiled.join("\n"),
+  );
   // A fragment that does not compile has to say it is a template, and why.
   const unmarked = messages(doc("tsx", `<Button>{label}</Button>`));
-  assert.ok(unmarked.some((m) => /TS2304/.test(m)), unmarked.join("\n"));
+  assert.ok(
+    unmarked.some((m) => /TS2304/.test(m)),
+    unmarked.join("\n"),
+  );
   const reasonless = messages(
     doc("tsx", `// kozmos-skills: template\n<Button>{label}</Button>`),
   );
-  assert.ok(reasonless.some((m) => /reason/.test(m)), reasonless.join("\n"));
+  assert.ok(
+    reasonless.some((m) => /reason/.test(m)),
+    reasonless.join("\n"),
+  );
   // With one, it is not compiled, and what it names is still checked.
   assert.deepEqual(
     messages(
@@ -222,14 +246,23 @@ test("an alias and a namespace import are followed to the component", () => {
       `import { Button as KozmosButton } from "@kozmos-ds/react";\nimport * as K from "@kozmos-ds/react";\nexport const x = <><KozmosButton variant="primary" /><K.Badge variant="loud" /></>;`,
     ),
   );
-  assert.ok(found.some((m) => /"primary"/.test(m)), found.join("\n"));
-  assert.ok(found.some((m) => /"loud"/.test(m)), found.join("\n"));
+  assert.ok(
+    found.some((m) => /"primary"/.test(m)),
+    found.join("\n"),
+  );
+  assert.ok(
+    found.some((m) => /"loud"/.test(m)),
+    found.join("\n"),
+  );
 });
 
 test("prose and other fences are held to the same facts, across lines", () => {
   const text = `# Prose\n\nWrite \`<Badge\n  variant="shouting">\` for emphasis, or import it:\n\n${fence}markdown\nimport {\n  Radio,\n} from "@kozmos-ds/react";\n${fence}\n`;
   const found = messages(text);
-  assert.ok(found.some((m) => /"shouting"/.test(m)), found.join("\n"));
+  assert.ok(
+    found.some((m) => /"shouting"/.test(m)),
+    found.join("\n"),
+  );
   assert.ok(
     found.some((m) => /Radio/.test(m) && /does not export/.test(m)),
     found.join("\n"),

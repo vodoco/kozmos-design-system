@@ -37,10 +37,35 @@ export const compilerOptions = {
 // declaration files, and parsing them is most of what a program costs.
 const parsed = new Map();
 
+/** How a file is parsed, by its extension: a `.ts` file is not JSX. */
+export const scriptKindOf = (file) =>
+  /\.[mc]?ts$/.test(file)
+    ? ts.ScriptKind.TS
+    : /\.[mc]?js$/.test(file)
+      ? ts.ScriptKind.JS
+      : /\.jsx$/.test(file)
+        ? ts.ScriptKind.JSX
+        : ts.ScriptKind.TSX;
+
 /** A compiler host that serves `virtual` (path → text) from memory. */
 export function hostWith(virtual = new Map(), options = compilerOptions) {
   const host = ts.createCompilerHost(options, true);
-  const { fileExists, readFile, getSourceFile } = host;
+  const { fileExists, readFile, getSourceFile, directoryExists } = host;
+  // Module resolution gives up on a relative import whose directory does not
+  // exist, and the virtual files' directories never do.
+  const directories = new Set();
+  for (const file of virtual.keys())
+    for (let dir = path.dirname(file); !directories.has(dir); ) {
+      directories.add(dir);
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  host.directoryExists = (dir) =>
+    directories.has(dir) ||
+    (directoryExists
+      ? directoryExists.call(host, dir)
+      : ts.sys.directoryExists(dir));
   host.fileExists = (file) => virtual.has(file) || fileExists.call(host, file);
   host.readFile = (file) =>
     virtual.has(file) ? virtual.get(file) : readFile.call(host, file);
@@ -51,7 +76,7 @@ export function hostWith(virtual = new Map(), options = compilerOptions) {
         virtual.get(file),
         language,
         true,
-        ts.ScriptKind.TSX,
+        scriptKindOf(file),
       );
     const version =
       typeof language === "object" ? language.languageVersion : language;
@@ -78,21 +103,27 @@ export function formatDiagnostic(diagnostic, root) {
 
 /**
  * Type-checks each of `modules` (name → source) as a file of its own, the way
- * an app holds it, and returns each one's diagnostics by name.
+ * an app holds it, and returns each one's diagnostics by name. A module is
+ * a `.tsx` file unless `extensionOf(name)` says otherwise, and `options`
+ * adjusts the compiler options for the whole set.
  */
-export function compileModules(root, modules) {
+export function compileModules(
+  root,
+  modules,
+  { extensionOf = () => ".tsx", options = {} } = {},
+) {
   const dir = exampleDirectory(root);
   const virtual = new Map();
   const nameOf = new Map();
   for (const [name, source] of modules) {
-    const file = path.join(dir, `${name}.tsx`);
+    const file = path.join(dir, `${name}${extensionOf(name)}`);
     virtual.set(file, source);
     nameOf.set(file, name);
   }
   const program = ts.createProgram({
     rootNames: [...virtual.keys()],
-    options: compilerOptions,
-    host: hostWith(virtual),
+    options: { ...compilerOptions, ...options },
+    host: hostWith(virtual, { ...compilerOptions, ...options }),
   });
   const result = new Map([...modules.keys()].map((name) => [name, []]));
   const global = [

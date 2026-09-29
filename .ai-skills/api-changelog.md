@@ -28,6 +28,7 @@ from. A minor bump can still change behaviour: read the entry.
   `LocationFollowing` and `LocationHeading`, which the control draws, so this react needs this icons.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/icons 0.4.0 release notes, a fragment written for that release
   <MapControlsGroup
     locationState={locationState}
     locationRevealOnChange
@@ -77,6 +78,7 @@ from. A minor bump can still change behaviour: read the entry.
   its own `iconUrl`, and the panel's `renderIcon` takes whatever you give it:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/icons 0.3.0 release notes, a fragment written for that release
   <BrowseCategoriesPanel
     renderIcon={(category) => <img src={category.iconUrl} alt="" aria-hidden />}
   />
@@ -131,6 +133,7 @@ from. A minor bump can still change behaviour: read the entry.
   drawn nor said.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.4.0 release notes, a fragment written for that release
   <FloorSelector
     floors={floors.map((floor) => ({
       ...floor,
@@ -164,6 +167,7 @@ from. A minor bump can still change behaviour: read the entry.
   closing.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.4.0 release notes, a fragment written for that release
   <POIResultList
     header={allergenNotice}
     showMoreLabel={(hidden) => t("results.showMore", { count: hidden })}
@@ -250,6 +254,7 @@ from. A minor bump can still change behaviour: read the entry.
   them:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.3.0 release notes, a fragment written for that release
   services: [
     { id: "1", label: "Vegan", kind: "dietary" },
     { id: "2", label: "Step-free", kind: "accessibility" },
@@ -309,6 +314,7 @@ from. A minor bump can still change behaviour: read the entry.
   needs. Built to the behaviours rather than to a screen:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   <AICompanionPanel onClose={close}>
     <AIMessageList>
       <AIMessage>What are you looking for?</AIMessage>
@@ -336,6 +342,7 @@ from. A minor bump can still change behaviour: read the entry.
   four lines — 114px above the results that are the answer.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   <Notice summary="AI results may be incomplete. Check allergens with the venue.">
     These results are AI-assisted and may be incomplete or out of date…
   </Notice>
@@ -353,6 +360,7 @@ from. A minor bump can still change behaviour: read the entry.
   `POIResultList` forwards it.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   result={{
     selected: true,
     actions: [
@@ -377,6 +385,7 @@ from. A minor bump can still change behaviour: read the entry.
   and a visitor asking for coffee wants one row, not five.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   <POIResultGroup
     items={branches}
     onSelect={select}
@@ -412,6 +421,7 @@ from. A minor bump can still change behaviour: read the entry.
   its own `iconUrl`, and the panel's `renderIcon` takes whatever you give it:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   <BrowseCategoriesPanel
     renderIcon={(category) => <img src={category.iconUrl} alt="" aria-hidden />}
   />
@@ -469,6 +479,7 @@ from. A minor bump can still change behaviour: read the entry.
   each `Chip` a `value`. `"multiple"` stays the default and behaves as before.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.5.0 release notes, a fragment written for that release
   <ChipGroup
     selectionMode="single"
     value={sort}
@@ -500,6 +511,7 @@ from. A minor bump can still change behaviour: read the entry.
   drawn nor said.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.5.0 release notes, a fragment written for that release
   <FloorSelector
     floors={floors.map((floor) => ({
       ...floor,
@@ -524,6 +536,7 @@ from. A minor bump can still change behaviour: read the entry.
   `LocationFollowing` and `LocationHeading`, which the control draws, so this react needs this icons.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.5.0 release notes, a fragment written for that release
   <MapControlsGroup
     locationState={locationState}
     locationRevealOnChange
@@ -605,6 +618,7 @@ from. A minor bump can still change behaviour: read the entry.
   closing.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.5.0 release notes, a fragment written for that release
   <POIResultList
     header={allergenNotice}
     showMoreLabel={(hidden) => t("results.showMore", { count: hidden })}
@@ -781,6 +795,7 @@ from. A minor bump can still change behaviour: read the entry.
   them:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.4.0 release notes, a fragment written for that release
   services: [
     { id: "1", label: "Vegan", kind: "dietary" },
     { id: "2", label: "Step-free", kind: "accessibility" },
@@ -885,6 +900,7 @@ from. A minor bump can still change behaviour: read the entry.
   needs. Built to the behaviours rather than to a screen:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   <AICompanionPanel onClose={close}>
     <AIMessageList>
       <AIMessage>What are you looking for?</AIMessage>
@@ -912,6 +928,7 @@ from. A minor bump can still change behaviour: read the entry.
   four lines — 114px above the results that are the answer.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   <Notice summary="AI results may be incomplete. Check allergens with the venue.">
     These results are AI-assisted and may be incomplete or out of date…
   </Notice>
@@ -929,6 +946,7 @@ from. A minor bump can still change behaviour: read the entry.
   `POIResultList` forwards it.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   result={{
     selected: true,
     actions: [
@@ -953,6 +971,7 @@ from. A minor bump can still change behaviour: read the entry.
   and a visitor asking for coffee wants one row, not five.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   <POIResultGroup
     items={branches}
     onSelect={select}
@@ -988,6 +1007,7 @@ from. A minor bump can still change behaviour: read the entry.
   its own `iconUrl`, and the panel's `renderIcon` takes whatever you give it:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   <BrowseCategoriesPanel
     renderIcon={(category) => <img src={category.iconUrl} alt="" aria-hidden />}
   />
@@ -1181,6 +1201,7 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   example knew; the reference site's did not, and neither would an integrator's.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.1.0 release notes, a fragment written for that release
   <SearchBar placeholder="Search this building" trailing={<AISearchButton />} />
   ```
 

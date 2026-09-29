@@ -51,6 +51,7 @@ import {
   COMPONENTS,
   declaredExports,
   defaultsOf,
+  exportOwners,
   readModules,
 } from "./claude-design-source.mjs";
 import { compileModules } from "./claude-design-typescript.mjs";
@@ -268,30 +269,13 @@ export async function buildClaudeDesignDocs(root) {
   const packageRoot = path.join(root, "packages/react/src");
 
   // ---- which export belongs to which card --------------------------------------
-  // A directory that re-exports a name by name publishes it as its own
-  // (DateRangePicker, declared beside DatePicker); otherwise a name is its
-  // declaring module's. The declaring module is still where its defaults are.
-  const owner = new Map();
-  const declarer = new Map();
-  for (const module of modules)
-    for (const name of module.reexports)
-      if (exportNames.has(name) && !owner.has(name)) owner.set(name, module);
-  for (const module of modules)
-    for (const name of module.names) {
-      if (!exportNames.has(name)) continue;
-      if (!declarer.has(name)) declarer.set(name, module);
-      if (!owner.has(name)) owner.set(name, module);
-    }
+  const { owner, declarer, ownedBy } = exportOwners(modules, exportNames);
   const unplaced = [...api.entries.values()].filter(
     (e) => e.component && !owner.has(e.name),
   );
   if (unplaced.length)
     throw new Error(
       `No component directory or module declares ${unplaced.map((e) => e.name).join(", ")}, so no card would carry ${unplaced.length === 1 ? "it" : "them"}.`,
-    );
-  const ownedBy = (module) =>
-    [...new Set([...module.reexports, ...module.names])].filter(
-      (name) => owner.get(name) === module,
     );
 
   // ---- the stories -----------------------------------------------------------------

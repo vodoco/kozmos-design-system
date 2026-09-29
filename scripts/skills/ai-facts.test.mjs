@@ -287,7 +287,10 @@ export const Untyped = (props: any) => <div>{String(props)}</div>;
   );
   // Only `level` is a closed set of values; `size` takes any string too, and
   // `detent` an object.
-  assert.deepEqual(sorted(axesOf(fixture, "Negatives")), expect({ level: [1, 2, 3] }));
+  assert.deepEqual(
+    sorted(axesOf(fixture, "Negatives")),
+    expect({ level: [1, 2, 3] }),
+  );
   const unknown = unknownsOf(fixture, "Negatives");
   assert.equal(unknown.component, null);
   assert.deepEqual(Object.keys(unknown.props), ["broken"]);

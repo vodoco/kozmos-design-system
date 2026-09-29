@@ -22,6 +22,9 @@ const ALLOWED = [
   // because `git grep` only reads tracked files: a check that cannot see itself
   // is a check with a blind spot at its centre.
   /^scripts\/check-package-scope\.mjs$/,
+  // The test that `pnpm skills:check` refuses the old scope in AI-facing
+  // code: it has to write the import it refuses.
+  /^scripts\/skills\/ai-snippets\.test\.mjs$/,
   /^\.ai-skills\//,
   /^docs\/project-scope\.md$/,
 ];

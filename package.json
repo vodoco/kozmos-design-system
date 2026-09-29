@@ -70,7 +70,7 @@
     "components:contract:check": "node scripts/check-component-contracts.mjs",
     "contracts:parity:check": "node scripts/check-contract-parity.mjs",
     "skills:build": "node scripts/build-ai-skills.mjs",
-    "skills:check": "node scripts/build-ai-skills.mjs --check && node scripts/check-ai-skills.mjs && node --test scripts/skills/claude-design-docs.test.mjs",
+    "skills:check": "node scripts/build-ai-skills.mjs --check && node --test scripts/skills/ai-facts.test.mjs scripts/skills/ai-snippets.test.mjs && node scripts/check-ai-skills.mjs && node --test scripts/skills/claude-design-docs.test.mjs",
     "docs:snippets:check": "node scripts/check-doc-snippets.mjs",
     "docs:snippets:compile": "node scripts/check-package-install.mjs",
     "test:doc-snippets": "node --test scripts/lib/doc-snippets.test.mjs",

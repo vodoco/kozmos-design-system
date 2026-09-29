@@ -9,15 +9,21 @@
  * shell. A stale inventory is worse than none, because an assistant reads it
  * as the complete set and works around what it thinks is missing.
  *
- * This generates it instead, from four sources that cannot disagree with the
- * code because they ARE the code:
+ * This generates it instead, from sources that cannot disagree with the code
+ * because they ARE the code:
  *
- *   - the component directories under packages/react/src/components;
- *   - each one's Storybook `meta.title`, which carries the real category;
- *   - each one's variant axes, read the way check-variant-parity reads them,
- *     including a union given a name;
+ *   - the component directories under packages/react/src/components, and
+ *     the exports of @kozmos-ds/react each one owns;
+ *   - each one's Storybook `meta.title`, which carries the real category,
+ *     read the way the Claude Design cards read it;
+ *   - each export's props that take a closed set of values, with every value,
+ *     as the TypeScript checker resolves them from the built declarations
+ *     (scripts/skills/ai-facts.mjs). They were read with regular expressions
+ *     that assumed how the source was laid out, and Badge and Tag came out
+ *     with no axes and Button without `emotion` (the review's T2);
  *   - whether SwiftUI and Compose have it.
  *
+ * A fact the checker cannot resolve is written as unknown, never as "none".
  * `--check` fails when the written file is stale, so the inventory cannot
  * drift again without a red build.
  *
@@ -32,9 +38,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import prettier from "prettier";
 import {
+  AXIS_ORIGINS,
+  componentDirectories,
+  readKozmosFacts,
+} from "./skills/ai-facts.mjs";
+import { LANGUAGES } from "./skills/ai-snippets.mjs";
+import {
   CARDS_DIR,
   buildClaudeDesignDocs,
 } from "./skills/claude-design-docs.mjs";
+import { readStories, storyProgram } from "./skills/claude-design-examples.mjs";
 
 /**
  * Written the way the repository writes markdown.
@@ -53,102 +66,100 @@ async function formatted(markdown, filepath) {
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REACT = path.join(root, "packages/react/src/components");
 const IOS = path.join(root, "packages/ios/Sources/Components");
-const ANDROID = path.join(root, "packages/android/src/main/java/com/kozmos/components");
+const ANDROID = path.join(
+  root,
+  "packages/android/src/main/java/com/kozmos/components",
+);
 const OUT = path.join(root, ".ai-skills/component-inventory.md");
 
 const read = (f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") : null);
 
-/** The category a component is filed under in Storybook, from meta.title. */
+// ------------------------------------------------------------- the facts
+
+const facts = readKozmosFacts(root);
+const directories = componentDirectories(root, facts);
+
+/** The category each directory is filed under in Storybook, from meta.title. */
+const storyFiles = directories
+  .map((d) => path.join(REACT, d.name, `${d.name}.stories.tsx`))
+  .filter((file) => fs.existsSync(file));
+const stories = storyProgram(storyFiles);
 function categoryOf(name) {
-  const stories = read(path.join(REACT, name, `${name}.stories.tsx`));
-  if (!stories) return "Uncategorised";
-  // Only the meta block's title: a story's args can carry a `title` too, and
-  // matching those filed Card under "Starbucks Coffee".
-  const meta = /(?:const meta[^=]*=|export default)\s*\{([\s\S]*?)\n\}/.exec(stories);
-  const title = meta && /title:\s*["']([^"']+)["']/.exec(meta[1]);
-  return title ? title[1].split("/")[0].trim() : "Uncategorised";
+  const file = path.join(REACT, name, `${name}.stories.tsx`);
+  if (!storyFiles.includes(file)) return "Uncategorised";
+  const title = readStories(stories.program, file).meta.title;
+  return title ? title.split("/")[0].trim() : "Uncategorised";
 }
 
-/** Variant axes, inline or behind a named union — the same two forms the
- *  parity analyser reads. */
-function axesOf(name) {
-  const file = read(path.join(REACT, name, `${name}.tsx`));
-  if (!file) return {};
-  const axes = {};
-  const cva = /variants:\s*\{([\s\S]*?)\n\s{2}\},?\n/.exec(file);
-  if (cva) {
-    for (const axis of ["variant", "size", "status", "tone", "density"]) {
-      const block = new RegExp(`^\\s{4}${axis}:\\s*\\{([\\s\\S]*?)^\\s{4}\\},?$`, "m").exec(cva[1]);
-      if (!block) continue;
-      const values = [...block[1].matchAll(/^\s{6}["']?([\w-]+)["']?:/gm)].map((m) => m[1]);
-      if (values.length) axes[axis] = values;
-    }
-  }
-  const aliases = {};
-  for (const a of file.matchAll(/^(?:export )?type (\w+)\s*=\s*((?:\s*\|?\s*["'][^"']+["'])+)\s*;/gm)) {
-    const values = [...a[2].matchAll(/["']([^"']+)["']/g)].map((v) => v[1]);
-    if (values.length > 1) aliases[a[1]] = values;
-  }
-  const props =
-    file.match(new RegExp(`export interface ${name}Props[\\s\\S]*?\\n\\}`)) ??
-    file.match(new RegExp(`interface ${name}Props[\\s\\S]*?\\n\\}`));
-  if (props) {
-    for (const m of props[0].matchAll(/^\s+([a-zA-Z][a-zA-Z0-9]*)\??:\s*(.+?);$/gm)) {
-      const inline = [...m[2].matchAll(/["']([^"']+)["']/g)].map((v) => v[1]);
-      if (inline.length > 1) axes[m[1]] = inline;
-      else if (aliases[m[2].trim()]) axes[m[1]] = aliases[m[2].trim()];
-    }
-  }
-  return axes;
-}
+/** A value as the inventory writes it: a table cell holds no bare pipe. */
+const cell = (text) => text.replace(/\|/g, "\\|");
 
 /**
- * Components whose props are another component's, resolved from the built
- * types. `IconButtonProps = ButtonProps`, so IconButton accepts every one of
- * Button's variants — and printing "—" against it would tell an assistant the
- * opposite of the truth, which is the failure this file exists to stop.
+ * The props of one component export worth listing: its own and Radix's that
+ * take literal values, each as `name`: a | b | c, and what else it takes when
+ * it takes more than literals. Or the reason its facts are unknown.
  */
-function propAliases() {
-  const dts = read(path.join(root, "packages/react/dist/index.d.ts"));
-  const map = {};
-  if (!dts) return map;
-  for (const m of dts.matchAll(
-    /export declare type (\w+)Props = (\w+)Props;/g,
-  ))
-    map[m[1]] = m[2];
-  return map;
+function variantsOf(name, prefix) {
+  const component = facts.components.get(name);
+  const label = (prop) => `\`${prefix ? `${name}.` : ""}${prop}\``;
+  if (component.unknown)
+    return [`${label("*")}: **unknown**: ${component.unknown}`];
+  const lines = [];
+  for (const [prop, { origin, accepted }] of component.props) {
+    if (!AXIS_ORIGINS.has(origin)) continue;
+    if (accepted.unknown) {
+      lines.push(`${label(prop)}: **unknown**: ${accepted.unknown}`);
+      continue;
+    }
+    const values = [
+      ...accepted.strings,
+      ...accepted.numbers,
+      ...(accepted.strings.length || accepted.numbers.length
+        ? accepted.booleans
+        : []),
+    ].map(String);
+    if (!accepted.strings.length && !accepted.numbers.length) continue;
+    const also = [
+      ...(accepted.openStrings ? ["any string"] : []),
+      ...(accepted.openNumbers ? ["any number"] : []),
+      ...accepted.others.map((o) => `\`${o}\``),
+    ];
+    lines.push(
+      `${label(prop)}: ${cell(values.join(" | "))}${also.length ? `, or ${cell(also.join(" | "))}` : ""}`,
+    );
+  }
+  return lines;
 }
 
-const aliasOf = propAliases();
-
-const components = fs
-  .readdirSync(REACT)
-  .filter((c) => fs.existsSync(path.join(REACT, c, `${c}.tsx`)))
-  .sort();
-
 const byCategory = new Map();
-for (const name of components) {
-  const category = categoryOf(name);
+const owned = new Set();
+for (const directory of directories) {
+  const category = categoryOf(directory.name);
   if (!byCategory.has(category)) byCategory.set(category, []);
-  const own = axesOf(name);
-  const inherited = aliasOf[name] ? axesOf(aliasOf[name]) : null;
+  for (const part of directory.parts) owned.add(part);
+  // The directory's own name is not always an export: Radio publishes
+  // RadioGroup and RadioGroupItem. Then every line names its part.
+  const own = directory.main === directory.name;
+  const variants = directory.parts.flatMap((part, i) =>
+    variantsOf(part, !own || i > 0),
+  );
   byCategory.get(category).push({
-    name,
-    axes: Object.keys(own).length ? own : (inherited ?? {}),
-    inheritsFrom: Object.keys(own).length ? null : (aliasOf[name] ?? null),
-    ios: fs.existsSync(path.join(IOS, name)),
-    android: fs.existsSync(path.join(ANDROID, name)),
+    name: directory.name,
+    exported: directory.parts.length > 0,
+    variants,
+    ios: fs.existsSync(path.join(IOS, directory.name)),
+    android: fs.existsSync(path.join(ANDROID, directory.name)),
   });
 }
 
-const manifests = {};
-for (const p of fs.readdirSync(path.join(root, "packages"))) {
-  const m = read(path.join(root, "packages", p, "package.json"));
-  if (!m) continue;
-  const json = JSON.parse(m);
-  if (json.name && !json.private) manifests[json.name] = json.version;
-}
+/** Components the package exports from outside a component directory: the providers. */
+const outside = [...facts.components.keys()].filter((name) => !owned.has(name));
 
+const manifests = {};
+for (const [name, { manifest }] of facts.packages)
+  manifests[name] = manifest.version;
+
+const unexported = directories.filter((d) => d.main && d.main !== d.name);
 const lines = [];
 lines.push("# Kozmos component inventory");
 lines.push("");
@@ -167,21 +178,56 @@ for (const [name, version] of Object.entries(manifests).sort())
   lines.push(`| \`${name}\` | ${version} |`);
 lines.push("");
 lines.push(
+  "These are the public packages, on npm. SwiftUI (`packages/ios`) and Compose",
+);
+lines.push(
+  "(`packages/android`) are used from a checkout and are not published.",
+);
+lines.push(
   "`@kozmos-ds/vue` exists in the workspace but is **private**: an internal",
 );
-lines.push("harness, not something to install. There is no React Native package.");
+lines.push(
+  "harness, not something to install. There is no React Native package.",
+);
 lines.push("");
-lines.push(`## Components (${components.length})`);
+lines.push(`## Components (${directories.length})`);
 lines.push("");
 lines.push(
-  "**iOS** and **Android** say whether that platform has the component at all.",
+  "A row is a directory of `packages/react/src/components`, linked to its API card,",
 );
 lines.push(
-  "**Variants** are the axes the React component actually declares, with every",
+  "which lists every part to import and every prop. **iOS** and **Android** say",
 );
-lines.push("value it accepts — these are the only values that compile.");
+lines.push("whether that platform has the component at all.");
+lines.push("");
+lines.push(
+  "**Variants** are the props that take a closed set of values, and every value",
+);
+lines.push(
+  "each one accepts, as the TypeScript checker reads them from the built types:",
+);
+lines.push(
+  "the component's own props and those it takes from Radix, not React's DOM",
+);
+lines.push(
+  "attributes. A part other than the component itself is named (`SelectContent.side`),",
+);
+lines.push(
+  "and a prop that also takes another kind of value says so. **none** means the",
+);
+lines.push(
+  "component has no such prop; **unknown** means the checker could not resolve it.",
+);
+if (unexported.length) {
+  lines.push("");
+  lines.push(
+    `${unexported.map((d) => `\`${d.name}\``).join(", ")} ${unexported.length === 1 ? "is a directory whose name is" : "are directories whose names are"} not an export: import the parts named in ${unexported.length === 1 ? "its" : "their"} row instead.`,
+  );
+}
 lines.push("");
 
+const cardExists = (name) =>
+  fs.existsSync(path.join(root, CARDS_DIR, `${name}.md`));
 for (const category of [...byCategory.keys()].sort()) {
   const entries = byCategory.get(category);
   lines.push(`### ${category} (${entries.length})`);
@@ -189,15 +235,27 @@ for (const category of [...byCategory.keys()].sort()) {
   lines.push("| Component | iOS | Android | Variants |");
   lines.push("| --- | :-: | :-: | --- |");
   for (const e of entries) {
-    let axes = Object.entries(e.axes)
-      .map(([axis, values]) => `\`${axis}\`: ${values.join(" \\| ")}`)
-      .join("<br>");
-    if (axes && e.inheritsFrom)
-      axes = `*same props as \`${e.inheritsFrom}\`* — ${axes}`;
+    const title = cardExists(e.name)
+      ? `[**${e.name}**](../${CARDS_DIR}/${e.name}.md)`
+      : `**${e.name}**`;
+    const variants = !e.exported
+      ? "**not exported**: @kozmos-ds/react exports no component from this directory"
+      : e.variants.join("<br>") || "none";
     lines.push(
-      `| **${e.name}** | ${e.ios ? "✅" : "—"} | ${e.android ? "✅" : "—"} | ${axes || "—"} |`,
+      `| ${title} | ${e.ios ? "✅" : "—"} | ${e.android ? "✅" : "—"} | ${variants} |`,
     );
   }
+  lines.push("");
+}
+if (outside.length) {
+  lines.push(`### Outside a component directory (${outside.length})`);
+  lines.push("");
+  lines.push("| Component | Variants |");
+  lines.push("| --- | --- |");
+  for (const name of outside.sort())
+    lines.push(
+      `| ${cardExists(name) ? `[**${name}**](../${CARDS_DIR}/${name}.md)` : `**${name}**`} | ${variantsOf(name, false).join("<br>") || "none"} |`,
+    );
   lines.push("");
 }
 
@@ -217,6 +275,44 @@ const current = read(OUT);
  * those names exists. An assistant reading it wrote code that cannot compile.
  */
 const CHANGELOG_OUT = path.join(root, ".ai-skills/api-changelog.md");
+
+/**
+ * Release notes quote fragments written against that release: each
+ * TypeScript block copied from one says so, with the release, in the
+ * marker `pnpm skills:check` reads (scripts/skills/ai-snippets.mjs). It is
+ * still checked by name against what the package exports today.
+ */
+function markReleaseNotes(body, pkg) {
+  let version = null;
+  let fence = null;
+  const out = [];
+  for (const line of body.split("\n")) {
+    const heading = !fence && line.match(/^## (\S+)/);
+    if (heading) version = heading[1];
+    const marker = line.match(/^(\s*)(`{3,}|~{3,})(.*)$/);
+    out.push(line);
+    if (marker && !fence) {
+      fence = { char: marker[2][0], length: marker[2].length };
+      const lang = marker[3].trim().split(/\s+/)[0].toLowerCase();
+      if (LANGUAGES[lang])
+        out.push(
+          `${marker[1]}// kozmos-skills: template — from the ${pkg} ${version ?? ""} release notes, a fragment written for that release`.replace(
+            /\s+release notes/,
+            " release notes",
+          ),
+        );
+    } else if (
+      marker &&
+      fence &&
+      marker[2][0] === fence.char &&
+      marker[2].length >= fence.length &&
+      !marker[3].trim()
+    )
+      fence = null;
+  }
+  return out.join("\n");
+}
+
 const changelogLines = [];
 changelogLines.push("# Kozmos API changelog");
 changelogLines.push("");
@@ -233,11 +329,13 @@ changelogLines.push(
 changelogLines.push(
   "breaking-change migration, so there are no codemods and nothing to migrate",
 );
-changelogLines.push("from. A minor bump can still change behaviour: read the entry.");
+changelogLines.push(
+  "from. A minor bump can still change behaviour: read the entry.",
+);
 changelogLines.push("");
 for (const [name, version] of Object.entries(manifests).sort()) {
-  const dir = name.replace("@kozmos-ds/", "");
-  const log = read(path.join(root, "packages", dir, "CHANGELOG.md"));
+  const dir = facts.packages.get(name).dir;
+  const log = read(path.join(root, dir, "CHANGELOG.md"));
   changelogLines.push(`## \`${name}\` — current ${version}`);
   changelogLines.push("");
   if (!log) {
@@ -246,7 +344,10 @@ for (const [name, version] of Object.entries(manifests).sort()) {
     continue;
   }
   // Every release heading and its notes, minus the package's own H1.
-  const body = log.split("\n").slice(1).join("\n").trim();
+  const body = markReleaseNotes(
+    log.split("\n").slice(1).join("\n").trim(),
+    name,
+  );
   // Deepest first: bumping `##` before `###` would turn a version heading
   // into `####` on the second pass and bury it under its own notes.
   changelogLines.push(
@@ -276,11 +377,18 @@ const retired = (fs.existsSync(cardsDir) ? fs.readdirSync(cardsDir) : [])
 
 const stale = [];
 if (current !== next) stale.push(path.relative(root, OUT));
-if (changelogCurrent !== changelogNext) stale.push(path.relative(root, CHANGELOG_OUT));
+if (changelogCurrent !== changelogNext)
+  stale.push(path.relative(root, CHANGELOG_OUT));
 for (const [file, content] of claudeDesign.files)
   if (read(path.join(root, file)) !== content) stale.push(file);
 for (const file of retired) stale.push(`${file} (its component is gone)`);
 
+const axes = directories.reduce(
+  (sum, d) =>
+    sum + d.parts.reduce((n, part) => n + variantsOf(part, false).length, 0),
+  0,
+);
+const summary = `${directories.length} components across ${byCategory.size} categories, with ${axes} props of closed values read from the types`;
 if (process.argv.includes("--check")) {
   if (stale.length) {
     console.error(
@@ -289,7 +397,7 @@ if (process.argv.includes("--check")) {
     process.exit(1);
   }
   console.log(
-    `AI-facing generated docs ok: ${components.length} components across ${byCategory.size} categories, ${Object.keys(manifests).length} package changelogs, and the Claude Design page and ${claudeDesign.cards.length} component cards.`,
+    `AI-facing generated docs ok: ${summary}, ${Object.keys(manifests).length} package changelogs, and the Claude Design page and ${claudeDesign.cards.length} component cards.`,
   );
 } else {
   fs.writeFileSync(OUT, next);
@@ -299,6 +407,6 @@ if (process.argv.includes("--check")) {
     fs.writeFileSync(path.join(root, file), content);
   for (const file of retired) fs.rmSync(path.join(root, file));
   console.log(
-    `Wrote the inventory (${components.length} components, ${byCategory.size} categories), the changelog (${Object.keys(manifests).length} packages), and the Claude Design page and ${claudeDesign.cards.length} component cards${retired.length ? `, removing ${retired.length} whose component is gone` : ""}.`,
+    `Wrote the inventory (${summary}), the changelog (${Object.keys(manifests).length} packages), and the Claude Design page and ${claudeDesign.cards.length} component cards${retired.length ? `, removing ${retired.length} whose component is gone` : ""}.`,
   );
 }
