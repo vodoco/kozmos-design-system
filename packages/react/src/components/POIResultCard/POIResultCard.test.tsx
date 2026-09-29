@@ -542,16 +542,28 @@ describe("POIResultCard", () => {
       expect(card).not.toHaveClass("border-primary");
     });
 
-    it("hangs from the card's start edge, so it follows the name right to left", () => {
-      const { container } = render(
+    it("sits inside the card in its top-start corner, and the name begins below it", () => {
+      // Olcay, 2026-09-29 (Figma 9273:45990): no folder tab above the card.
+      // The corner is logical, so right to left it is the top-right.
+      const { container, rerender } = render(
         <POIResultCard
           poi={poi}
           result={{ ...plain, featured: true }}
           onSelect={vi.fn()}
         />,
       );
-      expect(tabOf(container)).toHaveClass("start-4");
-      expect(tabOf(container)).not.toHaveClass("left-4");
+      const tab = tabOf(container)!;
+      expect(tab).toHaveClass("absolute", "start-0", "top-0");
+      expect(tab).toHaveClass("pointer-events-none");
+      expect(tab).not.toHaveClass("bottom-full");
+      expect(tab).not.toHaveClass("left-0");
+      const card = screen.getByRole("article");
+      expect(card).not.toHaveClass("mt-3");
+      expect(screen.getByRole("button")).toHaveClass("pt-6");
+
+      // Without a tab the card keeps its own top padding.
+      rerender(<POIResultCard poi={poi} result={plain} onSelect={vi.fn()} />);
+      expect(screen.getByRole("button")).not.toHaveClass("pt-6");
     });
 
     it("draws the result's own number in the tab, only when asked, quiet on the grey edge at rest", () => {
@@ -573,7 +585,7 @@ describe("POIResultCard", () => {
       expect(tab).toHaveAttribute("data-tab", "number");
       expect(tab).not.toHaveAttribute("data-selected");
       const card = screen.getByRole("article");
-      expect(card).toHaveClass("border-border", "mt-3");
+      expect(card).toHaveClass("border-border");
       expect(card).not.toHaveClass("kozmos-poi-result-card-featured");
       expect(card).not.toHaveClass("border-primary");
       // The prop is the card's, never an attribute on the page.

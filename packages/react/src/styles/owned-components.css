@@ -429,9 +429,36 @@
        with the primary colour, as the selected card's edge is primary, and
        as a selected pin stands out from the rest.
      - A badge: quiet, the muted fill and the muted text colour, and no star
-       (GAP-054). It is why the result is in the list, not a promotion. */
+       (GAP-054). It is why the result is in the list, not a promotion.
+
+     Each has an edge of its own colour; only the number at rest draws it in
+     another, so its quiet tab is outlined. */
+  .kozmos-poi-result-tab {
+    border: 0 solid transparent;
+  }
+  /* A card's tab sits inside the card, in its top-start corner (Olcay,
+     2026-09-29; Figma "Search - Quick Access", 9273:45990). The card's edge
+     is its top and its start, so it draws only its end and bottom edges. Its
+     outer corner is the card's own, the Control radius less the card's 1px
+     edge; only its inner corner is its own, 7px: the node's 6 and the 1px
+     edge around it. Owned, so it stays a corner in a browser without @scope. */
+  .kozmos-poi-result-tab:not([data-placement="inline"]) {
+    border-inline-end-width: 1px;
+    border-bottom-width: 1px;
+    border-start-start-radius: calc(
+      var(--semantics-radius-control) * 1px - 1px
+    );
+    border-end-end-radius: calc(
+      var(--primitives-layout-spacing-100) * 1px - 1px
+    );
+  }
+  /* A number before a grouped row's name is a whole outline of its own. */
+  .kozmos-poi-result-tab[data-placement="inline"] {
+    border-width: 1px;
+  }
   .kozmos-poi-result-tab[data-tab="featured"] {
     background-color: var(--semantics-emotion-alert-fill);
+    border-color: var(--semantics-emotion-alert-fill);
     color: var(--semantics-emotion-alert-on-fill);
   }
   /* A featured card's edge, in the tab's amber. The card draws no other
@@ -443,13 +470,8 @@
   }
   .kozmos-poi-result-tab[data-tab="number"] {
     background-color: var(--primitives-colors-background-0);
+    border-color: var(--semantics-border-subtle);
     color: var(--primitives-colors-foreground-400);
-    border: 1px solid var(--semantics-border-subtle);
-  }
-  /* A tab hangs on the card's top edge, which closes it; a number before a
-     grouped row's name is a whole outline of its own. */
-  .kozmos-poi-result-tab[data-tab="number"]:not([data-placement="inline"]) {
-    border-bottom-width: 0;
   }
   .kozmos-poi-result-tab[data-tab="number"][data-selected] {
     background-color: var(--primitives-colors-theme-600);
@@ -458,6 +480,7 @@
   }
   .kozmos-poi-result-tab[data-tab="badge"] {
     background-color: var(--primitives-colors-background-100);
+    border-color: var(--primitives-colors-background-100);
     color: var(--primitives-colors-foreground-400);
   }
   /* The number, said at the start of the result's name while its tab is

@@ -91,7 +91,7 @@ async function nearbyOnEverySurface(page, id) {
 
 /**
  * The result card's one tab on each surface of a root of the owned-css host:
- * what it says and is painted in, what paints behind its text, where it hangs
+ * what it says and is painted in, what paints behind its text, where it sits
  * against its card, the card's own edge, and what the result is called.
  */
 async function resultTabsIn(page, id) {
@@ -117,6 +117,8 @@ async function resultTabsIn(page, id) {
           layers.push(getComputedStyle(at).backgroundColor);
         const box = tab.getBoundingClientRect();
         const frame = article.getBoundingClientRect();
+        // The name: the first line that truncates in the select button.
+        const name = article.querySelector("button .truncate");
         return {
           found: true,
           kind: tab.getAttribute("data-tab"),
@@ -132,10 +134,23 @@ async function resultTabsIn(page, id) {
           borderTopWidth: s.borderTopWidth,
           borderTopColor: s.borderTopColor,
           borderBottomWidth: s.borderBottomWidth,
+          borderBottomColor: s.borderBottomColor,
+          borderEndWidth: s.borderInlineEndWidth,
+          borderStartWidth: s.borderInlineStartWidth,
+          outerCorner: s.borderStartStartRadius,
+          innerCorner: s.borderEndEndRadius,
+          topEndCorner: s.borderStartEndRadius,
+          bottomStartCorner: s.borderEndStartRadius,
           cardEdge: getComputedStyle(article).borderTopColor,
+          cardEdgeWidth: getComputedStyle(article).borderTopWidth,
           // Right to left, the start edge is the right.
-          fromStart: frame.right - box.right,
-          above: frame.top - box.bottom,
+          fromStart:
+            s.direction === "rtl"
+              ? frame.right - box.right
+              : box.left - frame.left,
+          fromTop: box.top - frame.top,
+          height: box.height,
+          nameGap: name ? name.getBoundingClientRect().top - box.bottom : null,
           innerText: article.querySelector("button").innerText,
         };
       })),
@@ -268,18 +283,35 @@ try {
       // fill pair, for its words and its star, and the card's edge takes the
       // same amber; a number is quiet and outlined at rest and primary when
       // selected, and never recolours the card's edge; a badge is quiet, with
-      // no star and the grey edge. With
-      // the utilities (the full pass) each hangs from the card's start edge,
-      // the right here, and the number leads the result's name.
+      // no star and the grey edge. Each card's tab is a corner of the card
+      // (Olcay, 2026-09-29; Figma 9273:45990): the card's edge is its top
+      // and start, so it draws its end and bottom edges only, its outer
+      // corner is the card's radius less the card's 1px edge, and its inner
+      // corner is 7px, owned, so all of it holds without @scope. With the
+      // utilities (the full pass) it sits inside the card's edge in its
+      // top-start corner, the right here, the name begins 8px below it, and
+      // the number leads the result's name.
       {
         const theme = id === "outer" ? "dark" : "light";
         const token = (name) => value(`${id}-tabs`, name);
         const edge = await token("--semantics-border-subtle");
+        const corner = {
+          borderTopWidth: "0px",
+          borderStartWidth: "0px",
+          borderEndWidth: "1px",
+          borderBottomWidth: "1px",
+          outerCorner: "15px",
+          innerCorner: "7px",
+          topEndCorner: "0px",
+          bottomStartCorner: "0px",
+        };
         const expected = {
           featured: {
             kind: "featured",
             background: await token("--semantics-emotion-alert-fill"),
             color: await token("--semantics-emotion-alert-on-fill"),
+            borderBottomColor: await token("--semantics-emotion-alert-fill"),
+            ...corner,
             star: true,
             hidden: false,
           },
@@ -287,9 +319,8 @@ try {
             kind: "number",
             background: await token("--primitives-colors-background-0"),
             color: await token("--primitives-colors-foreground-400"),
-            borderTopWidth: "1px",
-            borderTopColor: edge,
-            borderBottomWidth: "0px",
+            borderBottomColor: edge,
+            ...corner,
             star: false,
             hidden: true,
           },
@@ -297,6 +328,8 @@ try {
             kind: "number",
             background: await token("--primitives-colors-theme-600"),
             color: await token("--primitives-colors-foreground-1000"),
+            borderBottomColor: await token("--primitives-colors-theme-600"),
+            ...corner,
             star: false,
             hidden: true,
           },
@@ -304,7 +337,10 @@ try {
             kind: "badge",
             background: await token("--primitives-colors-background-100"),
             color: await token("--primitives-colors-foreground-400"),
-            borderTopWidth: "0px",
+            borderBottomColor: await token(
+              "--primitives-colors-background-100",
+            ),
+            ...corner,
             star: false,
             hidden: false,
           },
@@ -326,59 +362,78 @@ try {
         };
         const amber = await token("--semantics-emotion-alert-fill");
         const onAmber = await token("--semantics-emotion-alert-on-fill");
-        for (const drawn of await resultTabsIn(page, id)) {
-          const where = `${mode}, ${theme}: the ${drawn.surface}'s tab`;
-          assert(drawn.found, `${where} is not drawn`);
-          for (const [key, want] of Object.entries(expected[drawn.surface]))
-            assert.equal(drawn[key], want, `${where}: ${key}`);
-          if (mode !== "full") continue;
-          assert(
-            drawn.fromStart >= 0 && drawn.fromStart < 20,
-            `${where} is ${drawn.fromStart}px from the start (right) edge, not at it`,
-          );
-          const card = !drawn.surface.includes("row");
-          if (card) {
-            // It stands on the card's 1px top edge, over it, so the edge
-            // closes the tab and a number's quiet tab opens into the card.
+        for (const direction of ["rtl", "ltr"]) {
+          await page
+            .getByTestId(`${id}-tabs`)
+            .evaluate((node, dir) => node.setAttribute("dir", dir), direction);
+          for (const drawn of await resultTabsIn(page, id)) {
+            const where = `${mode}, ${theme}, ${direction}: the ${drawn.surface}'s tab`;
+            assert(drawn.found, `${where} is not drawn`);
+            for (const [key, want] of Object.entries(expected[drawn.surface]))
+              assert.equal(drawn[key], want, `${where}: ${key}`);
+            if (mode !== "full") continue;
             assert(
-              drawn.above <= 0.5 && drawn.above >= -1.5,
-              `${where} does not hang from the card's top edge (${drawn.above}px)`,
+              drawn.fromStart >= 0 && drawn.fromStart < 20,
+              `${where} is ${drawn.fromStart}px from the start (right) edge, not at it`,
             );
-            assert.equal(
-              drawn.cardEdge === amber,
-              drawn.surface === "featured",
-              `${where}: the card's edge is ${drawn.cardEdge}; only Featured's is its amber`,
-            );
-          }
-          if (drawn.surface === "featured")
-            assert.equal(
-              drawn.starFill,
-              onAmber,
-              `${where}: the star is not the amber's ink`,
-            );
-          if (drawn.surface === "number" || drawn.surface === "badge")
-            assert.equal(
-              drawn.cardEdge,
-              edge,
-              `${where}: the card's edge is not the container edge`,
-            );
-          if (drawn.kind === "number") {
-            assert.equal(
-              drawn.named,
-              1,
-              `${where}: the result is not called "2, Burger King …"`,
-            );
-            // WebKit runs a hidden prefix into the text after it unless a
-            // space follows it: "2,Burger King".
-            assert.match(
-              drawn.innerText,
-              /^2,\s/,
-              `${where}: the number runs into the name (${JSON.stringify(drawn.innerText)})`,
-            );
+            const card = !drawn.surface.includes("row");
+            if (card) {
+              // Inside the card's 1px edge, in its top-start corner: no folder
+              // tab above the card, and no room left above it.
+              const inset = parseFloat(drawn.cardEdgeWidth);
+              assert(
+                Math.abs(drawn.fromTop - inset) < 0.5 &&
+                  Math.abs(drawn.fromStart - inset) < 0.5,
+                `${where} is ${drawn.fromTop}px down and ${drawn.fromStart}px in, not in the card's corner inside its ${inset}px edge`,
+              );
+              assert(
+                Math.abs(drawn.height - 16) < 0.5,
+                `${where} is ${drawn.height}px tall, not 16`,
+              );
+              // The name begins below it, as the design has it.
+              assert(
+                drawn.nameGap >= 7.5,
+                `${where}: the name begins ${drawn.nameGap}px below the tab, into it or under 8px`,
+              );
+              assert.equal(
+                drawn.cardEdge === amber,
+                drawn.surface === "featured",
+                `${where}: the card's edge is ${drawn.cardEdge}; only Featured's is its amber`,
+              );
+            }
+            if (drawn.surface === "featured")
+              assert.equal(
+                drawn.starFill,
+                onAmber,
+                `${where}: the star is not the amber's ink`,
+              );
+            if (drawn.surface === "number" || drawn.surface === "badge")
+              assert.equal(
+                drawn.cardEdge,
+                edge,
+                `${where}: the card's edge is not the container edge`,
+              );
+            if (drawn.kind === "number") {
+              assert.equal(
+                drawn.named,
+                1,
+                `${where}: the result is not called "2, Burger King …"`,
+              );
+              // WebKit runs a hidden prefix into the text after it unless a
+              // space follows it: "2,Burger King".
+              assert.match(
+                drawn.innerText,
+                /^2,\s/,
+                `${where}: the number runs into the name (${JSON.stringify(drawn.innerText)})`,
+              );
+            }
           }
         }
+        await page
+          .getByTestId(`${id}-tabs`)
+          .evaluate((node) => node.removeAttribute("dir"));
         console.log(
-          `PASS GAP-054, ${theme}, ${mode}: Featured is the amber tab with dark words and a star; the number is quiet and outlined at rest and primary when selected, on cards and grouped rows; the badge is quiet with no star${mode === "full" ? "; each hangs from the start edge, only Featured recolours the card's edge (its amber, as is its star), and the number leads the name" : ""}`,
+          `PASS GAP-054, ${theme}, ${mode}, LTR and RTL: Featured is the amber tab with dark words and a star; the number is quiet and outlined at rest and primary when selected, on cards and grouped rows; the badge is quiet with no star${mode === "full" ? "; each sits inside the shared top-start corner with one rounded inner corner, only Featured recolours the card's edge (its amber, as is its star), and the number leads the name" : ""}`,
         );
       }
       const poi = page.getByTestId(`${id}-poi`);
@@ -963,8 +1018,11 @@ try {
               color: s.color,
               type: [s.fontSize, s.lineHeight, s.fontWeight],
               mark: mark && [mark.width, mark.height],
-              markInset: mark && (rtl ? box.right - mark.right : mark.left - box.left),
-              gap: mark && (rtl ? mark.left - words.right : words.left - mark.right),
+              markInset:
+                mark && (rtl ? box.right - mark.right : mark.left - box.left),
+              gap:
+                mark &&
+                (rtl ? mark.left - words.right : words.left - mark.right),
               wordsInset: rtl ? box.right - words.right : words.left - box.left,
             };
           });
@@ -1024,7 +1082,8 @@ try {
           `${where}: the status pill's mark is not 24: ${JSON.stringify(status.mark)}`,
         );
         assert(
-          Math.abs(status.markInset - 12) < 0.5 && Math.abs(status.gap - 8) < 0.5,
+          Math.abs(status.markInset - 12) < 0.5 &&
+            Math.abs(status.gap - 8) < 0.5,
           `${where}: the mark is ${status.markInset} in and ${status.gap} from the words, not 12 and 8`,
         );
         // The board's Turn Back: the named alert fill pair (Olcay,
@@ -1053,7 +1112,8 @@ try {
           `${where}: Turn Back's words are ${turnBack.color}, not dark on its amber`,
         );
         assert(
-          turnBack.mark === undefined && Math.abs(turnBack.wordsInset - 12) < 0.5,
+          turnBack.mark === undefined &&
+            Math.abs(turnBack.wordsInset - 12) < 0.5,
           `${where}: Turn Back with no mark starts its words ${turnBack.wordsInset} in, not 12`,
         );
 

@@ -257,8 +257,6 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           // A row states its selection with a fill, since it has no border of
           // its own to thicken.
           appearance === "row" && result.selected && "bg-primary/5",
-          // The tab hangs above the card, so it needs the space a card has.
-          appearance === "card" && tab && "mt-3",
           className,
         )}
         data-appearance={appearance}
@@ -280,17 +278,21 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
               is said at the start of the result's name instead.
             - A badge: quiet, a neutral fill with no star, on the card's grey
               edge (GAP-054). It is read, as it always was.
-            It sits at the card's start edge, so it follows the name in a
-            right-to-left language. */}
+            It sits inside the card, in its top-start corner (Olcay,
+            2026-09-29; Figma "Search - Quick Access", 9273:45990): the
+            card's edge is its top and start, its outer corner is the card's,
+            and only its inner corner is its own. 16 tall with its edge, 11/14
+            words, 6 in from the card's outer edge on either side. In a
+            right-to-left language it is the top-right corner. */}
         {appearance === "card" && tab && (
           <span
             aria-hidden={tab.kind === "number" || undefined}
-            className="kozmos-poi-result-tab absolute bottom-full start-4 inline-flex h-6 items-center gap-1 rounded-t-control px-2 text-xs font-semibold"
+            className="kozmos-poi-result-tab pointer-events-none absolute start-0 top-0 inline-flex h-4 items-center gap-1 whitespace-nowrap pe-1.5 ps-[5px] pt-px text-[11px] font-normal leading-[14px]"
             data-selected={result.selected || undefined}
             data-tab={tab.kind}
           >
             {tab.kind === "featured" && (
-              <Star aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
+              <Star aria-hidden="true" className="h-2.5 w-2.5 fill-current" />
             )}
             {tab.label}
           </span>
@@ -316,7 +318,12 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           // same word. The two now agree, which matters: the pin and the row
           // are one thing to a visitor and are announced together.
           aria-current={result.selected ? "location" : undefined}
-          className="grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[inherit] px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className={cn(
+            "grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[inherit] px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+            // The tab takes the card's top-start corner, so the name begins
+            // below it: 24 down, 8 under the tab, as the design has it.
+            appearance === "card" && tab && "pt-6",
+          )}
           disabled={!available}
           onClick={handleSelect}
           type="button"

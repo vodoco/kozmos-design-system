@@ -1,5 +1,30 @@
 import SwiftUI
 
+/// The card supplies the outside corner. This path supplies only the inside
+/// bottom-end corner and mirrors logically, including the quiet tab's edge.
+private struct POIResultTabShape: Shape {
+    var rightToLeft: Bool
+    var edgeOnly = false
+
+    func path(in rect: CGRect) -> Path {
+        let inset: CGFloat = edgeOnly ? 0.5 : 0
+        let end = rect.maxX - inset
+        let bottom = rect.maxY - inset
+        let radius = min(KozmosDimensions.primitivesLayoutSpacing100 - 1, min(rect.width, rect.height))
+        var path = Path()
+        path.move(to: CGPoint(x: end, y: rect.minY))
+        path.addLine(to: CGPoint(x: end, y: bottom - radius))
+        path.addArc(center: CGPoint(x: end - radius, y: bottom - radius), radius: radius,
+                    startAngle: .zero, endAngle: .degrees(90), clockwise: false)
+        path.addLine(to: CGPoint(x: rect.minX, y: bottom))
+        if !edgeOnly {
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.closeSubpath()
+        }
+        return rightToLeft ? path.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: rect.minX + rect.maxX, ty: 0)) : path
+    }
+}
+
 /// Characters `encodeURIComponent` leaves untouched. Matching the web escaping
 /// exactly keeps the identifier identical on all three platforms.
 private let kozmosPOIResultIdentifierAllowed = CharacterSet(
@@ -22,6 +47,8 @@ public func kozmosPOIResultIdentifier(_ poiId: String) -> String {
 /// card renders exactly the state described by `poi` and `result`.
 public struct KozmosPOIResultCard: View {
     @Environment(\.kozmosAnalytics) private var trackEvent
+    @Environment(\.layoutDirection) private var layoutDirection
+    @ScaledMetric(relativeTo: .caption2) private var tabHeight = KozmosDimensions.primitivesLayoutSizing200
 
     private let poi: KozmosPOIPresentation
     private let result: KozmosPOIResultPresentation
@@ -255,10 +282,6 @@ public struct KozmosPOIResultCard: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let tab, let paint = tabPaint {
-                tabView(tab, paint)
-            }
-
             Button(action: handleSelect) {
                 HStack(alignment: .center, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                     VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
@@ -309,7 +332,8 @@ public struct KozmosPOIResultCard: View {
                 // 80 tall: the prototype's row.
                 .frame(minHeight: KozmosDimensions.primitivesLayoutSizing1000 - KozmosDimensions.primitivesLayoutSpacing150 * 2)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
-                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing150)
+                .padding(.top, tab == nil ? KozmosDimensions.primitivesLayoutSpacing150 : tabHeight + KozmosDimensions.primitivesLayoutSpacing100)
+                .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing150)
                 // The row has no fill of its own, so without an explicit hit
                 // shape only the text and the logo are tappable and the gaps
                 // between them swallow taps.
@@ -362,6 +386,12 @@ public struct KozmosPOIResultCard: View {
             }
         }
         .background(KozmosColors.primitivesColorsBackground0)
+        .overlay(alignment: .topLeading) {
+            if let tab, let paint = tabPaint {
+                tabView(tab, paint)
+                    .allowsHitTesting(false)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
@@ -385,18 +415,13 @@ public struct KozmosPOIResultCard: View {
     /// as their words, as they always were; a number is hidden, because it
     /// leads the result's own description.
     ///
-    /// A capsule with circular ends, for the clip and the outline alike: its
-    /// corners never exceed half its height, which is what Android's
-    /// Control-radius shape clamps to, and they are circular arcs, as
-    /// Android's are. The Control radius itself is larger than half a 22pt
-    /// tab, and on a one-digit number, about as wide as it is tall, the
-    /// outline came out as a circle with straight stubs out of its sides and
-    /// bottom (K3, the review of #167). The continuous style does the same on
-    /// a capsule that nearly square, so the style is named, not left to the
-    /// default.
+    /// Inside the top-start corner, sharing the card's outer clip and border.
+    /// Only the inner bottom-end corner rounds. The one-point inner outline
+    /// closes a quiet number without duplicating the card's top/start edge.
+    /// Its height and the clearance before the name scale with Dynamic Type.
     @ViewBuilder
     private func tabView(_ tab: Tab, _ paint: TabPaint) -> some View {
-        let shape = Capsule(style: .circular)
+        let shape = POIResultTabShape(rightToLeft: layoutDirection == .rightToLeft)
         let words: String = {
             switch tab {
             case .featured: return featuredLabel
@@ -411,15 +436,16 @@ public struct KozmosPOIResultCard: View {
                     .accessibilityHidden(true)
             }
             Text(words)
-                .font(.caption.weight(.semibold))
+                .font(KozmosTypography.caption2)
+                .lineLimit(1)
         }
         .foregroundColor(paint.ink)
-        .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
-        .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
+        .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing75)
+        .frame(minHeight: tabHeight)
         .background(paint.fill)
         .clipShape(shape)
-        .overlay(shape.strokeBorder(paint.edge ?? .clear, lineWidth: 1))
-        .padding(.leading, KozmosDimensions.primitivesLayoutSpacing200)
+        .overlay(POIResultTabShape(rightToLeft: layoutDirection == .rightToLeft, edgeOnly: true)
+            .stroke(paint.edge ?? .clear, lineWidth: 1))
         .accessibilityHidden(tab.isNumber)
     }
 

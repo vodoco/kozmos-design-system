@@ -17,8 +17,9 @@ results remain readable but cannot invoke `onSelect`.
 
 ## One tab: Featured, a number, or a badge
 
-A card draws at most one tab, hung from its top edge at the start, where the name begins (the right
-in a right-to-left language). What it says decides how it looks, and the first that applies wins:
+A card draws at most one tab inside its top-start corner (the right in a right-to-left language).
+It shares the card's outer curve and edge; only its inner corner rounds. The name begins below
+the tab, never underneath it. What it says decides how it looks, and the first that applies wins:
 
 1. **Featured** (`result.featured`): the SDK's bright amber under dark words, with a star, and the
    card's edge in the same amber, selected or not (the ring says which card is selected). It is the
@@ -126,13 +127,13 @@ import Kozmos
 
 // The walk the product already has, and its exact time in the visitor's words.
 struct WalkingResult: View {
-    let poi: KozmosPOIPresentation
-    // The result's number, counted from 1: the one its map marker shows.
-    let number: Int
-    let walkSeconds: Double
-    let walkLabel: String
-    let bandLabels: [KozmosTravelTimeBand: String]
-    let onSelect: (String) -> Void
+let poi: KozmosPOIPresentation
+// The result's number, counted from 1: the one its map marker shows.
+let number: Int
+let walkSeconds: Double
+let walkLabel: String
+let bandLabels: [KozmosTravelTimeBand: String]
+let onSelect: (String) -> Void
 
     var body: some View {
         KozmosPOIResultCard(
@@ -152,8 +153,9 @@ struct WalkingResult: View {
             onSelect: onSelect
         )
     }
+
 }
-    `}
+`}
     kotlin={`
 import androidx.compose.runtime.Composable
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
@@ -165,30 +167,30 @@ import com.kozmos.contracts.KozmosTravelTimeBand
 // The walk the product already has, and its exact time in the visitor's words.
 @Composable
 fun WalkingResult(
-    poi: KozmosPOIPresentation,
-    // The result's number, counted from 1: the one its map marker shows.
-    number: Int,
-    walkSeconds: Double,
-    walkLabel: String,
-    bandLabels: Map<KozmosTravelTimeBand, String>,
-    onSelect: (String) -> Unit
+poi: KozmosPOIPresentation,
+// The result's number, counted from 1: the one its map marker shows.
+number: Int,
+walkSeconds: Double,
+walkLabel: String,
+bandLabels: Map<KozmosTravelTimeBand, String>,
+onSelect: (String) -> Unit
 ) {
-    KozmosPOIResultCard(
-        poi = poi,
-        result = KozmosPOIResultPresentation(
-            poiId = poi.id,
-            resultIndex = number,
-            // The list shows the band; the details card keeps durationLabel.
-            travelEstimate = KozmosTravelEstimatePresentation(
-                durationSeconds = walkSeconds,
-                durationLabel = walkLabel,
-                band = KozmosTravelTimeBand.forDuration(walkSeconds)
-            )
-        ),
-        onSelect = onSelect,
-        // English until the product passes its own words.
-        travelTimeBandLabels = bandLabels
-    )
+KozmosPOIResultCard(
+poi = poi,
+result = KozmosPOIResultPresentation(
+poiId = poi.id,
+resultIndex = number,
+// The list shows the band; the details card keeps durationLabel.
+travelEstimate = KozmosTravelEstimatePresentation(
+durationSeconds = walkSeconds,
+durationLabel = walkLabel,
+band = KozmosTravelTimeBand.forDuration(walkSeconds)
+)
+),
+onSelect = onSelect,
+// English until the product passes its own words.
+travelTimeBandLabels = bandLabels
+)
 }
-    `}
+`}
 />

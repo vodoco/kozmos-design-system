@@ -181,7 +181,7 @@ export const TabsInTheDark: Story = {
 };
 
 /**
- * Right to left, the tab hangs from the card's start edge, the right, where
+ * Right to left, the tab sits inside the card's start corner, the right, where
  * the name begins, and the number still leads the name read aloud.
  */
 export const TabsRightToLeft: Story = {
