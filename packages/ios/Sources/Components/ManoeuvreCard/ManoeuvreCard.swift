@@ -1,5 +1,10 @@
 import SwiftUI
 
+/// The parts of the manoeuvre card VoiceOver can be on.
+enum KozmosManoeuvreCardPart: Hashable {
+    case instruction, itinerary, bar
+}
+
 /// The current manoeuvre, floating over the map during navigation: its arrow,
 /// the instruction, how far and how long, and a grab bar that opens the full
 /// itinerary in its place. Mirrors the product prototype's instruction card:
@@ -12,10 +17,21 @@ import SwiftUI
 /// card never decides what a route is made of. Open, the card is as tall as
 /// the itinerary up to `maxItineraryHeight`, past which the itinerary scrolls:
 /// a long route must not cover the map.
+///
+/// The instruction shows whole, and the card grows with it (GAP-094): two
+/// lines cut ordinary instructions short of the level, the side, or in German
+/// the turn itself. A product that wants a limit passes `instructionLines`.
+///
+/// VoiceOver's focus goes with the disclosure (review T4): opening takes the
+/// instruction away and closing hides the grab bar, so focus that was on the
+/// part that went moves to the one that took its place — the itinerary on
+/// opening, the instruction on closing. Focus anywhere else is left alone,
+/// whether the change came from the card or from the product.
 public struct KozmosManoeuvreCard<Itinerary: View>: View {
     let type: DirectionType
     let instruction: String
     let detail: String?
+    let instructionLines: Int?
     let isExpanded: Bool
     let onToggle: () -> Void
     let expandLabel: String
@@ -25,10 +41,23 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
     let maxItineraryHeight: CGFloat
     let itinerary: Itinerary
 
+    typealias FocusedPart = KozmosManoeuvreCardPart
+
+    /// Which part VoiceOver is on, and where it goes as the card opens or closes.
+    @AccessibilityFocusState private var voiceOverFocus: FocusedPart?
+    /// Where VoiceOver goes once the card's own toggle has opened or closed
+    /// it, decided as the toggle is pressed: VoiceOver is on the part then.
+    @State private var focusAfterToggle: FocusedPart?
+
+    /// - Parameter instructionLines: The most lines the instruction is drawn
+    ///   in before it ends in an ellipsis. Nil, the default, shows the whole
+    ///   instruction; so does a value under one. VoiceOver hears the whole
+    ///   instruction either way.
     public init(
         type: DirectionType,
         instruction: String,
         detail: String? = nil,
+        instructionLines: Int? = nil,
         isExpanded: Bool,
         onToggle: @escaping () -> Void,
         expandLabel: String = "Show itinerary",
@@ -41,6 +70,7 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         self.type = type
         self.instruction = instruction
         self.detail = detail
+        self.instructionLines = instructionLines
         self.isExpanded = isExpanded
         self.onToggle = onToggle
         self.expandLabel = expandLabel
@@ -57,8 +87,35 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         [instruction, detail].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
     }
 
+    /// The lines the instruction is cut at: none, unless the product asks
+    /// for one line or more.
+    static func instructionLineLimit(_ lines: Int?) -> Int? {
+        guard let lines, lines >= 1 else { return nil }
+        return lines
+    }
+
+    /// Where VoiceOver goes as the card opens or closes, from the part it was
+    /// on: nil leaves it where it is. Opening takes away the instruction, so
+    /// focus on it moves to the itinerary that took its place; closing takes
+    /// away the itinerary and silences the grab bar, so focus on either moves
+    /// to the instruction. Focus anywhere else was not in what changed.
+    static func voiceOverFocus(afterExpanding expanded: Bool, from part: FocusedPart?) -> FocusedPart? {
+        switch (expanded, part) {
+        case (true, .instruction): return .itinerary
+        case (false, .itinerary), (false, .bar): return .instruction
+        default: return nil
+        }
+    }
+
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous)
+    }
+
+    /// The card's own toggle: it decides where VoiceOver goes while VoiceOver
+    /// is still on the part that was pressed, then asks the product to flip.
+    private func toggle() {
+        focusAfterToggle = Self.voiceOverFocus(afterExpanding: !isExpanded, from: voiceOverFocus)
+        onToggle()
     }
 
     public var body: some View {
@@ -81,20 +138,25 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                         }
                     }
                 }
+                // What VoiceOver lands on as the card opens: the itinerary's
+                // first element.
+                .accessibilityElement(children: .contain)
+                .kozmosVoiceOverFocus($voiceOverFocus, .itinerary)
             } else {
                 // The instruction row is the button: a tap anywhere on it opens
                 // the itinerary, and VoiceOver hears the manoeuvre with that hint.
-                Button(action: onToggle) {
+                Button(action: toggle) {
                     HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                         Image(systemName: type.iconName)
                             .font(.system(size: 22, weight: .semibold))
                             .foregroundColor(KozmosColors.primitivesColorsTheme500)
                             .frame(width: KozmosDimensions.primitivesLayoutSizing400, height: KozmosDimensions.primitivesLayoutSizing400)
                         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
+                            // Whole unless the product asks for a limit (GAP-094).
                             Text(instruction)
                                 .font(KozmosTypography.title3.weight(.semibold))
                                 .foregroundColor(KozmosColors.primitivesColorsForeground100)
-                                .lineLimit(2)
+                                .lineLimit(Self.instructionLineLimit(instructionLines))
                                 .fixedSize(horizontal: false, vertical: true)
                             if let detail, !detail.isEmpty {
                                 // Muted, and on glass the foreground colour
@@ -113,9 +175,10 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                 .accessibilityLabel(Self.accessibilityDescription(instruction: instruction, detail: detail))
                 .accessibilityHint(expandLabel)
                 .accessibilityAddTraits(.isButton)
+                .kozmosVoiceOverFocus($voiceOverFocus, .instruction)
             }
             // The grab bar: the sign that the card opens, and the way to close it.
-            Button(action: onToggle) {
+            Button(action: toggle) {
                 Capsule()
                     .fill(KozmosColors.primitivesColorsBackground300)
                     .frame(width: 36, height: 5)
@@ -127,6 +190,16 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
             .accessibilityLabel(isExpanded ? collapseLabel : expandLabel)
             // Closed, the instruction row already offers the way in.
             .accessibilityHidden(!isExpanded)
+            .kozmosVoiceOverFocus($voiceOverFocus, .bar)
+        }
+        // Opened or closed, by the card's toggle or by the product: focus
+        // that was on the part that went follows to the part in its place.
+        // The toggle decided while VoiceOver was still on what it pressed;
+        // a change from the product reads where VoiceOver is now.
+        .onChange(of: isExpanded) { expanded in
+            let target = focusAfterToggle ?? Self.voiceOverFocus(afterExpanding: expanded, from: voiceOverFocus)
+            focusAfterToggle = nil
+            if let target { voiceOverFocus = target }
         }
         .padding(.top, KozmosDimensions.primitivesLayoutSpacing200)
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
@@ -138,5 +211,23 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         // Open, the card has no name of its own: the itinerary inside is the
         // named thing, and two groups called the same would be read twice.
         .accessibilityLabel(isExpanded ? "" : manoeuvreLabel)
+    }
+}
+
+private extension View {
+    /// Binds VoiceOver's focus on this view to `part`. iOS only, as
+    /// FloorSelector's is: on a Mac `ImageRenderer` draws nothing of a view
+    /// that carries it (measured there), and VoiceOver on a Mac is not what
+    /// the card is for.
+    @ViewBuilder
+    func kozmosVoiceOverFocus(
+        _ focus: AccessibilityFocusState<KozmosManoeuvreCardPart?>.Binding,
+        _ part: KozmosManoeuvreCardPart
+    ) -> some View {
+        #if os(iOS)
+        accessibilityFocused(focus, equals: part)
+        #else
+        self
+        #endif
     }
 }
