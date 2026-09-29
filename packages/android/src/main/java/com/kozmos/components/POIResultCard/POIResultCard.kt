@@ -2,6 +2,7 @@ package com.kozmos.components.poiresultcard
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -92,10 +95,22 @@ fun KozmosPOIResultCard(
      * band or all five.
      */
     travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    /**
+     * Draw the result's number, `result.resultIndex`, in its tab: the number
+     * its pin shows on the map. Off unless the product turns it on, for a list
+     * whose pins are numbered, as quick access's are. The card draws the number
+     * it is given and never renumbers. A featured result keeps its Featured tab
+     * and shows no number, as its pin shows its logo; a number takes the place
+     * of a badge. The number leads what TalkBack says ("2, Burger King"); a
+     * [selectionLabel] replaces all of it.
+     */
+    numbered: Boolean = false,
     onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     val trackEvent = LocalKozmosAnalytics.current
     val available = result.isAvailable
+    val tab = kozmosPOIResultTab(result, numbered, featuredLabel)
+    val numberText = (tab as? KozmosPOIResultTab.Number)?.number
 
     // Shown only on the selected result: an action row on every card would be a
     // wall of buttons, and the tap that selects is the tap that asks.
@@ -109,6 +124,9 @@ fun KozmosPOIResultCard(
     }
 
     val accessibilityDescription = selectionLabel ?: listOfNotNull(
+        // The number leads the name, "2, Burger King": the tab that draws it
+        // is left out of what TalkBack reads, so it is heard once.
+        numberText,
         poi.name,
         poi.categoryLabel,
         poi.locationLabel,
@@ -143,80 +161,12 @@ fun KozmosPOIResultCard(
         color = KozmosThemeTokens.primitivesColorsBackground0,
         border = BorderStroke(
             width = if (result.selected) 2.dp else 1.dp,
-            color = if (result.selected) {
-                KozmosThemeTokens.primitivesColorsTheme500
-            } else {
-                KozmosThemeTokens.semanticsBorderSubtle
-            }
+            color = kozmosPOIResultCardEdge(selected = result.selected, featured = tab is KozmosPOIResultTab.Featured)
         )
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            if (result.featured) {
-                Row(
-                    modifier = Modifier
-                        .padding(
-                            start = KozmosDimensions.primitivesLayoutSpacing200,
-                            top = KozmosDimensions.primitivesLayoutSpacing100
-                        )
-                        .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-                        .background(KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle)
-                        .padding(
-                            horizontal = KozmosDimensions.primitivesLayoutSpacing100,
-                            vertical = KozmosDimensions.primitivesLayoutSpacing50
-                        ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(
-                        KozmosDimensions.primitivesLayoutSpacing50
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentIdle,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = featuredLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentIdle
-                    )
-                }
-            } else if (result.badge != null) {
-                // One tab, one treatment: the prototypes draw "Popular Choice"
-                // in the same amber as "Featured", so the LABEL distinguishes
-                // them and the styling does not. What differs is meaning --
-                // featured is the CMS's word and the map marker acts on it too.
-                Row(
-                    modifier = Modifier
-                        .padding(
-                            start = KozmosDimensions.primitivesLayoutSpacing200,
-                            top = KozmosDimensions.primitivesLayoutSpacing100
-                        )
-                        .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-                        .background(KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle)
-                        .padding(
-                            horizontal = KozmosDimensions.primitivesLayoutSpacing100,
-                            vertical = KozmosDimensions.primitivesLayoutSpacing50
-                        ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(
-                        KozmosDimensions.primitivesLayoutSpacing50
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentIdle,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = result.badge.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentIdle
-                    )
-                }
+            if (tab != null) {
+                KozmosPOIResultTabView(tab = tab, selected = result.selected)
             }
 
             // 80 tall: the prototype's row.
@@ -377,6 +327,129 @@ fun KozmosPOIResultCard(
                 )
             }
         }
+    }
+}
+
+/**
+ * The card's one tab. What it says decides how it looks: Featured is the
+ * CMS's word and the map acts on it too (its pin draws the logo), so it wins;
+ * then the number, which pairs the result with its pin; then the badge, which
+ * only says why the result is in the list.
+ */
+internal sealed class KozmosPOIResultTab {
+    abstract val words: String
+
+    data class Featured(override val words: String) : KozmosPOIResultTab()
+    data class Number(val number: String) : KozmosPOIResultTab() {
+        override val words: String get() = number
+    }
+    data class Badge(override val words: String) : KozmosPOIResultTab()
+}
+
+internal fun kozmosPOIResultTab(
+    result: KozmosPOIResultPresentation,
+    numbered: Boolean,
+    featuredLabel: String
+): KozmosPOIResultTab? = when {
+    result.featured -> KozmosPOIResultTab.Featured(featuredLabel)
+    numbered -> KozmosPOIResultTab.Number(result.resultIndex.toString())
+    result.badge != null -> KozmosPOIResultTab.Badge(result.badge.label)
+    else -> null
+}
+
+/** A tab's fill, words and edge. */
+internal data class KozmosPOIResultTabPaint(val fill: Color, val ink: Color, val edge: Color?)
+
+/**
+ * The card's edge. Selected, the theme colour, whatever else the card is: the
+ * web says selection with a ring beside the edge, and a native card has only
+ * its edge to say it with. Otherwise a featured card takes its tab's amber
+ * (Olcay, 2026-09-29), and every other card the container edge: a number and a
+ * badge never recolour it.
+ */
+@Composable
+internal fun kozmosPOIResultCardEdge(selected: Boolean, featured: Boolean): Color = when {
+    selected -> KozmosThemeTokens.primitivesColorsTheme500
+    featured -> KozmosThemeTokens.semanticsEmotionAlertFill
+    else -> KozmosThemeTokens.semanticsBorderSubtle
+}
+
+/**
+ * GAP-054. Featured is the SDK's bright amber under dark words, the alert fill
+ * pair, for its words and its star (Olcay, 2026-09-29). A number is quiet at
+ * rest, the card's own fill outlined in the container edge with muted words,
+ * and filled with the primary colour when the result is selected, as the
+ * selected card's edge is. A badge is quiet: the muted fill and muted words,
+ * with no star. Each pair reads at 4.5:1 or more in both themes, as on the web.
+ */
+@Composable
+internal fun kozmosPOIResultTabPaint(tab: KozmosPOIResultTab, selected: Boolean): KozmosPOIResultTabPaint =
+    when (tab) {
+        is KozmosPOIResultTab.Featured -> KozmosPOIResultTabPaint(
+            fill = KozmosThemeTokens.semanticsEmotionAlertFill,
+            ink = KozmosThemeTokens.semanticsEmotionAlertOnfill,
+            edge = null
+        )
+        is KozmosPOIResultTab.Number -> if (selected) {
+            KozmosPOIResultTabPaint(
+                fill = KozmosThemeTokens.primitivesColorsTheme600,
+                ink = KozmosThemeTokens.primitivesColorsForeground1000,
+                edge = null
+            )
+        } else {
+            KozmosPOIResultTabPaint(
+                fill = KozmosThemeTokens.primitivesColorsBackground0,
+                ink = KozmosThemeTokens.primitivesColorsForeground400,
+                edge = KozmosThemeTokens.semanticsBorderSubtle
+            )
+        }
+        is KozmosPOIResultTab.Badge -> KozmosPOIResultTabPaint(
+            fill = KozmosThemeTokens.primitivesColorsBackground100,
+            ink = KozmosThemeTokens.primitivesColorsForeground400,
+            edge = null
+        )
+    }
+
+/**
+ * The one tab, at the card's start edge. Featured and a badge are read as
+ * their words, as they always were; a number is left out of what TalkBack
+ * reads, because it leads the result's own description.
+ */
+@Composable
+private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean) {
+    val paint = kozmosPOIResultTabPaint(tab, selected)
+    val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
+    Row(
+        modifier = Modifier
+            .padding(
+                start = KozmosDimensions.primitivesLayoutSpacing200,
+                top = KozmosDimensions.primitivesLayoutSpacing100
+            )
+            .then(if (tab is KozmosPOIResultTab.Number) Modifier.clearAndSetSemantics { } else Modifier)
+            .clip(shape)
+            .background(paint.fill)
+            .then(if (paint.edge != null) Modifier.border(1.dp, paint.edge, shape) else Modifier)
+            .padding(
+                horizontal = KozmosDimensions.primitivesLayoutSpacing100,
+                vertical = KozmosDimensions.primitivesLayoutSpacing50
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
+    ) {
+        if (tab is KozmosPOIResultTab.Featured) {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = paint.ink,
+                modifier = Modifier.size(14.dp)
+            )
+        }
+        Text(
+            text = tab.words,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = paint.ink
+        )
     }
 }
 

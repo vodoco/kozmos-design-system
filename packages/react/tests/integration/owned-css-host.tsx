@@ -93,6 +93,60 @@ function TravelTimes({ id }: { id: string }) {
   );
 }
 
+/* The result card's one tab (GAP-054, and quick access's numbers): Featured,
+   a number at rest and selected, and a quiet badge, on cards; and a grouped
+   row's number before its name, at rest and selected. The check reads what
+   each is painted in, where it hangs, and what the result is called. */
+function ResultTabs({ id }: { id: string }) {
+  const poi = (name: string): POIPresentation => ({
+    id: `${id}-tab-${name}`,
+    name: `Burger King ${name}`,
+    floorLabel: "Level 1",
+    media: [],
+    actions: [],
+  });
+  const result = (
+    name: string,
+    extra: Partial<POIResultPresentation> = {},
+  ): POIResultPresentation => ({
+    poiId: `${id}-tab-${name}`,
+    resultIndex: 2,
+    selected: false,
+    featured: false,
+    ...extra,
+  });
+  const card = (name: string, extra?: Partial<POIResultPresentation>) => (
+    <POIResultCard
+      data-testid={`${id}-tab-${name}`}
+      numbered={name !== "badge"}
+      poi={poi(name)}
+      result={result(name, extra)}
+      onSelect={() => undefined}
+    />
+  );
+  return (
+    <div data-testid={`${id}-tabs`}>
+      {card("featured", { featured: true })}
+      {card("number")}
+      {card("number-selected", { selected: true })}
+      {card("badge", { badge: { label: "Alternative" } })}
+      <POIResultGroup
+        data-testid={`${id}-tab-group`}
+        items={[
+          {
+            poi: poi("row-selected"),
+            result: result("row-selected", { selected: true }),
+          },
+          { poi: poi("row"), result: result("row") },
+        ]}
+        collapsedCount={2}
+        numbered
+        onSelect={() => undefined}
+      />
+    </div>
+  );
+}
+
 /* GAP-082 (row 81): map chrome floating in MapOverlays, or the same chrome
    placed by hand at the same insets. The two boards must draw alike: the
    overlay's scroll box cut its controls' shadows, and their rings, at its own
@@ -493,6 +547,7 @@ function Controls({ id }: { id: string }) {
         <button className="host-slot-button">Host slot</button>
       </div>
       <TravelTimes id={id} />
+      <ResultTabs id={id} />
       <POIDetailPanel
         data-testid={`${id}-poi`}
         poi={{

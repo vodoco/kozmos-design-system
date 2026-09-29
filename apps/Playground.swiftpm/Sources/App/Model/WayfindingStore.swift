@@ -143,7 +143,7 @@ final class WayfindingStore: ObservableObject {
                 poi: poi.presentation,
                 result: KozmosPOIResultPresentation(
                     poiId: poi.id,
-                    resultIndex: index,
+                    resultIndex: index + 1,
                     selected: poi.id == selectedPOIId,
                     featured: poi.featured,
                     floorId: poi.floorId,

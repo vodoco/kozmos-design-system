@@ -49,8 +49,15 @@ describe("POIResultGroup", () => {
   });
 
   it("offers no control when there is nothing folded away", () => {
-    render(<POIResultGroup items={[branch("only", "Current floor")]} onSelect={vi.fn()} />);
-    expect(screen.queryByRole("button", { name: /Show|Hide/ })).not.toBeInTheDocument();
+    render(
+      <POIResultGroup
+        items={[branch("only", "Current floor")]}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /Show|Hide/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("draws its members as rows, so nine borders do not sit inside one", () => {
@@ -60,6 +67,35 @@ describe("POIResultGroup", () => {
     const rows = container.querySelectorAll("[data-appearance='row']");
     expect(rows).toHaveLength(9);
     for (const row of rows) expect(row.className).not.toMatch(/\bborder\b/);
+  });
+
+  it("numbers each member before its name when told to, and only then", () => {
+    const numbered = [0, 1, 2].map((index) => {
+      const item = branch(`n${index}`, `Floor ${index + 1}`);
+      return { ...item, result: { ...item.result, resultIndex: index + 4 } };
+    });
+    const { container, rerender } = render(
+      <POIResultGroup defaultExpanded items={numbered} onSelect={vi.fn()} />,
+    );
+    expect(container.querySelectorAll("[data-tab='number']")).toHaveLength(0);
+
+    rerender(
+      <POIResultGroup
+        defaultExpanded
+        items={numbered}
+        numbered
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(
+      Array.from(container.querySelectorAll("[data-tab='number']")).map(
+        (node) => node.textContent,
+      ),
+    ).toEqual(["4", "5", "6"]);
+    expect(
+      screen.getAllByRole("button", { name: /^\d, Starbucks/ }),
+    ).toHaveLength(3);
+    expect(container.querySelector("section")).not.toHaveAttribute("numbered");
   });
 
   it("keeps a grouped result as capable as an ungrouped one", () => {
