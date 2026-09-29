@@ -65,7 +65,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readKozmosFacts } from "./skills/ai-facts.mjs";
+import { readKozmosFacts, unknownFacts } from "./skills/ai-facts.mjs";
 import { checkDocuments } from "./skills/ai-snippets.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -580,6 +580,12 @@ const docs = files.map((file) => ({
   text: fs.readFileSync(path.join(SKILLS, file), "utf8"),
 }));
 const snippets = checkDocuments(root, docs, facts);
+// A fact the checker could not establish is written into the inventory as
+// unknown; it is not left there.
+for (const unknown of unknownFacts(facts))
+  problems.push(
+    `facts  ${unknown}: the types do not say, so neither can the docs`,
+  );
 for (const p of snippets) fail(p.file, p.line, p.message);
 
 if (problems.length) {

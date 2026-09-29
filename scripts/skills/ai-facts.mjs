@@ -202,11 +202,15 @@ export function componentFacts(api, entry) {
         declarations.find(
           (d) => originOf(d.getSourceFile().fileName) === "kozmos",
         ) ?? declarations[0];
-      const origin = own ? originOf(own.getSourceFile().fileName) : "kozmos";
+      // A prop that cannot be traced to a declaration is not assumed to be
+      // Kozmos's: what React's DOM types add changes with their version, and
+      // a generated fact must not.
+      const origin = own ? originOf(own.getSourceFile().fileName) : "unknown";
       const accepted = acceptedValues(
         checker,
         checker.getTypeOfSymbolAtLocation(symbol, dts),
       );
+      if (!own) accepted.unknown ??= "where it is declared cannot be found";
       const known = facts.props.get(symbol.name);
       if (known) merge(known.accepted, accepted);
       else
@@ -330,6 +334,25 @@ export function axesOf(facts, name) {
     if (AXIS_ORIGINS.has(origin) && isAxis(accepted))
       axes[prop] = axisValues(accepted);
   return axes;
+}
+
+/**
+ * Every fact the checker could not establish, as `Component: why` or
+ * `Component.prop: why`. `pnpm skills:check` fails on any: an unknown is a
+ * gap in what an assistant is told, to be fixed, not shipped as "none".
+ */
+export function unknownFacts(facts) {
+  const found = [];
+  for (const [name, component] of facts.components) {
+    if (component.unknown) found.push(`${name}: ${component.unknown}`);
+    else
+      for (const [prop, { accepted }] of component.props)
+        if (accepted.unknown)
+          found.push(`${name}.${prop}: ${accepted.unknown}`);
+  }
+  for (const [name, pkg] of facts.packages)
+    if (pkg.unknown) found.push(`${name}: ${pkg.unknown}`);
+  return found;
 }
 
 /** Why a component's facts, or some of its props', are unknown. */

@@ -106,7 +106,7 @@ function variantsOf(name, prefix) {
     return [`${label("*")}: **unknown**: ${component.unknown}`];
   const lines = [];
   for (const [prop, { origin, accepted }] of component.props) {
-    if (!AXIS_ORIGINS.has(origin)) continue;
+    if (!AXIS_ORIGINS.has(origin) && origin !== "unknown") continue;
     if (accepted.unknown) {
       lines.push(`${label(prop)}: **unknown**: ${accepted.unknown}`);
       continue;

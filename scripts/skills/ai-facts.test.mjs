@@ -15,12 +15,9 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { describeComponent } from "./claude-design-api.mjs";
 import { compileModules } from "./claude-design-typescript.mjs";
-import {
-  axesOf,
-  factsFromSources,
-  readKozmosFacts,
-  unknownsOf,
-} from "./ai-facts.mjs";
+import * as ai from "./ai-facts.mjs";
+
+const { axesOf, factsFromSources, readKozmosFacts, unknownsOf } = ai;
 
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -298,6 +295,31 @@ export const Untyped = (props: any) => <div>{String(props)}</div>;
   // A component whose props are `any` has no facts to give: unknown, not "none".
   assert.equal(axesOf(fixture, "Untyped"), null);
   assert.match(unknownsOf(fixture, "Untyped").component, /any/);
+  // And both are listed for skills:check to fail on, not left in the
+  // inventory as though they were facts.
+  assert.equal(
+    typeof ai.unknownFacts,
+    "function",
+    "nothing lists unknown facts",
+  );
+  const listed = ai.unknownFacts(fixture);
+  assert.ok(
+    listed.some((u) => /^Negatives\.broken: .*resolve/.test(u)),
+    listed.join("\n"),
+  );
+  assert.ok(
+    listed.some((u) => /^Untyped: .*any/.test(u)),
+    listed.join("\n"),
+  );
+});
+
+test("every fact about the built packages is established: none is unknown", () => {
+  assert.equal(
+    typeof ai.unknownFacts,
+    "function",
+    "nothing lists unknown facts",
+  );
+  assert.deepEqual(ai.unknownFacts(facts), []);
 });
 
 // ------------------------------------------------ the compiler as the oracle
