@@ -182,9 +182,9 @@ const knownViolations: Record<string, readonly KnownViolation[]> = {
   "/examples/venue-explorer": [SHELL_PANEL],
   "/examples/wayfinding": [SHELL_PANEL],
   "/examples/phone-search": [SHELL_PANEL],
-  // The assistant open over the phone's frame: the map shell under it is
-  // inert (GAP-93), and axe leaves inert content out, so the shell's panel
-  // is not measured then.
+  // The assistant open over the phone's frame: the panel makes the map shell
+  // under it inert (GAP-93, fixed), and axe leaves inert content out, so the
+  // shell's panel is not measured then.
   "/examples/phone-search#assistant": [],
   "/examples/dashboard": [SIDEBAR],
   // The adaptive tile's shell.
@@ -3620,9 +3620,10 @@ test.describe("phone search example", () => {
   test("the assistant keeps the keyboard out of what it covers", async ({
     page,
   }) => {
-    // GAP-93, composed: the panel covers the frame but leaves what it covers
-    // in the tab order, so the example makes the map shell inert while it is
-    // open. Shift+Tab from the panel went to the sheet's tiles under it.
+    // GAP-93, fixed: the panel covered the frame but left what it covered in
+    // the tab order, and Shift+Tab from it went to the sheet's tiles under it.
+    // The example made the map shell inert itself; the panel does it now, and
+    // the example passes nothing.
     await page.goto("/examples/phone-search");
     await hydrated(page);
     const example = phone(page);

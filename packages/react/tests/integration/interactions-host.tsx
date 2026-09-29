@@ -1,8 +1,13 @@
-import { useState, type ReactElement } from "react";
+import { useState, type CSSProperties, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import {
   AICompanionPanel,
+  AISearchButton,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
   POIResultList,
   SegmentedControl,
   ThemeProvider,
@@ -143,11 +148,106 @@ function AssistantEscape() {
   );
 }
 
+type Placement = "cover" | "side" | "flow" | "fixed";
+
+/** Where the panel is drawn: the placement its docs give, and three others. */
+const placements: Record<Placement, CSSProperties> = {
+  // `absolute inset-0` in its positioned frame, as AICompanionPanel.mdx has it.
+  cover: { position: "absolute", inset: 0 },
+  // Over half the frame: the other half is still there to use.
+  side: { position: "absolute", top: 0, bottom: 0, right: 0, width: "50%" },
+  // In flow, below the search, as the stories draw it in a frame of its own.
+  flow: { height: 240 },
+  // Over the whole viewport.
+  fixed: { position: "fixed", inset: 0 },
+};
+
+/**
+ * GAP-93: a phone's frame, the search beneath with its tiles and the AI
+ * button, and the assistant over it; a toolbar before the frame and a link
+ * after it, which are never covered.
+ */
+function AssistantCover({
+  placement,
+  mountOpen = false,
+  focusUnderOnClose = false,
+}: {
+  placement: Placement;
+  mountOpen?: boolean;
+  /** onCloseAutoFocus puts focus on a tile the panel covered. */
+  focusUnderOnClose?: boolean;
+}) {
+  const [open, setOpen] = useState(mountOpen);
+  return (
+    <>
+      <button type="button">Toolbar</button>
+      <div
+        data-testid="frame"
+        style={{
+          position: "relative",
+          width: 360,
+          height: 560,
+          overflow: "hidden",
+          display: placement === "flow" ? "flex" : undefined,
+          flexDirection: "column",
+        }}
+      >
+        <div data-testid="search">
+          <AISearchButton
+            label="Ask the assistant"
+            onClick={() => setOpen(true)}
+          />
+          <button type="button">Shops</button>
+          <button type="button">Offices</button>
+          <p aria-live="polite">3 places</p>
+        </div>
+        <AICompanionPanel
+          onClose={() => setOpen(false)}
+          onCloseAutoFocus={(event) => {
+            if (!focusUnderOnClose) return;
+            event.preventDefault();
+            Array.from(
+              document.querySelectorAll<HTMLButtonElement>(
+                '[data-testid="search"] button',
+              ),
+            )
+              .find((button) => button.textContent === "Shops")
+              ?.focus();
+          }}
+          open={open}
+          style={{ ...placements[placement], background: "white" }}
+        >
+          <input aria-label="Ask" />
+          <Menu>
+            <MenuTrigger asChild>
+              <button type="button">Suggestions</button>
+            </MenuTrigger>
+            <MenuContent>
+              <MenuItem>Nearest restroom</MenuItem>
+            </MenuContent>
+          </Menu>
+        </AICompanionPanel>
+      </div>
+      <button type="button">After the frame</button>
+    </>
+  );
+}
+
 const scenarios: Record<string, () => ReactElement> = {
   "late-results": () => <LateResults reveal />,
   "reveal-later": () => <LateResults reveal={false} />,
   "held-choice": () => <HeldChoice />,
   "assistant-escape": () => <AssistantEscape />,
+  "assistant-cover": () => <AssistantCover placement="cover" />,
+  "assistant-cover-focus-under": () => (
+    <AssistantCover focusUnderOnClose placement="cover" />
+  ),
+  "assistant-cover-mounted-open": () => (
+    <AssistantCover mountOpen placement="cover" />
+  ),
+  "assistant-side": () => <AssistantCover placement="side" />,
+  "assistant-flow": () => <AssistantCover placement="flow" />,
+  "assistant-fixed": () => <AssistantCover placement="fixed" />,
 };
 
 window.interactions = {

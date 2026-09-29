@@ -1,6 +1,7 @@
 import React from "react";
 import { Stars01, XClose } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { inertOutside } from "../../utils/modal-inert";
 import { Text } from "../Text";
 
 export interface AICompanionPanelProps extends Omit<
@@ -52,6 +53,36 @@ const focusedElement = () =>
   typeof document === "undefined" ? null : document.activeElement;
 
 /**
+ * What the open panel covers (GAP-93): the box it is laid over and fills,
+ * taken out of flow to cover it — `absolute inset-0` in its positioned
+ * container, as its docs place it — or the page, for a panel that fills the
+ * viewport (fixed) or the whole page. A panel in flow, or one over only part
+ * of its box, covers nothing: what is beside it stays in reach. Read from
+ * the layout, not the screen, so a transform the product animates it in with
+ * does not change the answer.
+ */
+function coveredBy(panel: HTMLElement): Element | null {
+  const doc = panel.ownerDocument;
+  const position = doc.defaultView?.getComputedStyle(panel).position;
+  if (position !== "absolute" && position !== "fixed") return null;
+  const { offsetWidth: width, offsetHeight: height, offsetParent: box } = panel;
+  // Nothing laid out, hidden or without a layout at all, covers nothing.
+  if (!width || !height) return null;
+  if (box && box !== doc.body)
+    return panel.offsetLeft <= 1 &&
+      panel.offsetTop <= 1 &&
+      width >= box.clientWidth - 1 &&
+      height >= box.clientHeight - 1
+      ? box
+      : null;
+  const page = doc.documentElement;
+  return width >= page.clientWidth - 1 &&
+    height >= (position === "fixed" ? page.clientHeight : page.scrollHeight) - 1
+    ? doc.body
+    : null;
+}
+
+/**
  * The assistant surface.
  *
  * It covers the frame and leaves the search sheet untouched beneath, as the
@@ -69,6 +100,12 @@ const focusedElement = () =>
  * and focus fell to the page. It moves focus in only when the visitor opens
  * it (decision 16): a panel on screen from the start takes nothing from the
  * page, which may have put focus somewhere on purpose.
+ *
+ * While it is open, what it covers is out of reach (GAP-93): laid over the
+ * box it fills, `absolute inset-0` in its positioned container, it makes the
+ * rest of that box inert, and gives it back as it closes, before it hands
+ * focus back. The keyboard cannot step back out of it onto controls nobody
+ * can see. Placed in flow, or over part of its box, it covers nothing.
  */
 const AICompanionPanel = React.forwardRef<
   HTMLDivElement,
@@ -134,7 +171,20 @@ const AICompanionPanel = React.forwardRef<
         onOpenAutoFocus?.(opening);
         if (!opening.defaultPrevented) node.focus({ preventScroll: true });
       }
+      // What the panel covers is out of reach while it is open (GAP-93):
+      // stepping back out of it with Shift+Tab landed on the search's tiles
+      // beneath, where nobody could see them (WCAG 2.2, 2.4.11). Only what it
+      // covers, never the page beyond its frame; live regions beneath still
+      // speak, and the page's portals, where a part inside opens its popups,
+      // stay in reach. After focus has moved in, so the button that opened
+      // it does not lose focus to the page on the way.
+      const covered = coveredBy(node);
+      const release = covered
+        ? inertOutside(node, { within: covered, keep: "[data-kozmos-portal]" })
+        : undefined;
       return () => {
+        // Given back first: the control focus returns to was under the panel.
+        release?.();
         // StrictMode's rehearsal runs this with the panel still in the
         // document. A real close has already taken it out.
         if (node.isConnected) return;

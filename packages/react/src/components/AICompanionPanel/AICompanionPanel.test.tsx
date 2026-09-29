@@ -139,6 +139,208 @@ describe("AICompanionPanel", () => {
     });
   });
 
+  describe("what it covers is out of reach while it is open (GAP-93)", () => {
+    // It covers the frame it is laid over, and moves focus in as it opens,
+    // but what it covered stayed in the tab order: Shift+Tab from the panel
+    // landed on the search's tiles beneath, where nobody could see them
+    // (WCAG 2.2, 2.4.11). jsdom lays nothing out, so the layout is stated:
+    // a 360 by 560 frame, and the panel filling it, as `absolute inset-0`
+    // does, or not.
+    const frameSize = { width: 360, height: 560 };
+    const viewport = { width: 1024, height: 768 };
+    let spies: { mockRestore(): void }[] = [];
+    afterEach(() => {
+      spies.forEach((spy) => spy.mockRestore());
+      spies = [];
+    });
+    function layOut(panel: {
+      width: number;
+      height: number;
+      left?: number;
+      top?: number;
+      /** The box it is laid against: the frame, or none (fixed). */
+      against?: "frame" | "page";
+    }) {
+      const isPanel = (node: HTMLElement) =>
+        node.getAttribute("role") === "region";
+      const isFrame = (node: HTMLElement) => node.dataset.testid === "frame";
+      const size = (axis: "width" | "height") =>
+        function (this: HTMLElement) {
+          if (isPanel(this)) return panel[axis];
+          if (isFrame(this)) return frameSize[axis];
+          if (this === document.documentElement) return viewport[axis];
+          return 0;
+        };
+      const at = (edge: "left" | "top") =>
+        function (this: HTMLElement) {
+          return isPanel(this) ? (panel[edge] ?? 0) : 0;
+        };
+      spies = [
+        vi
+          .spyOn(HTMLElement.prototype, "offsetParent", "get")
+          .mockImplementation(function (this: HTMLElement) {
+            if (!isPanel(this) || panel.against === "page") return null;
+            return document.querySelector('[data-testid="frame"]');
+          }),
+        vi
+          .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+          .mockImplementation(size("width")),
+        vi
+          .spyOn(HTMLElement.prototype, "offsetHeight", "get")
+          .mockImplementation(size("height")),
+        vi
+          .spyOn(HTMLElement.prototype, "clientWidth", "get")
+          .mockImplementation(size("width")),
+        vi
+          .spyOn(HTMLElement.prototype, "clientHeight", "get")
+          .mockImplementation(size("height")),
+        vi
+          .spyOn(HTMLElement.prototype, "offsetLeft", "get")
+          .mockImplementation(at("left")),
+        vi
+          .spyOn(HTMLElement.prototype, "offsetTop", "get")
+          .mockImplementation(at("top")),
+      ];
+    }
+
+    /** A phone's frame: the search beneath, and the assistant over it. */
+    function Phone({
+      open,
+      position = "absolute",
+      onCloseAutoFocus,
+      coverItself = false,
+    }: {
+      open?: boolean;
+      position?: "absolute" | "fixed" | "static";
+      onCloseAutoFocus?: (event: Event) => void;
+      /** GAP-93's workaround: the product makes the search inert itself. */
+      coverItself?: boolean;
+    }) {
+      return (
+        <>
+          <button type="button">Toolbar</button>
+          <div data-testid="frame" style={{ position: "relative" }}>
+            <div data-testid="search" inert={coverItself && open}>
+              <button type="button">Shops</button>
+              <button type="button">Ask the assistant</button>
+              <p aria-live="polite">3 places</p>
+            </div>
+            <AICompanionPanel
+              onClose={vi.fn()}
+              onCloseAutoFocus={onCloseAutoFocus}
+              open={open}
+              style={position === "static" ? undefined : { position, inset: 0 }}
+            >
+              <input aria-label="Ask" />
+            </AICompanionPanel>
+          </div>
+          <div data-kozmos-portal="" data-testid="portal" />
+        </>
+      );
+    }
+    const inert = (name: string) =>
+      screen.getByRole("button", { name }).closest("[inert]") !== null;
+
+    it("makes the frame it fills inert while open, and gives it back as it closes", () => {
+      layOut(frameSize);
+      const { rerender } = render(<Phone open={false} />);
+      const ask = screen.getByRole("button", { name: "Ask the assistant" });
+      ask.focus();
+      rerender(<Phone open />);
+
+      const panel = screen.getByRole("region", { name: "Assistant" });
+      expect(panel).toHaveFocus();
+      expect(inert("Shops")).toBe(true);
+      expect(inert("Ask the assistant")).toBe(true);
+      expect(panel.closest("[inert]")).toBeNull();
+      // A live region beneath still speaks, and the page beyond the frame is
+      // left alone.
+      expect(screen.getByText("3 places").closest("[inert]")).toBeNull();
+      expect(inert("Toolbar")).toBe(false);
+
+      rerender(<Phone open={false} />);
+      expect(document.querySelector("[inert]")).toBeNull();
+      expect(ask).toHaveFocus();
+    });
+
+    it("covers nothing in flow, or over only part of its frame", () => {
+      layOut(frameSize);
+      const { rerender, unmount } = render(
+        <Phone open={false} position="static" />,
+      );
+      rerender(<Phone open position="static" />);
+      expect(document.querySelector("[inert]")).toBeNull();
+      unmount();
+
+      // Laid over half the frame: the other half is still there to use.
+      layOut({ ...frameSize, width: 180, left: 180 });
+      const half = render(<Phone open={false} />);
+      half.rerender(<Phone open />);
+      expect(document.querySelector("[inert]")).toBeNull();
+    });
+
+    it("makes what it covers inert when it mounts open, and leaves focus where it was", () => {
+      // Decision 16: a panel on screen from the start takes no focus.
+      layOut(frameSize);
+      render(<button type="button">Elsewhere</button>);
+      screen.getByRole("button", { name: "Elsewhere" }).focus();
+      render(<Phone open />);
+      expect(screen.getByRole("button", { name: "Elsewhere" })).toHaveFocus();
+      expect(inert("Shops")).toBe(true);
+    });
+
+    it("gives what it covered back before it hands focus back, and as it unmounts", () => {
+      layOut(frameSize);
+      const shops = () => screen.getByRole("button", { name: "Shops" });
+      // The close under test; the unmount at the end closes it once more.
+      const onCloseAutoFocus = vi
+        .fn()
+        .mockImplementationOnce((event: Event) => {
+          // What the product focuses here is under the panel: it must be in
+          // reach again by now.
+          expect(shops().closest("[inert]")).toBeNull();
+          event.preventDefault();
+          shops().focus();
+        });
+      const { rerender, unmount } = render(
+        <Phone onCloseAutoFocus={onCloseAutoFocus} open={false} />,
+      );
+      screen.getByRole("button", { name: "Ask the assistant" }).focus();
+      rerender(<Phone onCloseAutoFocus={onCloseAutoFocus} open />);
+      expect(inert("Shops")).toBe(true);
+      rerender(<Phone onCloseAutoFocus={onCloseAutoFocus} open={false} />);
+      expect(onCloseAutoFocus).toHaveBeenCalledTimes(1);
+      expect(shops()).toHaveFocus();
+
+      rerender(<Phone onCloseAutoFocus={onCloseAutoFocus} open />);
+      expect(inert("Shops")).toBe(true);
+      unmount();
+      expect(document.querySelector("[inert]")).toBeNull();
+    });
+
+    it("leaves a product's own inert to the product, as GAP-93's workaround did", () => {
+      layOut(frameSize);
+      const { rerender } = render(<Phone coverItself open={false} />);
+      rerender(<Phone coverItself open />);
+      expect(inert("Shops")).toBe(true);
+      rerender(<Phone coverItself open={false} />);
+      expect(screen.getByTestId("search")).not.toHaveAttribute("inert");
+      expect(document.querySelector("[inert]")).toBeNull();
+    });
+
+    it("covers the page when it is fixed over the whole viewport, and keeps the page's popups in reach", () => {
+      layOut({ ...viewport, against: "page" });
+      const { rerender } = render(<Phone open={false} position="fixed" />);
+      rerender(<Phone open position="fixed" />);
+      expect(inert("Toolbar")).toBe(true);
+      expect(inert("Shops")).toBe(true);
+      // Popups a part inside the panel opens are drawn in the portal.
+      expect(screen.getByTestId("portal").closest("[inert]")).toBeNull();
+      rerender(<Phone open={false} position="fixed" />);
+      expect(document.querySelector("[inert]")).toBeNull();
+    });
+  });
+
   it("puts a banner above the thread, for the Story 14 notice", () => {
     render(
       <AICompanionPanel banner={<p>AI results may be incomplete.</p>}>

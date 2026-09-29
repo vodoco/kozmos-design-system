@@ -259,6 +259,165 @@ await scenario(
   },
 );
 
+// GAP-93: what the assistant covers is out of reach while it is open.
+
+/** Where focus is: its name, and whether it is in the frame, in the panel. */
+const focusIn = (page) =>
+  page.evaluate(() => {
+    const active = document.activeElement;
+    const frame = document.querySelector('[data-testid="frame"]');
+    const panel = document.querySelector('[role="region"]');
+    const labelledBy = active?.getAttribute("aria-labelledby");
+    return {
+      name:
+        active?.getAttribute("aria-label") ??
+        (labelledBy
+          ? document.getElementById(labelledBy)?.textContent?.trim()
+          : active?.textContent?.trim()) ??
+        null,
+      body: active === document.body,
+      inFrame: Boolean(frame?.contains(active)),
+      inPanel: Boolean(panel?.contains(active)),
+    };
+  });
+
+/** Ask a control for focus directly, and say whether it took it. */
+const takesFocus = (page, name) =>
+  page.getByRole("button", { name, exact: true }).evaluate((button) => {
+    button.focus();
+    return document.activeElement === button;
+  });
+
+/** Open the assistant from its button, from the keyboard. */
+async function openAssistant(page) {
+  await page.getByRole("button", { name: "Ask the assistant" }).focus();
+  await page.keyboard.press("Enter");
+  await settleLayout(page);
+  assert.equal(
+    (await focusIn(page)).name,
+    "Assistant",
+    "the panel took focus as the visitor opened it (decision 16)",
+  );
+}
+
+await scenario(
+  "GAP-93: over its frame, the assistant keeps the keyboard out of what it covers, and gives it back",
+  "assistant-cover",
+  async (page) => {
+    await openAssistant(page);
+
+    // Stepping back out of the panel leaves the frame, for the toolbar
+    // before it, instead of landing on a tile under the panel.
+    await page.keyboard.press("Shift+Tab");
+    const back = await focusIn(page);
+    assert.equal(
+      back.inFrame && !back.inPanel,
+      false,
+      `Shift+Tab landed under the panel, on "${back.name}"`,
+    );
+    assert.equal(back.name, "Toolbar");
+
+    // Nothing under it takes focus, even asked directly; the page beyond the
+    // frame is left alone.
+    assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+    assert.equal(await takesFocus(page, "Ask the assistant"), false);
+    assert.equal(await takesFocus(page, "After the frame"), true);
+    assert.equal(await takesFocus(page, "Toolbar"), true);
+
+    // Forward from the toolbar goes straight into the panel.
+    await page.keyboard.press("Tab");
+    assert.equal((await focusIn(page)).inPanel, true, "Tab into the panel");
+
+    // Closed, it gives everything back and hands focus to its button.
+    await page.keyboard.press("Escape");
+    await settleLayout(page);
+    assert.equal(await page.getByRole("region").count(), 0, "closed");
+    assert.equal((await focusIn(page)).name, "Ask the assistant");
+    assert.equal(
+      await page.evaluate(() => document.querySelectorAll("[inert]").length),
+      0,
+      "inert left behind",
+    );
+    await page.keyboard.press("Tab");
+    assert.equal((await focusIn(page)).name, "Shops", "the tiles are back");
+  },
+);
+
+await scenario(
+  "GAP-93: the product's onCloseAutoFocus can put focus on what the panel covered",
+  "assistant-cover-focus-under",
+  async (page) => {
+    await openAssistant(page);
+    await page.keyboard.press("Escape");
+    await settleLayout(page);
+    assert.equal((await focusIn(page)).name, "Shops");
+  },
+);
+
+await scenario(
+  "GAP-93: mounted open, it covers what is under it and takes no focus (decision 16)",
+  "assistant-cover-mounted-open",
+  async (page) => {
+    assert.equal((await focusIn(page)).body, true, "focus stayed on the page");
+    assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+    assert.equal(await takesFocus(page, "Toolbar"), true);
+  },
+);
+
+for (const placement of ["side", "flow"]) {
+  await scenario(
+    `GAP-93: ${placement === "side" ? "over half its frame" : "in flow"}, it covers nothing, and nothing changes`,
+    `assistant-${placement}`,
+    async (page) => {
+      await openAssistant(page);
+      assert.equal(
+        await page.evaluate(() => document.querySelectorAll("[inert]").length),
+        0,
+      );
+      await page.keyboard.press("Shift+Tab");
+      assert.equal((await focusIn(page)).name, "Offices");
+      assert.equal(await takesFocus(page, "Shops"), true);
+    },
+  );
+}
+
+await scenario(
+  "GAP-93: fixed over the whole page, it covers the page and keeps its own menu in reach",
+  "assistant-fixed",
+  async (page) => {
+    await openAssistant(page);
+    assert.equal(
+      await takesFocus(page, "Toolbar"),
+      false,
+      "the page under a panel that covers it",
+    );
+    assert.equal(await takesFocus(page, "After the frame"), false);
+    assert.equal(await takesFocus(page, "Shops"), false);
+
+    // A menu opened from inside the panel draws in the page's portal.
+    await page.getByRole("button", { name: "Suggestions" }).focus();
+    await page.keyboard.press("Enter");
+    const item = page.getByRole("menuitem", { name: "Nearest restroom" });
+    await item.waitFor();
+    await settleLayout(page);
+    assert.equal(
+      await item.evaluate((node) => node.closest("[inert]") === null),
+      true,
+      "the panel's own menu was made inert",
+    );
+    assert.equal(
+      await item.evaluate((node) => {
+        node.focus();
+        return document.activeElement === node;
+      }),
+      true,
+      "the panel's own menu takes focus",
+    );
+    await page.keyboard.press("Escape");
+    await settleLayout(page);
+  },
+);
+
 await browser.close();
 if (failures.length) {
   console.error(`\n${failures.length} interaction check(s) failed.`);

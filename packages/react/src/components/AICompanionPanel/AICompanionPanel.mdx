@@ -107,6 +107,30 @@ Close is drawn at 36px, as the header was drawn round it, with a 44px target.
 
 <Canvas of={Stories.OpenAndClose} />
 
+## What it covers is out of reach
+
+While the panel is open, nothing it covers can be reached: not with Tab or
+Shift+Tab, not with a pointer, and not by a screen reader moving through the
+page. Stepping back out of it used to land on the search's tiles beneath,
+where nobody could see them (WCAG 2.2, 2.4.11).
+
+- **What it covers** is the box it is laid over and fills: its positioned
+  container, when it is placed there with `absolute inset-0`, as in the
+  example above. The rest of that box is inert while the panel is open, and
+  nothing beyond it: the page around a phone's frame stays as it was. Fixed
+  over the whole viewport, it covers the page.
+- **Live regions beneath** still speak, and a menu or popover opened from a
+  part inside the panel, drawn in the page's portal, stays in reach.
+- **As it closes** it gives everything back, then hands focus back to the
+  button that opened it, which it covered. `onCloseAutoFocus` can put focus on
+  anything it covered: that is in reach again by then.
+- **Placed in flow**, as in the stories above, or over only part of its box,
+  it covers nothing, and what sits beside it stays in reach.
+
+It measures what it covers as it opens, from the layout, so a transform that
+animates it in does not change the answer. A product that made the covered box
+inert itself before Kozmos did can stop: its own `inert` is left to it.
+
 ## A spoken conversation
 
 Where the product has a voice model, the visitor can talk to the assistant
