@@ -160,9 +160,15 @@ public struct KozmosLocationPin: View {
             .accessibilityAction { if !isDisabled { onSelect?() } }
     }
 
+    /// Selected whether or not the pin can be pressed, as React's
+    /// `aria-current` and Compose's `selected` say it: a pin drawn with no
+    /// `onSelect`, or a disabled one, still marks the selected place. A button
+    /// only when it can be pressed.
     private var accessibilityTraits: AccessibilityTraits {
-        guard !isDisabled, onSelect != nil else { return [] }
-        return selected ? [.isButton, .isSelected] : .isButton
+        var traits: AccessibilityTraits = []
+        if !isDisabled, onSelect != nil { traits.insert(.isButton) }
+        if selected { traits.insert(.isSelected) }
+        return traits
     }
 
     @ViewBuilder
