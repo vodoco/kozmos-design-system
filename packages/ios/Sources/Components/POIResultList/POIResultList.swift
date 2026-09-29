@@ -27,6 +27,13 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
     private let currentFloorId: String?
     /// Each result's words for a walk shown as a band: the card's.
     private let travelTimeBandLabels: [KozmosTravelTimeBand: String]
+    /// Number every result with its `resultIndex`, the number its pin shows:
+    /// the card's `numbered`, given to every card. Off unless the product
+    /// turns it on, for a list whose pins are numbered, as quick access's
+    /// are. The list never renumbers: a featured result shows Featured and no
+    /// number, since its pin shows its logo, so number the others in pin
+    /// order.
+    private let numbered: Bool
     private let onSelect: (String) -> Void
     private let emptyState: EmptyStateContent
 
@@ -38,6 +45,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         featuredLabel: String = "Featured",
         currentFloorId: String? = nil,
         travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
+        numbered: Bool = false,
         onSelect: @escaping (String) -> Void,
         @ViewBuilder emptyState: () -> EmptyStateContent
     ) {
@@ -48,6 +56,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         self.featuredLabel = featuredLabel
         self.currentFloorId = currentFloorId
         self.travelTimeBandLabels = travelTimeBandLabels
+        self.numbered = numbered
         self.onSelect = onSelect
         self.emptyState = emptyState()
     }
@@ -60,6 +69,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
             featuredLabel: featuredLabel,
             currentFloorId: currentFloorId,
             travelTimeBandLabels: travelTimeBandLabels,
+            numbered: numbered,
             onSelect: onSelect
         )
     }
@@ -108,6 +118,7 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
         selectedPoiId: String? = nil,
         featuredLabel: String = "Featured",
         travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
+        numbered: Bool = false,
         onSelect: @escaping (String) -> Void
     ) {
         self.init(
@@ -117,6 +128,7 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
             selectedPoiId: selectedPoiId,
             featuredLabel: featuredLabel,
             travelTimeBandLabels: travelTimeBandLabels,
+            numbered: numbered,
             onSelect: onSelect
         ) {
             EmptyView()

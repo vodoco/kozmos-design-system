@@ -61,6 +61,54 @@ export function QuickAccessResults({
   );
 }
     `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The places of the category chosen in the browse grid, numbered by the
+// product as their pins are: the featured ones show their logo and no number.
+struct QuickAccessResults: View {
+    let results: [KozmosPOIResultListItem]
+    // "6 places", in the visitor's language.
+    let countLabel: String
+    let selectedPoiId: String?
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        KozmosPOIResultList(
+            items: results,
+            resultCountLabel: countLabel,
+            selectedPoiId: selectedPoiId,
+            numbered: true,
+            onSelect: onSelect
+        )
+    }
+}
+    `}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.poiresultlist.KozmosPOIResultList
+import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
+
+// The places of the category chosen in the browse grid, numbered by the
+// product as their pins are: the featured ones show their logo and no number.
+@Composable
+fun QuickAccessResults(
+    results: List<KozmosPOIResultListItem>,
+    // "6 places", in the visitor's language.
+    countLabel: String,
+    selectedPoiId: String?,
+    onSelect: (String) -> Unit
+) {
+    KozmosPOIResultList(
+        items = results,
+        resultCountLabel = countLabel,
+        onSelect = onSelect,
+        selectedPoiId = selectedPoiId,
+        numbered = true
+    )
+}
+    `}
 />
 
 ## The selected result comes into view

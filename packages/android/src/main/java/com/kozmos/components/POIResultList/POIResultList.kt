@@ -54,7 +54,15 @@ fun KozmosPOIResultList(
     /** The floor the map shows: a result on it carries a dot before its floor. */
     currentFloorId: String? = null,
     /** Each result's words for a walk shown as a band: the card's. */
-    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap()
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    /**
+     * Number every result with its `resultIndex`, the number its pin shows:
+     * the card's `numbered`, given to every card. Off unless the product turns
+     * it on, for a list whose pins are numbered, as quick access's are. The
+     * list never renumbers: a featured result shows Featured and no number,
+     * since its pin shows its logo, so number the others in pin order.
+     */
+    numbered: Boolean = false
 ) {
     Column(
         modifier = modifier
@@ -99,7 +107,8 @@ fun KozmosPOIResultList(
                     result = item.result.selecting(selectedPoiId),
                     onSelect = onSelect,
                     featuredLabel = featuredLabel,
-                    travelTimeBandLabels = travelTimeBandLabels
+                    travelTimeBandLabels = travelTimeBandLabels,
+                    numbered = numbered
                 )
             }
         }
