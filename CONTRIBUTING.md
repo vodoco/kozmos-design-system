@@ -45,7 +45,7 @@ Report violations to: kozmos-maintainers@pointr.tech
 ### Prerequisites
 
 - Node.js 20+
-- pnpm 8+
+- pnpm 9+
 - Git
 
 ### Setup
@@ -70,16 +70,17 @@ pnpm dev
 ```
 kozmos-design-system/
 ├── packages/
-│   ├── tokens/        # Design tokens (Style Dictionary)
-│   ├── react/         # React components
-│   ├── vue/           # Vue 3 components
-│   ├── ios/           # SwiftUI components
-│   ├── android/       # Jetpack Compose components
-│   ├── react-native/  # React Native components
-│   └── icons/         # Icon library
+│   ├── tokens/             # Design tokens (Style Dictionary)
+│   ├── react/              # React components
+│   ├── icons/              # Icon library
+│   ├── product-contracts/  # The shapes a product passes the product components
+│   ├── ios/                # SwiftUI components
+│   ├── android/            # Jetpack Compose components
+│   └── vue/                # Vue wrappers around the React components (private)
 ├── apps/
-│   └── docs/          # Documentation site
-└── .ai-skills/        # AI agent reference docs
+│   ├── docs/               # Storybook, the component reference
+│   └── site/               # The website
+└── .ai-skills/             # AI agent reference docs
 ```
 
 ---
@@ -129,14 +130,11 @@ docs(readme): update installation instructions
 ### Development Commands
 
 ```bash
-# Start Storybook (React)
-pnpm --filter @kozmos-ds/react storybook
+# Start Storybook (React, port 6006)
+pnpm --filter @kozmos-ds/docs storybook:react
 
 # Run tests
 pnpm test
-
-# Run tests with coverage
-pnpm test:coverage
 
 # Lint code
 pnpm lint
@@ -209,14 +207,20 @@ Fixes #123
 
 ### Review Process
 
-1. **Automated checks** must pass. Branch protection on `main` requires all 19 checks a pull
-   request runs: CI's web build and tests, its twelve browser shards, the Android build and the iOS
-   build, the bundle budget (`analyze-bundle`), Lighthouse's accessibility audit (`lighthouse`) and
-   "Visual Review". The iOS build runs when a pull request touches what it builds (`packages/ios`,
-   `packages/tokens`, its scripts, `ci.yml` or the dependencies) and is skipped, which counts as
-   passing, otherwise; every push to `main` builds it. A pull request opened against another
-   branch and then retargeted to `main` has no `analyze-bundle` or `lighthouse` run, because both
-   run only for pull requests into `main`: push to it, or close and reopen it.
+1. **Automated checks** must pass. Branch protection on `main` requires 19 checks: CI's web build
+   and tests ("Web Build & Test"), its twelve browser shards, "Core Pipeline & POI Gallery", the
+   Android build and the iOS build, the bundle budget (`analyze-bundle`), Lighthouse's
+   accessibility audit (`lighthouse`) and "Visual Review". The iOS build runs when a pull request
+   touches what it builds (`packages/ios`, `packages/tokens`, its scripts, `ci.yml` or the
+   dependencies) and is skipped, which counts as passing, otherwise; every push to `main` builds
+   it. A pull request opened against another branch and then retargeted to `main` has no
+   `analyze-bundle` or `lighthouse` run, because both run only for pull requests into `main`: push
+   to it, or close and reopen it.
+
+   Two more run on pull requests and are not required: CI's "Changes", which decides whether the
+   iOS build runs, and the Site workflow's "Build & Test", which runs when a pull request touches
+   `apps/site`, `apps/docs`, `packages`, `scripts/skills/check-completion.ts`, `site.yml` or the
+   lockfile.
 
    A pull request must be **up to date with `main`** to merge, so its checks have run against the
    `main` it merges into and two pull requests that are each green cannot break `main` together.
@@ -317,7 +321,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
 ```
 Button/
 ├── Button.tsx           # Component implementation
-├── Button.styles.css    # Component styles
+├── Button.mdx           # Docs page, shown in Storybook
 ├── Button.stories.tsx   # Storybook stories
 ├── Button.test.tsx      # Unit tests
 ├── Button.figma.tsx     # Code Connect mapping
@@ -408,9 +412,8 @@ describe('Button', () => {
 ### Accessibility Tests
 
 ```typescript
-import { axe, toHaveNoViolations } from 'jest-axe';
-
-expect.extend(toHaveNoViolations);
+// vitest-axe's matchers are registered once, in packages/react/src/test/setup.ts
+import { axe } from 'vitest-axe';
 
 it('has no accessibility violations', async () => {
   const { container } = render(<Button>Accessible</Button>);
@@ -529,7 +532,6 @@ full procedure. In short:
 
 ## Questions?
 
-- **Discussions**: GitHub Discussions
 - **Issues**: GitHub Issues
 - **Email**: kozmos-maintainers@pointr.tech
 
