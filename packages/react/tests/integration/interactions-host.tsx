@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import {
   POIResultList,
+  SegmentedControl,
   ThemeProvider,
   type POIResultListItem,
 } from "@kozmos-ds/react";
@@ -77,9 +78,33 @@ function LateResults({ reveal: initialReveal }: { reveal: boolean }) {
   );
 }
 
+/**
+ * R1: a product holding the choice, starting with nothing chosen, as
+ * `useState<string | undefined>()` does. The output says what the product
+ * holds.
+ */
+function HeldChoice() {
+  const [value, setValue] = useState<string | undefined>();
+  return (
+    <>
+      <SegmentedControl
+        items={[
+          { value: "list", label: "List" },
+          { value: "map", label: "Map" },
+        ]}
+        label="View"
+        onValueChange={setValue}
+        value={value}
+      />
+      <output data-testid="held">{value ?? "nothing"}</output>
+    </>
+  );
+}
+
 const scenarios: Record<string, () => ReactElement> = {
   "late-results": () => <LateResults reveal />,
   "reveal-later": () => <LateResults reveal={false} />,
+  "held-choice": () => <HeldChoice />,
 };
 
 window.interactions = {

@@ -164,6 +164,51 @@ await scenario(
   { reducedMotion: true },
 );
 
+// R1: a choice the product holds, from nothing chosen, taken and given back
+// from the keyboard.
+await scenario(
+  "R1: a held choice with nothing chosen is taken and given back from the keyboard",
+  "held-choice",
+  async (page) => {
+    const held = page.getByTestId("held");
+    const segment = (name) => page.getByRole("radio", { name, exact: true });
+    const checked = async () =>
+      Promise.all(
+        ["List", "Map"].map((name) =>
+          segment(name).getAttribute("aria-checked"),
+        ),
+      );
+    // A key, then the frames a change reported from an effect needs.
+    const press = async (key) => {
+      await page.keyboard.press(key);
+      await settleLayout(page);
+    };
+    assert.deepEqual(await checked(), ["false", "false"]);
+
+    await segment("List").focus();
+    await press("Space");
+    assert.equal(await held.textContent(), "list");
+    assert.deepEqual(await checked(), ["true", "false"]);
+
+    await press("Space");
+    assert.equal(await held.textContent(), "nothing");
+    assert.deepEqual(
+      await checked(),
+      ["false", "false"],
+      "the segment stayed pressed after the choice was given back",
+    );
+
+    // Choosing again after giving it back.
+    await press("ArrowRight");
+    await press("Space");
+    assert.equal(await held.textContent(), "map");
+    assert.deepEqual(await checked(), ["false", "true"]);
+    await press("Space");
+    assert.equal(await held.textContent(), "nothing");
+    assert.deepEqual(await checked(), ["false", "false"]);
+  },
+);
+
 await browser.close();
 if (failures.length) {
   console.error(`\n${failures.length} interaction check(s) failed.`);
