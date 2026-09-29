@@ -238,10 +238,20 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
       if (option) inputRef.current?.focus();
     };
 
+    // Focusing the field opens its list, except when the list is to stay shut.
+    const keepListClosed = React.useRef(false);
     const clearSelection = () => {
       if (disabled || readOnly) return;
       commitValue([]);
       setSearch("");
+      // The clear button goes with the choices it clears, and focus went down
+      // with it, to the page (R3). The field is where the keyboard goes on
+      // from, so it takes focus, with its list closed: the visitor cleared
+      // the choice and did not ask for options. Typing or an arrow key opens
+      // it, as from any other focus.
+      keepListClosed.current = true;
+      inputRef.current?.focus();
+      keepListClosed.current = false;
       setOpen(false);
       trackEvent("MultiSelect", "selection_cleared", {});
     };
@@ -329,7 +339,8 @@ export const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                 placeholder={selectedValues.length > 0 ? "" : placeholder}
                 value={visibleSearchValue}
                 onFocus={() => {
-                  if (!disabled && !readOnly) setOpen(true);
+                  if (!disabled && !readOnly && !keepListClosed.current)
+                    setOpen(true);
                 }}
                 onChange={(event) => {
                   setSearch(event.target.value);
