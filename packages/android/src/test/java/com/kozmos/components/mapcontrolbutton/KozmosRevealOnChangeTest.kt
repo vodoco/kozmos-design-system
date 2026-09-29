@@ -1,5 +1,6 @@
 package com.kozmos.components.mapcontrolbutton
 
+import androidx.compose.runtime.snapshots.Snapshot
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -18,8 +19,21 @@ class KozmosRevealOnChangeTest {
     private val clock = ManualClock()
     private val reveal = KozmosRevealOnChange(clock::schedule)
 
+    /**
+     * A case, run inside a Compose snapshot of its own, applied when it ends.
+     * KozmosRevealOnChange keeps `revealed` in Compose state, and this class
+     * has no composition and no frames. Written to the global snapshot, once
+     * an earlier test in the JVM has composed, it woke Compose's snapshot
+     * manager, which posted its work to a main looper no frame runs again,
+     * and every composition after it in the JVM got no frames:
+     * KozmosMapControlsGroupPressesTest read an empty group on CI (#169), and
+     * the panel header's drag tests did not move the sheet. Written in a
+     * snapshot of its own, the state reaches no global observer.
+     */
+    private fun case(body: () -> Unit) = Snapshot.withMutableSnapshot(body)
+
     @Test
-    fun staysClosedOnTheFirstRender() {
+    fun staysClosedOnTheFirstRender() = case {
         reveal.observe("off", enabled = true)
         assertFalse(reveal.revealed)
 
@@ -28,7 +42,7 @@ class KozmosRevealOnChangeTest {
     }
 
     @Test
-    fun opensWhenTheValueChangesAndClosesAfterTheDuration() {
+    fun opensWhenTheValueChangesAndClosesAfterTheDuration() = case {
         reveal.observe("off", enabled = true, durationMillis = 2500)
         reveal.observe("on", enabled = true, durationMillis = 2500)
         clock.advanceBy(0)
@@ -42,7 +56,7 @@ class KozmosRevealOnChangeTest {
     }
 
     @Test
-    fun staysOpenTwoAndAHalfSecondsUnlessToldOtherwise() {
+    fun staysOpenTwoAndAHalfSecondsUnlessToldOtherwise() = case {
         // React's default, which the SDK's control reads by.
         reveal.observe("off", enabled = true)
         reveal.observe("on", enabled = true)
@@ -54,7 +68,7 @@ class KozmosRevealOnChangeTest {
     }
 
     @Test
-    fun waitsOutTheDelayBeforeOpening() {
+    fun waitsOutTheDelayBeforeOpening() = case {
         reveal.observe("off", enabled = true, durationMillis = 3000, delayMillis = 1400)
         reveal.observe("on", enabled = true, durationMillis = 3000, delayMillis = 1400)
 
@@ -69,7 +83,7 @@ class KozmosRevealOnChangeTest {
     }
 
     @Test
-    fun restartsRatherThanStackingWhenTheValueChangesAgainMidReveal() {
+    fun restartsRatherThanStackingWhenTheValueChangesAgainMidReveal() = case {
         reveal.observe("off", enabled = true, durationMillis = 2000)
         reveal.observe("on", enabled = true, durationMillis = 2000)
         clock.advanceBy(1500)
@@ -86,7 +100,7 @@ class KozmosRevealOnChangeTest {
     }
 
     @Test
-    fun staysClosedWhileDisabled() {
+    fun staysClosedWhileDisabled() = case {
         reveal.observe("off", enabled = false)
         reveal.observe("on", enabled = false)
 
@@ -95,7 +109,7 @@ class KozmosRevealOnChangeTest {
     }
 
     @Test
-    fun closesWhenTurnedOffAndDoesNotReplayWhenTurnedBackOn() {
+    fun closesWhenTurnedOffAndDoesNotReplayWhenTurnedBackOn() = case {
         // Turning it off mid-reveal closes the label rather than freezing it,
         // and turning it back on does not replay a change it was not watching.
         reveal.observe("off", enabled = true)
@@ -112,7 +126,7 @@ class KozmosRevealOnChangeTest {
     }
 
     @Test
-    fun closesEvenWhenItsTimingChangesWhileItIsOpen() {
+    fun closesEvenWhenItsTimingChangesWhileItIsOpen() = case {
         // A caller may compute the timing, so it can change while the label is
         // open. The window already open keeps the timing it opened with, and
         // the new timing applies from the next change.
