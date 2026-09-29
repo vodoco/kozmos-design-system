@@ -1,5 +1,5 @@
 ---
-"@kozmos-ds/react": patch
+"@kozmos-ds/react": minor
 ---
 
 `ManoeuvreCard` shows the whole instruction, and the card grows with it (GAP-094). It cut the instruction at two lines, which lost ordinary words: "Take the escalator near Fountain Court up to…" lost the level, and German "Biegen Sie bei Marlow Apotheke auf der linke…" lost the turn itself, "rechts ab". This is a deliberate change of default, asked for by MAP-111 (US1-EC8): a card with a long instruction is now taller. A product that wants a limit passes the new `instructionLines`, the most lines drawn before an ellipsis (`instructionLines={2}` draws what 0.5 drew; under one line is no limit). Assistive technology hears the whole instruction either way, as it did. The itinerary keeps its own cap, `maxItineraryHeight`.
