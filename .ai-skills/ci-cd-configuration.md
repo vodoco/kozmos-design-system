@@ -68,14 +68,14 @@ plain `pnpm install`; the release jobs add `--ignore-scripts`).
 Runs on every pull request and on pushes to `main`. A newer push to the same branch cancels the run
 in progress, which a job reports as "The operation was canceled".
 
-| Job (check name)              | Runner        | What it runs                                                                                                                                                                                                                                                                        |
-| ----------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Web Build & Test`            | ubuntu-latest | `pnpm test:release`; the changeset rule (pull requests); lint; `pnpm build`; `pnpm test`; the contract, token and parity checks; `pnpm skills:check`; the package-install check; the Figma plugin and Code Connect checks; the built-library checks in Chromium, Firefox and WebKit |
-| Twelve browser shards         | ubuntu-latest | Each serves the built Storybook and runs one suite in one browser: stories and interactions, documentation, POI reference, and map, search and navigation, in Chromium, Firefox and WebKit                                                                                          |
-| `Core Pipeline & POI Gallery` | ubuntu-latest | React's Playwright tests, `scripts/skills/check-a11y.ts` and `pnpm test:storybook-regressions` (three browsers) against a running Storybook, then `pnpm test:poi-gallery`                                                                                                           |
-| `Changes`                     | ubuntu-latest | Decides whether `iOS Build` builds: on a pull request that touches `packages/ios`, `packages/tokens`, their scripts, `ci.yml`, `package.json` or the lockfile, and on every push to `main`                                                                                          |
-| `iOS Build`                   | macos-latest  | `swift build` and `swift test` in `packages/ios`, the POI render tests on a simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                           |
-| `Android Build`               | ubuntu-latest | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                          |
+| Job (check name)              | Runner        | What it runs                                                                                                                                                                                                                                                                                        |
+| ----------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Web Build & Test`            | ubuntu-latest | `pnpm test:release`; `pnpm test:ci`; the changeset rule (pull requests); lint; `pnpm build`; `pnpm test`; the contract, token and parity checks; `pnpm skills:check`; the package-install check; the Figma plugin and Code Connect checks; the built-library checks in Chromium, Firefox and WebKit |
+| Twelve browser shards         | ubuntu-latest | Each serves the built Storybook and runs one suite in one browser: stories and interactions, documentation, POI reference, and map, search and navigation, in Chromium, Firefox and WebKit                                                                                                          |
+| `Core Pipeline & POI Gallery` | ubuntu-latest | React's Playwright tests, `scripts/skills/check-a11y.ts` and `pnpm test:storybook-regressions` (three browsers) against a running Storybook, then `pnpm test:poi-gallery`                                                                                                                           |
+| `Changes`                     | ubuntu-latest | Decides whether `iOS Build` builds (`scripts/ci/ios-changes.sh`): on a pull request that touches `packages/ios`, `packages/tokens`, their scripts, `ci.yml`, `package.json` or the lockfile, on every push to `main`, and whenever the changed paths cannot be worked out                           |
+| `iOS Build`                   | macos-latest  | `swift build` and `swift test` in `packages/ios`, the POI render tests on a simulator (`scripts/check-ios-poi.mjs`), SwiftUI Code Connect                                                                                                                                                           |
+| `Android Build`               | ubuntu-latest | `./gradlew assembleDebug` and `./gradlew verifyPaparazziDebug` in `packages/android`, Compose Code Connect                                                                                                                                                                                          |
 
 `node scripts/ci-local.mjs --job <job>` runs one of `ci.yml`'s jobs on your machine: `web` (the
 default), `browsers`, `pipeline`, `ios` or `android`. `--job browsers` runs the twelve shards one
@@ -110,13 +110,15 @@ to report where `NPM_TOKEN` is configured: it fails if `NPM_TOKEN` is a reposito
 
 Only the publish job in `release.yml` names an environment, `npm-release`:
 
-- Olcay (account `vodoco`) is the required reviewer, and may approve a release they dispatched;
+- Olcay's account (`vodoco`, User id 10688082) is its one required reviewer, and may approve a
+  release they dispatched;
 - administrator bypass is off;
 - it deploys from `main` only;
 - it holds `NPM_TOKEN`.
 
 `scripts/release/policy.mjs` asserts the reviewer and the bypass setting, so a release refuses to
-run if either is undone.
+run if either is undone. The reviewers must be exactly that one account, matched by its id rather
+than its login: another account, a team, or a second reviewer beside it is refused.
 
 ---
 

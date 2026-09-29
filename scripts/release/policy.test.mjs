@@ -4,6 +4,9 @@ import { validateRequest, validateEvidence, validatePlan } from "./policy.mjs";
 import { preparePublication, publishPrepared } from "./publisher.mjs";
 
 const sha = "a".repeat(40);
+// npm-release's one required reviewer, as GitHub returns it: Olcay's account
+// (`gh api users/vodoco --jq .id`).
+const OWNER = { type: "User", reviewer: { login: "vodoco", id: 10688082 } };
 const request = {
   event: "workflow_dispatch",
   ref: "refs/heads/main",
@@ -38,7 +41,7 @@ const evidence = {
       { type: "branch_policy" },
       {
         type: "required_reviewers",
-        reviewers: [{ type: "User", reviewer: { login: "vodoco" } }],
+        reviewers: [OWNER],
       },
     ],
     deployment_branch_policy: { custom_branch_policies: true },
@@ -197,6 +200,73 @@ for (const [label, mutate] of [
     mutate(changed);
     assert.throws(() => validateEvidence(changed));
   });
+
+test("npm-release's approval is Olcay's account, by its id, and no one else's", () => {
+  // Olcay's decision (2026-09-28): the approval is his account's alone. The
+  // id is what is compared: a login can be renamed and later registered by
+  // someone else, an account id cannot.
+  const withReviewers = (reviewers) => {
+    const changed = structuredClone(evidence);
+    changed.environment.protection_rules.find(
+      (rule) => rule.type === "required_reviewers",
+    ).reviewers = reviewers;
+    return changed;
+  };
+  validateEvidence(withReviewers([OWNER]));
+  const other = { type: "User", reviewer: { login: "someone-else", id: 1 } };
+  const owner = /exactly one required reviewer, Olcay's account/;
+  for (const [label, reviewers] of [
+    ["another account", [other]],
+    [
+      "Olcay's login on another account",
+      [{ type: "User", reviewer: { login: "vodoco", id: 2 } }],
+    ],
+    [
+      "a team, even one numbered like Olcay's account",
+      [{ type: "Team", reviewer: { slug: "vodoco", id: 10688082 } }],
+    ],
+    ["Olcay and another account", [OWNER, other]],
+    [
+      "Olcay and a team",
+      [OWNER, { type: "Team", reviewer: { slug: "release", id: 5 } }],
+    ],
+    ["Olcay twice", [OWNER, OWNER]],
+    [
+      "a reviewer without an id",
+      [{ type: "User", reviewer: { login: "vodoco" } }],
+    ],
+    [
+      "an id as text",
+      [{ type: "User", reviewer: { login: "vodoco", id: "10688082" } }],
+    ],
+    [
+      "a reviewer without a type",
+      [{ reviewer: { login: "vodoco", id: 10688082 } }],
+    ],
+    ["a reviewer without an account", [{ type: "User" }]],
+    ["an empty entry", [{}]],
+    ["a null entry", [null]],
+  ])
+    assert.throws(
+      () => validateEvidence(withReviewers(reviewers)),
+      owner,
+      label,
+    );
+  // A second required-reviewer rule adds its reviewers to the first's.
+  const twoRules = structuredClone(evidence);
+  twoRules.environment.protection_rules.push({
+    type: "required_reviewers",
+    reviewers: [other],
+  });
+  assert.throws(() => validateEvidence(twoRules), owner);
+  // No reviewer at all is still refused as no approval.
+  for (const reviewers of [[], undefined, "vodoco", { id: 10688082 }])
+    assert.throws(
+      () => validateEvidence(withReviewers(reviewers)),
+      /Require a reviewer's approval/,
+      JSON.stringify(reviewers),
+    );
+});
 
 const manifests = [
   { name: "@kozmos-ds/a", version: "0.1.0-next.0" },

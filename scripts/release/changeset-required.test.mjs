@@ -160,3 +160,315 @@ test("the check accepts an empty changeset, and a version bump alone", (t) => {
   const empty = run();
   assert.equal(empty.status, 0, empty.stdout + empty.stderr);
 });
+
+// ---- Shared build inputs and consumer-facing manifest fields (the read-only
+// review's L3) ----
+
+test("a root file this checkout's builds run needs a changeset for every package that runs it", () => {
+  // scripts/emit-format-declarations.mjs writes the .d.mts and .d.cts that
+  // react, icons and product-contracts ship (each build script runs it), and
+  // the icons and product-contracts tsconfigs extend tsconfig.base.json.
+  const missing = (file, changesets = []) =>
+    missingChangesets({ changedFiles: [file], changesets }).map((m) => m.name);
+  assert.deepEqual(missing("scripts/emit-format-declarations.mjs"), [
+    "@kozmos-ds/react",
+    "@kozmos-ds/icons",
+    "@kozmos-ds/product-contracts",
+  ]);
+  assert.deepEqual(missing("tsconfig.base.json"), [
+    "@kozmos-ds/icons",
+    "@kozmos-ds/product-contracts",
+  ]);
+  assert.deepEqual(
+    missing("scripts/emit-format-declarations.mjs", [{ releases: [react] }]),
+    ["@kozmos-ds/icons", "@kozmos-ds/product-contracts"],
+  );
+  // An empty changeset still says none is needed.
+  assert.deepEqual(
+    missing("scripts/emit-format-declarations.mjs", [{ releases: [] }]),
+    [],
+  );
+  // What no package's build runs stays out, the emitter's own test included.
+  for (const file of [
+    "scripts/emit-format-declarations.test.mjs",
+    "scripts/check-raw-values.mjs",
+    "scripts/release/changeset-required.mjs",
+    "scripts/ci/ios-changes.sh",
+    "tsconfig.json",
+    "eslint.config.mjs",
+  ])
+    assert.deepEqual(missing(file), [], file);
+});
+
+/**
+ * A scratch workspace: `files` committed on main, then a branch. `reset()`
+ * starts the branch again from main, so each case changes one thing.
+ */
+function workspace(t, files) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "kozmos-changeset-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const git = (...args) =>
+    execFileSync("git", args, { cwd: dir, encoding: "utf8" });
+  const write = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  git("init", "-q", "-b", "main");
+  git("config", "user.email", "test@example.com");
+  git("config", "user.name", "test");
+  for (const [file, text] of Object.entries(files)) write(file, text);
+  git("add", "-A");
+  git("commit", "-q", "-m", "base");
+  const reset = () => git("checkout", "-q", "-B", "change", "main");
+  reset();
+  const run = () =>
+    spawnSync(process.execPath, [script, "main"], {
+      cwd: dir,
+      encoding: "utf8",
+    });
+  const commit = (file, text) => {
+    write(file, text);
+    git("add", file);
+    git("commit", "-q", "-m", file);
+  };
+  return { run, commit, reset };
+}
+
+const manifest = (fields) => `${JSON.stringify(fields, null, 2)}\n`;
+
+test("an edit to a file outside a package that its build runs needs that package's changeset", (t) => {
+  const { run, commit, reset } = workspace(t, {
+    "packages/react/package.json": manifest({
+      name: "@kozmos-ds/react",
+      version: "0.4.0",
+      scripts: {
+        build: "tsc && vite build && node ../../scripts/emit.mjs",
+        test: "node ../../scripts/unrelated.mjs",
+      },
+    }),
+    "packages/icons/package.json": manifest({
+      name: "@kozmos-ds/icons",
+      version: "0.4.0",
+      scripts: { build: "vite build && node ../../scripts/emit.mjs" },
+    }),
+    // JSONC, as tsconfig files are.
+    "packages/icons/tsconfig.json":
+      '{\n  // shared options\n  "extends": "../../tsconfig.base.json",\n  "include": ["src"],\n}\n',
+    "packages/tokens/package.json": manifest({
+      name: "@kozmos-ds/tokens",
+      version: "0.1.0",
+      scripts: { build: "node build.mjs" },
+    }),
+    "packages/tokens/build.mjs": "console.log('tokens');\n",
+    "scripts/emit.mjs":
+      'import { format } from "./lib/format.mjs";\nconsole.log(format());\n',
+    "scripts/lib/format.mjs": "export const format = () => 'd.ts';\n",
+    "scripts/unrelated.mjs": "console.log('a check');\n",
+    "tsconfig.base.json": '{ "compilerOptions": { "declarationMap": true } }\n',
+  });
+  const names = (result) =>
+    [...result.stderr.matchAll(/^(@kozmos-ds\/[a-z-]+) ships changes/gm)].map(
+      (match) => match[1],
+    );
+
+  commit("scripts/emit.mjs", "console.log('another format');\n");
+  let result = run();
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.deepEqual(names(result), ["@kozmos-ds/react", "@kozmos-ds/icons"]);
+  assert.match(result.stderr, /^ {2}scripts\/emit\.mjs$/m);
+  commit(".changeset/react.md", '---\n"@kozmos-ds/react": patch\n---\n\nA.\n');
+  result = run();
+  assert.deepEqual(names(result), ["@kozmos-ds/icons"]);
+  commit(".changeset/icons.md", '---\n"@kozmos-ds/icons": patch\n---\n\nB.\n');
+  result = run();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+
+  // What that script imports is part of it.
+  reset();
+  commit("scripts/lib/format.mjs", "export const format = () => 'd.mts';\n");
+  result = run();
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.deepEqual(names(result), ["@kozmos-ds/react", "@kozmos-ds/icons"]);
+
+  // A tsconfig a package's tsconfig extends.
+  reset();
+  commit(
+    "tsconfig.base.json",
+    '{ "compilerOptions": { "sourceMap": true } }\n',
+  );
+  result = run();
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.deepEqual(names(result), ["@kozmos-ds/icons"]);
+
+  // A script only a test runs is not a build input.
+  reset();
+  commit("scripts/unrelated.mjs", "console.log('another check');\n");
+  result = run();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+// A workspace whose react build config imports a root script and reads two
+// manifests, the tokens package's and the root's.
+const configWorkspace = (t) =>
+  workspace(t, {
+    "package.json": manifest({
+      name: "kozmos-design-system",
+      private: true,
+      scripts: { test: "turbo run test" },
+    }),
+    "packages/react/package.json": manifest({
+      name: "@kozmos-ds/react",
+      version: "0.4.0",
+      // A path the shell ends with `;` is still a path.
+      scripts: { build: "node ../../scripts/emit.mjs; vite build" },
+    }),
+    "packages/react/vite.config.mts": [
+      'import shared from "../../scripts/vite-shared.mjs";',
+      'const tokens = require("../tokens/package.json");',
+      'const root = require("../../package.json");',
+      "export default shared(tokens, root);",
+      "",
+    ].join("\n"),
+    "packages/tokens/package.json": manifest({
+      name: "@kozmos-ds/tokens",
+      version: "0.1.0",
+      scripts: { build: "node build.mjs" },
+    }),
+    "packages/tokens/build.mjs": "console.log('tokens');\n",
+    "scripts/emit.mjs": "console.log('d.ts');\n",
+    "scripts/vite-shared.mjs": "export default () => ({});\n",
+  });
+const shipping = (result) =>
+  [...result.stderr.matchAll(/^(@kozmos-ds\/[a-z-]+) ships changes/gm)].map(
+    (match) => match[1],
+  );
+
+test("what a package's build config imports from outside it counts, as does a path a build script ends with `;`", (t) => {
+  const { run, commit, reset } = configWorkspace(t);
+  commit(
+    "scripts/vite-shared.mjs",
+    "export default () => ({ minify: false });\n",
+  );
+  let result = run();
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.deepEqual(shipping(result), ["@kozmos-ds/react"]);
+
+  reset();
+  commit("scripts/emit.mjs", "console.log('d.mts');\n");
+  result = run();
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.deepEqual(shipping(result), ["@kozmos-ds/react"]);
+});
+
+test("a manifest a build config reads never counts as a whole: a version PR asks nothing more", (t) => {
+  const { run, commit, reset } = configWorkspace(t);
+  // A version PR bumps the tokens manifest react's config reads: the bump
+  // is the release, and asks nothing of react.
+  let result;
+  commit(
+    "packages/tokens/package.json",
+    manifest({
+      name: "@kozmos-ds/tokens",
+      version: "0.2.0",
+      scripts: { build: "node build.mjs" },
+    }),
+  );
+  result = run();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+
+  // Nor does a new root script.
+  reset();
+  commit(
+    "package.json",
+    manifest({
+      name: "kozmos-design-system",
+      private: true,
+      scripts: { test: "turbo run test", lint: "turbo run lint" },
+    }),
+  );
+  result = run();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+test("each consumer-facing package.json field needs a changeset; a version bump or a script a person runs does not", (t) => {
+  const base = {
+    name: "@kozmos-ds/react",
+    version: "0.4.0",
+    description: "Kozmos for React",
+    scripts: {
+      build: "pnpm run build:css && vite build",
+      "build:css": "tailwindcss -o dist/style.css",
+      test: "vitest run",
+      lint: "eslint src",
+    },
+    devDependencies: { vite: "^5.0.0" },
+  };
+  const { run, commit, reset } = workspace(t, {
+    "packages/react/package.json": manifest(base),
+  });
+  const scripts = (patch) => ({ scripts: { ...base.scripts, ...patch } });
+  for (const [label, patch] of [
+    ["type", { type: "module" }],
+    ["engines", { engines: { node: ">=20" } }],
+    ["browser", { browser: "./dist/browser.js" }],
+    ["browserslist", { browserslist: ["chrome >= 120"] }],
+    ["sideEffects", { sideEffects: false }],
+    ["exports", { exports: { ".": "./dist/index.js" } }],
+    ["imports", { imports: { "#internal": "./dist/internal.js" } }],
+    ["main", { main: "dist/index.cjs" }],
+    ["module", { module: "dist/index.mjs" }],
+    ["types", { types: "dist/index.d.ts" }],
+    ["unpkg", { unpkg: "dist/index.umd.js" }],
+    ["bin", { bin: { kozmos: "dist/cli.js" } }],
+    ["files", { files: ["dist"] }],
+    ["publishConfig", { publishConfig: { access: "public" } }],
+    ["dependencies", { dependencies: { clsx: "2.1.1" } }],
+    ["peerDependencies", { peerDependencies: { react: "^19.0.0" } }],
+    [
+      "peerDependenciesMeta",
+      { peerDependenciesMeta: { "react-dom": { optional: true } } },
+    ],
+    ["optionalDependencies", { optionalDependencies: { fsevents: "2.3.3" } }],
+    ["bundleDependencies", { bundleDependencies: ["clsx"] }],
+    ["os", { os: ["darwin"] }],
+    ["cpu", { cpu: ["arm64"] }],
+    ["the build script", scripts({ build: "vite build --minify false" })],
+    [
+      "a script the build script runs",
+      scripts({ "build:css": "tailwindcss --minify -o dist/style.css" }),
+    ],
+    ["a script npm runs when it packs", scripts({ prepack: "node strip.mjs" })],
+    [
+      "a script a consumer's install runs",
+      scripts({ postinstall: "node setup.mjs" }),
+    ],
+  ]) {
+    reset();
+    commit("packages/react/package.json", manifest({ ...base, ...patch }));
+    const result = run();
+    assert.equal(
+      result.status,
+      1,
+      `${label}\n${result.stdout}${result.stderr}`,
+    );
+    assert.match(result.stderr, /@kozmos-ds\/react ships changes/, label);
+    assert.match(result.stderr, /^ {2}packages\/react\/package\.json$/m, label);
+  }
+  for (const [label, patch] of [
+    ["a version bump", { version: "0.5.0" }],
+    ["the test script", scripts({ test: "vitest run --coverage" })],
+    ["the lint script", scripts({ lint: "eslint src --max-warnings 0" })],
+    ["a new script no build runs", scripts({ storybook: "storybook dev" })],
+    ["the description", { description: "Kozmos components for React" }],
+    ["devDependencies", { devDependencies: { vite: "^5.4.0" } }],
+  ]) {
+    reset();
+    commit("packages/react/package.json", manifest({ ...base, ...patch }));
+    const result = run();
+    assert.equal(
+      result.status,
+      0,
+      `${label}\n${result.stdout}${result.stderr}`,
+    );
+  }
+});

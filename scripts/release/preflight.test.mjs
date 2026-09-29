@@ -5,7 +5,19 @@ import { REPOSITORY, preflight } from "./preflight.mjs";
 const sha = "c".repeat(40);
 
 // GitHub as it answers for a release candidate that should pass: the live
-// shape of npm-release since 2026-09-28 (a required reviewer, no bypass).
+// shape of npm-release since 2026-09-28 (one required reviewer, Olcay's
+// account by its id, and no bypass).
+const environment = (reviewers) => ({
+  name: "npm-release",
+  protection_rules: [
+    { type: "branch_policy" },
+    { type: "required_reviewers", prevent_self_review: false, reviewers },
+  ],
+  deployment_branch_policy: { custom_branch_policies: true },
+  can_admins_bypass: false,
+});
+const OWNER = { type: "User", reviewer: { login: "vodoco", id: 10688082 } };
+
 function github(overrides = {}) {
   const routes = {
     "actions/runs/7": {
@@ -29,18 +41,7 @@ function github(overrides = {}) {
       })),
     },
     "git/ref/heads/main": { object: { sha } },
-    "environments/npm-release": {
-      name: "npm-release",
-      protection_rules: [
-        { type: "branch_policy" },
-        {
-          type: "required_reviewers",
-          reviewers: [{ type: "User", reviewer: { login: "vodoco" } }],
-        },
-      ],
-      deployment_branch_policy: { custom_branch_policies: true },
-      can_admins_bypass: false,
-    },
+    "environments/npm-release": environment([OWNER]),
     "environments/npm-release/deployment-branch-policies?per_page=100": {
       total_count: 1,
       branch_policies: [{ name: "main", type: "branch" }],
@@ -198,6 +199,29 @@ for (const [label, input, message] of [
       }),
     },
     /Require a reviewer's approval/,
+  ],
+  [
+    "npm-release's reviewer is an account other than Olcay's",
+    {
+      gh: github({
+        "environments/npm-release": environment([
+          { type: "User", reviewer: { login: "someone-else", id: 1 } },
+        ]),
+      }),
+    },
+    /exactly one required reviewer, Olcay's account \(vodoco, User id 10688082\)/,
+  ],
+  [
+    "npm-release names a second reviewer beside Olcay",
+    {
+      gh: github({
+        "environments/npm-release": environment([
+          OWNER,
+          { type: "Team", reviewer: { slug: "release", id: 5 } },
+        ]),
+      }),
+    },
+    /exactly one required reviewer, Olcay's account/,
   ],
 ])
   test(`the pre-flight refuses when ${label}`, async () => {
