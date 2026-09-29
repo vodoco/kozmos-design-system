@@ -629,14 +629,20 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
   },
 ];
 
-// `/* @__PURE__ */` for the same reason each generated icon carries one: this
-// is a call at module scope, and a bundler must assume a call can do something
-// unless told otherwise. Without it, importing a single icon from this package
-// retained the whole registry — measured on 2026-09-23 at 75 path definitions
-// in a bundle that asked for one icon — because the lookup references every
-// component the registry names.
+// Both calls are marked `/* @__PURE__ */`, for the reason each generated icon
+// carries one: a bundler must assume a call at module scope can do something,
+// and keeps it unless told otherwise. A mark covers its own call, not the calls
+// in its arguments, so the `.map` needs its own. From 2026-09-23 to 2026-09-29
+// only `Object.fromEntries` was marked, and Rollup and esbuild both kept the
+// `.map`, and with it the definitions and every icon they named: in 0.4.0,
+// importing `Check` alone cost an app 11.49 KB gzip, all 56 of the registry's
+// icons, where it now costs 0.38. tests/tree-shaking.test.mjs bundles single
+// imports with both bundlers and fails if the registry comes back with them.
 export const kozmosIconRegistry = /* @__PURE__ */ Object.fromEntries(
-  kozmosIconDefinitions.map((icon) => [icon.name, icon.component]),
+  /* @__PURE__ */ kozmosIconDefinitions.map((icon) => [
+    icon.name,
+    icon.component,
+  ]),
 ) as Record<KozmosIconName, KozmosIconComponent>;
 
 export const kozmosIconAliases = {
