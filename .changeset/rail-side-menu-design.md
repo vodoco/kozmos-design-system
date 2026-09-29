@@ -6,6 +6,6 @@ The rail takes the dashboard side menu's design. A `NavigationItem` with `placem
 
 `Sidebar`'s `rail` variant is that 96px rail: it was 80px with 8px of inline padding, and its items now fill it. Its background is the surface (`bg-surface-0`, the same colour as before), and its 1px edge is at its inline end (`border-e`) in both variants, so a right-to-left sidebar draws it on the left.
 
-`BottomNavigation` keeps its own items: it no longer renders `NavigationItem` rail tiles, so it does not take the rail's padding, width or selected bar. It draws what it drew before: an icon over an 11px label on 14px lines, sharing the bar's width, a selected item on the muted fill. Its items are no longer marked `data-placement="rail"`; they are `data-slot="bottom-navigation-item"`.
+`BottomNavigation` keeps its own items: it no longer renders `NavigationItem` rail tiles, so it does not take the rail's padding, width or selected bar. It preserves the icon-over-label layout, equal-width items and muted selected fill. Labels now use 11px text on 14px lines, as described in the separate typography change. Its items are no longer marked `data-placement="rail"`; they are `data-slot="bottom-navigation-item"`.
 
 This is a visible change: screenshot tests of a rail or a sidebar rail will see it, and a product that sized rail tiles itself (`className="w-24"`) no longer needs to.
