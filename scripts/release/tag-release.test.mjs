@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as tagRelease from "./tag-release.mjs";
 import {
   assertPublished,
   changelogSection,
@@ -122,5 +123,136 @@ test("it tags only what a successful Release run for the commit published, and n
       npm({ "@kozmos-ds/icons": ["0.4.0"] }),
     ),
     /npm does not have @kozmos-ds\/react@0\.5\.0/,
+  );
+});
+
+// A release commit for any plan: its manifests and changelogs.
+const planned = (plan) => (args) => {
+  if (args[0] === "ls-tree") return "packages/icons\npackages/react\n";
+  if (args[0] !== "show") throw new Error(args.join(" "));
+  const [, file] = args[1].split(":");
+  if (file === "release/plan.json")
+    return JSON.stringify({ schemaVersion: 1, ...plan });
+  const name = `@kozmos-ds/${file.split("/")[1]}`;
+  const version =
+    plan.packages.find((item) => item.name === name)?.version ?? "0.0.1";
+  if (file.endsWith("package.json")) return JSON.stringify({ name, version });
+  return `# ${name}\n\n## ${version}\n\n- 1111111: ${version}.\n`;
+};
+
+test("the plan's channel reaches each release: only stable React on latest is Latest", () => {
+  const classify = (plan) =>
+    releasesAt(sha, planned(plan)).map((r) => [
+      r.tag,
+      r.channel,
+      r.prerelease,
+      r.latest,
+    ]);
+  const react = (version) => ({ name: "@kozmos-ds/react", version });
+  const icons = (version) => ({ name: "@kozmos-ds/icons", version });
+  assert.deepEqual(
+    classify({ tag: "latest", packages: [react("0.6.0"), icons("0.5.0")] }),
+    [
+      ["@kozmos-ds/icons@0.5.0", "latest", false, false],
+      ["@kozmos-ds/react@0.6.0", "latest", false, true],
+    ],
+  );
+  assert.deepEqual(
+    classify({ tag: "next", packages: [react("0.6.0-beta.1")] }),
+    [["@kozmos-ds/react@0.6.0-beta.1", "next", true, false]],
+  );
+  assert.deepEqual(classify({ tag: "next", packages: [react("0.6.0")] }), [
+    ["@kozmos-ds/react@0.6.0", "next", false, false],
+  ]);
+  assert.deepEqual(classify({ tag: "next", packages: [icons("0.5.0-rc.0")] }), [
+    ["@kozmos-ds/icons@0.5.0-rc.0", "next", true, false],
+  ]);
+  // The policy never lets a prerelease use latest; were one to, it would
+  // still not be Latest.
+  assert.deepEqual(
+    classify({ tag: "latest", packages: [react("0.6.0-rc.1")] }),
+    [["@kozmos-ds/react@0.6.0-rc.1", "latest", true, false]],
+  );
+  // React goes last on every channel: it depends on the others.
+  assert.deepEqual(
+    classify({ tag: "next", packages: [react("0.6.0"), icons("0.5.0")] }).map(
+      ([tag]) => tag,
+    ),
+    ["@kozmos-ds/icons@0.5.0", "@kozmos-ds/react@0.6.0"],
+  );
+});
+
+test("a plan without a channel, or a version that is not semver, is refused rather than guessed", () => {
+  for (const plan of [
+    { packages: [{ name: "@kozmos-ds/react", version: "0.6.0" }] },
+    { tag: "beta", packages: [{ name: "@kozmos-ds/react", version: "0.6.0" }] },
+  ])
+    assert.throws(() => releasesAt(sha, planned(plan)), /next or latest/);
+  assert.throws(
+    () =>
+      releasesAt(
+        sha,
+        planned({
+          tag: "latest",
+          packages: [{ name: "@kozmos-ds/react", version: "v0.6" }],
+        }),
+      ),
+    /not a semver version/,
+  );
+});
+
+test("a tag resolves to its commit through any number of annotated tags", async () => {
+  assert.equal(
+    typeof tagRelease.tagCommit,
+    "function",
+    "tag-release.mjs exports tagCommit",
+  );
+  const commit = "c".repeat(40);
+  const objects = {
+    "git/ref/tags/%40kozmos-ds/react%400.6.0": {
+      status: 200,
+      body: { object: { type: "tag", sha: "1".repeat(40) } },
+    },
+    [`git/tags/${"1".repeat(40)}`]: {
+      status: 200,
+      body: { object: { type: "tag", sha: "2".repeat(40) } },
+    },
+    [`git/tags/${"2".repeat(40)}`]: {
+      status: 200,
+      body: { object: { type: "commit", sha: commit } },
+    },
+    "git/ref/tags/%40kozmos-ds/icons%400.5.0": {
+      status: 200,
+      body: { object: { type: "commit", sha: commit } },
+    },
+    "git/ref/tags/%40kozmos-ds/tree%401.0.0": {
+      status: 200,
+      body: { object: { type: "tree", sha: "3".repeat(40) } },
+    },
+    "git/ref/tags/%40kozmos-ds/gone%401.0.0": {
+      status: 200,
+      body: { object: { type: "tag", sha: "4".repeat(40) } },
+    },
+  };
+  const api = async (route) =>
+    objects[route] ?? { status: 404, body: { message: "Not Found" } };
+  assert.equal(
+    await tagRelease.tagCommit(api, "@kozmos-ds/react@0.6.0"),
+    commit,
+  );
+  assert.equal(
+    await tagRelease.tagCommit(api, "@kozmos-ds/icons@0.5.0"),
+    commit,
+  );
+  assert.equal(await tagRelease.tagCommit(api, "@kozmos-ds/none@1.0.0"), null);
+  await assert.rejects(
+    tagRelease.tagCommit(api, "@kozmos-ds/tree@1.0.0"),
+    /points at a tree, not a commit/,
+  );
+  // The ref is there but its tag object is not: that is a failed lookup, not
+  // an absent tag.
+  await assert.rejects(
+    tagRelease.tagCommit(api, "@kozmos-ds/gone@1.0.0"),
+    /HTTP 404/,
   );
 });

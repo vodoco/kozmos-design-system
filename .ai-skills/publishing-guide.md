@@ -133,6 +133,12 @@ pnpm changeset
 A pull request that changes what `@kozmos-ds/react`, `icons`, `product-contracts` or `tokens` ships
 needs a changeset naming the package, and CI's `scripts/release/changeset-required.mjs` fails
 without one. An empty changeset (`pnpm changeset --empty`) records that a change needs no release.
+What ships includes files outside the package that its build runs or extends: an edit to
+`scripts/emit-format-declarations.mjs` needs changesets for react, icons and product-contracts, and
+one to `tsconfig.base.json` for icons and product-contracts. It also includes the consumer-facing
+`package.json` fields (`type`, `exports`, `engines`, `browserslist`, `sideEffects`, the
+dependencies and the rest) and the scripts that build and pack the package. A version bump alone
+needs none.
 
 ### Changeset File Format
 
@@ -192,7 +198,9 @@ deprecating or re-tagging a version, are Olcay's decision, never an assistant's.
 ## 9. Pre-release Versions
 
 `release/plan.json` carries the npm tag, `next` or `latest`. A prerelease version cannot use
-`latest`, and a first release of something new begins on `next`. Changesets' pre mode has never
+`latest`, and a first release of something new begins on `next`. `pnpm release:tag` carries the
+channel to GitHub: a prerelease version becomes a GitHub prerelease, and only a stable React
+release on `latest` is marked Latest. Changesets' pre mode has never
 been used here (there has never been a `.changeset/pre.json`), and there are no canary releases:
 nothing publishes from a branch or on a push.
 
