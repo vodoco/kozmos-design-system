@@ -102,6 +102,10 @@ internal fun manoeuvreCardFocusAfter(expanded: Boolean, from: ManoeuvreCardPart?
  * [manoeuvreCardFocusAfter] — whether a keyboard, TalkBack or the product
  * opened or closed the card. A tap moves no focus, and focus anywhere else
  * stays where it is.
+ *
+ * [instructionLines] sits after 0.5.0's parameters and before [itinerary],
+ * so the itinerary stays last for a trailing lambda; the overload below
+ * keeps 0.5.0's positional call.
  */
 @Composable
 fun KozmosManoeuvreCard(
@@ -279,4 +283,44 @@ fun KozmosManoeuvreCard(
         }
         }
     }
+}
+
+/**
+ * [KozmosManoeuvreCard] as 0.5.0 declared it: its parameters, in its order,
+ * [itinerary] last. A call that passes them by position still compiles, and
+ * so does one that passes the itinerary as a trailing lambda: a parameter
+ * added since, instructionLines, sits before itinerary so that the lambda
+ * stays last, and this overload keeps the positional call. It draws the card
+ * the full one does, with the whole instruction.
+ */
+@Composable
+fun KozmosManoeuvreCard(
+    type: DirectionType,
+    instruction: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    detail: String? = null,
+    expandLabel: String = "Show itinerary",
+    collapseLabel: String = "Hide itinerary",
+    manoeuvreLabel: String = "Current manoeuvre",
+    maxItineraryHeight: Dp = 320.dp,
+    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    itinerary: @Composable () -> Unit
+) {
+    KozmosManoeuvreCard(
+        type = type,
+        instruction = instruction,
+        expanded = expanded,
+        onToggle = onToggle,
+        modifier = modifier,
+        detail = detail,
+        expandLabel = expandLabel,
+        collapseLabel = collapseLabel,
+        manoeuvreLabel = manoeuvreLabel,
+        maxItineraryHeight = maxItineraryHeight,
+        surface = surface,
+        instructionLines = null,
+        itinerary = itinerary
+    )
 }
