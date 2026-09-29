@@ -753,7 +753,7 @@ fun KozmosButton(text: String, onClick: () -> Unit) {
 
 #### Proposal: 5.4 React Native
 
-There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](other-platforms.md).
 
 ### Proposal: 6. Dark Mode
 
