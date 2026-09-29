@@ -44,8 +44,9 @@ fi
 
 # The list is captured before it is matched. Piped straight into `grep -q`, a
 # failed diff reached grep as an empty list, and the pipeline's status was
-# grep's "no match": the failure read as "no iOS changes".
-if ! changed="$(git diff --name-only "$base"...HEAD)"; then
+# grep's "no match": the failure read as "no iOS changes". --end-of-options
+# keeps a base that starts with "-" a revision, never an option.
+if ! changed="$(git diff --name-only --end-of-options "$base"...HEAD)"; then
   unknown "Could not list the paths changed since $base"
 fi
 

@@ -151,10 +151,13 @@ test("a base git cannot diff against builds iOS, with a warning, never a skip", 
   git("commit", "-q", "--allow-empty", "-m", "unrelated");
   const unrelated = git("rev-parse", "HEAD");
   change("docs/release-process.md"); // a change that on its own would skip
+  const optionFile = path.join(scratch(t, "kozmos-ios-option-"), "diff");
   for (const [label, base] of [
     ["a commit this clone does not have", "0".repeat(40)],
     ["a malformed base", "not-a-commit"],
     ["a base with no history in common", unrelated],
+    // Read as an option, it would write the diff to a file and list nothing.
+    ["a base that looks like an option", `--output=${optionFile}`],
   ]) {
     const run = runStep(t, dir, base);
     assert.equal(run.status, 0, `${label}\n${run.log}`);
@@ -165,6 +168,11 @@ test("a base git cannot diff against builds iOS, with a warning, never a skip", 
       `${label}\n${run.log}`,
     );
   }
+  assert.equal(
+    fs.readdirSync(path.dirname(optionFile)).length,
+    0,
+    "git read the base as an option",
+  );
 });
 
 test("git failing for any other reason builds iOS, with a warning", (t) => {
