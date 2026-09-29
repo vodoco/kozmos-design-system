@@ -1,6 +1,23 @@
 import assert from "node:assert/strict";
 import semver from "semver";
 
+// Who approves a release: Olcay's account, and only it (Olcay's decision,
+// 2026-09-28). The numeric id is what is compared, not the login: a login can
+// be renamed and later registered by someone else, an account id cannot.
+// From `gh api users/vodoco --jq .id`.
+export const RELEASE_APPROVER = Object.freeze({
+  type: "User",
+  login: "vodoco",
+  id: 10688082,
+});
+
+/** A required reviewer as a person reads it, for a refusal message. */
+function reviewerName(entry) {
+  const who = entry?.reviewer;
+  const name = who?.login ?? who?.slug ?? who?.name ?? "no account";
+  return `${entry?.type ?? "no type"} ${name} (id ${JSON.stringify(who?.id)})`;
+}
+
 export function validateRequest(request) {
   assert.equal(
     request.event,
@@ -78,20 +95,33 @@ export function validateEvidence({
   // comment once said the click could not be required). This repository is
   // public, and since 2026-09-28 npm-release waits for Olcay's approval with
   // administrator bypass off (Olcay's choice), so both are asserted: a release
-  // refuses to run if someone removes the reviewer or turns bypass back on.
-  // An absent bypass field is refused too rather than read as false.
+  // refuses to run if someone removes the reviewer, replaces or joins it with
+  // another account or a team, or turns bypass back on. The reviewers must be
+  // exactly one, of type User, with RELEASE_APPROVER's account id. An absent
+  // bypass field is refused too rather than read as false.
   assert.ok(
     environment.protection_rules?.some((rule) => rule.type === "branch_policy"),
     "Restrict the environment with a branch protection rule",
   );
+  const reviewerRules = (environment.protection_rules ?? []).filter(
+    (rule) => rule.type === "required_reviewers",
+  );
   assert.ok(
-    environment.protection_rules?.some(
-      (rule) =>
-        rule.type === "required_reviewers" &&
-        Array.isArray(rule.reviewers) &&
-        rule.reviewers.length > 0,
+    reviewerRules.some(
+      (rule) => Array.isArray(rule.reviewers) && rule.reviewers.length > 0,
     ),
     "Require a reviewer's approval on the npm-release environment",
+  );
+  const reviewers = reviewerRules.flatMap((rule) =>
+    Array.isArray(rule.reviewers) ? rule.reviewers : [rule.reviewers],
+  );
+  assert.ok(
+    reviewers.length === 1 &&
+      reviewers[0]?.type === RELEASE_APPROVER.type &&
+      reviewers[0]?.reviewer?.id === RELEASE_APPROVER.id,
+    `npm-release must have exactly one required reviewer, Olcay's account ` +
+      `(${RELEASE_APPROVER.login}, User id ${RELEASE_APPROVER.id}); it has ` +
+      `${reviewers.map(reviewerName).join(", ")}`,
   );
   assert.equal(
     environment.can_admins_bypass,

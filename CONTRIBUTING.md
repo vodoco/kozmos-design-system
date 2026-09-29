@@ -494,11 +494,28 @@ pnpm changeset
 **Every pull request that changes what a published package ships carries a changeset naming that
 package** — `@kozmos-ds/react`, `@kozmos-ds/icons`, `@kozmos-ds/product-contracts` or
 `@kozmos-ds/tokens`. "Ships" means its `src/` apart from tests, stories, `.mdx` pages and Code Connect
-files, the build files beside it (`tsconfig*.json`, `vite.config.*` and the like), and the
-consumer-facing fields of its `package.json`. CI's "Web Build & Test" fails a pull request without
-one (`scripts/release/changeset-required.mjs`; run it yourself with
-`node scripts/release/changeset-required.mjs`). If a change genuinely needs no release, say so with
-an empty changeset: `pnpm changeset --empty`. React pins its siblings exactly, so a react change that
+files, the build files beside it (`tsconfig*.json`, `vite.config.*` and the like), the files outside
+it that its build runs or extends, and the consumer-facing fields of its `package.json`:
+
+- **Files outside the package:** each file its build script names, each tsconfig its tsconfig
+  extends, and what those import. The check reads them from the packages, so today that is
+  `scripts/emit-format-declarations.mjs` (the react, icons and product-contracts builds run it)
+  and `tsconfig.base.json` (the icons and product-contracts tsconfigs extend it). An edit to one
+  needs a changeset for every package that reads it.
+- **`package.json`:**
+  - how it resolves (`type`, `exports`, `imports`, `main`, `module`, `browser`, `types`, `bin`,
+    `sideEffects`);
+  - what installs with it (the dependency fields, `engines`, `os`, `cpu`);
+  - what it packs and how it publishes (`files`, `publishConfig`);
+  - `browserslist`;
+  - the scripts that build and pack it (`build`, `prepack`, `prepare`, `postpack`, the install
+    scripts, and any script they run).
+
+  A version bump alone, or a change to `test`, `lint` or `devDependencies`, needs none.
+
+CI's "Web Build & Test" fails a pull request without one (`scripts/release/changeset-required.mjs`;
+run it yourself with `node scripts/release/changeset-required.mjs`). If a change genuinely needs no
+release, say so with an empty changeset: `pnpm changeset --empty`. React pins its siblings exactly, so a react change that
 needs a new icon or contract field needs their changesets too.
 
 A Dependabot pull request that bumps a published package's runtime `dependencies` needs one too
@@ -526,7 +543,9 @@ full procedure. In short:
 4. The owner dispatches **Release Kozmos System** and approves the `npm-release` deployment; the
    workflow publishes the tested tarballs with npm provenance.
 5. `pnpm release:tag <sha>` creates the git tags and GitHub Releases, with each version's
-   changelog as the notes.
+   changelog as the notes. It first checks that every tag and release already there points at
+   `<sha>`. Only a stable React release on `latest` is marked Latest, and a prerelease version is
+   a GitHub prerelease.
 
 ---
 
