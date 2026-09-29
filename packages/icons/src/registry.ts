@@ -634,10 +634,10 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
 // and keeps it unless told otherwise. A mark covers its own call, not the calls
 // in its arguments, so the `.map` needs its own. From 2026-09-23 to 2026-09-29
 // only `Object.fromEntries` was marked, and Rollup and esbuild both kept the
-// `.map`, and with it the definitions and all 56 icons they named: importing
-// `Check` alone cost an app 11.49 KB gzip, where it now costs 0.38.
-// tests/tree-shaking.test.mjs bundles single imports with both bundlers and
-// fails if the registry comes back with them.
+// `.map`, and with it the definitions and every icon they named: in 0.4.0,
+// importing `Check` alone cost an app 11.49 KB gzip, all 56 of the registry's
+// icons, where it now costs 0.38. tests/tree-shaking.test.mjs bundles single
+// imports with both bundlers and fails if the registry comes back with them.
 export const kozmosIconRegistry = /* @__PURE__ */ Object.fromEntries(
   /* @__PURE__ */ kozmosIconDefinitions.map((icon) => [
     icon.name,

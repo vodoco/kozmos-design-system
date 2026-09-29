@@ -7,8 +7,8 @@
  * `sideEffects` honoured and React left to the app. It then checks two things: the icons that
  * survive are exactly the ones asked for, and one icon stays under a ceiling in bytes.
  *
- * Until 2026-09-29 one icon cost 11.5 to 13 KB gzip, 33 to 36 KB minified, because all 56
- * of the registry's icons came with it. `kozmosIconRegistry` was built at module scope by
+ * In 0.4.0 one icon cost 11.5 to 13 KB gzip, 33 to 36 KB minified, because all 56 of the
+ * registry's icons came with it. `kozmosIconRegistry` was built at module scope by
  * `Object.fromEntries(kozmosIconDefinitions.map(...))`, and only the outer call was marked
  * `@__PURE__`. A pure mark covers its own call, not the calls in its arguments, so both
  * bundlers kept the `.map`, and with it the definitions and every component they name.
@@ -24,8 +24,9 @@ import { after, before, describe, test } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
 
-// Measured on 2026-09-29, each of the 1,179 icons bundled alone, factory included: median
-// 0.58 KB gzip, the heaviest (Settings01) 1.88 KB, Check 0.38 KB. The registry's 56 cost 11.5 KB.
+// Measured on 2026-09-29, each of the 1,180 icons bundled alone, factory included: median
+// 0.58 KB gzip, the heaviest (Settings01) 1.88 KB, Check 0.38 KB. A lookup by name keeps all
+// 57 of the registry's: 11.8 KB.
 const MAX_ONE_ICON_GZIP_KB = 2;
 
 const PACKAGE_DIR = path.resolve(
