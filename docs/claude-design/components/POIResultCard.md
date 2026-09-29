@@ -89,6 +89,18 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultCardProps`, which 
   is set (decision 50). English by default; a product that translates
   passes its own, for one band or all five.
 
+- `idPrefix`: `string`, optional.
+
+  Names this card apart from another card for the same place on the page:
+  the search's results and an assistant's answer can both show it. The
+  card's id becomes `getPOIResultDomId(poi.id, idPrefix)`, and its action
+  row's and unavailable note's ids follow it, so each card's references
+  stay its own. Left out, the id is `getPOIResultDomId(poi.id)`, as it has
+  always been. An `id` given to the card wins over both.
+
+  Keep it the same on the server and in the browser: a word, or an id from
+  React's `useId()`. `POIResultList` and `POIResultGroup` pass theirs on.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -395,4 +407,4 @@ type POIAttributeKind = "service" | "dietary" | "accessibility" | "restriction";
 
 ## Also exported
 
-- `getPOIResultDomId`: `(poiId: string) => string`.
+- `getPOIResultDomId`: `(poiId: string, idPrefix?: string) => string`. The DOM id of a place's result card: what `LocationPin`'s `resultId` names to say which card a pin controls.
