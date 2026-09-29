@@ -2,13 +2,13 @@ package com.kozmos.components.poiresultcard
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,15 +26,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kozmos.contracts.KozmosPOIAvailability
 import com.kozmos.contracts.KozmosPOIPresentation
@@ -111,6 +121,8 @@ fun KozmosPOIResultCard(
     val available = result.isAvailable
     val tab = kozmosPOIResultTab(result, numbered, featuredLabel)
     val numberText = (tab as? KozmosPOIResultTab.Number)?.number
+    // The tab and the name's clearance grow with the reader's font size.
+    val tabHeight = with(LocalDensity.current) { 16.sp.toDp() }
 
     // Shown only on the selected result: an action row on every card would be a
     // wall of buttons, and the tap that selects is the tap that asks.
@@ -164,167 +176,173 @@ fun KozmosPOIResultCard(
             color = kozmosPOIResultCardEdge(selected = result.selected, featured = tab is KozmosPOIResultTab.Featured)
         )
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            if (tab != null) {
-                KozmosPOIResultTabView(tab = tab, selected = result.selected)
-            }
-
-            // 80 tall: the prototype's row.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(minHeight = KozmosDimensions.primitivesLayoutSizing1000)
-                    .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing200, vertical = KozmosDimensions.primitivesLayoutSpacing150),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(
-                    KozmosDimensions.primitivesLayoutSpacing150
-                )
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(
-                        KozmosDimensions.primitivesLayoutSpacing25
-                    )
-                ) {
-                    Text(
-                        text = poi.name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Normal,
-                        color = KozmosThemeTokens.primitivesColorsForeground100,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    poi.categoryLabel?.let { categoryLabel ->
-                        Text(
-                            text = categoryLabel,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = KozmosThemeTokens.primitivesColorsForeground500,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(
-                            KozmosDimensions.primitivesLayoutSpacing50
-                        )
-                    ) {
-                        // A dot before the floor when it is the one the map shows.
-                        if (currentFloorId != null && result.floorId == currentFloorId) {
-                            Box(
-                                modifier = Modifier
-                                    .size(KozmosDimensions.primitivesLayoutSpacing75)
-                                    .clip(CircleShape)
-                                    .background(KozmosThemeTokens.primitivesColorsTheme500)
-                            )
-                        }
-                        Text(
-                            text = poi.locationLabel,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = KozmosThemeTokens.primitivesColorsForeground500,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    poi.availabilityLabel?.let { availabilityLabel ->
-                        Text(
-                            text = availabilityLabel,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            // Three tones, not two. "Closing soon" is a reason
-                            // to hurry, so it cannot look like open; the place
-                            // is still open, so it is not closed either.
-                            color = when (poi.availability) {
-                                KozmosPOIAvailability.Open ->
-                                    KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle
-                                KozmosPOIAvailability.OpeningSoon,
-                                KozmosPOIAvailability.ClosingSoon ->
-                                    KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle
-                                else -> KozmosThemeTokens.primitivesColorsForeground500
-                            }
-                        )
-                    }
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(
-                        KozmosDimensions.primitivesLayoutSpacing100
-                    )
-                ) {
-                    POILogo(poi = poi)
-
-                    travelTimeText?.let { text ->
-                        Text(
-                            text = text,
-                            style = MaterialTheme.typography.bodyMedium,
-                            // Nearby in the success emotion's Text role, which
-                            // reads at 4.5:1 or more on the card in both
-                            // themes; every other band, and the exact minutes,
-                            // in the card's text colour. The word is Nearby,
-                            // so the colour is never the only signal.
-                            color = when (result.travelEstimate?.band?.tone) {
-                                KozmosTravelTimeTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
-                                KozmosTravelTimeTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
-                            }
-                        )
-                    }
-                }
-            }
-
-            if (visibleActions.isNotEmpty()) {
-                Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
-
+        Box {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // 80 tall: the prototype's row.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics { contentDescription = actionsLabel }
+                        .defaultMinSize(minHeight = KozmosDimensions.primitivesLayoutSizing1000)
                         .padding(
-                            horizontal = KozmosDimensions.primitivesLayoutSpacing200,
-                            vertical = KozmosDimensions.primitivesLayoutSpacing100
+                            start = KozmosDimensions.primitivesLayoutSpacing200,
+                            end = KozmosDimensions.primitivesLayoutSpacing200,
+                            top = if (tab != null) tabHeight + KozmosDimensions.primitivesLayoutSpacing100 else KozmosDimensions.primitivesLayoutSpacing150,
+                            bottom = KozmosDimensions.primitivesLayoutSpacing150
                         ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(
-                        KozmosDimensions.primitivesLayoutSpacing100
+                        KozmosDimensions.primitivesLayoutSpacing150
                     )
                 ) {
-                    visibleActions.forEach { entry ->
-                        KozmosPOIResultActionButton(
-                            entry = entry,
-                            onClick = {
-                                trackEvent(
-                                    KozmosAnalyticsEvent(
-                                        component = "POIResultCard",
-                                        eventName = "poi_result_action",
-                                        properties = mapOf(
-                                            "poiId" to poi.id,
-                                            "resultIndex" to result.resultIndex.toString(),
-                                            "action" to entry.action.value
-                                        )
-                                    )
-                                )
-                                onAction?.invoke(entry.action, poi.id)
-                            }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(
+                            KozmosDimensions.primitivesLayoutSpacing25
                         )
+                    ) {
+                        Text(
+                            text = poi.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Normal,
+                            color = KozmosThemeTokens.primitivesColorsForeground100,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        poi.categoryLabel?.let { categoryLabel ->
+                            Text(
+                                text = categoryLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = KozmosThemeTokens.primitivesColorsForeground500,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(
+                                KozmosDimensions.primitivesLayoutSpacing50
+                            )
+                        ) {
+                            // A dot before the floor when it is the one the map shows.
+                            if (currentFloorId != null && result.floorId == currentFloorId) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(KozmosDimensions.primitivesLayoutSpacing75)
+                                        .clip(CircleShape)
+                                        .background(KozmosThemeTokens.primitivesColorsTheme500)
+                                )
+                            }
+                            Text(
+                                text = poi.locationLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = KozmosThemeTokens.primitivesColorsForeground500,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        poi.availabilityLabel?.let { availabilityLabel ->
+                            Text(
+                                text = availabilityLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                // Three tones, not two. "Closing soon" is a reason
+                                // to hurry, so it cannot look like open; the place
+                                // is still open, so it is not closed either.
+                                color = when (poi.availability) {
+                                    KozmosPOIAvailability.Open ->
+                                        KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle
+                                    KozmosPOIAvailability.OpeningSoon,
+                                    KozmosPOIAvailability.ClosingSoon ->
+                                        KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle
+                                    else -> KozmosThemeTokens.primitivesColorsForeground500
+                                }
+                            )
+                        }
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(
+                            KozmosDimensions.primitivesLayoutSpacing100
+                        )
+                    ) {
+                        POILogo(poi = poi)
+
+                        travelTimeText?.let { text ->
+                            Text(
+                                text = text,
+                                style = MaterialTheme.typography.bodyMedium,
+                                // Nearby in the success emotion's Text role, which
+                                // reads at 4.5:1 or more on the card in both
+                                // themes; every other band, and the exact minutes,
+                                // in the card's text colour. The word is Nearby,
+                                // so the colour is never the only signal.
+                                color = when (result.travelEstimate?.band?.tone) {
+                                    KozmosTravelTimeTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
+                                    KozmosTravelTimeTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
+                                }
+                            )
+                        }
                     }
                 }
-            }
 
-            if (!available && result.unavailableReason != null) {
-                Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
+                if (visibleActions.isNotEmpty()) {
+                    Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
-                Text(
-                    text = result.unavailableReason,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = KozmosThemeTokens.primitivesColorsForeground500,
-                    modifier = Modifier.padding(
-                        horizontal = KozmosDimensions.primitivesLayoutSpacing200,
-                        vertical = KozmosDimensions.primitivesLayoutSpacing100
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { contentDescription = actionsLabel }
+                            .padding(
+                                horizontal = KozmosDimensions.primitivesLayoutSpacing200,
+                                vertical = KozmosDimensions.primitivesLayoutSpacing100
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(
+                            KozmosDimensions.primitivesLayoutSpacing100
+                        )
+                    ) {
+                        visibleActions.forEach { entry ->
+                            KozmosPOIResultActionButton(
+                                entry = entry,
+                                onClick = {
+                                    trackEvent(
+                                        KozmosAnalyticsEvent(
+                                            component = "POIResultCard",
+                                            eventName = "poi_result_action",
+                                            properties = mapOf(
+                                                "poiId" to poi.id,
+                                                "resultIndex" to result.resultIndex.toString(),
+                                                "action" to entry.action.value
+                                            )
+                                        )
+                                    )
+                                    onAction?.invoke(entry.action, poi.id)
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (!available && result.unavailableReason != null) {
+                    Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
+
+                    Text(
+                        text = result.unavailableReason,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = KozmosThemeTokens.primitivesColorsForeground500,
+                        modifier = Modifier.padding(
+                            horizontal = KozmosDimensions.primitivesLayoutSpacing200,
+                            vertical = KozmosDimensions.primitivesLayoutSpacing100
+                        )
                     )
-                )
+                }
+            }
+            if (tab != null) {
+                KozmosPOIResultTabView(tab = tab, selected = result.selected, modifier = Modifier.align(Alignment.TopStart))
             }
         }
     }
@@ -411,28 +429,47 @@ internal fun kozmosPOIResultTabPaint(tab: KozmosPOIResultTab, selected: Boolean)
     }
 
 /**
- * The one tab, at the card's start edge. Featured and a badge are read as
+ * The one tab, inside the card's top-start corner. The parent supplies its
+ * outer curve and top/start outline; only the inner bottom-end corner rounds.
+ * Featured and a badge are read as
  * their words, as they always were; a number is left out of what TalkBack
  * reads, because it leads the result's own description.
  */
 @Composable
-private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean) {
+private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean, modifier: Modifier = Modifier) {
     val paint = kozmosPOIResultTabPaint(tab, selected)
-    val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
+    val innerRadius = KozmosDimensions.primitivesLayoutSpacing100 - 1.dp
+    val shape = RoundedCornerShape(bottomEnd = innerRadius)
+    val tabHeight = with(LocalDensity.current) { 16.sp.toDp() }
     Row(
-        modifier = Modifier
-            .padding(
-                start = KozmosDimensions.primitivesLayoutSpacing200,
-                top = KozmosDimensions.primitivesLayoutSpacing100
-            )
+        modifier = modifier
             .then(if (tab is KozmosPOIResultTab.Number) Modifier.clearAndSetSemantics { } else Modifier)
             .clip(shape)
             .background(paint.fill)
-            .then(if (paint.edge != null) Modifier.border(1.dp, paint.edge, shape) else Modifier)
-            .padding(
-                horizontal = KozmosDimensions.primitivesLayoutSpacing100,
-                vertical = KozmosDimensions.primitivesLayoutSpacing50
-            ),
+            .drawWithContent {
+                drawContent()
+                // A quiet number needs only the bottom/end outline. Drawing a
+                // whole rounded border would duplicate the card's own edge.
+                paint.edge?.let { edge ->
+                    val stroke = 1.dp.toPx()
+                    val half = stroke / 2
+                    val radius = (innerRadius.toPx() - half).coerceAtLeast(0f)
+                    val end = size.width - half
+                    val bottom = size.height - half
+                    val path = Path().apply {
+                        moveTo(end, 0f)
+                        lineTo(end, bottom - radius)
+                        arcTo(Rect(end - 2 * radius, bottom - 2 * radius, end, bottom), 0f, 90f, false)
+                        lineTo(0f, bottom)
+                    }
+                    val rightToLeft = layoutDirection == LayoutDirection.Rtl
+                    withTransform({ if (rightToLeft) scale(-1f, 1f) }) {
+                        drawPath(path, edge, style = Stroke(stroke))
+                    }
+                }
+            }
+            .heightIn(min = tabHeight)
+            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing75),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
@@ -441,14 +478,21 @@ private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean) {
                 imageVector = Icons.Default.Star,
                 contentDescription = null,
                 tint = paint.ink,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(10.dp)
             )
         }
         Text(
             text = tab.words,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = paint.ink
+            style = MaterialTheme.typography.labelSmall.copy(
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
+            ),
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
+            fontWeight = FontWeight.Normal,
+            color = paint.ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

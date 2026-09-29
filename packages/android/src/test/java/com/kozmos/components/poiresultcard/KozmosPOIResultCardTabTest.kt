@@ -4,11 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
@@ -23,6 +29,7 @@ import com.kozmos.contracts.KozmosPOIResultPresentation
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -147,6 +154,130 @@ class KozmosPOIResultCardTabTest {
     }
 
     // region how each tab is drawn, light and dark
+
+    /** The tab shares the card's top-start corner, not a padded pill above its content. */
+    @Test
+    fun everyTabIsInsideTheTopStartCornerWithSpaceBeforeTheTitle() {
+        val wrong = mutableListOf<String>()
+        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            for ((label, value, numbered) in listOf(
+                Triple("2", result(), true),
+                Triple("2", result(selected = true), true),
+                Triple("Featured", result(featured = true), true),
+                Triple("Featured", result(featured = true, selected = true), true),
+                Triple("Alternative", result(badge = "Alternative"), false)
+            )) {
+                var density = 1f
+                val read = paparazzi.readSemantics {
+                    density = LocalDensity.current.density
+                    CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                        Box(Modifier.padding(16.dp).width(240.dp)) {
+                            MaterialTheme {
+                                KozmosPOIResultCard(poi = poi, result = value, onSelect = {}, numbered = numbered)
+                            }
+                        }
+                    }
+                }
+                val card = read.merged.first { it.description?.contains("Burger King") == true }.bounds
+                val words = read.unmerged.single { it.texts == listOf(label) }.bounds
+                val title = read.unmerged.single { it.texts == listOf("Burger King") }.bounds
+                val top = (words.top - card.top) / density
+                val start = if (direction == LayoutDirection.Ltr) {
+                    (words.left - card.left) / density
+                } else {
+                    (card.right - words.right) / density
+                }
+                val expectedStart = if (label == "Featured") 20f else 6f // 6 inset + 10 star + 4 gap
+                val case = "$direction $label selected=${value.selected}"
+                if (top !in 0f..2f) wrong += "$case: tab text starts $top dp below the card, not inside its 16dp corner"
+                if (abs(start - expectedStart) > 1f) wrong += "$case: logical text inset is $start dp, expected $expectedStart"
+                if (words.height / density > 14.5f) wrong += "$case: tab line is ${words.height / density} dp, expected 14"
+                if ((title.top - card.top) / density < 24f) wrong += "$case: title overlaps the tab's 16dp height and 8dp clearance"
+            }
+        }
+        assertTrue(wrong.joinToString("; "), wrong.isEmpty())
+    }
+
+    /** Pixel evidence: the outer curve belongs to the card; only the bottom-end corner bends inward. */
+    @Test
+    fun filledTabsShareTheOuterCurveAndOnlyRoundTheirInnerCornerInBothDirections() {
+        val wrong = mutableListOf<String>()
+        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            for (featured in listOf(false, true)) {
+                var density = 1f
+                var canvasWidth = 1
+                var canvasHeight = 1
+                val value = result(featured = featured, selected = !featured)
+                val label = if (featured) "Featured" else "2"
+                val fill = swatch(false) {
+                    if (featured) KozmosThemeTokens.semanticsEmotionAlertFill else KozmosThemeTokens.primitivesColorsTheme600
+                }
+                val background = swatch(false) { KozmosThemeTokens.primitivesColorsBackground0 }
+                val read = paparazzi.readSemantics {
+                    density = LocalDensity.current.density
+                    CompositionLocalProvider(LocalLayoutDirection provides direction, LocalKozmosUseDarkTokens provides false) {
+                        Box(Modifier.fillMaxSize().background(Color.Magenta).onGloballyPositioned {
+                            canvasWidth = it.size.width
+                            canvasHeight = it.size.height
+                        }) {
+                            Box(Modifier.padding(16.dp).width(240.dp)) {
+                                MaterialTheme {
+                                    KozmosPOIResultCard(poi = poi, result = value, onSelect = {}, numbered = true)
+                                }
+                            }
+                        }
+                    }
+                }
+                val drawn = DrawnPixels(checkNotNull(frames.last))
+                val card = read.merged.first { it.description?.contains("Burger King") == true }.bounds
+                val words = read.unmerged.single { it.texts == listOf(label) }.bounds
+                val end = if (direction == LayoutDirection.Ltr) words.right + 6 * density else words.left - 6 * density
+                // Paparazzi's image may be downscaled from the layout's physical pixels.
+                fun pixel(x: Float, y: Float): Int = drawn.argb(
+                    (x * drawn.width / canvasWidth).roundToInt(),
+                    (y * drawn.height / canvasHeight).roundToInt()
+                )
+                fun pixelFromEnd(inset: Float, top: Float): Int {
+                    val x = if (direction == LayoutDirection.Ltr) end - inset * density else end + inset * density
+                    return pixel(x, card.top + top * density)
+                }
+                val startX = if (direction == LayoutDirection.Ltr) card.left + 3 * density else card.right - 3 * density
+                val case = "$direction $label"
+                if (!DrawnPixels.matches(pixelFromEnd(2f, 3f), fill, 8)) wrong += "$case: top-end is not a square filled corner"
+                if (!DrawnPixels.matches(pixel(startX, card.top + 13 * density), fill, 8)) {
+                    wrong += "$case: bottom-start is not flush with the card's outer curve"
+                }
+                if (!DrawnPixels.matches(pixelFromEnd(1f, 15f), background, 8)) wrong += "$case: bottom-end has no inward rounded corner"
+                if (!DrawnPixels.matches(pixelFromEnd(3f, 18f), background, 8)) wrong += "$case: tab extends below its 16dp height"
+                val outsideX = if (direction == LayoutDirection.Ltr) card.left + density else card.right - density
+                if (!DrawnPixels.matches(pixel(outsideX, card.top + density), 0xFFFF00FF.toInt(), 8)) {
+                    wrong += "$case: tab paints outside the parent's rounded corner"
+                }
+            }
+        }
+        assertTrue(wrong.joinToString("; "), wrong.isEmpty())
+    }
+
+    @Test
+    fun largerTextKeepsTheTabAndTitleApartWithoutShrinkingTheWords() {
+        var density = 1f
+        val read = paparazzi.readSemantics {
+            density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
+                Box(Modifier.padding(16.dp).width(240.dp)) {
+                    MaterialTheme {
+                        KozmosPOIResultCard(poi = poi, result = result(featured = true), onSelect = {})
+                    }
+                }
+            }
+        }
+        val tab = read.unmerged.single { it.texts == listOf("Featured") }.bounds
+        val title = read.unmerged.single { it.texts == listOf("Burger King") }.bounds
+        assertTrue("The tab must preserve its scaled 28dp line, not clip or shrink it: $tab", tab.height / density >= 27.5f)
+        // Android's SP conversion can be nonlinear. Check the measured words,
+        // not an assumed 16 * fontScale box: no text may eat into the gap.
+        assertTrue("The enlarged tab needs 8dp before the title: tab=$tab title=$title", (title.top - tab.bottom) / density >= 8f)
+    }
 
     private fun distance(a: Int, b: Int): Int =
         listOf(16, 8, 0).sumOf { shift -> abs((a shr shift and 0xFF) - (b shr shift and 0xFF)) }
