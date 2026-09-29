@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
+import com.kozmos.contracts.KozmosTravelTimeBand
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.components.surface.kozmosDashedEdge
@@ -51,7 +52,9 @@ fun KozmosPOIResultList(
     featuredLabel: String = "Featured",
     emptyState: (@Composable () -> Unit)? = null,
     /** The floor the map shows: a result on it carries a dot before its floor. */
-    currentFloorId: String? = null
+    currentFloorId: String? = null,
+    /** Each result's words for a walk shown as a band: the card's. */
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap()
 ) {
     Column(
         modifier = modifier
@@ -95,7 +98,8 @@ fun KozmosPOIResultList(
                     poi = item.poi,
                     result = item.result.selecting(selectedPoiId),
                     onSelect = onSelect,
-                    featuredLabel = featuredLabel
+                    featuredLabel = featuredLabel,
+                    travelTimeBandLabels = travelTimeBandLabels
                 )
             }
         }

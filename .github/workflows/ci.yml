@@ -473,6 +473,7 @@ jobs:
 
   # Whether a change touches what the iOS job builds: the iOS package, the
   # tokens it compiles against (the job builds @kozmos-ds/tokens first), the
+  # travel-time table its tests read with the web's and Android's, the
   # scripts it runs, this workflow, or the installed dependencies.
   changes:
     name: Changes
@@ -493,7 +494,7 @@ jobs:
           # No base (a push to main) builds everything.
           if [ -z "$BASE" ]; then
             echo "ios=true" >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$BASE"...HEAD | grep -qE '^(packages/ios/|packages/tokens/|scripts/check-ios-poi\.mjs$|scripts/figma-connect-native\.mjs$|\.github/workflows/ci\.yml$|package\.json$|pnpm-lock\.yaml$)'; then
+          elif git diff --name-only "$BASE"...HEAD | grep -qE '^(packages/ios/|packages/tokens/|packages/product-contracts/tests/travel-time-bands\.txt$|scripts/check-ios-poi\.mjs$|scripts/figma-connect-native\.mjs$|\.github/workflows/ci\.yml$|package\.json$|pnpm-lock\.yaml$)'; then
             echo "ios=true" >> "$GITHUB_OUTPUT"
           else
             echo "ios=false" >> "$GITHUB_OUTPUT"

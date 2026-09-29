@@ -2545,6 +2545,16 @@
           "$value": "{Primitives.Colors.emotional.alert.900}",
           "$type": "color",
           "$description": "The emotion as text or a glyph on the page itself — white or either grey a panel, card or sheet paints (background/0, /50, /100). The step differs per emotion because the ramps reach 4.5:1 on background/100 at different places: success and alert 900, informative 800, danger 700, themed 600. Measured on white alone they were one step lighter, and four of six failed on a sheet's grey. The product draws success at 600, which is 2.74:1 even on white."
+        },
+        "fill": {
+          "$value": "{Primitives.Colors.emotional.alert.600}",
+          "$type": "color",
+          "$description": "A loud field an emotion fills: the map status pill's Turn Back. It stays bright in both files, alert/600, a mid step of the ramp, so it is not a surface that turns over with the theme, and it carries onFill, not the page's ink. The Category Fill tokens are the same shape for the taxonomy's colours."
+        },
+        "onFill": {
+          "$value": "{Primitives.Colors.foreground.1000}",
+          "$type": "color",
+          "$description": "Ink on the matching fill: black in both files, foreground/0 in the light and foreground/1000 in the dark, because the fill does not turn over and no one primitive is dark in both. 10.56:1 on the light fill and 13.14:1 on the dark."
         }
       },
       "informative": {

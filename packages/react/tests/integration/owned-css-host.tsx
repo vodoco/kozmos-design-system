@@ -18,6 +18,7 @@ import {
   MapControlButton,
   MapControlsGroup,
   MapOverlay,
+  MapStatusPill,
   FloorSelector,
   AIMessage,
   Listbox,
@@ -31,7 +32,66 @@ import {
   Tag,
   ToggleButton,
   SegmentedControl,
+  POIResultCard,
+  POIResultGroup,
 } from "@kozmos-ds/react";
+import type {
+  POIPresentation,
+  POIResultPresentation,
+  TravelTimeBand,
+} from "@kozmos-ds/product-contracts";
+
+/* Decision 50 (GAP-088): a walk shown as a band on the result card's four
+   surfaces, a card and a grouped row, each at rest and selected. Nearby is
+   the success tone and the other bands the card's text; the check measures
+   what each draws in, and on what. */
+function TravelTimes({ id }: { id: string }) {
+  const poi = (name: string): POIPresentation => ({
+    id: `${id}-${name}`,
+    name,
+    floorLabel: "Level 1",
+    media: [],
+    actions: [],
+  });
+  const result = (
+    name: string,
+    band: TravelTimeBand,
+    selected = false,
+  ): POIResultPresentation => ({
+    poiId: `${id}-${name}`,
+    resultIndex: 0,
+    selected,
+    featured: false,
+    travelEstimate: { durationSeconds: 45, durationLabel: "exact", band },
+  });
+  const card = (name: string, band: TravelTimeBand, selected?: boolean) => (
+    <POIResultCard
+      data-testid={`${id}-travel-${name}`}
+      poi={poi(name)}
+      result={result(name, band, selected)}
+      onSelect={() => undefined}
+    />
+  );
+  return (
+    <div data-testid={`${id}-travel`}>
+      {card("card", "nearby")}
+      {card("card-selected", "nearby", true)}
+      {card("card-neutral", "fiveToTenMinutes")}
+      <POIResultGroup
+        data-testid={`${id}-travel-group`}
+        items={[
+          {
+            poi: poi("row-selected"),
+            result: result("row-selected", "nearby", true),
+          },
+          { poi: poi("row"), result: result("row", "nearby") },
+        ]}
+        collapsedCount={2}
+        onSelect={() => undefined}
+      />
+    </div>
+  );
+}
 
 /* GAP-082 (row 81): map chrome floating in MapOverlays, or the same chrome
    placed by hand at the same insets. The two boards must draw alike: the
@@ -341,6 +401,18 @@ function Controls({ id }: { id: string }) {
         label={`${id} surface`}
         data-testid={`${id}-map-surface`}
       />
+      {/* Decision 39: the map's status pill wears the map controls' surface,
+          and Turn Back fills with the warning role. */}
+      <MapStatusPill tone="progress" data-testid={`${id}-map-status`}>
+        {`${id} calculating`}
+      </MapStatusPill>
+      <MapStatusPill
+        icon={null}
+        tone="warning"
+        data-testid={`${id}-map-status-warning`}
+      >
+        {`${id} turn back`}
+      </MapStatusPill>
       <MapControlsGroup
         label={`${id} zoom`}
         zoomInLabel={`${id} zoom in`}
@@ -397,6 +469,7 @@ function Controls({ id }: { id: string }) {
       <div className="host-slot">
         <button className="host-slot-button">Host slot</button>
       </div>
+      <TravelTimes id={id} />
       <POIDetailPanel
         data-testid={`${id}-poi`}
         poi={{

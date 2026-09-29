@@ -25,6 +25,8 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
     private let selectedPoiId: String?
     private let featuredLabel: String
     private let currentFloorId: String?
+    /// Each result's words for a walk shown as a band: the card's.
+    private let travelTimeBandLabels: [KozmosTravelTimeBand: String]
     private let onSelect: (String) -> Void
     private let emptyState: EmptyStateContent
 
@@ -35,6 +37,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         selectedPoiId: String? = nil,
         featuredLabel: String = "Featured",
         currentFloorId: String? = nil,
+        travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
         onSelect: @escaping (String) -> Void,
         @ViewBuilder emptyState: () -> EmptyStateContent
     ) {
@@ -44,8 +47,21 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         self.selectedPoiId = selectedPoiId
         self.featuredLabel = featuredLabel
         self.currentFloorId = currentFloorId
+        self.travelTimeBandLabels = travelTimeBandLabels
         self.onSelect = onSelect
         self.emptyState = emptyState()
+    }
+
+    /// The card a row draws, with the list's words and its one selection.
+    func card(for item: KozmosPOIResultListItem) -> KozmosPOIResultCard {
+        KozmosPOIResultCard(
+            poi: item.poi,
+            result: item.result.selecting(selectedPoiId),
+            featuredLabel: featuredLabel,
+            currentFloorId: currentFloorId,
+            travelTimeBandLabels: travelTimeBandLabels,
+            onSelect: onSelect
+        )
     }
 
     public var body: some View {
@@ -74,13 +90,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
             } else {
                 LazyVStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                     ForEach(items) { item in
-                        KozmosPOIResultCard(
-                            poi: item.poi,
-                            result: item.result.selecting(selectedPoiId),
-                            featuredLabel: featuredLabel,
-                    currentFloorId: currentFloorId,
-                            onSelect: onSelect
-                        )
+                        card(for: item)
                     }
                 }
             }
@@ -97,6 +107,7 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
         label: String = "Points of interest",
         selectedPoiId: String? = nil,
         featuredLabel: String = "Featured",
+        travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
         onSelect: @escaping (String) -> Void
     ) {
         self.init(
@@ -105,6 +116,7 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
             label: label,
             selectedPoiId: selectedPoiId,
             featuredLabel: featuredLabel,
+            travelTimeBandLabels: travelTimeBandLabels,
             onSelect: onSelect
         ) {
             EmptyView()

@@ -406,6 +406,14 @@
     animation: reveal var(--semantics-motion-duration-quick)
       var(--semantics-motion-easing-standard) both;
   }
+  /* A result's walk in the Nearby tone (decision 50): the success emotion's
+     Text role, measured at 4.5:1 or more on the card in both themes by
+     check-owned-css. Owned, so the tone holds in a browser without @scope,
+     where the card's utilities do not reach. The word is Nearby, so the
+     colour is never the only signal. */
+  .kozmos-travel-time-success {
+    color: var(--semantics-emotion-success-text);
+  }
   /* The result card has two moments, and they are not the same kind of move.
 
      Selection recolours the card in place, so it is a transition: the card is

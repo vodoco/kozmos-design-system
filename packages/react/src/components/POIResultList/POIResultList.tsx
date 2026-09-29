@@ -6,7 +6,7 @@ import type {
 } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
 import { EmptyStateDensity } from "../EmptyState/EmptyState";
-import { POIResultCard } from "../POIResultCard";
+import { POIResultCard, type POIResultCardProps } from "../POIResultCard";
 import { POIResultGroup } from "../POIResultGroup";
 
 export interface POIResultListItem {
@@ -170,6 +170,8 @@ export interface POIResultListProps extends Omit<
   hideLabel?: string;
   /** Told which group, so one handler can hold several open. */
   onGroupExpandedChange?: (groupId: string, expanded: boolean) => void;
+  /** Each result's words for a walk shown as a band: POIResultCard's. */
+  travelTimeBandLabels?: POIResultCardProps["travelTimeBandLabels"];
   /**
    * Bring the selected result into view when `selectedPoiId` changes — by
    * scrolling whatever the list sits in, and nothing further out. On by
@@ -208,6 +210,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       hideLabel,
       onGroupExpandedChange,
       scrollSelectedIntoView = true,
+      travelTimeBandLabels,
       ...props
     },
     ref,
@@ -350,6 +353,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                       }
                       onSelect={onSelect}
                       showMoreLabel={showMoreLabel}
+                      travelTimeBandLabels={travelTimeBandLabels}
                     />
                   </li>
                 );
@@ -366,6 +370,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                     onSelect={onSelect}
                     poi={poi}
                     result={select(entry)}
+                    travelTimeBandLabels={travelTimeBandLabels}
                   />
                 </li>
               );

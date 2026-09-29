@@ -166,12 +166,80 @@ data class KozmosPOIPresentation(
 
 data class KozmosTravelEstimatePresentation(
     val durationSeconds: Double,
+    /** The exact time, already localized: "3 min". The details card shows it. */
     val durationLabel: String,
     val distanceMetres: Double? = null,
     val distanceLabel: String? = null,
     val mode: String? = null,
-    val modeLabel: String? = null
+    val modeLabel: String? = null,
+    /**
+     * Set when a result list shows this walk as a band rather than the exact
+     * minutes (decision 50): [KozmosTravelTimeBand.forDuration] gives it.
+     *
+     * `KozmosPOIResultCard` then draws the band's words, and Nearby in the
+     * success colour. The details card keeps [durationLabel], the exact
+     * minutes, so one estimate serves the list and the details card alike.
+     * Null, a result shows [durationLabel], as before.
+     */
+    val band: KozmosTravelTimeBand? = null
 )
+
+/**
+ * A walk as a result list shows it (decision 50): a band, not the exact
+ * minutes. Nearby is under a minute; then 1–2, 2–5 and 5–10 minutes, and
+ * more than 10.
+ *
+ * The product passes the walking time it already has and Kozmos's rule,
+ * [forDuration], turns it into one of these, so every product draws the edges
+ * in the same place. The words are the card's, and translatable. Mirrors
+ * `TravelTimeBand` on the web and `KozmosTravelTimeBand` on SwiftUI.
+ */
+enum class KozmosTravelTimeBand(val value: String) {
+    Nearby("nearby"),
+    OneToTwoMinutes("oneToTwoMinutes"),
+    TwoToFiveMinutes("twoToFiveMinutes"),
+    FiveToTenMinutes("fiveToTenMinutes"),
+    MoreThanTenMinutes("moreThanTenMinutes");
+
+    /** The tone this band is drawn in: Nearby's is success, every other neutral. */
+    val tone: KozmosTravelTimeTone
+        get() = if (this == Nearby) KozmosTravelTimeTone.Success else KozmosTravelTimeTone.Neutral
+
+    companion object {
+        /**
+         * The band a walk falls in, from its length in seconds: Kozmos's rule
+         * (decision 50), the web's `travelTimeBand`.
+         *
+         * Nearby is under a minute. Every band after it keeps its upper edge,
+         * so a place exactly 2, 5 or 10 minutes away reads "1–2 min",
+         * "2–5 min" or "5–10 min", and one a second further reads the next
+         * band. Past the first minute that is the walk rounded up to whole
+         * minutes: 1 or 2, 3 to 5, 6 to 10, then 11 and more. No walk falls
+         * in two bands; a length below zero, or one that is not finite, falls
+         * in none (null), and a card given no band shows the exact minutes.
+         * Tested against the table the web and SwiftUI read,
+         * packages/product-contracts/tests/travel-time-bands.txt.
+         */
+        fun forDuration(durationSeconds: Double): KozmosTravelTimeBand? = when {
+            !durationSeconds.isFinite() || durationSeconds < 0 -> null
+            durationSeconds < 60 -> Nearby
+            durationSeconds <= 120 -> OneToTwoMinutes
+            durationSeconds <= 300 -> TwoToFiveMinutes
+            durationSeconds <= 600 -> FiveToTenMinutes
+            else -> MoreThanTenMinutes
+        }
+    }
+}
+
+/**
+ * The colour a band is drawn in: Nearby in the success colour, the others in
+ * the card's normal text colour. A band's [KozmosTravelTimeBand.tone] says
+ * which.
+ */
+enum class KozmosTravelTimeTone(val value: String) {
+    Success("success"),
+    Neutral("neutral")
+}
 
 /**
  * Why a result is in the list.

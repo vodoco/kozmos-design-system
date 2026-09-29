@@ -326,6 +326,29 @@ describe("POIDetailPanel", () => {
     expect(screen.getByRole("button", { name: "Book" })).toBeDisabled();
   });
 
+  it("keeps the exact minutes when the estimate also carries its band", () => {
+    // Decision 50: the result list shows the band, the details card the
+    // exact time. One estimate serves both, so the band must not leak here.
+    render(
+      <POIDetailPanel
+        poi={restaurantPOI}
+        details={{
+          ...restaurantDetails,
+          travelEstimate: {
+            durationSeconds: 45,
+            durationLabel: "1 min",
+            distanceLabel: "40 m",
+            band: "nearby",
+          },
+        }}
+        actionLabels={labels}
+        onAction={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Go 1 min 40 m" })).toBeVisible();
+    expect(screen.queryByText(/Nearby/)).not.toBeInTheDocument();
+  });
+
   it("emits supplementary capabilities independently of legacy actions", () => {
     const onSupplementaryAction = vi.fn();
     render(

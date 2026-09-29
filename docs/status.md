@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
 | Core                   | 83         | 83/83 | 83/83     | 71/83   | 74/83 | 71/83   | 75/83   | 71/83       |
 | Code-Only / Utility    | 5          | 5/5   | 5/5       | —       | 5/5   | —       | 5/5     | —           |
-| Product / SDK          | 22         | 22/22 | 22/22     | 22/22   | 22/22 | 22/22   | 22/22   | 22/22       |
+| Product / SDK          | 23         | 23/23 | 23/23     | 22/23   | 23/23 | 22/23   | 23/23   | 22/23       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
 
 ## Core
@@ -144,6 +144,7 @@ Map, wayfinding, CMS, dashboard, or product-specific compositions that should co
 | MapControlButton      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | MapControlsGroup      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | MapOverlay            | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| MapStatusPill         | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | MapView               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | POICard               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | POIDetailPanel        | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -177,18 +178,18 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 ## Summary
 
-- Web components: 112/112
-- Web stories: 112/112
-- Web tests: 112/112
-- Web Code Connect files: 95/107
-- Web Code Connect scaffolds: 0/107
-- Web Code Connect linked: 95/107
-- iOS components: 103/112
-- iOS Code Connect files: 95/107
-- iOS Code Connect scaffolds: 0/107
-- iOS Code Connect linked: 95/107
-- Android components: 104/112
-- Android Code Connect files: 95/107
-- Android Code Connect scaffolds: 0/107
-- Android Code Connect linked: 95/107
-- Code Connect not applicable: 5/112
+- Web components: 113/113
+- Web stories: 113/113
+- Web tests: 113/113
+- Web Code Connect files: 95/108
+- Web Code Connect scaffolds: 0/108
+- Web Code Connect linked: 95/108
+- iOS components: 104/113
+- iOS Code Connect files: 95/108
+- iOS Code Connect scaffolds: 0/108
+- iOS Code Connect linked: 95/108
+- Android components: 105/113
+- Android Code Connect files: 95/108
+- Android Code Connect scaffolds: 0/108
+- Android Code Connect linked: 95/108
+- Code Connect not applicable: 5/113

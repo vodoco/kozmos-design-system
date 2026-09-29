@@ -6,6 +6,89 @@ import {
   settleLayout,
 } from "./lib/built-react-fixture.mjs";
 
+/** A computed colour as sRGB channels in 0–1 and its alpha. */
+function readColour(css) {
+  const legacy = css.match(
+    /^rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?\)$/,
+  );
+  if (legacy)
+    return {
+      r: legacy[1] / 255,
+      g: legacy[2] / 255,
+      b: legacy[3] / 255,
+      a: legacy[4] === undefined ? 1 : Number(legacy[4]),
+    };
+  const srgb = css.match(
+    /^color\(srgb ([\d.e+-]+) ([\d.e+-]+) ([\d.e+-]+)(?: \/ ([\d.e+-]+))?\)$/,
+  );
+  if (srgb)
+    return {
+      r: Number(srgb[1]),
+      g: Number(srgb[2]),
+      b: Number(srgb[3]),
+      a: srgb[4] === undefined ? 1 : Number(srgb[4]),
+    };
+  throw new Error(`a colour this check cannot read: ${css}`);
+}
+
+/** What paints behind a node: its backgrounds, innermost first, over a white page. */
+function paintedBehind(layers) {
+  let behind = { r: 1, g: 1, b: 1 };
+  for (const layer of [...layers].reverse()) {
+    const { r, g, b, a } = readColour(layer);
+    behind = {
+      r: r * a + behind.r * (1 - a),
+      g: g * a + behind.g * (1 - a),
+      b: b * a + behind.b * (1 - a),
+    };
+  }
+  return behind;
+}
+
+/** The WCAG contrast ratio of two opaque sRGB colours. */
+function contrastRatio(one, two) {
+  const luminance = ({ r, g, b }) => {
+    const linear = (c) =>
+      c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  };
+  const [light, dark] = [luminance(one), luminance(two)].sort((a, b) => b - a);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * The Nearby of each of the result card's four surfaces in a root of the
+ * owned-css host: how many there are, the colour it draws in, and the
+ * backgrounds from it up to the page.
+ */
+async function nearbyOnEverySurface(page, id) {
+  const group = page.getByTestId(`${id}-travel-group`);
+  const surfaces = [
+    ["card", page.getByTestId(`${id}-travel-card`)],
+    ["selected card", page.getByTestId(`${id}-travel-card-selected`)],
+    ["grouped row", group.locator("article").nth(1)],
+    ["selected grouped row", group.locator("article").nth(0)],
+  ];
+  const drawn = [];
+  for (const [surface, card] of surfaces) {
+    const nearby = card.getByText("Nearby", { exact: true });
+    const found = await nearby.count();
+    drawn.push({
+      surface,
+      found,
+      ...(found === 1
+        ? await nearby.evaluate((node) => {
+            const layers = [];
+            for (let at = node; at; at = at.parentElement)
+              layers.push(getComputedStyle(at).backgroundColor);
+            return { color: getComputedStyle(node).color, layers };
+          })
+        : {}),
+    });
+  }
+  return drawn;
+}
+
 const { code, css } = await buildReactFixture("owned-css-host.tsx");
 const require = createRequire(`${process.cwd()}/packages/react/package.json`);
 const postcss = require("postcss");
@@ -78,6 +161,48 @@ try {
         return result;
       }, token);
     for (const id of ["outer", "nested"]) {
+      // Decision 50 (GAP-088): a walk in the Nearby tone draws in the success
+      // emotion's Text role on each of the result card's four surfaces, in
+      // this root's theme (outer is dark, nested light), with or without
+      // @scope and under the host's hostile rules, because the rule is owned.
+      // Its contrast is measured after these passes, on a page of its own.
+      {
+        const theme = id === "outer" ? "dark" : "light";
+        const success = await value(
+          `${id}-travel`,
+          "--semantics-emotion-success-text",
+        );
+        for (const { surface, found, color } of await nearbyOnEverySurface(
+          page,
+          id,
+        )) {
+          assert.equal(
+            found,
+            1,
+            `${mode}, ${theme}: the ${surface} does not read Nearby for a walk under a minute`,
+          );
+          assert.equal(
+            color,
+            success,
+            `${mode}, ${theme}: Nearby on the ${surface} is not the success text colour`,
+          );
+        }
+        if (mode === "full")
+          assert.equal(
+            (
+              await measure(
+                page
+                  .getByTestId(`${id}-travel-card-neutral`)
+                  .getByText("5–10 min", { exact: true }),
+              )
+            ).color,
+            await value(`${id}-travel`, "--primitives-colors-foreground-0"),
+            `${theme}: a band other than Nearby is not the card's text colour`,
+          );
+        console.log(
+          `PASS decision 50, ${theme}, ${mode}: Nearby is the success text colour ${success} on the card, the selected card, the grouped row and the selected grouped row${mode === "full" ? "; 5–10 min is the text colour" : ""}`,
+        );
+      }
       const poi = page.getByTestId(`${id}-poi`);
       const metadata = poi.locator("[data-slot=meta-strip]");
       assert.equal(
@@ -617,6 +742,143 @@ try {
           `${where}: a map control's focus ring is ${contrast.toFixed(2)}:1 against its surface`,
         );
 
+        // Decision 39: the map's status pill wears the map controls' surface
+        // from the same owned rule — the Control corner, no border, the map
+        // controls' elevation and the 32px blur — at least 48 tall, 8 above
+        // and below and 12 at the sides, the SDK's words (13 on 16, in
+        // foreground/300) and a 24 mark 8 before them, on the side reading
+        // starts from. Turn Back is the named alert fill pair.
+        const statusLook = (testId) =>
+          page.getByTestId(testId).evaluate((node) => {
+            const s = getComputedStyle(node);
+            const box = node.getBoundingClientRect();
+            const mark = node
+              .querySelector(".kozmos-map-status-pill-mark")
+              ?.getBoundingClientRect();
+            const words = node
+              .querySelector(".kozmos-map-status-pill-words")
+              .getBoundingClientRect();
+            const rtl = s.direction === "rtl";
+            return {
+              height: box.height,
+              radius: [
+                s.borderTopLeftRadius,
+                s.borderTopRightRadius,
+                s.borderBottomRightRadius,
+                s.borderBottomLeftRadius,
+              ],
+              border: [
+                s.borderTopWidth,
+                s.borderRightWidth,
+                s.borderBottomWidth,
+                s.borderLeftWidth,
+              ],
+              padding: [
+                s.paddingTop,
+                s.paddingRight,
+                s.paddingBottom,
+                s.paddingLeft,
+              ],
+              background: s.backgroundColor,
+              boxShadow: s.boxShadow,
+              backdrop: s.backdropFilter || s.webkitBackdropFilter,
+              color: s.color,
+              type: [s.fontSize, s.lineHeight, s.fontWeight],
+              mark: mark && [mark.width, mark.height],
+              markInset: mark && (rtl ? box.right - mark.right : mark.left - box.left),
+              gap: mark && (rtl ? mark.left - words.right : words.left - mark.right),
+              wordsInset: rtl ? box.right - words.right : words.left - box.left,
+            };
+          });
+        const status = await statusLook(`${id}-map-status`);
+        assert.equal(
+          status.height,
+          48,
+          `${where}: the status pill is not 48 tall: ${JSON.stringify(status)}`,
+        );
+        assert.deepEqual(
+          status.radius,
+          look.radius,
+          `${where}: the status pill's corner is not the map controls': ${JSON.stringify(status.radius)}`,
+        );
+        assert.deepEqual(
+          status.border,
+          ["0px", "0px", "0px", "0px"],
+          `${where}: the status pill draws a border: ${JSON.stringify(status.border)}`,
+        );
+        assert.deepEqual(
+          status.padding,
+          ["8px", "12px", "8px", "12px"],
+          `${where}: the status pill is not padded 8 by 12: ${JSON.stringify(status.padding)}`,
+        );
+        assert.equal(
+          status.background,
+          look.background,
+          `${where}: the status pill is not the map controls' surface`,
+        );
+        assert(
+          sameLayers(layersOf(status.boxShadow), elevation),
+          `${where}: the status pill does not cast the map controls' elevation: ${status.boxShadow}`,
+        );
+        assert.equal(
+          status.backdrop,
+          "blur(32px)",
+          `${where}: the status pill does not blur the map behind it by 32px`,
+        );
+        assert.equal(
+          status.color,
+          await value(`${id}-map-status`, "--primitives-colors-foreground-300"),
+          `${where}: the status pill's words are not foreground/300`,
+        );
+        assert.equal(
+          Math.round(parseFloat(status.type[0])),
+          13,
+          `${where}: the status pill's words are not 13: ${status.type}`,
+        );
+        assert.deepEqual(
+          status.type.slice(1),
+          ["16px", "400"],
+          `${where}: the status pill's words are not regular on a 16 line: ${status.type}`,
+        );
+        assert.deepEqual(
+          status.mark,
+          [24, 24],
+          `${where}: the status pill's mark is not 24: ${JSON.stringify(status.mark)}`,
+        );
+        assert(
+          Math.abs(status.markInset - 12) < 0.5 && Math.abs(status.gap - 8) < 0.5,
+          `${where}: the mark is ${status.markInset} in and ${status.gap} from the words, not 12 and 8`,
+        );
+        // The board's Turn Back: the named alert fill pair (Olcay,
+        // 2026-09-28), the SDK's bright amber under black words in both
+        // themes; the nested light theme here reads its own.
+        const turnBack = await statusLook(`${id}-map-status-warning`);
+        const alertFill = await value(
+          `${id}-map-status-warning`,
+          "--semantics-emotion-alert-fill",
+        );
+        assert.equal(
+          turnBack.background,
+          alertFill,
+          `${where}: Turn Back does not fill with Emotion/alert/fill (${alertFill})`,
+        );
+        assert.equal(
+          turnBack.color,
+          await value(
+            `${id}-map-status-warning`,
+            "--semantics-emotion-alert-on-fill",
+          ),
+          `${where}: Turn Back's words are not Emotion/alert/onFill`,
+        );
+        assert(
+          luminance(channels(turnBack.color)) < 0.05,
+          `${where}: Turn Back's words are ${turnBack.color}, not dark on its amber`,
+        );
+        assert(
+          turnBack.mark === undefined && Math.abs(turnBack.wordsInset - 12) < 0.5,
+          `${where}: Turn Back with no mark starts its words ${turnBack.wordsInset} in, not 12`,
+        );
+
         // The zoom pair is one surface: 48 wide, the control's corner and
         // elevation, and the two buttons in it cast nothing of their own —
         // the lower one's shadow would darken the upper.
@@ -868,6 +1130,9 @@ try {
         );
         console.log(
           `PASS ${where}: map controls are the SDK's 48 square, 16 corner, no edge, three shadows and 32px blur; the labels bold 16/16, grey off and navy on; the ring shows at ${contrast.toFixed(2)}:1`,
+        );
+        console.log(
+          `PASS ${where}: the map status pill wears their surface, 48 tall and padded 8 by 12, its words 13/16 in foreground/300 after a 24 mark 12 in and 8 before them; Turn Back is Emotion/alert/fill under its onFill`,
         );
       }
       // The search row: the field and what follows it on one line, in a
@@ -1368,6 +1633,49 @@ try {
       `PASS ${mode}: local reset, forms/states, consumer CSS, exported helpers, buttons, loading animation, nested themes, RTL, portal updates and keyboard dismissal`,
     );
     await page.close();
+  }
+
+  // Decision 50 (GAP-088): Nearby reads at 4.5:1 or more on each of the
+  // result card's four surfaces, in both themes. On a page with no rules of
+  // its own, so what paints behind the text is the card's: the passes above
+  // give every button the host's orange, and the card's select button has no
+  // owned fill to refuse it, which would measure the host rather than Kozmos.
+  {
+    const clean = await browser.newPage({
+      viewport: { width: 1100, height: 1100 },
+    });
+    const errors = [];
+    clean.on("pageerror", (error) => errors.push(error.message));
+    await clean.setContent(
+      `<!doctype html><html><head></head><body><div id="fixture"></div></body></html>`,
+    );
+    await clean.addStyleTag({ content: css });
+    await clean.addScriptTag({ content: code });
+    await clean.getByTestId("outer-travel").waitFor();
+    await settleLayout(clean);
+    const readings = [];
+    for (const [id, theme] of [
+      ["outer", "dark"],
+      ["nested", "light"],
+    ]) {
+      for (const {
+        surface,
+        found,
+        color,
+        layers,
+      } of await nearbyOnEverySurface(clean, id)) {
+        assert.equal(found, 1, `${theme}: the ${surface} does not read Nearby`);
+        const ratio = contrastRatio(readColour(color), paintedBehind(layers));
+        assert(
+          ratio >= 4.5,
+          `${theme}: Nearby on the ${surface} reads at ${ratio.toFixed(2)}:1, under 4.5:1`,
+        );
+        readings.push(`${theme} ${surface} ${ratio.toFixed(2)}:1`);
+      }
+    }
+    assert.deepEqual(errors, []);
+    console.log(`PASS decision 50: Nearby reads at ${readings.join(", ")}`);
+    await clean.close();
   }
 
   // GAP-50: the spinner, the skeleton and the loading button turned whatever
