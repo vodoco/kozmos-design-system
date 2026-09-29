@@ -138,6 +138,10 @@ struct SDKMapScreen: View {
                 KozmosMapControlsGroup(onZoomIn: { session.zoom(1) }, onZoomOut: { session.zoom(-1) },
                                        onCompassReset: { widget.mapViewController.resetNorth() })
             }
+            // The SDK's level switcher (decision 38), top floor first. It
+            // marks no level as the visitor's: this host has no visitor
+            // position (location, motion and Bluetooth are declined), and the
+            // switcher never guesses one.
             KozmosFloorSelector(
                 floors: session.floors,
                 selectedFloor: .init(get: { session.selectedFloorId }, set: session.selectFloor),

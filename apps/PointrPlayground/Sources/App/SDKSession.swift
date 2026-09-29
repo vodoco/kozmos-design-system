@@ -233,9 +233,12 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
             return
         }
         building = target
-        let start = SDKFloorPolicy.startLevel(
-            target.levels.map(SDKFloorPolicy.Level.init), sdkDefault: target.defaultLevel.map(SDKFloorPolicy.Level.init))
+        let levels = target.levels.map(SDKFloorPolicy.Level.init)
+        let start = SDKFloorPolicy.startLevel(levels, sdkDefault: target.defaultLevel.map(SDKFloorPolicy.Level.init))
         selectedFloorId = start?.id ?? ""
+        // For whoever checks the venue's levels: the selector's order, the
+        // level Pointr Cloud marks default, the SDK's default and the start.
+        log.notice("QA-LEVELS \(target.name, privacy: .public): \(SDKFloorPolicy.ordered(levels).map { "\($0.shortName) (\($0.index))" }.joined(separator: ", "), privacy: .public); marked default: \(target.levels.filter(\.isDefault).map(\.shortName).joined(separator: ", "), privacy: .public); SDK default \(target.defaultLevel?.shortName ?? "none", privacy: .public); start \(start?.shortName ?? "none", privacy: .public)")
         let policy = SDKMapPolicy.make()
         let controller = PTRMapWidgetViewController(location: target.mapWidgetLocation, configuration: policy)
         controller.addListener(self)
