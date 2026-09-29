@@ -7,6 +7,7 @@ import {
   Menu,
   MenuContent,
   MenuItem,
+  MapStatusPill,
   MenuTrigger,
   MultiSelect,
   POIResultList,
@@ -227,6 +228,9 @@ function AssistantCover({
           <button type="button">Shops</button>
           <button type="button">Offices</button>
           <p aria-live="polite">3 places</p>
+          {/* A status the map shows under the assistant: live by its role
+              alone, with no aria-live. */}
+          <MapStatusPill tone="warning">Turn back</MapStatusPill>
         </div>
         <AICompanionPanel
           onClose={() => setOpen(false)}

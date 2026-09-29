@@ -121,8 +121,11 @@ where nobody could see them (WCAG 2.2, 2.4.11).
   example above. The rest of that box is inert while the panel is open, and
   nothing beyond it: the page around a phone's frame stays as it was. Fixed
   over the whole viewport, it covers the page.
-- **Live regions beneath** still speak, and a menu or popover opened from a
-  part inside the panel, drawn in the page's portal, stays in reach.
+- **Live regions beneath** still speak: those marked with `aria-live`, and
+  those live by their role, `status`, `alert`, `log`, `marquee` or `timer`,
+  and `output`, as `MapStatusPill`, `Alert`, `Notice` and `Spinner` are. A menu
+  or popover opened from a part inside the panel, drawn in the page's portal,
+  stays in reach.
 - **As it closes** it gives everything back, then hands focus back to the
   button that opened it, which it covered. `onCloseAutoFocus` can put focus on
   anything it covered: that is in reach again by then.

@@ -474,6 +474,38 @@ await scenario(
   },
 );
 
+// Fix 3 of 0.6.0: a live region by its role alone, as MapStatusPill is,
+// keeps speaking under the open assistant.
+await scenario(
+  "GAP-93: a map status under the open assistant stays in the accessibility tree",
+  "assistant-cover",
+  async (page) => {
+    await openAssistant(page);
+    assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+    const pill = page.getByRole("status").filter({ hasText: "Turn back" });
+    assert.equal(await pill.count(), 1, "the pill is drawn");
+    assert.equal(
+      await pill.evaluate((node) => node.closest("[inert]") === null),
+      true,
+      "the pill's status was made inert",
+    );
+    // Chromium can show its own accessibility tree: the status is in it.
+    if (browser.browserType().name() === "chromium") {
+      const cdp = await page.context().newCDPSession(page);
+      const { nodes } = await cdp.send("Accessibility.getFullAXTree");
+      const statuses = nodes.filter((node) => node.role?.value === "status");
+      assert.ok(statuses.length > 0, "no status in the accessibility tree");
+      assert.deepEqual(
+        statuses
+          .filter((node) => node.ignored)
+          .map((node) => (node.ignoredReasons ?? []).map((r) => r.name)),
+        [],
+        "the status is left out of the accessibility tree",
+      );
+    }
+  },
+);
+
 // Fix 2 of 0.6.0: what the assistant covers follows the layout while it is
 // open. A media query lays it over the frame below 700px, and beside the
 // search from 700px.
