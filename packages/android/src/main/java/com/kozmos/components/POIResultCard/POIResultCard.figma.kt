@@ -35,7 +35,7 @@ class KozmosPOIResultCardConnect {
                 id = "cafe", name = title, floorId = "l2", floorLabel = "Level 2", actions = emptyList()
             ),
             result = KozmosPOIResultPresentation(
-                poiId = "cafe", resultIndex = 0, selected = selected,
+                poiId = "cafe", resultIndex = 1, selected = selected,
                 featured = featured, floorId = "l2", available = available
             ),
             onSelect = {}

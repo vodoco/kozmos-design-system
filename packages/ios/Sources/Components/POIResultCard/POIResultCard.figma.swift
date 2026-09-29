@@ -39,7 +39,7 @@ struct KozmosPOIResultCardConnect: FigmaConnect {
             ),
             result: KozmosPOIResultPresentation(
                 poiId: "cafe",
-                resultIndex: 0,
+                resultIndex: 1,
                 selected: self.selected,
                 featured: self.featured,
                 floorId: "l2",

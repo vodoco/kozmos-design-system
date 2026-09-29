@@ -79,7 +79,9 @@ export const Empty: Story = {
 const dining = (
   id: string,
   name: string,
+  // Counted from 1: the number the place's map marker shows.
   resultIndex: number,
+  minutes: number,
   floorLabel = "First floor",
 ): POIResultListItem => ({
   poi: {
@@ -98,13 +100,15 @@ const dining = (
     featured: false,
     floorId: "1",
     travelEstimate: {
-      durationSeconds: (2 + resultIndex) * 60,
-      durationLabel: `${2 + resultIndex} min`,
+      durationSeconds: minutes * 60,
+      durationLabel: `${minutes} min`,
     },
   },
 });
 
-const featuredBurgerKing = dining("burger-king", "Burger King", 0);
+// Its pin shows its logo, so its number is never drawn: the others are
+// numbered 1 to 5 in pin order, and it takes the next.
+const featuredBurgerKing = dining("burger-king", "Burger King", 6, 2);
 
 /** Dining, chosen in the browse grid: its places, numbered as their pins are. */
 const quickAccessDining: POIResultListEntry[] = [
@@ -112,18 +116,18 @@ const quickAccessDining: POIResultListEntry[] = [
     ...featuredBurgerKing,
     result: { ...featuredBurgerKing.result, featured: true },
   },
-  dining("starbucks", "Starbucks", 1),
-  dining("mcdonalds", "McDonald's", 2),
+  dining("starbucks", "Starbucks", 1, 3),
+  dining("mcdonalds", "McDonald's", 2, 4),
   {
     id: "costa",
     label: "Costa Coffee, 2 results",
     items: [
-      dining("costa-1", "Costa Coffee", 3),
-      dining("costa-2", "Costa Coffee", 4, "Second floor"),
+      dining("costa-1", "Costa Coffee", 3, 5),
+      dining("costa-2", "Costa Coffee", 4, 6, "Second floor"),
     ],
     collapsedCount: 2,
   },
-  dining("pret", "Pret A Manger", 5),
+  dining("pret", "Pret A Manger", 5, 7),
 ];
 
 /**

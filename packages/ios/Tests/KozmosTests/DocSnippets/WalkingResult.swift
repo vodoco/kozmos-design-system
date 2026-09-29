@@ -8,6 +8,8 @@ import Kozmos
 // The walk the product already has, and its exact time in the visitor's words.
 struct WalkingResult: View {
     let poi: KozmosPOIPresentation
+    // The result's number, counted from 1: the one its map marker shows.
+    let number: Int
     let walkSeconds: Double
     let walkLabel: String
     let bandLabels: [KozmosTravelTimeBand: String]
@@ -18,7 +20,7 @@ struct WalkingResult: View {
             poi: poi,
             result: KozmosPOIResultPresentation(
                 poiId: poi.id,
-                resultIndex: 0,
+                resultIndex: number,
                 // The list shows the band; the details card keeps durationLabel.
                 travelEstimate: KozmosTravelEstimatePresentation(
                     durationSeconds: walkSeconds,

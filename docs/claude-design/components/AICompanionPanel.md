@@ -63,7 +63,7 @@ export function AICompanionPanelExample() {
                     poi={poi}
                     result={{
                       poiId: poi.id,
-                      resultIndex: 0,
+                      resultIndex: 1,
                       selected: false,
                       featured: false,
                       floorId: poi.floorId,

@@ -37,10 +37,11 @@ So a featured result shows Featured and no number, and a numbered result shows i
 than its badge, so the list's numbers match the pins.
 
 - **The numbers are the product's.** The card draws the `resultIndex` it is given and never
-  renumbers. Turn numbering on for a list whose pins are numbered, with `POIResultList`'s
-  `numbered`; quick access is the case, where a category chosen in the browse grid lists its places
-  and the map pins them. Number the results that are not featured, in pin order, since a featured
-  result's pin shows its logo.
+  renumbers. `resultIndex` counts from 1: it is the number the result's map marker shows, and the
+  position analytics reports. Turn numbering on for a list whose pins are numbered, with
+  `POIResultList`'s `numbered`; quick access is the case, where a category chosen in the browse
+  grid lists its places and the map pins them. Number the results that are not featured 1, 2, 3 in
+  pin order, since a featured result's pin shows its logo.
 - **What is heard.** The number's tab is decorative. The number leads the result's accessible name
   instead, "2, Burger King …", so it is heard once, with the result it numbers, and no words are
   added. A `selectionLabel` replaces that whole name, so a product that passes one says the number
@@ -126,6 +127,8 @@ import Kozmos
 // The walk the product already has, and its exact time in the visitor's words.
 struct WalkingResult: View {
     let poi: KozmosPOIPresentation
+    // The result's number, counted from 1: the one its map marker shows.
+    let number: Int
     let walkSeconds: Double
     let walkLabel: String
     let bandLabels: [KozmosTravelTimeBand: String]
@@ -136,7 +139,7 @@ struct WalkingResult: View {
             poi: poi,
             result: KozmosPOIResultPresentation(
                 poiId: poi.id,
-                resultIndex: 0,
+                resultIndex: number,
                 // The list shows the band; the details card keeps durationLabel.
                 travelEstimate: KozmosTravelEstimatePresentation(
                     durationSeconds: walkSeconds,
@@ -163,6 +166,8 @@ import com.kozmos.contracts.KozmosTravelTimeBand
 @Composable
 fun WalkingResult(
     poi: KozmosPOIPresentation,
+    // The result's number, counted from 1: the one its map marker shows.
+    number: Int,
     walkSeconds: Double,
     walkLabel: String,
     bandLabels: Map<KozmosTravelTimeBand, String>,
@@ -172,7 +177,7 @@ fun WalkingResult(
         poi = poi,
         result = KozmosPOIResultPresentation(
             poiId = poi.id,
-            resultIndex = 0,
+            resultIndex = number,
             // The list shows the band; the details card keeps durationLabel.
             travelEstimate = KozmosTravelEstimatePresentation(
                 durationSeconds = walkSeconds,
