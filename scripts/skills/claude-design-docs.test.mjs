@@ -187,6 +187,24 @@ test("AdaptiveMapShell's card goes on past onPanelDetentChange, to the last prop
   assert.match(props.get("map"), /\*\*required\*\*/);
 });
 
+test("no card counts the attributes it inherits from React or framer-motion", () => {
+  // Those counts are facts about whichever @types/react and framer-motion a
+  // machine resolves, not about Kozmos: on 2026-09-29 one tree gave
+  // DynamicIsland 258 of React's attributes on a pull request's run and 272
+  // on main's, so the freshness check failed on main with nothing changed.
+  // The cards name what a part inherits; they do not count it.
+  const counted = [];
+  for (const file of fs.readdirSync(path.join(root, CARDS_DIR)))
+    if (file.endsWith(".md")) {
+      const text = fs.readFileSync(path.join(root, CARDS_DIR, file), "utf8");
+      for (const match of text.matchAll(
+        /the \d+ (attributes React's DOM types give it|animation props)/g,
+      ))
+        counted.push(`${file}: ${match[0]}`);
+    }
+  assert.deepEqual(counted, []);
+});
+
 test("every card carries one example, in a ThemeProvider, that renders its component", () => {
   const problems = [];
   for (const [name, card] of cards) {
