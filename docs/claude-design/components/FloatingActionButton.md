@@ -44,7 +44,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `FloatingActionButtonP
 - `variant`: `"link" | "default" | "destructive" | "outline" | "secondary" | "ghost" | "glass" | null`, optional, default `"default"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

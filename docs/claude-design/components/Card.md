@@ -64,7 +64,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `CardProps`, which extend
 - `padding`: `CardPadding`, optional, default `"default"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## CardHeader
 
@@ -72,7 +72,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `React.HTMLAttributes<HTM
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## CardFooter
 
@@ -80,7 +80,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `React.HTMLAttributes<HTM
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## CardTitle
 
@@ -88,7 +88,7 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `React.HTMLAttribut
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## CardDescription
 
@@ -96,7 +96,7 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `React.HTMLAttribut
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## CardContent
 
@@ -104,7 +104,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `React.HTMLAttributes<HTM
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 
