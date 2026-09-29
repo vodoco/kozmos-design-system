@@ -159,7 +159,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [Link](components/Link.md): Link is a component of `@kozmos-ds/react` whose docs do not describe it yet.
 - [Menu](components/Menu.md): Menu is a component of `@kozmos-ds/react` whose docs do not describe it yet.
 - [Navbar](components/Navbar.md): Horizontal app navigation shell.
-- [NavigationItem](components/NavigationItem.md): Reusable navigation row/item primitive for top navigation, side navigation, and compact rails.
+- [NavigationItem](components/NavigationItem.md): Reusable navigation row/item primitive for top navigation, side navigation, and the rail.
 - [Pagination](components/Pagination.md): Pagination is a component of `@kozmos-ds/react` whose docs do not describe it yet.
 - [Sidebar](components/Sidebar.md): Vertical navigation shell.
 - [Stepper](components/Stepper.md): Stepper is a component of `@kozmos-ds/react` whose docs do not describe it yet.

@@ -77,7 +77,7 @@ export function Example() {
   const [floor, setFloor] = useState("G");
   return (
     <FloorSelector
-      floors={["G", "1", "2"]}
+      floors={["2", "1", "G"]}
       selectedFloor={floor}
       onFloorSelect={setFloor}
     />
@@ -132,7 +132,7 @@ import { KozmosFloorSelector } from "@kozmos-ds/vue"
 import SwiftUI
 
 KozmosFloorSelector(
-floors: ["B2", "B1", "G", "1", "2"],
+floors: ["2", "1", "G", "B1", "B2"],
 selectedFloor: .constant("G")
 )
 
@@ -184,7 +184,7 @@ import com.kozmos.contracts.KozmosFloorPresentation
 @Composable
 fun Levels(selected: String, onSelect: (String) -> Unit) {
     KozmosFloorSelector(
-        floors = listOf("B2", "B1", "G", "1", "2"),
+        floors = listOf("2", "1", "G", "B1", "B2"),
         selectedFloor = selected,
         onFloorSelect = onSelect
     )
