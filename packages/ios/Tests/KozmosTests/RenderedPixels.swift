@@ -76,6 +76,45 @@ struct RenderedPixels {
         return found
     }
 
+    /// The bounding boxes, in points, of the separate shapes inside `region`
+    /// (in points): each run of matching pixels that touch, corners counted.
+    /// A button's outline is one shape and its glyph, which the outline
+    /// encloses without touching, another.
+    func shapes(in region: CGRect, where matches: (UInt8, UInt8, UInt8) -> Bool) -> [CGRect] {
+        let x0 = max(0, Int(region.minX * scale)), x1 = min(width, Int(region.maxX * scale))
+        let y0 = max(0, Int(region.minY * scale)), y1 = min(height, Int(region.maxY * scale))
+        guard x0 < x1, y0 < y1 else { return [] }
+        let columns = x1 - x0
+        var matched = [Bool](repeating: false, count: columns * (y1 - y0))
+        for y in y0..<y1 {
+            for x in x0..<x1 {
+                let i = (y * width + x) * 4
+                matched[(y - y0) * columns + (x - x0)] = matches(rgba[i], rgba[i + 1], rgba[i + 2])
+            }
+        }
+        var boxes: [CGRect] = []
+        for start in matched.indices where matched[start] {
+            matched[start] = false
+            var stack = [start]
+            var minX = Int.max, minY = Int.max, maxX = -1, maxY = -1
+            while let index = stack.popLast() {
+                let x = index % columns, y = index / columns
+                minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+                for dy in -1...1 {
+                    for dx in -1...1 {
+                        let nx = x + dx, ny = y + dy
+                        guard nx >= 0, nx < columns, ny >= 0, ny < y1 - y0 else { continue }
+                        let next = ny * columns + nx
+                        if matched[next] { matched[next] = false; stack.append(next) }
+                    }
+                }
+            }
+            boxes.append(CGRect(x: CGFloat(minX + x0) / scale, y: CGFloat(minY + y0) / scale,
+                                width: CGFloat(maxX - minX + 1) / scale, height: CGFloat(maxY - minY + 1) / scale))
+        }
+        return boxes
+    }
+
     /// The colour drawn at a point, in points.
     func color(at point: CGPoint) -> (r: UInt8, g: UInt8, b: UInt8) {
         let x = min(max(Int(point.x * scale), 0), width - 1), y = min(max(Int(point.y * scale), 0), height - 1)

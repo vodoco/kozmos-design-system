@@ -97,17 +97,35 @@ In `AdaptiveMapShell`'s panel, sheet or side panel alike, use `presentation="she
 no surface of its own and sits on the panel's. The panel already leaves space above its content —
 the grip's 16px row on a sheet, 16px at the top of a side panel — and the header tops its top padding
 up to 16 instead of adding another 16, so the close button sits as far from the panel's top as from
-its side (GAP-083: it sat 33px down and 17px in). Under a grip it keeps 4px more, so the grip's 16px
-target keeps its WCAG 2.5.8 spacing: at 320px wide the favourite button would otherwise sit inside
-it. With a single detent there is no grip, and under a `panelHeader` the header sits above the card;
-in both the card keeps its own 16.
+its side: 17px and 17px, the panel's 1px border counted (GAP-083: it sat 33px down and 17px in).
+
+Under a grip that holds while the header's buttons stay clear of the grip's target (decision 51).
+The grip's 16px row is an undersized target, and WCAG 2.5.8 keeps a 24px circle on its centre clear
+of every other target. Flush under the row, the buttons' top edge is 8px below that centre, so the
+button nearest the middle must start about 9px past it. Where it would not, the header keeps the
+grip's 4px clearance, as every other part at the top of the panel does (decision 14): 21px and 17px.
+With favourite, save and close that is a panel under 340px wide (a 320px phone); with one toggle and
+close, under 240px; with close alone, under 140px. The header decides by a container query on the
+panel's width (`kozmos-panel`), so it follows the panel, not the viewport. iOS and Android draw the
+same rule, 16 and 16 or 20 and 16 with no border; on iOS the header measures its buttons, which grow
+with the text size, so at the largest sizes it keeps the clearance on wider phones too.
+
+With a single detent there is no grip, and under a `panelHeader` the header sits above the card; in
+both the card keeps its own 16.
+
+In the `sheet` presentation the header's buttons draw their keyboard focus ring inside their edge,
+as the actions strip draws its own: flush against the card's top, in a side panel and under a grip,
+a ring drawn outside lost its top edge to the card's and the panel's scrolling boxes.
 
 `presentation="panel"` and `"inline"` draw a bordered card of their own; the space above that border
 is not the card's, so the header keeps its 16 inside it. A card placed lower in the panel than its
 top should use `"inline"`.
 
 The shell says what it leaves through two custom properties on its panel's content,
-`--kozmos-panel-inset-top` and `--kozmos-panel-clearance-top` (see AdaptiveMapShell).
+`--kozmos-panel-inset-top` and `--kozmos-panel-clearance-top`, and how wide that content is through
+its container, `kozmos-panel` (see AdaptiveMapShell). The rule assumes the card spans the panel's
+width, as it does when it is the panel's content: a card inside a padded wrapper sits nearer the
+grip's centre than the panel's width says.
 
 On a glass panel the `sheet` presentation's muted lines, its level and hours, its prices, its
 summaries' notes, its section headings and its gallery's position, take the foreground colour, so
