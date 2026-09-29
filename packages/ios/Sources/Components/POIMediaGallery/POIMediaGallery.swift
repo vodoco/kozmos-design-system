@@ -38,6 +38,11 @@ public struct KozmosPOIMediaGallery: View {
     /// The index as last rendered. Deferred work reads this, because a
     /// controlled `activeIndex` captured in a closure is stale by then.
     @State private var renderedIndex = 0
+    /// Set while the strip waits to be lined up with its index: on the first
+    /// layout and after new media. What the strip measures meanwhile is the
+    /// gallery's own doing, not a visitor's scroll, so it selects nothing.
+    /// Opened on its third photo, the gallery used to report 0 and then 2.
+    @State private var alignmentPending = true
     @State private var stripWidth: CGFloat = 0
 
     public init(
@@ -208,7 +213,7 @@ public struct KozmosPOIMediaGallery: View {
     }
 
     private func observe(_ frames: [Int: CGRect], stripWidth: CGFloat, _ proxy: ScrollViewProxy) {
-        guard let nearest = POIMediaGalleryGeometry.nearestIndex(
+        guard !alignmentPending, let nearest = POIMediaGalleryGeometry.nearestIndex(
             tileFrames: frames, stripWidth: stripWidth, layoutDirection: layoutDirection
         ), nearest != observedIndex else { return }
         observedIndex = nearest
@@ -218,13 +223,22 @@ public struct KozmosPOIMediaGallery: View {
     /// Scroll only the strip, never the panel around it, and without animation:
     /// no forced motion, as on the web. At the last item the scroll view clamps
     /// to its range, which the nearest-tile measure still reads as that item.
+    ///
+    /// `afterLayout` waits for the strip to be laid out, then lines it up with
+    /// the index rendered by then, which may have moved since; until it has,
+    /// nothing the strip measures is taken for a visitor's scroll.
     private func align(_ index: Int, _ proxy: ScrollViewProxy, afterLayout: Bool = false) {
-        guard media.indices.contains(index) else { return }
-        let id = media[index].id
         if afterLayout {
-            DispatchQueue.main.async { proxy.scrollTo(id, anchor: .leading) }
+            alignmentPending = true
+            DispatchQueue.main.async {
+                if media.indices.contains(renderedIndex) {
+                    proxy.scrollTo(media[renderedIndex].id, anchor: .leading)
+                }
+                alignmentPending = false
+            }
         } else {
-            proxy.scrollTo(id, anchor: .leading)
+            guard media.indices.contains(index) else { return }
+            proxy.scrollTo(media[index].id, anchor: .leading)
         }
     }
 }
