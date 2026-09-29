@@ -1,7 +1,9 @@
 # Embedded React modules: theme and stylesheet ownership
 
-2026-09-17 · local pre-publication implementation on `astra/prepublish-foundations`.
-Not published; browser/WebView support policy is still awaiting Olcay's decision.
+2026-09-17 · written for `astra/prepublish-foundations`, which merged to `main` that day (#53).
+It has shipped in `@kozmos-ds/react` since its first release, 0.1.0 on 2026-09-23. The
+browser floor this depends on has been declared since the same day: `browserslist` in the React
+package's `package.json`, and "Browsers" in its README.
 
 ## Contract
 
@@ -60,16 +62,16 @@ widgets, Shadow DOM support or isolation from every third-party overlay manager.
 **Migration continuation:** the component-owned CSS migration of 2026-09-17
 supersedes the implementation description below for Input, Textarea, Button,
 Popover, FieldWrapper and Label. Their recipes, token foundations and animation
-definitions no longer require native scope. The remaining library still does;
-this is not a completed cross-browser release. The paragraphs below retain the
+definitions no longer require native scope. The remaining library still does,
+which is what sets the browser floor below. The paragraphs below retain the
 original foundation design and the finding that prompted its replacement.
 
 **2026-09-17 follow-up:** the existing green browser suite missed native form
 controls. The built Input/Textarea fixture now reproduces scoped-style failures in
 the installed WebKit 26.0, including sizing and theme colours. Chromium 145 and
 Firefox 146 pass that fixture, so the earlier evidence is not a readiness claim.
-No workaround or support-floor decision has been implemented; this remains a
-release blocker.
+No workaround was implemented. A support floor was declared on 2026-09-23
+instead (below), and every release has shipped with it.
 
 The React build processes the existing generated token CSS and Tailwind output into
 bounded native `@scope` rules. Light values are established at every root; dark values
@@ -93,12 +95,14 @@ do not need it.
 This implementation requires native `@scope`, including its nested `:scope` behavior.
 There is no legacy-browser fallback: an unsupported browser ignores the scoped rules.
 MDN currently marks the full feature [Baseline 2026](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@scope).
-Current automated Chromium and WebKit checks are evidence for those installed engines,
-**not certification of minimum browser versions or Pointr's embedded WebViews**.
-Olcay was asked whether to adopt this browser floor; no answer has yet been recorded.
-Do not release or declare this support policy approved until that decision and device
-matrix are resolved. If older engines are required, select a different isolation
-architecture before npm publication, not an untested selector/polyfill workaround.
+Since 2026-09-23 the React package declares the floor that follows: Chrome and Edge 118,
+Safari and iOS 17.4, Firefox 128 and Android WebView 118, where `@scope` landed
+(`browserslist` in its `package.json`, and "Browsers" in its README). The automated
+Chromium, Firefox and WebKit checks are evidence for those installed engines,
+**not certification of minimum browser versions or Pointr's embedded WebViews**: a host
+checks its WebView against the floor. A host that needs an older engine needs the
+remaining components moved to their own CSS, which lowers the floor one component at a
+time, not an untested selector/polyfill workaround.
 
 ## Migration
 

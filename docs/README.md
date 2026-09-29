@@ -1,8 +1,11 @@
 # Documentation
 
 What each document is for, and when to read it. The website,
-<https://vodoco.github.io/kozmos-design-system/>, shows every component running with its code on
-three platforms. [`AGENTS.md`](../AGENTS.md) is the short guide to working in this repository, and
+<https://vodoco.github.io/kozmos-design-system/>, is the front door: the examples, the foundations,
+and where each component exists on React, SwiftUI, Compose and Figma. Storybook,
+<https://vodoco.github.io/kozmos-design-system/storybook/>, is the component reference: each
+component's docs, stories and controls, and its code on every platform (decision 44).
+[`AGENTS.md`](../AGENTS.md) is the short guide to working in this repository, and
 [`.ai-skills/`](../.ai-skills/README.md) is the reference written for AI assistants.
 
 ## How Kozmos works

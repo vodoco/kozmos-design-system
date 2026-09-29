@@ -21,8 +21,10 @@ official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and com
   fonts, which never update underneath a baseline. Map canvases (WebGL, from tiles) and the slots of
   outside symbols are **masked** (drawn as solid magenta): their size and place are compared, their
   pixels are not. A symbol scaled into its slot rasterised a pixel or two differently from run to run.
-- **Exact.** Colours are compared exactly (`threshold: 0`): Playwright's default tolerance passed a
-  whole token step (the Skeleton's move from background/100 to /200) as unchanged.
+- **To within rounding.** Colours are compared with `threshold: 0.02`, which allows a colour delta
+  of 14. Playwright's default tolerance (0.2) passed a whole token step, the Skeleton's move from
+  background/100 to /200 (a delta of 351), as unchanged. An exact 0 failed on noise instead: the
+  image redraws a few anti-aliased edge pixels one unit off from run to run.
 - **Still.** The clock is fixed (2026-01-15 10:30 UTC), `Math.random` is seeded, animations and
   transitions are stopped, the caret is hidden, and the page asks for reduced motion.
 - **Opting out.** Give a story the tag `no-visual`, with a comment saying why.

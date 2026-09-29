@@ -3,6 +3,23 @@
 Written 2026-09-05. Measured against the POI Details Card Revamp designs
 (`HbFSXhCPxKUy2fWa5x9TKO`) and the Kozmos library over REST.
 
+**Since then** (read from the code on 2026-09-29), five of the eleven primitives ranked below
+exist, whole or in part. The rest of this document still describes 2026-09-05.
+
+| #   | Primitive                    | On 2026-09-29                                                                                                                   |
+| --- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | State on `MapControlButton`  | Built. The importer paints the Figma set with `State: Default, Pressed, Disabled`; React has `pressed` and `disabled`           |
+| 2   | Attribute section            | Not a part of its own: `POIDetailPanel` draws its services and tags sections itself                                             |
+| 3   | In-surface status message    | Built: `MapStatusPill` (decision 39)                                                                                            |
+| 4   | Generic control cluster      | Not yet: `MapControlsGroup` still draws a fixed set (zoom, compass, location, step-free), and `MapOverlay` places what it holds |
+| 5   | Meta strip                   | Built: `MetaStrip`                                                                                                              |
+| 6   | Drag handle                  | Not a part of its own: `AdaptiveMapShell`'s sheet draws its own                                                                 |
+| 7   | Step list with connector     | In part: `Itinerary` lists the steps, with no connector; `RouteProgressRail` is the journey's progress                          |
+| 8   | Collapsed-expandable control | In part: `FloorSelector`'s collapsible level switcher (decision 38)                                                             |
+| 9   | Filter row                   | Not yet                                                                                                                         |
+| 10  | Carousel                     | Not yet                                                                                                                         |
+| 11  | Opening hours                | Not a part of its own: `POIDetailPanel` draws the week from `details.openingHours`                                              |
+
 ## The premise
 
 **An SDK module is a composition, not a component.** A POI detail card is a
@@ -17,9 +34,9 @@ what a POI is.
 
 That reframes the gap audit of 2026-09-05, which found the 24 Product/SDK sets
 diverging from their React implementations. That matters much less than this:
-**can a module be built from Kozmos alone today?** For every module below, the
-answer is no, and the missing pieces are small and reusable rather than large
-and bespoke.
+**can a module be built from Kozmos alone today?** On 2026-09-05, for every
+module below, the answer was no, and the missing pieces were small and reusable
+rather than large and bespoke. The table above says which exist now.
 
 ## The map module
 

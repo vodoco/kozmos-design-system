@@ -1,11 +1,13 @@
 # Adaptive map layout: first pre-publication implementation
 
-2026-09-17 · implemented on `astra/prepublish-foundations`, not published.
+2026-09-17 · written for `astra/prepublish-foundations`, which merged to `main` that day (#53).
+It has shipped in `@kozmos-ds/react` and `@kozmos-ds/product-contracts` since their first
+release, 0.1.0 on 2026-09-23.
 
 This is the React geometry foundation, not a claim of complete foldable-device support.
 The TypeScript presentation contract is in `@kozmos-ds/product-contracts`; SwiftUI and Compose
-still use their previous implementations. Theme/portal/CSS isolation is the next separate
-foundation, not part of this change.
+still use their previous implementations. Theme, portal and stylesheet isolation came in the
+same pull request, as a separate foundation: [embedding-isolation.md](embedding-isolation.md).
 
 ## Host responsibilities
 
@@ -130,7 +132,9 @@ coverage passed already. The geometry unit test for measured chrome reservation 
    regressing iOS detents or measured chrome. Test native rotation/recreation and restoration.
 2. Connect a real Pointr map adapter and run POI/routing flows against installed package tarballs.
 3. Validate actual keyboard, safe-area, fold/posture and accessibility scenarios on devices.
-4. Complete theme/portal/CSS isolation, the API/export review and release safeguards that the
-   pre-publication architecture review of 2026-09-17 called for.
+4. Complete the API/export review and release safeguards that the pre-publication architecture
+   review of 2026-09-17 called for. Theme, portal and stylesheet isolation, also on its list,
+   shipped with this change (#53).
 
-No npm publication, release token, package version, Figma node or remote branch was changed.
+When this was written, the change had published nothing: no npm publication, release token,
+package version, Figma node or remote branch had been changed.
