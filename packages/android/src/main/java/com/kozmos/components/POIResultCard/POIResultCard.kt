@@ -399,6 +399,40 @@ fun KozmosPOIResultCard(
     }
 }
 
+/**
+ * [KozmosPOIResultCard] as 0.5.0 declared it: its parameters, in its order,
+ * [onAction] last. A call that passes them by position still compiles, and so
+ * does one that passes [onAction] as a trailing lambda: a parameter added
+ * since, travelTimeBandLabels, sits before onAction so that the lambda stays
+ * last, and this overload keeps the positional call. It draws the card the
+ * full one does, with no words of its own for a walk shown as a band.
+ */
+@Composable
+fun KozmosPOIResultCard(
+    poi: KozmosPOIPresentation,
+    result: KozmosPOIResultPresentation,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    featuredLabel: String = "Featured",
+    currentFloorId: String? = null,
+    selectionLabel: String? = null,
+    actionsLabel: String = "Actions for this result",
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) {
+    KozmosPOIResultCard(
+        poi = poi,
+        result = result,
+        onSelect = onSelect,
+        modifier = modifier,
+        featuredLabel = featuredLabel,
+        currentFloorId = currentFloorId,
+        selectionLabel = selectionLabel,
+        actionsLabel = actionsLabel,
+        travelTimeBandLabels = emptyMap(),
+        onAction = onAction
+    )
+}
+
 /** The bands' words, and the only English the card holds for them. */
 internal fun englishTravelTimeBandLabel(band: KozmosTravelTimeBand): String = when (band) {
     KozmosTravelTimeBand.Nearby -> "Nearby"
