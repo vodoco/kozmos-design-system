@@ -138,8 +138,8 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                         }
                     }
                 }
-                // What VoiceOver lands on as the card opens: the itinerary's
-                // first element.
+                // Where VoiceOver is sent as the card opens: the itinerary,
+                // one container around whatever the product put in it.
                 .accessibilityElement(children: .contain)
                 .kozmosVoiceOverFocus($voiceOverFocus, .itinerary)
             } else {
@@ -217,8 +217,8 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
 private extension View {
     /// Binds VoiceOver's focus on this view to `part`. iOS only, as
     /// FloorSelector's is: on a Mac `ImageRenderer` draws nothing of a view
-    /// that carries it (measured there), and VoiceOver on a Mac is not what
-    /// the card is for.
+    /// that carries it (FloorSelector measured it), and VoiceOver on a Mac is
+    /// not what the card is for.
     @ViewBuilder
     func kozmosVoiceOverFocus(
         _ focus: AccessibilityFocusState<KozmosManoeuvreCardPart?>.Binding,

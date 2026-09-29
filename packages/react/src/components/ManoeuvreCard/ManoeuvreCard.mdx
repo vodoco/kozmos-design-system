@@ -126,7 +126,7 @@ Past its cap the itinerary scrolls, and every step stays reachable (GAP-100):
 Opening takes the instruction away, and closing hides the grab bar. Focus that was on the part that went moves to the part in its place; focus anywhere else stays where it is, whether a key, a pointer or the product opened or closed the card. No timers.
 
 - **On the web:** opening from the instruction puts focus on the scrolling itinerary; closing from Hide, or from inside the itinerary, puts it back on the instruction. The closed, silent grab bar never takes focus, even from a pointer. A pointer that focuses what it presses (Chromium) is followed; one that does not (WebKit, Firefox on macOS) moves nothing. Before, focus fell to the page on opening, and closing left it on the grab bar, hidden from assistive technology.
-- **On iOS:** VoiceOver's focus follows the same rule (`@AccessibilityFocusState`): from the instruction to the itinerary's first element as the card opens, from Hide back to the instruction as it closes.
+- **On iOS:** VoiceOver's focus follows the same rule (`@AccessibilityFocusState`, as FloorSelector's column uses it): from the instruction to the itinerary as the card opens, from Hide back to the instruction as it closes. VoiceOver does not run in the Simulator, so the rule is tested and the move itself wants a device.
 - **On Android:** input focus follows the rule, and TalkBack with it, since Compose reports the move (`TYPE_VIEW_FOCUSED`). Opening from the instruction puts focus on Hide, the control that took its place: a focusable box around the steps would be a silent stop for TalkBack. The closed grab bar is no longer a keyboard stop. A tap moves no focus.
 
 ## Implementation
