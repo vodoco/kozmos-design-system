@@ -47,7 +47,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `RadioGroupProps`, which 
 - `onValueChange`: `RadioGroupContextValue['onValueChange']`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 261 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## RadioGroupItem
 
@@ -61,4 +61,4 @@ It forwards its ref to `HTMLButtonElement`. Its props are `RadioGroupItemProps`,
 - `required`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 271 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

@@ -130,6 +130,10 @@ function partSection(part, { summarised }) {
   );
   for (const prop of listed) lines.push(propLine(prop));
   if (children) lines.push(propLine({ ...children, doc: "" }));
+  // What a part inherits is named, never counted: how many attributes React's
+  // DOM types or framer-motion give depends on which versions a machine
+  // resolves, and one tree gave DynamicIsland 258 on one CI run and 272 on
+  // the next, which failed the freshness check on main with nothing changed.
   const inherited = [];
   const react = part.summarised.react;
   if (react.length) {
@@ -137,12 +141,12 @@ function partSection(part, { summarised }) {
     if (react.some((n) => n.startsWith("aria-"))) named.push(code("aria-*"));
     if (react.some((n) => /^on[A-Z]/.test(n))) named.push("the event handlers");
     inherited.push(
-      `the ${react.length} attributes React's DOM types give it${named.length ? ` (${named.join(", ")} among them)` : ""}`,
+      `the attributes React's DOM types give it${named.length ? ` (${named.join(", ")} among them)` : ""}`,
     );
   }
   if (part.summarised.motion.length)
     inherited.push(
-      `the ${part.summarised.motion.length} animation props of framer-motion's ${code("motion")} elements`,
+      `the animation props of framer-motion's ${code("motion")} elements`,
     );
   if (!listed.length && !children && !inherited.length)
     lines.push("It takes no props.");

@@ -46,7 +46,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `MapViewProps`, which ext
 
 - `variant`: `MapViewVariant`, optional, default `"framed"`.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

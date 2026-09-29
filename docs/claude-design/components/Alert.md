@@ -45,7 +45,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `AlertProps`, which exten
 - `variant`: `"default" | "destructive" | "warning" | "success" | "info" | null`, optional, default `"default"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## AlertTitle
 
@@ -66,7 +66,7 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `AlertTitleProps`, 
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## AlertDescription
 
@@ -74,7 +74,7 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `React.HTMLAttribut
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

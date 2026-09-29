@@ -36,7 +36,7 @@ It forwards its ref to `HTMLUListElement`. Its props are `ListProps`, which exte
 - `density`: `ListDensity`, optional, default `"default"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## ListItem
 
@@ -44,7 +44,7 @@ It forwards its ref to `HTMLLIElement`. Its props are `React.HTMLAttributes<HTML
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 
