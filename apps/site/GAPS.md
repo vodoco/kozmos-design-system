@@ -5,11 +5,13 @@ The site is built from `@kozmos-ds/react` and its tokens only (see README.md,
 being worked around, the way Kozmos records what its examples cannot express:
 the component and the part, what was tried, the lane, and the evidence. Entries
 up to GAP-36 were measured on `claude/pointr-browse-repairs` at `ef1b68b`
-(2026-09-21), the branch the site is built on; the rest, and every revision
-since, on the same packages at `f30c0f9`, the site's current base, on
-2026-09-22. GAP-54 to GAP-82, and the revisions the home page's new cover made to
+(2026-09-21), the branch the site was then built on; GAP-37 to GAP-53, and
+that day's revisions, on the same packages at `f30c0f9`, the site's base then,
+on 2026-09-22. GAP-54 to GAP-82, and the revisions the home page's new cover made to
 GAP-07, 10, 24, 25, 39, 40 and 44, on the packages merged in at `7622daf`,
-the same day.
+the same day. Later entries and revisions were measured on the packages of
+their day; since #55 (2026-09-28) the site is on `main` and builds from its
+packages.
 
 **Numbers** are the site's own register, two digits, separate from the
 design system's change list and its three-digit GAP-0nn: the site's GAP-91 is
@@ -44,7 +46,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-04 | `Grid` cannot reflow, and a caller cannot make it                | Core                   | composed     |
 | GAP-05 | No code block; `Text` has no monospace option                    | Core                   | composed     |
 | GAP-06 | No skip link or visually-hidden text                             | Core                   | composed     |
-| GAP-07 | Icons a website needs: theme, copy, external link                | Core                   | open         |
+| GAP-07 | Icons a website needs ship, but `Icon` cannot name them          | Core                   | open         |
 | GAP-08 | No footer                                                        | Core                   | composed     |
 | GAP-09 | `buttonVariants` on a link keeps the link's underline            | Core                   | left visible |
 | GAP-10 | No image or brand-mark primitive                                 | Core                   | composed     |
@@ -52,7 +54,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-12 | `Alert` is always `role="alert"`, `AlertTitle` always an `h5`    | Core                   | fixed        |
 | GAP-13 | `SelectTrigger` has no label; `Textarea` no helper text          | Core                   | composed     |
 | GAP-14 | `CardTitle` is always an `h3`                                    | Core                   | composed     |
-| GAP-15 | No icons for a venue's everyday categories                       | Product / SDK          | open         |
+| GAP-15 | No icon by name for a venue's everyday categories                | Product / SDK          | open         |
 | GAP-16 | `TabsList` neither wraps nor scrolls                             | Core                   | composed     |
 | GAP-17 | `AdaptiveMapShell`'s panel is an `<aside>`                       | Product / SDK          | open         |
 | GAP-18 | `POIDetailPanel` has no presentation for the shell's panel       | Product / SDK          | left visible |
@@ -118,7 +120,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-78 | `Switch` cannot lead with its label                              | Core                   | open         |
 | GAP-79 | The Pointr icons ship, but cannot be asked for by name           | Product / SDK          | open         |
 | GAP-80 | No row actions: nothing shows on hover outside `Tree`            | Core                   | open         |
-| GAP-81 | 36 of 112 components carry placeholder documentation             | Core                   | left visible |
+| GAP-81 | 36 of 113 components carry placeholder documentation             | Core                   | left visible |
 | GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible |
 | GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | composed     |
 | GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | open         |
@@ -254,13 +256,23 @@ keep the table's four columns and its statuses as they are.
   A test checks it is what the page paints at its own centre.
 - **Lane:** Core (accessibility).
 
-## GAP-07 · Icons a website needs: theme, copy, external link
+## GAP-07 · Icons a website needs ship, but `Icon` cannot name them
 
-- **What:** the 56 icons have no sun, moon or display (a theme switch), no copy
-  (a code block), no external-link glyph, and no pause or play (the control
-  that stops a page's motion).
+- **What:** a theme switch wants a sun, a moon and a display; a code block a
+  copy; a link out an external-link glyph; the control that stops a page's
+  motion a pause and a play. When this was written the icon set had none of
+  them.
+- **Since icons 0.2.0** (2026-09-24), `@kozmos-ds/icons` exports all 1,175
+  outlines of the Pointr Icon Library as components (1,179 components in all
+  in 0.4.0), and these are among them: `Sun`, `Moon01`, `Monitor01`, `Copy01`,
+  `LinkExternal01`, `Play` and `PauseCircle`. What is missing is their names:
+  `Icon name="…"`, the icons page and its search read the registry, which
+  holds none of them (56 names in 0.4.0, 57 on `main`; GAP-79).
 - **Now:** the theme switch, the copy button and the home page's "Pause
-  motion" use words.
+  motion" still use words.
+- **Follow-up:** those controls could draw the components themselves,
+  imported from `@kozmos-ds/icons` (the one rule allows the Kozmos packages),
+  rather than wait for GAP-79.
 - **Lane:** Core (icons).
 
 ## GAP-08 · No footer
@@ -361,15 +373,29 @@ keep the table's four columns and its statuses as they are.
 - **Now:** the index puts its cards under an `h2` ("Pages and apps").
 - **Lane:** Core. (Same shape as GAP-12's `AlertTitle`.)
 
-## GAP-15 · No icons for a venue's everyday categories
+## GAP-15 · No icon by name for a venue's everyday categories
 
-- **What:** the icon set's 56 glyphs have nothing for food and drink, toilets,
-  accessible facilities, parking or first aid — the categories an indoor map
-  shows first. The accessibility glyph is already on record as missing
-  (the product draws it 1,213 times across 7 surfaces, by the 2026-09-14 scan).
+- **What:** when this was written the icon set had nothing for food and
+  drink, toilets, accessible facilities, parking or first aid — the categories
+  an indoor map shows first. The accessibility glyph was already on record as
+  missing (the product draws it 1,213 times across 7 surfaces, by the
+  2026-09-14 scan).
+- **Since icons 0.2.0** (2026-09-24), three of the five have a glyph in
+  `@kozmos-ds/icons`: `Utensils` (food and drink) and `Accessibility`
+  (accessible facilities), which the package draws itself, and the Pointr
+  library's `MedicalCross` (first aid). All three are components only: the
+  examples name their categories' icons through `Icon`, whose registry holds
+  none of them (GAP-79). Toilets and parking have no glyph at all: neither the
+  names nor the tags of the 1,175 Pointr outlines hold one. The icons package
+  says a venue's quick-access category artwork is the taxonomy's, carried as
+  each category's `iconUrl` (its README), and the site cannot draw an image
+  (GAP-10).
 - **Now (venue explorer, phone search, kiosk directory):** those categories
   are left out rather than drawn with a stand-in icon. The six they have
   (shops, information, transport, events, offices, Wi-Fi) use Kozmos icons.
+- **Follow-up:** food and drink, accessible facilities and first aid could
+  come back into the three examples, drawn with those components imported
+  from `@kozmos-ds/icons`; toilets and parking wait for a glyph.
 - **Lane:** Product / SDK (icons; the Pointr taxonomy's own sprites may be the
   source).
 
@@ -1239,9 +1265,9 @@ Text"])`) and the Get started page shows — touches it.
   some will not.
 - **Evidence:** "GAP-61: the breadcrumb's separator does not mirror in right
   to left" measures the separator's path and transform in the direction
-  sample: lucide's right-pointing chevron, `transform: none`. The built
-  package stopped emitting the glyph's class name on 2026-09-27, so the path
-  is the anchor.
+  sample: the Pointr set's right-pointing `ChevronRight` (`M9 18L15 12L9 6`;
+  lucide's until icons 0.2.0), `transform: none`. The built package stopped
+  emitting the glyph's class name on 2026-09-27, so the path is the anchor.
 - **Now:** left visible on the theming page, whose sample says which arrow is
   the page's choice and which is the component's. The site picks its own
   glyphs there — back and next follow the direction it sets — because a page
@@ -1613,9 +1639,9 @@ Text"])`) and the Get started page shows — touches it.
   and is reachable from the keyboard — with an overflow button among the
   icons.
 
-## GAP-81 · 36 of 112 components carry placeholder documentation
+## GAP-81 · 36 of 113 components carry placeholder documentation
 
-- **What:** 37 components describe themselves as "Displays the X interface
+- **What:** 36 components describe themselves as "Displays the X interface
   topology natively" — a placeholder that says nothing about what the part is
   for or when to reach for it. `SegmentedControl` shows what the others could
   be: it says to use it for one choice from a short visible set, to prefer
@@ -1624,7 +1650,9 @@ Text"])`) and the Get started page shows — touches it.
   cannot be told apart from the documentation.
 - **Evidence:** counted from the component docs the site reads: 36 of 112 open
   with "Displays the <Name> interface topology natively." on 2026-09-28 (37 of
-  104 on 2026-09-24).
+  104 on 2026-09-24), and the same 36 of 113 components on 2026-09-29, when
+  MapStatusPill arrived with a description of its own. DatePicker and
+  TimePicker repeat the sentence as a second paragraph.
 - **Now:** left visible: each of their pages says "Its docs have no
   description yet." where it used to print the placeholder, and the search
   shows its lane instead. ThemeProvider's page reads the component's own doc
