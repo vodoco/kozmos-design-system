@@ -24,6 +24,7 @@ import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIPresentation
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -49,11 +50,14 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
         actions = listOf(KozmosPOIAction.Favourite, KozmosPOIAction.Bookmark)
     )
 
-    /** The card as a product hosts it: favourite and save, and its close button. */
+    /** The card as a product hosts it: favourite and save, or [toggles], and its close button. */
     @Composable
-    private fun Card(presentation: KozmosPOIDetailPanelPresentation) {
+    private fun Card(
+        presentation: KozmosPOIDetailPanelPresentation,
+        toggles: List<KozmosPOIAction> = poi.actions
+    ) {
         KozmosPOIDetailPanel(
-            poi = poi,
+            poi = poi.copy(actions = toggles),
             actionLabels = mapOf(KozmosPOIAction.Favourite to "Favourite", KozmosPOIAction.Bookmark to "Save"),
             onAction = { _, _ -> },
             onClose = {},
@@ -61,11 +65,15 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
         )
     }
 
+    /** A phone [widthDp] wide, as the default device is drawn: 3 pixels to the dp, 640 tall. */
+    private fun phone(widthDp: Int) = DeviceConfig.NEXUS_5.copy(screenWidth = widthDp * 3)
+
     private fun read(
         presentation: KozmosPOIDetailPanelPresentation = KozmosPOIDetailPanelPresentation.Sheet,
         detents: List<KozmosMapPanelDetent> = KozmosDefaultPanelDetents,
         detent: KozmosMapPanelDetent = KozmosMapPanelDetent.Medium,
         direction: LayoutDirection = LayoutDirection.Ltr,
+        toggles: List<KozmosPOIAction> = poi.actions,
         header: (@Composable () -> Unit)? = null
     ): ReadSemantics = paparazzi.readSemantics {
         density = LocalDensity.current.density
@@ -73,7 +81,7 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
             MaterialTheme {
                 KozmosAdaptiveMapShell(
                     map = { Box(modifier = Modifier.fillMaxSize()) },
-                    panel = { Card(presentation) },
+                    panel = { Card(presentation, toggles) },
                     panelHeader = header,
                     panelDetents = detents,
                     panelDetent = detent
@@ -112,20 +120,131 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
 
     /**
      * Under a handle: the button sat 32 from the sheet's top — the handle's
-     * 16dp row and the header's own 16 — and 16 from its side. The card tops
-     * its header up to 16 instead of adding 16 to the row, and keeps the
-     * handle's clearance: 4dp, so the handle's 16dp target keeps its WCAG
-     * 2.5.8 spacing, as the web's does. 20 and 16.
+     * 16dp row and the header's own 16 — and 16 from its side. The card then
+     * topped its header up to 16 instead of adding 16 to the row, and kept
+     * the handle's 4dp clearance too: 20 and 16. Decision 51: the header
+     * takes the 4 back wherever its buttons stay clear of the handle's target
+     * anyway, and on a phone they do — at 360 (the default device), 390 and
+     * 430 wide, 16 and 16.
      */
     @Test
-    fun underAHandleTheCloseButtonSitsAsFarDownAsInPlusTheHandlesClearance() {
-        val tree = read()
-        tree.assertSheet()
-        assertEquals("the sheet draws no handle", true, tree.drawsHandle())
-        val at = tree.closeButton()
-        println("GAP-083 Android, sheet with a handle: the close button ${at.down} from the top, ${at.inward} from the side")
-        assertEquals("the close button is ${at.down} from the sheet's top and ${at.inward} from its side", at.inward + 4f, at.down, 0.5f)
-        assertEquals("the close button is ${at.inward} from the sheet's side", 16f, at.inward, 0.5f)
+    fun underAHandleOnAPhoneTheCloseButtonSitsAsFarDownAsIn() {
+        for (width in listOf(360, 390, 430)) {
+            paparazzi.unsafeUpdateConfig(deviceConfig = phone(width))
+            val tree = read()
+            tree.assertSheet()
+            assertEquals("$width: the sheet's width", width.toFloat(), tree.named("Map details").bounds.width / density, 0.5f)
+            assertEquals("$width: the sheet draws no handle", true, tree.drawsHandle())
+            val at = tree.closeButton()
+            println("Decision 51 Android, $width wide under a handle: the close button ${at.down} from the top, ${at.inward} from the side")
+            assertEquals("$width wide: the close button is ${at.down} from the sheet's top and ${at.inward} from its side", 16f, at.down, 0.5f)
+            assertEquals("$width wide: the close button is ${at.inward} from the sheet's side", 16f, at.inward, 0.5f)
+        }
+    }
+
+    /** Where the header's buttons sit against the handle's 24dp circle, in dp: each one's distance from the handle's centre as drawn, and flush under the handle's row. */
+    private data class Clearance(val drawn: Map<String, Float>, val flush: Map<String, Float>) {
+        /** Whether, flush under the handle's row, every button would stay out of the circle. */
+        val flushClears get() = flush.values.all { it >= 12f }
+    }
+
+    /**
+     * The handle's target is its whole 16dp row, "Panel height", and WCAG
+     * 2.5.8 keeps a 24dp circle on its centre clear of every other target.
+     * Where each of [names] sits across the sheet does not depend on the
+     * header's top padding, so how far it would be from the centre flush
+     * under the row is read off the same bounds.
+     */
+    private fun ReadSemantics.clearance(names: List<String>): Clearance {
+        val handle = named("Panel height").bounds
+        val cx = handle.center.x
+        val cy = handle.center.y
+        fun distance(dx: Float, dy: Float) = kotlin.math.hypot(dx, dy) / density
+        val drawn = mutableMapOf<String, Float>()
+        val flush = mutableMapOf<String, Float>()
+        for (name in names) {
+            val b = named(name).bounds
+            val dx = maxOf(b.left - cx, 0f, cx - b.right)
+            drawn[name] = distance(dx, maxOf(b.top - cy, 0f, cy - b.bottom))
+            flush[name] = distance(dx, handle.bottom - cy)
+        }
+        return Clearance(drawn, flush)
+    }
+
+    /**
+     * Decision 51's rule, from what is drawn at each width rather than from
+     * the widths it gives: the header sits flush under the handle's row —
+     * 16 from the top — wherever its buttons would then stay out of the
+     * handle's circle, and keeps the handle's 4dp clearance — 20 — wherever
+     * they would not; and at every width no button meets the circle. Flush,
+     * the buttons' top edge is 8 under the handle's centre, so the favourite,
+     * the first of three 44dp buttons 6 apart 16 in from the end, must start
+     * √(12² − 8²) ≈ 8.9 past the middle: from 338 wide. Below, it meets the
+     * circle at a tangent at most: at 320 it starts at the sheet's middle.
+     */
+    @Test
+    fun theHeaderKeepsTheHandlesClearanceOnlyWhereItsButtonsWouldMeetTheHandlesCircle() {
+        val expected = mapOf(320 to 20f, 330 to 20f, 337 to 20f, 338 to 16f, 339 to 16f, 350 to 16f, 375 to 16f, 412 to 16f, 440 to 16f)
+        for ((width, down) in expected) {
+            paparazzi.unsafeUpdateConfig(deviceConfig = phone(width))
+            val tree = read()
+            assertEquals("$width: the sheet draws no handle", true, tree.drawsHandle())
+            val clearance = tree.clearance(listOf("Favourite", "Save", "Close details"))
+            val at = tree.closeButton()
+            println("Decision 51 Android, $width wide: the close button ${at.down} from the top; from the handle's centre ${clearance.drawn}, flush ${clearance.flush}")
+            assertEquals(
+                "$width wide: flush under the row the buttons would ${if (clearance.flushClears) "clear" else "meet"} the circle ${clearance.flush}",
+                down == 16f, clearance.flushClears
+            )
+            assertEquals("$width wide: the close button is ${at.down} from the sheet's top", down, at.down, 0.5f)
+            assertEquals("$width wide: the close button is ${at.inward} from the sheet's side", 16f, at.inward, 0.5f)
+            for ((name, distance) in clearance.drawn) {
+                assertTrue("$width wide: $name is $distance from the handle's centre, inside its 24dp circle", distance >= 12f - 0.01f)
+            }
+        }
+    }
+
+    /** Fewer buttons reach the circle only on narrower sheets: a toggle and close under 238 wide, close alone under 138. */
+    @Test
+    fun withFewerButtonsTheHeaderKeepsEqualInsetsOnNarrowerSheets() {
+        val cases = listOf(
+            Triple(listOf(KozmosPOIAction.Favourite), 237, 20f),
+            Triple(listOf(KozmosPOIAction.Favourite), 238, 16f),
+            Triple(emptyList<KozmosPOIAction>(), 137, 20f),
+            Triple(emptyList<KozmosPOIAction>(), 138, 16f)
+        )
+        for ((toggles, width, down) in cases) {
+            paparazzi.unsafeUpdateConfig(deviceConfig = phone(width))
+            val tree = read(toggles = toggles)
+            val name = "${if (toggles.isEmpty()) "close alone" else "${toggles.size + 1} buttons"}, $width wide"
+            assertEquals("$name: the sheet draws no handle", true, tree.drawsHandle())
+            val buttons = listOf("Favourite", "Close details").takeLast(toggles.size + 1)
+            val clearance = tree.clearance(buttons)
+            val at = tree.closeButton()
+            println("Decision 51 Android, $name: the close button ${at.down} from the top; from the handle's centre ${clearance.drawn}")
+            assertEquals("$name: the close button is ${at.down} from the sheet's top", down, at.down, 0.5f)
+            for ((button, distance) in clearance.drawn) {
+                assertTrue("$name: $button is $distance from the handle's centre, inside its 24dp circle", distance >= 12f - 0.01f)
+            }
+        }
+    }
+
+    /** Right to left the buttons stand at the header's left end; the circle is the same. */
+    @Test
+    fun rightToLeftUnderAHandleTheCloseButtonSitsAsFarDownAsFromTheLeft() {
+        for ((width, down) in listOf(390 to 16f, 338 to 16f, 337 to 20f, 320 to 20f)) {
+            paparazzi.unsafeUpdateConfig(deviceConfig = phone(width))
+            val tree = read(direction = LayoutDirection.Rtl)
+            assertEquals("$width: the sheet draws no handle", true, tree.drawsHandle())
+            val clearance = tree.clearance(listOf("Favourite", "Save", "Close details"))
+            val at = tree.closeButton(LayoutDirection.Rtl)
+            println("Decision 51 Android, right to left, $width wide: the close button ${at.down} from the top, ${at.inward} from the left")
+            assertEquals("right to left, $width wide: the close button is ${at.down} from the sheet's top", down, at.down, 0.5f)
+            assertEquals("right to left, $width wide: the close button is ${at.inward} from the sheet's left", 16f, at.inward, 0.5f)
+            for ((name, distance) in clearance.drawn) {
+                assertTrue("right to left, $width wide: $name is $distance from the handle's centre", distance >= 12f - 0.01f)
+            }
+        }
     }
 
     /** A single detent draws no handle, so the sheet leaves nothing above the card and its header keeps its own 16. */

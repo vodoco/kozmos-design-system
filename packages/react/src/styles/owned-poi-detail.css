@@ -62,18 +62,55 @@
      the panel leaves above it is the card's own top. The header tops its top
      padding up to 16 rather than adding 16 to that space, so the close button
      sits as far from the panel's top as from its side (GAP-083: it sat 33
-     and 17). Under a grip it keeps the grip's clearance too, 4px, so the
-     grip's target keeps its WCAG 2.5.8 spacing: at 320 wide the favourite
-     button would otherwise sit inside it. With no grip, or under a panel
-     header, the panel leaves nothing and the header keeps its 16.
+     and 17). Under a grip too: 17 and 17 (decision 51). With no grip, or
+     under a panel header, the panel leaves nothing and the header keeps its
+     16.
      The inline and panel presentations draw a bordered card of their own:
      the space above the border is not the card's, and the header keeps its
      16 inside it — topped up, it met the border. */
   .kozmos-poi-detail[data-presentation="sheet"] .kozmos-poi-header {
-    padding-top: max(
-      var(--kozmos-panel-clearance-top, 0px),
-      calc(1rem - var(--kozmos-panel-inset-top, 0px))
-    );
+    padding-top: max(0px, calc(1rem - var(--kozmos-panel-inset-top, 0px)));
+  }
+  /* Unless its buttons would meet the grip's target. The grip is a 16px row,
+     an undersized target, and WCAG 2.5.8 keeps a 24px circle on its centre
+     clear of every other target. Flush under the row, the buttons' top edge
+     is 8 below that centre, so the one nearest the middle must start
+     √(12² − 8²) ≈ 8.9 past it: the panel's content must be 2 × (16 + the
+     buttons' run) + 17.9 wide, rounded up to 18 so layout rounding never
+     puts a button on the circle's edge. The buttons are 44px (2.75rem)
+     squares 6px (0.375rem) apart: three — favourite, save and close — need
+     20rem + 18px (a 340px panel, its border counted), two 13.75rem + 18px,
+     close alone 7.5rem + 18px. Narrower, the header keeps the grip's 4px
+     clearance, as every other part at the panel's top does (decision 14):
+     21 and 17. The shell's panel is the container (kozmos-panel); its
+     content is centred under the grip on a phone, whose scrollbars overlay
+     it. With no grip the clearance is 0, and nothing here moves. */
+  @container kozmos-panel (width < calc(20rem + 18px)) {
+    .kozmos-poi-detail[data-presentation="sheet"]
+      > .kozmos-poi-header:has(> .kozmos-poi-header-actions > :nth-child(3)) {
+      padding-top: max(
+        var(--kozmos-panel-clearance-top, 0px),
+        calc(1rem - var(--kozmos-panel-inset-top, 0px))
+      );
+    }
+  }
+  @container kozmos-panel (width < calc(13.75rem + 18px)) {
+    .kozmos-poi-detail[data-presentation="sheet"]
+      > .kozmos-poi-header:has(> .kozmos-poi-header-actions > :nth-child(2)) {
+      padding-top: max(
+        var(--kozmos-panel-clearance-top, 0px),
+        calc(1rem - var(--kozmos-panel-inset-top, 0px))
+      );
+    }
+  }
+  @container kozmos-panel (width < calc(7.5rem + 18px)) {
+    .kozmos-poi-detail[data-presentation="sheet"]
+      > .kozmos-poi-header:has(> .kozmos-poi-header-actions > *) {
+      padding-top: max(
+        var(--kozmos-panel-clearance-top, 0px),
+        calc(1rem - var(--kozmos-panel-inset-top, 0px))
+      );
+    }
   }
   .kozmos-poi-identity {
     display: flex;
@@ -105,6 +142,16 @@
     max-inline-size: 100%;
     margin-inline-start: auto;
     gap: 0.375rem;
+  }
+  /* In the sheet presentation the header's buttons draw their keyboard focus
+     ring inside their edge, as the actions strip draws its own. The header
+     can sit flush against the card's top — in a side panel, and under a grip
+     (decision 51) — and the card and the panel are scroll boxes that clip: a
+     ring drawn outside lost its top edge there. */
+  .kozmos-poi-detail[data-presentation="sheet"]
+    .kozmos-poi-header-actions
+    > button {
+    --tw-ring-inset: inset;
   }
   .kozmos-poi-location {
     color: var(

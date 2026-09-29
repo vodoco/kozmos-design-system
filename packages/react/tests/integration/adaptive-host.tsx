@@ -48,11 +48,12 @@ declare global {
      * Swap the panel for a place's details, hosted as a product hosts them:
      * the card alone, with its close button, in this presentation. With
      * `body`, its body too: a photo, a service and a group of attributes,
-     * each under its heading.
+     * each under its heading. With `toggles`, the header's toggles before its
+     * close button: favourite and save unless told otherwise.
      */
     showDetails: (
       presentation: "sheet" | "panel",
-      options?: { body?: boolean },
+      options?: { body?: boolean; toggles?: ("favourite" | "bookmark")[] },
     ) => void;
     /**
      * Swap the panel for the category browser, hosted as a product hosts it:
@@ -257,12 +258,14 @@ function routePreview(onBack: () => void) {
 
 // A place's details as a product hosts them: the card alone, with its close
 // button, in this presentation; with `body`, its body too, each part of it
-// under its heading. The photo's address resolves nowhere, so the gallery
-// draws its position over an unavailable photo.
+// under its heading; its header's toggles, favourite and save, or those in
+// `toggles`. The photo's address resolves nowhere, so the gallery draws its
+// position over an unavailable photo.
 function placeDetails(
   presentation: "sheet" | "panel",
   body: boolean,
   onClose: () => void,
+  toggles: ("favourite" | "bookmark")[] = ["favourite", "bookmark"],
 ) {
   return (
     <POIDetailPanel
@@ -275,7 +278,7 @@ function placeDetails(
           ? [{ id: "front", src: "/harbour-coffee.jpg", alt: "The front" }]
           : [],
         services: body ? [{ id: "wifi", label: "Wi-Fi" }] : [],
-        actions: ["favourite", "bookmark"],
+        actions: toggles,
       }}
       details={
         body
@@ -442,6 +445,7 @@ function Host() {
   const [details, setDetails] = useState<{
     presentation: "sheet" | "panel";
     body: boolean;
+    toggles?: ("favourite" | "bookmark")[];
   } | null>(null);
   const [browse, setBrowse] = useState<{ search: boolean } | null>(null);
   const [route, setRoute] = useState(false);
@@ -456,7 +460,11 @@ function Host() {
   window.showPanelHeader = () => setHeader(true);
   window.showResults = (selectedPoiId) => setShownResults({ selectedPoiId });
   window.showDetails = (presentation, detailsOptions) =>
-    setDetails({ presentation, body: detailsOptions?.body ?? false });
+    setDetails({
+      presentation,
+      body: detailsOptions?.body ?? false,
+      toggles: detailsOptions?.toggles,
+    });
   window.showBrowse = (browseOptions) =>
     setBrowse({ search: browseOptions?.search ?? true });
   window.showRoute = () => setRoute(true);
@@ -478,8 +486,11 @@ function Host() {
         ) : browse ? (
           browser(browse.search)
         ) : details ? (
-          placeDetails(details.presentation, details.body, () =>
-            setDetails(null),
+          placeDetails(
+            details.presentation,
+            details.body,
+            () => setDetails(null),
+            details.toggles,
           )
         ) : shownResults ? (
           <POIResultList
