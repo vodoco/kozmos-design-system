@@ -55,6 +55,11 @@ jobs:
       - name: Verify CI Change Detection
         run: pnpm test:ci
 
+      # Exercise request admission on the installed dev server. Static builds
+      # do not expose the server channel and cannot prove this security boundary.
+      - name: Verify Storybook Development Server Security
+        run: pnpm test:storybook-security
+
       # A pull request that changes what a published package ships says how it
       # is released: a changeset naming the package, or an empty one when it
       # needs none (Olcay's decision 8). Only the four npm packages' shipped
