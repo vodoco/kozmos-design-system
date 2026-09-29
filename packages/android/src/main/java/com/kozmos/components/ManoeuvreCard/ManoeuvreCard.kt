@@ -21,13 +21,23 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +57,32 @@ fun manoeuvreDescription(instruction: String, detail: String?): String =
     if (detail.isNullOrEmpty()) instruction else "$instruction, $detail"
 
 /**
+ * The lines the instruction is cut at: none, unless the product asks for one
+ * line or more.
+ */
+internal fun manoeuvreInstructionLineLimit(lines: Int?): Int? = lines?.takeIf { it >= 1 }
+
+/** The parts of the manoeuvre card that can hold focus. */
+internal enum class ManoeuvreCardPart { Instruction, Itinerary, Bar }
+
+/**
+ * Where focus goes as the card opens or closes, from the part it was on: null
+ * leaves it where it is. Opening takes the instruction away, so focus on it
+ * moves to Hide, the grab bar, in its place; closing takes the itinerary
+ * away and silences the bar, so focus on either moves to the instruction.
+ * Focus anywhere else was not in what changed. On the web the scrolling
+ * itinerary takes focus as the card opens; here the itinerary is no stop of
+ * its own — a focusable box around its steps would be a silent stop for
+ * TalkBack — so Hide, the control that took the instruction's place, does.
+ */
+internal fun manoeuvreCardFocusAfter(expanded: Boolean, from: ManoeuvreCardPart?): ManoeuvreCardPart? =
+    when {
+        expanded && from == ManoeuvreCardPart.Instruction -> ManoeuvreCardPart.Bar
+        !expanded && (from == ManoeuvreCardPart.Bar || from == ManoeuvreCardPart.Itinerary) -> ManoeuvreCardPart.Instruction
+        else -> null
+    }
+
+/**
  * The current manoeuvre, floating over the map during navigation: its arrow,
  * the instruction, how far and how long, and a grab bar that opens the full
  * itinerary in its place. The card owns the toggle and what TalkBack hears
@@ -54,6 +90,18 @@ fun manoeuvreDescription(instruction: String, detail: String?): String =
  * the products — so the card never decides what a route is made of. Open,
  * the card is as tall as the itinerary up to `maxItineraryHeight`, past
  * which the itinerary scrolls: a long route must not cover the map.
+ *
+ * The instruction shows whole, and the card grows with it (GAP-094): two
+ * lines cut ordinary instructions short of the level, the side, or in German
+ * the turn itself. [instructionLines] sets a limit for a product that wants
+ * one: the most lines drawn before an ellipsis; under one line is no limit.
+ * TalkBack hears the whole instruction either way.
+ *
+ * Focus goes with the disclosure (review T4): focus on the part that the
+ * change takes away moves to the part in its place — see
+ * [manoeuvreCardFocusAfter] — whether a keyboard, TalkBack or the product
+ * opened or closed the card. A tap moves no focus, and focus anywhere else
+ * stays where it is.
  */
 @Composable
 fun KozmosManoeuvreCard(
@@ -68,8 +116,35 @@ fun KozmosManoeuvreCard(
     manoeuvreLabel: String = "Current manoeuvre",
     maxItineraryHeight: Dp = 320.dp,
     surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    instructionLines: Int? = null,
     itinerary: @Composable () -> Unit
 ) {
+    val instructionFocus = remember { FocusRequester() }
+    val barFocus = remember { FocusRequester() }
+    // The part that has input focus, the keyboard's.
+    var focused by remember { mutableStateOf<ManoeuvreCardPart?>(null) }
+    // Read as the card recomposes for a change of `expanded`, while the part
+    // that held focus is still there: once the change is applied the
+    // instruction may be gone, and its focus with it.
+    val focusedAtChange = remember(expanded) { focused }
+    // An accessibility service (TalkBack, Switch Access) acts on the part its
+    // own focus is on, and gives it no input focus: the part it opened or
+    // closed the card from is where its focus was.
+    var focusAfterToggle by remember { mutableStateOf<ManoeuvreCardPart?>(null) }
+    fun toggleFromService(part: ManoeuvreCardPart) {
+        focusAfterToggle = manoeuvreCardFocusAfter(!expanded, part)
+        onToggle()
+    }
+    LaunchedEffect(expanded) {
+        // Moving input focus is what TalkBack follows too: Compose says
+        // TYPE_VIEW_FOCUSED as a node takes it.
+        when (focusAfterToggle ?: manoeuvreCardFocusAfter(expanded, focusedAtChange)) {
+            ManoeuvreCardPart.Bar -> barFocus.requestFocus()
+            ManoeuvreCardPart.Instruction -> instructionFocus.requestFocus()
+            else -> Unit
+        }
+        focusAfterToggle = null
+    }
     Surface(
         // Open, the card has no name of its own: the itinerary inside is the
         // named thing, and two nodes called the same would be read twice.
@@ -97,6 +172,11 @@ fun KozmosManoeuvreCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(max = maxItineraryHeight)
+                        // Focus in what the product put in the itinerary.
+                        .onFocusChanged { state ->
+                            if (state.hasFocus) focused = ManoeuvreCardPart.Itinerary
+                            else if (focused == ManoeuvreCardPart.Itinerary) focused = null
+                        }
                         .verticalScroll(rememberScrollState())
                 ) {
                     itinerary()
@@ -107,10 +187,21 @@ fun KozmosManoeuvreCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .focusRequester(instructionFocus)
+                        .onFocusChanged { state ->
+                            if (state.isFocused) focused = ManoeuvreCardPart.Instruction
+                            else if (focused == ManoeuvreCardPart.Instruction) focused = null
+                        }
+                        // What an accessibility service's click does, in
+                        // place of the one the click below gives it: the same
+                        // toggle, from where that service's focus is.
+                        .semantics {
+                            onClick(label = expandLabel) { toggleFromService(ManoeuvreCardPart.Instruction); true }
+                        }
                         .clickable(onClickLabel = expandLabel, role = Role.Button, onClick = onToggle)
                         .semantics(mergeDescendants = true) {
                             contentDescription = manoeuvreDescription(instruction, detail)
-                            expand { onToggle(); true }
+                            expand { toggleFromService(ManoeuvreCardPart.Instruction); true }
                         },
                     verticalAlignment = Alignment.Top
                 ) {
@@ -126,11 +217,12 @@ fun KozmosManoeuvreCard(
                         )
                     }
                     Column(modifier = Modifier.weight(1f).padding(start = KozmosDimensions.primitivesLayoutSpacing150)) {
+                        // Whole unless the product asks for a limit (GAP-094).
                         Text(
                             text = instruction,
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                             color = KozmosThemeTokens.primitivesColorsForeground100,
-                            maxLines = 2,
+                            maxLines = manoeuvreInstructionLineLimit(instructionLines) ?: Int.MAX_VALUE,
                             overflow = TextOverflow.Ellipsis
                         )
                         if (!detail.isNullOrEmpty()) {
@@ -151,6 +243,11 @@ fun KozmosManoeuvreCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = KozmosDimensions.primitivesLayoutSpacing150)
+                    .focusRequester(barFocus)
+                    .onFocusChanged { state ->
+                        if (state.isFocused) focused = ManoeuvreCardPart.Bar
+                        else if (focused == ManoeuvreCardPart.Bar) focused = null
+                    }
                     // Closed, the bar has no semantics at all — the cleared
                     // node hides the click that follows it — so TalkBack
                     // never lands on a second way to do what the row does.
@@ -158,12 +255,16 @@ fun KozmosManoeuvreCard(
                         if (expanded) {
                             Modifier.semantics {
                                 contentDescription = collapseLabel
-                                collapse { onToggle(); true }
+                                onClick(label = collapseLabel) { toggleFromService(ManoeuvreCardPart.Bar); true }
+                                collapse { toggleFromService(ManoeuvreCardPart.Bar); true }
                             }
                         } else {
                             Modifier.clearAndSetSemantics { }
                         }
                     )
+                    // Nor is it a stop for the keyboard while it is silent:
+                    // focus there would be on something TalkBack cannot see.
+                    .focusProperties { canFocus = expanded }
                     .clickable(onClick = onToggle, role = Role.Button)
                     .padding(vertical = KozmosDimensions.primitivesLayoutSpacing50),
                 contentAlignment = Alignment.Center
