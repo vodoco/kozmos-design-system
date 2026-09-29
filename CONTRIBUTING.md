@@ -510,10 +510,9 @@ it that its build runs or extends, and the consumer-facing fields of its `packag
 
   A version bump alone, or a change to `test`, `lint` or `devDependencies`, needs none.
 
-CI's "Web Build & Test" fails a pull request without
-one (`scripts/release/changeset-required.mjs`; run it yourself with
-`node scripts/release/changeset-required.mjs`). If a change genuinely needs no release, say so with
-an empty changeset: `pnpm changeset --empty`. React pins its siblings exactly, so a react change that
+CI's "Web Build & Test" fails a pull request without one (`scripts/release/changeset-required.mjs`;
+run it yourself with `node scripts/release/changeset-required.mjs`). If a change genuinely needs no
+release, say so with an empty changeset: `pnpm changeset --empty`. React pins its siblings exactly, so a react change that
 needs a new icon or contract field needs their changesets too.
 
 A Dependabot pull request that bumps a published package's runtime `dependencies` needs one too

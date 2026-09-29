@@ -117,6 +117,8 @@ against GitHub's live `environments/npm-release` response:
 - **A branch rule restricted to `main`:** a `branch_policy` rule, custom branch policies, and
   exactly one policy, the branch `main`.
 
+What no check here can do:
+
 - Protect main and the release workflow/plan from unreviewed edits as part of
   repository governance. Local scripts cannot prevent an administrator or someone
   already holding an npm token from bypassing the workflow outside GitHub.
