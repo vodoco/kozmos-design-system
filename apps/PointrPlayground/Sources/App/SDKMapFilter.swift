@@ -9,6 +9,21 @@ enum SDKMapPlaces: Equatable {
     case only(Set<String>)
     /// None of these places: `poisToHide`.
     case hide(Set<String>)
+
+    /// A value for one of PointrKit's two properties.
+    enum Write: Equatable {
+        case show(Set<String>?)
+        case hide(Set<String>?)
+    }
+
+    /// What to write to take the map from `old` to this.
+    func writes(from old: SDKMapPlaces) -> [Write] {
+        switch self {
+        case .every: return [.show(nil), .hide(nil)]
+        case .only(let ids): return [.show(ids), .hide(nil)]
+        case .hide(let ids): return [.hide(ids), .show(nil)]
+        }
+    }
 }
 
 /// The quick-access tile's filter on the map, held with its inputs: the tile

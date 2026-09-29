@@ -84,6 +84,8 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     /// map only then: a widget just made has no view yet, and the host has
     /// never handed PointrKit a filter before its map was up.
     private var mapLoaded = false
+    /// What this widget's map was last told; a new map shows every place.
+    private var appliedPlaces = SDKMapPlaces.every
     var saved: Set<String> { mapFilter.saved }
     var favourites: Set<String> { mapFilter.favourites }
     /// The quick-access tile chosen, replacing the search field with its chip
@@ -177,6 +179,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         Pointr.shared.stop()
         widget = nil
         mapLoaded = false
+        appliedPlaces = .every
         building = nil
         selected = nil
         card = nil
@@ -251,6 +254,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         let controller = PTRMapWidgetViewController(location: target.mapWidgetLocation, configuration: policy)
         controller.addListener(self)
         widget = controller
+        appliedPlaces = .every
         Pointr.shared.poiManager?.addListener(self)
         Pointr.shared.dataManager?.addListener(self)
         Pointr.shared.wayfindingManager?.addListener(self)
@@ -370,32 +374,36 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     func toggleFavourite(_ id: String) { mapFilter.toggleFavourite(id) }
     func toggleSaved(_ id: String) { mapFilter.toggleSaved(id) }
 
-    /// Gives the map the filter's places (`SDKMapFilter.mapPlaces`). Of its
-    /// two properties, the one that restricts is set first and the other
-    /// cleared after, so the map never shows every place in between.
+    /// Gives the map the filter's places (`SDKMapFilter.mapPlaces`), through
+    /// `SDKMapPlaces.writes(from:)`.
     private func showFilteredPlaces() {
         guard mapLoaded, let map = widget?.mapViewController else { return }
         let places = mapFilter.mapPlaces
         let pois = { (ids: Set<String>) in Set(ids.compactMap { self.poisById[$0] }) }
+        let writes = places.writes(from: appliedPlaces)
+        for write in writes {
+            switch write {
+            case .show(let ids): map.poisToShow = ids.map(pois)
+            case .hide(let ids): map.poisToHide = ids.map(pois)
+            }
+        }
+        appliedPlaces = places
         let shown: String
         switch places {
-        case .every:
-            map.poisToShow = nil
-            map.poisToHide = nil
-            shown = "every place"
-        case .only(let ids):
-            map.poisToShow = pois(ids)
-            map.poisToHide = nil
-            shown = "\(ids.count)"
-        case .hide(let ids):
-            map.poisToHide = pois(ids)
-            map.poisToShow = nil
-            shown = "none, \(ids.count) hidden"
+        case .every: shown = "every place"
+        case .only(let ids): shown = "\(ids.count)"
+        case .hide(let ids): shown = "none, \(ids.count) hidden"
         }
+        let written = writes.map { write -> String in
+            switch write {
+            case .show(let ids): return ids == nil ? "poisToShow nil" : "poisToShow"
+            case .hide(let ids): return ids == nil ? "poisToHide nil" : "poisToHide"
+            }
+        }.joined(separator: ", ")
         // For whoever checks that the map and the list agree: how many places
         // each shows. The map keeps the open card's place until the card closes.
         let list = category.map { "\(self.places(in: $0).count)" } ?? "-"
-        log.notice("QA-FILTER \(self.category?.name ?? "no tile", privacy: .public): list \(list, privacy: .public), map \(shown, privacy: .public)")
+        log.notice("QA-FILTER \(self.category?.name ?? "no tile", privacy: .public): list \(list, privacy: .public), map \(shown, privacy: .public); wrote \(written, privacy: .public)")
     }
 
     /// The places a tile shows, on every floor, by name: the filter's, as the

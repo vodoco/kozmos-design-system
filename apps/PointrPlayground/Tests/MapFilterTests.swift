@@ -131,6 +131,42 @@ final class MapFilterTests: XCTestCase {
         XCTAssertEqual(filter.mapPlaces, .every)
     }
 
+    // MARK: What is written to PointrKit
+
+    /// Live on Design-QA, 2026-09-29: a marker half off the map's edge when
+    /// the filter changed kept its old state until the level was drawn again.
+    /// Every change had written both properties, one of them to the value it
+    /// already had. Only a property whose value changes is written.
+    func testChoosingATileWritesOnlyPoisToShow() {
+        XCTAssertEqual(SDKMapPlaces.only(["a"]).writes(from: .every), [.show(["a"])])
+    }
+
+    func testAnotherTilesPlacesRewriteOnlyPoisToShow() {
+        XCTAssertEqual(SDKMapPlaces.only(["b"]).writes(from: .only(["a"])), [.show(["b"])])
+    }
+
+    func testClearingATileClearsOnlyPoisToShow() {
+        XCTAssertEqual(SDKMapPlaces.every.writes(from: .only(["a"])), [.show(nil)])
+    }
+
+    func testLeavingNoneForEveryPlaceClearsOnlyPoisToHide() {
+        XCTAssertEqual(SDKMapPlaces.every.writes(from: .hide(["a", "b"])), [.hide(nil)])
+    }
+
+    func testAnUnchangedCommandWritesNothing() {
+        XCTAssertEqual(SDKMapPlaces.only(["a"]).writes(from: .only(["a"])), [])
+    }
+
+    /// When both properties change, the restricting one goes first, so the map
+    /// never shows every place in between.
+    func testGoingToNoneHidesFirstThenClearsTheShowSet() {
+        XCTAssertEqual(SDKMapPlaces.hide(["a", "b"]).writes(from: .only(["a"])), [.hide(["a", "b"]), .show(nil)])
+    }
+
+    func testComingBackFromNoneShowsFirstThenClearsTheHideSet() {
+        XCTAssertEqual(SDKMapPlaces.only(["a"]).writes(from: .hide(["a", "b"])), [.show(["a"]), .hide(nil)])
+    }
+
     func testClearingTheTileShowsEveryPlaceAgain() {
         var filter = loaded(favourites: ["alamo"])
         filter.choose(favouritesTile)
