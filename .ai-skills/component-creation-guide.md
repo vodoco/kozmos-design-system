@@ -87,7 +87,8 @@ Add `packages/ios/Sources/Components/<Name>/<Name>.swift`, following
 
 - `public struct Kozmos<Name>: View`, with its axes as enums named `Kozmos<Name><Axis>` holding the
   same values as React's;
-- colours from `KozmosThemeTokens`, which follows the theme `KozmosThemeProvider` sets;
+- colours from `KozmosColors`, each a light and a dark colour that the view's colour scheme picks
+  between, and sizes from `KozmosDimensions`;
 - its Code Connect file beside it (§8).
 
 `pnpm native:check` compiles the package the way CI's iOS job does.

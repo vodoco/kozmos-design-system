@@ -64,7 +64,7 @@ token variables for both themes, scoped to its `ThemeProvider`.
 | --------------- | ------------------------------------------------------------------------------- | ------------------------------------------------- |
 | Web, CSS        | The variables                                                                   | `var(--primitives-colors-background-0)`           |
 | Web, JavaScript | The named exports, which are the light theme's values (there is no dark module) | `PrimitivesColorsTheme500`                        |
-| SwiftUI         | `KozmosThemeTokens`, which follows the theme                                    | `KozmosThemeTokens.primitivesColorsForeground100` |
+| SwiftUI         | `KozmosColors`, each a light and a dark colour the view's colour scheme picks   | `KozmosColors.primitivesColorsForeground100`      |
 | Compose         | `KozmosThemeTokens`, which follows the theme                                    | `KozmosThemeTokens.primitivesColorsForeground100` |
 
 The iOS and Android packages carry copies of the generated sources. After a build,

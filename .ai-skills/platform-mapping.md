@@ -75,7 +75,7 @@ KozmosButton(onClick = {}, variant = KozmosButtonVariant.Default) {
 | --------------- | ----------------------------------------------------------------------- | ------------------------------------------------- |
 | Web, CSS        | CSS variables, from `@kozmos-ds/react/style.css` or `@kozmos-ds/tokens` | `var(--primitives-colors-background-0)`           |
 | Web, JavaScript | Named exports of `@kozmos-ds/tokens`, the light theme's values          | `PrimitivesColorsTheme500`                        |
-| SwiftUI         | `KozmosThemeTokens`, which follows the theme                            | `KozmosThemeTokens.primitivesColorsForeground100` |
+| SwiftUI         | `KozmosColors`, each a light and a dark colour the view's scheme picks  | `KozmosColors.primitivesColorsForeground100`      |
 | Compose         | `KozmosThemeTokens`, which follows the theme                            | `KozmosThemeTokens.primitivesColorsForeground100` |
 
 The native packages carry copies of the generated token sources: `pnpm tokens:native:copy` copies

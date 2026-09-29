@@ -133,6 +133,7 @@ kozmos-design-system/
 │   ├── ios/                        # SwiftUI: the Swift package Kozmos (library Kozmos)
 │   │   ├── Sources/
 │   │   │   ├── Components/         # KozmosButton, KozmosAccordion, …
+│   │   │   ├── KozmosColors.swift, …  # The generated token sources
 │   │   │   ├── ProductContracts/
 │   │   │   └── Providers/
 │   │   ├── Tests/

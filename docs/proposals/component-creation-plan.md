@@ -5,7 +5,8 @@
 > `TooltipTrigger`, `TooltipContent`) and takes none of `message`, `position`, `variant` or
 > `delayShow`. The native paths are not the real ones either: SwiftUI's module is `Kozmos`, its
 > components are in `packages/ios/Sources/Components/`, Compose's package is
-> `com.kozmos.components`, and both read `KozmosThemeTokens`, not a `KozmosTokens` object. It is
+> `com.kozmos.components`, and they read `KozmosColors` (SwiftUI) and `KozmosThemeTokens`
+> (Compose), not a `KozmosTokens` object. It is
 > kept as planning history; the sections below were in `.ai-skills/component-creation-guide.md`
 > until 2026-09-29.
 

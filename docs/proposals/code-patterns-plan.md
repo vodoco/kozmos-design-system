@@ -5,8 +5,8 @@
 > file of the repository as if it were: the real `Button.tsx` has no `primary` or `outlined`
 > variant and reads no `--kozmos-*` variable, the real `ThemeProvider` takes no `brandColors`,
 > SwiftUI's module is `Kozmos` (not `KozmosUI`), Compose's package is `com.kozmos` (not
-> `com.pointr.kozmos`), and the native tokens are `KozmosThemeTokens`, not a `KozmosTokens`
-> object. It is kept as planning history; until 2026-09-29 it was `.ai-skills/code-patterns.md`,
+> `com.pointr.kozmos`), and the native colours are `KozmosColors` on iOS and `KozmosThemeTokens`
+> on Android, not a `KozmosTokens` object. It is kept as planning history; until 2026-09-29 it was `.ai-skills/code-patterns.md`,
 > which now points to the real components to follow.
 
 ## Proposal: Table of Contents

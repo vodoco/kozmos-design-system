@@ -76,7 +76,9 @@ Follow `packages/ios/Sources/Components/Button/Button.swift`:
   in the Swift package `Kozmos`.
 - Its axes are enums named `Kozmos<Name><Axis>` (`KozmosButtonVariant`, `KozmosButtonSize`), with
   the same values as React's, spelled Swift's way (`.default`).
-- Its colours come from `KozmosThemeTokens`, which follows the theme `KozmosThemeProvider` sets.
+- Its colours come from `KozmosColors`, each a light and a dark colour that the view's colour
+  scheme picks between (`KozmosThemeProvider` sets the scheme from the stored `selectedTheme`), and
+  its sizes from `KozmosDimensions`.
 - Its Code Connect file sits beside it, `<Name>.figma.swift`.
 
 ## 3. Jetpack Compose
