@@ -343,6 +343,21 @@
   .kozmos-map-overlay-stack > * {
     pointer-events: auto;
   }
+  /* A MapControlsGroup's box is only the column its controls stand in, so it
+     passes presses through: a press in the 8px between two controls reaches
+     the map beneath, as one in an overlay's room does (decision 46), and
+     each control takes its own. In an overlay that overflows, the press
+     lands on the overlay's scroll box instead, which takes its room then
+     ([data-scrolls] above). The group keeps its role, its name and its
+     controls' tab order; none of them is a press. Written for the overlay's
+     stack too, where what the stack holds takes presses. */
+  .kozmos-map-controls-group,
+  .kozmos-map-overlay-stack > .kozmos-map-controls-group {
+    pointer-events: none;
+  }
+  .kozmos-map-controls-group > * {
+    pointer-events: auto;
+  }
   /* How the system's parts enter, on the motion tokens — the same few moves
      everywhere, so a row changing form reads as one thing happening. A part
      that takes another's place pops (the prototype's chip: from 90 %, a

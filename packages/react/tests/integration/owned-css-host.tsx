@@ -97,13 +97,15 @@ function TravelTimes({ id }: { id: string }) {
    placed by hand at the same insets. The two boards must draw alike: the
    overlay's scroll box cut its controls' shadows, and their rings, at its own
    edges. The last board is an overlay whose stack is taller than the room it
-   is given, so it scrolls. */
+   is given, so it scrolls. The group boards hold a MapControlsGroup in an
+   overlay, one that fits and one that overflows, for the presses in the gaps
+   between its controls (decision 46). */
 function MapBoard({
   id,
   layout,
 }: {
   id: string;
-  layout: "overlay" | "by-hand" | "scrolling";
+  layout: "overlay" | "by-hand" | "scrolling" | "group" | "group-scrolling";
 }) {
   const control = (name: string) => (
     <MapControlButton
@@ -125,7 +127,8 @@ function MapBoard({
       style={{
         position: "relative",
         width: 200,
-        height: 220,
+        // A group's four controls and their gaps are 209 tall.
+        height: layout.startsWith("group") ? 300 : 220,
         background: "var(--primitives-colors-background-100)",
       }}
     >
@@ -159,6 +162,24 @@ function MapBoard({
           <MapOverlay position="top-left">{control("zoom in")}</MapOverlay>
           <MapOverlay position="bottom-right">{floors}</MapOverlay>
         </>
+      ) : layout.startsWith("group") ? (
+        <MapOverlay
+          position="top-left"
+          data-testid={`${id}-map-overlay-${layout}`}
+          style={layout === "group-scrolling" ? { maxHeight: 120 } : undefined}
+        >
+          <MapControlsGroup
+            label={`${id} map controls, ${layout}`}
+            zoomInLabel={`${id} zoom in, ${layout}`}
+            zoomOutLabel={`${id} zoom out, ${layout}`}
+            compassResetLabel={`${id} reset bearing, ${layout}`}
+            locationLabel={`${id} locate, ${layout}`}
+            onZoomIn={() => undefined}
+            onZoomOut={() => undefined}
+            onCompassReset={() => undefined}
+            onMyLocation={() => undefined}
+          />
+        </MapOverlay>
       ) : (
         <MapOverlay
           position="top-left"
@@ -451,6 +472,8 @@ function Controls({ id }: { id: string }) {
       <MapBoard id={id} layout="overlay" />
       <MapBoard id={id} layout="by-hand" />
       <MapBoard id={id} layout="scrolling" />
+      <MapBoard id={id} layout="group" />
+      <MapBoard id={id} layout="group-scrolling" />
       <AIMessage status="streaming" data-testid={`${id}-ai-streaming`}>
         Looking through this building…
       </AIMessage>
