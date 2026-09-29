@@ -1151,7 +1151,9 @@ Error: The operation was canceled.
    `packages/ios` with SwiftPM (`swift build`, `swift test`) and renders the POI tests on a
    simulator. There is no CocoaPods to cache.
 3. **A deliberate skip passes:** on a pull request that touches no iOS input, the `Changes` job
-   skips `iOS Build`, and the skipped check counts as passing.
+   skips `iOS Build`, and the skipped check counts as passing. When it cannot work out which paths
+   changed (a base git cannot diff against), `iOS Build` runs instead, with a warning saying why;
+   `scripts/ci/ios-changes.sh` holds the list and the three outcomes.
 
 ---
 

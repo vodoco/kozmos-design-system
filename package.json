@@ -41,6 +41,7 @@
     "test:declarations": "node --test scripts/emit-format-declarations.test.mjs",
     "lint": "turbo run lint",
     "ci:local": "node scripts/ci-local.mjs",
+    "test:ci": "node --test scripts/ci/*.test.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",

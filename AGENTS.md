@@ -62,9 +62,11 @@ testing what uses it, and restart Storybook after a rebuild.
 - **Merging** needs all 19 required checks green, on a branch that is up to date with `main`.
   Changes reach `main` through a pull request.
 - **A changeset** for a pull request that changes what a published package ships: its `src/`
-  apart from tests, stories, docs pages and Code Connect files, its build files, and the
-  consumer-facing fields of its `package.json`. Run `pnpm changeset`, or `pnpm changeset --empty`
-  when nothing needs releasing. CI runs `node scripts/release/changeset-required.mjs`; run it too.
+  apart from tests, stories, docs pages and Code Connect files, its build files, the files
+  outside it that its build runs or extends (`scripts/emit-format-declarations.mjs`,
+  `tsconfig.base.json`), and the consumer-facing fields and build scripts of its `package.json`.
+  Run `pnpm changeset`, or `pnpm changeset --empty` when nothing needs releasing. CI runs
+  `node scripts/release/changeset-required.mjs`; run it too.
 - **Visual Review baselines** are drawn only by the Playwright image's amd64 build, through
   Docker: build Storybook, then `pnpm test:visual:update --grep <story>`, or use the Visual
   Regression workflow's record run. Never record on a bare Mac: it draws text differently.
