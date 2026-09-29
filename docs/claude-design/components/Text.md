@@ -38,4 +38,4 @@ It forwards its ref to `HTMLElement`. Its props are `TextProps`, which extends `
 - `truncate`: `boolean | null`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

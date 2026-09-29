@@ -54,7 +54,7 @@ It forwards its ref to `HTMLElement`. Its props are `Omit<React.DetailedHTMLProp
 - `separator`: `React.ReactNode`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BreadcrumbList
 
@@ -62,7 +62,7 @@ It forwards its ref to `HTMLOListElement`. Its props are `Omit<React.DetailedHTM
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 266 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BreadcrumbItem
 
@@ -70,7 +70,7 @@ It forwards its ref to `HTMLLIElement`. Its props are `Omit<React.DetailedHTMLPr
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 264 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BreadcrumbLink
 
@@ -79,7 +79,7 @@ It forwards its ref to `HTMLAnchorElement`. Its props are `Omit<React.DetailedHT
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 271 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BreadcrumbPage
 
@@ -87,7 +87,7 @@ It forwards its ref to `HTMLSpanElement`. Its props are `Omit<React.DetailedHTML
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BreadcrumbSeparator
 
@@ -95,7 +95,7 @@ Its props are `React.ComponentProps<"li">`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 264 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## BreadcrumbEllipsis
 
@@ -103,4 +103,4 @@ Its props are `React.ComponentProps<"span">`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

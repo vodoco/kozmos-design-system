@@ -125,7 +125,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `MapControlButtonProps
 
   `glass` takes no emotion.
 
-It also takes the 272 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
 

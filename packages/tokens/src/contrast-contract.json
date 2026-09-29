@@ -132,6 +132,12 @@
       "minimum": 4.5
     },
     {
+      "name": "alert fill / on-fill (the map status pill's Turn Back)",
+      "background": "semantics-emotion-alert-fill",
+      "foreground": "semantics-emotion-alert-on-fill",
+      "minimum": 4.5
+    },
+    {
       "name": "info action",
       "background": "primitives-colors-emotional-info-700",
       "foreground": "primitives-colors-foreground-1000",

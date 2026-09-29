@@ -34,4 +34,4 @@ It forwards its ref to `HTMLAnchorElement`. Its props are `LinkProps`, which ext
 - `variant`: `"default" | "subtle"`, optional, default `"default"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 271 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
