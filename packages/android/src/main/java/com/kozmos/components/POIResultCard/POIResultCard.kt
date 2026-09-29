@@ -119,6 +119,10 @@ fun KozmosPOIResultCard(
 
     Surface(
         onClick = {
+            // An unavailable result is readable, never selected, as on the
+            // web and iOS: their handlers return early too. Here because the
+            // click Compose 1.6 puts in a disabled node's semantics still runs.
+            if (!available) return@Surface
             trackEvent(
                 KozmosAnalyticsEvent(
                     component = "POIResultCard",
@@ -331,7 +335,10 @@ fun KozmosPOIResultCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics { contentDescription = actionsLabel }
+                        // Its own node, read before the actions it names. Not
+                        // merged, the name was added to the result's own:
+                        // "Gate 12, Level 1, Actions for this result".
+                        .semantics(mergeDescendants = true) { contentDescription = actionsLabel }
                         .padding(
                             horizontal = KozmosDimensions.primitivesLayoutSpacing200,
                             vertical = KozmosDimensions.primitivesLayoutSpacing100
@@ -342,21 +349,33 @@ fun KozmosPOIResultCard(
                     )
                 ) {
                     visibleActions.forEach { entry ->
+                        // An action runs only when it is enabled and something
+                        // handles it. Without onAction the card still draws
+                        // what the product offers, but disabled — the rule
+                        // POIDetailPanel's supplementary actions follow on the
+                        // web and iOS — never an enabled button that does
+                        // nothing. Checked in the handler too: the click
+                        // Compose 1.6 puts in a disabled node's semantics
+                        // still runs it.
+                        val canRun = !entry.disabled && onAction != null
                         KozmosPOIResultActionButton(
                             entry = entry,
+                            enabled = canRun,
                             onClick = {
-                                trackEvent(
-                                    KozmosAnalyticsEvent(
-                                        component = "POIResultCard",
-                                        eventName = "poi_result_action",
-                                        properties = mapOf(
-                                            "poiId" to poi.id,
-                                            "resultIndex" to result.resultIndex.toString(),
-                                            "action" to entry.action.value
+                                if (canRun) {
+                                    trackEvent(
+                                        KozmosAnalyticsEvent(
+                                            component = "POIResultCard",
+                                            eventName = "poi_result_action",
+                                            properties = mapOf(
+                                                "poiId" to poi.id,
+                                                "resultIndex" to result.resultIndex.toString(),
+                                                "action" to entry.action.value
+                                            )
                                         )
                                     )
-                                )
-                                onAction?.invoke(entry.action, poi.id)
+                                    onAction?.invoke(entry.action, poi.id)
+                                }
                             }
                         )
                     }
@@ -400,6 +419,8 @@ internal fun englishTravelTimeBandLabel(band: KozmosTravelTimeBand): String = wh
 @Composable
 private fun KozmosPOIResultActionButton(
     entry: KozmosPOIResultActionPresentation,
+    /** False for a disabled action, and for any action the card has no handler for. */
+    enabled: Boolean,
     onClick: () -> Unit
 ) {
     val background = if (entry.primary) {
@@ -415,7 +436,7 @@ private fun KozmosPOIResultActionButton(
 
     Surface(
         onClick = onClick,
-        enabled = !entry.disabled,
+        enabled = enabled,
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
         color = background,
         border = if (entry.primary) {
