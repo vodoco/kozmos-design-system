@@ -19,16 +19,17 @@
 ### Safe Patterns
 
 ```tsx
-// Use textContent for text insertion
-element.textContent = userInput;
+export function Greeting({ name }: { name: string }) {
+  return <p>Hello, {name}</p>; // JSX escapes what it renders
+}
 
-// React JSX auto-escapes
-<div>{userInput}</div>;
-
-// Use DOMPurify for HTML
-import DOMPurify from "dompurify";
-const clean = DOMPurify.sanitize(dirty);
+export function showStatus(element: HTMLElement, text: string) {
+  element.textContent = text; // text, never parsed as HTML
+}
 ```
+
+HTML that comes from outside the app is sanitised before it is rendered, with a library of the
+app's own (DOMPurify is one; Kozmos installs none), and never inserted as raw HTML as it arrived.
 
 ### URL Validation
 

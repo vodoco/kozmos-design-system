@@ -65,14 +65,19 @@ Indoor venues have complex data (floors, zones, POIs, routes). We show enough to
 
 Animation should **inform**, not entertain.
 
-| Animation Type | Purpose | Duration |
-|----------------|---------|----------|
-| Route drawing | Show path progression | 400-600ms |
-| Floor transition | Orient user spatially | 300ms |
-| Button feedback | Confirm interaction | 100-150ms |
-| Loading states | Indicate progress | Continuous |
+| Animation Type   | Purpose               | Duration   |
+| ---------------- | --------------------- | ---------- |
+| Route drawing    | Show path progression | 400-600ms  |
+| Floor transition | Orient user spatially | 300ms      |
+| Button feedback  | Confirm interaction   | 100-150ms  |
+| Loading states   | Indicate progress     | Continuous |
+
+The motion tokens carry three durations, quick (150 ms), standard (280 ms) and deliberate
+(460 ms), and a standard and an emphasised curve, on every platform
+([theming-guide.md](./theming-guide.md) §3).
 
 **Never animate:**
+
 - Static content that doesn't change state
 - Decorative flourishes
 - Anything that delays task completion
@@ -102,20 +107,20 @@ Level 1 (Default):     Level 2 (Expanded):      Level 3 (Full):
 
 Same gestures should do the same things everywhere:
 
-| Gesture | Web | iOS | Android | Action |
-|---------|-----|-----|---------|--------|
-| Tap/Click | Click | Tap | Tap | Select, activate |
-| Long press | Right-click | Long press | Long press | Context menu |
-| Pinch | Scroll wheel | Pinch | Pinch | Zoom map |
-| Swipe | Drag | Swipe | Swipe | Dismiss, navigate |
-| Two-finger rotate | - | Two-finger | Two-finger | Rotate map |
+| Gesture           | Web          | iOS        | Android    | Action            |
+| ----------------- | ------------ | ---------- | ---------- | ----------------- |
+| Tap/Click         | Click        | Tap        | Tap        | Select, activate  |
+| Long press        | Right-click  | Long press | Long press | Context menu      |
+| Pinch             | Scroll wheel | Pinch      | Pinch      | Zoom map          |
+| Swipe             | Drag         | Swipe      | Swipe      | Dismiss, navigate |
+| Two-finger rotate | -            | Two-finger | Two-finger | Rotate map        |
 
 ### 2. Immediate Feedback
 
 Every interaction gets feedback within **100ms**:
 
-```typescript
-// Button states timeline
+```text
+Button states timeline
 0ms    → Touch start: opacity 0.8, scale 0.98
 100ms  → Visual feedback complete
 150ms  → Action triggers
@@ -125,6 +130,7 @@ Every interaction gets feedback within **100ms**:
 ### 3. Predictable Navigation
 
 Users should always know:
+
 - Where they are (current location indicator)
 - Where they can go (clear CTAs)
 - How to go back (consistent back/close patterns)
@@ -146,6 +152,7 @@ Sheet/Modal:           Navigation Stack:
 ### 4. Error Recovery
 
 Errors should be:
+
 - **Specific:** What went wrong
 - **Actionable:** How to fix it
 - **Non-blocking:** Don't trap the user
@@ -179,23 +186,24 @@ Errors should be:
 
 Pointr's brand represents **confidence in navigation**—knowing where you are and how to get where you're going.
 
-| Brand Attribute | Visual Expression |
-|-----------------|-------------------|
-| Trustworthy | Blue-based primary palette |
-| Innovative | Wide-gamut P3 colors for vibrancy |
-| Accessible | High contrast, never rely on color alone |
-| Professional | Clean typography, generous spacing |
+| Brand Attribute | Visual Expression                                  |
+| --------------- | -------------------------------------------------- |
+| Trustworthy     | Blue-based primary palette                         |
+| Innovative      | Glass surfaces over the map (the `glass` variants) |
+| Accessible      | High contrast, never rely on color alone           |
+| Professional    | Clean typography, generous spacing                 |
 
 ### Status Color Semantics
 
-| Status | Color | Meaning | Use Cases |
-|--------|-------|---------|-----------|
-| **Success** | Green | Completed, confirmed, available | Arrived at destination, booking confirmed |
-| **Danger** | Red | Error, destructive, closed | Route blocked, venue closed, delete action |
-| **Alert** | Amber/Yellow | Warning, attention needed | Slow route, temporary closure, battery low |
-| **Info** | Blue | Informational, neutral | Tips, additional details, help |
+| Status      | Color        | Meaning                         | Use Cases                                  |
+| ----------- | ------------ | ------------------------------- | ------------------------------------------ |
+| **Success** | Green        | Completed, confirmed, available | Arrived at destination, booking confirmed  |
+| **Danger**  | Red          | Error, destructive, closed      | Route blocked, venue closed, delete action |
+| **Alert**   | Amber/Yellow | Warning, attention needed       | Slow route, temporary closure, battery low |
+| **Info**    | Blue         | Informational, neutral          | Tips, additional details, help             |
 
 **Never rely on color alone:**
+
 ```
 ✅ Accessible status:
 [✓] Route saved        ← Icon + color + text
@@ -210,13 +218,13 @@ Pointr's brand represents **confidence in navigation**—knowing where you are a
 
 While maintaining consistency, each platform should feel **native**:
 
-| Aspect | iOS | Android | Web |
-|--------|-----|---------|-----|
-| Navigation | iOS nav bar patterns | Material top app bar | Browser-native or custom |
-| Buttons | SF Symbols + system style | Material buttons | Custom with CSS vars |
-| Sheets | iOS sheet with grabber | Bottom sheet with handle | Modal or slide-over |
-| Typography | SF Pro (system) | Roboto (system) | System font stack |
-| Haptics | UIImpactFeedback | HapticFeedback | N/A |
+| Aspect     | iOS                       | Android                  | Web                      |
+| ---------- | ------------------------- | ------------------------ | ------------------------ |
+| Navigation | iOS nav bar patterns      | Material top app bar     | Browser-native or custom |
+| Buttons    | SF Symbols + system style | Material buttons         | Custom with CSS vars     |
+| Sheets     | iOS sheet with grabber    | Bottom sheet with handle | Modal or slide-over      |
+| Typography | SF Pro (system)           | Roboto (system)          | System font stack        |
+| Haptics    | UIImpactFeedback          | HapticFeedback           | N/A                      |
 
 ---
 
@@ -248,14 +256,14 @@ Accessible?
 
 ## Anti-Patterns to Avoid
 
-| Anti-Pattern | Why It's Bad | What to Do Instead |
-|--------------|--------------|---------------------|
-| **Skeleton overload** | Too many skeletons feel broken | Show 2-3 skeleton items max |
-| **Toast spam** | Multiple toasts overwhelm | Queue toasts, max 1 visible |
-| **Confirmation fatigue** | Confirming everything dulls attention | Only confirm destructive/irreversible |
-| **Hidden gestures** | Users don't discover them | Show affordances, add hints |
-| **Infinite scroll everywhere** | No sense of progress | Use pagination for finite lists |
-| **Auto-playing media** | Unexpected, accessibility issue | Always require user initiation |
+| Anti-Pattern                   | Why It's Bad                          | What to Do Instead                    |
+| ------------------------------ | ------------------------------------- | ------------------------------------- |
+| **Skeleton overload**          | Too many skeletons feel broken        | Show 2-3 skeleton items max           |
+| **Toast spam**                 | Multiple toasts overwhelm             | Queue toasts, max 1 visible           |
+| **Confirmation fatigue**       | Confirming everything dulls attention | Only confirm destructive/irreversible |
+| **Hidden gestures**            | Users don't discover them             | Show affordances, add hints           |
+| **Infinite scroll everywhere** | No sense of progress                  | Use pagination for finite lists       |
+| **Auto-playing media**         | Unexpected, accessibility issue       | Always require user initiation        |
 
 ---
 
@@ -271,5 +279,5 @@ When creating or reviewing components:
 
 ---
 
-*Last updated: 2025-02-07*
-*Maintainer: Kozmos Design System Team*
+_Last updated: 2025-02-07_
+_Maintainer: Kozmos Design System Team_

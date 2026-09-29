@@ -237,15 +237,15 @@ packages/react/src/components/ComponentName/
 **Code (React):**
 
 ```tsx
+// kozmos-skills: template — a sketch inside packages/react; OldButton and NewButton stand for any retired part and its replacement
 /**
- * @deprecated Use `NewButton` instead. Will be removed in v3.0.0.
- * Migration guide: https://kozmos.design/migrate/button-v2-to-v3
+ * @deprecated Use `NewButton` instead. Will be removed in the next major version.
+ * Migration: the release's entry in .ai-skills/api-changelog.md.
  */
 export const OldButton = ({ ...props }) => {
   if (process.env.NODE_ENV === "development") {
     console.warn(
-      "[@kozmos-ds/react] OldButton is deprecated. Use NewButton instead. " +
-        "See: https://kozmos.design/migrate/button-v2-to-v3",
+      "[@kozmos-ds/react] OldButton is deprecated. Use NewButton instead.",
     );
   }
   return <NewButton {...props} />;
@@ -255,6 +255,7 @@ export const OldButton = ({ ...props }) => {
 **Storybook:**
 
 ```tsx
+// kozmos-skills: template — the meta of OldButton's story, beside the sketch above
 export default {
   title: "Components/OldButton",
   component: OldButton,

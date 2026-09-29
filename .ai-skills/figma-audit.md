@@ -54,6 +54,10 @@ Use this abbreviated checklist for quick audits:
 
 ### File Organization
 
+An example layout. The Core Library itself is painted by the importer plugin,
+`figma/foundations-importer`, whose layout registry names the component sets it paints, and
+`pnpm figma:verify` checks the published file against it.
+
 ```
 Kozmos Design System (Library File)
 ├── 📁 _Tokens (local styles/variables)
@@ -68,7 +72,7 @@ Kozmos Design System (Library File)
 │   └── ...
 ├── 📁 Composites
 │   ├── Card
-│   ├── Modal
+│   ├── Dialog
 │   ├── SearchPanel
 │   └── ...
 └── 📁 Templates
@@ -193,13 +197,14 @@ disabled=True     →    disabled={true}
 
 ### Variable Naming Alignment
 
-Figma Variables must map to code tokens:
+Figma Variables map to code tokens by their collection and path, which the token build turns into
+each platform's name:
 
-| Figma Variable       | CSS Variable                  | Swift          | Kotlin                            |
-| -------------------- | ----------------------------- | -------------- | --------------------------------- |
-| `color/text/primary` | `--kozmos-color-text-primary` | `.textPrimary` | `KozmosTokens.color.text.primary` |
-| `space/400`          | `--kozmos-space-400`          | `.space400`    | `KozmosTokens.space[400]`         |
-| `radius/200`         | `--kozmos-radius-200`         | `.radius200`   | `KozmosTokens.radius[200]`        |
+| Figma variable (collection / name) | CSS variable                       | Swift                                         | Kotlin                                          |
+| ---------------------------------- | ---------------------------------- | --------------------------------------------- | ----------------------------------------------- |
+| Primitives / `Colors/foreground/0` | `--primitives-colors-foreground-0` | `KozmosColors.primitivesColorsForeground0`    | `KozmosThemeTokens.primitivesColorsForeground0` |
+| Semantics / `Surface/0`            | `--semantics-surface-0`            | `KozmosColors.semanticsSurface0`              | `KozmosThemeTokens.semanticsSurface0`           |
+| Primitives / `Layout/spacing/200`  | `--primitives-layout-spacing-200`  | `KozmosDimensions.primitivesLayoutSpacing200` | `KozmosDimensions.primitivesLayoutSpacing200`   |
 
 ---
 
@@ -468,7 +473,7 @@ Before publishing Code Connect:
 - [ ] `.figma.kt` (Android) created
 - [ ] Props mapped correctly
 - [ ] Imports are correct
-- [ ] `figma connect parse` passes
+- [ ] `pnpm figma:parse:linked` and `pnpm figma:parse:native:linked` pass
 - [ ] Preview in Figma Dev Mode verified
 
 ---
@@ -544,7 +549,7 @@ Run through this checklist before publishing to team library:
 - [ ] No changes pending in Figma branch
 - [ ] Published to library
 - [ ] Announced in #design-system channel
-- [ ] Updated component inventory
+- [ ] Code Connect still parses (`pnpm figma:parse:linked`)
 
 ---
 
@@ -552,20 +557,25 @@ Run through this checklist before publishing to team library:
 
 ### Variant Property Cheat Sheet
 
+The properties the Code Connect files map, `packages/react/src/components/<Name>/<Name>.figma.tsx`:
+
 ```
-Button:    variant(solid|outline|ghost) × size(sm|md|lg) × state(default|hover|focus|active|disabled) × hasIcon(true|false)
-Input:     size(sm|md|lg) × state(default|hover|focus|disabled|error) × hasPrefix(true|false) × hasSuffix(true|false)
-Checkbox:  state(unchecked|checked|indeterminate) × disabled(true|false)
-Modal:     size(sm|md|lg|full)
+Button:    Variant(Default|Secondary|Destructive|Outline|Ghost|Link|Glass) × Size(Default|Small|Large|Icon) × State(Default|Disabled|Loading)
+Input:     State(Default|Focus|Disabled|Readonly) × Status(Default|Error|Warning|Success) × Show Helper Text
+Checkbox:  Checked(Unchecked|Checked) × State(Default|Disabled|Error)
+Dialog:    Title Text, Description Text, Body Text, and slots for its fields and actions
 ```
 
 ### Token Quick Reference
 
+Variables are named by collection and path, as `packages/tokens/src/raw/` exports them:
+
 ```
-Colors:    color/text/primary, color/background/primary, color/interactive/primary
-Spacing:   space/100(4), space/200(8), space/400(16), space/600(24), space/800(32)
-Radius:    radius/100(4), radius/200(8), radius/300(12), radius/full
-Typography: font/size/100...900, font/weight/regular|medium|semibold|bold
+Colors:     Primitives  Colors/foreground/0…1000, Colors/background/0…1000, Colors/theme/0…1000
+Surfaces:   Semantics   Surface/0, 100, 200, 300
+Spacing:    Primitives  Layout/spacing/0, 25, 50, 75, 100 (8), 150, 200 (16) … 1000
+Radius:     Primitives  Layout/radius/0, 50, 100 … 1000
+Typography: Primitives  Typography/font/family, weight, size
 ```
 
 ### State Visual Guide
@@ -584,11 +594,12 @@ Error    → Red border, error icon
 
 ## Version History
 
-| Version | Date       | Changes                       |
-| ------- | ---------- | ----------------------------- |
-| 1.0.0   | 2026-02-07 | Initial Figma audit checklist |
+| Version | Date       | Changes                                        |
+| ------- | ---------- | ---------------------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial Figma audit checklist                  |
+| 1.1.0   | 2026-09-29 | Real token names and the repository's commands |
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last Updated:** 2026-02-07
+**Last Updated:** 2026-09-29

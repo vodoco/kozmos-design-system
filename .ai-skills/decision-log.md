@@ -67,7 +67,7 @@ Write an ADR when:
 | [ADR-007](#adr-007-turborepo--pnpm-for-monorepo-tooling)              | Turborepo + pnpm Monorepo                | ✅ Accepted                         | 2026-01-10 |
 | [ADR-008](#adr-008-system-fonts-over-custom-fonts)                    | System Fonts over Custom Fonts           | ✅ Accepted                         | 2026-02-01 |
 | [ADR-009](#adr-009-mit-license-for-open-source-readiness)             | MIT License                              | ✅ Accepted                         | 2026-02-05 |
-| [ADR-010](#adr-010-callback-props-for-error-tracking)                 | Callback Props for Error Tracking        | ✅ Accepted                         | 2026-02-05 |
+| [ADR-010](#adr-010-callback-props-for-error-tracking)                 | Callback Props for Error Tracking        | Accepted, not built as written      | 2026-02-05 |
 
 ---
 
@@ -75,7 +75,7 @@ Write an ADR when:
 
 ### ADR-001: CSS Variables + CVA for Web Styling
 
-**Status:** ✅ Accepted
+**Status:** ✅ Accepted. As built, the recipes' classes are Tailwind role classes (`bg-primary`, over the token variables) and owned CSS, compiled into one stylesheet scoped to the `ThemeProvider` (`@scope ([data-kozmos-root])`), so they cannot meet a consumer's own Tailwind
 **Date:** 2026-01-15
 **Decision Makers:** Core Team, Tech Lead
 
@@ -161,6 +161,10 @@ const buttonStyles = cva(
 
 export type ButtonProps = VariantProps<typeof buttonStyles>;
 ```
+
+This sketch predates the code. `Button`'s real recipe is in
+`packages/react/src/components/Button/Button.tsx`: its variants are default, destructive, outline,
+secondary, ghost, link and glass, and its sizes default, sm, lg and icon.
 
 ---
 
@@ -318,20 +322,36 @@ Use **Compound Component Pattern** with Context for state sharing.
 
 #### Implementation
 
+As built, the parts are separate exports built on Radix (`DialogTrigger`), not properties of the
+root (`Modal.Trigger`), and the dialog is `Dialog`; Kozmos has no Modal:
+
 ```tsx
-// Consumer usage
-<Modal>
-  <Modal.Trigger asChild>
-    <Button>Open</Button>
-  </Modal.Trigger>
-  <Modal.Content>
-    <Modal.Title>Confirm Action</Modal.Title>
-    <Modal.Description>Are you sure?</Modal.Description>
-    <Modal.Close asChild>
-      <Button>Close</Button>
-    </Modal.Close>
-  </Modal.Content>
-</Modal>
+import {
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@kozmos-ds/react";
+
+export function ConfirmAction() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>Open</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogTitle>Confirm Action</DialogTitle>
+        <DialogDescription>Are you sure?</DialogDescription>
+        <DialogClose asChild>
+          <Button>Close</Button>
+        </DialogClose>
+      </DialogContent>
+    </Dialog>
+  );
+}
 ```
 
 ---
@@ -390,7 +410,7 @@ Use **Figma Code Connect** as the primary bridge, with Storybook as secondary re
 
 ### ADR-007: Turborepo + pnpm for Monorepo Tooling
 
-**Status:** ✅ Accepted
+**Status:** ✅ Accepted. Remote caching was never set up: no workflow sets `TURBO_TOKEN` or `TURBO_TEAM`, and each CI run starts with an empty cache
 **Date:** 2026-01-10
 **Decision Makers:** Core Team
 
@@ -583,7 +603,7 @@ Use **MIT License**.
 
 ### ADR-010: Callback Props for Error Tracking
 
-**Status:** ✅ Accepted
+**Status:** ✅ Accepted, not built as written: no component takes an `onError` for tracking. What exists is an event callback, React's `AnalyticsProvider` (`onDispatch`), SwiftUI's `kozmosAnalytics` environment value and Compose's `LocalKozmosAnalytics`
 **Date:** 2026-02-05
 **Decision Makers:** Core Team
 
@@ -613,14 +633,25 @@ Use **callback props** for error tracking (e.g., `onError`).
 
 #### Implementation
 
+As built, a product receives the parts' events in batches, and sends them where it likes:
+
 ```tsx
-// Consumer usage
-<AICompanion
-  onError={(error) => {
-    Sentry.captureException(error);
-    // or Datadog, or custom logger
-  }}
-/>
+import type { ReactNode } from "react";
+import { AnalyticsProvider } from "@kozmos-ds/react";
+
+export function Tracked({ children }: { children: ReactNode }) {
+  return (
+    <AnalyticsProvider
+      onDispatch={(events) => {
+        // Sentry, Datadog, or a logger of your own
+        for (const event of events)
+          console.log(event.component, event.eventName);
+      }}
+    >
+      {children}
+    </AnalyticsProvider>
+  );
+}
 ```
 
 ---
@@ -690,11 +721,12 @@ What constraints exist?]
 
 ## Version History
 
-| Version | Date       | Changes                           |
-| ------- | ---------- | --------------------------------- |
-| 1.0.0   | 2026-02-07 | Initial decision log with 10 ADRs |
+| Version | Date       | Changes                                                    |
+| ------- | ---------- | ---------------------------------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial decision log with 10 ADRs                          |
+| 1.1.0   | 2026-09-29 | Each decision says what was built; examples use real parts |
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last Updated:** 2026-02-07
+**Last Updated:** 2026-09-29
