@@ -1,5 +1,31 @@
 # @kozmos-ds/icons
 
+## 0.5.0
+
+### Minor Changes
+
+- b46112a: `@kozmos-ds/icons` gains `Walking`, the walking figure the SDK's position status draws beside "Walking improves accuracy", sourced from Pointr's Figma. It is a solid mark squared on the icon grid, 20 of 24 tall, in `currentColor`. `bluetooth-off`, the pill's No Bluetooth mark, joins the icon name list, so `getIconComponent("bluetooth-off")` and `<Icon name="bluetooth-off" />` reach Pointr's outline. React 0.6.0 requires icons 0.5.0; they are released together.
+
+  ```tsx
+  import { MapStatusPill } from "@kozmos-ds/react";
+  import { BluetoothOff, Walking } from "@kozmos-ds/icons";
+
+  <MapStatusPill tone="progress" icon={<Walking />}>
+    Walking improves accuracy
+  </MapStatusPill>;
+  <MapStatusPill tone="danger" icon={<BluetoothOff />}>
+    No Bluetooth
+  </MapStatusPill>;
+  ```
+
+  Dedicated Turn Back and Wayfinding Unavailable marks are not included. Their examples explicitly pass `icon={null}` to omit a mark. A `warning` or `danger` pill without an `icon` prop still draws its default warning triangle; pass `icon={null}` when no fallback mark is appropriate.
+
+### Patch Changes
+
+- f028338: Importing one icon no longer bundles every icon in the registry. `kozmosIconRegistry` was built at module scope by `Object.fromEntries(kozmosIconDefinitions.map(...))`, and only the outer call was marked `/* @__PURE__ */`. A mark covers its own call, not the calls in its arguments, so Rollup and esbuild both kept the `.map`, and with it every definition and every icon they name. In 0.4.0, `import { Check } from "@kozmos-ds/icons"` cost an app 11.49 KB gzip (32.84 KB minified), all 56 of the registry's icons. It now costs 0.38 KB (0.54 KB minified), the icon and its factory. The `.map` is marked too.
+
+  Nothing else changes: the same exports, names and registry. Anything that looks an icon up by name, `getIconComponent`, `getIconDefinition`, `isKozmosIconKey` or the registry itself, still brings in every icon the registry names, as it must.
+
 ## 0.4.0
 
 ### Minor Changes

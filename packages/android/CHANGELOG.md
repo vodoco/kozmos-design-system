@@ -2,7 +2,7 @@
 
 Kozmos is consumed from this repository's `packages/android` source as an Android library module in the `com.kozmos` namespace. It is not a published Maven/registry release. Pin a reviewed repository commit when adopting these changes; the version headings below follow the web release plan, not a separate native package publication.
 
-## 0.6.0 — unreleased candidate
+## 0.6.0 — repository snapshot
 
 Native source changes since the repository snapshot tagged `@kozmos-ds/react@0.5.0`. This entry does not announce a 0.6.0 tag or completed release validation. The web package has its own [changelog](../react/CHANGELOG.md).
 

@@ -7,7 +7,33 @@ Follow each release's migration notes before upgrading. 0.x releases can change 
 and may require consumer changes even without a major version bump.
 Automated codemods are not guaranteed; apply and verify the documented migration steps.
 
-## `@kozmos-ds/icons` — current 0.4.0
+## `@kozmos-ds/icons` — current 0.5.0
+
+### 0.5.0
+
+#### Minor Changes
+
+- b46112a: `@kozmos-ds/icons` gains `Walking`, the walking figure the SDK's position status draws beside "Walking improves accuracy", sourced from Pointr's Figma. It is a solid mark squared on the icon grid, 20 of 24 tall, in `currentColor`. `bluetooth-off`, the pill's No Bluetooth mark, joins the icon name list, so `getIconComponent("bluetooth-off")` and `<Icon name="bluetooth-off" />` reach Pointr's outline. React 0.6.0 requires icons 0.5.0; they are released together.
+
+  ```tsx
+  import { MapStatusPill } from "@kozmos-ds/react";
+  import { BluetoothOff, Walking } from "@kozmos-ds/icons";
+
+  <MapStatusPill tone="progress" icon={<Walking />}>
+    Walking improves accuracy
+  </MapStatusPill>;
+  <MapStatusPill tone="danger" icon={<BluetoothOff />}>
+    No Bluetooth
+  </MapStatusPill>;
+  ```
+
+  Dedicated Turn Back and Wayfinding Unavailable marks are not included. Their examples explicitly pass `icon={null}` to omit a mark. A `warning` or `danger` pill without an `icon` prop still draws its default warning triangle; pass `icon={null}` when no fallback mark is appropriate.
+
+#### Patch Changes
+
+- f028338: Importing one icon no longer bundles every icon in the registry. `kozmosIconRegistry` was built at module scope by `Object.fromEntries(kozmosIconDefinitions.map(...))`, and only the outer call was marked `/* @__PURE__ */`. A mark covers its own call, not the calls in its arguments, so Rollup and esbuild both kept the `.map`, and with it every definition and every icon they name. In 0.4.0, `import { Check } from "@kozmos-ds/icons"` cost an app 11.49 KB gzip (32.84 KB minified), all 56 of the registry's icons. It now costs 0.38 KB (0.54 KB minified), the icon and its factory. The `.map` is marked too.
+
+  Nothing else changes: the same exports, names and registry. Anything that looks an icon up by name, `getIconComponent`, `getIconDefinition`, `isKozmosIconKey` or the registry itself, still brings in every icon the registry names, as it must.
 
 ### 0.4.0
 
@@ -117,7 +143,27 @@ Automated codemods are not guaranteed; apply and verify the documented migration
 - c5ec97c: First public release: the curated Pointr icon set and the taxonomy's eight
   quick-access symbols as React components.
 
-## `@kozmos-ds/product-contracts` — current 0.4.0
+## `@kozmos-ds/product-contracts` — current 0.5.0
+
+### 0.5.0
+
+#### Minor Changes
+
+- 8f51ba1: `UserLocationState` gains `"heading-paused"` (decision 45): heading remembered while the map has been moved away from the visitor, the SDK's rotational Off. The next press goes straight back to `"heading"`, which is the product's to do. iOS has it as `KozmosUserLocationState.headingPaused` and Android as `KozmosUserLocationState.HeadingPaused`, with the same wire value.
+
+  It releases with `@kozmos-ds/react`, which draws it: react pins its siblings exactly, so the react that knows `"heading-paused"` needs this version, and the two go out together.
+
+  Migration: exhaustive TypeScript, Swift or Kotlin switches over the location-state type must add the new case. Existing state values are unchanged.
+
+- a6f288d: A result list can show a walk as a band (decision 50, GAP-088). `TravelEstimatePresentation` gains `band`, a `TravelTimeBand`: `"nearby"`, `"oneToTwoMinutes"`, `"twoToFiveMinutes"`, `"fiveToTenMinutes"` or `"moreThanTenMinutes"`. The product passes the walking time it already has, and `travelTimeBand(durationSeconds)` gives its band, so every product draws the edges in the same place. `travelTimeTone(band)` says the colour it is drawn in: `"success"` for Nearby, `"neutral"` for the rest. These two functions are the package's first runtime code; everything else is still types.
+
+  Nearby is under a minute. Every band after it keeps its upper edge, so a place exactly 2, 5 or 10 minutes away reads 1–2, 2–5 or 5–10 min, and one a second further reads the next band; past the first minute that is the walk rounded up to whole minutes. A length below zero, or one that is not finite, has no band. The estimate keeps `durationLabel`, the exact minutes, for the details card.
+
+  iOS has the same rule as `KozmosTravelTimeBand(durationSeconds:)` and Android as `KozmosTravelTimeBand.forDuration`, with a band's `tone` and the same wire values; the three are tested against one table of cases. It releases with `@kozmos-ds/react`, which draws the band: react pins its siblings exactly, so the two go out together.
+
+#### Patch Changes
+
+- a957142: `POIResultPresentation.resultIndex` is documented: the result's number, counted from 1, which is the number its map marker shows. A numbered `POIResultList` draws it in the result's tab, and analytics reports it as the result's position. In a numbered list, number the results that are not featured 1, 2, 3 in pin order: a featured result's marker shows its logo, so its number is never drawn. `badge` says it is ignored in a numbered list too, where the number takes its place. The types are unchanged.
 
 ### 0.4.0
 
@@ -440,7 +486,164 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   Add labelled media-error fallback and remove forced smooth gallery movement.
 - eb68e53: Support decorative POI asset icons, generic highlighted properties, semantic metadata tones and price scales. Demonstrate taxonomy-driven attribute labels/icons/order with a pinned Pointr 10.12.0 dictionary outside the public component runtime.
 
-## `@kozmos-ds/react` — current 0.5.0
+## `@kozmos-ds/react` — current 0.6.0
+
+### 0.6.0
+
+#### Minor Changes
+
+- 58ca08d: `AICompanionPanel` gains an optional `open` prop. With `open` omitted, mounting the panel opens it and takes focus, as in 0.5.0; unmounting returns focus to its opener. Existing consumers that mount the panel to open it do not need to change that pattern.
+
+  With `open` supplied, keep the panel mounted and turn it from `false` to `true` when the visitor opens it, usually from `AISearchButton`: that transition takes focus. A panel mounted with `open={true}` is already on screen and does not take focus or call `onOpenAutoFocus`. Closed, it draws nothing. Closing or unmounting returns focus to the opener unless the product has already moved focus outside the panel.
+
+  `onOpenAutoFocus` and `onCloseAutoFocus` let the product prevent the default handoff and choose a focus target. Place the panel itself through its `className`, rather than a wrapper that would remain over the sheet after it closes.
+
+- 7da92a8: `AIInputBar` draws a microphone that starts a spoken conversation with the assistant, which answers aloud, when the product passes `onVoiceStart`. Without it there is no microphone, so voice stays off unless the product has a voice model and turns it on: an App Clip leaves it out. The microphone sits between the field and send, 44px. The product keeps `voiceState` (`AIVoiceState`: `idle`, `connecting`, `listening`, `speaking`, `unavailable`, `error`) and ends the conversation in `onVoiceEnd`. Kozmos records and plays nothing: the voice model, its connection, the microphone permission and the audio are the product's.
+
+  The control is named for what a press does, "Start voice conversation" or "End voice conversation", with no `aria-pressed`. A polite live region announces each change of state, and while the conversation is live the empty field shows it in place of its placeholder. `unavailable` is `aria-disabled`, so it stays focusable and a press does nothing. Offline, `disabled` shows a microphone that is not in use as unavailable, while a live one can still be ended. Every string is a prop with an English default (`voiceStartLabel`, `voiceEndLabel`, `voiceConnectingLabel`, `voiceListeningLabel`, `voiceSpeakingLabel`, `voiceEndedLabel`, `voiceUnavailableLabel`, `voiceErrorLabel`); an empty string leaves that announcement out.
+
+- a67223c: `FloorSelector` gains `variant="collapsible"`, the SDK's level switcher for a control parked in a corner of a map (row 79, GAP-080), as iOS and Android have it. At rest it is one `MapControlButton` showing the current level's short label. Activated, it grows into a column of every level over itself in a `Popover`, in the supplied order: pass floors top-floor-first. The current level is outlined in the theme's primary and a closed level muted; the tile says `aria-expanded`. A choice, Escape or a press outside closes the column, and focus goes back to the tile, which is named by the level now shown, unless the press put focus on another control. The column's level counts sit at their bottom corner.
+
+  It also gains `userFloor`, the level the visitor is on by the same id as `selectedFloor`, and `userFloorLabel` (default "your level"). The switcher marks that level with a dot: on the closed tile while it shows that level, and on that level in the open column. It is said with the level's name, "Level 1, your level". Only the switcher draws it; the other variants take the props and ignore them.
+
+  Migration: exhaustive switches over React's floor-selector variant union or Android's `KozmosFloorSelectorVariant` must handle the added `collapsible`/`Collapsible` case. The existing variants remain supported.
+
+- 00e857b: - **`MapControlsGroup` remembers heading** (decision 45). With `locationState="heading-paused"` the location control shows the SDK's rotational Off — the upright pointer in outline and "Focus / Off" in the off grey — and a screen reader hears `locationHeadingPausedDescription` after the words (default "press to turn the map with you again", for the product to translate). The next press should bring `heading` back, which is the product's to do. `"heading-paused"` is new in `@kozmos-ds/product-contracts`, released with this: react pins its siblings exactly, so the two go out together.
+  - **`MapOverlay` passes presses in its room to the map** (decision 46). The room around what an overlay holds stays for the shadows, but while what it holds fits, only what it holds takes a press: a press or a drag in the room, or between the overlay's items, reaches the map beneath. While what it holds overflows, and only then, the room takes presses again, so that a wheel or a touch over what it holds scrolls the overlay in every engine (Linux WebKit scrolls a box from a wheel only if the box takes presses), and a scrollbar a platform draws there takes its drag; focus scrolls it either way. The overlay marks its stack `data-scrolls` while it overflows.
+
+  Migration: consumers that switch exhaustively over `UserLocationState` must handle `heading-paused`. Existing values and callbacks remain available.
+
+- 24c7530: LocationPin: a numbered pin is quiet at rest and filled when selected, so it pairs with the result card's number tab (decision 55). **The look of unselected numbered pins changes, by design; no prop changes.**
+  - **At rest**, a pin with a `number` is the outlined marker on the background, with its ring and number in the pin's colour, as the SDK's map draws its unselected results. Before, every numbered pin was filled with a white number, selected or not.
+  - **Selected**, it is filled as before, with the ink made for the fill on the number, and still grows.
+  - **Unchanged:** a featured pin, a pin showing `markerContent` (a logo or an icon) and a pin with no number keep their fill.
+  - **Off the floor**, the outlined marker's ring is now dashed, so it is never taken for a quiet pin at rest, in forced colours and for any colour vision. It still takes the number in the foreground and is never filled.
+  - **Variants** keep their colours in the ring and number. `secondary`, whose own colour is a surface grey (1.6:1 on the background), takes the muted foreground as a ring and a number, off the floor too, where its ring had not shown.
+  - **A tint** outlines a numbered pin at rest in the category's fill, with the number in the foreground: six of the eight fills fail 4.5:1 as text on the background.
+
+  Measured in Chromium, Firefox and WebKit: the primary number reads 6.24:1 on the light background and 6.17:1 on the dark, and its ring at least 4.68:1 against Pointr's light map. On the dark map it reads 3.27:1 or more, except over food-and-drink rooms (2.76:1), where the filled pin is the same colour. iOS and Compose make the same change.
+
+- 9070b0f: `ManoeuvreCard` shows the whole instruction, and the card grows with it (GAP-094). It cut the instruction at two lines, which lost ordinary words: "Take the escalator near Fountain Court up to…" lost the level, and German "Biegen Sie bei Marlow Apotheke auf der linke…" lost the turn itself, "rechts ab". This is a deliberate change of default, asked for by MAP-111 (US1-EC8): a card with a long instruction is now taller. A product that wants a limit passes the new `instructionLines`, the most lines drawn before an ellipsis (`instructionLines={2}` draws what 0.5 drew; under one line is no limit). Assistive technology hears the whole instruction either way, as it did. The itinerary keeps its own cap, `maxItineraryHeight`.
+
+  Open, the itinerary that scrolls past the cap is a stop in the tab order (GAP-100): a group named after the itinerary it holds, by the new `itineraryLabel` ("Itinerary" until the product passes its own words, as `Itinerary`'s `label` is). It could not take focus, so a keyboard could not reach the steps past the cap (axe's `scrollable-region-focusable`, serious). It is a group, not a second landmark, and it draws the focus ring.
+
+  Focus goes with the disclosure (review T4). Opening removed the instruction button that had focus, and focus fell to the page; closing from the grab bar left focus on the bar, hidden from assistive technology and out of the tab order. Now focus on the part that goes moves to the part in its place: from the instruction to the itinerary as the card opens, from Hide or from inside the itinerary to the instruction as it closes. Focus anywhere else is left where it is, whether a key, a pointer or the product changed `expanded`, and a pointer never puts focus on the closed, silent bar. Every existing prop and callback is unchanged.
+
+  **Native (iOS and Android):** `KozmosManoeuvreCard` shows the whole instruction by default too, with `instructionLines` to cut it. On opening, iOS requests accessibility focus on the itinerary container and Android requests keyboard focus on Hide; closing requests focus back on the instruction when focus belonged to the removed part. Human VoiceOver and TalkBack behaviour still needs verification on a device with the product's actual itinerary; a focus request is not proof that assistive technology follows it. A ManoeuvreCard call written against 0.5.0 still compiles, on Android through an overload with 0.5.0's parameters.
+
+- 36db8b6: The map controls take the SDK's current look (decision 40): the Tracking Indicator of Pointr's Location Tracking Buttons. Every map control wears it — `MapControlButton`, so the zoom pair, the compass, the location and step-free control and the floor tile.
+  - **The surface.** A 48px square (above the 44px touch target), the Control corner (16), no border in any state, and the map controls' own elevation, three shadows, with the SDK's 32px backdrop blur. The zoom pair is one such surface, its buttons its segments. It is owned CSS now, so it holds in a host without `@scope`, and a caller's class still wins over it.
+  - **The words.** Two equal lines, "Focus" over "Off" or "On", bold 16 on a 16 line. A toggle's state is its tone: off, the words and the mark are grey (foreground/400); on, the words are navy (theme/1000) and the mark the theme's blue (theme/600). "On" no longer draws a primary border or a lower shadow. A control that is not a toggle (`pressed` unset) keeps the ink. Marks are the SDK's 24px.
+  - **`MapControlButton`** gains `stateDescription`, said after the state and never drawn, and `showLabel`, which draws a state alone while its name still starts the accessible name.
+  - **`MapControlsGroup`**: with no position (`unavailable`, `permission-denied`) the location control reads its state alone, on one line — the SDK's "No Location". Heading reads "On", as following does; its mark tells them apart, and a screen reader hears `locationHeadingDescription` after the words (default "map turns with you", for the product to translate).
+  - **`MapOverlay`**'s room is the reach of the map controls' shadow as well as the floating one's: 32px above and at the sides and 48px below, where it was 4, 8 and 12.
+
+- e3cbdbf: `MapStatusPill`, one status on the map in five tones (decision 39). The SDK's PositionStatus, Downloading Content and Turn Back indicator are all this part, and so is the step-free route being calculated (GAP-102). The words, the tone and when it shows are the product's; place it in a `MapOverlay`, for example at the bottom centre.
+  - **Tones.** `neutral` draws the words alone; `progress` turns the system's arc in the theme's blue; `success` draws a check and its words in the success colour; `danger` draws a warning triangle in the danger colour and keeps the words ink; `warning` fills the surface with the new `Emotion/alert/fill` under its `onFill`, the SDK's bright amber under black words in both themes (Turn Back), 10.56:1 light and 13.14:1 dark. The words read at 4.5:1 or more, and the marks at 3:1 or more, in both themes.
+  - **The surface** is the map controls' own (decision 40), from the same owned rule: the page's surface, the Control corner, no border in either theme, the map controls' three shadows and the 32px blur, at least 48px tall, 8px above and below and 12px at the sides. The words are 13px on a 16px line in `foreground/300`; it wraps at 16rem rather than cutting them.
+  - **`icon`** replaces the tone's own mark, drawn at 24px in the tone's colour; `icon={null}` draws none. The mark is never announced.
+  - **Announced politely.** It is `role="status"` by default; `live` takes Alert's and Notice's `"off" | "polite" | "assertive"`. With no words it draws nothing and keeps its live region, so a product that keeps it rendered where it shows has its first words read too.
+  - **`MapControlButton`'s surface rule** now dresses both parts; nothing about a map control changes.
+
+- 31eb28d: `BottomNavigation` labels are now 11px on 14px lines, wrapping to at most two lines. It keeps its own items rather than reusing the rail's redesigned side-menu items: `compact` remains the default, with a 64px minimum item height and 6px padding; `default` uses a 72px minimum and 8px padding.
+
+  This is a visible typography change for bottom navigation. Rail sizing and selection follow the separate side-menu change in this release; the intermediate 72px/64px rail-tile design does not ship.
+
+- 9013c31: The rail takes the dashboard side menu's design. A `NavigationItem` with `placement="rail"` no longer draws a fixed 72px tile (64px compact): it fills the width of its rail, 96px, and grows with its label. It is padded 16px by 8px, with a 24px icon 6px above an 11px regular label on 14px lines that wraps to two lines, so an item is 76px tall, or 90px with two lines. At rest it is the muted foreground, with no fill. Selected, it is primary on the lightest theme tint (theme/0), with a 2px primary bar down its inline end (the right in LTR, the left in RTL), where it was primary on the grey muted fill. It is square, and its focus ring is drawn inside it. `density` still sizes top and side items; a rail item draws the same with `compact` as without it.
+
+  `Sidebar`'s `rail` variant is that 96px rail: it was 80px with 8px of inline padding, and its items now fill it. Its background is the surface (`bg-surface-0`, the same colour as before), and its 1px edge is at its inline end (`border-e`) in both variants, so a right-to-left sidebar draws it on the left.
+
+  `BottomNavigation` keeps its own items: it no longer renders `NavigationItem` rail tiles, so it does not take the rail's padding, width or selected bar. It preserves the icon-over-label layout, equal-width items and muted selected fill. Labels now use 11px text on 14px lines, as described in the separate typography change. Its items are no longer marked `data-placement="rail"`; they are `data-slot="bottom-navigation-item"`.
+
+  This is a visible change: screenshot tests of a rail or a sidebar rail will see it, and a product that sized rail tiles itself (`className="w-24"`) no longer needs to.
+
+- 6f9b048: `POIResultList`, `POIResultGroup` and `POIResultCard` take an optional `idPrefix`, and `getPOIResultDomId` an optional second argument, so a page can show the same place in two lists without drawing its ids twice. A card's id came from the place's id alone, and its action row's and unavailable note's from that, so a second list's `aria-controls` and `aria-describedby` resolved into the first list. With `idPrefix`, every id in the list becomes `getPOIResultDomId(poiId, idPrefix)` and its references stay inside it; a map pin names the intended card with the same call, through `LocationPin`'s `resultId`. Without it the ids are exactly what they were, and a card's own `id` still wins.
+
+  Give each independent list a distinct, stable prefix when the same POI can appear more than once on a page. Keep that prefix consistent between server rendering and hydration, and use the matching prefix for a pin's result reference; do not change the POI's business identifier.
+
+- 8eae92c: `POIResultList`, `POIResultGroup` and `POIResultCard` gain `numbered`, off unless the product turns it on. A numbered result shows its `result.resultIndex`, the number its pin shows on the map, in the card's tab (before its name in a group's row), for a list whose pins are numbered: quick access, where a category chosen in the browse grid lists that category's places. Kozmos draws the number it is given and never renumbers. One tab per card: Featured wins over the number, so a featured result keeps its Featured tab and no number, as its pin shows its logo; the number wins over a badge. At rest the number's tab is quiet, outlined on the card's grey edge; selected, it fills with the primary colour. The number leads the result's accessible name ("2, Burger King") and its tab is decorative; a `selectionLabel` replaces the whole name, as before.
+
+  The badge tab is quiet, as the contract always said (GAP-054): a neutral tab with no star, on the card's grey edge. It drew the Featured star, colour and edge, so an "Alternative" read as featured. The tabs now sit inside the card's top-start corner, sharing its outer curve and edge, with only the inner corner rounded. They sit on the right in a right-to-left language, and their colours and corners are owned rules that hold without `@scope`.
+
+  **A deliberate visual change to Featured:** the Featured tab is the SDK's bright amber under dark words, the alert fill pair (`--semantics-emotion-alert-fill` and `--semantics-emotion-alert-on-fill`), for its words and its star, and a featured card's edge takes the same amber, selected or not. It was the darker warning fill under white words, with a darker edge. The words read at 10.56:1 in the light theme and 13.14:1 in the dark.
+
+- 15b5524: `POIResultCard` draws a walk as a band when the product sets `result.travelEstimate.band` (decision 50, GAP-088): **Nearby**, **1–2 min**, **2–5 min**, **5–10 min** or **More than 10 min**, in place of the exact minutes. Nearby is drawn in the success colour, the success emotion's Text role, which reads at 7.1:1 on the card in the light theme and 17.7:1 in the dark; the other bands keep the card's text colour. The word itself says Nearby, so the tone is never carried by colour alone. The colour is an owned rule, so it holds in a browser without `@scope`.
+
+  The words are English until the product passes its own as `travelTimeBandLabels`, for one band or all five; `POIResultList` and `POIResultGroup` take the same prop and hand it to every result. A result with no band shows `durationLabel` as before, and `POIDetailPanel` keeps the exact minutes from the same estimate.
+
+#### Patch Changes
+
+- 5a7f5da: `AICompanionPanel` keeps what it covers out of reach while it is open (the site's GAP-93, WCAG 2.2 2.4.11). It covers the frame and moves focus in, but Shift+Tab from the panel landed on the search's tiles beneath it, where nobody could see them. While open, a panel laid over the box it fills, `absolute inset-0` in its positioned container as its docs place it, now makes the rest of that box inert, and nothing beyond it; fixed over the whole viewport, it covers the page. It measures what it covers as it opens and again whenever it or that box changes size while it is open, so a layout that moves it from covering its frame to half of it gives the other half back, and the other way takes what it now covers, moving focus into the panel from a control it has just covered. Live regions beneath still speak, whether they are marked with `aria-live` or live by their role (`status`, `alert`, `log`, `marquee` or `timer`, or an `output`), as `MapStatusPill`, `Alert`, `Notice` and `Spinner` are; an open `Select` now leaves those role-only regions out of what it makes inert too. Popups a part inside the panel opens in the page's portal stay in reach. It gives everything back as it closes, before it hands focus back, so focus returns to the button it covered and `onCloseAutoFocus` can focus anything under it. A panel in flow, or over only part of its box, makes no background content inert. Initial focus follows the documented mount/controlled-open policy; responsive focus recovery applies only when the previously focused control becomes newly inert. A product's own `inert` on the covered box is left to it.
+- 836257b: `AICompanionPanel` composes Escape with the product's own key handler. A product's `onKeyDown` replaced the panel's handler, so adding analytics or a shortcut stopped Escape from closing the panel; and an Escape a part inside had already handled, and marked with `preventDefault()`, closed the panel anyway. The product's `onKeyDown` now runs first, and Escape closes the panel after it unless the event has been default-prevented, by the product's handler or by a part inside. It still closes this panel only, and other keys never close it.
+- 9e8d657: Keep focus on assistant inputs and other intentionally reachable controls when a responsive assistant panel grows to cover its frame. Move focus into the panel only when the previously focused control becomes inert.
+- 641be45: `BottomNavigation`'s `density` says what it does for the bar: `compact`, the default, is an item at least 64px tall and 6px in from its edges; `default` is at least 72px tall and 8px in. It was typed as `NavigationItemProps["density"]`, whose docs describe the rail's item and say the compact tile is retired; it is now `"default" | "compact" | null`, the same values.
+- dd06e4a: `POIDetailPanel`'s `sheet` presentation, hosted in `AdaptiveMapShell`'s sheet under a grip, now sits its close button as far from the panel's top as from its side: 17px and 17px, where it sat 21px and 17px (decision 51, row 82 / GAP-083).
+  - The header tops its 16px up to the grip's row and no longer adds the grip's 4px clearance, wherever its buttons stay clear of the grip's target anyway. The grip is a 16px row, an undersized target, and WCAG 2.5.8 keeps a 24px circle on its centre clear of every other target.
+  - Where they would not, on a narrow panel, the header keeps the clearance, 21px and 17px, as every other part at the panel's top does (decision 14). With favourite, save and close that is a panel under 340px wide, such as a 320px phone; with one toggle and close, under 240px; with close alone, under 140px.
+  - The header reads the card's width from a container query. Hosted in `AdaptiveMapShell`'s panel, the details card is a size container of its own, inline size only, and fills the panel's content box; on its own, in a box that shrinks to fit, it is no container and keeps its width. The panel itself is not a container, so a product's own container queries in content it hosts, unnamed ones and `cqi` or `cqw` units among them, read the product's own containers. Fixed and absolutely positioned parts inside the card place as they did.
+
+  In the `sheet` presentation the header's buttons now draw their keyboard focus ring inside their edge, as the actions strip draws its own. Flush against the card's top, in a side panel since the header first topped up and now under a grip, a ring drawn outside lost its top edge to the card's and the panel's scrolling boxes.
+
+  A side panel, a single-detent sheet, a sheet with a `panelHeader`, and the `panel` and `inline` presentations keep their insets.
+
+- ddfcc5a: Decision 48 on every glass surface: text that is muted elsewhere takes the foreground colour on glass, so it reads at 4.5:1 over any map.
+  - The cards that take `surface` draw their muted text through `kozmos-muted-text`, which reads the glass surface's `--kozmos-surface-muted-foreground`. That covers `ManoeuvreCard`'s detail, `Itinerary`'s captions and origin (inside a glass manoeuvre card), `RouteSummary`'s distance, and the descriptions of `FeedbackCard` and `SaveLocationCard`. Muted over a saturated map they read 3.6:1 to 4.2:1; on glass they now read 9.7:1 or more. On a solid card they look as they did.
+  - `POIMediaGallery`'s position follows wherever the gallery sits, hosted on its own too.
+  - `POIDetailPanel`'s muted lines read the property directly. Its `panel` and `inline` presentations say they are a card of their own, so their text stays muted even on a glass sheet.
+  - In `AdaptiveMapShell`'s panel, `POIDetailPanel`'s summary strip paints no fill of its own (decision 43): across a glass sheet it was an opaque band. On its own it keeps its fill.
+
+- 04ed458: Every part at the top of `AdaptiveMapShell`'s panel now keeps the grip's clearance, not only the panel header and the details card (decision 14).
+  - `BrowseCategoriesPanel`: as the panel's content, its first row (the search row, or the tiles when there is none) tops its 16px up to what the panel leaves above it (`max(--kozmos-panel-clearance-top, 16px − --kozmos-panel-inset-top)`) rather than adding 16px to it. Its search field sat 33px from the panel's top and 17px from its side; it now sits 21px down under a sheet's grip and 17px down in a side panel or a single-detent sheet. The tiles under a search row keep their 16px, and on its own it is unchanged.
+  - `POIResultList`: under a grip it keeps the grip's 4px above its first result, which sat inside the grip's 24px target circle (WCAG 2.5.8). It adds nothing anywhere else.
+
+  The two custom properties describe the panel's top: a part placed under a row of your own should have both set to `0px`, or its row belongs in `panelHeader`.
+
+- b51f1be: In `AdaptiveMapShell`'s panel, sheet or side, a hosted part paints no fill of its own: the panel's surface, solid or glass, is the one surface (decision 43).
+  - The panel sets `--kozmos-panel-part-fill` to `transparent` on its content and its header, in a sheet and a side panel alike.
+  - `BrowseCategoriesPanel` and `RoutePreviewPanel` paint nothing there. They filled their box with the background colour wherever they were, so on a glass panel each was an opaque block from under the grip's row down; the glass now shows through them. On a solid panel they look as they did, its fill being the same colour, and their text keeps the theme's foreground. On their own they keep the background colour.
+  - Their fill moves from `bg-background` to owned CSS (`kozmos-browse-categories`, `kozmos-route-preview`), which reads the property. A background class passed in `className` still outranks it.
+
+  On a glass surface, text that is muted elsewhere takes the foreground colour, so it reads at 4.5:1 over any map; the glass itself is unchanged (decision 48).
+  - `.kozmos-surface-glass` sets `--kozmos-surface-muted-foreground` to the foreground colour, and `.kozmos-surface-solid` resets it. Owned CSS reads it, falling back to the muted colour: the `kozmos-muted-text` class, and `POIDetailPanel`'s `sheet` presentation.
+  - The muted text a hosted part draws straight on the panel reads it: `RoutePreviewPanel`'s "To", its count of options and its status text; the empty states of `BrowseCategoriesPanel` and `POIResultList`; and, in `POIDetailPanel`'s `sheet` presentation, the level and hours line, the prices, the summaries' notes, the section headings and the gallery's position. Muted over a saturated map, they read as low as 3.6:1; they now read 9.7:1 or more, in light and dark.
+  - Muted text on a card of its own keeps its colour: a result, a route option, and a `panel` or `inline` details card.
+
+- 1213847: `MapControlsGroup` passes the presses in the gaps between its controls to the map (decision 46). Its box took every press in the 8px between the zoom pair, the compass and the location control; now only the controls take presses, so a press or a drag in a gap reaches the map beneath, as one in a `MapOverlay`'s room does. While the overlay holding the group overflows, a press in a gap is the overlay's, whose scroll box takes its room then, so a wheel there still scrolls it in every engine. The group keeps its role, its name and its controls' tab order. Its box is the owned `kozmos-map-controls-group` rule, and no longer carries `pointer-events-auto`.
+- ddfcc5a: `AdaptiveMapShell`'s panel carries `data-slot="map-shell-panel"`, a short, stable name for a check that reads the panel's markup. Axe cuts every attribute value in a node's snippet to 20 characters once its opening tag passes 300, and the website's exclusion for the known nested-landmark finding (GAP-17), which read the panel's class, stopped matching when the panel's style grew. It now reads this attribute.
+- b46112a: `@kozmos-ds/icons` gains `Walking`, the walking figure the SDK's position status draws beside "Walking improves accuracy", sourced from Pointr's Figma. It is a solid mark squared on the icon grid, 20 of 24 tall, in `currentColor`. `bluetooth-off`, the pill's No Bluetooth mark, joins the icon name list, so `getIconComponent("bluetooth-off")` and `<Icon name="bluetooth-off" />` reach Pointr's outline. React 0.6.0 requires icons 0.5.0; they are released together.
+
+  ```tsx
+  import { MapStatusPill } from "@kozmos-ds/react";
+  import { BluetoothOff, Walking } from "@kozmos-ds/icons";
+
+  <MapStatusPill tone="progress" icon={<Walking />}>
+    Walking improves accuracy
+  </MapStatusPill>;
+  <MapStatusPill tone="danger" icon={<BluetoothOff />}>
+    No Bluetooth
+  </MapStatusPill>;
+  ```
+
+  Dedicated Turn Back and Wayfinding Unavailable marks are not included. Their examples explicitly pass `icon={null}` to omit a mark. A `warning` or `danger` pill without an `icon` prop still draws its default warning triangle; pass `icon={null}` when no fallback mark is appropriate.
+
+- df63812: `MultiSelect` hands focus to its field when every choice is cleared. The clear button goes with the choices it clears, and a keyboard that pressed it lost focus to the page. The field now takes focus, with its list closed, since the visitor cleared the choice and did not ask for options; typing or an arrow key opens it, as before. Removing one chip still hands focus to the field, and a disabled or read-only field still offers nothing to clear.
+- e141c57: `POIResultList` brings the selected result into view when its results arrive after the selection. A pin's tap that came before the search answered, or a batch of results without the selected place, used to mark the selection as shown with nothing to show, and the result then stayed out of sight when it arrived. Each selection is now brought in once, when its result is in `items`; a new array of the same results still moves nothing, and a result that leaves the list and comes back is brought in again. A selection made while `scrollSelectedIntoView` is off is brought in when it is turned back on.
+- ddfcc5a: `RouteOptionCard`: the chosen option's 5% tint of the theme now sits on the option's own background colour (the owned `kozmos-route-option` class). It was `bg-primary/5` over nothing, so on a glass sheet the map showed through the chosen option while the others stood opaque; it now reads like them. On a solid sheet it looks as it did, the tint over the sheet's background colour being the same mix.
+- 9c955d1: `RoutePreviewPanel` keeps the grip's clearance at the top of `AdaptiveMapShell`'s panel, as the category browser and the details card do (decision 14). As the panel's content, its destination row tops its 16px up to what the panel leaves above it (`max(--kozmos-panel-clearance-top, 16px − --kozmos-panel-inset-top)`) rather than adding 16px to it. Under a sheet's grip and in a side panel, "To" sat 33px from the panel's top and 17px from its side; it now sits 21px down under a grip and 17px down in a side panel, as it already did in a single-detent sheet. The options under the row keep their 16px, and on its own it is unchanged.
+
+  Placed under a row of your own inside the panel, the preview is not at the panel's top: set both custom properties to `0px` on it, or move that row into `panelHeader`.
+
+- d6df00f: `SegmentedControl` can hold an empty choice: `value={null}` is nothing chosen. `onValueChange` still reports a choice taken back as `undefined`, so a product that holds the choice passes `value={choice ?? null}`; the segment it took back is no longer left pressed, and Radix no longer warns about the control switching between controlled and uncontrolled. `value={undefined}`, or no `value` at all, leaves the choice to the control, exactly as in 0.5.0, so a wrapper that forwards its own optional `value` keeps working when it is used without one.
+- Updated dependencies [0956f93]
+- Updated dependencies [8f51ba1]
+- Updated dependencies [f028338]
+- Updated dependencies [6ce1001]
+- Updated dependencies [b46112a]
+- Updated dependencies [a957142]
+- Updated dependencies [a6f288d]
+  - @kozmos-ds/tokens@0.2.0
+  - @kozmos-ds/product-contracts@0.5.0
+  - @kozmos-ds/icons@0.5.0
 
 ### 0.5.0
 
@@ -1222,7 +1425,21 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   - @kozmos-ds/icons@0.1.0
   - @kozmos-ds/product-contracts@0.1.0
 
-## `@kozmos-ds/tokens` — current 0.1.0
+## `@kozmos-ds/tokens` — current 0.2.0
+
+### 0.2.0
+
+#### Minor Changes
+
+- 0956f93: A loud fill for the alert emotion and its ink, `Semantics.Emotion.alert.fill` and `Semantics.Emotion.alert.onFill` (`--semantics-emotion-alert-fill` and `--semantics-emotion-alert-on-fill`, `semanticsEmotionAlertFill` and `semanticsEmotionAlertOnfill` on iOS and Android). The map status pill's Turn Back reads them: the SDK's bright amber under black words.
+
+  The fill is `alert/600` in both themes (#F9A707 light, #FBC459 dark), a mid step of the ramp that stays bright, so it is not a surface that turns over with the theme. Its ink is black in both themes: `foreground/0` in the light file and `foreground/1000` in the dark, because no one primitive is dark in both. The pair reads at 10.56:1 in the light and 13.14:1 in the dark, and the contrast contract holds it at 4.5:1 or more.
+
+  Next to `surface` and `onSurface` (the quiet field a label sits on) and `text` (the emotion on the page), `fill` and `onFill` are the loud pair. They take the shape of the taxonomy's `Semantics.Category.Fill` and `OnFill`.
+
+- 6ce1001: A fourth elevation role, `Semantics.Elevation.Map Control` (`--semantics-elevation-map-control`, `semanticsElevationMapControl` on iOS and Android), for a control over a map: the SDK's own three shadows, Pointr's "Shadows/Floating Components BG" — 0 8px 8px at 16%, 0 24px 24px at 8% and 0 0 32px at 12% — aliasing a new `shadow.xl`. Dark mode gives the key layer the Floating role's dark alpha and keeps the SDK's proportions (0.4, 0.2, 0.3).
+
+  The native builds carry layered roles: iOS as the layers, each radius half its CSS blur, which is how SwiftUI's radius draws, with `kozmosElevation(_:in:fill:)` to cast them from a surface; Android as the key light's blur, 8.dp, since Compose here draws one elevation.
 
 ### 0.1.0
 
