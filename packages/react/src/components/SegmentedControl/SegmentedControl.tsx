@@ -106,6 +106,14 @@ export interface SegmentedControlProps
    */
   onValueChange?: (value: string | undefined) => void;
   size?: "sm" | "default" | "lg";
+  /**
+   * The chosen segment, for a product that holds the choice itself. Passed at
+   * all, `value` holds it: `undefined` is nothing chosen, the value
+   * `onValueChange` hands over when the choice is taken back, so a control
+   * that starts empty passes `value={undefined}` too. Leave it out, and give
+   * `defaultValue`, for a control that keeps its own choice; an `undefined`
+   * value beside a `defaultValue` leaves the choice to the control as well.
+   */
   value?: string;
   wrapperClassName?: string;
 }
@@ -126,12 +134,22 @@ export const SegmentedControl = React.forwardRef<
       label,
       onValueChange,
       size = "default",
-      value,
       wrapperClassName,
+      // `value` stays in `props`: whether the product passed it at all is
+      // what tells nothing chosen from a choice left to the control.
       ...props
     },
     ref,
   ) => {
+    // Passed at all, `value` holds the choice, and `undefined` is nothing
+    // chosen: what onValueChange hands over when the choice is taken back.
+    // Radix reads an undefined value as "uncontrolled" and shows the last
+    // choice it saw itself instead (R1), so nothing chosen reaches it as "",
+    // its own empty value. Left out, or undefined beside a `defaultValue`,
+    // the choice stays the control's, as before.
+    const held =
+      Object.prototype.hasOwnProperty.call(props, "value") &&
+      (props.value !== undefined || defaultValue === undefined);
     const generatedId = React.useId();
     const generatedErrorId = React.useId();
     const inputId = props.id || generatedId;
@@ -185,8 +203,8 @@ export const SegmentedControl = React.forwardRef<
             onValueChange?.(nextValue);
           }}
           type="single"
-          value={value}
           {...props}
+          value={held ? (props.value ?? "") : undefined}
         >
           {items.map((item) => (
             <ToggleGroupPrimitive.Item

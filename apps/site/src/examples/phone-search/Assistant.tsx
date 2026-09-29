@@ -152,6 +152,10 @@ export function Assistant({
                     {turn.places.map((place, index) => (
                       <POIResultCard
                         key={place.poi.id}
+                        // The sheet beneath lists the same places, and two
+                        // answers can name one: each answer's cards take ids
+                        // of their own, so no id is drawn twice (T1).
+                        idPrefix={`answer-${turn.id}`}
                         poi={place.poi}
                         result={{
                           poiId: place.poi.id,
