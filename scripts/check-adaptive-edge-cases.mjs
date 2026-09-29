@@ -1,9 +1,21 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import { createRequire } from "node:module";
 import {
   buildReactFixture,
   launchFixtureBrowser,
   settleLayout,
 } from "./lib/built-react-fixture.mjs";
+
+// axe-core, the version @axe-core/playwright runs, read once and put in a
+// page once: AxeBuilder injects all of it again on every run, and a hundred
+// or so runs on one page stalled WebKit for good.
+const axeSource = fs.readFileSync(
+  createRequire(
+    createRequire(import.meta.url).resolve("@axe-core/playwright"),
+  ).resolve("axe-core/axe.min.js"),
+  "utf8",
+);
 
 const { code, css } = await buildReactFixture("adaptive-host.tsx");
 const browser = await launchFixtureBrowser();
@@ -113,6 +125,67 @@ async function insideGripCircle(page) {
         };
       })
       .filter(({ d }) => d < 12);
+  });
+}
+
+// Decision 51: the hosted details card's header under a grip, the shell
+// `width` wide, right to left when `dir` says so, with `toggles` before its
+// close button (favourite and save unless told otherwise). Where the close
+// button sits (closeInsets), and whether the header's buttons would clear the
+// grip's 24px circle if the header sat flush under the grip's row. That is
+// read off where they sit across the panel, which the header's top padding
+// never moves: flush, their top edge would be the grip row's bottom edge.
+async function detailsUnderGrip(page, width, { dir = "ltr", toggles } = {}) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.evaluate(
+    ({ width, dir, toggles }) => {
+      const fixture = document.getElementById("fixture");
+      fixture.style.width = `${width}px`;
+      fixture.dir = dir;
+      window.showDetails("sheet", { toggles });
+      window.setAdaptiveOptions({ panelDetent: "medium" });
+    },
+    { width, dir, toggles },
+  );
+  await page.waitForFunction(
+    (width) => window.adaptiveSnapshot?.mapBounds.width === width,
+    width,
+  );
+  await settleLayout(page);
+  const at = await closeInsets(page);
+  const flush = await page.evaluate(() => {
+    const grip = document
+      .querySelector(".kozmos-map-sheet-handle")
+      .getBoundingClientRect();
+    const cx = grip.left + grip.width / 2;
+    const cy = grip.top + grip.height / 2;
+    return [...document.querySelectorAll(".kozmos-poi-header button")].map(
+      (button) => {
+        const r = button.getBoundingClientRect();
+        const dx = Math.max(r.left - cx, 0, cx - r.right);
+        return {
+          name: button.getAttribute("aria-label"),
+          d: Math.round(Math.hypot(dx, grip.bottom - cy) * 100) / 100,
+        };
+      },
+    );
+  });
+  return { ...at, flushClears: flush.every(({ d }) => d >= 12), flush };
+}
+
+// axe's WCAG 2.5.8 check, alone, on the page as it is: the grip is the one
+// undersized target, so its findings are the grip's.
+async function targetSizeFindings(page) {
+  if (!(await page.evaluate(() => "axe" in window)))
+    await page.addScriptTag({ content: axeSource });
+  return page.evaluate(async () => {
+    const audit = await window.axe.run(document, {
+      runOnly: { type: "rule", values: ["target-size"] },
+      resultTypes: ["violations"],
+    });
+    return audit.violations.flatMap(({ nodes }) =>
+      nodes.map(({ target, failureSummary }) => ({ target, failureSummary })),
+    );
   });
 }
 
@@ -683,57 +756,223 @@ const cases = [
     },
   ],
   [
-    "under a grip, a hosted details card's close button is as far from the sheet's top as from its side, plus the grip's clearance",
+    "under a grip, at 390 and 430 wide, a hosted details card's close button is as far from the sheet's top as from its side: 17 and 17 (decision 51)",
     async (page) => {
       // GAP-083: the card's header padded 16 on every side, and the sheet's
       // grip row added 16 above it — the close button sat 33 from the top
-      // and 17 from the side. The shell now says what it leaves above its
-      // content, and the card tops its header up to 16 rather than adding.
-      // Under a grip it keeps 4 more, the grip's target clearance (WCAG
-      // 2.5.8, the next case): 21 against 17.
-      await page.emulateMedia({ reducedMotion: "reduce" });
-      await page.evaluate(() => {
-        window.showDetails("sheet");
-        window.setAdaptiveOptions({ panelDetent: "medium" });
-      });
-      await settleLayout(page);
-      const at = await closeInsets(page);
-      assert(at.grip, "this sheet draws its grip");
-      assert(
-        Math.abs(at.top - (at.end + 4)) <= 1,
-        `close button ${at.top} from the top and ${at.end} from the side`,
-      );
+      // and 17 from the side. The card then topped its header up to 16
+      // rather than adding, and kept the grip's 4px clearance too: 21
+      // against 17. Decision 51: the header takes the 4 back wherever its
+      // buttons stay clear of the grip's target anyway (the next cases), and
+      // on a phone they do: 17 and 17, the panel's 1px border and 16.
+      for (const width of [390, 430]) {
+        const at = await detailsUnderGrip(page, width);
+        assert(at.grip, `${width}: this sheet draws its grip`);
+        assert(
+          Math.abs(at.top - 17) <= 0.5 && Math.abs(at.end - 17) <= 0.5,
+          `${width} wide: the close button ${at.top} from the top and ${at.end} from the side`,
+        );
+        assert.equal(at.headerTop, 0, `${width}: the header's top padding`);
+      }
     },
   ],
   [
-    "at 320 wide, a hosted details card keeps the grip's target clear (WCAG 2.5.8)",
+    "where its buttons would meet the grip's circle, a hosted details card's header keeps the grip's clearance: 21 at 320 and 339, 17 from 340 (decision 51)",
     async (page) => {
       // The grip is a 16px row: an undersized target, so a 24px circle on
-      // its centre must meet no other target. With the card's header flush
-      // under the grip, at 320 wide the favourite button sat inside that
-      // circle (axe target-size). The card keeps the grip's clearance, as a
-      // panel header does (#109).
-      await page.emulateMedia({ reducedMotion: "reduce" });
-      await page.evaluate(() => {
-        document.getElementById("fixture").style.width = "320px";
-        window.showDetails("sheet");
-        window.setAdaptiveOptions({ panelDetent: "medium" });
-      });
-      await page.waitForFunction(
-        () => window.adaptiveSnapshot?.mapBounds.width === 320,
-      );
-      await settleLayout(page);
-      assert.equal(
-        await page.getByRole("button", { name: "Close details" }).count(),
-        1,
-        "the details card is drawn",
-      );
-      const inside = await insideGripCircle(page);
-      assert.deepEqual(
-        inside,
-        [],
-        `inside the grip's 24px circle: ${JSON.stringify(inside)}`,
-      );
+      // its centre must meet no other target (WCAG 2.5.8). Flush under the
+      // row, the header's buttons sit 8 below that centre, and its favourite,
+      // the first of three 44px buttons 6 apart 17 in from the end, reaches
+      // within 12 of it until the panel is 340 wide: its start edge must sit
+      // √(12² − 8²) ≈ 8.9 past the middle. Narrower, the header keeps the
+      // 4px clearance, as every other part at the panel's top does
+      // (decision 14), and the favourite meets the circle at a tangent at
+      // most: at 320 wide it starts at the sheet's middle.
+      for (const [width, top] of [
+        [320, 21],
+        [339, 21],
+        [340, 17],
+      ]) {
+        const at = await detailsUnderGrip(page, width);
+        assert(at.grip, `${width}: this sheet draws its grip`);
+        assert(
+          Math.abs(at.top - top) <= 0.5 && Math.abs(at.end - 17) <= 0.5,
+          `${width} wide: the close button ${at.top} from the top (expected ${top}) and ${at.end} from the side`,
+        );
+        const inside = await insideGripCircle(page);
+        assert.deepEqual(
+          inside,
+          [],
+          `${width} wide, inside the grip's 24px circle: ${JSON.stringify(inside)}`,
+        );
+      }
+    },
+  ],
+  [
+    "at every width from 300 to 440, a hosted details card's header sits flush under the grip exactly where its buttons clear the grip's circle, and axe's target-size rule passes (WCAG 2.5.8)",
+    async (page) => {
+      // The rule, from what is drawn at each width rather than from the
+      // widths above: flush wherever the buttons, flush, would stay 12 from
+      // the grip's centre; the grip's clearance wherever they would not.
+      // And at every width no target meets the circle, by this measure and
+      // by axe's own.
+      const wrong = [];
+      for (let width = 300; width <= 440; width++) {
+        const at = await detailsUnderGrip(page, width);
+        const top = at.flushClears ? 17 : 21;
+        if (!at.grip) wrong.push(`${width}: no grip`);
+        if (Math.abs(at.top - top) > 0.5 || Math.abs(at.end - 17) > 0.5)
+          wrong.push(
+            `${width}: close ${at.top}/${at.end}, expected ${top}/17 (flush ${JSON.stringify(at.flush)})`,
+          );
+        const inside = await insideGripCircle(page);
+        if (inside.length)
+          wrong.push(`${width}: inside the circle ${JSON.stringify(inside)}`);
+        const findings = await targetSizeFindings(page);
+        if (findings.length)
+          wrong.push(`${width}: axe target-size ${JSON.stringify(findings)}`);
+      }
+      assert.deepEqual(wrong, [], wrong.join("\n"));
+    },
+  ],
+  [
+    "with fewer buttons in its header, a hosted details card keeps equal insets on narrower sheets: two from 240 wide, one from 140 (decision 51)",
+    async (page) => {
+      // Two buttons, a toggle and close, reach the circle only under 240
+      // wide; close alone only under 140. The header follows its own
+      // buttons, not a phone's width.
+      for (const [toggles, width, top] of [
+        [["favourite"], 239, 21],
+        [["favourite"], 240, 17],
+        [[], 139, 21],
+        [[], 140, 17],
+      ]) {
+        const at = await detailsUnderGrip(page, width, { toggles });
+        const name = `${toggles.length + 1} buttons, ${width} wide`;
+        assert(at.grip, `${name}: this sheet draws its grip`);
+        assert(
+          Math.abs(at.top - top) <= 0.5 && Math.abs(at.end - 17) <= 0.5,
+          `${name}: the close button ${at.top} from the top (expected ${top}) and ${at.end} from the side`,
+        );
+        const inside = await insideGripCircle(page);
+        assert.deepEqual(
+          inside,
+          [],
+          `${name}, inside the grip's 24px circle: ${JSON.stringify(inside)}`,
+        );
+        assert.deepEqual(
+          await targetSizeFindings(page),
+          [],
+          `${name}: axe target-size`,
+        );
+      }
+    },
+  ],
+  [
+    "flush under a grip or at a side panel's top, a hosted details card's header buttons draw their keyboard focus ring whole",
+    async (page) => {
+      // The card is a scroll box of its own, and so is the panel: both clip.
+      // A ring drawn outside a button flush against the card's top lost its
+      // top edge there — in a side panel since the header first topped up
+      // (GAP-083), and under a grip once it sits flush (decision 51). The
+      // ring's colour along the middle of the button's top edge, where the
+      // corners do not curve, must match its bottom edge's.
+      const cut = [];
+      for (const [layout, width] of [
+        ["under a grip", 390],
+        ["under a grip, keeping the clearance", 320],
+        ["in a side panel", 1024],
+      ]) {
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await page.evaluate((width) => {
+          document.getElementById("fixture").style.width = `${width}px`;
+          window.showDetails("sheet");
+          window.setAdaptiveOptions({ panelDetent: "medium" });
+        }, width);
+        await page.waitForFunction(
+          (width) => window.adaptiveSnapshot?.mapBounds.width === width,
+          width,
+        );
+        await settleLayout(page);
+        await page.evaluate(() => document.activeElement?.blur());
+        for (let tab = 0; tab < 40; tab++) {
+          await page.keyboard.press("Tab");
+          if (
+            await page.evaluate(
+              () =>
+                document.activeElement?.getAttribute("aria-label") ===
+                "Close details",
+            )
+          )
+            break;
+        }
+        await settleLayout(page);
+        const button = await page.evaluate(() => {
+          const focused = document.activeElement;
+          const r = focused.getBoundingClientRect();
+          return {
+            name: focused.getAttribute("aria-label"),
+            visible: focused.matches(":focus-visible"),
+            left: Math.round(r.left),
+            top: Math.round(r.top),
+            width: Math.round(r.width),
+            height: Math.round(r.height),
+          };
+        });
+        assert.equal(button.name, "Close details", `${layout}: focus`);
+        assert(button.visible, `${layout}: the close button shows its focus`);
+        // The theme's blue: the ring, and nothing else drawn there.
+        const ring = async (y) => {
+          const pixels = await photograph(page, {
+            x: button.left + 18,
+            y,
+            width: button.width - 36,
+            height: 9,
+          });
+          let blue = 0;
+          for (let i = 0; i < pixels.length; i += 4)
+            if (pixels[i + 2] > 150 && pixels[i] < 110) blue++;
+          return blue;
+        };
+        const top = await ring(button.top - 5);
+        const bottom = await ring(button.top + button.height - 4);
+        if (!bottom || Math.abs(top - bottom) > bottom / 4)
+          cut.push(
+            `${layout}: ${top} ring pixels along the top edge, ${bottom} along the bottom`,
+          );
+      }
+      assert.deepEqual(cut, [], cut.join("; "));
+    },
+  ],
+  [
+    "right to left, under a grip, a hosted details card's close button is 17 from the top and 17 from the left at 390, and keeps the grip's clearance at 320 (decision 51)",
+    async (page) => {
+      // The header's buttons stand at its inline end, the left right to
+      // left; the grip's circle is the same either way.
+      for (const [width, top] of [
+        [390, 17],
+        [340, 17],
+        [339, 21],
+        [320, 21],
+      ]) {
+        const at = await detailsUnderGrip(page, width, { dir: "rtl" });
+        assert(at.grip, `${width}: this sheet draws its grip`);
+        assert(
+          Math.abs(at.top - top) <= 0.5 && Math.abs(at.end - 17) <= 0.5,
+          `right to left, ${width} wide: the close button ${at.top} from the top (expected ${top}) and ${at.end} from the left`,
+        );
+        const inside = await insideGripCircle(page);
+        assert.deepEqual(
+          inside,
+          [],
+          `right to left, ${width} wide, inside the grip's 24px circle: ${JSON.stringify(inside)}`,
+        );
+        assert.deepEqual(
+          await targetSizeFindings(page),
+          [],
+          `right to left, ${width} wide: axe target-size`,
+        );
+      }
     },
   ],
   [
