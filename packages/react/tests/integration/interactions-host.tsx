@@ -2,6 +2,7 @@ import { useState, type ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import {
+  AICompanionPanel,
   POIResultList,
   SegmentedControl,
   ThemeProvider,
@@ -101,10 +102,52 @@ function HeldChoice() {
   );
 }
 
+/**
+ * R2: the assistant with a product's own key handler, which logs every key
+ * and, when told to, keeps Escape for itself; and a draft field inside that
+ * clears itself on Escape and says so, as a part with something of its own
+ * to dismiss does.
+ */
+function AssistantEscape() {
+  const [open, setOpen] = useState(true);
+  const [draft, setDraft] = useState("");
+  const [keys, setKeys] = useState<readonly string[]>([]);
+  const [keepEscape, setKeepEscape] = useState(false);
+  Object.assign(window.interactions, {
+    keepEscape: (on = true) => setKeepEscape(on),
+  });
+  return (
+    <div style={{ position: "relative", height: 400, width: 360 }}>
+      <AICompanionPanel
+        onClose={() => setOpen(false)}
+        onKeyDown={(event) => {
+          const { key } = event;
+          setKeys((current) => [...current, key]);
+          if (key === "Escape" && keepEscape) event.preventDefault();
+        }}
+        open={open}
+      >
+        <input
+          aria-label="Draft"
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || !draft) return;
+            event.preventDefault();
+            setDraft("");
+          }}
+          value={draft}
+        />
+      </AICompanionPanel>
+      <output data-testid="keys">{keys.join(" ")}</output>
+    </div>
+  );
+}
+
 const scenarios: Record<string, () => ReactElement> = {
   "late-results": () => <LateResults reveal />,
   "reveal-later": () => <LateResults reveal={false} />,
   "held-choice": () => <HeldChoice />,
+  "assistant-escape": () => <AssistantEscape />,
 };
 
 window.interactions = {

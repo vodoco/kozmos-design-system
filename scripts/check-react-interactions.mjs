@@ -209,6 +209,56 @@ await scenario(
   },
 );
 
+// R2: Escape with the product's own key handler, and a part inside that
+// handles Escape itself.
+await scenario(
+  "R2: Escape runs the product's handler, respects a handled Escape, and closes",
+  "assistant-escape",
+  async (page) => {
+    const panel = page.getByRole("region", { name: "Assistant" });
+    const draft = page.getByRole("textbox", { name: "Draft" });
+    const keys = page.getByTestId("keys");
+    const press = async (key) => {
+      await page.keyboard.press(key);
+      await settleLayout(page);
+    };
+    await draft.focus();
+
+    // The product keeps Escape for itself: the panel stays.
+    await call(page, "keepEscape", true);
+    await settleLayout(page);
+    await press("Escape");
+    assert.equal(await panel.count(), 1, "the product kept Escape");
+    await call(page, "keepEscape", false);
+    await settleLayout(page);
+
+    // Other keys never close it.
+    await press("x");
+    await press("Enter");
+    assert.equal(await panel.count(), 1);
+    assert.equal(await draft.inputValue(), "x");
+
+    // The draft clears itself on Escape and says so: the panel stays.
+    await press("Escape");
+    assert.equal(await draft.inputValue(), "");
+    assert.equal(await panel.count(), 1, "the draft handled that Escape");
+
+    // Nothing left to handle: Escape closes the panel, after the product's
+    // handler has seen it.
+    await press("Escape");
+    assert.equal(
+      await panel.count(),
+      0,
+      "Escape did not close the panel beside the product's handler",
+    );
+    assert.equal(
+      await keys.textContent(),
+      "Escape x Enter Escape Escape",
+      "the product's handler saw every key",
+    );
+  },
+);
+
 await browser.close();
 if (failures.length) {
   console.error(`\n${failures.length} interaction check(s) failed.`);

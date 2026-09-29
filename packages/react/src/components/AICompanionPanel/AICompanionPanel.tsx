@@ -86,6 +86,7 @@ const AICompanionPanel = React.forwardRef<
       children,
       onOpenAutoFocus,
       onCloseAutoFocus,
+      onKeyDown,
       "aria-label": ariaLabel,
       "aria-labelledby": ariaLabelledBy,
       ...props
@@ -166,8 +167,14 @@ const AICompanionPanel = React.forwardRef<
     // keyboard, or it is a trap for anyone not using a pointer. Bound on the
     // panel rather than the document so a host that renders two of these does
     // not close both, and skipped entirely when there is nothing to close.
+    //
+    // The product's own handler runs first, and an Escape already handled —
+    // by it, or by a part inside that dismissed something of its own and said
+    // so with preventDefault() — is left alone (R2). The product's handler
+    // used to replace this one, and a handled Escape closed the panel anyway.
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!onClose || event.key !== "Escape") return;
+      onKeyDown?.(event);
+      if (!onClose || event.key !== "Escape" || event.defaultPrevented) return;
       event.stopPropagation();
       onClose();
     };

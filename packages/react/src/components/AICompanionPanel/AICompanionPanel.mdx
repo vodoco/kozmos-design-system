@@ -12,7 +12,14 @@ untouched beneath, so closing it returns the visitor to the search they left.
 `onClose` is optional: a host app may turn the assistant off, and the panel
 has to tolerate `AISearchButton` being absent. Escape closes it when there is
 something to close — a surface covering the frame that can only be dismissed
-by clicking its × is a trap for anyone not using a pointer.
+by clicking its × is a trap for anyone not using a pointer. It closes this
+panel only, and goes no further.
+
+A product's own `onKeyDown` runs first, and Escape still closes the panel
+after it. An Escape already handled is left alone: one the product's handler
+keeps with `event.preventDefault()`, or one a part inside has used to dismiss
+something of its own, a field clearing itself or a list of suggestions
+closing, and marked the same way.
 
 Put the thread and its input inside, in that order. `banner` sits above the
 thread, for a `Notice` or an offline `EmptyState`.

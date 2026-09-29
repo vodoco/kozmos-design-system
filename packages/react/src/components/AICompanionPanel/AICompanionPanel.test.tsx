@@ -46,6 +46,99 @@ describe("AICompanionPanel", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  describe("Escape, with the product's own key handler (R2)", () => {
+    // The panel's Escape handler sat before `...props`, so a product that
+    // passed `onKeyDown` — analytics, a shortcut — replaced it, and Escape
+    // stopped closing the panel. And a part inside that handled Escape for
+    // itself, and said so with preventDefault(), closed the panel anyway.
+    it("runs the product's handler, and still closes", () => {
+      const onClose = vi.fn();
+      const onKeyDown = vi.fn(() => expect(onClose).not.toHaveBeenCalled());
+      render(
+        <AICompanionPanel onClose={onClose} onKeyDown={onKeyDown}>
+          thread
+        </AICompanionPanel>,
+      );
+      fireEvent.keyDown(screen.getByText("thread"), { key: "Escape" });
+      // The product's first, then the close.
+      expect(onKeyDown).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("stays open when the product's handler prevents Escape", () => {
+      const onClose = vi.fn();
+      const onKeyDown = vi.fn((event: React.KeyboardEvent) => {
+        if (event.key === "Escape") event.preventDefault();
+      });
+      render(
+        <AICompanionPanel onClose={onClose} onKeyDown={onKeyDown}>
+          thread
+        </AICompanionPanel>,
+      );
+      fireEvent.keyDown(screen.getByText("thread"), { key: "Escape" });
+      expect(onKeyDown).toHaveBeenCalledTimes(1);
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it("stays open when a part inside has handled Escape for itself", () => {
+      // A field that clears itself on Escape, a list of suggestions that
+      // closes: each says it handled the key, and the panel leaves it be.
+      const onClose = vi.fn();
+      render(
+        <AICompanionPanel onClose={onClose}>
+          <input
+            aria-label="Ask"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") event.preventDefault();
+            }}
+          />
+        </AICompanionPanel>,
+      );
+      fireEvent.keyDown(screen.getByRole("textbox", { name: "Ask" }), {
+        key: "Escape",
+      });
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it("closes on nothing but Escape, and closes this panel only", () => {
+      const onClose = vi.fn();
+      const onKeyDown = vi.fn();
+      const outside = vi.fn();
+      render(
+        <div onKeyDown={outside}>
+          <AICompanionPanel onClose={onClose} onKeyDown={onKeyDown}>
+            thread
+          </AICompanionPanel>
+        </div>,
+      );
+      const thread = screen.getByText("thread");
+      for (const key of ["Enter", " ", "a", "Tab"])
+        fireEvent.keyDown(thread, { key });
+      expect(onKeyDown).toHaveBeenCalledTimes(4);
+      expect(onClose).not.toHaveBeenCalled();
+      expect(outside).toHaveBeenCalledTimes(4);
+
+      // Escape closes this panel, and goes no further: a host with a second
+      // panel, or a dialog round this one, does not close too.
+      fireEvent.keyDown(thread, { key: "Escape" });
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(outside).toHaveBeenCalledTimes(4);
+    });
+
+    it("hands Escape on when there is nothing to close", () => {
+      const onKeyDown = vi.fn();
+      const outside = vi.fn();
+      render(
+        <div onKeyDown={outside}>
+          <AICompanionPanel onKeyDown={onKeyDown}>thread</AICompanionPanel>
+        </div>,
+      );
+      fireEvent.keyDown(screen.getByText("thread"), { key: "Escape" });
+      expect(onKeyDown).toHaveBeenCalledTimes(1);
+      expect(outside).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("puts a banner above the thread, for the Story 14 notice", () => {
     render(
       <AICompanionPanel banner={<p>AI results may be incomplete.</p>}>
