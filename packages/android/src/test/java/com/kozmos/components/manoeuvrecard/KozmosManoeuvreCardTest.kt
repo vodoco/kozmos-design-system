@@ -1,6 +1,9 @@
 package com.kozmos.components.manoeuvrecard
 
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
+import android.view.Choreographer
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -17,7 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.runtime.getValue
@@ -42,6 +47,11 @@ import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.itinerary.KozmosItinerary
 import com.kozmos.components.itinerary.KozmosItineraryStep
 import com.kozmos.components.semanticsPaparazzi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.android.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -76,6 +86,42 @@ class KozmosManoeuvreCardTest {
     )
 
     private fun SemanticsNode.flatten(): List<SemanticsNode> = listOf(this) + children.flatMap { it.flatten() }
+
+    /**
+     * Records [content] for [durationMillis] in a host of its own, frame by
+     * frame, as the shell's drag test drives a finger — but on a recomposer
+     * of the view's own, with this test's looper and Choreographer for its
+     * work and its frames. The window's shared recomposer stops taking frames
+     * for the rest of a run once an earlier test writes Compose state to a
+     * composition its snapshot has finished with: the floor switcher's
+     * semantics test closes its column that way, and a later scripted test
+     * then got no frame at all, so nothing it scripted ran (measured on
+     * 2026-09-29, with the write alone reproducing it).
+     */
+    private fun record(name: String, durationMillis: Long, content: @Composable () -> Unit) {
+        val work = Handler(Looper.getMainLooper()).asCoroutineDispatcher("manoeuvre-card-test")
+        val frames = object : MonotonicFrameClock {
+            override suspend fun <R> withFrameNanos(onFrame: (frameTimeNanos: Long) -> R): R =
+                suspendCancellableCoroutine { continuation ->
+                    val callback = Choreographer.FrameCallback { nanos -> continuation.resumeWith(runCatching { onFrame(nanos) }) }
+                    Choreographer.getInstance().postFrameCallback(callback)
+                    continuation.invokeOnCancellation { Choreographer.getInstance().removeFrameCallback(callback) }
+                }
+        }
+        val scope = CoroutineScope(work + frames)
+        val recomposer = Recomposer(scope.coroutineContext)
+        scope.launch { recomposer.runRecomposeAndApplyChanges() }
+        try {
+            val view = ComposeView(paparazzi.context).apply {
+                setParentCompositionContext(recomposer)
+                setContent(content)
+            }
+            paparazzi.gif(view, name, start = 0L, end = durationMillis, fps = 20)
+        } finally {
+            recomposer.cancel()
+            scope.cancel()
+        }
+    }
 
     /** Every node of the composition's unmerged semantics, as laid out in [view]. */
     private fun nodes(view: View): List<SemanticsNode> =
@@ -133,8 +179,7 @@ class KozmosManoeuvreCardTest {
         var scrollable: SemanticsNode? = null
         var destinationShownAfterScrolling = false
         var destinationBelowTheCap = false
-        val view = ComposeView(paparazzi.context).apply {
-            setContent {
+        record("reach", durationMillis = 1000L) {
                 val host = LocalView.current
                 MaterialTheme {
                     Box(Modifier.width(358.dp)) {
@@ -178,9 +223,7 @@ class KozmosManoeuvreCardTest {
                     val shown = destination()
                     destinationShownAfterScrolling = shown.height > 1f && shown.bottom <= list.boundsInRoot.bottom + 1f
                 }
-            }
         }
-        paparazzi.gif(view, "reach", start = 0L, end = 1000L, fps = 20)
 
         for (step in germanSteps) {
             assertTrue("TalkBack has no node for '${step.instruction}' among $names", step.instruction in names)
@@ -237,8 +280,7 @@ class KozmosManoeuvreCardTest {
      * its own after the card. [script] runs in the host once it is laid out.
      */
     private fun drive(expanded: MutableState<Boolean>, script: suspend View.() -> Unit) {
-        val view = ComposeView(paparazzi.context).apply {
-            setContent {
+        record("drive", durationMillis = 3000L) {
                 val host = LocalView.current
                 MaterialTheme {
                     CompositionLocalProvider(LocalIndication provides UnpaintedIndication) {
@@ -262,9 +304,7 @@ class KozmosManoeuvreCardTest {
                     host.requestFocus()
                     host.script()
                 }
-            }
         }
-        paparazzi.gif(view, "drive", start = 0L, end = 3000L, fps = 20)
     }
 
     /** The node TalkBack is given the name [name] for. */
