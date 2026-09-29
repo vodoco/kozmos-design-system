@@ -173,6 +173,21 @@ export interface POIResultListProps extends Omit<
   /** Each result's words for a walk shown as a band: POIResultCard's. */
   travelTimeBandLabels?: POIResultCardProps["travelTimeBandLabels"];
   /**
+   * Names this list's results apart from another list's on the same page
+   * that shows one of the same places: the search's results and an
+   * assistant's answer, say. Every result's id becomes
+   * `getPOIResultDomId(poiId, idPrefix)`, with its action row's and
+   * unavailable note's following it, so each list's references stay inside
+   * it, and a map pin names the card in the list it belongs to with the same
+   * call.
+   *
+   * Left out, the ids are `getPOIResultDomId(poiId)`, as they have always
+   * been: on a page with more than one list, give every list but one its
+   * own. Keep it the same on the server and in the browser: a word, or an id
+   * from React's `useId()`.
+   */
+  idPrefix?: string;
+  /**
    * Bring the selected result into view when `selectedPoiId` changes — by
    * scrolling whatever the list sits in, and nothing further out. On by
    * default (row 70).
@@ -218,6 +233,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       onGroupExpandedChange,
       scrollSelectedIntoView = true,
       travelTimeBandLabels,
+      idPrefix,
       ...props
     },
     ref,
@@ -366,6 +382,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                       expanded={entry.expanded}
                       featuredLabel={featuredLabel}
                       hideLabel={hideLabel}
+                      idPrefix={idPrefix}
                       items={entry.items.map((item) => ({
                         poi: item.poi,
                         result: select(item),
@@ -391,6 +408,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                     actionsLabel={actionsLabel}
                     currentFloorId={currentFloorId}
                     featuredLabel={featuredLabel}
+                    idPrefix={idPrefix}
                     onAction={onAction}
                     onSelect={onSelect}
                     poi={poi}

@@ -3504,6 +3504,44 @@ test.describe("phone search example", () => {
       .toBe("Bookshop");
   });
 
+  test("a place in the assistant's answer and in the sheet's list draws no id twice", async ({
+    page,
+  }) => {
+    // T1: a result card's id came from its place's id alone, so the Bookshop
+    // the answer shows and the Bookshop the sheet lists drew one id twice, and
+    // the answer's references could resolve into the sheet. Each answer's
+    // cards take a prefix of their own (idPrefix).
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const example = phone(page);
+    await example
+      .getByRole("searchbox", { name: "Search Riverside Centre" })
+      .fill("book");
+    await expect(
+      example.getByRole("button", { name: /^Bookshop/ }).first(),
+    ).toBeVisible();
+    await example
+      .getByRole("button", { name: "Ask the assistant" })
+      .press("Enter");
+    const assistant = example.getByRole("region", { name: "Assistant" });
+    const field = assistant.getByRole("textbox", { name: "Ask the assistant" });
+    await field.fill("Where can I buy a book?");
+    await field.press("Enter");
+    await expect(
+      assistant.getByRole("button", { name: /^Bookshop/ }),
+    ).toBeVisible();
+    const twice = await page.evaluate(() => {
+      const seen = new Set<string>();
+      const repeated = new Set<string>();
+      for (const node of document.querySelectorAll("[id]")) {
+        if (seen.has(node.id)) repeated.add(node.id);
+        seen.add(node.id);
+      }
+      return [...repeated];
+    });
+    expect(twice, "ids drawn twice").toEqual([]);
+  });
+
   test("the assistant's voice conversation, from its script", async ({
     page,
   }) => {

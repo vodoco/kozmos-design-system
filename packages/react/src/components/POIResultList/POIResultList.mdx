@@ -45,6 +45,27 @@ brings in the one it has not brought in yet.
 
 <Canvas of={Stories.SelectionComesIntoView} />
 
+## More than one list on a page
+
+Each result card's id comes from its place's id, `getPOIResultDomId(poiId)`,
+so a map pin can say which card it controls: `LocationPin`'s `resultId`. A page
+that shows the same place in two lists — the search's results and an
+assistant's answer — would draw that id twice, and the second card's action row
+and unavailable note would be found in the first list. Give each list but one
+an `idPrefix`: every id in it becomes `getPOIResultDomId(poiId, idPrefix)`, and
+its references stay inside it. Keep the prefix the same on the server and in
+the browser: a word, or an id from `useId()`.
+
+```tsx
+<POIResultList idPrefix="assistant" items={answer} {...rest} />
+
+<LocationPin resultId={getPOIResultDomId(poi.id, "assistant")} {...pin} />
+```
+
+Without `idPrefix` the ids are what they have always been, so existing pins
+keep finding their cards. A card of its own, outside a list, takes the same
+`idPrefix`, and an `id` given to it outright wins.
+
 ## At the top of a map sheet
 
 The list brings no padding of its own; whatever holds it pads it. At the top of
