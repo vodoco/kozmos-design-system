@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "9b97a23c3bac";
+const PLUGIN_BUILD = "a973c65b5f02";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -3983,6 +3983,13 @@ const KOSMOS_ICON_DEFINITIONS = [
     category: "Alerts & feedback",
     componentKey: "3deb23e1ab8a78324a4272df2d048baa50205f39",
     description: "Notification bell.",
+  },
+  {
+    name: "bluetooth-off",
+    figmaName: "bluetooth-off",
+    category: "Media & devices",
+    componentKey: "cb04402e0bdbb0312323e7251ccb52a3ee913ced",
+    description: "Bluetooth is off: the map status pill's No Bluetooth.",
   },
   {
     name: "building-01",

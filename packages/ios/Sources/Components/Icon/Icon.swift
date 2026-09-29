@@ -34,11 +34,26 @@ public enum KozmosIconColor {
     }
 }
 
+/// The colour a `KozmosIcon` at `.default` takes inside a part that sets it:
+/// the map status pill's mark takes its tone's, as a Compose icon takes
+/// `LocalContentColor`. Unset, `.default` is foreground/100.
+struct KozmosIconHostInkKey: EnvironmentKey {
+    static let defaultValue: Color? = nil
+}
+
+extension EnvironmentValues {
+    var kozmosIconHostInk: Color? {
+        get { self[KozmosIconHostInkKey.self] }
+        set { self[KozmosIconHostInkKey.self] = newValue }
+    }
+}
+
 public struct KozmosIcon: View {
     let name: String
     let size: KozmosIconSize
     let color: KozmosIconColor
     let accessibilityLabel: String?
+    @Environment(\.kozmosIconHostInk) private var hostInk
 
     public init(
         _ name: String = "home-line",
@@ -53,12 +68,19 @@ public struct KozmosIcon: View {
     }
 
     public var body: some View {
-        Image(systemName: Self.symbolName(for: name))
-            .font(.system(size: size.pointSize, weight: .medium))
-            .foregroundColor(color.swiftUIColor)
-            .frame(width: size.pointSize, height: size.pointSize)
-            .accessibilityHidden(accessibilityLabel == nil)
-            .accessibilityLabel(accessibilityLabel ?? "")
+        Group {
+            if let glyph = KozmosPointrGlyph.named(Self.resolvedIconName(name)) {
+                // SF Symbols has nothing for this name: Pointr's own outline.
+                glyph.stroke(style: KozmosPointrGlyph.style(size: size.pointSize))
+            } else {
+                Image(systemName: Self.symbolName(for: name))
+                    .font(.system(size: size.pointSize, weight: .medium))
+            }
+        }
+        .foregroundColor(color == .default ? hostInk ?? color.swiftUIColor : color.swiftUIColor)
+        .frame(width: size.pointSize, height: size.pointSize)
+        .accessibilityHidden(accessibilityLabel == nil)
+        .accessibilityLabel(accessibilityLabel ?? "")
     }
 
     static func symbolName(for rawName: String) -> String {

@@ -148,6 +148,8 @@ object KozmosColorsDark {
   val semanticsEmotionAlertSurface = Color(0xff744d03)
   val semanticsEmotionAlertOnsurface = Color(0xfffeeed0)
   val semanticsEmotionAlertText = Color(0xfffeeed0)
+  val semanticsEmotionAlertFill = Color(0xfffbc459)
+  val semanticsEmotionAlertOnfill = Color(0xff000000)
   val semanticsEmotionInformativeSurface = Color(0xff154761)
   val semanticsEmotionInformativeOnsurface = Color(0xffcae6f3)
   val semanticsEmotionInformativeText = Color(0xffa9d6ec)
