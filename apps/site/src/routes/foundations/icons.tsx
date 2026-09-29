@@ -77,7 +77,7 @@ export default function Icons() {
     <DocsPage page={page}>
       <Section
         title={`${definitions.length} icons`}
-        lead="Named by stable keys. Most come from Lucide; the rest carry the Pointr icon library’s own outlines, matched to the Figma component by key. Press one to copy its JSX."
+        lead="The names Icon takes: stable keys, each drawn with the Pointr icon library’s own outline and matched to the Figma component by key. Press one to copy its JSX. The package exports the library’s other outlines as components, which Icon cannot name yet."
         actions={
           <Stack gap={3}>
             <SearchBar

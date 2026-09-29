@@ -43,7 +43,7 @@ export const foundationPages: readonly FoundationPage[] = [
     slug: "icons",
     title: "Icons",
     summary:
-      "Every icon in the set, searchable, with its name to copy and its aliases.",
+      "The named icons, searchable, with each name to copy and its aliases.",
   },
   {
     slug: "theming",

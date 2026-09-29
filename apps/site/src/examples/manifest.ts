@@ -54,7 +54,7 @@ export const examples: readonly ExampleEntry[] = [
       "GAP-17 · The map shell’s panel is an aside, a landmark that should not sit inside the page’s main.",
       "GAP-20 · In Safari and other WebKit browsers, the search field is drawn as a small native field: Kozmos’s styles do not reach it there.",
       "GAP-29 · A phone app’s tab bar is missing: BottomNavigation pins itself to the browser’s viewport and cannot sit in the frame.",
-      "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Kozmos has no icon for them.",
+      "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Icon cannot name any of them, and toilets and parking have no Kozmos glyph at all.",
       "GAP-53 · The phone’s rounded corners cut the sheet’s: the sheet keeps square, bordered bottom corners, and the shell has no edge-to-edge form.",
       "GAP-91 · The map shell’s top bar and controls sit in boxes that scroll, which cut their shadows off at the box’s edge.",
       "GAP-83 · The assistant’s thread scrolls and takes no focus of its own, so the example gives it a tab stop.",
@@ -70,7 +70,7 @@ export const examples: readonly ExampleEntry[] = [
     summary:
       "A touch-screen directory at the centre’s entrance: browse by category or search, see the places on the map, read about one, get the route from the kiosk and send it to a phone with a code. After a while alone it shows its attract screen.",
     gaps: [
-      "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Kozmos has no icon for them.",
+      "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Icon cannot name any of them, and toilets and parking have no Kozmos glyph at all.",
       "GAP-33 · Kozmos has no token for the route line a map engine draws; the dots that stand in for it take the theme’s colour.",
       "GAP-34 · The attract screen is a Surface laid over the directory: Backdrop pins itself to the browser’s viewport and would cover the site.",
       "GAP-35 · The category grid is four columns at any width, so the directory column is kept wide enough for the names to fit.",
@@ -83,7 +83,7 @@ export const examples: readonly ExampleEntry[] = [
     summary:
       "Search a shopping centre, browse it by category, pick a place from the results or the map, and read its details, across three floors, with the SDK’s location control to follow the visitor. The map is a stand-in: Kozmos lays out around a map engine and does not draw one.",
     gaps: [
-      "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Kozmos has no icon for them.",
+      "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Icon cannot name any of them, and toilets and parking have no Kozmos glyph at all.",
       "GAP-17 · The map shell’s panel is an aside, a landmark that should not sit inside the page’s main.",
       "GAP-18 · The place details use the sheet presentation; on the shell’s panel, the action message’s block loses its background.",
       "GAP-20 · In Safari and other WebKit browsers, the search field is drawn as a small native field: Kozmos’s styles do not reach it there.",

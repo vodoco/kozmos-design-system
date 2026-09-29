@@ -23,9 +23,9 @@ function isTheme(value: string): value is Theme {
 
 /**
  * The site's colour theme, as a menu behind one small button, so the header
- * stays one row on a phone. Words, not glyphs: the icon set has no sun, moon
- * or display (GAPS.md, GAP-07). The button's name starts with its visible
- * word and says the current choice.
+ * stays one row on a phone. Words, not glyphs: `Icon` cannot name a sun, moon
+ * or display, though `@kozmos-ds/icons` exports all three (GAPS.md, GAP-07).
+ * The button's name starts with its visible word and says the current choice.
  */
 export function ThemeMenu() {
   const { theme, setTheme } = useTheme();

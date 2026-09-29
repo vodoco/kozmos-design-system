@@ -1,9 +1,9 @@
 /**
- * The main checks that run on every pull request, from
- * `.github/workflows/ci.yml` on the branch the site is built on, and the
- * scripts they call. Grouped as the workflow's steps are. The workflow also
- * checks the documentation's code samples, an installed product's build,
- * the internal Vue harness and its own governance; those are left out here.
+ * The main checks a pull request runs, from `.github/workflows/ci.yml` on
+ * `main`, and the scripts they call. Grouped as the workflow's steps are.
+ * The workflow also checks the documentation's code samples, an installed
+ * product's build, the internal Vue harness and its own governance; those
+ * are left out here. Kept by hand: change it when `ci.yml` changes.
  */
 export interface Gate {
   title: string;
@@ -16,7 +16,7 @@ export const ciGates: readonly Gate[] = [
   {
     title: "Lint, build and unit tests",
     detail:
-      "The workspace lints (the example app’s lint reports without blocking), every package builds, and the unit tests run, with axe on Button, IconButton, Card, Input and Tooltip.",
+      "The workspace lints (the example app’s lint reports without blocking), every package builds, and the unit tests run, with axe on Button, IconButton, Card, Input, Tooltip and MapStatusPill.",
     command: "pnpm lint && pnpm build && pnpm test",
   },
   {
@@ -76,7 +76,7 @@ export const ciGates: readonly Gate[] = [
   {
     title: "iOS: build, test and render",
     detail:
-      "The Swift package builds and its tests pass, the POI views render on an iOS simulator, and the SwiftUI Code Connect parses.",
+      "The Swift package builds and its tests pass on macOS, the whole test target runs on an iOS simulator, render tests included, and the SwiftUI Code Connect parses. It runs on every push to main, and on a pull request that touches what it builds.",
     command: "swift build && swift test",
   },
   {
