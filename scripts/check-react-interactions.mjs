@@ -209,6 +209,33 @@ await scenario(
   },
 );
 
+// 0.5.0's contract: a wrapper that forwards an undefined `value` leaves the
+// choice to the control, and a press shows.
+await scenario(
+  "SegmentedControl: a wrapper forwarding an undefined value keeps its own choice, as in 0.5.0",
+  "forwarded-toggle",
+  async (page) => {
+    const segment = (name) => page.getByRole("radio", { name, exact: true });
+    const checked = async () =>
+      Promise.all(
+        ["List", "Map"].map((name) =>
+          segment(name).getAttribute("aria-checked"),
+        ),
+      );
+    await segment("Map").click();
+    await settleLayout(page);
+    assert.deepEqual(
+      await checked(),
+      ["false", "true"],
+      "the press did nothing visible",
+    );
+    await segment("List").focus();
+    await page.keyboard.press("Space");
+    await settleLayout(page);
+    assert.deepEqual(await checked(), ["true", "false"]);
+  },
+);
+
 // R2: Escape with the product's own key handler, and a part inside that
 // handles Escape itself.
 await scenario(

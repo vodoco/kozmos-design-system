@@ -101,10 +101,36 @@ function HeldChoice() {
         ]}
         label="View"
         onValueChange={setValue}
-        value={value}
+        // Nothing chosen is `null`: `undefined` leaves the choice to the
+        // control, as in 0.5.0.
+        value={value ?? null}
       />
       <output data-testid="held">{value ?? "nothing"}</output>
     </>
+  );
+}
+
+/**
+ * Fix 1 of 0.6.0: a product's own toggle that passes its optional `value`
+ * on, used without one, as 0.5.0 allowed. The control keeps its own choice.
+ */
+function ForwardedToggle({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (value: string | undefined) => void;
+}) {
+  return (
+    <SegmentedControl
+      items={[
+        { value: "list", label: "List" },
+        { value: "map", label: "Map" },
+      ]}
+      label="View"
+      onValueChange={onChange}
+      value={value}
+    />
   );
 }
 
@@ -277,6 +303,7 @@ const scenarios: Record<string, () => ReactElement> = {
   "late-results": () => <LateResults reveal />,
   "reveal-later": () => <LateResults reveal={false} />,
   "held-choice": () => <HeldChoice />,
+  "forwarded-toggle": () => <ForwardedToggle />,
   "assistant-escape": () => <AssistantEscape />,
   "assistant-cover": () => <AssistantCover placement="cover" />,
   "assistant-cover-focus-under": () => (

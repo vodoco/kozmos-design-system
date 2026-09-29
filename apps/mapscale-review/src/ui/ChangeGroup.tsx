@@ -98,7 +98,9 @@ function GroupDecision({
   return (
     <SegmentedControl
       items={items}
-      value={uniform}
+      // Mixed decisions hold no segment: `null`, since `undefined` would
+      // leave the choice to the control.
+      value={uniform ?? null}
       onValueChange={(v) => onDecide(v as Decision)}
     />
   );
