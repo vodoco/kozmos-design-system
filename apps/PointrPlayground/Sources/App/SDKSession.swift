@@ -246,9 +246,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         let levels = target.levels.map(SDKFloorPolicy.Level.init)
         let start = SDKFloorPolicy.startLevel(levels, sdkDefault: target.defaultLevel.map(SDKFloorPolicy.Level.init))
         selectedFloorId = start?.id ?? ""
-        // For whoever checks the venue's levels: the selector's order, the
-        // level Pointr Cloud marks default, the SDK's default and the start.
-        log.notice("QA-LEVELS \(target.name, privacy: .public): \(SDKFloorPolicy.ordered(levels).map { "\($0.shortName) (\($0.index))" }.joined(separator: ", "), privacy: .public); marked default: \(target.levels.filter(\.isDefault).map(\.shortName).joined(separator: ", "), privacy: .public); SDK default \(target.defaultLevel?.shortName ?? "none", privacy: .public); start \(start?.shortName ?? "none", privacy: .public)")
+        logLevels(of: target, start: start)
         let policy = SDKMapPolicy.make()
         let controller = PTRMapWidgetViewController(location: target.mapWidgetLocation, configuration: policy)
         controller.addListener(self)
@@ -264,6 +262,14 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     }
 
     var millisecondsSinceStart: Int { Int(Date().timeIntervalSince(startedAt) * 1000) }
+
+    /// For whoever checks a building's levels: the selector's order, the level
+    /// Pointr Cloud marks default, the SDK's default and, when the building
+    /// loads, the level the host starts on.
+    private func logLevels(of building: PTRBuilding, start: SDKFloorPolicy.Level?) {
+        let levels = building.levels.map(SDKFloorPolicy.Level.init)
+        log.notice("QA-LEVELS \(building.name, privacy: .public): \(SDKFloorPolicy.ordered(levels).map { "\($0.shortName) (\($0.index))" }.joined(separator: ", "), privacy: .public); marked default: \(building.levels.filter(\.isDefault).map(\.shortName).joined(separator: ", "), privacy: .public); SDK default \(building.defaultLevel?.shortName ?? "none", privacy: .public); start \(start?.shortName ?? "-", privacy: .public)")
+    }
 
     func refreshPOIs() {
         guard let building else { return }
@@ -368,7 +374,13 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     /// set none (`SDKMapFilter.shown`).
     private func showFilteredPlaces() {
         guard mapLoaded else { return }
-        widget?.mapViewController.poisToShow = mapFilter.shown.map { ids in Set(ids.compactMap { poisById[$0] }) }
+        let shown = mapFilter.shown.map { ids in Set(ids.compactMap { poisById[$0] }) }
+        widget?.mapViewController.poisToShow = shown
+        // For whoever checks that the map and the list agree: how many places
+        // each shows. The map keeps the open card's place until the card closes.
+        let list = category.map { "\(places(in: $0).count)" } ?? "-"
+        let map = shown.map { "\($0.count)" } ?? "every place"
+        log.notice("QA-FILTER \(self.category?.name ?? "no tile", privacy: .public): list \(list, privacy: .public), map \(map, privacy: .public)")
     }
 
     /// The places a tile shows, on every floor, by name: the filter's, as the
@@ -460,7 +472,10 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         let changedBuilding = building?.identifier != level.building.identifier
         building = level.building
         selectedFloorId = SDKPOIAdapter.floorId(level)
-        if changedBuilding { refreshPOIs() }
+        if changedBuilding {
+            refreshPOIs()
+            logLevels(of: level.building, start: nil)
+        }
     }
     func zoom(_ delta: Double) {
         framesSelection = false
@@ -487,7 +502,10 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         }
     }
     nonisolated func map(_ map: PTRMapViewController, didChangeLevel level: PTRLevel) {
-        onMain { $0.updateLevel(level) }
+        onMain { session in
+            session.log.notice("QA-LEVELS the map shows \(level.building.name, privacy: .public) \(level.shortName, privacy: .public) (\(level.index, privacy: .public))")
+            session.updateLevel(level)
+        }
     }
     nonisolated func mapDidEndLoading(_ map: PTRMapViewController) {
         onMain { session in
