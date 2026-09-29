@@ -1,5 +1,16 @@
 import Foundation
 
+/// What the host asks PointrKit's map to show, as the two properties it has:
+/// `poisToShow` and `poisToHide`.
+enum SDKMapPlaces: Equatable {
+    /// Every place: both properties nil.
+    case every
+    /// Only these places: `poisToShow`.
+    case only(Set<String>)
+    /// None of these places: `poisToHide`.
+    case hide(Set<String>)
+}
+
 /// The quick-access tile's filter on the map, held with its inputs: the tile
 /// chosen, the loaded places, the favourites and the bookmarks, and the place
 /// whose card is open. What the map shows is worked out from those inputs
@@ -27,11 +38,9 @@ struct SDKMapFilter: Equatable {
     /// The place whose card is open, if any.
     private(set) var openPlace: String?
 
-    /// The places the map shows, by identifier, for PointrKit's `poisToShow`:
-    /// nil with no tile chosen, which shows every place; otherwise exactly the
-    /// tile's places. A tile with none is an empty set, which shows none. The
-    /// SDK's reference: "If non-nil, the map will only display the pois that
-    /// match the identifiers from the set. Default value is nil."
+    /// The places the map shows, by identifier: nil with no tile chosen, which
+    /// is every place; otherwise exactly the tile's places. A tile with none is
+    /// an empty set: none. `mapPlaces` is how PointrKit is told.
     ///
     /// The place whose card is open stays on the map while its card does, so
     /// removing its favourite does not take it from under the card; it leaves
@@ -42,6 +51,11 @@ struct SDKMapFilter: Equatable {
             if let openPlace { ids.insert(openPlace) }
             return ids
         }
+    }
+
+    /// `shown` as PointrKit is told it.
+    var mapPlaces: SDKMapPlaces {
+        shown.map { .only($0) } ?? .every
     }
 
     /// A tile's places, on every floor, by name: its places by the stand-in

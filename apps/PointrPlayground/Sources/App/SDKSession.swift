@@ -78,7 +78,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     /// through the session's own methods, and whenever it changes which places
     /// the map shows, the map is told; nothing else, and never the camera.
     @Published private(set) var mapFilter = SDKMapFilter() {
-        didSet { if mapFilter.shown != oldValue.shown { showFilteredPlaces() } }
+        didSet { if mapFilter.mapPlaces != oldValue.mapPlaces { showFilteredPlaces() } }
     }
     /// Whether this widget's map has finished loading. The filter reaches the
     /// map only then: a widget just made has no view yet, and the host has
@@ -370,17 +370,32 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     func toggleFavourite(_ id: String) { mapFilter.toggleFavourite(id) }
     func toggleSaved(_ id: String) { mapFilter.toggleSaved(id) }
 
-    /// Gives the map the filter's places: nil shows every place, and an empty
-    /// set none (`SDKMapFilter.shown`).
+    /// Gives the map the filter's places (`SDKMapFilter.mapPlaces`). Of its
+    /// two properties, the one that restricts is set first and the other
+    /// cleared after, so the map never shows every place in between.
     private func showFilteredPlaces() {
-        guard mapLoaded else { return }
-        let shown = mapFilter.shown.map { ids in Set(ids.compactMap { poisById[$0] }) }
-        widget?.mapViewController.poisToShow = shown
+        guard mapLoaded, let map = widget?.mapViewController else { return }
+        let places = mapFilter.mapPlaces
+        let pois = { (ids: Set<String>) in Set(ids.compactMap { self.poisById[$0] }) }
+        let shown: String
+        switch places {
+        case .every:
+            map.poisToShow = nil
+            map.poisToHide = nil
+            shown = "every place"
+        case .only(let ids):
+            map.poisToShow = pois(ids)
+            map.poisToHide = nil
+            shown = "\(ids.count)"
+        case .hide(let ids):
+            map.poisToHide = pois(ids)
+            map.poisToShow = nil
+            shown = "none, \(ids.count) hidden"
+        }
         // For whoever checks that the map and the list agree: how many places
         // each shows. The map keeps the open card's place until the card closes.
-        let list = category.map { "\(places(in: $0).count)" } ?? "-"
-        let map = shown.map { "\($0.count)" } ?? "every place"
-        log.notice("QA-FILTER \(self.category?.name ?? "no tile", privacy: .public): list \(list, privacy: .public), map \(map, privacy: .public)")
+        let list = category.map { "\(self.places(in: $0).count)" } ?? "-"
+        log.notice("QA-FILTER \(self.category?.name ?? "no tile", privacy: .public): list \(list, privacy: .public), map \(shown, privacy: .public)")
     }
 
     /// The places a tile shows, on every floor, by name: the filter's, as the
@@ -514,7 +529,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
             session.refreshPOIs()
             // A tile chosen before the map was up, or before a retry, which
             // is still chosen: the map shows its places, not every place.
-            if session.mapFilter.shown != nil { session.showFilteredPlaces() }
+            if session.mapFilter.mapPlaces != .every { session.showFilteredPlaces() }
         }
     }
     nonisolated func map(_ map: PTRMapViewController, didFailToLoadWith error: Error) {
