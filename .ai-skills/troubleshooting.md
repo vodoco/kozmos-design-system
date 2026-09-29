@@ -77,12 +77,12 @@ pnpm --filter @kozmos-ds/tokens build
 
    ```tsx
    // Correct - tokens first
-   import "@kozmos/tokens/tokens.css";
-   import { Button } from "@kozmos/react";
+   import "@kozmos-ds/tokens/tokens.css";
+   import { Button } from "@kozmos-ds/react";
 
    // Wrong - tokens after component
-   import { Button } from "@kozmos/react";
-   import "@kozmos/tokens/tokens.css";
+   import { Button } from "@kozmos-ds/react";
+   import "@kozmos-ds/tokens/tokens.css";
    ```
 
 4. **Verify CSS variable name:**
@@ -226,10 +226,10 @@ Error: useState only works in Client Components. Add the "use client" directive.
 
    ```tsx
    // Instead of one large component
-   import { DataTable } from "@kozmos/react";
+   import { DataTable } from "@kozmos-ds/react";
 
    // Use code splitting
-   const DataTable = lazy(() => import("@kozmos/react/DataTable"));
+   const DataTable = lazy(() => import("@kozmos-ds/react/DataTable"));
    ```
 
 5. **Remove duplicate dependencies:**
@@ -277,7 +277,7 @@ SyntaxError: Cannot use import statement outside a module
 **Symptoms:**
 
 ```
-error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type declarations.
+error TS2307: Cannot find module '@kozmos-ds/tokens' or its corresponding type declarations.
 ```
 
 **Solutions:**
@@ -336,7 +336,7 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
 
    ```tsx
    // App.tsx or layout.tsx
-   import "@kozmos/tokens/tokens.css";
+   import "@kozmos-ds/tokens/tokens.css";
    ```
 
 2. **Check for CSS isolation:**
@@ -679,164 +679,13 @@ java.lang.IllegalStateException: CompositionLocal not present
 
 ## 6. React Native Issues
 
-### 6.1 Metro Bundler Fails
-
-**Symptoms:**
-
-```
-error: Error: Unable to resolve module @kozmos/react-native
-```
-
-**Solutions:**
-
-1. **Clear Metro cache:**
-
-   ```bash
-   npx react-native start --reset-cache
-   ```
-
-2. **Check metro.config.js:**
-
-   ```javascript
-   module.exports = {
-     resolver: {
-       nodeModulesPaths: [path.resolve(__dirname, "node_modules")],
-     },
-   };
-   ```
-
-3. **Reinstall pods (iOS):**
-   ```bash
-   cd ios && pod install --repo-update
-   ```
-
----
-
-### 6.2 Gesture Handler Not Working
-
-**Symptoms:**
-
-- Buttons don't respond to touch
-- Swipe gestures fail
-
-**Solutions:**
-
-1. **Wrap app with GestureHandlerRootView:**
-
-   ```tsx
-   import { GestureHandlerRootView } from "react-native-gesture-handler";
-
-   export default function App() {
-     return (
-       <GestureHandlerRootView style={{ flex: 1 }}>
-         <Navigation />
-       </GestureHandlerRootView>
-     );
-   }
-   ```
-
-2. **Import at entry point:**
-   ```tsx
-   // index.js - FIRST LINE
-   import "react-native-gesture-handler";
-   ```
-
----
-
-### 6.3 Reanimated Errors
-
-**Symptoms:**
-
-```
-Reanimated 2 failed to create a worklet
-```
-
-**Solutions:**
-
-1. **Add Babel plugin:**
-
-   ```javascript
-   // babel.config.js
-   module.exports = {
-     plugins: ["react-native-reanimated/plugin"],
-   };
-   ```
-
-2. **Clear caches:**
-   ```bash
-   npx react-native start --reset-cache
-   cd android && ./gradlew clean
-   cd ios && pod install
-   ```
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
 ## 7. Vue/Web Components Issues
 
-### 7.1 Custom Elements Not Defined
-
-**Symptoms:**
-
-```
-Uncaught TypeError: Illegal constructor
-```
-
-or
-
-```
-[Vue warn]: Failed to resolve component: kozmos-button
-```
-
-**Solutions:**
-
-1. **Register custom elements:**
-
-   ```typescript
-   // main.ts
-   import "@kozmos/vue/define"; // Auto-registers all elements
-   ```
-
-2. **Configure Vue to recognize custom elements:**
-   ```typescript
-   // vite.config.ts
-   export default defineConfig({
-     plugins: [
-       vue({
-         template: {
-           compilerOptions: {
-             isCustomElement: (tag) => tag.startsWith("kozmos-"),
-           },
-         },
-       }),
-     ],
-   });
-   ```
-
----
-
-### 7.2 v-model Not Working
-
-**Symptoms:**
-
-- Two-way binding doesn't update
-- Input value not syncing
-
-**Solutions:**
-
-1. **Use Vue wrapper, not raw Web Component:**
-
-   ```vue
-   <!-- Use Vue wrapper -->
-   <KozmosInput v-model="value" />
-
-   <!-- Raw Web Component doesn't support v-model -->
-   <kozmos-input :value="value" />
-   ```
-
-2. **Handle events manually for Web Components:**
-   ```vue
-   <kozmos-input :value="value" @input="value = $event.target.value" />
-   ```
+Vue waits: `@kozmos-ds/vue` is a private harness that mounts the React components in Vue, not a package to install, and there are no Lit Web Components. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
@@ -1288,7 +1137,7 @@ npm view @kozmos-ds/react versions
 
 3. **Lazy load non-critical components:**
    ```tsx
-   const DataTable = lazy(() => import("@kozmos/react/DataTable"));
+   const DataTable = lazy(() => import("@kozmos-ds/react/DataTable"));
    ```
 
 ---

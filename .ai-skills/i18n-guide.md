@@ -1,6 +1,6 @@
 # Kozmos Design System - Internationalization (i18n) Implementation Guide
 
-> **Purpose:** This document provides comprehensive internationalization guidelines for implementing multi-language support across all 6 platforms in the Kozmos Design System, including RTL support for Arabic and Hebrew.
+> **Purpose:** This document provides comprehensive internationalization guidelines for implementing multi-language support on the Kozmos Design System's three platforms, React, SwiftUI and Jetpack Compose, including RTL support for Arabic and Hebrew.
 
 ---
 
@@ -440,62 +440,7 @@ fun NavigationCard(
 
 ### 4.4 React Native
 
-```tsx
-// i18n/index.ts
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import { I18nManager } from "react-native";
-import * as RNLocalize from "react-native-localize";
-
-import en from "@kozmos/locales/en/common.json";
-import de from "@kozmos/locales/de/common.json";
-import ar from "@kozmos/locales/ar/common.json";
-
-const resources = {
-  en: { translation: en },
-  de: { translation: de },
-  ar: { translation: ar },
-};
-
-const RTL_LANGUAGES = ["ar", "he"];
-
-i18n.use(initReactI18next).init({
-  resources,
-  lng: RNLocalize.getLocales()[0].languageCode,
-  fallbackLng: "en",
-  interpolation: { escapeValue: false },
-});
-
-// Handle RTL
-i18n.on("languageChanged", (lng) => {
-  const isRtl = RTL_LANGUAGES.includes(lng);
-  if (I18nManager.isRTL !== isRtl) {
-    I18nManager.forceRTL(isRtl);
-    // Requires app restart on iOS
-  }
-});
-
-export default i18n;
-```
-
-```tsx
-// Usage in component
-import { useTranslation } from "react-i18next";
-import { I18nManager, View, Text } from "react-native";
-
-function NavigationCard({ distance, minutesAgo }: Props) {
-  const { t } = useTranslation();
-  const isRtl = I18nManager.isRTL;
-
-  return (
-    <View style={[styles.card, isRtl && styles.cardRtl]}>
-      <Text>{t("navigation.startNavigation")}</Text>
-      <Text>{t("navigation.distanceRemaining", { distance })}</Text>
-      <Text>{t("time.minutesAgo", { count: minutesAgo })}</Text>
-    </View>
-  );
-}
-```
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
@@ -629,9 +574,9 @@ function NavigationHeader() {
 
 ### 6.1 Date Formatting
 
-```typescript
+```tsx
 // React (using Intl)
-import { useIntl } from 'react-intl';
+import { useIntl } from "react-intl";
 
 function DateDisplay({ date }: { date: Date }) {
   const intl = useIntl();
@@ -639,9 +584,9 @@ function DateDisplay({ date }: { date: Date }) {
   return (
     <span>
       {intl.formatDate(date, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       })}
     </span>
   );
@@ -656,7 +601,7 @@ function DateDisplay({ date }: { date: Date }) {
 
 ### 6.2 Time Formatting
 
-```typescript
+```tsx
 // Time with timezone awareness
 function TimeDisplay({ date }: { date: Date }) {
   const intl = useIntl();
@@ -664,8 +609,8 @@ function TimeDisplay({ date }: { date: Date }) {
   return (
     <time dateTime={date.toISOString()}>
       {intl.formatTime(date, {
-        hour: 'numeric',
-        minute: 'numeric',
+        hour: "numeric",
+        minute: "numeric",
         hour12: undefined, // Use locale default (12h for en-US, 24h for de)
       })}
     </time>
@@ -681,7 +626,7 @@ function TimeDisplay({ date }: { date: Date }) {
 
 ### 6.3 Relative Time
 
-```typescript
+```tsx
 // Relative time formatting
 function RelativeTime({ date }: { date: Date }) {
   const intl = useIntl();
@@ -689,13 +634,13 @@ function RelativeTime({ date }: { date: Date }) {
   const minutes = Math.round(diff / 60000);
 
   if (minutes < 1) {
-    return <span>{intl.formatMessage({ id: 'time.justNow' })}</span>;
+    return <span>{intl.formatMessage({ id: "time.justNow" })}</span>;
   }
 
   if (minutes < 60) {
     return (
       <span>
-        {intl.formatRelativeTime(-minutes, 'minute', { style: 'long' })}
+        {intl.formatRelativeTime(-minutes, "minute", { style: "long" })}
       </span>
     );
   }
@@ -711,31 +656,39 @@ function RelativeTime({ date }: { date: Date }) {
 
 ### 6.4 Number Formatting
 
-```typescript
+```tsx
 // Distance formatting
 function DistanceDisplay({ meters }: { meters: number }) {
   const intl = useIntl();
   const { locale } = useI18n();
 
   // Use metric for most locales, imperial for en-US
-  const useImperial = locale === 'en-US';
+  const useImperial = locale === "en-US";
 
   if (useImperial) {
     const feet = meters * 3.28084;
-    return <span>{intl.formatNumber(feet, { style: 'unit', unit: 'foot' })}</span>;
+    return (
+      <span>{intl.formatNumber(feet, { style: "unit", unit: "foot" })}</span>
+    );
   }
 
-  return <span>{intl.formatNumber(meters, { style: 'unit', unit: 'meter' })}</span>;
+  return (
+    <span>{intl.formatNumber(meters, { style: "unit", unit: "meter" })}</span>
+  );
 }
 
 // Currency (if needed)
-function PriceDisplay({ amount, currency }: { amount: number; currency: string }) {
+function PriceDisplay({
+  amount,
+  currency,
+}: {
+  amount: number;
+  currency: string;
+}) {
   const intl = useIntl();
 
   return (
-    <span>
-      {intl.formatNumber(amount, { style: 'currency', currency })}
-    </span>
+    <span>{intl.formatNumber(amount, { style: "currency", currency })}</span>
   );
 }
 
@@ -921,79 +874,93 @@ validateTranslations();
 
 ### 9.1 Unit Tests
 
-```typescript
+```tsx
 // __tests__/i18n.test.tsx
-import { render, screen } from '@testing-library/react';
-import { IntlProvider } from 'react-intl';
-import en from '@kozmos/locales/en/common.json';
-import de from '@kozmos/locales/de/common.json';
-import ar from '@kozmos/locales/ar/common.json';
+import { render, screen } from "@testing-library/react";
+import { IntlProvider } from "react-intl";
+import en from "@kozmos/locales/en/common.json";
+import de from "@kozmos/locales/de/common.json";
+import ar from "@kozmos/locales/ar/common.json";
 
-function renderWithLocale(ui: React.ReactElement, locale: string, messages: Record<string, string>) {
+function renderWithLocale(
+  ui: React.ReactElement,
+  locale: string,
+  messages: Record<string, string>,
+) {
   return render(
     <IntlProvider locale={locale} messages={messages}>
       {ui}
-    </IntlProvider>
+    </IntlProvider>,
   );
 }
 
-describe('NavigationButton', () => {
-  it('renders in English', () => {
-    renderWithLocale(<NavigationButton />, 'en', en);
-    expect(screen.getByText('Start Navigation')).toBeInTheDocument();
+describe("NavigationButton", () => {
+  it("renders in English", () => {
+    renderWithLocale(<NavigationButton />, "en", en);
+    expect(screen.getByText("Start Navigation")).toBeInTheDocument();
   });
 
-  it('renders in German', () => {
-    renderWithLocale(<NavigationButton />, 'de', de);
-    expect(screen.getByText('Navigation starten')).toBeInTheDocument();
+  it("renders in German", () => {
+    renderWithLocale(<NavigationButton />, "de", de);
+    expect(screen.getByText("Navigation starten")).toBeInTheDocument();
   });
 
-  it('renders in Arabic with RTL', () => {
-    renderWithLocale(<NavigationButton />, 'ar', ar);
-    expect(screen.getByText('بدء الملاحة')).toBeInTheDocument();
-    expect(document.documentElement.dir).toBe('rtl');
+  it("renders in Arabic with RTL", () => {
+    renderWithLocale(<NavigationButton />, "ar", ar);
+    expect(screen.getByText("بدء الملاحة")).toBeInTheDocument();
+    expect(document.documentElement.dir).toBe("rtl");
   });
 });
 
-describe('Pluralization', () => {
-  it('handles English plurals', () => {
-    const { rerender } = renderWithLocale(
-      <TimeAgo minutes={1} />, 'en', en
-    );
-    expect(screen.getByText('1 minute ago')).toBeInTheDocument();
+describe("Pluralization", () => {
+  it("handles English plurals", () => {
+    const { rerender } = renderWithLocale(<TimeAgo minutes={1} />, "en", en);
+    expect(screen.getByText("1 minute ago")).toBeInTheDocument();
 
     rerender(
       <IntlProvider locale="en" messages={en}>
         <TimeAgo minutes={5} />
-      </IntlProvider>
+      </IntlProvider>,
     );
-    expect(screen.getByText('5 minutes ago')).toBeInTheDocument();
+    expect(screen.getByText("5 minutes ago")).toBeInTheDocument();
   });
 
-  it('handles Arabic plurals', () => {
-    renderWithLocale(<TimeAgo minutes={2} />, 'ar', ar);
-    expect(screen.getByText('منذ دقيقتين')).toBeInTheDocument(); // dual form
+  it("handles Arabic plurals", () => {
+    renderWithLocale(<TimeAgo minutes={2} />, "ar", ar);
+    expect(screen.getByText("منذ دقيقتين")).toBeInTheDocument(); // dual form
   });
 });
 ```
 
 ### 9.2 Visual Regression for RTL
 
-```typescript
+```tsx
 // Button.stories.tsx
 export default {
-  title: 'Components/Button',
+  title: "Components/Button",
   component: Button,
 };
 
 export const LTR = {
-  args: { children: 'Submit' },
-  decorators: [(Story) => <div dir="ltr"><Story /></div>],
+  args: { children: "Submit" },
+  decorators: [
+    (Story) => (
+      <div dir="ltr">
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export const RTL = {
-  args: { children: 'إرسال' },
-  decorators: [(Story) => <div dir="rtl"><Story /></div>],
+  args: { children: "إرسال" },
+  decorators: [
+    (Story) => (
+      <div dir="rtl">
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 // Visual Review draws both stories, in light and dark

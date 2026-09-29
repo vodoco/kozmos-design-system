@@ -34,17 +34,20 @@
 **npm Tag:** N/A (not published)
 
 #### What Happens
+
 - RFC issue created using template
 - Design requirements gathered
 - Use cases documented
 - Platform scope defined
 
 #### Entry Criteria
+
 - Identified need from SDK team or consumer
 - No existing component serves the purpose
 - Clear use case documented
 
 #### Exit Criteria (→ Draft)
+
 - [ ] RFC approved by design system core team
 - [ ] Design lead assigned
 - [ ] Platform leads identified
@@ -52,6 +55,7 @@
 - [ ] Added to roadmap
 
 #### Rejection Criteria
+
 - Duplicate of existing component
 - Too narrow use case (< 2 consuming teams)
 - Out of scope for design system
@@ -62,19 +66,22 @@
 
 **Duration:** 2-4 weeks
 **Owner:** Feature owner + Design lead
-**npm Tag:** `@alpha` (e.g., `@kozmos/react@1.0.0-alpha.1`)
+**npm Tag:** `@alpha` (e.g., `@kozmos-ds/react@1.0.0-alpha.1`)
 
 #### What Happens
+
 - Figma component designed
 - Initial implementation on primary platform (React)
 - API surface defined
 - Basic tests written
 
 #### Entry Criteria
+
 - RFC approved
 - Design resources allocated
 
 #### Exit Criteria (→ Beta)
+
 - [ ] Figma component complete with all variants
 - [ ] React implementation complete
 - [ ] TypeScript types finalized
@@ -85,6 +92,7 @@
 - [ ] API reviewed by core team
 
 #### Artifacts Required
+
 ```
 packages/react/src/components/ComponentName/
 ├── ComponentName.tsx
@@ -95,6 +103,7 @@ packages/react/src/components/ComponentName/
 ```
 
 #### Usage Restrictions
+
 - Internal use only
 - No stability guarantees
 - API may change without notice
@@ -106,20 +115,23 @@ packages/react/src/components/ComponentName/
 
 **Duration:** 4-8 weeks
 **Owner:** Platform leads
-**npm Tag:** `@beta` (e.g., `@kozmos/react@1.0.0-beta.1`)
+**npm Tag:** `@beta` (e.g., `@kozmos-ds/react@1.0.0-beta.1`)
 
 #### What Happens
+
 - Cross-platform implementation
 - Real-world testing with early adopters
 - API refinement based on feedback
 - Documentation written
 
 #### Entry Criteria
+
 - Draft phase complete
 - React implementation approved
 
 #### Exit Criteria (→ Stable)
-- [ ] All platforms implemented (React, iOS, Android, RN, Vue)
+
+- [ ] All three platforms implemented (React, SwiftUI, Compose)
 - [ ] Used in 2+ consuming projects (SDK modules or apps)
 - [ ] No breaking API changes in 4+ weeks
 - [ ] Full test coverage (unit + visual regression)
@@ -131,15 +143,15 @@ packages/react/src/components/ComponentName/
 - [ ] Reduced motion compliance verified
 
 #### Platform Implementation Checklist
-| Platform | Implementation | Tests | Code Connect | Preview |
-|----------|---------------|-------|--------------|---------|
-| React | [ ] | [ ] | [ ] | Storybook |
-| iOS | [ ] | [ ] | [ ] | Xcode Preview |
-| Android | [ ] | [ ] | [ ] | Compose Preview |
-| React Native | [ ] | [ ] | [ ] | RN Storybook |
-| Vue | [ ] | [ ] | [ ] | Storybook |
+
+| Platform | Implementation | Tests | Code Connect | Preview         |
+| -------- | -------------- | ----- | ------------ | --------------- |
+| React    | [ ]            | [ ]   | [ ]          | Storybook       |
+| iOS      | [ ]            | [ ]   | [ ]          | Xcode Preview   |
+| Android  | [ ]            | [ ]   | [ ]          | Compose Preview |
 
 #### Usage Restrictions
+
 - Can be used in production with caution
 - API changes require migration path
 - Breaking changes trigger minor version bump
@@ -151,37 +163,42 @@ packages/react/src/components/ComponentName/
 
 **Duration:** Indefinite (until deprecated)
 **Owner:** Core team
-**npm Tag:** `@latest` (e.g., `@kozmos/react@1.0.0`)
+**npm Tag:** `@latest` (e.g., `@kozmos-ds/react@1.0.0`)
 
 #### What Happens
+
 - Full SemVer guarantees
 - Production support
 - Bug fixes prioritized
 - On-call escalation available
 
 #### Entry Criteria
+
 - Beta phase complete
 - Core team approval
 
 #### Exit Criteria (→ Deprecated)
+
 - Replacement component available
 - Migration guide published
 - Deprecation notice in changelog
 - Minimum 1 minor version with deprecation warning
 
 #### Stability Guarantees
-| Change Type | Allowed? | Version Bump |
-|-------------|----------|--------------|
-| Bug fix | ✅ Yes | Patch |
-| New optional prop | ✅ Yes | Minor |
-| New variant | ✅ Yes | Minor |
-| Prop rename | ❌ No* | Major |
-| Prop removal | ❌ No* | Major |
-| Behavior change | ❌ No* | Major |
 
-*Requires deprecation cycle first
+| Change Type       | Allowed? | Version Bump |
+| ----------------- | -------- | ------------ |
+| Bug fix           | ✅ Yes   | Patch        |
+| New optional prop | ✅ Yes   | Minor        |
+| New variant       | ✅ Yes   | Minor        |
+| Prop rename       | ❌ No\*  | Major        |
+| Prop removal      | ❌ No\*  | Major        |
+| Behavior change   | ❌ No\*  | Major        |
+
+\*Requires deprecation cycle first
 
 #### Support Level
+
 - Bug reports: 48-hour initial response
 - Critical bugs: Hotfix within 24 hours
 - Feature requests: Evaluated in RFC process
@@ -196,17 +213,20 @@ packages/react/src/components/ComponentName/
 **npm Tag:** `@deprecated` (in package.json)
 
 #### What Happens
+
 - Console warnings in development
 - Documentation shows deprecation banner
 - Migration guide available
 - Codemod provided (if applicable)
 
 #### Entry Criteria
+
 - Replacement available OR component no longer needed
 - Migration path documented
 - Core team approval
 
 #### Exit Criteria (→ Removed)
+
 - [ ] 2 minor versions elapsed since deprecation
 - [ ] Usage analytics show < 10% of peak usage
 - [ ] All known consumers migrated or notified
@@ -215,16 +235,17 @@ packages/react/src/components/ComponentName/
 #### Deprecation Signals
 
 **Code (React):**
+
 ```tsx
 /**
  * @deprecated Use `NewButton` instead. Will be removed in v3.0.0.
  * Migration guide: https://kozmos.design/migrate/button-v2-to-v3
  */
 export const OldButton = ({ ...props }) => {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     console.warn(
-      '[@kozmos/react] OldButton is deprecated. Use NewButton instead. ' +
-      'See: https://kozmos.design/migrate/button-v2-to-v3'
+      "[@kozmos-ds/react] OldButton is deprecated. Use NewButton instead. " +
+        "See: https://kozmos.design/migrate/button-v2-to-v3",
     );
   }
   return <NewButton {...props} />;
@@ -232,15 +253,16 @@ export const OldButton = ({ ...props }) => {
 ```
 
 **Storybook:**
+
 ```tsx
 export default {
-  title: 'Components/OldButton',
+  title: "Components/OldButton",
   component: OldButton,
   parameters: {
-    status: { type: 'deprecated' },
+    status: { type: "deprecated" },
     docs: {
       description: {
-        component: '⚠️ **DEPRECATED:** Use `NewButton` instead.',
+        component: "⚠️ **DEPRECATED:** Use `NewButton` instead.",
       },
     },
   },
@@ -248,6 +270,7 @@ export default {
 ```
 
 **Figma:**
+
 - Component description: "⚠️ DEPRECATED - Use NewButton"
 - Component moved to "Deprecated" section
 
@@ -260,16 +283,19 @@ export default {
 **npm Tag:** N/A (unpublished or major version bump)
 
 #### What Happens
+
 - Code removed from repository
 - npm package major version released without component
 - Documentation archived (not deleted)
 - Figma component moved to archive file
 
 #### Entry Criteria
+
 - Deprecation period complete
 - No blocking consumer dependencies
 
 #### Post-Removal
+
 - Archived documentation remains accessible at `/archive/component-name`
 - Old npm versions remain available (never unpublish)
 - Git history preserved
@@ -281,24 +307,30 @@ export default {
 A component can move **backward** in the lifecycle:
 
 ### Stable → Beta
+
 Triggers:
+
 - Critical bug affecting > 20% of users
 - Security vulnerability discovered
 - Fundamental API flaw requiring breaking change
 
 Process:
+
 1. Publish patch marking component as `@beta`
 2. Notify consumers immediately
 3. Provide workaround or revert instructions
 4. Fix and re-stabilize within 2 weeks
 
 ### Beta → Draft
+
 Triggers:
+
 - Fundamental design flaw discovered
 - Cross-platform parity not achievable
 - Use case invalidated
 
 Process:
+
 1. Announce in changelog
 2. Remove from beta consumers if possible
 3. Redesign and re-enter beta when ready
@@ -330,29 +362,29 @@ Process:
 
 ## Quick Reference: What Can I Use?
 
-| Stage | Production Safe? | API Stable? | Support Level |
-|-------|------------------|-------------|---------------|
-| Proposal | ❌ No | ❌ No | None |
-| Draft | ❌ No | ❌ No | Best effort |
-| Beta | ⚠️ Caution | ⚠️ Mostly | Standard |
-| Stable | ✅ Yes | ✅ Yes | Full |
-| Deprecated | ⚠️ Migrate | ✅ Yes (frozen) | Maintenance only |
-| Removed | ❌ N/A | ❌ N/A | None |
+| Stage      | Production Safe? | API Stable?     | Support Level    |
+| ---------- | ---------------- | --------------- | ---------------- |
+| Proposal   | ❌ No            | ❌ No           | None             |
+| Draft      | ❌ No            | ❌ No           | Best effort      |
+| Beta       | ⚠️ Caution       | ⚠️ Mostly       | Standard         |
+| Stable     | ✅ Yes           | ✅ Yes          | Full             |
+| Deprecated | ⚠️ Migrate       | ✅ Yes (frozen) | Maintenance only |
+| Removed    | ❌ N/A           | ❌ N/A          | None             |
 
 ---
 
 ## Responsibilities by Role
 
-| Role | Proposal | Draft | Beta | Stable | Deprecated |
-|------|----------|-------|------|--------|------------|
-| **Proposer** | Write RFC | - | - | - | - |
-| **Design Lead** | Review RFC | Design component | Review cross-platform | Approve changes | Approve deprecation |
-| **Feature Owner** | - | Implement React | Coordinate platforms | - | - |
-| **Platform Leads** | - | Review API | Implement platform | Fix bugs | Provide migration support |
-| **Core Team** | Approve RFC | Review API | Approve for stable | On-call, releases | Manage sunset |
-| **Consumers** | Request via RFC | - | Test & feedback | Use in production | Migrate |
+| Role               | Proposal        | Draft            | Beta                  | Stable            | Deprecated                |
+| ------------------ | --------------- | ---------------- | --------------------- | ----------------- | ------------------------- |
+| **Proposer**       | Write RFC       | -                | -                     | -                 | -                         |
+| **Design Lead**    | Review RFC      | Design component | Review cross-platform | Approve changes   | Approve deprecation       |
+| **Feature Owner**  | -               | Implement React  | Coordinate platforms  | -                 | -                         |
+| **Platform Leads** | -               | Review API       | Implement platform    | Fix bugs          | Provide migration support |
+| **Core Team**      | Approve RFC     | Review API       | Approve for stable    | On-call, releases | Manage sunset             |
+| **Consumers**      | Request via RFC | -                | Test & feedback       | Use in production | Migrate                   |
 
 ---
 
-*Last updated: 2025-02-07*
-*Maintainer: Kozmos Design System Team*
+_Last updated: 2025-02-07_
+_Maintainer: Kozmos Design System Team_

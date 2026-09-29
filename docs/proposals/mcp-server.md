@@ -1,34 +1,41 @@
-<!-- kozmos-skills: specification -->
+# Proposal: not built — a Kozmos MCP server
 
-# Kozmos MCP Server Specification
+> **Proposal: not built.** Nothing this document describes exists: there is no MCP server, no
+> `@kozmos-ds/mcp-server` package and no `kozmos-mcp` command, in this repository or on npm. An
+> install or `npx` of that name would run whatever someone else had published under it. The
+> document is kept as planning history; until 2026-09-29 it was
+> `.ai-skills/mcp-server-specification.md`.
+>
+> Its examples were written before the code and do not describe it: Button has no `solid` variant
+> and no `loading` prop, there is no `Modal`, and there is no React Native or Vue package to
+> generate code for. What Kozmos publishes is in the generated
+> [component inventory](../../.ai-skills/component-inventory.md) and the
+> [API cards](../claude-design/README.md), both read from the built types.
 
-> **Not built.** This specifies a server that does not exist yet, so the
-> package name and install commands below are proposals rather than something
-> you can run today. `pnpm skills:check` allows them because of the marker on
-> the first line of this file.
+> **Purpose (as proposed):** a Model Context Protocol (MCP) server for the Kozmos Design System,
+> letting AI agents (Claude, Cursor, Anti Gravity, Copilot and others) look up components, tokens
+> and patterns programmatically.
 
-> **Purpose:** This document specifies the Model Context Protocol (MCP) server for Kozmos Design System, enabling AI agents (Claude, Cursor, Anti Gravity, Copilot, and others) to interact with components, tokens, and patterns programmatically.
+## Proposal: Table of Contents
+
+1. [1. Overview](#proposal-1-overview)
+2. [2. Architecture](#proposal-2-architecture)
+3. [3. Installation & Configuration](#proposal-3-installation--configuration)
+4. [4. MCP Tools](#proposal-4-mcp-tools)
+5. [5. MCP Resources](#proposal-5-mcp-resources)
+6. [6. MCP Prompts](#proposal-6-mcp-prompts)
+7. [7. Implementation](#proposal-7-implementation)
+8. [8. Client Configuration](#proposal-8-client-configuration)
+9. [9. Security Considerations](#proposal-9-security-considerations)
+10. [10. Extending the Server](#proposal-10-extending-the-server)
+11. [Package.json](#proposal-packagejson)
+12. [Version History](#proposal-version-history)
 
 ---
 
-## Table of Contents
+## Proposal: 1. Overview
 
-1. [Overview](#1-overview)
-2. [Architecture](#2-architecture)
-3. [Installation & Configuration](#3-installation--configuration)
-4. [MCP Tools](#4-mcp-tools)
-5. [MCP Resources](#5-mcp-resources)
-6. [MCP Prompts](#6-mcp-prompts)
-7. [Implementation](#7-implementation)
-8. [Client Configuration](#8-client-configuration)
-9. [Security Considerations](#9-security-considerations)
-10. [Extending the Server](#10-extending-the-server)
-
----
-
-## 1. Overview
-
-### What is the Kozmos MCP Server?
+### Proposal: What is the Kozmos MCP Server?
 
 The Kozmos MCP Server exposes the design system to AI agents via the Model Context Protocol, enabling:
 
@@ -38,20 +45,20 @@ The Kozmos MCP Server exposes the design system to AI agents via the Model Conte
 - **Validation** — Check code for design system compliance
 - **Documentation** — Access patterns, guidelines, and examples
 
-### Supported AI Agents
+### Proposal: Supported AI Agents
 
-| Agent                  | Integration Method        | Status          |
-| ---------------------- | ------------------------- | --------------- |
-| **Claude** (Anthropic) | MCP Native                | ✅ Full Support |
-| **Claude Code**        | MCP Native                | ✅ Full Support |
-| **Cursor**             | MCP via config            | ✅ Full Support |
-| **Anti Gravity**       | MCP Native                | ✅ Full Support |
-| **GitHub Copilot**     | Context files + Extension | 🟡 Partial      |
-| **Codeium**            | Context files             | 🟡 Partial      |
-| **Amazon Q**           | Context files             | 🟡 Partial      |
-| **JetBrains AI**       | Context files             | 🟡 Partial      |
+| Agent                  | Integration Method        | Proposed support |
+| ---------------------- | ------------------------- | ---------------- |
+| **Claude** (Anthropic) | MCP Native                | ✅ Full Support  |
+| **Claude Code**        | MCP Native                | ✅ Full Support  |
+| **Cursor**             | MCP via config            | ✅ Full Support  |
+| **Anti Gravity**       | MCP Native                | ✅ Full Support  |
+| **GitHub Copilot**     | Context files + Extension | 🟡 Partial       |
+| **Codeium**            | Context files             | 🟡 Partial       |
+| **Amazon Q**           | Context files             | 🟡 Partial       |
+| **JetBrains AI**       | Context files             | 🟡 Partial       |
 
-### Key Benefits
+### Proposal: Key Benefits
 
 1. **Consistent Code Generation** — AI always uses correct patterns
 2. **Real-time Token Access** — Current values, not stale documentation
@@ -61,9 +68,9 @@ The Kozmos MCP Server exposes the design system to AI agents via the Model Conte
 
 ---
 
-## 2. Architecture
+## Proposal: 2. Architecture
 
-### System Architecture
+### Proposal: System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -98,7 +105,7 @@ The Kozmos MCP Server exposes the design system to AI agents via the Model Conte
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Package Structure
+### Proposal: Package Structure
 
 ```
 packages/mcp-server/
@@ -136,11 +143,12 @@ packages/mcp-server/
 
 ---
 
-## 3. Installation & Configuration
+## Proposal: 3. Installation & Configuration
 
-### Installing the MCP Server
+### Proposal: Installing the MCP Server
 
 ```bash
+# Proposal: not built. This does not exist; do not run it.
 # Global installation (recommended for system-wide use)
 npm install -g @kozmos-ds/mcp-server
 
@@ -148,9 +156,10 @@ npm install -g @kozmos-ds/mcp-server
 pnpm add -D @kozmos-ds/mcp-server
 ```
 
-### Configuration for Claude Desktop
+### Proposal: Configuration for Claude Desktop
 
 ```json
+// Proposal: not built. This does not exist.
 // ~/Library/Application Support/Claude/claude_desktop_config.json (macOS)
 // %APPDATA%\Claude\claude_desktop_config.json (Windows)
 {
@@ -166,9 +175,10 @@ pnpm add -D @kozmos-ds/mcp-server
 }
 ```
 
-### Configuration for Claude Code
+### Proposal: Configuration for Claude Code
 
 ```json
+// Proposal: not built. This does not exist.
 // .claude/settings.json in project root
 {
   "mcpServers": {
@@ -181,9 +191,10 @@ pnpm add -D @kozmos-ds/mcp-server
 }
 ```
 
-### Configuration for Cursor
+### Proposal: Configuration for Cursor
 
 ```json
+// Proposal: not built. This does not exist.
 // .cursor/mcp.json in project root
 {
   "servers": {
@@ -196,9 +207,10 @@ pnpm add -D @kozmos-ds/mcp-server
 }
 ```
 
-### Configuration for Anti Gravity
+### Proposal: Configuration for Anti Gravity
 
 ```json
+// Proposal: not built. This does not exist.
 // Anti Gravity MCP configuration
 {
   "mcp": {
@@ -215,9 +227,9 @@ pnpm add -D @kozmos-ds/mcp-server
 
 ---
 
-## 4. MCP Tools
+## Proposal: 4. MCP Tools
 
-### Tool: `kozmos_get_component`
+### Proposal: Tool: `kozmos_get_component`
 
 Retrieves detailed information about a component.
 
@@ -277,7 +289,7 @@ Response:
 
 ---
 
-### Tool: `kozmos_get_token`
+### Proposal: Tool: `kozmos_get_token`
 
 Retrieves token values across platforms.
 
@@ -332,7 +344,7 @@ Response:
 
 ---
 
-### Tool: `kozmos_search_tokens`
+### Proposal: Tool: `kozmos_search_tokens`
 
 Searches for tokens by name or value.
 
@@ -357,7 +369,7 @@ Searches for tokens by name or value.
 
 ---
 
-### Tool: `kozmos_scaffold_component`
+### Proposal: Tool: `kozmos_scaffold_component`
 
 Generates component code following Kozmos patterns.
 
@@ -416,7 +428,7 @@ Response:
 
 ---
 
-### Tool: `kozmos_validate_code`
+### Proposal: Tool: `kozmos_validate_code`
 
 Validates code against Kozmos patterns and guidelines.
 
@@ -474,7 +486,7 @@ Response:
 
 ---
 
-### Tool: `kozmos_list_components`
+### Proposal: Tool: `kozmos_list_components`
 
 Lists all available components with filtering.
 
@@ -499,7 +511,7 @@ Lists all available components with filtering.
 
 ---
 
-### Tool: `kozmos_get_pattern`
+### Proposal: Tool: `kozmos_get_pattern`
 
 Retrieves a code pattern or best practice.
 
@@ -526,7 +538,7 @@ Retrieves a code pattern or best practice.
 
 ---
 
-### Tool: `kozmos_check_accessibility`
+### Proposal: Tool: `kozmos_check_accessibility`
 
 Performs accessibility audit on component code.
 
@@ -551,11 +563,11 @@ Performs accessibility audit on component code.
 
 ---
 
-## 5. MCP Resources
+## Proposal: 5. MCP Resources
 
 Resources provide read-only access to Kozmos data.
 
-### Resource: `kozmos://components`
+### Proposal: Resource: `kozmos://components`
 
 Lists all component documentation.
 
@@ -565,7 +577,7 @@ URI: kozmos://components/Button
 URI: kozmos://components/Button/react
 ```
 
-### Resource: `kozmos://tokens`
+### Proposal: Resource: `kozmos://tokens`
 
 Access token definitions.
 
@@ -575,7 +587,7 @@ URI: kozmos://tokens/color
 URI: kozmos://tokens/color/text/primary
 ```
 
-### Resource: `kozmos://patterns`
+### Proposal: Resource: `kozmos://patterns`
 
 Access code patterns and best practices.
 
@@ -585,7 +597,7 @@ URI: kozmos://patterns/compound-component
 URI: kozmos://patterns/form-validation
 ```
 
-### Resource: `kozmos://changelog`
+### Proposal: Resource: `kozmos://changelog`
 
 Access API changelog and breaking changes.
 
@@ -594,7 +606,7 @@ URI: kozmos://changelog
 URI: kozmos://changelog/3.0.0
 ```
 
-### Resource: `kozmos://migration`
+### Proposal: Resource: `kozmos://migration`
 
 Access migration guides.
 
@@ -604,11 +616,11 @@ URI: kozmos://migration/2-to-3
 
 ---
 
-## 6. MCP Prompts
+## Proposal: 6. MCP Prompts
 
 Prompts are pre-built prompt templates for common tasks.
 
-### Prompt: `scaffold_component`
+### Proposal: Prompt: `scaffold_component`
 
 Interactive component scaffolding.
 
@@ -623,7 +635,7 @@ Interactive component scaffolding.
 }
 ```
 
-### Prompt: `review_component`
+### Proposal: Prompt: `review_component`
 
 Code review against Kozmos standards.
 
@@ -637,7 +649,7 @@ Code review against Kozmos standards.
 }
 ```
 
-### Prompt: `migrate_version`
+### Proposal: Prompt: `migrate_version`
 
 Guide migration between versions.
 
@@ -652,7 +664,7 @@ Guide migration between versions.
 }
 ```
 
-### Prompt: `explain_token`
+### Proposal: Prompt: `explain_token`
 
 Explain a token's purpose and usage.
 
@@ -668,9 +680,9 @@ Explain a token's purpose and usage.
 
 ---
 
-## 7. Implementation
+## Proposal: 7. Implementation
 
-### Server Entry Point
+### Proposal: Server Entry Point
 
 ```typescript
 // packages/mcp-server/src/index.ts
@@ -716,7 +728,7 @@ async function main() {
 main().catch(console.error);
 ```
 
-### Tool Implementation Example
+### Proposal: Tool Implementation Example
 
 ```typescript
 // packages/mcp-server/src/tools/component.ts
@@ -783,7 +795,7 @@ export function registerComponentTools(server: Server, data: KozmosData) {
 }
 ```
 
-### Resource Implementation Example
+### Proposal: Resource Implementation Example
 
 ```typescript
 // packages/mcp-server/src/resources/tokens.ts
@@ -839,7 +851,7 @@ export function registerTokenResources(server: Server, data: KozmosData) {
 }
 ```
 
-### Data Loading
+### Proposal: Data Loading
 
 ```typescript
 // packages/mcp-server/src/data/index.ts
@@ -904,11 +916,12 @@ function resolvePackage(packagePath: string, root: string): string | null {
 
 ---
 
-## 8. Client Configuration
+## Proposal: 8. Client Configuration
 
-### Claude Desktop / Claude Code
+### Proposal: Claude Desktop / Claude Code
 
 ```json
+// Proposal: not built. This does not exist.
 {
   "mcpServers": {
     "kozmos": {
@@ -922,9 +935,10 @@ function resolvePackage(packagePath: string, root: string): string | null {
 }
 ```
 
-### Cursor
+### Proposal: Cursor
 
 ```json
+// Proposal: not built. This does not exist.
 // .cursor/mcp.json
 {
   "servers": {
@@ -937,9 +951,10 @@ function resolvePackage(packagePath: string, root: string): string | null {
 }
 ```
 
-### Anti Gravity
+### Proposal: Anti Gravity
 
 ```yaml
+# Proposal: not built. This does not exist; do not run it.
 # antigravity.config.yaml
 mcp:
   servers:
@@ -950,7 +965,7 @@ mcp:
         KOZMOS_PROJECT_ROOT: .
 ```
 
-### Generic MCP Client
+### Proposal: Generic MCP Client
 
 ```typescript
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -978,9 +993,9 @@ const result = await client.callTool("kozmos_get_component", {
 
 ---
 
-## 9. Security Considerations
+## Proposal: 9. Security Considerations
 
-### Data Access
+### Proposal: Data Access
 
 The MCP server only provides read access to:
 
@@ -995,7 +1010,7 @@ It does **not**:
 - Read sensitive data (env vars, credentials)
 - Execute arbitrary code
 
-### Sandboxing
+### Proposal: Sandboxing
 
 ```typescript
 // The server runs with restricted permissions
@@ -1012,15 +1027,15 @@ const server = new Server(
 );
 ```
 
-### Validation
+### Proposal: Validation
 
 All inputs are validated using Zod schemas before processing.
 
 ---
 
-## 10. Extending the Server
+## Proposal: 10. Extending the Server
 
-### Adding Custom Tools
+### Proposal: Adding Custom Tools
 
 ```typescript
 // custom-tools.ts
@@ -1043,7 +1058,7 @@ export function registerCustomTools(server: Server, data: KozmosData) {
 }
 ```
 
-### Adding Company-Specific Patterns
+### Proposal: Adding Company-Specific Patterns
 
 ```typescript
 // Load additional patterns from company config
@@ -1051,7 +1066,7 @@ const companyPatterns = loadCompanyPatterns();
 data.patterns = new Map([...data.patterns, ...companyPatterns]);
 ```
 
-### Plugin System (Future)
+### Proposal: Plugin System (Future)
 
 ```typescript
 // kozmos.mcp.config.js
@@ -1065,9 +1080,10 @@ export default {
 
 ---
 
-## Package.json
+## Proposal: Package.json
 
 ```json
+// Proposal: not built. This does not exist.
 {
   "name": "@kozmos-ds/mcp-server",
   "version": "1.0.0",
@@ -1102,7 +1118,7 @@ export default {
 
 ---
 
-## Version History
+## Proposal: Version History
 
 | Version | Date       | Changes                          |
 | ------- | ---------- | -------------------------------- |

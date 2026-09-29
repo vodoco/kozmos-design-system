@@ -130,68 +130,66 @@ global.ResizeObserver = class ResizeObserver {
 
 ### Test Utilities
 
-```typescript
+```tsx
 // packages/react/src/test/utils.tsx
-import * as React from 'react';
-import { render, RenderOptions } from '@testing-library/react';
-import { ThemeProvider } from '../theme/ThemeProvider';
+import * as React from "react";
+import { render, RenderOptions } from "@testing-library/react";
+import { ThemeProvider } from "../theme/ThemeProvider";
 
 interface WrapperProps {
   children: React.ReactNode;
 }
 
 function AllTheProviders({ children }: WrapperProps) {
-  return (
-    <ThemeProvider defaultTheme="light">
-      {children}
-    </ThemeProvider>
-  );
+  return <ThemeProvider defaultTheme="light">{children}</ThemeProvider>;
 }
 
 const customRender = (
   ui: React.ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
+  options?: Omit<RenderOptions, "wrapper">,
 ) => render(ui, { wrapper: AllTheProviders, ...options });
 
-export * from '@testing-library/react';
+export * from "@testing-library/react";
 export { customRender as render };
 ```
 
 ### Button Component Tests
 
-```typescript
+```tsx
 // packages/react/src/components/Button/Button.test.tsx
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '../../test/utils';
-import userEvent from '@testing-library/user-event';
-import { axe } from 'jest-axe';
-import { Button } from './Button';
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "../../test/utils";
+import userEvent from "@testing-library/user-event";
+import { axe } from "jest-axe";
+import { Button } from "./Button";
 
-describe('Button', () => {
+describe("Button", () => {
   // =========================================================================
   // Rendering
   // =========================================================================
 
-  describe('Rendering', () => {
-    it('renders children correctly', () => {
+  describe("Rendering", () => {
+    it("renders children correctly", () => {
       render(<Button>Click me</Button>);
-      expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Click me" }),
+      ).toBeInTheDocument();
     });
 
-    it('renders as a button element by default', () => {
+    it("renders as a button element by default", () => {
       render(<Button>Click</Button>);
-      expect(screen.getByRole('button')).toBeInTheDocument();
+      expect(screen.getByRole("button")).toBeInTheDocument();
     });
 
-    it('forwards ref to button element', () => {
+    it("forwards ref to button element", () => {
       const ref = React.createRef<HTMLButtonElement>();
       render(<Button ref={ref}>Click</Button>);
       expect(ref.current).toBeInstanceOf(HTMLButtonElement);
     });
 
-    it('spreads additional props to button', () => {
+    it("spreads additional props to button", () => {
       render(<Button data-testid="custom-button">Click</Button>);
-      expect(screen.getByTestId('custom-button')).toBeInTheDocument();
+      expect(screen.getByTestId("custom-button")).toBeInTheDocument();
     });
   });
 
@@ -199,28 +197,27 @@ describe('Button', () => {
   // Variants
   // =========================================================================
 
-  describe('Variants', () => {
-    it.each(['solid', 'outline', 'ghost', 'link'] as const)(
-      'renders %s variant',
+  describe("Variants", () => {
+    it.each(["solid", "outline", "ghost", "link"] as const)(
+      "renders %s variant",
       (variant) => {
         render(<Button variant={variant}>Click</Button>);
-        expect(screen.getByRole('button')).toHaveClass(`kozmos-button--${variant}`);
-      }
+        expect(screen.getByRole("button")).toHaveClass(
+          `kozmos-button--${variant}`,
+        );
+      },
     );
 
-    it.each(['sm', 'md', 'lg'] as const)(
-      'renders %s size',
-      (size) => {
-        render(<Button size={size}>Click</Button>);
-        expect(screen.getByRole('button')).toHaveClass(`kozmos-button--${size}`);
-      }
-    );
+    it.each(["sm", "md", "lg"] as const)("renders %s size", (size) => {
+      render(<Button size={size}>Click</Button>);
+      expect(screen.getByRole("button")).toHaveClass(`kozmos-button--${size}`);
+    });
 
-    it('applies default variant and size', () => {
+    it("applies default variant and size", () => {
       render(<Button>Click</Button>);
-      const button = screen.getByRole('button');
-      expect(button).toHaveClass('kozmos-button--solid');
-      expect(button).toHaveClass('kozmos-button--md');
+      const button = screen.getByRole("button");
+      expect(button).toHaveClass("kozmos-button--solid");
+      expect(button).toHaveClass("kozmos-button--md");
     });
   });
 
@@ -228,51 +225,59 @@ describe('Button', () => {
   // Interactions
   // =========================================================================
 
-  describe('Interactions', () => {
-    it('calls onClick when clicked', async () => {
+  describe("Interactions", () => {
+    it("calls onClick when clicked", async () => {
       const handleClick = vi.fn();
       const user = userEvent.setup();
 
       render(<Button onClick={handleClick}>Click</Button>);
-      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByRole("button"));
 
       expect(handleClick).toHaveBeenCalledTimes(1);
     });
 
-    it('does not call onClick when disabled', async () => {
+    it("does not call onClick when disabled", async () => {
       const handleClick = vi.fn();
       const user = userEvent.setup();
 
-      render(<Button onClick={handleClick} disabled>Click</Button>);
-      await user.click(screen.getByRole('button'));
+      render(
+        <Button onClick={handleClick} disabled>
+          Click
+        </Button>,
+      );
+      await user.click(screen.getByRole("button"));
 
       expect(handleClick).not.toHaveBeenCalled();
     });
 
-    it('does not call onClick when loading', async () => {
+    it("does not call onClick when loading", async () => {
       const handleClick = vi.fn();
       const user = userEvent.setup();
 
-      render(<Button onClick={handleClick} loading>Click</Button>);
-      await user.click(screen.getByRole('button'));
+      render(
+        <Button onClick={handleClick} loading>
+          Click
+        </Button>,
+      );
+      await user.click(screen.getByRole("button"));
 
       expect(handleClick).not.toHaveBeenCalled();
     });
 
-    it('supports keyboard navigation', async () => {
+    it("supports keyboard navigation", async () => {
       const handleClick = vi.fn();
       const user = userEvent.setup();
 
       render(<Button onClick={handleClick}>Click</Button>);
-      const button = screen.getByRole('button');
+      const button = screen.getByRole("button");
 
       await user.tab();
       expect(button).toHaveFocus();
 
-      await user.keyboard('{Enter}');
+      await user.keyboard("{Enter}");
       expect(handleClick).toHaveBeenCalledTimes(1);
 
-      await user.keyboard(' ');
+      await user.keyboard(" ");
       expect(handleClick).toHaveBeenCalledTimes(2);
     });
   });
@@ -281,28 +286,30 @@ describe('Button', () => {
   // States
   // =========================================================================
 
-  describe('States', () => {
-    it('shows disabled state', () => {
+  describe("States", () => {
+    it("shows disabled state", () => {
       render(<Button disabled>Click</Button>);
-      expect(screen.getByRole('button')).toBeDisabled();
+      expect(screen.getByRole("button")).toBeDisabled();
     });
 
-    it('shows loading state with spinner', () => {
+    it("shows loading state with spinner", () => {
       render(<Button loading>Click</Button>);
-      const button = screen.getByRole('button');
+      const button = screen.getByRole("button");
 
-      expect(button).toHaveAttribute('aria-busy', 'true');
-      expect(screen.getByRole('status')).toBeInTheDocument();
+      expect(button).toHaveAttribute("aria-busy", "true");
+      expect(screen.getByRole("status")).toBeInTheDocument();
     });
 
-    it('hides text when loading', () => {
+    it("hides text when loading", () => {
       render(<Button loading>Click</Button>);
-      expect(screen.getByText('Click')).toHaveClass('kozmos-button__text--hidden');
+      expect(screen.getByText("Click")).toHaveClass(
+        "kozmos-button__text--hidden",
+      );
     });
 
-    it('is disabled when loading', () => {
+    it("is disabled when loading", () => {
       render(<Button loading>Click</Button>);
-      expect(screen.getByRole('button')).toBeDisabled();
+      expect(screen.getByRole("button")).toBeDisabled();
     });
   });
 
@@ -310,38 +317,43 @@ describe('Button', () => {
   // Accessibility
   // =========================================================================
 
-  describe('Accessibility', () => {
-    it('has no accessibility violations', async () => {
+  describe("Accessibility", () => {
+    it("has no accessibility violations", async () => {
       const { container } = render(<Button>Click</Button>);
       const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
 
-    it('has no violations when disabled', async () => {
+    it("has no violations when disabled", async () => {
       const { container } = render(<Button disabled>Click</Button>);
       const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
 
-    it('has no violations when loading', async () => {
+    it("has no violations when loading", async () => {
       const { container } = render(<Button loading>Click</Button>);
       const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
 
-    it('supports aria-label', () => {
+    it("supports aria-label", () => {
       render(<Button aria-label="Submit form">→</Button>);
-      expect(screen.getByRole('button', { name: 'Submit form' })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Submit form" }),
+      ).toBeInTheDocument();
     });
 
-    it('supports aria-describedby', () => {
+    it("supports aria-describedby", () => {
       render(
         <>
           <Button aria-describedby="help">Click</Button>
           <span id="help">This button submits the form</span>
-        </>
+        </>,
       );
-      expect(screen.getByRole('button')).toHaveAttribute('aria-describedby', 'help');
+      expect(screen.getByRole("button")).toHaveAttribute(
+        "aria-describedby",
+        "help",
+      );
     });
   });
 
@@ -349,20 +361,20 @@ describe('Button', () => {
   // Type Attribute
   // =========================================================================
 
-  describe('Type Attribute', () => {
+  describe("Type Attribute", () => {
     it('defaults to type="button"', () => {
       render(<Button>Click</Button>);
-      expect(screen.getByRole('button')).toHaveAttribute('type', 'button');
+      expect(screen.getByRole("button")).toHaveAttribute("type", "button");
     });
 
     it('supports type="submit"', () => {
       render(<Button type="submit">Submit</Button>);
-      expect(screen.getByRole('button')).toHaveAttribute('type', 'submit');
+      expect(screen.getByRole("button")).toHaveAttribute("type", "submit");
     });
 
     it('supports type="reset"', () => {
       render(<Button type="reset">Reset</Button>);
-      expect(screen.getByRole('button')).toHaveAttribute('type', 'reset');
+      expect(screen.getByRole("button")).toHaveAttribute("type", "reset");
     });
   });
 
@@ -370,17 +382,17 @@ describe('Button', () => {
   // Polymorphism (if supported)
   // =========================================================================
 
-  describe('Polymorphism', () => {
-    it('renders as anchor when asChild with Link', () => {
+  describe("Polymorphism", () => {
+    it("renders as anchor when asChild with Link", () => {
       render(
         <Button asChild>
           <a href="/test">Link Button</a>
-        </Button>
+        </Button>,
       );
 
-      const link = screen.getByRole('link', { name: 'Link Button' });
-      expect(link).toHaveAttribute('href', '/test');
-      expect(link).toHaveClass('kozmos-button');
+      const link = screen.getByRole("link", { name: "Link Button" });
+      expect(link).toHaveAttribute("href", "/test");
+      expect(link).toHaveClass("kozmos-button");
     });
   });
 });
@@ -388,87 +400,90 @@ describe('Button', () => {
 
 ### Input Component Tests
 
-```typescript
+```tsx
 // packages/react/src/components/Input/Input.test.tsx
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '../../test/utils';
-import userEvent from '@testing-library/user-event';
-import { axe } from 'jest-axe';
-import { Input } from './Input';
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "../../test/utils";
+import userEvent from "@testing-library/user-event";
+import { axe } from "jest-axe";
+import { Input } from "./Input";
 
-describe('Input', () => {
-  describe('Controlled Input', () => {
-    it('renders with controlled value', () => {
+describe("Input", () => {
+  describe("Controlled Input", () => {
+    it("renders with controlled value", () => {
       render(<Input value="test" onChange={() => {}} />);
-      expect(screen.getByRole('textbox')).toHaveValue('test');
+      expect(screen.getByRole("textbox")).toHaveValue("test");
     });
 
-    it('calls onChange with new value', async () => {
+    it("calls onChange with new value", async () => {
       const handleChange = vi.fn();
       const user = userEvent.setup();
 
       render(<Input value="" onChange={handleChange} />);
-      await user.type(screen.getByRole('textbox'), 'hello');
+      await user.type(screen.getByRole("textbox"), "hello");
 
       expect(handleChange).toHaveBeenCalled();
-      expect(handleChange.mock.calls[0][0].target.value).toBe('h');
+      expect(handleChange.mock.calls[0][0].target.value).toBe("h");
     });
   });
 
-  describe('Uncontrolled Input', () => {
-    it('renders with defaultValue', () => {
+  describe("Uncontrolled Input", () => {
+    it("renders with defaultValue", () => {
       render(<Input defaultValue="default" />);
-      expect(screen.getByRole('textbox')).toHaveValue('default');
+      expect(screen.getByRole("textbox")).toHaveValue("default");
     });
 
-    it('updates value on user input', async () => {
+    it("updates value on user input", async () => {
       const user = userEvent.setup();
 
       render(<Input defaultValue="" />);
-      await user.type(screen.getByRole('textbox'), 'typed');
+      await user.type(screen.getByRole("textbox"), "typed");
 
-      expect(screen.getByRole('textbox')).toHaveValue('typed');
+      expect(screen.getByRole("textbox")).toHaveValue("typed");
     });
   });
 
-  describe('Validation', () => {
-    it('shows error state', () => {
+  describe("Validation", () => {
+    it("shows error state", () => {
       render(<Input invalid errorMessage="This field is required" />);
 
-      expect(screen.getByRole('textbox')).toHaveAttribute('aria-invalid', 'true');
-      expect(screen.getByText('This field is required')).toBeInTheDocument();
+      expect(screen.getByRole("textbox")).toHaveAttribute(
+        "aria-invalid",
+        "true",
+      );
+      expect(screen.getByText("This field is required")).toBeInTheDocument();
     });
 
-    it('associates error message with input', () => {
+    it("associates error message with input", () => {
       render(<Input invalid errorMessage="Error" id="test-input" />);
 
-      const input = screen.getByRole('textbox');
-      const errorId = input.getAttribute('aria-describedby');
-      expect(screen.getByText('Error')).toHaveAttribute('id', errorId);
+      const input = screen.getByRole("textbox");
+      const errorId = input.getAttribute("aria-describedby");
+      expect(screen.getByText("Error")).toHaveAttribute("id", errorId);
     });
   });
 
-  describe('Accessibility', () => {
-    it('has no violations', async () => {
+  describe("Accessibility", () => {
+    it("has no violations", async () => {
       const { container } = render(<Input aria-label="Test input" />);
       const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
 
-    it('has no violations with label', async () => {
+    it("has no violations with label", async () => {
       const { container } = render(
         <>
           <label htmlFor="input">Name</label>
           <Input id="input" />
-        </>
+        </>,
       );
       const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
 
-    it('has no violations in error state', async () => {
+    it("has no violations in error state", async () => {
       const { container } = render(
-        <Input aria-label="Test" invalid errorMessage="Error" />
+        <Input aria-label="Test" invalid errorMessage="Error" />,
       );
       const results = await axe(container);
       expect(results).toHaveNoViolations();
@@ -479,42 +494,42 @@ describe('Input', () => {
 
 ### Modal Component Tests
 
-```typescript
+```tsx
 // packages/react/src/components/Modal/Modal.test.tsx
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '../../test/utils';
-import userEvent from '@testing-library/user-event';
-import { axe } from 'jest-axe';
-import { Modal } from './Modal';
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, waitFor } from "../../test/utils";
+import userEvent from "@testing-library/user-event";
+import { axe } from "jest-axe";
+import { Modal } from "./Modal";
 
-describe('Modal', () => {
-  describe('Opening and Closing', () => {
-    it('renders when open', () => {
+describe("Modal", () => {
+  describe("Opening and Closing", () => {
+    it("renders when open", () => {
       render(
         <Modal open onOpenChange={() => {}}>
           <Modal.Content>
             <Modal.Title>Test Modal</Modal.Title>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
-      expect(screen.getByText('Test Modal')).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByText("Test Modal")).toBeInTheDocument();
     });
 
-    it('does not render when closed', () => {
+    it("does not render when closed", () => {
       render(
         <Modal open={false} onOpenChange={() => {}}>
           <Modal.Content>
             <Modal.Title>Test Modal</Modal.Title>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
-      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    it('calls onOpenChange when close button clicked', async () => {
+    it("calls onOpenChange when close button clicked", async () => {
       const handleOpenChange = vi.fn();
       const user = userEvent.setup();
 
@@ -524,14 +539,14 @@ describe('Modal', () => {
             <Modal.Title>Test</Modal.Title>
             <Modal.Close>Close</Modal.Close>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
-      await user.click(screen.getByRole('button', { name: 'Close' }));
+      await user.click(screen.getByRole("button", { name: "Close" }));
       expect(handleOpenChange).toHaveBeenCalledWith(false);
     });
 
-    it('closes on Escape key', async () => {
+    it("closes on Escape key", async () => {
       const handleOpenChange = vi.fn();
       const user = userEvent.setup();
 
@@ -540,14 +555,14 @@ describe('Modal', () => {
           <Modal.Content>
             <Modal.Title>Test</Modal.Title>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
-      await user.keyboard('{Escape}');
+      await user.keyboard("{Escape}");
       expect(handleOpenChange).toHaveBeenCalledWith(false);
     });
 
-    it('closes on overlay click', async () => {
+    it("closes on overlay click", async () => {
       const handleOpenChange = vi.fn();
       const user = userEvent.setup();
 
@@ -556,19 +571,19 @@ describe('Modal', () => {
           <Modal.Content>
             <Modal.Title>Test</Modal.Title>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
       // Click the overlay (outside the content)
-      const overlay = document.querySelector('.kozmos-modal__overlay');
+      const overlay = document.querySelector(".kozmos-modal__overlay");
       if (overlay) await user.click(overlay);
 
       expect(handleOpenChange).toHaveBeenCalledWith(false);
     });
   });
 
-  describe('Focus Management', () => {
-    it('focuses first focusable element when opened', async () => {
+  describe("Focus Management", () => {
+    it("focuses first focusable element when opened", async () => {
       render(
         <Modal open onOpenChange={() => {}}>
           <Modal.Content>
@@ -576,15 +591,15 @@ describe('Modal', () => {
             <button>First</button>
             <button>Second</button>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'First' })).toHaveFocus();
+        expect(screen.getByRole("button", { name: "First" })).toHaveFocus();
       });
     });
 
-    it('traps focus within modal', async () => {
+    it("traps focus within modal", async () => {
       const user = userEvent.setup();
 
       render(
@@ -594,25 +609,25 @@ describe('Modal', () => {
             <button>First</button>
             <button>Last</button>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'First' })).toHaveFocus();
+        expect(screen.getByRole("button", { name: "First" })).toHaveFocus();
       });
 
       // Tab to last button
       await user.tab();
-      expect(screen.getByRole('button', { name: 'Last' })).toHaveFocus();
+      expect(screen.getByRole("button", { name: "Last" })).toHaveFocus();
 
       // Tab should wrap to first
       await user.tab();
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'First' })).toHaveFocus();
+        expect(screen.getByRole("button", { name: "First" })).toHaveFocus();
       });
     });
 
-    it('returns focus to trigger after close', async () => {
+    it("returns focus to trigger after close", async () => {
       const user = userEvent.setup();
 
       function TestComponent() {
@@ -632,14 +647,14 @@ describe('Modal', () => {
 
       render(<TestComponent />);
 
-      const trigger = screen.getByRole('button', { name: 'Open' });
+      const trigger = screen.getByRole("button", { name: "Open" });
       await user.click(trigger);
 
       await waitFor(() => {
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: 'Close' }));
+      await user.click(screen.getByRole("button", { name: "Close" }));
 
       await waitFor(() => {
         expect(trigger).toHaveFocus();
@@ -647,35 +662,35 @@ describe('Modal', () => {
     });
   });
 
-  describe('Accessibility', () => {
-    it('has no violations', async () => {
+  describe("Accessibility", () => {
+    it("has no violations", async () => {
       const { container } = render(
         <Modal open onOpenChange={() => {}}>
           <Modal.Content>
             <Modal.Title>Accessible Modal</Modal.Title>
             <Modal.Description>This is the description</Modal.Description>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
       const results = await axe(container);
       expect(results).toHaveNoViolations();
     });
 
-    it('has correct ARIA attributes', () => {
+    it("has correct ARIA attributes", () => {
       render(
         <Modal open onOpenChange={() => {}}>
           <Modal.Content>
             <Modal.Title>Test</Modal.Title>
             <Modal.Description>Description</Modal.Description>
           </Modal.Content>
-        </Modal>
+        </Modal>,
       );
 
-      const dialog = screen.getByRole('dialog');
-      expect(dialog).toHaveAttribute('aria-modal', 'true');
-      expect(dialog).toHaveAttribute('aria-labelledby');
-      expect(dialog).toHaveAttribute('aria-describedby');
+      const dialog = screen.getByRole("dialog");
+      expect(dialog).toHaveAttribute("aria-modal", "true");
+      expect(dialog).toHaveAttribute("aria-labelledby");
+      expect(dialog).toHaveAttribute("aria-describedby");
     });
   });
 });
@@ -1056,191 +1071,13 @@ class KozmosButtonTest : ComposeTest() {
 
 ## 5. React Native Testing
 
-### Test Setup
-
-```typescript
-// packages/react-native/jest.config.js
-module.exports = {
-  preset: "react-native",
-  setupFilesAfterEnv: ["./src/test/setup.ts"],
-  transformIgnorePatterns: [
-    "node_modules/(?!(react-native|@react-native|react-native-reanimated)/)",
-  ],
-  testMatch: ["**/*.test.tsx"],
-};
-```
-
-### Setup File
-
-```typescript
-// packages/react-native/src/test/setup.ts
-import "@testing-library/jest-native/extend-expect";
-
-// Mock react-native-reanimated
-jest.mock("react-native-reanimated", () => {
-  const Reanimated = require("react-native-reanimated/mock");
-  Reanimated.default.call = () => {};
-  return Reanimated;
-});
-
-// Mock Platform
-jest.mock("react-native/Libraries/Utilities/Platform", () => ({
-  OS: "ios",
-  select: jest.fn((obj) => obj.ios),
-}));
-```
-
-### Button Tests (React Native)
-
-```typescript
-// packages/react-native/src/components/Button/Button.test.tsx
-import React from 'react';
-import { render, fireEvent, screen } from '@testing-library/react-native';
-import { Button } from './Button';
-
-describe('Button', () => {
-  describe('Rendering', () => {
-    it('renders children text', () => {
-      render(<Button>Press me</Button>);
-      expect(screen.getByText('Press me')).toBeTruthy();
-    });
-
-    it('renders with testID', () => {
-      render(<Button testID="test-button">Press</Button>);
-      expect(screen.getByTestId('test-button')).toBeTruthy();
-    });
-  });
-
-  describe('Interactions', () => {
-    it('calls onPress when pressed', () => {
-      const onPress = jest.fn();
-      render(<Button onPress={onPress}>Press</Button>);
-
-      fireEvent.press(screen.getByText('Press'));
-      expect(onPress).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not call onPress when disabled', () => {
-      const onPress = jest.fn();
-      render(<Button onPress={onPress} disabled>Press</Button>);
-
-      fireEvent.press(screen.getByText('Press'));
-      expect(onPress).not.toHaveBeenCalled();
-    });
-
-    it('does not call onPress when loading', () => {
-      const onPress = jest.fn();
-      render(<Button onPress={onPress} loading>Press</Button>);
-
-      // Loading indicator should be visible
-      expect(screen.getByTestId('loading-indicator')).toBeTruthy();
-    });
-  });
-
-  describe('Accessibility', () => {
-    it('has correct accessibility role', () => {
-      render(<Button>Press</Button>);
-      expect(screen.getByRole('button')).toBeTruthy();
-    });
-
-    it('is accessible when disabled', () => {
-      render(<Button disabled>Press</Button>);
-      expect(screen.getByRole('button')).toHaveAccessibilityState({ disabled: true });
-    });
-
-    it('announces loading state', () => {
-      render(<Button loading accessibilityLabel="Submit">Submit</Button>);
-      expect(screen.getByLabelText('Submit')).toHaveAccessibilityState({ busy: true });
-    });
-  });
-
-  describe('Haptic Feedback', () => {
-    it('triggers haptic feedback on press', () => {
-      const hapticMock = jest.fn();
-      jest.mock('react-native', () => ({
-        ...jest.requireActual('react-native'),
-        Vibration: { vibrate: hapticMock },
-      }));
-
-      render(<Button haptic>Press</Button>);
-      fireEvent.press(screen.getByText('Press'));
-
-      // Verify haptic was triggered
-    });
-  });
-});
-```
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
 ## 6. Vue Testing
 
-### Test Setup
-
-```typescript
-// packages/vue/vitest.config.ts
-import { defineConfig } from "vitest/config";
-import vue from "@vitejs/plugin-vue";
-
-export default defineConfig({
-  plugins: [vue()],
-  test: {
-    globals: true,
-    environment: "jsdom",
-    include: ["src/**/*.test.ts"],
-  },
-});
-```
-
-### Web Component Tests
-
-```typescript
-// packages/vue/src/components/kozmos-button.test.ts
-import { describe, it, expect, beforeEach } from "vitest";
-import { fixture, html, expect as wcExpect } from "@open-wc/testing";
-import "./kozmos-button";
-
-describe("kozmos-button", () => {
-  let element: HTMLElement;
-
-  beforeEach(async () => {
-    element = await fixture(html`<kozmos-button>Click</kozmos-button>`);
-  });
-
-  it("renders slot content", () => {
-    expect(element.textContent).toContain("Click");
-  });
-
-  it("reflects variant attribute", async () => {
-    element.setAttribute("variant", "outline");
-    await element.updateComplete;
-    expect(element.getAttribute("variant")).toBe("outline");
-  });
-
-  it("dispatches click event", async () => {
-    let clicked = false;
-    element.addEventListener("click", () => {
-      clicked = true;
-    });
-
-    element.click();
-    expect(clicked).toBe(true);
-  });
-
-  it("does not dispatch click when disabled", async () => {
-    element.setAttribute("disabled", "");
-    await element.updateComplete;
-
-    let clicked = false;
-    element.addEventListener("click", () => {
-      clicked = true;
-    });
-
-    element.click();
-    expect(clicked).toBe(false);
-  });
-});
-```
+Vue waits: `@kozmos-ds/vue` is a private harness that mounts the React components in Vue, not a package to install, and there are no Lit Web Components to test. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
@@ -1287,22 +1124,25 @@ export async function checkA11y(container: HTMLElement) {
 
 ### Automated A11y Tests for All Components
 
-```typescript
+```tsx
 // packages/react/src/test/a11y.test.tsx
-import { describe, it } from 'vitest';
-import { render } from '@testing-library/react';
-import { axe } from 'jest-axe';
-import * as Components from '../index';
+import { describe, it } from "vitest";
+import { render } from "@testing-library/react";
+import { axe } from "jest-axe";
+import * as Components from "../index";
 
 const componentTestCases = [
-  { name: 'Button', component: <Components.Button>Click</Components.Button> },
-  { name: 'Input', component: <Components.Input aria-label="Test input" /> },
-  { name: 'Checkbox', component: <Components.Checkbox label="Accept terms" /> },
-  { name: 'Select', component: <Components.Select aria-label="Choose" options={[]} /> },
+  { name: "Button", component: <Components.Button>Click</Components.Button> },
+  { name: "Input", component: <Components.Input aria-label="Test input" /> },
+  { name: "Checkbox", component: <Components.Checkbox label="Accept terms" /> },
+  {
+    name: "Select",
+    component: <Components.Select aria-label="Choose" options={[]} />,
+  },
   // Add all components...
 ];
 
-describe('Accessibility', () => {
+describe("Accessibility", () => {
   componentTestCases.forEach(({ name, component }) => {
     it(`${name} has no accessibility violations`, async () => {
       const { container } = render(component);
@@ -1325,8 +1165,8 @@ import { readFileSync } from "fs";
 import { gzipSync } from "zlib";
 
 const BUDGETS = {
-  "@kozmos/react": 80 * 1024, // 80KB
-  "@kozmos/tokens": 8 * 1024, // 8KB
+  "@kozmos-ds/react": 80 * 1024, // 80KB
+  "@kozmos-ds/tokens": 8 * 1024, // 8KB
 };
 
 function getGzipSize(filePath: string): number {
@@ -1350,20 +1190,20 @@ function testBundleSize(packageName: string, bundlePath: string) {
   );
 }
 
-testBundleSize("@kozmos/react", "packages/react/dist/index.js");
-testBundleSize("@kozmos/tokens", "packages/tokens/build/js/tokens.js");
+testBundleSize("@kozmos-ds/react", "packages/react/dist/index.js");
+testBundleSize("@kozmos-ds/tokens", "packages/tokens/build/js/tokens.js");
 ```
 
 ### Render Performance Tests
 
-```typescript
+```tsx
 // packages/react/src/test/performance.test.tsx
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
-import { Button } from '../components/Button';
+import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
+import { Button } from "../components/Button";
 
-describe('Performance', () => {
-  it('Button renders within 1ms', () => {
+describe("Performance", () => {
+  it("Button renders within 1ms", () => {
     const iterations = 100;
     const start = performance.now();
 
@@ -1379,7 +1219,7 @@ describe('Performance', () => {
     expect(perRender).toBeLessThan(1);
   });
 
-  it('Form with 20 inputs renders within 50ms', () => {
+  it("Form with 20 inputs renders within 50ms", () => {
     const start = performance.now();
 
     render(
@@ -1387,7 +1227,7 @@ describe('Performance', () => {
         {Array.from({ length: 20 }, (_, i) => (
           <Input key={i} label={`Field ${i}`} />
         ))}
-      </form>
+      </form>,
     );
 
     const duration = performance.now() - start;

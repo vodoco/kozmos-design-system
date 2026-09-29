@@ -61,15 +61,13 @@ No check enforces the tables below.
 
 ### Package-Level Budgets
 
-| Package                     | Budget (minified) | Budget (gzip) | Current | Status |
-| --------------------------- | ----------------- | ------------- | ------- | ------ |
-| `@kozmos/tokens`            | 8KB               | 2KB           | —       | 🟢     |
-| `@kozmos/react` (full)      | 80KB              | 25KB          | —       | 🟢     |
-| `@kozmos/react` (core only) | 20KB              | 6KB           | —       | 🟢     |
-| `@kozmos/icons` (full)      | 150KB             | 40KB          | —       | 🟢     |
-| `@kozmos/icons` (per icon)  | 1KB               | 0.3KB         | —       | 🟢     |
-| `@kozmos/vue`               | 60KB              | 18KB          | —       | 🟢     |
-| `@kozmos/react-native`      | 100KB             | 30KB          | —       | 🟢     |
+| Package                        | Budget (minified) | Budget (gzip) | Current | Status |
+| ------------------------------ | ----------------- | ------------- | ------- | ------ |
+| `@kozmos-ds/tokens`            | 8KB               | 2KB           | —       | 🟢     |
+| `@kozmos-ds/react` (full)      | 80KB              | 25KB          | —       | 🟢     |
+| `@kozmos-ds/react` (core only) | 20KB              | 6KB           | —       | 🟢     |
+| `@kozmos-ds/icons` (full)      | 150KB             | 40KB          | —       | 🟢     |
+| `@kozmos-ds/icons` (per icon)  | 1KB               | 0.3KB         | —       | 🟢     |
 
 ### Component-Level Budgets (React)
 
@@ -266,9 +264,9 @@ useEffect(() => {
 
 ```tsx
 // Automatic code splitting for heavy components
-const DatePicker = lazy(() => import("@kozmos/react/DatePicker"));
-const DataTable = lazy(() => import("@kozmos/react/DataTable"));
-const RichTextEditor = lazy(() => import("@kozmos/react/RichTextEditor"));
+const DatePicker = lazy(() => import("@kozmos-ds/react/DatePicker"));
+const DataTable = lazy(() => import("@kozmos-ds/react/DataTable"));
+const RichTextEditor = lazy(() => import("@kozmos-ds/react/RichTextEditor"));
 
 // Usage with Suspense
 <Suspense fallback={<Skeleton />}>
@@ -280,7 +278,7 @@ const RichTextEditor = lazy(() => import("@kozmos/react/RichTextEditor"));
 
 ```tsx
 // Preload on hover for modals
-const preloadModal = () => import("@kozmos/react/Modal");
+const preloadModal = () => import("@kozmos-ds/react/Modal");
 
 <Button onMouseEnter={preloadModal} onClick={openModal}>
   Open Settings
@@ -351,27 +349,7 @@ fun MeasuredButton(onClick: () -> Unit, content: @Composable () -> Unit) {
 
 ### React Native
 
-| Metric                 | Budget | Measurement    |
-| ---------------------- | ------ | -------------- |
-| JS bundle impact       | <100KB | Metro bundler  |
-| Bridge calls per frame | <10    | Flipper        |
-| Frame rate             | 60fps  | Perf Monitor   |
-| TTI impact             | <200ms | React DevTools |
-| Memory                 | <20MB  | Flipper        |
-
-```tsx
-// Measuring JS-to-Native bridge calls
-import { InteractionManager } from "react-native";
-
-function measureInteraction(name: string, fn: () => void) {
-  const start = performance.now();
-  InteractionManager.runAfterInteractions(() => {
-    fn();
-    const duration = performance.now() - start;
-    console.log(`[Kozmos] ${name}: ${duration.toFixed(2)}ms`);
-  });
-}
-```
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ### Web (Core Web Vitals)
 
@@ -396,26 +374,25 @@ function measureInteraction(name: string, fn: () => void) {
 
 ### Runtime Profiling
 
-| Tool                        | Platform     | Purpose                    |
-| --------------------------- | ------------ | -------------------------- |
-| React DevTools Profiler     | React        | Render timing              |
-| Chrome DevTools Performance | Web          | JS execution, paint        |
-| Lighthouse                  | Web          | Core Web Vitals            |
-| Safari Web Inspector        | Web/iOS      | Memory, timeline           |
-| Xcode Instruments           | iOS          | Time Profiler, Allocations |
-| Android Studio Profiler     | Android      | CPU, Memory, Network       |
-| Flipper                     | React Native | All metrics                |
+| Tool                        | Platform | Purpose                    |
+| --------------------------- | -------- | -------------------------- |
+| React DevTools Profiler     | React    | Render timing              |
+| Chrome DevTools Performance | Web      | JS execution, paint        |
+| Lighthouse                  | Web      | Core Web Vitals            |
+| Safari Web Inspector        | Web/iOS  | Memory, timeline           |
+| Xcode Instruments           | iOS      | Time Profiler, Allocations |
+| Android Studio Profiler     | Android  | CPU, Memory, Network       |
 
 ### Automated Testing
 
-```typescript
+```tsx
 // performance.test.ts
-import { performance } from 'perf_hooks';
-import { render } from '@testing-library/react';
-import { Button } from '@kozmos/react';
+import { performance } from "perf_hooks";
+import { render } from "@testing-library/react";
+import { Button } from "@kozmos-ds/react";
 
-describe('Performance', () => {
-  it('Button renders within budget', () => {
+describe("Performance", () => {
+  it("Button renders within budget", () => {
     const start = performance.now();
 
     for (let i = 0; i < 100; i++) {
@@ -429,7 +406,7 @@ describe('Performance', () => {
     expect(perRender).toBeLessThan(1); // <1ms per render
   });
 
-  it('Form with 20 inputs renders within budget', () => {
+  it("Form with 20 inputs renders within budget", () => {
     const start = performance.now();
 
     render(
@@ -437,7 +414,7 @@ describe('Performance', () => {
         {Array.from({ length: 20 }, (_, i) => (
           <Input key={i} label={`Field ${i}`} />
         ))}
-      </form>
+      </form>,
     );
 
     const duration = performance.now() - start;
@@ -478,12 +455,12 @@ builds Storybook (`pnpm turbo run build --filter=@kozmos-ds/docs`) and runs Ligh
 
 ### Bundle Size Trend
 
-| Version | @kozmos/react | @kozmos/tokens | @kozmos/icons |
-| ------- | ------------- | -------------- | ------------- |
-| v1.0.0  | 45KB          | 5KB            | 80KB          |
-| v2.0.0  | 62KB          | 6KB            | 120KB         |
-| v2.5.0  | 68KB          | 7KB            | 135KB         |
-| v3.0.0  | 75KB          | 7.5KB          | 145KB         |
+| Version | @kozmos-ds/react | @kozmos-ds/tokens | @kozmos-ds/icons |
+| ------- | ---------------- | ----------------- | ---------------- |
+| v1.0.0  | 45KB             | 5KB               | 80KB             |
+| v2.0.0  | 62KB             | 6KB               | 120KB            |
+| v2.5.0  | 68KB             | 7KB               | 135KB            |
+| v3.0.0  | 75KB             | 7.5KB             | 145KB            |
 
 ### Render Performance Trend
 
@@ -511,14 +488,14 @@ builds Storybook (`pnpm turbo run build --filter=@kozmos-ds/docs`) and runs Ligh
 ```tsx
 // 1. Use specific imports (tree-shaking)
 // ❌ Bad
-import { Button, Input, Select } from '@kozmos/react';
+import { Button, Input, Select } from '@kozmos-ds/react';
 
 // ✅ Good (if bundler doesn't tree-shake well)
-import { Button } from '@kozmos/react/Button';
-import { Input } from '@kozmos/react/Input';
+import { Button } from '@kozmos-ds/react/Button';
+import { Input } from '@kozmos-ds/react/Input';
 
 // 2. Lazy load heavy components
-const DatePicker = lazy(() => import('@kozmos/react/DatePicker'));
+const DatePicker = lazy(() => import('@kozmos-ds/react/DatePicker'));
 
 // 3. Use CSS variables instead of inline styles
 // ❌ Bad
@@ -544,7 +521,7 @@ const handleChange = useCallback((value: string) => {
 }, []);
 
 // 3. Virtualize long lists
-import { VirtualList } from "@kozmos/react";
+import { VirtualList } from "@kozmos-ds/react";
 
 <VirtualList
   items={thousandItems}

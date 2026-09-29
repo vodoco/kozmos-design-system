@@ -145,7 +145,7 @@ import { themes } from "@storybook/theming";
 import { withThemeByDataAttribute } from "@storybook/addon-themes";
 
 // Import Kozmos tokens and global styles
-import "@kozmos/tokens/css/tokens.css";
+import "@kozmos-ds/tokens/css/tokens.css";
 import "../src/styles/global.css";
 
 const preview: Preview = {
@@ -437,21 +437,21 @@ export const States: Story = {
 
 ### 5.1 Basic Story Structure
 
-```typescript
+```tsx
 // Button.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
-import { Button } from './Button';
+import type { Meta, StoryObj } from "@storybook/react";
+import { fn } from "@storybook/test";
+import { Button } from "./Button";
 
 const meta = {
-  title: 'Primitives/Button',
+  title: "Primitives/Button",
   component: Button,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
 
   // Decorators wrap stories
   decorators: [
     (Story) => (
-      <div style={{ padding: '1rem' }}>
+      <div style={{ padding: "1rem" }}>
         <Story />
       </div>
     ),
@@ -465,31 +465,31 @@ const meta = {
   // Arg types for controls
   argTypes: {
     variant: {
-      control: 'select',
-      options: ['primary', 'secondary', 'ghost', 'destructive'],
-      description: 'Visual style variant',
+      control: "select",
+      options: ["primary", "secondary", "ghost", "destructive"],
+      description: "Visual style variant",
       table: {
-        type: { summary: 'string' },
-        defaultValue: { summary: 'primary' },
+        type: { summary: "string" },
+        defaultValue: { summary: "primary" },
       },
     },
     size: {
-      control: 'radio',
-      options: ['sm', 'md', 'lg'],
+      control: "radio",
+      options: ["sm", "md", "lg"],
     },
     disabled: {
-      control: 'boolean',
+      control: "boolean",
     },
     loading: {
-      control: 'boolean',
+      control: "boolean",
     },
   },
 
   // Parameters for this component
   parameters: {
     design: {
-      type: 'figma',
-      url: 'https://figma.com/file/.../Button',
+      type: "figma",
+      url: "https://figma.com/file/.../Button",
     },
   },
 } satisfies Meta<typeof Button>;
@@ -500,41 +500,47 @@ type Story = StoryObj<typeof meta>;
 
 ### 5.2 Story Variants
 
-```typescript
+```tsx
 // Primary variant (default)
 export const Primary: Story = {
   args: {
-    variant: 'primary',
-    children: 'Primary Button',
+    variant: "primary",
+    children: "Primary Button",
   },
 };
 
 // Secondary variant
 export const Secondary: Story = {
   args: {
-    variant: 'secondary',
-    children: 'Secondary Button',
+    variant: "secondary",
+    children: "Secondary Button",
   },
 };
 
 // All sizes
 export const Sizes: Story = {
   render: (args) => (
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-      <Button {...args} size="sm">Small</Button>
-      <Button {...args} size="default">Medium</Button>
-      <Button {...args} size="lg">Large</Button>
+    <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+      <Button {...args} size="sm">
+        Small
+      </Button>
+      <Button {...args} size="default">
+        Medium
+      </Button>
+      <Button {...args} size="lg">
+        Large
+      </Button>
     </div>
   ),
   args: {
-    variant: 'primary',
+    variant: "primary",
   },
 };
 
 // All variants
 export const AllVariants: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
       <Button variant="default">Primary</Button>
       <Button variant="secondary">Secondary</Button>
       <Button variant="ghost">Ghost</Button>
@@ -546,7 +552,7 @@ export const AllVariants: Story = {
 // With icon
 export const WithIcon: Story = {
   args: {
-    children: 'Navigate',
+    children: "Navigate",
     startIcon: <ArrowRightIcon />,
   },
 };
@@ -555,7 +561,7 @@ export const WithIcon: Story = {
 export const Loading: Story = {
   args: {
     loading: true,
-    children: 'Loading...',
+    children: "Loading...",
   },
 };
 
@@ -563,7 +569,7 @@ export const Loading: Story = {
 export const Disabled: Story = {
   args: {
     disabled: true,
-    children: 'Disabled',
+    children: "Disabled",
   },
 };
 ```
@@ -609,16 +615,16 @@ export const KeyboardNavigation: Story = {
 
 ### 5.4 Form Stories
 
-```typescript
+```tsx
 // Input.stories.tsx
 export const WithValidation: Story = {
   render: () => {
-    const [value, setValue] = useState('');
+    const [value, setValue] = useState("");
     const [error, setError] = useState<string>();
 
     const validate = (val: string) => {
       if (val.length < 3) {
-        setError('Must be at least 3 characters');
+        setError("Must be at least 3 characters");
       } else {
         setError(undefined);
       }
@@ -648,7 +654,7 @@ export const FormExample: Story = {
     </form>
   ),
   parameters: {
-    layout: 'padded',
+    layout: "padded",
   },
 };
 ```
@@ -669,21 +675,21 @@ import \* as ButtonStories from '../components/Button/Button.stories';
 # Kozmos Design System
 
 Welcome to the Kozmos Design System documentation. This design system
-powers Pointr's indoor navigation SDK across 6 platforms.
+powers Pointr's indoor navigation SDK on React, SwiftUI and Jetpack Compose.
 
 ## Getting Started
 
 Install the package:
 
 ```bash
-npm install @kozmos/react
+npm install @kozmos-ds/react
 ```
 ````
 
 Import and use components:
 
 ```tsx
-import { Button } from "@kozmos/react";
+import { Button } from "@kozmos-ds/react";
 
 function App() {
   return <Button variant="default">Navigate</Button>;
@@ -719,7 +725,7 @@ Buttons allow users to take actions and make choices with a single tap.
 ## Import
 
 ```tsx
-import { Button } from '@kozmos/react';
+import { Button } from '@kozmos-ds/react';
 ````
 
 ## Usage
@@ -911,18 +917,18 @@ export const globalTypes = {
 
 ### 7.2 RTL Toggle
 
-```typescript
+```tsx
 // Add RTL support
 export const globalTypes = {
   direction: {
-    description: 'Text direction',
-    defaultValue: 'ltr',
+    description: "Text direction",
+    defaultValue: "ltr",
     toolbar: {
-      title: 'Direction',
-      icon: 'transfer',
+      title: "Direction",
+      icon: "transfer",
       items: [
-        { value: 'ltr', title: 'LTR' },
-        { value: 'rtl', title: 'RTL' },
+        { value: "ltr", title: "LTR" },
+        { value: "rtl", title: "RTL" },
       ],
     },
   },
@@ -942,19 +948,19 @@ export const decorators = [
 
 ### 7.3 Customer Theme Preview
 
-```typescript
+```tsx
 // Preview different customer themes
 export const globalTypes = {
   customerTheme: {
-    description: 'Customer theme',
-    defaultValue: 'default',
+    description: "Customer theme",
+    defaultValue: "default",
     toolbar: {
-      title: 'Customer',
-      icon: 'paintbrush',
+      title: "Customer",
+      icon: "paintbrush",
       items: [
-        { value: 'default', title: 'Kozmos Default' },
-        { value: 'customer-a', title: 'Customer A' },
-        { value: 'customer-b', title: 'Customer B' },
+        { value: "default", title: "Kozmos Default" },
+        { value: "customer-a", title: "Customer A" },
+        { value: "customer-b", title: "Customer B" },
       ],
     },
   },
@@ -964,7 +970,7 @@ export const decorators = [
   (Story, context) => {
     const theme = context.globals.customerTheme;
     useEffect(() => {
-      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute("data-theme", theme);
     }, [theme]);
     return <Story />;
   },
@@ -1068,19 +1074,19 @@ export const Test: Story = { ... };
 
 ### 10.3 Args Best Practices
 
-```typescript
+```tsx
 // ✅ Good: Use args for reusability
 export const Primary: Story = {
   args: {
-    variant: 'primary',
-    children: 'Button',
+    variant: "primary",
+    children: "Button",
   },
 };
 
 export const PrimarySmall: Story = {
   args: {
     ...Primary.args,
-    size: 'sm',
+    size: "sm",
   },
 };
 
@@ -1108,12 +1114,12 @@ export const Primary: Story = {
 
 ### 10.5 Performance
 
-```typescript
+```tsx
 // Lazy load heavy stories
 export const ComplexVisualization: Story = {
   loaders: [
     async () => ({
-      data: await fetch('/api/large-dataset').then(r => r.json()),
+      data: await fetch("/api/large-dataset").then((r) => r.json()),
     }),
   ],
   render: (args, { loaded: { data } }) => (

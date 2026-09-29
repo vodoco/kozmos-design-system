@@ -1,6 +1,6 @@
 # Kozmos Design System - Theming & White-labeling Guide
 
-> **Purpose:** This document provides comprehensive guidelines for implementing customer white-labeling, theme customization, and brand adaptation across all 6 platforms in the Kozmos Design System.
+> **Purpose:** This document provides comprehensive guidelines for implementing customer white-labeling, theme customization, and brand adaptation on the Kozmos Design System's three platforms: React, SwiftUI and Jetpack Compose.
 
 ---
 
@@ -278,7 +278,7 @@ packages/tokens/
 
 ```typescript
 // kozmos.config.ts
-import { defineConfig } from "@kozmos/tokens";
+import { defineConfig } from "@kozmos-ds/tokens";
 
 export default defineConfig({
   // Customer identification
@@ -766,135 +766,7 @@ fun KozmosButton(text: String, onClick: () -> Unit) {
 
 ### 5.4 React Native
 
-```tsx
-// theme/index.tsx
-import { createContext, useContext, useMemo } from "react";
-import { useColorScheme } from "react-native";
-
-interface KozmosTheme {
-  colors: {
-    primary: string;
-    primaryHover: string;
-    onPrimary: string;
-    secondary: string;
-    background: string;
-    foreground: string;
-    border: string;
-    success: string;
-    warning: string;
-    error: string;
-  };
-  spacing: {
-    xs: number;
-    sm: number;
-    md: number;
-    lg: number;
-    xl: number;
-  };
-  radius: {
-    sm: number;
-    md: number;
-    lg: number;
-    full: number;
-  };
-  isDark: boolean;
-}
-
-const lightTheme: KozmosTheme = {
-  colors: {
-    primary: "#2563EB",
-    primaryHover: "#1D4ED8",
-    onPrimary: "#FFFFFF",
-    secondary: "#7C3AED",
-    background: "#FAFAFA",
-    foreground: "#171717",
-    border: "#E5E5E5",
-    success: "#22C55E",
-    warning: "#F59E0B",
-    error: "#EF4444",
-  },
-  spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },
-  radius: { sm: 4, md: 8, lg: 12, full: 9999 },
-  isDark: false,
-};
-
-const darkTheme: KozmosTheme = {
-  ...lightTheme,
-  colors: {
-    primary: "#60A5FA",
-    primaryHover: "#93C5FD",
-    onPrimary: "#000000",
-    secondary: "#A78BFA",
-    background: "#171717",
-    foreground: "#FAFAFA",
-    border: "#404040",
-    success: "#4ADE80",
-    warning: "#FBBF24",
-    error: "#F87171",
-  },
-  isDark: true,
-};
-
-interface ThemeOverrides {
-  primary?: string;
-  secondary?: string;
-}
-
-const ThemeContext = createContext<KozmosTheme>(lightTheme);
-
-export function KozmosThemeProvider({
-  children,
-  overrides,
-  forceDark,
-}: {
-  children: React.ReactNode;
-  overrides?: ThemeOverrides;
-  forceDark?: boolean;
-}) {
-  const colorScheme = useColorScheme();
-  const isDark = forceDark ?? colorScheme === "dark";
-
-  const theme = useMemo(() => {
-    const baseTheme = isDark ? darkTheme : lightTheme;
-
-    if (!overrides) return baseTheme;
-
-    return {
-      ...baseTheme,
-      colors: {
-        ...baseTheme.colors,
-        ...(overrides.primary && { primary: overrides.primary }),
-        ...(overrides.secondary && { secondary: overrides.secondary }),
-      },
-    };
-  }, [isDark, overrides]);
-
-  return (
-    <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
-  );
-}
-
-export function useKozmosTheme() {
-  return useContext(ThemeContext);
-}
-
-// Usage
-function NavigationButton() {
-  const theme = useKozmosTheme();
-
-  return (
-    <TouchableOpacity
-      style={{
-        backgroundColor: theme.colors.primary,
-        padding: theme.spacing.md,
-        borderRadius: theme.radius.md,
-      }}
-    >
-      <Text style={{ color: theme.colors.onPrimary }}>Start Navigation</Text>
-    </TouchableOpacity>
-  );
-}
-```
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
@@ -1047,7 +919,7 @@ function NavigationButton() {
 
 ```tsx
 // ThemeSwitcher.tsx
-import { useTheme } from "@kozmos/react";
+import { useTheme } from "@kozmos-ds/react";
 
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
@@ -1227,13 +1099,13 @@ We need:
 ## Step 3: Generate Theme
 
 ```bash
-npx @kozmos/tokens build --theme your-company
+npx @kozmos-ds/tokens build --theme your-company
 ```
 
 ## Step 4: Use in Your App
 
 ```tsx
-import "@kozmos/tokens/themes/your-company.css";
+import "@kozmos-ds/tokens/themes/your-company.css";
 
 <KozmosThemeProvider theme="your-company">
   <App />
@@ -1250,7 +1122,7 @@ import "@kozmos/tokens/themes/your-company.css";
 ## Company Information
 - Company Name:
 - Contact Email:
-- SDK Platforms: [ ] Web [ ] iOS [ ] Android [ ] React Native
+- SDK Platforms: [ ] Web [ ] iOS [ ] Android
 
 ## Brand Colors
 - Primary Color:

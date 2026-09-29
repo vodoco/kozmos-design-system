@@ -1,6 +1,6 @@
 # Kozmos Design System - Accessibility Compliance Guide
 
-> **Purpose:** This document provides comprehensive WCAG 2.1 AA compliance guidelines, component-specific accessibility requirements, and testing procedures for the Kozmos Design System across all 6 platforms.
+> **Purpose:** This document provides comprehensive WCAG 2.1 AA compliance guidelines, component-specific accessibility requirements, and testing procedures for the Kozmos Design System on its three platforms: React, SwiftUI and Jetpack Compose.
 
 ---
 
@@ -51,7 +51,7 @@ Kozmos Design System targets **WCAG 2.1 Level AA** compliance across all platfor
 
 #### 1.1 Text Alternatives (Level A)
 
-```typescript
+```tsx
 // ✅ All images must have alt text
 <KozmosImage
   src="/map-floor-1.png"
@@ -74,7 +74,7 @@ Kozmos Design System targets **WCAG 2.1 Level AA** compliance across all platfor
 
 #### 1.3 Adaptable (Level A)
 
-```typescript
+```tsx
 // ✅ Semantic structure
 <KozmosCard as="article">
   <KozmosHeading level={2}>Meeting Room A</KozmosHeading>
@@ -100,7 +100,7 @@ Kozmos Design System targets **WCAG 2.1 Level AA** compliance across all platfor
 
 All interactive components must be keyboard accessible:
 
-```typescript
+```tsx
 // ✅ All interactions work with keyboard
 <KozmosButton onClick={handleClick} onKeyDown={handleKeyDown}>
   Navigate
@@ -115,7 +115,7 @@ All interactive components must be keyboard accessible:
 
 #### 2.4 Navigable (Level AA)
 
-```typescript
+```tsx
 // ✅ Skip links
 <KozmosSkipLink href="#main-content">
   Skip to main content
@@ -132,7 +132,7 @@ All interactive components must be keyboard accessible:
 
 #### 3.1 Readable (Level A)
 
-```typescript
+```tsx
 // ✅ Language declared
 <html lang="en">
   <KozmosApp>...</KozmosApp>
@@ -146,11 +146,11 @@ All interactive components must be keyboard accessible:
 
 #### 3.2 Predictable (Level AA)
 
-```typescript
+```tsx
 // ✅ No unexpected context changes on focus
 <KozmosInput
   onFocus={() => {}} // No navigation or submission
-  onBlur={() => {}}  // No navigation or submission
+  onBlur={() => {}} // No navigation or submission
 />
 
 // ✅ Consistent navigation
@@ -159,7 +159,7 @@ All interactive components must be keyboard accessible:
 
 #### 3.3 Input Assistance (Level AA)
 
-```typescript
+```tsx
 // ✅ Error identification
 <KozmosInput
   error="Please enter a valid destination"
@@ -187,7 +187,7 @@ All interactive components must be keyboard accessible:
 
 #### 4.1 Compatible (Level A)
 
-```typescript
+```tsx
 // ✅ Valid HTML
 // No duplicate IDs, proper nesting
 
@@ -422,49 +422,7 @@ fun KozmosMapView(
 
 ### 4.4 React Native
 
-```tsx
-// Button.tsx - Accessible implementation
-import { TouchableOpacity, Text, ActivityIndicator } from "react-native";
-
-interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  loading?: boolean;
-  disabled?: boolean;
-}
-
-export function KozmosButton({
-  title,
-  onPress,
-  loading,
-  disabled,
-}: ButtonProps) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
-      accessible={true}
-      accessibilityRole="button"
-      accessibilityLabel={loading ? `Loading, ${title}` : title}
-      accessibilityState={{
-        disabled: disabled || loading,
-        busy: loading,
-      }}
-      accessibilityHint="Double tap to activate"
-    >
-      {loading && <ActivityIndicator accessibilityElementsHidden={true} />}
-      <Text>{title}</Text>
-    </TouchableOpacity>
-  );
-}
-
-// Live region for announcements
-import { AccessibilityInfo } from "react-native";
-
-export function announceForAccessibility(message: string) {
-  AccessibilityInfo.announceForAccessibility(message);
-}
-```
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
@@ -486,9 +444,9 @@ export function announceForAccessibility(message: string) {
 
 ### 5.2 Focus Management Patterns
 
-```typescript
+```tsx
 // Focus trap for modals
-import { useFocusTrap } from '@kozmos/react';
+import { useFocusTrap } from "@kozmos-ds/react";
 
 function Modal({ isOpen, onClose, children }) {
   const trapRef = useFocusTrap(isOpen);
@@ -501,7 +459,7 @@ function Modal({ isOpen, onClose, children }) {
 }
 
 // Return focus on close
-import { useReturnFocus } from '@kozmos/react';
+import { useReturnFocus } from "@kozmos-ds/react";
 
 function Dropdown({ trigger, children }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -520,23 +478,23 @@ function Dropdown({ trigger, children }) {
 
 ### 5.3 Roving Tab Index
 
-```typescript
+```tsx
 // Tab list with roving tabindex
 function Tabs({ tabs, activeTab, onChange }) {
   const [focusedIndex, setFocusedIndex] = useState(0);
 
   const handleKeyDown = (e: KeyboardEvent, index: number) => {
     switch (e.key) {
-      case 'ArrowRight':
+      case "ArrowRight":
         setFocusedIndex((index + 1) % tabs.length);
         break;
-      case 'ArrowLeft':
+      case "ArrowLeft":
         setFocusedIndex((index - 1 + tabs.length) % tabs.length);
         break;
-      case 'Home':
+      case "Home":
         setFocusedIndex(0);
         break;
-      case 'End':
+      case "End":
         setFocusedIndex(tabs.length - 1);
         break;
     }
@@ -581,7 +539,7 @@ function Tabs({ tabs, activeTab, onChange }) {
 
 ### 6.2 Live Regions
 
-```typescript
+```tsx
 // Polite announcements (non-urgent)
 <div aria-live="polite" aria-atomic="true">
   {statusMessage}
@@ -607,15 +565,13 @@ function Toast({ message, type }) {
 
 ### 6.3 Screen Reader Testing Matrix
 
-| Platform     | Screen Reader | Browser/OS     | Priority       |
-| ------------ | ------------- | -------------- | -------------- |
-| Web          | NVDA          | Chrome/Windows | ✅ Required    |
-| Web          | VoiceOver     | Safari/macOS   | ✅ Required    |
-| Web          | JAWS          | Chrome/Windows | 🟡 Recommended |
-| iOS          | VoiceOver     | Safari/iOS     | ✅ Required    |
-| Android      | TalkBack      | Chrome/Android | ✅ Required    |
-| React Native | VoiceOver     | iOS            | ✅ Required    |
-| React Native | TalkBack      | Android        | ✅ Required    |
+| Platform | Screen Reader | Browser/OS     | Priority       |
+| -------- | ------------- | -------------- | -------------- |
+| Web      | NVDA          | Chrome/Windows | ✅ Required    |
+| Web      | VoiceOver     | Safari/macOS   | ✅ Required    |
+| Web      | JAWS          | Chrome/Windows | 🟡 Recommended |
+| iOS      | VoiceOver     | Safari/iOS     | ✅ Required    |
+| Android  | TalkBack      | Chrome/Android | ✅ Required    |
 
 ---
 
@@ -651,7 +607,7 @@ Light Theme Contrast Ratios:
 
 ### 7.3 Color-Only Information
 
-```typescript
+```tsx
 // ❌ Bad: Color only indicates state
 <Badge color={isActive ? 'green' : 'red'} />
 
@@ -725,9 +681,9 @@ Light Theme Contrast Ratios:
 }
 ```
 
-```typescript
+```tsx
 // React hook for reduced motion
-import { useReducedMotion } from '@kozmos/react';
+import { useReducedMotion } from "@kozmos-ds/react";
 
 function AnimatedComponent() {
   const prefersReducedMotion = useReducedMotion();
@@ -807,7 +763,7 @@ function validateAnimation(keyframes: Keyframe[]) {
 
 ### 9.2 Focus Order
 
-```typescript
+```tsx
 // Ensure logical focus order
 // DOM order = visual order = tab order
 
@@ -865,27 +821,27 @@ function SkipLinks() {
 
 ### 10.1 Automated Testing
 
-```typescript
+```tsx
 // vitest + axe-core
-import { render } from '@testing-library/react';
-import { axe, toHaveNoViolations } from 'jest-axe';
+import { render } from "@testing-library/react";
+import { axe, toHaveNoViolations } from "jest-axe";
 
 expect.extend(toHaveNoViolations);
 
-describe('Button accessibility', () => {
-  it('should have no accessibility violations', async () => {
+describe("Button accessibility", () => {
+  it("should have no accessibility violations", async () => {
     const { container } = render(<Button>Click me</Button>);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
 
-  it('should have no violations when disabled', async () => {
+  it("should have no violations when disabled", async () => {
     const { container } = render(<Button disabled>Disabled</Button>);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
 
-  it('should have no violations when loading', async () => {
+  it("should have no violations when loading", async () => {
     const { container } = render(<Button loading>Loading</Button>);
     const results = await axe(container);
     expect(results).toHaveNoViolations();

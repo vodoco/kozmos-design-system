@@ -92,154 +92,80 @@ CI uses no Turborepo remote cache.
 
 ## 3. Project Structure
 
-### Complete Directory Structure
+### Directory Structure
+
+The folders that matter, as they are. [`AGENTS.md`](../AGENTS.md) says what each is for.
 
 ```
 kozmos-design-system/
 ├── .github/
-│   └── workflows/                  # The six workflows (ci-cd-configuration.md)
+│   └── workflows/                  # The eight workflows (ci-cd-configuration.md)
 │       ├── ci.yml                  # CI: web, browser shards, core pipeline, iOS, Android
 │       ├── visual.yml              # Visual Review
 │       ├── lighthouse.yml          # Lighthouse CI
 │       ├── bundle-size.yml         # Bundle budgets
 │       ├── figma-tokens.yml        # Figma token sync (manual)
+│       ├── site.yml                # The website's own checks
+│       ├── pages.yml               # The website and Storybook, published from main
 │       └── release.yml             # The npm release (dispatched, approved)
 │
 ├── .ai-skills/                     # AI agent reference docs
-│   ├── README.md
-│   ├── design-philosophy.md
-│   ├── code-patterns.md
-│   └── ... (other skill files)
 │
 ├── packages/
-│   ├── tokens/                     # Design tokens
-│   │   ├── src/
-│   │   │   ├── tokens.json         # DTCG token source
-│   │   │   ├── themes/
-│   │   │   │   ├── light.json
-│   │   │   │   └── dark.json
-│   │   │   └── platforms/          # Platform-specific overrides
-│   │   ├── build/                  # Generated output
-│   │   ├── sd.config.js            # Style Dictionary config
-│   │   └── package.json
+│   ├── tokens/                     # @kozmos-ds/tokens
+│   │   ├── src/                    # The DTCG token source (tokens-light.json, tokens-dark.json, …)
+│   │   ├── build.mjs               # The Style Dictionary build
+│   │   └── dist/                   # CSS, JavaScript, Swift and Kotlin, generated
 │   │
-│   ├── react/                      # React components
+│   ├── react/                      # @kozmos-ds/react
 │   │   ├── src/
-│   │   │   ├── components/
-│   │   │   │   ├── Button/
-│   │   │   │   │   ├── Button.tsx
-│   │   │   │   │   ├── Button.test.tsx
-│   │   │   │   │   ├── Button.stories.tsx
-│   │   │   │   │   ├── Button.figma.tsx
-│   │   │   │   │   ├── Button.css
-│   │   │   │   │   └── index.ts
-│   │   │   │   └── ... (other components)
-│   │   │   ├── hooks/
-│   │   │   ├── utils/
-│   │   │   ├── styles/
-│   │   │   │   └── tokens.css      # Generated from @kozmos-ds/tokens
-│   │   │   └── index.ts            # Barrel export
-│   │   ├── .storybook/
-│   │   ├── tsconfig.json
+│   │   │   ├── components/         # One directory per component:
+│   │   │   │   └── Button/         #   Button.tsx, .test.tsx, .stories.tsx, .mdx, .figma.tsx, index.ts
+│   │   │   ├── context/, theme/    # DesignConfigProvider and KozmosTheme
+│   │   │   ├── hooks/, utils/
+│   │   │   └── index.ts            # The package's exports
 │   │   ├── vite.config.mts         # The build: Vite library mode
-│   │   ├── vitest.config.ts
-│   │   └── package.json
+│   │   └── dist/                   # What npm ships, types included (index.d.ts)
 │   │
-│   ├── vue/                        # Vue/Web Components
-│   │   ├── src/
-│   │   │   ├── components/         # Lit Web Components
-│   │   │   ├── vue-wrappers/       # Vue 3 wrappers
-│   │   │   └── index.ts
-│   │   ├── vite.config.ts
-│   │   └── package.json
+│   ├── icons/                      # @kozmos-ds/icons
+│   ├── product-contracts/          # @kozmos-ds/product-contracts
 │   │
-│   ├── ios/                        # SwiftUI components
+│   ├── ios/                        # SwiftUI: the Swift package Kozmos (library Kozmos)
 │   │   ├── Sources/
-│   │   │   └── KozmosSwiftUI/
-│   │   │       ├── Components/
-│   │   │       │   ├── Button/
-│   │   │       │   │   ├── KozmosButton.swift
-│   │   │       │   │   └── KozmosButton.figma.swift
-│   │   │       │   └── ...
-│   │   │       ├── Tokens/
-│   │   │       │   └── KozmosTokens.swift  # Generated
-│   │   │       └── Theme/
+│   │   │   ├── Components/         # KozmosButton, KozmosAccordion, …
+│   │   │   ├── ProductContracts/
+│   │   │   └── Providers/
 │   │   ├── Tests/
-│   │   ├── Package.swift
-│   │   └── figma.config.json
+│   │   └── Package.swift
 │   │
-│   ├── android/                    # Jetpack Compose
-│   │   ├── kozmos/
-│   │   │   └── src/
-│   │   │       └── main/
-│   │   │           └── kotlin/
-│   │   │               └── com/kozmos/compose/
-│   │   │                   ├── components/
-│   │   │                   ├── tokens/
-│   │   │                   │   └── KozmosTokens.kt  # Generated
-│   │   │                   └── theme/
-│   │   ├── build.gradle.kts
-│   │   ├── settings.gradle.kts
-│   │   └── figma.config.json
+│   ├── android/                    # Jetpack Compose: com.kozmos
+│   │   ├── src/main/java/com/kozmos/
+│   │   │   ├── components/         # One package per component: com.kozmos.components.button, …
+│   │   │   ├── tokens/             # KozmosThemeTokens and the generated token sources
+│   │   │   └── contracts/, providers/
+│   │   └── build.gradle.kts
 │   │
-│   ├── react-native/               # React Native
-│   │   ├── src/
-│   │   │   ├── components/
-│   │   │   ├── tokens/
-│   │   │   │   └── index.ts        # Generated JS tokens
-│   │   │   └── theme/
-│   │   ├── example/                # Example app
-│   │   └── package.json
-│   │
-│   └── icons/                      # Icon library
-│       ├── svg/                    # Source SVGs
-│       ├── src/
-│       │   ├── react/              # Generated React icons
-│       │   ├── vue/                # Generated Vue icons
-│       │   └── native/             # Generated native icons
-│       ├── scripts/
-│       │   └── generate.ts         # Icon generation script
-│       └── package.json
+│   └── vue/                        # Private: mounts the React components in Vue, never published
 │
 ├── apps/
-│   └── docs/                       # Documentation site
-│       ├── src/
-│       ├── astro.config.mjs
-│       └── package.json
+│   ├── docs/                       # Storybook (@kozmos-ds/docs), the component reference
+│   ├── site/                       # The website
+│   └── …                           # Playgrounds and the Pointr QA app
 │
-├── scripts/
-│   ├── generate-tokens.ts          # Token generation
-│   ├── generate-icons.ts           # Icon generation
-│   ├── new-component.ts            # Component scaffolding
-│   └── sync-figma.ts               # Figma sync
-│
-├── .changeset/                     # Changesets config
-│   └── config.json
-│
+├── docs/                           # The written documentation, and docs/claude-design, generated
+├── scripts/                        # The checks, run by their package.json names
+├── tests/visual/                   # The visual review's suite and its baselines
+├── .changeset/                     # Changes waiting for a release
 ├── turbo.json                      # Turborepo config
 ├── pnpm-workspace.yaml             # pnpm workspace
 ├── package.json                    # Root package.json
 ├── tsconfig.base.json              # Shared TypeScript config
 ├── eslint.config.mjs               # ESLint config (Prettier runs with its defaults)
-├── docs/project-scope.md           # Full specification
-└── README.md
+└── AGENTS.md                       # The guide for coding agents
 ```
 
-### Creating the Structure
-
-```bash
-# Create the directory structure
-mkdir -p packages/{tokens,react,vue,ios,android,react-native,icons}/{src,tests}
-mkdir -p packages/react/src/components
-mkdir -p packages/react/.storybook
-mkdir -p packages/ios/Sources/KozmosSwiftUI/{Components,Tokens,Theme}
-mkdir -p packages/android/kozmos/src/main/kotlin/com/kozmos/compose
-mkdir -p packages/icons/{svg,scripts}
-mkdir -p apps/docs/src
-mkdir -p scripts
-mkdir -p .github/workflows
-mkdir -p .changeset
-```
+A fresh checkout needs no structure made: `pnpm install --frozen-lockfile`, then
+`pnpm --filter "@kozmos-ds/react..." build` to build React and what it needs.
 
 ---
 

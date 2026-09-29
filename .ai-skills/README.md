@@ -4,28 +4,42 @@
 
 ---
 
+## Start with the facts
+
+These are generated from the code, and `pnpm skills:check` fails when they and the code disagree.
+Where anything else here disagrees with them, they are right.
+
+| Document                                              | What it holds                                                                                                   |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| [component-inventory.md](./component-inventory.md)    | Every component, whether SwiftUI and Compose have it, and every value each variant prop accepts, from the types |
+| [docs/claude-design](../docs/claude-design/README.md) | Consuming Kozmos, and one API card per component: every prop and an example that compiles                       |
+| [api-changelog.md](./api-changelog.md)                | What changed in each release, from each package's own changelog                                                 |
+| [docs/status.md](../docs/status.md)                   | Which components exist on which platform, and which link to Figma                                               |
+
+---
+
 ## Available Skill Documents
 
 ### Reference Documents (Conceptual)
 
-| Document                                           | Purpose                                                      | When to Use                                                        |
-| -------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------ |
-| [design-philosophy.md](./design-philosophy.md)     | Visual language, interaction patterns, design principles     | Creating new components, reviewing designs, making UX decisions    |
-| [component-lifecycle.md](./component-lifecycle.md) | Component stages from proposal to removal                    | Proposing features, understanding stability, planning deprecations |
-| [incident-playbook.md](./incident-playbook.md)     | Production incident response, hotfixes, post-mortems         | Debugging issues, publishing urgent fixes, rollback decisions      |
-| [code-patterns.md](./code-patterns.md)             | Templates for all 6 platforms (React, Vue, iOS, Android, RN) | Scaffolding new components, ensuring consistency across platforms  |
-| [troubleshooting.md](./troubleshooting.md)         | Common issues and solutions by category                      | Debugging build errors, component issues, CI/CD failures           |
+| Document                                           | Purpose                                                  | When to Use                                                        |
+| -------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
+| [design-philosophy.md](./design-philosophy.md)     | Visual language, interaction patterns, design principles | Creating new components, reviewing designs, making UX decisions    |
+| [component-lifecycle.md](./component-lifecycle.md) | Component stages from proposal to removal                | Proposing features, understanding stability, planning deprecations |
+| [incident-playbook.md](./incident-playbook.md)     | Production incident response, hotfixes, post-mortems     | Debugging issues, publishing urgent fixes, rollback decisions      |
+| [code-patterns.md](./code-patterns.md)             | Templates for React, SwiftUI and Compose                 | Scaffolding new components, ensuring consistency across platforms  |
+| [troubleshooting.md](./troubleshooting.md)         | Common issues and solutions by category                  | Debugging build errors, component issues, CI/CD failures           |
 
 ### Maintenance & Evolution Documents
 
-| Document                                                 | Purpose                                            | When to Use                                                       |
-| -------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------- |
-| [migration-guide.md](./migration-guide.md)               | Version upgrades and implementation migrations     | Upgrading major versions, migrating from custom implementations   |
-| [api-changelog.md](./api-changelog.md)                   | API changes, deprecations, breaking changes        | Tracking what changed between versions, planning migrations       |
-| [decision-log.md](./decision-log.md)                     | Architecture Decision Records (ADRs)               | Understanding why decisions were made, proposing new decisions    |
-| [performance-benchmarks.md](./performance-benchmarks.md) | Bundle size budgets, runtime metrics, optimization | Ensuring performance standards, catching regressions              |
-| [platform-mapping.md](./platform-mapping.md)             | Cross-platform component and prop mapping          | Implementing features across platforms, understanding differences |
-| [figma-audit.md](./figma-audit.md)                       | Figma component checklists for designers           | Preparing components for Code Connect, ensuring quality           |
+| Document                                                 | Purpose                                             | When to Use                                                       |
+| -------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
+| [migration-guide.md](./migration-guide.md)               | Upgrading between releases, moving an app to Kozmos | Upgrading Kozmos, migrating from custom implementations           |
+| [api-changelog.md](./api-changelog.md)                   | API changes, deprecations, breaking changes         | Tracking what changed between versions, planning migrations       |
+| [decision-log.md](./decision-log.md)                     | Architecture Decision Records (ADRs)                | Understanding why decisions were made, proposing new decisions    |
+| [performance-benchmarks.md](./performance-benchmarks.md) | Bundle size budgets, runtime metrics, optimization  | Ensuring performance standards, catching regressions              |
+| [platform-mapping.md](./platform-mapping.md)             | Cross-platform component and prop mapping           | Implementing features across platforms, understanding differences |
+| [figma-audit.md](./figma-audit.md)                       | Figma component checklists for designers            | Preparing components for Code Connect, ensuring quality           |
 
 ### Technical Implementation Documents (Executable)
 
@@ -45,17 +59,25 @@
 
 ### AI Integration Documents
 
-| Document                                                     | Purpose                                                                | When to Use                                                 |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------- |
-| [mcp-server-specification.md](./mcp-server-specification.md) | MCP server design for `@kozmos-ds/mcp-server` package                  | Building AI-powered tooling, integrating with Claude/Cursor |
-| [ai-integration-guide.md](./ai-integration-guide.md)         | Context files for Claude, Cursor, Anti Gravity, Copilot, Codeium, etc. | Setting up AI agents in consuming projects                  |
-| [docs/claude-design](../docs/claude-design/README.md)        | Consuming Kozmos, and one API card per component, generated            | Designing with Kozmos in Claude Design, mounting a part     |
+| Document                                              | Purpose                                                            | When to Use                                             |
+| ----------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
+| [ai-integration-guide.md](./ai-integration-guide.md)  | What an assistant should read, and a context file for your project | Setting up AI agents in consuming projects              |
+| [docs/claude-design](../docs/claude-design/README.md) | Consuming Kozmos, and one API card per component, generated        | Designing with Kozmos in Claude Design, mounting a part |
 
-### Master Reference
+### Proposals: not built
 
-| Document                                     | Purpose                                       | When to Use                                   |
-| -------------------------------------------- | --------------------------------------------- | --------------------------------------------- |
-| [project-scope.md](../docs/project-scope.md) | Complete project specification (3,900+ lines) | Understanding architecture, tokens, platforms |
+| Document                                      | Purpose                                                                                   |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [docs/proposals](../docs/proposals/README.md) | Designs kept as planning history: an MCP server, an AI setup command, and other platforms |
+
+Nothing there exists: no package, command or API it names is built. It lives outside this
+directory so that nothing here describes something that is not.
+
+### The original specification
+
+| Document                                     | Purpose                                                                                        |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [project-scope.md](../docs/project-scope.md) | The original specification, written before the code. Where the two disagree, the code is right |
 
 ---
 
@@ -65,24 +87,27 @@
 
 Kozmos is a multi-platform design system for **Pointr's indoor navigation SDK**. It provides:
 
-- **6 platforms:** React, Vue 3, iOS (SwiftUI), Android (Compose), React Native, Dashboard
-- **60+ components** from primitives (Button, Input) to SDK-specific (MapView, WayfindingCard, AI Companion)
-- **Design tokens** using Style Dictionary v4 with DTCG compliance and wide-gamut color support
-- **Figma integration** via Code Connect for design-to-code accuracy
+- **3 platforms:** React, SwiftUI (iOS) and Jetpack Compose (Android). Vue waits: `@kozmos-ds/vue`
+  is a private harness that mounts the React components in Vue, not a package to install. There
+  is no React Native package.
+- **Components** from primitives (Button, Input) to SDK-specific ones (MapView, WayfindingCard, the
+  AI Companion): [component-inventory.md](./component-inventory.md) lists every one.
+- **Design tokens** in the DTCG format, built with Style Dictionary 5 into CSS, JavaScript, Swift
+  and Kotlin.
+- **Figma integration** through Code Connect, on all three platforms.
 
 ### Key Technical Decisions
 
-| Area              | Decision                             |
-| ----------------- | ------------------------------------ |
-| Styling (Web)     | CSS Variables + CVA (zero runtime)   |
-| Tokens            | Style Dictionary v4 + DTCG format    |
-| Colors            | Wide gamut P3/oklch for all colors   |
-| Monorepo          | Turborepo + pnpm                     |
-| Build (React)     | Vite library mode (ES modules + UMD) |
-| Testing           | Vitest + Testing Library + axe-core  |
-| Visual Regression | Own visual review (`tests/visual`)   |
-| Figma             | Code Connect for 5 platforms         |
-| i18n              | 13+ languages including RTL (Arabic) |
+| Area              | Decision                                                                      |
+| ----------------- | ----------------------------------------------------------------------------- |
+| Styling (Web)     | CSS Variables + CVA (zero runtime)                                            |
+| Tokens            | Style Dictionary 5 + DTCG format                                              |
+| Monorepo          | Turborepo + pnpm                                                              |
+| Build (React)     | Vite library mode (ES modules + UMD)                                          |
+| Testing           | Vitest + Testing Library + axe-core                                           |
+| Visual Regression | Own visual review (`tests/visual`)                                            |
+| Figma             | Code Connect for React, SwiftUI and Compose                                   |
+| i18n              | RTL through `dir="rtl"` on `ThemeProvider`; a component's words are its props |
 
 ### npm Packages
 
@@ -103,29 +128,35 @@ Compose ship as source in `packages/ios` and `packages/android`, not on npm.
 ```
 kozmos-design-system-dev/
 ├── packages/
-│   ├── tokens/          # Style Dictionary source
-│   ├── react/           # React components + Storybook
-│   ├── ios/             # SwiftUI components (SPM)
-│   ├── android/         # Compose components (Gradle)
-│   ├── react-native/    # RN components
-│   ├── vue/             # Lit Web Components + Vue wrappers
-│   └── icons/           # SVG source + generated icons
+│   ├── tokens/              # The design tokens: DTCG source, CSS, JS, Swift and Kotlin output
+│   ├── react/               # React components
+│   ├── icons/               # SVG source and the generated icon components
+│   ├── product-contracts/   # The shapes a product passes the Product / SDK components
+│   ├── ios/                 # SwiftUI components (Swift package, library Kozmos)
+│   ├── android/             # Compose components (Gradle module, com.kozmos)
+│   └── vue/                 # Private: mounts the React components in Vue
 ├── apps/
-│   └── docs/            # Documentation site
+│   ├── docs/                # Storybook
+│   └── site/                # The website
 ├── docs/
-│   └── project-scope.md # Full specification
-└── .ai-skills/          # This directory
+│   ├── claude-design/       # Consuming Kozmos, and an API card per component, generated
+│   ├── proposals/           # Designs that are not built
+│   └── project-scope.md     # The original specification
+└── .ai-skills/              # This directory
 ```
 
 ---
 
 ## How to Use These Documents
 
+Where a document here or `docs/project-scope.md` disagrees with the generated facts above, or with
+the code, the facts and the code are right.
+
 ### For Code Generation
 
 When generating component code, reference:
 
-1. **code-patterns.md** - Ready-to-use templates for all 6 platforms
+1. **code-patterns.md** - Templates for React, SwiftUI and Compose
 2. **design-philosophy.md** - For interaction patterns and visual guidelines
 3. **docs/project-scope.md §5** - For component API patterns (CVA, compound components)
 4. **docs/project-scope.md §8** - For platform-specific patterns
@@ -185,20 +216,12 @@ When preparing Figma components or reviewing designs:
 
 When setting up AI agents in projects that use Kozmos:
 
-1. **ai-integration-guide.md** - Context files for all major AI agents
-2. **mcp-server-specification.md** - MCP server integration for Claude/Cursor
+1. **ai-integration-guide.md** - What an assistant should read, and a context file for the project
+2. **docs/claude-design/** - The API cards, for Claude Design and any assistant
 
-Supported AI agents:
-
-- **Claude** (Claude Desktop, Claude Code, claude.ai)
-- **Cursor** (IDE with AI)
-- **Anti Gravity** (Custom agent platform)
-- **GitHub Copilot** (VS Code, JetBrains)
-- **Codeium** (Multi-IDE)
-- **Amazon Q** (AWS-focused)
-- **JetBrains AI** (IntelliJ, WebStorm)
-- **Tabnine** (Multi-IDE)
-- **Sourcegraph Cody** (Code intelligence)
+Any assistant that reads a project instructions file (`CLAUDE.md`, `AGENTS.md`,
+`.github/copilot-instructions.md`) or can be handed files can use them. There is no Kozmos MCP
+server or setup command: see docs/proposals.
 
 ---
 
@@ -208,7 +231,7 @@ Supported AI agents:
 
 ```
 Using the Kozmos design system patterns from .ai-skills/code-patterns.md
-and docs/project-scope.md §5, create a Tooltip component for React that:
+and docs/project-scope.md §5, create a Carousel component for React that:
 - Uses CVA for variants
 - Follows the compound component pattern
 - Includes proper ARIA attributes
@@ -248,4 +271,4 @@ These documents should be updated when:
 - New platforms or tools are added
 
 **Maintainer:** Kozmos Design System Core Team
-**Last updated:** 2026-09-28
+**Last updated:** 2026-09-29

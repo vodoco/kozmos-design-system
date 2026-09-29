@@ -18,15 +18,15 @@
 
 ### Safe Patterns
 
-```typescript
+```tsx
 // Use textContent for text insertion
 element.textContent = userInput;
 
 // React JSX auto-escapes
-<div>{userInput}</div>
+<div>{userInput}</div>;
 
 // Use DOMPurify for HTML
-import DOMPurify from 'dompurify';
+import DOMPurify from "dompurify";
 const clean = DOMPurify.sanitize(dirty);
 ```
 
@@ -76,10 +76,6 @@ const cspPolicy = {
 ```typescript
 // Never store tokens in localStorage
 // Use HttpOnly cookies or secure storage
-
-// React Native
-import * as SecureStore from "expo-secure-store";
-await SecureStore.setItemAsync("token", value);
 ```
 
 ---
@@ -100,9 +96,7 @@ await SecureStore.setItemAsync("token", value);
 
 ### React Native
 
-- Use react-native-keychain
-- Prevent screenshots on sensitive screens
-- Detect jailbreak/root in production
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 

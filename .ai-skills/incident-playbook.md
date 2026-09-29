@@ -69,7 +69,7 @@ Thanks for reporting this issue. We're investigating now.
 
 - Severity: [P0/P1/P2/P3]
 - Affected versions: @kozmos-ds/react@x.y.z
-- Platforms impacted: [React/iOS/Android/RN/Vue]
+- Platforms impacted: [React/SwiftUI/Compose]
 
 **Next Steps:**
 
