@@ -6,18 +6,21 @@ import SwiftUI
 /// categories it is given; filtering, searching, and result counts belong to
 /// the consuming app.
 ///
-/// In its sheet presentation, which paints no surface of its own, the panel
-/// is the top of the map shell's panel when it is that panel's content: its
-/// first row — the search row, or the tiles when there is none — tops its
-/// padding up to what the panel already leaves above it
-/// (`kozmosPanelInsetTop`, `kozmosPanelClearanceTop`) rather than adding to
-/// it, so the search field sits as far from the panel's top as from its side
-/// and keeps the grabber's target clear (decision 14).
+/// Hosted in the map shell's panel, in either presentation, the panel paints
+/// no surface of its own (decision 43) and is the top of the shell's panel
+/// when it is that panel's content: its first row — the search row, or the
+/// tiles when there is none — tops its padding up to what the panel already
+/// leaves above it (`kozmosPanelInsetTop`, `kozmosPanelClearanceTop`) rather
+/// than adding to it, so the search field sits as far from the panel's top as
+/// from its side and keeps the grabber's target clear (decision 14). Standing
+/// alone, in either presentation, it paints the background colour, as the
+/// web's browser and Android's do.
 public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: View, EmptyStateContent: View>: View {
-    /// Where the panel is drawn: on its own, with its own surface and a rule
-    /// under the search row; or inside the shell's sheet, which draws the
-    /// surface, where the search row sits straight over the grid as the
-    /// prototype's does.
+    /// Whether a rule runs under the search row: the panel presentation
+    /// draws one; the sheet presentation, for the shell's sheet, sets the
+    /// search row straight over the grid as the prototype's does. Neither
+    /// decides the fill: the browser paints its own standing alone, and none
+    /// on the shell's panel, whatever the presentation.
     public enum Presentation: Sendable {
         case panel
         case sheet
@@ -27,14 +30,16 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
     @Environment(\.kozmosPanelClearanceTop) private var panelClearanceTop
     @Environment(\.kozmosPanelSurface) private var panelSurface
 
-    /// Whether the browser sits on a surface it does not draw: in the sheet
-    /// presentation, and in the map shell's panel whatever the presentation.
-    /// The panel says so (`kozmosPanelSurface`), as the web's browser reads
-    /// it, so a product need not remember to pass the sheet presentation.
-    /// There the browser paints no fill of its own (decision 43) and its
-    /// first row tops up to what the panel leaves (decision 14). The panel
-    /// presentation keeps its rule under the search row.
-    private var onPanelSurface: Bool { presentation == .sheet || panelSurface != nil }
+    /// Whether the browser sits on a surface it does not draw: in the map
+    /// shell's panel, whatever the presentation. The panel says so
+    /// (`kozmosPanelSurface`), as the web's browser reads it, so a product
+    /// need not remember to pass the sheet presentation. There the browser
+    /// paints no fill of its own (decision 43) and its first row tops up to
+    /// what the panel leaves (decision 14). Standing alone it paints its
+    /// fill in either presentation, as React's and Compose's browsers do: the
+    /// sheet presentation painted none even there, so the map showed through
+    /// it. The panel presentation keeps its rule under the search row.
+    private var onPanelSurface: Bool { panelSurface != nil }
 
     private let categories: [KozmosCategoryPresentation]
     private let presentation: Presentation
@@ -87,8 +92,8 @@ public struct KozmosBrowseCategoriesPanel<Icon: View, Search: View, Actions: Vie
     /// own top: the row tops its 16 up to it rather than adding 16 to it, and
     /// keeps the clearance the panel asks for under a grabber. It padded 16
     /// under the grabber's 16-point row: the search field sat 32 from the
-    /// sheet's top and 16 from its side. Standing alone, the panel
-    /// presentation draws a surface of its own: it keeps its 16.
+    /// sheet's top and 16 from its side. Standing alone, in either
+    /// presentation, it draws a surface of its own and keeps its 16.
     private var firstRowTopPadding: CGFloat {
         let padding = KozmosDimensions.primitivesLayoutSpacing200
         guard onPanelSurface else { return padding }
