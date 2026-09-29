@@ -242,19 +242,23 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
         className={cn(
           "kozmos-poi-result-card relative bg-card text-card-foreground",
           appearance === "card" && "rounded-control border",
+          appearance === "card" && result.selected && "ring-2 ring-primary/20",
+          // Only Featured recolours the card's edge, in its tab's amber (an
+          // owned rule), selected or not: the ring says which is selected. A
+          // number keeps the grey edge, so it never reads as the selected
+          // card, and a badge is quiet: it must not read as featured
+          // (GAP-054).
           appearance === "card" &&
-            (result.selected
-              ? "border-primary ring-2 ring-primary/20"
-              : "border-border"),
+            (tab?.kind === "featured"
+              ? "kozmos-poi-result-card-featured"
+              : result.selected
+                ? "border-primary"
+                : "border-border"),
           // A row states its selection with a fill, since it has no border of
           // its own to thicken.
           appearance === "row" && result.selected && "bg-primary/5",
           // The tab hangs above the card, so it needs the space a card has.
           appearance === "card" && tab && "mt-3",
-          // Only Featured recolours the card's edge. A number keeps the grey
-          // edge, so it never reads as the selected card, and a badge is
-          // quiet: it must not read as featured (GAP-054).
-          appearance === "card" && tab?.kind === "featured" && "border-warning",
           className,
         )}
         data-appearance={appearance}
@@ -267,8 +271,9 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       >
         {/* One tab per card, painted for what it says (owned CSS, so the
             paint holds without @scope):
-            - Featured: the warning fill with a star, and the card's edge in
-              the same colour. It is set in the CMS and read beyond this card.
+            - Featured: the SDK's bright amber under dark words, the alert
+              fill pair, with a star, and the card's edge in the same amber.
+              It is set in the CMS and read beyond this card.
             - A number: the pin's number. Quiet, outlined on the card's own
               fill, until the result is selected; then filled in the primary
               colour, as the selected card's edge is. Decorative: the number

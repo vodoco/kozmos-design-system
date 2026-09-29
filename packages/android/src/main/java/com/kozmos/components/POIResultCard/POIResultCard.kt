@@ -161,11 +161,7 @@ fun KozmosPOIResultCard(
         color = KozmosThemeTokens.primitivesColorsBackground0,
         border = BorderStroke(
             width = if (result.selected) 2.dp else 1.dp,
-            color = if (result.selected) {
-                KozmosThemeTokens.primitivesColorsTheme500
-            } else {
-                KozmosThemeTokens.semanticsBorderSubtle
-            }
+            color = kozmosPOIResultCardEdge(selected = result.selected, featured = tab is KozmosPOIResultTab.Featured)
         )
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -365,9 +361,24 @@ internal fun kozmosPOIResultTab(
 internal data class KozmosPOIResultTabPaint(val fill: Color, val ink: Color, val edge: Color?)
 
 /**
- * GAP-054. Featured is the alert button's pair, as it always was. A number is
- * quiet at rest, the card's own fill outlined in the container edge with muted
- * words, and filled with the primary colour when the result is selected, as the
+ * The card's edge. Selected, the theme colour, whatever else the card is: the
+ * web says selection with a ring beside the edge, and a native card has only
+ * its edge to say it with. Otherwise a featured card takes its tab's amber
+ * (Olcay, 2026-09-29), and every other card the container edge: a number and a
+ * badge never recolour it.
+ */
+@Composable
+internal fun kozmosPOIResultCardEdge(selected: Boolean, featured: Boolean): Color = when {
+    selected -> KozmosThemeTokens.primitivesColorsTheme500
+    featured -> KozmosThemeTokens.semanticsEmotionAlertFill
+    else -> KozmosThemeTokens.semanticsBorderSubtle
+}
+
+/**
+ * GAP-054. Featured is the SDK's bright amber under dark words, the alert fill
+ * pair, for its words and its star (Olcay, 2026-09-29). A number is quiet at
+ * rest, the card's own fill outlined in the container edge with muted words,
+ * and filled with the primary colour when the result is selected, as the
  * selected card's edge is. A badge is quiet: the muted fill and muted words,
  * with no star. Each pair reads at 4.5:1 or more in both themes, as on the web.
  */
@@ -375,8 +386,8 @@ internal data class KozmosPOIResultTabPaint(val fill: Color, val ink: Color, val
 internal fun kozmosPOIResultTabPaint(tab: KozmosPOIResultTab, selected: Boolean): KozmosPOIResultTabPaint =
     when (tab) {
         is KozmosPOIResultTab.Featured -> KozmosPOIResultTabPaint(
-            fill = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle,
-            ink = KozmosThemeTokens.componentsPrimaryButtonsAlertButtonForegroundContentIdle,
+            fill = KozmosThemeTokens.semanticsEmotionAlertFill,
+            ink = KozmosThemeTokens.semanticsEmotionAlertOnfill,
             edge = null
         )
         is KozmosPOIResultTab.Number -> if (selected) {

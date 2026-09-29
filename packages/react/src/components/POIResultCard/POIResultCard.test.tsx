@@ -503,13 +503,19 @@ describe("POIResultCard", () => {
       expect(tab).not.toHaveClass("bg-warning");
       expect(tab).toHaveAttribute("data-tab", "badge");
       expect(screen.getByRole("article")).not.toHaveClass("border-warning");
+      expect(screen.getByRole("article")).not.toHaveClass(
+        "kozmos-poi-result-card-featured",
+      );
       expect(screen.getByRole("article")).toHaveClass("border-border");
       // Read, as it always was: why this result is in the list.
       expect(tab).not.toHaveAttribute("aria-hidden");
     });
 
-    it("keeps Featured's star, paint and edge", () => {
-      const { container } = render(
+    it("draws Featured in its amber with a star, and the card's edge in the same amber, selected or not", () => {
+      // Olcay, 2026-09-29: the SDK's bright amber under dark words. The
+      // tab's paint and the edge are owned rules; the ring still says which
+      // card is selected.
+      const { container, rerender } = render(
         <POIResultCard
           poi={poi}
           result={{ ...plain, featured: true }}
@@ -520,7 +526,20 @@ describe("POIResultCard", () => {
       expect(tab).toHaveTextContent("Featured");
       expect(tab.querySelector("svg")).not.toBeNull();
       expect(tab).toHaveAttribute("data-tab", "featured");
-      expect(screen.getByRole("article")).toHaveClass("border-warning");
+      const card = screen.getByRole("article");
+      expect(card).toHaveClass("kozmos-poi-result-card-featured");
+      expect(card).not.toHaveClass("border-warning");
+      expect(card).not.toHaveClass("border-border");
+
+      rerender(
+        <POIResultCard
+          poi={poi}
+          result={{ ...plain, featured: true, selected: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(card).toHaveClass("kozmos-poi-result-card-featured", "ring-2");
+      expect(card).not.toHaveClass("border-primary");
     });
 
     it("hangs from the card's start edge, so it follows the name right to left", () => {
@@ -555,7 +574,7 @@ describe("POIResultCard", () => {
       expect(tab).not.toHaveAttribute("data-selected");
       const card = screen.getByRole("article");
       expect(card).toHaveClass("border-border", "mt-3");
-      expect(card).not.toHaveClass("border-warning");
+      expect(card).not.toHaveClass("kozmos-poi-result-card-featured");
       expect(card).not.toHaveClass("border-primary");
       // The prop is the card's, never an attribute on the page.
       expect(card).not.toHaveAttribute("numbered");

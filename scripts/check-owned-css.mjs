@@ -122,6 +122,9 @@ async function resultTabsIn(page, id) {
           kind: tab.getAttribute("data-tab"),
           text: tab.textContent,
           star: tab.querySelector("svg") !== null,
+          starFill: tab.querySelector("svg")
+            ? getComputedStyle(tab.querySelector("svg")).fill
+            : null,
           hidden: tab.getAttribute("aria-hidden") === "true",
           background: s.backgroundColor,
           color: s.color,
@@ -261,9 +264,11 @@ try {
       // The result card's one tab (GAP-054; Olcay, 2026-09-29): each is
       // painted for what it says, in this root's theme, with or without
       // @scope and under the host's hostile rules, because the paint is
-      // owned. Featured keeps its warning tab and edge; a number is quiet and
-      // outlined at rest and primary when selected, and never recolours the
-      // card's edge; a badge is quiet, with no star and the grey edge. With
+      // owned. Featured is the SDK's bright amber under dark words, the alert
+      // fill pair, for its words and its star, and the card's edge takes the
+      // same amber; a number is quiet and outlined at rest and primary when
+      // selected, and never recolours the card's edge; a badge is quiet, with
+      // no star and the grey edge. With
       // the utilities (the full pass) each hangs from the card's start edge,
       // the right here, and the number leads the result's name.
       {
@@ -273,8 +278,8 @@ try {
         const expected = {
           featured: {
             kind: "featured",
-            background: await token("--primitives-colors-emotional-alert-800"),
-            color: await token("--primitives-colors-foreground-1000"),
+            background: await token("--semantics-emotion-alert-fill"),
+            color: await token("--semantics-emotion-alert-on-fill"),
             star: true,
             hidden: false,
           },
@@ -319,7 +324,8 @@ try {
             hidden: true,
           },
         };
-        const warning = await token("--primitives-colors-emotional-alert-800");
+        const amber = await token("--semantics-emotion-alert-fill");
+        const onAmber = await token("--semantics-emotion-alert-on-fill");
         for (const drawn of await resultTabsIn(page, id)) {
           const where = `${mode}, ${theme}: the ${drawn.surface}'s tab`;
           assert(drawn.found, `${where} is not drawn`);
@@ -339,11 +345,17 @@ try {
               `${where} does not hang from the card's top edge (${drawn.above}px)`,
             );
             assert.equal(
-              drawn.cardEdge === warning,
+              drawn.cardEdge === amber,
               drawn.surface === "featured",
-              `${where}: the card's edge is ${drawn.cardEdge}; only Featured's is the warning colour`,
+              `${where}: the card's edge is ${drawn.cardEdge}; only Featured's is its amber`,
             );
           }
+          if (drawn.surface === "featured")
+            assert.equal(
+              drawn.starFill,
+              onAmber,
+              `${where}: the star is not the amber's ink`,
+            );
           if (drawn.surface === "number" || drawn.surface === "badge")
             assert.equal(
               drawn.cardEdge,
@@ -366,7 +378,7 @@ try {
           }
         }
         console.log(
-          `PASS GAP-054, ${theme}, ${mode}: Featured is the warning tab with a star; the number is quiet and outlined at rest and primary when selected, on cards and grouped rows; the badge is quiet with no star${mode === "full" ? "; each hangs from the start edge, only Featured recolours the card's edge, and the number leads the name" : ""}`,
+          `PASS GAP-054, ${theme}, ${mode}: Featured is the amber tab with dark words and a star; the number is quiet and outlined at rest and primary when selected, on cards and grouped rows; the badge is quiet with no star${mode === "full" ? "; each hangs from the start edge, only Featured recolours the card's edge (its amber, as is its star), and the number leads the name" : ""}`,
         );
       }
       const poi = page.getByTestId(`${id}-poi`);

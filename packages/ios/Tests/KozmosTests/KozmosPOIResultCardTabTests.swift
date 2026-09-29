@@ -122,9 +122,10 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
 
     func testEachTabIsPaintedForWhatItSaysAndReadsAtFourAndAHalfToOne() {
         let cases: [(String, KozmosPOIResultCard, Color, Color, Color?)] = [
+            // The SDK's bright amber under dark words (Olcay, 2026-09-29).
             ("featured", card(numbered: true, featured: true),
-             KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle,
-             KozmosColors.componentsPrimaryButtonsAlertButtonForegroundContentIdle, nil),
+             KozmosColors.semanticsEmotionAlertFill,
+             KozmosColors.semanticsEmotionAlertOnfill, nil),
             ("number at rest", card(numbered: true),
              KozmosColors.primitivesColorsBackground0, KozmosColors.primitivesColorsForeground400,
              KozmosColors.semanticsBorderSubtle),
@@ -148,10 +149,32 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
                 print("GAP-054 iOS: \(name), \(style == .dark ? "dark" : "light"): \(String(format: "%.2f", ratio)):1")
                 if ratio < 4.5 { wrong.append("\(name), \(style.rawValue): \(ratio):1, under 4.5:1") }
             }
-            // The badge is never painted as Featured is.
+            // The badge is never painted as Featured is, now or as it was.
             if let badge = card(numbered: false, badge: "Alternative").tabPaint,
-               same(badge.fill, KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle, style) {
+               same(badge.fill, KozmosColors.semanticsEmotionAlertFill, style)
+                || same(badge.fill, KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle, style) {
                 wrong.append("badge, \(style.rawValue): drawn in Featured's colour")
+            }
+        }
+        XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
+    }
+
+    /// A featured card's edge takes its tab's amber; a number and a badge keep
+    /// the container edge; a selected card, featured or not, has the theme's
+    /// edge, since a native card has no ring to say it with.
+    func testOnlyAFeaturedCardsEdgeIsItsAmberAndSelectionKeepsTheThemesEdge() {
+        var wrong: [String] = []
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let cases: [(String, KozmosPOIResultCard, Color)] = [
+                ("featured", card(numbered: true, featured: true), KozmosColors.semanticsEmotionAlertFill),
+                ("featured and selected", card(numbered: true, featured: true, selected: true),
+                 KozmosColors.primitivesColorsTheme500),
+                ("number", card(numbered: true), KozmosColors.semanticsBorderSubtle),
+                ("badge", card(numbered: false, badge: "Alternative"), KozmosColors.semanticsBorderSubtle),
+                ("selected number", card(numbered: true, selected: true), KozmosColors.primitivesColorsTheme500),
+            ]
+            for (name, card, edge) in cases where !same(card.edgeColor, edge, style) {
+                wrong.append("\(name), \(style.rawValue)")
             }
         }
         XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
@@ -181,14 +204,19 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
             let muted = try await RenderedPixels.render(
                 KozmosColors.primitivesColorsBackground100.environment(\.colorScheme, scheme), size: size
             ).color(at: centre)
+            // Featured's colour as the released card drew it, and as it is now.
             let alert = try await RenderedPixels.render(
                 KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle.environment(\.colorScheme, scheme), size: size
             ).color(at: centre)
+            let amber = try await RenderedPixels.render(
+                KozmosColors.semanticsEmotionAlertFill.environment(\.colorScheme, scheme), size: size
+            ).color(at: centre)
             // Inside the tab's leading padding, level with its words: its fill.
             let fill = drawn.color(at: CGPoint(x: 16 + 3, y: 12))
-            let line = "\(scheme): the badge's tab is (\(fill.0), \(fill.1), \(fill.2)); muted (\(muted.0), \(muted.1), \(muted.2)), Featured's (\(alert.0), \(alert.1), \(alert.2))"
+            let line = "\(scheme): the badge's tab is (\(fill.0), \(fill.1), \(fill.2)); muted (\(muted.0), \(muted.1), \(muted.2)), Featured's (\(alert.0), \(alert.1), \(alert.2)), now (\(amber.0), \(amber.1), \(amber.2))"
             print("GAP-054 iOS: \(line)")
-            if distance(fill, muted) > 12 || distance(fill, muted) >= distance(fill, alert) {
+            if distance(fill, muted) > 12 || distance(fill, muted) >= distance(fill, alert)
+                || distance(fill, muted) >= distance(fill, amber) {
                 wrong.append(line)
             }
         }

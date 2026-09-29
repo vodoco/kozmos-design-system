@@ -20,9 +20,11 @@ results remain readable but cannot invoke `onSelect`.
 A card draws at most one tab, hung from its top edge at the start, where the name begins (the right
 in a right-to-left language). What it says decides how it looks, and the first that applies wins:
 
-1. **Featured** (`result.featured`): the warning tab with a star, and the card's edge in the same
-   colour. Featured is set in the CMS and read beyond the card: a featured result's pin shows its
-   logo on the map.
+1. **Featured** (`result.featured`): the SDK's bright amber under dark words, with a star, and the
+   card's edge in the same amber, selected or not (the ring says which card is selected). It is the
+   alert fill pair, `--semantics-emotion-alert-fill` and `--semantics-emotion-alert-on-fill`, which
+   stays bright in both themes. Featured is set in the CMS and read beyond the card: a featured
+   result's pin shows its logo on the map.
 2. **A number** (`numbered`, off unless the product turns it on): the result's `resultIndex`, the
    number its pin shows. At rest the tab is quiet, outlined on the card's own fill, and the card
    keeps its grey edge, so a number never reads as the selected card. Selected, the tab fills with
@@ -46,8 +48,9 @@ than its badge, so the list's numbers match the pins.
 - **In a group.** A `POIResultGroup` row has no edge of its own to hang a tab from, so a numbered
   row draws its number before its name, painted as the tab is.
 - **The colours** are owned rules, so they hold without `@scope`, and each tab's words read at
-  4.5:1 or more on its fill in both themes: the number 6.10:1 light and 7.76:1 dark at rest, 6.24:1
-  and 6.17:1 selected; the badge 4.80:1 and 6.51:1.
+  4.5:1 or more on its fill in both themes: Featured 10.56:1 light and 13.14:1 dark; the number
+  6.10:1 and 7.76:1 at rest, 6.24:1 and 6.17:1 selected; the badge 4.80:1 and 6.51:1. iOS and
+  Android draw the same pairs.
 
 <Canvas of={Stories.Tabs} />
 <Canvas of={Stories.TabsRightToLeft} />

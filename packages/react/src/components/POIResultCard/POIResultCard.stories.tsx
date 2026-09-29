@@ -155,9 +155,10 @@ function ResultTabs({
 /**
  * The card's one tab, in the order it wins (Olcay, 2026-09-29):
  *
- * - **Featured**: the warning tab with a star and the card's edge in the same
- *   colour. It is set in the CMS, and a featured result's pin shows its logo,
- *   so it shows no number even in a numbered list.
+ * - **Featured**: the SDK's bright amber under dark words, with a star, and
+ *   the card's edge in the same amber. It is set in the CMS, and a featured
+ *   result's pin shows its logo, so it shows no number even in a numbered
+ *   list.
  * - **A number**, in a list the product numbers (`numbered`): the result's
  *   `resultIndex`, the number its pin shows. Selected, it fills with the
  *   primary colour; at rest it is quiet and outlined, on the card's grey edge,

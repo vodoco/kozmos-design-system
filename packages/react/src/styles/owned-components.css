@@ -420,7 +420,10 @@
      4.5:1 or more on its own fill in both themes, measured by
      check-owned-css.
 
-     - Featured: the warning fill and its ink, as it always was.
+     - Featured: the SDK's bright amber under dark words, the alert fill and
+       its ink (Olcay, 2026-09-29), for the words and the star alike. The
+       pair does not turn over with the theme, so it reads the same on a
+       light card and a dark one. The card's edge takes the same amber.
      - A number at rest: quiet, the card's own fill outlined in the container
        edge, with the number in the muted text colour. Selected, it fills
        with the primary colour, as the selected card's edge is primary, and
@@ -428,8 +431,15 @@
      - A badge: quiet, the muted fill and the muted text colour, and no star
        (GAP-054). It is why the result is in the list, not a promotion. */
   .kozmos-poi-result-tab[data-tab="featured"] {
-    background-color: var(--primitives-colors-emotional-alert-800);
-    color: var(--primitives-colors-foreground-1000);
+    background-color: var(--semantics-emotion-alert-fill);
+    color: var(--semantics-emotion-alert-on-fill);
+  }
+  /* A featured card's edge, in the tab's amber. The card draws no other
+     edge colour while it is featured, so this one rule decides it. Two
+     classes, because the scoped preflight gives every element an edge colour
+     at one class's weight, and a scoped rule wins a tie with an owned one. */
+  .kozmos-poi-result-card.kozmos-poi-result-card-featured {
+    border-color: var(--semantics-emotion-alert-fill);
   }
   .kozmos-poi-result-tab[data-tab="number"] {
     background-color: var(--primitives-colors-background-0);

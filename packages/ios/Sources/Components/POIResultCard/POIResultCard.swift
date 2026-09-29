@@ -97,12 +97,13 @@ public struct KozmosPOIResultCard: View {
         return nil
     }
 
-    /// The tab's fill, words and edge (GAP-054). Featured is the alert
-    /// button's pair, as it always was. A number is quiet at rest, the card's
-    /// own fill outlined in the container edge with muted words, and filled
-    /// with the primary colour when the result is selected, as the selected
-    /// card's edge is. A badge is quiet: the muted fill and muted words, with
-    /// no star. Each pair reads at 4.5:1 or more in both themes, as on the web.
+    /// The tab's fill, words and edge (GAP-054). Featured is the SDK's bright
+    /// amber under dark words, the alert fill pair, for its words and its star
+    /// (Olcay, 2026-09-29). A number is quiet at rest, the card's own fill
+    /// outlined in the container edge with muted words, and filled with the
+    /// primary colour when the result is selected, as the selected card's edge
+    /// is. A badge is quiet: the muted fill and muted words, with no star. Each
+    /// pair reads at 4.5:1 or more in both themes, as on the web.
     struct TabPaint {
         let fill: Color
         let ink: Color
@@ -113,8 +114,8 @@ public struct KozmosPOIResultCard: View {
         switch tab {
         case .featured:
             return TabPaint(
-                fill: KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle,
-                ink: KozmosColors.componentsPrimaryButtonsAlertButtonForegroundContentIdle,
+                fill: KozmosColors.semanticsEmotionAlertFill,
+                ink: KozmosColors.semanticsEmotionAlertOnfill,
                 edge: nil
             )
         case .number:
@@ -364,14 +365,20 @@ public struct KozmosPOIResultCard: View {
         .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
-                .stroke(
-                    result.selected
-                        ? KozmosColors.primitivesColorsTheme500
-                        : KozmosColors.semanticsBorderSubtle,
-                    lineWidth: result.selected ? 2 : 1
-                )
+                .stroke(edgeColor, lineWidth: result.selected ? 2 : 1)
         )
         .accessibilityIdentifier(kozmosPOIResultIdentifier(poi.id))
+    }
+
+    /// The card's edge. Selected, the theme colour at 2pt, whatever else the
+    /// card is: the web says selection with a ring beside the edge, and a
+    /// native card has only its edge to say it with. Otherwise a featured card
+    /// takes its tab's amber (Olcay, 2026-09-29), and every other card the
+    /// container edge: a number and a badge never recolour it.
+    var edgeColor: Color {
+        if result.selected { return KozmosColors.primitivesColorsTheme500 }
+        if tab == .featured { return KozmosColors.semanticsEmotionAlertFill }
+        return KozmosColors.semanticsBorderSubtle
     }
 
     /// The one tab, at the card's leading edge. Featured and a badge are read
