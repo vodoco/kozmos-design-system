@@ -55,7 +55,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `WayfindingCardProps`, wh
 - `closeLabel`: `string`, optional, default `"Close navigation"`.
 - `children`: `React.ReactNode`, **required**.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## WayfindingInputRow
 
@@ -73,4 +73,4 @@ It forwards its ref to `HTMLDivElement`. Its props are `WayfindingInputRowProps`
 - `swapLabel`: `string`, optional, default `"Swap origin and destination"`.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

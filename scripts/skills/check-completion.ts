@@ -34,6 +34,7 @@ const PRODUCT_SDK_COMPONENT_NAMES = new Set([
   "MapControlsGroup",
   "MapControlButton",
   "MapOverlay",
+  "MapStatusPill",
   "MapView",
   "POICard",
   "POIDetailPanel",

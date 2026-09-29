@@ -327,6 +327,8 @@
   <color name="semantics_emotion_alert_surface">@color/primitives_colors_emotional_alert_100</color>
   <color name="semantics_emotion_alert_on_surface">@color/primitives_colors_emotional_alert_900</color>
   <color name="semantics_emotion_alert_text">@color/primitives_colors_emotional_alert_900</color>
+  <color name="semantics_emotion_alert_fill">@color/primitives_colors_emotional_alert_600</color>
+  <color name="semantics_emotion_alert_on_fill">@color/primitives_colors_foreground_0</color>
   <color name="semantics_emotion_informative_surface">@color/primitives_colors_emotional_info_100</color>
   <color name="semantics_emotion_informative_on_surface">@color/primitives_colors_emotional_info_900</color>
   <color name="semantics_emotion_informative_text">@color/primitives_colors_emotional_info_800</color>

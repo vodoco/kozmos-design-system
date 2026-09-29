@@ -9,6 +9,7 @@ import {
   ArrowRight,
   ArrowUp,
   Bell01,
+  BluetoothOff,
   Bookmark,
   Building01,
   Bus,
@@ -68,6 +69,7 @@ export const kozmosIconNames = [
   "arrow-right",
   "arrow-up",
   "bell-01",
+  "bluetooth-off",
   "building-01",
   "bus",
   "calendar",
@@ -122,7 +124,6 @@ export const kozmosIconNames = [
   "phone",
   "share-01",
   "shopping-bag-02",
-
 ] as const;
 
 export type KozmosIconName = (typeof kozmosIconNames)[number];
@@ -233,6 +234,14 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     category: "General",
     description: "Notification bell.",
     component: Bell01,
+  },
+  {
+    name: "bluetooth-off",
+    figmaName: "bluetooth-off",
+    figmaNodeId: "1007:10625",
+    category: "Media & devices",
+    description: "Bluetooth is off: the map status pill's No Bluetooth.",
+    component: BluetoothOff,
   },
   {
     name: "building-01",

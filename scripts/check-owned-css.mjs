@@ -742,6 +742,143 @@ try {
           `${where}: a map control's focus ring is ${contrast.toFixed(2)}:1 against its surface`,
         );
 
+        // Decision 39: the map's status pill wears the map controls' surface
+        // from the same owned rule — the Control corner, no border, the map
+        // controls' elevation and the 32px blur — at least 48 tall, 8 above
+        // and below and 12 at the sides, the SDK's words (13 on 16, in
+        // foreground/300) and a 24 mark 8 before them, on the side reading
+        // starts from. Turn Back is the named alert fill pair.
+        const statusLook = (testId) =>
+          page.getByTestId(testId).evaluate((node) => {
+            const s = getComputedStyle(node);
+            const box = node.getBoundingClientRect();
+            const mark = node
+              .querySelector(".kozmos-map-status-pill-mark")
+              ?.getBoundingClientRect();
+            const words = node
+              .querySelector(".kozmos-map-status-pill-words")
+              .getBoundingClientRect();
+            const rtl = s.direction === "rtl";
+            return {
+              height: box.height,
+              radius: [
+                s.borderTopLeftRadius,
+                s.borderTopRightRadius,
+                s.borderBottomRightRadius,
+                s.borderBottomLeftRadius,
+              ],
+              border: [
+                s.borderTopWidth,
+                s.borderRightWidth,
+                s.borderBottomWidth,
+                s.borderLeftWidth,
+              ],
+              padding: [
+                s.paddingTop,
+                s.paddingRight,
+                s.paddingBottom,
+                s.paddingLeft,
+              ],
+              background: s.backgroundColor,
+              boxShadow: s.boxShadow,
+              backdrop: s.backdropFilter || s.webkitBackdropFilter,
+              color: s.color,
+              type: [s.fontSize, s.lineHeight, s.fontWeight],
+              mark: mark && [mark.width, mark.height],
+              markInset: mark && (rtl ? box.right - mark.right : mark.left - box.left),
+              gap: mark && (rtl ? mark.left - words.right : words.left - mark.right),
+              wordsInset: rtl ? box.right - words.right : words.left - box.left,
+            };
+          });
+        const status = await statusLook(`${id}-map-status`);
+        assert.equal(
+          status.height,
+          48,
+          `${where}: the status pill is not 48 tall: ${JSON.stringify(status)}`,
+        );
+        assert.deepEqual(
+          status.radius,
+          look.radius,
+          `${where}: the status pill's corner is not the map controls': ${JSON.stringify(status.radius)}`,
+        );
+        assert.deepEqual(
+          status.border,
+          ["0px", "0px", "0px", "0px"],
+          `${where}: the status pill draws a border: ${JSON.stringify(status.border)}`,
+        );
+        assert.deepEqual(
+          status.padding,
+          ["8px", "12px", "8px", "12px"],
+          `${where}: the status pill is not padded 8 by 12: ${JSON.stringify(status.padding)}`,
+        );
+        assert.equal(
+          status.background,
+          look.background,
+          `${where}: the status pill is not the map controls' surface`,
+        );
+        assert(
+          sameLayers(layersOf(status.boxShadow), elevation),
+          `${where}: the status pill does not cast the map controls' elevation: ${status.boxShadow}`,
+        );
+        assert.equal(
+          status.backdrop,
+          "blur(32px)",
+          `${where}: the status pill does not blur the map behind it by 32px`,
+        );
+        assert.equal(
+          status.color,
+          await value(`${id}-map-status`, "--primitives-colors-foreground-300"),
+          `${where}: the status pill's words are not foreground/300`,
+        );
+        assert.equal(
+          Math.round(parseFloat(status.type[0])),
+          13,
+          `${where}: the status pill's words are not 13: ${status.type}`,
+        );
+        assert.deepEqual(
+          status.type.slice(1),
+          ["16px", "400"],
+          `${where}: the status pill's words are not regular on a 16 line: ${status.type}`,
+        );
+        assert.deepEqual(
+          status.mark,
+          [24, 24],
+          `${where}: the status pill's mark is not 24: ${JSON.stringify(status.mark)}`,
+        );
+        assert(
+          Math.abs(status.markInset - 12) < 0.5 && Math.abs(status.gap - 8) < 0.5,
+          `${where}: the mark is ${status.markInset} in and ${status.gap} from the words, not 12 and 8`,
+        );
+        // The board's Turn Back: the named alert fill pair (Olcay,
+        // 2026-09-28), the SDK's bright amber under black words in both
+        // themes; the nested light theme here reads its own.
+        const turnBack = await statusLook(`${id}-map-status-warning`);
+        const alertFill = await value(
+          `${id}-map-status-warning`,
+          "--semantics-emotion-alert-fill",
+        );
+        assert.equal(
+          turnBack.background,
+          alertFill,
+          `${where}: Turn Back does not fill with Emotion/alert/fill (${alertFill})`,
+        );
+        assert.equal(
+          turnBack.color,
+          await value(
+            `${id}-map-status-warning`,
+            "--semantics-emotion-alert-on-fill",
+          ),
+          `${where}: Turn Back's words are not Emotion/alert/onFill`,
+        );
+        assert(
+          luminance(channels(turnBack.color)) < 0.05,
+          `${where}: Turn Back's words are ${turnBack.color}, not dark on its amber`,
+        );
+        assert(
+          turnBack.mark === undefined && Math.abs(turnBack.wordsInset - 12) < 0.5,
+          `${where}: Turn Back with no mark starts its words ${turnBack.wordsInset} in, not 12`,
+        );
+
         // The zoom pair is one surface: 48 wide, the control's corner and
         // elevation, and the two buttons in it cast nothing of their own —
         // the lower one's shadow would darken the upper.
@@ -993,6 +1130,9 @@ try {
         );
         console.log(
           `PASS ${where}: map controls are the SDK's 48 square, 16 corner, no edge, three shadows and 32px blur; the labels bold 16/16, grey off and navy on; the ring shows at ${contrast.toFixed(2)}:1`,
+        );
+        console.log(
+          `PASS ${where}: the map status pill wears their surface, 48 tall and padded 8 by 12, its words 13/16 in foreground/300 after a 24 mark 12 in and 8 before them; Turn Back is Emotion/alert/fill under its onFill`,
         );
       }
       // The search row: the field and what follows it on one line, in a

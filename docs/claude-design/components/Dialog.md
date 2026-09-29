@@ -89,7 +89,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DialogPrimitive.Dia
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## DialogClose
 
@@ -98,7 +98,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `DialogPrimitive.Dialo
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## DialogTrigger
 
@@ -107,7 +107,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `DialogPrimitive.Dialo
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## DialogContent
 
@@ -153,7 +153,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DialogPrimitive.Dia
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## DialogHeader
 
@@ -161,7 +161,7 @@ Its props are `React.HTMLAttributes<HTMLDivElement>`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## DialogFooter
 
@@ -169,7 +169,7 @@ Its props are `React.HTMLAttributes<HTMLDivElement>`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## DialogTitle
 
@@ -178,7 +178,7 @@ It forwards its ref to `HTMLHeadingElement`. Its props are `Omit<DialogPrimitive
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## DialogDescription
 
@@ -187,4 +187,4 @@ It forwards its ref to `HTMLParagraphElement`. Its props are `Omit<DialogPrimiti
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).

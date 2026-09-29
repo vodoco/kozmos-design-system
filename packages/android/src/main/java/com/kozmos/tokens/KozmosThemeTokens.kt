@@ -1018,6 +1018,31 @@ object KozmosThemeTokens {
         )
 
     /**
+     * A loud field an emotion fills: the map status pill's Turn Back. It stays
+     * bright in both files, alert/600, a mid step of the ramp, so it is not a
+     * surface that turns over with the theme, and it carries onFill, not the
+     * page's ink. The Category Fill tokens are the same shape for the
+     * taxonomy's colours.
+     */
+    val semanticsEmotionAlertFill: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsEmotionAlertFill,
+            KozmosColorsDark.semanticsEmotionAlertFill
+        )
+
+    /**
+     * Ink on the matching fill: black in both files, foreground/0 in the light
+     * and foreground/1000 in the dark, because the fill does not turn over and
+     * no one primitive is dark in both. 10.56:1 on the light fill and 13.14:1
+     * on the dark.
+     */
+    val semanticsEmotionAlertOnfill: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsEmotionAlertOnfill,
+            KozmosColorsDark.semanticsEmotionAlertOnfill
+        )
+
+    /**
      * The quiet field an emotional label sits on — a tag, a counter, a status
      * pill. Paired with onSurface it clears 4.5:1 in both modes; the emotional
      * ramps invert between the two files, so one alias is right in both.

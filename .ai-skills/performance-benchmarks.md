@@ -54,8 +54,11 @@ budgets, gzipped:
 | ------------------------------------ | ------ |
 | Any one public export, bundled alone | 8 KB   |
 | `Button` alone                       | 2 KB   |
-| Every export at once                 | 64 KB  |
+| Every export at once                 | 68 KB  |
 | The stylesheet                       | 30 KB  |
+
+The whole library's budget went from 64 to 68 KB on 2026-09-28 (decision 53); the other three are
+unchanged.
 
 No check enforces the tables below.
 

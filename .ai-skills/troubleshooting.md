@@ -195,7 +195,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
 **Symptoms:**
 
 ```
-❌ ERROR: everything costs 64.20 KB, over 64 KB
+❌ ERROR: everything costs 68.20 KB, over 68 KB
 ```
 
 **Solutions:**

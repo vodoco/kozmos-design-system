@@ -64,7 +64,7 @@ It forwards its ref to `HTMLButtonElement`. Its props are `DropdownMenuPrimitive
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 273 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuContent
 
@@ -103,7 +103,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuItem
 
@@ -116,7 +116,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 - `textValue`: `string`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuCheckboxItem
 
@@ -130,7 +130,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 - `onCheckedChange`: `(checked: boolean) => void`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuRadioItem
 
@@ -143,7 +143,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 - `textValue`: `string`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuLabel
 
@@ -153,7 +153,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuSeparator
 
@@ -162,7 +162,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuShortcut
 
@@ -170,7 +170,7 @@ Its props are `React.HTMLAttributes<HTMLSpanElement>`.
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuGroup
 
@@ -179,7 +179,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `DropdownMenuPrimitive.Dr
 - `asChild`: `boolean`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuPortal
 
@@ -227,7 +227,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 
 - `children`: `ReactNode`, optional.
 
-It also takes the 262 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuSubTrigger
 
@@ -239,7 +239,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<DropdownMenuPrimiti
 - `textValue`: `string`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## MenuRadioGroup
 
@@ -250,4 +250,4 @@ It forwards its ref to `HTMLDivElement`. Its props are `DropdownMenuPrimitive.Dr
 - `onValueChange`: `(value: string) => void`, optional.
 - `children`: `ReactNode`, optional.
 
-It also takes the 263 attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
