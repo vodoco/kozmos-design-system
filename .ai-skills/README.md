@@ -22,40 +22,40 @@ Where anything else here disagrees with them, they are right.
 
 ### Reference Documents (Conceptual)
 
-| Document                                           | Purpose                                                  | When to Use                                                        |
-| -------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------ |
-| [design-philosophy.md](./design-philosophy.md)     | Visual language, interaction patterns, design principles | Creating new components, reviewing designs, making UX decisions    |
-| [component-lifecycle.md](./component-lifecycle.md) | Component stages from proposal to removal                | Proposing features, understanding stability, planning deprecations |
-| [incident-playbook.md](./incident-playbook.md)     | Production incident response, hotfixes, post-mortems     | Debugging issues, publishing urgent fixes, rollback decisions      |
-| [code-patterns.md](./code-patterns.md)             | Templates for React, SwiftUI and Compose                 | Scaffolding new components, ensuring consistency across platforms  |
-| [troubleshooting.md](./troubleshooting.md)         | Common issues and solutions by category                  | Debugging build errors, component issues, CI/CD failures           |
+| Document                                           | Purpose                                                   | When to Use                                                        |
+| -------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------ |
+| [design-philosophy.md](./design-philosophy.md)     | Visual language, interaction patterns, design principles  | Creating new components, reviewing designs, making UX decisions    |
+| [component-lifecycle.md](./component-lifecycle.md) | Component stages from proposal to removal                 | Proposing features, understanding stability, planning deprecations |
+| [incident-playbook.md](./incident-playbook.md)     | Production incident response, hotfixes, post-mortems      | Debugging issues, publishing urgent fixes, rollback decisions      |
+| [code-patterns.md](./code-patterns.md)             | The real component to follow for each shape, per platform | Scaffolding new components, ensuring consistency across platforms  |
+| [troubleshooting.md](./troubleshooting.md)         | Common issues and solutions by category                   | Debugging build errors, component issues, CI/CD failures           |
 
 ### Maintenance & Evolution Documents
 
-| Document                                                 | Purpose                                             | When to Use                                                       |
-| -------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- |
-| [migration-guide.md](./migration-guide.md)               | Upgrading between releases, moving an app to Kozmos | Upgrading Kozmos, migrating from custom implementations           |
-| [api-changelog.md](./api-changelog.md)                   | API changes, deprecations, breaking changes         | Tracking what changed between versions, planning migrations       |
-| [decision-log.md](./decision-log.md)                     | Architecture Decision Records (ADRs)                | Understanding why decisions were made, proposing new decisions    |
-| [performance-benchmarks.md](./performance-benchmarks.md) | Bundle size budgets, runtime metrics, optimization  | Ensuring performance standards, catching regressions              |
-| [platform-mapping.md](./platform-mapping.md)             | Cross-platform component and prop mapping           | Implementing features across platforms, understanding differences |
-| [figma-audit.md](./figma-audit.md)                       | Figma component checklists for designers            | Preparing components for Code Connect, ensuring quality           |
+| Document                                                 | Purpose                                                  | When to Use                                                       |
+| -------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------- |
+| [migration-guide.md](./migration-guide.md)               | Upgrading between releases, moving an app to Kozmos      | Upgrading Kozmos, migrating from custom implementations           |
+| [api-changelog.md](./api-changelog.md)                   | API changes, deprecations, breaking changes              | Tracking what changed between versions, planning migrations       |
+| [decision-log.md](./decision-log.md)                     | Architecture Decision Records (ADRs)                     | Understanding why decisions were made, proposing new decisions    |
+| [performance-benchmarks.md](./performance-benchmarks.md) | The bundle budgets CI enforces, and what is not measured | Ensuring performance standards, catching regressions              |
+| [platform-mapping.md](./platform-mapping.md)             | Cross-platform component and prop mapping                | Implementing features across platforms, understanding differences |
+| [figma-audit.md](./figma-audit.md)                       | Figma component checklists for designers                 | Preparing components for Code Connect, ensuring quality           |
 
 ### Technical Implementation Documents (Executable)
 
-| Document                                                     | Purpose                                                | When to Use                                                    |
-| ------------------------------------------------------------ | ------------------------------------------------------ | -------------------------------------------------------------- |
-| [getting-started.md](./getting-started.md)                   | Development environment setup, project structure       | Setting up the project from scratch, onboarding new developers |
-| [component-creation-guide.md](./component-creation-guide.md) | Step-by-step component creation for all platforms      | Creating new components, following correct patterns            |
-| [token-implementation.md](./token-implementation.md)         | Style Dictionary configuration, DTCG format, output    | Setting up tokens, modifying token pipeline                    |
-| [testing-patterns.md](./testing-patterns.md)                 | Platform-specific test examples, setup                 | Writing tests, ensuring quality                                |
-| [ci-cd-configuration.md](./ci-cd-configuration.md)           | GitHub Actions workflows, secrets, automation          | Setting up CI/CD, debugging pipelines                          |
-| [publishing-guide.md](./publishing-guide.md)                 | The npm release; SwiftUI and Compose are not published | Releasing packages, managing versions                          |
-| [storybook-guide.md](./storybook-guide.md)                   | Storybook setup, addons, documentation                 | Component development environment                              |
-| [accessibility-guide.md](./accessibility-guide.md)           | WCAG 2.1 AA compliance, component checklists           | Ensuring accessibility standards                               |
-| [i18n-guide.md](./i18n-guide.md)                             | Internationalization, RTL support, translations        | Multi-language implementation                                  |
-| [theming-guide.md](./theming-guide.md)                       | White-labeling, customer themes, dark mode             | Theme customization                                            |
-| [security-guide.md](./security-guide.md)                     | Security hardening, vulnerability prevention           | Secure component patterns                                      |
+| Document                                                     | Purpose                                                    | When to Use                                                    |
+| ------------------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| [getting-started.md](./getting-started.md)                   | Development environment setup, project structure           | Setting up the project from scratch, onboarding new developers |
+| [component-creation-guide.md](./component-creation-guide.md) | Step-by-step component creation for all platforms          | Creating new components, following correct patterns            |
+| [token-implementation.md](./token-implementation.md)         | The token source, build, outputs and checks                | Setting up tokens, modifying token pipeline                    |
+| [testing-patterns.md](./testing-patterns.md)                 | The tests on each platform, with excerpts of real ones     | Writing tests, ensuring quality                                |
+| [ci-cd-configuration.md](./ci-cd-configuration.md)           | GitHub Actions workflows, secrets, automation              | Setting up CI/CD, debugging pipelines                          |
+| [publishing-guide.md](./publishing-guide.md)                 | The npm release; SwiftUI and Compose are not published     | Releasing packages, managing versions                          |
+| [storybook-guide.md](./storybook-guide.md)                   | Storybook setup, addons, documentation                     | Component development environment                              |
+| [accessibility-guide.md](./accessibility-guide.md)           | WCAG 2.1 AA compliance, component checklists               | Ensuring accessibility standards                               |
+| [i18n-guide.md](./i18n-guide.md)                             | Direction, and the words a product passes to the parts     | Multi-language implementation                                  |
+| [theming-guide.md](./theming-guide.md)                       | Light and dark on each platform; the web's token overrides | Theme customization                                            |
+| [security-guide.md](./security-guide.md)                     | Security hardening, vulnerability prevention               | Secure component patterns                                      |
 
 ### AI Integration Documents
 
@@ -66,9 +66,9 @@ Where anything else here disagrees with them, they are right.
 
 ### Proposals: not built
 
-| Document                                      | Purpose                                                                                   |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [docs/proposals](../docs/proposals/README.md) | Designs kept as planning history: an MCP server, an AI setup command, and other platforms |
+| Document                                      | Purpose                                                                                                                                                                          |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [docs/proposals](../docs/proposals/README.md) | Designs kept as planning history: an MCP server, an AI setup command, other platforms, customer themes, and the templates, tests and budgets these guides once presented as fact |
 
 Nothing there exists: no package, command or API it names is built. It lives outside this
 directory so that nothing here describes something that is not.
