@@ -1,10 +1,20 @@
 package com.kozmos.components
 
+import android.os.Handler
+import android.os.Looper
+import android.view.Choreographer
+import android.view.View
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -13,9 +23,16 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.unit.toSize
 import app.cash.paparazzi.Paparazzi
 import app.cash.paparazzi.SnapshotHandler
 import java.lang.reflect.Proxy
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.android.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * Paparazzi as a host rather than a camera: it composes, measures and lays out
@@ -64,7 +81,19 @@ data class ReadNode(
     /** Offered while open: TalkBack reads it as the control's expanded state. */
     val collapse: (() -> Boolean)? = null,
     /** Set, TalkBack says the node's new description when it changes. */
-    val liveRegion: LiveRegionMode? = null
+    val liveRegion: LiveRegionMode? = null,
+    /** How a scrolling node is moved by TalkBack's scroll gestures. */
+    val scrollBy: ((Float, Float) -> Boolean)? = null,
+    /** A node that scrolls sideways: how far it has, and how far it can. */
+    val horizontalScroll: Pair<Float, Float>? = null,
+    /**
+     * Where the node is laid out, unclipped: [bounds] stops at whatever
+     * clips it, so a tile scrolled half out of a strip reads as starting at
+     * the strip's edge.
+     */
+    val frame: Rect = bounds,
+    /** False for a node composed but not placed: a lazy list's prefetched or recycled item. */
+    val placed: Boolean = true
 )
 
 /**
@@ -106,6 +135,102 @@ fun Paparazzi.readSemantics(content: @Composable () -> Unit): ReadSemantics {
     return checkNotNull(read) { "the content was never laid out" }
 }
 
+/**
+ * A composition kept alive while a test works it: [read] is what TalkBack is
+ * told now, and [frames] lets recomposition, layout and effects run. For
+ * pressing a control and reading what follows, which [readSemantics] cannot
+ * do: it composes once and is gone.
+ */
+class LiveSemantics internal constructor(val view: View) {
+    fun read(): ReadSemantics {
+        val owner = (view as ViewRootForTest).semanticsOwner
+        return ReadSemantics(
+            merged = owner.rootSemanticsNode.flatten().map(::copyOf),
+            unmerged = owner.unmergedRootSemanticsNode.flatten().map(::copyOf)
+        )
+    }
+
+    /** The frames the script has been given. */
+    var framesSeen = 0
+        private set
+
+    suspend fun frames(count: Int = 1) = repeat(count) { withFrameNanos { framesSeen++ } }
+}
+
+/**
+ * Composes [content] in a host that keeps no picture and runs [script]
+ * against it once it is laid out, for up to [durationMillis] of frames. A
+ * failure inside the script fails the test, and so does a script that does
+ * not finish in time.
+ *
+ * The composition has a recomposer of its own, on this test's looper, and a
+ * frame clock that Paparazzi's frames tick — not the window's, which runs on
+ * Compose's shared main dispatcher. That dispatcher can be left waiting for
+ * good by any earlier test in the run: a Compose state write made outside a
+ * frame — a click invoked on what [readSemantics] returned, whose handler sets
+ * a `mutableStateOf`, or a plain logic test of a class that keeps its state in
+ * one — wakes Compose's snapshot manager, whose dispatch is posted where no
+ * frame will ever run it, and every composition on that dispatcher afterwards
+ * gets no frames (measured 2026-09-29, from the floor switcher's close and
+ * from KozmosRevealOnChangeTest). Nothing here depends on it: state written in
+ * a script is sent on at the next frame.
+ */
+fun Paparazzi.live(
+    durationMillis: Long = 3000,
+    content: @Composable () -> Unit,
+    script: suspend LiveSemantics.() -> Unit
+) {
+    var failure: Throwable? = null
+    var finished = false
+    var live: LiveSemantics? = null
+
+    val clock = BroadcastFrameClock()
+    val effects = Handler(Looper.getMainLooper()).asCoroutineDispatcher("kozmos-live") + clock
+    val recomposer = Recomposer(effects)
+    val running = CoroutineScope(effects + Job()).apply { launch { recomposer.runRecomposeAndApplyChanges() } }
+    val choreographer = Choreographer.getInstance()
+    val tick = object : Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            Snapshot.sendApplyNotifications()
+            clock.sendFrame(frameTimeNanos)
+            choreographer.postFrameCallback(this)
+        }
+    }
+
+    val host = ComposeView(context).apply {
+        setParentCompositionContext(recomposer)
+        setContent {
+            val view = LocalView.current
+            content()
+            LaunchedEffect(Unit) {
+                try {
+                    val started = LiveSemantics(view).also { live = it }
+                    started.frames(2)
+                    started.script()
+                    finished = true
+                } catch (cancelled: CancellationException) {
+                    // The composition went before the script finished: said below.
+                    throw cancelled
+                } catch (thrown: Throwable) {
+                    failure = thrown
+                }
+            }
+        }
+    }
+    choreographer.postFrameCallback(tick)
+    try {
+        gif(host, "live", start = 0L, end = durationMillis, fps = 30)
+    } finally {
+        choreographer.removeFrameCallback(tick)
+        host.disposeComposition()
+        recomposer.cancel()
+        running.cancel()
+    }
+    failure?.let { throw it }
+    check(live?.framesSeen != 0) { "the composition was given no frames" }
+    check(finished) { "the script did not finish within ${durationMillis}ms of frames" }
+}
+
 private fun SemanticsNode.flatten(): List<SemanticsNode> =
     listOf(this) + children.flatMap { it.flatten() }
 
@@ -121,5 +246,10 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     click = node.config.getOrNull(SemanticsActions.OnClick)?.action,
     expand = node.config.getOrNull(SemanticsActions.Expand)?.action,
     collapse = node.config.getOrNull(SemanticsActions.Collapse)?.action,
-    liveRegion = node.config.getOrNull(SemanticsProperties.LiveRegion)
+    liveRegion = node.config.getOrNull(SemanticsProperties.LiveRegion),
+    scrollBy = node.config.getOrNull(SemanticsActions.ScrollBy)?.action,
+    horizontalScroll = node.config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
+        ?.let { it.value() to it.maxValue() },
+    frame = Rect(node.positionInRoot, node.size.toSize()),
+    placed = node.layoutInfo.isPlaced
 )
