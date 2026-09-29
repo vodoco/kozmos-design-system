@@ -16,12 +16,28 @@ enum SDKMapPlaces: Equatable {
         case hide(Set<String>?)
     }
 
-    /// What to write to take the map from `old` to this.
+    private var showSet: Set<String>? {
+        if case .only(let ids) = self { return ids }
+        return nil
+    }
+
+    private var hideSet: Set<String>? {
+        if case .hide(let ids) = self { return ids }
+        return nil
+    }
+
+    /// What to write to take the map from `old` to this: only a property
+    /// whose value changes, and, when both do, the restricting one first, so
+    /// the map never shows every place in between. PointrKit redraws its
+    /// markers on every write.
     func writes(from old: SDKMapPlaces) -> [Write] {
-        switch self {
-        case .every: return [.show(nil), .hide(nil)]
-        case .only(let ids): return [.show(ids), .hide(nil)]
-        case .hide(let ids): return [.hide(ids), .show(nil)]
+        let show: Write? = old.showSet != showSet ? .show(showSet) : nil
+        let hide: Write? = old.hideSet != hideSet ? .hide(hideSet) : nil
+        switch (show, hide) {
+        case let (show?, hide?): return showSet != nil ? [show, hide] : [hide, show]
+        case let (show?, nil): return [show]
+        case let (nil, hide?): return [hide]
+        case (nil, nil): return []
         }
     }
 }
