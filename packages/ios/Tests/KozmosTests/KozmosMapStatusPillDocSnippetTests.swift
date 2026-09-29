@@ -22,12 +22,21 @@ struct PositioningStatus: View {
     }
 }
 
-// The product's own mark in place of the tone's. iOS has no Bluetooth
-// symbol, so the mark is the app's own asset.
+// A mark in place of the tone's. Kozmos names Bluetooth-off on every
+// platform; SF Symbols has no Bluetooth glyph, so iOS draws Pointr's outline.
 struct BluetoothStatus: View {
     var body: some View {
         KozmosMapStatusPill(String(localized: "No Bluetooth"), tone: .danger) {
-            Image("bluetooth-off")
+            KozmosIcon("bluetooth-off", size: .lg)
+        }
+    }
+}
+
+// The system's walking figure, in the progress tone's blue.
+struct WalkingStatus: View {
+    var body: some View {
+        KozmosMapStatusPill(String(localized: "Walking improves accuracy"), tone: .progress) {
+            Image(systemName: "figure.walk").resizable().scaledToFit()
         }
     }
 }
@@ -43,5 +52,6 @@ final class KozmosMapStatusPillDocSnippetTests: XCTestCase {
             XCTAssertEqual(height, 48, accuracy: 0.5, "calculating \(isCalculating): the pill is \(height) tall")
         }
         XCTAssertEqual(try DrawnPixels.draw(BluetoothStatus()).size.height, 48, accuracy: 0.5)
+        XCTAssertEqual(try DrawnPixels.draw(WalkingStatus()).size.height, 48, accuracy: 0.5)
     }
 }
