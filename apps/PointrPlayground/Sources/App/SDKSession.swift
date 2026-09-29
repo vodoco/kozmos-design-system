@@ -80,6 +80,10 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     @Published private(set) var mapFilter = SDKMapFilter() {
         didSet { if mapFilter.shown != oldValue.shown { showFilteredPlaces() } }
     }
+    /// Whether this widget's map has finished loading. The filter reaches the
+    /// map only then: a widget just made has no view yet, and the host has
+    /// never handed PointrKit a filter before its map was up.
+    private var mapLoaded = false
     var saved: Set<String> { mapFilter.saved }
     var favourites: Set<String> { mapFilter.favourites }
     /// The quick-access tile chosen, replacing the search field with its chip
@@ -172,6 +176,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         Pointr.shared.permissionManager?.delegate = nil
         Pointr.shared.stop()
         widget = nil
+        mapLoaded = false
         building = nil
         selected = nil
         card = nil
@@ -248,9 +253,6 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
         let controller = PTRMapWidgetViewController(location: target.mapWidgetLocation, configuration: policy)
         controller.addListener(self)
         widget = controller
-        // A tile chosen before a retry is still chosen: the new map shows its
-        // places, not every place, before the places are even counted.
-        showFilteredPlaces()
         Pointr.shared.poiManager?.addListener(self)
         Pointr.shared.dataManager?.addListener(self)
         Pointr.shared.wayfindingManager?.addListener(self)
@@ -365,6 +367,7 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     /// Gives the map the filter's places: nil shows every place, and an empty
     /// set none (`SDKMapFilter.shown`).
     private func showFilteredPlaces() {
+        guard mapLoaded else { return }
         widget?.mapViewController.poisToShow = mapFilter.shown.map { ids in Set(ids.compactMap { poisById[$0] }) }
     }
 
@@ -489,7 +492,11 @@ final class SDKSession: NSObject, ObservableObject, PointrStateChangeListener, P
     nonisolated func mapDidEndLoading(_ map: PTRMapViewController) {
         onMain { session in
             session.status = "Ready"
+            session.mapLoaded = true
             session.refreshPOIs()
+            // A tile chosen before the map was up, or before a retry, which
+            // is still chosen: the map shows its places, not every place.
+            if session.mapFilter.shown != nil { session.showFilteredPlaces() }
         }
     }
     nonisolated func map(_ map: PTRMapViewController, didFailToLoadWith error: Error) {
