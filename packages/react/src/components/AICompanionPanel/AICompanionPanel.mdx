@@ -121,17 +121,24 @@ where nobody could see them (WCAG 2.2, 2.4.11).
   example above. The rest of that box is inert while the panel is open, and
   nothing beyond it: the page around a phone's frame stays as it was. Fixed
   over the whole viewport, it covers the page.
-- **Live regions beneath** still speak, and a menu or popover opened from a
-  part inside the panel, drawn in the page's portal, stays in reach.
+- **Live regions beneath** still speak: those marked with `aria-live`, and
+  those live by their role, `status`, `alert`, `log`, `marquee` or `timer`,
+  and `output`, as `MapStatusPill`, `Alert`, `Notice` and `Spinner` are. A menu
+  or popover opened from a part inside the panel, drawn in the page's portal,
+  stays in reach.
 - **As it closes** it gives everything back, then hands focus back to the
   button that opened it, which it covered. `onCloseAutoFocus` can put focus on
   anything it covered: that is in reach again by then.
 - **Placed in flow**, as in the stories above, or over only part of its box,
   it covers nothing, and what sits beside it stays in reach.
 
-It measures what it covers as it opens, from the layout, so a transform that
-animates it in does not change the answer. A product that made the covered box
-inert itself before Kozmos did can stop: its own `inert` is left to it.
+It measures what it covers from the layout, so a transform that animates it in
+does not change the answer: as it opens, and again whenever it or the box it is
+laid against changes size while it is open. A layout that moves it from covering
+its frame to half of it gives the other half back; the other way, it takes what
+it now covers, and focus on a control it has just covered goes into the panel.
+A product that made the covered box inert itself before Kozmos did can stop:
+its own `inert` is left to it.
 
 ## A spoken conversation
 

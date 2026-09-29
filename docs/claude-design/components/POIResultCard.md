@@ -89,6 +89,21 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultCardProps`, which 
   is set (decision 50). English by default; a product that translates
   passes its own, for one band or all five.
 
+- `numbered`: `boolean`, optional, default `false`.
+
+  Draw the result's number, `result.resultIndex`, in its tab: the number
+  its pin shows on the map. Off unless the product turns it on, for a list
+  whose pins are numbered, as quick access's are when a category's places
+  are listed and pinned.
+
+  The card draws the number it is given and never renumbers, so the
+  product numbers the results the way it numbers the pins. A featured
+  result keeps its Featured tab and shows no number, as its pin shows its
+  logo; a number takes the place of a badge, so the list's numbers match
+  the pins. The number leads the result's accessible name ("2, Burger
+  King"); a `selectionLabel` replaces that whole name, so it says the
+  number itself.
+
 - `idPrefix`: `string`, optional.
 
   Names this card apart from another card for the same place on the page:
@@ -151,6 +166,16 @@ From `@kozmos-ds/product-contracts`.
 ```ts
 interface POIResultPresentation {
   poiId: string;
+  /**
+   * The result's number, counted from 1: the number its map marker shows, so
+   * the row and its pin share one number. A numbered list (POIResultList's
+   * `numbered`) draws it in the result's tab, and analytics reports it as
+   * the result's position. Kozmos draws and reports it as given and never
+   * renumbers, so number the results the way the map numbers their pins.
+   * A featured result's marker shows its logo, not a number, and its card
+   * shows Featured, so its number is never drawn: in a numbered list,
+   * number the others 1, 2, 3 in pin order.
+   */
   resultIndex: number;
   selected: boolean;
   /** Set in the CMS. Draws the starred tab here, and the logo on the marker. */
@@ -160,7 +185,10 @@ interface POIResultPresentation {
   travelEstimate?: TravelEstimatePresentation;
   available?: boolean;
   unavailableReason?: string;
-  /** A quiet tab: why this result is in this list. Ignored when featured. */
+  /**
+   * A quiet tab: why this result is in this list. Ignored when featured, and
+   * in a numbered list, where the number takes its place.
+   */
   badge?: POIResultBadgePresentation;
   /**
    * Whether this result answers the query exactly, stands in for one that

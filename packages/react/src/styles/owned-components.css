@@ -207,15 +207,10 @@
      panel's top and 17 from its side, in a sheet and a side panel alike.
      The route preview's destination row does the same: its "To" sat 33 and
      17 too. */
-  /* And how wide it is: the panel's content box is a size container named
-     kozmos-panel, so a hosted part can place itself by the panel's width in
-     a container query, as the details card's header does under a grip
-     (decision 51). Inline-size containment only: the panel's width is the
-     shell's, never its content's, and fixed and absolute parts inside it
-     place as they did. */
-  [data-slot="map-shell-panel"] > [data-kozmos-scroller] {
-    container: kozmos-panel / inline-size;
-  }
+  /* The panel's content box is no size container: a product's own unnamed
+     container queries, and its cqi and cqw units, in content hosted here
+     read the product's own containers, not the panel. The details card is
+     its own container under the shell (owned-poi-detail.css). */
   .kozmos-browse-categories-first-row,
   .kozmos-route-preview-first-row {
     padding-top: max(
@@ -261,6 +256,28 @@
       --kozmos-surface-muted-foreground,
       var(--primitives-colors-foreground-400)
     );
+  }
+  /* The manoeuvre card's instruction, whole: two lines cut ordinary
+     instructions short of the level, the side, or in German the turn
+     itself (GAP-094, US1-EC8), so the card grows with it. A word longer
+     than the line breaks rather than running out of the card. Only a
+     product that asks for a limit, `instructionLines`, gets one: the
+     ellipsis at that many lines. */
+  .kozmos-manoeuvre-instruction {
+    overflow-wrap: anywhere;
+  }
+  .kozmos-manoeuvre-instruction[data-lines] {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--kozmos-manoeuvre-instruction-lines);
+    overflow: hidden;
+  }
+  /* The open card's itinerary scrolls past its cap and takes focus
+     (GAP-100); the ring is drawn inside it, where the card's edge cannot
+     cut it. */
+  .kozmos-manoeuvre-itinerary:focus-visible {
+    @apply outline outline-2 outline-ring;
+    outline-offset: -2px;
   }
   /* A route option is a card of its own: the background colour, and the
      chosen one the theme's 5% tint on it. The tint was bg-primary/5 over
@@ -352,6 +369,21 @@
   .kozmos-map-overlay-stack > * {
     pointer-events: auto;
   }
+  /* A MapControlsGroup's box is only the column its controls stand in, so it
+     passes presses through: a press in the 8px between two controls reaches
+     the map beneath, as one in an overlay's room does (decision 46), and
+     each control takes its own. In an overlay that overflows, the press
+     lands on the overlay's scroll box instead, which takes its room then
+     ([data-scrolls] above). The group keeps its role, its name and its
+     controls' tab order; none of them is a press. Written for the overlay's
+     stack too, where what the stack holds takes presses. */
+  .kozmos-map-controls-group,
+  .kozmos-map-overlay-stack > .kozmos-map-controls-group {
+    pointer-events: none;
+  }
+  .kozmos-map-controls-group > * {
+    pointer-events: auto;
+  }
   /* How the system's parts enter, on the motion tokens — the same few moves
      everywhere, so a row changing form reads as one thing happening. A part
      that takes another's place pops (the prototype's chip: from 90 %, a
@@ -413,6 +445,80 @@
      colour is never the only signal. */
   .kozmos-travel-time-success {
     color: var(--semantics-emotion-success-text);
+  }
+  /* The result card's one tab, painted for what it says. Owned, so a badge
+     stays quiet and a number stays unlike a selected card in a browser
+     without @scope, where the card's utilities do not reach. Each reads at
+     4.5:1 or more on its own fill in both themes, measured by
+     check-owned-css.
+
+     - Featured: the SDK's bright amber under dark words, the alert fill and
+       its ink (Olcay, 2026-09-29), for the words and the star alike. The
+       pair does not turn over with the theme, so it reads the same on a
+       light card and a dark one. The card's edge takes the same amber.
+     - A number at rest: quiet, the card's own fill outlined in the container
+       edge, with the number in the muted text colour. Selected, it fills
+       with the primary colour, as the selected card's edge is primary, and
+       as a selected pin stands out from the rest.
+     - A badge: quiet, the muted fill and the muted text colour, and no star
+       (GAP-054). It is why the result is in the list, not a promotion.
+
+     Each has an edge of its own colour; only the number at rest draws it in
+     another, so its quiet tab is outlined. */
+  .kozmos-poi-result-tab {
+    border: 0 solid transparent;
+  }
+  /* A card's tab sits inside the card, in its top-start corner (Olcay,
+     2026-09-29; Figma "Search - Quick Access", 9273:45990). The card's edge
+     is its top and its start, so it draws only its end and bottom edges. Its
+     outer corner is the card's own, the Control radius less the card's 1px
+     edge; only its inner corner is its own, 7px: the node's 6 and the 1px
+     edge around it. Owned, so it stays a corner in a browser without @scope. */
+  .kozmos-poi-result-tab:not([data-placement="inline"]) {
+    border-inline-end-width: 1px;
+    border-bottom-width: 1px;
+    border-start-start-radius: calc(
+      var(--semantics-radius-control) * 1px - 1px
+    );
+    border-end-end-radius: calc(
+      var(--primitives-layout-spacing-100) * 1px - 1px
+    );
+  }
+  /* A number before a grouped row's name is a whole outline of its own. */
+  .kozmos-poi-result-tab[data-placement="inline"] {
+    border-width: 1px;
+  }
+  .kozmos-poi-result-tab[data-tab="featured"] {
+    background-color: var(--semantics-emotion-alert-fill);
+    border-color: var(--semantics-emotion-alert-fill);
+    color: var(--semantics-emotion-alert-on-fill);
+  }
+  /* A featured card's edge, in the tab's amber. The card draws no other
+     edge colour while it is featured, so this one rule decides it. Two
+     classes, because the scoped preflight gives every element an edge colour
+     at one class's weight, and a scoped rule wins a tie with an owned one. */
+  .kozmos-poi-result-card.kozmos-poi-result-card-featured {
+    border-color: var(--semantics-emotion-alert-fill);
+  }
+  .kozmos-poi-result-tab[data-tab="number"] {
+    background-color: var(--primitives-colors-background-0);
+    border-color: var(--semantics-border-subtle);
+    color: var(--primitives-colors-foreground-400);
+  }
+  .kozmos-poi-result-tab[data-tab="number"][data-selected] {
+    background-color: var(--primitives-colors-theme-600);
+    border-color: var(--primitives-colors-theme-600);
+    color: var(--primitives-colors-foreground-1000);
+  }
+  .kozmos-poi-result-tab[data-tab="badge"] {
+    background-color: var(--primitives-colors-background-100);
+    border-color: var(--primitives-colors-background-100);
+    color: var(--primitives-colors-foreground-400);
+  }
+  /* The number, said at the start of the result's name while its tab is
+     decorative: hidden here too, so it is never drawn twice. */
+  .kozmos-poi-result-number-name {
+    @apply sr-only;
   }
   /* The result card has two moments, and they are not the same kind of move.
 

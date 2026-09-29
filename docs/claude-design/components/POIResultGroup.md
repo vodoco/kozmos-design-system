@@ -22,6 +22,8 @@ const branch = (
   floorLabel: string,
   durationLabel: string,
   distanceLabel: string,
+  // Counted from 1: the number the branch's map marker shows.
+  resultIndex: number,
 ) => {
   const poi: POIPresentation = {
     id,
@@ -36,7 +38,7 @@ const branch = (
     poi,
     result: {
       poiId: id,
-      resultIndex: 0,
+      resultIndex,
       selected: false,
       featured: false,
       floorId: id,
@@ -46,11 +48,11 @@ const branch = (
 };
 
 const items = [
-  branch("a", "Current floor", "4 min", "260 m"),
-  branch("b", "Second floor", "5 min", "300 m"),
-  branch("c", "Second floor", "7 min", "420 m"),
-  branch("d", "Third floor", "8 min", "440 m"),
-  branch("e", "Fourth floor", "10 min", "500 m"),
+  branch("a", "Current floor", "4 min", "260 m", 1),
+  branch("b", "Second floor", "5 min", "300 m", 2),
+  branch("c", "Second floor", "7 min", "420 m", 3),
+  branch("d", "Third floor", "8 min", "440 m", 4),
+  branch("e", "Fourth floor", "10 min", "500 m", 5),
 ];
 
 export function POIResultGroupExample() {
@@ -120,6 +122,12 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultGroupProps`, which
 - `travelTimeBandLabels`: `POIResultCardProps["travelTimeBandLabels"]`, optional.
 
   Each member's words for a walk shown as a band: POIResultCard's.
+
+- `numbered`: `boolean`, optional.
+
+  Number each member with its `result.resultIndex`, before its name:
+  POIResultCard's `numbered`, given to every member. POIResultList passes
+  its own.
 
 - `idPrefix`: `string`, optional.
 
@@ -201,6 +209,21 @@ interface POIResultCardProps extends Omit<
    */
   travelTimeBandLabels?: Partial<Record<TravelTimeBand, string>>;
   /**
+   * Draw the result's number, `result.resultIndex`, in its tab: the number
+   * its pin shows on the map. Off unless the product turns it on, for a list
+   * whose pins are numbered, as quick access's are when a category's places
+   * are listed and pinned.
+   *
+   * The card draws the number it is given and never renumbers, so the
+   * product numbers the results the way it numbers the pins. A featured
+   * result keeps its Featured tab and shows no number, as its pin shows its
+   * logo; a number takes the place of a badge, so the list's numbers match
+   * the pins. The number leads the result's accessible name ("2, Burger
+   * King"); a `selectionLabel` replaces that whole name, so it says the
+   * number itself.
+   */
+  numbered?: boolean;
+  /**
    * Names this card apart from another card for the same place on the page:
    * the search's results and an assistant's answer can both show it. The
    * card's id becomes `getPOIResultDomId(poi.id, idPrefix)`, and its action
@@ -259,6 +282,16 @@ From `@kozmos-ds/product-contracts`.
 ```ts
 interface POIResultPresentation {
   poiId: string;
+  /**
+   * The result's number, counted from 1: the number its map marker shows, so
+   * the row and its pin share one number. A numbered list (POIResultList's
+   * `numbered`) draws it in the result's tab, and analytics reports it as
+   * the result's position. Kozmos draws and reports it as given and never
+   * renumbers, so number the results the way the map numbers their pins.
+   * A featured result's marker shows its logo, not a number, and its card
+   * shows Featured, so its number is never drawn: in a numbered list,
+   * number the others 1, 2, 3 in pin order.
+   */
   resultIndex: number;
   selected: boolean;
   /** Set in the CMS. Draws the starred tab here, and the logo on the marker. */
@@ -268,7 +301,10 @@ interface POIResultPresentation {
   travelEstimate?: TravelEstimatePresentation;
   available?: boolean;
   unavailableReason?: string;
-  /** A quiet tab: why this result is in this list. Ignored when featured. */
+  /**
+   * A quiet tab: why this result is in this list. Ignored when featured, and
+   * in a numbered list, where the number takes its place.
+   */
   badge?: POIResultBadgePresentation;
   /**
    * Whether this result answers the query exactly, stands in for one that

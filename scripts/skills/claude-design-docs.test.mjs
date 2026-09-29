@@ -25,6 +25,24 @@ const root = path.resolve(
 );
 const api = readPublishedApi(root);
 
+test("the API changelog directs 0.x upgrades to release migration notes", () => {
+  const text = fs.readFileSync(
+    path.join(root, ".ai-skills/api-changelog.md"),
+    "utf8",
+  );
+  const preamble = text.split(/^## /m)[0].replace(/\s+/g, " ");
+  // A pre-1.0 version is not evidence that an upgrade needs no migration:
+  // exhaustive switches and changed defaults already require consumer work.
+  assert.doesNotMatch(
+    preamble,
+    /nothing to migrate|no breaking-change migration/i,
+    "0.x must not be presented as a guarantee that migrations are unnecessary",
+  );
+  assert.match(preamble, /follow each release's migration notes/i);
+  assert.match(preamble, /0\.x releases can change APIs and behaviour/i);
+  assert.match(preamble, /automated codemods are not guaranteed/i);
+});
+
 /** The sections of a card that are not one of its parts. */
 const NOT_PARTS = new Set([
   "Example",

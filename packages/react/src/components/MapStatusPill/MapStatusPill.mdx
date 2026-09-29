@@ -30,6 +30,12 @@ as `MapControlButton`, so the two cannot drift:
   `#464A53` in the light theme. No brand font ships, so the system's sans draws
   them, as it draws the map controls'.
 
+SwiftUI and Compose draw no blur: the surface is opaque, so a blur behind it
+would not show, and the pill looks the same without one. SwiftUI casts the same
+three shadows. Compose casts one 8dp elevation (`KozmosShadows.kt`), Material's
+key and ambient light, where the web casts three: Compose here has no layered
+shadow.
+
 It is as wide as its words, up to a map control's longest (16rem), and then
 wraps: longer words, or a longer language, make it taller rather than cut.
 
@@ -97,7 +103,10 @@ wraps: longer words, or a longer language, make it taller rather than cut.
       </td>
       <td>a warning triangle, dark</td>
       <td>dark, on a filled amber</td>
-      <td>Turn Back</td>
+      <td>
+        Turn Back, drawn without the triangle until its U-turn arrow exists
+        (below)
+      </td>
     </tr>
   </tbody>
 </table>
@@ -141,11 +150,16 @@ Icon Library's outline. `bluetooth-off` is in the icon name list, so
 
 Two of the SDK's marks are not in `@kozmos-ds/icons`: neither Figma file Kozmos
 reads for the SDK draws them, and icons come from Figma rather than being drawn
-here. Until they are, these stories draw no mark rather than a stand-in:
+here. Until they are, these stories pass `icon={null}` and draw no mark, rather
+than the tone's own triangle standing in for the SDK's:
 
 - **Wayfinding Unavailable**: the SDK's walking figure, struck through, beside
   a pin;
 - **Turn Back**: the SDK's U-turn arrow.
+
+The `warning` tone keeps its own mark, the dark triangle, for a warning the
+product has no mark of its own for; it is Turn Back that passes `icon={null}`
+(SwiftUI's `showsIcon: false`, Compose's `icon = null`).
 
 <Canvas of={Stories.WayfindingUnavailable} />
 <Canvas of={Stories.TurnBack} />

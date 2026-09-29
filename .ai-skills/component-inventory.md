@@ -137,7 +137,7 @@ value it accepts — these are the only values that compile.
 
 | Component            | iOS | Android | Variants                                                                                                                       |
 | -------------------- | :-: | :-----: | ------------------------------------------------------------------------------------------------------------------------------ |
-| **BottomNavigation** | ✅  |   ✅    | —                                                                                                                              |
+| **BottomNavigation** | ✅  |   ✅    | `density`: default \| compact                                                                                                  |
 | **Breadcrumb**       | ✅  |   ✅    | —                                                                                                                              |
 | **Link**             | ✅  |   ✅    | `variant`: default \| subtle                                                                                                   |
 | **Menu**             | ✅  |   ✅    | —                                                                                                                              |

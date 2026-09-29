@@ -3,7 +3,7 @@
 "@kozmos-ds/react": patch
 ---
 
-The map status pill's marks (decision 39). `@kozmos-ds/icons` gains `Walking`, the walking figure the SDK's position status draws beside "Walking improves accuracy", taken from Pointr's Figma: the icon library has none. It is a solid mark squared on the icon grid, 20 of 24 tall, in `currentColor`. `bluetooth-off`, the pill's No Bluetooth, joins the icon name list, so `getIconComponent("bluetooth-off")` and `<Icon name="bluetooth-off" />` reach Pointr's outline. This react needs this icons for both.
+`@kozmos-ds/icons` gains `Walking`, the walking figure the SDK's position status draws beside "Walking improves accuracy", sourced from Pointr's Figma. It is a solid mark squared on the icon grid, 20 of 24 tall, in `currentColor`. `bluetooth-off`, the pill's No Bluetooth mark, joins the icon name list, so `getIconComponent("bluetooth-off")` and `<Icon name="bluetooth-off" />` reach Pointr's outline. React 0.6.0 requires icons 0.5.0; they are released together.
 
 ```tsx
 import { MapStatusPill } from "@kozmos-ds/react";
@@ -17,4 +17,4 @@ import { BluetoothOff, Walking } from "@kozmos-ds/icons";
 </MapStatusPill>;
 ```
 
-Turn Back's U-turn arrow and Wayfinding Unavailable's mark are not in either Figma file Kozmos reads for the SDK, so those states still draw no mark.
+Dedicated Turn Back and Wayfinding Unavailable marks are not included. Their examples explicitly pass `icon={null}` to omit a mark. A `warning` or `danger` pill without an `icon` prop still draws its default warning triangle; pass `icon={null}` when no fallback mark is appropriate.

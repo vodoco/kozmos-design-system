@@ -93,17 +93,73 @@ function TravelTimes({ id }: { id: string }) {
   );
 }
 
+/* The result card's one tab (GAP-054, and quick access's numbers): Featured,
+   a number at rest and selected, and a quiet badge, on cards; and a grouped
+   row's number before its name, at rest and selected. The check reads what
+   each is painted in, where it hangs, and what the result is called. */
+function ResultTabs({ id }: { id: string }) {
+  const poi = (name: string): POIPresentation => ({
+    id: `${id}-tab-${name}`,
+    name: `Burger King ${name}`,
+    floorLabel: "Level 1",
+    media: [],
+    actions: [],
+  });
+  const result = (
+    name: string,
+    extra: Partial<POIResultPresentation> = {},
+  ): POIResultPresentation => ({
+    poiId: `${id}-tab-${name}`,
+    resultIndex: 2,
+    selected: false,
+    featured: false,
+    ...extra,
+  });
+  const card = (name: string, extra?: Partial<POIResultPresentation>) => (
+    <POIResultCard
+      data-testid={`${id}-tab-${name}`}
+      numbered={name !== "badge"}
+      poi={poi(name)}
+      result={result(name, extra)}
+      onSelect={() => undefined}
+    />
+  );
+  return (
+    <div data-testid={`${id}-tabs`}>
+      {card("featured", { featured: true })}
+      {card("number")}
+      {card("number-selected", { selected: true })}
+      {card("badge", { badge: { label: "Alternative" } })}
+      <POIResultGroup
+        data-testid={`${id}-tab-group`}
+        items={[
+          {
+            poi: poi("row-selected"),
+            result: result("row-selected", { selected: true }),
+          },
+          { poi: poi("row"), result: result("row") },
+        ]}
+        collapsedCount={2}
+        numbered
+        onSelect={() => undefined}
+      />
+    </div>
+  );
+}
+
 /* GAP-082 (row 81): map chrome floating in MapOverlays, or the same chrome
    placed by hand at the same insets. The two boards must draw alike: the
    overlay's scroll box cut its controls' shadows, and their rings, at its own
    edges. The last board is an overlay whose stack is taller than the room it
-   is given, so it scrolls. */
+   is given, so it scrolls. The group boards hold a MapControlsGroup in an
+   overlay, one that fits and one that overflows, for the presses in the gaps
+   between its controls (decision 46). */
 function MapBoard({
   id,
   layout,
 }: {
   id: string;
-  layout: "overlay" | "by-hand" | "scrolling";
+  layout: "overlay" | "by-hand" | "scrolling" | "group" | "group-scrolling";
 }) {
   const control = (name: string) => (
     <MapControlButton
@@ -125,7 +181,8 @@ function MapBoard({
       style={{
         position: "relative",
         width: 200,
-        height: 220,
+        // A group's four controls and their gaps are 209 tall.
+        height: layout.startsWith("group") ? 300 : 220,
         background: "var(--primitives-colors-background-100)",
       }}
     >
@@ -159,6 +216,24 @@ function MapBoard({
           <MapOverlay position="top-left">{control("zoom in")}</MapOverlay>
           <MapOverlay position="bottom-right">{floors}</MapOverlay>
         </>
+      ) : layout.startsWith("group") ? (
+        <MapOverlay
+          position="top-left"
+          data-testid={`${id}-map-overlay-${layout}`}
+          style={layout === "group-scrolling" ? { maxHeight: 120 } : undefined}
+        >
+          <MapControlsGroup
+            label={`${id} map controls, ${layout}`}
+            zoomInLabel={`${id} zoom in, ${layout}`}
+            zoomOutLabel={`${id} zoom out, ${layout}`}
+            compassResetLabel={`${id} reset bearing, ${layout}`}
+            locationLabel={`${id} locate, ${layout}`}
+            onZoomIn={() => undefined}
+            onZoomOut={() => undefined}
+            onCompassReset={() => undefined}
+            onMyLocation={() => undefined}
+          />
+        </MapOverlay>
       ) : (
         <MapOverlay
           position="top-left"
@@ -451,6 +526,8 @@ function Controls({ id }: { id: string }) {
       <MapBoard id={id} layout="overlay" />
       <MapBoard id={id} layout="by-hand" />
       <MapBoard id={id} layout="scrolling" />
+      <MapBoard id={id} layout="group" />
+      <MapBoard id={id} layout="group-scrolling" />
       <AIMessage status="streaming" data-testid={`${id}-ai-streaming`}>
         Looking through this building…
       </AIMessage>
@@ -470,6 +547,7 @@ function Controls({ id }: { id: string }) {
         <button className="host-slot-button">Host slot</button>
       </div>
       <TravelTimes id={id} />
+      <ResultTabs id={id} />
       <POIDetailPanel
         data-testid={`${id}-poi`}
         poi={{

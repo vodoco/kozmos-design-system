@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.kozmos.components.categorytile.KozmosCategoryTint
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
+import kotlin.math.PI
 
 /** Colour role of a map marker, mirroring the React `LocationPin.variant` prop. */
 enum class KozmosLocationPinVariant {
@@ -83,6 +86,38 @@ fun KozmosLocationPin(
     val diameter = if (selected) size.diameter + 8.dp else size.diameter
     val alpha = if (enabled) 1f else 0.5f
 
+    // Decision 55 (Olcay, 2026-09-29): a numbered pin on this floor is quiet
+    // at rest — the surface, a ring and the number in its colour — and filled
+    // only when selected, as the result card's number tab is. A featured pin
+    // (its logo on the map) and a pin with no number keep their fill. Quiet
+    // and off the floor both draw the outlined marker; off the floor its ring
+    // is dashed, so the two never read alike.
+    val quiet = number != null && !selected && !featured && !offFloor
+    val outlined = quiet || offFloor
+
+    // The marker's colour as a ring and a number on the surface, where it
+    // must read at 4.5:1 in both themes. The theme's 500 is one blue in both,
+    // 3.74:1 on the dark surface, so the primary takes the theme's text role
+    // (theme/600), and the accent its 700 (theme variant 1's 600 reads 4.21:1
+    // in the dark). The others are inks already.
+    val outlineColor: Color = when {
+        featured -> KozmosThemeTokens.primitivesColorsEmotionalAlert500
+        tint != null -> tint.fill.fill
+        variant == KozmosLocationPinVariant.Default -> KozmosThemeTokens.primitivesColorsForeground100
+        variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.semanticsEmotionThemedText
+        variant == KozmosLocationPinVariant.Secondary -> KozmosThemeTokens.primitivesColorsForeground400
+        else -> KozmosThemeTokens.primitivesColorsThemeVariant1700
+    }
+
+    // The number: in the fill's ink when filled; in the ring's colour when
+    // quiet, except a tint's (six of the eight fills fail 4.5:1 as text on the
+    // surface), which takes the foreground, as it does off the floor.
+    val numberColor: Color = when {
+        offFloor || (quiet && tint != null) -> KozmosThemeTokens.primitivesColorsForeground0
+        quiet -> outlineColor
+        else -> tint?.fill?.ink ?: KozmosThemeTokens.primitivesColorsForeground1000
+    }
+
     val description = listOfNotNull(
         label,
         number?.toString(),
@@ -105,19 +140,36 @@ fun KozmosLocationPin(
         Box(contentAlignment = Alignment.Center) {
             Canvas(modifier = Modifier.size(diameter)) {
                 val radius = this.size.minDimension / 2f
-                // Off-floor pins invert to a hollow ring: the fill drops out
-                // and the marker colour moves to the stroke. Shape carries the
-                // state, so it is never colour-only, and a dashed stroke at
-                // this diameter reads as a cogwheel rather than a dashed ring.
-                val fill = if (offFloor) hollowFill else markerColor
-                val ring = if (offFloor) markerColor else pinRing
-                val ringWidth = (if (offFloor) 3f else 2f) * density
+                // Outlined — quiet at rest, or off the floor — the fill drops
+                // out and the marker colour moves to the ring. Off the floor
+                // the ring is dashed (eight long dashes, which read as a
+                // dashed ring, not the cogwheel short ones made), so shape
+                // carries the floor, never colour alone, and a quiet pin at
+                // rest is never taken for one on another floor.
+                val fill = if (outlined) hollowFill else markerColor
+                val ring = if (outlined) outlineColor else pinRing
+                val ringWidth = (if (outlined) 3f else 2f) * density
+                val ringRadius = radius - ringWidth / 2f
+                // Eight dashes that close evenly at every diameter; round caps
+                // add half the width at each end of a dash.
+                val segment = (2f * PI.toFloat() * ringRadius) / 8f
+                val dashes = if (offFloor) {
+                    PathEffect.dashPathEffect(
+                        floatArrayOf(segment * 0.62f - ringWidth, segment * 0.38f + ringWidth)
+                    )
+                } else {
+                    null
+                }
 
                 drawCircle(color = fill.copy(alpha = alpha), radius = radius)
                 drawCircle(
                     color = ring.copy(alpha = alpha),
-                    radius = radius - ringWidth / 2f,
-                    style = Stroke(width = ringWidth)
+                    radius = ringRadius,
+                    style = Stroke(
+                        width = ringWidth,
+                        cap = if (offFloor) StrokeCap.Round else StrokeCap.Butt,
+                        pathEffect = dashes
+                    )
                 )
             }
 
@@ -126,11 +178,9 @@ fun KozmosLocationPin(
                     text = it.toString(),
                     fontSize = (diameter.value * 0.44f).sp,
                     fontWeight = FontWeight.Bold,
-                    color = (
-                        // Off the floor the number sits on the white disc in the
-                        // foreground; the ring keeps the colour (Olcay, 2026-09-21).
-                        if (offFloor) KozmosThemeTokens.primitivesColorsForeground0 else (tint?.fill?.ink ?: KozmosThemeTokens.primitivesColorsForeground1000)
-                        ).copy(alpha = alpha)
+                    // Off the floor the number sits on the white disc in the
+                    // foreground; the ring keeps the colour (Olcay, 2026-09-21).
+                    color = numberColor.copy(alpha = alpha)
                 )
             }
         }

@@ -21,19 +21,21 @@ content regions.
 
 Pressing the segment that holds the pill takes the choice back, and
 `onValueChange` reports that as `undefined`. A product that holds the choice
-passes it back as `value`, and `undefined` then means nothing is chosen: the
-control shows no pill, from the start and after the choice is taken back or
-cleared.
+says "nothing chosen" with `null`, so it passes `value={view ?? null}`: the
+control then shows no pill, from the start and after the choice is taken back
+or cleared.
 
 ```tsx
-const [view, setView] = useState<string | undefined>();
+const [view, setView] = useState<string>();
 
-<SegmentedControl items={views} onValueChange={setView} value={view} />;
+<SegmentedControl items={views} onValueChange={setView} value={view ?? null} />;
 ```
 
-Leave `value` out, with a `defaultValue` or without, for a control that keeps
-its own choice. A product that wants exactly one choice at all times ignores
-the `undefined` and keeps its `value`.
+`undefined`, or no `value` at all, leaves the choice to the control, as it
+always has: a wrapper of the product's own that passes its optional `value` on
+keeps working when it is used without one. Give `defaultValue` for the
+control's first choice. A product that wants exactly one choice at all times
+ignores the `undefined` and keeps its `value`.
 
 ## Implementation
 

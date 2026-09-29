@@ -108,6 +108,16 @@ try {
     assert.equal(m.background, "rgba(0, 0, 0, 0)", `the sheet panel paints a surface: ${m.background}`);
     assert.equal(m.borderTop, "0px", `the sheet panel keeps a top border: ${m.borderTop}`);
     assert.equal(m.borderLeft, "0px", `the sheet panel keeps a side border: ${m.borderLeft}`);
+    // Outside the shell the card is no size container: the story's box
+    // shrinks to fit its content, and an inline-size container there
+    // collapses to nothing (decision 51 made the card one only in the
+    // shell's panel).
+    const fit = await panel.evaluate((node) => ({
+      container: getComputedStyle(node).containerType,
+      width: Math.round(node.getBoundingClientRect().width),
+    }));
+    assert.equal(fit.container, "normal", "the lone sheet card is a size container");
+    assert.ok(fit.width > 300, `the lone sheet card collapsed to ${fit.width}px`);
   });
   // Eight device pixels to the CSS pixel: a 2.5 band is two or three pixels
   // at 1x, antialiasing is most of it, and rays through it read anywhere

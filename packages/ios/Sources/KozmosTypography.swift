@@ -72,4 +72,24 @@ public enum KozmosTypography {
         return max(0, 14 - (caption2.ascender - caption2.descender + caption2.leading))
         #endif
     }()
+
+    /// What SwiftUI adds between lines of `footnote` to set them 16pt apart
+    /// at the default text size, as the map status pill's words are 13px on
+    /// 16px lines on the web and 13sp on 16sp in Compose. SwiftUI sets
+    /// footnote's lines 18pt apart — SF Pro's 15.5pt line at 13pt and the
+    /// style's own 2.5pt of leading, measured on iOS 26.5 — so this is less
+    /// than nothing, and brings them 2pt closer. It is the same at every text
+    /// size, so the lines still grow with the text.
+    static let footnoteOn16ptLineSpacing: CGFloat = {
+        #if canImport(UIKit)
+        let footnote = UIFont.preferredFont(
+            forTextStyle: .footnote,
+            compatibleWith: UITraitCollection(preferredContentSizeCategory: .large)
+        )
+        return 16 - (footnote.lineHeight + footnote.leading)
+        #else
+        let footnote = NSFont.preferredFont(forTextStyle: .footnote)
+        return 16 - (footnote.ascender - footnote.descender + footnote.leading)
+        #endif
+    }()
 }

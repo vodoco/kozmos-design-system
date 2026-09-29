@@ -481,6 +481,221 @@ describe("POIResultCard", () => {
     });
   });
 
+  describe("the tab: Featured, the number, or a quiet badge (GAP-054)", () => {
+    // Olcay, 2026-09-29: quick access numbers its results as its pins are
+    // numbered; one tab per card, Featured over the number over the badge;
+    // the badge is quiet, and the number is never the selected card's look.
+    const plain = { ...result, featured: false, selected: false };
+    const tabOf = (container: HTMLElement) =>
+      container.querySelector<HTMLElement>("article > span");
+
+    it("draws a badge quiet: no star, and neither Featured's paint nor its edge", () => {
+      const { container } = render(
+        <POIResultCard
+          poi={poi}
+          result={{ ...plain, badge: { label: "Alternative" } }}
+          onSelect={vi.fn()}
+        />,
+      );
+      const tab = screen.getByText("Alternative");
+      expect(tab).toBe(tabOf(container));
+      expect(tab.querySelector("svg")).toBeNull();
+      expect(tab).not.toHaveClass("bg-warning");
+      expect(tab).toHaveAttribute("data-tab", "badge");
+      expect(screen.getByRole("article")).not.toHaveClass("border-warning");
+      expect(screen.getByRole("article")).not.toHaveClass(
+        "kozmos-poi-result-card-featured",
+      );
+      expect(screen.getByRole("article")).toHaveClass("border-border");
+      // Read, as it always was: why this result is in the list.
+      expect(tab).not.toHaveAttribute("aria-hidden");
+    });
+
+    it("draws Featured in its amber with a star, and the card's edge in the same amber, selected or not", () => {
+      // Olcay, 2026-09-29: the SDK's bright amber under dark words. The
+      // tab's paint and the edge are owned rules; the ring still says which
+      // card is selected.
+      const { container, rerender } = render(
+        <POIResultCard
+          poi={poi}
+          result={{ ...plain, featured: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      const tab = tabOf(container)!;
+      expect(tab).toHaveTextContent("Featured");
+      expect(tab.querySelector("svg")).not.toBeNull();
+      expect(tab).toHaveAttribute("data-tab", "featured");
+      const card = screen.getByRole("article");
+      expect(card).toHaveClass("kozmos-poi-result-card-featured");
+      expect(card).not.toHaveClass("border-warning");
+      expect(card).not.toHaveClass("border-border");
+
+      rerender(
+        <POIResultCard
+          poi={poi}
+          result={{ ...plain, featured: true, selected: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(card).toHaveClass("kozmos-poi-result-card-featured", "ring-2");
+      expect(card).not.toHaveClass("border-primary");
+    });
+
+    it("sits inside the card in its top-start corner, and the name begins below it", () => {
+      // Olcay, 2026-09-29 (Figma 9273:45990): no folder tab above the card.
+      // The corner is logical, so right to left it is the top-right.
+      const { container, rerender } = render(
+        <POIResultCard
+          poi={poi}
+          result={{ ...plain, featured: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      const tab = tabOf(container)!;
+      expect(tab).toHaveClass("absolute", "start-0", "top-0");
+      expect(tab).toHaveClass("pointer-events-none");
+      expect(tab).not.toHaveClass("bottom-full");
+      expect(tab).not.toHaveClass("left-0");
+      const card = screen.getByRole("article");
+      expect(card).not.toHaveClass("mt-3");
+      expect(screen.getByRole("button")).toHaveClass("pt-6");
+
+      // Without a tab the card keeps its own top padding.
+      rerender(<POIResultCard poi={poi} result={plain} onSelect={vi.fn()} />);
+      expect(screen.getByRole("button")).not.toHaveClass("pt-6");
+    });
+
+    it("draws the result's own number in the tab, only when asked, quiet on the grey edge at rest", () => {
+      const { container, rerender } = render(
+        <POIResultCard poi={poi} result={plain} onSelect={vi.fn()} />,
+      );
+      // Off unless the product numbers the list: an upgrade changes nothing.
+      expect(tabOf(container)).toBeNull();
+      expect(
+        screen.getByRole("button", { name: /^Burger King/ }),
+      ).toBeVisible();
+
+      rerender(
+        <POIResultCard numbered poi={poi} result={plain} onSelect={vi.fn()} />,
+      );
+      const tab = tabOf(container);
+      expect(tab).not.toBeNull();
+      expect(tab).toHaveTextContent(/^2$/);
+      expect(tab).toHaveAttribute("data-tab", "number");
+      expect(tab).not.toHaveAttribute("data-selected");
+      const card = screen.getByRole("article");
+      expect(card).toHaveClass("border-border");
+      expect(card).not.toHaveClass("kozmos-poi-result-card-featured");
+      expect(card).not.toHaveClass("border-primary");
+      // The prop is the card's, never an attribute on the page.
+      expect(card).not.toHaveAttribute("numbered");
+    });
+
+    it("fills the number's tab when the result is selected, as the selected card's edge is", () => {
+      const { container } = render(
+        <POIResultCard
+          numbered
+          poi={poi}
+          result={{ ...plain, selected: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(tabOf(container)).toHaveAttribute("data-selected", "true");
+      expect(screen.getByRole("article")).toHaveClass("border-primary");
+    });
+
+    it("says the number at the start of the result's name, and hides the tab that draws it", () => {
+      const { container, rerender } = render(
+        <POIResultCard numbered poi={poi} result={plain} onSelect={vi.fn()} />,
+      );
+      expect(
+        screen.getByRole("button", { name: /^2, Burger King/ }),
+      ).toBeVisible();
+      expect(tabOf(container)).toHaveAttribute("aria-hidden", "true");
+
+      // A product's selectionLabel names the result, number and all, in its
+      // own words.
+      rerender(
+        <POIResultCard
+          numbered
+          poi={poi}
+          result={plain}
+          selectionLabel="Résultat 2 : Burger King"
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(
+        screen.getByRole("button", { name: "Résultat 2 : Burger King" }),
+      ).toBeVisible();
+    });
+
+    it("shows Featured, not a number, on a featured result", () => {
+      const { container } = render(
+        <POIResultCard
+          numbered
+          poi={poi}
+          result={{ ...plain, featured: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(tabOf(container)).toHaveAttribute("data-tab", "featured");
+      expect(screen.queryByText("2")).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /^Burger King/ }),
+      ).toBeVisible();
+    });
+
+    it("shows the number, not a badge, on a numbered result that has one", () => {
+      const { container } = render(
+        <POIResultCard
+          numbered
+          poi={poi}
+          result={{ ...plain, badge: { label: "Alternative" } }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(tabOf(container)).toHaveAttribute("data-tab", "number");
+      expect(screen.queryByText("Alternative")).not.toBeInTheDocument();
+    });
+
+    it("draws a grouped row's number before its name, since a row has no edge to hang a tab from", () => {
+      const { container, rerender } = render(
+        <POIResultCard
+          appearance="row"
+          numbered
+          poi={poi}
+          result={plain}
+          onSelect={vi.fn()}
+        />,
+      );
+      const number = container.querySelector<HTMLElement>(
+        "button [data-tab='number']",
+      );
+      expect(number).not.toBeNull();
+      expect(number).toHaveTextContent(/^2$/);
+      expect(number).toHaveAttribute("aria-hidden", "true");
+      expect(number).toHaveAttribute("data-placement", "inline");
+      expect(tabOf(container)).toBeNull();
+      expect(
+        screen.getByRole("button", { name: /^2, Burger King/ }),
+      ).toBeVisible();
+
+      rerender(
+        <POIResultCard
+          appearance="row"
+          numbered
+          poi={poi}
+          result={{ ...plain, selected: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(
+        container.querySelector("button [data-tab='number']"),
+      ).toHaveAttribute("data-selected", "true");
+    });
+  });
+
   it("is the current result, not a button stuck unpressed", () => {
     // GAP-049. `handleSelect` always selects — a second tap never releases —
     // so `aria-pressed` claimed a toggle the card does not implement, and

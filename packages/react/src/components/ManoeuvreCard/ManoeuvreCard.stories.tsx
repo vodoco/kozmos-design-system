@@ -63,10 +63,25 @@ export const Closed: Story = {};
 
 export const Open: Story = { args: { expanded: true } };
 
+/** The whole instruction, however many lines it takes: the card grows with it. */
 export const LongInstruction: Story = {
   args: {
     instruction:
       "Take the escalator up to the Departures level and continue past the security checkpoint",
     detail: "120 m · First Floor",
+  },
+};
+
+/**
+ * A product that wants a limit asks for one: `instructionLines`, here 2, and
+ * the instruction ends in an ellipsis there. Assistive technology still hears
+ * it whole.
+ */
+export const InstructionLines: Story = {
+  args: {
+    instruction:
+      "Take the escalator up to the Departures level and continue past the security checkpoint",
+    detail: "120 m · First Floor",
+    instructionLines: 2,
   },
 };

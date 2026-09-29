@@ -102,6 +102,25 @@ const travelEstimate = {
 `POIDetailPanel` keeps the exact minutes from the same estimate. Leave `band`
 out and a result shows `durationLabel`, as before.
 
+### Numbered results for quick access
+
+When a category chosen in the browse grid lists its places and the map pins
+them with numbers, pass `numbered` to that `POIResultList` (`numbered: true` on
+iOS and Android). Each result then shows its `resultIndex`, the number on its
+pin, in its tab. Kozmos never renumbers. A featured result keeps Featured and
+shows no number, as its pin shows its logo, so number the other results 1, 2,
+3 in pin order. Left out, nothing changes.
+
+```tsx
+<POIResultList
+  items={categoryResults} // resultIndex: the pin's number
+  numbered
+  resultCountLabel={copy.placeCount(categoryResults.length)}
+  selectedPoiId={selectedPoiId}
+  onSelect={selectPoi}
+/>
+```
+
 ## Compose The Adaptive Map Surface
 
 ```tsx

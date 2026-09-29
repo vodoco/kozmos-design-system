@@ -2,6 +2,8 @@
 "@kozmos-ds/react": minor
 ---
 
-`AICompanionPanel` takes focus only when the visitor opens it. It gains `open` (`true` when left out): keep the panel mounted and turn `open` on when the visitor opens it, from `AISearchButton` usually, and it takes focus then; turn `open` off, or unmount the panel, and it hands focus back to whatever had it when it opened. Closed, it draws nothing. `onOpenAutoFocus` is called at that open, so a product can still send focus to its field instead.
+`AICompanionPanel` gains an optional `open` prop. With `open` omitted, mounting the panel opens it and takes focus, as in 0.5.0; unmounting returns focus to its opener. Existing consumers that mount the panel to open it do not need to change that pattern.
 
-A panel that is open as it mounts, on screen from the start, no longer takes focus, and `onOpenAutoFocus` is not called for it: the `preventDefault()` a product needed to keep its page's focus is no longer needed. This is a behaviour change for a product that mounts the panel to open it: to the panel that is a panel on screen from the start, so focus now stays on the button beneath. Keep the panel mounted and pass `open` instead, and place the panel itself through its `className`, not a wrapper that would stay over the sheet once it closes.
+With `open` supplied, keep the panel mounted and turn it from `false` to `true` when the visitor opens it, usually from `AISearchButton`: that transition takes focus. A panel mounted with `open={true}` is already on screen and does not take focus or call `onOpenAutoFocus`. Closed, it draws nothing. Closing or unmounting returns focus to the opener unless the product has already moved focus outside the panel.
+
+`onOpenAutoFocus` and `onCloseAutoFocus` let the product prevent the default handoff and choose a focus target. Place the panel itself through its `className`, rather than a wrapper that would remain over the sheet after it closes.

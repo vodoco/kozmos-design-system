@@ -262,6 +262,36 @@ final class KozmosMapStatusPillTests: XCTestCase {
         XCTAssertGreaterThan(box.height, 48 + 4, "the pill is \(box.height) tall: its words did not wrap onto a third line")
     }
 
+    #if os(iOS)
+    /// The words are the SDK's 13 on a 16 line, as the web's 13px on 16px and
+    /// Compose's 13sp on 16sp: at the default text size their lines are 16
+    /// apart, and each line is 16 tall, its leading split above and below as
+    /// CSS splits it, so four lines make the pill 8 + 64 + 8. `footnote`'s own
+    /// line is 15.5 (SF Pro at 13), and the lines sat 15.5 apart. The words
+    /// have no descenders, so each line's lowest ink is its baseline.
+    @MainActor func testTheWordsAre13On16Lines() throws {
+        let words = "Turn back at the next hall and walk to the lift beside the main door in the atrium on the third level then look for the red sofas"
+        let drawn = try DrawnPixels.draw(
+            KozmosMapStatusPill(words, tone: .neutral)
+                .padding(40)
+                .environment(\.colorScheme, .light)
+                .environment(\.layoutDirection, .leftToRight)
+                .environment(\.dynamicTypeSize, .large),
+            scale: 3
+        )
+        let lines = drawn.bands { r, g, b, a in a > 200 && r < 160 && g < 160 && b < 160 }
+        XCTAssertGreaterThanOrEqual(lines.count, 3, "the words took \(lines.count) line(s): \(lines)")
+        guard lines.count >= 3, let first = lines.first, let last = lines.last else { return }
+        let apart = (last.maxY - first.maxY) / CGFloat(lines.count - 1)
+        XCTAssertEqual(apart, 16, accuracy: 0.25, "\(lines.count) lines of the words sit \(apart) apart")
+        let surface = try XCTUnwrap(drawn.boundingBox(where: DrawnPixels.matches(
+            try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: .light), tolerance: 1
+        )), "no surface was drawn")
+        XCTAssertEqual(surface.height, 8 + CGFloat(lines.count) * 16 + 8, accuracy: 0.34,
+                       "\(lines.count) lines make the pill \(surface.height) tall")
+    }
+    #endif
+
     /// The product's mark takes the tone's place, at 24 and in the tone's
     /// colour; and a pill told to show none starts its words 12 in.
     @MainActor func testTheProductsMarkTakesTheTonesPlaceAndNoneCanBeShown() throws {
