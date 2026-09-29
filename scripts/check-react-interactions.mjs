@@ -418,6 +418,55 @@ await scenario(
   },
 );
 
+// R3: clearing every choice from the keyboard hands focus to the field.
+for (const key of ["Enter", "Space"]) {
+  await scenario(
+    `R3: clearing every choice with ${key} hands focus to the field, its list closed`,
+    "multi-select",
+    async (page) => {
+      const field = page.getByRole("combobox", { name: "Tools" });
+      const press = async (keys) => {
+        await page.keyboard.press(keys);
+        await settleLayout(page);
+      };
+      // From the field, as a keyboard comes: Tab on to the clear button. The
+      // list the field opened stays open past it, as before.
+      await field.focus();
+      await settleLayout(page);
+      await press("Tab");
+      assert.equal(
+        await page.evaluate(() =>
+          document.activeElement?.getAttribute("aria-label"),
+        ),
+        "Clear selected options",
+      );
+
+      await press(key);
+      const after = await page.evaluate(() => ({
+        role: document.activeElement?.getAttribute("role"),
+        body: document.activeElement === document.body,
+        chips: document.querySelectorAll('[aria-label^="Remove "]').length,
+      }));
+      assert.equal(after.chips, 0, "the choices were cleared");
+      assert.equal(after.body, false, "focus fell to the page");
+      assert.equal(after.role, "combobox", "focus is in the field");
+      assert.equal(await field.getAttribute("aria-expanded"), "false");
+      assert.equal(await page.getByRole("listbox").count(), 0);
+
+      // Typing goes on at once, and a choice can be made again.
+      await page.keyboard.type("lay");
+      await settleLayout(page);
+      assert.equal(await field.inputValue(), "lay");
+      assert.equal(await page.getByRole("listbox").count(), 1);
+      await press("Enter");
+      assert.equal(
+        await page.getByRole("button", { name: "Remove Layers" }).count(),
+        1,
+      );
+    },
+  );
+}
+
 await browser.close();
 if (failures.length) {
   console.error(`\n${failures.length} interaction check(s) failed.`);

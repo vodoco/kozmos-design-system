@@ -8,6 +8,7 @@ import {
   MenuContent,
   MenuItem,
   MenuTrigger,
+  MultiSelect,
   POIResultList,
   SegmentedControl,
   ThemeProvider,
@@ -233,6 +234,21 @@ function AssistantCover({
   );
 }
 
+/** R3: a multi-select with two choices made, to clear from the keyboard. */
+function ToolsSelect() {
+  return (
+    <MultiSelect
+      defaultValue={["filters", "layers"]}
+      label="Tools"
+      options={[
+        { value: "filters", label: "Filters" },
+        { value: "layers", label: "Layers" },
+        { value: "routes", label: "Routes" },
+      ]}
+    />
+  );
+}
+
 const scenarios: Record<string, () => ReactElement> = {
   "late-results": () => <LateResults reveal />,
   "reveal-later": () => <LateResults reveal={false} />,
@@ -248,6 +264,7 @@ const scenarios: Record<string, () => ReactElement> = {
   "assistant-side": () => <AssistantCover placement="side" />,
   "assistant-flow": () => <AssistantCover placement="flow" />,
   "assistant-fixed": () => <AssistantCover placement="fixed" />,
+  "multi-select": () => <ToolsSelect />,
 };
 
 window.interactions = {

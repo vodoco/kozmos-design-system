@@ -24,6 +24,11 @@ rather than disappearing, so the user can see what they are trading away.
 `onValueChange` receives both the values and the matching options, so the label
 for each chip does not need a second lookup.
 
+Removing a chip, or clearing every choice with the clear button, hands focus to
+the field: the button pressed goes with what it removed. After a clear the
+field's list stays closed, since the visitor cleared the choice and did not ask
+for options; typing or an arrow key opens it.
+
 ## Implementation
 
 import { PlatformSnippets } from '../PlatformSnippets';
