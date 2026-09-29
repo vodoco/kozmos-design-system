@@ -50,6 +50,21 @@ export interface POIResultCardProps extends Omit<
    * passes its own, for one band or all five.
    */
   travelTimeBandLabels?: Partial<Record<TravelTimeBand, string>>;
+  /**
+   * Draw the result's number, `result.resultIndex`, in its tab: the number
+   * its pin shows on the map. Off unless the product turns it on, for a list
+   * whose pins are numbered, as quick access's are when a category's places
+   * are listed and pinned.
+   *
+   * The card draws the number it is given and never renumbers, so the
+   * product numbers the results the way it numbers the pins. A featured
+   * result keeps its Featured tab and shows no number, as its pin shows its
+   * logo; a number takes the place of a badge, so the list's numbers match
+   * the pins. The number leads the result's accessible name ("2, Burger
+   * King"); a `selectionLabel` replaces that whole name, so it says the
+   * number itself.
+   */
+  numbered?: boolean;
 }
 
 /**
@@ -111,6 +126,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       currentFloorId,
       appearance = "card",
       travelTimeBandLabels,
+      numbered = false,
       id = getPOIResultDomId(poi.id),
       ...props
     },
@@ -118,6 +134,20 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const available = result.available !== false;
+    // One tab, and what it says decides how it looks. Featured is the CMS's
+    // word and the map acts on it too (its pin draws the logo), so it wins;
+    // then the number, which pairs the result with its pin; then the badge,
+    // which only says why the result is in the list.
+    const number =
+      numbered && !result.featured ? String(result.resultIndex) : undefined;
+    const tab: { kind: "featured" | "number" | "badge"; label: string } | null =
+      result.featured
+        ? { kind: "featured", label: featuredLabel }
+        : number !== undefined
+          ? { kind: "number", label: number }
+          : result.badge
+            ? { kind: "badge", label: result.badge.label }
+            : null;
     // The list shows the band when the product sets one (decision 50); the
     // exact minutes stay in the estimate for the details card. A band this
     // version has no words for falls back to the exact minutes.
@@ -163,6 +193,19 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       onAction?.(action, poi.id);
     };
 
+    const name = (
+      <span
+        className="block min-w-0 truncate text-lg font-normal leading-tight text-foreground"
+        // Story 2 shows an authored name exactly as authored, which leaves a
+        // screen reader saying a Japanese name in the voice of the interface
+        // language. The tag tells it which voice to use, and is set only when
+        // the two differ (GAP-004).
+        lang={result.nameLanguage}
+      >
+        {poi.name}
+      </span>
+    );
+
     const handleSelect = () => {
       if (!available) return;
       trackEvent("POIResultCard", "poi_result_selected", {
@@ -187,10 +230,11 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           // its own to thicken.
           appearance === "row" && result.selected && "bg-primary/5",
           // The tab hangs above the card, so it needs the space a card has.
-          appearance === "card" &&
-            (result.featured
-              ? "mt-3 border-warning"
-              : result.badge && "mt-3 border-warning"),
+          appearance === "card" && tab && "mt-3",
+          // Only Featured recolours the card's edge. A number keeps the grey
+          // edge, so it never reads as the selected card, and a badge is
+          // quiet: it must not read as featured (GAP-054).
+          appearance === "card" && tab?.kind === "featured" && "border-warning",
           className,
         )}
         data-appearance={appearance}
@@ -201,26 +245,30 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
         id={id}
         {...props}
       >
-        {/* One tab, one treatment. The prototypes draw "★ Popular Choice" in
-            the same amber as "★ Featured", so the LABEL distinguishes them and
-            the styling does not — which is also why the plugin notes a
-            sponsored result is never identified by colour alone. What differs
-            is meaning, not paint: featured is set in the CMS and read beyond
-            this card (the map marker draws a featured POI with its logo), so a
-            result that is both shows featured. */}
-        {appearance === "card" && result.featured ? (
-          <span className="absolute bottom-full left-4 inline-flex h-6 items-center gap-1 rounded-t-control bg-warning px-2 text-xs font-semibold text-warning-foreground">
-            <Star aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
-            {featuredLabel}
-          </span>
-        ) : (
-          appearance === "card" &&
-          result.badge && (
-            <span className="absolute bottom-full left-4 inline-flex h-6 items-center gap-1 rounded-t-control bg-warning px-2 text-xs font-semibold text-warning-foreground">
+        {/* One tab per card, painted for what it says (owned CSS, so the
+            paint holds without @scope):
+            - Featured: the warning fill with a star, and the card's edge in
+              the same colour. It is set in the CMS and read beyond this card.
+            - A number: the pin's number. Quiet, outlined on the card's own
+              fill, until the result is selected; then filled in the primary
+              colour, as the selected card's edge is. Decorative: the number
+              is said at the start of the result's name instead.
+            - A badge: quiet, a neutral fill with no star, on the card's grey
+              edge (GAP-054). It is read, as it always was.
+            It sits at the card's start edge, so it follows the name in a
+            right-to-left language. */}
+        {appearance === "card" && tab && (
+          <span
+            aria-hidden={tab.kind === "number" || undefined}
+            className="kozmos-poi-result-tab absolute bottom-full start-4 inline-flex h-6 items-center gap-1 rounded-t-control px-2 text-xs font-semibold"
+            data-selected={result.selected || undefined}
+            data-tab={tab.kind}
+          >
+            {tab.kind === "featured" && (
               <Star aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
-              {result.badge.label}
-            </span>
-          )
+            )}
+            {tab.label}
+          </span>
         )}
 
         <button
@@ -249,16 +297,33 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           type="button"
         >
           <span className="min-w-0">
-            <span
-              className="block truncate text-lg font-normal leading-tight text-foreground"
-              // Story 2 shows an authored name exactly as authored, which
-              // leaves a screen reader saying a Japanese name in the voice of
-              // the interface language. The tag tells it which voice to use,
-              // and is set only when the two differ (GAP-004).
-              lang={result.nameLanguage}
-            >
-              {poi.name}
-            </span>
+            {number !== undefined && (
+              // The number leads the result's name, "2, Burger King": the tab
+              // that draws it is decorative. The space after it keeps WebKit
+              // from running it into the name.
+              <>
+                <span className="kozmos-poi-result-number-name">{`${number},`}</span>{" "}
+              </>
+            )}
+            {appearance === "row" && number !== undefined ? (
+              // A row in a POIResultGroup has no edge of its own to hang a
+              // tab from, so its number stands before its name, painted as
+              // the tab is.
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="kozmos-poi-result-tab inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control px-1.5 text-xs font-semibold"
+                  data-placement="inline"
+                  data-selected={result.selected || undefined}
+                  data-tab="number"
+                >
+                  {number}
+                </span>
+                {name}
+              </span>
+            ) : (
+              name
+            )}
             {poi.categoryLabel && (
               <span className="mt-0.5 block truncate text-sm text-muted-foreground">
                 {poi.categoryLabel}

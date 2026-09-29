@@ -15,6 +15,43 @@ results remain readable but cannot invoke `onSelect`.
 <Canvas of={Stories.FeaturedSelected} />
 <Controls />
 
+## One tab: Featured, a number, or a badge
+
+A card draws at most one tab, hung from its top edge at the start, where the name begins (the right
+in a right-to-left language). What it says decides how it looks, and the first that applies wins:
+
+1. **Featured** (`result.featured`): the warning tab with a star, and the card's edge in the same
+   colour. Featured is set in the CMS and read beyond the card: a featured result's pin shows its
+   logo on the map.
+2. **A number** (`numbered`, off unless the product turns it on): the result's `resultIndex`, the
+   number its pin shows. At rest the tab is quiet, outlined on the card's own fill, and the card
+   keeps its grey edge, so a number never reads as the selected card. Selected, the tab fills with
+   the primary colour as the card's edge turns primary, the way the selected pin stands out from
+   the rest.
+3. **A badge** (`result.badge`): why the result is in this list, such as "Alternative". It is quiet:
+   a neutral tab with no star, on the card's grey edge, so it is never taken for Featured (GAP-054).
+
+So a featured result shows Featured and no number, and a numbered result shows its number rather
+than its badge, so the list's numbers match the pins.
+
+- **The numbers are the product's.** The card draws the `resultIndex` it is given and never
+  renumbers. Turn numbering on for a list whose pins are numbered, with `POIResultList`'s
+  `numbered`; quick access is the case, where a category chosen in the browse grid lists its places
+  and the map pins them. Number the results that are not featured, in pin order, since a featured
+  result's pin shows its logo.
+- **What is heard.** The number's tab is decorative. The number leads the result's accessible name
+  instead, "2, Burger King …", so it is heard once, with the result it numbers, and no words are
+  added. A `selectionLabel` replaces that whole name, so a product that passes one says the number
+  in its own words. The Featured and badge tabs are read as text, as they always were.
+- **In a group.** A `POIResultGroup` row has no edge of its own to hang a tab from, so a numbered
+  row draws its number before its name, painted as the tab is.
+- **The colours** are owned rules, so they hold without `@scope`, and each tab's words read at
+  4.5:1 or more on its fill in both themes: the number 6.10:1 light and 7.76:1 dark at rest, 6.24:1
+  and 6.17:1 selected; the badge 4.80:1 and 6.51:1.
+
+<Canvas of={Stories.Tabs} />
+<Canvas of={Stories.TabsRightToLeft} />
+
 ## A walk shown as a band
 
 A result list shows the walk to a place as a band: **Nearby** under a minute, then **1–2 min**,

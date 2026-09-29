@@ -43,6 +43,12 @@ export interface POIResultGroupProps extends Omit<
   currentFloorId?: string;
   /** Each member's words for a walk shown as a band: POIResultCard's. */
   travelTimeBandLabels?: POIResultCardProps["travelTimeBandLabels"];
+  /**
+   * Number each member with its `result.resultIndex`, before its name:
+   * POIResultCard's `numbered`, given to every member. POIResultList passes
+   * its own.
+   */
+  numbered?: boolean;
 }
 
 /**
@@ -80,6 +86,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
       actionsLabel,
       currentFloorId,
       travelTimeBandLabels,
+      numbered,
       ...props
     },
     ref,
@@ -120,6 +127,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
                 appearance="row"
                 currentFloorId={currentFloorId}
                 featuredLabel={featuredLabel}
+                numbered={numbered}
                 onAction={onAction}
                 onSelect={onSelect}
                 poi={poi}

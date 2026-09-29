@@ -89,6 +89,61 @@ async function nearbyOnEverySurface(page, id) {
   return drawn;
 }
 
+/**
+ * The result card's one tab on each surface of a root of the owned-css host:
+ * what it says and is painted in, what paints behind its text, where it hangs
+ * against its card, the card's own edge, and what the result is called.
+ */
+async function resultTabsIn(page, id) {
+  const group = page.getByTestId(`${id}-tab-group`);
+  const surfaces = [
+    ["featured", page.getByTestId(`${id}-tab-featured`)],
+    ["number", page.getByTestId(`${id}-tab-number`)],
+    ["selected number", page.getByTestId(`${id}-tab-number-selected`)],
+    ["badge", page.getByTestId(`${id}-tab-badge`)],
+    ["selected grouped row", group.locator("article").nth(0)],
+    ["grouped row", group.locator("article").nth(1)],
+  ];
+  const drawn = [];
+  for (const [surface, card] of surfaces)
+    drawn.push({
+      surface,
+      ...(await card.evaluate((article) => {
+        const tab = article.querySelector(".kozmos-poi-result-tab");
+        if (!tab) return { found: false };
+        const s = getComputedStyle(tab);
+        const layers = [];
+        for (let at = tab; at; at = at.parentElement)
+          layers.push(getComputedStyle(at).backgroundColor);
+        const box = tab.getBoundingClientRect();
+        const frame = article.getBoundingClientRect();
+        return {
+          found: true,
+          kind: tab.getAttribute("data-tab"),
+          text: tab.textContent,
+          star: tab.querySelector("svg") !== null,
+          hidden: tab.getAttribute("aria-hidden") === "true",
+          background: s.backgroundColor,
+          color: s.color,
+          layers,
+          borderTopWidth: s.borderTopWidth,
+          borderTopColor: s.borderTopColor,
+          borderBottomWidth: s.borderBottomWidth,
+          cardEdge: getComputedStyle(article).borderTopColor,
+          // Right to left, the start edge is the right.
+          fromStart: frame.right - box.right,
+          above: frame.top - box.bottom,
+          innerText: article.querySelector("button").innerText,
+        };
+      })),
+      // What the result is called, as a screen reader is told.
+      named: await card
+        .getByRole("button", { name: /^2, Burger King/ })
+        .count(),
+    });
+  return drawn;
+}
+
 const { code, css } = await buildReactFixture("owned-css-host.tsx");
 const require = createRequire(`${process.cwd()}/packages/react/package.json`);
 const postcss = require("postcss");
@@ -201,6 +256,117 @@ try {
           );
         console.log(
           `PASS decision 50, ${theme}, ${mode}: Nearby is the success text colour ${success} on the card, the selected card, the grouped row and the selected grouped row${mode === "full" ? "; 5–10 min is the text colour" : ""}`,
+        );
+      }
+      // The result card's one tab (GAP-054; Olcay, 2026-09-29): each is
+      // painted for what it says, in this root's theme, with or without
+      // @scope and under the host's hostile rules, because the paint is
+      // owned. Featured keeps its warning tab and edge; a number is quiet and
+      // outlined at rest and primary when selected, and never recolours the
+      // card's edge; a badge is quiet, with no star and the grey edge. With
+      // the utilities (the full pass) each hangs from the card's start edge,
+      // the right here, and the number leads the result's name.
+      {
+        const theme = id === "outer" ? "dark" : "light";
+        const token = (name) => value(`${id}-tabs`, name);
+        const edge = await token("--semantics-border-subtle");
+        const expected = {
+          featured: {
+            kind: "featured",
+            background: await token("--primitives-colors-emotional-alert-800"),
+            color: await token("--primitives-colors-foreground-1000"),
+            star: true,
+            hidden: false,
+          },
+          number: {
+            kind: "number",
+            background: await token("--primitives-colors-background-0"),
+            color: await token("--primitives-colors-foreground-400"),
+            borderTopWidth: "1px",
+            borderTopColor: edge,
+            borderBottomWidth: "0px",
+            star: false,
+            hidden: true,
+          },
+          "selected number": {
+            kind: "number",
+            background: await token("--primitives-colors-theme-600"),
+            color: await token("--primitives-colors-foreground-1000"),
+            star: false,
+            hidden: true,
+          },
+          badge: {
+            kind: "badge",
+            background: await token("--primitives-colors-background-100"),
+            color: await token("--primitives-colors-foreground-400"),
+            borderTopWidth: "0px",
+            star: false,
+            hidden: false,
+          },
+          "selected grouped row": {
+            kind: "number",
+            background: await token("--primitives-colors-theme-600"),
+            color: await token("--primitives-colors-foreground-1000"),
+            hidden: true,
+          },
+          "grouped row": {
+            kind: "number",
+            background: await token("--primitives-colors-background-0"),
+            color: await token("--primitives-colors-foreground-400"),
+            borderTopWidth: "1px",
+            borderTopColor: edge,
+            borderBottomWidth: "1px",
+            hidden: true,
+          },
+        };
+        const warning = await token("--primitives-colors-emotional-alert-800");
+        for (const drawn of await resultTabsIn(page, id)) {
+          const where = `${mode}, ${theme}: the ${drawn.surface}'s tab`;
+          assert(drawn.found, `${where} is not drawn`);
+          for (const [key, want] of Object.entries(expected[drawn.surface]))
+            assert.equal(drawn[key], want, `${where}: ${key}`);
+          if (mode !== "full") continue;
+          assert(
+            drawn.fromStart >= 0 && drawn.fromStart < 20,
+            `${where} is ${drawn.fromStart}px from the start (right) edge, not at it`,
+          );
+          const card = !drawn.surface.includes("row");
+          if (card) {
+            // It stands on the card's 1px top edge, over it, so the edge
+            // closes the tab and a number's quiet tab opens into the card.
+            assert(
+              drawn.above <= 0.5 && drawn.above >= -1.5,
+              `${where} does not hang from the card's top edge (${drawn.above}px)`,
+            );
+            assert.equal(
+              drawn.cardEdge === warning,
+              drawn.surface === "featured",
+              `${where}: the card's edge is ${drawn.cardEdge}; only Featured's is the warning colour`,
+            );
+          }
+          if (drawn.surface === "number" || drawn.surface === "badge")
+            assert.equal(
+              drawn.cardEdge,
+              edge,
+              `${where}: the card's edge is not the container edge`,
+            );
+          if (drawn.kind === "number") {
+            assert.equal(
+              drawn.named,
+              1,
+              `${where}: the result is not called "2, Burger King …"`,
+            );
+            // WebKit runs a hidden prefix into the text after it unless a
+            // space follows it: "2,Burger King".
+            assert.match(
+              drawn.innerText,
+              /^2,\s/,
+              `${where}: the number runs into the name (${JSON.stringify(drawn.innerText)})`,
+            );
+          }
+        }
+        console.log(
+          `PASS GAP-054, ${theme}, ${mode}: Featured is the warning tab with a star; the number is quiet and outlined at rest and primary when selected, on cards and grouped rows; the badge is quiet with no star${mode === "full" ? "; each hangs from the start edge, only Featured recolours the card's edge, and the number leads the name" : ""}`,
         );
       }
       const poi = page.getByTestId(`${id}-poi`);
@@ -1675,6 +1841,28 @@ try {
     }
     assert.deepEqual(errors, []);
     console.log(`PASS decision 50: Nearby reads at ${readings.join(", ")}`);
+    // GAP-054: every tab's words read at 4.5:1 or more on its own fill, in
+    // both themes: Featured, the number at rest and selected, and the quiet
+    // badge.
+    const tabReadings = [];
+    for (const [id, theme] of [
+      ["outer", "dark"],
+      ["nested", "light"],
+    ]) {
+      for (const { surface, found, color, layers } of await resultTabsIn(
+        clean,
+        id,
+      )) {
+        assert(found, `${theme}: the ${surface}'s tab is not drawn`);
+        const ratio = contrastRatio(readColour(color), paintedBehind(layers));
+        assert(
+          ratio >= 4.5,
+          `${theme}: the ${surface}'s tab reads at ${ratio.toFixed(2)}:1, under 4.5:1`,
+        );
+        tabReadings.push(`${theme} ${surface} ${ratio.toFixed(2)}:1`);
+      }
+    }
+    console.log(`PASS GAP-054: the tabs read at ${tabReadings.join(", ")}`);
     await clean.close();
   }
 

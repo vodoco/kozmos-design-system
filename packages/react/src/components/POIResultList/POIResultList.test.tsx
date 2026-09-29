@@ -109,6 +109,58 @@ describe("POIResultList", () => {
     );
   });
 
+  it("numbers its results, grouped or not, only when the product asks", () => {
+    // Quick access: a category chosen in the browse grid lists its places and
+    // the map numbers their pins. Kozmos cannot tell that list from another,
+    // so the product turns numbering on; it draws each result's own index and
+    // never renumbers. A featured result keeps Featured, as its pin keeps its
+    // logo.
+    const featured = createItem("featured", 0);
+    const items: POIResultListEntry[] = [
+      { ...featured, result: { ...featured.result, featured: true } },
+      createItem("one", 1),
+      {
+        id: "starbucks",
+        label: "Starbucks, 2 results",
+        items: [createItem("two", 2), createItem("three", 3)],
+        defaultExpanded: true,
+      },
+    ];
+    const numbers = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll("[data-tab='number']")).map(
+        (node) => node.textContent,
+      );
+    const { container, rerender } = render(
+      <POIResultList
+        items={items}
+        onSelect={vi.fn()}
+        resultCountLabel="4 results"
+      />,
+    );
+    expect(numbers(container)).toEqual([]);
+
+    rerender(
+      <POIResultList
+        items={items}
+        numbered
+        onSelect={vi.fn()}
+        resultCountLabel="4 results"
+        selectedPoiId="two"
+      />,
+    );
+    expect(numbers(container)).toEqual(["1", "2", "3"]);
+    expect(container.querySelector("[data-tab='featured']")).not.toBeNull();
+    // The selected one fills, wherever it is.
+    expect(
+      container.querySelector("[data-tab='number'][data-selected]"),
+    ).toHaveTextContent(/^2$/);
+    expect(
+      screen.getByRole("button", { name: /^2, Burger King/ }),
+    ).toHaveAttribute("aria-current", "location");
+    // The list's own element is not given the flag as an attribute.
+    expect(container.querySelector("section")).not.toHaveAttribute("numbered");
+  });
+
   it("holds a notice inside the list, above the results it qualifies", () => {
     // The allergen notice belongs to the results: as a sibling it could
     // outlive a list that failed to render, and be read as qualifying

@@ -114,6 +114,20 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
 
   Each result's words for a walk shown as a band: POIResultCard's.
 
+- `numbered`: `boolean`, optional.
+
+  Number every result, grouped or not, with its `result.resultIndex`: the
+  number its pin shows on the map. Off unless the product turns it on, for
+  a list whose pins are numbered: quick access, where a category chosen in
+  the browse grid lists that category's places and the map pins them.
+  Kozmos cannot tell that list from any other, so the product says so.
+
+  The list draws the numbers it is given and never renumbers. A featured
+  result keeps its Featured tab and shows no number, since its pin shows
+  its logo, so number the results that are not featured, in the order the
+  pins are numbered. A number takes the place of a badge. POIResultCard's
+  `numbered`, given to every card.
+
 - `scrollSelectedIntoView`: `boolean`, optional, default `true`.
 
   Bring the selected result into view when `selectedPoiId` changes — by
@@ -201,6 +215,21 @@ interface POIResultCardProps extends Omit<
    * passes its own, for one band or all five.
    */
   travelTimeBandLabels?: Partial<Record<TravelTimeBand, string>>;
+  /**
+   * Draw the result's number, `result.resultIndex`, in its tab: the number
+   * its pin shows on the map. Off unless the product turns it on, for a list
+   * whose pins are numbered, as quick access's are when a category's places
+   * are listed and pinned.
+   *
+   * The card draws the number it is given and never renumbers, so the
+   * product numbers the results the way it numbers the pins. A featured
+   * result keeps its Featured tab and shows no number, as its pin shows its
+   * logo; a number takes the place of a badge, so the list's numbers match
+   * the pins. The number leads the result's accessible name ("2, Burger
+   * King"); a `selectionLabel` replaces that whole name, so it says the
+   * number itself.
+   */
+  numbered?: boolean;
 }
 ```
 

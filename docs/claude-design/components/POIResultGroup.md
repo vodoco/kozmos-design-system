@@ -121,6 +121,12 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultGroupProps`, which
 
   Each member's words for a walk shown as a band: POIResultCard's.
 
+- `numbered`: `boolean`, optional.
+
+  Number each member with its `result.resultIndex`, before its name:
+  POIResultCard's `numbered`, given to every member. POIResultList passes
+  its own.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -194,6 +200,21 @@ interface POIResultCardProps extends Omit<
    * passes its own, for one band or all five.
    */
   travelTimeBandLabels?: Partial<Record<TravelTimeBand, string>>;
+  /**
+   * Draw the result's number, `result.resultIndex`, in its tab: the number
+   * its pin shows on the map. Off unless the product turns it on, for a list
+   * whose pins are numbered, as quick access's are when a category's places
+   * are listed and pinned.
+   *
+   * The card draws the number it is given and never renumbers, so the
+   * product numbers the results the way it numbers the pins. A featured
+   * result keeps its Featured tab and shows no number, as its pin shows its
+   * logo; a number takes the place of a badge, so the list's numbers match
+   * the pins. The number leads the result's accessible name ("2, Burger
+   * King"); a `selectionLabel` replaces that whole name, so it says the
+   * number itself.
+   */
+  numbered?: boolean;
 }
 ```
 

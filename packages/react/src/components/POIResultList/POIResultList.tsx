@@ -173,6 +173,20 @@ export interface POIResultListProps extends Omit<
   /** Each result's words for a walk shown as a band: POIResultCard's. */
   travelTimeBandLabels?: POIResultCardProps["travelTimeBandLabels"];
   /**
+   * Number every result, grouped or not, with its `result.resultIndex`: the
+   * number its pin shows on the map. Off unless the product turns it on, for
+   * a list whose pins are numbered: quick access, where a category chosen in
+   * the browse grid lists that category's places and the map pins them.
+   * Kozmos cannot tell that list from any other, so the product says so.
+   *
+   * The list draws the numbers it is given and never renumbers. A featured
+   * result keeps its Featured tab and shows no number, since its pin shows
+   * its logo, so number the results that are not featured, in the order the
+   * pins are numbered. A number takes the place of a badge. POIResultCard's
+   * `numbered`, given to every card.
+   */
+  numbered?: boolean;
+  /**
    * Bring the selected result into view when `selectedPoiId` changes — by
    * scrolling whatever the list sits in, and nothing further out. On by
    * default (row 70).
@@ -211,6 +225,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       onGroupExpandedChange,
       scrollSelectedIntoView = true,
       travelTimeBandLabels,
+      numbered,
       ...props
     },
     ref,
@@ -346,6 +361,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                         result: select(item),
                       }))}
                       label={entry.label}
+                      numbered={numbered}
                       onAction={onAction}
                       onExpandedChange={
                         onGroupExpandedChange &&
@@ -366,6 +382,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                     actionsLabel={actionsLabel}
                     currentFloorId={currentFloorId}
                     featuredLabel={featuredLabel}
+                    numbered={numbered}
                     onAction={onAction}
                     onSelect={onSelect}
                     poi={poi}
