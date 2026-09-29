@@ -26,3 +26,4 @@ The facts are generated from the code: the
 | [platform-mapping-plan.md](platform-mapping-plan.md) | The cross-platform component, prop and token mapping planned before the code, across six platforms.   |
 | [token-pipeline-plan.md](token-pipeline-plan.md)     | The token pipeline planned before the code: its files, configuration and outputs.                     |
 | [migration-plan.md](migration-plan.md)               | Upgrades across major versions that were never released, with a CLI and codemods that do not exist.   |
+| [i18n-plan.md](i18n-plan.md)                         | Kozmos's own translation files, a locales package, an i18n provider and a translation workflow.       |

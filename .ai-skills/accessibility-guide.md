@@ -52,34 +52,31 @@ Kozmos Design System targets **WCAG 2.1 Level AA** compliance across all platfor
 #### 1.1 Text Alternatives (Level A)
 
 ```tsx
+// kozmos-skills: template — fragments of a render shown in turn, not one module
 // ✅ All images must have alt text
-<KozmosImage
+<img
   src="/map-floor-1.png"
   alt="Floor 1 map showing entrance, elevators, and main corridor"
 />
 
 // ✅ Decorative images use empty alt
-<KozmosImage
-  src="/decorative-line.svg"
-  alt=""
-  role="presentation"
-/>
+<img src="/decorative-line.svg" alt="" />
 
-// ✅ Icons with meaning need labels
-<KozmosIconButton
-  icon={<NavigateIcon />}
-  aria-label="Start navigation to destination"
-/>
+// ✅ Icons with meaning need labels: an icon-only button names its action
+<IconButton aria-label="Start navigation to destination" variant="ghost" size="icon">
+  <Icon name="navigation-pointer-01" size="sm" />
+</IconButton>
 ```
 
 #### 1.3 Adaptable (Level A)
 
 ```tsx
-// ✅ Semantic structure
-<KozmosCard as="article">
-  <KozmosHeading level={2}>Meeting Room A</KozmosHeading>
-  <KozmosText>Available now</KozmosText>
-</KozmosCard>
+// kozmos-skills: template — a fragment of a render, not a module
+// ✅ Semantic structure: a real heading level, and text in a paragraph
+<Card>
+  <Heading level={2}>Meeting Room A</Heading>
+  <Text as="p">Available now</Text>
+</Card>
 
 // ✅ Reading order matches visual order
 // DOM order = visual order = tab order
@@ -87,12 +84,14 @@ Kozmos Design System targets **WCAG 2.1 Level AA** compliance across all platfor
 
 #### 1.4 Distinguishable (Level AA)
 
-| Requirement            | Kozmos Token                    | Value         |
-| ---------------------- | ------------------------------- | ------------- |
-| Text contrast (normal) | `--kozmos-color-text-primary`   | 4.5:1 minimum |
-| Text contrast (large)  | `--kozmos-color-text-primary`   | 3:1 minimum   |
-| Non-text contrast      | `--kozmos-color-border-default` | 3:1 minimum   |
-| Focus indicator        | `--kozmos-focus-ring`           | 3:1 minimum   |
+| Requirement            | Kozmos token                                                             | Value         |
+| ---------------------- | ------------------------------------------------------------------------ | ------------- |
+| Text contrast (normal) | `--primitives-colors-foreground-0` on `--primitives-colors-background-0` | 4.5:1 minimum |
+| Text contrast (large)  | `--primitives-colors-foreground-0` on `--primitives-colors-background-0` | 3:1 minimum   |
+| Non-text contrast      | `--semantics-border-input`, the edge of anything you interact with       | 3:1 minimum   |
+| Focus indicator        | `--primitives-colors-theme-600`, the focus ring                          | 3:1 minimum   |
+
+`pnpm tokens:contrast:check` holds the text pairs to WCAG AA in both themes.
 
 ### 2.2 Operable
 
@@ -101,28 +100,33 @@ Kozmos Design System targets **WCAG 2.1 Level AA** compliance across all platfor
 All interactive components must be keyboard accessible:
 
 ```tsx
-// ✅ All interactions work with keyboard
-<KozmosButton onClick={handleClick} onKeyDown={handleKeyDown}>
-  Navigate
-</KozmosButton>
+// kozmos-skills: template — fragments of a render; open, setOpen and confirm are the app's
+// ✅ All interactions work with keyboard: Button is a native <button>
+<Button onClick={handleClick}>Navigate</Button>
 
-// ✅ No keyboard traps
-<KozmosModal onClose={handleClose}>
-  <KozmosButton>Confirm</KozmosButton>
-  <KozmosButton onClick={handleClose}>Cancel</KozmosButton>
-</KozmosModal>
+// ✅ No keyboard traps: Dialog keeps focus inside while it is open, and Escape closes it
+<Dialog open={open} onOpenChange={setOpen}>
+  <DialogContent>
+    <DialogTitle>Start navigation?</DialogTitle>
+    <Button onClick={confirm}>Confirm</Button>
+    <DialogClose asChild>
+      <Button variant="outline">Cancel</Button>
+    </DialogClose>
+  </DialogContent>
+</Dialog>
 ```
 
 #### 2.4 Navigable (Level AA)
 
 ```tsx
-// ✅ Skip links
-<KozmosSkipLink href="#main-content">
+// kozmos-skills: template — fragments of a page, not a module
+// ✅ Skip links: a plain link to the main landmark, first on the page
+<a href="#main-content" className="skip-link">
   Skip to main content
-</KozmosSkipLink>
+</a>
 
-// ✅ Page titles
-<KozmosPageTitle>Floor 1 - Building A | Pointr</KozmosPageTitle>
+// ✅ Page titles: the document's title, set by the app
+<title>Floor 1 - Building A | Pointr</title>
 
 // ✅ Focus order follows visual order
 // Tab through interactive elements in logical sequence
@@ -133,22 +137,23 @@ All interactive components must be keyboard accessible:
 #### 3.1 Readable (Level A)
 
 ```tsx
-// ✅ Language declared
-<html lang="en">
-  <KozmosApp>...</KozmosApp>
-</html>
+// kozmos-skills: template — fragments of a page, not a module
+// ✅ Language declared on the document
+<html lang="en">…</html>
 
 // ✅ Language changes marked
-<KozmosText>
-  Welcome! <span lang="es">Bienvenido!</span>
-</KozmosText>
+<Text as="p">
+  Welcome! <span lang="es">¡Bienvenido!</span>
+</Text>
 ```
 
 #### 3.2 Predictable (Level AA)
 
 ```tsx
+// kozmos-skills: template — a fragment of a render, not a module
 // ✅ No unexpected context changes on focus
-<KozmosInput
+<Input
+  label="Destination"
   onFocus={() => {}} // No navigation or submission
   onBlur={() => {}} // No navigation or submission
 />
@@ -160,27 +165,30 @@ All interactive components must be keyboard accessible:
 #### 3.3 Input Assistance (Level AA)
 
 ```tsx
-// ✅ Error identification
-<KozmosInput
-  error="Please enter a valid destination"
-  aria-invalid={true}
-  aria-describedby="destination-error"
-/>
+// kozmos-skills: template — fragments of a render; confirming, setConfirming and remove are the app's
+// ✅ Error identification: an error sets aria-invalid and describes the field with its message
+<Input label="Destination" error="Please enter a valid destination" />
 
 // ✅ Labels and instructions
-<KozmosInput
+<Input
   label="Destination"
   placeholder="e.g., Meeting Room A"
-  hint="Enter room name or number"
+  helperText="Enter room name or number"
 />
 
-// ✅ Error prevention
-<KozmosConfirmDialog
-  title="Delete saved location?"
-  description="This action cannot be undone."
-  confirmLabel="Delete"
-  cancelLabel="Cancel"
-/>
+// ✅ Error prevention: confirm an action that cannot be undone
+<Dialog open={confirming} onOpenChange={setConfirming}>
+  <DialogContent>
+    <DialogTitle>Delete saved location?</DialogTitle>
+    <DialogDescription>This action cannot be undone.</DialogDescription>
+    <Button variant="destructive" onClick={remove}>
+      Delete
+    </Button>
+    <DialogClose asChild>
+      <Button variant="outline">Cancel</Button>
+    </DialogClose>
+  </DialogContent>
+</Dialog>
 ```
 
 ### 2.4 Robust
@@ -188,23 +196,25 @@ All interactive components must be keyboard accessible:
 #### 4.1 Compatible (Level A)
 
 ```tsx
+// kozmos-skills: template — fragments of a render; floor and setFloor are the app's
 // ✅ Valid HTML
 // No duplicate IDs, proper nesting
 
-// ✅ Name, Role, Value exposed
-<KozmosSelect
-  aria-label="Select floor"
-  aria-expanded={isOpen}
-  aria-haspopup="listbox"
-  role="combobox"
->
-  <KozmosOption value="1" role="option">Floor 1</KozmosOption>
-</KozmosSelect>
+// ✅ Name, role and value exposed: Select is built on Radix's, which gives its
+// trigger and its list their roles and state
+<Select value={floor} onValueChange={setFloor}>
+  <SelectTrigger aria-label="Select floor">
+    <SelectValue placeholder="Floor" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="1">Floor 1</SelectItem>
+  </SelectContent>
+</Select>
 
-// ✅ Status messages announced
-<KozmosToast role="status" aria-live="polite">
+// ✅ Status messages announced: a polite live region
+<p role="status" aria-live="polite">
   Navigation started
-</KozmosToast>
+</p>
 ```
 
 ---
@@ -213,23 +223,23 @@ All interactive components must be keyboard accessible:
 
 ### Primitive Components
 
-| Component | Keyboard       | Screen Reader    | Focus Visible | ARIA     | WCAG Level |
-| --------- | -------------- | ---------------- | ------------- | -------- | ---------- |
-| Button    | ✅ Enter/Space | ✅ Role=button   | ✅ Ring       | Optional | AA         |
-| Input     | ✅ Full        | ✅ Label+Value   | ✅ Ring       | Required | AA         |
-| Select    | ✅ Arrow keys  | ✅ Listbox       | ✅ Ring       | Required | AA         |
-| Checkbox  | ✅ Space       | ✅ Checked state | ✅ Ring       | Required | AA         |
-| Radio     | ✅ Arrow keys  | ✅ Group+Checked | ✅ Ring       | Required | AA         |
-| Switch    | ✅ Space       | ✅ Checked state | ✅ Ring       | Required | AA         |
-| Slider    | ✅ Arrow keys  | ✅ Value         | ✅ Ring       | Required | AA         |
-| Link      | ✅ Enter       | ✅ Role=link     | ✅ Ring       | Optional | AA         |
+| Component  | Keyboard       | Screen Reader    | Focus Visible | ARIA     | WCAG Level |
+| ---------- | -------------- | ---------------- | ------------- | -------- | ---------- |
+| Button     | ✅ Enter/Space | ✅ Role=button   | ✅ Ring       | Optional | AA         |
+| Input      | ✅ Full        | ✅ Label+Value   | ✅ Ring       | Required | AA         |
+| Select     | ✅ Arrow keys  | ✅ Listbox       | ✅ Ring       | Required | AA         |
+| Checkbox   | ✅ Space       | ✅ Checked state | ✅ Ring       | Required | AA         |
+| RadioGroup | ✅ Arrow keys  | ✅ Group+Checked | ✅ Ring       | Required | AA         |
+| Switch     | ✅ Space       | ✅ Checked state | ✅ Ring       | Required | AA         |
+| Slider     | ✅ Arrow keys  | ✅ Value         | ✅ Ring       | Required | AA         |
+| Link       | ✅ Enter       | ✅ Role=link     | ✅ Ring       | Optional | AA         |
 
 ### Compound Components
 
 | Component | Keyboard        | Screen Reader  | Focus Visible | ARIA     | WCAG Level |
 | --------- | --------------- | -------------- | ------------- | -------- | ---------- |
-| Modal     | ✅ Tab trap     | ✅ Dialog      | ✅ Content    | Required | AA         |
-| Dropdown  | ✅ Arrow+Esc    | ✅ Menu        | ✅ Options    | Required | AA         |
+| Dialog    | ✅ Tab trap     | ✅ Dialog      | ✅ Content    | Required | AA         |
+| Menu      | ✅ Arrow+Esc    | ✅ Menu        | ✅ Options    | Required | AA         |
 | Tabs      | ✅ Arrow keys   | ✅ Tablist     | ✅ Tab        | Required | AA         |
 | Accordion | ✅ Enter/Space  | ✅ Expanded    | ✅ Header     | Required | AA         |
 | Toast     | N/A             | ✅ Live region | N/A           | Required | AA         |
@@ -245,7 +255,6 @@ All interactive components must be keyboard accessible:
 | SearchBar      | ✅ Full       | ✅ Results       | ✅ Ring       | Required | AA         |
 | FloorSelector  | ✅ Arrow keys | ✅ Current floor | ✅ Option     | Required | AA         |
 | POICard        | ✅ Full       | ✅ Details       | ✅ Actions    | Required | AA         |
-| DirectionsList | ✅ Arrow keys | ✅ Step by step  | ✅ Current    | Required | AA         |
 
 ---
 
@@ -253,38 +262,25 @@ All interactive components must be keyboard accessible:
 
 ### 4.1 React (Web)
 
+Kozmos's React components are accessible as they ship: an app composes them rather than
+re-implementing them. `Button` renders a native `<button>`. While `isLoading` it is disabled and
+draws a spinner beside its label, so the label should say what is happening:
+
 ```tsx
-// Button.tsx - Accessible implementation
-import { forwardRef } from "react";
+import { Button } from "@kozmos-ds/react";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost";
-  loading?: boolean;
+export function SaveButton({ saving }: { saving: boolean }) {
+  return <Button isLoading={saving}>{saving ? "Saving…" : "Save"}</Button>;
 }
-
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ children, loading, disabled, ...props }, ref) => {
-    return (
-      <button
-        ref={ref}
-        disabled={disabled || loading}
-        aria-busy={loading}
-        aria-disabled={disabled || loading}
-        {...props}
-      >
-        {loading && <span aria-hidden="true" className="spinner" />}
-        <span className={loading ? "visually-hidden" : ""}>{children}</span>
-        {loading && <span className="visually-hidden">Loading...</span>}
-      </button>
-    );
-  },
-);
 ```
 
+A control of your own takes the colour of Kozmos's focus ring, `--primitives-colors-theme-600`,
+and hides text visually without hiding it from a screen reader like this:
+
 ```css
-/* Focus styles */
-.kozmos-button:focus-visible {
-  outline: 2px solid var(--kozmos-color-focus);
+/* Focus styles, for a control of your own */
+.my-control:focus-visible {
+  outline: 2px solid var(--primitives-colors-theme-600);
   outline-offset: 2px;
 }
 
@@ -305,10 +301,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 ### 4.2 iOS (SwiftUI)
 
 ```swift
-// Button.swift - Accessible implementation
+// A pattern for a button of your own, not Kozmos's source: its KozmosButton, in
+// packages/ios, already takes isLoading and isDisabled.
 import SwiftUI
 
-public struct KozmosButton: View {
+public struct AccessibleButton: View {
     let title: String
     let action: () -> Void
     let isLoading: Bool
@@ -340,8 +337,8 @@ public struct KozmosButton: View {
     }
 }
 
-// MapView with accessibility
-public struct KozmosMapView: View {
+// A pattern for a map of your own
+public struct AccessibleMapView: View {
     @State private var focusedPOI: POI?
 
     public var body: some View {
@@ -363,9 +360,10 @@ public struct KozmosMapView: View {
 ### 4.3 Android (Jetpack Compose)
 
 ```kotlin
-// Button.kt - Accessible implementation
+// A pattern for a button of your own, not Kozmos's source: its KozmosButton, in
+// packages/android, already takes isLoading.
 @Composable
-fun KozmosButton(
+fun AccessibleButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -394,9 +392,9 @@ fun KozmosButton(
     }
 }
 
-// Custom accessibility actions
+// Custom accessibility actions, for a map of your own
 @Composable
-fun KozmosMapView(
+fun AccessibleMapView(
     pois: List<POI>,
     onPOISelected: (POI) -> Unit
 ) {
@@ -438,85 +436,66 @@ There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack
 | `Space`            | Activate / Toggle          | Button, Checkbox, Switch  |
 | `Arrow Up/Down`    | Navigate options           | Select, Menu, Radio group |
 | `Arrow Left/Right` | Navigate tabs, Slider      | Tabs, Slider, Radio group |
-| `Escape`           | Close / Cancel             | Modal, Dropdown, Popover  |
+| `Escape`           | Close / Cancel             | Dialog, Menu, Popover     |
 | `Home`             | First item                 | List, Menu, Slider        |
 | `End`              | Last item                  | List, Menu, Slider        |
 
 ### 5.2 Focus Management Patterns
 
+Kozmos's overlays manage focus themselves. `Dialog`, `Drawer` and `BottomSheet` keep focus inside
+while they are open and hand it back to their trigger when they close, and `Menu` and `Popover`
+return it to their trigger on close. None needs a focus trap of your own:
+
 ```tsx
-// Focus trap for modals
-import { useFocusTrap } from "@kozmos-ds/react";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@kozmos-ds/react";
 
-function Modal({ isOpen, onClose, children }) {
-  const trapRef = useFocusTrap(isOpen);
-
-  return isOpen ? (
-    <div ref={trapRef} role="dialog" aria-modal="true">
-      {children}
-    </div>
-  ) : null;
-}
-
-// Return focus on close
-import { useReturnFocus } from "@kozmos-ds/react";
-
-function Dropdown({ trigger, children }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const returnFocusRef = useReturnFocus(isOpen);
-
+export function ShareDialog() {
   return (
-    <>
-      <button ref={returnFocusRef} onClick={() => setIsOpen(true)}>
-        {trigger}
-      </button>
-      {isOpen && <DropdownMenu>{children}</DropdownMenu>}
-    </>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>Share</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogTitle>Share this location</DialogTitle>
+        <DialogDescription>Send a link to the meeting room.</DialogDescription>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
 
 ### 5.3 Roving Tab Index
 
+`Tabs` and `RadioGroup` give their items one Tab stop, and move between them with the arrow keys,
+Home and End. With `activationMode="manual"`, Tabs moves focus without selecting until Enter or
+Space:
+
 ```tsx
-// Tab list with roving tabindex
-function Tabs({ tabs, activeTab, onChange }) {
-  const [focusedIndex, setFocusedIndex] = useState(0);
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kozmos-ds/react";
 
-  const handleKeyDown = (e: KeyboardEvent, index: number) => {
-    switch (e.key) {
-      case "ArrowRight":
-        setFocusedIndex((index + 1) % tabs.length);
-        break;
-      case "ArrowLeft":
-        setFocusedIndex((index - 1 + tabs.length) % tabs.length);
-        break;
-      case "Home":
-        setFocusedIndex(0);
-        break;
-      case "End":
-        setFocusedIndex(tabs.length - 1);
-        break;
-    }
-  };
-
+export function FloorTabs() {
   return (
-    <div role="tablist">
-      {tabs.map((tab, index) => (
-        <button
-          key={tab.id}
-          role="tab"
-          tabIndex={index === focusedIndex ? 0 : -1}
-          aria-selected={tab.id === activeTab}
-          onKeyDown={(e) => handleKeyDown(e, index)}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
+    <Tabs defaultValue="1" activationMode="manual">
+      <TabsList aria-label="Floors">
+        <TabsTrigger value="1">Floor 1</TabsTrigger>
+        <TabsTrigger value="2">Floor 2</TabsTrigger>
+      </TabsList>
+      <TabsContent value="1">The first floor's rooms.</TabsContent>
+      <TabsContent value="2">The second floor's rooms.</TabsContent>
+    </Tabs>
   );
 }
 ```
+
+A widget of your own follows the WAI-ARIA Authoring Practices' roving tabindex: one item takes
+`tabIndex={0}`, the rest `-1`, and the arrow keys move both the index and the focus.
 
 ---
 
@@ -540,28 +519,20 @@ function Tabs({ tabs, activeTab, onChange }) {
 ### 6.2 Live Regions
 
 ```tsx
+// kozmos-skills: template — fragments of a render; statusMessage and errorMessage are the app's
 // Polite announcements (non-urgent)
 <div aria-live="polite" aria-atomic="true">
   {statusMessage}
 </div>
 
 // Assertive announcements (urgent)
-<div aria-live="assertive" role="alert">
+<div role="alert">
   {errorMessage}
 </div>
-
-// Toast implementation
-function Toast({ message, type }) {
-  return (
-    <div
-      role={type === 'error' ? 'alert' : 'status'}
-      aria-live={type === 'error' ? 'assertive' : 'polite'}
-    >
-      {message}
-    </div>
-  );
-}
 ```
+
+Kozmos's `Toast` is built on Radix's, whose viewport announces each toast: it needs no live region
+of its own.
 
 ### 6.3 Screen Reader Testing Matrix
 
@@ -590,62 +561,52 @@ function Toast({ message, type }) {
 
 ### 7.2 Color Token Contrast Matrix
 
-```
-Light Theme Contrast Ratios:
-┌─────────────────────────────────────────────────────────────┐
-│ Token                      │ vs Background │ Ratio │ Pass │
-├─────────────────────────────────────────────────────────────┤
-│ --kozmos-color-text-primary   │ surface-primary   │ 12.5:1 │ ✅ AAA │
-│ --kozmos-color-text-secondary │ surface-primary   │  7.2:1 │ ✅ AAA │
-│ --kozmos-color-text-tertiary  │ surface-primary   │  4.8:1 │ ✅ AA  │
-│ --kozmos-color-text-disabled  │ surface-primary   │  3.2:1 │ 🟡 UI  │
-│ --kozmos-color-border-default │ surface-primary   │  3.1:1 │ ✅ UI  │
-│ --kozmos-color-primary        │ surface-primary   │  4.6:1 │ ✅ AA  │
-│ --kozmos-color-primary        │ on-primary        │  5.2:1 │ ✅ AA  │
-└─────────────────────────────────────────────────────────────┘
-```
+The pairs Kozmos promises are in `packages/tokens/src/contrast-contract.json`, each with its
+minimum: the app's background and text, `--primitives-colors-background-0` and
+`--primitives-colors-foreground-0`, at 4.5:1 among them. `pnpm tokens:contrast:check` measures
+every pair in both themes from the built CSS, and fails when one falls below its minimum.
 
 ### 7.3 Color-Only Information
 
 ```tsx
-// ❌ Bad: Color only indicates state
-<Badge color={isActive ? 'green' : 'red'} />
+// kozmos-skills: template — fragments of a render; isActive is the app's
+// ❌ Bad: colour alone says the state
+<Badge variant={isActive ? "default" : "destructive"} />
 
-// ✅ Good: Color + icon + text
+// ✅ Good: colour, an icon and words
 <Badge
-  color={isActive ? 'success' : 'error'}
-  icon={isActive ? <CheckIcon /> : <XIcon />}
+  variant={isActive ? "default" : "destructive"}
+  icon={<Icon name={isActive ? "check" : "x"} size="xs" />}
 >
-  {isActive ? 'Active' : 'Inactive'}
+  {isActive ? "Active" : "Inactive"}
 </Badge>
 
-// ❌ Bad: Error only shown by red border
-<Input error style={{ borderColor: 'red' }} />
+// ❌ Bad: an error shown only by a red border
+<Input style={{ borderColor: "red" }} />
 
-// ✅ Good: Error with icon and message
-<Input
-  error
-  errorMessage="This field is required"
-  startIcon={<ErrorIcon />}
-  aria-invalid={true}
-/>
+// ✅ Good: an error with its message, which Input shows and announces
+<Input label="Destination" error="This field is required" />
 ```
 
 ### 7.4 High Contrast Mode Support
 
+Kozmos ships no forced-colours rules yet, so its controls take the browser's defaults in Windows
+High Contrast mode, and a borderless control can lose its edge. An app can give its own controls
+rules like these:
+
 ```css
 /* Windows High Contrast Mode */
 @media (forced-colors: active) {
-  .kozmos-button {
+  .my-control {
     border: 2px solid ButtonText;
   }
 
-  .kozmos-button:focus {
+  .my-control:focus {
     outline: 3px solid Highlight;
     outline-offset: 2px;
   }
 
-  .kozmos-button[disabled] {
+  .my-control[disabled] {
     border-color: GrayText;
     color: GrayText;
   }
@@ -660,7 +621,7 @@ Light Theme Contrast Ratios:
 
 ```css
 /* Default animations */
-.kozmos-component {
+.panel {
   transition:
     transform 200ms ease-out,
     opacity 200ms ease-out;
@@ -668,36 +629,37 @@ Light Theme Contrast Ratios:
 
 /* Respect user preference */
 @media (prefers-reduced-motion: reduce) {
-  .kozmos-component {
+  .panel {
     transition: none;
     animation: none;
   }
 
   /* Alternative for essential motion */
-  .kozmos-loading-spinner {
+  .loading-spinner {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
 }
 ```
 
+A hook for your own animations, from the same media query:
+
 ```tsx
-// React hook for reduced motion
-import { useReducedMotion } from "@kozmos-ds/react";
+import { useEffect, useState } from "react";
 
-function AnimatedComponent() {
-  const prefersReducedMotion = useReducedMotion();
+const QUERY = "(prefers-reduced-motion: reduce)";
 
-  return (
-    <motion.div
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: prefersReducedMotion ? 0 : 0.3,
-      }}
-    >
-      Content
-    </motion.div>
+export function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(
+    () => window.matchMedia(QUERY).matches,
   );
+  useEffect(() => {
+    const list = window.matchMedia(QUERY);
+    const update = () => setReduced(list.matches);
+    list.addEventListener("change", update);
+    return () => list.removeEventListener("change", update);
+  }, []);
+  return reduced;
 }
 ```
 
@@ -713,6 +675,7 @@ function AnimatedComponent() {
 ### 8.3 Seizure Safety
 
 ```typescript
+// kozmos-skills: template — a sketch; countBrightnessTransitions is yours to write
 // No flashing content > 3 times per second
 // If using video, check with PEAT tool
 
@@ -735,46 +698,45 @@ function validateAnimation(keyframes: Keyframe[]) {
 
 ### 9.1 Focus Indicator Styles
 
+Kozmos's components draw their own focus ring. For a control of your own:
+
 ```css
-/* Base focus ring */
+/* Base focus ring, in Kozmos's ring colour */
 :root {
-  --kozmos-focus-ring-width: 2px;
-  --kozmos-focus-ring-color: var(--kozmos-color-primary);
-  --kozmos-focus-ring-offset: 2px;
+  --focus-ring-width: 2px;
+  --focus-ring-color: var(--primitives-colors-theme-600);
+  --focus-ring-offset: 2px;
 }
 
 /* Apply to all focusable elements */
-.kozmos-focusable:focus-visible {
-  outline: var(--kozmos-focus-ring-width) solid var(--kozmos-focus-ring-color);
-  outline-offset: var(--kozmos-focus-ring-offset);
+.focusable:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Remove default on mouse focus */
-.kozmos-focusable:focus:not(:focus-visible) {
+.focusable:focus:not(:focus-visible) {
   outline: none;
 }
-
-/* High contrast on dark backgrounds */
-.kozmos-dark .kozmos-focusable:focus-visible {
-  outline-color: var(--kozmos-color-on-primary);
-  box-shadow: 0 0 0 4px var(--kozmos-color-primary);
-}
 ```
+
+The token follows the theme, so the ring needs no rule of its own in the dark.
 
 ### 9.2 Focus Order
 
 ```tsx
+// kozmos-skills: template — the wrong order and the right one, side by side
 // Ensure logical focus order
 // DOM order = visual order = tab order
 
 // ❌ Bad: CSS reordering breaks focus
-<div style={{ display: 'flex', flexDirection: 'row-reverse' }}>
-  <Button>Cancel</Button>  {/* Focused first but appears second */}
-  <Button>Save</Button>    {/* Focused second but appears first */}
+<div style={{ display: "flex", flexDirection: "row-reverse" }}>
+  <Button>Cancel</Button> {/* Focused first but appears second */}
+  <Button>Save</Button> {/* Focused second but appears first */}
 </div>
 
 // ✅ Good: DOM order matches visual
-<div style={{ display: 'flex' }}>
+<div style={{ display: "flex" }}>
   <Button>Save</Button>
   <Button>Cancel</Button>
 </div>
@@ -783,8 +745,7 @@ function validateAnimation(keyframes: Keyframe[]) {
 ### 9.3 Skip Links
 
 ```tsx
-// Skip link component
-function SkipLinks() {
+export function SkipLinks() {
   return (
     <nav aria-label="Skip links" className="skip-links">
       <a href="#main-content" className="skip-link">
@@ -799,15 +760,16 @@ function SkipLinks() {
     </nav>
   );
 }
+```
 
-// CSS for skip links
+```css
 .skip-link {
   position: absolute;
   top: -100%;
   left: 0;
   z-index: 9999;
   padding: 1rem;
-  background: var(--kozmos-color-surface-primary);
+  background: var(--primitives-colors-background-0);
 }
 
 .skip-link:focus {
@@ -822,11 +784,11 @@ function SkipLinks() {
 ### 10.1 Automated Testing
 
 ```tsx
-// vitest + axe-core
+// kozmos-skills: template — a test beside Button in packages/react, whose setup file adds the axe matchers
 import { render } from "@testing-library/react";
-import { axe, toHaveNoViolations } from "jest-axe";
-
-expect.extend(toHaveNoViolations);
+import { describe, expect, it } from "vitest";
+import { axe } from "vitest-axe";
+import { Button } from "./Button";
 
 describe("Button accessibility", () => {
   it("should have no accessibility violations", async () => {
@@ -842,7 +804,7 @@ describe("Button accessibility", () => {
   });
 
   it("should have no violations when loading", async () => {
-    const { container } = render(<Button loading>Loading</Button>);
+    const { container } = render(<Button isLoading>Loading</Button>);
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
@@ -884,14 +846,14 @@ describe("Button accessibility", () => {
 
 ### 10.3 Storybook a11y Addon
 
-```typescript
-// .storybook/main.ts
-export default {
-  addons: ["@storybook/addon-a11y"],
-};
+Storybook's configuration, `apps/docs/.storybook/main.ts`, already lists `@storybook/addon-a11y`. A
+story can set the addon's rules in its meta:
 
-// Component.stories.tsx
-export default {
+```tsx
+import type { Meta } from "@storybook/react";
+import { Button } from "@kozmos-ds/react";
+
+const meta: Meta<typeof Button> = {
   title: "Components/Button",
   component: Button,
   parameters: {
@@ -905,6 +867,8 @@ export default {
     },
   },
 };
+
+export default meta;
 ```
 
 ### 10.4 CI/CD Integration

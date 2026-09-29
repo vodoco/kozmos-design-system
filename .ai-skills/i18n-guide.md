@@ -23,15 +23,19 @@
 
 ### i18n Strategy
 
-Kozmos Design System provides:
+Kozmos ships no translations and no i18n library. A component's words are its props, many with an
+English default a product replaces (POIResultCard's `featuredLabel` defaults to "Featured"), so an
+app translates Kozmos the way it translates itself, and passes the result in.
 
-| Feature             | Implementation                         | Coverage            |
-| ------------------- | -------------------------------------- | ------------------- |
-| **Translations**    | JSON files per locale                  | All UI strings      |
-| **RTL Support**     | CSS logical properties + platform APIs | Full layout flip    |
-| **Formatting**      | Intl API / platform equivalents        | Date, time, numbers |
-| **Pluralization**   | ICU MessageFormat                      | Complex rules       |
-| **Dynamic Loading** | Lazy load per locale                   | Performance         |
+| What              | Who does it                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| **Translations**  | The app, with its own library and files; Kozmos takes the translated words as props          |
+| **Direction**     | `ThemeProvider dir="rtl"` on the web; the platform's layout direction on SwiftUI and Compose |
+| **Formatting**    | The app: `Intl` on the web, the platform's formatters natively                               |
+| **Pluralization** | The app's message format                                                                     |
+
+A plan for Kozmos's own translation files and provider, written before the code, is kept as a
+proposal in [docs/proposals/i18n-plan.md](../docs/proposals/i18n-plan.md).
 
 ### Key Principles
 
@@ -46,164 +50,17 @@ Kozmos Design System provides:
 
 ## 2. Supported Languages
 
-### Language Matrix
-
-| Code      | Language              | Direction | Region               | Priority    |
-| --------- | --------------------- | --------- | -------------------- | ----------- |
-| `en`      | English               | LTR       | Global               | ✅ Primary  |
-| `de`      | German                | LTR       | DACH                 | ✅ Required |
-| `fr`      | French                | LTR       | France, Canada       | ✅ Required |
-| `es`      | Spanish               | LTR       | Spain, LATAM         | ✅ Required |
-| `pt`      | Portuguese            | LTR       | Brazil, Portugal     | ✅ Required |
-| `it`      | Italian               | LTR       | Italy                | ✅ Required |
-| `nl`      | Dutch                 | LTR       | Netherlands, Belgium | ✅ Required |
-| `ja`      | Japanese              | LTR       | Japan                | ✅ Required |
-| `zh-Hans` | Chinese (Simplified)  | LTR       | China                | ✅ Required |
-| `zh-Hant` | Chinese (Traditional) | LTR       | Taiwan, HK           | ✅ Required |
-| `ko`      | Korean                | LTR       | Korea                | ✅ Required |
-| `ar`      | Arabic                | RTL       | MENA                 | ✅ Required |
-| `he`      | Hebrew                | RTL       | Israel               | 🟡 Optional |
-| `tr`      | Turkish               | LTR       | Turkey               | 🟡 Optional |
-| `ru`      | Russian               | LTR       | Russia               | 🟡 Optional |
-
-### Locale Fallback Chain
-
-```
-zh-Hans-CN → zh-Hans → zh → en
-ar-SA → ar → en
-pt-BR → pt → en
-```
+Kozmos has no list of languages: it ships no strings of its own to translate, only English
+defaults a product replaces through props. The language matrix planned before the code is kept in
+[docs/proposals/i18n-plan.md](../docs/proposals/i18n-plan.md).
 
 ---
 
 ## 3. Translation Architecture
 
-### File Structure
-
-```
-packages/
-├── locales/
-│   ├── en/
-│   │   ├── common.json       # Shared strings
-│   │   ├── components.json   # Component-specific
-│   │   ├── navigation.json   # Wayfinding strings
-│   │   └── errors.json       # Error messages
-│   ├── de/
-│   │   ├── common.json
-│   │   └── ...
-│   ├── ar/
-│   │   ├── common.json
-│   │   └── ...
-│   └── index.ts              # Exports all locales
-├── react/
-│   └── src/
-│       └── i18n/
-│           ├── provider.tsx   # I18nProvider
-│           ├── useTranslation.ts
-│           └── types.ts
-```
-
-### Translation File Format
-
-```json
-// locales/en/common.json
-{
-  "app": {
-    "name": "Pointr",
-    "tagline": "Indoor navigation made simple"
-  },
-  "actions": {
-    "submit": "Submit",
-    "cancel": "Cancel",
-    "save": "Save",
-    "delete": "Delete",
-    "edit": "Edit",
-    "close": "Close",
-    "back": "Back",
-    "next": "Next",
-    "retry": "Retry"
-  },
-  "navigation": {
-    "startNavigation": "Start Navigation",
-    "endNavigation": "End Navigation",
-    "recalculating": "Recalculating route...",
-    "arrived": "You have arrived!",
-    "turnLeft": "Turn left",
-    "turnRight": "Turn right",
-    "goStraight": "Go straight",
-    "takeElevator": "Take the elevator to floor {floor}",
-    "takeStairs": "Take the stairs to floor {floor}",
-    "distanceRemaining": "{distance} remaining",
-    "estimatedTime": "About {time}"
-  },
-  "search": {
-    "placeholder": "Search for a place...",
-    "noResults": "No results found",
-    "recentSearches": "Recent searches",
-    "clearHistory": "Clear search history"
-  },
-  "floors": {
-    "floor": "Floor {number}",
-    "basement": "Basement {number}",
-    "ground": "Ground Floor",
-    "roof": "Roof"
-  },
-  "errors": {
-    "generic": "Something went wrong. Please try again.",
-    "network": "Unable to connect. Check your internet connection.",
-    "locationUnavailable": "Location services unavailable",
-    "destinationNotFound": "Destination not found"
-  },
-  "time": {
-    "now": "Now",
-    "justNow": "Just now",
-    "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}",
-    "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
-    "daysAgo": "{count, plural, one {# day ago} other {# days ago}}"
-  },
-  "distance": {
-    "meters": "{count, plural, one {# meter} other {# meters}}",
-    "kilometers": "{count, number, ::precision-integer} km",
-    "feet": "{count, plural, one {# foot} other {# feet}}",
-    "miles": "{count, number, ::precision-integer} mi"
-  }
-}
-```
-
-```json
-// locales/ar/common.json
-{
-  "app": {
-    "name": "بوينتر",
-    "tagline": "الملاحة الداخلية بكل سهولة"
-  },
-  "actions": {
-    "submit": "إرسال",
-    "cancel": "إلغاء",
-    "save": "حفظ",
-    "delete": "حذف",
-    "edit": "تعديل",
-    "close": "إغلاق",
-    "back": "رجوع",
-    "next": "التالي",
-    "retry": "إعادة المحاولة"
-  },
-  "navigation": {
-    "startNavigation": "بدء الملاحة",
-    "endNavigation": "إنهاء الملاحة",
-    "recalculating": "جاري إعادة حساب المسار...",
-    "arrived": "لقد وصلت!",
-    "turnLeft": "انعطف يساراً",
-    "turnRight": "انعطف يميناً",
-    "goStraight": "استمر للأمام",
-    "takeElevator": "استخدم المصعد للطابق {floor}",
-    "takeStairs": "استخدم الدرج للطابق {floor}"
-  },
-  "time": {
-    "minutesAgo": "{count, plural, zero {الآن} one {منذ دقيقة} two {منذ دقيقتين} few {منذ # دقائق} many {منذ # دقيقة} other {منذ # دقيقة}}"
-  }
-}
-```
+There is no `packages/locales` and no `@kozmos-ds/locales`: an app keeps its translations where its
+own i18n library wants them. The architecture planned before the code is kept in
+[docs/proposals/i18n-plan.md](../docs/proposals/i18n-plan.md).
 
 ---
 
@@ -211,232 +68,43 @@ packages/
 
 ### 4.1 React (Web)
 
+Translate with the app's own library and hand Kozmos the words. `ThemeProvider`'s `dir` sets the
+direction for everything inside it, Radix's keyboard handling included:
+
 ```tsx
-// i18n/provider.tsx
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { IntlProvider, MessageFormatElement } from 'react-intl';
+import { Button, Input, ThemeProvider } from "@kozmos-ds/react";
 
-type Locale = 'en' | 'de' | 'fr' | 'ar' | 'ja' | /* ... */;
-
-interface I18nContextType {
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-  dir: 'ltr' | 'rtl';
-}
-
-const I18nContext = createContext<I18nContextType | null>(null);
-
-// Lazy load translations
-async function loadMessages(locale: Locale): Promise<Record<string, string>> {
-  const messages = await import(`@kozmos/locales/${locale}/common.json`);
-  return flattenMessages(messages.default);
-}
-
-export function KozmosI18nProvider({
-  children,
-  defaultLocale = 'en'
+// t is the app's own translation function.
+export function Destination({
+  t,
+  dir,
 }: {
-  children: ReactNode;
-  defaultLocale?: Locale;
+  t: (key: string) => string;
+  dir: "ltr" | "rtl";
 }) {
-  const [locale, setLocale] = useState<Locale>(defaultLocale);
-  const [messages, setMessages] = useState<Record<string, string>>({});
-  const dir = ['ar', 'he'].includes(locale) ? 'rtl' : 'ltr';
-
-  useEffect(() => {
-    loadMessages(locale).then(setMessages);
-    document.documentElement.lang = locale;
-    document.documentElement.dir = dir;
-  }, [locale, dir]);
-
   return (
-    <I18nContext.Provider value={{ locale, setLocale, dir }}>
-      <IntlProvider
-        locale={locale}
-        messages={messages}
-        defaultLocale="en"
-      >
-        {children}
-      </IntlProvider>
-    </I18nContext.Provider>
-  );
-}
-
-export function useI18n() {
-  const context = useContext(I18nContext);
-  if (!context) throw new Error('useI18n must be used within KozmosI18nProvider');
-  return context;
-}
-```
-
-```tsx
-// hooks/useTranslation.ts
-import { useIntl } from "react-intl";
-
-export function useTranslation() {
-  const intl = useIntl();
-
-  return {
-    t: (id: string, values?: Record<string, any>) =>
-      intl.formatMessage({ id }, values),
-    formatDate: intl.formatDate,
-    formatTime: intl.formatTime,
-    formatNumber: intl.formatNumber,
-    formatRelativeTime: intl.formatRelativeTime,
-  };
-}
-
-// Usage in component
-function NavigationCard() {
-  const { t } = useTranslation();
-  const { dir } = useI18n();
-
-  return (
-    <Card dir={dir}>
-      <Button>{t("navigation.startNavigation")}</Button>
-      <Text>{t("navigation.distanceRemaining", { distance: "250m" })}</Text>
-      <Text>{t("time.minutesAgo", { count: 5 })}</Text>
-    </Card>
+    <ThemeProvider defaultTheme="light" dir={dir}>
+      <Input
+        label={t("destination.label")}
+        helperText={t("destination.hint")}
+      />
+      <Button>{t("navigation.start")}</Button>
+    </ThemeProvider>
   );
 }
 ```
 
 ### 4.2 iOS (SwiftUI)
 
-```swift
-// Localizable.strings (en)
-"navigation.startNavigation" = "Start Navigation";
-"navigation.distanceRemaining" = "%@ remaining";
-"time.minutesAgo" = "%d minutes ago";
-
-// Localizable.strings (ar)
-"navigation.startNavigation" = "بدء الملاحة";
-"navigation.distanceRemaining" = "%@ متبقية";
-
-// Localizable.stringsdict (en) - Pluralization
-<?xml version="1.0" encoding="UTF-8"?>
-<plist version="1.0">
-<dict>
-    <key>time.minutesAgo</key>
-    <dict>
-        <key>NSStringLocalizedFormatKey</key>
-        <string>%#@count@</string>
-        <key>count</key>
-        <dict>
-            <key>NSStringFormatSpecTypeKey</key>
-            <string>NSStringPluralRuleType</string>
-            <key>NSStringFormatValueTypeKey</key>
-            <string>d</string>
-            <key>one</key>
-            <string>%d minute ago</string>
-            <key>other</key>
-            <string>%d minutes ago</string>
-        </dict>
-    </dict>
-</dict>
-</plist>
-```
-
-```swift
-// KozmosLocalization.swift
-import SwiftUI
-
-public struct KozmosLocalization {
-    public static let supportedLocales = ["en", "de", "fr", "ar", "ja", "zh-Hans"]
-
-    public static func localizedString(_ key: String, _ args: CVarArg...) -> String {
-        let format = NSLocalizedString(key, bundle: .kozmos, comment: "")
-        return String(format: format, arguments: args)
-    }
-
-    public static var currentLayoutDirection: LayoutDirection {
-        Locale.current.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight
-    }
-}
-
-// Environment key for direction
-struct LayoutDirectionKey: EnvironmentKey {
-    static let defaultValue: LayoutDirection = .leftToRight
-}
-
-extension EnvironmentValues {
-    var kozmosLayoutDirection: LayoutDirection {
-        get { self[LayoutDirectionKey.self] }
-        set { self[LayoutDirectionKey.self] = newValue }
-    }
-}
-
-// Usage
-struct NavigationButton: View {
-    @Environment(\.kozmosLayoutDirection) var direction
-
-    var body: some View {
-        Button(KozmosLocalization.localizedString("navigation.startNavigation")) {
-            // action
-        }
-        .environment(\.layoutDirection, direction)
-    }
-}
-```
+The app's strings live in its own String Catalog or `Localizable.strings`, and Kozmos's views take
+the localized text as their parameters (`KozmosButton("Save", variant: .default) { … }`). They
+follow the environment's `layoutDirection`, so a right-to-left locale lays them out right to left.
 
 ### 4.3 Android (Jetpack Compose)
 
-```xml
-<!-- res/values/strings.xml (default - English) -->
-<resources>
-    <string name="navigation_start">Start Navigation</string>
-    <string name="navigation_distance_remaining">%s remaining</string>
-    <plurals name="time_minutes_ago">
-        <item quantity="one">%d minute ago</item>
-        <item quantity="other">%d minutes ago</item>
-    </plurals>
-</resources>
-
-<!-- res/values-ar/strings.xml (Arabic) -->
-<resources>
-    <string name="navigation_start">بدء الملاحة</string>
-    <string name="navigation_distance_remaining">%s متبقية</string>
-    <plurals name="time_minutes_ago">
-        <item quantity="zero">الآن</item>
-        <item quantity="one">منذ دقيقة</item>
-        <item quantity="two">منذ دقيقتين</item>
-        <item quantity="few">منذ %d دقائق</item>
-        <item quantity="many">منذ %d دقيقة</item>
-        <item quantity="other">منذ %d دقيقة</item>
-    </plurals>
-</resources>
-```
-
-```kotlin
-// KozmosLocalization.kt
-object KozmosLocalization {
-    val supportedLocales = listOf("en", "de", "fr", "ar", "ja", "zh")
-
-    fun isRtl(context: Context): Boolean {
-        return context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL
-    }
-}
-
-// Composable with RTL support
-@Composable
-fun NavigationCard(
-    distance: String,
-    minutesAgo: Int
-) {
-    val context = LocalContext.current
-    val isRtl = KozmosLocalization.isRtl(context)
-
-    CompositionLocalProvider(
-        LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
-    ) {
-        Card {
-            Text(stringResource(R.string.navigation_start))
-            Text(stringResource(R.string.navigation_distance_remaining, distance))
-            Text(pluralStringResource(R.plurals.time_minutes_ago, minutesAgo, minutesAgo))
-        }
-    }
-}
-```
+The app's strings live in its own `strings.xml`, read with `stringResource`, and Kozmos's
+composables take the text as their content or parameters. They follow `LocalLayoutDirection`, so a
+right-to-left locale lays them out right to left.
 
 ### 4.4 React Native
 
@@ -482,72 +150,64 @@ There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack
 
 ### 5.3 Directional Icons
 
+Icons that point somewhere flip right to left; icons of things (a check, a clock, a phone) do not.
+With Kozmos's `Icon`, taking the direction the app already knows:
+
 ```tsx
+import { Icon } from "@kozmos-ds/react";
+import type { ComponentProps } from "react";
+
 // Icons that should flip in RTL
-const MIRRORED_ICONS = [
+const MIRRORED = new Set([
   "arrow-left",
   "arrow-right",
   "chevron-left",
   "chevron-right",
-  "reply",
-  "forward",
-  "undo",
-  "redo",
-];
+  "back",
+  "next",
+]);
 
-// Icons that should NOT flip
-const NON_MIRRORED_ICONS = [
-  "check",
-  "close",
-  "search",
-  "home",
-  "phone", // Handset orientation is universal
-  "clock", // Clock hands go clockwise universally
-];
-
-function DirectionalIcon({ name, ...props }) {
-  const { dir } = useI18n();
-  const shouldMirror = MIRRORED_ICONS.includes(name) && dir === "rtl";
-
+export function DirectionalIcon({
+  dir,
+  ...props
+}: ComponentProps<typeof Icon> & { dir: "ltr" | "rtl" }) {
+  const mirror =
+    dir === "rtl" && props.name !== undefined && MIRRORED.has(props.name);
   return (
     <Icon
-      name={name}
-      style={shouldMirror ? { transform: "scaleX(-1)" } : undefined}
       {...props}
+      style={mirror ? { ...props.style, transform: "scaleX(-1)" } : props.style}
     />
   );
 }
 ```
 
+`check`, `close`, `search`, `home`, `phone` and `clock` stay as they are.
+
 ### 5.4 RTL Layout Patterns
 
 ```tsx
-// Flexbox with RTL
-function NavigationHeader() {
-  const { dir } = useI18n();
+// kozmos-skills: template — a fragment of a render; BackButton, Title and MenuButton are the app's
+// Flexbox follows the direction ThemeProvider (or the page) sets: no rule of its own
+<header style={{ display: "flex" }}>
+  <BackButton />
+  <Title>Navigation</Title>
+  <MenuButton />
+</header>
+```
 
-  return (
-    // flex-direction automatically flips with dir="rtl"
-    <header style={{ display: 'flex', direction: dir }}>
-      <BackButton />
-      <Title>Navigation</Title>
-      <MenuButton />
-    </header>
-  );
-}
-
-// Grid with RTL
+```css
+/* Grid with RTL: columns follow the dir attribute */
 .navigation-grid {
   display: grid;
   grid-template-columns: 1fr auto;
-  /* Automatically respects dir attribute */
 }
 
-// Absolute positioning with logical properties
+/* Absolute positioning with logical properties */
 .floating-button {
   position: absolute;
-  inset-block-end: 16px;   /* bottom in both LTR and RTL */
-  inset-inline-end: 16px;  /* right in LTR, left in RTL */
+  inset-block-end: 16px; /* bottom in both LTR and RTL */
+  inset-inline-end: 16px; /* right in LTR, left in RTL */
 }
 ```
 
@@ -575,21 +235,13 @@ function NavigationHeader() {
 ### 6.1 Date Formatting
 
 ```tsx
-// React (using Intl)
-import { useIntl } from "react-intl";
-
-function DateDisplay({ date }: { date: Date }) {
-  const intl = useIntl();
-
-  return (
-    <span>
-      {intl.formatDate(date, {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })}
-    </span>
-  );
+export function DateDisplay({ date, locale }: { date: Date; locale: string }) {
+  const text = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+  return <span>{text}</span>;
 }
 
 // Output by locale:
@@ -602,19 +254,13 @@ function DateDisplay({ date }: { date: Date }) {
 ### 6.2 Time Formatting
 
 ```tsx
-// Time with timezone awareness
-function TimeDisplay({ date }: { date: Date }) {
-  const intl = useIntl();
-
-  return (
-    <time dateTime={date.toISOString()}>
-      {intl.formatTime(date, {
-        hour: "numeric",
-        minute: "numeric",
-        hour12: undefined, // Use locale default (12h for en-US, 24h for de)
-      })}
-    </time>
-  );
+// Time in the locale's own clock: 12-hour for en-US, 24-hour for de
+export function TimeDisplay({ date, locale }: { date: Date; locale: string }) {
+  const text = new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    minute: "numeric",
+  }).format(date);
+  return <time dateTime={date.toISOString()}>{text}</time>;
 }
 
 // Output by locale:
@@ -627,69 +273,53 @@ function TimeDisplay({ date }: { date: Date }) {
 ### 6.3 Relative Time
 
 ```tsx
-// Relative time formatting
-function RelativeTime({ date }: { date: Date }) {
-  const intl = useIntl();
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.round(diff / 60000);
-
-  if (minutes < 1) {
-    return <span>{intl.formatMessage({ id: "time.justNow" })}</span>;
-  }
-
-  if (minutes < 60) {
-    return (
-      <span>
-        {intl.formatRelativeTime(-minutes, "minute", { style: "long" })}
-      </span>
-    );
-  }
-
-  // ... hours, days, etc.
+export function RelativeTime({ date, locale }: { date: Date; locale: string }) {
+  const minutes = Math.round((date.getTime() - Date.now()) / 60000);
+  const format = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  return <span>{format.format(minutes, "minute")}</span>;
 }
 
-// Output by locale:
+// Output by locale, five minutes ago:
 // en: "5 minutes ago"
 // de: "vor 5 Minuten"
-// ar: "منذ ٥ دقائق"
+// ar: "قبل ٥ دقائق"
 ```
 
 ### 6.4 Number Formatting
 
 ```tsx
-// Distance formatting
-function DistanceDisplay({ meters }: { meters: number }) {
-  const intl = useIntl();
-  const { locale } = useI18n();
-
-  // Use metric for most locales, imperial for en-US
-  const useImperial = locale === "en-US";
-
-  if (useImperial) {
-    const feet = meters * 3.28084;
-    return (
-      <span>{intl.formatNumber(feet, { style: "unit", unit: "foot" })}</span>
-    );
-  }
-
-  return (
-    <span>{intl.formatNumber(meters, { style: "unit", unit: "meter" })}</span>
-  );
+// Distance: metric for most locales, imperial for en-US
+export function DistanceDisplay({
+  meters,
+  locale,
+}: {
+  meters: number;
+  locale: string;
+}) {
+  const imperial = locale === "en-US";
+  const text = new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: imperial ? "foot" : "meter",
+    maximumFractionDigits: 0,
+  }).format(imperial ? meters * 3.28084 : meters);
+  return <span>{text}</span>;
 }
 
 // Currency (if needed)
-function PriceDisplay({
+export function PriceDisplay({
   amount,
   currency,
+  locale,
 }: {
   amount: number;
   currency: string;
+  locale: string;
 }) {
-  const intl = useIntl();
-
-  return (
-    <span>{intl.formatNumber(amount, { style: "currency", currency })}</span>
-  );
+  const text = new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+  }).format(amount);
+  return <span>{text}</span>;
 }
 
 // Output:
@@ -760,113 +390,9 @@ Arabic has 6 plural forms: zero, one, two, few, many, other
 
 ## 8. Translation Workflow
 
-None of this section exists in the repository yet: there is no `packages/locales`, no
-translation-management service is connected, and no workflow or script extracts, syncs or validates
-translations. Read it as a design, not as instructions.
-
-### 8.1 Translation Management
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        Translation Workflow                              │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  1. Developer adds key      2. Extract to TMS      3. Translators work  │
-│  ┌─────────────────┐        ┌─────────────────┐    ┌─────────────────┐  │
-│  │ t('new.string') │───────>│ Lokalise/Phrase │───>│ Native speakers │  │
-│  └─────────────────┘        └─────────────────┘    └─────────────────┘  │
-│                                                              │           │
-│  6. Deploy                  5. PR auto-created     4. Review & approve  │
-│  ┌─────────────────┐        ┌─────────────────┐    ┌─────────────────┐  │
-│  │ Production      │<───────│ GitHub Action   │<───│ QA + Context    │  │
-│  └─────────────────┘        └─────────────────┘    └─────────────────┘  │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### 8.2 Extraction Script
-
-```bash
-#!/bin/bash
-# scripts/extract-translations.sh
-
-# Extract from React
-npx formatjs extract 'packages/react/src/**/*.{ts,tsx}' \
-  --out-file packages/locales/en/extracted.json \
-  --id-interpolation-pattern '[sha512:contenthash:base64:6]'
-
-# Merge with existing
-npx formatjs compile packages/locales/en/extracted.json \
-  --out-file packages/locales/en/common.json
-
-# Upload to TMS (example with Lokalise)
-lokalise2 file upload \
-  --project-id $LOKALISE_PROJECT_ID \
-  --file packages/locales/en/common.json \
-  --lang-iso en
-```
-
-### 8.3 CI/CD Integration
-
-No workflow syncs or validates translations. There is no `translations.yml`, no workflow reads a
-translation-management secret, and no package declares a `validate:translations` script; the
-workflows that exist are listed in [ci-cd-configuration.md](./ci-cd-configuration.md).
-
-### 8.4 Translation Validation
-
-```typescript
-// scripts/validate-translations.ts
-import en from "@kozmos/locales/en/common.json";
-import de from "@kozmos/locales/de/common.json";
-import ar from "@kozmos/locales/ar/common.json";
-
-const locales = { en, de, ar };
-const baseLocale = "en";
-
-function validateTranslations() {
-  const baseKeys = getAllKeys(locales[baseLocale]);
-  const errors: string[] = [];
-
-  for (const [locale, messages] of Object.entries(locales)) {
-    if (locale === baseLocale) continue;
-
-    const localeKeys = getAllKeys(messages);
-
-    // Check for missing keys
-    for (const key of baseKeys) {
-      if (!localeKeys.has(key)) {
-        errors.push(`Missing key in ${locale}: ${key}`);
-      }
-    }
-
-    // Check for extra keys
-    for (const key of localeKeys) {
-      if (!baseKeys.has(key)) {
-        errors.push(`Extra key in ${locale}: ${key}`);
-      }
-    }
-
-    // Validate ICU syntax
-    for (const [key, value] of Object.entries(flattenObject(messages))) {
-      try {
-        new IntlMessageFormat(value, locale);
-      } catch (e) {
-        errors.push(`Invalid ICU syntax in ${locale}.${key}: ${e.message}`);
-      }
-    }
-  }
-
-  if (errors.length > 0) {
-    console.error("Translation validation failed:");
-    errors.forEach((e) => console.error(`  - ${e}`));
-    process.exit(1);
-  }
-
-  console.log("✅ All translations valid");
-}
-
-validateTranslations();
-```
+Kozmos has none: there is no `packages/locales`, no translation-management service is connected,
+and no workflow or script extracts, syncs or validates translations. The workflow planned before
+the code is kept in [docs/proposals/i18n-plan.md](../docs/proposals/i18n-plan.md).
 
 ---
 
@@ -874,91 +400,42 @@ validateTranslations();
 
 ### 9.1 Unit Tests
 
-```tsx
-// __tests__/i18n.test.tsx
-import { render, screen } from "@testing-library/react";
-import { IntlProvider } from "react-intl";
-import en from "@kozmos/locales/en/common.json";
-import de from "@kozmos/locales/de/common.json";
-import ar from "@kozmos/locales/ar/common.json";
-
-function renderWithLocale(
-  ui: React.ReactElement,
-  locale: string,
-  messages: Record<string, string>,
-) {
-  return render(
-    <IntlProvider locale={locale} messages={messages}>
-      {ui}
-    </IntlProvider>,
-  );
-}
-
-describe("NavigationButton", () => {
-  it("renders in English", () => {
-    renderWithLocale(<NavigationButton />, "en", en);
-    expect(screen.getByText("Start Navigation")).toBeInTheDocument();
-  });
-
-  it("renders in German", () => {
-    renderWithLocale(<NavigationButton />, "de", de);
-    expect(screen.getByText("Navigation starten")).toBeInTheDocument();
-  });
-
-  it("renders in Arabic with RTL", () => {
-    renderWithLocale(<NavigationButton />, "ar", ar);
-    expect(screen.getByText("بدء الملاحة")).toBeInTheDocument();
-    expect(document.documentElement.dir).toBe("rtl");
-  });
-});
-
-describe("Pluralization", () => {
-  it("handles English plurals", () => {
-    const { rerender } = renderWithLocale(<TimeAgo minutes={1} />, "en", en);
-    expect(screen.getByText("1 minute ago")).toBeInTheDocument();
-
-    rerender(
-      <IntlProvider locale="en" messages={en}>
-        <TimeAgo minutes={5} />
-      </IntlProvider>,
-    );
-    expect(screen.getByText("5 minutes ago")).toBeInTheDocument();
-  });
-
-  it("handles Arabic plurals", () => {
-    renderWithLocale(<TimeAgo minutes={2} />, "ar", ar);
-    expect(screen.getByText("منذ دقيقتين")).toBeInTheDocument(); // dual form
-  });
-});
-```
+An app tests its own translations with its own i18n library: Kozmos adds none to test. To check a
+layout right to left, render it inside `ThemeProvider dir="rtl"`.
 
 ### 9.2 Visual Regression for RTL
 
 ```tsx
-// Button.stories.tsx
-export default {
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button, ThemeProvider } from "@kozmos-ds/react";
+
+const meta: Meta<typeof Button> = {
   title: "Components/Button",
   component: Button,
 };
+export default meta;
+type Story = StoryObj<typeof Button>;
 
-export const LTR = {
+// ThemeProvider's dir reaches Radix's keyboard handling too, which a bare
+// <div dir="rtl"> does not.
+export const LTR: Story = {
   args: { children: "Submit" },
   decorators: [
     (Story) => (
-      <div dir="ltr">
+      <ThemeProvider dir="ltr">
         <Story />
-      </div>
+      </ThemeProvider>
     ),
   ],
 };
 
-export const RTL = {
+export const RTL: Story = {
   args: { children: "إرسال" },
   decorators: [
     (Story) => (
-      <div dir="rtl">
+      <ThemeProvider dir="rtl">
         <Story />
-      </div>
+      </ThemeProvider>
     ),
   ],
 };
@@ -969,6 +446,7 @@ export const RTL = {
 ### 9.3 Pseudo-localization
 
 ```typescript
+// kozmos-skills: template — a sketch for the app's own i18n setup; locale, messages and mapValues are the app's
 // For testing text expansion and missing translations
 const pseudoLocalize = (text: string): string => {
   const chars: Record<string, string> = {
@@ -1003,6 +481,7 @@ if (process.env.NODE_ENV === "development" && locale === "pseudo") {
 ### 10.1 Translation Keys
 
 ```typescript
+// kozmos-skills: template — the wrong keys and the right ones; t is the app's translation function
 // ❌ Bad: Generic keys
 t("button1");
 t("text_34");
@@ -1023,6 +502,7 @@ t("navigation.startNavigation");
 ### 10.2 Interpolation
 
 ```typescript
+// kozmos-skills: template — the wrong way and the right one; t and name are the app's
 // ❌ Bad: Concatenation
 t("greeting") + name + t("punctuation");
 
@@ -1072,16 +552,20 @@ t("greeting.withName", { name });
 ### 10.5 Dynamic Content
 
 ```typescript
+// kozmos-skills: template — the wrong way and the right one; distance, date and locale are the app's
 // ❌ Bad: Hardcoded units
 `${distance} meters`;
 
 // ✅ Good: Locale-aware formatting
-intl.formatNumber(distance, { style: "unit", unit: "meter" })
+new Intl.NumberFormat(locale, { style: "unit", unit: "meter" }).format(
+  distance,
+);
+
 // ❌ Bad: Hardcoded date format
 `${month}/${day}/${year}`;
 
 // ✅ Good: Locale-aware date
-intl.formatDate(date, { dateStyle: "medium" });
+new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date);
 ```
 
 ---
