@@ -23,6 +23,112 @@ On `surface="glass"` the detail, muted elsewhere, takes the foreground colour, a
 
 <Controls />
 
+## The whole instruction
+
+The card shows the whole instruction, and grows with it. Two lines cut ordinary instructions short: "Take the escalator near Fountain Court up to…" loses the level, and German "Biegen Sie bei Marlow Apotheke auf der linke…" loses the turn itself, "rechts ab" (GAP-094). Examples/Navigation's phone stories show English, German and Japanese instructions whole on a 390 phone, and the German itinerary scrolling.
+
+- **A limit, if a product wants one:** `instructionLines` on every platform (SwiftUI's `lineLimit`, Compose's `maxLines`). The instruction ends in an ellipsis at that many lines. Unset, or under one line, the whole instruction shows. Assistive technology hears the whole instruction either way.
+- **The itinerary keeps its own cap:** `maxItineraryHeight`.
+- **Before:** Kozmos 0.5 and earlier cut the instruction at two lines. The whole instruction is the default now, as MAP-111's US1-EC8 asks; `instructionLines={2}` draws what they drew.
+
+<Canvas>
+  <Story of={ManoeuvreCardStories.LongInstruction} />
+</Canvas>
+
+<Canvas>
+  <Story of={ManoeuvreCardStories.InstructionLines} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { Itinerary, ManoeuvreCard, type ItineraryStep } from "@kozmos-ds/react";
+import { useState } from "react";
+
+// A product that keeps the instruction to two lines, as Kozmos 0.5 drew it.
+export function ShortManoeuvre({ steps }: { steps: ItineraryStep[] }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <ManoeuvreCard
+      type="escalator-up"
+      instruction="Take the escalator near Fountain Court up to Level 1"
+      detail="40 m · Ground Floor"
+      instructionLines={2}
+      expanded={expanded}
+      onToggle={() => setExpanded((open) => !open)}
+    >
+      <Itinerary origin="Main Entrance" steps={steps} destination="Airport Shuttles" />
+    </ManoeuvreCard>
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A product that keeps the instruction to two lines, as Kozmos 0.5 drew it.
+struct ShortManoeuvre: View {
+    let steps: [KozmosItineraryStep]
+    @State private var expanded = false
+
+    var body: some View {
+        KozmosManoeuvreCard(
+            type: .escalatorUp,
+            instruction: "Take the escalator near Fountain Court up to Level 1",
+            detail: "40 m · Ground Floor",
+            instructionLines: 2,
+            isExpanded: expanded,
+            onToggle: { expanded.toggle() }
+        ) {
+            KozmosItinerary(origin: "Main Entrance", steps: steps, destination: "Airport Shuttles")
+        }
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.directionstep.DirectionType
+import com.kozmos.components.itinerary.KozmosItinerary
+import com.kozmos.components.itinerary.KozmosItineraryStep
+import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
+
+// A product that keeps the instruction to two lines, as Kozmos 0.5 drew it.
+@Composable
+fun ShortManoeuvre(steps: List<KozmosItineraryStep>) {
+    var expanded by remember { mutableStateOf(false) }
+    KozmosManoeuvreCard(
+        type = DirectionType.EscalatorUp,
+        instruction = "Take the escalator near Fountain Court up to Level 1",
+        expanded = expanded,
+        onToggle = { expanded = !expanded },
+        detail = "40 m · Ground Floor",
+        instructionLines = 2
+    ) {
+        KozmosItinerary(origin = "Main Entrance", steps = steps, destination = "Airport Shuttles")
+    }
+}
+    `}
+/>
+
+## Reaching the itinerary
+
+Past its cap the itinerary scrolls, and every step stays reachable (GAP-100):
+
+- **On the web** the box that scrolls is a stop of its own in the tab order: a group named after the itinerary it holds, `itineraryLabel` ("Itinerary" until the product passes its own words, the same as `Itinerary`'s `label`). Tab reaches it, Page Down, Space and End scroll it, and it draws the focus ring. It is a group, not a second landmark: the `Itinerary` inside is that already. Before, it could not take focus (axe's `scrollable-region-focusable`, serious), so a keyboard could not reach the steps past the cap.
+- **VoiceOver** reaches every step: each is an element, and the itinerary scrolls to the one VoiceOver moves to. Read from outside the app with XCUITest, all nine steps of the German example are there, and the destination below the cap scrolls into view.
+- **TalkBack** reaches every step: each is a node of its own, and the list offers TalkBack the scroll that brings the ones below the cap into view.
+
+## Focus through the disclosure
+
+Opening takes the instruction away, and closing hides the grab bar. Focus that was on the part that went moves to the part in its place; focus anywhere else stays where it is, whether a key, a pointer or the product opened or closed the card. No timers.
+
+- **On the web:** opening from the instruction puts focus on the scrolling itinerary; closing from Hide, or from inside the itinerary, puts it back on the instruction. The closed, silent grab bar never takes focus, even from a pointer. A pointer that focuses what it presses (Chromium) is followed; one that does not (WebKit, Firefox on macOS) moves nothing. Before, focus fell to the page on opening, and closing left it on the grab bar, hidden from assistive technology.
+- **On iOS:** VoiceOver's focus follows the same rule (`@AccessibilityFocusState`): from the instruction to the itinerary's first element as the card opens, from Hide back to the instruction as it closes.
+- **On Android:** input focus follows the rule, and TalkBack with it, since Compose reports the move (`TYPE_VIEW_FOCUSED`). Opening from the instruction puts focus on Hide, the control that took its place: a focusable box around the steps would be a silent stop for TalkBack. The closed grab bar is no longer a keyboard stop. A tap moves no focus.
+
 ## Implementation
 
 <div className="subheading">Code</div>
