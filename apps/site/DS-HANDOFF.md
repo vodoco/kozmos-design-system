@@ -450,9 +450,10 @@ border-primary-foreground/20`.
 - **Measured on 2026-09-29,** against `main` and the published 0.5.0 alike,
   built with the site's Vite and every dependency but React bundled:
   `import { Button }` costs an app 9.3 kB gzipped, and the whole library
-  175 kB. CI's `analyze-bundle` (`scripts/performance/bundle-analyzer.ts`)
-  holds Kozmos's own share, dependencies aside: Button alone 1.29 kB, every
-  export under 8 kB, everything 64 of its 68 kB.
+  175 kB (172 kB in 0.5.0). CI's `analyze-bundle`
+  (`scripts/performance/bundle-analyzer.ts`) holds Kozmos's own share,
+  dependencies aside: Button alone 1.29 kB, every export under 8 kB,
+  everything 64 of its 68 kB.
 - **On the site:** there is no Kozmos chunk any more. Each component is its
   own module, and what the site draws nowhere, directly or inside another
   component, stays out of its build: none of the code of ColorPicker,
