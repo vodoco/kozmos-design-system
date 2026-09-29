@@ -378,31 +378,100 @@ describe("AICompanionPanel", () => {
     expect(screen.getByRole("region", { name: "Chat" })).toBeInTheDocument();
   });
 
-  it("leaves focus where it was when it mounts already open", () => {
+  it("leaves focus where it was when it mounts with open already true", () => {
     // Decision 16: a panel on screen from the start was not opened by the
-    // visitor, so it takes focus from nothing on the page. It used to take it
-    // as it mounted, unless the product prevented the open.
+    // visitor, so it takes focus from nothing on the page.
     const search = outsideButton("Search");
     search.focus();
     const onOpenAutoFocus = vi.fn();
-    const { unmount } = render(
-      <AICompanionPanel onClose={vi.fn()} onOpenAutoFocus={onOpenAutoFocus}>
+    render(
+      <AICompanionPanel onOpenAutoFocus={onOpenAutoFocus} open>
         thread
       </AICompanionPanel>,
     );
     expect(screen.getByRole("region", { name: "Assistant" })).toBeVisible();
     expect(search).toHaveFocus();
     expect(onOpenAutoFocus).not.toHaveBeenCalled();
-    unmount();
+  });
 
-    // `open` from the first render is the same: nobody opened it.
-    render(
-      <AICompanionPanel onOpenAutoFocus={onOpenAutoFocus} open>
-        thread
-      </AICompanionPanel>,
-    );
-    expect(search).toHaveFocus();
-    expect(onOpenAutoFocus).not.toHaveBeenCalled();
+  describe("given no open, mounting it is opening it, as in 0.5.0 (B1)", () => {
+    // 0.5.0 had no `open`: "The panel opens when it mounts, and takes focus
+    // then." A product that mounts the panel as the visitor taps the AI
+    // button is following that contract, and #133 (decision 16) left its
+    // focus on the button beneath, covered.
+    it("takes focus as it mounts, calling onOpenAutoFocus first", () => {
+      const ask = outsideButton("Ask the assistant");
+      ask.focus();
+      const onOpenAutoFocus = vi.fn(() => expect(ask).toHaveFocus());
+      const { unmount } = render(
+        <AICompanionPanel onClose={vi.fn()} onOpenAutoFocus={onOpenAutoFocus}>
+          thread
+        </AICompanionPanel>,
+      );
+      expect(onOpenAutoFocus).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("region", { name: "Assistant" })).toHaveFocus();
+
+      // Unmounted, it hands focus back to the button, as it always has.
+      unmount();
+      expect(ask).toHaveFocus();
+    });
+
+    it("keeps focus where onOpenAutoFocus puts it", () => {
+      outsideButton("Ask the assistant").focus();
+      render(
+        <AICompanionPanel
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            screen.getByRole("textbox", { name: "Ask" }).focus();
+          }}
+        >
+          <input aria-label="Ask" />
+        </AICompanionPanel>,
+      );
+      expect(screen.getByRole("textbox", { name: "Ask" })).toHaveFocus();
+    });
+
+    it("takes focus once under StrictMode's rehearsal of its mount", () => {
+      const ask = outsideButton("Ask the assistant");
+      ask.focus();
+      const onOpenAutoFocus = vi.fn();
+      const onCloseAutoFocus = vi.fn();
+      const { unmount } = render(
+        <React.StrictMode>
+          <AICompanionPanel
+            onCloseAutoFocus={onCloseAutoFocus}
+            onOpenAutoFocus={onOpenAutoFocus}
+          >
+            thread
+          </AICompanionPanel>
+        </React.StrictMode>,
+      );
+      expect(onOpenAutoFocus).toHaveBeenCalledTimes(1);
+      expect(onCloseAutoFocus).not.toHaveBeenCalled();
+      expect(screen.getByRole("region", { name: "Assistant" })).toHaveFocus();
+      unmount();
+      expect(onCloseAutoFocus).toHaveBeenCalledTimes(1);
+      expect(ask).toHaveFocus();
+    });
+
+    it("keeps decision 16 for a product that passes open", () => {
+      // Given `open`, the product says when the visitor opens the panel:
+      // only false turning true is an opening.
+      const ask = outsideButton("Ask the assistant");
+      ask.focus();
+      const onOpenAutoFocus = vi.fn();
+      const panel = (open: boolean) => (
+        <AICompanionPanel onOpenAutoFocus={onOpenAutoFocus} open={open}>
+          thread
+        </AICompanionPanel>
+      );
+      const { rerender } = render(panel(true));
+      expect(ask).toHaveFocus();
+      rerender(panel(false));
+      rerender(panel(true));
+      expect(onOpenAutoFocus).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("region", { name: "Assistant" })).toHaveFocus();
+    });
   });
 
   it("takes focus when a panel that mounted open is closed and opened again", () => {

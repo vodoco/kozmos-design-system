@@ -9,11 +9,15 @@ export interface AICompanionPanelProps extends Omit<
   "title"
 > {
   /**
-   * Whether the panel is on screen; `true` when left out. Keep the panel
-   * mounted and turn `open` on when the visitor opens it — from
-   * AISearchButton, usually: that is when it takes focus. A panel that is
-   * open as it mounts, on screen from the start, was opened by nobody and
-   * leaves focus where it is. Closed, it draws nothing.
+   * Whether the panel is on screen. Pass it, keep the panel mounted, and turn
+   * it on when the visitor opens the panel — from AISearchButton, usually:
+   * that is when it takes focus. Given as `true` from the first render, the
+   * panel is on screen from the start, was opened by nobody, and leaves focus
+   * where it is (decision 16). Closed, it draws nothing.
+   *
+   * Left out, the panel is open, and mounting it is its opening, as it was
+   * before `open` existed (0.5.0): it takes focus as it mounts, and hands it
+   * back as it unmounts.
    */
   open?: boolean;
   title?: React.ReactNode;
@@ -32,10 +36,11 @@ export interface AICompanionPanelProps extends Omit<
   banner?: React.ReactNode;
   /**
    * The panel takes focus when the visitor opens it: when `open` turns true
-   * after it has mounted. Called first: `event.preventDefault()` keeps focus
-   * where you put it instead — in the field, through AIInputBar's `inputRef`.
-   * Not called for a panel that mounts open, which takes no focus, nor when a
-   * part inside has already taken focus, which is left alone.
+   * after it has mounted, or, with `open` left out, as it mounts. Called
+   * first: `event.preventDefault()` keeps focus where you put it instead — in
+   * the field, through AIInputBar's `inputRef`. Not called for a panel
+   * mounted with `open` already true, which takes no focus, nor when a part
+   * inside has already taken focus, which is left alone.
    */
   onOpenAutoFocus?: (event: Event) => void;
   /**
@@ -114,7 +119,7 @@ const AICompanionPanel = React.forwardRef<
   (
     {
       className,
-      open = true,
+      open: openProp,
       title = "Assistant",
       titleLevel = 2,
       onClose,
@@ -130,6 +135,7 @@ const AICompanionPanel = React.forwardRef<
     },
     ref,
   ) => {
+    const open = openProp ?? true;
     const titleId = React.useId();
     const root = React.useRef<HTMLDivElement>(null);
     // Closed, there is no panel: the handle follows `open`.
@@ -145,9 +151,12 @@ const AICompanionPanel = React.forwardRef<
     if (shown.open !== open)
       setShown({ open, opener: open ? focusedElement() : null });
     const { opener } = shown;
-    // Whether the panel was open when it last committed. It starts as `open`:
-    // a panel that mounts open is one nobody opened.
-    const wasOpen = React.useRef(open);
+    // Whether the panel was open when it last committed. Given `open`, it
+    // starts as `open`: a panel that mounts open is one nobody opened
+    // (decision 16). Without it, it starts closed: the product mounts the
+    // panel to open it, as 0.5.0 documented, and the mount is the opening
+    // (B1). StrictMode's second run finds it open already, and opens nothing.
+    const wasOpen = React.useRef(openProp === undefined ? false : open);
     // The close comes renders after the open, so it calls the handler the
     // panel has by then, not the one it opened with.
     const closeAutoFocus = React.useRef(onCloseAutoFocus);

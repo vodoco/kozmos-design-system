@@ -234,6 +234,30 @@ function AssistantCover({
   );
 }
 
+/**
+ * B1: 0.5.0's pattern, from before `open` existed: the product mounts the
+ * panel as the visitor taps the AI button, and unmounts it to close it.
+ */
+function AssistantMountToOpen() {
+  const [shown, setShown] = useState(false);
+  return (
+    <div style={{ position: "relative", width: 360, height: 560 }}>
+      <AISearchButton
+        label="Ask the assistant"
+        onClick={() => setShown(true)}
+      />
+      {shown && (
+        <AICompanionPanel
+          onClose={() => setShown(false)}
+          style={{ position: "absolute", inset: 0 }}
+        >
+          <input aria-label="Ask" />
+        </AICompanionPanel>
+      )}
+    </div>
+  );
+}
+
 /** R3: a multi-select with two choices made, to clear from the keyboard. */
 function ToolsSelect() {
   return (
@@ -265,6 +289,7 @@ const scenarios: Record<string, () => ReactElement> = {
   "assistant-flow": () => <AssistantCover placement="flow" />,
   "assistant-fixed": () => <AssistantCover placement="fixed" />,
   "multi-select": () => <ToolsSelect />,
+  "assistant-mount-to-open": () => <AssistantMountToOpen />,
 };
 
 window.interactions = {

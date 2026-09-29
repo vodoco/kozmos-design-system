@@ -268,14 +268,17 @@ const focusIn = (page) =>
     const frame = document.querySelector('[data-testid="frame"]');
     const panel = document.querySelector('[role="region"]');
     const labelledBy = active?.getAttribute("aria-labelledby");
+    const body = !active || active === document.body;
     return {
-      name:
-        active?.getAttribute("aria-label") ??
-        (labelledBy
-          ? document.getElementById(labelledBy)?.textContent?.trim()
-          : active?.textContent?.trim()) ??
-        null,
-      body: active === document.body,
+      // The page itself has no name: its text is not a control's.
+      name: body
+        ? null
+        : (active.getAttribute("aria-label") ??
+          (labelledBy
+            ? document.getElementById(labelledBy)?.textContent?.trim()
+            : active.textContent?.trim()) ??
+          null),
+      body,
       inFrame: Boolean(frame?.contains(active)),
       inPanel: Boolean(panel?.contains(active)),
     };
@@ -415,6 +418,32 @@ await scenario(
     );
     await page.keyboard.press("Escape");
     await settleLayout(page);
+  },
+);
+
+// B1: 0.5.0's contract, for a panel given no `open`: mounting it opens it.
+await scenario(
+  "B1: a panel mounted to open it, with no open, takes focus and hands it back as it unmounts",
+  "assistant-mount-to-open",
+  async (page) => {
+    const ask = page.getByRole("button", { name: "Ask the assistant" });
+    await ask.focus();
+    await page.keyboard.press("Enter");
+    await settleLayout(page);
+    assert.equal(
+      await page.evaluate(
+        () => document.activeElement?.getAttribute("role") ?? null,
+      ),
+      "region",
+      "the mounted panel did not take focus as it opened",
+    );
+    // Covered by the panel, the button is out of reach meanwhile (GAP-93).
+    assert.equal(await takesFocus(page, "Ask the assistant"), false);
+
+    await page.keyboard.press("Escape");
+    await settleLayout(page);
+    assert.equal(await page.getByRole("region").count(), 0, "unmounted");
+    assert.equal((await focusIn(page)).name, "Ask the assistant");
   },
 );
 
