@@ -567,6 +567,39 @@ await scenario(
   { viewport: { width: 900, height: 800 } },
 );
 
+// The responsive cover must not take focus from its own input, or from
+// controls the inert policy intentionally leaves reachable.
+for (const [role, name] of [
+  ["textbox", "Ask"],
+  ["button", "Portal control"],
+  ["button", "Live region control"],
+  ["button", "Outside frame"],
+]) {
+  await scenario(
+    `GAP-93: covering the frame preserves focus on ${name}`,
+    "assistant-responsive-reachable",
+    async (page) => {
+      await openAssistant(page);
+      const control = page.getByRole(role, { name, exact: true });
+      await control.focus();
+      await page.setViewportSize({ width: 390, height: 800 });
+      await settleLayout(page);
+      assert.equal(
+        await control.evaluate((node) => document.activeElement === node),
+        true,
+        `the covering panel took focus from the still-reachable ${name}`,
+      );
+      assert.equal(
+        await control.evaluate((node) => node.closest("[inert]") === null),
+        true,
+        `${name} became inert`,
+      );
+      assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+    },
+    { viewport: { width: 900, height: 800 } },
+  );
+}
+
 // Fix 4 of 0.6.0: the shell's panel no longer captures a product's own
 // container queries; only the hosted details card is a size container.
 await scenario(

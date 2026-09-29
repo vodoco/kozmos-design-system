@@ -295,7 +295,7 @@ function AssistantMountToOpen() {
  * 700px the panel covers its frame; from 700px it is the frame's right half,
  * beside the search. A media query decides, as a product's would.
  */
-function AssistantResponsive() {
+function AssistantResponsive({ reachableControls = false } = {}) {
   const [open, setOpen] = useState(false);
   const [presses, setPresses] = useState(0);
   return (
@@ -318,6 +318,16 @@ function AssistantResponsive() {
           </button>
           <output data-testid="presses">{presses}</output>
         </div>
+        {reachableControls && (
+          <>
+            <div data-kozmos-portal="">
+              <button type="button">Portal control</button>
+            </div>
+            <div role="status">
+              <button type="button">Live region control</button>
+            </div>
+          </>
+        )}
         <AICompanionPanel
           className="responsive-panel"
           onClose={() => setOpen(false)}
@@ -326,6 +336,7 @@ function AssistantResponsive() {
           <input aria-label="Ask" />
         </AICompanionPanel>
       </div>
+      {reachableControls && <button type="button">Outside frame</button>}
     </>
   );
 }
@@ -428,6 +439,9 @@ const scenarios: Record<string, () => ReactElement> = {
   "multi-select": () => <ToolsSelect />,
   "assistant-mount-to-open": () => <AssistantMountToOpen />,
   "assistant-responsive": () => <AssistantResponsive />,
+  "assistant-responsive-reachable": () => (
+    <AssistantResponsive reachableControls />
+  ),
   "shell-product-container": () => <ShellProductContainer />,
 };
 

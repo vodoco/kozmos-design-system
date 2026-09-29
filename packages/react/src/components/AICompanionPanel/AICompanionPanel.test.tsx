@@ -412,6 +412,40 @@ describe("AICompanionPanel", () => {
         expect(inert("Shops")).toBe(true);
         expect(screen.getByRole("region", { name: "Assistant" })).toHaveFocus();
       });
+
+      it.each(["input", "portal", "live region", "outside frame"])(
+        "keeps focus in the %s when the panel grows to cover its frame",
+        (place) => {
+          const layout = { ...frameSize, width: 180, left: 180 };
+          layOut(layout);
+          render(<Phone open />);
+          let target: HTMLElement;
+          if (place === "input") {
+            target = screen.getByRole("textbox", { name: "Ask" });
+          } else if (place === "outside frame") {
+            target = screen.getByRole("button", { name: "Toolbar" });
+          } else {
+            // A popup and a live region inside the frame stay reachable by
+            // the same policy as when the assistant first covers it.
+            const host = document.createElement("div");
+            if (place === "portal") host.setAttribute("data-kozmos-portal", "");
+            else host.setAttribute("role", "status");
+            target = document.createElement("button");
+            target.textContent = "Reachable control";
+            host.append(target);
+            screen.getByTestId("frame").append(host);
+          }
+          target.focus();
+          expect(target).toHaveFocus();
+
+          Object.assign(layout, { width: frameSize.width, left: 0 });
+          resized();
+
+          expect(inert("Shops")).toBe(true);
+          expect(target.closest("[inert]")).toBeNull();
+          expect(target).toHaveFocus();
+        },
+      );
     });
 
     it("covers the page when it is fixed over the whole viewport, and keeps the page's popups in reach", () => {

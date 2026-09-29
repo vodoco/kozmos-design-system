@@ -198,15 +198,25 @@ const AICompanionPanel = React.forwardRef<
       const measure = (moved: boolean) => {
         const next = coveredBy(node);
         if (next === covered) return;
+        // Native inert may drop focus as soon as it is applied. Remember
+        // what had focus so only a newly unreachable control is moved in.
+        const active = doc.activeElement;
+        const wasInert = active?.closest("[inert]");
         release?.();
         covered = next;
         release = next
           ? inertOutside(node, { within: next, keep: "[data-kozmos-portal]" })
           : undefined;
-        // Focus on a control the panel has just covered is on something
-        // nobody can see, and inert would drop it to the page: it goes in.
-        const active = doc.activeElement;
-        if (moved && next && active !== node && next.contains(active))
+        // Own children, portals and live regions stay reachable. Sharing
+        // the covered frame does not mean their focus should be taken.
+        if (
+          moved &&
+          next &&
+          active &&
+          next.contains(active) &&
+          !wasInert &&
+          active.closest("[inert]")
+        )
           node.focus({ preventScroll: true });
       };
       measure(false);
