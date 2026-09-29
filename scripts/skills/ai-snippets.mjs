@@ -21,6 +21,8 @@
  *   - a React tag named `Kozmos…` must be an export: the prefix is the
  *     SwiftUI and Compose naming, and guides had invented React components
  *     under it (`KozmosSkipLink`, `KozmosModal`);
+ *   - a CSS variable, `var(--name)`, must be one the built stylesheets
+ *     define or the document itself does;
  *   - no command may run a Kozmos package through npx, dlx or bunx: none
  *     provides one, so the command would run whatever npm served under the
  *     name.
@@ -299,7 +301,45 @@ function context(root, facts) {
     return resolved.get(specifier);
   };
   const publicNames = [...facts.packages.keys()].join(", ");
-  return { root, facts, installed, publicNames };
+  return { root, facts, installed, publicNames, variables: cssVariables(root) };
+}
+
+/**
+ * The CSS custom properties Kozmos defines: the token stylesheets' and the
+ * React stylesheet's, as built. A guide that writes
+ * `var(--kozmos-color-text-primary)` names a variable nothing defines, and a
+ * browser drops the declaration without a word.
+ */
+const STYLESHEETS = [
+  "packages/tokens/dist/css/variables-light.css",
+  "packages/tokens/dist/css/variables-dark.css",
+  "packages/react/dist/style.css",
+];
+function cssVariables(root) {
+  const defined = new Set();
+  for (const file of STYLESHEETS) {
+    const full = path.join(root, file);
+    if (!fs.existsSync(full))
+      throw new Error(
+        `${file} is missing: build the packages first (pnpm --filter "@kozmos-ds/react..." build).`,
+      );
+    for (const m of fs.readFileSync(full, "utf8").matchAll(/(--[\w-]+)\s*:/g))
+      defined.add(m[1]);
+  }
+  return defined;
+}
+
+/** Each `var(--name)` in a document that neither Kozmos nor the document defines. */
+function variableProblems(ctx, text) {
+  const own = new Set([...text.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
+  const problems = [];
+  for (const m of text.matchAll(/var\(\s*(--[\w-]+)/g))
+    if (!ctx.variables.has(m[1]) && !own.has(m[1]))
+      problems.push({
+        line: lineAt(text, m.index),
+        message: `uses the CSS variable ${m[1]}, which no Kozmos stylesheet defines (their names are --primitives-*, --semantics-* and --components-*)`,
+      });
+  return problems;
 }
 
 /** Whether a package's manifest exports `subpath` (`./style.css`, `./dist/*`). */
@@ -711,6 +751,9 @@ export function checkDocuments(root, docs, facts) {
         file: doc.file,
         ...p,
       })),
+    );
+    own.push(
+      ...variableProblems(ctx, doc.text).map((p) => ({ file: doc.file, ...p })),
     );
     problems.push(...own);
   });

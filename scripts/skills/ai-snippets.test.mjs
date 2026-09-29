@@ -295,6 +295,19 @@ test("a React tag named Kozmos-something must be an export: the prefix is SwiftU
   );
 });
 
+test("a CSS variable must be one the built stylesheets define, or the document does", () => {
+  const found = messages(
+    `# Tokens\n\n${fence}css\n.panel {\n  color: var(--kozmos-color-text-primary);\n  background: var(--primitives-colors-background-0);\n  --my-brand: #123456;\n  border-color: var(--my-brand);\n}\n${fence}\n\n${fence}tsx\n// kozmos-skills: template — a style prop, shown on its own\n<div style={{ padding: "var(--kozmos-space-400)" }} />\n${fence}\n`,
+  );
+  for (const name of ["--kozmos-color-text-primary", "--kozmos-space-400"])
+    assert.ok(
+      found.some((m) => m.includes(name)),
+      `${name}: ${found.join("\n")}`,
+    );
+  for (const name of ["--primitives-colors-background-0", "--my-brand"])
+    assert.ok(!found.some((m) => m.includes(name)), found.join("\n"));
+});
+
 test("no command runs a Kozmos package through npx: none provides one", () => {
   // Each of these would fetch and run whatever npm served under the name.
   const found = messages(
