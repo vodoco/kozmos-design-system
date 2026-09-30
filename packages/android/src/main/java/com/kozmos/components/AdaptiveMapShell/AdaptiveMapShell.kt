@@ -2,6 +2,19 @@ package com.kozmos.components.adaptivemapshell
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import kotlin.math.roundToInt
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -14,7 +27,6 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,6 +60,7 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -204,16 +217,29 @@ fun KozmosAdaptiveMapShell(
     panelDetents: List<KozmosMapPanelDetent> = KozmosDefaultPanelDetents,
     /** The detent the sheet rests at: controlled, with [onPanelDetentChange]. */
     panelDetent: KozmosMapPanelDetent? = null,
+    /** Independent logical corners, measured together and wrapped when needed. */
+    controlsBottomStart: (@Composable () -> Unit)? = null,
+    controlsBottomEnd: (@Composable () -> Unit)? = null,
+    bottomControlsPadCamera: Boolean = false,
+    attribution: (@Composable () -> Unit)? = null,
     onPanelDetentChange: ((KozmosMapPanelDetent) -> Unit)? = null
 ) {
-    LaunchedEffect(collisionInsets) {
-        onCollisionInsetsChange?.invoke(collisionInsets)
-    }
+    val density = LocalDensity.current
+    val direction = LocalLayoutDirection.current
+    var topHeight by remember { mutableStateOf(0.dp) }
+    var controlsHeight by remember { mutableStateOf(0.dp) }
+    var panelHeight by remember { mutableStateOf(0.dp) }
+    var sidePanelHeight by remember { mutableStateOf(0.dp) }
+    var bottomControlsHeight by remember { mutableStateOf(0.dp) }
+    var bottomStartWidth by remember { mutableStateOf(0.dp) }
+    var bottomEndWidth by remember { mutableStateOf(0.dp) }
+    var attributionHeight by remember { mutableStateOf(0.dp) }
+    var shellOrigin by remember { mutableStateOf(IntOffset.Zero) }
 
     BoxWithConstraints(
         modifier = modifier
+            .onGloballyPositioned { val p = it.positionInWindow(); shellOrigin = IntOffset(p.x.roundToInt(), p.y.roundToInt()) }
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 448.dp)
             .background(KozmosThemeTokens.primitivesColorsBackground100)
     ) {
         // Wide layouts float the panel beside the map; compact layouts dock it
@@ -221,6 +247,43 @@ fun KozmosAdaptiveMapShell(
         val isRegularWidth = maxWidth >= 600.dp
         val availableHeight = maxHeight
         val availableWidth = maxWidth
+        val gap = KozmosDimensions.primitivesLayoutSpacing200
+        val safeTop = with(density) { WindowInsets.safeDrawing.getTop(this).toDp() }
+        val safeBottom = with(density) { WindowInsets.safeDrawing.getBottom(this).toDp() }
+        val safeLeft = with(density) { WindowInsets.safeDrawing.getLeft(this, direction).toDp() }
+        val safeRight = with(density) { WindowInsets.safeDrawing.getRight(this, direction).toDp() }
+        val sidePanel = if (panel != null && isRegularWidth) minOf(416.dp, availableWidth * 0.42f) + gap * 2 else 0.dp
+        val bottomPanel = if (panel != null && !isRegularWidth) panelHeight else 0.dp
+        val chromeWidth = (availableWidth - sidePanel - safeLeft - safeRight).coerceAtLeast(0.dp)
+        val footerWidth = (availableWidth - safeLeft - safeRight).coerceAtLeast(0.dp)
+        val topInset = if (topBar != null) topHeight + gap else 0.dp
+        val band = (availableHeight - bottomPanel - safeTop - (if (bottomPanel > 0.dp) 0.dp else safeBottom) - topInset - gap * 2).coerceAtLeast(0.dp)
+        val footerHeight = if (attribution != null) minOf(attributionHeight,
+            (availableHeight - safeTop - safeBottom - topInset - gap * 3).coerceAtLeast(0.dp) / 2) else 0.dp
+        val attributionReserve = if (footerHeight > 0.dp) footerHeight + gap else 0.dp
+        val bottomBand = (band - (if (controls != null) controlsHeight + gap else 0.dp)).coerceAtLeast(0.dp)
+        val cornersVisible = bottomControlsHeight > 0.dp && bottomControlsHeight <= bottomBand
+        val startReserve = if (cornersVisible && bottomStartWidth > 0.dp) bottomStartWidth + gap else 0.dp
+        val endReserve = if (cornersVisible && bottomEndWidth > 0.dp) bottomEndWidth + gap else 0.dp
+        val attributionCornerReserve = maxOf(startReserve, endReserve)
+        val attributionAboveCorners = cornersVisible && footerWidth - gap * 2 - attributionCornerReserve * 2 < 128.dp
+        val attributionLift = if (attributionAboveCorners) bottomControlsHeight + gap else 0.dp
+        val maximumPanelHeight = if (footerHeight > 0.dp)
+            (availableHeight - topInset - safeTop - footerHeight - gap * 3).coerceAtLeast(0.dp) else availableHeight
+        val chromeAlignment = if (panelPlacement == KozmosMapPanelPlacement.End) Alignment.BottomStart else Alignment.BottomEnd
+        val panelRight = (panelPlacement == KozmosMapPanelPlacement.End) == (direction == LayoutDirection.Ltr)
+        fun cleanInset(value: Double) = if (value.isFinite()) maxOf(0.0, value) else 0.0
+        val cornerPadding = if ((controlsBottomStart != null || controlsBottomEnd != null) && bottomControlsPadCamera && cornersVisible) bottomPanel + minOf(bottomControlsHeight, bottomBand) + gap + (if (bottomPanel > 0.dp) 0.dp else safeBottom) else 0.dp
+        val attributionPadding = if (footerHeight > 0.dp) bottomPanel + minOf(footerHeight, (band - attributionLift).coerceAtLeast(0.dp)) + attributionLift + gap + (if (bottomPanel > 0.dp) 0.dp else safeBottom) else 0.dp
+        val left = maxOf(cleanInset(collisionInsets.left), (safeLeft + if (!panelRight) sidePanel else 0.dp).value.toDouble()).coerceIn(0.0, availableWidth.value.toDouble())
+        val top = maxOf(cleanInset(collisionInsets.top), (safeTop + topInset).value.toDouble()).coerceIn(0.0, availableHeight.value.toDouble())
+        val resolvedInsets = KozmosMapCollisionInsets(
+            top = top,
+            left = left,
+            right = maxOf(cleanInset(collisionInsets.right), (safeRight + if (panelRight) sidePanel else 0.dp).value.toDouble()).coerceIn(0.0, (availableWidth.value - left).coerceAtLeast(0.0)),
+            bottom = maxOf(cleanInset(collisionInsets.bottom), maxOf(bottomPanel, safeBottom, cornerPadding, attributionPadding).value.toDouble()).coerceIn(0.0, (availableHeight.value - top).coerceAtLeast(0.0))
+        )
+        LaunchedEffect(resolvedInsets) { onCollisionInsetsChange?.invoke(resolvedInsets) }
 
         Box(
             modifier = Modifier
@@ -249,19 +312,30 @@ fun KozmosAdaptiveMapShell(
         if (topBar != null) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .width(chromeWidth)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                     .padding(KozmosDimensions.primitivesLayoutSpacing200)
-                    .align(Alignment.TopCenter),
+                    .align(if (panelPlacement == KozmosMapPanelPlacement.End) Alignment.TopStart else Alignment.TopEnd),
                 contentAlignment = Alignment.TopCenter
             ) {
-                Box(modifier = Modifier.widthIn(max = 672.dp)) { topBar() }
+                Box(modifier = Modifier.widthIn(max = minOf(672.dp, chromeWidth)).onSizeChanged { topHeight = with(density) { it.height.toDp() } }) { topBar() }
             }
         }
 
         if (controls != null) {
+            val controlsFit = attribution == null || controlsHeight <= (band - attributionReserve).coerceAtLeast(0.dp)
             Box(
                 modifier = Modifier
+                    .then(if (controlsFit) Modifier else Modifier.clearAndSetSemantics {})
+                    .layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        layout(placeable.width, placeable.height) {
+                            if (controlsFit) placeable.place(0, 0)
+                        }
+                    }
+                    .padding(top = topInset)
+                    .widthIn(max = chromeWidth)
+                    .heightIn(max = (band - attributionReserve).coerceAtLeast(0.dp) + safeTop + gap * 2)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                     .padding(KozmosDimensions.primitivesLayoutSpacing200)
                     .align(
@@ -272,10 +346,74 @@ fun KozmosAdaptiveMapShell(
                         }
                     )
             ) {
-                controls()
+                Box(Modifier
+                    .then(if (attribution != null) Modifier.wrapContentHeight(unbounded = true) else Modifier)
+                    .onSizeChanged { controlsHeight = with(density) { it.height.toDp() } }) { controls() }
             }
         }
 
+        if (controlsBottomStart != null || controlsBottomEnd != null) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = if (direction == LayoutDirection.Ltr) safeLeft else safeRight,
+                             end = if (direction == LayoutDirection.Ltr) safeRight else safeLeft)
+                    .width(footerWidth)
+                    .offset(y = -(bottomPanel + gap + if (bottomPanel > 0.dp) 0.dp else safeBottom))
+                    .padding(horizontal = gap)
+            ) {
+                val popupBounds = with(density) {
+                    val x = shellOrigin.x + ((if (panelRight) 0.dp else sidePanel) + safeLeft + gap).roundToPx()
+                    val y = shellOrigin.y + (availableHeight - bottomPanel - gap - (if (bottomPanel > 0.dp) 0.dp else safeBottom) - bottomBand).roundToPx()
+                    IntRect(x, y, x + (chromeWidth - gap * 2).coerceAtLeast(0.dp).roundToPx(), y + bottomBand.roundToPx())
+                }
+                val belowPanelBounds = with(density) {
+                    val x = shellOrigin.x + (safeLeft + gap).roundToPx()
+                    val y = shellOrigin.y + (safeTop + gap * 2 + sidePanelHeight).roundToPx()
+                    IntRect(x, y, x + (footerWidth - gap * 2).coerceAtLeast(0.dp).roundToPx(),
+                        maxOf(y, shellOrigin.y + (availableHeight - safeBottom - gap).roundToPx()))
+                }
+                val popupFitsBelowPanel = with(density) { belowPanelBounds.height >= (bottomControlsHeight + gap * 10).roundToPx() }
+                CompositionLocalProvider(LocalMapPopupRegion provides MapPopupRegion(popupBounds, bottomBand > 0.dp)) {
+                BottomControlsLayout(
+                    start = controlsBottomStart?.let { content -> {
+                        val region = LocalMapPopupRegion.current
+                        CompositionLocalProvider(LocalMapPopupRegion provides region?.copy(bounds = if (panel != null && isRegularWidth && panelPlacement == KozmosMapPanelPlacement.Start && popupFitsBelowPanel) belowPanelBounds else popupBounds)) {
+                            Box(Modifier.onSizeChanged { bottomStartWidth = with(density) { it.width.toDp() } }) { content() }
+                        }
+                    } },
+                    end = controlsBottomEnd?.let { content -> {
+                        val region = LocalMapPopupRegion.current
+                        CompositionLocalProvider(LocalMapPopupRegion provides region?.copy(bounds = if (panel != null && isRegularWidth && panelPlacement == KozmosMapPanelPlacement.End && popupFitsBelowPanel) belowPanelBounds else popupBounds)) {
+                            Box(Modifier.onSizeChanged { bottomEndWidth = with(density) { it.width.toDp() } }) { content() }
+                        }
+                    } },
+                    availableHeight = bottomBand,
+                    modifier = Modifier.fillMaxWidth()
+                        .onSizeChanged { bottomControlsHeight = with(density) { it.height.toDp() } }
+                        .then(if (bottomBand <= 0.dp) Modifier.clearAndSetSemantics {} else Modifier)
+                )
+                }
+            }
+        }
+
+        if (attribution != null) {
+            Box(
+                Modifier.align(Alignment.BottomCenter)
+                    .padding(start = if (direction == LayoutDirection.Ltr) safeLeft else safeRight,
+                             end = if (direction == LayoutDirection.Ltr) safeRight else safeLeft)
+                    .width(footerWidth)
+                    .offset(y = -(bottomPanel + gap + attributionLift + if (bottomPanel > 0.dp) 0.dp else safeBottom))
+                    .padding(horizontal = gap)
+                    .padding(horizontal = if (attributionAboveCorners) 0.dp else attributionCornerReserve)
+                    .heightIn(max = minOf(footerHeight, (band - attributionLift).coerceAtLeast(0.dp)))
+                    .verticalScroll(rememberScrollState()),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(Modifier.fillMaxWidth().onSizeChanged { attributionHeight = with(density) { it.height.toDp() } },
+                    contentAlignment = Alignment.Center) { attribution() }
+            }
+        }
         if (panel != null) {
             val radius = KozmosDimensions.semanticsRadiusPanel
 
@@ -284,18 +422,22 @@ fun KozmosAdaptiveMapShell(
                 // chained, because `widthIn` before `fillMaxWidth` would take
                 // the fraction of the cap instead of capping the fraction.
                 val panelWidth = minOf(416.dp, availableWidth * 0.42f)
+                val sidePanelCap = (availableHeight - safeTop - safeBottom - gap * 2 -
+                    maxOf(if (cornersVisible) bottomControlsHeight + gap else 0.dp,
+                        if (footerHeight > 0.dp) footerHeight + attributionLift + gap else 0.dp)).coerceAtLeast(0.dp)
 
                 Surface(
                     modifier = Modifier
                         .windowInsetsPadding(WindowInsets.safeDrawing)
                         .padding(KozmosDimensions.primitivesLayoutSpacing200)
                         .width(panelWidth)
-                        .fillMaxHeight()
+                        .heightIn(max = sidePanelCap)
+                        .onSizeChanged { sidePanelHeight = with(density) { it.height.toDp() } }
                         .align(
                             if (panelPlacement == KozmosMapPanelPlacement.End) {
-                                Alignment.CenterEnd
+                                Alignment.TopEnd
                             } else {
-                                Alignment.CenterStart
+                                Alignment.TopStart
                             }
                         )
                         .semantics { contentDescription = panelLabel },
@@ -315,7 +457,7 @@ fun KozmosAdaptiveMapShell(
                             if (panelHeader != null) {
                                 Box(modifier = Modifier.fillMaxWidth()) { panelHeader() }
                             }
-                            Box(modifier = Modifier.fillMaxWidth().weight(1f), propagateMinConstraints = true) {
+                            Box(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
                                 // A side panel starts its content at its top edge,
                                 // with no handle: it leaves nothing above it.
                                 CompositionLocalProvider(
@@ -337,13 +479,48 @@ fun KozmosAdaptiveMapShell(
                     panelDetent = panelDetent,
                     onPanelDetentChange = onPanelDetentChange,
                     shellHeight = availableHeight,
+                    maximumHeight = maximumPanelHeight,
                     radius = radius,
-                    modifier = Modifier.align(Alignment.BottomCenter)
+                    modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { panelHeight = with(density) { it.height.toDp() } }
                 )
             }
         }
     }
 }
+
+/**
+ * The pre-corner positional signature. Keep it for source consumers; named
+ * calls and trailing detent callbacks continue through the primary overload.
+ */
+@Composable
+fun KozmosAdaptiveMapShell(
+    map: @Composable () -> Unit,
+    modifier: Modifier,
+    mapLabel: String,
+    mapStatus: KozmosMapReadiness,
+    mapStatusContent: (@Composable () -> Unit)?,
+    controls: (@Composable () -> Unit)?,
+    topBar: (@Composable () -> Unit)?,
+    panel: (@Composable () -> Unit)?,
+    panelHeader: (@Composable () -> Unit)?,
+    panelLabel: String,
+    panelPlacement: KozmosMapPanelPlacement,
+    collisionInsets: KozmosMapCollisionInsets,
+    onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Unit)?,
+    panelSurface: KozmosSurfaceStyle,
+    panelDetents: List<KozmosMapPanelDetent>,
+    panelDetent: KozmosMapPanelDetent?,
+    onPanelDetentChange: ((KozmosMapPanelDetent) -> Unit)?
+) = KozmosAdaptiveMapShell(
+    map = map, modifier = modifier, mapLabel = mapLabel, mapStatus = mapStatus,
+    mapStatusContent = mapStatusContent, controls = controls, topBar = topBar,
+    panel = panel, panelHeader = panelHeader, panelLabel = panelLabel,
+    panelPlacement = panelPlacement, collisionInsets = collisionInsets,
+    onCollisionInsetsChange = onCollisionInsetsChange, panelSurface = panelSurface,
+    panelDetents = panelDetents, panelDetent = panelDetent,
+    controlsBottomStart = null, controlsBottomEnd = null,
+    onPanelDetentChange = onPanelDetentChange
+)
 
 /**
  * The docked sheet: the Pointr prototype's three detents and its drag rule,
@@ -363,6 +540,7 @@ private fun BottomSheet(
     panelDetent: KozmosMapPanelDetent?,
     onPanelDetentChange: ((KozmosMapPanelDetent) -> Unit)?,
     shellHeight: Dp,
+    maximumHeight: Dp,
     radius: Dp,
     modifier: Modifier = Modifier
 ) {
@@ -380,8 +558,8 @@ private fun BottomSheet(
     val active = panelDetent ?: uncontrolled
     fun heights(with: KozmosPanelMeasures): Triple<Dp, Dp, Dp> {
         val sorted = orderPanelDetents(offered, shellHeight, with)
-        val smallest = sorted.first().height(shellHeight, with)
-        val largest = sorted.last().height(shellHeight, with)
+        val smallest = minOf(sorted.first().height(shellHeight, with), maximumHeight)
+        val largest = minOf(sorted.last().height(shellHeight, with), maximumHeight)
         return Triple(smallest, largest, active.height(shellHeight, with).coerceIn(smallest, largest))
     }
     val (smallest, largest, settled) = heights(measures)
@@ -394,7 +572,10 @@ private fun BottomSheet(
         animationSpec = KozmosTransitions.standard(),
         label = "kozmos-sheet-detent"
     )
-    val index = ordered.indexOfFirst { it.height(shellHeight, measures).value.roundToInt() == settled.value.roundToInt() }.coerceAtLeast(0)
+    // The footer can cap several detents to the same rendered height. Keep
+    // cycling/step semantics tied to the chosen detent, not that capped size.
+    val index = ordered.indexOf(active).takeIf { it >= 0 }
+        ?: ordered.indexOfFirst { it.height(shellHeight, measures).value.roundToInt() == active.height(shellHeight, measures).value.roundToInt() }.coerceAtLeast(0)
     fun setDetent(detent: KozmosMapPanelDetent) {
         if (panelDetent == null) uncontrolled = detent
         if (detent != active) onPanelDetentChange?.invoke(detent)
@@ -523,7 +704,7 @@ private fun BottomSheet(
             // the handle's centre, inside the 24dp circle its target keeps
             // clear (WCAG 2.5.8). As the web's header has since #109.
             val headerClearance = if (handle != null && part(SheetPart.Header) != null) HandleClearance.roundToPx() else 0
-            val largestNow = orderPanelDetents(offered, shellHeight, measures).last().height(shellHeight, measures).roundToPx()
+            val largestNow = minOf(orderPanelDetents(offered, shellHeight, measures).last().height(shellHeight, measures), maximumHeight).roundToPx()
             val header = part(SheetPart.Header)?.measure(loose.copy(maxHeight = largestNow))
             val content = part(SheetPart.Content)!!.measure(
                 loose.copy(maxHeight = (largestNow - (header?.height ?: 0) - headerClearance).coerceAtLeast(0))

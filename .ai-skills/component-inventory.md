@@ -15,7 +15,7 @@
 `@kozmos-ds/vue` exists in the workspace but is **private**: an internal
 harness, not something to install. There is no React Native package.
 
-## Components (113)
+## Components (116)
 
 **iOS** and **Android** say whether that platform has the component at all.
 **Variants** are the axes the React component actually declares, with every
@@ -163,7 +163,13 @@ value it accepts — these are the only values that compile.
 | **DynamicIsland** | ✅  |   ✅    | `islandState`: compact \| expanded \| minimal |
 | **FeedbackCard**  | ✅  |   ✅    | —                                             |
 
-### Product SDK (23)
+### Product (1)
+
+| Component        | iOS | Android | Variants |
+| ---------------- | :-: | :-----: | -------- |
+| **MapInfoPanel** | ✅  |   ✅    | —        |
+
+### Product SDK (25)
 
 | Component                 | iOS | Android | Variants                                                                                                                           |
 | ------------------------- | :-: | :-----: | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -178,7 +184,9 @@ value it accepts — these are the only values that compile.
 | **CategoryField**         | ✅  |   ✅    | —                                                                                                                                  |
 | **CategoryTile**          | ✅  |   ✅    | —                                                                                                                                  |
 | **FloorSelector**         | ✅  |   ✅    | `variant`: vertical-list \| horizontal-list \| compact-stepper \| collapsible                                                      |
+| **LanguageSwitcher**      |  —  |    —    | `dir`: ltr \| rtl                                                                                                                  |
 | **LocationPin**           | ✅  |   ✅    | `variant`: default \| primary \| secondary \| accent<br>`size`: sm \| md \| lg<br>`labelPlacement`: top \| right \| bottom \| left |
+| **MapAttribution**        | ✅  |   ✅    | `appearance`: map \| surface                                                                                                       |
 | **MapControlButton**      | ✅  |   ✅    | `presentation`: icon-only \| labelled<br>`emphasis`: tinted \| filled<br>`labelPlacement`: inline \| stacked                       |
 | **MapStatusPill**         | ✅  |   ✅    | `tone`: neutral \| progress \| success \| danger \| warning<br>`live`: off \| polite \| assertive                                  |
 | **Notice**                |  —  |    —    | `tone`: warning \| info \| critical<br>`live`: off \| polite \| assertive                                                          |

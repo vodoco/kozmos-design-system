@@ -110,6 +110,7 @@ class KozmosFloorSelectorPaparazziTest {
         Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
             ListAndStepper()
             KozmosFloorSelector(
+                showResultCounts = true,
                 floors = levels,
                 selectedFloor = "1",
                 onFloorSelect = {},
@@ -121,8 +122,10 @@ class KozmosFloorSelectorPaparazziTest {
     @Composable
     private fun ListAndStepper() {
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
-            KozmosFloorSelector(floors = levels, selectedFloor = "2", onFloorSelect = {})
+            KozmosFloorSelector(showResultCounts = true,
+                floors = levels, selectedFloor = "2", onFloorSelect = {})
             KozmosFloorSelector(
+                showResultCounts = true,
                 floors = levels,
                 selectedFloor = "2",
                 onFloorSelect = {},
