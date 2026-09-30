@@ -32,9 +32,15 @@ import { gzipSync } from "zlib";
 // Everything went from 64 to 68 KB on 2026-09-28 (decision 53, Olcay's). Main measured 63.61 KB
 // here after that day's features, and the map status pill (decision 39) measured 63.77, leaving
 // 0.23 KB for the next. The per-export, Button and stylesheet budgets are unchanged.
+//
+// Olcay approved 80 KB on 2026-09-30 for the SDK-controls integration (#175).
+// After lossless SVG data-URL optimization, the candidate measured 74.01 KB gzip
+// locally (previous CI measurements were about 0.38 KB higher). The heaviest
+// export was 7.31 KB, Button 1.29 KB and CSS 29.83 KB. Only the total-library
+// allowance changes; the per-export, Button, CSS and module-count guards stay.
 const MAX_EXPORT_GZIP_KB = 8;
 const MAX_BUTTON_GZIP_KB = 2;
-const MAX_TOTAL_GZIP_KB = 68;
+const MAX_TOTAL_GZIP_KB = 80;
 const MAX_CSS_GZIP_KB = 30;
 const MIN_ESM_MODULES = 50;
 
