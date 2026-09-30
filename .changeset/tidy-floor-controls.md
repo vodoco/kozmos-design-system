@@ -15,3 +15,5 @@ Add independently measured logical `controlsBottomStart` and `controlsBottomEnd`
 Native shells now respect a bounded host shorter than 448pt/dp. Give native shells a bounded parent; the shell no longer forces that old minimum. Compose now reports measured panel/top-bar/safe-area camera padding rather than echoing caller insets alone. These changes are source-only for native consumers and are not native registry releases.
 
 Bound expanded floor lists to the registered map-shell region, scroll long lists without shrinking targets, reveal the selected floor after measurement, and dismiss the popup when its region disappears. Preserve standalone viewport behavior and existing small-list geometry.
+
+Keep full-name tooltips inside the floor dialog's accessible ownership but outside its scrolling viewport, preserving keyboard descriptions and preventing clipped hints.

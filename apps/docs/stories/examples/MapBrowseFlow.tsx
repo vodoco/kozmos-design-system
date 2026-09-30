@@ -183,6 +183,7 @@ export function MapBrowseFlow({
             ) : (
               <div
                 className="h-full bg-muted"
+                role="img"
                 aria-label="Illustrative map; no live SDK"
               />
             )

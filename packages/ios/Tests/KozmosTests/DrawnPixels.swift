@@ -23,7 +23,7 @@ struct DrawnPixels {
         return try DrawnPixels(image, scale: scale)
     }
 
-    private init(_ image: CGImage, scale: CGFloat) throws {
+    init(_ image: CGImage, scale: CGFloat) throws {
         self.scale = scale
         width = image.width
         height = image.height

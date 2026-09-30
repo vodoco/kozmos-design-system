@@ -63,7 +63,7 @@ try {
     assert.ok(
       await logo.evaluate(
         (image) =>
-          image.currentSrc.startsWith("data:image/svg+xml;base64,") &&
+          image.currentSrc.startsWith("data:image/svg+xml,") &&
           image.naturalWidth === 98 &&
           image.naturalHeight === 34,
       ),

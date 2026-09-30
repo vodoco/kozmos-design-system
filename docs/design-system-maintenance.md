@@ -25,11 +25,43 @@ Documentation-only reviews and unchanged released artifacts do not require specu
 Changes to build tooling, dependencies, lockfiles, tests or CI invalidate relevant evidence even
 if component source is unchanged.
 
-### Optimize duration, not the meaning of green
+### Candidate validation checklist
+
+- Run checks against the **formatted candidate**, then check generated assets again after
+  committing. The brand generator formats its TS/JSON outputs with the repository's Prettier
+  configuration; `pnpm test:ci` checks both canonical content and formatter stability, and the
+  commit hook checks branding after `lint-staged`. Never manually repair generated output.
+- `pnpm ci:local` defaults to the **web job in ci.yml**, not every release check. Inspect other
+  jobs with `--list --job ios` or `--list --job browsers`. Separate workflows can be inspected
+  and run using `--workflow`, for example:
+
+  ```sh
+  pnpm ci:local --workflow bundle-size.yml --job analyze-bundle
+  ```
+
+- Check the actual consuming story at 320 px and desktop widths in both themes, as well as its
+  isolated component. `STORY_SCOPE=all STORY_FILTER='<affected-story-id-regex>' pnpm test:storybook-audit`
+  audits a freshly built, served Storybook. The full story audit remains a required CI check.
+- Audit open/focused tooltips and popups, not only their closed state. Portaled content must
+  retain its owning accessible region; a scrolling list must not clip its tooltips. Verify the
+  screen-reader description, visible hint, keyboard dismissal and returned focus together.
+- Run **both** macOS `swift test` and the named iOS simulator target when changing SwiftUI
+  layout or its tests. Window-dependent geometry/scrolling tests require a hosted view, not a
+  detached renderer. Keep pixel scale explicit rather than dependent on the runner's display.
+- Measure the whole bundle as well as individual exports and CSS. Optimize first; a budget
+  increase requires an explicit, measured decision. A new component passing its own budget
+  does not imply the total library passes.
+- Report the exact candidate SHA and distinguish local passes, pending CI, failures and skips.
+  No earlier build or green visual comparison substitutes for the required checks on that SHA.
+
+### Keep feedback fast without weakening gates
 
 Use deterministic caching keyed by source, dependency lockfiles, toolchain and test configuration;
 parallelize independent jobs; cancel superseded PR runs. Rebuild workspace `dist` before consumer
 tests. Run affected tests locally, and keep release verification comprehensive.
+Finish all builds before starting built-package browser checks. Do not run `pnpm typecheck`
+alongside those checks either: Turborepo may rebuild dependencies and temporarily remove
+their `dist` entries. Parallelize read-only suites only after their shared artifacts are stable.
 
 Any future affected-only CI needs a verified dependency graph including tokens, global CSS,
 code generation, shared native helpers, public exports and contracts. Unknown impact must

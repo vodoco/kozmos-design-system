@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import AxeBuilder from "@axe-core/playwright";
 import {
   buildReactFixture,
   launchFixtureBrowser,
@@ -7,12 +8,71 @@ import {
 const fixture = await buildReactFixture("floor-popup.fixture.tsx");
 const browser = await launchFixtureBrowser();
 try {
-  const page = await browser.newPage({
+  const context = await browser.newContext({
     viewport: { width: 1200, height: 900 },
+    reducedMotion: "reduce",
   });
-  await page.setContent('<div id="root" style="margin:80px"></div>');
+  const page = await context.newPage();
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>Floor popup</title></head><body><main id="root" style="margin:80px"></main></body></html>',
+  );
   await page.addStyleTag({ content: fixture.css });
   await page.addScriptTag({ content: fixture.code });
+  await page.evaluate(() => window.renderFloorPopup({ height: 320, count: 3 }));
+  await settleLayout(page);
+  await page
+    .getByRole("group", { name: "Floor selector" })
+    .getByRole("button")
+    .click();
+  const describedFloor = page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Level 1", exact: true });
+  await describedFloor.focus();
+  const tooltip = page.getByRole("tooltip", { name: "Level 1", exact: true });
+  await tooltip.waitFor();
+  await settleLayout(page);
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter(
+          (animation) => animation.effect?.getTiming().iterations !== Infinity,
+        )
+        .map((animation) => animation.finished.catch(() => {})),
+    ),
+  );
+  assert.equal(await tooltip.textContent(), "Level 1");
+  assert.equal(
+    await describedFloor.getAttribute("aria-describedby"),
+    await tooltip.getAttribute("id"),
+  );
+  assert.ok(
+    await tooltip.evaluate((node) => Boolean(node.closest('[role="dialog"]'))),
+    "the open floor dialog owns its tooltip description",
+  );
+  assert.ok(
+    await tooltip.evaluate((node) => {
+      const bubble = node.parentElement;
+      const bounds = bubble.getBoundingClientRect();
+      return bubble.contains(
+        document.elementFromPoint(
+          bounds.x + bounds.width / 2,
+          bounds.y + bounds.height / 2,
+        ),
+      );
+    }),
+    "the visible hint is painted outside the floor list, not clipped by its viewport",
+  );
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  assert.deepEqual(
+    accessibility.violations.map(({ id, nodes }) => ({
+      id,
+      targets: nodes.map(({ target }) => target),
+    })),
+    [],
+    "open floor list and its focused tooltip remain accessible, including portaled content",
+  );
+  await page.keyboard.press("Escape");
   for (const dir of ["ltr", "rtl"]) {
     await page.evaluate(
       (dir) => window.renderFloorPopup({ height: 320, dir }),
@@ -43,7 +103,9 @@ try {
       "popup stays in embedded map horizontally",
     );
     assert.ok(
-      await popup.evaluate((el) => el.scrollHeight > el.clientHeight),
+      await popup
+        .locator(".kozmos-floor-selector-scroll")
+        .evaluate((el) => el.scrollHeight > el.clientHeight),
       "long floors scroll instead of shrinking",
     );
     const selected = popup.getByRole("button", {
@@ -59,6 +121,47 @@ try {
     await popup
       .getByRole("button", { name: "Level 39", exact: true })
       .scrollIntoViewIfNeeded();
+    // Deliver the scroll event before focusing the next tile. Radix correctly
+    // dismisses a tooltip on scroll, which WebKit dispatches after the scroll
+    // command has returned.
+    await settleLayout(page);
+    const lastFloor = popup.getByRole("button", {
+      name: "Level 39",
+      exact: true,
+    });
+    await lastFloor.focus();
+    const longListHint = popup.getByRole("tooltip", {
+      name: "Level 39",
+      exact: true,
+    });
+    await longListHint.waitFor();
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation.effect?.getTiming().iterations !== Infinity,
+          )
+          .map((animation) => animation.finished.catch(() => {})),
+      ),
+    );
+    assert.ok(
+      await longListHint.evaluate((node) => {
+        const bubble = node.parentElement;
+        const bounds = bubble.getBoundingClientRect();
+        return (
+          !node.closest(".kozmos-floor-selector-scroll") &&
+          bubble.contains(
+            document.elementFromPoint(
+              bounds.x + bounds.width / 2,
+              bounds.y + bounds.height / 2,
+            ),
+          )
+        );
+      }),
+      "a long scrolling floor list must not clip its full-name hint",
+    );
     await popup.getByRole("button", { name: "Level 39", exact: true }).click();
     await popup.waitFor({ state: "hidden" });
     assert.match(
@@ -70,6 +173,7 @@ try {
     await popup.waitFor();
     await page.keyboard.press("Escape");
     await popup.waitFor({ state: "hidden" });
+    await settleLayout(page);
     assert.ok(
       await tile.evaluate((el) => el === document.activeElement),
       "Escape returns to tile",

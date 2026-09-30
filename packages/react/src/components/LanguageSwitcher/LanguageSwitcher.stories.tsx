@@ -39,7 +39,7 @@ export const EmbeddedMap: Story = {
     return (
       <ThemeProvider dir={locale === "ar" ? "rtl" : "ltr"}>
         <AdaptiveMapShell
-          style={{ width: 360, height: 400 }}
+          style={{ width: 360, maxWidth: "100%", height: 400 }}
           map={<div />}
           controlsBottomStart={
             <LanguageSwitcher

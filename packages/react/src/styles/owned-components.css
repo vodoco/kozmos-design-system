@@ -900,9 +900,8 @@
     max-width: var(--radix-popover-content-available-width);
     display: flex;
     flex-direction: column;
-    gap: calc(var(--primitives-layout-spacing-50) * 1px);
     width: auto;
-    padding: calc(var(--primitives-layout-spacing-50) * 1px);
+    padding: 0;
     border-width: 0;
     border-radius: calc(
       var(--semantics-radius-control) * 1px +
@@ -912,9 +911,21 @@
     -webkit-backdrop-filter: blur(32px);
     backdrop-filter: blur(32px);
   }
+  /* Tooltips belong to the dialog, outside its scrolling viewport. Portaling
+     to the page loses that ownership; putting them inside the scroll box
+     clips the full-name hint on long lists. */
+  .kozmos-floor-selector-scroll {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: inherit;
+    gap: calc(var(--primitives-layout-spacing-50) * 1px);
+    padding: calc(var(--primitives-layout-spacing-50) * 1px);
+  }
   /* Do not clip a short list's focus outline. Only a genuinely overflowing
      list needs a scroll viewport. */
-  .kozmos-popover.kozmos-floor-selector-list[data-scrollable="true"] {
+  .kozmos-popover.kozmos-floor-selector-list[data-scrollable="true"]
+    > .kozmos-floor-selector-scroll {
     overflow-y: auto;
     overscroll-behavior: contain;
   }

@@ -1,5 +1,8 @@
 import XCTest
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 @testable import Kozmos
 
 /// Property assertions on the FloorSelector's API.
@@ -383,9 +386,10 @@ final class KozmosFloorSelectorTests: XCTestCase {
 
     /// The switcher parked in the corner, drawn as a device draws it. On iOS
     /// its tile carries a UIKit element for VoiceOver, which `ImageRenderer`
-    /// cannot draw — it puts SwiftUI's yellow placeholder in its place — so
-    /// there the switcher is hosted and snapshotted; on a Mac, where the
-    /// element does not exist, `ImageRenderer` draws it. On white both ways
+    /// cannot draw — it puts SwiftUI's yellow placeholder in its place. The
+    /// bounded popup also needs a settled geometry-preference pass and a real
+    /// scroll view, so both platforms host the switcher before snapshotting.
+    /// On white both ways
     /// unless a test asks for another backdrop: the map-control surface is
     /// the page's own and has no edge, so on white only its shadow shows, and
     /// a test that measures the surface draws it on black.
@@ -423,7 +427,29 @@ final class KozmosFloorSelectorTests: XCTestCase {
             count: { pixels.count(in: $0, where: $1) }
         )
         #else
-        let pixels = try DrawnPixels.draw(content)
+        let host = NSHostingView(rootView: content)
+        let window = NSWindow(contentRect: CGRect(origin: .zero, size: corner),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+        // Allow preferences, scrolling to the selected level, and rendering
+        // to settle in the same host the macOS control actually uses.
+        for _ in 0..<4 {
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        // Pin 2x like ImageRenderer and the iOS snapshots, independent of the
+        // runner's attached display (CI may be 1x). Keep the logical size.
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: Int(corner.width * 2), pixelsHigh: Int(corner.height * 2),
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        bitmap.size = corner
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        let image = try XCTUnwrap(bitmap.cgImage)
+        let pixels = try DrawnPixels(image, scale: CGFloat(image.width) / corner.width)
         return SwitcherDrawing(
             color: { let p = pixels.pixel(at: $0); return (p.r, p.g, p.b) },
             boundingBox: { region, matches in pixels.boundingBox(in: region) { r, g, b, _ in matches(r, g, b) } },

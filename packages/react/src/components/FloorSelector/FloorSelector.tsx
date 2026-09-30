@@ -254,6 +254,7 @@ const CollapsibleFloorSelector = React.forwardRef<
     const tileRef = React.useRef<HTMLButtonElement>(null);
     const currentRef = React.useRef<HTMLButtonElement>(null);
     const [content, setContent] = React.useState<HTMLDivElement | null>(null);
+    const [popup, setPopup] = React.useState<HTMLDivElement | null>(null);
     const [scrollable, setScrollable] = React.useState(false);
     React.useEffect(() => {
       if (!open || typeof ResizeObserver === "undefined") return;
@@ -371,7 +372,12 @@ const CollapsibleFloorSelector = React.forwardRef<
                   />
                 </PopoverTrigger>
               </TooltipTrigger>
-              <TooltipContent side={tooltipSide}>{tileLabel}</TooltipContent>
+              <TooltipContent
+                side={tooltipSide}
+                portalContainer={tileRef.current?.parentElement}
+              >
+                {tileLabel}
+              </TooltipContent>
             </Tooltip>
             <PopoverContent
               collisionBoundary={popupRegion?.boundary ?? undefined}
@@ -380,7 +386,7 @@ const CollapsibleFloorSelector = React.forwardRef<
               sticky={popupRegion ? "always" : "partial"}
               collisionPadding={0}
               updatePositionStrategy="always"
-              ref={setContent}
+              ref={setPopup}
               data-scrollable={scrollable ? "true" : undefined}
               align="end"
               alignOffset={-COLUMN_INSET}
@@ -412,61 +418,64 @@ const CollapsibleFloorSelector = React.forwardRef<
                 }
               }}
             >
-              {options.map((floor) => {
-                const isCurrent = floor.id === selectedFloor;
-                const isUserLevel =
-                  userFloor !== undefined && floor.id === userFloor;
-                const count = markedResultCount(floor);
-                return (
-                  <Tooltip key={floor.id}>
-                    <TooltipTrigger asChild disabled={floor.disabled}>
-                      <Button
-                        ref={isCurrent ? currentRef : undefined}
-                        aria-label={spokenLabel(
-                          floor,
-                          resultCountLabel,
-                          isUserLevel ? userFloorLabel : undefined,
-                        )}
-                        aria-pressed={isCurrent}
-                        // The board's states: the current level outlined in the
-                        // theme's primary; on hover a light primary outline, and
-                        // pressed a full one; a closed level on the muted surface.
-                        className={cn(
-                          "relative border border-transparent p-0 text-sm font-semibold text-foreground hover:bg-transparent active:border-primary active:text-primary disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
-                          isCurrent
-                            ? "border-primary text-primary"
-                            : "hover:border-primary/40 hover:text-primary",
-                        )}
-                        disabled={floor.disabled}
-                        onClick={() => {
-                          onChoose(floor.id);
-                          setOpen(false);
-                        }}
-                        size="icon"
-                        style={{
-                          height: tileSize.height,
-                          flexShrink: 0,
-                          minWidth: tileSize.width,
-                        }}
-                        type="button"
-                        variant="ghost"
+              <div ref={setContent} className="kozmos-floor-selector-scroll">
+                {options.map((floor) => {
+                  const isCurrent = floor.id === selectedFloor;
+                  const isUserLevel =
+                    userFloor !== undefined && floor.id === userFloor;
+                  const count = markedResultCount(floor);
+                  return (
+                    <Tooltip key={floor.id}>
+                      <TooltipTrigger asChild disabled={floor.disabled}>
+                        <Button
+                          ref={isCurrent ? currentRef : undefined}
+                          aria-label={spokenLabel(
+                            floor,
+                            resultCountLabel,
+                            isUserLevel ? userFloorLabel : undefined,
+                          )}
+                          aria-pressed={isCurrent}
+                          // The board's states: the current level outlined in the
+                          // theme's primary; on hover a light primary outline, and
+                          // pressed a full one; a closed level on the muted surface.
+                          className={cn(
+                            "relative border border-transparent p-0 text-sm font-semibold text-foreground hover:bg-transparent active:border-primary active:text-primary disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+                            isCurrent
+                              ? "border-primary text-primary"
+                              : "hover:border-primary/40 hover:text-primary",
+                          )}
+                          disabled={floor.disabled}
+                          onClick={() => {
+                            onChoose(floor.id);
+                            setOpen(false);
+                          }}
+                          size="icon"
+                          style={{
+                            height: tileSize.height,
+                            flexShrink: 0,
+                            minWidth: tileSize.width,
+                          }}
+                          type="button"
+                          variant="ghost"
+                        >
+                          {floor.shortLabel}
+                          {isUserLevel ? <UserLevelDot /> : null}
+                          {count !== undefined ? (
+                            <ResultMarker corner="bottom" count={count} />
+                          ) : null}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side={tooltipSide}
+                        portalContainer={popup}
+                        onEscapeKeyDown={() => setOpen(false)}
                       >
-                        {floor.shortLabel}
-                        {isUserLevel ? <UserLevelDot /> : null}
-                        {count !== undefined ? (
-                          <ResultMarker corner="bottom" count={count} />
-                        ) : null}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side={tooltipSide}
-                      onEscapeKeyDown={() => setOpen(false)}
-                    >
-                      {floor.label}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
+                        {floor.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
             </PopoverContent>
           </Popover>
         </div>
