@@ -1,4 +1,5 @@
 import React from "react";
+import { MapPopupRegionContext } from "../AdaptiveMapShell/map-popup-region";
 import type { FloorPresentation } from "@kozmos-ds/product-contracts";
 import { ChevronDown, ChevronUp } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
@@ -7,6 +8,13 @@ import { IconButton } from "../IconButton";
 import { MapControlButton } from "../MapControlButton";
 import { Popover, PopoverContent, PopoverTrigger } from "../Popover";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../Tooltip";
+import { ThemeProviderContext } from "../../theme/theme-context";
 
 export type FloorSelectorOption = FloorPresentation | string;
 
@@ -39,6 +47,12 @@ export interface FloorSelectorProps extends React.HTMLAttributes<HTMLDivElement>
   previousFloorLabel?: string;
   /** The down chevron's name, "Floor down" unless the product passes its own. */
   nextFloorLabel?: string;
+  /**
+   * Opt in to per-floor result badges and their accessible descriptions.
+   * Defaults to false, even when floors carry resultCount. Only positive
+   * counts appear in lists; the collapsed tile and stepper never show them.
+   */
+  showResultCounts?: boolean;
   /**
    * How a level's result count is said, for a visitor who cannot see the
    * marker. Joined to the floor's own label: "Level 2, 3 results".
@@ -221,6 +235,17 @@ const CollapsibleFloorSelector = React.forwardRef<
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const [open, setOpen] = React.useState(false);
+    const popupRegion = React.useContext(MapPopupRegionContext);
+    const canExpand = (popupRegion?.available ?? true) && options.length > 0;
+    const [hintOpen, setHintOpen] = React.useState(false);
+    React.useEffect(() => {
+      if (!canExpand) {
+        setOpen(false);
+        setHintOpen(false);
+      }
+    }, [canExpand]);
+    const theme = React.useContext(ThemeProviderContext);
+    const tooltipSide = (props.dir ?? theme?.dir) === "rtl" ? "right" : "left";
     // The map control's own size, read off the tile as the column opens: the
     // column's levels take it and the column is placed by it, so its bottom
     // level lies exactly over the tile whatever size the shared map-control
@@ -228,8 +253,35 @@ const CollapsibleFloorSelector = React.forwardRef<
     const [tileSize, setTileSize] = React.useState({ width: 44, height: 44 });
     const tileRef = React.useRef<HTMLButtonElement>(null);
     const currentRef = React.useRef<HTMLButtonElement>(null);
+    const [content, setContent] = React.useState<HTMLDivElement | null>(null);
+    const [scrollable, setScrollable] = React.useState(false);
+    React.useEffect(() => {
+      if (!open || typeof ResizeObserver === "undefined") return;
+      if (!content) return;
+      const revealCurrent = () => {
+        const current = currentRef.current;
+        const overflows = content.scrollHeight > content.clientHeight;
+        setScrollable(overflows);
+        if (!current || content.clientHeight <= 0 || !overflows) return;
+        // Positioning supplies the scroll viewport after autofocus. Scroll
+        // this list only; never move the embedding page to reveal the floor.
+        const item = current.getBoundingClientRect();
+        const viewport = content.getBoundingClientRect();
+        if (item.top < viewport.top || item.bottom > viewport.bottom) {
+          content.scrollTop +=
+            item.top -
+            viewport.top -
+            (content.clientHeight - current.offsetHeight) / 2;
+        }
+      };
+      const observer = new ResizeObserver(revealCurrent);
+      observer.observe(content);
+      revealCurrent();
+      return () => observer.disconnect();
+    }, [open, content, scrollable, selectedFloor, options.length]);
 
     const setOpenState = (next: boolean) => {
+      if (next && !canExpand) return;
       if (next && !open) {
         trackEvent("FloorSelector", "floor_selector_expanded", {
           floor: selectedOption?.id ?? selectedFloor,
@@ -247,114 +299,178 @@ const CollapsibleFloorSelector = React.forwardRef<
     const tileIsUserLevel =
       userFloor !== undefined && selectedFloor === userFloor;
     const tileLabel = selectedOption?.label ?? selectedFloor;
+    // Availability cues only. The entire tile remains one disclosure button.
+    // Unknown selections cannot promise a direction; the host owns selection.
+    const selectedIndex = options.findIndex(
+      (floor) => floor.id === selectedFloor,
+    );
+    const above =
+      selectedIndex >= 0 &&
+      options.slice(0, selectedIndex).some((floor) => !floor.disabled);
+    const below =
+      selectedIndex >= 0 &&
+      options.slice(selectedIndex + 1).some((floor) => !floor.disabled);
 
     return (
-      <div
-        ref={ref}
-        aria-label={label}
-        className={cn("w-fit", className)}
-        role="group"
-        {...props}
-      >
-        <Popover open={open} onOpenChange={setOpenState}>
-          <PopoverTrigger asChild>
-            {/* The map's own control, surface and states and all: nothing
+      <TooltipProvider>
+        <div
+          ref={ref}
+          aria-label={label}
+          className={cn("w-fit", className)}
+          role="group"
+          {...props}
+        >
+          <Popover open={open} onOpenChange={setOpenState}>
+            <Tooltip
+              open={canExpand && !open && hintOpen}
+              onOpenChange={setHintOpen}
+            >
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  {/* The map's own control, surface and states and all: nothing
                 here restyles it, so the tile follows the shared map-control
                 surface wherever it goes. `relative` only places the dot.
                 Named by the level it shows, as iOS's is: the group says what
                 the control is, the tile which level is on. It marks no
                 result count — it is the level already in view. */}
-            <MapControlButton
-              ref={tileRef}
-              className="relative"
-              icon={
-                <>
-                  <span className="text-sm font-semibold leading-5">
-                    {selectedOption?.shortLabel ?? selectedFloor}
-                  </span>
-                  {tileIsUserLevel ? <UserLevelDot /> : null}
-                </>
-              }
-              label={
-                tileIsUserLevel ? `${tileLabel}, ${userFloorLabel}` : tileLabel
-              }
-            />
-          </PopoverTrigger>
-          <PopoverContent
-            align="end"
-            alignOffset={-COLUMN_INSET}
-            aria-label={label}
-            className="kozmos-floor-selector-list"
-            side="top"
-            sideOffset={-(tileSize.height + COLUMN_INSET)}
-            onCloseAutoFocus={(event) => {
-              // Back to the tile after a choice, Escape, or a tap on the map
-              // that took focus nowhere. Not after a tap that put it on
-              // another control: the search field a visitor tapped is where
-              // they are typing next, and taking focus back would close their
-              // keyboard. Radix itself returns it only when nothing was
-              // pressed outside.
-              event.preventDefault();
-              const active = tileRef.current?.ownerDocument.activeElement;
-              if (!active || active === active.ownerDocument.body) {
-                tileRef.current?.focus();
-              }
-            }}
-            onOpenAutoFocus={(event) => {
-              // The current level, where a visitor who opened the column to
-              // look around already is, rather than the top floor.
-              const current = currentRef.current;
-              if (current && !current.disabled) {
+                  <MapControlButton
+                    ref={tileRef}
+                    disabled={!options.length}
+                    className="relative"
+                    icon={
+                      <>
+                        <span className="kozmos-reset kozmos-floor-selector-mark">
+                          <span className="kozmos-reset kozmos-floor-selector-direction">
+                            {above && (
+                              <ChevronUp
+                                aria-hidden="true"
+                                data-floor-direction="up"
+                              />
+                            )}
+                          </span>
+                          <span className="kozmos-reset kozmos-floor-selector-short-label">
+                            {selectedOption?.shortLabel ?? selectedFloor}
+                          </span>
+                          <span className="kozmos-reset kozmos-floor-selector-direction">
+                            {below && (
+                              <ChevronDown
+                                aria-hidden="true"
+                                data-floor-direction="down"
+                              />
+                            )}
+                          </span>
+                        </span>
+                        {tileIsUserLevel ? <UserLevelDot /> : null}
+                      </>
+                    }
+                    label={
+                      tileIsUserLevel
+                        ? `${tileLabel}, ${userFloorLabel}`
+                        : tileLabel
+                    }
+                  />
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent side={tooltipSide}>{tileLabel}</TooltipContent>
+            </Tooltip>
+            <PopoverContent
+              collisionBoundary={popupRegion?.boundary ?? undefined}
+              // Same-side panels can put the usable map region beside the
+              // trigger. Do not tether the column back over that panel.
+              sticky={popupRegion ? "always" : "partial"}
+              collisionPadding={0}
+              updatePositionStrategy="always"
+              ref={setContent}
+              data-scrollable={scrollable ? "true" : undefined}
+              align="end"
+              alignOffset={-COLUMN_INSET}
+              aria-label={label}
+              className="kozmos-floor-selector-list"
+              side="top"
+              sideOffset={-(tileSize.height + COLUMN_INSET)}
+              onCloseAutoFocus={(event) => {
+                // Back to the tile after a choice, Escape, or a tap on the map
+                // that took focus nowhere. Not after a tap that put it on
+                // another control: the search field a visitor tapped is where
+                // they are typing next, and taking focus back would close their
+                // keyboard. Radix itself returns it only when nothing was
+                // pressed outside.
                 event.preventDefault();
-                current.focus();
-              }
-            }}
-          >
-            {options.map((floor) => {
-              const isCurrent = floor.id === selectedFloor;
-              const isUserLevel =
-                userFloor !== undefined && floor.id === userFloor;
-              const count = markedResultCount(floor);
-              return (
-                <Button
-                  key={floor.id}
-                  ref={isCurrent ? currentRef : undefined}
-                  aria-label={spokenLabel(
-                    floor,
-                    resultCountLabel,
-                    isUserLevel ? userFloorLabel : undefined,
-                  )}
-                  aria-pressed={isCurrent}
-                  // The board's states: the current level outlined in the
-                  // theme's primary; on hover a light primary outline, and
-                  // pressed a full one; a closed level on the muted surface.
-                  className={cn(
-                    "relative border border-transparent p-0 text-sm font-semibold text-foreground hover:bg-transparent active:border-primary active:text-primary disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
-                    isCurrent
-                      ? "border-primary text-primary"
-                      : "hover:border-primary/40 hover:text-primary",
-                  )}
-                  disabled={floor.disabled}
-                  onClick={() => {
-                    onChoose(floor.id);
-                    setOpen(false);
-                  }}
-                  size="icon"
-                  style={{ height: tileSize.height, minWidth: tileSize.width }}
-                  type="button"
-                  variant="ghost"
-                >
-                  {floor.shortLabel}
-                  {isUserLevel ? <UserLevelDot /> : null}
-                  {count !== undefined ? (
-                    <ResultMarker corner="bottom" count={count} />
-                  ) : null}
-                </Button>
-              );
-            })}
-          </PopoverContent>
-        </Popover>
-      </div>
+                const active = tileRef.current?.ownerDocument.activeElement;
+                if (!active || active === active.ownerDocument.body) {
+                  if (canExpand) tileRef.current?.focus();
+                  else popupRegion?.focusFallback();
+                }
+              }}
+              onOpenAutoFocus={(event) => {
+                // The current level, where a visitor who opened the column to
+                // look around already is, rather than the top floor.
+                const current = currentRef.current;
+                if (current && !current.disabled) {
+                  event.preventDefault();
+                  current.focus({ preventScroll: true });
+                }
+              }}
+            >
+              {options.map((floor) => {
+                const isCurrent = floor.id === selectedFloor;
+                const isUserLevel =
+                  userFloor !== undefined && floor.id === userFloor;
+                const count = markedResultCount(floor);
+                return (
+                  <Tooltip key={floor.id}>
+                    <TooltipTrigger asChild disabled={floor.disabled}>
+                      <Button
+                        ref={isCurrent ? currentRef : undefined}
+                        aria-label={spokenLabel(
+                          floor,
+                          resultCountLabel,
+                          isUserLevel ? userFloorLabel : undefined,
+                        )}
+                        aria-pressed={isCurrent}
+                        // The board's states: the current level outlined in the
+                        // theme's primary; on hover a light primary outline, and
+                        // pressed a full one; a closed level on the muted surface.
+                        className={cn(
+                          "relative border border-transparent p-0 text-sm font-semibold text-foreground hover:bg-transparent active:border-primary active:text-primary disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+                          isCurrent
+                            ? "border-primary text-primary"
+                            : "hover:border-primary/40 hover:text-primary",
+                        )}
+                        disabled={floor.disabled}
+                        onClick={() => {
+                          onChoose(floor.id);
+                          setOpen(false);
+                        }}
+                        size="icon"
+                        style={{
+                          height: tileSize.height,
+                          flexShrink: 0,
+                          minWidth: tileSize.width,
+                        }}
+                        type="button"
+                        variant="ghost"
+                      >
+                        {floor.shortLabel}
+                        {isUserLevel ? <UserLevelDot /> : null}
+                        {count !== undefined ? (
+                          <ResultMarker corner="bottom" count={count} />
+                        ) : null}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side={tooltipSide}
+                      onEscapeKeyDown={() => setOpen(false)}
+                    >
+                      {floor.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </PopoverContent>
+          </Popover>
+        </div>
+      </TooltipProvider>
     );
   },
 );
@@ -370,6 +486,7 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
       label = "Floor selector",
       previousFloorLabel = "Floor up",
       nextFloorLabel = "Floor down",
+      showResultCounts = false,
       resultCountLabel = (count) =>
         count === 1 ? "1 result" : `${count} results`,
       userFloor,
@@ -386,7 +503,12 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
       onFloorSelect(floor);
     };
 
-    const options = floors.map(normalizeFloor);
+    // Derive display data without mutating the host's search results. Both
+    // the visual marker and spoken label read the same opt-in presentation.
+    const options = floors.map((floor) => {
+      const option = normalizeFloor(floor);
+      return showResultCounts ? option : { ...option, resultCount: undefined };
+    });
     const selectedIndex = options.findIndex(
       (floor) => floor.id === selectedFloor,
     );
@@ -440,10 +562,10 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
           >
             {selectedOption?.shortLabel ?? selectedFloor}
           </span>
-          <span className="flex border-l border-border/70">
+          <span className="flex border-s border-border/70">
             <IconButton
               aria-label={previousFloorLabel}
-              className="h-11 w-11 rounded-none border-r border-border/70 bg-transparent p-0 shadow-none"
+              className="h-11 w-11 rounded-none border-e border-border/70 bg-transparent p-0 shadow-none"
               disabled={!previousOption}
               onClick={() =>
                 previousOption && handleFloorSelect(previousOption.id)

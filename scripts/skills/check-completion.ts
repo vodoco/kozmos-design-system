@@ -30,6 +30,9 @@ const PRODUCT_SDK_COMPONENT_NAMES = new Set([
   "CategoryTile",
   "DirectionStep",
   "FloorSelector",
+  "LanguageSwitcher",
+  "MapAttribution",
+  "MapInfoPanel",
   "LocationPin",
   "MapControlsGroup",
   "MapControlButton",
@@ -431,6 +434,8 @@ function generateMarkdown(statuses: ComponentStatus[]): string {
     ".\n\n";
 
   md += "## Scope Of This Report\n\n";
+  md +=
+    "LanguageSwitcher is intentionally web-only: iOS and Android use device/app language without a dedicated button. Its absent native implementations are a product policy, not a parity backlog. See `docs/sdk-module-primitives.md`.\n\n";
   md +=
     "A checkmark confirms repository structure only: the expected implementation, story, test, export, or Code Connect mapping file was found. It does not grade the depth or correctness of that file.\n\n";
   md +=

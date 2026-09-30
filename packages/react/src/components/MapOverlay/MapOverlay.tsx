@@ -3,11 +3,16 @@ import type { MapCollisionInsets } from "@kozmos-ds/product-contracts";
 import { cn } from "../../utils";
 
 export interface MapOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Use start/end corners to mirror with interface direction; left/right stay physical. */
   position?:
     | "top-left"
     | "top-right"
     | "bottom-left"
     | "bottom-right"
+    | "top-start"
+    | "top-end"
+    | "bottom-start"
+    | "bottom-end"
     | "top-center"
     | "bottom-center";
   width?: "auto" | "sm" | "md" | "lg" | "full";
@@ -25,6 +30,10 @@ const positionClasses: Record<
     "bottom-[var(--map-overlay-bottom)] left-[var(--map-overlay-left)]",
   "bottom-right":
     "bottom-[var(--map-overlay-bottom)] right-[var(--map-overlay-right)]",
+  "top-start": "kozmos-map-overlay-start top-[var(--map-overlay-top)]",
+  "top-end": "kozmos-map-overlay-end top-[var(--map-overlay-top)]",
+  "bottom-start": "kozmos-map-overlay-start bottom-[var(--map-overlay-bottom)]",
+  "bottom-end": "kozmos-map-overlay-end bottom-[var(--map-overlay-bottom)]",
   "top-center": "left-1/2 top-[var(--map-overlay-top)] -translate-x-1/2",
   "bottom-center":
     "bottom-[var(--map-overlay-bottom)] left-1/2 -translate-x-1/2",

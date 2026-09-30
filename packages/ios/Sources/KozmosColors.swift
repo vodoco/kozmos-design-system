@@ -1655,6 +1655,32 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var semanticsMapAttributionText: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#464A53") : UIColor(hex: "#464A53")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#464A53") : NSColor(hex: "#464A53")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var semanticsMapAttributionHalo: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFFFF") : UIColor(hex: "#FFFFFF")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFFFF") : NSColor(hex: "#FFFFFF")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
     public static var semanticsSurface0: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in

@@ -8,6 +8,43 @@ import SwiftUI
 /// canonical floor IDs double as the visible labels. These cover the
 /// presentation-based API and the stepper's handling of closed levels.
 final class KozmosFloorSelectorTests: XCTestCase {
+    func testPopupMovesBesideSameSidePanelInsteadOfRefusingToOpen() throws {
+        let bounds = CGRect(x: 100, y: 100, width: 400, height: 400)
+        for (x, rtl) in [(CGFloat(700), false), (CGFloat(20), true)] {
+            let anchor = CGRect(x: x, y: 440, width: 48, height: 48)
+            let popup = try XCTUnwrap(kozmosFloorPopupFrame(
+                anchor: anchor, bounds: bounds, desiredHeight: 900, inset: 4, rtl: rtl, allowHorizontalShift: true
+            ))
+            XCTAssertTrue(bounds.contains(popup))
+            XCTAssertEqual(popup.width, 56)
+            XCTAssertGreaterThan(popup.height, 48)
+        }
+        XCTAssertNil(kozmosFloorPopupFrame(
+            anchor: CGRect(x: 700, y: 550, width: 48, height: 48),
+            bounds: bounds, desiredHeight: 900, inset: 4, rtl: false, allowHorizontalShift: true
+        ), "A vertically excluded control must still stay unavailable")
+    }
+
+    func testCollapsedAvailabilityTracksTopMiddleBottomAndUnknownFloors() {
+        let floors = ["2", "1", "G"]
+        for (selected, up, down) in [("2", false, true), ("1", true, true), ("G", true, false), ("missing", false, false)] {
+            let view = KozmosFloorSelector(floors: floors, selectedFloor: .constant(selected), variant: .collapsible)
+            XCTAssertEqual(view.availableAbove, up)
+            XCTAssertEqual(view.availableBelow, down)
+        }
+        let single = KozmosFloorSelector(floors: ["G"], selectedFloor: .constant("G"), variant: .collapsible)
+        XCTAssertFalse(single.availableAbove)
+        XCTAssertFalse(single.availableBelow)
+    }
+
+    func testCollapsedAvailabilityDoesNotPromiseDisabledFloors() {
+        let view = KozmosFloorSelector(floors: [
+            KozmosFloorPresentation(id: "1", label: "First floor", shortLabel: "1F", disabled: true),
+            KozmosFloorPresentation(id: "G", label: "Ground floor", shortLabel: "GF")
+        ], selectedFloor: .constant("G"), variant: .collapsible)
+        XCTAssertFalse(view.availableAbove)
+        XCTAssertFalse(view.availableBelow)
+    }
     private let levels = [
         KozmosFloorPresentation(id: "level-3", label: "Level 3", shortLabel: "L3"),
         KozmosFloorPresentation(id: "level-2", label: "Level 2", shortLabel: "L2", disabled: true),
@@ -40,9 +77,29 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertEqual(view.selectedIndex, 3)
     }
 
-    func testUnknownSelectionFallsBackToTheFirstFloor() {
-        let view = KozmosFloorSelector(floors: levels, selectedFloor: .constant("mezzanine"))
-        XCTAssertEqual(view.selectedIndex, 0)
+    func testUnknownSelectionIsNotSubstitutedWithTheFirstFloor() {
+        let view = KozmosFloorSelector(
+            floors: levels, selectedFloor: .constant("mezzanine"),
+            variant: .collapsible, userFloor: "level-3"
+        )
+        XCTAssertNil(view.selectedIndex)
+        XCTAssertEqual(view.tileLabel, "mezzanine")
+        XCTAssertFalse(view.tileShowsUserFloor)
+        XCTAssertNil(view.reachableIndex(step: -1))
+        XCTAssertNil(view.reachableIndex(step: 1))
+    }
+
+    func testRemovingTheSelectedFloorDisablesSteppingUntilTheHostSelectsAgain() {
+        let selected = "level-1"
+        let before = KozmosFloorSelector(floors: levels, selectedFloor: .constant(selected))
+        XCTAssertEqual(before.reachableIndex(step: 1), 3)
+        let after = KozmosFloorSelector(
+            floors: levels.filter { $0.id != selected }, selectedFloor: .constant(selected)
+        )
+        XCTAssertEqual(after.tileLabel, selected)
+        XCTAssertNil(after.reachableIndex(step: -1))
+        XCTAssertNil(after.reachableIndex(step: 1))
+        XCTAssertEqual(after.selectedFloor, selected)
     }
 
     /// Level 2 is closed, so stepping down from Level 3 lands on Level 1.
@@ -125,6 +182,14 @@ final class KozmosFloorSelectorTests: XCTestCase {
         KozmosFloorPresentation(id: "3", label: "Level 3", shortLabel: "3", resultCount: 0)
     ]
 
+    func testSuppliedResultCountsAreOffByDefault() {
+        for variant in KozmosFloorSelectorVariant.allCases {
+            let view = KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("1"), variant: variant)
+            XCTAssertNil(view.markedResultCount(resultLevels[1]), "\(variant)")
+            XCTAssertEqual(view.spokenLabel(resultLevels[1]), "Level 2", "\(variant)")
+        }
+    }
+
     /// The count joins the level's own label, in the product's words, on every
     /// layout that lists the levels. Zero is not "unknown", and neither is
     /// marked: a level with no results reads as itself.
@@ -133,7 +198,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
             let view = KozmosFloorSelector(
                 floors: resultLevels,
                 selectedFloor: .constant("1"),
-                variant: variant,
+                variant: variant, showResultCounts: true,
                 resultCountLabel: { "\($0) Ergebnisse" }
             )
             XCTAssertEqual(view.spokenLabel(resultLevels[1]), "Level 2, 3 Ergebnisse", "\(variant)")
@@ -148,7 +213,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// The stepper shows one level at a time, so a marker on the level already
     /// in view says nothing — and what is not drawn is not said.
     func testTheStepperMarksNoLevel() {
-        let view = KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .compactStepper)
+        let view = KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .compactStepper, showResultCounts: true)
         XCTAssertNil(view.markedResultCount(resultLevels[1]))
         XCTAssertEqual(view.spokenLabel(resultLevels[1]), "Level 2")
     }
@@ -156,7 +221,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// A product that passes no words hears English, singular for one.
     func testTheCountIsSaidInEnglishUntilTheProductSaysOtherwise() {
         let one = KozmosFloorPresentation(id: "4", label: "Level 4", shortLabel: "4", resultCount: 1)
-        let view = KozmosFloorSelector(floors: resultLevels + [one], selectedFloor: .constant("1"))
+        let view = KozmosFloorSelector(floors: resultLevels + [one], selectedFloor: .constant("1"), showResultCounts: true)
         XCTAssertEqual(view.spokenLabel(resultLevels[1]), "Level 2, 3 results")
         XCTAssertEqual(view.spokenLabel(one), "Level 4, 1 result")
     }
@@ -180,7 +245,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         direction: LayoutDirection = .leftToRight
     ) throws -> DrawnPixels {
         try DrawnPixels.draw(
-            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), variant: variant)
+            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), variant: variant, showResultCounts: true)
                 .environment(\.colorScheme, scheme)
                 .environment(\.layoutDirection, direction)
         )
@@ -231,7 +296,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         let plain = resultLevels.map { KozmosFloorPresentation(id: $0.id, label: $0.label, shortLabel: $0.shortLabel) }
         for variant in [KozmosFloorSelectorVariant.verticalList, .horizontalList] {
             let marked = try drawList(variant)
-            let unmarked = try DrawnPixels.draw(KozmosFloorSelector(floors: plain, selectedFloor: .constant("none"), variant: variant))
+            let unmarked = try DrawnPixels.draw(KozmosFloorSelector(floors: plain, selectedFloor: .constant("none"), variant: variant, showResultCounts: true))
             XCTAssertEqual(marked.size, unmarked.size, "\(variant)")
         }
     }
@@ -241,8 +306,8 @@ final class KozmosFloorSelectorTests: XCTestCase {
     @MainActor func testTheStepperDrawsNoMarker() throws {
         let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
         let plain = resultLevels.map { KozmosFloorPresentation(id: $0.id, label: $0.label, shortLabel: $0.shortLabel) }
-        let marked = try DrawnPixels.draw(KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .compactStepper))
-        let unmarked = try DrawnPixels.draw(KozmosFloorSelector(floors: plain, selectedFloor: .constant("2"), variant: .compactStepper))
+        let marked = try DrawnPixels.draw(KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .compactStepper, showResultCounts: true))
+        let unmarked = try DrawnPixels.draw(KozmosFloorSelector(floors: plain, selectedFloor: .constant("2"), variant: .compactStepper, showResultCounts: true))
         XCTAssertNil(marked.boundingBox(where: DrawnPixels.matches(primary)), "the stepper drew a marker")
         let difference = try XCTUnwrap(marked.largestDifference(from: unmarked), "the stepper changed size")
         XCTAssertLessThanOrEqual(difference, 2, "the stepper draws something new")
@@ -258,7 +323,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         // No level is current, so the only primary drawn is the marker's; the
         // level with three results is the column's middle one.
         let drawn = try await drawSwitcher(
-            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), variant: .collapsible, expanded: true)
+            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), variant: .collapsible, showResultCounts: true, expanded: true)
         )
         let marker = try XCTUnwrap(drawn.boundingBox(whole, primary), "the open column marks no level")
         XCTAssertEqual(marker.height, 16, accuracy: 1)
@@ -268,7 +333,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertEqual(marker.maxY, level2.maxY, accuracy: 1, "the marker is not at the bottom")
 
         let closed = try await drawSwitcher(
-            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .collapsible)
+            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .collapsible, showResultCounts: true)
         )
         XCTAssertNil(closed.boundingBox(whole, primary), "the closed tile drew a marker")
     }
@@ -341,7 +406,17 @@ final class KozmosFloorSelectorTests: XCTestCase {
         .background(backdrop)
         .environment(\.layoutDirection, direction)
         #if os(iOS)
-        let pixels = try await RenderedPixels.render(content, size: corner)
+        // The popup is measured against its live window, so settle layout before
+        // reading pixels (an immediate detached snapshot has no window bounds).
+        let window = Window(frame: CGRect(origin: .zero, size: corner))
+        let controller = UIHostingController(rootView: content)
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        controller.view.frame = window.bounds
+        await settle()
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { window.layer.render(in: $0.cgContext) }
+        let pixels = try RenderedPixels(image, pointWidth: corner.width)
+        window.isHidden = true
         return SwitcherDrawing(
             color: { pixels.color(at: $0) },
             boundingBox: { pixels.boundingBox(in: $0, where: $1) },
@@ -376,9 +451,10 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// point of it and of its shadow is the map control's but its mark, on
     /// white, where the shadow shows, and on black, where the surface does.
     @MainActor func testTheClosedSwitcherIsOneMapControlTile() async throws {
-        // The 24 square the mark sits in, where the level's label and the
-        // control's symbol differ; everything else, 40 round, is compared.
-        let mark = CGRect(x: tileRect.midX - 12, y: tileRect.midY - 12, width: 24, height: 24)
+        // The level and its new availability cues occupy a 24 by 32 mark.
+        // Everything outside that mark, including the entire surface edge
+        // and shadow, must still match the shared map control exactly.
+        let mark = CGRect(x: tileRect.midX - 12, y: tileRect.midY - 16, width: 24, height: 32)
         let around = tileRect.insetBy(dx: -40, dy: -40).intersection(whole)
         for backdrop in [Color.white, Color.black] {
             let tile = try await drawSwitcher(
@@ -400,6 +476,19 @@ final class KozmosFloorSelectorTests: XCTestCase {
             XCTAssertLessThanOrEqual(largest, 2, "on \(backdrop) the switcher is not drawn as a map control is: \(largest) at \(at)")
             XCTAssertNil(tile.boundingBox(whole, try near(KozmosColors.primitivesColorsTheme500)),
                          "the closed switcher is filled with the theme")
+        }
+    }
+
+    @MainActor func testAvailabilityCuesAreDrawnWithoutGrowingTheTile() async throws {
+        let upper = CGRect(x: tileRect.midX - 9, y: tileRect.midY - 16, width: 18, height: 7)
+        let lower = CGRect(x: tileRect.midX - 9, y: tileRect.midY + 9, width: 18, height: 7)
+        let ink: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in max(r, g, b) < 140 }
+        for (selected, up, down) in [("2", false, true), ("1", true, true), ("g", true, false)] {
+            let drawn = try await drawSwitcher(
+                KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant(selected), variant: .collapsible)
+            )
+            XCTAssertEqual(drawn.count(upper, ink) > 0, up, "up cue for \(selected)")
+            XCTAssertEqual(drawn.count(lower, ink) > 0, down, "down cue for \(selected)")
         }
     }
 
@@ -547,7 +636,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         let levels = [KozmosFloorPresentation(id: "2", label: "Second floor", shortLabel: "2F", resultCount: 3)]
             + switcherLevels.dropFirst()
         let drawn = try await drawSwitcher(
-            KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible,
+            KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible, showResultCounts: true,
                                 userFloor: "2", expanded: true)
         )
         let level = slot(0, of: 3)
@@ -566,13 +655,13 @@ final class KozmosFloorSelectorTests: XCTestCase {
     func testTheVisitorsLevelIsSaidWithItsName() {
         let levels = [KozmosFloorPresentation(id: "2", label: "Second floor", shortLabel: "2F", resultCount: 3)]
             + switcherLevels.dropFirst()
-        let switcher = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible, userFloor: "2")
+        let switcher = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible, showResultCounts: true, userFloor: "2")
         XCTAssertEqual(switcher.spokenLabel(levels[0]), "Second floor, your level, 3 results")
         XCTAssertEqual(switcher.spokenLabel(levels[1]), "First floor")
-        let german = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible,
+        let german = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .collapsible, showResultCounts: true,
                                          userFloor: "g", userFloorLabel: "Ihre Ebene")
         XCTAssertEqual(german.spokenLabel(levels[2]), "Ground floor, Ihre Ebene")
-        let list = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .verticalList, userFloor: "2")
+        let list = KozmosFloorSelector(floors: levels, selectedFloor: .constant("1"), variant: .verticalList, showResultCounts: true, userFloor: "2")
         XCTAssertEqual(list.spokenLabel(levels[0]), "Second floor, 3 results", "a list says a dot it does not draw")
     }
 
@@ -599,7 +688,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
                     KozmosFloorPresentation(id: "G", label: "Ground", shortLabel: "G")
                 ],
                 selectedFloor: .constant("L1"),
-                variant: .collapsible,
+                variant: .collapsible, showResultCounts: true,
                 userFloor: "G",
                 userFloorLabel: String(localized: "your level"),
                 expandHint: String(localized: "Shows every level")
@@ -638,6 +727,37 @@ final class KozmosFloorSelectorTests: XCTestCase {
         window.makeKeyAndVisible()
         await settle()
         return window
+    }
+
+    @MainActor private final class PopupRegionModel: ObservableObject {
+        @Published var available = true
+    }
+
+    private struct RegionSwitcher: View {
+        @ObservedObject var model: PopupRegionModel
+        var body: some View {
+            KozmosFloorSelector(floors: ["2", "1", "G"], selectedFloor: .constant("1"), variant: .collapsible)
+                .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
+                    bounds: CGRect(x: 0, y: 0, width: 320, height: 300), available: model.available
+                ))
+        }
+    }
+
+    @MainActor func testPopupDismissesWhenItsShellRegionDisappearsAndDoesNotReopen() async throws {
+        let model = PopupRegionModel()
+        let window = await host(RegionSwitcher(model: model))
+        defer { window.isHidden = true }
+        let tile = try XCTUnwrap(accessibleView(named: "1", in: window) as? KozmosFloorSwitcherElement.ElementView)
+        XCTAssertTrue(tile.accessibilityActivate())
+        await settle()
+        XCTAssertTrue(tile.isExpanded)
+        model.available = false
+        await settle()
+        XCTAssertFalse(tile.isExpanded)
+        XCTAssertEqual(tile.columnFrame, .zero)
+        model.available = true
+        await settle()
+        XCTAssertFalse(tile.isExpanded)
     }
 
     @MainActor private func settle() async {
@@ -682,6 +802,19 @@ final class KozmosFloorSelectorTests: XCTestCase {
         if #available(iOS 18.0, *) {
             XCTAssertEqual(tile.accessibilityExpandedStatus, .collapsed, "the column did not close")
         }
+    }
+
+    @MainActor func testManyFloorsStayInsideTheHostWindow() async throws {
+        let floors = (0..<40).map { KozmosFloorPresentation(id: String($0), label: "Level \($0)", shortLabel: String($0)) }
+        let window = await host(KozmosFloorSelector(floors: floors, selectedFloor: .constant("20"), variant: .collapsible))
+        defer { window.isHidden = true }
+        let tile = try XCTUnwrap(accessibleView(named: "Level 20", in: window) as? KozmosFloorSwitcherElement.ElementView)
+        XCTAssertTrue(tile.accessibilityActivate())
+        await settle()
+        let frame = tile.convert(tile.columnFrame, to: window)
+        XCTAssertGreaterThanOrEqual(frame.minY, 0)
+        XCTAssertLessThanOrEqual(frame.maxY, corner.height)
+        XCTAssertGreaterThan(frame.height, tile.bounds.height)
     }
 
     /// The hint VoiceOver hears on the closed tile — what activating it does —
@@ -850,7 +983,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
     @MainActor func testTheMarkerGrowsWithTheText() throws {
         let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
         let drawn = try DrawnPixels.draw(
-            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"))
+            KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), showResultCounts: true)
                 .environment(\.dynamicTypeSize, .accessibility3)
         )
         let marker = try XCTUnwrap(drawn.boundingBox(where: DrawnPixels.matches(primary)), "no marker drawn")
@@ -860,4 +993,3 @@ final class KozmosFloorSelectorTests: XCTestCase {
     }
     #endif
 }
-

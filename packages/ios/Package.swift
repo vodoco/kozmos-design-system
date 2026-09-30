@@ -19,7 +19,8 @@ let package = Package(
             dependencies: [
                 .product(name: "Figma", package: "code-connect")
             ],
-            path: "Sources"
+            path: "Sources",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "KozmosTests",

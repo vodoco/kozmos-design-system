@@ -1,6 +1,71 @@
 /* Build-time component CSS. Tailwind expands @apply; consumers need neither
    Tailwind nor native @scope. Every target is explicitly component-owned. */
 @kozmos-owned {
+  .kozmos-map-attribution {
+    font-size: calc(var(--primitives-typography-font-size-50) * 1rem / 16);
+    line-height: 1.2;
+  }
+  .kozmos-map-attribution-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 2px;
+    scrollbar-width: thin;
+  }
+  .kozmos-map-attribution-scroll:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+  }
+  /* The map shell owns the edge inset. Align the credit line itself with
+     corner frames, not a padded attribution box. Scrolling stays available
+     by touch, trackpad and keyboard without a scrollbar below the line. */
+  .kozmos-map-attribution[data-appearance="map"]
+    .kozmos-map-attribution-scroll {
+    padding-bottom: 0;
+    scrollbar-width: none;
+  }
+  .kozmos-map-attribution[data-appearance="map"]
+    .kozmos-map-attribution-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  /* Halo affects credits only, never replacement branding. Offset shadows sit
+     outside the glyphs, preserving the fill, underline and one semantic label. */
+  .kozmos-map-attribution[data-appearance="map"] li {
+    color: var(--semantics-map-attribution-text);
+    --kozmos-attribution-halo: var(--semantics-map-attribution-halo);
+    --kozmos-attribution-outline: var(--semantics-map-attribution-halo-width);
+    text-shadow:
+      var(--kozmos-attribution-outline) 0 var(--kozmos-attribution-halo),
+      calc(-1 * var(--kozmos-attribution-outline)) 0
+        var(--kozmos-attribution-halo),
+      0 var(--kozmos-attribution-outline) var(--kozmos-attribution-halo),
+      0 calc(-1 * var(--kozmos-attribution-outline))
+        var(--kozmos-attribution-halo),
+      var(--kozmos-attribution-outline) var(--kozmos-attribution-outline)
+        var(--kozmos-attribution-halo),
+      var(--kozmos-attribution-outline)
+        calc(-1 * var(--kozmos-attribution-outline))
+        var(--kozmos-attribution-halo),
+      calc(-1 * var(--kozmos-attribution-outline))
+        var(--kozmos-attribution-outline) var(--kozmos-attribution-halo),
+      calc(-1 * var(--kozmos-attribution-outline))
+        calc(-1 * var(--kozmos-attribution-outline))
+        var(--kozmos-attribution-halo);
+  }
+  .kozmos-map-attribution[data-appearance="map"] li a {
+    color: inherit;
+  }
+  @media (forced-colors: active) {
+    .kozmos-map-attribution[data-appearance="map"] {
+      background: Canvas;
+    }
+    .kozmos-map-attribution[data-appearance="map"] li {
+      color: CanvasText;
+      text-shadow: none;
+    }
+    .kozmos-map-attribution[data-appearance="map"] li a {
+      color: LinkText;
+    }
+  }
   .kozmos-reset,
   .kozmos-reset::before,
   .kozmos-reset::after {
@@ -162,6 +227,11 @@
     touch-action: none;
   }
   @media (prefers-reduced-motion: no-preference) {
+    /* Keep footer credits and corner controls on the sheet's moving edge. */
+    .kozmos-map-footer[data-settling] {
+      transition: bottom var(--semantics-motion-duration-standard)
+        var(--semantics-motion-easing-standard);
+    }
     .kozmos-map-sheet[data-settling]:not([data-dragging]) {
       transition:
         top var(--semantics-motion-duration-standard)
@@ -778,6 +848,44 @@
     @apply fill-popover;
     display: block;
   }
+  /* Logical map corners follow the owning interface direction. Insets remain
+     physical renderer clearances: RTL start uses the right-hand clearance. */
+  .kozmos-map-overlay-start {
+    inset-inline-start: var(--map-overlay-left);
+  }
+  .kozmos-map-overlay-end {
+    inset-inline-end: var(--map-overlay-right);
+  }
+  .kozmos-map-overlay-start:where(:dir(rtl)) {
+    inset-inline-start: var(--map-overlay-right);
+  }
+  .kozmos-map-overlay-end:where(:dir(rtl)) {
+    inset-inline-end: var(--map-overlay-left);
+  }
+  /* Availability cues occupy equal space even at the ends, keeping the level
+     label centered. Decorative: the tile remains one disclosure target. */
+  .kozmos-floor-selector-mark {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .kozmos-floor-selector-short-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1rem;
+  }
+  .kozmos-floor-selector-direction {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(var(--primitives-layout-spacing-75) * 1px);
+    width: calc(var(--primitives-layout-sizing-200) * 1px);
+  }
+  .kozmos-floor-selector-direction > svg {
+    flex-shrink: 0;
+    width: calc(var(--primitives-layout-sizing-200) * 1px);
+    height: calc(var(--primitives-layout-sizing-200) * 1px);
+  }
   /* The floor switcher's open column (row 79) wears the map-control surface
      its tile does (decision 40): the page's own surface, opaque; no edge; the
      map controls' elevation; and the SDK's 32px blur of the map behind it.
@@ -788,6 +896,8 @@
      owned, so the column holds in a host without @scope. */
   .kozmos-popover.kozmos-floor-selector-list {
     @apply shadow-map-control;
+    max-height: var(--radix-popover-content-available-height);
+    max-width: var(--radix-popover-content-available-width);
     display: flex;
     flex-direction: column;
     gap: calc(var(--primitives-layout-spacing-50) * 1px);
@@ -802,10 +912,14 @@
     -webkit-backdrop-filter: blur(32px);
     backdrop-filter: blur(32px);
   }
+  /* Do not clip a short list's focus outline. Only a genuinely overflowing
+     list needs a scroll viewport. */
+  .kozmos-popover.kozmos-floor-selector-list[data-scrollable="true"] {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
   /* It arrives without the popover's zoom and slide when the system asks for
-     reduced motion: the popover reads only the design config's duration
-     scale, which the portal carries, and not the media query. Two classes,
-     so it outweighs the popover's own `[data-state]` rule. */
+     reduced motion. Two classes outweigh the popover's own data-state rule. */
   @media (prefers-reduced-motion: reduce) {
     .kozmos-popover.kozmos-floor-selector-list {
       animation: none;
@@ -877,5 +991,111 @@
   .kozmos-notice-more::after,
   .kozmos-ai-companion-close::after {
     width: max(100%, 44px);
+  }
+}
+/* Information is a separate task, not a detent of the browse/POI sheet. */
+@kozmos-owned {
+  .kozmos-map-info-host {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+  .kozmos-map-info-map {
+    height: 100%;
+    min-width: 0;
+  }
+  .kozmos-map-info-host[data-info-open="true"][data-info-presentation="side"]
+    .kozmos-map-info-map {
+    margin-inline-end: 24rem;
+  }
+  .kozmos-map-info-trigger {
+    position: absolute;
+    inset-block-start: calc(env(safe-area-inset-top, 0px) + 1rem);
+    inset-inline-end: calc(env(safe-area-inset-right, 0px) + 1rem);
+    z-index: 45;
+  }
+  .kozmos-map-info-trigger:dir(rtl) {
+    inset-inline-end: calc(env(safe-area-inset-left, 0px) + 1rem);
+  }
+  .kozmos-map-info-dialog {
+    @apply bg-background text-foreground;
+    z-index: 60;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .kozmos-map-info-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+  }
+  .kozmos-map-info-dialog[data-presentation="side"] {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: 24rem;
+    border-inline-start: 1px solid var(--semantics-border-subtle);
+    padding-block: env(safe-area-inset-top, 0px)
+      env(safe-area-inset-bottom, 0px);
+    padding-inline-end: env(safe-area-inset-right, 0px);
+  }
+  .kozmos-map-info-dialog[data-presentation="side"]:dir(rtl) {
+    padding-inline-end: env(safe-area-inset-left, 0px);
+  }
+  .kozmos-map-info-dialog[data-presentation="full-screen"] {
+    position: fixed;
+    inset: 0;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+  .kozmos-map-info-panel {
+    @apply bg-background text-foreground;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 100%;
+    box-sizing: border-box;
+    padding: 1.5rem;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-map-info-heading {
+    padding-inline-end: 2.5rem;
+  }
+  .kozmos-map-info-close {
+    position: absolute;
+    inset-block-start: 1rem;
+    inset-inline-end: 1rem;
+  }
+  .kozmos-map-info-brand {
+    max-width: 10rem;
+    margin-block-end: 1rem;
+  }
+  .kozmos-map-info-brand img,
+  .kozmos-map-info-brand svg {
+    max-width: 100%;
+    max-height: 3rem;
+  }
+  .kozmos-map-info-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-block-start: auto;
+    padding-block-start: 2rem;
+  }
+  /* Accordion utilities use transition-all. Do not animate text resizing or
+     wrapping inside this scrollable panel: it can move keyboard focus away. */
+  .kozmos-map-info-panel .kozmos-map-info-faq [data-state] {
+    transition-property: color, background-color, border-color, box-shadow;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-map-info-panel .kozmos-map-info-faq [data-state][id],
+    .kozmos-map-info-panel .kozmos-map-info-faq [data-state] svg {
+      animation: none;
+      transition: none;
+    }
   }
 }

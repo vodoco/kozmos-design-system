@@ -253,6 +253,12 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:adaptive
           ADAPTIVE_BROWSER=firefox pnpm test:adaptive
 
+      - name: Verify Map Control Placement and Floor Affordances
+        run: |
+          pnpm test:map-controls
+          ADAPTIVE_BROWSER=webkit pnpm test:map-controls
+          ADAPTIVE_BROWSER=firefox pnpm test:map-controls
+
       - name: Verify Built Overlay Ownership
         run: |
           pnpm test:overlays

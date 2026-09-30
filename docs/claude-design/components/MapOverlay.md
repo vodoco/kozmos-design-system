@@ -40,7 +40,10 @@ export function MapOverlayExample() {
 
 It forwards its ref to `HTMLDivElement`. Its props are `MapOverlayProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
-- `position`: `"top-left" | "top-right" | "bottom-left" | "bottom-right" | "top-center" | "bottom-center"`, optional, default `"top-left"`.
+- `position`: `"top-left" | "top-right" | "bottom-left" | "bottom-right" | "top-start" | "top-end" | "bottom-start" | "bottom-end" | "top-center" | "bottom-center"`, optional, default `"top-left"`.
+
+  Use start/end corners to mirror with interface direction; left/right stay physical.
+
 - `width`: `"auto" | "sm" | "md" | "lg" | "full"`, optional, default `"auto"`.
 - `collisionInsets`: `Partial<MapCollisionInsets>`, optional.
 

@@ -29,6 +29,37 @@ moves the sheet, however far the content has scrolled; a sideways one stays with
 header, for a row of chips that scrolls. Under a grab handle it keeps its first control
 clear of the handle's target (WCAG 2.5.8). In a side panel it is the panel's first row.
 
+## Registered bottom corners
+
+Use `controlsBottomStart` for the logical start corner and `controlsBottomEnd` for
+the opposite corner. Place controls directly in these slots, not inside a second
+`MapOverlay`. The shell measures them together, clears its top bar, legacy controls
+and panel, and mirrors their placement in RTL. If the two corners cannot share a
+row, start stacks above end without shrinking their controls. Give slot content a
+width that can fit the host. The shell does not make oversized child content responsive.
+
+If the remaining height cannot fit the complete region, it stays mounted but is
+hidden and non-interactive until space returns. Empty space between the controls
+continues to accept map gestures. Expanded popup containment is a separate concern:
+these slots are not a replacement for a bounded popup implementation.
+In particular, a portaled popup has its own visibility and focus lifecycle; hiding
+its anchor region is not proof that the popup has closed. Host integration must
+coordinate that transition. Bounded floor-popup handling is the next implementation
+slice, before calling the complete map-controls composition release-ready.
+
+`bottomControlsPadCamera` defaults to `false`. Enable it to reserve a conservative
+bottom camera band. React always includes the visible region's bounding envelope in
+`onLayoutChange().occlusions`; that envelope includes the space between corners.
+Native implementations report edge insets, not React's full rectangle snapshot.
+Caller insets are inputs—do not feed the resolved callback back into those inputs.
+
+SwiftUI and Compose expose the same slot names and opt-in flag. Native shells also
+respect a host shorter than 448pt/dp; give them a bounded parent. Existing `controls`
+remains supported. Independent `MapOverlay` siblings do not gain collision avoidance
+automatically: register opposite corners with the shell.
+
+<Canvas of={Stories.RegisteredBottomCorners} />
+
 <Canvas of={Stories.SheetPanelHeader} />
 <Canvas of={Stories.SheetWithPlaceDetails} />
 <Canvas of={Stories.SheetWithBrowseCategories} />
@@ -104,40 +135,41 @@ import { AdaptiveMapShell, SearchBar } from "@kozmos-ds/react";
 
 // The search field stays under the sheet's grip while the results scroll.
 export function PlacesSheet({
-  map,
-  results,
+map,
+results,
 }: {
-  map: ReactNode;
-  results: ReactNode;
+map: ReactNode;
+results: ReactNode;
 }) {
-  const [query, setQuery] = useState("");
-  return (
-    <AdaptiveMapShell
-      map={map}
-      panelLabel="Places"
-      panelHeader={
-        <div style={{ padding: "0 16px 8px" }}>
-          <SearchBar
+const [query, setQuery] = useState("");
+return (
+
+<AdaptiveMapShell
+map={map}
+panelLabel="Places"
+panelHeader={
+<div style={{ padding: "0 16px 8px" }}>
+<SearchBar
             aria-label="Search places"
             placeholder="Search"
             value={query}
             onChange={setQuery}
             variant="inline"
           />
-        </div>
-      }
-      panel={results}
-    />
-  );
+</div>
 }
-  `}
+panel={results}
+/>
+);
+}
+`}
   swift={`
 import SwiftUI
 import Kozmos
 
 // The search field stays under the sheet's grip while the results scroll.
 struct PlacesSheet: View {
-    @State private var query = ""
+@State private var query = ""
 
     var body: some View {
         KozmosAdaptiveMapShell(panelLabel: String(localized: "Places")) {
@@ -149,8 +181,9 @@ struct PlacesSheet: View {
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
         }
     }
+
 }
-  `}
+`}
   kotlin={`
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -166,22 +199,22 @@ import com.kozmos.tokens.KozmosDimensions
 // The search field stays under the sheet's grip while the results scroll.
 @Composable
 fun PlacesSheet(map: @Composable () -> Unit, results: @Composable () -> Unit) {
-    var query by remember { mutableStateOf("") }
-    KozmosAdaptiveMapShell(
-        map = map,
-        panelLabel = "Places",
-        panelHeader = {
-            KozmosSearchBar(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = "Search",
-                modifier = Modifier.padding(horizontal = KozmosDimensions.primitivesLayoutSpacing200)
-            )
-        },
-        panel = results
-    )
+var query by remember { mutableStateOf("") }
+KozmosAdaptiveMapShell(
+map = map,
+panelLabel = "Places",
+panelHeader = {
+KozmosSearchBar(
+value = query,
+onValueChange = { query = it },
+placeholder = "Search",
+modifier = Modifier.padding(horizontal = KozmosDimensions.primitivesLayoutSpacing200)
+)
+},
+panel = results
+)
 }
-  `}
+`}
 />
 
 On iOS and Android the shell tells its panel's content how much space it already leaves
@@ -237,6 +270,57 @@ do not subtract a keyboard again if it already resized the host. See
 `docs/adaptive-map-layout.md` for the full coordinate and fallback contract.
 
 <Canvas of={Stories.PanelAtEnd} />
+## Registered attribution
+
+Pass MapAttribution through the optional attribution slot, not through the renderer's map
+slot. Registered corner controls keep equal 16-unit side/bottom insets, plus safe areas,
+or the same gap above a bottom sheet. Attribution stays centered across the full map,
+independent of a desktop search/POI panel. The larger measured corner is reserved equally
+on both sides so unequal controls cannot shift the credits. In RTL the logical corners
+mirror. If this centered slot has less than 128 units (room for the default brand), only attribution moves above the
+corners. Tall side panels leave a clear footer band instead of covering the credits.
+MapAttribution's transparent appearance aligns the credit text's bottom, rather than an
+internally padded frame, with the corner frames at this inset.
+
+The row contributes an attribution occlusion and bottom camera padding even when
+bottomControlsPadCamera is false. Omitting the slot restores the prior layout. Long credits
+stay on one horizontally scrollable line. Oversized custom branding is capped to at most
+half the usable chrome band; it does not displace the entire panel. Capped sheets allow
+content scrolling. Safe-area and host keyboard insets still apply.
+The SDK adapter applies reported camera padding and owns provider content and deduplication.
+Unregistered overlays and status messages still require host placement.
+
+Native equivalents use `attribution: AnyView(...)` in SwiftUI and `attribution = { ... }` in
+Compose. Native locale remains device/app-owned; there is no native language button.
+
+## Browse and details in one panel
+
+Wide side panels hug short content and scroll long content within their available
+height. They reserve the bottom control row plus one 16-unit gap. Registered
+bottom-start/end controls stay at the map's outer edges, not beside the panel;
+placement mirrors in RTL. A corner popup uses the space below a short panel,
+or the clear map beside a long panel when the lower band cannot hold a usable menu.
+Bottom-sheet detents and separated/hinge layouts keep their existing sizing policy.
+
+SwiftUI mirrors this through `KozmosPanelScrollView`, which fits its content when
+hosted in a side panel. Compose content must retain bounded scrolling (for example,
+a lazy list/grid) and must not force an infinite minimum height. Custom content
+that explicitly fills available height can still take the panel's height cap.
+Search headers should use the same 16-unit top and side padding on wide hosts;
+compact headers keep the existing grab-handle clearance.
+
+Use BrowseCategoriesPanel's search slot for SearchBar, not the shell's topBar. Dock the
+panel at start on desktop; the same content becomes a bottom sheet on compact hosts.
+Replace that panel content with POIDetailPanel when selecting a POI, keeping query and
+category state in the host so closing details restores them. The interactive
+Examples / Map browse flow stories demonstrate this composition, including focus transfer.
+Those examples use illustrative data, not a live SDK. Native hosts own the equivalent
+state transition using KozmosBrowseCategoriesPanel and KozmosPOIDetailPanel.
+
+<Canvas of={Stories.RegisteredAttribution} />
+<Canvas of={Stories.AttributionWithSheet} />
+<Canvas of={Stories.AttributionBesidePanel} />
+
 <Canvas of={Stories.NarrowHost} />
 <Canvas of={Stories.LandscapeHost} />
 <Canvas of={Stories.SeparatedRegions} />

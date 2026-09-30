@@ -58,6 +58,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `FloorSelectorProps`, whi
 
   The down chevron's name, "Floor down" unless the product passes its own.
 
+- `showResultCounts`: `boolean`, optional, default `false`.
+
+  Opt in to per-floor result badges and their accessible descriptions.
+  Defaults to false, even when floors carry resultCount. Only positive
+  counts appear in lists; the collapsed tile and stepper never show them.
+
 - `resultCountLabel`: `(count: number) => string`, optional, default `` (count) => count === 1 ? "1 result" : `${count} results` ``.
 
   How a level's result count is said, for a visitor who cannot see the

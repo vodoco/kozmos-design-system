@@ -61,6 +61,19 @@ It forwards its ref to `HTMLDivElement`. Its props are `AdaptiveMapShellProps`, 
 - `mapStatus`: `MapReadiness`, optional, default `"ready"`.
 - `mapStatusContent`: `React.ReactNode`, optional.
 - `controls`: `React.ReactNode`, optional.
+- `controlsBottomStart`: `React.ReactNode`, optional.
+
+  Logical bottom corners above the panel. Wide clusters wrap without overlapping.
+
+- `controlsBottomEnd`: `React.ReactNode`, optional.
+- `attribution`: `React.ReactNode`, optional.
+
+  Measured map credits above sheets, centered across the full map independently of side panels.
+
+- `bottomControlsPadCamera`: `boolean`, optional, default `false`.
+
+  Opt in to conservative bottom camera padding for the measured corner region.
+
 - `topBar`: `React.ReactNode`, optional.
 - `panel`: `React.ReactNode`, optional.
 - `panelHeader`: `React.ReactNode`, optional.
@@ -283,7 +296,7 @@ From `@kozmos-ds/product-contracts`.
 
 ```ts
 interface MapOcclusion {
-  kind: "panel" | "top-bar" | "controls";
+  kind: "panel" | "top-bar" | "controls" | "attribution";
   /** Shell-local bounds; intersect with mapBounds before sending to a renderer. */
   bounds: MapLayoutRect;
 }
