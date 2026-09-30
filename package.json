@@ -12,6 +12,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:map-controls": "node scripts/build-pointr-brand.mjs --check && node scripts/check-map-controls-parity.mjs && node scripts/check-shell-corners.mjs && node scripts/check-floor-popup.mjs && node scripts/check-language-switcher.mjs && node scripts/check-map-attribution.mjs && node scripts/check-shell-attribution.mjs && node scripts/check-map-browse-flow.mjs && node scripts/check-map-info.mjs",
     "test:adaptive": "node scripts/check-adaptive-layout.mjs && node scripts/check-adaptive-edge-cases.mjs",
     "test:overlays": "node scripts/check-overlay-ownership.mjs",
     "test:select-accessibility": "node scripts/check-select-accessibility.mjs",

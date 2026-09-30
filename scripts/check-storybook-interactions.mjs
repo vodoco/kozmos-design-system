@@ -853,12 +853,60 @@ try {
           "0px",
           "the floor column draws an edge",
         );
-        assert.equal(
-          parseFloat(columnSurface.borderTopLeftRadius),
-          parseFloat(tileSurface.rest.borderTopLeftRadius) +
-            parseFloat(columnSurface.paddingTop),
-          "the floor column's corner is not the map control's grown by its inset",
-        );
+        const checkColumnGeometry = async () => {
+          // Measure the painted inset, not padding on a particular wrapper.
+          // The dialog owns the surface and tooltips; an inner scroll viewport
+          // now owns spacing. Their DOM structure is not the design contract.
+          const geometry = await surfaceColumn.evaluate((node) => {
+            const levels = [...node.querySelectorAll("button")];
+            if (!levels.length)
+              throw new Error("the floor column has no levels");
+            const frame = node.getBoundingClientRect();
+            const first = levels[0].getBoundingClientRect();
+            const last = levels.at(-1).getBoundingClientRect();
+            const style = getComputedStyle(node);
+            return {
+              insets: {
+                top: first.top - frame.top,
+                left: first.left - frame.left,
+                right: frame.right - first.right,
+                bottom: frame.bottom - last.bottom,
+              },
+              expectedInset: parseFloat(
+                style.getPropertyValue("--primitives-layout-spacing-50"),
+              ),
+              radius: parseFloat(style.borderTopLeftRadius),
+            };
+          });
+          for (const [edge, inset] of Object.entries(geometry.insets)) {
+            assert.equal(
+              inset,
+              geometry.expectedInset,
+              `the floor column's ${edge} inset is not its spacing token`,
+            );
+          }
+          assert.equal(
+            geometry.radius,
+            parseFloat(tileSurface.rest.borderTopLeftRadius) +
+              geometry.insets.top,
+            "the floor column's corner is not the map control's grown by its inset",
+          );
+        };
+        await checkColumnGeometry();
+        // Negative control: a genuinely wrong corner must still fail after
+        // replacing the old wrapper-padding assertion. Restore before closing.
+        const originalRadius = await surfaceColumn.evaluate((node) => {
+          const original = node.style.borderTopLeftRadius;
+          node.style.borderTopLeftRadius = "0px";
+          return original;
+        });
+        try {
+          await assert.rejects(checkColumnGeometry, /corner is not/);
+        } finally {
+          await surfaceColumn.evaluate((node, radius) => {
+            node.style.borderTopLeftRadius = radius;
+          }, originalRadius);
+        }
         await page.keyboard.press("Escape");
         await surfaceColumn.waitFor({ state: "detached" });
         console.log(`PASS floor switcher ${theme} ${viewport.width}`);

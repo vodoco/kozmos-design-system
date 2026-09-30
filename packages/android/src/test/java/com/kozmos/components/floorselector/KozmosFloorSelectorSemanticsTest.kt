@@ -1,6 +1,7 @@
 package com.kozmos.components.floorselector
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.contracts.KozmosFloorPresentation
@@ -21,6 +22,45 @@ import org.junit.Test
 class KozmosFloorSelectorSemanticsTest {
     @get:Rule
     val paparazzi = semanticsPaparazzi()
+
+    @Test
+    fun existingPositionalCountFormatterCallStillCompilesWithCountsOff() {
+        val tree = paparazzi.readSemantics {
+            MaterialTheme {
+                // The 0.6.0 positional signature, including its last lambda.
+                KozmosFloorSelector(
+                    resultLevels, "1", {}, Modifier,
+                    KozmosFloorSelectorVariant.VerticalList, "Floors",
+                    "Up", "Down", null, "your level", { "$it matches" }
+                )
+            }
+        }
+        tree.named("Level 2")
+        assertTrue(tree.names().none { it.contains("matches") })
+    }
+
+    @Test
+    fun unknownSelectionCannotEmitAFabricatedFloorChoice() {
+        val selected = mutableListOf<String>()
+        val tree = paparazzi.readSemantics {
+            MaterialTheme {
+                KozmosFloorSelector(
+                    floors = listOf("2", "1", "G"),
+                    selectedFloor = "missing",
+                    onFloorSelect = { selected += it },
+                    variant = KozmosFloorSelectorVariant.CompactStepper
+                )
+            }
+        }
+        // Invoke semantics directly as assistive technology does. No path
+        // may report an ID that was never supplied as a selectable floor.
+        for (name in listOf("Floor up", "Floor down", "missing")) {
+            val node = tree.named(name)
+            assertFalse("$name must be disabled", node.enabled)
+            node.click?.invoke()
+        }
+        assertEquals(emptyList<String>(), selected)
+    }
 
     @Test
     fun theStepperTakesTheProductsNames() {
@@ -76,6 +116,19 @@ class KozmosFloorSelectorSemanticsTest {
     )
 
     @Test
+    fun suppliedResultCountsAreOffByDefault() {
+        for (variant in listOf(KozmosFloorSelectorVariant.VerticalList, KozmosFloorSelectorVariant.HorizontalList)) {
+            val tree = paparazzi.readSemantics {
+                MaterialTheme {
+                    KozmosFloorSelector(floors = resultLevels, selectedFloor = "1", onFloorSelect = {}, variant = variant)
+                }
+            }
+            tree.named("Level 2")
+            assertTrue(tree.names().none { it.contains("results") })
+        }
+    }
+
+    @Test
     fun theListsSayWhereTheResultsAre() {
         for (variant in listOf(KozmosFloorSelectorVariant.VerticalList, KozmosFloorSelectorVariant.HorizontalList)) {
             val tree = paparazzi.readSemantics {
@@ -85,6 +138,7 @@ class KozmosFloorSelectorSemanticsTest {
                         selectedFloor = "1",
                         onFloorSelect = {},
                         variant = variant,
+                        showResultCounts = true,
                         resultCountLabel = { "$it Ergebnisse" }
                     )
                 }
@@ -114,7 +168,8 @@ class KozmosFloorSelectorSemanticsTest {
                     floors = resultLevels,
                     selectedFloor = "2",
                     onFloorSelect = {},
-                    variant = KozmosFloorSelectorVariant.CompactStepper
+                    variant = KozmosFloorSelectorVariant.CompactStepper,
+                    showResultCounts = true
                 )
             }
         }
@@ -127,6 +182,7 @@ class KozmosFloorSelectorSemanticsTest {
         val tree = paparazzi.readSemantics {
             MaterialTheme {
                 KozmosFloorSelector(
+                    showResultCounts = true,
                     floors = resultLevels + KozmosFloorPresentation(id = "4", label = "Level 4", shortLabel = "4", resultCount = 1),
                     selectedFloor = "1",
                     onFloorSelect = {}

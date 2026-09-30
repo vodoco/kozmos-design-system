@@ -130,6 +130,21 @@ fun MapScreen() {
   `}
 />
 
+## Mirrored map corners
+
+Use `bottom-start` for the language-side controls and `bottom-end` for the floor/zoom
+stack: left/right in LTR, right/left in RTL. The other logical corners are `top-start`
+and `top-end`. SwiftUI uses `.bottomStart` / `.bottomEnd`; Compose uses
+`OverlayPosition.BOTTOM_START` / `BOTTOM_END`.
+
+Explicit left/right positions stay on those physical sides regardless of direction.
+This corrects the native left/right behavior in RTL; consumers wanting the old mirroring
+should migrate to start/end. Web `collisionInsets.left/right` remain physical clearances.
+
+Logical anchors do not register independent controls with AdaptiveMapShell's camera-occlusion
+measurement. Native overlay collision-inset/containment parity and full-shell integration
+remain separate work; do not add arbitrary margins to pretend they are solved.
+
 ## Accessibility
 
 - The overlay adds no landmark of its own; its content keeps its own reading

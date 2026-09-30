@@ -510,7 +510,7 @@ export interface AdaptiveMapLayout {
 }
 
 export interface MapOcclusion {
-  kind: "panel" | "top-bar" | "controls";
+  kind: "panel" | "top-bar" | "controls" | "attribution";
   /** Shell-local bounds; intersect with mapBounds before sending to a renderer. */
   bounds: MapLayoutRect;
 }

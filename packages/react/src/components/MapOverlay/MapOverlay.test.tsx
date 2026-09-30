@@ -51,6 +51,22 @@ afterEach(() => {
 });
 
 describe("MapOverlay", () => {
+  it.each(["top-start", "top-end", "bottom-start", "bottom-end"] as const)(
+    "supports logical position %s for mirrored map controls",
+    (position) => {
+      const { container } = render(
+        <MapOverlay position={position} dir="rtl">
+          Control
+        </MapOverlay>,
+      );
+      expect(container.firstChild).toHaveClass(
+        position.endsWith("start")
+          ? "kozmos-map-overlay-start"
+          : "kozmos-map-overlay-end",
+      );
+      expect(container.firstChild).toHaveAttribute("dir", "rtl");
+    },
+  );
   it("renders overlay content", () => {
     render(
       <MapOverlay position="bottom-right">

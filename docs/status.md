@@ -14,6 +14,8 @@ Folders in a platform's component directory that hold no component are skipped t
 
 ## Scope Of This Report
 
+LanguageSwitcher is intentionally web-only: iOS and Android use device/app language without a dedicated button. Its absent native implementations are a product policy, not a parity backlog. See `docs/sdk-module-primitives.md`.
+
 A checkmark confirms repository structure only: the expected implementation, story, test, export, or Code Connect mapping file was found. It does not grade the depth or correctness of that file.
 
 This report does **not** prove visual fidelity, accessibility conformance, behavioral completeness, responsive coverage, API parity between React, Vue, SwiftUI, and Compose, meaningful test assertions, or production readiness. Those require separate contract, interaction, accessibility, visual-regression, and cross-platform review gates. Vue is not included in this table.
@@ -24,7 +26,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
 | Core                   | 83         | 83/83 | 83/83     | 71/83   | 74/83 | 71/83   | 75/83   | 71/83       |
 | Code-Only / Utility    | 5          | 5/5   | 5/5       | —       | 5/5   | —       | 5/5     | —           |
-| Product / SDK          | 23         | 23/23 | 23/23     | 22/23   | 23/23 | 22/23   | 23/23   | 22/23       |
+| Product / SDK          | 26         | 26/26 | 26/26     | 22/26   | 25/26 | 22/26   | 25/26   | 22/26       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
 
 ## Core
@@ -140,9 +142,12 @@ Map, wayfinding, CMS, dashboard, or product-specific compositions that should co
 | CategoryTile          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | DirectionStep         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | FloorSelector         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| LanguageSwitcher      | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
 | LocationPin           | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| MapAttribution        | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | MapControlButton      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | MapControlsGroup      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| MapInfoPanel          | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | MapOverlay            | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | MapStatusPill         | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | MapView               | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -178,18 +183,18 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 ## Summary
 
-- Web components: 113/113
-- Web stories: 113/113
-- Web tests: 113/113
-- Web Code Connect files: 95/108
-- Web Code Connect scaffolds: 0/108
-- Web Code Connect linked: 95/108
-- iOS components: 104/113
-- iOS Code Connect files: 95/108
-- iOS Code Connect scaffolds: 0/108
-- iOS Code Connect linked: 95/108
-- Android components: 105/113
-- Android Code Connect files: 95/108
-- Android Code Connect scaffolds: 0/108
-- Android Code Connect linked: 95/108
-- Code Connect not applicable: 5/113
+- Web components: 116/116
+- Web stories: 116/116
+- Web tests: 116/116
+- Web Code Connect files: 95/111
+- Web Code Connect scaffolds: 0/111
+- Web Code Connect linked: 95/111
+- iOS components: 106/116
+- iOS Code Connect files: 95/111
+- iOS Code Connect scaffolds: 0/111
+- iOS Code Connect linked: 95/111
+- Android components: 107/116
+- Android Code Connect files: 95/111
+- Android Code Connect scaffolds: 0/111
+- Android Code Connect linked: 95/111
+- Code Connect not applicable: 5/116

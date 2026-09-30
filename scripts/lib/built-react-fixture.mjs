@@ -16,6 +16,8 @@ export async function buildReactFixture(entry) {
   const result = await build({
     configFile: false,
     root: packageDir,
+    // Cross-workspace examples must share the fixture host's React instance.
+    resolve: { dedupe: ["react", "react-dom"] },
     logLevel: "error",
     esbuild: { jsx: "automatic" },
     define: { "process.env.NODE_ENV": JSON.stringify("production") },

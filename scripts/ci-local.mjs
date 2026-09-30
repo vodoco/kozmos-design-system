@@ -23,6 +23,7 @@
  *   pnpm ci:local --from 12       resume at step 12
  *   pnpm ci:local --bail          stop at the first failure
  *   pnpm ci:local --base release  as a pull request into another branch
+ *   pnpm ci:local --workflow bundle-size.yml --job analyze-bundle
  */
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -41,10 +42,6 @@ if (fs.existsSync(dotenv)) {
       process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, "").trim();
   }
 }
-const workflow = parse(
-  fs.readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8"),
-);
-
 const argv = process.argv.slice(2);
 const flag = (name, fallback) => {
   const at = argv.indexOf(`--${name}`);
@@ -52,11 +49,22 @@ const flag = (name, fallback) => {
 };
 const has = (name) => argv.includes(`--${name}`);
 
+const workflowName = flag("workflow", "ci.yml");
+if (
+  path.basename(workflowName) !== workflowName ||
+  !/\.ya?ml$/.test(workflowName)
+) {
+  throw new Error("--workflow must name a YAML file in .github/workflows");
+}
+const workflow = parse(
+  fs.readFileSync(path.join(root, ".github/workflows", workflowName), "utf8"),
+);
+
 const jobKey = flag("job", "web");
 const job = workflow.jobs[jobKey];
 if (!job) {
   console.error(
-    `no job "${jobKey}" in ci.yml. Jobs: ${Object.keys(workflow.jobs).join(", ")}`,
+    `no job "${jobKey}" in ${workflowName}. Jobs: ${Object.keys(workflow.jobs).join(", ")}`,
   );
   process.exit(2);
 }
@@ -146,7 +154,9 @@ function resolveEnv(step) {
 function portsOf(run) {
   return [
     ...new Set(
-      [...String(run ?? "").matchAll(/127\.0\.0\.1:(\d{4,5})/g)].map((m) => m[1]),
+      [...String(run ?? "").matchAll(/127\.0\.0\.1:(\d{4,5})/g)].map(
+        (m) => m[1],
+      ),
     ),
   ];
 }
@@ -210,7 +220,9 @@ function stepsFor(shard) {
 
 if (shards && wantedShard) {
   const picked = shards.filter((shard) =>
-    String(shard.name).toLowerCase().includes(String(wantedShard).toLowerCase()),
+    String(shard.name)
+      .toLowerCase()
+      .includes(String(wantedShard).toLowerCase()),
   );
   if (picked.length === 0) {
     console.error(
@@ -258,9 +270,13 @@ const wanted = [
   ),
 ];
 const held = wanted.filter((port) => {
-  const probe = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], {
-    encoding: "utf8",
-  });
+  const probe = spawnSync(
+    "lsof",
+    ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"],
+    {
+      encoding: "utf8",
+    },
+  );
   return probe.status === 0 && probe.stdout.trim();
 });
 if (held.length) {
@@ -270,7 +286,10 @@ if (held.length) {
   for (const port of held) {
     const who = spawnSync(
       "bash",
-      ["-lc", `lsof -nP -iTCP:${port} -sTCP:LISTEN | tail -n +2 | awk '{print $1, $2}' | sort -u`],
+      [
+        "-lc",
+        `lsof -nP -iTCP:${port} -sTCP:LISTEN | tail -n +2 | awk '{print $1, $2}' | sort -u`,
+      ],
       { encoding: "utf8" },
     );
     console.error(`  ${port}  ${who.stdout.trim().replace(/\n/g, ", ")}`);
@@ -281,7 +300,9 @@ if (held.length) {
   process.exit(2);
 }
 
-console.log(`${job.name ?? jobKey}, locally — ${chosen.length} step(s)\n`);
+console.log(
+  `${workflowName}: ${job.name ?? jobKey}, locally — ${chosen.length} step(s)\n`,
+);
 let passed = 0;
 let failed = 0;
 let skipped = 0;
@@ -321,7 +342,9 @@ for (const { step, result } of failures) {
   // keep enough of what is left to read.
   const meaningful = output
     .split("\n")
-    .filter((line) => !/^\[[A-Z]+\] 127\.0\.0\.1 - -|GET \/|^\[STATIC\]/.test(line));
+    .filter(
+      (line) => !/^\[[A-Z]+\] 127\.0\.0\.1 - -|GET \/|^\[STATIC\]/.test(line),
+    );
   console.log(
     meaningful.length
       ? meaningful.slice(-60).join("\n")

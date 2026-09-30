@@ -20,6 +20,7 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const STEP = "Require A Changeset For Published Changes";
 const FILES = [
   ".github/workflows/ci.yml",
+  ".github/workflows/bundle-size.yml",
   "scripts/ci-local.mjs",
   "scripts/release/changeset-required.mjs",
 ];
@@ -47,13 +48,19 @@ function repository(t) {
   git("config", "user.name", "test");
   for (const file of FILES)
     write(file, fs.readFileSync(path.join(root, file), "utf8"));
-  fs.symlinkSync(path.join(root, "node_modules"), path.join(dir, "node_modules"));
+  fs.symlinkSync(
+    path.join(root, "node_modules"),
+    path.join(dir, "node_modules"),
+  );
   write(".gitignore", "node_modules\n");
   write(
     "packages/react/package.json",
     `${JSON.stringify({ name: "@kozmos-ds/react", version: "0.5.0" }, null, 2)}\n`,
   );
-  write("packages/react/src/components/Thing/Thing.tsx", "export const thing = 1;\n");
+  write(
+    "packages/react/src/components/Thing/Thing.tsx",
+    "export const thing = 1;\n",
+  );
   git("add", ".");
   git("commit", "-q", "-m", "base");
   git("update-ref", "refs/remotes/origin/main", "HEAD");
@@ -94,7 +101,11 @@ test("the changeset rule fails a branch that ships a change with no changeset", 
     "export const thing = 2;\n",
   );
   const run = ciLocal(dir, "--only", "Require A Changeset");
-  assert.equal(run.status, 1, `ci-local passed a change with no changeset:\n${run.log}`);
+  assert.equal(
+    run.status,
+    1,
+    `ci-local passed a change with no changeset:\n${run.log}`,
+  );
   assert.match(run.log, new RegExp(`FAIL\\s+${STEP}`), run.log);
   assert.match(
     run.log,
@@ -127,4 +138,18 @@ test("a step that reads what only a runner has is skipped, never run with the ex
     /SKIP.*reads github\.event\.pull_request\.base\.sha, which only a runner has/,
     `the Changes job's diff would run with a literal \${{ }} for its base:\n${listed.log}`,
   );
+});
+
+test("ci-local can inspect the separate bundle workflow instead of silently omitting it", (t) => {
+  const { dir } = repository(t);
+  const listed = ciLocal(
+    dir,
+    "--list",
+    "--workflow",
+    "bundle-size.yml",
+    "--job",
+    "analyze-bundle",
+  );
+  assert.equal(listed.status, 0, listed.log);
+  assert.match(listed.log, /RUN\s+Run Bundle Size Analyzer/);
 });

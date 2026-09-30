@@ -15,6 +15,23 @@ struct KozmosPanelScrollEnabledKey: EnvironmentKey {
     static let defaultValue = true
 }
 
+/// Side panels fit short scrolling content but still cap long lists.
+struct KozmosPanelFitsContentKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var kozmosPanelFitsContent: Bool {
+        get { self[KozmosPanelFitsContentKey.self] }
+        set { self[KozmosPanelFitsContentKey.self] = newValue }
+    }
+}
+
+private struct KozmosScrollContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
 public extension EnvironmentValues {
     var kozmosPanelScrollEnabled: Bool {
         get { self[KozmosPanelScrollEnabledKey.self] }
@@ -138,6 +155,8 @@ struct KozmosMapShellPanelHeaderBottomKey: PreferenceKey {
 /// plain scroll view.
 public struct KozmosPanelScrollView<Content: View>: View {
     @Environment(\.kozmosPanelScrollEnabled) private var scrollEnabled
+    @Environment(\.kozmosPanelFitsContent) private var fitsContent
+    @State private var contentHeight: CGFloat?
     private let showsIndicators: Bool
     private let content: Content
 
@@ -155,9 +174,12 @@ public struct KozmosPanelScrollView<Content: View>: View {
                             key: KozmosPanelScrollOffsetKey.self,
                             value: max(-proxy.frame(in: .named(KozmosPanelScrollView.spaceName)).minY, 0)
                         )
+                        .preference(key: KozmosScrollContentHeightKey.self, value: proxy.size.height)
                     }
                 )
         }
+        .frame(maxHeight: fitsContent ? contentHeight : nil)
+        .onPreferenceChange(KozmosScrollContentHeightKey.self) { contentHeight = $0 }
         .coordinateSpace(name: Self.spaceName)
         .scrollDisabled(!scrollEnabled)
         // The sheet's scrolling content runs under the home indicator, as a

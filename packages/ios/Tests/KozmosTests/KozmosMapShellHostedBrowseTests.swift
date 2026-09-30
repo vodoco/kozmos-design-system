@@ -250,9 +250,12 @@ final class KozmosMapShellHostedBrowseTests: XCTestCase {
                 .environment(\.colorScheme, .light)
             let pixels = try await render(view, size: wide, "decision-14-browser-side-panel-\(direction)")
             let rightToLeft = direction == .rightToLeft
-            let panel = try panel(in: pixels, size: wide, through: CGPoint(x: rightToLeft ? 224 : 800, y: 350))
+            let field = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: wide), where: Self.isMagenta), "\(direction): the search field is not drawn")
+            // Short side panels no longer reach the screen's midpoint. Probe
+            // the actual field's row and centre column, clear of rounded corners.
+            let panel = try panel(in: pixels, size: wide, through: CGPoint(x: field.midX, y: field.midY))
             XCTAssertEqual(panel.width, 416, accuracy: 1.5, "\(direction): not the side panel: \(panel)")
-            let field = try XCTUnwrap(pixels.boundingBox(in: panel, where: Self.isMagenta), "\(direction): the search field is not drawn")
+            XCTAssertLessThan(panel.height, wide.height / 2, "\(direction): the short browser should hug its content")
             let down = field.minY - panel.minY
             let inward = rightToLeft ? panel.maxX - field.maxX : field.minX - panel.minX
             print("Decision 14 iOS, browser in a side panel, \(direction): the search field \(down) from the top, \(inward) from the start")
