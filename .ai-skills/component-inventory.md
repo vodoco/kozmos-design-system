@@ -8,9 +8,9 @@
 | package                        | version |
 | ------------------------------ | ------- |
 | `@kozmos-ds/icons`             | 0.5.0   |
-| `@kozmos-ds/product-contracts` | 0.5.0   |
-| `@kozmos-ds/react`             | 0.6.0   |
-| `@kozmos-ds/tokens`            | 0.2.0   |
+| `@kozmos-ds/product-contracts` | 0.6.0   |
+| `@kozmos-ds/react`             | 0.7.0   |
+| `@kozmos-ds/tokens`            | 0.3.0   |
 
 `@kozmos-ds/vue` exists in the workspace but is **private**: an internal
 harness, not something to install. There is no React Native package.

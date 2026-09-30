@@ -1,5 +1,72 @@
 # @kozmos-ds/react
 
+## 0.7.0
+
+### Minor Changes
+
+- ccc6580: Add MapAttribution: provider-neutral, single-line horizontally scrollable credits with safe links and independently optional branding. The host supplies approved content and owns SDK provider resolution and map placement. Matching SwiftUI and Compose components accompany the web presentation.
+
+  Use compact text-height credit rows and 4-unit spacing across all three platforms, without map-button minimum heights.
+
+  Bundle the official Pointr logo by default on all three platforms. Supply brand to replace it for white-label use, or showBrand=false to hide branding without hiding credits. Artwork loads locally with no network dependency.
+
+  Encode the web artwork as a compact SVG data URL without changing the canonical image, and keep generated branding stable under repository formatting.
+
+  Default to transparent map appearance with tokenized grey text and a thin white halo across all three platforms. The optional surface appearance retains the opaque themed treatment. Preserve underlines, a single accessible label per credit, one-line scrolling and independent branding.
+
+- ccc6580: Add a controlled, web-only LanguageSwitcher for AdaptiveMapShell's bottom-start slot. Show native language names, retain the committed locale during pending/failed changes, expose localized status and retry, and bound the selection menu to the registered shell region. Empty and already-selected single-language lists remain visible but disabled. Native apps deliberately keep device/app-language behavior without a language button.
+
+  Mirror Select item padding and selection indicators correctly in right-to-left interfaces.
+
+- ccc6580: Add MapInfoPanel and MapInfo for host-supplied venue information, FAQs, credits,
+  support/legal links and labelled versions. Reserve a logical-end pane on wide
+  maps and use a full-screen modal on compact hosts, preserving map/browse state.
+  SwiftUI and Compose counterparts ship in the repository alongside the React API.
+- ccc6580: Add a measured attribution slot to AdaptiveMapShell, matching SwiftUI and Compose.
+  Credits stay centered across the full map, independent of side panels, or above bottom sheets.
+  Equal reservations for the larger corner keep unequal controls from shifting attribution.
+  Tall side panels leave the footer band clear.
+  Controls retain equal side/bottom insets; only attribution moves above oversized corners
+  when their middle gap is too narrow. Credits use one horizontally scrollable, scalable
+  line (10px default on web); large sheets preserve attribution room.
+  Transparent attribution aligns the credit line itself with the 16-unit bottom inset,
+  without adding inner padding beneath it.
+  Web layout snapshots identify attribution occlusions and include their bottom camera
+  inset independently of optional control padding. Omitting the slot preserves existing layout.
+- ccc6580: Refine the collapsible level switcher with floor-availability arrows and full-name hints. The whole tile opens the level list; arrows are non-interactive indicators. Preserve the 48px tile and close the list with one Escape even when a hint is open.
+
+  Make per-floor result counts opt-in with `showResultCounts` (default `false`). Hosts upgrading from 0.6.0 must explicitly enable it to retain badges in the expanded, vertical or horizontal lists. Hidden badges are also omitted from accessible names. The collapsed tile and compact stepper never display counts.
+
+  Add logical `top-start`, `top-end`, `bottom-start` and `bottom-end` MapOverlay positions that mirror in RTL while respecting physical collision insets. Existing web left/right positions remain physical. Corresponding SwiftUI and Compose source changes are included in the repository; native packages are not published to npm. Native left/right overlay positions now correctly stay physical in RTL—use start/end for mirroring.
+
+  Correct compact-stepper separators in RTL. Native selectors preserve missing selected IDs instead of substituting the first floor or emitting fabricated selections; stepping stays disabled until the host selects a supplied floor. The Android source API retains existing positional count-formatter calls without implicitly enabling counts.
+
+  Add independently measured logical `controlsBottomStart` and `controlsBottomEnd` slots to AdaptiveMapShell across React, SwiftUI and Compose. Opposite corners share a row when they fit and stack without shrinking controls when they do not. They clear the shell's panel and top controls, mirror in RTL, retain mounted state during resize, and become unavailable when the remaining vertical band cannot fit them. `bottomControlsPadCamera` is opt-in (false by default); React reports the region as a conservative controls occlusion regardless. The legacy controls slot remains supported.
+
+  Native shells now respect a bounded host shorter than 448pt/dp. Give native shells a bounded parent; the shell no longer forces that old minimum. Compose now reports measured panel/top-bar/safe-area camera padding rather than echoing caller insets alone. These changes are source-only for native consumers and are not native registry releases.
+
+  Bound expanded floor lists to the registered map-shell region, scroll long lists without shrinking targets, reveal the selected floor after measurement, and dismiss the popup when its region disappears. Preserve standalone viewport behavior and existing small-list geometry.
+
+  Keep full-name tooltips inside the floor dialog's accessible ownership but outside its scrolling viewport, preserving keyboard descriptions and preventing clipped hints.
+
+### Patch Changes
+
+- ccc6580: Fit wide AdaptiveMapShell panels to short content and bound long content above
+  the bottom control row. Keep bottom-start/end controls at the outer map edges
+  in LTR and RTL, rather than pushing them beside the panel. Bound corner popups
+  below short panels or in the clear map beside long panels.
+  Permit a shell-bound floor menu to move horizontally away from its trigger when a
+  same-side panel occupies that column, instead of overlapping the panel on web or
+  refusing to open on native.
+
+  SwiftUI and Compose mirror the layout policy. The iOS QA search header now uses
+  equal top and side padding on wide screens.
+
+- Updated dependencies [ccc6580]
+- Updated dependencies [ccc6580]
+  - @kozmos-ds/tokens@0.3.0
+  - @kozmos-ds/product-contracts@0.6.0
+
 ## 0.6.0
 
 ### Minor Changes
