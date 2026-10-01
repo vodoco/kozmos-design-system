@@ -101,6 +101,7 @@ try {
           record.status = "ok";
         } catch (error) {
           record.status = `FAIL ${error.message}`;
+          console.error(`${record.name}: ${error.stack ?? error.message}`);
         } finally {
           await page.screenshot({ path: path.join(output, `${record.name}.png`), fullPage: true });
           await context.close();

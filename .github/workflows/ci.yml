@@ -438,6 +438,9 @@ jobs:
           path: |
             test-results/poi-detail-examples
             test-results/storybook-*.json
+            test-results/map-sheet
+            test-results/search-sheet
+            test-results/navigation-examples
           if-no-files-found: ignore
           retention-days: 7
 
