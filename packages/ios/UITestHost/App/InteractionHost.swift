@@ -69,6 +69,13 @@ private struct InteractionFixture: View {
             KozmosChip(text: "Coffee", selected: true, onRemove: { events.append("remove Coffee") },
                        action: { events.append("Coffee") })
             KozmosChip(text: "Open now", onRemove: { events.append("remove Open now") })
+        case "localized-remove":
+            KozmosChip(text: "Kaffee", removeLabel: "Kaffee entfernen",
+                       onRemove: { events.append("remove Kaffee") }, action: { events.append("Kaffee") })
+            KozmosChip(text: "Tee", removeLabel: "Tee entfernen", onRemove: { events.append("remove Tee") },
+                       icon: { Image(systemName: "cup.and.saucer") })
+            KozmosChip(text: "Milch", disabled: true, removeLabel: "Milch entfernen",
+                       onRemove: { events.append("disabled remove") })
         case "disabled-chip":
             KozmosChip(text: "Vegan", selected: true, disabled: true, onRemove: { events.append("remove") },
                        action: { events.append("Vegan") })

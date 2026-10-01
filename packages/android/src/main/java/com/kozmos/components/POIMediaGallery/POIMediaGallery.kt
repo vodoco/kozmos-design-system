@@ -1,6 +1,11 @@
 package com.kozmos.components.poimediagallery
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.stopScroll
+import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
+import androidx.compose.foundation.gestures.snapping.SnapPositionInLayout
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -22,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -39,6 +45,7 @@ import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.contracts.KozmosPOIMediaPresentation
 import com.kozmos.tokens.KozmosDimensions
 import kotlin.math.abs
+import kotlinx.coroutines.launch
 
 /**
  * A horizontally paged gallery of POI photography.
@@ -62,6 +69,7 @@ import kotlin.math.abs
  * the last tile, at any width.
  */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun KozmosPOIMediaGallery(
     media: List<KozmosPOIMediaPresentation>,
     label: String,
@@ -80,8 +88,16 @@ fun KozmosPOIMediaGallery(
     // Laid out at the index from its first frame: the strip used to start at
     // the first photo whatever the index said.
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = currentIndex)
+    val scope = rememberCoroutineScope()
+    // Start-aligned tiles, as scroll-snap-align:start on the web. The stock
+    // LazyList overload centres tiles, which would disagree with the index rule.
+    val snapLayout = remember(listState) {
+        SnapLayoutInfoProvider(listState, SnapPositionInLayout { _, _, _, _, _ -> 0 })
+    }
+    val flingBehavior = rememberSnapFlingBehavior(snapLayout)
     // The tile nearest the strip's leading edge, as last laid out.
     var shownIndex by remember { mutableStateOf<Int?>(null) }
+    var scrollRequestedIndex by remember { mutableStateOf<Int?>(null) }
 
     // An index past the end of fewer photos, or a starting one out of range,
     // is brought in without a report, as the web gallery does.
@@ -96,6 +112,15 @@ fun KozmosPOIMediaGallery(
         onActiveIndexChange?.invoke(next)
     }
 
+    fun selectWithButton(index: Int) {
+        // A button is a new request, not part of the finger's settling fling.
+        // Cancel that fling first so it cannot overwrite the button's index.
+        scope.launch {
+            listState.stopScroll()
+            select(index)
+        }
+    }
+
     val latestIndex by rememberUpdatedState(currentIndex)
     val latestSelect by rememberUpdatedState(::select)
 
@@ -107,8 +132,19 @@ fun KozmosPOIMediaGallery(
             .collect { (scrolling, nearest) ->
                 if (nearest == null) return@collect
                 shownIndex = nearest
-                if (scrolling && nearest != latestIndex) latestSelect(nearest)
+                if (scrolling && nearest != latestIndex) {
+                    scrollRequestedIndex = nearest
+                    latestSelect(nearest)
+                }
             }
+    }
+
+    // A parent may replace the index while a native snap is still settling.
+    // An accepted swipe is not such a replacement: leave that fling alone.
+    LaunchedEffect(currentIndex) {
+        if (listState.isScrollInProgress && currentIndex != scrollRequestedIndex) {
+            listState.stopScroll()
+        }
     }
 
     // Index to strip, once nothing is scrolling it: an arrow, a controlled
@@ -150,13 +186,13 @@ fun KozmosPOIMediaGallery(
                 ) {
                     KozmosIconButton(
                         icon = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        onClick = { select(currentIndex - 1) },
+                        onClick = { selectWithButton(currentIndex - 1) },
                         contentDescription = previousLabel,
                         enabled = currentIndex > 0
                     )
                     KozmosIconButton(
                         icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        onClick = { select(currentIndex + 1) },
+                        onClick = { selectWithButton(currentIndex + 1) },
                         contentDescription = nextLabel,
                         enabled = currentIndex < media.lastIndex
                     )
@@ -166,6 +202,7 @@ fun KozmosPOIMediaGallery(
 
         LazyRow(
             state = listState,
+            flingBehavior = flingBehavior,
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
         ) {
@@ -177,7 +214,7 @@ fun KozmosPOIMediaGallery(
                     modifier = Modifier
                         .fillParentMaxWidth(GALLERY_TILE_WIDTH_FRACTION)
                         .aspectRatio(GALLERY_TILE_ASPECT_RATIO)
-                        .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusPanel))
+                        .clip(galleryTileShape())
                 )
             }
         }
@@ -189,6 +226,8 @@ internal const val GALLERY_TILE_WIDTH_FRACTION = 0.85f
 
 /** A tile's width over its height: 4:3, iOS's and the web's. */
 internal const val GALLERY_TILE_ASPECT_RATIO = 4f / 3f
+
+internal fun galleryTileShape() = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
 
 /**
  * The tile whose leading edge is nearest the strip's leading edge: the web's
