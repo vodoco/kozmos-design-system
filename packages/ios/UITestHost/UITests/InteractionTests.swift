@@ -84,6 +84,27 @@ final class InteractionTests: XCTestCase {
         }
     }
 
+    func testExpandedManoeuvreKeepsItsNameAndChildControls() {
+        launch("manoeuvre-custom")
+        let card = app.otherElements["Navigation en cours"]
+        XCTAssertTrue(card.exists, "the expanded card lost its localized container name")
+        XCTAssertTrue(card.staticTexts["Continue to the gate"].exists)
+        let close = card.buttons["Masquer le trajet"]
+        XCTAssertTrue(close.isHittable)
+        close.tap()
+        received("toggle")
+        XCTAssertTrue(card.exists, "the closed card lost its name")
+        XCTAssertFalse(card.staticTexts["Continue to the gate"].exists)
+        // XCUI exposes the accessibility-focused instruction as a button
+        // containing a button with the same label. Target the card's direct
+        // control, not an arbitrary first descendant with that name.
+        let instruction = card.children(matching: .button).matching(identifier: "Turn right")
+        XCTAssertEqual(instruction.count, 1)
+        instruction.element.tap()
+        received("toggle|toggle")
+        XCTAssertTrue(card.staticTexts["Continue to the gate"].exists)
+    }
+
     func testAnInteractiveChipIsAButtonThatSaysWhetherItIsSelected() {
         launch("traits")
         XCTAssertTrue(app.buttons["Vegan"].isSelected)

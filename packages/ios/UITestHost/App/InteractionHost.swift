@@ -19,6 +19,7 @@ private struct InteractionFixture: View {
     @State private var galleryIndex = 1
     @State private var replaced = false
     @State private var controlAccessibilityReport = "not inspected"
+    @State private var manoeuvreExpanded = true
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -104,6 +105,12 @@ private struct InteractionFixture: View {
                 .init(action: .order, label: "Order ahead", disabled: true)]),
                 resultCountLabel: "2 results", selectedPoiId: "cafe", onSelect: select, onAction: action)
                 .environment(\.dynamicTypeSize, scenario == "result-action-targets-large" ? .accessibility3 : .large)
+        case "manoeuvre-custom":
+            KozmosManoeuvreCard(type: .right, instruction: "Turn right", isExpanded: manoeuvreExpanded,
+                                onToggle: { manoeuvreExpanded.toggle(); events.append("toggle") },
+                                collapseLabel: "Masquer le trajet", manoeuvreLabel: "Navigation en cours") {
+                Text("Continue to the gate")
+            }
         case "traits":
             KozmosChip(text: "Vegan", selected: true, action: {})
             KozmosChip(text: "Halal", action: {})

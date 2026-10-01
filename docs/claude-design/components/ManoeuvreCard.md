@@ -105,9 +105,8 @@ It forwards its ref to `HTMLElement`. Its props are `ManoeuvreCardProps`, which 
 - `collapseLabel`: `string`, optional, default `"Hide itinerary"`.
 - `manoeuvreLabel`: `string`, optional, default `"Current manoeuvre"`.
 
-  What the closed card is called to assistive technology. Open, the card
-  has no name of its own: the itinerary inside it is the named thing, and
-  two landmarks called the same would be read twice.
+  The card's accessible name in both states, including with custom
+  itinerary content. Use a name distinct from the itinerary's own label.
 
 - `itineraryLabel`: `string`, optional, default `"Itinerary"`.
 
