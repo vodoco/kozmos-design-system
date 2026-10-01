@@ -52,8 +52,8 @@ export interface VenueCategory {
 
 /**
  * Food and drink, toilets, accessible facilities, parking and first aid are
- * a venue's most used categories and are missing here: Kozmos has no icon for
- * any of them (GAPS.md, GAP-15).
+ * a venue's most used categories and are missing here: `Icon` names none of
+ * them, and toilets and parking have no Kozmos glyph at all (GAPS.md, GAP-15).
  */
 export const categories: readonly VenueCategory[] = [
   { id: "shops", label: "Shops", icon: "shopping-bag-02", tint: "blue" },

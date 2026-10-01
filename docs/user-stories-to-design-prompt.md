@@ -1,8 +1,9 @@
 # From a user-stories document to a Kozmos design — the brief to paste
 
-Written 2026-09-21, against `main` at `a02a008`. Every number here was measured that day; §8 says
-how to re-measure before trusting one. This file is the long form. §0 is the short form Olcay
-pastes into a new chat; the chat then reads this file and does the work.
+Written 2026-09-21, against `main` at `a02a008`. Every number here was measured that day, and
+re-measured on 2026-09-29 where §8 says so; §8 says how to re-measure before trusting one. This
+file is the long form. §0 is the short form Olcay pastes into a new chat; the chat then reads this
+file and does the work.
 
 ## 0 · What to paste
 
@@ -56,17 +57,17 @@ how something _outside_ the repository consumes it. Pick the case that applies.
 
 | What                    | Where                                                                                                                                                                                                       |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The components          | `packages/react/src/components/` — 98 in `docs/status.md` (Core 69 · Code-only 5 · Product/SDK 22 · Platform 2); the barrel is `packages/react/src/index.ts`                                                |
+| The components          | `packages/react/src/components/` — use the generated lane counts in `docs/status.md`; the barrel is `packages/react/src/index.ts`                                                                           |
 | Props and variants      | `docs/figma-library-manifest.json` → `components.items[]` (props, variant values, Code Connect node); regenerate with `pnpm figma:manifest`                                                                 |
 | Tokens and roles        | `packages/tokens/src/tokens-light.json`, `tokens-dark.json`; the roles and the one rule in `docs/style-playbook.md`                                                                                         |
-| Icons                   | `@kozmos-ds/icons` (`kozmosIconNames`); the set is small — count it before promising an icon                                                                                                                |
+| Icons                   | `@kozmos-ds/icons`: the 57 names `Icon` takes (`kozmosIconNames`), and every Pointr Icon Library outline as a component `Icon` cannot name; check both before promising an icon                             |
 | Presentation models     | `@kozmos-ds/product-contracts` (`POIPresentation`, `RouteOptionPresentation`, `FloorPresentation`…); the ownership boundary in `docs/product-sdk-react-handoff.md`                                          |
 | Native                  | `packages/ios` (SwiftUI, package `Kozmos`), `packages/android` (Compose) — the same component names                                                                                                         |
 | Storybook               | `apps/docs` (`storybook-react` in `.claude/launch.json`, port 6006); examples in `apps/docs/stories/examples/`                                                                                              |
 | Figma Core Library      | `Kozmos DS - Core Library`, file `Yj4O8p6Y9h2Sa9zJVoAiVY`; Components page `4:4`, Examples page `286:1601`; 95 sets; painted by `figma/foundations-importer`                                                |
-| Code Connect            | 92 of 98 linked to that file (`figma.linked.config.json`); the native configs under `packages/{ios,android}/`                                                                                               |
+| Code Connect            | 95 linked to that file (`figma.linked.config.json`), of the 108 that can be: the 5 code-only parts have no set; the native configs under `packages/{ios,android}/`                                          |
 | What Kozmos still lacks | `apps/site/GAPS.md` (numbered gaps, shown on the website's `/roadmap`), `docs/component-variant-gap-analysis.md` (variant axes per platform), `docs/sdk-module-primitives.md` (what the SDK's modules need) |
-| Unmerged work           | none: `claude/pointr-browse-repairs` (the navigation parts, the sheet detents, `CategoryField`, `AISearchButton`, glass and category tokens) has merged into `main`                                         |
+| Unmerged work           | Check current pull requests; the historical `claude/pointr-browse-repairs` branch has merged, but that does not mean later work has merged                                                                  |
 
 Build before reading anything at runtime: `pnpm install --frozen-lockfile` then
 `pnpm --filter "@kozmos-ds/react..." build` (a fresh worktree has no built packages).
@@ -374,9 +375,13 @@ the one line to push them when told. A handoff a new chat can start from is part
 
 ## 8 · When this brief is stale
 
-The dated facts: 98 components, 92 Code Connect links, 95 Figma sets, 641 + 641 tokens,
-packages at `0.0.1` and unpublished, Figma MCP read-only in the writing session. Re-measure
-rather than trust: `docs/status.md` (`pnpm exec tsx scripts/skills/check-completion.ts --check`),
+The dated facts, as re-measured on 2026-09-29: 113 components, 95 Code Connect links, 674 + 674
+tokens, 57 icon names, and the four npm packages published since 2026-09-23 (react 0.5.0,
+icons 0.4.0, product-contracts 0.4.0, tokens 0.1.0). Not re-measured: 95 Figma sets
+(2026-09-21; counting them needs `pnpm figma:verify` and the Figma token). On 2026-09-21 the
+others were 98 components, 92 links, 641 + 641 tokens and packages at `0.0.1`, unpublished, and
+the Figma MCP was read-only in the writing session. Re-measure rather than trust:
+`docs/status.md` (`pnpm exec tsx scripts/skills/check-completion.ts --check`),
 `pnpm figma:manifest`, `pnpm figma:verify`, `npm view @kozmos-ds/react version`,
 `git branch -r --merged origin/main`. If a number here disagrees with a measurement, the
 measurement wins and this file gets the correction in the same commit.

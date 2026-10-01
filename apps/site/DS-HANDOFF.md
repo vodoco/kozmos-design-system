@@ -1,8 +1,9 @@
 # Design-system fixes the website needs — a handoff
 
 **For:** the agent that changes Kozmos itself (`packages/`).
-**From:** the Kozmos website, `apps/site` on the local branch `claude/kozmos-site`
-(worktree `/Volumes/4TB Depo/development/K/kozmos-design-system-site`).
+**From:** the Kozmos website, `apps/site`, on `main` since #55 (2026-09-28). It
+was built on the branch `claude/kozmos-site`, in the worktree
+`/Volumes/4TB Depo/development/K/kozmos-design-system-site`.
 **Written:** 2026-09-22, after a design critique of the site; revised the same
 day after an audit of the site, its copy and its tests, again when the home
 page's first screen became the Figma file's cover (GAP-54), and again when the
@@ -43,7 +44,7 @@ the component's own stories in Storybook are where to see it.
 
 The site is built from Kozmos components and tokens only. Where Kozmos fell
 short, the site did not work around it: the gap is recorded in
-[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-82, with the evidence), and the site
+[`GAPS.md`](./GAPS.md) (GAP-01 to GAP-95, with the evidence), and the site
 either composed an honest stand-in from Kozmos parts or left the defect
 visible. This document turns those gaps into work for `packages/`, in
 priority order, with the file and line, the change, and the site check that
@@ -62,11 +63,11 @@ Anything else is given from the repository root. Line numbers are those of
 ## Ground rules
 
 - **Change `packages/`, not the site.** The site's own fixes are done.
-- **Where:** the packages the site uses are those of the component branch
-  `claude/pointr-browse-repairs` (the site is based on it at `f30c0f9`; the
-  packages are unchanged since). Work in your own worktree of that branch, or
-  wherever its owner says; the site rebases afterwards (its README,
-  "Keeping up with the component branch").
+- **Where:** the site and the packages are both on `main` now, and the site
+  builds from the workspace's packages. When this was written, the site was
+  based on the component branch `claude/pointr-browse-repairs` at `f30c0f9`.
+  Work in your own worktree of a branch off `main`; the site follows as its
+  README says ("Keeping up with `main`").
 - **Parity:** a part that exists in SwiftUI, Compose or Figma changes there
   too, as `pnpm components:contract:check` requires.
 - **CI:** everything the workflow runs must stay green — the main checks are
@@ -80,10 +81,9 @@ test`, the contract, token, class, install, Figma, browser, Storybook, iOS
   expectation to the fixed one, or delete the entry — and set the gap to
   _fixed_ in `GAPS.md`.
 
-To run the site against your packages:
+To run the site against your packages, from the root of your worktree:
 
 ```sh
-cd "/Volumes/4TB Depo/development/K/kozmos-design-system-site"
 pnpm install
 pnpm turbo run build --filter=@kozmos-ds/site^...     # rebuild the Kozmos packages
 pnpm --filter @kozmos-ds/site build
@@ -111,7 +111,7 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 | P1       | GAP-42                         | CardTitle                                                | Line height 1.0: wrapped titles touch.                                                           |
 | P1       | GAP-43                         | Slider, Tabs, Rating, SearchBar, Chip, ToggleButton      | Targets under 44 px; the slider thumb is 20 × 20.                                                |
 | P1       | GAP-39                         | RouteSummary                                             | Its title is always an `h2`.                                                                     |
-| P1       | —                              | The React package                                        | Not tree-shaken: about 155 kB gzipped in the site's bundle, whatever it imports.                 |
+| P1       | — (fixed)                      | The React package                                        | Tree-shaken since #57: `import { Button }` costs an app 9.3 kB gzipped, not the whole 175 kB.    |
 | P2       | GAP-59                         | DynamicIsland                                            | Pinned to its own dark theme: on the dark page the capsule is black on black, 1:1.               |
 | P2       | GAP-60                         | DynamicIsland                                            | No room kept for the camera: Apple leaves 54% of the island's width, the component 12%.          |
 | P2       | GAP-61                         | Breadcrumb, Menu, Tree, Pagination                       | No glyph mirrors in right to left; one rule in the package does it, for the gallery's arrows.    |
@@ -438,21 +438,28 @@ border-primary-foreground/20`.
   first in the outline, has given way to the cover; the wayfinding example
   would pass the level its walking view needs.
 
-### The React package is not tree-shaken
+### The React package is tree-shaken now (fixed)
 
-- **Where:** `packages/react` — `sideEffects` is already `["**/*.css"]`,
-  yet everything ships. The likely cause, not yet verified: the 184
-  top-level `Component.displayName = …` writes (185 with the one inside
-  `ThemePortal`) and the unannotated `React.forwardRef(…)` calls, which a
-  bundler must treat as side effects.
-- **Measured:** the site's `kozmos-react-*.js` chunk is 523 kB, about 155 kB
-  gzipped, whatever the page imports; the home page preloads 22 modules,
-  about 300 kB gzipped, and its first paint was 7.1 s on fast 3G with a 4×
-  slower CPU.
-- **Change:** annotate the component factories `/* @__PURE__ */` (or build
-  with a pure-annotation step) and move `displayName` into a pure form.
-- **Proof:** a one-component consumer (`import { Button }`) bundles far less
-  than 155 kB gzipped; the site's chunk shrinks on the next build.
+- **Was:** the ES build was one file, and a bundler cannot drop the unused
+  components inside one module. Measured on 2026-09-22: the site's
+  `kozmos-react-*.js` chunk was 523 kB, about 155 kB gzipped, whatever the
+  page imported; the home page preloaded 22 modules, about 300 kB gzipped,
+  and its first paint was 7.1 s on fast 3G with a 4× slower CPU.
+- **Fixed** on 2026-09-23, before the first publish (#57): one ES file per
+  module, which `sideEffects: ["**/*.css"]` lets a bundler drop.
+- **Measured on 2026-09-29,** against `main` and the published 0.5.0 alike,
+  built with the site's Vite and every dependency but React bundled:
+  `import { Button }` costs an app 9.3 kB gzipped, and the whole library
+  175 kB (172 kB in 0.5.0). CI's `analyze-bundle`
+  (`scripts/performance/bundle-analyzer.ts`) holds Kozmos's own share,
+  dependencies aside: Button alone 1.29 kB, every export under 8 kB,
+  everything 64 of its 68 kB.
+- **On the site:** there is no Kozmos chunk any more. Each component is its
+  own module, and what the site draws nowhere, directly or inside another
+  component, stays out of its build: none of the code of ColorPicker,
+  Combobox, MultiSelect, Toast, Tooltip and 13 more is in it. What no bundler
+  trims is the stylesheet: all 28 kB of Kozmos's CSS, gzipped, ships with the
+  site's.
 
 ## P2 — API and structure
 
@@ -593,17 +600,17 @@ border-primary-foreground/20`.
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | GAP-05 | A code block; `Text` has no monospace                                                                                                                                                                                     | `CodeBlock` with copy, and `Text font="mono"`.                                                                   |
 | GAP-06 | A skip link and visually hidden text                                                                                                                                                                                      | `SkipLink` (drawn above the sticky header) and `VisuallyHidden`.                                                 |
-| GAP-07 | Icons: sun, moon, display, copy, external link, pause, play                                                                                                                                                               | Add them; the site's theme menu and the cover's "Pause motion" then get an icon.                                 |
+| GAP-07 | Icons by name: sun, moon, display, copy, external link, pause and play. `@kozmos-ds/icons` exports each (`Sun`, `Moon01`, `Monitor01`, `Copy01`, `LinkExternal01`, `PauseCircle`, `Play`); the registry has none          | Name them in the registry (GAP-79); the site's theme menu and the cover's "Pause motion" then get an icon.       |
 | GAP-08 | A footer                                                                                                                                                                                                                  | `Footer`.                                                                                                        |
 | GAP-10 | A way to draw a product's logo in the `Navbar`'s `logo` slot                                                                                                                                                              | A `Logo` part that draws a product's SVG in a colour role, or product glyphs in `Icon`.                          |
-| GAP-15 | Venue icons: food and drink, toilets, accessible facilities, parking, first aid                                                                                                                                           | Add them; three examples leave those categories out today.                                                       |
+| GAP-15 | Venue icons: food and drink (`Utensils`), accessible facilities (`Accessibility`) and first aid (`MedicalCross`) are exported but not named in the registry; toilets and parking have no glyph                            | Name the three (GAP-79) and draw the other two; three examples leave those categories out today.                 |
 | GAP-33 | A token for the route line on a map                                                                                                                                                                                       | `semantics-map-route` (line, casing, walked part), both themes, in the contrast contract.                        |
 | GAP-54 | Light: a glow, gradients, a blur scale, and a duration for motion that loops (the effects are three dark shadows and glass; the longest duration is 460 ms)                                                               | A glow role from the ramps with a spread, gradient tokens, a blur scale, an ambient duration and pause guidance. |
-| —      | Docs: 37 component `.mdx` files open with the placeholder "Displays the X interface topology natively" (and DatePicker and TimePicker repeat it as a second paragraph); 11 components' docs carry no code at all          | Write one real sentence and the missing code; the site picks them up on `pnpm generate`. The README lists them.  |
+| —      | Docs: the placeholder introductions are fixed (GAP-81); remaining missing examples and deeper usage guidance are separate work                                                                                            | Keep the source descriptions and generated reference in sync; add examples against the actual exported API.      |
 | GAP-76 | A calendar and a clock of its own: the date and time fields are the browser's, so they ignore the tokens, differ per platform, and cannot carry a range in one field, two months, or a product's available days and hours | A Kozmos calendar and time picker, with range, two-month and single forms                                        |
 | GAP-77 | Drag and drop: no handle, no grabbed state, no drop target, no reorderable list                                                                                                                                           | A handle, the states, a reorderable list, and keyboard reordering                                                |
 | GAP-78 | A `Switch` that leads with its label, for a settings row                                                                                                                                                                  | `labelPlacement="start"`, keeping the label bound to the control                                                 |
-| GAP-79 | Icons: 64 glyphs, 8 of them the taxonomy's, against a taxonomy of hundreds                                                                                                                                                | Generate the taxonomy set from the Pointr library (see GAP-07, GAP-15, GAP-69)                                   |
+| GAP-79 | Icons by name: the registry `Icon` reads holds 57 names (56 in 0.4.0), against 1,179 icon components exported in 0.4.0                                                                                                    | Put the Pointr set in the registry with names, categories and aliases (see GAP-07, GAP-15, GAP-69)               |
 | GAP-86 | A speaker for a read-aloud control, by name: the voice control has its marks since #140 (fixed), but `Icon name` cannot reach `VolumeMax`                                                                                 | Put the Pointr set in the registry (GAP-79)                                                                      |
 | GAP-80 | Row actions: `Tree` fades its own in on hover, nothing else can                                                                                                                                                           | An actions slot any row can take, with an overflow button, on hover, focus and selection                         |
 
@@ -613,11 +620,12 @@ border-primary-foreground/20`.
   React 19 app's `ReactNode` does not fit its props inside the workspace; the
   site maps the types to its own (its `tsconfig.json`). Move the package's
   dev types to 19.
-- **`scripts/skills/check-completion.ts` predates the newest components:**
-  `docs/status.md` lists 98 components against 104 folders, and the lanes it
-  gives (which the site's reference uses) differ from Storybook's grouping
-  for AISearchButton and CategoryField (Product SDK there) and for
-  Itinerary, ManoeuvreCard and RouteProgressRail (Map there).
+- **`scripts/skills/check-completion.ts`'s lanes predate the newest
+  components.** `docs/status.md` now lists every component folder (113 on
+  2026-09-29), but the lanes it gives, which the site's reference uses, still
+  differ from Storybook's grouping: the AI parts, AISearchButton and
+  CategoryField are Core there and Product SDK in Storybook, and Itinerary,
+  ManoeuvreCard and RouteProgressRail are Core there and Map in Storybook.
 - **`scripts/check-token-contrast.mjs` pushes the category pairs inside its
   per-theme loop,** so the dark theme measures them twice; the "218 pairs"
   it prints counts the duplicates.

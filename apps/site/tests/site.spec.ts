@@ -2069,7 +2069,7 @@ test.describe("design-system gaps, measured", () => {
       };
     });
     expect(trail.rootIsRightmost).toBe(true);
-    // And the separator still points the way it was drawn: lucide's
+    // And the separator still points the way it was drawn: the Pointr set's
     // chevron-right path, with nothing mirroring it. (The built package
     // stopped emitting the glyph's class name, so the path is the anchor.)
     expect(trail.separatorPath).toBe("m9 18l15 12l9 6");
