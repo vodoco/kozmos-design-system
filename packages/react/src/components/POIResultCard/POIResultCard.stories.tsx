@@ -1,9 +1,11 @@
+import type * as React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import {
   travelTimeBand,
   type POIPresentation,
 } from "@kozmos-ds/product-contracts";
+import { ThemeProvider } from "../ThemeProvider";
 import { POIResultCard } from "./POIResultCard";
 
 const poi: POIPresentation = {
@@ -89,7 +91,8 @@ export const SelectedWithActions: Story = {
 
 /**
  * A badge says why a result is in this list — "Alternative", "Similar",
- * "Close by". It is the quiet form of the featured tab, and never replaces it:
+ * "Close by". It is quiet: a neutral tab with no star, on the card's grey
+ * edge, so it never reads as featured (GAP-054). It never replaces Featured:
  * featured is set in the CMS and the map marker acts on it too, so a result
  * that is both shows featured.
  */
@@ -104,6 +107,96 @@ export const AlternativeBadge: Story = {
       travelEstimate: { durationSeconds: 300, durationLabel: "5 min" },
       badge: { label: "Alternative" },
     },
+  },
+};
+
+/** One card per tab, as a list of quick-access results draws them. */
+function ResultTabs({
+  args,
+  names = ["Burger King", "Burger King", "Burger King", "Burger King"],
+}: {
+  args: React.ComponentProps<typeof POIResultCard>;
+  names?: readonly [string, string, string, string];
+}) {
+  const card = (
+    index: number,
+    result: Partial<React.ComponentProps<typeof POIResultCard>["result"]>,
+    numbered = false,
+  ) => (
+    <POIResultCard
+      {...args}
+      numbered={numbered}
+      poi={{ ...poi, id: `tab-${index}`, name: names[index] }}
+      result={{
+        poiId: `tab-${index}`,
+        resultIndex: 2,
+        selected: false,
+        featured: false,
+        floorId: poi.floorId,
+        travelEstimate: {
+          durationSeconds: 240,
+          durationLabel: "4 min",
+          band: "twoToFiveMinutes",
+        },
+        ...result,
+      }}
+    />
+  );
+  return (
+    <div className="flex w-full flex-col items-center gap-3">
+      {card(0, { featured: true }, true)}
+      {card(1, { resultIndex: 1, selected: true }, true)}
+      {card(2, {}, true)}
+      {card(3, { badge: { label: "Alternative" } })}
+    </div>
+  );
+}
+
+/**
+ * The card's one tab, in the order it wins (Olcay, 2026-09-29):
+ *
+ * - **Featured**: the SDK's bright amber under dark words, with a star, and
+ *   the card's edge in the same amber. It is set in the CMS, and a featured
+ *   result's pin shows its logo, so it shows no number even in a numbered
+ *   list.
+ * - **A number**, in a list the product numbers (`numbered`): the result's
+ *   `resultIndex`, the number its pin shows. Selected, it fills with the
+ *   primary colour; at rest it is quiet and outlined, on the card's grey edge,
+ *   so it is never taken for the selected card.
+ * - **A badge**: quiet, neutral and without a star (GAP-054).
+ */
+export const Tabs: Story = {
+  render: (args) => <ResultTabs args={args} />,
+};
+
+/** The same four in the dark theme, whatever the toolbar says. */
+export const TabsInTheDark: Story = {
+  render: (args) => (
+    <ThemeProvider theme="dark">
+      <div className="w-full rounded-container bg-background p-4">
+        <ResultTabs args={args} />
+      </div>
+    </ThemeProvider>
+  ),
+};
+
+/**
+ * Right to left, the tab sits inside the card's start corner, the right, where
+ * the name begins, and the number still leads the name read aloud.
+ */
+export const TabsRightToLeft: Story = {
+  render: function TabsRightToLeftStory(args, { globals }) {
+    return (
+      <ThemeProvider
+        dir="rtl"
+        theme={globals.theme === "dark" ? "dark" : "light"}
+      >
+        <ResultTabs
+          args={args}
+          names={["برجر كنج", "برجر كنج", "برجر كنج", "برجر كنج"]}
+        />
+      </ThemeProvider>
+    );
   },
 };
 

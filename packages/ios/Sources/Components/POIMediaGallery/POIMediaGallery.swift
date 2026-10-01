@@ -42,7 +42,7 @@ public struct KozmosPOIMediaGallery: View {
     /// layout and after new media. What the strip measures meanwhile is the
     /// gallery's own doing, not a visitor's scroll, so it selects nothing.
     /// Opened on its third photo, the gallery used to report 0 and then 2.
-    @State private var alignmentPending = true
+    @State private var alignmentTarget: Int?
     @State private var stripWidth: CGFloat = 0
 
     public init(
@@ -73,6 +73,9 @@ public struct KozmosPOIMediaGallery: View {
         self.retryHint = retryHint
         self.onActiveIndexChange = onActiveIndexChange
         self._internalIndex = State(initialValue: defaultActiveIndex)
+        self._alignmentTarget = State(initialValue: POIMediaGalleryGeometry.boundedIndex(
+            activeIndex ?? defaultActiveIndex, count: media.count
+        ))
     }
 
     private var isControlled: Bool { activeIndex != nil }
@@ -213,9 +216,20 @@ public struct KozmosPOIMediaGallery: View {
     }
 
     private func observe(_ frames: [Int: CGRect], stripWidth: CGFloat, _ proxy: ScrollViewProxy) {
-        guard !alignmentPending, let nearest = POIMediaGalleryGeometry.nearestIndex(
+        guard let nearest = POIMediaGalleryGeometry.nearestIndex(
             tileFrames: frames, stripWidth: stripWidth, layoutDirection: layoutDirection
-        ), nearest != observedIndex else { return }
+        ) else { return }
+        // A scrollTo request is not a completed layout. In a real app the
+        // initial frames can arrive after the next main-queue turn. Finish
+        // alignment only when geometry confirms the requested tile, never
+        // after a timer/queue hop, and never report it as visitor input.
+        if let target = alignmentTarget {
+            guard nearest == target else { return }
+            alignmentTarget = nil
+            observedIndex = nearest
+            return
+        }
+        guard nearest != observedIndex else { return }
         observedIndex = nearest
         if nearest != currentIndex { select(nearest, proxy, native: true) }
     }
@@ -228,16 +242,15 @@ public struct KozmosPOIMediaGallery: View {
     /// the index rendered by then, which may have moved since; until it has,
     /// nothing the strip measures is taken for a visitor's scroll.
     private func align(_ index: Int, _ proxy: ScrollViewProxy, afterLayout: Bool = false) {
+        guard media.indices.contains(index) else { return }
+        alignmentTarget = index
         if afterLayout {
-            alignmentPending = true
             DispatchQueue.main.async {
                 if media.indices.contains(renderedIndex) {
                     proxy.scrollTo(media[renderedIndex].id, anchor: .leading)
                 }
-                alignmentPending = false
             }
         } else {
-            guard media.indices.contains(index) else { return }
             proxy.scrollTo(media[index].id, anchor: .leading)
         }
     }

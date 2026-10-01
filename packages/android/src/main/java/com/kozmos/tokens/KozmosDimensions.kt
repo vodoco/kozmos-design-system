@@ -76,6 +76,7 @@ object KozmosDimensions {
   val primitivesLayoutRadius900 = 96.dp
   val primitivesLayoutRadius1000 = 128.dp
   // primitivesLayoutRadiusFull is not emitted: a pill is a shape, not a length. Use RoundedCornerShape(percent = 50).
+  val semanticsMapAttributionHaloWidth = 1.dp
   val semanticsRadiusNone = 0.dp
   val semanticsRadiusMarker = 4.dp
   val semanticsRadiusControl = 16.dp

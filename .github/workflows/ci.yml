@@ -50,6 +50,16 @@ jobs:
       - name: Verify Release Safeguards
         run: pnpm test:release
 
+      # The Changes job's iOS decision, over a scratch repository: a skip only
+      # when the changed paths are known and none is an iOS input.
+      - name: Verify CI Change Detection
+        run: pnpm test:ci
+
+      # Exercise request admission on the installed dev server. Static builds
+      # do not expose the server channel and cannot prove this security boundary.
+      - name: Verify Storybook Development Server Security
+        run: pnpm test:storybook-security
+
       # A pull request that changes what a published package ships says how it
       # is released: a changeset naming the package, or an empty one when it
       # needs none (Olcay's decision 8). Only the four npm packages' shipped
@@ -241,12 +251,19 @@ jobs:
           pnpm test:token-alpha
           ADAPTIVE_BROWSER=firefox pnpm test:token-alpha
           ADAPTIVE_BROWSER=webkit pnpm test:token-alpha
+          ADAPTIVE_BROWSER=firefox pnpm test:scoped-utilities
 
       - name: Verify Built Adaptive Layout Geometry
         run: |
           pnpm test:adaptive
           ADAPTIVE_BROWSER=webkit pnpm test:adaptive
           ADAPTIVE_BROWSER=firefox pnpm test:adaptive
+
+      - name: Verify Map Control Placement and Floor Affordances
+        run: |
+          pnpm test:map-controls
+          ADAPTIVE_BROWSER=webkit pnpm test:map-controls
+          ADAPTIVE_BROWSER=firefox pnpm test:map-controls
 
       - name: Verify Built Overlay Ownership
         run: |
@@ -256,6 +273,14 @@ jobs:
           pnpm test:select-accessibility
           ADAPTIVE_BROWSER=webkit pnpm test:select-accessibility
           ADAPTIVE_BROWSER=firefox pnpm test:select-accessibility
+
+      # What only a real browser proves, on the built package in each engine:
+      # focus, the keyboard and scrolling (scripts/check-react-interactions.mjs).
+      - name: Verify Built Focus, Keyboard and Scrolling
+        run: |
+          pnpm test:react-interactions
+          ADAPTIVE_BROWSER=webkit pnpm test:react-interactions
+          ADAPTIVE_BROWSER=firefox pnpm test:react-interactions
 
       - name: Verify Module Theme and Stylesheet Isolation
         run: |
@@ -474,7 +499,11 @@ jobs:
   # Whether a change touches what the iOS job builds: the iOS package, the
   # tokens it compiles against (the job builds @kozmos-ds/tokens first), the
   # travel-time table its tests read with the web's and Android's, the
-  # scripts it runs, this workflow, or the installed dependencies.
+  # scripts it runs, this workflow, or the installed dependencies. The list
+  # and the logic live in scripts/ci/ios-changes.sh, which has three outcomes:
+  # iOS inputs changed (build), none did (a deliberate skip), or the changed
+  # paths could not be worked out (build, with a warning). Its tests run this
+  # step over a scratch repository (pnpm test:ci, in the web job).
   changes:
     name: Changes
     runs-on: ubuntu-latest
@@ -490,15 +519,7 @@ jobs:
         id: diff
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
-        run: |
-          # No base (a push to main) builds everything.
-          if [ -z "$BASE" ]; then
-            echo "ios=true" >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$BASE"...HEAD | grep -qE '^(packages/ios/|packages/tokens/|packages/product-contracts/tests/travel-time-bands\.txt$|scripts/check-ios-poi\.mjs$|scripts/figma-connect-native\.mjs$|\.github/workflows/ci\.yml$|package\.json$|pnpm-lock\.yaml$)'; then
-            echo "ios=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ios=false" >> "$GITHUB_OUTPUT"
-          fi
+        run: bash scripts/ci/ios-changes.sh
 
   ios:
     name: iOS Build
@@ -558,7 +579,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-poi-test-results
-          path: ${{ runner.temp }}/kozmos-ios-poi-*/TestResults.xcresult
+          path: ${{ runner.temp }}/kozmos-ios-poi-*/*.xcresult
           if-no-files-found: warn
 
       - name: Parse SwiftUI Code Connect

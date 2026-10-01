@@ -6,7 +6,7 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # NavigationItem
 
-Reusable navigation row/item primitive for top navigation, side navigation, and compact rails.
+Reusable navigation row/item primitive for top navigation, side navigation, and the rail.
 
 <Story of={NavigationItemStories.Side} />
 
@@ -111,7 +111,7 @@ export function AppRail() {
         <div className="flex flex-col">
           <NavigationItem
             content="icon-label"
-            icon={<Icon name="home-line" />}
+            icon={<Icon name="home-line" size="lg" />}
             placement="rail"
             selected
           >
@@ -119,7 +119,7 @@ export function AppRail() {
           </NavigationItem>
           <NavigationItem
             content="icon-label"
-            icon={<Icon name="navigation-pointer-01" />}
+            icon={<Icon name="navigation-pointer-01" size="lg" />}
             placement="rail"
           >
             Accessible routes

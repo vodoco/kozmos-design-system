@@ -10,12 +10,20 @@
  * repository secret, or an uploaded artifact is reported as skipped with the
  * reason, never as passed.
  *
+ * A run here stands for a pull request into main, because that is how every
+ * change reaches main: a step CI keeps for pull requests runs here too, and
+ * `${{ github.base_ref }}` is main (`--base` names another branch). The
+ * changeset rule is one: skipped here, a branch that shipped a change with no
+ * changeset passed locally and failed on its pull request.
+ *
  *   pnpm ci:local                 every step of the web job
  *   pnpm ci:local --list          what would run, and what would be skipped
  *   pnpm ci:local --job ios       another job
  *   pnpm ci:local --only token    only steps whose name contains "token"
  *   pnpm ci:local --from 12       resume at step 12
  *   pnpm ci:local --bail          stop at the first failure
+ *   pnpm ci:local --base release  as a pull request into another branch
+ *   pnpm ci:local --workflow bundle-size.yml --job analyze-bundle
  */
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -34,10 +42,6 @@ if (fs.existsSync(dotenv)) {
       process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, "").trim();
   }
 }
-const workflow = parse(
-  fs.readFileSync(path.join(root, ".github/workflows/ci.yml"), "utf8"),
-);
-
 const argv = process.argv.slice(2);
 const flag = (name, fallback) => {
   const at = argv.indexOf(`--${name}`);
@@ -45,13 +49,55 @@ const flag = (name, fallback) => {
 };
 const has = (name) => argv.includes(`--${name}`);
 
+const workflowName = flag("workflow", "ci.yml");
+if (
+  path.basename(workflowName) !== workflowName ||
+  !/\.ya?ml$/.test(workflowName)
+) {
+  throw new Error("--workflow must name a YAML file in .github/workflows");
+}
+const workflow = parse(
+  fs.readFileSync(path.join(root, ".github/workflows", workflowName), "utf8"),
+);
+
 const jobKey = flag("job", "web");
 const job = workflow.jobs[jobKey];
 if (!job) {
   console.error(
-    `no job "${jobKey}" in ci.yml. Jobs: ${Object.keys(workflow.jobs).join(", ")}`,
+    `no job "${jobKey}" in ${workflowName}. Jobs: ${Object.keys(workflow.jobs).join(", ")}`,
   );
   process.exit(2);
+}
+
+/**
+ * The GitHub context a local run has: a pull request into main, or into
+ * `--base`. A step that reads anything else from `github` needs a runner.
+ */
+const localGithub = {
+  event_name: "pull_request",
+  base_ref: flag("base", "main"),
+};
+
+/** The `github.*` values a step reads through `${{ }}`, by key. */
+function githubRead(step) {
+  const text = JSON.stringify(step.env ?? {}) + String(step.run ?? "");
+  return [...text.matchAll(/\$\{\{\s*github\.([A-Za-z0-9_.]+)\s*\}\}/g)].map(
+    (m) => m[1],
+  );
+}
+
+/**
+ * Whether a step's `if` holds for a local run: true or false for one
+ * comparison of a `github` value with a string (`github.event_name ==
+ * 'pull_request'`), null for anything else, which only a runner can decide.
+ */
+function holdsLocally(condition) {
+  const match = String(condition).match(
+    /^\s*github\.([A-Za-z0-9_.]+)\s*(==|!=)\s*'([^']*)'\s*$/,
+  );
+  if (!match || !Object.hasOwn(localGithub, match[1])) return null;
+  const equal = localGithub[match[1]] === match[3];
+  return match[2] === "==" ? equal : !equal;
 }
 
 /**
@@ -70,19 +116,36 @@ function skipReason(step) {
   if (!step.run) return "has nothing to run";
   const missing = secretsUsed(step).filter((name) => !process.env[name]);
   if (missing.length) return `needs ${missing.join(", ")} in the environment`;
-  if (step.if && !/always\(\)/.test(String(step.if)))
-    return `runs only when ${step.if}`;
+  if (step.if && !/always\(\)/.test(String(step.if))) {
+    const holds = holdsLocally(step.if);
+    if (holds === null) return `runs only when ${step.if}`;
+    if (!holds)
+      return `runs only when ${step.if}, and a local run is a pull request into ${localGithub.base_ref}`;
+  }
+  const unknown = githubRead(step).filter(
+    (key) => !Object.hasOwn(localGithub, key),
+  );
+  if (unknown.length)
+    return `reads ${unknown.map((key) => `github.${key}`).join(", ")}, which only a runner has`;
   return null;
 }
 
-/** `${{ secrets.X }}` becomes this machine's X. */
+/**
+ * `${{ secrets.X }}` becomes this machine's X, and `${{ github.X }}` the local
+ * run's (a pull request into main: `origin/${{ github.base_ref }}` is
+ * origin/main).
+ */
 function resolveEnv(step) {
   const out = {};
   for (const [key, value] of Object.entries(step.env ?? {})) {
-    out[key] = String(value).replace(
-      /\$\{\{\s*secrets\.([A-Z0-9_]+)\s*\}\}/g,
-      (_, name) => process.env[name] ?? "",
-    );
+    out[key] = String(value)
+      .replace(
+        /\$\{\{\s*secrets\.([A-Z0-9_]+)\s*\}\}/g,
+        (_, name) => process.env[name] ?? "",
+      )
+      .replace(/\$\{\{\s*github\.([A-Za-z0-9_.]+)\s*\}\}/g, (whole, name) =>
+        Object.hasOwn(localGithub, name) ? localGithub[name] : whole,
+      );
   }
   return out;
 }
@@ -91,7 +154,9 @@ function resolveEnv(step) {
 function portsOf(run) {
   return [
     ...new Set(
-      [...String(run ?? "").matchAll(/127\.0\.0\.1:(\d{4,5})/g)].map((m) => m[1]),
+      [...String(run ?? "").matchAll(/127\.0\.0\.1:(\d{4,5})/g)].map(
+        (m) => m[1],
+      ),
     ),
   ];
 }
@@ -155,7 +220,9 @@ function stepsFor(shard) {
 
 if (shards && wantedShard) {
   const picked = shards.filter((shard) =>
-    String(shard.name).toLowerCase().includes(String(wantedShard).toLowerCase()),
+    String(shard.name)
+      .toLowerCase()
+      .includes(String(wantedShard).toLowerCase()),
   );
   if (picked.length === 0) {
     console.error(
@@ -203,9 +270,13 @@ const wanted = [
   ),
 ];
 const held = wanted.filter((port) => {
-  const probe = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], {
-    encoding: "utf8",
-  });
+  const probe = spawnSync(
+    "lsof",
+    ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"],
+    {
+      encoding: "utf8",
+    },
+  );
   return probe.status === 0 && probe.stdout.trim();
 });
 if (held.length) {
@@ -215,7 +286,10 @@ if (held.length) {
   for (const port of held) {
     const who = spawnSync(
       "bash",
-      ["-lc", `lsof -nP -iTCP:${port} -sTCP:LISTEN | tail -n +2 | awk '{print $1, $2}' | sort -u`],
+      [
+        "-lc",
+        `lsof -nP -iTCP:${port} -sTCP:LISTEN | tail -n +2 | awk '{print $1, $2}' | sort -u`,
+      ],
       { encoding: "utf8" },
     );
     console.error(`  ${port}  ${who.stdout.trim().replace(/\n/g, ", ")}`);
@@ -226,7 +300,9 @@ if (held.length) {
   process.exit(2);
 }
 
-console.log(`${job.name ?? jobKey}, locally — ${chosen.length} step(s)\n`);
+console.log(
+  `${workflowName}: ${job.name ?? jobKey}, locally — ${chosen.length} step(s)\n`,
+);
 let passed = 0;
 let failed = 0;
 let skipped = 0;
@@ -266,7 +342,9 @@ for (const { step, result } of failures) {
   // keep enough of what is left to read.
   const meaningful = output
     .split("\n")
-    .filter((line) => !/^\[[A-Z]+\] 127\.0\.0\.1 - -|GET \/|^\[STATIC\]/.test(line));
+    .filter(
+      (line) => !/^\[[A-Z]+\] 127\.0\.0\.1 - -|GET \/|^\[STATIC\]/.test(line),
+    );
   console.log(
     meaningful.length
       ? meaningful.slice(-60).join("\n")

@@ -1,8 +1,8 @@
 # Documentation
 
 What each document is for, and when to read it. The website,
-<https://vodoco.github.io/kozmos-design-system/>, shows every component running with its code on
-three platforms. [`AGENTS.md`](../AGENTS.md) is the short guide to working in this repository, and
+<https://vodoco.github.io/kozmos-design-system/>, describes platform coverage and links to
+Storybook, the component reference. [`AGENTS.md`](../AGENTS.md) is the short guide to working in this repository, and
 [`.ai-skills/`](../.ai-skills/README.md) is the reference written for AI assistants.
 
 ## How Kozmos works
@@ -20,11 +20,16 @@ three platforms. [`AGENTS.md`](../AGENTS.md) is the short guide to working in th
 - [`visual-review.md`](visual-review.md) — when a change moves pixels: how every story is compared,
   and how to record a new baseline.
 - [`release-process.md`](release-process.md) — before you prepare or cut a release.
+- [`design-system-maintenance.md`](design-system-maintenance.md) — testing cadence, component
+  definition of done, compatibility and developer/AI documentation practices.
 
 ## Product and SDK
 
-- [`sdk-module-primitives.md`](sdk-module-primitives.md) — before you build an SDK module from
-  Kozmos: the primitives it needs, ranked.
+- [`product-design-gap-register.md`](product-design-gap-register.md) — the 108 supplied product
+  gaps reconciled against released source, plus new SDK-screen requirements; separates library
+  implementation, host integration, platform validation and external artifact adoption.
+- [`sdk-module-primitives.md`](sdk-module-primitives.md) — current SDK coverage and the proposed
+  implementation plan for floor controls, map layout, language, branding/attribution, info and exit.
 - [`product-sdk-react-handoff.md`](product-sdk-react-handoff.md) — when you use a Product / SDK
   component: what it owns, what the app owns, and the `@kozmos-ds/product-contracts` models.
 - [`user-stories-to-design-prompt.md`](user-stories-to-design-prompt.md) — when an AI-written

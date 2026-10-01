@@ -26,6 +26,7 @@ import com.kozmos.contracts.KozmosPOIResultActionPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import com.kozmos.contracts.KozmosUserLocationState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -202,8 +203,10 @@ class ReleasedParameterOrderTest {
                 }
             }
         }
-        tree.has("Second floor, 3 Ergebnisse")
-        tree.has("Second floor, 3 résultats")
+        // A formatter alone is source-compatible, not an opt-in to counts.
+        // 0.7.0 deliberately made counts hidden unless showResultCounts is true.
+        tree.has("Second floor")
+        assertFalse(tree.names().any { "Ergebnisse" in it || "résultats" in it })
     }
 
     /** The list: 0.5.0's parameters, by position, and every one added since after them. */

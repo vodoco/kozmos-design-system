@@ -1,0 +1,120 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./MapAttribution.stories";
+
+<Meta of={Stories} />
+
+# MapAttribution
+
+Provider-neutral map credits and an independently optional brand slot, available on React,
+SwiftUI and Compose. The host supplies ordered entries with unique IDs, plain-text labels
+and optional absolute HTTP(S) destinations. Kozmos renders that content; it never selects
+a provider, invents copyright wording or inserts a year.
+
+<Canvas of={Stories.Default} />
+<Controls />
+
+## Branding and credits
+
+Use showBrand=false for a host-approved unbranded presentation. It removes only the
+brand slot, never credits. The official Pointr logo is bundled locally by default on all
+three platforms, with its original colors and 98×34 proportions. It needs no network request.
+Web embeds the image as a data URI; the host's Content Security Policy must allow data:
+in img-src, or the host can supply its own same-origin image through brand.
+Pass brand to replace it with an approved,
+theme-appropriate asset with its aspect ratio preserved, constrained to the available width,
+and an accessible name. If linked, the supplied brand content owns its link semantics.
+The Branded story's text-only "Example venue" demonstrates replacement. On web, an omitted
+or undefined brand uses Pointr; explicit null/false also suppresses the slot. On native,
+nil/null means the default. Prefer showBrand=false for consistent cross-platform hiding.
+
+Labels render as text, not HTML. Unsafe, relative or malformed link destinations remain
+readable plain text. Valid links navigate in the same browsing context on web and through
+the native URL handler on iOS/Android. No new window is forced. Web keyboard focus stays visible;
+native links/actions remain independently accessible, not merged into one container action.
+Credits stay on one line and are never ellipsized. A horizontal viewport preserves the
+full wording when the host is narrow or text is enlarged. Web defaults to the existing
+10px typography token in rem units; SwiftUI uses scalable caption2 (11pt by default),
+and Compose uses 11sp with a 14sp line height. Native system scaling remains enabled.
+The compact presentation uses text-height rows, 4-unit spacing between credits and a
+4-unit logo gap plus 2-unit paint/focus clearance. Credits are inline links, not
+48-unit map-control buttons. On web the scroll region and links are keyboard reachable.
+The transparent map appearance has no bottom padding below the credit line: when the
+shell applies its 16-unit inset, the text's bottom aligns with the corner button frames.
+The opaque surface appearance retains its inner padding. Map-mode scrollbars are hidden
+so they do not create an extra strip below the text; horizontal scrolling remains enabled.
+For touch-friendly full-size actions, also expose credit links in the host's information panel
+without hiding this attribution line. Keyboard focus and native link/action semantics remain.
+The default map appearance has a transparent background and a one-unit white halo behind
+dark-grey credit text, consistent in light and dark themes. This uses the shared
+Semantics / Map attribution text, halo and halo width tokens. Only credit text is outlined;
+custom branding owns its own contrast. Underlines, font size and the compact gap remain.
+The decorative native layers are hidden from accessibility and do not add link targets.
+Use appearance="surface" for an opaque themed background without a halo; also prefer it
+when the host requests increased contrast or reduced transparency. Web forced-colors mode
+automatically uses system text/link colours and an opaque system surface, without the halo.
+An empty input without visible branding renders nothing, not invented credits.
+
+<Canvas of={Stories.OverMap} />
+<Canvas of={Stories.Surface} />
+
+<Canvas of={Stories.WhiteLabel} />
+<Canvas of={Stories.Narrow} />
+<Canvas of={Stories.RightToLeft} />
+
+## SDK and placement boundary
+
+The SDK/adapter resolves provider metadata, wording, approved destinations, style changes,
+deduplication and any required provider notices. In the examined SDK, provider selection uses
+metadata's pointr:mapProviderName; this is adapter knowledge, not a Kozmos component prop.
+No style fetch or provider-name switch belongs in this component.
+
+Use AdaptiveMapShell's attribution slot for automatic placement with its registered controls
+and panel. The shell measures the credits and corner controls. Corners keep matching
+16-unit bottom/side insets (plus safe areas), or a 16-unit gap above a sheet. Attribution
+stays centered across the full map, independent of side panels. Equal reservations for
+the larger corner keep unequal controls from shifting it. If the centered slot is narrower
+than 128 units, only attribution moves above the controls, preserving the default logo's
+size. Tall side panels leave the footer band clear. Credits contribute camera padding independently of
+bottomControlsPadCamera. Oversized custom branding is vertically bounded to preserve the
+panel; a sheet reaching its attribution-imposed limit permits content scrolling.
+Omitting the slot preserves existing shell behavior.
+
+This component remains usable standalone: MapOverlay does not register arbitrary children
+with the shell, so that placement still requires host-managed collision handling.
+Do not render duplicate SDK and Kozmos credits. Custom overlays, status messages and SDK
+camera application remain host responsibilities.
+
+## Native usage
+
+SwiftUI:
+
+```swift
+KozmosMapAttribution(credits: [.init(id: "owner", label: "© Example data")])
+```
+
+Pass brand: AnyView(...) for approved content; showBrand: false preserves credits.
+Use appearance: .surface for the opaque presentation (default: .map).
+In KozmosAdaptiveMapShell, pass attribution: AnyView(KozmosMapAttribution(credits: credits)).
+
+Compose (from com.kozmos.components.mapattribution):
+
+```kotlin
+KozmosMapAttribution(
+    credits = listOf(KozmosMapAttributionCredit("owner", "© Example data"))
+)
+```
+
+An optional composable brand and showBrand=false have the same ownership.
+In KozmosAdaptiveMapShell, pass `attribution = { KozmosMapAttribution(credits = credits) }`.
+Use appearance = KozmosMapAttributionAppearance.Surface for opaque presentation
+(default: Map).
+Override label with localized region copy. Compose exposes linked credits as URL-opening
+actions with underlined labels; the current dependency does not provide the newer inline
+LinkAnnotation API.
+
+## Acceptance boundary
+
+Component behavior is independent of the selected provider. Real SDK lifecycle wiring,
+custom brand assets/copy and whole-map collision/device assistive-technology acceptance
+remain host integration work. Figma mapping is not yet supplied.

@@ -3,7 +3,12 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import { Button } from "../Button";
-import { POIResultList, type POIResultListItem } from "./POIResultList";
+import { ThemeProvider } from "../ThemeProvider";
+import {
+  POIResultList,
+  type POIResultListEntry,
+  type POIResultListItem,
+} from "./POIResultList";
 
 const pois: POIPresentation[] = [
   {
@@ -68,6 +73,98 @@ export const Empty: Story = {
     emptyState: "No places match these filters. Remove a filter to see more.",
     items: [],
     resultCountLabel: "No results",
+  },
+};
+
+const dining = (
+  id: string,
+  name: string,
+  // Counted from 1: the number the place's map marker shows.
+  resultIndex: number,
+  minutes: number,
+  floorLabel = "First floor",
+): POIResultListItem => ({
+  poi: {
+    id,
+    name,
+    categoryLabel: "Dining",
+    floorId: "1",
+    floorLabel,
+    media: [],
+    actions: ["navigate"],
+  },
+  result: {
+    poiId: id,
+    resultIndex,
+    selected: false,
+    featured: false,
+    floorId: "1",
+    travelEstimate: {
+      durationSeconds: minutes * 60,
+      durationLabel: `${minutes} min`,
+    },
+  },
+});
+
+// Its pin shows its logo, so its number is never drawn: the others are
+// numbered 1 to 5 in pin order, and it takes the next.
+const featuredBurgerKing = dining("burger-king", "Burger King", 6, 2);
+
+/** Dining, chosen in the browse grid: its places, numbered as their pins are. */
+const quickAccessDining: POIResultListEntry[] = [
+  {
+    ...featuredBurgerKing,
+    result: { ...featuredBurgerKing.result, featured: true },
+  },
+  dining("starbucks", "Starbucks", 1, 3),
+  dining("mcdonalds", "McDonald's", 2, 4),
+  {
+    id: "costa",
+    label: "Costa Coffee, 2 results",
+    items: [
+      dining("costa-1", "Costa Coffee", 3, 5),
+      dining("costa-2", "Costa Coffee", 4, 6, "Second floor"),
+    ],
+    collapsedCount: 2,
+  },
+  dining("pret", "Pret A Manger", 5, 7),
+];
+
+/**
+ * Quick access: a category chosen in the browse grid lists that category's
+ * places, and the map pins them with numbers. The product turns `numbered`
+ * on for this list, and each result shows its own `resultIndex`, the number
+ * on its pin; the selected one's tab fills, as its pin stands out. The
+ * featured result keeps its Featured tab and no number, as its pin shows its
+ * logo, so the product numbers the others 1, 2, 3 in pin order. A grouped
+ * branch has its number before its name.
+ */
+export const QuickAccessNumbered: Story = {
+  args: {
+    items: quickAccessDining,
+    numbered: true,
+    resultCountLabel: "6 dining places",
+    selectedPoiId: "starbucks",
+  },
+};
+
+/** The same list right to left: tabs and numbers keep to the start edge. */
+export const QuickAccessNumberedRightToLeft: Story = {
+  args: {
+    items: quickAccessDining,
+    numbered: true,
+    resultCountLabel: "6 dining places",
+    selectedPoiId: "starbucks",
+  },
+  render: function QuickAccessNumberedRightToLeftStory(args, { globals }) {
+    return (
+      <ThemeProvider
+        dir="rtl"
+        theme={globals.theme === "dark" ? "dark" : "light"}
+      >
+        <POIResultList {...args} />
+      </ThemeProvider>
+    );
   },
 };
 

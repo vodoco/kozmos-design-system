@@ -93,7 +93,8 @@ data class ReadNode(
      */
     val frame: Rect = bounds,
     /** False for a node composed but not placed: a lazy list's prefetched or recycled item. */
-    val placed: Boolean = true
+    val placed: Boolean = true,
+    val horizontalScrollMax: Float? = null
 )
 
 /**
@@ -187,7 +188,7 @@ fun Paparazzi.live(
     val clock = BroadcastFrameClock()
     val effects = Handler(Looper.getMainLooper()).asCoroutineDispatcher("kozmos-live") + clock
     val recomposer = Recomposer(effects)
-    val running = CoroutineScope(effects + Job()).apply { launch { recomposer.runRecomposeAndApplyChanges() } }
+    val running = CoroutineScope(effects + Job())
     val choreographer = Choreographer.getInstance()
     val tick = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
@@ -199,6 +200,16 @@ fun Paparazzi.live(
 
     val host = ComposeView(context).apply {
         setParentCompositionContext(recomposer)
+        // Paparazzi starts each capture at time zero. Schedule work only once
+        // this host attaches, after that reset; before attachment a second
+        // capture would enqueue its work at the previous capture's end time.
+        addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(view: View) {
+                running.launch { recomposer.runRecomposeAndApplyChanges() }
+                choreographer.postFrameCallback(tick)
+            }
+            override fun onViewDetachedFromWindow(view: View) = Unit
+        })
         setContent {
             val view = LocalView.current
             content()
@@ -217,7 +228,6 @@ fun Paparazzi.live(
             }
         }
     }
-    choreographer.postFrameCallback(tick)
     try {
         gif(host, "live", start = 0L, end = durationMillis, fps = 30)
     } finally {
@@ -229,6 +239,26 @@ fun Paparazzi.live(
     failure?.let { throw it }
     check(live?.framesSeen != 0) { "the composition was given no frames" }
     check(finished) { "the script did not finish within ${durationMillis}ms of frames" }
+}
+
+/** Advance real Compose frames before reading measure-driven shell state. */
+fun Paparazzi.readSettledSemantics(content: @Composable () -> Unit): ReadSemantics {
+    var result: ReadSemantics? = null
+    val view = ComposeView(context).apply {
+        setContent {
+            val owner = (LocalView.current as ViewRootForTest).semanticsOwner
+            Box { content() }
+            LaunchedEffect(Unit) {
+                repeat(5) { withFrameNanos { } }
+                result = ReadSemantics(
+                    owner.rootSemanticsNode.flatten().map(::copyOf),
+                    owner.unmergedRootSemanticsNode.flatten().map(::copyOf)
+                )
+            }
+        }
+    }
+    gif(view, "settled-semantics", start = 0L, end = 1000L, fps = 20)
+    return checkNotNull(result) { "settled semantics were never read" }
 }
 
 private fun SemanticsNode.flatten(): List<SemanticsNode> =
@@ -251,5 +281,6 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     horizontalScroll = node.config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
         ?.let { it.value() to it.maxValue() },
     frame = Rect(node.positionInRoot, node.size.toSize()),
-    placed = node.layoutInfo.isPlaced
+    placed = node.layoutInfo.isPlaced,
+    horizontalScrollMax = node.config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)?.maxValue?.invoke()
 )

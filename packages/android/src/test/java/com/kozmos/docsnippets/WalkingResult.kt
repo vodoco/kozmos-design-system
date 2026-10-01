@@ -15,6 +15,8 @@ import com.kozmos.contracts.KozmosTravelTimeBand
 @Composable
 fun WalkingResult(
     poi: KozmosPOIPresentation,
+    // The result's number, counted from 1: the one its map marker shows.
+    number: Int,
     walkSeconds: Double,
     walkLabel: String,
     bandLabels: Map<KozmosTravelTimeBand, String>,
@@ -24,7 +26,7 @@ fun WalkingResult(
         poi = poi,
         result = KozmosPOIResultPresentation(
             poiId = poi.id,
-            resultIndex = 0,
+            resultIndex = number,
             // The list shows the band; the details card keeps durationLabel.
             travelEstimate = KozmosTravelEstimatePresentation(
                 durationSeconds = walkSeconds,

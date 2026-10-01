@@ -127,6 +127,8 @@ object KozmosColorsDark {
   val primitivesColorsForeground1000 = Color(0xff000000)
   val primitivesBorderBevelTop = Color(0x80ffffff)
   val primitivesBorderBevelBottom = Color(0x33000000)
+  val semanticsMapAttributionText = Color(0xff464a53)
+  val semanticsMapAttributionHalo = Color(0xffffffff)
   val semanticsSurface0 = Color(0xff000000)
   val semanticsSurface100 = Color(0xff17191c)
   val semanticsSurface200 = Color(0xff2e3138)

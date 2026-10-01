@@ -386,14 +386,12 @@ export default function PhoneSearch() {
           onPanelDetentChange={(next) => {
             if (isDetent(next as string)) setDetent(next as Detent);
           }}
-          // What the assistant covers is out of reach while it is open: a
-          // keyboard stepping back out of the panel otherwise lands on the
-          // sheet's tiles under it, where nobody can see them (GAP-93).
-          inert={assistantOpen}
         />
         {/* Kept mounted and opened with `open`, so it takes focus as it
             opens and hands it back to the AI search button as it closes. It
-            covers the frame and leaves the sheet as it was beneath. */}
+            covers the frame and leaves the sheet as it was beneath, out of
+            reach while it is open: the panel makes what it covers inert
+            (GAP-93, fixed). */}
         <Assistant
           open={assistantOpen}
           places={places}

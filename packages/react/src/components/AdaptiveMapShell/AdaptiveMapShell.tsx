@@ -1,4 +1,5 @@
 import React from "react";
+import { MapPopupRegionContext } from "./map-popup-region";
 import type {
   AdaptiveMapLayoutSnapshot,
   MapCollisionInsets,
@@ -46,6 +47,13 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
   mapStatus?: MapReadiness;
   mapStatusContent?: React.ReactNode;
   controls?: React.ReactNode;
+  /** Logical bottom corners above the panel. Wide clusters wrap without overlapping. */
+  controlsBottomStart?: React.ReactNode;
+  controlsBottomEnd?: React.ReactNode;
+  /** Measured map credits above sheets, centered across the full map independently of side panels. */
+  attribution?: React.ReactNode;
+  /** Opt in to conservative bottom camera padding for the measured corner region. */
+  bottomControlsPadCamera?: boolean;
   topBar?: React.ReactNode;
   panel?: React.ReactNode;
   /**
@@ -199,6 +207,10 @@ const AdaptiveMapShell = React.forwardRef<
       mapStatus = "ready",
       mapStatusContent,
       controls,
+      controlsBottomStart,
+      controlsBottomEnd,
+      attribution,
+      bottomControlsPadCamera = false,
       topBar,
       panel,
       panelHeader,
@@ -229,6 +241,21 @@ const AdaptiveMapShell = React.forwardRef<
     const safeArea = React.useRef<HTMLDivElement>(null);
     const bar = React.useRef<HTMLDivElement>(null);
     const buttons = React.useRef<HTMLDivElement>(null);
+    const bottomControls = React.useRef<HTMLDivElement>(null);
+    const bottomStart = React.useRef<HTMLDivElement>(null);
+    const bottomEnd = React.useRef<HTMLDivElement>(null);
+    const [belowPanelBoundary, setBelowPanelBoundary] =
+      React.useState<HTMLDivElement | null>(null);
+    const attributionContent = React.useRef<HTMLDivElement>(null);
+    const hasAttribution =
+      attribution != null && typeof attribution !== "boolean";
+    const mapRegion = React.useRef<HTMLElement>(null);
+    const [popupBoundary, setPopupBoundary] =
+      React.useState<HTMLDivElement | null>(null);
+    const hasBottomStart =
+      controlsBottomStart != null && typeof controlsBottomStart !== "boolean";
+    const hasBottomEnd =
+      controlsBottomEnd != null && typeof controlsBottomEnd !== "boolean";
     const panelContent = React.useRef<HTMLDivElement>(null);
     const panelHeaderElement = React.useRef<HTMLDivElement>(null);
     const handleElement = React.useRef<HTMLDivElement>(null);
@@ -242,8 +269,13 @@ const AdaptiveMapShell = React.forwardRef<
       barHeight: 0,
       controlsWidth: 0,
       controlsHeight: 0,
+      bottomControlsHeight: 0,
+      bottomStartWidth: 0,
+      bottomEndWidth: 0,
+      attributionHeight: 0,
       panelContentHeight: 0,
       panelHeaderHeight: 0,
+      panelHeight: 0,
       /** The panel header's bottom edge from the sheet's top; 0 when none. */
       headerBottom: 0,
       /** The grab handle's row, when the sheet draws one; 0 otherwise. */
@@ -295,6 +327,10 @@ const AdaptiveMapShell = React.forwardRef<
             bar.current?.scrollHeight ?? 0,
           ),
           controlsWidth: buttons.current?.offsetWidth ?? 0,
+          bottomControlsHeight: bottomControls.current?.offsetHeight ?? 0,
+          bottomStartWidth: bottomStart.current?.offsetWidth ?? 0,
+          bottomEndWidth: bottomEnd.current?.offsetWidth ?? 0,
+          attributionHeight: attributionContent.current?.offsetHeight ?? 0,
           controlsHeight: Math.max(
             buttons.current?.offsetHeight ?? 0,
             buttons.current?.scrollHeight ?? 0,
@@ -302,6 +338,7 @@ const AdaptiveMapShell = React.forwardRef<
           // What the panel holds, not what it was given: the scroll height.
           panelContentHeight: panelContent.current?.scrollHeight ?? 0,
           panelHeaderHeight: panelHeaderElement.current?.offsetHeight ?? 0,
+          panelHeight: panelElement.current?.offsetHeight ?? 0,
           headerBottom: measureHeaderBottom(panelHeaderElement.current),
           handleHeight: handleElement.current?.offsetHeight ?? 0,
           peekBottom: measurePeekBottom(
@@ -325,6 +362,10 @@ const AdaptiveMapShell = React.forwardRef<
         element,
         bar.current,
         buttons.current,
+        bottomControls.current,
+        bottomStart.current,
+        bottomEnd.current,
+        attributionContent.current,
         panelContent.current,
         panelHeaderElement.current,
       ].forEach((node) => {
@@ -360,7 +401,15 @@ const AdaptiveMapShell = React.forwardRef<
         directionObserver.disconnect();
         window.removeEventListener("resize", measure);
       };
-    }, [Boolean(topBar), Boolean(controls), Boolean(panel), hasPanelHeader]);
+    }, [
+      Boolean(topBar),
+      Boolean(controls),
+      hasBottomStart,
+      hasBottomEnd,
+      hasAttribution,
+      Boolean(panel),
+      hasPanelHeader,
+    ]);
 
     // The device's safe areas (CSS env()) are the chrome's: the map runs
     // under them, as the prototype's does. What the host supplies — a
@@ -429,7 +478,7 @@ const AdaptiveMapShell = React.forwardRef<
     const settledHeight = clampToOffered(heightOf(activeDetent));
     const liveHeight =
       dragHeight === null ? settledHeight : clampToOffered(dragHeight);
-    const atLargestDetent = settledHeight >= largest - 0.5;
+    const atLargestOfferedDetent = settledHeight >= largest - 0.5;
     const activeIndex = Math.max(
       0,
       ordered.findIndex(
@@ -443,6 +492,21 @@ const AdaptiveMapShell = React.forwardRef<
     };
     const effectivePanelFraction =
       sheetHeight > 0 ? liveHeight / sheetHeight : undefined;
+    // Very long/localized credits scroll inside at most half of the usable
+    // chrome band, rather than consuming all space and removing the panel.
+    const reservedAttributionHeight = hasAttribution
+      ? Math.min(
+          measured.attributionHeight,
+          Math.max(
+            0,
+            measured.height -
+              chrome.top -
+              chrome.bottom -
+              (topBar ? measured.barHeight + 32 : 0) -
+              32,
+          ) / 2,
+        )
+      : 0;
     const layout = resolveAdaptiveMapLayout({
       ...measured,
       hasPanel: Boolean(panel),
@@ -453,13 +517,40 @@ const AdaptiveMapShell = React.forwardRef<
       // — their band above the sheet shrinks, and with none left they hide
       // (the iOS shell bounds them to the same band) — so the largest detent
       // is reachable with controls, as the prototype's full is.
-      minimumMapHeight: topBar ? measured.barHeight + 32 : 0,
+      minimumMapHeight:
+        (topBar ? measured.barHeight + 32 : 0) +
+        (reservedAttributionHeight > 0 ? reservedAttributionHeight + 32 : 0),
       safeAreaInsets: safe,
       chromeInsets: chrome,
       usableRegions,
     });
     const unavailable =
       measured.ready && (!layout.mapBounds.width || !layout.mapBounds.height);
+    // Side panels hug their DOM content, with a bounded scroller for long lists.
+    // Keep a continuous bottom control row at the map's edges.
+    let sidePanelCap =
+      layout.presentation === "side" && layout.panelBounds
+        ? Math.max(
+            0,
+            layout.panelBounds.height -
+              ((hasBottomStart || hasBottomEnd) &&
+              measured.bottomControlsHeight > 0
+                ? measured.bottomControlsHeight + 16
+                : 0),
+          )
+        : undefined;
+    if (sidePanelCap !== undefined && layout.panelBounds) {
+      layout.panelBounds =
+        sidePanelCap > 0
+          ? {
+              ...layout.panelBounds,
+              height: Math.min(
+                measured.panelHeight || sidePanelCap,
+                sidePanelCap,
+              ),
+            }
+          : null;
+    }
     const rtl = measured.direction === "rtl";
     // Controls sit clear of a docked side panel. A bottom sheet spans the full
     // width, so there is nothing to sit clear of — and the rule, read from
@@ -489,6 +580,7 @@ const AdaptiveMapShell = React.forwardRef<
       width: Math.max(0, layout.mapBounds.width - chrome.left - chrome.right),
       height: Math.max(0, layout.mapBounds.height - chrome.top - chrome.bottom),
     };
+    const footerAvailable = { ...available };
     if (layout.panelBounds && layout.presentation === "side") {
       if (onRight) available.width = layout.panelBounds.x - available.x;
       else {
@@ -498,6 +590,7 @@ const AdaptiveMapShell = React.forwardRef<
       }
     } else if (layout.panelBounds && layout.presentation === "bottom") {
       available.height = Math.max(0, layout.panelBounds.y - available.y);
+      footerAvailable.height = available.height;
     }
     const gap = Math.min(16, available.width / 4, available.height / 4);
     const chromeWidth = Math.max(0, available.width - 2 * gap);
@@ -514,10 +607,22 @@ const AdaptiveMapShell = React.forwardRef<
     // all leaves them no room: they are hidden then, not drawn under the
     // sheet where a keyboard or a screen reader would still reach them, and
     // they no longer pad the camera.
-    const controlsBand = Math.max(
+    const footerBand = Math.max(
       0,
       available.y + available.height - gap - controlsY,
     );
+    const attributionHeight = hasAttribution
+      ? Math.min(reservedAttributionHeight, footerBand)
+      : 0;
+    const attributionReserve =
+      attributionHeight > 0 ? attributionHeight + gap : 0;
+    const attributionBounds = {
+      x: available.x + gap,
+      y: available.y + available.height - gap - attributionHeight,
+      width: chromeWidth,
+      height: attributionHeight,
+    };
+    const controlsBand = Math.max(0, footerBand - attributionReserve);
     const controlsOutOfRoom = measured.ready && controlsBand === 0;
     const controlsBounds = {
       x: controlsOnLeft
@@ -527,13 +632,100 @@ const AdaptiveMapShell = React.forwardRef<
       width: measured.controlsWidth,
       height: Math.min(measured.controlsHeight, controlsBand),
     };
+    // Preserve the legacy top controls. The independent bottom corners own
+    // the remaining band. If neither wrapping nor full-size controls fit,
+    // keep their state mounted but remove the region from interaction.
+    const hasBottomControls = hasBottomStart || hasBottomEnd;
+    const bottomControlsBand = Math.max(
+      0,
+      footerBand - (controls ? controlsBounds.height + gap : 0),
+    );
+    const bottomControlsFit =
+      measured.bottomControlsHeight <= bottomControlsBand &&
+      footerAvailable.width > 2 * gap;
+    const bottomControlsHeight = bottomControlsFit
+      ? measured.bottomControlsHeight
+      : 0;
+    const bottomControlsBounds = {
+      x: footerAvailable.x + gap,
+      y:
+        footerAvailable.y + footerAvailable.height - gap - bottomControlsHeight,
+      width: Math.max(0, footerAvailable.width - 2 * gap),
+      height: bottomControlsHeight,
+    };
+    // A long panel may leave only the trigger row underneath. In that case
+    // the popup uses the clear map beside the panel, rather than a zero-height menu.
+    const popupFitsBelowPanel =
+      layout.panelBounds !== null &&
+      footerAvailable.y +
+        footerAvailable.height -
+        gap -
+        (layout.panelBounds.y + layout.panelBounds.height + gap) >=
+        bottomControlsHeight + 160;
+    const startReserve =
+      bottomControlsHeight > 0 && hasBottomStart
+        ? measured.bottomStartWidth + gap
+        : 0;
+    const endReserve =
+      bottomControlsHeight > 0 && hasBottomEnd
+        ? measured.bottomEndWidth + gap
+        : 0;
+    // Reserve the larger corner equally on both sides: attribution is centered
+    // on the whole map, never on the remainder beside a panel or wider button.
+    const cornerReserve = Math.max(startReserve, endReserve);
+    const footerWidth = Math.max(0, footerAvailable.width - 2 * gap);
+    const betweenWidth = footerWidth - 2 * cornerReserve;
+    // Only the credits move when the two corners leave no readable middle
+    // slot. Corner controls always retain their bottom and side edge insets.
+    const attributionAboveCorners =
+      bottomControlsHeight > 0 && betweenWidth < 128;
+    const attributionLift = attributionAboveCorners
+      ? bottomControlsHeight + gap
+      : 0;
+    attributionBounds.x =
+      footerAvailable.x + gap + (attributionAboveCorners ? 0 : cornerReserve);
+    attributionBounds.width = attributionAboveCorners
+      ? footerWidth
+      : Math.max(0, betweenWidth);
+    attributionBounds.height = Math.min(
+      attributionHeight,
+      Math.max(0, footerBand - attributionLift),
+    );
+    attributionBounds.y =
+      available.y +
+      available.height -
+      gap -
+      attributionLift -
+      attributionBounds.height;
+    if (
+      sidePanelCap !== undefined &&
+      layout.panelBounds &&
+      attributionBounds.height > 0
+    ) {
+      // Keep a full-width footer band clear even with a tall side panel and no
+      // registered corner controls. The attribution must not slide sideways.
+      sidePanelCap = Math.min(
+        sidePanelCap,
+        Math.max(0, attributionBounds.y - gap - layout.panelBounds.y),
+      );
+      layout.panelBounds = {
+        ...layout.panelBounds,
+        height: Math.min(layout.panelBounds.height, sidePanelCap),
+      };
+    }
     const occlusions: AdaptiveMapLayoutSnapshot["occlusions"] = [
       ...(layout.panelBounds
         ? [{ kind: "panel" as const, bounds: layout.panelBounds }]
         : []),
       ...(topBar ? [{ kind: "top-bar" as const, bounds: barBounds }] : []),
+      ...(attributionHeight > 0
+        ? [{ kind: "attribution" as const, bounds: attributionBounds }]
+        : []),
       ...(controls && !controlsOutOfRoom
         ? [{ kind: "controls" as const, bounds: controlsBounds }]
+        : []),
+      ...(hasBottomControls && bottomControlsHeight > 0
+        ? [{ kind: "controls" as const, bounds: bottomControlsBounds }]
         : []),
     ];
     const insets = resolveMapInsets(
@@ -542,22 +734,30 @@ const AdaptiveMapShell = React.forwardRef<
       // only whether they are allowed to pad the camera.
       occlusions
         .filter(
-          (occlusion) => controlsPadCamera || occlusion.kind !== "controls",
+          (occlusion) =>
+            occlusion.kind !== "controls" ||
+            (occlusion.bounds === bottomControlsBounds
+              ? bottomControlsPadCamera
+              : controlsPadCamera),
         )
         .map((occlusion) => ({
           bounds: occlusion.bounds,
           edge:
-            occlusion.kind === "top-bar"
-              ? "top"
-              : occlusion.kind === "controls"
-                ? controlsOnLeft
-                  ? "left"
-                  : "right"
-                : layout.presentation === "bottom"
-                  ? "bottom"
-                  : onRight
-                    ? "right"
-                    : "left",
+            occlusion.kind === "attribution"
+              ? "bottom"
+              : occlusion.kind === "top-bar"
+                ? "top"
+                : occlusion.kind === "controls"
+                  ? occlusion.bounds === bottomControlsBounds
+                    ? "bottom"
+                    : controlsOnLeft
+                      ? "left"
+                      : "right"
+                  : layout.presentation === "bottom"
+                    ? "bottom"
+                    : onRight
+                      ? "right"
+                      : "left",
         })),
       {
         top: Math.max(collisionInsets?.top ?? 0, chrome.top),
@@ -588,6 +788,14 @@ const AdaptiveMapShell = React.forwardRef<
     }, [snapshot]);
 
     const isSheet = layout.presentation === "bottom";
+    // A reserved footer can make a smaller detent the largest physically
+    // available height. Content must scroll there, just as at the full detent.
+    const atLargestDetent =
+      atLargestOfferedDetent ||
+      (hasAttribution &&
+        isSheet &&
+        layout.panelBounds != null &&
+        layout.panelBounds.height < settledHeight - 0.5);
     const panelHidden = unavailable || (measured.ready && !layout.panelBounds);
     const drawsHandle = isSheet && showsHandle;
     // The handle is a 16px row, and a control directly under it leaves the
@@ -616,7 +824,8 @@ const AdaptiveMapShell = React.forwardRef<
     const detentKey = JSON.stringify(panelDetent ?? uncontrolledDetent ?? null);
     if (shownDetent !== detentKey) {
       setShownDetent(detentKey);
-      if (shownDetent !== null && isSheet) setSettling(true);
+      if (shownDetent !== null && isSheet && panelElement.current)
+        setSettling(true);
     }
     // Settled once the sheet's own transitions end, including one a newer
     // detent started meanwhile; with none running (reduced motion, or the
@@ -800,6 +1009,8 @@ const AdaptiveMapShell = React.forwardRef<
           }}
         />
         <section
+          ref={mapRegion}
+          tabIndex={-1}
           aria-label={mapLabel}
           hidden={unavailable}
           style={position(layout.mapBounds)}
@@ -853,12 +1064,163 @@ const AdaptiveMapShell = React.forwardRef<
             {controls}
           </div>
         )}
+        {hasBottomControls && (
+          <MapPopupRegionContext.Provider
+            value={{
+              boundary: popupBoundary,
+              available: bottomControlsFit && !unavailable,
+              focusFallback: () =>
+                mapRegion.current?.focus({ preventScroll: true }),
+            }}
+          >
+            <div
+              ref={setPopupBoundary}
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                pointerEvents: "none",
+                left: available.x + gap,
+                top: available.y + available.height - gap - bottomControlsBand,
+                width: chromeWidth,
+                height: bottomControlsBand,
+              }}
+            />
+            {layout.presentation === "side" && layout.panelBounds && (
+              <div
+                ref={setBelowPanelBoundary}
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  pointerEvents: "none",
+                  left: footerAvailable.x + gap,
+                  top: layout.panelBounds.y + layout.panelBounds.height + gap,
+                  width: bottomControlsBounds.width,
+                  height: Math.max(
+                    0,
+                    footerAvailable.y +
+                      footerAvailable.height -
+                      gap -
+                      (layout.panelBounds.y + layout.panelBounds.height + gap),
+                  ),
+                }}
+              />
+            )}
+            <div
+              ref={bottomControls}
+              data-kozmos-bottom-controls=""
+              data-settling={
+                isSheet && settling && dragHeight === null ? "" : undefined
+              }
+              hidden={unavailable}
+              className="kozmos-map-footer absolute z-30"
+              style={{
+                left: bottomControlsBounds.x,
+                bottom:
+                  measured.height -
+                  footerAvailable.y -
+                  footerAvailable.height +
+                  gap,
+                width: bottomControlsBounds.width,
+                visibility: bottomControlsFit ? "visible" : "hidden",
+                pointerEvents: "none",
+              }}
+            >
+              <div className="flex flex-wrap items-end gap-4">
+                {hasBottomStart && (
+                  <div
+                    ref={bottomStart}
+                    style={{
+                      maxWidth: "100%",
+                      marginInlineEnd: "auto",
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    <MapPopupRegionContext.Provider
+                      value={{
+                        boundary:
+                          layout.presentation === "side" &&
+                          panelPlacement === "start" &&
+                          popupFitsBelowPanel
+                            ? belowPanelBoundary
+                            : popupBoundary,
+                        available: bottomControlsFit && !unavailable,
+                        focusFallback: () =>
+                          mapRegion.current?.focus({ preventScroll: true }),
+                      }}
+                    >
+                      {controlsBottomStart}
+                    </MapPopupRegionContext.Provider>
+                  </div>
+                )}
+                {hasBottomEnd && (
+                  <div
+                    ref={bottomEnd}
+                    style={{
+                      maxWidth: "100%",
+                      marginInlineStart: "auto",
+                      pointerEvents: "auto",
+                    }}
+                  >
+                    <MapPopupRegionContext.Provider
+                      value={{
+                        boundary:
+                          layout.presentation === "side" &&
+                          panelPlacement === "end" &&
+                          popupFitsBelowPanel
+                            ? belowPanelBoundary
+                            : popupBoundary,
+                        available: bottomControlsFit && !unavailable,
+                        focusFallback: () =>
+                          mapRegion.current?.focus({ preventScroll: true }),
+                      }}
+                    >
+                      {controlsBottomEnd}
+                    </MapPopupRegionContext.Provider>
+                  </div>
+                )}
+              </div>
+            </div>
+          </MapPopupRegionContext.Provider>
+        )}
+        {hasAttribution && (
+          <div
+            data-kozmos-attribution=""
+            data-settling={
+              isSheet && settling && dragHeight === null ? "" : undefined
+            }
+            hidden={unavailable}
+            className="kozmos-map-footer absolute z-30 overflow-auto"
+            style={{
+              left: attributionBounds.x,
+              bottom:
+                measured.height -
+                available.y -
+                available.height +
+                gap +
+                attributionLift,
+              width: attributionBounds.width,
+              maxHeight: attributionBounds.height,
+            }}
+          >
+            <div
+              ref={attributionContent}
+              style={{ display: "flex", justifyContent: "center", minWidth: 0 }}
+            >
+              {attribution}
+            </div>
+          </div>
+        )}
         {panel && (
           <aside
             ref={panelElement}
             aria-label={panelLabel}
             hidden={panelHidden}
-            style={position(layout.panelBounds ?? zero)}
+            style={{
+              ...position(layout.panelBounds ?? zero),
+              ...(sidePanelCap === undefined
+                ? {}
+                : { height: "auto", maxHeight: sidePanelCap }),
+            }}
             className={cn(
               surfaceClass(panelSurface),
               "z-40 flex-col overflow-hidden shadow-overlay",
@@ -936,7 +1298,8 @@ const AdaptiveMapShell = React.forwardRef<
               // hides its overflow is otherwise only clipping.
               data-kozmos-scroller=""
               className={cn(
-                "min-h-0 flex-1 overscroll-contain",
+                "min-h-0 overscroll-contain",
+                layout.presentation === "side" ? "flex-auto" : "flex-1",
                 // A side panel has no grip, so nothing was making the space
                 // the sheet's grip makes: the search field sat 1px under the
                 // panel's top edge. 16 matches where the field starts below

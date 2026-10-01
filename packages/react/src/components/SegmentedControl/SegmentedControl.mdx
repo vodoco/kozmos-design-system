@@ -17,6 +17,26 @@ content regions.
 
 <Controls />
 
+## Holding the choice
+
+Pressing the segment that holds the pill takes the choice back, and
+`onValueChange` reports that as `undefined`. A product that holds the choice
+says "nothing chosen" with `null`, so it passes `value={view ?? null}`: the
+control then shows no pill, from the start and after the choice is taken back
+or cleared.
+
+```tsx
+const [view, setView] = useState<string>();
+
+<SegmentedControl items={views} onValueChange={setView} value={view ?? null} />;
+```
+
+`undefined`, or no `value` at all, leaves the choice to the control, as it
+always has: a wrapper of the product's own that passes its optional `value` on
+keeps working when it is used without one. Give `defaultValue` for the
+control's first choice. A product that wants exactly one choice at all times
+ignores the `undefined` and keeps its `value`.
+
 ## Implementation
 
 <div className="subheading">Code</div>

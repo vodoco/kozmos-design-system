@@ -1,5 +1,9 @@
 npx lint-staged
 
+# Validate generated branding after the formatter, not only before committing.
+# The generator and Prettier must agree on the bytes that actually get shipped.
+node scripts/build-pointr-brand.mjs --check
+
 # The plugin build id is a hash of code.js, and lint-staged prettifies code.js,
 # so the stamp has to be taken after formatting or it lands stale in the very
 # commit that changed the plugin. Only re-stamps when the plugin is staged.

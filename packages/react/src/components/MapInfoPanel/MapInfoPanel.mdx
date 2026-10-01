@@ -1,0 +1,129 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./MapInfoPanel.stories";
+
+<Meta of={Stories} />
+
+# MapInfoPanel
+
+Information about a map: host-provided introduction, optional branding, FAQs,
+copyright/provider credits, support/legal links and explicitly labelled versions.
+Available as React MapInfoPanel, SwiftUI KozmosMapInfoPanel and Compose KozmosMapInfoPanel.
+MapInfo / KozmosMapInfo supplies the trigger and responsive presentation around a map shell.
+
+<Canvas of={Stories.Default} />
+<Controls />
+
+## Content contract
+
+Every string is host-supplied, already localized. Content has a required title and optional
+introduction, faqs (id/question/answer), credits and links (id/label/optional href), and
+versions (id/label/value). IDs must be stable and unique within each list. Empty sections
+are omitted. There are no default privacy claims, legal URLs, provider names, dates or
+SDK version numbers. Plain text is rendered literally, never interpreted as HTML/Markdown.
+
+The optional brand slot is independent of credits. Provide approved, accessible artwork
+appropriate to both themes; the information panel does not reuse the haloed map logo by default.
+Support can be an entry in links or part of a FAQ answer. Answers are plain text; use links for
+destinations. Versions have explicit labels so product and SDK versions cannot be confused.
+
+Absolute HTTP(S), mailto and tel destinations are supported. Credentials in URLs, whitespace,
+relative URLs and other schemes render as text. The host must still approve the destinations;
+scheme validation is not a destination allowlist. Web links use the same tab; native links use
+the system URL handler. An application that intercepts links owns failure feedback when a
+handler is unavailable. The DS never fetches the style, resolves OSM/Esri, or loads tenant HTML.
+
+## Responsive host
+
+Wrap a bounded AdaptiveMapShell in MapInfo, rather than replacing its search/POI panel:
+
+```tsx
+const [infoOpen, setInfoOpen] = React.useState(false);
+<MapInfo
+  open={infoOpen}
+  onOpenChange={setInfoOpen}
+  content={{ title: "About this map", introduction: "Explore Terminal 2." }}
+  style={{ width: "100%", height: 720 }}
+>
+  <AdaptiveMapShell
+    map={<VenueMap />}
+    panel={<BrowsePlaces />}
+    panelPlacement="start"
+  />
+</MapInfo>;
+```
+
+At a host width of at least 1104 logical units, the wrapper reserves a 384-unit pane at the
+logical end (right in LTR, left in RTL). Below that width it is full-screen, **not a right-hand
+drawer or a bottom-sheet detent**. Web also uses compact presentation when the viewport is
+narrower than that threshold. The threshold leaves at least 720 units for the existing shell
+to retain its side-panel layout; web increases it when the 24rem Info pane grows with text size.
+A compact embedded web map opens Info across the browser viewport.
+On iOS the host uses fullScreenCover; Android uses a full-width system Dialog with system
+bar insets. Native platforms use device/app locale; there is no language selector here.
+
+Desktop remains non-modal: search and map interaction continue, without dismissing Info
+on an outside click. Compact presentation isolates focus and background interaction. Close
+and Escape (web/hardware keyboard), or Android Back, dismiss it. Focus returns to the trigger.
+The trigger is hidden while Info is open and when available=false. Callers own open state;
+temporarily hiding availability does not discard that state. FAQ state is kept by the wrapper
+across presentation changes; standalone panels can own or receive controlled disclosure state.
+
+The map child stays mounted and is resized on desktop. Its renderer must observe container
+size (as it already must for AdaptiveMapShell) rather than recreate the SDK on each render.
+The nested shell computes camera padding in its resized coordinate space: do **not** add
+the Info width a second time. No SDK state, query, POI, route, floor or locale is cleared.
+MapInfo owns the top-end 48-unit Info control with a 16-unit edge inset. Do not put a second
+floating stack in that same area: place other controls in the shell's registered bottom
+corners, or compose MapInfoPanel into your application's own coordinated presentation.
+
+The entire panel scrolls when necessary, including its close button. Legal/version content
+rests at the bottom when content is short and follows the content when it is long. It is
+never absolutely pinned over FAQs. Long text wraps, type scaling is preserved, and the
+existing Kozmos Accordion supplies disclosure behavior. SwiftUI's expandedLabel and
+collapsedLabel are host-localizable accessibility values; web/Android expose native
+expanded/collapsed semantics. No entrance animation is added on web; mobile never slides
+from the right. Native system presentations respect platform motion settings.
+
+## Native usage
+
+```swift
+KozmosMapInfo(isOpen: $infoOpen,
+    content: .init(title: "About this map", introduction: "Explore Terminal 2.")) {
+    mapShell
+}
+```
+
+```kotlin
+KozmosMapInfo(
+    isOpen = infoOpen,
+    onOpenChange = { infoOpen = it },
+    content = KozmosMapInfoContent(title = "About this map"),
+    modifier = Modifier.fillMaxSize()
+) { MapShell() }
+```
+
+Standalone SwiftUI content accepts minimumHeight when placed in a ScrollView, so a short
+footer can sit at the viewport bottom. Compose callers can use verticalScroll followed by
+heightIn(min = viewportHeight). The wrapper handles both. An app must install this composition
+before disabling its SDK-provided Info UI. The separate iOS Pointr QA application now adopts
+the native host, with live simulator checks for SDK resizing and retained POI/search state.
+See `apps/PointrPlayground/README.md`. Other SDK consumers must wire and verify their own hosts;
+library/demo coverage alone is not proof of adoption.
+
+## Verification
+
+MapInfoPanel unit tests cover content, missing sections, FAQ disclosure, close callbacks and
+URL rejection. check-map-info.mjs uses built public exports to exercise desktop/phone LTR/RTL,
+full viewport sizing, non-modal desktop interaction, modal focus isolation, Escape/close,
+query preservation and map DOM identity. Native named tests check content, link policy,
+layout thresholds and large-text/rendering behavior. See the map-browse-flow Information,
+PhoneInformation and InformationRightToLeft stories for the complete composition.
+
+The browser integration check also traverses the footer by keyboard at 200% text size.
+FAQ color transitions may animate, but font and wrapping changes do not: animating those
+can displace the focused link while it is being read. Reduced-motion mode disables FAQ
+disclosure animation. WebKit uses Option/Alt-Tab to include links in keyboard traversal.
+
+<Canvas of={Stories.ExpandedFAQ} />
+<Canvas of={Stories.LongContent} />

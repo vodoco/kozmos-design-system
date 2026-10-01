@@ -62,6 +62,14 @@ fun KozmosPOIResultList(
     currentFloorId: String? = null,
     /** Each result's words for a walk shown as a band: the card's. */
     travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    /**
+     * Number every result with its `resultIndex`, the number its pin shows:
+     * the card's `numbered`, given to every card. Off unless the product turns
+     * it on, for a list whose pins are numbered, as quick access's are. The
+     * list never renumbers: a featured result shows Featured and no number,
+     * since its pin shows its logo, so number the others in pin order.
+     */
+    numbered: Boolean = false,
     /** Names each result's action row for TalkBack: the card's. */
     actionsLabel: String = "Actions for this result",
     /**
@@ -117,6 +125,7 @@ fun KozmosPOIResultList(
                     featuredLabel = featuredLabel,
                     actionsLabel = actionsLabel,
                     travelTimeBandLabels = travelTimeBandLabels,
+                    numbered = numbered,
                     onAction = onAction
                 )
             }

@@ -1,0 +1,47 @@
+name: KozmosInteractionHost
+options:
+  minimumXcodeGenVersion: "2.45.4"
+  deploymentTarget:
+    iOS: "16.0"
+packages:
+  Kozmos:
+    path: ..
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    CODE_SIGNING_ALLOWED: NO
+    GENERATE_INFOPLIST_FILE: YES
+    TARGETED_DEVICE_FAMILY: "1,2"
+targets:
+  KozmosInteractionHost:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - ../Tests/KozmosTests/DocSnippets/CategoryFilters.swift
+      - ../Tests/KozmosTests/DocSnippets/ResultsWithActions.swift
+    dependencies:
+      - package: Kozmos
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kozmos.interaction-tests
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+  KozmosInteractionTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: KozmosInteractionHost
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kozmos.interaction-tests.runner
+schemes:
+  KozmosInteractions:
+    build:
+      targets:
+        KozmosInteractionHost: all
+        KozmosInteractionTests: [test]
+    test:
+      targets: [KozmosInteractionTests]
+      parallelizable: false
