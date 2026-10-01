@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { prepareStillPage } from "./stillness";
 
 // Every story in the Storybook being measured, in the light theme and the
 // dark. A story opts out with the tag `no-visual`, and says why beside it.
@@ -71,6 +72,7 @@ for (const story of stories) {
         };
       });
 
+      await prepareStillPage(page);
       await page.goto(
         `/iframe.html?id=${story.id}&viewMode=story&globals=theme:${theme}`,
       );
@@ -95,16 +97,6 @@ for (const story of stories) {
       );
       await page.waitForLoadState("networkidle");
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
-      // `animations: "disabled"` rewinds most motion but not reliably (the AI
-      // search ring was caught mid-turn on 2026-09-23), so the page is
-      // stopped outright.
-      await page.addStyleTag({
-        content: `*, *::before, *::after {
-          animation: none !important;
-          transition: none !important;
-          caret-color: transparent !important;
-        }`,
-      });
 
       // The drawing, not the page: the union of what paints — text, images,
       // SVG and form controls, and boxes with a fill, a border, a shadow or an
