@@ -34,6 +34,7 @@ export interface POIResultCardProps extends Omit<
    * Run an action from the selected result. The card draws whatever
    * `result.actions` carries and reports which was pressed; it never decides
    * that a POI can be booked, only that the product said so.
+   * Without a handler, the actions remain visible but disabled.
    */
   onAction?: (action: POIResultAction, poiId: string) => void;
   featuredLabel?: string;
@@ -205,12 +206,13 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
     ];
 
     const handleAction = (action: POIResultAction) => {
+      if (!onAction) return;
       trackEvent("POIResultCard", "poi_result_action", {
         poiId: poi.id,
         resultIndex: result.resultIndex,
         action,
       });
-      onAction?.(action, poi.id);
+      onAction(action, poi.id);
     };
 
     const name = (
@@ -462,7 +464,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                       ? "bg-primary text-primary-foreground hover:bg-primary/90"
                       : "border border-border bg-card text-foreground hover:bg-muted",
                   )}
-                  disabled={entry.disabled}
+                  disabled={entry.disabled || !onAction}
                   key={`${entry.action}-${index}`}
                   onClick={() => handleAction(entry.action)}
                   type="button"

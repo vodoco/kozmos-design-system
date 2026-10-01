@@ -47,6 +47,25 @@ class KozmosPOIMediaGalleryIndexTest {
 
     private val photos = (1..3).map { KozmosPOIMediaPresentation(id = "photo-$it", src = "file:///photo-$it.jpg", alt = "Photo $it") }
 
+    @Test
+    fun aShortDragSettlesAtTheLeadingEdgeInBothDirections() {
+        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            val reported = mutableListOf<Int>()
+            paparazzi.live(content = { Gallery(direction = direction, onActiveIndexChange = { reported += it }) }) {
+                frames(5)
+                swipe(100f, direction)
+                frames(40)
+                val tree = read()
+                val strip = tree.merged.single { it.horizontalScroll != null }.bounds
+                val first = tree.named("Photo 1").frame
+                val offset = if (direction == LayoutDirection.Ltr) first.left - strip.left else strip.right - first.right
+                assertEquals("a short drag leaves a tile between snap positions ($direction)", 0f, offset, 1f)
+                assertEquals("Image 1 of 3", counter())
+                assertEquals(emptyList<Int>(), reported)
+            }
+        }
+    }
+
     @Composable
     private fun Gallery(
         media: List<KozmosPOIMediaPresentation> = photos,
@@ -209,6 +228,10 @@ class KozmosPOIMediaGalleryIndexTest {
             assertEquals("Next moved the strip the parent kept", "Photo 1", shown())
 
             swipe(240f)
+            // A released drag now settles with the native snap fling. Wait
+            // for the refused strip to return, with a bounded frame budget.
+            var remainingFrames = 120
+            while (shown() != "Photo 1" && remainingFrames-- > 0) frames(1)
             assertEquals(listOf(1, 1), reported)
             assertEquals("Image 1 of 3", counter())
             assertEquals("a refused swipe was left where the parent did not put it", "Photo 1", shown())
@@ -249,7 +272,7 @@ class KozmosPOIMediaGalleryIndexTest {
     fun rightToLeftTheSwipeAndTheButtonsGoTheOtherWay() {
         val reported = mutableListOf<Int>()
         val rtl = LayoutDirection.Rtl
-        paparazzi.live(content = { Gallery(direction = rtl, onActiveIndexChange = { reported += it }) }) {
+        paparazzi.live(durationMillis = 5000, content = { Gallery(direction = rtl, onActiveIndexChange = { reported += it }) }) {
             frames(5)
             assertEquals("Photo 1", shown(rtl))
             swipe(240f, rtl)
@@ -260,6 +283,26 @@ class KozmosPOIMediaGalleryIndexTest {
             assertEquals("Photo 3", shown(rtl))
             assertEquals("Image 3 of 3", counter())
             assertEquals(listOf(1, 2), reported)
+            frames(60)
+            assertEquals("the cancelled snap overwrote Next", "Photo 3", shown(rtl))
+            assertEquals(listOf(1, 2), reported)
+        }
+    }
+
+    @Test
+    fun aControlledChangeDuringSnapWinsWithoutAStaleReport() {
+        var index by mutableStateOf(0)
+        val reported = mutableListOf<Int>()
+        paparazzi.live(durationMillis = 5000, content = { Gallery(activeIndex = index, onActiveIndexChange = { reported += it; index = it }) }) {
+            frames(5)
+            swipe(240f)
+            assertEquals(listOf(1), reported)
+            index = 0
+            frames(5)
+            assertEquals("the parent's change did not interrupt settling", "Photo 1", shown())
+            frames(60)
+            assertEquals("Image 1 of 3", counter())
+            assertEquals(listOf(1), reported)
         }
     }
 }

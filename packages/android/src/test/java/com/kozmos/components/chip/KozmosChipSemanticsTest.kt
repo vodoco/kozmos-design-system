@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.ReadNode
 import com.kozmos.components.ReadSemantics
@@ -35,6 +36,47 @@ import org.junit.Test
 class KozmosChipSemanticsTest {
     @get:Rule
     val paparazzi = semanticsPaparazzi()
+
+    @Test
+    fun releasedPositionalArgumentsAndTrailingActionsKeepTheirMeaning() {
+        val ran = mutableListOf<String>()
+        val tree = paparazzi.readSemantics {
+            MaterialTheme {
+                Column {
+                    KozmosChip("Trailing", Modifier, ChipVariant.Brand, ChipSize.Default,
+                        true, null, true, null, { ran += "remove trailing" }) { ran += "trailing" }
+                    KozmosChip("Positional", Modifier, ChipVariant.Neutral, ChipSize.Default,
+                        false, null, true, null, { ran += "remove positional" }, { ran += "positional" })
+                }
+            }
+        }
+        tree.showing("Trailing").click!!.invoke()
+        tree.named("Remove Trailing").click!!.invoke()
+        tree.showing("Positional").click!!.invoke()
+        tree.named("Remove Positional").click!!.invoke()
+        assertEquals(listOf("trailing", "remove trailing", "positional", "remove positional"), ran)
+    }
+
+    @Test
+    fun theRemoveLabelCanBeLocalizedWithoutChangingTheChipsAction() {
+        val ran = mutableListOf<String>()
+        val tree = paparazzi.readSemantics {
+            MaterialTheme {
+                Column {
+                    KozmosChip(text = "Kaffee", removeLabel = "Kaffee entfernen",
+                        onRemove = { ran += "remove" }, onClick = { ran += "select" })
+                    KozmosChip(text = "Tee", enabled = false, removeLabel = "Tee entfernen",
+                        onRemove = { ran += "disabled remove" })
+                }
+            }
+        }
+        tree.showing("Kaffee").click!!.invoke()
+        tree.named("Kaffee entfernen").click!!.invoke()
+        assertFalse(tree.named("Tee entfernen").enabled)
+        tree.named("Tee entfernen").click?.invoke()
+        assertEquals(listOf("select", "remove"), ran)
+        assertTrue(tree.merged.none { it.description == "Remove Kaffee" })
+    }
 
     /** The one control whose text is [text]. */
     private fun ReadSemantics.showing(text: String): ReadNode {

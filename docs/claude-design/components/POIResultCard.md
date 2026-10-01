@@ -63,6 +63,7 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultCardProps`, which 
   Run an action from the selected result. The card draws whatever
   `result.actions` carries and reports which was pressed; it never decides
   that a POI can be booked, only that the product said so.
+  Without a handler, the actions remain visible but disabled.
 
 - `featuredLabel`: `string`, optional, default `"Featured"`.
 - `selectionLabel`: `string`, optional.
