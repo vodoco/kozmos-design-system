@@ -28,8 +28,8 @@ component's docs, stories and controls, and its code on every platform (decision
 
 ## Product and SDK
 
-- [`product-design-gap-register.md`](product-design-gap-register.md) — the 108 supplied product
-  gaps reconciled against released source, plus new SDK-screen requirements; separates library
+- [`product-design-gap-register.md`](product-design-gap-register.md) — all 121 supplied product
+  gaps reconciled against release and current-main evidence, plus SDK-screen requirements; separates library
   implementation, host integration, platform validation and external artifact adoption.
 - [`sdk-module-primitives.md`](sdk-module-primitives.md) — current SDK coverage and the proposed
   implementation plan for floor controls, map layout, language, branding/attribution, info and exit.
