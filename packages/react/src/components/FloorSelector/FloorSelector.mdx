@@ -7,7 +7,10 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # FloorSelector
 
-Displays the FloorSelector interface topology natively.
+A controlled floor selector with vertical-list, horizontal-list, compact-stepper and
+collapsible presentations. The host supplies top-first floors and the selected ID; Kozmos
+renders selection, availability cues and optional result counts without choosing a floor
+or changing the map itself.
 
 <Canvas>
   <Story of={FloorSelectorStories.VerticalList} />
@@ -115,6 +118,7 @@ export function Example() {
 export function LevelStepper() {
 const [floor, setFloor] = useState("G");
 return (
+
 <FloorSelector
 floors={["2", "1", "G", "B1", "B2"]}
 selectedFloor={floor}
@@ -131,6 +135,7 @@ nextFloorLabel="Floor down"
 export function LevelSwitcher({ visitorLevel }: { visitorLevel?: string }) {
 const [floor, setFloor] = useState("L1");
 return (
+
 <FloorSelector
 floors={[
 { id: "L2", label: "Level 2", shortLabel: "L2" },

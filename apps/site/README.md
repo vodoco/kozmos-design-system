@@ -725,16 +725,20 @@ means the gap is fixed: change the expectation and mark it fixed in
 
 ## The packages on npm
 
-Published since 2026-09-24 under the `@kozmos-ds` scope: `react` 0.4.0,
-`icons` 0.3.0, `product-contracts` 0.3.0, `tokens` 0.1.0.
+First published on 2026-09-23 under the `@kozmos-ds` scope. The verified 2026-10-01
+release is `react` 0.7.0, `tokens` 0.3.0 and `product-contracts` 0.6.0;
+`icons` remains 0.5.0. See [release evidence](../../docs/release-process.md#070).
+For a future current version, query `npm view @kozmos-ds/react version` rather than
+treating this dated snapshot as a live registry response.
 `PACKAGES_PUBLISHED` in `src/lib/site.ts` is `true`, which is what the home
 page's status tags and the Get started install note read.
 
 The site keeps `workspace:*`: it lives in the repository and builds from its
 source, so what it shows is what the repository holds. Deploy it from a
 release commit if you want the page to match a published version exactly.
-Still to do: check the install command on Get started against a clean
-project, as `pnpm packages:install:check` does for the packages.
+A clean npm React 19 install and Button server-render smoke test passed for 0.7.0.
+The release prepare job also checked React 18/19 tarballs. These do not certify every
+Get started browser interaction or a production SDK host.
 
 ## Deploying
 
@@ -812,7 +816,11 @@ These need someone to decide; the site does not guess:
 
 ## Found along the way, outside the site
 
-Measured while building the site; none of it is the site's to fix.
+Historical observations while building the site, not a newly reproduced defect list for
+0.7.0. [PR #166](https://github.com/vodoco/kozmos-design-system/pull/166) contains broader
+site/documentation reconciliation and needs refreshing against current main before merging.
+In particular its tree-shaking and icon-export findings must be considered before treating
+the old bullets below as current facts. No site gap is closed here without its acceptance test.
 
 - **`@kozmos-ds/react` is not tree-shaken.** Components the site never uses ship
   in its bundle: the shared chunk is 523 kB minified, about 155 kB gzipped,
@@ -829,10 +837,9 @@ Measured while building the site; none of it is the site's to fix.
   Product SDK, and Itinerary, ManoeuvreCard and RouteProgressRail in Core
   where Storybook files them under Map. The site runs the script and shows
   its lanes.
-- **Some CI checks exist only on this branch.** On `main`, `ci.yml` has no
-  `figma:painters:check`, `test:adaptive`, `test:storybook-audit` or the
-  POI-fixture and taxonomy steps; the site describes the pipeline of the
-  branch it is built on, which is the one it will merge after.
+- **CI reconciliation:** `figma:painters:check`, `test:adaptive`, `test:storybook-audit`
+  and the POI-fixture/taxonomy steps are now in main's `ci.yml`. Use the exact candidate
+  workflow rather than the original site branch as evidence.
 - **`scripts/check-token-contrast.mjs` counts the category pairs twice** in
   the dark theme (it pushes them inside its per-theme loop); the "218 pairs"
   it prints includes the duplicates.

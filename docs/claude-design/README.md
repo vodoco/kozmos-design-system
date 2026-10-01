@@ -192,7 +192,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [BrowseCategoriesPanel](components/BrowseCategoriesPanel.md): Scrollable Product/SDK category composition.
 - [CategoryField](components/CategoryField.md): The search field's form once a quick-access category is chosen — the prototype's, measured: 48 tall, the control radius, the category's colour at 12 % with a 1-pixel border of it, the icon at 28 in the colour, the name at 15 semibold in the foreground, a 22-tall count pill filled with the colour, a 32 clear at the trailing edge with its cross in the foreground, in a 44 hit area as the search bar's clear is.
 - [CategoryTile](components/CategoryTile.md): Product category action with controlled selection, multiline localization-safe labels, an optional count drawn as the system's counter at the icon square's top-right (its localized label spoken, not drawn), and a minimum 44px target.
-- [FloorSelector](components/FloorSelector.md): FloorSelector is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [FloorSelector](components/FloorSelector.md): A controlled floor selector with vertical-list, horizontal-list, compact-stepper and collapsible presentations.
 - [LanguageSwitcher](components/LanguageSwitcher.md): A web-only language control built from Kozmos Select. iOS and Android deliberately follow device/app language and do not have this button.
 - [LocationPin](components/LocationPin.md): LocationPin is a component of `@kozmos-ds/react` whose docs do not describe it yet.
 - [MapAttribution](components/MapAttribution.md): Provider-neutral map credits and an independently optional brand slot, available on React, SwiftUI and Compose.
