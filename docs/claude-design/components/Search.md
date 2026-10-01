@@ -2,7 +2,7 @@
 
 # Search
 
-Search is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A search input with a leading search icon, optional field label and validation message. Use Search for a form field; use SearchBar when you need a clear action and a trailing map-toolbar control.
 
 - **Import:** `import { Search } from "@kozmos-ds/react";`
 - **Group:** Inputs

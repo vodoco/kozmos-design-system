@@ -2,7 +2,7 @@
 
 # Pagination
 
-Pagination is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Composes page navigation from numbered links, previous/next controls and ellipses. The host supplies destinations, the active page and pagination logic; the component does not fetch or slice data.
 
 - **Import:** `import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@kozmos-ds/react";`
 - **Group:** Navigation

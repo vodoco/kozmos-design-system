@@ -9,8 +9,9 @@
  * shell. A stale inventory is worse than none, because an assistant reads it
  * as the complete set and works around what it thinks is missing.
  *
- * This generates it instead, from sources that cannot disagree with the code
- * because they ARE the code:
+ * This generates it from source and built declarations, rather than a second
+ * hand-maintained inventory. Tests independently check representative facts;
+ * extraction still needs review and does not prove runtime behaviour:
  *
  *   - the component directories under packages/react/src/components, and
  *     the exports of @kozmos-ds/react each one owns;
@@ -324,13 +325,13 @@ changelogLines.push(
 );
 changelogLines.push("");
 changelogLines.push(
-  "Every package is on 0.x. There has been no 1.0, no major version and no",
+  "Follow each release's migration notes before upgrading. 0.x releases can change APIs and behaviour",
 );
 changelogLines.push(
-  "breaking-change migration, so there are no codemods and nothing to migrate",
+  "and may require consumer changes even without a major version bump.",
 );
 changelogLines.push(
-  "from. A minor bump can still change behaviour: read the entry.",
+  "Automated codemods are not guaranteed; apply and verify the documented migration steps.",
 );
 changelogLines.push("");
 for (const [name, version] of Object.entries(manifests).sort()) {

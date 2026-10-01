@@ -58,14 +58,16 @@ It forwards its ref to `HTMLDivElement`. Its props are `SegmentedControlProps`, 
   ignore the `undefined` rather than expect the component to refuse it.
 
 - `size`: `"sm" | "default" | "lg"`, optional, default `"default"`.
-- `value`: `string`, optional.
+- `value`: `string | null`, optional.
 
-  The chosen segment, for a product that holds the choice itself. Passed at
-  all, `value` holds it: `undefined` is nothing chosen, the value
-  `onValueChange` hands over when the choice is taken back, so a control
-  that starts empty passes `value={undefined}` too. Leave it out, and give
-  `defaultValue`, for a control that keeps its own choice; an `undefined`
-  value beside a `defaultValue` leaves the choice to the control as well.
+  The chosen segment, for a product that holds the choice itself; `null`
+  is nothing chosen. `onValueChange` hands over `undefined` when the choice
+  is taken back, so a product holding the choice passes
+  `value={choice ?? null}`.
+
+  `undefined`, or no `value` at all, leaves the choice to the control, as
+  it always has: a wrapper that passes its own optional `value` on works
+  used without one. Give `defaultValue` for the control's first choice.
 
 - `wrapperClassName`: `string`, optional.
 - `dir`: `RovingFocusGroupProps['dir']`, optional.

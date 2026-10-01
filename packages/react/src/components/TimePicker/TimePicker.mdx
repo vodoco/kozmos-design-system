@@ -12,7 +12,8 @@ merge with helper/error guidance, and an explicit component error remains invali
 The owned field layout follows module direction and exposes a focus indicator for
 native segments, including engines that do not match them with `:focus-visible`.
 
-Displays the TimePicker interface topology natively.
+Uses the browser's time input with Kozmos field styling, labels and validation feedback.
+The browser supplies the picker interaction; the host owns any time-zone or scheduling rules.
 
 <Canvas>
   <Story of={TimePickerStories.Default} />

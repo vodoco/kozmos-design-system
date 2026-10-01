@@ -1,5 +1,6 @@
 import { Meta, Canvas } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
+import { PlatformSnippets } from "../PlatformSnippets";
 import * as Stories from "./POIResultList.stories";
 
 <Meta of={Stories} />
@@ -12,6 +13,103 @@ change. The empty state should tell the person how to recover.
 
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.Empty} />
+
+## Numbered results: quick access
+
+When a category is chosen in the browse grid, the list shows that category's places and the map
+pins them with numbers. Pass `numbered` for that list, and every result, grouped or not, shows its
+own `result.resultIndex`, the number on its pin, counted from 1. It is off unless the product turns
+it on: Kozmos cannot tell a quick-access list from a search's, so the product says which it is.
+
+- **The list draws the numbers it is given and never renumbers.** A featured result keeps its
+  Featured tab and shows no number, as its pin shows its logo; so number the other results, in the
+  order their pins are numbered, and the list and the map agree.
+- **A number takes the place of a badge**, for the same reason.
+- **The selected result's number fills** with the primary colour, as its pin stands out; the rest
+  are quiet, on the cards' grey edges, so a number is never taken for the selection.
+- **The number is heard with the name**, "2, Burger King …", and its tab is decorative.
+  `POIResultCard` has the details.
+
+<Canvas of={Stories.QuickAccessNumbered} />
+
+<PlatformSnippets
+    react={`
+import { POIResultList, type POIResultListItem } from "@kozmos-ds/react";
+
+// The places of the category chosen in the browse grid, numbered by the
+// product as their pins are: the featured ones show their logo and no number.
+export function QuickAccessResults({
+  results,
+  countLabel,
+  selectedPoiId,
+  onSelect,
+}: {
+  results: readonly POIResultListItem[];
+  // "6 places", in the visitor's language.
+  countLabel: string;
+  selectedPoiId?: string;
+  onSelect: (poiId: string) => void;
+}) {
+  return (
+    <POIResultList
+      items={results}
+      numbered
+      onSelect={onSelect}
+      resultCountLabel={countLabel}
+      selectedPoiId={selectedPoiId}
+    />
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The places of the category chosen in the browse grid, numbered by the
+// product as their pins are: the featured ones show their logo and no number.
+struct QuickAccessResults: View {
+    let results: [KozmosPOIResultListItem]
+    // "6 places", in the visitor's language.
+    let countLabel: String
+    let selectedPoiId: String?
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        KozmosPOIResultList(
+            items: results,
+            resultCountLabel: countLabel,
+            selectedPoiId: selectedPoiId,
+            numbered: true,
+            onSelect: onSelect
+        )
+    }
+}
+    `}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.poiresultlist.KozmosPOIResultList
+import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
+
+// The places of the category chosen in the browse grid, numbered by the
+// product as their pins are: the featured ones show their logo and no number.
+@Composable
+fun QuickAccessResults(
+    results: List<KozmosPOIResultListItem>,
+    // "6 places", in the visitor's language.
+    countLabel: String,
+    selectedPoiId: String?,
+    onSelect: (String) -> Unit
+) {
+    KozmosPOIResultList(
+        items = results,
+        resultCountLabel = countLabel,
+        onSelect = onSelect,
+        selectedPoiId = selectedPoiId,
+        numbered = true
+    )
+}
+    `}
+/>
 
 ## The selected result comes into view
 

@@ -7,7 +7,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # Textarea
 
-Displays the Textarea interface topology natively.
+A multiline text field with a label, validation message and optional character count.
+The count's limit is a soft maximum; use the native `maxLength` prop only when input should be capped.
 
 <Canvas>
   <Story of={TextareaStories.Default} />

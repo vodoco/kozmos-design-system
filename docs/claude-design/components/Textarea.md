@@ -2,7 +2,7 @@
 
 # Textarea
 
-Textarea is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A multiline text field with a label, validation message and optional character count. The count's limit is a soft maximum; use the native `maxLength` prop only when input should be capped.
 
 - **Import:** `import { Textarea } from "@kozmos-ds/react";`
 - **Group:** Components

@@ -2,7 +2,7 @@
 
 # Box
 
-Box is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A minimal layout wrapper that renders a `div`, or passes its props to one child with `asChild`. It adds no spacing or surface styling of its own; use Stack, Grid or Container for those layout conventions.
 
 - **Import:** `import { Box } from "@kozmos-ds/react";`
 - **Group:** Foundations

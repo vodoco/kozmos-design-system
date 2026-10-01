@@ -16,9 +16,9 @@ const browser = await launchFixtureBrowser();
 const failures = [];
 
 /** One scenario on a fresh page; any page error or React warning fails it. */
-async function scenario(name, mount, run, { reducedMotion } = {}) {
+async function scenario(name, mount, run, { reducedMotion, viewport } = {}) {
   const page = await browser.newPage({
-    viewport: { width: 800, height: 600 },
+    viewport: viewport ?? { width: 800, height: 600 },
     reducedMotion: reducedMotion ? "reduce" : "no-preference",
   });
   const errors = [];
@@ -206,6 +206,33 @@ await scenario(
     await press("Space");
     assert.equal(await held.textContent(), "nothing");
     assert.deepEqual(await checked(), ["false", "false"]);
+  },
+);
+
+// 0.5.0's contract: a wrapper that forwards an undefined `value` leaves the
+// choice to the control, and a press shows.
+await scenario(
+  "SegmentedControl: a wrapper forwarding an undefined value keeps its own choice, as in 0.5.0",
+  "forwarded-toggle",
+  async (page) => {
+    const segment = (name) => page.getByRole("radio", { name, exact: true });
+    const checked = async () =>
+      Promise.all(
+        ["List", "Map"].map((name) =>
+          segment(name).getAttribute("aria-checked"),
+        ),
+      );
+    await segment("Map").click();
+    await settleLayout(page);
+    assert.deepEqual(
+      await checked(),
+      ["false", "true"],
+      "the press did nothing visible",
+    );
+    await segment("List").focus();
+    await page.keyboard.press("Space");
+    await settleLayout(page);
+    assert.deepEqual(await checked(), ["true", "false"]);
   },
 );
 
@@ -445,6 +472,207 @@ await scenario(
     assert.equal(await page.getByRole("region").count(), 0, "unmounted");
     assert.equal((await focusIn(page)).name, "Ask the assistant");
   },
+);
+
+// Fix 3 of 0.6.0: a live region by its role alone, as MapStatusPill is,
+// keeps speaking under the open assistant.
+await scenario(
+  "GAP-93: a map status under the open assistant stays in the accessibility tree",
+  "assistant-cover",
+  async (page) => {
+    await openAssistant(page);
+    assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+    const pill = page.getByRole("status").filter({ hasText: "Turn back" });
+    assert.equal(await pill.count(), 1, "the pill is drawn");
+    assert.equal(
+      await pill.evaluate((node) => node.closest("[inert]") === null),
+      true,
+      "the pill's status was made inert",
+    );
+    // Chromium can show its own accessibility tree: the status is in it.
+    if (browser.browserType().name() === "chromium") {
+      const cdp = await page.context().newCDPSession(page);
+      const { nodes } = await cdp.send("Accessibility.getFullAXTree");
+      const statuses = nodes.filter((node) => node.role?.value === "status");
+      assert.ok(statuses.length > 0, "no status in the accessibility tree");
+      assert.deepEqual(
+        statuses
+          .filter((node) => node.ignored)
+          .map((node) => (node.ignoredReasons ?? []).map((r) => r.name)),
+        [],
+        "the status is left out of the accessibility tree",
+      );
+    }
+  },
+);
+
+// Fix 2 of 0.6.0: what the assistant covers follows the layout while it is
+// open. A media query lays it over the frame below 700px, and beside the
+// search from 700px.
+await scenario(
+  "GAP-93: covering, then beside the search as the layout changes, it gives the search back to the pointer and the keyboard",
+  "assistant-responsive",
+  async (page) => {
+    await openAssistant(page);
+    assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+
+    await page.setViewportSize({ width: 900, height: 800 });
+    await settleLayout(page);
+    assert.equal(
+      await takesFocus(page, "Shops"),
+      true,
+      "the tile beside the panel stayed out of reach",
+    );
+    const tile = await page
+      .getByRole("button", { name: "Shops", exact: true })
+      .boundingBox();
+    await page.mouse.click(tile.x + tile.width / 2, tile.y + tile.height / 2);
+    await settleLayout(page);
+    assert.equal(
+      await page.getByTestId("presses").textContent(),
+      "1",
+      "a press on the tile beside the panel did nothing",
+    );
+  },
+  { viewport: { width: 390, height: 800 } },
+);
+
+await scenario(
+  "GAP-93: beside the search, then covering it as the layout changes, it keeps the keyboard out and takes focus from what it covered",
+  "assistant-responsive",
+  async (page) => {
+    await openAssistant(page);
+    // Beside the panel, the visitor goes back to a tile.
+    assert.equal(await takesFocus(page, "Shops"), true);
+
+    await page.setViewportSize({ width: 390, height: 800 });
+    await settleLayout(page);
+    assert.equal(
+      (await focusIn(page)).name,
+      "Assistant",
+      "focus stayed on the tile the panel now covers",
+    );
+    assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+    await page.getByRole("textbox", { name: "Ask" }).focus();
+    for (let step = 0; step < 3; step += 1) {
+      await page.keyboard.press("Shift+Tab");
+      const at = await focusIn(page);
+      assert.equal(
+        at.inFrame && !at.inPanel,
+        false,
+        `Shift+Tab landed under the panel, on "${at.name}"`,
+      );
+    }
+  },
+  { viewport: { width: 900, height: 800 } },
+);
+
+// The responsive cover must not take focus from its own input, or from
+// controls the inert policy intentionally leaves reachable.
+for (const [role, name] of [
+  ["textbox", "Ask"],
+  ["button", "Portal control"],
+  ["button", "Live region control"],
+  ["button", "Outside frame"],
+]) {
+  await scenario(
+    `GAP-93: covering the frame preserves focus on ${name}`,
+    "assistant-responsive-reachable",
+    async (page) => {
+      await openAssistant(page);
+      const control = page.getByRole(role, { name, exact: true });
+      await control.focus();
+      await page.setViewportSize({ width: 390, height: 800 });
+      await settleLayout(page);
+      assert.equal(
+        await control.evaluate((node) => document.activeElement === node),
+        true,
+        `the covering panel took focus from the still-reachable ${name}`,
+      );
+      assert.equal(
+        await control.evaluate((node) => node.closest("[inert]") === null),
+        true,
+        `${name} became inert`,
+      );
+      assert.equal(await takesFocus(page, "Shops"), false, "a covered tile");
+    },
+    { viewport: { width: 900, height: 800 } },
+  );
+}
+
+// Fix 4 of 0.6.0: the shell's panel no longer captures a product's own
+// container queries; only the hosted details card is a size container.
+await scenario(
+  "Containers: in the shell's panel, a product's unnamed query and cqi read the product's own container; only the details card is one",
+  "shell-product-container",
+  async (page) => {
+    const read = await page.evaluate(() => {
+      const note = document.querySelector('[data-testid="product-note"]');
+      const scroller = note.closest("[data-kozmos-scroller]");
+      const hosted = document.querySelector('[data-testid="hosted-details"]');
+      const alone = document.querySelector(
+        '[data-testid="standalone-details"]',
+      );
+      const style = (node) => getComputedStyle(node);
+      const contentWidth = (node) => {
+        const s = style(node);
+        return (
+          node.clientWidth -
+          parseFloat(s.paddingLeft) -
+          parseFloat(s.paddingRight)
+        );
+      };
+      return {
+        noteColour: style(note).color,
+        noteWidth: Math.round(note.getBoundingClientRect().width),
+        scrollerContainer: style(scroller).containerType,
+        scrollerWidth: Math.round(contentWidth(scroller)),
+        hostedContainer: style(hosted).containerType,
+        hostedWidth: Math.round(hosted.getBoundingClientRect().width),
+        aloneContainer: style(alone).containerType,
+        aloneWidth: Math.round(alone.getBoundingClientRect().width),
+      };
+    });
+    assert.equal(
+      read.noteColour,
+      "rgb(255, 0, 0)",
+      `a product's unnamed @container query read a ${read.scrollerWidth}px box, not its own 1000px container`,
+    );
+    assert.equal(
+      read.noteWidth,
+      500,
+      "50cqi of the product's 1000px container",
+    );
+    assert.equal(read.scrollerContainer, "normal", "the panel is a container");
+    // The hosted card is the container its header reads (decision 51), and
+    // fills the panel's content box, which is what that header measured.
+    assert.equal(read.hostedContainer, "inline-size");
+    assert.equal(read.hostedWidth, read.scrollerWidth);
+    // On its own, in a box that shrinks to fit, it is no container and does
+    // not collapse.
+    assert.equal(read.aloneContainer, "normal");
+    assert.ok(
+      read.aloneWidth > 200,
+      `the lone card collapsed to ${read.aloneWidth}px`,
+    );
+    // A container of inline size only is no containing block: a fixed part
+    // inside the card still places against the viewport.
+    const fixed = await page.evaluate(() => {
+      const part = document.createElement("div");
+      part.style.cssText =
+        "position: fixed; top: 0; left: 0; width: 10px; height: 10px;";
+      document.querySelector('[data-testid="hosted-details"]').append(part);
+      const { top, left } = part.getBoundingClientRect();
+      part.remove();
+      return { top: Math.round(top), left: Math.round(left) };
+    });
+    assert.deepEqual(
+      fixed,
+      { top: 0, left: 0 },
+      "a fixed part placed against the card",
+    );
+  },
+  { viewport: { width: 1000, height: 1400 } },
 );
 
 // R3: clearing every choice from the keyboard hands focus to the field.

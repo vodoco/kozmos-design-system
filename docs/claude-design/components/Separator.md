@@ -2,7 +2,7 @@
 
 # Separator
 
-Separator is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A horizontal or vertical divider between related sections. It is decorative by default; set `decorative={false}` when the separator should be exposed to assistive technology.
 
 - **Import:** `import { Separator } from "@kozmos-ds/react";`
 - **Group:** Data Display

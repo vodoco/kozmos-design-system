@@ -2,7 +2,7 @@
 
 # Table
 
-Table is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Styled semantic table parts for headers, body rows, cells, footers and captions. The wrapper supports horizontal overflow and keyboard scrolling; sorting, selection and data loading remain host responsibilities.
 
 - **Import:** `import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@kozmos-ds/react";`
 - **Group:** Data Display

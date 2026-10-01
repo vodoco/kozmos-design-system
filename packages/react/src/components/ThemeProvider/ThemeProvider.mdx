@@ -7,7 +7,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # ThemeProvider
 
-Displays the ThemeProvider interface topology natively.
+Scopes light, dark or system appearance, reading direction and token overrides to a Kozmos subtree and its owned portals.
+It does not switch the host document's theme; persistence is opt-in through `storageKey`, or owned by the caller in controlled mode.
 
 <Canvas>
   <Story of={ThemeProviderStories.Default} />

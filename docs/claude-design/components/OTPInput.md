@@ -2,7 +2,7 @@
 
 # OTPInput
 
-OTPInput is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A segmented numeric code field with configurable length, paste handling and field feedback. Use its value callback to collect the code; verification and authentication belong to the host.
 
 - **Import:** `import { OTPInput } from "@kozmos-ds/react";`
 - **Group:** Components

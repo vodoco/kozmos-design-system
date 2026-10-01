@@ -1,8 +1,13 @@
 package com.kozmos.components.floorselector
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.key.Key
@@ -40,8 +47,15 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
+import com.kozmos.components.adaptivemapshell.LocalMapPopupRegion
+import kotlin.math.roundToInt
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -63,6 +77,8 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlSize
+import com.kozmos.components.tooltip.KozmosTooltip
+import com.kozmos.components.tooltip.KozmosTooltipSide
 import com.kozmos.contracts.KozmosFloorPresentation
 import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
@@ -119,13 +135,15 @@ fun KozmosFloorSelector(
     previousFloorLabel: String = "Floor up",
     nextFloorLabel: String = "Floor down",
     userFloor: String? = null,
-    userFloorLabel: String = "your level"
+    userFloorLabel: String = "your level",
+    showResultCounts: Boolean = false
 ) {
     val levels = remember(floors) {
         floors.map { KozmosFloorPresentation(id = it, label = it, shortLabel = it) }
     }
     KozmosFloorSelector(
         floors = levels,
+        showResultCounts = showResultCounts,
         selectedFloor = selectedFloor,
         onFloorSelect = onFloorSelect,
         modifier = modifier,
@@ -148,7 +166,7 @@ fun KozmosFloorSelector(
  * IDs had to double as what the buttons show and what TalkBack says, and there
  * was nowhere to put a count.
  *
- * A level's `resultCount` marks its button with a small count in the square's
+ * With [showResultCounts] enabled (false by default), a level's `resultCount` marks its button with a small count in the square's
  * trailing top corner, so a visitor can see the answer is upstairs without
  * changing level to find out (row 69, GAP-070). Only a count above zero is
  * marked: `null` is unknown, which is not the same as none, and a level with a
@@ -183,10 +201,11 @@ fun KozmosFloorSelector(
     nextFloorLabel: String = "Floor down",
     userFloor: String? = null,
     userFloorLabel: String = "your level",
+    showResultCounts: Boolean = false,
     resultCountLabel: (Int) -> String = { count -> if (count == 1) "1 result" else "$count results" }
 ) {
     val trackEvent = LocalKozmosAnalytics.current
-    val selectedIndex = floors.indexOfFirst { it.id == selectedFloor }.takeIf { it >= 0 } ?: 0
+    val selectedIndex = floors.indexOfFirst { it.id == selectedFloor }
     val labelStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
     // A level's square, and the result marker in it, grow by as much as the
     // label's text has, as the SwiftUI ones grow relative to the label's text
@@ -200,6 +219,7 @@ fun KozmosFloorSelector(
     val side = KozmosDimensions.primitivesLayoutSizing500 * growth
 
     fun select(floor: KozmosFloorPresentation) {
+        if (floor.disabled || floors.none { it.id == floor.id && !it.disabled }) return
         trackEvent(
             KozmosAnalyticsEvent(
                 component = "FloorSelector",
@@ -213,7 +233,9 @@ fun KozmosFloorSelector(
     if (variant == KozmosFloorSelectorVariant.Collapsible) {
         var expanded by remember { mutableStateOf(false) }
         KozmosFloorSwitcher(
-            floors = floors,
+            // One presentation for both drawn and spoken counts. Do not
+            // mutate the host's search data when the badges are disabled.
+            floors = if (showResultCounts) floors else floors.map { it.copy(resultCount = null) },
             selectedFloor = selectedFloor,
             expanded = expanded,
             onExpandedChange = { open ->
@@ -240,7 +262,7 @@ fun KozmosFloorSelector(
 
     val floorButton: @Composable (KozmosFloorPresentation, Boolean) -> Unit = { floor, marksResults ->
         val isSelected = floor.id == selectedFloor
-        val count = markedResultCount(floor, marksResults)
+        val count = markedResultCount(floor, marksResults && showResultCounts)
         // The marker lies over the square rather than in it, so the square's
         // round clip does not take its corner off; the two are one control's
         // size, so the marker is still inside the level's button.
@@ -257,7 +279,7 @@ fun KozmosFloorSelector(
                         // The button shows the short label; TalkBack gets the
                         // full one, and the result count with it where the
                         // button marks one.
-                        contentDescription = spokenFloorLabel(floor, marksResults, resultCountLabel)
+                        contentDescription = spokenFloorLabel(floor, marksResults && showResultCounts, resultCountLabel)
                         selected = isSelected
                     },
                 contentAlignment = Alignment.Center
@@ -339,7 +361,7 @@ fun KozmosFloorSelector(
             // A selection the list does not hold is shown as it was given.
             floorButton(
                 floors.firstOrNull { it.id == selectedFloor }
-                    ?: KozmosFloorPresentation(id = selectedFloor, label = selectedFloor, shortLabel = selectedFloor),
+                    ?: KozmosFloorPresentation(id = selectedFloor, label = selectedFloor, shortLabel = selectedFloor, disabled = true),
                 false
             )
             stepperButton(1, nextFloorLabel)
@@ -349,6 +371,40 @@ fun KozmosFloorSelector(
         KozmosFloorSelectorVariant.Collapsible -> Unit
     }
 }
+
+/**
+ * Source-compatible 0.6.0 positional call with a count formatter as its final
+ * argument. No defaults: ordinary named/short calls use the primary overload.
+ * Supplying a formatter alone does not opt in to showing counts.
+ */
+@JvmName("KozmosFloorSelectorOfLevels")
+@Composable
+fun KozmosFloorSelector(
+    floors: List<KozmosFloorPresentation>,
+    selectedFloor: String,
+    onFloorSelect: (String) -> Unit,
+    modifier: Modifier,
+    variant: KozmosFloorSelectorVariant,
+    label: String,
+    previousFloorLabel: String,
+    nextFloorLabel: String,
+    userFloor: String?,
+    userFloorLabel: String,
+    resultCountLabel: (Int) -> String
+) = KozmosFloorSelector(
+    floors = floors,
+    selectedFloor = selectedFloor,
+    onFloorSelect = onFloorSelect,
+    modifier = modifier,
+    variant = variant,
+    label = label,
+    previousFloorLabel = previousFloorLabel,
+    nextFloorLabel = nextFloorLabel,
+    userFloor = userFloor,
+    userFloorLabel = userFloorLabel,
+    showResultCounts = false,
+    resultCountLabel = resultCountLabel
+)
 
 /**
  * How far the switcher's open column reaches past its tile, and how far its
@@ -394,6 +450,7 @@ internal fun KozmosFloorSwitcher(
         ?: KozmosFloorPresentation(id = selectedFloor, label = selectedFloor, shortLabel = selectedFloor)
     val tileShowsUserFloor = userFloor != null && shown.id == userFloor
     val tileLabel = if (tileShowsUserFloor) "${shown.label}, $userFloorLabel" else shown.label
+    val availability = floorAvailability(floors, selectedFloor)
     val density = LocalDensity.current
     // The map control's own size, read off the tile: the column's levels take
     // it, so its bottom level lies exactly over the tile whatever size the
@@ -401,8 +458,22 @@ internal fun KozmosFloorSwitcher(
     // tile has been measured.
     var tileSize by remember { mutableStateOf(DpSize(KozmosMapControlSize, KozmosMapControlSize)) }
     val tileFocus = remember { FocusRequester() }
+    val region = LocalMapPopupRegion.current
+    var anchorBounds by remember { mutableStateOf(IntRect.Zero) }
+    val configuration = LocalConfiguration.current
+    val fallbackBounds = with(density) { IntRect(0, 0, configuration.screenWidthDp.dp.roundToPx(), configuration.screenHeightDp.dp.roundToPx()) }
+    val popupBounds = region?.bounds ?: fallbackBounds
+    val available = region?.available != false && floors.isNotEmpty()
+    val maxPopupHeight = with(density) { floorPopupHeight(anchorBounds, popupBounds, SwitcherInset.roundToPx(), allowHorizontalShift = region != null).toDp() }
+    LaunchedEffect(available, maxPopupHeight) {
+        if (expanded && (!available || (anchorBounds.width > 0 && maxPopupHeight < tileSize.height + SwitcherInset * 2))) onExpandedChange(false)
+    }
     val inputModeManager = LocalInputModeManager.current
     var returnFocus by remember { mutableStateOf(false) }
+    val hoverSource = remember { MutableInteractionSource() }
+    val hovered by hoverSource.collectIsHoveredAsState()
+    var focused by remember { mutableStateOf(false) }
+    val hintSide = if (LocalLayoutDirection.current == LayoutDirection.Rtl) KozmosTooltipSide.Right else KozmosTooltipSide.Left
 
     // Closes the column. From a keyboard, focus goes back to the tile, which
     // names the level now shown; a touch leaves focus where the visitor put it.
@@ -412,60 +483,77 @@ internal fun KozmosFloorSwitcher(
     }
 
     LaunchedEffect(expanded, returnFocus) {
-        if (!expanded && returnFocus) {
+        if (!expanded && returnFocus && available) {
             tileFocus.requestFocus()
             returnFocus = false
         }
     }
 
-    Box(modifier = modifier.semantics { contentDescription = label }) {
-        KozmosMapControlButton(
-            label = tileLabel,
-            onClick = { if (expanded) close() else onExpandedChange(true) },
-            modifier = Modifier
-                .onSizeChanged { size -> tileSize = with(density) { DpSize(size.width.toDp(), size.height.toDp()) } }
-                .focusRequester(tileFocus)
-                .semantics {
-                    if (expanded) {
-                        collapse { close(); true }
-                    } else {
-                        expand { onExpandedChange(true); true }
+    KozmosTooltip(
+        tooltip = shown.label,
+        side = hintSide,
+        visible = available && !expanded && (hovered || focused),
+        modifier = modifier.hoverable(hoverSource)
+    ) {
+        Box(modifier = Modifier.semantics { contentDescription = label }) {
+            KozmosMapControlButton(
+                label = tileLabel,
+                onClick = { if (expanded) close() else if (available) onExpandedChange(true) },
+                modifier = Modifier
+                    .onGloballyPositioned { coordinates ->
+                        val b = coordinates.boundsInWindow()
+                        anchorBounds = IntRect(b.left.roundToInt(), b.top.roundToInt(), b.right.roundToInt(), b.bottom.roundToInt())
                     }
-                    liveRegion = LiveRegionMode.Polite
-                },
-            icon = {
-                Text(
-                    text = shown.shortLabel,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1
-                )
-            }
-        )
-        // The tile marks the visitor's level only while it shows it, and no
-        // result count: it is the level already in view.
-        if (tileShowsUserFloor) {
-            UserFloorDot(Modifier.align(Alignment.TopEnd))
-        }
-        if (expanded) {
-            val inset = with(density) { SwitcherInset.roundToPx() }
-            Popup(
-                popupPositionProvider = remember(inset) { FloorSwitcherColumnPosition(inset) },
-                onDismissRequest = { close() },
-                properties = FloorSwitcherPopupProperties
-            ) {
-                KozmosFloorSwitcherColumn(
-                    floors = floors,
-                    selectedFloor = selectedFloor,
-                    userFloor = userFloor,
-                    userFloorLabel = userFloorLabel,
-                    resultCountLabel = resultCountLabel,
-                    levelSize = tileSize,
-                    onChoose = { floor ->
-                        onChoose(floor)
-                        close()
+                    .onSizeChanged { size -> tileSize = with(density) { DpSize(size.width.toDp(), size.height.toDp()) } }
+                    .focusRequester(tileFocus)
+                    .onFocusChanged { focused = it.isFocused }
+                    .semantics {
+                        if (expanded) {
+                            collapse { close(); true }
+                        } else {
+                            if (available) expand { onExpandedChange(true); true }
+                        }
+                        liveRegion = LiveRegionMode.Polite
                     },
-                    onEscape = { close() }
-                )
+                icon = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        FloorDirectionCue(up = true, visible = availability.above)
+                        Text(
+                            text = shown.shortLabel,
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            maxLines = 1
+                        )
+                        FloorDirectionCue(up = false, visible = availability.below)
+                    }
+                }
+            )
+            // The tile marks the visitor's level only while it shows it, and no
+            // result count: it is the level already in view.
+            if (tileShowsUserFloor) {
+                UserFloorDot(Modifier.align(Alignment.TopEnd))
+            }
+            if (expanded && available && maxPopupHeight >= tileSize.height + SwitcherInset * 2) {
+                val inset = with(density) { SwitcherInset.roundToPx() }
+                Popup(
+                    popupPositionProvider = remember(inset, popupBounds) { FloorSwitcherColumnPosition(inset, popupBounds) },
+                    onDismissRequest = { close() },
+                    properties = FloorSwitcherPopupProperties
+                ) {
+                    KozmosFloorSwitcherColumn(
+                        floors = floors,
+                        selectedFloor = selectedFloor,
+                        userFloor = userFloor,
+                        userFloorLabel = userFloorLabel,
+                        resultCountLabel = resultCountLabel,
+                        levelSize = tileSize,
+                        maxHeight = maxPopupHeight,
+                        onChoose = { floor ->
+                            onChoose(floor)
+                            close()
+                        },
+                        onEscape = { close() }
+                    )
+                }
             }
         }
     }
@@ -493,17 +581,26 @@ internal fun KozmosFloorSwitcherColumn(
     levelSize: DpSize,
     onChoose: (KozmosFloorPresentation) -> Unit,
     modifier: Modifier = Modifier,
-    onEscape: () -> Unit = {}
+    onEscape: () -> Unit = {},
+    maxHeight: Dp = Dp.Infinity
 ) {
     val edge = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl + SwitcherInset)
     val levelShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
     val labelStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+    val scroll = rememberScrollState()
+    val density = LocalDensity.current
+    LaunchedEffect(selectedFloor, levelSize, maxHeight) {
+        val index = floors.indexOfFirst { it.id == selectedFloor }.coerceAtLeast(0)
+        scroll.scrollTo(with(density) { ((levelSize.height + SwitcherInset) * index).roundToPx() })
+    }
     Column(
         modifier = modifier
             // The map controls' elevation role, as KozmosMapControlButton casts
             // it, on the page's own surface, and no edge.
             .shadow(KozmosShadows.semanticsElevationMapControl, edge)
             .background(KozmosThemeTokens.primitivesColorsBackground0, edge)
+            .heightIn(max = maxHeight)
+            .verticalScroll(scroll)
             .padding(SwitcherInset)
             // Escape from a keyboard, as Back: the popup hears only Back.
             .onPreviewKeyEvent { event ->
@@ -519,46 +616,53 @@ internal fun KozmosFloorSwitcherColumn(
         floors.forEach { floor ->
             val isCurrent = floor.id == selectedFloor
             val count = markedResultCount(floor, true)
+            val hoverSource = remember(floor.id) { MutableInteractionSource() }
+            val hovered by hoverSource.collectIsHoveredAsState()
+            var focused by remember(floor.id) { mutableStateOf(false) }
+            val hintSide = if (LocalLayoutDirection.current == LayoutDirection.Rtl) KozmosTooltipSide.Right else KozmosTooltipSide.Left
             // The marks lie over the level rather than in it, so its round
             // clip does not take their corners off, as the lists' markers do.
-            Box(modifier = Modifier.size(levelSize)) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clip(levelShape)
-                        .background(
-                            if (floor.disabled) KozmosThemeTokens.primitivesColorsBackground100 else Color.Transparent
+            KozmosTooltip(tooltip = floor.label, side = hintSide, visible = hovered || focused) {
+                Box(modifier = Modifier.size(levelSize).hoverable(hoverSource)) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clip(levelShape)
+                            .background(
+                                if (floor.disabled) KozmosThemeTokens.primitivesColorsBackground100 else Color.Transparent
+                            )
+                            .then(
+                                if (isCurrent) {
+                                    Modifier.border(1.dp, KozmosThemeTokens.primitivesColorsTheme600, levelShape)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .onFocusChanged { focused = it.isFocused }
+                            .clickable(enabled = !floor.disabled, role = Role.Button) { onChoose(floor) }
+                            .semantics {
+                                contentDescription = switcherSpokenLabel(floor, userFloor, userFloorLabel, resultCountLabel)
+                                selected = isCurrent
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = floor.shortLabel,
+                            color = when {
+                                isCurrent -> KozmosThemeTokens.primitivesColorsTheme600
+                                floor.disabled -> KozmosThemeTokens.primitivesColorsForeground400
+                                else -> KozmosThemeTokens.primitivesColorsForeground100
+                            },
+                            style = labelStyle,
+                            maxLines = 1
                         )
-                        .then(
-                            if (isCurrent) {
-                                Modifier.border(1.dp, KozmosThemeTokens.primitivesColorsTheme600, levelShape)
-                            } else {
-                                Modifier
-                            }
-                        )
-                        .clickable(enabled = !floor.disabled, role = Role.Button) { onChoose(floor) }
-                        .semantics {
-                            contentDescription = switcherSpokenLabel(floor, userFloor, userFloorLabel, resultCountLabel)
-                            selected = isCurrent
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = floor.shortLabel,
-                        color = when {
-                            isCurrent -> KozmosThemeTokens.primitivesColorsTheme600
-                            floor.disabled -> KozmosThemeTokens.primitivesColorsForeground400
-                            else -> KozmosThemeTokens.primitivesColorsForeground100
-                        },
-                        style = labelStyle,
-                        maxLines = 1
-                    )
-                }
-                if (floor.id == userFloor) {
-                    UserFloorDot(Modifier.align(Alignment.TopEnd))
-                }
-                if (count != null) {
-                    ResultMarker(count, 1f, Modifier.align(Alignment.BottomEnd))
+                    }
+                    if (floor.id == userFloor) {
+                        UserFloorDot(Modifier.align(Alignment.TopEnd))
+                    }
+                    if (count != null) {
+                        ResultMarker(count, 1f, Modifier.align(Alignment.BottomEnd))
+                    }
                 }
             }
         }
@@ -571,7 +675,18 @@ internal fun KozmosFloorSwitcherColumn(
  * inset, so its levels line up with it — and turned downwards from the tile's
  * top where the window has no room above. Mirrored right to left.
  */
-internal class FloorSwitcherColumnPosition(private val inset: Int) : PopupPositionProvider {
+internal fun floorPopupHeight(anchor: IntRect, bounds: IntRect, inset: Int, allowHorizontalShift: Boolean = false): Int {
+    // The shell's clear region may be beside a same-side panel. The popup
+    // position provider clamps horizontally into it; keep standalone guards.
+    if (anchor.width <= 0 || anchor.height <= 0 ||
+        (!allowHorizontalShift && (anchor.left < bounds.left || anchor.right > bounds.right)) ||
+        anchor.top < bounds.top || anchor.bottom > bounds.bottom || bounds.width < anchor.width + inset * 2) return 0
+    val above = minOf(bounds.bottom, anchor.bottom + inset) - bounds.top
+    val below = bounds.bottom - maxOf(bounds.top, anchor.top - inset)
+    return maxOf(above, below).coerceAtLeast(0)
+}
+
+internal class FloorSwitcherColumnPosition(private val inset: Int, private val bounds: IntRect? = null) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
         windowSize: IntSize,
@@ -583,9 +698,13 @@ internal class FloorSwitcherColumnPosition(private val inset: Int) : PopupPositi
         } else {
             anchorBounds.left - inset
         }
+        val region = bounds ?: IntRect(0, 0, windowSize.width, windowSize.height)
         val above = anchorBounds.bottom + inset - popupContentSize.height
-        val y = if (above >= 0) above else anchorBounds.top - inset
-        return IntOffset(x.coerceIn(0, maxOf(0, windowSize.width - popupContentSize.width)), y)
+        val y = if (above >= region.top) above else anchorBounds.top - inset
+        return IntOffset(
+            x.coerceIn(region.left, maxOf(region.left, region.right - popupContentSize.width)),
+            y.coerceIn(region.top, maxOf(region.top, region.bottom - popupContentSize.height))
+        )
     }
 }
 
@@ -688,10 +807,40 @@ internal fun spokenFloorLabel(
 
 /** The next level that can be chosen `step` entries on in list order, passing closed ones; null past either end. */
 internal fun reachableFloorIndex(floors: List<KozmosFloorPresentation>, from: Int, step: Int): Int? {
+    if (from !in floors.indices || (step != -1 && step != 1)) return null
     var candidate = from + step
     while (candidate in floors.indices) {
         if (!floors[candidate].disabled) return candidate
         candidate += step
     }
     return null
+}
+
+/** Availability only: the entire collapsed tile opens the floor list. */
+internal data class FloorAvailability(val above: Boolean, val below: Boolean)
+
+internal fun floorAvailability(floors: List<KozmosFloorPresentation>, selectedFloor: String): FloorAvailability {
+    val index = floors.indexOfFirst { it.id == selectedFloor }
+    if (index < 0) return FloorAvailability(false, false)
+    return FloorAvailability(
+        floors.take(index).any { !it.disabled },
+        floors.drop(index + 1).any { !it.disabled }
+    )
+}
+
+@Composable
+private fun FloorDirectionCue(up: Boolean, visible: Boolean) {
+    Box(
+        modifier = Modifier.size(width = KozmosDimensions.primitivesLayoutSizing200, height = KozmosDimensions.primitivesLayoutSpacing75),
+        contentAlignment = Alignment.Center
+    ) {
+    Icon(
+        imageVector = if (up) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+        contentDescription = null,
+        modifier = Modifier
+            .requiredSize(KozmosDimensions.primitivesLayoutSizing200)
+            .alpha(if (visible) 1f else 0f)
+            .clearAndSetSemantics {}
+    )
+    }
 }

@@ -108,11 +108,11 @@ describe("SegmentedControl", () => {
   });
 
   describe("held by the product, with nothing chosen (R1)", () => {
-    // `onValueChange` hands over `undefined` when the choice is taken back,
-    // and a product holding the choice passes that back as `value`. Radix
-    // reads an undefined value as "uncontrolled", so the control showed the
-    // last choice it had seen itself, not the product's: taken back, the
-    // segment stayed pressed.
+    // `onValueChange` hands over `undefined` when the choice is taken back.
+    // `undefined` leaves the choice to the control, as it did in 0.5.0, so a
+    // product that holds the choice says "nothing chosen" with `null`:
+    // `value={choice ?? null}`. Passed back as `undefined`, the control would
+    // show the last choice it had seen itself, and the segment stay pressed.
     let warnings: ReturnType<typeof vi.spyOn>[] = [];
     beforeEach(() => {
       warnings = [
@@ -138,7 +138,7 @@ describe("SegmentedControl", () => {
             items={items}
             label="View"
             onValueChange={setValue}
-            value={value}
+            value={value ?? null}
           />
           <output>{value ?? "nothing"}</output>
           <button onClick={() => setValue(undefined)} type="button">
@@ -242,6 +242,83 @@ describe("SegmentedControl", () => {
       expect(pressed()).toEqual(["One"]);
       await user.click(screen.getByRole("radio", { name: "Three" }));
       expect(pressed()).toEqual(["Three"]);
+      expectNoWarnings();
+    });
+
+    it("leaves the choice to the control when a wrapper forwards an undefined value, as in 0.5.0", async () => {
+      // A product's own toggle that passes its optional `value` on, used
+      // without one. In 0.5.0 the control kept its own choice; holding
+      // `undefined` as "nothing chosen" made every press do nothing visible.
+      function ViewToggle({
+        value,
+        onChange,
+      }: {
+        value?: string;
+        onChange?: (value: string | undefined) => void;
+      }) {
+        return (
+          <SegmentedControl
+            items={items}
+            label="View"
+            onValueChange={onChange}
+            value={value}
+          />
+        );
+      }
+      const user = userEvent.setup();
+      const { unmount } = render(<ViewToggle />);
+      expect(pressed()).toEqual([]);
+      await user.click(screen.getByRole("radio", { name: "Two" }));
+      expect(pressed()).toEqual(["Two"]);
+      await user.click(screen.getByRole("radio", { name: "Three" }));
+      expect(pressed()).toEqual(["Three"]);
+      await user.click(screen.getByRole("radio", { name: "Three" }));
+      expect(pressed()).toEqual([]);
+      unmount();
+
+      // Spread in from an object that holds the key, undefined.
+      const forwarded: { value?: string } = { value: undefined };
+      render(<SegmentedControl items={items} label="View" {...forwarded} />);
+      await user.click(screen.getByRole("radio", { name: "One" }));
+      expect(pressed()).toEqual(["One"]);
+      expectNoWarnings();
+    });
+
+    it("holds an empty choice given null, whatever is pressed, until the product changes it", async () => {
+      const user = userEvent.setup();
+      const onValueChange = vi.fn();
+      const { rerender } = render(
+        <SegmentedControl
+          items={items}
+          label="View"
+          onValueChange={onValueChange}
+          value={null}
+        />,
+      );
+      expect(pressed()).toEqual([]);
+      await user.click(screen.getByRole("radio", { name: "One" }));
+      // Reported, and not shown: the product holds the choice.
+      expect(onValueChange).toHaveBeenLastCalledWith("one");
+      expect(pressed()).toEqual([]);
+
+      rerender(
+        <SegmentedControl
+          items={items}
+          label="View"
+          onValueChange={onValueChange}
+          value="two"
+        />,
+      );
+      expect(pressed()).toEqual(["Two"]);
+      rerender(
+        <SegmentedControl
+          items={items}
+          label="View"
+          onValueChange={onValueChange}
+          value={null}
+        />,
+      );
+      expect(pressed()).toEqual([]);
       expectNoWarnings();
     });
   });

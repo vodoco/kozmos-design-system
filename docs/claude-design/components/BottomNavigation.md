@@ -2,7 +2,7 @@
 
 # BottomNavigation
 
-BottomNavigation is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A bottom navigation bar of icon-and-label destinations with active, disabled and optional badge states. Items can be links or callback buttons; the host owns navigation and marks the active destination.
 
 - **Import:** `import { BottomNavigation } from "@kozmos-ds/react";`
 - **Group:** Navigation
@@ -44,65 +44,13 @@ export function BottomNavigationExample() {
 It forwards its ref to `HTMLElement`. Its props are `BottomNavigationProps`, which extends `React.HTMLAttributes<HTMLElement>`.
 
 - `items`: `{ badge?: React.ReactNode; disabled?: boolean; href?: string; icon: React.ReactNode; label: string; onClick?: () => void; active?: boolean }[]`, **required**.
-- `density`: `NavigationItemProps["density"]`, optional, default `"compact"`.
+- `density`: `"default" | "compact" | null`, optional, default `"compact"`.
+
+  How roomy the bar's items are. `compact`, the default, is an item at
+  least 64px tall, 6px in from its edges; `default` is at least 72px tall,
+  8px in. The bar keeps its own items (decision 42): the rail's side-menu
+  item, which has one size, is not what it draws.
+
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
-
-## Types these props take
-
-### NavigationItemProps
-
-From `@kozmos-ds/react`.
-
-```ts
-interface NavigationItemProps
-  extends
-    Omit<React.HTMLAttributes<HTMLElement>, "children">,
-    Omit<VariantProps<typeof navigationItemVariants>, "state"> {
-  asChild?: boolean;
-  badge?: React.ReactNode;
-  children?: React.ReactNode;
-  content?: NavigationItemContent;
-  /**
-   * How roomy a top or side item is. A rail item has one size and draws the
-   * same with `compact` as without it: the 64px compact tile is retired, and
-   * a rail item fills its rail (decision 42).
-   */
-  density?: VariantProps<typeof navigationItemVariants>["density"];
-  disabled?: boolean;
-  focusVisible?: boolean;
-  href?: string;
-  icon?: React.ReactNode;
-  label?: React.ReactNode;
-  selected?: boolean;
-  state?: NavigationItemState;
-  trailing?: React.ReactNode;
-}
-```
-
-### NavigationItemContent
-
-From `@kozmos-ds/react`.
-
-```ts
-type NavigationItemContent =
-  | "label"
-  | "icon-label"
-  | "icon-only"
-  | "badge"
-  | "trailing";
-```
-
-### NavigationItemState
-
-From `@kozmos-ds/react`.
-
-```ts
-type NavigationItemState =
-  | "default"
-  | "hover"
-  | "selected"
-  | "focus"
-  | "disabled";
-```

@@ -422,8 +422,9 @@ final class KozmosMapShellHostedDetailsTests: XCTestCase {
                 let pixels = try await RenderedPixels.render(view, size: wide)
                 let rightToLeft = direction == .rightToLeft
                 let name = "\(presentation) card, \(direction)"
-                // Somewhere inside the 416-point panel on the shell's end.
-                let panel = try panel(in: pixels, size: wide, through: CGPoint(x: rightToLeft ? 224 : 800, y: 350))
+                // Sample inside the header: a short side panel now hugs its
+                // content rather than extending to the map's vertical centre.
+                let panel = try panel(in: pixels, size: wide, through: CGPoint(x: rightToLeft ? 224 : 800, y: 80))
                 XCTAssertEqual(panel.width, 416, accuracy: 1.5, "\(name): not the side panel: \(panel)")
                 let close = try closeButton(in: pixels, from: panel.minY + 10, end: rightToLeft ? panel.minX : panel.maxX,
                                             rightToLeft: rightToLeft)

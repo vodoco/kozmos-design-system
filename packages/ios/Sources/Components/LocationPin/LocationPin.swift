@@ -94,6 +94,52 @@ public struct KozmosLocationPin: View {
         selected ? size.diameter + 8 : size.diameter
     }
 
+    /// Decision 55 (Olcay, 2026-09-29): a numbered pin on this floor is quiet
+    /// at rest — the surface, a ring and the number in its colour — and filled
+    /// only when selected, as the result card's number tab is. A featured pin
+    /// (its logo on the map) and a pin with no number keep their fill.
+    private var isQuiet: Bool {
+        number != nil && !selected && !featured && !offFloor
+    }
+
+    /// Quiet and off the floor both draw the outlined marker; off the floor
+    /// its ring is dashed, so the two never read alike.
+    private var isOutlined: Bool { isQuiet || offFloor }
+
+    /// The marker's colour as a ring and a number on the surface, where it
+    /// must read at 4.5:1 in both themes. The theme's 500 is one blue in
+    /// both, 3.74:1 on the dark surface, so the primary takes the theme's
+    /// text role (theme/600), and the accent its 700 (theme variant 1's 600
+    /// reads 4.21:1 in the dark). The others are inks already.
+    private var outlineColor: Color {
+        if featured { return KozmosColors.primitivesColorsEmotionalAlert500 }
+        if let tint { return tint.fill.fill }
+        switch variant {
+        case .default: return KozmosColors.primitivesColorsForeground100
+        case .primary: return KozmosColors.semanticsEmotionThemedText
+        case .secondary: return KozmosColors.primitivesColorsForeground400
+        case .accent: return KozmosColors.primitivesColorsThemeVariant1700
+        }
+    }
+
+    /// The number: in the fill's ink when filled; in the ring's colour when
+    /// quiet, except a tint's (six of the eight fills fail 4.5:1 as text on
+    /// the surface), which takes the foreground, as it does off the floor.
+    private var numberColor: Color {
+        if offFloor || (isQuiet && tint != nil) { return KozmosColors.primitivesColorsForeground0 }
+        if isQuiet { return outlineColor }
+        return tint?.fill.ink ?? KozmosColors.primitivesColorsForeground1000
+    }
+
+    /// Off the floor the ring is dashed: eight dashes, sized to close evenly
+    /// around the ring at every diameter.
+    private func ringStyle(width: CGFloat) -> StrokeStyle {
+        guard offFloor else { return StrokeStyle(lineWidth: width) }
+        let segment = CGFloat.pi * (diameter - width) / 8
+        // Round caps add half the width at each end of a dash.
+        return StrokeStyle(lineWidth: width, lineCap: .round, dash: [segment * 0.62 - width, segment * 0.38 + width])
+    }
+
     private var accessibilityDescription: String {
         [
             label,
@@ -114,9 +160,15 @@ public struct KozmosLocationPin: View {
             .accessibilityAction { if !isDisabled { onSelect?() } }
     }
 
+    /// Selected whether or not the pin can be pressed, as React's
+    /// `aria-current` and Compose's `selected` say it: a pin drawn with no
+    /// `onSelect`, or a disabled one, still marks the selected place. A button
+    /// only when it can be pressed.
     private var accessibilityTraits: AccessibilityTraits {
-        guard !isDisabled, onSelect != nil else { return [] }
-        return selected ? [.isButton, .isSelected] : .isButton
+        var traits: AccessibilityTraits = []
+        if !isDisabled, onSelect != nil { traits.insert(.isButton) }
+        if selected { traits.insert(.isSelected) }
+        return traits
     }
 
     @ViewBuilder
@@ -147,18 +199,20 @@ public struct KozmosLocationPin: View {
 
     private var marker: some View {
         ZStack {
-            // Off-floor pins invert to a hollow ring: the fill drops out and
-            // the marker colour moves to the stroke. Shape carries the state,
-            // so it is never colour-only, and a dashed stroke at this diameter
-            // would read as a cogwheel rather than a dashed ring.
+            // Outlined — quiet at rest, or off the floor — the fill drops out
+            // and the marker colour moves to the ring. Off the floor the ring
+            // is dashed (eight long dashes, which read as a dashed ring, not
+            // the cogwheel short ones made), so shape carries the floor, never
+            // colour alone, and a quiet pin at rest is never taken for one on
+            // another floor.
             Circle()
-                .fill(offFloor ? KozmosColors.primitivesColorsBackground0 : markerColor)
+                .fill(isOutlined ? KozmosColors.primitivesColorsBackground0 : markerColor)
                 .frame(width: diameter, height: diameter)
 
             Circle()
                 .strokeBorder(
-                    offFloor ? markerColor : KozmosColors.primitivesColorsForeground1000,
-                    lineWidth: offFloor ? 3 : 2
+                    isOutlined ? outlineColor : KozmosColors.primitivesColorsForeground1000,
+                    style: ringStyle(width: isOutlined ? 3 : 2)
                 )
                 .frame(width: diameter, height: diameter)
 
@@ -168,9 +222,7 @@ public struct KozmosLocationPin: View {
             if let number {
                 Text("\(number)")
                     .font(.system(size: diameter * 0.44, weight: .bold))
-                    .foregroundColor(
-                        offFloor ? KozmosColors.primitivesColorsForeground0 : (tint?.fill.ink ?? KozmosColors.primitivesColorsForeground1000)
-                    )
+                    .foregroundColor(numberColor)
             }
         }
         .shadow(color: KozmosColors.primitivesColorsForeground900.opacity(0.24), radius: 4, y: 2)

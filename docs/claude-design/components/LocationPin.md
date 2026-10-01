@@ -2,7 +2,7 @@
 
 # LocationPin
 
-LocationPin is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A map marker with optional result number, custom content, external label and category tint. Selected, featured and off-floor states distinguish the marker; the SDK host owns geographic placement and selection state.
 
 - **Import:** `import { LocationPin } from "@kozmos-ds/react";`
 - **Group:** Product SDK
@@ -38,15 +38,24 @@ It forwards its ref to `HTMLDivElement`. Its props are `LocationPinProps`, which
 - `size`: `"sm" | "md" | "lg"`, optional, default `"md"`.
 - `label`: `string`, optional, default `"Location"`.
 - `number`: `number`, optional.
+
+  The result's number, as its card's number tab shows it. At rest the pin
+  is quiet — the outlined marker on the background, its ring and number in
+  its colour — and it fills only when `selected`, as the tab does.
+
 - `markerContent`: `React.ReactNode`, optional.
 - `selected`: `boolean`, optional, default `false`.
+
+  Grows the pin, and fills a numbered one.
+
 - `featured`: `boolean`, optional, default `false`.
 - `disabled`: `boolean`, optional, default `false`.
 - `offFloor`: `boolean`, optional, default `false`.
 
-  On another floor: the marker inverts to a hollow outline on the
-  background and the number takes the foreground, so shape carries the
-  state, as on iOS and Compose.
+  On another floor: the outlined marker with a dashed ring, on the
+  background, and the number in the foreground, so shape carries the
+  state, as on iOS and Compose. The dashes tell it from a quiet numbered
+  pin at rest, which is outlined too; it never fills, selected or not.
 
 - `externalLabel`: `string`, optional.
 - `labelPlacement`: `"top" | "right" | "bottom" | "left"`, optional, default `"bottom"`.
@@ -55,8 +64,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `LocationPinProps`, which
 
   A category's colours for the marker — its fill, solid, with its ink for
   the number — over the variant's; a featured pin keeps the alert colour.
-  Off the floor the fill outlines the marker and the number takes the
-  foreground.
+  A numbered pin at rest and a pin off the floor are outlined in the fill,
+  with the number in the foreground.
 
 - `children`: `ReactNode`, optional.
 

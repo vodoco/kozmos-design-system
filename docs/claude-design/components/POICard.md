@@ -2,7 +2,7 @@
 
 # POICard
 
-POICard is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A general-purpose place card with optional imagery, subtitle, description, badges and actions. Its selectable identity and action footer are separate; use POIResultCard for SDK search-result state and POIDetailPanel for the full detail view.
 
 - **Import:** `import { POICard } from "@kozmos-ds/react";`
 - **Group:** Components

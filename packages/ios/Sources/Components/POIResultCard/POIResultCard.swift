@@ -1,5 +1,30 @@
 import SwiftUI
 
+/// The card supplies the outside corner. This path supplies only the inside
+/// bottom-end corner and mirrors logically, including the quiet tab's edge.
+private struct POIResultTabShape: Shape {
+    var rightToLeft: Bool
+    var edgeOnly = false
+
+    func path(in rect: CGRect) -> Path {
+        let inset: CGFloat = edgeOnly ? 0.5 : 0
+        let end = rect.maxX - inset
+        let bottom = rect.maxY - inset
+        let radius = min(KozmosDimensions.primitivesLayoutSpacing100 - 1, min(rect.width, rect.height))
+        var path = Path()
+        path.move(to: CGPoint(x: end, y: rect.minY))
+        path.addLine(to: CGPoint(x: end, y: bottom - radius))
+        path.addArc(center: CGPoint(x: end - radius, y: bottom - radius), radius: radius,
+                    startAngle: .zero, endAngle: .degrees(90), clockwise: false)
+        path.addLine(to: CGPoint(x: rect.minX, y: bottom))
+        if !edgeOnly {
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.closeSubpath()
+        }
+        return rightToLeft ? path.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: rect.minX + rect.maxX, ty: 0)) : path
+    }
+}
+
 /// Characters `encodeURIComponent` leaves untouched. Matching the web escaping
 /// exactly keeps the identifier identical on all three platforms.
 private let kozmosPOIResultIdentifierAllowed = CharacterSet(
@@ -22,6 +47,8 @@ public func kozmosPOIResultIdentifier(_ poiId: String) -> String {
 /// card renders exactly the state described by `poi` and `result`.
 public struct KozmosPOIResultCard: View {
     @Environment(\.kozmosAnalytics) private var trackEvent
+    @Environment(\.layoutDirection) private var layoutDirection
+    @ScaledMetric(relativeTo: .caption2) private var tabHeight = KozmosDimensions.primitivesLayoutSizing200
 
     private let poi: KozmosPOIPresentation
     private let result: KozmosPOIResultPresentation
@@ -34,6 +61,14 @@ public struct KozmosPOIResultCard: View {
     /// is set (decision 50). English until the product gives its own, for one
     /// band or all five.
     private let travelTimeBandLabels: [KozmosTravelTimeBand: String]
+    /// Draw the result's number, `result.resultIndex`, in its tab: the number
+    /// its pin shows on the map. Off unless the product turns it on, for a
+    /// list whose pins are numbered, as quick access's are. The card draws
+    /// the number it is given and never renumbers. A featured result keeps
+    /// its Featured tab and shows no number, as its pin shows its logo; a
+    /// number takes the place of a badge. The number leads what VoiceOver
+    /// says ("2, Burger King"); a `selectionLabel` replaces all of it.
+    let numbered: Bool
     private let onSelect: (String) -> Void
     private let onAction: ((KozmosPOIResultAction, String) -> Void)?
 
@@ -45,6 +80,7 @@ public struct KozmosPOIResultCard: View {
         currentFloorId: String? = nil,
         actionsLabel: String = "Actions for this result",
         travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
+        numbered: Bool = false,
         onSelect: @escaping (String) -> Void,
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil
     ) {
@@ -55,8 +91,81 @@ public struct KozmosPOIResultCard: View {
         self.currentFloorId = currentFloorId
         self.actionsLabel = actionsLabel
         self.travelTimeBandLabels = travelTimeBandLabels
+        self.numbered = numbered
         self.onSelect = onSelect
         self.onAction = onAction
+    }
+
+    /// The card's one tab, and what it says decides how it looks. Featured
+    /// is the CMS's word and the map acts on it too (its pin draws the logo),
+    /// so it wins; then the number, which pairs the result with its pin; then
+    /// the badge, which only says why the result is in the list.
+    enum Tab: Equatable {
+        case featured
+        case number(String)
+        case badge(String)
+
+        var isNumber: Bool {
+            if case .number = self { return true }
+            return false
+        }
+    }
+
+    /// The number drawn, when the list is numbered and the result is not
+    /// featured: `resultIndex` as given.
+    var numberText: String? {
+        numbered && !result.featured ? "\(result.resultIndex)" : nil
+    }
+
+    var tab: Tab? {
+        if result.featured { return .featured }
+        if let numberText { return .number(numberText) }
+        if let badge = result.badge { return .badge(badge.label) }
+        return nil
+    }
+
+    /// The tab's fill, words and edge (GAP-054). Featured is the SDK's bright
+    /// amber under dark words, the alert fill pair, for its words and its star
+    /// (Olcay, 2026-09-29). A number is quiet at rest, the card's own fill
+    /// outlined in the container edge with muted words, and filled with the
+    /// primary colour when the result is selected, as the selected card's edge
+    /// is. A badge is quiet: the muted fill and muted words, with no star. Each
+    /// pair reads at 4.5:1 or more in both themes, as on the web.
+    struct TabPaint {
+        let fill: Color
+        let ink: Color
+        let edge: Color?
+    }
+
+    var tabPaint: TabPaint? {
+        switch tab {
+        case .featured:
+            return TabPaint(
+                fill: KozmosColors.semanticsEmotionAlertFill,
+                ink: KozmosColors.semanticsEmotionAlertOnfill,
+                edge: nil
+            )
+        case .number:
+            return result.selected
+                ? TabPaint(
+                    fill: KozmosColors.primitivesColorsTheme600,
+                    ink: KozmosColors.primitivesColorsForeground1000,
+                    edge: nil
+                )
+                : TabPaint(
+                    fill: KozmosColors.primitivesColorsBackground0,
+                    ink: KozmosColors.primitivesColorsForeground400,
+                    edge: KozmosColors.semanticsBorderSubtle
+                )
+        case .badge:
+            return TabPaint(
+                fill: KozmosColors.primitivesColorsBackground100,
+                ink: KozmosColors.primitivesColorsForeground400,
+                edge: nil
+            )
+        case nil:
+            return nil
+        }
     }
 
     /// What the result says about the walk: the band's words when the
@@ -134,6 +243,9 @@ public struct KozmosPOIResultCard: View {
         if let selectionLabel { return selectionLabel }
         return [
             result.featured ? featuredLabel : nil,
+            // The number leads the name, "2, Burger King": the tab that draws
+            // it is hidden from VoiceOver, so it is heard once.
+            numberText,
             poi.name,
             poi.categoryLabel,
             poi.locationLabel,
@@ -170,50 +282,6 @@ public struct KozmosPOIResultCard: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if result.featured {
-                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                    Image(systemName: "star.fill")
-                        .font(KozmosTypography.caption2)
-                        .accessibilityHidden(true)
-                    Text(featuredLabel)
-                        .font(.caption.weight(.semibold))
-                }
-                .foregroundColor(KozmosColors.componentsPrimaryButtonsAlertButtonForegroundContentIdle)
-                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
-                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
-                .background(KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle)
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: KozmosDimensions.semanticsRadiusControl,
-                        style: .continuous
-                    )
-                )
-                .padding(.leading, KozmosDimensions.primitivesLayoutSpacing200)
-            } else if let badge = result.badge {
-                // One tab, one treatment: the prototypes draw "Popular Choice"
-                // in the same amber as "Featured", so the LABEL distinguishes
-                // them and the styling does not. What differs is meaning -
-                // featured is the CMS's word and the map marker acts on it too.
-                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                    Image(systemName: "star.fill")
-                        .font(KozmosTypography.caption2)
-                        .accessibilityHidden(true)
-                    Text(badge.label)
-                        .font(.caption.weight(.semibold))
-                }
-                .foregroundColor(KozmosColors.componentsPrimaryButtonsAlertButtonForegroundContentIdle)
-                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
-                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
-                .background(KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle)
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: KozmosDimensions.semanticsRadiusControl,
-                        style: .continuous
-                    )
-                )
-                .padding(.leading, KozmosDimensions.primitivesLayoutSpacing200)
-            }
-
             Button(action: handleSelect) {
                 HStack(alignment: .center, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                     VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
@@ -264,7 +332,8 @@ public struct KozmosPOIResultCard: View {
                 // 80 tall: the prototype's row.
                 .frame(minHeight: KozmosDimensions.primitivesLayoutSizing1000 - KozmosDimensions.primitivesLayoutSpacing150 * 2)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
-                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing150)
+                .padding(.top, tab == nil ? KozmosDimensions.primitivesLayoutSpacing150 : tabHeight + KozmosDimensions.primitivesLayoutSpacing100)
+                .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing150)
                 // The row has no fill of its own, so without an explicit hit
                 // shape only the text and the logo are tappable and the gaps
                 // between them swallow taps.
@@ -317,17 +386,67 @@ public struct KozmosPOIResultCard: View {
             }
         }
         .background(KozmosColors.primitivesColorsBackground0)
+        .overlay(alignment: .topLeading) {
+            if let tab, let paint = tabPaint {
+                tabView(tab, paint)
+                    .allowsHitTesting(false)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
-                .stroke(
-                    result.selected
-                        ? KozmosColors.primitivesColorsTheme500
-                        : KozmosColors.semanticsBorderSubtle,
-                    lineWidth: result.selected ? 2 : 1
-                )
+                .stroke(edgeColor, lineWidth: result.selected ? 2 : 1)
         )
         .accessibilityIdentifier(kozmosPOIResultIdentifier(poi.id))
+    }
+
+    /// The card's edge. Selected, the theme colour at 2pt, whatever else the
+    /// card is: the web says selection with a ring beside the edge, and a
+    /// native card has only its edge to say it with. Otherwise a featured card
+    /// takes its tab's amber (Olcay, 2026-09-29), and every other card the
+    /// container edge: a number and a badge never recolour it.
+    var edgeColor: Color {
+        if result.selected { return KozmosColors.primitivesColorsTheme500 }
+        if tab == .featured { return KozmosColors.semanticsEmotionAlertFill }
+        return KozmosColors.semanticsBorderSubtle
+    }
+
+    /// The one tab, at the card's leading edge. Featured and a badge are read
+    /// as their words, as they always were; a number is hidden, because it
+    /// leads the result's own description.
+    ///
+    /// Inside the top-start corner, sharing the card's outer clip and border.
+    /// Only the inner bottom-end corner rounds. The one-point inner outline
+    /// closes a quiet number without duplicating the card's top/start edge.
+    /// Its height and the clearance before the name scale with Dynamic Type.
+    @ViewBuilder
+    private func tabView(_ tab: Tab, _ paint: TabPaint) -> some View {
+        let shape = POIResultTabShape(rightToLeft: layoutDirection == .rightToLeft)
+        let words: String = {
+            switch tab {
+            case .featured: return featuredLabel
+            case .number(let number): return number
+            case .badge(let label): return label
+            }
+        }()
+        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+            if tab == .featured {
+                Image(systemName: "star.fill")
+                    .font(KozmosTypography.caption2)
+                    .accessibilityHidden(true)
+            }
+            Text(words)
+                .font(KozmosTypography.caption2)
+                .lineLimit(1)
+        }
+        .foregroundColor(paint.ink)
+        .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing75)
+        .frame(minHeight: tabHeight)
+        .background(paint.fill)
+        .clipShape(shape)
+        .overlay(POIResultTabShape(rightToLeft: layoutDirection == .rightToLeft, edgeOnly: true)
+            .stroke(paint.edge ?? .clear, lineWidth: 1))
+        .accessibilityHidden(tab.isNumber)
     }
 
     /// The logo when there is one, 48 at radius Control; nothing otherwise.

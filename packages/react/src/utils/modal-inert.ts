@@ -17,6 +17,10 @@ type InertState = {
 // suppression are distinct lifecycles. Never change a host's aria-hidden state.
 const documents = new WeakMap<Document, InertState>();
 
+/** What stays in reach to speak: live regions by attribute or by role. */
+const LIVE =
+  '[aria-live], [role~="status"], [role~="alert"], [role~="log"], [role~="marquee"], [role~="timer"], output, script';
+
 /** Make the background of a document-modal popup non-interactive. The newest
  * connected popup wins; release restores the preceding popup and host attributes.
  * Native inert complements, rather than replaces, the primitive's focus trap.
@@ -49,11 +53,14 @@ export function inertOutside(
             ? entry.within
             : doc.body;
         active.push(entry.target);
-        // Preserve live announcements exactly as the ARIA visibility primitive
-        // does. Never make a container inert if it contains an active popup.
+        // Preserve live announcements: those marked with aria-live, as the
+        // ARIA visibility primitive keeps them, and those whose role makes
+        // them live, as Kozmos's own status parts do with a role alone
+        // (MapStatusPill, Alert, Notice, Spinner). Never make a container
+        // inert if it contains an active popup.
         const reachable = [
           ...active,
-          ...scope.querySelectorAll("[aria-live], script"),
+          ...scope.querySelectorAll(LIVE),
           ...(entry.keep ? scope.querySelectorAll(entry.keep) : []),
         ];
         const visit = (parent: Element) => {

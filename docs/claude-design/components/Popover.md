@@ -2,7 +2,7 @@
 
 # Popover
 
-Popover is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+An anchored surface for supporting content or small interactions, composed from a trigger and content. An optional PopoverArrow connects it visually to its anchor; owned portals retain the enclosing Kozmos theme.
 
 - **Import:** `import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from "@kozmos-ds/react";`
 - **Group:** Overlay

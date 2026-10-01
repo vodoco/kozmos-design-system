@@ -2,7 +2,7 @@
 
 # Grid
 
-Grid is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Arranges children in a CSS grid with explicit column, row, flow, alignment and gap options. Use it for two-dimensional layouts; use Stack for a row or column of content.
 
 - **Import:** `import { Grid } from "@kozmos-ds/react";`
 - **Group:** Foundations

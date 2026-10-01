@@ -31,6 +31,21 @@ const check = (text) =>
   checkDocuments(root, [{ file: "fixture.md", text }], facts);
 const messages = (text) => check(text).map((p) => p.message);
 
+test("namespace imports cannot invent exports inside explicitly partial examples", () => {
+  const template = (name) =>
+    doc(
+      "tsx",
+      `// kozmos-skills: template — this fragment belongs in the caller's render\nimport * as K from "@kozmos-ds/react";\n<K.${name} />`,
+    );
+  assert.deepEqual(messages(template("Button")), []);
+  assert.ok(
+    messages(template("NonexistentWidget")).some(
+      (message) =>
+        /NonexistentWidget/.test(message) && /does not export/.test(message),
+    ),
+  );
+});
+
 test("real compound exports, type imports and hooks pass, and compile", () => {
   const text = doc(
     "tsx",

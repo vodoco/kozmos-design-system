@@ -89,6 +89,79 @@ async function nearbyOnEverySurface(page, id) {
   return drawn;
 }
 
+/**
+ * The result card's one tab on each surface of a root of the owned-css host:
+ * what it says and is painted in, what paints behind its text, where it sits
+ * against its card, the card's own edge, and what the result is called.
+ */
+async function resultTabsIn(page, id) {
+  const group = page.getByTestId(`${id}-tab-group`);
+  const surfaces = [
+    ["featured", page.getByTestId(`${id}-tab-featured`)],
+    ["number", page.getByTestId(`${id}-tab-number`)],
+    ["selected number", page.getByTestId(`${id}-tab-number-selected`)],
+    ["badge", page.getByTestId(`${id}-tab-badge`)],
+    ["selected grouped row", group.locator("article").nth(0)],
+    ["grouped row", group.locator("article").nth(1)],
+  ];
+  const drawn = [];
+  for (const [surface, card] of surfaces)
+    drawn.push({
+      surface,
+      ...(await card.evaluate((article) => {
+        const tab = article.querySelector(".kozmos-poi-result-tab");
+        if (!tab) return { found: false };
+        const s = getComputedStyle(tab);
+        const layers = [];
+        for (let at = tab; at; at = at.parentElement)
+          layers.push(getComputedStyle(at).backgroundColor);
+        const box = tab.getBoundingClientRect();
+        const frame = article.getBoundingClientRect();
+        // The name: the first line that truncates in the select button.
+        const name = article.querySelector("button .truncate");
+        return {
+          found: true,
+          kind: tab.getAttribute("data-tab"),
+          text: tab.textContent,
+          star: tab.querySelector("svg") !== null,
+          starFill: tab.querySelector("svg")
+            ? getComputedStyle(tab.querySelector("svg")).fill
+            : null,
+          hidden: tab.getAttribute("aria-hidden") === "true",
+          background: s.backgroundColor,
+          color: s.color,
+          layers,
+          borderTopWidth: s.borderTopWidth,
+          borderTopColor: s.borderTopColor,
+          borderBottomWidth: s.borderBottomWidth,
+          borderBottomColor: s.borderBottomColor,
+          borderEndWidth: s.borderInlineEndWidth,
+          borderStartWidth: s.borderInlineStartWidth,
+          outerCorner: s.borderStartStartRadius,
+          innerCorner: s.borderEndEndRadius,
+          topEndCorner: s.borderStartEndRadius,
+          bottomStartCorner: s.borderEndStartRadius,
+          cardEdge: getComputedStyle(article).borderTopColor,
+          cardEdgeWidth: getComputedStyle(article).borderTopWidth,
+          // Right to left, the start edge is the right.
+          fromStart:
+            s.direction === "rtl"
+              ? frame.right - box.right
+              : box.left - frame.left,
+          fromTop: box.top - frame.top,
+          height: box.height,
+          nameGap: name ? name.getBoundingClientRect().top - box.bottom : null,
+          innerText: article.querySelector("button").innerText,
+        };
+      })),
+      // What the result is called, as a screen reader is told.
+      named: await card
+        .getByRole("button", { name: /^2, Burger King/ })
+        .count(),
+    });
+  return drawn;
+}
+
 const { code, css } = await buildReactFixture("owned-css-host.tsx");
 const require = createRequire(`${process.cwd()}/packages/react/package.json`);
 const postcss = require("postcss");
@@ -201,6 +274,166 @@ try {
           );
         console.log(
           `PASS decision 50, ${theme}, ${mode}: Nearby is the success text colour ${success} on the card, the selected card, the grouped row and the selected grouped row${mode === "full" ? "; 5–10 min is the text colour" : ""}`,
+        );
+      }
+      // The result card's one tab (GAP-054; Olcay, 2026-09-29): each is
+      // painted for what it says, in this root's theme, with or without
+      // @scope and under the host's hostile rules, because the paint is
+      // owned. Featured is the SDK's bright amber under dark words, the alert
+      // fill pair, for its words and its star, and the card's edge takes the
+      // same amber; a number is quiet and outlined at rest and primary when
+      // selected, and never recolours the card's edge; a badge is quiet, with
+      // no star and the grey edge. Each card's tab is a corner of the card
+      // (Olcay, 2026-09-29; Figma 9273:45990): the card's edge is its top
+      // and start, so it draws its end and bottom edges only, its outer
+      // corner is the card's radius less the card's 1px edge, and its inner
+      // corner is 7px, owned, so all of it holds without @scope. With the
+      // utilities (the full pass) it sits inside the card's edge in its
+      // top-start corner, the right here, the name begins 8px below it, and
+      // the number leads the result's name.
+      {
+        const theme = id === "outer" ? "dark" : "light";
+        const token = (name) => value(`${id}-tabs`, name);
+        const edge = await token("--semantics-border-subtle");
+        const corner = {
+          borderTopWidth: "0px",
+          borderStartWidth: "0px",
+          borderEndWidth: "1px",
+          borderBottomWidth: "1px",
+          outerCorner: "15px",
+          innerCorner: "7px",
+          topEndCorner: "0px",
+          bottomStartCorner: "0px",
+        };
+        const expected = {
+          featured: {
+            kind: "featured",
+            background: await token("--semantics-emotion-alert-fill"),
+            color: await token("--semantics-emotion-alert-on-fill"),
+            borderBottomColor: await token("--semantics-emotion-alert-fill"),
+            ...corner,
+            star: true,
+            hidden: false,
+          },
+          number: {
+            kind: "number",
+            background: await token("--primitives-colors-background-0"),
+            color: await token("--primitives-colors-foreground-400"),
+            borderBottomColor: edge,
+            ...corner,
+            star: false,
+            hidden: true,
+          },
+          "selected number": {
+            kind: "number",
+            background: await token("--primitives-colors-theme-600"),
+            color: await token("--primitives-colors-foreground-1000"),
+            borderBottomColor: await token("--primitives-colors-theme-600"),
+            ...corner,
+            star: false,
+            hidden: true,
+          },
+          badge: {
+            kind: "badge",
+            background: await token("--primitives-colors-background-100"),
+            color: await token("--primitives-colors-foreground-400"),
+            borderBottomColor: await token(
+              "--primitives-colors-background-100",
+            ),
+            ...corner,
+            star: false,
+            hidden: false,
+          },
+          "selected grouped row": {
+            kind: "number",
+            background: await token("--primitives-colors-theme-600"),
+            color: await token("--primitives-colors-foreground-1000"),
+            hidden: true,
+          },
+          "grouped row": {
+            kind: "number",
+            background: await token("--primitives-colors-background-0"),
+            color: await token("--primitives-colors-foreground-400"),
+            borderTopWidth: "1px",
+            borderTopColor: edge,
+            borderBottomWidth: "1px",
+            hidden: true,
+          },
+        };
+        const amber = await token("--semantics-emotion-alert-fill");
+        const onAmber = await token("--semantics-emotion-alert-on-fill");
+        for (const direction of ["rtl", "ltr"]) {
+          await page
+            .getByTestId(`${id}-tabs`)
+            .evaluate((node, dir) => node.setAttribute("dir", dir), direction);
+          for (const drawn of await resultTabsIn(page, id)) {
+            const where = `${mode}, ${theme}, ${direction}: the ${drawn.surface}'s tab`;
+            assert(drawn.found, `${where} is not drawn`);
+            for (const [key, want] of Object.entries(expected[drawn.surface]))
+              assert.equal(drawn[key], want, `${where}: ${key}`);
+            if (mode !== "full") continue;
+            assert(
+              drawn.fromStart >= 0 && drawn.fromStart < 20,
+              `${where} is ${drawn.fromStart}px from the start (right) edge, not at it`,
+            );
+            const card = !drawn.surface.includes("row");
+            if (card) {
+              // Inside the card's 1px edge, in its top-start corner: no folder
+              // tab above the card, and no room left above it.
+              const inset = parseFloat(drawn.cardEdgeWidth);
+              assert(
+                Math.abs(drawn.fromTop - inset) < 0.5 &&
+                  Math.abs(drawn.fromStart - inset) < 0.5,
+                `${where} is ${drawn.fromTop}px down and ${drawn.fromStart}px in, not in the card's corner inside its ${inset}px edge`,
+              );
+              assert(
+                Math.abs(drawn.height - 16) < 0.5,
+                `${where} is ${drawn.height}px tall, not 16`,
+              );
+              // The name begins below it, as the design has it.
+              assert(
+                drawn.nameGap >= 7.5,
+                `${where}: the name begins ${drawn.nameGap}px below the tab, into it or under 8px`,
+              );
+              assert.equal(
+                drawn.cardEdge === amber,
+                drawn.surface === "featured",
+                `${where}: the card's edge is ${drawn.cardEdge}; only Featured's is its amber`,
+              );
+            }
+            if (drawn.surface === "featured")
+              assert.equal(
+                drawn.starFill,
+                onAmber,
+                `${where}: the star is not the amber's ink`,
+              );
+            if (drawn.surface === "number" || drawn.surface === "badge")
+              assert.equal(
+                drawn.cardEdge,
+                edge,
+                `${where}: the card's edge is not the container edge`,
+              );
+            if (drawn.kind === "number") {
+              assert.equal(
+                drawn.named,
+                1,
+                `${where}: the result is not called "2, Burger King …"`,
+              );
+              // WebKit runs a hidden prefix into the text after it unless a
+              // space follows it: "2,Burger King".
+              assert.match(
+                drawn.innerText,
+                /^2,\s/,
+                `${where}: the number runs into the name (${JSON.stringify(drawn.innerText)})`,
+              );
+            }
+          }
+        }
+        await page
+          .getByTestId(`${id}-tabs`)
+          .evaluate((node) => node.removeAttribute("dir"));
+        console.log(
+          `PASS GAP-054, ${theme}, ${mode}, LTR and RTL: Featured is the amber tab with dark words and a star; the number is quiet and outlined at rest and primary when selected, on cards and grouped rows; the badge is quiet with no star${mode === "full" ? "; each sits inside the shared top-start corner with one rounded inner corner, only Featured recolours the card's edge (its amber, as is its star), and the number leads the name" : ""}`,
         );
       }
       const poi = page.getByTestId(`${id}-poi`);
@@ -785,8 +1018,11 @@ try {
               color: s.color,
               type: [s.fontSize, s.lineHeight, s.fontWeight],
               mark: mark && [mark.width, mark.height],
-              markInset: mark && (rtl ? box.right - mark.right : mark.left - box.left),
-              gap: mark && (rtl ? mark.left - words.right : words.left - mark.right),
+              markInset:
+                mark && (rtl ? box.right - mark.right : mark.left - box.left),
+              gap:
+                mark &&
+                (rtl ? mark.left - words.right : words.left - mark.right),
               wordsInset: rtl ? box.right - words.right : words.left - box.left,
             };
           });
@@ -846,7 +1082,8 @@ try {
           `${where}: the status pill's mark is not 24: ${JSON.stringify(status.mark)}`,
         );
         assert(
-          Math.abs(status.markInset - 12) < 0.5 && Math.abs(status.gap - 8) < 0.5,
+          Math.abs(status.markInset - 12) < 0.5 &&
+            Math.abs(status.gap - 8) < 0.5,
           `${where}: the mark is ${status.markInset} in and ${status.gap} from the words, not 12 and 8`,
         );
         // The board's Turn Back: the named alert fill pair (Olcay,
@@ -875,7 +1112,8 @@ try {
           `${where}: Turn Back's words are ${turnBack.color}, not dark on its amber`,
         );
         assert(
-          turnBack.mark === undefined && Math.abs(turnBack.wordsInset - 12) < 0.5,
+          turnBack.mark === undefined &&
+            Math.abs(turnBack.wordsInset - 12) < 0.5,
           `${where}: Turn Back with no mark starts its words ${turnBack.wordsInset} in, not 12`,
         );
 
@@ -1675,6 +1913,28 @@ try {
     }
     assert.deepEqual(errors, []);
     console.log(`PASS decision 50: Nearby reads at ${readings.join(", ")}`);
+    // GAP-054: every tab's words read at 4.5:1 or more on its own fill, in
+    // both themes: Featured, the number at rest and selected, and the quiet
+    // badge.
+    const tabReadings = [];
+    for (const [id, theme] of [
+      ["outer", "dark"],
+      ["nested", "light"],
+    ]) {
+      for (const { surface, found, color, layers } of await resultTabsIn(
+        clean,
+        id,
+      )) {
+        assert(found, `${theme}: the ${surface}'s tab is not drawn`);
+        const ratio = contrastRatio(readColour(color), paintedBehind(layers));
+        assert(
+          ratio >= 4.5,
+          `${theme}: the ${surface}'s tab reads at ${ratio.toFixed(2)}:1, under 4.5:1`,
+        );
+        tabReadings.push(`${theme} ${surface} ${ratio.toFixed(2)}:1`);
+      }
+    }
+    console.log(`PASS GAP-054: the tabs read at ${tabReadings.join(", ")}`);
     await clean.close();
   }
 
@@ -1849,6 +2109,23 @@ try {
         node.style.setProperty("position", "fixed", "important");
         node.style.setProperty("top", `${16 + row * 240}px`, "important");
         node.style.setProperty("left", `${16 + column * 224}px`, "important");
+        node.style.setProperty("z-index", "2147483647", "important");
+      }),
+    );
+    // The group boards, 300 tall, in a row below: for each root, one whose
+    // overlay fits and one whose overlay overflows (decision 46).
+    ["outer", "nested"].forEach((id, row) =>
+      ["group", "group-scrolling"].forEach((layout, column) => {
+        const node = document.querySelector(
+          `[data-testid="${id}-map-board-${layout}"]`,
+        );
+        node.style.setProperty("position", "fixed", "important");
+        node.style.setProperty("top", "496px", "important");
+        node.style.setProperty(
+          "left",
+          `${16 + (row * 2 + column) * 224}px`,
+          "important",
+        );
         node.style.setProperty("z-index", "2147483647", "important");
       }),
     );
@@ -2298,6 +2575,26 @@ try {
         el?.getAttribute("data-testid") || el?.className || el?.tagName || null
       );
     }, point);
+  // A press, then a drag, at a point, as a visitor panning the map would:
+  // whether both reached `map` (a board's map stand-in), and what did.
+  const pressAndDrag = async (point, map) => {
+    await boards.evaluate(() => (window.__mapPresses = []));
+    await boards.mouse.click(point.x, point.y);
+    await boards.mouse.move(point.x, point.y);
+    await boards.mouse.down();
+    await boards.mouse.move(point.x + 24, point.y + 16, { steps: 4 });
+    await boards.mouse.up();
+    const got = await boards.evaluate(() => window.__mapPresses);
+    const on = (type) =>
+      got.filter((e) => e.type === type && e.map === map && e.target).length;
+    return {
+      reached:
+        on("pointerdown") >= 2 &&
+        on("pointerup") >= 2 &&
+        on("pointermove") >= 1,
+      got,
+    };
+  };
   // Presses and drags at the room's points, and every one must reach the map.
   const pressed = [];
   // The points of a scrolling overlay's room, which its scroll box takes.
@@ -2316,20 +2613,9 @@ try {
         map,
         `${id} ${layout}${state}: a press ${point.where} a control, in the overlay's room at ${point.x},${point.y}, lands on ${hit}, not the map`,
       );
-      // A press, then a drag, as a visitor panning the map would.
-      await boards.evaluate(() => (window.__mapPresses = []));
-      await boards.mouse.click(point.x, point.y);
-      await boards.mouse.move(point.x, point.y);
-      await boards.mouse.down();
-      await boards.mouse.move(point.x + 24, point.y + 16, { steps: 4 });
-      await boards.mouse.up();
-      const got = await boards.evaluate(() => window.__mapPresses);
-      const on = (type) =>
-        got.filter((e) => e.type === type && e.map === map && e.target).length;
+      const { reached, got } = await pressAndDrag(point, map);
       assert(
-        on("pointerdown") >= 2 &&
-          on("pointerup") >= 2 &&
-          on("pointermove") >= 1,
+        reached,
         `${id} ${layout}${state}: a press and a drag ${point.where} a control, in the overlay's room, did not reach the map: ${JSON.stringify(got)}`,
       );
       pressed.push(`${id} ${layout}${state} ${point.where}`);
@@ -2444,6 +2730,182 @@ try {
   }
   console.log(
     `PASS decision 46: a press or a drag in the room of an overlay that fits reaches the map (${pressed.length} points: ${[...new Set(pressed)].join(", ")}); a control in it still takes its press; an overlay that overflows scrolls from a wheel over what it holds, and is marked as scrolling and takes the presses in its room (${scrollBoxTook} points) only while it overflows`,
+  );
+
+  // Decision 46 inside a MapControlsGroup (the night audit's M3): the gaps
+  // between its controls are outside the controls too, so a press or a drag
+  // there reaches the map. The group's box took them: the zoom pair, the
+  // compass and the location control stand 8px apart in a column that took
+  // every press, and only the controls should. The group stays one named
+  // group whose controls Tab reaches in order: none of that is presses.
+  //
+  // While the overlay holding it overflows, a press in a gap lands on the
+  // overlay's scroll box, which takes its room then, and never on the group:
+  // in Linux WebKit, as CI runs it, a wheel scrolls a box only if the box
+  // takes presses itself (#148's data-scrolls), so a wheel over a gap still
+  // scrolls the overlay.
+  const gapPoints = (id, layout) =>
+    boards.evaluate(
+      ({ id, layout }) => {
+        const board = document.querySelector(
+          `[data-testid="${id}-map-board-${layout}"]`,
+        );
+        const group = board.querySelector('[role="group"]');
+        const g = group.getBoundingClientRect();
+        const parts = [...group.children].map((child) =>
+          child.getBoundingClientRect(),
+        );
+        const points = [];
+        for (let i = 1; i < parts.length; i += 1) {
+          const [above, below] = [parts[i - 1], parts[i]];
+          if (below.top - above.bottom < 4) continue;
+          const y = Math.round((above.bottom + below.top) / 2);
+          for (const x of [g.left + 6, (g.left + g.right) / 2, g.right - 6])
+            points.push({ x: Math.round(x), y, where: `in gap ${i}` });
+        }
+        return points;
+      },
+      { id, layout },
+    );
+  const gapsPressed = [];
+  let groupRoomPressed = 0;
+  let gapsOnTheScrollBox = 0;
+  for (const id of ["outer", "nested"]) {
+    const map = `${id}-map-board-group-map`;
+    const points = await gapPoints(id, "group");
+    assert.equal(
+      points.length,
+      6,
+      `${id}: a MapControlsGroup of four controls does not have its two 8px gaps: ${JSON.stringify(points)}`,
+    );
+    for (const point of points) {
+      const hit = await hitAt(point);
+      assert.equal(
+        hit,
+        map,
+        `${id}: a press ${point.where} between a MapControlsGroup's controls, at ${point.x},${point.y}, lands on ${hit}, not the map`,
+      );
+      const { reached, got } = await pressAndDrag(point, map);
+      assert(
+        reached,
+        `${id}: a press and a drag ${point.where} between a MapControlsGroup's controls did not reach the map: ${JSON.stringify(got)}`,
+      );
+      gapsPressed.push(`${id} ${point.where}`);
+    }
+    // The room round the group reaches the map as well.
+    const before = pressed.length;
+    await pressInRoom(id, "group", "");
+    groupRoomPressed += pressed.length - before;
+    // Every control in it still takes its own press, the zoom pair's two
+    // halves included.
+    const controls = board(id, "group").locator('[role="group"] button');
+    const names = await controls.evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute("aria-label")),
+    );
+    assert.deepEqual(
+      names,
+      [
+        `${id} zoom in, group`,
+        `${id} zoom out, group`,
+        `${id} reset bearing, group`,
+        `${id} locate, group`,
+      ],
+      `${id}: the group's controls are not the four it was given`,
+    );
+    for (const [index, name] of names.entries()) {
+      const box = await controls.nth(index).boundingBox();
+      const took = await boards.evaluate(
+        ({ x, y }) =>
+          document
+            .elementFromPoint(x, y)
+            ?.closest("button")
+            ?.getAttribute("aria-label") ?? null,
+        { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+      );
+      assert.equal(
+        took,
+        name,
+        `${id}: a press on ${name} in a MapControlsGroup lands on ${took}`,
+      );
+    }
+    // Its keyboard: one named group, its controls reached by Tab in order.
+    assert.equal(
+      await board(id, "group")
+        .getByRole("group", { name: `${id} map controls, group` })
+        .count(),
+      1,
+      `${id}: the MapControlsGroup is no longer one named group`,
+    );
+    await controls.first().focus();
+    const reached = [];
+    for (const [index] of names.entries()) {
+      reached.push(
+        await boards.evaluate(() =>
+          document.activeElement?.getAttribute("aria-label"),
+        ),
+      );
+      if (index < names.length - 1) await boards.keyboard.press("Tab");
+    }
+    await boards.evaluate(() => document.activeElement?.blur());
+    assert.deepEqual(
+      reached,
+      names,
+      `${id}: Tab no longer walks a MapControlsGroup's controls in order`,
+    );
+
+    // The overlay that overflows: a press in a gap is its scroll box's, never
+    // the group's, and a wheel there scrolls it.
+    const scrolling = `${id}-map-overlay-group-scrolling`;
+    assert(
+      await marked(scrolling, true),
+      `${id}: an overlay holding a MapControlsGroup taller than its room is not marked as scrolling`,
+    );
+    const stack = boards.getByTestId(scrolling).locator(":scope > div");
+    await stack.evaluate((node) => (node.scrollTop = 0));
+    // The gaps in the part of it the overlay shows.
+    const shown = await boards.getByTestId(scrolling).boundingBox();
+    const whileScrolling = (await gapPoints(id, "group-scrolling")).filter(
+      (point) => point.y > shown.y && point.y < shown.y + shown.height,
+    );
+    assert(
+      whileScrolling.length >= 3,
+      `${id}: no gap of a MapControlsGroup in the visible part of an overlay that overflows: ${JSON.stringify(whileScrolling)}`,
+    );
+    for (const point of whileScrolling) {
+      const onStack = await boards.evaluate(
+        ({ x, y, testId }) =>
+          document.elementFromPoint(x, y) ===
+          document.querySelector(`[data-testid="${testId}"] > div`),
+        { ...point, testId: scrolling },
+      );
+      assert(
+        onStack,
+        `${id}: while its overlay overflows, a press ${point.where} between a MapControlsGroup's controls, at ${point.x},${point.y}, lands on ${await hitAt(point)}, not the overlay's scroll box`,
+      );
+      gapsOnTheScrollBox += 1;
+    }
+    await boards.mouse.move(whileScrolling[1].x, whileScrolling[1].y);
+    await boards.mouse.wheel(0, 40);
+    const scrolled = await boards
+      .waitForFunction(
+        (testId) =>
+          document.querySelector(`[data-testid="${testId}"] > div`).scrollTop >
+          0,
+        scrolling,
+        { timeout: 3000 },
+      )
+      .then(
+        () => true,
+        () => false,
+      );
+    assert(
+      scrolled,
+      `${id}: a wheel over a gap between a MapControlsGroup's controls no longer scrolls the overlay that overflows`,
+    );
+    await stack.evaluate((node) => (node.scrollTop = 0));
+  }
+  console.log(
+    `PASS decision 46 in a MapControlsGroup: a press or a drag in the gaps between its controls reaches the map (${gapsPressed.length} points: ${[...new Set(gapsPressed)].join(", ")}), and so does one in the room round it (${groupRoomPressed} points); each of its four controls takes its own press, and Tab walks them in order in one named group; while its overlay overflows, a press in a gap is the overlay's scroll box's (${gapsOnTheScrollBox} points), never the group's, and a wheel there scrolls it`,
   );
   await boards.close();
 

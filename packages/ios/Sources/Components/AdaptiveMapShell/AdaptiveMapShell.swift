@@ -1,5 +1,17 @@
 import SwiftUI
 
+private struct KozmosContainerSafeAreaKey: PreferenceKey {
+    static var defaultValue: EdgeInsets? = nil
+    static func reduce(value: inout EdgeInsets?, nextValue: () -> EdgeInsets?) {
+        value = nextValue() ?? value
+    }
+}
+
+private struct KozmosSidePanelHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
+}
+
 /// How much of the shell a docked panel takes up.
 ///
 /// The shell's panel is not a modal sheet — the map keeps receiving touches at
@@ -174,6 +186,15 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private let mapStatus: KozmosMapReadiness
     private let mapStatusContent: MapStatusContent
     private let controls: Controls
+    private let controlsBottomStart: AnyView
+    private let controlsBottomEnd: AnyView
+    private let hasBottomControls: Bool
+    private let bottomControlsPadCamera: Bool
+    private let attribution: AnyView?
+    @State private var attributionHeight: CGFloat = 0
+    @State private var bottomControlsHeight: CGFloat = 0
+    @State private var cornerWidths: [Int: CGFloat] = [:]
+    @State private var sidePanelHeight: CGFloat = 0
     private let topBar: TopBar
     private let panel: Panel
     private let panelHeader: AnyView?
@@ -208,6 +229,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     @Environment(\.layoutDirection) private var layoutDirection
     @State private var topBarHeight: CGFloat = 0
     @State private var controlsSize: CGSize = .zero
+    @State private var containerSafeArea: EdgeInsets?
     @State private var uncontrolledDetent: KozmosMapPanelDetent?
     @State private var dragTranslation: CGFloat = 0
 
@@ -226,7 +248,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// of what the row falls short of a 24-point target, 4.
     private static var grabberClearance: CGFloat { (minimumTargetSpacing - grabberRowHeight) / 2 }
 
-    public init<PanelHeader: View>(
+    public init<PanelHeader: View, BottomStart: View, BottomEnd: View>(
         mapLabel: String = "Map",
         mapStatus: KozmosMapReadiness = .ready,
         panelLabel: String = "Map details",
@@ -237,6 +259,10 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         panelSurface: KozmosSurfaceStyle = .solid,
         collisionInsets: KozmosMapCollisionInsets = .zero,
         onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Void)? = nil,
+        bottomControlsPadCamera: Bool = false,
+        attribution: AnyView? = nil,
+        @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
+        @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
         @ViewBuilder mapStatusContent: () -> MapStatusContent,
         @ViewBuilder controls: () -> Controls,
@@ -257,6 +283,11 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         self.map = map()
         self.mapStatusContent = mapStatusContent()
         self.controls = controls()
+        self.bottomControlsPadCamera = bottomControlsPadCamera
+        self.attribution = attribution
+        self.controlsBottomStart = AnyView(controlsBottomStart())
+        self.controlsBottomEnd = AnyView(controlsBottomEnd())
+        self.hasBottomControls = BottomStart.self != EmptyView.self || BottomEnd.self != EmptyView.self
         self.topBar = topBar()
         self.panel = panel()
         self.panelHeader = PanelHeader.self == EmptyView.self ? nil : AnyView(panelHeader())
@@ -309,9 +340,12 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// always may; docked, only at the largest detent and with no drag moving
     /// the sheet. Mid-drag the change cancels the content's own pan, so one
     /// finger never scrolls the list and moves the sheet at once.
-    func panelScrollEnabled(in shellHeight: CGFloat, docked: Bool) -> Bool {
+    func panelScrollEnabled(in shellHeight: CGFloat, docked: Bool, safeArea: EdgeInsets = EdgeInsets()) -> Bool {
         guard docked else { return true }
-        return isAtLargestDetent(in: shellHeight) && dragTranslation == 0 && bodyDrag != .sheet
+        let footerCapReached = attribution != nil && attributionHeight > 0 &&
+            settledPanelHeight(in: shellHeight) >= maximumPanelHeight(
+                in: CGSize(width: 0, height: shellHeight), safeArea: safeArea) - 0.5
+        return (isAtLargestDetent(in: shellHeight) || footerCapReached) && dragTranslation == 0 && bodyDrag != .sheet
     }
 
     /// The detent set in ascending height order, with duplicates removed.
@@ -456,11 +490,12 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     ) -> KozmosMapCollisionInsets {
         let edgePadding = KozmosDimensions.primitivesLayoutSpacing200
         let sidePanelWidth = floatingPanelOccupancy(in: size, isRegularWidth: isRegularWidth)
-        let dockedPanel = dockedPanelHeight(in: size, isRegularWidth: isRegularWidth)
+        let dockedPanel = dockedPanelHeight(in: size, isRegularWidth: isRegularWidth, safeArea: safeArea)
         let inCorner = hasControls && controlsPlacement == .top
         let controlsColumn = inCorner ? controlsSize.width + edgePadding * 2 : 0
+        let cornerHeight = visibleBottomControlsHeight(in: size, safeArea: safeArea)
         let controlsBand = hasControls && controlsPlacement == .bottom
-            ? controlsSize.height + edgePadding * 2
+            ? controlsSize.height + edgePadding * 2 + (cornerHeight > 0 ? cornerHeight + edgePadding : 0)
             : 0
         let panelOnPhysicalRight = (panelPlacement == .end) == (layoutDirection == .leftToRight)
 
@@ -472,8 +507,17 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             collisionInsets.right,
             Double((panelOnPhysicalRight ? sidePanelWidth : controlsColumn) + safeRight)
         )
+        let cornerPadding = bottomControlsPadCamera && cornerHeight > 0
+            ? Double(dockedPanel + cornerHeight + edgePadding + (dockedPanel > 0 ? 0 : safeArea.bottom)) : 0
+        let innerWidth = max(0, size.width - safeArea.leading - safeArea.trailing - edgePadding * 2)
+        let cornerReserve = cornerHeight > 0 ? ((cornerWidths.values.max() ?? 0) + edgePadding) * 2 : 0
+        let attributionLift = cornerHeight > 0 && innerWidth - cornerReserve < 128 ? cornerHeight + edgePadding : 0
+        let footerBand = max(0, size.height - dockedPanel - topBarInset - safeArea.top - edgePadding * 2 - (dockedPanel > 0 ? 0 : safeArea.bottom))
+        let creditHeight = min(visibleAttributionHeight(in: size, safeArea: safeArea), max(0, footerBand - attributionLift))
+        let attributionPadding = creditHeight > 0 && attribution != nil
+            ? Double(dockedPanel + creditHeight + attributionLift + edgePadding + (dockedPanel > 0 ? 0 : safeArea.bottom)) : 0
         let bottom = max(
-            collisionInsets.bottom,
+            max(collisionInsets.bottom, cornerPadding, attributionPadding),
             Double(dockedPanel > 0 ? dockedPanel + controlsBand : controlsBand + safeArea.bottom)
         )
         let left = max(
@@ -501,8 +545,25 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
 
     /// How much of the shell the docked panel is covering, at its settled
     /// detent — zero when the panel floats beside the map instead.
-    private func dockedPanelHeight(in size: CGSize, isRegularWidth: Bool) -> CGFloat {
-        hasPanel && !isRegularWidth ? settledPanelHeight(in: size.height) : 0
+    private func visibleAttributionHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        guard attribution != nil else { return 0 }
+        return min(attributionHeight, max(0, size.height - topBarInset - safeArea.top - safeArea.bottom - KozmosDimensions.primitivesLayoutSpacing200 * 3) / 2)
+    }
+
+    private func attributionReserve(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        let height = visibleAttributionHeight(in: size, safeArea: safeArea)
+        return height > 0 ? height + KozmosDimensions.primitivesLayoutSpacing200 : 0
+    }
+
+    private func maximumPanelHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        guard attribution != nil, attributionHeight > 0 else { return size.height }
+        return max(0, size.height - topBarInset - safeArea.top - visibleAttributionHeight(in: size, safeArea: safeArea) - KozmosDimensions.primitivesLayoutSpacing200 * 3)
+    }
+
+    private func dockedPanelHeight(in size: CGSize, isRegularWidth: Bool, safeArea: EdgeInsets = EdgeInsets()) -> CGFloat {
+        guard hasPanel, !isRegularWidth else { return 0 }
+        return attribution == nil ? settledPanelHeight(in: size.height) :
+            min(livePanelHeight(in: size.height), maximumPanelHeight(in: size, safeArea: safeArea))
     }
 
     /// The width a floating panel takes from its side of the shell, gutters
@@ -536,6 +597,18 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         return topBarHeight + KozmosDimensions.primitivesLayoutSpacing200
     }
 
+    private func visibleBottomControlsHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        hasBottomControls && bottomControlsHeight <= bottomBand(in: size, safeArea: safeArea) ? bottomControlsHeight : 0
+    }
+
+    private func bottomBand(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        let gap = KozmosDimensions.primitivesLayoutSpacing200
+        let bottom = dockedPanelHeight(in: size, isRegularWidth: isRegularWidth, safeArea: safeArea)
+        let legacy = hasControls ? controlsSize.height + gap * 2 : 0
+        return max(0, size.height - bottom - topBarInset - safeArea.top
+            - (bottom > 0 ? 0 : safeArea.bottom) - legacy - gap * 2)
+    }
+
     // MARK: - Body
 
     public var body: some View {
@@ -545,13 +618,22 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         // safe areas the outer reader saw. The detents are shares of the
         // whole height, as the prototype's are of its frame.
         GeometryReader { outer in
-            shell(safeArea: outer.safeAreaInsets)
+            shell(safeArea: containerSafeArea ?? outer.safeAreaInsets)
                 // The container's safe areas only: the keyboard's region still
                 // insets the shell, so the sheet rises above the keyboard and
                 // a picker's rows stay reachable while a field is focused.
                 .ignoresSafeArea(.container)
         }
-        .frame(minHeight: 448)
+        // Measure container insets independently of keyboard avoidance. The
+        // shell's proposal already shrinks above a docked keyboard; subtracting
+        // outer.safeAreaInsets.bottom again collapsed regular-width panels.
+        .background {
+            GeometryReader { probe in
+                Color.clear.preference(key: KozmosContainerSafeAreaKey.self, value: probe.safeAreaInsets)
+            }
+            .ignoresSafeArea(.keyboard)
+        }
+        .onPreferenceChange(KozmosContainerSafeAreaKey.self) { containerSafeArea = $0 }
     }
 
     private func shell(safeArea: EdgeInsets) -> some View {
@@ -601,6 +683,14 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                 }
 
                 if hasControls {
+                    let gap = KozmosDimensions.primitivesLayoutSpacing200
+                    let bottom = dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth, safeArea: safeArea)
+                    let cornerHeight = visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea)
+                    let controlBand = max(0, geometry.size.height - bottom
+                        - attributionReserve(in: geometry.size, safeArea: safeArea)
+                        - topBarInset - safeArea.top - (bottom > 0 ? 0 : safeArea.bottom) - gap * 2
+                        - (controlsPlacement == .bottom && cornerHeight > 0 ? cornerHeight + gap : 0))
+                    let controlsFit = attribution == nil || (controlBand > 0 && controlsSize.height <= controlBand)
                     controls
                         .background(
                             GeometryReader { proxy in
@@ -610,6 +700,9 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                                 )
                             }
                         )
+                        .opacity(controlsFit ? 1 : 0)
+                        .allowsHitTesting(controlsFit)
+                        .accessibilityHidden(!controlsFit)
                         .padding(KozmosDimensions.primitivesLayoutSpacing200)
                         // The top bar shares this edge, so the controls clear
                         // whatever it occupies rather than sitting under it;
@@ -626,7 +719,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         .frame(
                             width: chromeWidth,
                             height: max(
-                                geometry.size.height - dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth),
+                                geometry.size.height - dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth, safeArea: safeArea) - attributionReserve(in: geometry.size, safeArea: safeArea)
+                                    - (controlsPlacement == .bottom ? visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea) + (visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea) > 0 ? KozmosDimensions.primitivesLayoutSpacing200 : 0) : 0),
                                 0
                             ),
                             alignment: controlsAlignment
@@ -635,6 +729,81 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         .zIndex(3)
                 }
 
+                if hasBottomControls {
+                    let gap = KozmosDimensions.primitivesLayoutSpacing200
+                    let bottom = dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth, safeArea: safeArea)
+                    let band = bottomBand(in: geometry.size, safeArea: safeArea)
+                    let shellFrame = geometry.frame(in: .global)
+                    let chromeOnLeft = (panelPlacement == .end) == (layoutDirection == .leftToRight)
+                    let safeLeft = layoutDirection == .leftToRight ? safeArea.leading : safeArea.trailing
+                    let popupBounds = CGRect(
+                        x: shellFrame.minX + (chromeOnLeft ? 0 : geometry.size.width - chromeWidth) + safeLeft + gap,
+                        y: shellFrame.maxY - bottom - gap - (bottom > 0 ? 0 : safeArea.bottom) - band,
+                        width: max(0, chromeWidth - safeArea.leading - safeArea.trailing - gap * 2), height: band)
+                    let belowPanelTop = shellFrame.minY + safeArea.top + gap * 2 + sidePanelHeight
+                    let belowPanelBounds = CGRect(
+                        x: shellFrame.minX + safeLeft + gap, y: belowPanelTop,
+                        width: max(0, geometry.size.width - safeArea.leading - safeArea.trailing - gap * 2),
+                        height: max(0, shellFrame.maxY - safeArea.bottom - gap - belowPanelTop))
+                    let cornersAvailable = bottomControlsHeight <= band && band > 0
+                    let popupFitsBelowPanel = belowPanelBounds.height >= bottomControlsHeight + gap * 10
+                    KozmosBottomControlsLayout {
+                        controlsBottomStart
+                            .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
+                                bounds: hasPanel && isRegularWidth && panelPlacement == .start && popupFitsBelowPanel ? belowPanelBounds : popupBounds,
+                                available: cornersAvailable))
+                            .background(GeometryReader { p in Color.clear.preference(key: KozmosBottomCornerWidthsKey.self, value: [0: p.size.width]) })
+                        controlsBottomEnd
+                            .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
+                                bounds: hasPanel && isRegularWidth && panelPlacement == .end && popupFitsBelowPanel ? belowPanelBounds : popupBounds,
+                                available: cornersAvailable))
+                            .background(GeometryReader { p in Color.clear.preference(key: KozmosBottomCornerWidthsKey.self, value: [1: p.size.width]) })
+                    }
+                    .frame(width: max(0, geometry.size.width - safeArea.leading - safeArea.trailing - gap * 2))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(bounds: popupBounds, available: bottomControlsHeight <= band && band > 0))
+                    .background(GeometryReader { proxy in
+                        Color.clear.preference(key: KozmosBottomControlsHeightKey.self, value: proxy.size.height)
+                    })
+                    .opacity(bottomControlsHeight <= band && band > 0 ? 1 : 0)
+                    .allowsHitTesting(bottomControlsHeight <= band && band > 0)
+                    .accessibilityHidden(bottomControlsHeight > band || band <= 0)
+                    .padding(.horizontal, gap)
+                    .padding(.leading, safeArea.leading)
+                    .padding(.trailing, safeArea.trailing)
+                    .padding(.bottom, bottom + gap + (bottom > 0 ? 0 : safeArea.bottom))
+                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .bottom)
+                    .zIndex(3)
+                }
+
+                if let attribution {
+                    let gap = KozmosDimensions.primitivesLayoutSpacing200
+                    let bottom = dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth, safeArea: safeArea)
+                    let footerBand = max(0, geometry.size.height - bottom - topBarInset - safeArea.top - gap * 2 - (bottom > 0 ? 0 : safeArea.bottom))
+                    let corners = visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea)
+                    let start = corners > 0 && (cornerWidths[0] ?? 0) > 0 ? (cornerWidths[0] ?? 0) + gap : 0
+                    let end = corners > 0 && (cornerWidths[1] ?? 0) > 0 ? (cornerWidths[1] ?? 0) + gap : 0
+                    let innerWidth = max(0, geometry.size.width - safeArea.leading - safeArea.trailing - gap * 2)
+                    let symmetricReserve = max(start, end)
+                    let above = corners > 0 && innerWidth - symmetricReserve * 2 < 128
+                    let lift = above ? corners + gap : 0
+                    ScrollView(.vertical) {
+                        attribution
+                            .frame(maxWidth: .infinity)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .background(GeometryReader { proxy in
+                                Color.clear.preference(key: KozmosAttributionHeightKey.self, value: proxy.size.height)
+                            })
+                    }
+                    .frame(width: max(0, innerWidth - (above ? 0 : symmetricReserve * 2)), height: min(visibleAttributionHeight(in: geometry.size, safeArea: safeArea), max(0, footerBand - lift)))
+                    .padding(.horizontal, above ? 0 : symmetricReserve)
+                    .padding(.horizontal, gap)
+                    .padding(.leading, safeArea.leading)
+                    .padding(.trailing, safeArea.trailing)
+                    .padding(.bottom, bottom + gap + lift + (bottom > 0 ? 0 : safeArea.bottom))
+                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: .bottom)
+                    .zIndex(3)
+                }
                 if hasPanel {
                     panelContainer(in: geometry, safeArea: safeArea)
                         // What the panel hosts, its header and its content,
@@ -646,6 +815,10 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             .frame(width: geometry.size.width, height: geometry.size.height)
             .onPreferenceChange(KozmosMapShellTopBarHeightKey.self) { topBarHeight = $0 }
             .onPreferenceChange(KozmosMapShellControlsSizeKey.self) { controlsSize = $0 }
+            .onPreferenceChange(KozmosBottomControlsHeightKey.self) { bottomControlsHeight = $0 }
+            .onPreferenceChange(KozmosBottomCornerWidthsKey.self) { cornerWidths = $0 }
+            .onPreferenceChange(KozmosSidePanelHeightKey.self) { sidePanelHeight = $0 }
+            .onPreferenceChange(KozmosAttributionHeightKey.self) { attributionHeight = $0 }
             .onPreferenceChange(KozmosMapShellContentPanelHeightKey.self) { contentPanelHeight = $0 }
             .onPreferenceChange(KozmosMapShellPeekBottomKey.self) { peekAnchorBottom = $0 }
             .onPreferenceChange(KozmosMapShellPanelHeaderBottomKey.self) { panelHeaderBottom = $0 }
@@ -662,16 +835,27 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     @ViewBuilder
     private func panelContainer(in geometry: GeometryProxy, safeArea: EdgeInsets) -> some View {
         if isRegularWidth {
-            // Beside the map the header is the panel's first row, and the
-            // panel takes the rest.
-            VStack(spacing: 0) {
-                if let panelHeader {
-                    panelHeader.fixedSize(horizontal: false, vertical: true)
+            let gap = KozmosDimensions.primitivesLayoutSpacing200
+            let corners = visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea)
+            let innerWidth = max(0, geometry.size.width - safeArea.leading - safeArea.trailing - gap * 2)
+            let cornerReserve = corners > 0 ? ((cornerWidths.values.max() ?? 0) + gap) * 2 : 0
+            let lift = corners > 0 && innerWidth - cornerReserve < 128 ? corners + gap : 0
+            let credits = visibleAttributionHeight(in: geometry.size, safeArea: safeArea)
+            let cap = max(0, geometry.size.height - safeArea.top - safeArea.bottom - gap * 2
+                - max(corners > 0 ? corners + gap : 0, credits > 0 ? credits + lift + gap : 0))
+            KozmosCappedHeightLayout(cap: cap) {
+                VStack(spacing: 0) {
+                    if let panelHeader {
+                        panelHeader.fixedSize(horizontal: false, vertical: true)
+                    }
+                    hostedPanel
                 }
-                hostedPanel.frame(maxHeight: .infinity)
             }
+            .environment(\.kozmosPanelFitsContent, true)
             .frame(width: min(416, geometry.size.width * 0.42))
-            .frame(maxHeight: .infinity)
+            .background(GeometryReader { p in
+                Color.clear.preference(key: KozmosSidePanelHeightKey.self, value: p.size.height)
+            })
             .kozmosSurface(
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusPanel, style: .continuous),
                 style: panelSurface
@@ -682,7 +866,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             .frame(
                 width: geometry.size.width,
                 height: geometry.size.height,
-                alignment: panelPlacement == .end ? .trailing : .leading
+                alignment: panelPlacement == .end ? .topTrailing : .topLeading
             )
             .accessibilityElement(children: .contain)
             .accessibilityLabel(panelLabel)
@@ -694,14 +878,14 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     // proposes the large height and takes what the content
                     // needs. The measured height feeds the detent maths — the
                     // insets, the snapping — a frame later.
-                    KozmosCappedHeightLayout(cap: KozmosMapPanelDetent.large.height(in: geometry.size.height)) {
+                    KozmosCappedHeightLayout(cap: min(KozmosMapPanelDetent.large.height(in: geometry.size.height), maximumPanelHeight(in: geometry.size, safeArea: safeArea))) {
                         VStack(spacing: 0) {
                             if showsGrabber {
                                 grabber(in: geometry.size.height)
                             }
                             sheetHeader(safeArea: safeArea)
                             hostedPanel
-                                .environment(\.kozmosPanelScrollEnabled, panelScrollEnabled(in: geometry.size.height, docked: true))
+                                .environment(\.kozmosPanelScrollEnabled, panelScrollEnabled(in: geometry.size.height, docked: true, safeArea: safeArea))
                                 // Fitted content never scrolls, so the safe
                                 // areas are plain padding here: a safe-area
                                 // inset would take the whole proposal and the
@@ -726,7 +910,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         sheetHeader(safeArea: safeArea)
 
                         hostedPanel
-                            .environment(\.kozmosPanelScrollEnabled, panelScrollEnabled(in: geometry.size.height, docked: true))
+                            .environment(\.kozmosPanelScrollEnabled, panelScrollEnabled(in: geometry.size.height, docked: true, safeArea: safeArea))
                             .modifier(KozmosSheetSafeArea(safeArea: safeArea))
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     }
@@ -736,7 +920,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     // falling off the screen.
                     .frame(
                         width: geometry.size.width,
-                        height: livePanelHeight(in: geometry.size.height),
+                        height: min(livePanelHeight(in: geometry.size.height), maximumPanelHeight(in: geometry.size, safeArea: safeArea)),
                         alignment: .top
                     )
                     // A detent the host sets — the field's focus opening the
@@ -985,7 +1169,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
 }
 
 public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
-    init<PanelHeader: View>(
+    init<PanelHeader: View, BottomStart: View, BottomEnd: View>(
         mapLabel: String = "Map",
         mapStatus: KozmosMapReadiness = .ready,
         panelLabel: String = "Map details",
@@ -996,6 +1180,10 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
         panelSurface: KozmosSurfaceStyle = .solid,
         collisionInsets: KozmosMapCollisionInsets = .zero,
         onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Void)? = nil,
+        bottomControlsPadCamera: Bool = false,
+        attribution: AnyView? = nil,
+        @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
+        @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
         @ViewBuilder mapStatusContent: () -> MapStatusContent,
         @ViewBuilder controls: () -> Controls,
@@ -1013,6 +1201,10 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
             panelSurface: panelSurface,
             collisionInsets: collisionInsets,
             onCollisionInsetsChange: onCollisionInsetsChange,
+            bottomControlsPadCamera: bottomControlsPadCamera,
+            attribution: attribution,
+            controlsBottomStart: controlsBottomStart,
+            controlsBottomEnd: controlsBottomEnd,
             map: map,
             mapStatusContent: mapStatusContent,
             controls: controls,
@@ -1025,7 +1217,7 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
 
 public extension KozmosAdaptiveMapShell
 where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView {
-    init<PanelHeader: View>(
+    init<PanelHeader: View, BottomStart: View, BottomEnd: View>(
         mapLabel: String = "Map",
         panelLabel: String = "Map details",
         panelPlacement: PanelPlacement = .end,
@@ -1035,6 +1227,10 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
         panelSurface: KozmosSurfaceStyle = .solid,
         collisionInsets: KozmosMapCollisionInsets = .zero,
         onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Void)? = nil,
+        bottomControlsPadCamera: Bool = false,
+        attribution: AnyView? = nil,
+        @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
+        @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
         @ViewBuilder panel: () -> Panel,
         @ViewBuilder panelHeader: () -> PanelHeader = { EmptyView() }
@@ -1050,6 +1246,10 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
             panelSurface: panelSurface,
             collisionInsets: collisionInsets,
             onCollisionInsetsChange: onCollisionInsetsChange,
+            bottomControlsPadCamera: bottomControlsPadCamera,
+            attribution: attribution,
+            controlsBottomStart: controlsBottomStart,
+            controlsBottomEnd: controlsBottomEnd,
             map: map,
             mapStatusContent: { EmptyView() },
             controls: { EmptyView() },

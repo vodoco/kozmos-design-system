@@ -2,7 +2,6 @@ import React from "react";
 import { cva } from "class-variance-authority";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
-import type { NavigationItemProps } from "../NavigationItem/NavigationItem";
 
 export interface BottomNavigationProps extends React.HTMLAttributes<HTMLElement> {
   items: {
@@ -14,7 +13,13 @@ export interface BottomNavigationProps extends React.HTMLAttributes<HTMLElement>
     onClick?: () => void;
     active?: boolean;
   }[];
-  density?: NavigationItemProps["density"];
+  /**
+   * How roomy the bar's items are. `compact`, the default, is an item at
+   * least 64px tall, 6px in from its edges; `default` is at least 72px tall,
+   * 8px in. The bar keeps its own items (decision 42): the rail's side-menu
+   * item, which has one size, is not what it draws.
+   */
+  density?: "default" | "compact" | null;
 }
 
 // The bar's own items (decision 42). They were NavigationItem's compact rail

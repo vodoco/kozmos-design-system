@@ -6,8 +6,10 @@
 
 ## Start with the facts
 
-These are generated from the code, and `pnpm skills:check` fails when they and the code disagree.
-Where anything else here disagrees with them, they are right.
+These are generated from the built code, and `pnpm skills:check` detects stale output and
+checks the documented API examples. Prefer them to older hand-written summaries, but verify
+any discrepancy against current source and tests: generation does not prove implementation
+correctness, visual fidelity or cross-platform behaviour.
 
 | Document                                              | What it holds                                                                                                   |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |

@@ -1,6 +1,7 @@
 # Controlled npm releases
 
-Status (2026-09-28): in use. It has published every release since 0.1.0 (2026-09-23);
+Status (2026-10-01): in use; React 0.7.0 is published (evidence below).
+It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
 
@@ -155,6 +156,11 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    project. Then `pnpm release:tag <sha>` for the tags and GitHub Releases (`--dry-run`
    first); it refuses a commit that no successful Release run published, or whose versions
    npm lacks, and it checks every tag and release already there before it makes any (below).
+6. Complete the [post-publication documentation checklist](design-system-maintenance.md#post-publication-documentation-checklist).
+   Publication does not rewrite maintained plans from "unreleased" to "released". Reconcile
+   those claims with evidence, preserve open host/device/design acceptance, and verify the
+   deployed site and Storybook separately. Use a documentation PR; do not bump packages again
+   for status prose or edit generated API cards by hand.
 
 ## Tags and GitHub Releases
 
@@ -196,10 +202,11 @@ Four workflow regression tests failed against the original configuration before
 the replacement. A later retry-tag regression failed before its preflight correction.
 The other safety tests are additional coverage, not claimed as old reproduced bugs.
 
-Measured locally: **35 release tests passed**, all package builds passed, ordinary
+Historical initial workflow validation (not current test totals): **35 release tests passed**, all package builds passed, ordinary
 React 18/19 tarball checks passed (14 exports, three CommonJS entries and 11 README
 samples), and the isolated export smoke test verified all four retained real-package
-tarballs. The three known declaration issues remain unchanged. ESLint, frozen-lockfile
+tarballs. The three declaration issues were unchanged in that initial batch, not a statement
+that they remain in today's release. ESLint, frozen-lockfile
 installation, diff checks and Actionlint 1.7.12 passed. Actionlint checked workflow
 syntax/expressions with its optional shellcheck/pyflakes integrations disabled; those
 external tools were not installed. The official Actionlint archive digest was verified
@@ -263,3 +270,30 @@ On 2026-09-28, 0.5.0 was the first release through the approval gate:
 - **Tags:** `pnpm release:tag` created the three tags and releases.
 - **A missed step:** its dispatch skipped the credential check, which passed when run afterwards.
   That is why the pre-flight now runs it.
+
+### 0.7.0
+
+Published on 2026-10-01 from `a3dc6f935b7914dedd17067036ebadcde737bfd9` after integration
+[#175](https://github.com/vodoco/kozmos-design-system/pull/175), Storybook development-server
+security [#174](https://github.com/vodoco/kozmos-design-system/pull/174), and version
+[#176](https://github.com/vodoco/kozmos-design-system/pull/176). This entry records that
+release, not permission to dispatch another one.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.7.0, tokens 0.3.0, product-contracts 0.6.0 on npm `latest`; icons 0.5.0 unchanged and omitted from this publication.                                                                                                                                                                                      |
+| Exact main-push CI      | [36792093361](https://github.com/vodoco/kozmos-design-system/actions/runs/36792093361): all 17 jobs succeeded, including web, iOS and Android.                                                                                                                                                                    |
+| Preflight / publication | Credential placement, exact CI/main identity and unpublished versions passed preflight. [36828049714](https://github.com/vodoco/kozmos-design-system/actions/runs/36828049714) succeeded after Olcay's protected approval; it published the tested candidate tarballs.                                            |
+| Registry readback       | All three versions and `latest` tags matched; SHA-512 integrities matched the retained candidate manifest; npm exposed provenance metadata.                                                                                                                                                                       |
+| Installed consumer      | A fresh npm installation of React package 0.7.0 with React 19 resolved tokens 0.3.0, icons 0.5.0 and contracts 0.6.0, loaded the package and server-rendered a Button. The prepare job also ran its broader React 18/19 tarball checks.                                                                           |
+| Tags / GitHub releases  | `release:tag` dry-run passed, created all three planned tags/releases, and a second dry-run verified their commit targets. Notes matched the committed changelog sections. React 0.7.0 is Latest; no icons release was created.                                                                                   |
+| Website / Storybook     | [Pages 36792093275](https://github.com/vodoco/kozmos-design-system/actions/runs/36792093275) built and deployed this exact SHA. Live site, Storybook manager, iframe and story index returned HTTP 200; new SDK component docs and map-browse stories were present. This is not a fresh all-screen visual review. |
+
+Change details and migration notes: [React](../packages/react/CHANGELOG.md#070),
+[tokens](../packages/tokens/CHANGELOG.md#030),
+[contracts](../packages/product-contracts/CHANGELOG.md#060), and
+[generated AI changelog](../.ai-skills/api-changelog.md).
+Consumers upgrading FloorSelector from 0.6.0 must opt into `showResultCounts` to retain
+list badges; closed-tile counts remain absent. Native source changes are not native registry
+publication. Figma, external Claude Design artifacts and product deployments are independent.
+Private Vue playground dependency advisories remain separately scoped; #174 did not fix them.

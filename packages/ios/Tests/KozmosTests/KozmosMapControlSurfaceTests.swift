@@ -111,6 +111,73 @@ final class KozmosMapControlSurfaceTests: XCTestCase {
         }
     }
 
+    // MARK: Dark
+
+    /// Decision 47: in the dark theme the controls stay borderless. On the
+    /// dark map's grey the surface is the page's own, background/0 as the
+    /// dark theme resolves it, all the way to its edge, and nothing round it
+    /// is lighter than the map. An edge in the border role, the one a dark
+    /// theme reaches for, is lighter than both the surface and the map, and a
+    /// shadow only darkens. Figma draws the light theme only, so this is the
+    /// ruling rather than the file: an icon-only control, a labelled one off
+    /// and on, and the zoom pair and the compass of a group.
+    @MainActor func testInTheDarkThemeTheControlsStayBorderless() throws {
+        let surface = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: .dark)
+        let map = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground100, in: .dark)
+        let labelled = { (pressed: Bool) in
+            KozmosMapControlButton(
+                label: "Focus", stateLabel: pressed ? "On" : "Off", presentation: .labelled,
+                labelPlacement: .stacked, pressed: pressed, action: {}
+            ) {
+                Image(systemName: pressed ? "location.fill" : "location").frame(width: 24, height: 24)
+            }
+        }
+        let cases: [(String, AnyView, Int)] = [
+            ("an icon-only control", AnyView(KozmosMapControlButton(label: "Zoom in", systemImage: "plus", action: {})), 1),
+            ("a labelled control, off", AnyView(labelled(false)), 1),
+            ("a labelled control, on", AnyView(labelled(true)), 1),
+            // The zoom pair's hairline splits it in two runs of rows, and the
+            // compass is the third.
+            ("the zoom pair and the compass", AnyView(KozmosMapControlsGroup(onZoomIn: {}, onZoomOut: {}, onCompassReset: {})), 3),
+        ]
+        let lighterThanTheMap = { (p: Pixel) in
+            Int(p.r) + Int(p.g) + Int(p.b) > Int(map.r) + Int(map.g) + Int(map.b) + 9
+        }
+        for (name, control, surfaces) in cases {
+            let drawn = try DrawnPixels.draw(
+                control
+                    .padding(60)
+                    .background(KozmosColors.primitivesColorsBackground100)
+                    .environment(\.colorScheme, .dark),
+                scale: 3
+            )
+            // Each surface, as the rows its colour is drawn in.
+            let boxes = drawn.bands(where: DrawnPixels.matches(surface, tolerance: 1))
+            XCTAssertEqual(boxes.count, surfaces, "\(name): \(boxes.count) surfaces drawn: \(boxes)")
+            for (index, box) in boxes.enumerated() {
+                XCTAssertEqual(box.height, 48, accuracy: 0.67, "\(name): a surface is \(box.height) tall, not the 48 it fills")
+                let inside = drawn.pixel(at: CGPoint(x: box.minX + 1 / 3, y: box.midY))
+                XCTAssertTrue(close(inside, surface, within: 2), "\(name): just inside its side the surface is \(inside), not \(surface)")
+                // A point either side of each edge, down the sides and along
+                // the top and the bottom, clear of the corners — but not the
+                // edge the zoom pair's two halves share, which is its hairline.
+                let sharesTop = index > 0 && box.minY - boxes[index - 1].maxY < 1.5
+                let sharesBottom = index < boxes.count - 1 && boxes[index + 1].minY - box.maxY < 1.5
+                var ring: [CGPoint] = []
+                for y in stride(from: box.minY + 12, through: box.maxY - 12, by: 1) {
+                    ring += [-1, -0.5, 0.2, 0.5].map { CGPoint(x: box.minX + $0, y: y) }
+                    ring += [-1, -0.5, 0.2, 0.5].map { CGPoint(x: box.maxX - $0, y: y) }
+                }
+                for x in stride(from: box.minX + 12, through: box.maxX - 12, by: 1) {
+                    if !sharesTop { ring += [-1, -0.5, 0.2, 0.5].map { CGPoint(x: x, y: box.minY + $0) } }
+                    if !sharesBottom { ring += [-1, -0.5, 0.2, 0.5].map { CGPoint(x: x, y: box.maxY - $0) } }
+                }
+                let lit = ring.filter { lighterThanTheMap(drawn.pixel(at: $0)) }
+                XCTAssertTrue(lit.isEmpty, "\(name): \(lit.count) points round a surface are lighter than the map (\(map)), an edge: the first at \(String(describing: lit.first)), \(lit.first.map { drawn.pixel(at: $0) }.map { "\($0)" } ?? "")")
+            }
+        }
+    }
+
     /// The zoom pair is one surface: 48 wide and two 48 controls tall with a
     /// hairline between, no edge round it. It was 44 wide.
     @MainActor func testTheZoomPairIsOneSurface() throws {

@@ -14,7 +14,12 @@ import { Input } from "../Input";
 import { POIDetailPanel } from "../POIDetailPanel";
 import { POIResultList, type POIResultListItem } from "../POIResultList";
 import { RoutePreviewPanel } from "../RoutePreviewPanel";
+import { Button } from "../Button";
+import { FloorSelector } from "../FloorSelector";
+import { MapControlsGroup } from "../MapControlsGroup";
 import { SearchBar } from "../SearchBar";
+import { MapAttribution } from "../MapAttribution";
+import { LanguageSwitcher } from "../LanguageSwitcher";
 
 const meta = {
   title: "Product SDK/AdaptiveMapShell",
@@ -440,5 +445,79 @@ export const GlassSheetWithResults: Story = {
         />
       </div>
     ),
+  },
+};
+
+/** Opposite corners are measured as one region, without a second MapOverlay. */
+export const RegisteredBottomCorners: Story = {
+  args: {
+    className: undefined,
+    style: { width: 360, height: 600, maxWidth: "100%" },
+    panel: undefined,
+    controls: undefined,
+    controlsBottomStart: <Button variant="outline">Start-side action</Button>,
+    controlsBottomEnd: (
+      <div className="flex flex-col items-end gap-4">
+        <FloorSelector
+          floors={["2", "1", "G"]}
+          selectedFloor="1"
+          variant="compact-stepper"
+        />
+        <MapControlsGroup
+          onZoomIn={() => undefined}
+          onZoomOut={() => undefined}
+        />
+      </div>
+    ),
+  },
+};
+
+/** The shell reserves credits separately from its controls and panel. */
+export const RegisteredAttribution: Story = {
+  args: {
+    ...RegisteredBottomCorners.args,
+    style: { width: 390, height: 720, maxWidth: "100%" },
+    controlsBottomStart: (
+      <LanguageSwitcher
+        languages={[
+          { id: "en", label: "English" },
+          { id: "de", label: "Deutsch" },
+        ]}
+        selectedLocale="en"
+        onLocaleRequest={() => undefined}
+      />
+    ),
+    attribution: (
+      <MapAttribution
+        credits={[
+          { id: "owner", label: "© Example indoor data" },
+          {
+            id: "outdoor",
+            label: "Outdoor map contributors",
+            href: "https://example.com/credits",
+          },
+        ]}
+      />
+    ),
+  },
+};
+
+export const AttributionWithSheet: Story = {
+  args: {
+    ...RegisteredAttribution.args,
+    panel: (
+      <div className="p-4">
+        <Button>Place details</Button>
+      </div>
+    ),
+    defaultPanelDetent: "collapsed",
+  },
+};
+
+export const AttributionBesidePanel: Story = {
+  args: {
+    ...AttributionWithSheet.args,
+    style: { width: 1000, height: 600, maxWidth: "100%" },
+    panelPlacement: "start",
   },
 };

@@ -55,6 +55,11 @@ jobs:
       - name: Verify CI Change Detection
         run: pnpm test:ci
 
+      # Exercise request admission on the installed dev server. Static builds
+      # do not expose the server channel and cannot prove this security boundary.
+      - name: Verify Storybook Development Server Security
+        run: pnpm test:storybook-security
+
       # A pull request that changes what a published package ships says how it
       # is released: a changeset naming the package, or an empty one when it
       # needs none (Olcay's decision 8). Only the four npm packages' shipped
@@ -246,12 +251,19 @@ jobs:
           pnpm test:token-alpha
           ADAPTIVE_BROWSER=firefox pnpm test:token-alpha
           ADAPTIVE_BROWSER=webkit pnpm test:token-alpha
+          ADAPTIVE_BROWSER=firefox pnpm test:scoped-utilities
 
       - name: Verify Built Adaptive Layout Geometry
         run: |
           pnpm test:adaptive
           ADAPTIVE_BROWSER=webkit pnpm test:adaptive
           ADAPTIVE_BROWSER=firefox pnpm test:adaptive
+
+      - name: Verify Map Control Placement and Floor Affordances
+        run: |
+          pnpm test:map-controls
+          ADAPTIVE_BROWSER=webkit pnpm test:map-controls
+          ADAPTIVE_BROWSER=firefox pnpm test:map-controls
 
       - name: Verify Built Overlay Ownership
         run: |

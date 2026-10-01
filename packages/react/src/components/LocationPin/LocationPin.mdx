@@ -7,7 +7,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # LocationPin
 
-Displays the LocationPin interface topology natively.
+A map marker with optional result number, custom content, external label and category tint.
+Selected, featured and off-floor states distinguish the marker; the SDK host owns geographic placement and selection state.
 
 <Canvas>
   <Story of={LocationPinStories.Default} />
@@ -22,18 +23,39 @@ Displays the LocationPin interface topology natively.
 <PlatformSnippets
     react={`
 import { LocationPin } from "@kozmos-ds/react";
-export function Example() {
-  return (
-    <>
-      <LocationPin />
-    </>
-  );
+
+// A result's pin, numbered as its card's tab: quiet at rest, filled when the
+// result is selected, and dashed when the place is on another floor.
+export function ResultPin({
+name,
+number,
+selected,
+onAnotherFloor,
+cardId,
+onSelect,
+}: {
+name: string;
+number: number;
+selected: boolean;
+onAnotherFloor: boolean;
+cardId: string;
+onSelect: () => void;
+}) {
+return (
+<LocationPin
+label={\`\${number}, \${name}\`}
+number={number}
+offFloor={onAnotherFloor}
+resultId={cardId}
+selected={selected}
+onClick={onSelect}
+/>
+);
 }
-    `}
+`}
     vue={`
-<script setup>
-import { KozmosLocationPin } from "@kozmos-ds/vue"
-</script>
+
+<script setup>import {KozmosLocationPin} from "@kozmos-ds/vue"</script>
 
 <template>
   <KozmosLocationPin />
@@ -41,42 +63,90 @@ import { KozmosLocationPin } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosLocationPin()
+// A result's pin, numbered as its card's tab: quiet at rest, filled when the
+// result is selected, and dashed when the place is on another floor.
+struct ResultPin: View {
+let name: String
+let number: Int
+let isSelected: Bool
+let isOnAnotherFloor: Bool
+let onSelect: () -> Void
+
+    var body: some View {
+        KozmosLocationPin(
+            label: name,
+            number: number,
+            selected: isSelected,
+            offFloor: isOnAnotherFloor,
+            onSelect: onSelect
+        )
+    }
+
+}
 `}
     kotlin={`
-package com.kozmos.components.locationpin
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
+import com.kozmos.components.locationpin.KozmosLocationPin
 
+// A result's pin, numbered as its card's tab: quiet at rest, filled when the
+// result is selected, and dashed when the place is on another floor.
 @Composable
-fun KozmosLocationPin(
-modifier: Modifier = Modifier,
-tint: Color = KozmosColors.primitivesColorsTheme500
+fun ResultPin(
+name: String,
+number: Int,
+isSelected: Boolean,
+isOnAnotherFloor: Boolean
 ) {
-Icon(
-imageVector = Icons.Default.LocationOn,
-contentDescription = "Location Pin",
-modifier = modifier.size(KozmosDimensions.primitivesLayoutSizing400),
-tint = tint
+KozmosLocationPin(
+label = name,
+number = number,
+selected = isSelected,
+offFloor = isOnAnotherFloor
 )
 }
-
-    `}
+`}
 
 />
 
+## Numbered pins: quiet at rest, filled when selected
+
+A pin with a `number` pairs with its result card's number tab (decision 55). At rest it is quiet: the
+outlined marker on the background, with its ring and number in the pin's colour, as the SDK's map
+draws its unselected results. Only the selected pin is filled, with the ink made for that fill on
+the number, and it grows, so selection is never told by colour alone. Its card's tab fills with it.
+
+<Canvas>
+  <Story of={LocationPinStories.NumberedOneSelected} />
+</Canvas>
+
+- **Keep their fill:** a featured pin (a featured result's pin shows its logo on the map, so a
+  product numbers only the others), a pin showing `markerContent`, and a pin with no number.
+- **Other variants** keep their colours in the ring and number, as ink that reads 4.5:1 on the
+  background in both themes: `secondary`, whose own colour on the web is a surface grey, takes the
+  muted foreground. On iOS and Compose, whose theme/500 reads 3.74:1 on the dark background,
+  `primary` takes the theme's text role and `accent` its theme variant's 700.
+- **Contrast:** the primary number reads 6.24:1 on the light background and 6.17:1 on the dark.
+  Its ring reads at least 4.68:1 against Pointr's light map (background, rooms, retail and food)
+  and 3.27:1 against the dark map's background, rooms, corridors and retail; dark food-and-drink
+  rooms are the exception, at 2.76:1, as the filled pin is.
+
+## On another floor
+
+`offFloor` keeps the outlined marker, with a **dashed** ring and the number in the foreground. The
+dashes are what tell it from a quiet pin at rest on this floor, which is outlined too: shape, not
+colour, so it holds in forced colours and for any colour vision. Selected, it grows and is never
+filled.
+
+<Canvas>
+  <Story of={LocationPinStories.OtherFloor} />
+</Canvas>
+
 ## A category's colours
 
-A `tint` — `{ accent, fill, onFill }` — fills the marker with the category's fill and inks its number with the fill's ink; a featured pin keeps the alert colour. Off the floor the marker inverts to a hollow outline in the fill on the background and the number takes the foreground, so the state is carried by shape, as on iOS and Compose.
+A `tint` — `{ accent, fill, onFill }` — colours the marker with the category's fill; a featured pin
+keeps the alert colour. Selected, the fill is the marker and its ink the number. At rest a numbered
+pin is outlined in the fill, and off the floor its outline is dashed; in both the number takes the
+foreground, since six of the eight fills fail 4.5:1 as text on the background (yellow reads
+1.92:1). The same holds on iOS and Compose.

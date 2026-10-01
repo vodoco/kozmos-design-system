@@ -2,7 +2,7 @@
 
 # Text
 
-Text is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Applies Kozmos typography, colour, alignment and optional truncation to body text. Choose a semantic element with `as`, or use Heading for a heading with a level-based type scale.
 
 - **Import:** `import { Text } from "@kozmos-ds/react";`
 - **Group:** Foundations

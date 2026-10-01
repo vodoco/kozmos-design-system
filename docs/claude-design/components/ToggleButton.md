@@ -2,7 +2,7 @@
 
 # ToggleButton
 
-ToggleButton is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A button that maintains a pressed/unpressed choice, with default or outline styling. Use `pressed` and `onPressedChange` for controlled state, or `defaultPressed` for an initial uncontrolled value.
 
 - **Import:** `import { ToggleButton } from "@kozmos-ds/react";`
 - **Group:** Action

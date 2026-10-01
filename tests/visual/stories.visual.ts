@@ -36,6 +36,11 @@ const taxonomySymbol = Buffer.from(
 for (const story of stories) {
   for (const theme of ["light", "dark"] as const) {
     test(`${story.id} ${theme}`, async ({ page, baseURL }) => {
+      // Full-screen mobile presentations must be captured in a phone viewport,
+      // not only inside a narrow component box on a desktop canvas.
+      if (story.tags?.includes("viewport-phone")) {
+        await page.setViewportSize({ width: 390, height: 844 });
+      }
       // Nothing from outside this Storybook. A remote photo becomes one grey
       // pixel, a taxonomy symbol a circle, and anything else is refused —
       // Google Fonts included, so text is drawn in the image's own fonts,

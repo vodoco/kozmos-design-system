@@ -525,9 +525,18 @@ function checkCode(ctx, code, extension) {
   const visit = (node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const component = componentOf(node.tagName);
+      const tag = node.tagName;
+      if (
+        ts.isPropertyAccessExpression(tag) &&
+        ts.isIdentifier(tag.expression) &&
+        imports.get(tag.expression.text)?.module === "@kozmos-ds/react" &&
+        imports.get(tag.expression.text)?.name === "*" &&
+        !ctx.facts.packages.get("@kozmos-ds/react")?.exports?.has(tag.name.text)
+      ) {
+        report(tag, `@kozmos-ds/react does not export ${tag.name.text}`);
+      }
       if (component)
         checkAttributes(component, node.attributes, ctx.facts, report);
-      const tag = node.tagName;
       if (
         ts.isIdentifier(tag) &&
         !imports.has(tag.text) &&

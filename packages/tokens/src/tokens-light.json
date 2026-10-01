@@ -2391,6 +2391,23 @@
     }
   },
   "Semantics": {
+    "Map attribution": {
+      "text": {
+        "$value": "#464A53",
+        "$type": "color",
+        "$description": "Fixed dark-grey map credit fill; paired with a white halo regardless of application theme."
+      },
+      "halo": {
+        "$value": "#FFFFFF",
+        "$type": "color",
+        "$description": "Fixed white halo behind map credit glyphs."
+      },
+      "halo width": {
+        "$value": "0.0625rem",
+        "$type": "dimension",
+        "$description": "One logical unit of outline outside map credit glyphs."
+      }
+    },
     "Surface": {
       "0": {
         "$value": "#FFFFFF",

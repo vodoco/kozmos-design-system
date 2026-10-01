@@ -9828,7 +9828,7 @@ if (locationPin.content.tint) {
   assertContains(
     files.reactLocationPin,
     source.reactLocationPin,
-    "tint && !featured",
+    "Boolean(tint) && !featured",
     "React LocationPin tint unless featured",
   );
   assertContains(
@@ -9845,25 +9845,25 @@ if (locationPin.content.offFloorNumberColor === "foreground/0") {
   assertContains(
     files.iosLocationPin,
     source.iosLocationPin,
-    "offFloor ? KozmosColors.primitivesColorsForeground0 : (tint?.fill.ink",
+    "if offFloor || (isQuiet && tint != nil) { return KozmosColors.primitivesColorsForeground0 }",
     "iOS LocationPin off-floor number in foreground/0",
   );
   assertContains(
     files.androidLocationPin,
     source.androidLocationPin,
-    "if (offFloor) KozmosThemeTokens.primitivesColorsForeground0 else (tint?.fill?.ink",
+    "offFloor || (quiet && tint != null) -> KozmosThemeTokens.primitivesColorsForeground0",
     "Android LocationPin off-floor number in foreground/0",
   );
   assertContains(
     files.reactLocationPin,
     source.reactLocationPin,
-    'offFloor ? "fill-background" : "fill-current"',
-    "React LocationPin solid on the floor, hollow off it",
+    'outlined ? "fill-background" : "fill-current"',
+    "React LocationPin solid when filled, hollow off the floor and at rest",
   );
   assertContains(
     files.reactLocationPin,
     source.reactLocationPin,
-    'offFloor ? "text-foreground" : inkClasses[variant]',
+    /offFloor \|\| \(quiet && tinted\)\s*\?\s*"text-foreground"/,
     "React LocationPin off-floor number in the foreground",
   );
   assertNotContains(
@@ -9885,6 +9885,61 @@ if (locationPin.content.offFloorNumberColor === "foreground/0") {
     "Figma LocationPin off-floor number takes that ink",
   );
 }
+
+// LocationPin numbered at rest (decision 55, 2026-09-29): quiet — the
+// outlined marker, its ring and number in its colour — and filled only when
+// selected; a featured pin and a pin with no number keep their fill. Off the
+// floor the outlined marker's ring is dashed, so the two never read alike,
+// and on iOS and Compose the primary's ring and number take the theme's text
+// role (theme/500 reads 3.74:1 on the dark surface).
+assertContains(
+  files.reactLocationPin,
+  source.reactLocationPin,
+  /const quiet =\s*markerContent == null &&\s*number != null &&\s*!selected &&\s*!featured &&\s*!offFloor/,
+  "React LocationPin quiet only for a numbered pin at rest on the floor",
+);
+assertContains(
+  files.reactLocationPin,
+  source.reactLocationPin,
+  'offFloor && "[&>path:last-child]:[stroke-dasharray:2_4.5]"',
+  "React LocationPin off-floor ring dashed",
+);
+assertContains(
+  files.iosLocationPin,
+  source.iosLocationPin,
+  "number != nil && !selected && !featured && !offFloor",
+  "iOS LocationPin quiet only for a numbered pin at rest on the floor",
+);
+assertContains(
+  files.iosLocationPin,
+  source.iosLocationPin,
+  "guard offFloor else { return StrokeStyle(lineWidth: width) }",
+  "iOS LocationPin off-floor ring dashed",
+);
+assertContains(
+  files.iosLocationPin,
+  source.iosLocationPin,
+  "case .primary: return KozmosColors.semanticsEmotionThemedText",
+  "iOS LocationPin primary outline in the theme's text role",
+);
+assertContains(
+  files.androidLocationPin,
+  source.androidLocationPin,
+  "val quiet = number != null && !selected && !featured && !offFloor",
+  "Android LocationPin quiet only for a numbered pin at rest on the floor",
+);
+assertContains(
+  files.androidLocationPin,
+  source.androidLocationPin,
+  "val dashes = if (offFloor) {",
+  "Android LocationPin off-floor ring dashed",
+);
+assertContains(
+  files.androidLocationPin,
+  source.androidLocationPin,
+  "variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.semanticsEmotionThemedText",
+  "Android LocationPin primary outline in the theme's text role",
+);
 
 // POIDetailPanel: in a sheet, no surface of its own.
 if (
