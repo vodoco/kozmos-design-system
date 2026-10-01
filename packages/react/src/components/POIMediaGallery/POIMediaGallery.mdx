@@ -26,6 +26,15 @@ All labels, including the controls group, can be localized. No timed autoplay or
 forced smooth scrolling is used. Gallery CSS is component-owned and tested with
 legacy CSS scope removed. Real-device touch gestures still need manual acceptance.
 
+iOS and Android keep the same one index. The strip opens at it; a swipe moves it;
+the arrows, a new controlled value and fewer or different photos move the strip,
+at once and without animation; a refused change leaves the strip on the index the
+host kept. `onActiveIndexChange` is called once for each change a visitor asks
+for, and never for the gallery lining its strip up with an index it was given.
+Each photo fills a 4:3 tile 85% of the gallery's width on every platform, so the
+photo whose leading edge is nearest the strip's is the one shown, the last one
+included at the end of the strip.
+
 On a glass surface the position, muted elsewhere, takes the foreground colour, so
 it reads at 4.5:1 over any map (decision 48): hosted on its own in
 `AdaptiveMapShell`'s glass panel, or in `POIDetailPanel`'s `sheet` presentation

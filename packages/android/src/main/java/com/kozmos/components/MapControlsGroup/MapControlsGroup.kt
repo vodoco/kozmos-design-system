@@ -92,8 +92,6 @@ fun KozmosMapControlsGroup(
         KozmosMapControlButtonPresentation.IconOnly,
     locationLabel: String = "Locate me",
     locationStateLabel: String? = null,
-    locationHeadingDescription: String = "map turns with you",
-    locationHeadingPausedDescription: String = "press to turn the map with you again",
     zoomInLabel: String = "Zoom in",
     zoomOutLabel: String = "Zoom out",
     compassResetLabel: String = "Reset bearing",
@@ -107,7 +105,11 @@ fun KozmosMapControlsGroup(
     stepFreeLabel: String = "Step-free",
     stepFreeOnLabel: String = "On",
     stepFreeOffLabel: String = "Off",
-    stepFreeIcon: ImageVector? = null
+    stepFreeIcon: ImageVector? = null,
+    // After every parameter 0.5.0 had: in the middle, a 0.5.0 call that
+    // passed the zoom-in label by position sent it here.
+    locationHeadingDescription: String = "map turns with you",
+    locationHeadingPausedDescription: String = "press to turn the map with you again"
 ) {
     val trackEvent = LocalKozmosAnalytics.current
 

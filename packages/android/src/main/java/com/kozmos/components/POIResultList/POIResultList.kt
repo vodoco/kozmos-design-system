@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
 import com.kozmos.contracts.KozmosPOIPresentation
+import com.kozmos.contracts.KozmosPOIResultAction
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import com.kozmos.contracts.KozmosTravelTimeBand
 import com.kozmos.tokens.KozmosDimensions
@@ -36,6 +37,12 @@ data class KozmosPOIResultListItem(
  * Mirrors the React `POIResultList`. When [selectedPoiId] is supplied it wins
  * over each result's own `selected` flag, so marker and list selection stay
  * derived from a single canonical ID.
+ *
+ * The selected result shows the actions its `result.actions` carries; one
+ * pressed reaches [onAction] with the action and the POI's ID, and never
+ * selects. Without [onAction] those actions are drawn disabled, as
+ * POIDetailPanel draws a supplementary action it has no handler for on the
+ * web and iOS.
  *
  * This is a plain [Column] rather than a `LazyColumn` so it can be nested
  * inside an already-scrolling detail panel. Callers rendering very long result
@@ -62,7 +69,14 @@ fun KozmosPOIResultList(
      * list never renumbers: a featured result shows Featured and no number,
      * since its pin shows its logo, so number the others in pin order.
      */
-    numbered: Boolean = false
+    numbered: Boolean = false,
+    /** Names each result's action row for TalkBack: the card's. */
+    actionsLabel: String = "Actions for this result",
+    /**
+     * Runs an action from the selected result's action row, told which
+     * action and the POI's ID. Without it those actions are drawn disabled.
+     */
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     Column(
         modifier = modifier
@@ -101,14 +115,18 @@ fun KozmosPOIResultList(
             }
         } else {
             items.forEach { item ->
+                // An action pressed on the selected result reaches onAction,
+                // as React's list hands its onAction to every card.
                 KozmosPOIResultCard(
                     currentFloorId = currentFloorId,
                     poi = item.poi,
                     result = item.result.selecting(selectedPoiId),
                     onSelect = onSelect,
                     featuredLabel = featuredLabel,
+                    actionsLabel = actionsLabel,
                     travelTimeBandLabels = travelTimeBandLabels,
-                    numbered = numbered
+                    numbered = numbered,
+                    onAction = onAction
                 )
             }
         }
