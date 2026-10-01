@@ -1,0 +1,59 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import * as Stories from "./LanguageSwitcher.stories";
+
+<Meta of={Stories} />
+
+# LanguageSwitcher
+
+A **web-only** language control built from Kozmos Select. iOS and Android deliberately follow
+device/app language and do not have this button. This is a product decision, not a native parity gap.
+
+<Canvas of={Stories.EmbeddedMap} />
+<Controls />
+
+## Ownership and placement
+
+Place it in `AdaptiveMapShell.controlsBottomStart`: bottom-left in LTR and bottom-right in RTL.
+The registered slot supplies the menu's collision boundary and availability. Menus close when
+that region disappears; restoring space does not reopen them. Standalone menus use the viewport.
+Select provides keyboard navigation, typeahead, scroll controls and selected-state announcements.
+
+Supply the tenant-supported `languages` with unique, nonempty canonical BCP 47 `id` values and
+native language-name `label` values. A language's `direction` concerns that name, not the whole app.
+Labels carry `lang` metadata and bidirectional isolation; flags are not used as language identifiers.
+
+`selectedLocale` is the **committed** app/SDK language. `onLocaleRequest` requests a change only.
+The component does not call the SDK, fetch translations, write browser storage, change the global
+document direction or reload the application. Keep SDK credentials and adapters outside Kozmos.
+
+## Async changes and fallback
+
+1. Resolve available languages from actual UI/content/SDK capabilities; do not hardcode a
+   production language list from the example fixture.
+2. On request, mark `pending`, clear a stale error, and apply the proposed language through a
+   host-owned coordinator. Do not advance `selectedLocale` before acceptance.
+3. Commit UI strings, SDK/content locale and ThemeProvider `dir` coherently after success.
+   Guard responses with a request generation/token; an older response must not revert newer state.
+4. On failure, retain/restore the committed choice, clear `pending` and provide translated `error`
+   text. Optional `onRetry` retries the host's retained failed request, not an invented selection.
+5. Persist only successful choices. If the SDK must restart, snapshot and restore supported
+   venue, floor, camera, route and search state. Missing translations and unsupported locale
+   fallback are host policies: decide and document them before integrating the real SDK.
+
+All interface copy is overridable: `label`, `placeholder`, `pendingLabel`, `retryLabel`, and `error`.
+An unknown selected ID is displayed verbatim, never silently substituted with the first option.
+Zero options and an already-selected sole enabled option keep a visible disabled control. A sole
+valid option remains selectable when recovering from an unknown selection. Pending prevents
+further requests; same-value and disabled choices do not emit callbacks.
+
+<Canvas of={Stories.Pending} />
+<Canvas of={Stories.Failed} />
+
+## Native integration policy
+
+No SwiftUI/Compose language-button API is introduced. Native hosts should use the effective
+device/app locale, negotiate supported translations, and respond to supported OS locale changes.
+This component does not certify native runtime locale reload or Pointr SDK fallback behavior.
+Figma mapping and live SDK host integration remain separate work; no placeholder Code Connect
+URL or fabricated SDK behavior is supplied.

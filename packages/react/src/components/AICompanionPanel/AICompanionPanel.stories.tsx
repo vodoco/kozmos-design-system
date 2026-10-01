@@ -36,14 +36,17 @@ const Frame = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-/** The whole surface: header, thread and input. */
+/**
+ * The whole surface: header, thread and input. On screen from the start, so
+ * it passes `open`: nobody opened it, and it takes no focus (decision 16).
+ */
 export const Conversation: Story = {
   render: () => {
     const Demo = () => {
       const [value, setValue] = useState("");
       return (
         <Frame>
-          <AICompanionPanel onClose={fn()}>
+          <AICompanionPanel onClose={fn()} open>
             <AIMessageList>
               <AIMessage>
                 Hello! What are you looking for? Describe it in your own words,
@@ -60,7 +63,7 @@ export const Conversation: Story = {
                       poi={poi}
                       result={{
                         poiId: poi.id,
-                        resultIndex: 0,
+                        resultIndex: 1,
                         selected: false,
                         featured: false,
                         floorId: poi.floorId,
@@ -90,7 +93,7 @@ export const Conversation: Story = {
 export const Streaming: Story = {
   render: () => (
     <Frame>
-      <AICompanionPanel onClose={fn()}>
+      <AICompanionPanel onClose={fn()} open>
         <AIMessageList>
           <UserMessage>Where is the nearest accessible restroom?</UserMessage>
           <AIMessage status="streaming">
@@ -107,7 +110,8 @@ export const Streaming: Story = {
  * Row 60 and decision 16: the panel stays mounted and `open` opens it. Open
  * it from the button and focus goes into the panel; close it and focus comes
  * back to the button, which stayed beneath it all along. The other stories
- * are on screen from the start, so none of them takes focus.
+ * are on screen from the start and pass `open` too, so none of them takes
+ * focus.
  */
 export const OpenAndClose: Story = {
   render: () => {
@@ -150,7 +154,7 @@ export const OpenAndClose: Story = {
 export const VoiceConversation: Story = {
   render: () => (
     <Frame>
-      <AICompanionPanel onClose={fn()}>
+      <AICompanionPanel onClose={fn()} open>
         <AIMessageList aria-live="off">
           <AIMessage>
             Hello! What are you looking for? Describe it in your own words, like
@@ -178,7 +182,7 @@ export const VoiceConversation: Story = {
 export const TimedOut: Story = {
   render: () => (
     <Frame>
-      <AICompanionPanel onClose={fn()}>
+      <AICompanionPanel onClose={fn()} open>
         <AIMessageList>
           <UserMessage>Where is the nearest accessible restroom?</UserMessage>
           <AIMessage status="timedOut" />

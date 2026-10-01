@@ -109,6 +109,58 @@ describe("POIResultList", () => {
     );
   });
 
+  it("numbers its results, grouped or not, only when the product asks", () => {
+    // Quick access: a category chosen in the browse grid lists its places and
+    // the map numbers their pins. Kozmos cannot tell that list from another,
+    // so the product turns numbering on; it draws each result's own index and
+    // never renumbers. A featured result keeps Featured, as its pin keeps its
+    // logo.
+    const featured = createItem("featured", 0);
+    const items: POIResultListEntry[] = [
+      { ...featured, result: { ...featured.result, featured: true } },
+      createItem("one", 1),
+      {
+        id: "starbucks",
+        label: "Starbucks, 2 results",
+        items: [createItem("two", 2), createItem("three", 3)],
+        defaultExpanded: true,
+      },
+    ];
+    const numbers = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll("[data-tab='number']")).map(
+        (node) => node.textContent,
+      );
+    const { container, rerender } = render(
+      <POIResultList
+        items={items}
+        onSelect={vi.fn()}
+        resultCountLabel="4 results"
+      />,
+    );
+    expect(numbers(container)).toEqual([]);
+
+    rerender(
+      <POIResultList
+        items={items}
+        numbered
+        onSelect={vi.fn()}
+        resultCountLabel="4 results"
+        selectedPoiId="two"
+      />,
+    );
+    expect(numbers(container)).toEqual(["1", "2", "3"]);
+    expect(container.querySelector("[data-tab='featured']")).not.toBeNull();
+    // The selected one fills, wherever it is.
+    expect(
+      container.querySelector("[data-tab='number'][data-selected]"),
+    ).toHaveTextContent(/^2$/);
+    expect(
+      screen.getByRole("button", { name: /^2, Burger King/ }),
+    ).toHaveAttribute("aria-current", "location");
+    // The list's own element is not given the flag as an attribute.
+    expect(container.querySelector("section")).not.toHaveAttribute("numbered");
+  });
+
   it("holds a notice inside the list, above the results it qualifies", () => {
     // The allergen notice belongs to the results: as a sibling it could
     // outlive a list that failed to render, and be read as qualifying
@@ -539,6 +591,277 @@ describe("POIResultList", () => {
         behavior: "smooth",
       });
       page.mockRestore();
+    });
+
+    describe("a selection whose result is not in the list yet (F2)", () => {
+      // A pin's tap sets the selection, and the results it belongs to can
+      // still be loading. Laid out by prototype, so a card is placed as it
+      // mounts: the effect that brings it in runs before a test could place
+      // it by hand.
+      function layOut(
+        cards: Record<string, number>,
+        groups: Record<string, number> = {},
+      ) {
+        const scrollBy = vi.fn();
+        const original = HTMLElement.prototype.scrollBy;
+        HTMLElement.prototype.scrollBy = scrollBy as typeof original;
+        const spies = [
+          vi
+            .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+            .mockImplementation(function (this: HTMLElement) {
+              if (this.dataset.testid === "scroller")
+                return rect(view.top, view.height);
+              const card = this.dataset.poiId;
+              if (card !== undefined && card in cards)
+                return rect(cards[card], 80);
+              const group = this.dataset.resultGroup;
+              if (group !== undefined && group in groups)
+                return rect(groups[group], 120);
+              return rect(0, 0);
+            }),
+          vi
+            .spyOn(HTMLElement.prototype, "clientHeight", "get")
+            .mockImplementation(function (this: HTMLElement) {
+              return this.dataset.testid === "scroller" ? view.height : 0;
+            }),
+          vi
+            .spyOn(HTMLElement.prototype, "scrollHeight", "get")
+            .mockImplementation(function (this: HTMLElement) {
+              return this.dataset.testid === "scroller" ? 1000 : 0;
+            }),
+        ];
+        const page = vi.spyOn(window, "scrollBy").mockImplementation(() => {});
+        return {
+          scrollBy,
+          page,
+          restore() {
+            HTMLElement.prototype.scrollBy = original;
+            spies.forEach((spy) => spy.mockRestore());
+            page.mockRestore();
+          },
+        };
+      }
+
+      it("brings the result in when the results arrive after the selection", () => {
+        const layout = layOut({ "poi-8": 500 });
+        try {
+          const { rerender } = render(
+            <Scroller>
+              <List items={[]} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).not.toHaveBeenCalled();
+
+          rerender(
+            <Scroller>
+              <List items={results} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledTimes(1);
+          expect(layout.scrollBy).toHaveBeenCalledWith({
+            top: 292,
+            behavior: "smooth",
+          });
+          expect(layout.scrollBy.mock.instances[0]).toBe(
+            screen.getByTestId("scroller"),
+          );
+          expect(layout.page).not.toHaveBeenCalled();
+        } finally {
+          layout.restore();
+        }
+      });
+
+      it("waits through a batch without the result, and brings it in from the batch that has it", () => {
+        const layout = layOut({ "poi-8": 500 });
+        try {
+          const { rerender } = render(
+            <Scroller>
+              <List items={results.slice(0, 5)} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).not.toHaveBeenCalled();
+
+          rerender(
+            <Scroller>
+              <List items={results} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledTimes(1);
+          expect(layout.scrollBy).toHaveBeenCalledWith({
+            top: 292,
+            behavior: "smooth",
+          });
+        } finally {
+          layout.restore();
+        }
+      });
+
+      it("brings in a late result's group when the group holds it folded away", () => {
+        const group: POIResultListEntry = {
+          id: "starbucks",
+          label: "Starbucks, 3 results",
+          items: [
+            createItem("s-1", 0),
+            createItem("s-2", 1),
+            createItem("s-3", 2),
+          ],
+        };
+        const layout = layOut({}, { starbucks: 900 });
+        try {
+          const { rerender } = render(
+            <Scroller>
+              <List items={results} selectedPoiId="s-3" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).not.toHaveBeenCalled();
+
+          rerender(
+            <Scroller>
+              <List items={[...results, group]} selectedPoiId="s-3" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledWith({
+            top: 732,
+            behavior: "smooth",
+          });
+        } finally {
+          layout.restore();
+        }
+      });
+
+      it("brings in, when turned on, the selection it was told to leave", () => {
+        // Off, the list leaves scrolling to the product. A selection made
+        // meanwhile was never brought in, so turning it on brings it in, as
+        // a list that appears with a selection does. One it has brought in
+        // is not brought in again.
+        const layout = layOut({ "poi-8": 500 });
+        try {
+          const { rerender } = render(
+            <Scroller>
+              <List scrollSelectedIntoView={false} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).not.toHaveBeenCalled();
+
+          rerender(
+            <Scroller>
+              <List selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledTimes(1);
+
+          rerender(
+            <Scroller>
+              <List scrollSelectedIntoView={false} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          rerender(
+            <Scroller>
+              <List selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledTimes(1);
+        } finally {
+          layout.restore();
+        }
+      });
+
+      it("brings a late result in once, whatever new arrays of the same results follow, and still follows its action row", () => {
+        const layout = layOut({ "poi-8": 500 });
+        try {
+          const { rerender } = render(
+            <Scroller>
+              <List items={[]} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          rerender(
+            <Scroller>
+              <List items={[...results]} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          // A product building its items in render hands over a new array
+          // every time, with the same results in it.
+          rerender(
+            <Scroller>
+              <List items={[...results]} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          rerender(
+            <Scroller>
+              <List
+                items={results.map((item) => ({ ...item }))}
+                selectedPoiId="poi-8"
+              />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledTimes(1);
+
+          // The action row has opened, and the card is taller now.
+          const card = document.querySelector<HTMLElement>(
+            '[data-poi-id="poi-8"]',
+          )!;
+          fireEvent.animationEnd(card);
+          expect(layout.scrollBy).toHaveBeenCalledTimes(2);
+        } finally {
+          layout.restore();
+        }
+      });
+
+      it("brings a result in again when it leaves the list and comes back", () => {
+        // A new search that loses the selected place, then finds it again:
+        // its card is a new one, wherever the new results put it.
+        const layout = layOut({ "poi-8": 500 });
+        try {
+          const { rerender } = render(
+            <Scroller>
+              <List items={results} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledTimes(1);
+
+          rerender(
+            <Scroller>
+              <List items={results.slice(0, 5)} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledTimes(1);
+
+          rerender(
+            <Scroller>
+              <List items={results} selectedPoiId="poi-8" />
+            </Scroller>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledTimes(2);
+        } finally {
+          layout.restore();
+        }
+      });
+
+      it("jumps rather than glides to a late result when motion is reduced", () => {
+        const layout = layOut({ "poi-8": 500 });
+        try {
+          const { rerender } = render(
+            <div data-kozmos-motion="reduced">
+              <Scroller>
+                <List items={[]} selectedPoiId="poi-8" />
+              </Scroller>
+            </div>,
+          );
+          rerender(
+            <div data-kozmos-motion="reduced">
+              <Scroller>
+                <List items={results} selectedPoiId="poi-8" />
+              </Scroller>
+            </div>,
+          );
+          expect(layout.scrollBy).toHaveBeenCalledWith({
+            top: 292,
+            behavior: "auto",
+          });
+        } finally {
+          layout.restore();
+        }
+      });
     });
 
     it("brings in the group that holds a result it has not drawn", () => {

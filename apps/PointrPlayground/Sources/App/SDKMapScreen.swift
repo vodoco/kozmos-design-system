@@ -14,6 +14,7 @@ struct SDKMapScreen: View {
     @FocusState private var searchFocused: Bool
     /// Whether the manoeuvre card over the map is open into the itinerary.
     @State private var itineraryExpanded = false
+    @State private var informationOpen = false
     /// The shell docks its panel as a sheet on compact widths and floats it
     /// beside the map on regular ones; the card has to match.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -29,43 +30,56 @@ struct SDKMapScreen: View {
     var body: some View {
         Group {
             if let widget = session.widget {
-                KozmosAdaptiveMapShell(
-                    mapLabel: "Design-QA indoor map", mapStatus: session.failure != nil ? .error : (session.status == "Ready" ? .ready : .loading),
-                    panelLabel: panelLabel, panelPlacement: .end,
-                    controlsPlacement: .bottom, panelDetent: $detent,
-                    // Navigating, the sheet also fits its summary; browsing, the
-                    // prototype's three stops.
-                    panelDetents: session.phase == .directions ? [.collapsed, .content, .medium, .large] : [.collapsed, .medium, .large],
-                    // The prototype's sheet is glass; the system's default is solid.
-                    panelSurface: .glass,
-                    onCollisionInsetsChange: session.setChromeInsets,
-                    map: { SDKMapHost(widget: widget) },
-                    mapStatusContent: {
-                        VStack {
-                            Text(session.failure ?? session.status)
-                            if session.failure != nil { KozmosButton("Retry", action: session.retry) }
-                        }.padding(16)
-                    },
-                    controls: {
-                        // The shell proposes this slot only the height left
-                        // between the top bar and the sheet. At a tall detent
-                        // the whole cluster no longer fits, and drawn anyway it
-                        // overflowed upward over the search bar. Zoom yields to
-                        // pinch first; the levels stay while they fit.
-                        ViewThatFits(in: .vertical) {
-                            controls(widget, zoom: true)
-                            controls(widget, zoom: false)
-                            // Not `EmptyView`: it adds no child at all, and
-                            // with nothing fitting `ViewThatFits` falls back to
-                            // its last real child — the levels, over the search.
-                            Color.clear.frame(width: 0, height: 0)
-                        }
-                    },
-                    // The shell's top slot spans the map's width; the row and the
-                    // card keep a margin from the edges, as the fixture playground does.
-                    topBar: { topBar.padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200) },
-                    panel: { panel }
-                )
+                KozmosMapInfo(
+                    isOpen: $informationOpen,
+                    content: SDKMapInformation.current(venue: session.building?.name),
+                    // A full browse sheet owns the compact screen. Do not put
+                    // a floating map button over its search/close controls.
+                    available: horizontalSizeClass == .regular || detent != .large,
+                    triggerLabel: "Map information"
+                ) {
+                    KozmosAdaptiveMapShell(
+                        mapLabel: "Design-QA indoor map", mapStatus: session.failure != nil ? .error : (session.status == "Ready" ? .ready : .loading),
+                        panelLabel: panelLabel, panelPlacement: .start,
+                        controlsPlacement: .bottom, panelDetent: $detent,
+                        // Navigating, the sheet also fits its summary; browsing, the
+                        // prototype's three stops.
+                        panelDetents: session.phase == .directions ? [.collapsed, .content, .medium, .large] : [.collapsed, .medium, .large],
+                        // The prototype's sheet is glass; the system's default is solid.
+                        panelSurface: .glass,
+                        onCollisionInsetsChange: session.setChromeInsets,
+                        map: { SDKMapHost(widget: widget) },
+                        mapStatusContent: {
+                            VStack {
+                                Text(session.failure ?? session.status)
+                                if session.failure != nil { KozmosButton("Retry", action: session.retry) }
+                            }.padding(16)
+                        },
+                        controls: {
+                            // The shell proposes this slot only the height left
+                            // between the top bar and the sheet. At a tall detent
+                            // the whole cluster no longer fits, and drawn anyway it
+                            // overflowed upward over the search bar. Zoom yields to
+                            // pinch first; the levels stay while they fit.
+                            ViewThatFits(in: .vertical) {
+                                controls(widget, zoom: true)
+                                controls(widget, zoom: false)
+                                // Not `EmptyView`: it adds no child at all, and
+                                // with nothing fitting `ViewThatFits` falls back to
+                                // its last real child — the levels, over the search.
+                                Color.clear.frame(width: 0, height: 0)
+                            }
+                        },
+                        // The shell's top slot spans the map's width; the row and the
+                        // card keep a margin from the edges, as the fixture playground does.
+                        topBar: {
+                            topBar
+                                .padding(.trailing, 64) // 48-unit Info control + 16-unit separation.
+                                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+                        },
+                        panel: { panel }
+                    )
+                }
             } else {
                 VStack(spacing: 16) {
                     Text("Kozmos × Pointr QA").font(KozmosTypography.title2)
@@ -76,7 +90,9 @@ struct SDKMapScreen: View {
             }
         }
         .task { session.start() }
-        .onDisappear { session.stop() }
+        // Full-screen Info covers this screen; it is not leaving the SDK host.
+        .onDisappear { if !informationOpen { session.stop() } }
+        .onChange(of: informationOpen) { if $0 { searchFocused = false } }
         .onChange(of: session.phase) { phase in
             itineraryExpanded = false
             // Navigating, the sheet holds a summary and a row of buttons: it
@@ -219,11 +235,13 @@ struct SDKMapScreen: View {
     /// tile. Every part is a Kozmos component; the shell draws the surface.
     @ViewBuilder private var searchSheet: some View {
         VStack(spacing: 0) {
-            // The row 8 under the handle's row, as the prototype's field sits
-            // 23 from the sheet's top; what follows brings its own top margin.
+            // Wide panels have no handle: keep the same 16pt top and side
+            // inset. Compact sheets retain the clearance under their handle.
             searchRow
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
-                .padding(.top, KozmosDimensions.primitivesLayoutSpacing100)
+                .padding(.top, horizontalSizeClass == .regular
+                    ? KozmosDimensions.primitivesLayoutSpacing200
+                    : KozmosDimensions.primitivesLayoutSpacing100)
             // What follows the row crossfades as the row's state changes.
             Group {
                 if let category = session.category {

@@ -2,6 +2,9 @@ package com.kozmos.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -64,7 +67,8 @@ data class ReadNode(
     /** Offered while open: TalkBack reads it as the control's expanded state. */
     val collapse: (() -> Boolean)? = null,
     /** Set, TalkBack says the node's new description when it changes. */
-    val liveRegion: LiveRegionMode? = null
+    val liveRegion: LiveRegionMode? = null,
+    val horizontalScrollMax: Float? = null
 )
 
 /**
@@ -106,6 +110,26 @@ fun Paparazzi.readSemantics(content: @Composable () -> Unit): ReadSemantics {
     return checkNotNull(read) { "the content was never laid out" }
 }
 
+/** Advance real Compose frames before reading measure-driven shell state. */
+fun Paparazzi.readSettledSemantics(content: @Composable () -> Unit): ReadSemantics {
+    var result: ReadSemantics? = null
+    val view = ComposeView(context).apply {
+        setContent {
+            val owner = (LocalView.current as ViewRootForTest).semanticsOwner
+            Box { content() }
+            LaunchedEffect(Unit) {
+                repeat(5) { withFrameNanos { } }
+                result = ReadSemantics(
+                    owner.rootSemanticsNode.flatten().map(::copyOf),
+                    owner.unmergedRootSemanticsNode.flatten().map(::copyOf)
+                )
+            }
+        }
+    }
+    gif(view, "settled-semantics", start = 0L, end = 1000L, fps = 20)
+    return checkNotNull(result) { "settled semantics were never read" }
+}
+
 private fun SemanticsNode.flatten(): List<SemanticsNode> =
     listOf(this) + children.flatMap { it.flatten() }
 
@@ -121,5 +145,6 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     click = node.config.getOrNull(SemanticsActions.OnClick)?.action,
     expand = node.config.getOrNull(SemanticsActions.Expand)?.action,
     collapse = node.config.getOrNull(SemanticsActions.Collapse)?.action,
-    liveRegion = node.config.getOrNull(SemanticsProperties.LiveRegion)
+    liveRegion = node.config.getOrNull(SemanticsProperties.LiveRegion),
+    horizontalScrollMax = node.config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)?.maxValue?.invoke()
 )

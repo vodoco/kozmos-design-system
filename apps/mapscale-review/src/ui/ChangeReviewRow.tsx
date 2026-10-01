@@ -433,7 +433,10 @@ export function ChangeReviewRow({
              */
             <SegmentedControl
               items={tray(["edit", "revert"])}
-              value={editing ? "edit" : undefined}
+              // `null`, not `undefined`: the row holds the choice, and
+              // undefined would leave it to the control, which keeps the
+              // last segment pressed.
+              value={editing ? "edit" : null}
               onValueChange={onTray}
             />
           ) : preserved ? (
@@ -461,7 +464,7 @@ export function ChangeReviewRow({
               </span>
               <SegmentedControl
                 items={tray(["edit", "revert"])}
-                value={editing ? "edit" : undefined}
+                value={editing ? "edit" : null}
                 onValueChange={onTray}
               />
             </>
@@ -474,7 +477,7 @@ export function ChangeReviewRow({
              */
             <SegmentedControl
               items={tray(["confirm", "edit", "reject"])}
-              value={editing ? "edit" : change.decision}
+              value={editing ? "edit" : (change.decision ?? null)}
               onValueChange={onTray}
             />
           )}

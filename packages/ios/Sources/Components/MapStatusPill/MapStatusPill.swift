@@ -107,8 +107,8 @@ struct KozmosCappedWidthLayout: Layout {
 /// the Control corner, no edge in either theme (decision 47) and the map
 /// controls' three shadows, at least 48 tall, 12 at the sides and 8 above and
 /// below, a 24 mark 8 from the words. The words are the footnote style, the
-/// SDK's 13, in foreground/300, and wrap at a map control's longest, 256,
-/// rather than being cut.
+/// SDK's 13, on 16pt lines as the web's and Compose's are, in foreground/300,
+/// and wrap at a map control's longest, 256, rather than being cut.
 ///
 /// VoiceOver reads it as its words; the mark is hidden. When the words change
 /// it announces them, politely unless `live` says otherwise. With no words it
@@ -237,6 +237,9 @@ public struct KozmosMapStatusPill: View {
                 }
                 Text(text)
                     .font(KozmosTypography.footnote)
+                    // The SDK's 13 on its 16, as the web's and Compose's
+                    // words: footnote's own lines are 18 apart.
+                    .lineSpacing(KozmosTypography.footnoteOn16ptLineSpacing)
                     .foregroundColor(color(appearance.words))
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)

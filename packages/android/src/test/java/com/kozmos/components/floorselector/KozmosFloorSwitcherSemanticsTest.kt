@@ -2,6 +2,7 @@ package com.kozmos.components.floorselector
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.DpSize
@@ -39,6 +40,19 @@ class KozmosFloorSwitcherSemanticsTest {
     )
 
     private val english: (Int) -> String = { count -> if (count == 1) "1 result" else "$count results" }
+
+    /**
+     * Presses controls that [readSemantics] read, once Paparazzi's frame is
+     * over, inside a Compose snapshot of their own, applied at the end.
+     * Closing the column writes Compose state (the tile's `returnFocus`).
+     * Written to the global snapshot outside a frame, it woke Compose's
+     * snapshot manager, which posted its work to a main looper no frame runs
+     * again, and every composition after it in the JVM got no frames:
+     * KozmosMapControlsGroupPressesTest read an empty group on CI (#169), and
+     * the panel header's drag tests did not move the sheet. Written in a
+     * snapshot of its own, the state reaches no global observer.
+     */
+    private fun afterTheSnapshot(presses: () -> Unit) = Snapshot.withMutableSnapshot(presses)
 
     @Test
     fun theSwitcherRestsAsOneMapControlTile() {
@@ -101,8 +115,10 @@ class KozmosFloorSwitcherSemanticsTest {
                 )
             }
         }
-        closed.named("First floor").expand!!.invoke()
-        closed.named("First floor").click!!.invoke()
+        afterTheSnapshot {
+            closed.named("First floor").expand!!.invoke()
+            closed.named("First floor").click!!.invoke()
+        }
         val open = paparazzi.readSemantics {
             MaterialTheme {
                 KozmosFloorSwitcher(
@@ -116,8 +132,10 @@ class KozmosFloorSwitcherSemanticsTest {
         }
         val tile = open.merged.single { it.description == "First floor" && it.liveRegion != null }
         assertNull("the open tile offers to expand", tile.expand)
-        tile.collapse!!.invoke()
-        tile.click!!.invoke()
+        afterTheSnapshot {
+            tile.collapse!!.invoke()
+            tile.click!!.invoke()
+        }
         assertEquals(listOf(true, true, false, false), asked)
     }
 
@@ -154,7 +172,7 @@ class KozmosFloorSwitcherSemanticsTest {
         assertEquals(listOf(false, false, true, false), rows.map { it.selected })
         // A closed level is listed, not chosen.
         assertEquals(listOf(true, true, true, false), rows.map { it.enabled })
-        tree.named("Third floor").click!!.invoke()
+        afterTheSnapshot { tree.named("Third floor").click!!.invoke() }
         assertEquals(listOf("3"), chosen)
     }
 

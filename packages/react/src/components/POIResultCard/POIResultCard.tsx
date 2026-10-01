@@ -12,8 +12,15 @@ import { Star01 as Star } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
-export function getPOIResultDomId(poiId: string) {
-  return `poi-result-${encodeURIComponent(poiId)}`;
+/**
+ * The DOM id of a place's result card: what `LocationPin`'s `resultId` names
+ * to say which card a pin controls. Pass the `idPrefix` the card's list was
+ * given when a page shows the same place in more than one list; left out, it
+ * is the id every result card has always had.
+ */
+export function getPOIResultDomId(poiId: string, idPrefix?: string) {
+  const id = `poi-result-${encodeURIComponent(poiId)}`;
+  return idPrefix ? `${idPrefix}-${id}` : id;
 }
 
 export interface POIResultCardProps extends Omit<
@@ -50,6 +57,33 @@ export interface POIResultCardProps extends Omit<
    * passes its own, for one band or all five.
    */
   travelTimeBandLabels?: Partial<Record<TravelTimeBand, string>>;
+  /**
+   * Draw the result's number, `result.resultIndex`, in its tab: the number
+   * its pin shows on the map. Off unless the product turns it on, for a list
+   * whose pins are numbered, as quick access's are when a category's places
+   * are listed and pinned.
+   *
+   * The card draws the number it is given and never renumbers, so the
+   * product numbers the results the way it numbers the pins. A featured
+   * result keeps its Featured tab and shows no number, as its pin shows its
+   * logo; a number takes the place of a badge, so the list's numbers match
+   * the pins. The number leads the result's accessible name ("2, Burger
+   * King"); a `selectionLabel` replaces that whole name, so it says the
+   * number itself.
+   */
+  numbered?: boolean;
+  /**
+   * Names this card apart from another card for the same place on the page:
+   * the search's results and an assistant's answer can both show it. The
+   * card's id becomes `getPOIResultDomId(poi.id, idPrefix)`, and its action
+   * row's and unavailable note's ids follow it, so each card's references
+   * stay its own. Left out, the id is `getPOIResultDomId(poi.id)`, as it has
+   * always been. An `id` given to the card wins over both.
+   *
+   * Keep it the same on the server and in the browser: a word, or an id from
+   * React's `useId()`. `POIResultList` and `POIResultGroup` pass theirs on.
+   */
+  idPrefix?: string;
 }
 
 /**
@@ -111,13 +145,29 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       currentFloorId,
       appearance = "card",
       travelTimeBandLabels,
-      id = getPOIResultDomId(poi.id),
+      numbered = false,
+      idPrefix,
+      id = getPOIResultDomId(poi.id, idPrefix),
       ...props
     },
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const available = result.available !== false;
+    // One tab, and what it says decides how it looks. Featured is the CMS's
+    // word and the map acts on it too (its pin draws the logo), so it wins;
+    // then the number, which pairs the result with its pin; then the badge,
+    // which only says why the result is in the list.
+    const number =
+      numbered && !result.featured ? String(result.resultIndex) : undefined;
+    const tab: { kind: "featured" | "number" | "badge"; label: string } | null =
+      result.featured
+        ? { kind: "featured", label: featuredLabel }
+        : number !== undefined
+          ? { kind: "number", label: number }
+          : result.badge
+            ? { kind: "badge", label: result.badge.label }
+            : null;
     // The list shows the band when the product sets one (decision 50); the
     // exact minutes stay in the estimate for the details card. A band this
     // version has no words for falls back to the exact minutes.
@@ -163,6 +213,19 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       onAction?.(action, poi.id);
     };
 
+    const name = (
+      <span
+        className="block min-w-0 truncate text-lg font-normal leading-tight text-foreground"
+        // Story 2 shows an authored name exactly as authored, which leaves a
+        // screen reader saying a Japanese name in the voice of the interface
+        // language. The tag tells it which voice to use, and is set only when
+        // the two differ (GAP-004).
+        lang={result.nameLanguage}
+      >
+        {poi.name}
+      </span>
+    );
+
     const handleSelect = () => {
       if (!available) return;
       trackEvent("POIResultCard", "poi_result_selected", {
@@ -179,18 +242,21 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
         className={cn(
           "kozmos-poi-result-card relative bg-card text-card-foreground",
           appearance === "card" && "rounded-control border",
+          appearance === "card" && result.selected && "ring-2 ring-primary/20",
+          // Only Featured recolours the card's edge, in its tab's amber (an
+          // owned rule), selected or not: the ring says which is selected. A
+          // number keeps the grey edge, so it never reads as the selected
+          // card, and a badge is quiet: it must not read as featured
+          // (GAP-054).
           appearance === "card" &&
-            (result.selected
-              ? "border-primary ring-2 ring-primary/20"
-              : "border-border"),
+            (tab?.kind === "featured"
+              ? "kozmos-poi-result-card-featured"
+              : result.selected
+                ? "border-primary"
+                : "border-border"),
           // A row states its selection with a fill, since it has no border of
           // its own to thicken.
           appearance === "row" && result.selected && "bg-primary/5",
-          // The tab hangs above the card, so it needs the space a card has.
-          appearance === "card" &&
-            (result.featured
-              ? "mt-3 border-warning"
-              : result.badge && "mt-3 border-warning"),
           className,
         )}
         data-appearance={appearance}
@@ -201,26 +267,35 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
         id={id}
         {...props}
       >
-        {/* One tab, one treatment. The prototypes draw "★ Popular Choice" in
-            the same amber as "★ Featured", so the LABEL distinguishes them and
-            the styling does not — which is also why the plugin notes a
-            sponsored result is never identified by colour alone. What differs
-            is meaning, not paint: featured is set in the CMS and read beyond
-            this card (the map marker draws a featured POI with its logo), so a
-            result that is both shows featured. */}
-        {appearance === "card" && result.featured ? (
-          <span className="absolute bottom-full left-4 inline-flex h-6 items-center gap-1 rounded-t-control bg-warning px-2 text-xs font-semibold text-warning-foreground">
-            <Star aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
-            {featuredLabel}
+        {/* One tab per card, painted for what it says (owned CSS, so the
+            paint holds without @scope):
+            - Featured: the SDK's bright amber under dark words, the alert
+              fill pair, with a star, and the card's edge in the same amber.
+              It is set in the CMS and read beyond this card.
+            - A number: the pin's number. Quiet, outlined on the card's own
+              fill, until the result is selected; then filled in the primary
+              colour, as the selected card's edge is. Decorative: the number
+              is said at the start of the result's name instead.
+            - A badge: quiet, a neutral fill with no star, on the card's grey
+              edge (GAP-054). It is read, as it always was.
+            It sits inside the card, in its top-start corner (Olcay,
+            2026-09-29; Figma "Search - Quick Access", 9273:45990): the
+            card's edge is its top and start, its outer corner is the card's,
+            and only its inner corner is its own. 16 tall with its edge, 11/14
+            words, 6 in from the card's outer edge on either side. In a
+            right-to-left language it is the top-right corner. */}
+        {appearance === "card" && tab && (
+          <span
+            aria-hidden={tab.kind === "number" || undefined}
+            className="kozmos-poi-result-tab pointer-events-none absolute start-0 top-0 inline-flex h-4 items-center gap-1 whitespace-nowrap pe-1.5 ps-[5px] pt-px text-[11px] font-normal leading-[14px]"
+            data-selected={result.selected || undefined}
+            data-tab={tab.kind}
+          >
+            {tab.kind === "featured" && (
+              <Star aria-hidden="true" className="h-2.5 w-2.5 fill-current" />
+            )}
+            {tab.label}
           </span>
-        ) : (
-          appearance === "card" &&
-          result.badge && (
-            <span className="absolute bottom-full left-4 inline-flex h-6 items-center gap-1 rounded-t-control bg-warning px-2 text-xs font-semibold text-warning-foreground">
-              <Star aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
-              {result.badge.label}
-            </span>
-          )
         )}
 
         <button
@@ -243,22 +318,44 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           // same word. The two now agree, which matters: the pin and the row
           // are one thing to a visitor and are announced together.
           aria-current={result.selected ? "location" : undefined}
-          className="grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[inherit] px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className={cn(
+            "grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[inherit] px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
+            // The tab takes the card's top-start corner, so the name begins
+            // below it: 24 down, 8 under the tab, as the design has it.
+            appearance === "card" && tab && "pt-6",
+          )}
           disabled={!available}
           onClick={handleSelect}
           type="button"
         >
           <span className="min-w-0">
-            <span
-              className="block truncate text-lg font-normal leading-tight text-foreground"
-              // Story 2 shows an authored name exactly as authored, which
-              // leaves a screen reader saying a Japanese name in the voice of
-              // the interface language. The tag tells it which voice to use,
-              // and is set only when the two differ (GAP-004).
-              lang={result.nameLanguage}
-            >
-              {poi.name}
-            </span>
+            {number !== undefined && (
+              // The number leads the result's name, "2, Burger King": the tab
+              // that draws it is decorative. The space after it keeps WebKit
+              // from running it into the name.
+              <>
+                <span className="kozmos-poi-result-number-name">{`${number},`}</span>{" "}
+              </>
+            )}
+            {appearance === "row" && number !== undefined ? (
+              // A row in a POIResultGroup has no edge of its own to hang a
+              // tab from, so its number stands before its name, painted as
+              // the tab is.
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="kozmos-poi-result-tab inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control px-1.5 text-xs font-semibold"
+                  data-placement="inline"
+                  data-selected={result.selected || undefined}
+                  data-tab="number"
+                >
+                  {number}
+                </span>
+                {name}
+              </span>
+            ) : (
+              name
+            )}
             {poi.categoryLabel && (
               <span className="mt-0.5 block truncate text-sm text-muted-foreground">
                 {poi.categoryLabel}

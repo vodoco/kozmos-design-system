@@ -4,10 +4,9 @@
  */
 
 /**
- * Whether the four public packages are on npm. True since 2026-09-23, when
- * each published its 0.1.0. `npm view @kozmos-ds/<name> version` gives the
- * current one: on 2026-09-29, react 0.5.0, icons 0.4.0, product-contracts
- * 0.4.0 and tokens 0.1.0.
+ * Whether the four public packages are on npm. True since 2026-09-23.
+ * This flag is not a version: query npm or read the dated release evidence
+ * in docs/release-process.md for package versions.
  */
 export const PACKAGES_PUBLISHED = true;
 

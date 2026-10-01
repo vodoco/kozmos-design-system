@@ -182,9 +182,9 @@ const knownViolations: Record<string, readonly KnownViolation[]> = {
   "/examples/venue-explorer": [SHELL_PANEL],
   "/examples/wayfinding": [SHELL_PANEL],
   "/examples/phone-search": [SHELL_PANEL],
-  // The assistant open over the phone's frame: the map shell under it is
-  // inert (GAP-93), and axe leaves inert content out, so the shell's panel
-  // is not measured then.
+  // The assistant open over the phone's frame: the panel makes the map shell
+  // under it inert (GAP-93, fixed), and axe leaves inert content out, so the
+  // shell's panel is not measured then.
   "/examples/phone-search#assistant": [],
   "/examples/dashboard": [SIDEBAR],
   // The adaptive tile's shell.
@@ -2813,12 +2813,48 @@ test.describe("every example", () => {
     // and the map examples in the states that draw their other surfaces: a
     // place's details, a route and its walk, the attract screen; then the
     // miniatures that show examples on the home page and the index.
+    //
+    // Glass is every glass surface Kozmos draws, not only Surface's: a glass
+    // Button, the glass utilities, and whatever else paints the glass role,
+    // which is the one backdrop filter that saturates what shows through
+    // (the map controls blur the map by 32px and saturate nothing, and they
+    // are opaque). Counting `.kozmos-surface-glass` alone, a glass Button
+    // passed (the night audit's X7).
     test.slow();
     const found: string[] = [];
     const canvas = () => page.locator(".site-example-canvas");
+    const glassIn = (selector: string) =>
+      page.locator(selector).evaluateAll((roots) => {
+        const classes = [
+          "kozmos-surface-glass",
+          "kozmos-button-glass",
+          "glass",
+          "glass-spotlight",
+          "glass-bevel",
+          "glass-edge-spotlight",
+        ];
+        const glass: string[] = [];
+        for (const root of roots)
+          for (const node of [root, ...root.querySelectorAll("*")]) {
+            const named = classes.filter((name) =>
+              node.classList.contains(name),
+            );
+            const style = getComputedStyle(node);
+            const filter =
+              style.backdropFilter ||
+              style.getPropertyValue("-webkit-backdrop-filter");
+            const painted = /saturate\(/.test(filter);
+            if (named.length > 0 || painted)
+              glass.push(
+                `${node.tagName.toLowerCase()}${named.map((name) => `.${name}`).join("")}${painted ? ` (${filter})` : ""}`,
+              );
+          }
+        return glass;
+      });
     const read = async (where: string) => {
-      const glass = await canvas().locator(".kozmos-surface-glass").count();
-      if (glass > 0) found.push(`${where}: ${glass} glass`);
+      const glass = await glassIn(".site-example-canvas");
+      if (glass.length > 0)
+        found.push(`${where}: ${glass.length} glass: ${glass.join(", ")}`);
       for (const panel of await canvas()
         .locator('aside[data-slot="map-shell-panel"]')
         .all()) {
@@ -2838,6 +2874,34 @@ test.describe("every example", () => {
       .map(({ path }) => path)
       .filter((path) => path.startsWith("/examples/"));
     expect(examplePaths, "every example").toHaveLength(13);
+
+    // The reading sees glass it is shown, in a probe of its own in an
+    // example's Kozmos root: a glass Button, and a node that paints the glass
+    // role with no Kozmos class. The next page it opens has neither.
+    await open(examplePaths[0]);
+    await canvas()
+      .first()
+      .evaluate((canvasNode) => {
+        const root =
+          canvasNode.querySelector("[data-kozmos-root]") ?? canvasNode;
+        const probe = document.createElement("div");
+        probe.setAttribute("data-glass-probe", "");
+        const button = document.createElement("button");
+        button.className = "kozmos-button-glass";
+        const painted = document.createElement("div");
+        painted.style.cssText =
+          "backdrop-filter: blur(8px) saturate(1.8); -webkit-backdrop-filter: blur(8px) saturate(1.8); background: rgba(255, 255, 255, 0.5)";
+        probe.append(button, painted);
+        root.append(probe);
+      });
+    expect(
+      await glassIn("[data-glass-probe]"),
+      "the reading misses a glass Button, or glass painted by no Kozmos class",
+    ).toEqual([
+      expect.stringMatching(/^button\.kozmos-button-glass\b/),
+      expect.stringMatching(/^div \(.*saturate\(/),
+    ]);
+
     for (const path of examplePaths) {
       await open(path);
       await read(path);
@@ -2902,10 +2966,11 @@ test.describe("every example", () => {
     for (const path of ["/", "/examples"]) {
       await page.goto(path);
       await scrolled(page);
-      const glass = await page
-        .locator(".site-miniature-canvas .kozmos-surface-glass")
-        .count();
-      if (glass > 0) found.push(`${path}, the miniatures: ${glass} glass`);
+      const glass = await glassIn(".site-miniature-canvas");
+      if (glass.length > 0)
+        found.push(
+          `${path}, the miniatures: ${glass.length} glass: ${glass.join(", ")}`,
+        );
     }
     expect(found, "glass in the examples").toEqual([]);
   });
@@ -3504,6 +3569,44 @@ test.describe("phone search example", () => {
       .toBe("Bookshop");
   });
 
+  test("a place in the assistant's answer and in the sheet's list draws no id twice", async ({
+    page,
+  }) => {
+    // T1: a result card's id came from its place's id alone, so the Bookshop
+    // the answer shows and the Bookshop the sheet lists drew one id twice, and
+    // the answer's references could resolve into the sheet. Each answer's
+    // cards take a prefix of their own (idPrefix).
+    await page.goto("/examples/phone-search");
+    await hydrated(page);
+    const example = phone(page);
+    await example
+      .getByRole("searchbox", { name: "Search Riverside Centre" })
+      .fill("book");
+    await expect(
+      example.getByRole("button", { name: /^Bookshop/ }).first(),
+    ).toBeVisible();
+    await example
+      .getByRole("button", { name: "Ask the assistant" })
+      .press("Enter");
+    const assistant = example.getByRole("region", { name: "Assistant" });
+    const field = assistant.getByRole("textbox", { name: "Ask the assistant" });
+    await field.fill("Where can I buy a book?");
+    await field.press("Enter");
+    await expect(
+      assistant.getByRole("button", { name: /^Bookshop/ }),
+    ).toBeVisible();
+    const twice = await page.evaluate(() => {
+      const seen = new Set<string>();
+      const repeated = new Set<string>();
+      for (const node of document.querySelectorAll("[id]")) {
+        if (seen.has(node.id)) repeated.add(node.id);
+        seen.add(node.id);
+      }
+      return [...repeated];
+    });
+    expect(twice, "ids drawn twice").toEqual([]);
+  });
+
   test("the assistant's voice conversation, from its script", async ({
     page,
   }) => {
@@ -3582,9 +3685,10 @@ test.describe("phone search example", () => {
   test("the assistant keeps the keyboard out of what it covers", async ({
     page,
   }) => {
-    // GAP-93, composed: the panel covers the frame but leaves what it covers
-    // in the tab order, so the example makes the map shell inert while it is
-    // open. Shift+Tab from the panel went to the sheet's tiles under it.
+    // GAP-93, fixed: the panel covered the frame but left what it covered in
+    // the tab order, and Shift+Tab from it went to the sheet's tiles under it.
+    // The example made the map shell inert itself; the panel does it now, and
+    // the example passes nothing.
     await page.goto("/examples/phone-search");
     await hydrated(page);
     const example = phone(page);

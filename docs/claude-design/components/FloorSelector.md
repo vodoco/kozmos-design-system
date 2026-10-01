@@ -2,7 +2,7 @@
 
 # FloorSelector
 
-FloorSelector is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A controlled floor selector with vertical-list, horizontal-list, compact-stepper and collapsible presentations. The host supplies top-first floors and the selected ID; Kozmos renders selection, availability cues and optional result counts without choosing a floor or changing the map itself.
 
 - **Import:** `import { FloorSelector } from "@kozmos-ds/react";`
 - **Group:** Product SDK
@@ -57,6 +57,12 @@ It forwards its ref to `HTMLDivElement`. Its props are `FloorSelectorProps`, whi
 - `nextFloorLabel`: `string`, optional, default `"Floor down"`.
 
   The down chevron's name, "Floor down" unless the product passes its own.
+
+- `showResultCounts`: `boolean`, optional, default `false`.
+
+  Opt in to per-floor result badges and their accessible descriptions.
+  Defaults to false, even when floors carry resultCount. Only positive
+  counts appear in lists; the collapsed tile and stepper never show them.
 
 - `resultCountLabel`: `(count: number) => string`, optional, default `` (count) => count === 1 ? "1 result" : `${count} results` ``.
 

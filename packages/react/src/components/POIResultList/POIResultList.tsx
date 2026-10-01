@@ -173,6 +173,35 @@ export interface POIResultListProps extends Omit<
   /** Each result's words for a walk shown as a band: POIResultCard's. */
   travelTimeBandLabels?: POIResultCardProps["travelTimeBandLabels"];
   /**
+   * Number every result, grouped or not, with its `result.resultIndex`: the
+   * number its pin shows on the map. Off unless the product turns it on, for
+   * a list whose pins are numbered: quick access, where a category chosen in
+   * the browse grid lists that category's places and the map pins them.
+   * Kozmos cannot tell that list from any other, so the product says so.
+   *
+   * The list draws the numbers it is given and never renumbers. A featured
+   * result keeps its Featured tab and shows no number, since its pin shows
+   * its logo, so number the results that are not featured, in the order the
+   * pins are numbered. A number takes the place of a badge. POIResultCard's
+   * `numbered`, given to every card.
+   */
+  numbered?: boolean;
+  /**
+   * Names this list's results apart from another list's on the same page
+   * that shows one of the same places: the search's results and an
+   * assistant's answer, say. Every result's id becomes
+   * `getPOIResultDomId(poiId, idPrefix)`, with its action row's and
+   * unavailable note's following it, so each list's references stay inside
+   * it, and a map pin names the card in the list it belongs to with the same
+   * call.
+   *
+   * Left out, the ids are `getPOIResultDomId(poiId)`, as they have always
+   * been: on a page with more than one list, give every list but one its
+   * own. Keep it the same on the server and in the browser: a word, or an id
+   * from React's `useId()`.
+   */
+  idPrefix?: string;
+  /**
    * Bring the selected result into view when `selectedPoiId` changes — by
    * scrolling whatever the list sits in, and nothing further out. On by
    * default (row 70).
@@ -186,7 +215,14 @@ export interface POIResultListProps extends Omit<
    * `data-kozmos-scroller`, as AdaptiveMapShell's sheet does; with nothing
    * around the list that scrolls, the page does.
    *
-   * Turn it off for a product that already scrolls the panel itself.
+   * Each selection is brought in once, when its result is in `items`: a
+   * selection that comes before its results waits for them, and a new array
+   * of the same results moves nothing. A result that leaves the list and
+   * comes back is brought in again.
+   *
+   * Turn it off for a product that already scrolls the panel itself. A
+   * selection made while it is off waits too: turned back on, the list
+   * brings in the one it has not brought in yet.
    */
   scrollSelectedIntoView?: boolean;
 }
@@ -211,6 +247,8 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       onGroupExpandedChange,
       scrollSelectedIntoView = true,
       travelTimeBandLabels,
+      numbered,
+      idPrefix,
       ...props
     },
     ref,
@@ -224,26 +262,43 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       },
       [ref],
     );
-    // Nothing has been shown yet, so a list that mounts with a selection
-    // brings it in as it appears.
-    const shownSelection = React.useRef<string | undefined>(undefined);
-    // Read through a ref, not the effect's dependencies: a product that
-    // builds `items` during its render passes a new array every time, and
-    // each re-run would drop the listener still waiting for the selected
-    // card's action row to open. Synced in an effect, which runs before the
-    // one below reads it.
+    // The selection last brought into view. A selection is brought in once,
+    // when it has something to bring in: until its result is in the list it
+    // waits (F2), so a pin's tap that comes before the results still brings
+    // its result in when they arrive. Nothing has been brought in yet, so a
+    // list that mounts with a selection brings it in as it appears.
+    const revealed = React.useRef<string | undefined>(undefined);
+    // Whether the selected result is in `items`: a boolean, so a product that
+    // builds `items` during its render, a new array every time, re-runs
+    // nothing below until the result actually arrives or leaves.
+    const selectedListed =
+      selectedPoiId !== undefined &&
+      items.some((entry) =>
+        isGroup(entry)
+          ? entry.items.some((item) => item.poi.id === selectedPoiId)
+          : entry.poi.id === selectedPoiId,
+      );
+    // Read through a ref, not the effect's dependencies: each re-run would
+    // drop the listener still waiting for the selected card's action row to
+    // open. Synced in an effect, which runs before the one below reads it.
     const latestItems = React.useRef(items);
     React.useEffect(() => {
       latestItems.current = items;
     });
 
     React.useEffect(() => {
-      const previous = shownSelection.current;
-      shownSelection.current = selectedPoiId;
+      // Nothing selected, or its result has left the list: a result that
+      // comes back is a new card, wherever the new results put it.
+      if (!selectedListed) {
+        revealed.current = undefined;
+        return;
+      }
+      // Off, the list leaves scrolling to the product, and a selection made
+      // meanwhile waits: turned on, it brings in what it has not brought in
+      // yet, as a list that appears with a selection does.
       if (
         !scrollSelectedIntoView ||
-        selectedPoiId === undefined ||
-        selectedPoiId === previous ||
+        selectedPoiId === revealed.current ||
         !section.current
       )
         return;
@@ -262,6 +317,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
         ).find((entry) => entry.dataset.resultGroup === group?.id);
       if (!target) return;
 
+      revealed.current = selectedPoiId;
       revealWithin(target);
       // A selected card opens its action row as it animates, so it is only
       // its full height once that ends; bring it in again then, or a card
@@ -272,7 +328,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       };
       target.addEventListener("animationend", reveal, { once: true });
       return () => target.removeEventListener("animationend", reveal);
-    }, [scrollSelectedIntoView, selectedPoiId]);
+    }, [scrollSelectedIntoView, selectedPoiId, selectedListed]);
 
     return (
       <section
@@ -341,11 +397,13 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                       expanded={entry.expanded}
                       featuredLabel={featuredLabel}
                       hideLabel={hideLabel}
+                      idPrefix={idPrefix}
                       items={entry.items.map((item) => ({
                         poi: item.poi,
                         result: select(item),
                       }))}
                       label={entry.label}
+                      numbered={numbered}
                       onAction={onAction}
                       onExpandedChange={
                         onGroupExpandedChange &&
@@ -366,6 +424,8 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                     actionsLabel={actionsLabel}
                     currentFloorId={currentFloorId}
                     featuredLabel={featuredLabel}
+                    idPrefix={idPrefix}
+                    numbered={numbered}
                     onAction={onAction}
                     onSelect={onSelect}
                     poi={poi}

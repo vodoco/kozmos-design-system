@@ -106,7 +106,8 @@ button nearest the middle must start about 9px past it. Where it would not, the 
 grip's 4px clearance, as every other part at the top of the panel does (decision 14): 21px and 17px.
 With favourite, save and close that is a panel under 340px wide (a 320px phone); with one toggle and
 close, under 240px; with close alone, under 140px. The header decides by a container query on the
-panel's width (`kozmos-panel`), so it follows the panel, not the viewport. iOS and Android draw the
+card's own width: hosted in the shell's panel, the card is an inline-size container and fills the
+panel's content box, so it follows the panel, not the viewport. iOS and Android draw the
 same rule, 16 and 16 or 20 and 16 with no border; on iOS the header measures its buttons, which grow
 with the text size, so at the largest sizes it keeps the clearance on wider phones too.
 
@@ -122,10 +123,12 @@ is not the card's, so the header keeps its 16 inside it. A card placed lower in 
 top should use `"inline"`.
 
 The shell says what it leaves through two custom properties on its panel's content,
-`--kozmos-panel-inset-top` and `--kozmos-panel-clearance-top`, and how wide that content is through
-its container, `kozmos-panel` (see AdaptiveMapShell). The rule assumes the card spans the panel's
-width, as it does when it is the panel's content: a card inside a padded wrapper sits nearer the
-grip's centre than the panel's width says.
+`--kozmos-panel-inset-top` and `--kozmos-panel-clearance-top` (see AdaptiveMapShell). The card is
+the container its header reads, only there, so a product's own container queries in the panel
+read the product's containers, and the card on its own, in a box that shrinks to fit, keeps its
+width. Its own width is what places its buttons: in a wrapper that pads both sides alike it is
+narrower, and nearer the grip's centre, and the header follows. The rule assumes the card is
+centred under the grip.
 
 On a glass panel the `sheet` presentation's muted lines, its level and hours, its prices, its
 summaries' notes, its section headings and its gallery's position, take the foreground colour, so

@@ -24,13 +24,13 @@ It holds the token variables for both themes and the styles the components
 use, so there is no Tailwind configuration to add. `@kozmos-ds/react/dist/style.css`
 resolves to the same file, for code that already imports that path.
 
-Token definitions belong to provider boundaries. Some components carry their own
-precompiled styles and local resets — Input, Textarea, Button, Popover,
-FieldWrapper, Label, PasswordInput and NumberInput among them — and the rest are
-styled by utilities inside native CSS `@scope`. That sets the package's browser
-floor: Chrome and Edge 118, Safari and iOS 17.4, Firefox 128 and Android WebView
-118, declared in its `browserslist` ([Browsers](#browsers), below). Below the
-floor, the utility-styled components lose their layout and colour.
+Token definitions belong to provider boundaries. Input, Textarea, Button, Popover,
+FieldWrapper, Label, PasswordInput and NumberInput use precompiled component-owned styles and local resets;
+the remaining utility-based components still require native CSS `@scope`.
+This is an unfinished compatibility migration, **not a broadly compatible release**.
+The production browser/WebView support matrix must be approved and tested before
+product adoption; package publication is not that certification. Unsupported engines will
+render the unmigrated parts incorrectly. See the Firefox floor correction and migration below.
 
 `inputVariants` and `buttonVariants` retain their arguments but return opaque,
 namespaced recipe classes. Do not depend on the individual class strings.
@@ -66,27 +66,43 @@ follow the host document's root font size.
 
 ## Browsers
 
+**Next-release support correction:** Firefox now requires 146 or newer. The published
+0.7.0 manifest incorrectly declared 128; existing npm packages are not changed by this
+source update. Mozilla documents [`@scope` enabled by default in Firefox 146](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146).
+This is an explicit breaking support-policy correction, not a new legacy-browser fallback.
+
 |                 |      |
 | --------------- | ---- |
 | Chrome, Edge    | 118  |
 | Safari, iOS     | 17.4 |
-| Firefox         | 128  |
+| Firefox         | 146  |
 | Android WebView | 118  |
 
-The floor is `@scope`, which fences the component styles off from a host page so
-a product's own CSS and Kozmos's cannot overwrite each other. It landed in those
-versions, and a browser below one of them **discards the whole block** rather
-than ignoring the rule: 955 of the stylesheet's 1,227 rules live inside one.
+The dependency behind the floor is `@scope`, which bounds component selectors to their
+intended scopes. A browser without support discards the scoped block. Scope is not complete
+isolation against arbitrary host selectors; see [embedding limitations](../../docs/embedding-isolation.md).
 
-What that costs below the floor is not all or nothing. Measured across 43
+**Migrating:** require Firefox 146+ in your product's browser policy. If Firefox 128–145 is
+required, the library's remaining scoped CSS needs an architectural migration before adoption;
+pinning 0.7.0 does not fix its rendering defects. Do not remove the scope boundary or enable
+experimental browser preferences as a workaround. Other declared minimums are unchanged.
+
+The built-package regression reproduced unstyled Badge and zero-height Separator in Firefox
+128.0, while owned-CSS Button/Input retained their geometry. The same cases pass in Firefox
+146.0.1, including nested light/dark providers. These are representative checks, not full
+minimum-version or embedded-WebView certification. CI guards the Firefox declaration and
+tests remaining scoped utilities separately from the owned form controls.
+
+What that costs below the floor is not all or nothing. An earlier measurement across 43
 elements, 30 render identically without `@scope` and 13 do not: the 31
-components that carry their own CSS are unaffected, the 73 styled by utilities
+components that carried their own CSS were unaffected, the 73 styled by utilities
 lose their layout and colour. `Button`, `Input` and `Heading` are in the first
 group; `AISearchButton`, `Tag` and `Skeleton` are in the second.
 
-Lowering this floor is the work of moving the remaining components to their own
-CSS, and every one of them moved lowers it a little. Raising it would be a
-breaking change, so it starts where the code actually is.
+Those are historical sample counts, not a fresh 0.7.0 whole-library census.
+Supporting older engines requires migrating remaining scoped components and checking other
+used features, not just editing the browser list. A changed support promise needs explicit
+compatibility review and migration notes.
 
 ## Use
 

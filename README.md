@@ -112,8 +112,10 @@ pnpm lint
 `pnpm components:classes:check` and the rest. `pnpm ci:local` runs the steps of
 one CI job here, by default the web job ("Web Build & Test"): `--list` shows
 what it skips, and `--job <id>` runs another of `ci.yml`'s jobs (`browsers`,
-`pipeline`, `ios`, `android`). It reads only `ci.yml`, so the bundle budget,
-Lighthouse and Visual Review, which are workflows of their own, are not in it.
+`pipeline`, `ios`, `android`). Other workflows are explicit, for example
+`pnpm ci:local --workflow bundle-size.yml --job analyze-bundle`. The default
+web job is not the full merge or release verdict; see
+[the candidate checklist](docs/design-system-maintenance.md#candidate-validation-checklist).
 
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) has the working agreements: how a
 component is added, how tokens are changed, and how a release is cut.

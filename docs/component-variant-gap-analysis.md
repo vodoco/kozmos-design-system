@@ -17,23 +17,28 @@ React is the reference because it is the only platform carrying every
 component with stories and tests. A gap means "React can express this and the other platform
 cannot".
 
+Platform policy exception: **LanguageSwitcher is web-only**. iOS and Android follow
+device/app language and deliberately have no dedicated language button. The generated
+absence lists count files, so they include this component; its native absence is not
+an implementation backlog item.
+
 ## Headline Numbers
 
 <!-- generated:headline -->
 
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
-| Components scanned                        | 113    |
-| Declaring at least one React variant axis | 50     |
-| Variations that are compositional only    | 63     |
-| Components with variant gaps — iOS        | 14/50  |
-| Components with variant gaps — Android    | 14/50  |
-| Components with variant gaps — Figma      | 15/50  |
-| Components with variant gaps — Vue        | 5/50   |
-| Components absent entirely — iOS          | 9/113  |
-| Components absent entirely — Android      | 8/113  |
-| Components absent entirely — Figma        | 17/113 |
-| Components absent entirely — Vue          | 16/113 |
+| Components scanned                        | 116    |
+| Declaring at least one React variant axis | 52     |
+| Variations that are compositional only    | 64     |
+| Components with variant gaps — iOS        | 15/52  |
+| Components with variant gaps — Android    | 15/52  |
+| Components with variant gaps — Figma      | 17/52  |
+| Components with variant gaps — Vue        | 7/52   |
+| Components absent entirely — iOS          | 10/116 |
+| Components absent entirely — Android      | 9/116  |
+| Components absent entirely — Figma        | 20/116 |
+| Components absent entirely — Vue          | 19/116 |
 
 <!-- /generated:headline -->
 
@@ -85,12 +90,20 @@ FloorSelector
   - figma missing values -> variant: collapsible
 Icon
   - figma: component/set absent
+LanguageSwitcher
+  - ios: component/set absent
+  - android: component/set absent
+  - figma: component/set absent
+  - vue: component absent
 Link
   - ios missing axes -> variant (default, subtle)
   - android missing axes -> variant (default, subtle)
 List
   - ios missing axes -> density (default, compact)
   - android missing axes -> density (default, compact)
+MapAttribution
+  - figma: component/set absent
+  - vue: component absent
 MapControlButton
   - figma missing axes -> emphasis (tinted, filled); labelPlacement (inline, stacked)
 MapControlsGroup
@@ -190,21 +203,21 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 9 of 113
+### iOS — 10 of 116
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Notice, POIResultGroup, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, POIResultGroup, Surface, UserMessage.
 
-### Android — 8 of 113
+### Android — 9 of 116
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, Notice, POIResultGroup, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, POIResultGroup, UserMessage.
 
-### Figma — 17 of 113
+### Figma — 20 of 116
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, FieldWrapper, Icon, Itinerary, ManoeuvreCard, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteProgressRail, Surface, ThemeProvider, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, FieldWrapper, Icon, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteProgressRail, Surface, ThemeProvider, UserMessage.
 
-### Vue — 16 of 113
+### Vue — 19 of 116
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, CategoryField, Itinerary, ManoeuvreCard, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteProgressRail, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, CategoryField, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteProgressRail, Surface, UserMessage.
 
 <!-- /generated:absent -->
 

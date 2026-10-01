@@ -75,6 +75,12 @@ const [selectedPoiId, setSelectedPoiId] = useState<string>();
 The map adapter should also pan or change floor from this same state transition.
 If the POI is on another floor, announce that change before switching floors.
 
+A page that shows the same place in more than one list, such as the search's
+results and an assistant's answer, gives each list but one an `idPrefix`, and
+its pins name the card with the same prefix:
+`resultId={getPOIResultDomId(poi.id, "assistant")}` for the list given
+`idPrefix="assistant"`. Without a prefix the ids are unchanged.
+
 ## Show A Walk As A Band In Result Lists
 
 The app passes the walking time it already has, with its exact, localized label.
@@ -95,6 +101,25 @@ const travelEstimate = {
 `travelTimeBandLabels` to `POIResultList` for the visitor's language.
 `POIDetailPanel` keeps the exact minutes from the same estimate. Leave `band`
 out and a result shows `durationLabel`, as before.
+
+### Numbered results for quick access
+
+When a category chosen in the browse grid lists its places and the map pins
+them with numbers, pass `numbered` to that `POIResultList` (`numbered: true` on
+iOS and Android). Each result then shows its `resultIndex`, the number on its
+pin, in its tab. Kozmos never renumbers. A featured result keeps Featured and
+shows no number, as its pin shows its logo, so number the other results 1, 2,
+3 in pin order. Left out, nothing changes.
+
+```tsx
+<POIResultList
+  items={categoryResults} // resultIndex: the pin's number
+  numbered
+  resultCountLabel={copy.placeCount(categoryResults.length)}
+  selectedPoiId={selectedPoiId}
+  onSelect={selectPoi}
+/>
+```
 
 ## Compose The Adaptive Map Surface
 

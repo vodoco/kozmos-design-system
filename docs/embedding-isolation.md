@@ -1,9 +1,11 @@
 # Embedded React modules: theme and stylesheet ownership
 
-2026-09-17 · written for `astra/prepublish-foundations`, which merged to `main` that day (#53).
-It has shipped in `@kozmos-ds/react` since its first release, 0.1.0 on 2026-09-23. The
-browser floor this depends on has been declared since the same day: `browserslist` in the React
-package's `package.json`, and "Browsers" in its README.
+The foundation was implemented on 2026-09-17 and is included in the published React 0.7.0
+baseline (`a3dc6f935b7914dedd17067036ebadcde737bfd9`). Historical measurements below retain
+their original scope; they are not current whole-library test totals or proof that old defects
+remain. Consult the [current consumer README](../packages/react/README.md) for browser floors
+and [release evidence](release-process.md#070) for delivery verification. Production browser/
+WebView compatibility still needs named host/device acceptance, independently of publication.
 
 ## Contract
 
@@ -62,16 +64,18 @@ widgets, Shadow DOM support or isolation from every third-party overlay manager.
 **Migration continuation:** the component-owned CSS migration of 2026-09-17
 supersedes the implementation description below for Input, Textarea, Button,
 Popover, FieldWrapper and Label. Their recipes, token foundations and animation
-definitions no longer require native scope. The remaining library still does,
-which is what sets the browser floor below. The paragraphs below retain the
+definitions no longer require native scope. Some remaining utility-based components still do;
+this is not complete legacy-browser compatibility. The paragraphs below retain the
 original foundation design and the finding that prompted its replacement.
 
 **2026-09-17 follow-up:** the existing green browser suite missed native form
-controls. The built Input/Textarea fixture now reproduces scoped-style failures in
+controls. At that time the built Input/Textarea fixture reproduced scoped-style failures in
 the installed WebKit 26.0, including sizing and theme colours. Chromium 145 and
 Firefox 146 pass that fixture, so the earlier evidence is not a readiness claim.
-No workaround was implemented. A support floor was declared on 2026-09-23
-instead (below), and every release has shipped with it.
+That was a historical blocker, not evidence that the shipped owned-CSS Input/Textarea still
+have that failure. The current package declares browser floors, but those claims need their
+own verification; the Firefox correction below is approved for the next release, not a
+retroactive change to the published 0.7.0 artifact.
 
 The React build processes the existing generated token CSS and Tailwind output into
 bounded native `@scope` rules. Light values are established at every root; dark values
@@ -92,17 +96,32 @@ whole page and wants that reset. Importing `@kozmos-ds/tokens/css/light.css` sep
 still applies the token package's documented global behavior; embedded React modules
 do not need it.
 
-This implementation requires native `@scope`, including its nested `:scope` behavior.
+Remaining scope-based styles require native `@scope`, including their nested `:scope` behavior.
 There is no legacy-browser fallback: an unsupported browser ignores the scoped rules.
 MDN currently marks the full feature [Baseline 2026](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@scope).
-Since 2026-09-23 the React package declares the floor that follows: Chrome and Edge 118,
-Safari and iOS 17.4, Firefox 128 and Android WebView 118, where `@scope` landed
-(`browserslist` in its `package.json`, and "Browsers" in its README). The automated
-Chromium, Firefox and WebKit checks are evidence for those installed engines,
-**not certification of minimum browser versions or Pointr's embedded WebViews**: a host
-checks its WebView against the floor. A host that needs an older engine needs the
-remaining components moved to their own CSS, which lowers the floor one component at a
-time, not an untested selector/polyfill workaround.
+Current automated Chromium and WebKit checks are evidence for those installed engines,
+**not certification of minimum browser versions or Pointr's embedded WebViews**.
+The package README and manifest describe the implementation's browser floor; publication
+does not certify a production product's browser/WebView matrix. Record the product owner's
+approved matrix and device evidence before adoption. If older engines are required, review
+the owned-CSS/isolation architecture rather than adding an untested selector/polyfill workaround.
+
+**Firefox support correction (approved 2026-10-01; next release):** the published React 0.7.0
+manifest incorrectly declared Firefox 128. Mozilla's [Firefox 146 developer release notes](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146)
+identify 146 as the release enabling `@scope` by default. A built-package fixture confirmed
+Badge losing its layout/background and Separator collapsing to zero height in Playwright's
+Firefox 128.0; both render correctly in 146.0.1. Button/Input keep their owned styling in both.
+Olcay approved correcting the declared minimum to Firefox 146+ rather than promising a
+legacy-browser fallback. The manifest, consumer README and minor changeset make that support
+change explicit; existing 0.7.0 artifacts remain immutable.
+
+`pnpm test:browser-selection` guards the declaration, including rejection of the former 128
+floor. `ADAPTIVE_BROWSER=firefox pnpm test:scoped-utilities` checks built Badge/Separator
+geometry, colour presence and nested theme boundaries, with Button/Input as owned-CSS controls.
+`KOZMOS_TEST_WITHOUT_SCOPE=1` is a negative control and must fail that utility test, not a
+supported fallback mode. Current Firefox CI covers these cases; it is not proof of every
+feature on every minimum-version engine. Product/browser and embedded-WebView acceptance remain
+separate. See the [consumer migration guidance](../packages/react/README.md#browsers).
 
 ## Migration
 
@@ -200,7 +219,7 @@ The optional reset is checked both as a package export and for its actual global
 Measured for the initial scoped-theme batch: 368 React tests in 105 files; 14 adaptive, 21 overlay and 6 named
 theme/reset browser checks per engine (Chromium and WebKit); React Storybook build;
 React 18/19 tarball installation and 10 README samples. The three known declaration
-issues and 62 inert class uses / 40 classes / 27 files remain unchanged. Remote CI,
+issues and 62 inert class uses / 40 classes / 27 files were unchanged in that historical batch. Remote CI,
 minimum-version/device certification, full visual/a11y audit and native/live Figma
 verification were not run for this batch.
 

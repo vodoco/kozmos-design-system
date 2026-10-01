@@ -45,6 +45,27 @@ export const Collapsible: Story = {
   args: { variant: "collapsible" },
 };
 
+/** Supplying search data alone does not turn on badges. */
+export const CollapsibleCountsOffByDefault: Story = {
+  args: {
+    variant: "collapsible",
+    floors: [
+      { id: "1", label: "First floor", shortLabel: "1F", resultCount: 3 },
+    ],
+  },
+  render: (args) => <OpenedOnArrival {...args} />,
+};
+
+export const CollapsibleTopFloor: Story = {
+  args: { variant: "collapsible", selectedFloor: "2" },
+};
+export const CollapsibleBottomFloor: Story = {
+  args: { variant: "collapsible", selectedFloor: "g" },
+};
+export const CollapsibleSingleFloor: Story = {
+  args: { variant: "collapsible", floors: [floors[1]] },
+};
+
 /**
  * The tile carries the dot while it shows the level the visitor is on
  * (`userFloor`), and says so: "First floor, your level".
@@ -82,7 +103,12 @@ const switcherLevels = [
  * it, and focus goes back to the tile.
  */
 export const CollapsibleOpen: Story = {
-  args: { variant: "collapsible", floors: switcherLevels, userFloor: "2" },
+  args: {
+    variant: "collapsible",
+    floors: switcherLevels,
+    userFloor: "2",
+    showResultCounts: true,
+  },
   render: (args) => <OpenedOnArrival {...args} />,
 };
 
@@ -91,7 +117,12 @@ export const CollapsibleOpen: Story = {
  * and its marks mirror with it.
  */
 export const CollapsibleOpenRightToLeft: Story = {
-  args: { variant: "collapsible", floors: switcherLevels, userFloor: "2" },
+  args: {
+    variant: "collapsible",
+    floors: switcherLevels,
+    userFloor: "2",
+    showResultCounts: true,
+  },
   render: function CollapsibleOpenRightToLeftStory(args, { globals }) {
     return (
       <ThemeProvider

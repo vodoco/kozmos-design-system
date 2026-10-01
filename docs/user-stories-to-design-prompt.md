@@ -57,7 +57,7 @@ how something _outside_ the repository consumes it. Pick the case that applies.
 
 | What                    | Where                                                                                                                                                                                                       |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The components          | `packages/react/src/components/` — 113 in `docs/status.md` (Core 83 · Code-only 5 · Product/SDK 23 · Platform 2); the barrel is `packages/react/src/index.ts`                                               |
+| The components          | `packages/react/src/components/` — use the generated lane counts in `docs/status.md`; the barrel is `packages/react/src/index.ts`                                                                           |
 | Props and variants      | `docs/figma-library-manifest.json` → `components.items[]` (props, variant values, Code Connect node); regenerate with `pnpm figma:manifest`                                                                 |
 | Tokens and roles        | `packages/tokens/src/tokens-light.json`, `tokens-dark.json`; the roles and the one rule in `docs/style-playbook.md`                                                                                         |
 | Icons                   | `@kozmos-ds/icons`: the 57 names `Icon` takes (`kozmosIconNames`), and every Pointr Icon Library outline as a component `Icon` cannot name; check both before promising an icon                             |
@@ -67,7 +67,7 @@ how something _outside_ the repository consumes it. Pick the case that applies.
 | Figma Core Library      | `Kozmos DS - Core Library`, file `Yj4O8p6Y9h2Sa9zJVoAiVY`; Components page `4:4`, Examples page `286:1601`; 95 sets; painted by `figma/foundations-importer`                                                |
 | Code Connect            | 95 linked to that file (`figma.linked.config.json`), of the 108 that can be: the 5 code-only parts have no set; the native configs under `packages/{ios,android}/`                                          |
 | What Kozmos still lacks | `apps/site/GAPS.md` (numbered gaps, shown on the website's `/roadmap`), `docs/component-variant-gap-analysis.md` (variant axes per platform), `docs/sdk-module-primitives.md` (what the SDK's modules need) |
-| Unmerged work           | none: `claude/pointr-browse-repairs` (the navigation parts, the sheet detents, `CategoryField`, `AISearchButton`, glass and category tokens) has merged into `main`                                         |
+| Unmerged work           | Check current pull requests; the historical `claude/pointr-browse-repairs` branch has merged, but that does not mean later work has merged                                                                  |
 
 Build before reading anything at runtime: `pnpm install --frozen-lockfile` then
 `pnpm --filter "@kozmos-ds/react..." build` (a fresh worktree has no built packages).

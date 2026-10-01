@@ -785,6 +785,25 @@ object KozmosThemeTokens {
             KozmosColorsDark.primitivesBorderBevelBottom
         )
 
+    /**
+     * Fixed dark-grey map credit fill; paired with a white halo regardless of
+     * application theme.
+     */
+    val semanticsMapAttributionText: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsMapAttributionText,
+            KozmosColorsDark.semanticsMapAttributionText
+        )
+
+    /**
+     * Fixed white halo behind map credit glyphs.
+     */
+    val semanticsMapAttributionHalo: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsMapAttributionHalo,
+            KozmosColorsDark.semanticsMapAttributionHalo
+        )
+
     val semanticsSurface0: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.semanticsSurface0,

@@ -120,7 +120,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-78 | `Switch` cannot lead with its label                              | Core                   | open         |
 | GAP-79 | The Pointr icons ship, but cannot be asked for by name           | Product / SDK          | open         |
 | GAP-80 | No row actions: nothing shows on hover outside `Tree`            | Core                   | open         |
-| GAP-81 | 36 of 113 components carry placeholder documentation             | Core                   | left visible |
+| GAP-81 | Component descriptions still contain placeholders                | Core                   | left visible |
 | GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible |
 | GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | composed     |
 | GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | open         |
@@ -132,7 +132,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-90 | The brand family is named but no font is shipped                 | Core                   | composed     |
 | GAP-91 | `AdaptiveMapShell` cuts its top bar's and controls' shadows      | Product / SDK          | left visible |
 | GAP-92 | `AdaptiveMapShell` does not say which edge its controls sit on   | Product / SDK          | composed     |
-| GAP-93 | `AICompanionPanel` leaves what it covers in the tab order        | Core                   | composed     |
+| GAP-93 | `AICompanionPanel` leaves what it covers in the tab order        | Core                   | fixed        |
 | GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | open         |
 | GAP-95 | `FloorSelector`'s column can grow out of the map it floats on    | Product / SDK          | left visible |
 
@@ -1639,9 +1639,9 @@ Text"])`) and the Get started page shows — touches it.
   and is reachable from the keyboard — with an overflow button among the
   icons.
 
-## GAP-81 · 36 of 113 components carry placeholder documentation
+## GAP-81 · Component descriptions still contain placeholders
 
-- **What:** 36 components describe themselves as "Displays the X interface
+- **What:** some components describe themselves as "Displays the X interface
   topology natively" — a placeholder that says nothing about what the part is
   for or when to reach for it. `SegmentedControl` shows what the others could
   be: it says to use it for one choice from a short visible set, to prefer
@@ -1653,6 +1653,9 @@ Text"])`) and the Get started page shows — touches it.
   104 on 2026-09-24), and the same 36 of 113 components on 2026-09-29, when
   MapStatusPill arrived with a description of its own. DatePicker and
   TimePicker repeat the sentence as a second paragraph.
+- **Rechecked on 2026-10-01:** 35 of the current 116 component docs open with the
+  placeholder; DatePicker and TimePicker still repeat it later (37 occurrences).
+  Counts are dated evidence, not a generated current-status total.
 - **Now:** left visible: each of their pages says "Its docs have no
   description yet." where it used to print the placeholder, and the search
   shows its lane instead. ThemeProvider's page reads the component's own doc
@@ -1866,11 +1869,19 @@ Text"])`) and the Get started page shows — touches it.
 - **Evidence:** in the phone search with the assistant open, on 2026-09-28,
   Shift+Tab from the panel went to the sheet's category tiles, "Wi-Fi
   zones", then "Offices", then "Events", all under the panel.
-- **Now:** composed. The phone search passes `inert` to the map shell while
-  the assistant is open, so Shift+Tab leaves the frame for the sheet
-  switcher above it, and the panel still hands focus back to the AI button
-  as it closes. The phone search's "the assistant keeps the keyboard out of
-  what it covers" walks it.
+- **Fixed** in the design system (2026-09-29): while it is open, the panel
+  makes what it covers inert, with the `utils/modal-inert` that `Select`
+  uses, scoped to the box it is laid over and fills — `absolute inset-0` in
+  its positioned container, as its docs place it — and never the page beyond
+  it. Live regions beneath still speak, and it gives everything back before
+  it hands focus back as it closes. A panel in flow, or over part of its box,
+  covers nothing and changes nothing. The phone search no longer passes
+  `inert` to the map shell, and "the assistant keeps the keyboard out of what
+  it covers" now walks Kozmos: without the fix it fails on "focus under the
+  panel".
+- **Was:** composed. The phone search passed `inert` to the map shell while
+  the assistant was open, so Shift+Tab left the frame for the sheet switcher
+  above it.
 - **Lane:** Core.
 - **Fix in Kozmos:** a way to say what the panel covers — a `covers` ref it
   makes inert while open — or a line in its docs that the product must.

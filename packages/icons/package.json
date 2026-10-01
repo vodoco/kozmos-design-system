@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/icons",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Icon components and the name registry for the Kozmos design system.",
   "keywords": [
     "kozmos",
@@ -43,6 +43,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc --noEmit && vite build && node ../../scripts/emit-format-declarations.mjs",
+    "test": "node --test tests/tree-shaking.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {

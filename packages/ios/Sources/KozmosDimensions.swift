@@ -74,6 +74,7 @@ public struct KozmosDimensions {
     public static let primitivesLayoutRadius900: CGFloat = 96
     public static let primitivesLayoutRadius1000: CGFloat = 128
     // primitivesLayoutRadiusFull is not emitted: a pill is a shape, not a length. Use Capsule().
+    public static let semanticsMapAttributionHaloWidth: CGFloat = 1
     public static let semanticsRadiusNone: CGFloat = 0
     public static let semanticsRadiusMarker: CGFloat = 4
     public static let semanticsRadiusControl: CGFloat = 16

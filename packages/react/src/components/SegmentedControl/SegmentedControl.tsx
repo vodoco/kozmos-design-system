@@ -106,7 +106,17 @@ export interface SegmentedControlProps
    */
   onValueChange?: (value: string | undefined) => void;
   size?: "sm" | "default" | "lg";
-  value?: string;
+  /**
+   * The chosen segment, for a product that holds the choice itself; `null`
+   * is nothing chosen. `onValueChange` hands over `undefined` when the choice
+   * is taken back, so a product holding the choice passes
+   * `value={choice ?? null}`.
+   *
+   * `undefined`, or no `value` at all, leaves the choice to the control, as
+   * it always has: a wrapper that passes its own optional `value` on works
+   * used without one. Give `defaultValue` for the control's first choice.
+   */
+  value?: string | null;
   wrapperClassName?: string;
 }
 
@@ -185,7 +195,10 @@ export const SegmentedControl = React.forwardRef<
             onValueChange?.(nextValue);
           }}
           type="single"
-          value={value}
+          // `null` is a held empty choice, which Radix calls "" (R1).
+          // `undefined` leaves the choice to the control, as in 0.5.0: a
+          // wrapper forwarding its optional `value` must keep working.
+          value={value === null ? "" : value}
           {...props}
         >
           {items.map((item) => (

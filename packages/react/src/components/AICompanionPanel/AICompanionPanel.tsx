@@ -1,6 +1,7 @@
 import React from "react";
 import { Stars01, XClose } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
+import { inertOutside } from "../../utils/modal-inert";
 import { Text } from "../Text";
 
 export interface AICompanionPanelProps extends Omit<
@@ -8,11 +9,15 @@ export interface AICompanionPanelProps extends Omit<
   "title"
 > {
   /**
-   * Whether the panel is on screen; `true` when left out. Keep the panel
-   * mounted and turn `open` on when the visitor opens it — from
-   * AISearchButton, usually: that is when it takes focus. A panel that is
-   * open as it mounts, on screen from the start, was opened by nobody and
-   * leaves focus where it is. Closed, it draws nothing.
+   * Whether the panel is on screen. Pass it, keep the panel mounted, and turn
+   * it on when the visitor opens the panel — from AISearchButton, usually:
+   * that is when it takes focus. Given as `true` from the first render, the
+   * panel is on screen from the start, was opened by nobody, and leaves focus
+   * where it is (decision 16). Closed, it draws nothing.
+   *
+   * Left out, the panel is open, and mounting it is its opening, as it was
+   * before `open` existed (0.5.0): it takes focus as it mounts, and hands it
+   * back as it unmounts.
    */
   open?: boolean;
   title?: React.ReactNode;
@@ -31,10 +36,11 @@ export interface AICompanionPanelProps extends Omit<
   banner?: React.ReactNode;
   /**
    * The panel takes focus when the visitor opens it: when `open` turns true
-   * after it has mounted. Called first: `event.preventDefault()` keeps focus
-   * where you put it instead — in the field, through AIInputBar's `inputRef`.
-   * Not called for a panel that mounts open, which takes no focus, nor when a
-   * part inside has already taken focus, which is left alone.
+   * after it has mounted, or, with `open` left out, as it mounts. Called
+   * first: `event.preventDefault()` keeps focus where you put it instead — in
+   * the field, through AIInputBar's `inputRef`. Not called for a panel
+   * mounted with `open` already true, which takes no focus, nor when a part
+   * inside has already taken focus, which is left alone.
    */
   onOpenAutoFocus?: (event: Event) => void;
   /**
@@ -50,6 +56,36 @@ export interface AICompanionPanelProps extends Omit<
 /** Whatever has focus in the page, where there is a page to ask. */
 const focusedElement = () =>
   typeof document === "undefined" ? null : document.activeElement;
+
+/**
+ * What the open panel covers (GAP-93): the box it is laid over and fills,
+ * taken out of flow to cover it — `absolute inset-0` in its positioned
+ * container, as its docs place it — or the page, for a panel that fills the
+ * viewport (fixed) or the whole page. A panel in flow, or one over only part
+ * of its box, covers nothing: what is beside it stays in reach. Read from
+ * the layout, not the screen, so a transform the product animates it in with
+ * does not change the answer.
+ */
+function coveredBy(panel: HTMLElement): Element | null {
+  const doc = panel.ownerDocument;
+  const position = doc.defaultView?.getComputedStyle(panel).position;
+  if (position !== "absolute" && position !== "fixed") return null;
+  const { offsetWidth: width, offsetHeight: height, offsetParent: box } = panel;
+  // Nothing laid out, hidden or without a layout at all, covers nothing.
+  if (!width || !height) return null;
+  if (box && box !== doc.body)
+    return panel.offsetLeft <= 1 &&
+      panel.offsetTop <= 1 &&
+      width >= box.clientWidth - 1 &&
+      height >= box.clientHeight - 1
+      ? box
+      : null;
+  const page = doc.documentElement;
+  return width >= page.clientWidth - 1 &&
+    height >= (position === "fixed" ? page.clientHeight : page.scrollHeight) - 1
+    ? doc.body
+    : null;
+}
 
 /**
  * The assistant surface.
@@ -69,6 +105,13 @@ const focusedElement = () =>
  * and focus fell to the page. It moves focus in only when the visitor opens
  * it (decision 16): a panel on screen from the start takes nothing from the
  * page, which may have put focus somewhere on purpose.
+ *
+ * While it is open, what it covers is out of reach (GAP-93): laid over the
+ * box it fills, `absolute inset-0` in its positioned container, it makes the
+ * rest of that box inert, and gives it back as it closes, before it hands
+ * focus back. The keyboard cannot step back out of it onto controls nobody
+ * can see. Placed in flow, or over part of its box, it covers nothing. It
+ * measures again whenever it or that box changes size while it is open.
  */
 const AICompanionPanel = React.forwardRef<
   HTMLDivElement,
@@ -77,7 +120,7 @@ const AICompanionPanel = React.forwardRef<
   (
     {
       className,
-      open = true,
+      open: openProp,
       title = "Assistant",
       titleLevel = 2,
       onClose,
@@ -86,12 +129,14 @@ const AICompanionPanel = React.forwardRef<
       children,
       onOpenAutoFocus,
       onCloseAutoFocus,
+      onKeyDown,
       "aria-label": ariaLabel,
       "aria-labelledby": ariaLabelledBy,
       ...props
     },
     ref,
   ) => {
+    const open = openProp ?? true;
     const titleId = React.useId();
     const root = React.useRef<HTMLDivElement>(null);
     // Closed, there is no panel: the handle follows `open`.
@@ -107,9 +152,12 @@ const AICompanionPanel = React.forwardRef<
     if (shown.open !== open)
       setShown({ open, opener: open ? focusedElement() : null });
     const { opener } = shown;
-    // Whether the panel was open when it last committed. It starts as `open`:
-    // a panel that mounts open is one nobody opened.
-    const wasOpen = React.useRef(open);
+    // Whether the panel was open when it last committed. Given `open`, it
+    // starts as `open`: a panel that mounts open is one nobody opened
+    // (decision 16). Without it, it starts closed: the product mounts the
+    // panel to open it, as 0.5.0 documented, and the mount is the opening
+    // (B1). StrictMode's second run finds it open already, and opens nothing.
+    const wasOpen = React.useRef(openProp === undefined ? false : open);
     // The close comes renders after the open, so it calls the handler the
     // panel has by then, not the one it opened with.
     const closeAutoFocus = React.useRef(onCloseAutoFocus);
@@ -133,7 +181,63 @@ const AICompanionPanel = React.forwardRef<
         onOpenAutoFocus?.(opening);
         if (!opening.defaultPrevented) node.focus({ preventScroll: true });
       }
+      // What the panel covers is out of reach while it is open (GAP-93):
+      // stepping back out of it with Shift+Tab landed on the search's tiles
+      // beneath, where nobody could see them (WCAG 2.2, 2.4.11). Only what it
+      // covers, never the page beyond its frame; live regions beneath still
+      // speak, and the page's portals, where a part inside opens its popups,
+      // stay in reach. After focus has moved in, so the button that opened
+      // it does not lose focus to the page on the way.
+      //
+      // Measured again whenever the panel or the box it is laid against
+      // changes size while it is open: a layout that moves it from covering
+      // its frame to half of it gives the other half back, and the other way
+      // takes it (it was decided once, as it opened).
+      let covered: Element | null = null;
+      let release: (() => void) | undefined;
+      const measure = (moved: boolean) => {
+        const next = coveredBy(node);
+        if (next === covered) return;
+        // Native inert may drop focus as soon as it is applied. Remember
+        // what had focus so only a newly unreachable control is moved in.
+        const active = doc.activeElement;
+        const wasInert = active?.closest("[inert]");
+        release?.();
+        covered = next;
+        release = next
+          ? inertOutside(node, { within: next, keep: "[data-kozmos-portal]" })
+          : undefined;
+        // Own children, portals and live regions stay reachable. Sharing
+        // the covered frame does not mean their focus should be taken.
+        if (
+          moved &&
+          next &&
+          active &&
+          next.contains(active) &&
+          !wasInert &&
+          active.closest("[inert]")
+        )
+          node.focus({ preventScroll: true });
+      };
+      measure(false);
+      let against = node.offsetParent;
+      const observer =
+        typeof ResizeObserver === "undefined"
+          ? undefined
+          : new ResizeObserver(() => {
+              if (node.offsetParent !== against) {
+                if (against) observer?.unobserve(against);
+                against = node.offsetParent;
+                if (against) observer?.observe(against);
+              }
+              measure(true);
+            });
+      observer?.observe(node);
+      if (against) observer?.observe(against);
       return () => {
+        observer?.disconnect();
+        // Given back first: the control focus returns to was under the panel.
+        release?.();
         // StrictMode's rehearsal runs this with the panel still in the
         // document. A real close has already taken it out.
         if (node.isConnected) return;
@@ -166,8 +270,14 @@ const AICompanionPanel = React.forwardRef<
     // keyboard, or it is a trap for anyone not using a pointer. Bound on the
     // panel rather than the document so a host that renders two of these does
     // not close both, and skipped entirely when there is nothing to close.
+    //
+    // The product's own handler runs first, and an Escape already handled —
+    // by it, or by a part inside that dismissed something of its own and said
+    // so with preventDefault() — is left alone (R2). The product's handler
+    // used to replace this one, and a handled Escape closed the panel anyway.
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!onClose || event.key !== "Escape") return;
+      onKeyDown?.(event);
+      if (!onClose || event.key !== "Escape" || event.defaultPrevented) return;
       event.stopPropagation();
       onClose();
     };

@@ -12,6 +12,71 @@ import { FloorSelector } from "./FloorSelector";
 import { describe, it, expect, vi } from "vitest";
 
 describe("FloorSelector", () => {
+  it("preserves an absent selection and cannot step until the host selects a supplied floor", () => {
+    const onSelect = vi.fn();
+    const floors = ["2", "1", "g"];
+    const { rerender } = render(
+      <FloorSelector
+        floors={floors}
+        selectedFloor="1"
+        onFloorSelect={onSelect}
+        variant="compact-stepper"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Floor down" })).toBeEnabled();
+    rerender(
+      <FloorSelector
+        floors={["2", "g"]}
+        selectedFloor="1"
+        onFloorSelect={onSelect}
+        variant="compact-stepper"
+      />,
+    );
+    expect(screen.getByText("1")).toBeVisible();
+    for (const name of ["Floor up", "Floor down"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+    }
+    expect(onSelect).not.toHaveBeenCalled();
+    rerender(
+      <FloorSelector
+        floors={floors}
+        selectedFloor="g"
+        onFloorSelect={onSelect}
+        variant="compact-stepper"
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Floor up" }));
+    expect(onSelect).toHaveBeenCalledWith("1");
+  });
+  it.each(["vertical-list", "horizontal-list", "collapsible"] as const)(
+    "hides supplied counts by default in %s, visually and from assistive technology",
+    async (variant) => {
+      const { container } = render(
+        <FloorSelector
+          floors={[
+            {
+              id: "g",
+              label: "Ground floor",
+              shortLabel: "GF",
+              resultCount: 7,
+            },
+          ]}
+          selectedFloor="g"
+          onFloorSelect={() => undefined}
+          variant={variant}
+        />,
+      );
+      if (variant === "collapsible")
+        fireEvent.click(screen.getByRole("button", { name: "Ground floor" }));
+      expect(screen.queryByRole("button", { name: /7 results/ })).toBeNull();
+      expect(
+        document.querySelector("[data-floor-selector-result-count]"),
+      ).toBeNull();
+      expect(container).not.toHaveTextContent("7");
+    },
+  );
   it("renders floors and handles selection", () => {
     const onSelect = vi.fn();
     render(
@@ -131,6 +196,7 @@ describe("FloorSelector", () => {
     // once the map was looked at.
     render(
       <FloorSelector
+        showResultCounts
         floors={[
           { id: "1", label: "Level 1", shortLabel: "1" },
           { id: "2", label: "Level 2", shortLabel: "2", resultCount: 3 },
@@ -165,6 +231,7 @@ describe("FloorSelector", () => {
     // The default read "1 results". iOS and Android say "1 result".
     render(
       <FloorSelector
+        showResultCounts
         floors={[
           { id: "1", label: "Level 1", shortLabel: "1", resultCount: 1 },
           { id: "2", label: "Level 2", shortLabel: "2", resultCount: 2 },
@@ -186,6 +253,7 @@ describe("FloorSelector", () => {
     // "-2 results". iOS and Android mark only a count above zero.
     render(
       <FloorSelector
+        showResultCounts
         floors={[
           { id: "1", label: "Level 1", shortLabel: "1", resultCount: -2 },
           { id: "2", label: "Level 2", shortLabel: "2" },
@@ -272,10 +340,94 @@ describe("FloorSelector collapsible", () => {
     expect(tile).toHaveTextContent("1F");
     // Drawn by the map control itself, so it is styled as one.
     expect(tile).toHaveAttribute("data-presentation", "icon-only");
-    // The level alone: no arrows, and no dot without a visitor's level.
-    expect(tile.querySelectorAll("svg")).toHaveLength(0);
+    // Middle floor: both availability indicators, but still just one button.
+    expect(tile.querySelectorAll("[data-floor-direction]")).toHaveLength(2);
     expect(dotsIn(tile)).toHaveLength(0);
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it.each([
+    ["2", ["down"]],
+    ["1", ["up", "down"]],
+    ["g", ["up"]],
+  ])(
+    "shows available floor directions at %s without adding actions",
+    (floor, directions) => {
+      render(
+        <FloorSelector
+          floors={levels}
+          selectedFloor={floor}
+          onFloorSelect={() => undefined}
+          variant="collapsible"
+        />,
+      );
+      const tile = screen.getByRole("button");
+      expect(
+        Array.from(tile.querySelectorAll("[data-floor-direction]"), (node) =>
+          node.getAttribute("data-floor-direction"),
+        ),
+      ).toEqual(directions);
+      for (const indicator of tile.querySelectorAll("[data-floor-direction]")) {
+        expect(indicator).toHaveAttribute("aria-hidden", "true");
+      }
+    },
+  );
+
+  it("shows no directions for a single floor or an unknown selection", () => {
+    const { rerender } = render(
+      <FloorSelector
+        floors={[levels[1]]}
+        selectedFloor="1"
+        onFloorSelect={() => undefined}
+        variant="collapsible"
+      />,
+    );
+    expect(
+      screen.getByRole("button").querySelectorAll("[data-floor-direction]"),
+    ).toHaveLength(0);
+    rerender(
+      <FloorSelector
+        floors={levels}
+        selectedFloor="missing"
+        onFloorSelect={() => undefined}
+        variant="collapsible"
+      />,
+    );
+    expect(
+      screen.getByRole("button").querySelectorAll("[data-floor-direction]"),
+    ).toHaveLength(0);
+  });
+
+  it("does not promise a direction whose remaining floors are disabled", () => {
+    render(
+      <FloorSelector
+        floors={levels.map((floor) => ({
+          ...floor,
+          disabled: floor.id === "2",
+        }))}
+        selectedFloor="1"
+        onFloorSelect={() => undefined}
+        variant="collapsible"
+      />,
+    );
+    expect(
+      Array.from(
+        screen.getByRole("button").querySelectorAll("[data-floor-direction]"),
+        (node) => node.getAttribute("data-floor-direction"),
+      ),
+    ).toEqual(["down"]);
+  });
+
+  it("shows the full floor name on keyboard focus without creating another action", async () => {
+    render(<Controlled />);
+    const tile = tileNamed("First floor");
+    fireEvent.focus(tile);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("First floor");
+    expect(
+      within(
+        screen.getByRole("group", { name: "Floor selector" }),
+      ).getAllByRole("button"),
+    ).toHaveLength(1);
   });
 
   it("grows into a column of every level, says it is open, and moves focus to the current level", async () => {
@@ -397,6 +549,7 @@ describe("FloorSelector collapsible", () => {
   it("marks the levels that hold results in the column, and not on the tile", async () => {
     render(
       <FloorSelector
+        showResultCounts
         floors={[
           { ...levels[0], resultCount: 3 },
           { ...levels[1], resultCount: 1 },
@@ -533,6 +686,7 @@ describe("FloorSelector collapsible", () => {
       // neither covers the other.
       render(
         <FloorSelector
+          showResultCounts
           floors={[{ ...levels[0], resultCount: 3 }, levels[1], levels[2]]}
           onFloorSelect={() => undefined}
           selectedFloor="1"
