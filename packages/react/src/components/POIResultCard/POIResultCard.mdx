@@ -13,8 +13,10 @@ results remain readable but cannot invoke `onSelect`.
 
 The selected result shows the actions `result.actions` carries, and a press
 reaches `onAction` with the action and the POI's ID. `POIResultList` hands its
-`onAction` to every card, on all three platforms: see its page. On iOS and
-Android a card given actions but no `onAction` draws them disabled.
+`onAction` to every card, on all three platforms: see its page. A card given actions
+but no `onAction` draws them disabled on every platform. Disabled actions do not
+invoke a callback or report an action analytics event. Adding or removing the handler
+updates their availability; an action explicitly marked disabled remains disabled.
 
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.FeaturedSelected} />

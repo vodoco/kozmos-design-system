@@ -35,6 +35,13 @@ Each photo fills a 4:3 tile 85% of the gallery's width on every platform, so the
 photo whose leading edge is nearest the strip's is the one shown, the last one
 included at the end of the strip.
 
+Tiles use the control-radius token on every platform. Android settles a released
+drag to a leading-edge snap position, like web scroll snapping and iOS 17's
+view-aligned scrolling; iOS 16 retains free scrolling. A new Android button or
+parent-selected index cancels an in-progress settling fling so stale motion
+cannot overwrite that selection. Controlled refusals restore the selected tile
+after the native gesture settles.
+
 On a glass surface the position, muted elsewhere, takes the foreground colour, so
 it reads at 4.5:1 over any map (decision 48): hosted on its own in
 `AdaptiveMapShell`'s glass panel, or in `POIDetailPanel`'s `sheet` presentation

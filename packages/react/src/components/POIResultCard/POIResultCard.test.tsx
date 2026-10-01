@@ -6,6 +6,7 @@ import type {
 } from "@kozmos-ds/product-contracts";
 import { describe, expect, it, vi } from "vitest";
 import { POIResultCard, getPOIResultDomId } from "./POIResultCard";
+import { AnalyticsProvider } from "../../utils/analytics";
 
 const poi: POIPresentation = {
   id: "burger-king/a",
@@ -30,6 +31,53 @@ const result: POIResultPresentation = {
 };
 
 describe("POIResultCard", () => {
+  it("keeps actions without a handler disabled and emits no action analytics", () => {
+    const onDispatch = vi.fn();
+    const onSelect = vi.fn();
+    const { unmount } = render(
+      <AnalyticsProvider onDispatch={onDispatch}>
+        <POIResultCard
+          poi={poi}
+          onSelect={onSelect}
+          result={{ ...result, actions: [{ action: "navigate", label: "Go" }] }}
+        />
+      </AnalyticsProvider>,
+    );
+    const action = screen.getByRole("button", { name: "Go" });
+    expect(action).toBeDisabled();
+    fireEvent.click(action);
+    action.click();
+    unmount();
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onDispatch).not.toHaveBeenCalled();
+  });
+
+  it("updates action availability with its handler without overriding explicit disabled state", () => {
+    const onAction = vi.fn();
+    const props = {
+      poi,
+      onSelect: vi.fn(),
+      result: {
+        ...result,
+        actions: [
+          { action: "navigate" as const, label: "Go" },
+          { action: "share" as const, label: "Share", disabled: true },
+        ],
+      },
+    };
+    const { rerender } = render(<POIResultCard {...props} />);
+    expect(screen.getByRole("button", { name: "Go" })).toBeDisabled();
+    rerender(<POIResultCard {...props} onAction={onAction} />);
+    expect(screen.getByRole("button", { name: "Go" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Share" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Go" }));
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(onAction).toHaveBeenCalledWith("navigate", poi.id);
+    rerender(<POIResultCard {...props} />);
+    expect(screen.getByRole("button", { name: "Go" })).toBeDisabled();
+  });
+
   it("renders synchronized result metadata and calls selection", () => {
     const onSelect = vi.fn();
     render(<POIResultCard poi={poi} result={result} onSelect={onSelect} />);

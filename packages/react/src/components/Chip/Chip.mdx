@@ -62,6 +62,12 @@ product keeps. A chip with no action is a tag, text and never a button, whatever
 words: the chip's own press is always its action. Disabled, the chip and its remove are announced
 as disabled, and neither runs.
 
+Pass `removeLabel` to provide the complete translated name of the remove button on
+React, SwiftUI or Compose. The fallback remains "Remove" followed by the chip's text.
+On SwiftUI this is available in both initializers. On Compose the localized overload
+requires `removeLabel`; the original positional signature and trailing `onClick`
+lambda remain valid. The app supplies the translation; Kozmos does not choose a locale.
+
 ## Android Jetpack Compose
 
 ```kotlin
