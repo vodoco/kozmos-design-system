@@ -97,6 +97,7 @@ const IOS_INPUTS = [
   "packages/tokens/build.mjs",
   "packages/product-contracts/tests/travel-time-bands.txt",
   "scripts/check-ios-poi.mjs",
+  "scripts/check-ios-interactions.mjs",
   "scripts/figma-connect-native.mjs",
   ".github/workflows/ci.yml",
   "package.json",

@@ -53,41 +53,65 @@ buttons, each pressed or not.
 
 <Canvas of={ChipStories.OneChoice} />
 
+## Selected, to every screen reader
+
+A chip with an action is a toggle, and says whether it is on: `aria-pressed` on the web, a
+selected button to VoiceOver, and selected or not selected to TalkBack, following the state the
+product keeps. A chip with no action is a tag, text and never a button, whatever its colours say.
+`onRemove` adds a remove button beside the chip, never inside it, named "Remove" and the chip's
+words: the chip's own press is always its action. Disabled, the chip and its remove are announced
+as disabled, and neither runs.
+
 ## Android Jetpack Compose
 
 ```kotlin
+import androidx.compose.runtime.Composable
 import com.kozmos.components.chip.KozmosChip
 import com.kozmos.components.chip.KozmosChipGroup
 
-KozmosChipGroup {
-    KozmosChip(
-        text = "All",
-        selected = true,
-        onClick = { }
-    )
-    KozmosChip(
-        text = "Open now",
-        onRemove = { }
-    )
+// Filters that combine: each chip is its own toggle, and TalkBack hears
+// whether it is selected. "Open now" can only be taken away.
+@Composable
+fun CategoryFilters(
+    category: String,
+    onCategoryChange: (String) -> Unit,
+    openNow: Boolean,
+    onOpenNowRemove: () -> Unit
+) {
+    KozmosChipGroup {
+        KozmosChip(text = "All", selected = category == "all", onClick = { onCategoryChange("all") })
+        KozmosChip(text = "Coffee", selected = category == "coffee", onClick = { onCategoryChange("coffee") })
+        if (openNow) {
+            KozmosChip(text = "Open now", onRemove = onOpenNowRemove)
+        }
+    }
 }
 ```
 
 ## iOS SwiftUI
 
 ```swift
+import SwiftUI
 import Kozmos
 
-KozmosChipGroup {
-    KozmosChip(text: "All", selected: true) {
-        // action
+// Filters that combine: each chip is its own toggle, and VoiceOver hears
+// whether it is selected. "Open now" can only be taken away.
+struct CategoryFilters: View {
+    @Binding var category: String
+    @Binding var openNow: Bool
+
+    var body: some View {
+        KozmosChipGroup {
+            KozmosChip(text: "All", selected: category == "all", action: { category = "all" })
+            KozmosChip(text: "Coffee", selected: category == "coffee") {
+                Image(systemName: "cup.and.saucer.fill")
+            } action: {
+                category = "coffee"
+            }
+            if openNow {
+                KozmosChip(text: "Open now", onRemove: { openNow = false })
+            }
+        }
     }
-    KozmosChip(text: "Coffee") {
-        Image(systemName: "cup.and.saucer.fill")
-    } action: {
-        // action
-    }
-    KozmosChip(text: "Open now", onRemove: {
-        // remove filter
-    })
 }
 ```

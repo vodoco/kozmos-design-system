@@ -70,6 +70,8 @@ public struct KozmosPOIResultCard: View {
     /// says ("2, Burger King"); a `selectionLabel` replaces all of it.
     let numbered: Bool
     private let onSelect: (String) -> Void
+    /// Runs an action from the selected result's row, told which action and
+    /// the POI's ID. Without it the row's actions are drawn disabled.
     private let onAction: ((KozmosPOIResultAction, String) -> Void)?
 
     public init(
@@ -222,6 +224,14 @@ public struct KozmosPOIResultCard: View {
         return result.actions
     }
 
+    /// An action runs only when it is enabled and something handles it.
+    /// Without `onAction` the card still draws what the product offers, but
+    /// disabled — the rule POIDetailPanel's supplementary actions follow —
+    /// never an enabled button that does nothing.
+    private func canRun(_ entry: KozmosPOIResultActionPresentation) -> Bool {
+        !entry.disabled && onAction != nil
+    }
+
     var onCurrentFloor: Bool { currentFloorId != nil && result.floorId == currentFloorId }
 
     private var available: Bool { result.isAvailable }
@@ -340,7 +350,6 @@ public struct KozmosPOIResultCard: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(!available)
             .opacity(available ? 1 : 0.6)
             // The collapse belongs to the SELECT ROW, not the card.
             //
@@ -357,13 +366,19 @@ public struct KozmosPOIResultCard: View {
                 // the button affordance so VoiceOver does not offer the action.
                 handleSelect()
             }
+            // Outside the row's element, so that element is the one heard as
+            // dimmed, as the web's disabled button is. Inside it, VoiceOver
+            // heard an unavailable result as an enabled button (measured
+            // 2026-09-29).
+            .disabled(!available)
 
             if !visibleActions.isEmpty {
                 Divider().overlay(KozmosColors.semanticsBorderSubtle)
 
                 HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                     ForEach(visibleActions) { entry in
-                        KozmosPOIResultActionButton(entry: entry) {
+                        KozmosPOIResultActionButton(entry: entry, enabled: canRun(entry)) {
+                            guard canRun(entry) else { return }
                             handleAction(entry.action)
                         }
                     }
@@ -478,6 +493,9 @@ public struct KozmosPOIResultCard: View {
 /// expression is the fix the compiler itself asks for.
 private struct KozmosPOIResultActionButton: View {
     let entry: KozmosPOIResultActionPresentation
+    /// False for a disabled action, and for any action the card has no
+    /// handler for.
+    let enabled: Bool
     let action: () -> Void
 
     private var foreground: Color {
@@ -513,7 +531,7 @@ private struct KozmosPOIResultActionButton: View {
             .background(background)
             .clipShape(shape)
             .overlay(shape.stroke(border, lineWidth: 1))
-            .disabled(entry.disabled)
-            .opacity(entry.disabled ? 0.6 : 1)
+            .disabled(!enabled)
+            .opacity(enabled ? 1 : 0.6)
     }
 }

@@ -3,6 +3,7 @@ package com.kozmos.components.chip
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -41,6 +43,16 @@ enum class ChipSize {
     Sm, Default, Lg
 }
 
+/**
+ * A compact filter, category or removable value.
+ *
+ * With [onClick] the chip is a button that TalkBack hears as selected or not
+ * selected, as React's `aria-pressed` says it (review finding N4): selection
+ * used to change only its colours. Without it the chip is a tag — it says
+ * what a place is, it is not a choice — and is text, whatever its colours.
+ * [onRemove] adds a remove button of its own, named by the chip. Disabled,
+ * both are read as disabled and neither runs, however it is pressed.
+ */
 @Composable
 fun KozmosChip(
     text: String,
@@ -71,7 +83,16 @@ fun KozmosChip(
                 .heightIn(min = metrics.minHeight)
                 .then(
                     if (onClick != null) {
-                        Modifier.clickable(enabled = enabled) { onClick() }
+                        // A button with a state, as the details card's
+                        // favourite and save toggles are. The handler checks
+                        // enabled itself: the click Compose 1.6 puts in a
+                        // disabled node's semantics still runs it.
+                        Modifier.selectable(
+                            selected = isSelected,
+                            enabled = enabled,
+                            role = Role.Button,
+                            onClick = { if (enabled) onClick() }
+                        )
                     } else {
                         Modifier
                     }
@@ -107,7 +128,7 @@ fun KozmosChip(
                     modifier = Modifier
                         .size(KozmosDimensions.primitivesLayoutSizing300)
                         .clip(CircleShape)
-                        .clickable(enabled = enabled) { onRemove() },
+                        .clickable(enabled = enabled, role = Role.Button) { if (enabled) onRemove() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

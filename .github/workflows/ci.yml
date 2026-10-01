@@ -579,7 +579,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-poi-test-results
-          path: ${{ runner.temp }}/kozmos-ios-poi-*/TestResults.xcresult
+          path: ${{ runner.temp }}/kozmos-ios-poi-*/*.xcresult
           if-no-files-found: warn
 
       - name: Parse SwiftUI Code Connect

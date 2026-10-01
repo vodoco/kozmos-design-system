@@ -20,6 +20,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkIOSInteractions } from "./check-ios-interactions.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const discovery = spawnSync(
@@ -65,3 +66,4 @@ const run = spawnSync(
 );
 if (run.error) throw run.error;
 process.exitCode = run.status ?? 1;
+if (run.status === 0) checkIOSInteractions({ root, destination, output });

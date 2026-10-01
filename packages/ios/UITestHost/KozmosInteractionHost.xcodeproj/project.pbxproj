@@ -1,0 +1,448 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2812AE5C1C317B03ADA046D7 /* InteractionHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948E535A2BB6F22FD41A9C53 /* InteractionHost.swift */; };
+		3B58901E0D583219CF614847 /* Kozmos in Frameworks */ = {isa = PBXBuildFile; productRef = 9AD0E9237B00FB2C3D83058E /* Kozmos */; };
+		436688103D8A54DB7C1B9CCC /* InteractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A31F4DE42C065CC09571D7E8 /* InteractionTests.swift */; };
+		C38D4938ADFB26C4FA710FC7 /* CategoryFilters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50253E3D835E1C531D7EF078 /* CategoryFilters.swift */; };
+		F487CC62787BC90B5FCC3F9D /* ResultsWithActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C28CD1FE1F4D0879A641A124 /* ResultsWithActions.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A05D44A88B691E5B7A528D02 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7E4F1864F8603BB5C6E5D470 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 710A5FDEE629F9488D10A456;
+			remoteInfo = KozmosInteractionHost;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		50253E3D835E1C531D7EF078 /* CategoryFilters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryFilters.swift; sourceTree = "<group>"; };
+		7AE9717D7EDD423938DA8E56 /* KozmosInteractionTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = KozmosInteractionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		948E535A2BB6F22FD41A9C53 /* InteractionHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractionHost.swift; sourceTree = "<group>"; };
+		A31F4DE42C065CC09571D7E8 /* InteractionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractionTests.swift; sourceTree = "<group>"; };
+		BC744BF666090F43F4768308 /* ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ios; path = ..; sourceTree = SOURCE_ROOT; };
+		BD771E0884D9BED136283AEC /* KozmosInteractionHost.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = KozmosInteractionHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C28CD1FE1F4D0879A641A124 /* ResultsWithActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsWithActions.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		76D37E1F57CC507E09969911 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B58901E0D583219CF614847 /* Kozmos in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		212B14CDDB0E04857C2FA045 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				948E535A2BB6F22FD41A9C53 /* InteractionHost.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		299C557CF178346574B83F51 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				BC744BF666090F43F4768308 /* ios */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		3D5EB2BB5E2F27815CD9AE2A /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				A31F4DE42C065CC09571D7E8 /* InteractionTests.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
+		424BBE63B890BA5262A367E5 /* DocSnippets */ = {
+			isa = PBXGroup;
+			children = (
+				50253E3D835E1C531D7EF078 /* CategoryFilters.swift */,
+				C28CD1FE1F4D0879A641A124 /* ResultsWithActions.swift */,
+			);
+			name = DocSnippets;
+			path = ../Tests/KozmosTests/DocSnippets;
+			sourceTree = "<group>";
+		};
+		69E3BD722B0253177E5ACEC0 = {
+			isa = PBXGroup;
+			children = (
+				212B14CDDB0E04857C2FA045 /* App */,
+				424BBE63B890BA5262A367E5 /* DocSnippets */,
+				299C557CF178346574B83F51 /* Packages */,
+				3D5EB2BB5E2F27815CD9AE2A /* UITests */,
+				93905B40D447DE44C686F518 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		93905B40D447DE44C686F518 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BD771E0884D9BED136283AEC /* KozmosInteractionHost.app */,
+				7AE9717D7EDD423938DA8E56 /* KozmosInteractionTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		710A5FDEE629F9488D10A456 /* KozmosInteractionHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DC638363968DFBD35FA52F41 /* Build configuration list for PBXNativeTarget "KozmosInteractionHost" */;
+			buildPhases = (
+				C1540129BC1801BA1B9788AC /* Sources */,
+				76D37E1F57CC507E09969911 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KozmosInteractionHost;
+			packageProductDependencies = (
+				9AD0E9237B00FB2C3D83058E /* Kozmos */,
+			);
+			productName = KozmosInteractionHost;
+			productReference = BD771E0884D9BED136283AEC /* KozmosInteractionHost.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7F76D2E7CCF264EE20962ABB /* KozmosInteractionTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9444260F8B2BD64DAE3DEEF8 /* Build configuration list for PBXNativeTarget "KozmosInteractionTests" */;
+			buildPhases = (
+				20613AD43C4CE4CE34605F43 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EFB74CD1BD8F5FFB21F14B77 /* PBXTargetDependency */,
+			);
+			name = KozmosInteractionTests;
+			packageProductDependencies = (
+			);
+			productName = KozmosInteractionTests;
+			productReference = 7AE9717D7EDD423938DA8E56 /* KozmosInteractionTests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7E4F1864F8603BB5C6E5D470 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					7F76D2E7CCF264EE20962ABB = {
+						TestTargetID = 710A5FDEE629F9488D10A456;
+					};
+				};
+			};
+			buildConfigurationList = A21B244BD62505B2D17E0A0E /* Build configuration list for PBXProject "KozmosInteractionHost" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 69E3BD722B0253177E5ACEC0;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8C2AADDA8429D7FAC3283909 /* XCLocalSwiftPackageReference ".." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 93905B40D447DE44C686F518 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				710A5FDEE629F9488D10A456 /* KozmosInteractionHost */,
+				7F76D2E7CCF264EE20962ABB /* KozmosInteractionTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		20613AD43C4CE4CE34605F43 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				436688103D8A54DB7C1B9CCC /* InteractionTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C1540129BC1801BA1B9788AC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C38D4938ADFB26C4FA710FC7 /* CategoryFilters.swift in Sources */,
+				2812AE5C1C317B03ADA046D7 /* InteractionHost.swift in Sources */,
+				F487CC62787BC90B5FCC3F9D /* ResultsWithActions.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EFB74CD1BD8F5FFB21F14B77 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 710A5FDEE629F9488D10A456 /* KozmosInteractionHost */;
+			targetProxy = A05D44A88B691E5B7A528D02 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0D8FED9EA58D2E8F445D2DEB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kozmos.interaction-tests.runner";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = KozmosInteractionHost;
+			};
+			name = Release;
+		};
+		4B8EEE9BD2870CF9DF5F227D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kozmos.interaction-tests";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		555D6AF8095AF895303637D8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kozmos.interaction-tests";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A1343E7DD6C9C8B3AF4DB7B1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A4CCE0076558C4DCA98EAC34 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C3DE3E5D25E6ADCC74B372AF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kozmos.interaction-tests.runner";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = KozmosInteractionHost;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9444260F8B2BD64DAE3DEEF8 /* Build configuration list for PBXNativeTarget "KozmosInteractionTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C3DE3E5D25E6ADCC74B372AF /* Debug */,
+				0D8FED9EA58D2E8F445D2DEB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A21B244BD62505B2D17E0A0E /* Build configuration list for PBXProject "KozmosInteractionHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A4CCE0076558C4DCA98EAC34 /* Debug */,
+				A1343E7DD6C9C8B3AF4DB7B1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DC638363968DFBD35FA52F41 /* Build configuration list for PBXNativeTarget "KozmosInteractionHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4B8EEE9BD2870CF9DF5F227D /* Debug */,
+				555D6AF8095AF895303637D8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		8C2AADDA8429D7FAC3283909 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9AD0E9237B00FB2C3D83058E /* Kozmos */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Kozmos;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 7E4F1864F8603BB5C6E5D470 /* Project object */;
+}
