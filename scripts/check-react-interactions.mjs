@@ -94,6 +94,57 @@ const call = (page, handle, ...args) =>
     [handle, args],
   );
 
+for (const width of [320, 800]) {
+  await scenario(
+    `GAP-056: result actions at least 44px (${width})`,
+    "result-action-targets",
+    async (page) => {
+      for (const name of ["Go", "Details", "Order ahead"]) {
+        const target = page.getByRole("button", { name, exact: true });
+        const bounds = await target.boundingBox();
+        assert.ok(
+          bounds.height >= 44,
+          `${name}: ${bounds.height}px, expected at least 44px`,
+        );
+        assert.ok(
+          bounds.width >= 44,
+          `${name}: ${bounds.width}px, expected at least 44px`,
+        );
+      }
+      assert.equal(
+        await page.getByRole("button", { name: "Order ahead" }).isDisabled(),
+        true,
+      );
+      await page.getByRole("button", { name: "Go", exact: true }).focus();
+      await page.keyboard.press("Enter");
+      await page.waitForFunction(
+        () =>
+          document.querySelector('[data-testid="action-received"]')
+            .textContent === "navigate",
+      );
+      await page.getByRole("button", { name: "Details", exact: true }).click();
+      await page.waitForFunction(
+        () =>
+          document.querySelector('[data-testid="action-received"]')
+            .textContent === "details",
+      );
+      await page.evaluate(() => {
+        document.documentElement.style.fontSize = "200%";
+      });
+      for (const name of ["Go", "Details", "Order ahead"]) {
+        const bounds = await page
+          .getByRole("button", { name, exact: true })
+          .boundingBox();
+        assert.ok(
+          bounds.height >= 88,
+          `${name}: action must grow with 200% root text, got ${bounds.height}`,
+        );
+      }
+    },
+    { viewport: { width, height: 700 } },
+  );
+}
+
 // F2: a selection that comes before its results is brought in when they do.
 for (const reducedMotion of [true, false]) {
   await scenario(

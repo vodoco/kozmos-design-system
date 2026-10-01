@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "a973c65b5f02";
+const PLUGIN_BUILD = "d12e6bc15cda";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -48717,7 +48717,7 @@ async function updatePOIResultCardVariant(
     paddingTop: 0,
     paddingBottom: 12,
     width,
-    height: 40,
+    height: 56,
   });
 
   for (const action of [
@@ -48733,7 +48733,7 @@ async function updatePOIResultCardVariant(
       paddingLeft: 16,
       paddingRight: 16,
       width: 80,
-      height: 40,
+      height: 44,
     });
     button.cornerRadius = KOZMOS_RADIUS.control;
     button.fills = [

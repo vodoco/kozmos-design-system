@@ -1704,6 +1704,11 @@ section("POIResultCard actions");
     ? actionsRow.children.filter((child) => child.name.endsWith("Action"))
     : [];
   ok(
+    actionsRow?.height === 56 &&
+      buttons.every((button) => button.height === 44),
+    "GAP-056: 44px result actions plus the row's 12px bottom inset",
+  );
+  ok(
     buttons.length === 2 &&
       buttons[0].name === "Primary Action" &&
       buttons[1].name === "Secondary Action",

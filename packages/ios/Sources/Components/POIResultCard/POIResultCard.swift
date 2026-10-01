@@ -522,12 +522,18 @@ private struct KozmosPOIResultActionButton: View {
     }
 
     var body: some View {
-        Button(entry.label, action: action)
+        Button(action: action) {
+            Text(entry.label)
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(foreground)
+                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
+                // Size the label inside the button, so the entire painted
+                // control is tappable. A minimum still permits Dynamic Type.
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
             .buttonStyle(.plain)
-            .font(.subheadline.weight(.semibold))
-            .foregroundColor(foreground)
-            .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
-            .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
             .background(background)
             .clipShape(shape)
             .overlay(shape.stroke(border, lineWidth: 1))

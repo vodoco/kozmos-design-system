@@ -56,6 +56,11 @@ private struct InteractionFixture: View {
 
     @ViewBuilder private var fixture: some View {
         switch scenario {
+        case "result-action-targets", "result-action-targets-large":
+            KozmosPOIResultList(items: items([go, .init(action: .details, label: "Details"),
+                .init(action: .order, label: "Order ahead", disabled: true)]),
+                resultCountLabel: "2 results", selectedPoiId: "cafe", onSelect: select, onAction: action)
+                .environment(\.dynamicTypeSize, scenario == "result-action-targets-large" ? .accessibility3 : .large)
         case "traits":
             KozmosChip(text: "Vegan", selected: true, action: {})
             KozmosChip(text: "Halal", action: {})
