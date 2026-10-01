@@ -18,7 +18,7 @@ npm install @kozmos-ds/react react react-dom
 
 - Import `@kozmos-ds/react/style.css` once. It holds the token variables for both themes and every component's styles, so there is no Tailwind configuration to add.
 - Put everything inside a `ThemeProvider`. The styles are scoped to the provider's own part of the page: a component outside one is not themed, and most are not styled at all. `defaultTheme` takes `"dark" | "light" | "system"`, and `dir="rtl"` lays the provider's components out right to left.
-- The scoping is CSS `@scope`, which sets the browser floor: Chrome 118, Edge 118, Safari 17.4, Firefox 128 and Android WebView 118.
+- The scoping is CSS `@scope`, which sets the browser floor: Chrome 118, Edge 118, Safari 17.4, Firefox 146 and Android WebView 118.
 
 ### A minimal example
 

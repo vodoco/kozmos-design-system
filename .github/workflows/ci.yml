@@ -251,6 +251,7 @@ jobs:
           pnpm test:token-alpha
           ADAPTIVE_BROWSER=firefox pnpm test:token-alpha
           ADAPTIVE_BROWSER=webkit pnpm test:token-alpha
+          ADAPTIVE_BROWSER=firefox pnpm test:scoped-utilities
 
       - name: Verify Built Adaptive Layout Geometry
         run: |

@@ -105,14 +105,22 @@ does not certify a production product's browser/WebView matrix. Record the produ
 approved matrix and device evidence before adoption. If older engines are required, review
 the owned-CSS/isolation architecture rather than adding an untested selector/polyfill workaround.
 
-**Known compatibility discrepancy (2026-10-01):** the published React 0.7.0 manifest and
-README table declare Firefox 128. Mozilla's [Firefox 146 developer release notes](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146)
-identify 146 as the release enabling `@scope` by default. The declared 128 floor therefore
-does not establish support for the remaining scoped utility styles. Current-engine CI is
-not evidence for Firefox 128–145. Reproduce representative shipped CSS on the proposed
-minimum engines and review the compatibility policy, manifest, README and release migration
-together. Do not assume that 146 alone certifies every feature of the library, or raise the
-manifest floor silently in a documentation-only patch.
+**Firefox support correction (approved 2026-10-01; next release):** the published React 0.7.0
+manifest incorrectly declared Firefox 128. Mozilla's [Firefox 146 developer release notes](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146)
+identify 146 as the release enabling `@scope` by default. A built-package fixture confirmed
+Badge losing its layout/background and Separator collapsing to zero height in Playwright's
+Firefox 128.0; both render correctly in 146.0.1. Button/Input keep their owned styling in both.
+Olcay approved correcting the declared minimum to Firefox 146+ rather than promising a
+legacy-browser fallback. The manifest, consumer README and minor changeset make that support
+change explicit; existing 0.7.0 artifacts remain immutable.
+
+`pnpm test:browser-selection` guards the declaration, including rejection of the former 128
+floor. `ADAPTIVE_BROWSER=firefox pnpm test:scoped-utilities` checks built Badge/Separator
+geometry, colour presence and nested theme boundaries, with Button/Input as owned-CSS controls.
+`KOZMOS_TEST_WITHOUT_SCOPE=1` is a negative control and must fail that utility test, not a
+supported fallback mode. Current Firefox CI covers these cases; it is not proof of every
+feature on every minimum-version engine. Product/browser and embedded-WebView acceptance remain
+separate. See the [consumer migration guidance](../packages/react/README.md#browsers).
 
 ## Migration
 
