@@ -30,7 +30,7 @@ the remaining utility-based components still require native CSS `@scope`.
 This is an unfinished compatibility migration, **not a broadly compatible release**.
 The production browser/WebView support matrix must be approved and tested before
 product adoption; package publication is not that certification. Unsupported engines will
-render the unmigrated parts incorrectly. See the known Firefox floor discrepancy below.
+render the unmigrated parts incorrectly. See the Firefox floor correction and migration below.
 
 `inputVariants` and `buttonVariants` retain their arguments but return opaque,
 namespaced recipe classes. Do not depend on the individual class strings.

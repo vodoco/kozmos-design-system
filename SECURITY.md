@@ -5,21 +5,23 @@
 Report anything you believe is a security problem privately, not as a public
 issue or pull request.
 
-Use GitHub's private advisory form —
-<https://github.com/vodoco/kozmos-design-system/security/advisories/new> —
-which is visible only to the maintainers.
+**Communication setup pending (confirmed by the owner, 2026-10-01):** no
+security mailbox has been established, and GitHub private vulnerability
+reporting is not enabled. The previously documented mailbox did not exist.
+The owner will add a verified private contact here when it is ready; this
+document must not advertise an unverified address or reporting form.
 
-If that form is not open to you, open an ordinary issue saying only that you
-have a security report and how we can reach you privately. Do not put the
-details in it.
+Until then, ask the repository owner for a private reporting channel. If you
+use a public issue, say only that you need a private security contact. Do not
+include vulnerability details, credentials, sensitive files or a proof of
+concept in that issue. Wait for a confirmed private channel before sending them.
 
 Please include what you found, where (a file, a package and version, or a
 URL), and what an attacker could do with it. A proof of concept helps. If you
 have already published the details somewhere, say so.
 
-We will acknowledge a report within five working days and tell you what we
-intend to do about it. Please give us 90 days before disclosing publicly, or
-less if we have shipped a fix sooner.
+The reporting contact and response commitment still need owner confirmation.
+Do not rely on an acknowledgement deadline until that setup is complete.
 
 ## What is in scope
 

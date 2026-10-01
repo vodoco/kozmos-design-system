@@ -74,7 +74,8 @@ the installed WebKit 26.0, including sizing and theme colours. Chromium 145 and
 Firefox 146 pass that fixture, so the earlier evidence is not a readiness claim.
 That was a historical blocker, not evidence that the shipped owned-CSS Input/Textarea still
 have that failure. The current package declares browser floors, but those claims need their
-own verification; the Firefox discrepancy below is still open.
+own verification; the Firefox correction below is approved for the next release, not a
+retroactive change to the published 0.7.0 artifact.
 
 The React build processes the existing generated token CSS and Tailwind output into
 bounded native `@scope` rules. Light values are established at every root; dark values

@@ -36,7 +36,9 @@ We are committed to providing a welcoming and inclusive environment. All contrib
 - Publishing others' private information
 - Any conduct inappropriate in a professional setting
 
-Report violations to: kozmos-maintainers@pointr.tech
+Private reporting contact: pending owner setup. Ask the repository owner for a
+private channel; do not post sensitive conduct reports publicly. See
+[Security](SECURITY.md) for the separate vulnerability-reporting guidance.
 
 ---
 
@@ -45,7 +47,7 @@ Report violations to: kozmos-maintainers@pointr.tech
 ### Prerequisites
 
 - Node.js 20+
-- pnpm 8+
+- pnpm 9+
 - Git
 
 ### Setup
@@ -70,16 +72,17 @@ pnpm dev
 ```
 kozmos-design-system/
 ├── packages/
-│   ├── tokens/        # Design tokens (Style Dictionary)
-│   ├── react/         # React components
-│   ├── vue/           # Vue 3 components
-│   ├── ios/           # SwiftUI components
-│   ├── android/       # Jetpack Compose components
-│   ├── react-native/  # React Native components
-│   └── icons/         # Icon library
+│   ├── tokens/             # Design tokens (Style Dictionary)
+│   ├── react/              # React components
+│   ├── icons/              # Icon library
+│   ├── product-contracts/  # The shapes a product passes the product components
+│   ├── ios/                # SwiftUI components
+│   ├── android/            # Jetpack Compose components
+│   └── vue/                # Vue wrappers around the React components (private)
 ├── apps/
-│   └── docs/          # Documentation site
-└── .ai-skills/        # AI agent reference docs
+│   ├── docs/               # Storybook, the component reference
+│   └── site/               # The website
+└── .ai-skills/             # AI agent reference docs
 ```
 
 ---
@@ -129,14 +132,11 @@ docs(readme): update installation instructions
 ### Development Commands
 
 ```bash
-# Start Storybook (React)
-pnpm --filter @kozmos-ds/react storybook
+# Start Storybook (React, port 6006)
+pnpm --filter @kozmos-ds/docs storybook:react
 
 # Run tests
 pnpm test
-
-# Run tests with coverage
-pnpm test:coverage
 
 # Lint code
 pnpm lint
@@ -209,14 +209,20 @@ Fixes #123
 
 ### Review Process
 
-1. **Automated checks** must pass. Branch protection on `main` requires all 19 checks a pull
-   request runs: CI's web build and tests, its twelve browser shards, the Android build and the iOS
-   build, the bundle budget (`analyze-bundle`), Lighthouse's accessibility audit (`lighthouse`) and
-   "Visual Review". The iOS build runs when a pull request touches what it builds (`packages/ios`,
-   `packages/tokens`, its scripts, `ci.yml` or the dependencies) and is skipped, which counts as
-   passing, otherwise; every push to `main` builds it. A pull request opened against another
-   branch and then retargeted to `main` has no `analyze-bundle` or `lighthouse` run, because both
-   run only for pull requests into `main`: push to it, or close and reopen it.
+1. **Automated checks** must pass. Branch protection on `main` requires 19 checks: CI's web build
+   and tests ("Web Build & Test"), its twelve browser shards, "Core Pipeline & POI Gallery", the
+   Android build and the iOS build, the bundle budget (`analyze-bundle`), Lighthouse's
+   accessibility audit (`lighthouse`) and "Visual Review". The iOS build runs when a pull request
+   touches what it builds (`packages/ios`, `packages/tokens`, its scripts, `ci.yml` or the
+   dependencies) and is skipped, which counts as passing, otherwise; every push to `main` builds
+   it. A pull request opened against another branch and then retargeted to `main` has no
+   `analyze-bundle` or `lighthouse` run, because both run only for pull requests into `main`: push
+   to it, or close and reopen it.
+
+   Two more run on pull requests and are not required: CI's "Changes", which decides whether the
+   iOS build runs, and the Site workflow's "Build & Test", which runs when a pull request touches
+   `apps/site`, `apps/docs`, `packages`, `scripts/skills/check-completion.ts`, `site.yml` or the
+   lockfile.
 
    A pull request must be **up to date with `main`** to merge, so its checks have run against the
    `main` it merges into and two pull requests that are each green cannot break `main` together.
@@ -237,76 +243,26 @@ Fixes #123
 
 ## Coding Standards
 
-### TypeScript
+### TypeScript and React
 
-```typescript
-// Use explicit types
-function Button(props: ButtonProps): React.ReactElement;
+Use the exported component types rather than copying a generic props template.
+For component implementations, follow the existing source, ref forwarding and
+state-ownership conventions in [Button](packages/react/src/components/Button/Button.tsx)
+and [Input](packages/react/src/components/Input/Input.tsx). Keep public changes
+source-compatible where practical and document migrations.
 
-// Use interfaces for objects
-interface ButtonProps {
-  variant?: "primary" | "secondary";
-  size?: "sm" | "md" | "lg";
-  disabled?: boolean;
-  children: React.ReactNode;
-}
-
-// Use const assertions
-const VARIANTS = ["primary", "secondary"] as const;
-
-// Avoid any - use unknown if necessary
-function handleData(data: unknown): void;
-```
-
-### React
-
-```tsx
-// Use function components
-export function Button({ variant = "primary", children }: ButtonProps) {
-  return <button className={styles[variant]}>{children}</button>;
-}
-
-// Use forwardRef for DOM refs
-export const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
-  return <input ref={ref} {...props} />;
-});
-
-// Use compound components for complex UIs
-<Select>
-  <Select.Trigger />
-  <Select.Content>
-    <Select.Option value="1">Option 1</Select.Option>
-  </Select.Content>
-</Select>;
-```
+Compound APIs are named exports, not properties such as `Select.Trigger`.
+Use the compilable [Select examples](packages/react/src/components/Select/Select.stories.tsx)
+(`SelectTrigger`, `SelectContent`, `SelectItem`) as the reference.
 
 ### CSS
 
-```css
-/* Use CSS custom properties from tokens */
-.button {
-  background-color: var(--kozmos-color-primary);
-  padding: var(--kozmos-spacing-3) var(--kozmos-spacing-4);
-  border-radius: var(--kozmos-radius-md);
-}
-
-/* Use logical properties for RTL support */
-.card {
-  margin-inline-start: var(--kozmos-spacing-4);
-  padding-block: var(--kozmos-spacing-3);
-}
-
-/* Mobile-first responsive */
-.container {
-  padding: var(--kozmos-spacing-4);
-}
-
-@media (min-width: 768px) {
-  .container {
-    padding: var(--kozmos-spacing-6);
-  }
-}
-```
+Read [the style playbook](docs/style-playbook.md) before changing appearance.
+Use real generated token names and documented roles, logical properties for RTL,
+and component-owned styles where required by the embedding contract. Do not
+invent `--kozmos-color-primary` or `--kozmos-spacing-3`: these are not exported
+tokens. The [embedding guide](docs/embedding-isolation.md) explains provider
+boundaries, portals, resets and browser prerequisites.
 
 ---
 
@@ -317,7 +273,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
 ```
 Button/
 ├── Button.tsx           # Component implementation
-├── Button.styles.css    # Component styles
+├── Button.mdx           # Docs page, shown in Storybook
 ├── Button.stories.tsx   # Storybook stories
 ├── Button.test.tsx      # Unit tests
 ├── Button.figma.tsx     # Code Connect mapping
@@ -408,9 +364,8 @@ describe('Button', () => {
 ### Accessibility Tests
 
 ```typescript
-import { axe, toHaveNoViolations } from 'jest-axe';
-
-expect.extend(toHaveNoViolations);
+// vitest-axe's matchers are registered once, in packages/react/src/test/setup.ts
+import { axe } from 'vitest-axe';
 
 it('has no accessibility violations', async () => {
   const { container } = render(<Button>Accessible</Button>);
@@ -419,7 +374,12 @@ it('has no accessibility violations', async () => {
 });
 ```
 
-### Coverage Requirements
+### Coverage target (not currently enforced)
+
+The intended coverage target is listed below, but no coverage provider or threshold
+is configured in the current test pipeline. Do not claim CI has measured or enforced
+these percentages. Named behaviour regressions and the candidate checks in
+[Maintaining Kozmos](docs/design-system-maintenance.md) are required independently.
 
 | Metric     | Minimum |
 | ---------- | ------- |
@@ -448,13 +408,13 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Button } from "./Button";
 
 const meta = {
-  title: "Primitives/Button",
+  title: "Components/Button",
   component: Button,
   tags: ["autodocs"],
   argTypes: {
     variant: {
       control: "select",
-      options: ["primary", "secondary"],
+      options: ["default", "secondary"],
     },
   },
 } satisfies Meta<typeof Button>;
@@ -464,7 +424,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
-    variant: "primary",
+    variant: "default",
     children: "Primary Button",
   },
 };
@@ -548,9 +508,8 @@ full procedure. In short:
 
 ## Questions?
 
-- **Discussions**: GitHub Discussions
 - **Issues**: GitHub Issues
-- **Email**: kozmos-maintainers@pointr.tech
+- **Private contact**: pending owner setup; no project mailbox is currently available.
 
 ---
 

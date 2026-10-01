@@ -8,8 +8,8 @@ the reading of the numbers, which are judgements the script does not make.
 
 ## Why This Exists
 
-`docs/status.md` reports every component present on Web, iOS, and Android, but it only proves that a
-file exists. It says so itself: it does not grade API parity, behavioural
+`docs/status.md` reports which components are present on Web, iOS and Android, but it only proves
+that a file exists. It says so itself: it does not grade API parity, behavioural
 completeness, or variant coverage. This document is the missing half — it looks
 _inside_ the files and compares the variant surface each platform can express.
 
@@ -43,8 +43,8 @@ an implementation backlog item.
 <!-- /generated:headline -->
 
 The important correction to the previous mental model: **most components carry
-no variant axis in code at all** — the table above says how many today. The other 72 vary compositionally, and
-those variations exist _only_ as Figma axes (`Dialog Content`, `Drawer Side`,
+no variant axis in code at all** — the table's "compositional only" row counts them. They vary
+compositionally, and those variations exist _only_ as Figma axes (`Dialog Content`, `Drawer Side`,
 `Tabs Count/Active/State`). Code has no name for them, so no amount of native
 work will "complete" them — they are a Code Connect mapping question, not a
 missing-variant question.
@@ -225,7 +225,8 @@ AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCa
 
 Closed:
 
-- **Vue** — 18 wrappers added; full parity.
+- **Vue, as far as it went** — 18 wrappers added. It is not at parity: §3 lists the components
+  with no Vue wrapper (Remaining, 4).
 - **Stack, Grid, Text on native** — recorded as intentional. Layout and
   typography stay platform primitives with Kozmos tokens.
 - **Heading** — `level` added on iOS and Android. Both previously had _no_
@@ -244,8 +245,8 @@ Closed:
 
 Remaining:
 
-1. **Product / SDK Figma sets** — the remaining 18, using the plugin lane
-   already built. This subsumes the six "set absent" rows above.
+1. **The Figma sets still absent** — the Figma list in §3, using the plugin lane already built.
+   This subsumes the Figma "component/set absent" rows in §1.
 2. ~~LocationPin `size` in Figma~~ — done. The set now uses the two-axis matrix
    builder: State x Size, 15 variants.
 3. **Naming normalisation** — `Kozmos`-prefix the unprefixed native enums
@@ -253,13 +254,16 @@ Remaining:
    `SegmentedControlSize`, `StackDirection`) and reconcile `AlertStatus.Error`
    with React's `destructive`. Cosmetic, breaking, so do it with deprecated
    aliases.
+4. **Vue** — the components §3 lists as absent from Vue. Vue is a private harness, and its work
+   waits (decision 2).
 
 ## 5. Known Limits Of This Analysis
 
 - It compares _declared_ variant surfaces, not rendered output. Two platforms
   can agree on axis and values and still look different.
 - It does not check that a variant is _correct_, only that it can be expressed.
-- Compositional variations (the 72) are out of scope by construction.
+- Compositional variations (the headline's "compositional only" row) are out of scope by
+  construction.
 - Figma axes are read from the importer plugin's registry, which is the intended
   design, not from the live Figma file. A designer who adds a variant by hand
   will not appear here until the plugin registry is updated.

@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 /**
  * What @kozmos-ds/react brings with it, pre-bundled when the dev server starts.
  * The package is linked from the workspace, so Vite only finds its imports
- * (the Radix primitives, framer-motion, lucide…) on the first request, then
+ * (the Radix primitives, framer-motion…) on the first request, then
  * optimises them and reloads the page mid-visit: for a few seconds the page
  * is there but nothing on it responds. Read from the package so the list
  * cannot go stale. The build is unaffected; it bundles everything.

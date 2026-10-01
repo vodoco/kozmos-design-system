@@ -1,5 +1,6 @@
 // Real distributed Input/Textarea CSS, not a CSSScopeRule feature-presence check.
-// This is an investigative release gate: pinned WebKit 26.0 currently fails it.
+// Verify rendered host isolation and scoped controls in the selected browser.
+// A historical WebKit failure is not a statement about the current result.
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import {

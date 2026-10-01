@@ -205,7 +205,7 @@ export default function GetStarted() {
       <Section
         id="checks"
         title="What every pull request runs"
-        lead="The main checks the workflow runs on every pull request, grouped as its steps are, and what each one holds the design system to. The iOS and Android jobs run beside the web one."
+        lead="The main checks the workflow runs on every pull request, grouped as its steps are, and what each one holds the design system to. The Android job runs beside the web one, and so does the iOS job when a pull request touches what it builds."
       >
         <Pipeline />
       </Section>
