@@ -87,6 +87,7 @@ fun kozmosPOIResultIdentifier(poiId: String): String = buildString {
  *
  * Mirrors the React `POIResultCard`. Selection is reported upward only; the
  * card renders exactly the state described by [poi] and [result].
+ * Actions without a handler are disabled. Pressing an action never selects the row.
  */
 @Composable
 fun KozmosPOIResultCard(
@@ -149,6 +150,8 @@ fun KozmosPOIResultCard(
 
     Surface(
         onClick = {
+            // Disabled semantics actions must remain inert when invoked directly.
+            if (!available) return@Surface
             trackEvent(
                 KozmosAnalyticsEvent(
                     component = "POIResultCard",
@@ -295,7 +298,7 @@ fun KozmosPOIResultCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .semantics { contentDescription = actionsLabel }
+                            .semantics(mergeDescendants = true) { contentDescription = actionsLabel }
                             .padding(
                                 horizontal = KozmosDimensions.primitivesLayoutSpacing200,
                                 vertical = KozmosDimensions.primitivesLayoutSpacing100
@@ -306,21 +309,25 @@ fun KozmosPOIResultCard(
                         )
                     ) {
                         visibleActions.forEach { entry ->
+                            val canRun = !entry.disabled && onAction != null
                             KozmosPOIResultActionButton(
                                 entry = entry,
+                                enabled = canRun,
                                 onClick = {
-                                    trackEvent(
-                                        KozmosAnalyticsEvent(
-                                            component = "POIResultCard",
-                                            eventName = "poi_result_action",
-                                            properties = mapOf(
-                                                "poiId" to poi.id,
-                                                "resultIndex" to result.resultIndex.toString(),
-                                                "action" to entry.action.value
+                                    if (canRun) {
+                                        trackEvent(
+                                            KozmosAnalyticsEvent(
+                                                component = "POIResultCard",
+                                                eventName = "poi_result_action",
+                                                properties = mapOf(
+                                                    "poiId" to poi.id,
+                                                    "resultIndex" to result.resultIndex.toString(),
+                                                    "action" to entry.action.value
+                                                )
                                             )
                                         )
-                                    )
-                                    onAction?.invoke(entry.action, poi.id)
+                                        onAction?.invoke(entry.action, poi.id)
+                                    }
                                 }
                             )
                         }
@@ -497,6 +504,40 @@ private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean, m
     }
 }
 
+/**
+ * [KozmosPOIResultCard] as 0.5.0 declared it: its parameters, in its order,
+ * [onAction] last. A call that passes them by position still compiles, and so
+ * does one that passes [onAction] as a trailing lambda: a parameter added
+ * since, travelTimeBandLabels, sits before onAction so that the lambda stays
+ * last, and this overload keeps the positional call. It draws the card the
+ * full one does, with no words of its own for a walk shown as a band.
+ */
+@Composable
+fun KozmosPOIResultCard(
+    poi: KozmosPOIPresentation,
+    result: KozmosPOIResultPresentation,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    featuredLabel: String = "Featured",
+    currentFloorId: String? = null,
+    selectionLabel: String? = null,
+    actionsLabel: String = "Actions for this result",
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) {
+    KozmosPOIResultCard(
+        poi = poi,
+        result = result,
+        onSelect = onSelect,
+        modifier = modifier,
+        featuredLabel = featuredLabel,
+        currentFloorId = currentFloorId,
+        selectionLabel = selectionLabel,
+        actionsLabel = actionsLabel,
+        travelTimeBandLabels = emptyMap(),
+        onAction = onAction
+    )
+}
+
 /** The bands' words, and the only English the card holds for them. */
 internal fun englishTravelTimeBandLabel(band: KozmosTravelTimeBand): String = when (band) {
     KozmosTravelTimeBand.Nearby -> "Nearby"
@@ -517,6 +558,7 @@ internal fun englishTravelTimeBandLabel(band: KozmosTravelTimeBand): String = wh
 @Composable
 private fun KozmosPOIResultActionButton(
     entry: KozmosPOIResultActionPresentation,
+    enabled: Boolean,
     onClick: () -> Unit
 ) {
     val background = if (entry.primary) {
@@ -532,7 +574,7 @@ private fun KozmosPOIResultActionButton(
 
     Surface(
         onClick = onClick,
-        enabled = !entry.disabled,
+        enabled = enabled,
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
         color = background,
         border = if (entry.primary) {

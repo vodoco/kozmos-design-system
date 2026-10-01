@@ -21,7 +21,7 @@
 # repository for each outcome.
 set -u
 
-IOS_INPUTS='^(packages/ios/|packages/tokens/|packages/product-contracts/tests/travel-time-bands\.txt$|scripts/check-ios-poi\.mjs$|scripts/figma-connect-native\.mjs$|\.github/workflows/ci\.yml$|package\.json$|pnpm-lock\.yaml$)'
+IOS_INPUTS='^(packages/ios/|packages/tokens/|packages/product-contracts/tests/travel-time-bands\.txt$|scripts/check-ios-(poi|interactions)\.mjs$|scripts/figma-connect-native\.mjs$|\.github/workflows/ci\.yml$|package\.json$|pnpm-lock\.yaml$)'
 
 base="${BASE:-}"
 output="${GITHUB_OUTPUT:-/dev/stdout}"

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,12 +33,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -103,8 +107,9 @@ enum class KozmosPOIDetailPanelPresentation {
  * button, as on iOS and the web. All three are drawn alike, 44dp squares 6dp
  * apart, outlined in the neutral emotion; a pressed toggle is filled with the
  * theme, and TalkBack hears it as selected. Each toggle is named by its
- * [actionLabels] entry. The other actions are labelled buttons in the row
- * under the header.
+ * [actionLabels] entry. The other actions are labelled buttons in one strip
+ * under the header that scrolls sideways, as on iOS and the web: it never
+ * wraps, whatever the number of actions or the length of their words.
  *
  * A supplied logo shows its artwork once loaded, and the name's initial while
  * it loads or if it fails to, as on iOS; with no logo the header draws none,
@@ -125,7 +130,6 @@ enum class KozmosPOIDetailPanelPresentation {
  * distinguish an h2 from an h3. SwiftUI does support ranks and mirrors the prop
  * as `KozmosPOIDetailPanel.TitleLevel`.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun KozmosPOIDetailPanel(
     poi: KozmosPOIPresentation,
@@ -256,14 +260,25 @@ fun KozmosPOIDetailPanel(
                 }
 
                 if (rowActions.isNotEmpty()) {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
+                    // One strip that scrolls sideways, as on iOS and the web,
+                    // however many actions and however long their words: a
+                    // FlowRow wrapped them onto a second row and grew the
+                    // card. It runs the card's whole width, under the body's
+                    // padding, and scrolls its buttons in from that padding,
+                    // as iOS's and the web's do. Each button keeps its own
+                    // width and its 44dp.
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bleedHorizontally(KozmosDimensions.primitivesLayoutSpacing200)
+                            // A new place's strip starts at its first action,
+                            // as iOS's and the web's do.
+                            .horizontalScroll(remember(poi.id) { ScrollState(0) })
+                            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing200),
                         horizontalArrangement = Arrangement.spacedBy(
                             KozmosDimensions.primitivesLayoutSpacing100
                         ),
-                        verticalArrangement = Arrangement.spacedBy(
-                            KozmosDimensions.primitivesLayoutSpacing100
-                        )
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         rowActions.forEach { action ->
                             val state = actionStates[action]
@@ -350,6 +365,27 @@ fun KozmosPOIDetailPanel(
         }
         }
         }
+    }
+}
+
+/**
+ * Lays the content out [amount] wider on each side than it is given, reaching
+ * into its parent's padding, and reports the width it was given, so nothing
+ * around it moves. The action strip runs under the body's padding this way,
+ * to the card's edges, which clip it.
+ */
+private fun Modifier.bleedHorizontally(amount: Dp): Modifier = layout { measurable, constraints ->
+    val bleed = amount.roundToPx()
+    val placeable = measurable.measure(
+        if (constraints.hasBoundedWidth) {
+            constraints.copy(minWidth = constraints.minWidth + 2 * bleed, maxWidth = constraints.maxWidth + 2 * bleed)
+        } else {
+            constraints
+        }
+    )
+    val width = if (constraints.hasBoundedWidth) placeable.width - 2 * bleed else placeable.width
+    layout(width, placeable.height) {
+        placeable.place(if (constraints.hasBoundedWidth) -bleed else 0, 0)
     }
 }
 
