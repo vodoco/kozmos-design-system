@@ -30,23 +30,25 @@
 **Symptoms:**
 
 ```
-Error: Cannot resolve reference: {color.blue.500}
+Reference Errors:
+Some token references (1) could not be found.
 ```
+
+followed, since the build logs verbosely, by the token at fault:
+`<token> tries to reference {<path>}, which is not defined.`
 
 **Causes & Solutions:**
 
-| Cause                    | Solution                                                               |
-| ------------------------ | ---------------------------------------------------------------------- |
-| Missing token definition | Check that `color.blue.500` exists in `foundations/colors.tokens.json` |
-| Circular reference       | Token A references B which references A — break the cycle              |
-| Typo in reference        | Verify exact path: `{color.blue.500}` not `{colors.blue.500}`          |
-| Wrong file extension     | Use `.tokens.json` not `.json` for DTCG files                          |
+| Cause                                      | Solution                                                                                                                                                                     |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A reference to a token that does not exist | A reference names a token by its collection and path, `{Primitives.Colors.background.200}`: check the path in `packages/tokens/src/tokens-light.json` and `tokens-dark.json` |
+| A collection spelled in the wrong case     | The collections are `Primitives`, `Semantics` and `Components`, capitalised                                                                                                  |
+| A circular reference                       | Token A refers to B, which refers to A: break the cycle                                                                                                                      |
 
 **Debug Command:**
 
 ```bash
-# Build the tokens: Style Dictionary already logs verbosely and names the unresolved reference.
-# There is no token validation script.
+# Build the tokens: the build names the unresolved reference. There is no separate validation script.
 pnpm --filter @kozmos-ds/tokens build
 ```
 
@@ -56,41 +58,35 @@ pnpm --filter @kozmos-ds/tokens build
 
 **Symptoms:**
 
-- Changed token value in source file
-- Component still shows old value
+- Changed a token's value in `packages/tokens/src`
+- A component still shows the old value
 
 **Solutions:**
 
-1. **Rebuild tokens:**
+1. **Rebuild the tokens, then what reads them:**
 
    ```bash
-   pnpm --filter @kozmos-ds/tokens build
+   pnpm tokens:build                           # packages/tokens/dist
+   pnpm --filter "@kozmos-ds/react..." build   # React's stylesheet carries the token variables
+   pnpm tokens:native:copy                     # the copies in packages/ios and packages/android
    ```
 
-2. **Rebuild without Turborepo's cache** (Turborepo has no `clean` command):
+   Workspace packages resolve to each other's `dist`, so nothing sees a change until it is
+   rebuilt; restart Storybook after a rebuild.
+
+2. **Rebuild without Turborepo's cache:**
 
    ```bash
    pnpm build --force
    ```
 
-3. **Check CSS import order:**
+   Not `pnpm clean`: no package defines a `clean` script, so it cleans nothing and deletes the
+   root `node_modules`.
 
-   ```tsx
-   // Correct - tokens first
-   import "@kozmos/tokens/tokens.css";
-   import { Button } from "@kozmos/react";
-
-   // Wrong - tokens after component
-   import { Button } from "@kozmos/react";
-   import "@kozmos/tokens/tokens.css";
-   ```
-
-4. **Verify CSS variable name:**
-   ```css
-   /* Check browser DevTools for actual variable name */
-   --kozmos-color-blue-500  /* correct */
-   --color-blue-500         /* wrong - missing prefix */
-   ```
+3. **Read the variable's real name in DevTools:** Kozmos's variables are named for their
+   collection and path, `--primitives-colors-background-0`, `--semantics-radius-container`,
+   `--components-…`; there is no `--kozmos-` prefix. From `@kozmos-ds/react/style.css` they are
+   defined on the `ThemeProvider`'s element, not on `:root` (§3.1).
 
 ---
 
@@ -98,8 +94,7 @@ pnpm --filter @kozmos-ds/tokens build
 
 **Symptoms:**
 
-- Token values in code don't match Figma
-- Drift detected in CI
+- Token values in code don't match the Figma variables
 
 **Solutions:**
 
@@ -124,37 +119,10 @@ pnpm --filter @kozmos-ds/tokens build
 
 ### 1.4 Wide Gamut Colors Not Working
 
-**Symptoms:**
-
-- P3/oklch colors falling back to sRGB unexpectedly
-- Colors look different across devices
-
-**Solutions:**
-
-1. **Check browser support:**
-
-   ```css
-   /* Ensure fallback is present */
-   .element {
-     color: #22c55e; /* sRGB fallback */
-     color: oklch(70% 0.25 145); /* Wide gamut */
-   }
-   ```
-
-2. **Check display capability:**
-
-   ```javascript
-   // Check if display supports P3
-   if (window.matchMedia("(color-gamut: p3)").matches) {
-     console.log("Display supports P3");
-   }
-   ```
-
-3. **Verify Style Dictionary transform:**
-   ```typescript
-   // style-dictionary.config.ts
-   transforms: ['color/oklch'], // Ensure this transform exists
-   ```
+Kozmos has no wide-gamut colours: every colour token is an sRGB hex or `rgba()` value, on every
+platform, and the token build has no P3 or oklch transform. A colour that looks different on two
+devices is two displays showing the same sRGB value, or two different tokens: compare the value
+DevTools shows with the token in `packages/tokens/src`.
 
 ---
 
@@ -170,23 +138,37 @@ Error: useState only works in Client Components. Add the "use client" directive.
 
 **Solutions:**
 
-1. **Add directive to component:**
+1. **Add the directive to your own file.** Kozmos's build writes `"use client";` as the first line
+   of `dist/kozmos-react.mjs` and of every module under `dist/esm/` (`banner` in
+   `packages/react/vite.config.mts`), so its parts can be imported from a Server Component. The
+   error names a file of yours that calls a hook:
 
    ```tsx
-   // First line of file
    "use client";
 
-   import * as React from "react";
+   import { useState } from "react";
+   import { Button } from "@kozmos-ds/react";
+
+   export function Counter() {
+     const [count, setCount] = useState(0);
+     return (
+       <Button onClick={() => setCount(count + 1)}>
+         Clicked {count} times
+       </Button>
+     );
+   }
    ```
 
-2. **Check the Vite build:** React builds with Vite, not tsup. `packages/react/vite.config.mts`
-   sets `banner: '"use client";'` on both Rollup outputs.
+2. **Verify the build output:**
 
-3. **Verify build output:**
    ```bash
    head -1 packages/react/dist/kozmos-react.mjs
    # Should output: "use client";
    ```
+
+3. **Import, don't require:** the CommonJS bundle (`dist/kozmos-react.umd.cjs`, what `require`
+   resolves to) carries the directive inside its wrapper function, not on its first line, where a
+   bundler looks for it.
 
 ---
 
@@ -207,35 +189,24 @@ Error: useState only works in Client Components. Add the "use client" directive.
    # Prints the median export and the five heaviest, Button, everything and the stylesheet
    ```
 
-2. **Check for unnecessary dependencies:**
+2. **Find what grew:** each export is bundled alone and held to 8 KB, so one over it imports more
+   than it needs; `Button` alone over 2 KB means the ES build no longer tree-shakes.
 
-   ```bash
-   npx depcheck packages/react
-   ```
+3. **Keep the JavaScript free of side effects:** `packages/react/package.json` declares
+   `"sideEffects": ["**/*.css"]`, and the ES build is one file per module, so an app keeps only the
+   modules behind what it imports. A module that does something when imported breaks that.
 
-3. **Verify tree-shaking:**
-
-   ```typescript
-   // package.json
-   {
-     "sideEffects": ["*.css"], // Only CSS has side effects
-   }
-   ```
-
-4. **Split large components:**
-
-   ```tsx
-   // Instead of one large component
-   import { DataTable } from "@kozmos/react";
-
-   // Use code splitting
-   const DataTable = lazy(() => import("@kozmos/react/DataTable"));
-   ```
+4. **There are no per-component entry points:** `@kozmos-ds/react` exports `.`, `./style.css` and
+   `./reset.css`. The per-module build is what keeps an app's cost to what it uses.
 
 5. **Remove duplicate dependencies:**
+
    ```bash
    pnpm dedupe
    ```
+
+A budget moves only with the measurement that justifies it, on Olcay's decision (decision 53 set
+everything at once to 68 KB).
 
 ---
 
@@ -262,13 +233,7 @@ SyntaxError: Cannot use import statement outside a module
 2. **Verify the Vite output:** `packages/react/vite.config.mts` builds an ES output (one file per
    module under `dist/esm/`) and a UMD CommonJS bundle; `vite-plugin-dts` writes the declarations.
 
-3. **Check consumer's bundler config:**
-   ```javascript
-   // webpack.config.js
-   resolve: {
-     conditionNames: ['import', 'require'],
-   }
-   ```
+3. **Prefer `import`:** the CommonJS bundle is one file, which a bundler cannot tree-shake.
 
 ---
 
@@ -277,46 +242,29 @@ SyntaxError: Cannot use import statement outside a module
 **Symptoms:**
 
 ```
-error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type declarations.
+error TS2307: Cannot find module '@kozmos-ds/tokens' or its corresponding type declarations.
 ```
 
 **Solutions:**
 
-1. **Check types field in package.json:**
-
-   ```json
-   {
-     "types": "./dist/index.d.ts",
-     "exports": {
-       ".": {
-         "types": "./dist/index.d.ts"
-       }
-     }
-   }
-   ```
-
-2. **Rebuild declarations:**
+1. **Build the package:** in this repository, workspace packages resolve to each other's `dist`,
+   and a fresh worktree has nothing built. This builds React and the packages it needs:
 
    ```bash
-   pnpm --filter @kozmos-ds/tokens build
+   pnpm --filter "@kozmos-ds/react..." build
    ```
 
-3. **Check tsconfig paths:**
+2. **Know where the declarations are:** each manifest names them. `@kozmos-ds/tokens` has
+   `dist/js/tokens.d.mts` (`import`) and `dist/js/tokens.d.ts` (`require`); `@kozmos-ds/react` has
+   `dist/index.d.mts`, `dist/index.d.cts` and `dist/index.d.ts`.
 
-   ```json
-   // tsconfig.json
-   {
-     "compilerOptions": {
-       "paths": {
-         "@kozmos/*": ["./packages/*/src"]
-       }
-     }
-   }
-   ```
+3. **No `paths` alias is needed:** pnpm links each workspace package into `node_modules`, and no
+   `tsconfig` in the repository maps the package names.
 
 4. **Verify declaration files exist:**
+
    ```bash
-   ls packages/tokens/dist/*.d.ts
+   ls packages/tokens/dist/js/*.d.ts packages/react/dist/*.d.ts
    ```
 
 ---
@@ -327,42 +275,36 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
 
 **Symptoms:**
 
-- Styles show as `var(--kozmos-color-*)` in DevTools
+- A component draws without its colours: in DevTools, its `--primitives-…` variables have no value
 - Components have no styling
 
 **Solutions:**
 
-1. **Import tokens CSS:**
+1. **Import the stylesheet once, and render inside a `ThemeProvider`:**
 
    ```tsx
-   // App.tsx or layout.tsx
-   import "@kozmos/tokens/tokens.css";
-   ```
+   import "@kozmos-ds/react/style.css";
+   import { Button, ThemeProvider } from "@kozmos-ds/react";
 
-2. **Check for CSS isolation:**
-
-   ```tsx
-   // Wrap in kozmos-root if needed
-   <div className="kozmos-root">
-     <Button>Styled</Button>
-   </div>
-   ```
-
-3. **Check for conflicting CSS resets:**
-
-   ```css
-   /* Some resets override custom properties */
-   :root {
-     all: initial; /* This breaks CSS variables! */
+   export function App() {
+     return (
+       <ThemeProvider defaultTheme="system">
+         <Button>Styled</Button>
+       </ThemeProvider>
+     );
    }
    ```
 
-4. **Verify ThemeProvider:**
-   ```tsx
-   <ThemeProvider>
-     <App /> {/* Components must be inside provider */}
-   </ThemeProvider>
-   ```
+2. **The variables live on the provider:** `@kozmos-ds/react/style.css` holds the components'
+   styles and the token variables for both themes, defined on the `ThemeProvider`'s element
+   (`[data-kozmos-root]`) and on its portal container, not on `:root`. A part rendered outside
+   every provider has no values. There is no `kozmos-root` class to add.
+
+3. **A part in a portal of your own** (rendered with `createPortal` into `document.body`) is
+   outside the provider's element too: render it inside a `ThemeProvider` of its own, given
+   `theme={useTheme().resolvedTheme}`. A nested provider inherits the outer one's `tokens` and
+   `dir`, but not its theme. Kozmos's own overlays (Dialog, Drawer, Popover, Menu, Select,
+   Tooltip) already portal into the provider's container.
 
 ---
 
@@ -370,39 +312,46 @@ error TS2307: Cannot find module '@kozmos/tokens' or its corresponding type decl
 
 **Symptoms:**
 
-```
-Warning: Text content did not match. Server: "light" Client: "dark"
-```
+- A user whose system is dark sees the light theme for a moment after the page loads
+
+**What happens:** `ThemeProvider` renders its `defaultSystemTheme` (`"light"` unless you set it)
+on the server and in the first render in the browser, so hydration matches. After it mounts, it
+reads the stored preference (`storageKey`) and the system's theme, and switches.
 
 **Solutions:**
 
-1. **Defer theme detection:**
+1. **Pass the theme you know on the server** as `theme`, from a cookie of your own, and keep it
+   there when it changes:
 
    ```tsx
-   // Use useEffect for client-only theme detection
-   const [mounted, setMounted] = useState(false);
-   useEffect(() => setMounted(true), []);
+   import type { ReactNode } from "react";
+   import { ThemeProvider, type Theme } from "@kozmos-ds/react";
 
-   if (!mounted) return <div>Loading...</div>;
-   ```
-
-2. **Use CSS media query for initial theme:**
-
-   ```css
-   :root {
-     color-scheme: light dark;
+   export function AppTheme({
+     saved,
+     children,
+   }: {
+     saved: Theme;
+     children: ReactNode;
+   }) {
+     return (
+       <ThemeProvider
+         theme={saved}
+         onThemeChange={(next) => {
+           document.cookie = `theme=${next}; path=/; max-age=31536000`;
+         }}
+       >
+         {children}
+       </ThemeProvider>
+     );
    }
-   @media (prefers-color-scheme: dark) {
-     :root {
-       /* dark tokens */
-     }
-   }
    ```
 
-3. **Suppress hydration warning for known cases:**
-   ```tsx
-   <html suppressHydrationWarning>
-   ```
+   With `theme` set, the caller owns the preference: `setTheme` calls `onThemeChange` and stores
+   nothing itself.
+
+2. **Or render a different first frame:** `defaultSystemTheme="dark"` where most of your users'
+   systems are dark.
 
 ---
 
@@ -415,25 +364,18 @@ Warning: Text content did not match. Server: "light" Client: "dark"
 
 **Solutions:**
 
-1. **Use forwardRef:**
+Kozmos's parts forward their ref to the element they render: `Button`'s reaches the native
+`<button>`. A wrapper of your own drops it unless it forwards it too:
 
-   ```tsx
-   const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-     (props, ref) => <button ref={ref} {...props} />,
-   );
-   ```
+```tsx
+import * as React from "react";
+import { Button, type ButtonProps } from "@kozmos-ds/react";
 
-2. **Check component wrapping:**
-
-   ```tsx
-   // Wrong - ref is lost
-   const WrappedButton = (props) => <Button {...props} />;
-
-   // Correct - forward the ref
-   const WrappedButton = React.forwardRef((props, ref) => (
-     <Button ref={ref} {...props} />
-   ));
-   ```
+export const SaveButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (props, ref) => <Button ref={ref} variant="default" {...props} />,
+);
+SaveButton.displayName = "SaveButton";
+```
 
 ---
 
@@ -442,75 +384,76 @@ Warning: Text content did not match. Server: "light" Client: "dark"
 **Symptoms:**
 
 ```
-Error: useTabsContext must be used within <Tabs>
+Error: `TabsTrigger` must be used within `Tabs`
 ```
+
+or `useTheme must be used within a ThemeProvider`.
 
 **Solutions:**
 
-1. **Wrap with provider:**
+1. **Put the part inside its root.** Kozmos's compound parts are separate exports (`TabsTrigger`),
+   not properties of the root (`Tabs.Trigger`), and each needs its root above it:
 
    ```tsx
-   <Tabs>
-     <Tabs.Trigger /> {/* Must be inside Tabs */}
-   </Tabs>
+   import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kozmos-ds/react";
+
+   export function Settings() {
+     return (
+       <Tabs defaultValue="general">
+         <TabsList>
+           <TabsTrigger value="general">General</TabsTrigger>
+           <TabsTrigger value="privacy">Privacy</TabsTrigger>
+         </TabsList>
+         <TabsContent value="general">General settings</TabsContent>
+         <TabsContent value="privacy">Privacy settings</TabsContent>
+       </Tabs>
+     );
+   }
    ```
 
-2. **Check provider hierarchy:**
-
-   ```tsx
-   // Providers must be properly nested
-   <ThemeProvider>
-     <Tabs>
-       <Tabs.Content /> {/* Correct */}
-     </Tabs>
-   </ThemeProvider>
-   ```
-
-3. **Provide default context for testing:**
-   ```tsx
-   // In tests
-   render(
-     <Tabs defaultValue="tab1">
-       <ComponentUnderTest />
-     </Tabs>,
-   );
-   ```
+2. **`useTheme` needs a `ThemeProvider` above it,** in a test as in the app.
 
 ---
 
 ## 4. iOS/SwiftUI Issues
 
-### 4.1 Colors Not Loading from Asset Catalog
+### 4.1 Colors Wrong in Light or Dark Mode
 
 **Symptoms:**
 
-- Colors appear as clear/transparent
-- Console: `Unable to load color named 'color-name'`
+- A colour shows the other theme's value
+- A view stays light while the device is dark, or the reverse
 
 **Solutions:**
 
-1. **Check bundle reference:**
+Kozmos has no asset catalog. `KozmosColors` (`packages/ios/Sources/KozmosColors.swift`, generated
+from the tokens) builds each colour in code from its light and dark values, and SwiftUI picks one
+for the colour scheme the view draws in.
+
+1. **Use the token, not a literal:** `KozmosColors.primitivesColorsForeground0`, and sizes from
+   `KozmosDimensions`.
+
+2. **Know what `KozmosThemeProvider` sets:** it applies `.preferredColorScheme` from the
+   `selectedTheme` it keeps in `@AppStorage` (`"light"`, `"dark"` or `"system"`). That preference
+   applies to the whole presentation it is in, such as the window or a sheet, not only to the
+   provider's content. For one view in another scheme, set the environment instead:
 
    ```swift
-   // Use Bundle.module for SPM packages
-   Color("interactive-primary", bundle: .module)
+   import SwiftUI
+   import Kozmos
+
+   struct NightBadge: View {
+       var body: some View {
+           Text("Night")
+               .foregroundStyle(KozmosColors.primitivesColorsForeground0)
+               .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
+               .environment(\.colorScheme, .dark)
+       }
+   }
    ```
 
-2. **Verify asset catalog exists:**
-
-   ```
-   Sources/KozmosUI/Resources/Colors.xcassets/
-   └── interactive-primary.colorset/
-       └── Contents.json
-   ```
-
-3. **Check Package.swift resources:**
-   ```swift
-   .target(
-     name: "KozmosUI",
-     resources: [.process("Resources")]
-   )
-   ```
+3. **After a token change,** run `pnpm tokens:build` and `pnpm tokens:native:copy`;
+   `pnpm tokens:copies:check` fails while the package's copy differs from the build.
 
 ---
 
@@ -523,36 +466,25 @@ Error: useTabsContext must be used within <Tabs>
 
 **Solutions:**
 
-1. **Check preview provider:**
+1. **Preview from your app:** the package has no previews of its own, and it needs iOS 16,
+   macOS 13 or Mac Catalyst 16:
 
    ```swift
-   #if DEBUG
-   struct Button_Previews: PreviewProvider {
-     static var previews: some View {
-       KozmosButton("Preview") {}
-     }
+   import SwiftUI
+   import Kozmos
+
+   struct SaveButton_Previews: PreviewProvider {
+       static var previews: some View {
+           KozmosThemeProvider {
+               KozmosButton("Save") {}
+           }
+           .previewLayout(.sizeThatFits)
+       }
    }
-   #endif
    ```
 
 2. **Clean build folder:**
    - Xcode → Product → Clean Build Folder (Cmd+Shift+K)
-
-3. **Check iOS version:**
-
-   ```swift
-   @available(iOS 16.0, *)
-   struct KozmosButton: View { ... }
-   ```
-
-4. **Add preview-specific environment:**
-   ```swift
-   static var previews: some View {
-     KozmosButton("Test") {}
-       .environment(\.colorScheme, .light)
-       .previewLayout(.sizeThatFits)
-   }
-   ```
 
 ---
 
@@ -565,25 +497,27 @@ Error: useTabsContext must be used within <Tabs>
 
 **Solutions:**
 
-1. **Use dynamic type styles:**
+Kozmos's text uses `KozmosTypography`, the platform's UI font at a Dynamic Type style
+(`.system(style)`), so it scales with the reader's text size. Text and sizes of your own should
+scale too:
 
-   ```swift
-   Text("Hello")
-     .font(.body) // Scales with Dynamic Type
+```swift
+import SwiftUI
+import Kozmos
 
-   // Not:
-   Text("Hello")
-     .font(.system(size: 16)) // Fixed size
-   ```
+struct SavedLabel: View {
+    @ScaledMetric private var iconSize: CGFloat = 24
 
-2. **Use scaled metric:**
-
-   ```swift
-   @ScaledMetric var iconSize: CGFloat = 24
-
-   Image(systemName: "star")
-     .frame(width: iconSize, height: iconSize)
-   ```
+    var body: some View {
+        HStack {
+            Image(systemName: "star")
+                .frame(width: iconSize, height: iconSize)
+            Text("Saved")
+                .font(KozmosTypography.body) // scales; .system(size: 16) would not
+        }
+    }
+}
+```
 
 ---
 
@@ -593,28 +527,35 @@ Error: useTabsContext must be used within <Tabs>
 
 **Symptoms:**
 
-- Components have default Material colors
-- Custom tokens not visible
+- Components show the light palette while the device is dark, or the reverse
+- A theme switch changes nothing
 
 **Solutions:**
 
-1. **Wrap with KozmosTheme:**
+1. **Wrap the content in `KozmosThemeProvider`** (`com.kozmos.components.themeprovider`); there is
+   no `KozmosTheme` composable. It provides `LocalKozmosUseDarkTokens` from its
+   `KozmosThemeManager`'s mode (`SYSTEM` until set) and a Material 3 theme:
 
    ```kotlin
-   KozmosTheme {
-     // Components must be inside theme
-     KozmosButton("Test") {}
+   import androidx.compose.material3.Text
+   import androidx.compose.runtime.Composable
+   import com.kozmos.components.button.KozmosButton
+   import com.kozmos.components.themeprovider.KozmosThemeProvider
+
+   @Composable
+   fun SaveScreen() {
+       KozmosThemeProvider {
+           KozmosButton(onClick = {}) { Text("Save") }
+       }
    }
    ```
 
-2. **Check CompositionLocalProvider:**
-   ```kotlin
-   CompositionLocalProvider(
-     LocalKozmosBrandConfig provides brandConfig
-   ) {
-     Content()
-   }
-   ```
+   Inside it, `LocalThemeManager.current.setThemeMode(KozmosThemeMode.DARK)` switches the theme.
+
+2. **Read `KozmosThemeTokens`:** it follows `LocalKozmosUseDarkTokens`, or the system's theme
+   without a provider. `KozmosColors` and `KozmosColorsDark` hold one theme each, so a composable
+   that reads either stays in that theme; `pnpm tokens:theme:check` holds the components to
+   `KozmosThemeTokens`.
 
 ---
 
@@ -623,30 +564,31 @@ Error: useTabsContext must be used within <Tabs>
 **Symptoms:**
 
 ```
-java.lang.IllegalStateException: CompositionLocal not present
+java.lang.IllegalStateException: No KozmosThemeManager provided
 ```
 
 **Solutions:**
 
-1. **Provide required CompositionLocals:**
+Something read `LocalThemeManager.current` outside a `KozmosThemeProvider`. Kozmos's own
+composables never read it, and render without a provider in the system's theme; the package has no
+previews of its own, and its composables are drawn by the Paparazzi tests. Wrap your preview in the
+provider:
 
-   ```kotlin
-   @Preview
-   @Composable
-   fun ButtonPreview() {
-     KozmosTheme {
-       KozmosButton("Preview") {}
-     }
-   }
-   ```
+```kotlin
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.themeprovider.KozmosThemeProvider
 
-2. **Use preview-safe defaults:**
-   ```kotlin
-   @Composable
-   fun MyComponent(
-     brandConfig: KozmosBrandConfig = KozmosBrandConfig.Default
-   ) { ... }
-   ```
+@Preview
+@Composable
+fun SaveButtonPreview() {
+    KozmosThemeProvider {
+        KozmosButton(onClick = {}) { Text("Save") }
+    }
+}
+```
 
 ---
 
@@ -659,184 +601,27 @@ java.lang.IllegalStateException: CompositionLocal not present
 
 **Solutions:**
 
-1. **Add ProGuard rules:**
+The library (namespace `com.kozmos`) is not minified, and the rules it passes an app,
+`packages/android/consumer-rules.pro`, hold only a comment: an app's R8 treats Kozmos's classes as
+it treats its own. If R8 strips one Kozmos needs, keep that class in the app's rules, and report
+it, since the rule belongs in `consumer-rules.pro`:
 
-   ```proguard
-   # kozmos-ui/proguard-rules.pro
-   -keep class com.pointr.kozmos.** { *; }
-   -keepclassmembers class * {
-       @androidx.compose.runtime.Composable <methods>;
-   }
-   ```
-
-2. **Check consumer ProGuard rules:**
-   ```proguard
-   # consumer-rules.pro (automatically included)
-   -keep class com.pointr.kozmos.tokens.** { *; }
-   ```
+```proguard
+# The app's proguard-rules.pro: the package R8 reported
+-keep class com.kozmos.components.button.** { *; }
+```
 
 ---
 
 ## 6. React Native Issues
 
-### 6.1 Metro Bundler Fails
-
-**Symptoms:**
-
-```
-error: Error: Unable to resolve module @kozmos/react-native
-```
-
-**Solutions:**
-
-1. **Clear Metro cache:**
-
-   ```bash
-   npx react-native start --reset-cache
-   ```
-
-2. **Check metro.config.js:**
-
-   ```javascript
-   module.exports = {
-     resolver: {
-       nodeModulesPaths: [path.resolve(__dirname, "node_modules")],
-     },
-   };
-   ```
-
-3. **Reinstall pods (iOS):**
-   ```bash
-   cd ios && pod install --repo-update
-   ```
-
----
-
-### 6.2 Gesture Handler Not Working
-
-**Symptoms:**
-
-- Buttons don't respond to touch
-- Swipe gestures fail
-
-**Solutions:**
-
-1. **Wrap app with GestureHandlerRootView:**
-
-   ```tsx
-   import { GestureHandlerRootView } from "react-native-gesture-handler";
-
-   export default function App() {
-     return (
-       <GestureHandlerRootView style={{ flex: 1 }}>
-         <Navigation />
-       </GestureHandlerRootView>
-     );
-   }
-   ```
-
-2. **Import at entry point:**
-   ```tsx
-   // index.js - FIRST LINE
-   import "react-native-gesture-handler";
-   ```
-
----
-
-### 6.3 Reanimated Errors
-
-**Symptoms:**
-
-```
-Reanimated 2 failed to create a worklet
-```
-
-**Solutions:**
-
-1. **Add Babel plugin:**
-
-   ```javascript
-   // babel.config.js
-   module.exports = {
-     plugins: ["react-native-reanimated/plugin"],
-   };
-   ```
-
-2. **Clear caches:**
-   ```bash
-   npx react-native start --reset-cache
-   cd android && ./gradlew clean
-   cd ios && pod install
-   ```
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
 ## 7. Vue/Web Components Issues
 
-### 7.1 Custom Elements Not Defined
-
-**Symptoms:**
-
-```
-Uncaught TypeError: Illegal constructor
-```
-
-or
-
-```
-[Vue warn]: Failed to resolve component: kozmos-button
-```
-
-**Solutions:**
-
-1. **Register custom elements:**
-
-   ```typescript
-   // main.ts
-   import "@kozmos/vue/define"; // Auto-registers all elements
-   ```
-
-2. **Configure Vue to recognize custom elements:**
-   ```typescript
-   // vite.config.ts
-   export default defineConfig({
-     plugins: [
-       vue({
-         template: {
-           compilerOptions: {
-             isCustomElement: (tag) => tag.startsWith("kozmos-"),
-           },
-         },
-       }),
-     ],
-   });
-   ```
-
----
-
-### 7.2 v-model Not Working
-
-**Symptoms:**
-
-- Two-way binding doesn't update
-- Input value not syncing
-
-**Solutions:**
-
-1. **Use Vue wrapper, not raw Web Component:**
-
-   ```vue
-   <!-- Use Vue wrapper -->
-   <KozmosInput v-model="value" />
-
-   <!-- Raw Web Component doesn't support v-model -->
-   <kozmos-input :value="value" />
-   ```
-
-2. **Handle events manually for Web Components:**
-   ```vue
-   <kozmos-input :value="value" @input="value = $event.target.value" />
-   ```
+Vue waits: `@kozmos-ds/vue` is a private harness that mounts the React components in Vue, not a package to install, and there are no Lit Web Components. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
@@ -846,27 +631,20 @@ or
 
 **Symptoms:**
 
-```
-Error: Could not find Figma file with key XXXXX
-```
+- A Code Connect publish cannot find the Figma file or the component
 
 **Solutions:**
 
-1. **Check URL format:**
+1. **Name the component by its full URL:** each `figma.connect` call takes the Figma component's
+   URL, with the file key and the node id. Button's, in
+   `packages/react/src/components/Button/Button.figma.tsx`, is
+   `https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=77-1055`; a file key alone names no
+   component.
 
-   ```typescript
-   // Correct - full URL with node-id
-   const FIGMA_URL = "https://www.figma.com/design/XXXXX/Name?node-id=123:456";
+2. **Parse first:** `pnpm figma:parse:linked` checks the files locally and needs no token.
 
-   // Wrong - file key only
-   const FIGMA_URL = "XXXXX";
-   ```
-
-2. **Verify API token permissions:**
-   - Token needs "Read-only" access to the file
-
-3. **Check file access:**
-   - You must have viewer access to the Figma file
+3. **Publishing needs the token:** a publish, dry or real, reads `FIGMA_ACCESS_TOKEN` from `.env`,
+   and the token must be allowed to write Code Connect to the Kozmos file.
 
 ---
 
@@ -879,27 +657,28 @@ Error: Could not find Figma file with key XXXXX
 
 **Solutions:**
 
-1. **Check Figma property names:**
+1. **Match Figma's property names and values exactly** (case-sensitive), mapping each Figma value
+   to the prop's value, as `Button.figma.tsx` does:
 
-   ```typescript
-   // Figma property must match exactly (case-sensitive)
-   variant: figma.enum('Variant', { ... }) // "Variant" in Figma
+   ```tsx
+   // kozmos-skills: template — the props object inside figma.connect in Button.figma.tsx
+   props: {
+     variant: figma.enum("Variant", {
+       Default: "default",
+       Secondary: "secondary",
+       Destructive: "destructive",
+       Outline: "outline",
+       Ghost: "ghost",
+       Link: "link",
+       Glass: "glass",
+     }),
+     disabled: figma.enum("State", { Default: false, Disabled: true, Loading: false }),
+     isLoading: figma.enum("State", { Default: false, Disabled: false, Loading: true }),
+   },
    ```
 
-2. **Verify enum mappings:**
-
-   ```typescript
-   variant: figma.enum('Variant', {
-     'Primary': 'primary',    // Figma value : Code value
-     'Secondary': 'secondary',
-   }),
-   ```
-
-3. **Check boolean property values:**
-   ```typescript
-   // Figma uses various truthy values
-   disabled: figma.boolean('Disabled'), // Handles "Yes", "True", "On"
-   ```
+2. **One Figma property can drive two props:** Button's `State` sets both `disabled` and
+   `isLoading`, as above.
 
 ---
 
@@ -937,35 +716,38 @@ Error: Failed to publish Code Connect
 
 - Storybook sidebar is empty
 - "No stories found" message
+- A story shows an error after a package was rebuilt
 
 **Solutions:**
 
-1. **Check story file pattern:**
+1. **Check the story's location:** `apps/docs/.storybook/main.ts` reads
+   `packages/react/src/**/*.stories.@(js|jsx|mjs|ts|tsx)` and `packages/react/src/**/*.mdx`, and
+   `apps/docs`'s own `src/` and `stories/`.
 
-   ```typescript
-   // .storybook/main.ts
-   stories: ['../src/**/*.stories.@(ts|tsx)'],
-   ```
-
-2. **Verify story export:**
+2. **Verify the story's exports:** a default export, the meta, and one named export per story:
 
    ```tsx
-   // Correct
-   export default {
+   import type { Meta, StoryObj } from "@storybook/react";
+   import { Button } from "@kozmos-ds/react";
+
+   const meta = {
      title: "Components/Button",
      component: Button,
    } satisfies Meta<typeof Button>;
+   export default meta;
 
-   export const Default: Story = {};
+   type Story = StoryObj<typeof meta>;
 
-   // Wrong - no default export
-   export const Default: Story = {};
+   export const Default: Story = { args: { children: "Button" } };
    ```
 
-3. **Check for syntax errors:**
-   ```bash
-   pnpm tsc --noEmit
-   ```
+3. **Read the error where Storybook runs:** Vite strips a story's types without checking them, and
+   `packages/react`'s `typecheck` leaves the stories out (its `tsconfig.json`), so a story's
+   mistakes surface in the browser console and in the terminal running Storybook.
+
+4. **`does not provide an export named …` after a rebuild:** Storybook pre-bundles workspace
+   packages into `apps/docs/node_modules/.cache/storybook/`, and a rebuilt `dist` does not refresh
+   that copy. Stop Storybook, move the folder aside, and start it again.
 
 ---
 
@@ -978,23 +760,27 @@ Error: Failed to publish Code Connect
 
 **Solutions:**
 
-1. **Define argTypes:**
+1. **Set `component` in the meta:** Storybook reads a component's props from its TypeScript types
+   (`react-docgen-typescript`, set in `apps/docs/.storybook/main.ts`), so a union prop gets a
+   select control with its values, and needs no `argTypes`.
+
+2. **Name only real values in `argTypes`:**
 
    ```tsx
+   import type { Meta } from "@storybook/react";
+   import { Button } from "@kozmos-ds/react";
+
    const meta: Meta<typeof Button> = {
+     title: "Components/Button",
+     component: Button,
      argTypes: {
        variant: {
          control: "select",
-         options: ["primary", "secondary"],
+         options: ["default", "secondary", "outline", "ghost"],
        },
      },
    };
-   ```
-
-2. **Check component props export:**
-   ```tsx
-   // Props interface must be exported
-   export interface ButtonProps { ... }
+   export default meta;
    ```
 
 ---
@@ -1039,24 +825,30 @@ Expected 0 violations but found 2:
 
 **Solutions:**
 
-1. **Color contrast:**
+1. **Color contrast:** `pnpm tokens:contrast:check` holds Kozmos's colour pairs to their contrast
+   in light and dark (`packages/tokens/src/contrast-contract.json`, and every button emotion and
+   state). A violation on a Kozmos part in its own colours is a Kozmos finding; on colours of your
+   own, use a pair of roles the contract holds.
+
+2. **Button name:** an icon-only button is an `IconButton` with a label:
 
    ```tsx
-   // Check token values meet 4.5:1 ratio
-   // Use https://webaim.org/resources/contrastchecker/
-   ```
+   import { IconButton } from "@kozmos-ds/react";
+   import { XClose } from "@kozmos-ds/icons";
 
-2. **Button name:**
-
-   ```tsx
-   // Add accessible name
-   <Button aria-label="Close dialog">
-     <Icon name="close" />
-   </Button>
+   export function CloseButton({ onClose }: { onClose: () => void }) {
+     return (
+       <IconButton aria-label="Close dialog" onClick={onClose}>
+         <XClose aria-hidden="true" />
+       </IconButton>
+     );
+   }
    ```
 
 3. **Disable specific rules in tests (if intentional):**
+
    ```tsx
+   // kozmos-skills: template — inside an async test, where `container` is what render returned
    const results = await axe(container, {
      rules: {
        "color-contrast": { enabled: false },
@@ -1076,33 +868,28 @@ Unable to find an element with the role "button"
 
 **Solutions:**
 
-1. **Use correct role:**
+1. **Query by role and name,** as a user finds it:
 
    ```tsx
-   // For <button>
-   screen.getByRole("button");
+   import "@testing-library/jest-dom/vitest";
+   import { render, screen, waitFor } from "@testing-library/react";
+   import { expect, it } from "vitest";
+   import { Button } from "@kozmos-ds/react";
 
-   // For <a>
-   screen.getByRole("link");
-
-   // For custom components
-   screen.getByTestId("custom-component");
-   ```
-
-2. **Wait for async rendering:**
-
-   ```tsx
-   await waitFor(() => {
-     expect(screen.getByRole("button")).toBeInTheDocument();
+   it("finds the button by its role and name", async () => {
+     render(<Button>Save</Button>);
+     await waitFor(() => {
+       expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+     });
    });
    ```
 
-3. **Check ARIA roles:**
-   ```tsx
-   <div role="button" tabIndex={0}>
-     Clickable div
-   </div>
-   ```
+2. **Portalled parts are in `document.body`:** a Dialog's, Popover's, Menu's or Tooltip's content
+   renders into the `ThemeProvider`'s portal container, outside the render's `container`;
+   `screen` queries find it, since they search the whole body.
+
+3. **Open it first:** content that appears on a pointer or key event is absent until the event;
+   fire it, or render the part open (`<Tooltip open>`), as `Tooltip.test.tsx` does.
 
 ---
 
@@ -1148,8 +935,8 @@ Error: The operation was canceled.
    (`cancel-in-progress`), and each cancelled job says exactly this. The newer run is the one that
    counts.
 2. **Know what `iOS Build` runs:** the only macOS job (`macos-latest`) builds and tests
-   `packages/ios` with SwiftPM (`swift build`, `swift test`) and renders the POI tests on a
-   simulator. There is no CocoaPods to cache.
+   `packages/ios` with SwiftPM (`swift build`, `swift test`), then runs the whole test target on
+   the pinned simulator (`node scripts/check-ios-poi.mjs`). There is no CocoaPods to cache.
 3. **A deliberate skip passes:** on a pull request that touches no iOS input, the `Changes` job
    skips `iOS Build`, and the skipped check counts as passing. When it cannot work out which paths
    changed (a base git cannot diff against), `iOS Build` runs instead, with a warning saying why;
@@ -1211,31 +998,29 @@ npm view @kozmos-ds/react versions
 
 **Solutions:**
 
-1. **Use shared tokens:**
+1. **Use the same token on each platform:**
 
    ```swift
-   // iOS
-   .padding(.horizontal, KozmosTokens.space400)
+   // iOS: points
+   .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing400)
    ```
 
    ```kotlin
-   // Android
-   Modifier.padding(horizontal = KozmosTokens.space400.dp)
+   // Android: already dp
+   Modifier.padding(horizontal = KozmosDimensions.primitivesLayoutSpacing400)
    ```
 
-   ```tsx
-   // React
-   padding: "var(--kozmos-space-400)";
+   ```css
+   /* Web: the spacing tokens are unitless numbers, shared with the native platforms */
+   .app-panel {
+     padding-inline: calc(var(--primitives-layout-spacing-400) * 1px);
+   }
    ```
 
-2. **Document intentional differences:**
-   ```markdown
-   | Platform | Touch target | Reason       |
-   | -------- | ------------ | ------------ |
-   | Web      | 44x44px      | WCAG minimum |
-   | iOS      | 44x44pt      | Apple HIG    |
-   | Android  | 48x48dp      | Material 3   |
-   ```
+2. **Run the parity checks:** `pnpm tokens:theme:check`, `tokens:radius:check`,
+   `tokens:border:check`, `tokens:typography:check`, `tokens:elevation:check`,
+   `tokens:glass:check` and `tokens:motion:check` compare the platforms' tokens, and
+   `pnpm components:variant:check` the variants each platform declares.
 
 ---
 
@@ -1248,22 +1033,32 @@ npm view @kozmos-ds/react versions
 
 **Solutions:**
 
-1. **Use same easing values:**
+The motion tokens are three durations (quick 150 ms, standard 280 ms, deliberate 460 ms) and two
+curves (standard `cubic-bezier(0.4, 0, 0.2, 1)` and emphasised), and each platform counts time its
+own way:
 
-   ```typescript
-   // Ensure all platforms use same curve
-   // cubic-bezier(0.4, 0, 0.2, 1)
-   ```
+```css
+/* Web */
+.app-drawer {
+  transition: transform var(--semantics-motion-duration-standard)
+    var(--semantics-motion-easing-standard);
+}
+```
 
-2. **Check platform animation systems:**
-   ```swift
-   // iOS - animation() takes seconds
-   .animation(.easeOut(duration: 0.25))
-   ```
-   ```kotlin
-   // Android - tween takes milliseconds
-   tween(durationMillis = 250)
-   ```
+```swift
+// iOS: seconds; KozmosMotion.standard is the standard curve over 0.28 s
+.animation(KozmosMotion.standard, value: isOpen)
+```
+
+```kotlin
+// Android: milliseconds
+tween(
+    durationMillis = KozmosMotion.semanticsMotionDurationStandard,
+    easing = KozmosMotion.semanticsMotionEasingStandard,
+)
+```
+
+`pnpm tokens:motion:check` holds every platform's numbers to the token files.
 
 ---
 
@@ -1273,24 +1068,32 @@ npm view @kozmos-ds/react versions
 
 **Symptoms:**
 
-- First paint takes > 100ms
+- First paint is slow
 - Component flashes unstyled
 
 **Solutions:**
 
-1. **Preload critical CSS:**
+1. **Load the stylesheet with the page:** Kozmos's CSS is one file, `@kozmos-ds/react/style.css`,
+   held to 30 KB gzipped. Import it from your entry, so your bundler links it in the document's
+   head rather than after the first render.
 
-   ```html
-   <link rel="preload" href="/tokens.css" as="style" />
-   ```
+2. **Lazy-load a screen of your own, not a Kozmos part:** `@kozmos-ds/react` has no per-component
+   entry points, and its per-module build already keeps only what you import. Make the `lazy` once,
+   at module scope: one made during a render is remade on every retry and never settles.
 
-2. **Inline critical tokens in server-rendered HTML:**
-   - Inject critical CSS tokens in the document head during SSR
-   - Use a style tag with the critical token values
-
-3. **Lazy load non-critical components:**
    ```tsx
-   const DataTable = lazy(() => import("@kozmos/react/DataTable"));
+   // kozmos-skills: template — `./MapScreen` is a module of the app's own
+   import { lazy, Suspense } from "react";
+
+   const MapScreen = lazy(() => import("./MapScreen"));
+
+   export function App() {
+     return (
+       <Suspense fallback={null}>
+         <MapScreen />
+       </Suspense>
+     );
+   }
    ```
 
 ---
@@ -1304,26 +1107,40 @@ npm view @kozmos-ds/react versions
 
 **Solutions:**
 
-1. **Memoize expensive components:**
+1. **Memoize an expensive part of your own, and the handlers it takes:**
 
    ```tsx
-   const MemoizedTable = React.memo(DataTable);
+   import { memo, useCallback, useState } from "react";
+   import { Button } from "@kozmos-ds/react";
+
+   const Results = memo(function Results({
+     onSelect,
+   }: {
+     onSelect: (id: string) => void;
+   }) {
+     return <Button onClick={() => onSelect("first")}>First result</Button>;
+   });
+
+   export function Search() {
+     const [selected, setSelected] = useState<string | null>(null);
+     const onSelect = useCallback((id: string) => setSelected(id), []);
+     return (
+       <>
+         <p>{selected ?? "Nothing selected"}</p>
+         <Results onSelect={onSelect} />
+       </>
+     );
+   }
    ```
 
-2. **Use useCallback for handlers:**
+2. **Animate with CSS and the motion tokens,** on your own elements; Kozmos's class names are not
+   its API:
 
-   ```tsx
-   const handleClick = useCallback(() => {
-     // Handler logic
-   }, [dependencies]);
-   ```
-
-3. **Move animations to CSS:**
    ```css
-   /* Prefer CSS animations over JS */
-   .kozmos-btn:hover {
+   .app-card:hover {
      transform: scale(1.02);
-     transition: transform var(--kozmos-motion-duration-fast);
+     transition: transform var(--semantics-motion-duration-quick)
+       var(--semantics-motion-easing-standard);
    }
    ```
 
@@ -1340,16 +1157,20 @@ npm view @kozmos-ds/react versions
 
 **Solutions:**
 
-1. **Add focus-visible styles:**
+1. **Kozmos's controls draw their own ring** on `:focus-visible`. Button's is 2 px of the `ring`
+   role, `--primitives-colors-theme-600`, offset by 2 px and drawn as a box shadow, so a rule of
+   yours that sets `box-shadow` on it replaces the ring.
+
+2. **Give your own controls the same ring:**
 
    ```css
-   .kozmos-btn:focus-visible {
-     outline: 2px solid var(--kozmos-color-interactive-primary);
+   .app-link:focus-visible {
+     outline: 2px solid var(--primitives-colors-theme-600);
      outline-offset: 2px;
    }
    ```
 
-2. **Don't remove outlines globally:**
+3. **Don't remove outlines globally:**
 
    ```css
    /* Never do this */
@@ -1374,28 +1195,19 @@ npm view @kozmos-ds/react versions
 
 **Solutions:**
 
-1. **Add ARIA labels:**
+1. **Label an icon-only control:** `IconButton` takes `aria-label` (§10.1).
+
+2. **Use semantic elements, and live regions for updates:**
 
    ```tsx
-   <button aria-label="Close dialog">X</button>
-   ```
-
-2. **Use semantic elements:**
-
-   ```tsx
-   // Semantic
-   <button>Submit</button>
-
-   // Non-semantic (avoid)
-   <div onClick={handleClick}>Submit</div>
-   ```
-
-3. **Add live regions for updates:**
-   ```tsx
+   // kozmos-skills: template — fragments of a render; `save` and `message` are the app's
+   <button onClick={save}>Submit</button>         // not <div onClick={save}>
    <div role="status" aria-live="polite">
      {message}
    </div>
    ```
+
+   `MapStatusPill` is such a region already: a polite `status` that says the product's words.
 
 ---
 
@@ -1439,23 +1251,25 @@ npm view @kozmos-ds/react versions
 
 ## Quick Reference: Error Messages
 
-| Error Message               | Likely Cause               | Solution Reference |
-| --------------------------- | -------------------------- | ------------------ |
-| `Cannot resolve reference`  | Token not found            | Section 1.1        |
-| `use client directive`      | Missing "use client"       | Section 2.1        |
-| `bundle size exceeds`       | Large bundle               | Section 2.2        |
-| `require() of ES Module`    | CJS/ESM conflict           | Section 2.3        |
-| `Hydration mismatch`        | Server/client diff         | Section 3.2        |
-| `Unable to load color`      | Missing asset              | Section 4.1        |
-| `ClassNotFoundException`    | ProGuard stripping         | Section 5.3        |
-| `Unable to resolve module`  | Metro issue                | Section 6.1        |
-| `Illegal constructor`       | Custom element not defined | Section 7.1        |
-| `Could not find Figma file` | Wrong URL/permissions      | Section 8.1        |
-| `No stories found`          | Story pattern issue        | Section 9.1        |
-| `color-contrast violation`  | Accessibility              | Section 10.1       |
-| `403 Forbidden npm`         | Token/access issue         | Section 11.2       |
+| Error Message                                   | Likely Cause                                      | Solution Reference |
+| ----------------------------------------------- | ------------------------------------------------- | ------------------ |
+| `Some token references (1) could not be found`  | A reference to a token that does not exist        | Section 1.1        |
+| `Add the "use client" directive`                | A hook in a file of your own without it           | Section 2.1        |
+| `everything costs … KB, over 68 KB`             | A bundle budget exceeded                          | Section 2.2        |
+| `require() of ES Module`                        | CJS/ESM conflict                                  | Section 2.3        |
+| `Cannot find module '@kozmos-ds/…'`             | The package is not built                          | Section 2.4        |
+| `Hydration mismatch`, or a flash of light theme | The first render uses `defaultSystemTheme`        | Section 3.2        |
+| `` `TabsTrigger` must be used within `Tabs` ``  | A part outside its root                           | Section 3.4        |
+| `useTheme must be used within a ThemeProvider`  | No provider above the hook                        | Section 3.4        |
+| `No KozmosThemeManager provided`                | `LocalThemeManager` read outside the provider     | Section 5.2        |
+| `ClassNotFoundException`                        | R8 stripped a class                               | Section 5.3        |
+| Code Connect cannot find the file               | A file key without a node id, or the token        | Section 8.1        |
+| `No stories found`                              | The story is outside Storybook's globs            | Section 9.1        |
+| `does not provide an export named …`            | Storybook's pre-bundled copy of a rebuilt package | Section 9.1        |
+| `color-contrast` violation                      | A colour pair the contrast contract does not hold | Section 10.1       |
+| `403 Forbidden` from npm                        | Publishing a version npm already has              | Section 11.2       |
 
 ---
 
-_Last updated: 2025-02-07_
+_Last updated: 2026-09-29_
 _Maintainer: Kozmos Design System Team_

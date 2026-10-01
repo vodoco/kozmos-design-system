@@ -58,6 +58,12 @@ component's docs, stories and controls, and its code on every platform (decision
 - [`project-scope.md`](project-scope.md) — the original specification, written before the code.
   Where the two disagree, the code is right.
 
+## Proposals: not built
+
+- [`proposals/`](proposals/README.md) — designs written before, or instead of, the thing they
+  describe: an MCP server, customer themes, the platforms never built, and the plans the AI
+  knowledge base once presented as fact. Read one to learn what was intended; nothing in it exists.
+
 ## Data the scripts read
 
 Written by a script: regenerate rather than edit.

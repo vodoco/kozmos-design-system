@@ -2,7 +2,7 @@
 
 # Menu
 
-Menu is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A dropdown menu composition for commands, checkbox or radio choices, groups and submenus. Compose its trigger and content parts; use Select for a form value and Popover for arbitrary supporting content.
 
 - **Import:** `import { Menu, MenuCheckboxItem, MenuContent, MenuGroup, MenuItem, MenuLabel, MenuPortal, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuShortcut, MenuSub, MenuSubContent, MenuSubTrigger, MenuTrigger } from "@kozmos-ds/react";`
 - **Group:** Navigation

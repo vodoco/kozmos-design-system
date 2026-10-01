@@ -2,7 +2,7 @@
 
 # Icon
 
-Icon is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Renders a Pointr icon supplied as a component or registry name with standard size and colour variants. Icons are decorative by default; provide an accessible label when the icon itself conveys information.
 
 - **Import:** `import { Icon } from "@kozmos-ds/react";`
 - **Group:** Foundations

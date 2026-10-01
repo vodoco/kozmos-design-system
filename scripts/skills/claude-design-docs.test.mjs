@@ -25,6 +25,27 @@ const root = path.resolve(
 );
 const api = readPublishedApi(root);
 
+test("component pages do not retain the generic generated description placeholder", () => {
+  const directory = path.join(root, "packages/react/src/components");
+  const placeholders = [];
+  for (const name of fs.readdirSync(directory)) {
+    const file = path.join(directory, name, `${name}.mdx`);
+    if (!fs.existsSync(file)) continue;
+    if (
+      /Displays the .+ interface topology natively\./.test(
+        fs.readFileSync(file, "utf8"),
+      )
+    ) {
+      placeholders.push(name);
+    }
+  }
+  assert.deepEqual(
+    placeholders,
+    [],
+    "Describe the component's actual purpose instead of boilerplate",
+  );
+});
+
 test("the API changelog directs 0.x upgrades to release migration notes", () => {
   const text = fs.readFileSync(
     path.join(root, ".ai-skills/api-changelog.md"),

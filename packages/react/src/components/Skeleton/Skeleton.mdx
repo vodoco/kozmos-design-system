@@ -7,7 +7,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # Skeleton
 
-Displays the Skeleton interface topology natively.
+A loading placeholder shaped as a text line, block or circle, with configurable dimensions.
+Match its size to the content it replaces and provide loading announcements in the surrounding UI.
 
 <Canvas>
   <Story of={SkeletonStories.Default} />
@@ -46,15 +47,15 @@ import Kozmos
 // A loading row needs no frame of its own: a line is text-high and fills
 // its row, and a circle is an avatar's 40.
 struct LoadingRow: View {
-    var body: some View {
-        HStack(spacing: 12) {
-            KozmosSkeleton(shape: .circle)
-            VStack(alignment: .leading, spacing: 8) {
-                KozmosSkeleton(shape: .line)
-                KozmosSkeleton(shape: .line, width: 120)
-            }
-        }
-    }
+var body: some View {
+HStack(spacing: 12) {
+KozmosSkeleton(shape: .circle)
+VStack(alignment: .leading, spacing: 8) {
+KozmosSkeleton(shape: .line)
+KozmosSkeleton(shape: .line, width: 120)
+}
+}
+}
 }
 
 // A block is whatever it replaces, so it takes the size it is given.
@@ -78,21 +79,21 @@ import com.kozmos.components.skeleton.KozmosSkeletonShape
 // and fills its row, and a circle is an avatar's 40.
 @Composable
 fun LoadingRow() {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        KozmosSkeleton(shape = KozmosSkeletonShape.Circle)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            KozmosSkeleton(shape = KozmosSkeletonShape.Line)
-            // A fraction of the row is the modifier's, as React's width="60%".
-            KozmosSkeleton(modifier = Modifier.fillMaxWidth(0.6f), shape = KozmosSkeletonShape.Line)
-        }
-    }
+Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+KozmosSkeleton(shape = KozmosSkeletonShape.Circle)
+Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+KozmosSkeleton(shape = KozmosSkeletonShape.Line)
+// A fraction of the row is the modifier's, as React's width="60%".
+KozmosSkeleton(modifier = Modifier.fillMaxWidth(0.6f), shape = KozmosSkeletonShape.Line)
+}
+}
 }
 
 // A block is whatever it replaces, so it takes the size it is given.
 @Composable
 fun LoadingCard() {
-    KozmosSkeleton(shape = KozmosSkeletonShape.Block, height = 80.dp)
+KozmosSkeleton(shape = KozmosSkeletonShape.Block, height = 80.dp)
 }
-    `}
+`}
 
 />

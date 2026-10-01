@@ -2,7 +2,7 @@
 
 # ThemeProvider
 
-A module boundary, never a document-global theme switch.
+Scopes light, dark or system appearance, reading direction and token overrides to a Kozmos subtree and its owned portals. It does not switch the host document's theme; persistence is opt-in through `storageKey`, or owned by the caller in controlled mode.
 
 - **Import:** `import { ThemeProvider } from "@kozmos-ds/react";`
 - **Group:** System
@@ -40,6 +40,8 @@ export function ThemeProviderExample() {
 ```
 
 ## ThemeProvider
+
+A module boundary, never a document-global theme switch.
 
 Its props are `ThemeProviderProps`.
 

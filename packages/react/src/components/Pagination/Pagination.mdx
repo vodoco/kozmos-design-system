@@ -7,7 +7,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # Pagination
 
-Displays the Pagination interface topology natively.
+Composes page navigation from numbered links, previous/next controls and ellipses.
+The host supplies destinations, the active page and pagination logic; the component does not fetch or slice data.
 
 <Canvas>
   <Story of={PaginationStories.Default} />

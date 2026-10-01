@@ -2,7 +2,7 @@
 
 # BottomNavigation
 
-BottomNavigation is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A bottom navigation bar of icon-and-label destinations with active, disabled and optional badge states. Items can be links or callback buttons; the host owns navigation and marks the active destination.
 
 - **Import:** `import { BottomNavigation } from "@kozmos-ds/react";`
 - **Group:** Navigation

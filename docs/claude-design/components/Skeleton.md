@@ -2,7 +2,7 @@
 
 # Skeleton
 
-Skeleton is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A loading placeholder shaped as a text line, block or circle, with configurable dimensions. Match its size to the content it replaces and provide loading announcements in the surrounding UI.
 
 - **Import:** `import { Skeleton } from "@kozmos-ds/react";`
 - **Group:** Feedback

@@ -2,7 +2,7 @@
 
 # Breadcrumb
 
-Breadcrumb is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Composes a navigation trail from links, separators and a non-interactive current-page label. Use the exported parts to reflect the page hierarchy; it does not infer routes or generate the trail.
 
 - **Import:** `import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@kozmos-ds/react";`
 - **Group:** Navigation

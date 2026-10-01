@@ -23,12 +23,20 @@
  *
  * What is checked, and only what can be checked without guessing:
  *
- *   1. `@kozmos-ds/<name>` must be a PUBLIC package in this workspace.
- *   2. `<Component variant="x">` and `size="x"` must be values that
- *      component's `cva` block actually declares — and only for components
- *      that declare one, so a prose example of a component without variants
- *      is never flagged.
- *   3. `import { X } from "@kozmos-ds/react"` must name a real export.
+ *   1. A package offered to install must be a PUBLIC package in this
+ *      workspace, under @kozmos-ds: `@kozmos` is the scope before the
+ *      rename.
+ *   2. Code, against what the packages publish (scripts/skills/ai-snippets.mjs,
+ *      from the facts in scripts/skills/ai-facts.mjs): every TypeScript and
+ *      JavaScript block is parsed whole; its imports must name public
+ *      packages and their real exports, and a Kozmos component in its JSX
+ *      may take only props it has, and literal values only where its types
+ *      take them. A block that is a whole module is compiled against the
+ *      build; one that is not says so, with its reason, in a
+ *      `// kozmos-skills: template — …` comment. Prose and other fences are
+ *      read for the same imports and tags.
+ *   3. (Was: `import { X } from "@kozmos-ds/react"` must name a real export,
+ *      read one line at a time against the directory names. 2 does it.)
  *   4. Chromatic must not be named: it is not the visual review (decision 11).
  *   5. A `pnpm <name>` inside a fenced code block must be something pnpm can
  *      run where the block runs it: a root script, a workspace package's
@@ -50,16 +58,18 @@
  * `~/.npmrc` for publishing from a laptop, and `pnpm` commands no
  * package.json has ever declared.
  *
- * Vue's `:prop="expr"` bindings are skipped: the quotes hold an expression,
- * not a value, and matching them reported `variant="variant"` as a defect.
+ * Proposals — things designed but not built, such as an MCP server — live in
+ * docs/proposals/, outside this knowledge base, each marked "Proposal: not
+ * built". Nothing here is excused for describing something unbuilt.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readKozmosFacts, unknownFacts } from "./skills/ai-facts.mjs";
+import { checkDocuments } from "./skills/ai-snippets.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SKILLS = path.join(root, ".ai-skills");
-const REACT = path.join(root, "packages/react/src/components");
 
 const problems = [];
 const fail = (file, line, message) =>
@@ -84,73 +94,6 @@ for (const dir of ["packages", "apps"]) {
         scripts: new Set(Object.keys(json.scripts ?? {})),
       });
   }
-}
-
-/**
- * Each component's axes — the same extraction the inventory generator uses,
- * so the gate and the generated document cannot disagree about what a
- * component accepts. Reading only cva blocks saw three components; reading a
- * union given a name as well sees most of the library.
- */
-const axes = new Map();
-const ALIAS_RE =
-  /^(?:export )?type (\w+)\s*=\s*((?:\s*\|?\s*["'][^"']+["'])+)\s*;/gm;
-for (const name of fs.readdirSync(REACT)) {
-  const file = path.join(REACT, name, `${name}.tsx`);
-  if (!fs.existsSync(file)) continue;
-  const source = fs.readFileSync(file, "utf8");
-  const found = {};
-
-  const cva = /variants:\s*\{([\s\S]*?)\n\s{2}\},?\n/.exec(source);
-  if (cva)
-    for (const axis of ["variant", "size", "status", "tone", "density"]) {
-      const block = new RegExp(
-        `^\\s{4}${axis}:\\s*\\{([\\s\\S]*?)^\\s{4}\\},?$`,
-        "m",
-      ).exec(cva[1]);
-      if (!block) continue;
-      const values = [...block[1].matchAll(/^\s{6}["']?([\w-]+)["']?:/gm)].map(
-        (m) => m[1],
-      );
-      if (values.length) found[axis] = values;
-    }
-
-  const aliases = {};
-  for (const a of source.matchAll(ALIAS_RE)) {
-    const values = [...a[2].matchAll(/["']([^"']+)["']/g)].map((v) => v[1]);
-    if (values.length > 1) aliases[a[1]] = values;
-  }
-  const props =
-    source.match(new RegExp(`export interface ${name}Props[\\s\\S]*?\\n\\}`)) ??
-    source.match(new RegExp(`interface ${name}Props[\\s\\S]*?\\n\\}`));
-  if (props)
-    for (const m of props[0].matchAll(
-      /^\s+([a-zA-Z][a-zA-Z0-9]*)\??:\s*(.+?);$/gm,
-    )) {
-      const inline = [...m[2].matchAll(/["']([^"']+)["']/g)].map((v) => v[1]);
-      if (inline.length > 1) found[m[1]] = inline;
-      else if (aliases[m[2].trim()]) found[m[1]] = aliases[m[2].trim()];
-    }
-
-  if (Object.keys(found).length) axes.set(name, found);
-}
-
-// `IconButtonProps = ButtonProps`: it takes every one of Button's values.
-const dts = fs.existsSync(path.join(root, "packages/react/dist/index.d.ts"))
-  ? fs.readFileSync(path.join(root, "packages/react/dist/index.d.ts"), "utf8")
-  : "";
-for (const m of dts.matchAll(/export declare type (\w+)Props = (\w+)Props;/g))
-  if (!axes.has(m[1]) && axes.has(m[2])) axes.set(m[1], axes.get(m[2]));
-
-/** What `@kozmos-ds/react` actually exports. */
-const exportsOfReact = new Set();
-const indexPath = path.join(root, "packages/react/src/index.ts");
-if (fs.existsSync(indexPath)) {
-  for (const m of fs
-    .readFileSync(indexPath, "utf8")
-    .matchAll(/export \* from "\.\/components\/(\w+)"/g))
-    exportsOfReact.add(m[1]);
-  for (const name of fs.readdirSync(REACT)) exportsOfReact.add(name);
 }
 
 // ------------------------------------------------------ 5. pnpm commands
@@ -473,12 +416,6 @@ const files = fs.existsSync(SKILLS)
 for (const file of files) {
   const full = path.join(SKILLS, file);
   const text = fs.readFileSync(full, "utf8");
-  // A document may declare itself a specification for something not yet
-  // built, and then its package names are allowed to be aspirational. The
-  // marker lives in the document, not in a list here, so a reader sees the
-  // exception at the same time as the claim — a silent allowlist in this file
-  // is how the drift got in.
-  const isSpec = /<!--\s*kozmos-skills:\s*specification\s*-->/.test(text);
   const lines = text.split("\n");
   // Fenced code, tracked the CommonMark way: a fence closes only on the same
   // character, at least as long, with nothing after it, so a ````mdx block
@@ -517,62 +454,30 @@ for (const file of files) {
         'names Chromatic; the visual review is tests/visual and the "Visual Review" check (docs/visual-review.md)',
       );
 
-    // Only where the name is presented as something to INSTALL or IMPORT.
-    // Prose that mentions a package in order to say it is private — which the
-    // generated inventory does — is not a defect, and flagging it made the
-    // gate fail on its own generated output.
+    // 1. A package offered to INSTALL must be a public one. Prose that
+    // mentions a package in order to say it is private — which the generated
+    // inventory does — is not a defect, and flagging it made the gate fail on
+    // its own generated output. Imports and requires are 2's.
     const installing =
       /\b(npm|pnpm|yarn|bun)\s+(i|add|install)\b/.test(line) ||
-      /\bfrom\s*["']@kozmos-ds\//.test(line) ||
-      /\brequire\(\s*["']@kozmos-ds\//.test(line) ||
-      /^\s*["']@kozmos-ds\/[a-z0-9-]+["']\s*:/.test(line) ||
-      /^\s*@kozmos-ds\/[a-z0-9-]+\s+-/.test(line);
-    if (installing && !isSpec) {
-      for (const m of line.matchAll(/@kozmos-ds\/([a-z0-9-]+)/g)) {
-        const name = `@kozmos-ds/${m[1]}`;
-        if (!publicPackages.has(name))
+      /^\s*["']@kozmos(?:-ds)?\/[a-z0-9-]+["']\s*:/.test(line) ||
+      /^\s*@kozmos(?:-ds)?\/[a-z0-9-]+\s+-/.test(line);
+    if (installing)
+      for (const m of line.matchAll(/@(kozmos(?:-ds)?)\/([a-z0-9-]+)/g)) {
+        const name = `@${m[1]}/${m[2]}`;
+        if (m[1] === "kozmos")
           fail(
             full,
             at,
-            `offers ${name} to install or import; it is not a public package here`,
+            `offers ${name} to install; @kozmos is the scope before the rename, and the packages are ${[...publicPackages].join(", ")}`,
           );
-      }
-    }
-
-    // `<Component ... prop="value">`, skipping Vue's `:prop="expr"`.
-    const tag = /<([A-Z]\w+)([^>]*)>/.exec(line);
-    if (tag && axes.has(tag[1])) {
-      const declared = axes.get(tag[1]);
-      for (const axis of Object.keys(declared)) {
-        const attr = new RegExp(`(?<!:)\\b${axis}=["']([\\w-]+)["']`).exec(
-          tag[2],
-        );
-        if (attr && !declared[axis].includes(attr[1]))
+        else if (!publicPackages.has(name))
           fail(
             full,
             at,
-            `<${tag[1]} ${axis}="${attr[1]}"> — ${tag[1]} declares ${axis}: ${declared[axis].join(" | ")}`,
+            `offers ${name} to install; it is not a public package here`,
           );
       }
-    }
-
-    const imports =
-      /import\s*\{([^}]+)\}\s*from\s*["']@kozmos-ds\/react["']/.exec(line);
-    if (imports) {
-      for (const raw of imports[1].split(",")) {
-        const name = raw
-          .trim()
-          .replace(/^type\s+/, "")
-          .split(/\s+as\s+/)[0];
-        if (!name || !/^[A-Z]/.test(name)) continue;
-        if (!exportsOfReact.has(name))
-          fail(
-            full,
-            at,
-            `imports ${name} from @kozmos-ds/react, which does not export it`,
-          );
-      }
-    }
 
     if (code !== null) {
       // 5. Every pnpm command in code must be one pnpm can run. Comments are
@@ -667,6 +572,22 @@ for (const file of files) {
   });
 }
 
+// 2. The code, whole: every document at once, so its complete blocks compile
+// in one program.
+const facts = readKozmosFacts(root);
+const docs = files.map((file) => ({
+  file,
+  text: fs.readFileSync(path.join(SKILLS, file), "utf8"),
+}));
+const snippets = checkDocuments(root, docs, facts);
+// A fact the checker could not establish is written into the inventory as
+// unknown; it is not left there.
+for (const unknown of unknownFacts(facts))
+  problems.push(
+    `facts  ${unknown}: the types do not say, so neither can the docs`,
+  );
+for (const p of snippets) fail(p.file, p.line, p.message);
+
 if (problems.length) {
   console.error(
     `The AI-facing docs describe code that does not exist: ${problems.length} problem(s)\n`,
@@ -680,10 +601,19 @@ if (problems.length) {
   process.exit(1);
 }
 
+const { stats } = snippets;
+const exportCount = [...facts.packages.values()].reduce(
+  (sum, p) => sum + (p.exports?.size ?? 0),
+  0,
+);
 console.log(
   `AI-facing docs ok: ${files.length} file(s) checked against ` +
-    `${publicPackages.size} public packages, ${axes.size} components' variants, ` +
-    `${exportsOfReact.size} exports, ${rootScripts.size} root scripts, ` +
+    `${publicPackages.size} public packages and their ${exportCount} exports, ` +
+    `the props of ${facts.components.size} components read from the types, ` +
+    `${rootScripts.size} root scripts, ` +
     `${workspacePackages.length} workspace packages' scripts and ` +
-    `${workflows.size} workflows.`,
+    `${workflows.size} workflows. Code: ${stats.blocks} TypeScript and ` +
+    `JavaScript blocks, ${stats.compiled} compiled against the build, ` +
+    `${stats.parsed} parsed, ${stats.templates} templates and ` +
+    `${stats.counterexamples} counterexamples checked by name.`,
 );

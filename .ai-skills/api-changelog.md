@@ -16,6 +16,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
 - b46112a: `@kozmos-ds/icons` gains `Walking`, the walking figure the SDK's position status draws beside "Walking improves accuracy", sourced from Pointr's Figma. It is a solid mark squared on the icon grid, 20 of 24 tall, in `currentColor`. `bluetooth-off`, the pill's No Bluetooth mark, joins the icon name list, so `getIconComponent("bluetooth-off")` and `<Icon name="bluetooth-off" />` reach Pointr's outline. React 0.6.0 requires icons 0.5.0; they are released together.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/icons 0.5.0 release notes, a fragment written for that release
   import { MapStatusPill } from "@kozmos-ds/react";
   import { BluetoothOff, Walking } from "@kozmos-ds/icons";
 
@@ -54,6 +55,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   `LocationFollowing` and `LocationHeading`, which the control draws, so this react needs this icons.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/icons 0.4.0 release notes, a fragment written for that release
   <MapControlsGroup
     locationState={locationState}
     locationRevealOnChange
@@ -103,6 +105,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   its own `iconUrl`, and the panel's `renderIcon` takes whatever you give it:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/icons 0.3.0 release notes, a fragment written for that release
   <BrowseCategoriesPanel
     renderIcon={(category) => <img src={category.iconUrl} alt="" aria-hidden />}
   />
@@ -193,6 +196,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   drawn nor said.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.4.0 release notes, a fragment written for that release
   <FloorSelector
     floors={floors.map((floor) => ({
       ...floor,
@@ -226,6 +230,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   closing.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.4.0 release notes, a fragment written for that release
   <POIResultList
     header={allergenNotice}
     showMoreLabel={(hidden) => t("results.showMore", { count: hidden })}
@@ -312,6 +317,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   them:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.3.0 release notes, a fragment written for that release
   services: [
     { id: "1", label: "Vegan", kind: "dietary" },
     { id: "2", label: "Step-free", kind: "accessibility" },
@@ -371,6 +377,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   needs. Built to the behaviours rather than to a screen:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   <AICompanionPanel onClose={close}>
     <AIMessageList>
       <AIMessage>What are you looking for?</AIMessage>
@@ -398,6 +405,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   four lines — 114px above the results that are the answer.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   <Notice summary="AI results may be incomplete. Check allergens with the venue.">
     These results are AI-assisted and may be incomplete or out of date…
   </Notice>
@@ -415,6 +423,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   `POIResultList` forwards it.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   result={{
     selected: true,
     actions: [
@@ -439,6 +448,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   and a visitor asking for coffee wants one row, not five.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   <POIResultGroup
     items={branches}
     onSelect={select}
@@ -474,6 +484,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   its own `iconUrl`, and the panel's `renderIcon` takes whatever you give it:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/product-contracts 0.2.0 release notes, a fragment written for that release
   <BrowseCategoriesPanel
     renderIcon={(category) => <img src={category.iconUrl} alt="" aria-hidden />}
   />
@@ -696,6 +707,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
 - b46112a: `@kozmos-ds/icons` gains `Walking`, the walking figure the SDK's position status draws beside "Walking improves accuracy", sourced from Pointr's Figma. It is a solid mark squared on the icon grid, 20 of 24 tall, in `currentColor`. `bluetooth-off`, the pill's No Bluetooth mark, joins the icon name list, so `getIconComponent("bluetooth-off")` and `<Icon name="bluetooth-off" />` reach Pointr's outline. React 0.6.0 requires icons 0.5.0; they are released together.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.6.0 release notes, a fragment written for that release
   import { MapStatusPill } from "@kozmos-ds/react";
   import { BluetoothOff, Walking } from "@kozmos-ds/icons";
 
@@ -755,6 +767,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   each `Chip` a `value`. `"multiple"` stays the default and behaves as before.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.5.0 release notes, a fragment written for that release
   <ChipGroup
     selectionMode="single"
     value={sort}
@@ -786,6 +799,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   drawn nor said.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.5.0 release notes, a fragment written for that release
   <FloorSelector
     floors={floors.map((floor) => ({
       ...floor,
@@ -810,6 +824,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   `LocationFollowing` and `LocationHeading`, which the control draws, so this react needs this icons.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.5.0 release notes, a fragment written for that release
   <MapControlsGroup
     locationState={locationState}
     locationRevealOnChange
@@ -891,6 +906,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   closing.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.5.0 release notes, a fragment written for that release
   <POIResultList
     header={allergenNotice}
     showMoreLabel={(hidden) => t("results.showMore", { count: hidden })}
@@ -1067,6 +1083,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   them:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.4.0 release notes, a fragment written for that release
   services: [
     { id: "1", label: "Vegan", kind: "dietary" },
     { id: "2", label: "Step-free", kind: "accessibility" },
@@ -1171,6 +1188,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   needs. Built to the behaviours rather than to a screen:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   <AICompanionPanel onClose={close}>
     <AIMessageList>
       <AIMessage>What are you looking for?</AIMessage>
@@ -1198,6 +1216,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   four lines — 114px above the results that are the answer.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   <Notice summary="AI results may be incomplete. Check allergens with the venue.">
     These results are AI-assisted and may be incomplete or out of date…
   </Notice>
@@ -1215,6 +1234,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   `POIResultList` forwards it.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   result={{
     selected: true,
     actions: [
@@ -1239,6 +1259,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   and a visitor asking for coffee wants one row, not five.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   <POIResultGroup
     items={branches}
     onSelect={select}
@@ -1274,6 +1295,7 @@ Automated codemods are not guaranteed; apply and verify the documented migration
   its own `iconUrl`, and the panel's `renderIcon` takes whatever you give it:
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.3.0 release notes, a fragment written for that release
   <BrowseCategoriesPanel
     renderIcon={(category) => <img src={category.iconUrl} alt="" aria-hidden />}
   />
@@ -1467,6 +1489,7 @@ var(--primitives-layout-spacing-200)` — and those tokens are bare numbers
   example knew; the reference site's did not, and neither would an integrator's.
 
   ```tsx
+  // kozmos-skills: template — from the @kozmos-ds/react 0.1.0 release notes, a fragment written for that release
   <SearchBar placeholder="Search this building" trailing={<AISearchButton />} />
   ```
 

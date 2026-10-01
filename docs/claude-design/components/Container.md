@@ -2,7 +2,7 @@
 
 # Container
 
-Container is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Constrains content width and applies consistent horizontal insets. Use `inset="window"` for viewport-responsive page padding and `inset="panel"` for fixed padding inside a narrow panel.
 
 - **Import:** `import { Container } from "@kozmos-ds/react";`
 - **Group:** Foundations

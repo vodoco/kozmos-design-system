@@ -7,7 +7,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # LocationPin
 
-Displays the LocationPin interface topology natively.
+A map marker with optional result number, custom content, external label and category tint.
+Selected, featured and off-floor states distinguish the marker; the SDK host owns geographic placement and selection state.
 
 <Canvas>
   <Story of={LocationPinStories.Default} />
@@ -26,36 +27,35 @@ import { LocationPin } from "@kozmos-ds/react";
 // A result's pin, numbered as its card's tab: quiet at rest, filled when the
 // result is selected, and dashed when the place is on another floor.
 export function ResultPin({
-  name,
-  number,
-  selected,
-  onAnotherFloor,
-  cardId,
-  onSelect,
+name,
+number,
+selected,
+onAnotherFloor,
+cardId,
+onSelect,
 }: {
-  name: string;
-  number: number;
-  selected: boolean;
-  onAnotherFloor: boolean;
-  cardId: string;
-  onSelect: () => void;
+name: string;
+number: number;
+selected: boolean;
+onAnotherFloor: boolean;
+cardId: string;
+onSelect: () => void;
 }) {
-  return (
-    <LocationPin
-      label={\`\${number}, \${name}\`}
-      number={number}
-      offFloor={onAnotherFloor}
-      resultId={cardId}
-      selected={selected}
-      onClick={onSelect}
-    />
-  );
+return (
+<LocationPin
+label={\`\${number}, \${name}\`}
+number={number}
+offFloor={onAnotherFloor}
+resultId={cardId}
+selected={selected}
+onClick={onSelect}
+/>
+);
 }
-    `}
+`}
     vue={`
-<script setup>
-import { KozmosLocationPin } from "@kozmos-ds/vue"
-</script>
+
+<script setup>import {KozmosLocationPin} from "@kozmos-ds/vue"</script>
 
 <template>
   <KozmosLocationPin />
@@ -68,11 +68,11 @@ import Kozmos
 // A result's pin, numbered as its card's tab: quiet at rest, filled when the
 // result is selected, and dashed when the place is on another floor.
 struct ResultPin: View {
-    let name: String
-    let number: Int
-    let isSelected: Bool
-    let isOnAnotherFloor: Bool
-    let onSelect: () -> Void
+let name: String
+let number: Int
+let isSelected: Bool
+let isOnAnotherFloor: Bool
+let onSelect: () -> Void
 
     var body: some View {
         KozmosLocationPin(
@@ -83,6 +83,7 @@ struct ResultPin: View {
             onSelect: onSelect
         )
     }
+
 }
 `}
     kotlin={`
@@ -93,19 +94,19 @@ import com.kozmos.components.locationpin.KozmosLocationPin
 // result is selected, and dashed when the place is on another floor.
 @Composable
 fun ResultPin(
-    name: String,
-    number: Int,
-    isSelected: Boolean,
-    isOnAnotherFloor: Boolean
+name: String,
+number: Int,
+isSelected: Boolean,
+isOnAnotherFloor: Boolean
 ) {
-    KozmosLocationPin(
-        label = name,
-        number = number,
-        selected = isSelected,
-        offFloor = isOnAnotherFloor
-    )
+KozmosLocationPin(
+label = name,
+number = number,
+selected = isSelected,
+offFloor = isOnAnotherFloor
+)
 }
-    `}
+`}
 
 />
 

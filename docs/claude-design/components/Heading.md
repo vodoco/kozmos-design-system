@@ -2,7 +2,7 @@
 
 # Heading
 
-Heading is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Renders a semantic heading using the Kozmos level-based type scale. `level` sets the visual size and default heading element; use `as` when the document hierarchy needs a different element.
 
 - **Import:** `import { Heading } from "@kozmos-ds/react";`
 - **Group:** Foundations

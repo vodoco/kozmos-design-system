@@ -17,12 +17,13 @@
 - **Vercel**: only `apps/mapscale-review` deploys there, by hand and prebuilt (its `vercel.json`
   skips install and build): build it locally, then `vercel deploy --prod` from
   `apps/mapscale-review`, only when authorized.
-- **Storybook**: not hosted anywhere yet (Olcay's decision 34: with the website, on GitHub Pages).
+- **Storybook and the website**: `pages.yml` publishes both to GitHub Pages from `main`
+  (Storybook at <https://vodoco.github.io/kozmos-design-system/storybook/>, decision 44).
 - **Railway**: nothing here deploys to Railway; there are no backend services.
 
 ### 3. Quality Assurance
 
-- **CI/CD**: Maintain the six workflows in `.github/workflows/`
+- **CI/CD**: Maintain the eight workflows in `.github/workflows/`
   ([ci-cd-configuration.md](./ci-cd-configuration.md)). Required checks are matched by name, so
   renaming a job or shard means updating branch protection in the same change.
 - **Governance**: husky's pre-commit hook runs lint-staged (ESLint and Prettier on staged files);

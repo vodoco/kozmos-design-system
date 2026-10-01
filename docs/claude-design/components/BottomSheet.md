@@ -2,7 +2,7 @@
 
 # BottomSheet
 
-BottomSheet is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A bottom-edge Drawer composition with a handle, optional close button and safe-area-aware spacing. Provide `title` for a visually hidden accessible name or render BottomSheetTitle; use AdaptiveMapShell for a persistent map panel with detents.
 
 - **Import:** `import { BottomSheet, BottomSheetClose, BottomSheetContent, BottomSheetDescription, BottomSheetFooter, BottomSheetHeader, BottomSheetTitle, BottomSheetTrigger } from "@kozmos-ds/react";`
 - **Group:** Overlay

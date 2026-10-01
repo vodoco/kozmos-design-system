@@ -2,7 +2,7 @@
 
 # MapView
 
-MapView is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A named surface that contains the map renderer supplied by the host, not a map SDK itself. Use `framed` for a map in page flow or `fill` inside AdaptiveMapShell for an edge-to-edge surface.
 
 - **Import:** `import { MapView } from "@kozmos-ds/react";`
 - **Group:** Map

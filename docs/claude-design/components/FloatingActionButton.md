@@ -2,7 +2,7 @@
 
 # FloatingActionButton
 
-FloatingActionButton is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A round, elevated Button for a prominent action, with a plus icon by default. It stays inline unless `placement="fixed"` is selected; give an icon-only action a meaningful accessible name.
 
 - **Import:** `import { FloatingActionButton } from "@kozmos-ds/react";`
 - **Group:** Action

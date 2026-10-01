@@ -2,7 +2,7 @@
 
 # Backdrop
 
-Backdrop is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A full-viewport scrim that visually separates foreground content from the page. Use `visible` to toggle it; dialog semantics, focus management and dismissal belong to the enclosing overlay.
 
 - **Import:** `import { Backdrop } from "@kozmos-ds/react";`
 - **Group:** Feedback

@@ -2,7 +2,7 @@
 
 # Tag
 
-Tag is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A compact label for metadata or status, with variant and emotion colours and an optional remove action. Use Chip when the value is an interactive selection rather than a label.
 
 - **Import:** `import { Tag } from "@kozmos-ds/react";`
 - **Group:** Data Display

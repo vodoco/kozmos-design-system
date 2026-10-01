@@ -2,9 +2,17 @@
 
 > **Purpose:** This document defines how to respond when a released design system component breaks production. Use this as a reference during incidents, for hotfix processes, and for post-mortem reviews.
 
+**Operational setup is pending owner confirmation.** Severity definitions and investigation
+templates below are guidance; the response/resolution times, on-call rota, Slack channels,
+PagerDuty and communication deadlines are proposed examples, not a staffed service or an SLA.
+The owner confirmed that the previously advertised security mailbox does not exist. Follow
+[SECURITY.md](../SECURITY.md) for a private contact request; never put security details in a
+public issue. No urgency bypasses [the release process](../docs/release-process.md), and this
+playbook does not authorize publication, a registry change or consumer deployment.
+
 ---
 
-## Incident Severity Levels
+## Incident Severity Levels and Proposed Timing Targets
 
 | Level             | Definition                                          | Response SLA       | Resolution SLA | Examples                                                                     |
 | ----------------- | --------------------------------------------------- | ------------------ | -------------- | ---------------------------------------------------------------------------- |
@@ -52,9 +60,11 @@
 
 #### 1.1 Issue Reported
 
-Consumer reports via:
+For a non-sensitive functional defect, a consumer can open a GitHub issue. For security
+findings, request a confirmed private channel as described in SECURITY.md. The proposed
+channels below require owner setup; do not assume they exist:
 
-- GitHub Issue (preferred)
+- GitHub Issue (non-sensitive functional defects only)
 - Slack #kozmos-support channel
 - Direct message to team member
 
@@ -69,7 +79,7 @@ Thanks for reporting this issue. We're investigating now.
 
 - Severity: [P0/P1/P2/P3]
 - Affected versions: @kozmos-ds/react@x.y.z
-- Platforms impacted: [React/iOS/Android/RN/Vue]
+- Platforms impacted: [React/SwiftUI/Compose]
 
 **Next Steps:**
 
@@ -446,9 +456,9 @@ Level 4: Engineering manager
 
 ### Contact Methods
 
-- **Slack:** #kozmos-incidents (monitored during business hours)
-- **PagerDuty:** [For P0 after-hours, if configured]
-- **Email:** the Kozmos on-call address (ask an owner; deliberately not written here)
+- **Private contact:** pending owner setup; ask the repository owner for a confirmed channel.
+- **Slack/PagerDuty/on-call:** proposed here, not verified as configured or monitored.
+- **Email:** no project security mailbox currently exists. The owner will add it when ready.
 
 ---
 
@@ -456,11 +466,11 @@ Level 4: Engineering manager
 
 ### I just got paged for a P0
 
-1. Acknowledge in Slack within 15 min
-2. Open the GitHub issue
-3. Start reproducing locally
-4. Post status update every 30 min
-5. If can't fix in 2 hours → rollback
+1. Confirm the actual owner and communication channel; agree an update cadence.
+2. Record non-sensitive details in a GitHub issue, or security details only in a confirmed private channel.
+3. Reproduce locally and identify the affected versions and consumers.
+4. Report facts, mitigations and remaining uncertainty; do not promise an unapproved deadline.
+5. Agree a fix-forward or consumer mitigation plan. Registry changes require separate approval.
 
 ### I need to publish a hotfix NOW
 

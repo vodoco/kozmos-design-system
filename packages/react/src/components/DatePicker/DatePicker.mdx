@@ -11,7 +11,8 @@ DatePicker retains the browser's native date input. External `aria-describedby`
 IDs are merged with helper/error guidance; explicit error state cannot be hidden
 by `aria-invalid={false}`. The decorative icon follows the module's text direction.
 
-Displays the DatePicker interface topology natively.
+DatePicker uses the browser's date input; DateRangePicker composes start and end fields.
+Provide field labels, constraints and validation feedback; browser-localized entry is distinct from the stored date string.
 
 <Canvas>
   <Story of={DatePickerStories.Default} />

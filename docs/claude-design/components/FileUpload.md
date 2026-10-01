@@ -2,7 +2,7 @@
 
 # FileUpload
 
-FileUpload is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback. Use its callbacks to receive files and perform uploads in the host; selecting a file does not upload it.
 
 - **Import:** `import { DropZone, FileUpload } from "@kozmos-ds/react";`
 - **Group:** Components

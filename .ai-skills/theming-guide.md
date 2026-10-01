@@ -1,6 +1,9 @@
 # Kozmos Design System - Theming & White-labeling Guide
 
-> **Purpose:** This document provides comprehensive guidelines for implementing customer white-labeling, theme customization, and brand adaptation across all 6 platforms in the Kozmos Design System.
+> **Purpose:** how Kozmos themes on its three platforms, React, SwiftUI and Jetpack Compose: its
+> light and dark themes, switching between them, and the token overrides the web takes. The
+> customer themes planned before the code are kept as a proposal in
+> [docs/proposals/theming-plan.md](../docs/proposals/theming-plan.md).
 
 ---
 
@@ -21,24 +24,30 @@
 
 ## 1. Overview
 
-### White-labeling Strategy
+### What Kozmos Themes
 
-Kozmos supports three levels of customization:
+Kozmos has one palette, Pointr's, in a light and a dark theme, on all three platforms.
 
-| Level                  | What's Customizable                | Use Case             |
-| ---------------------- | ---------------------------------- | -------------------- |
-| **Brand Colors**       | Primary, secondary, accent colors  | All customers        |
-| **Full Theme**         | Colors, typography, spacing, radii | Enterprise customers |
-| **Component Override** | Individual component styles        | Custom integrations  |
+|                                     | React                                     | SwiftUI                                     | Compose                                    |
+| ----------------------------------- | ----------------------------------------- | ------------------------------------------- | ------------------------------------------ |
+| Light, dark, and the system's theme | `ThemeProvider` (`defaultTheme`, `theme`) | `KozmosThemeProvider`, from `selectedTheme` | `KozmosThemeProvider`, from its theme mode |
+| The default                         | `"system"`                                | `"system"`                                  | `KozmosThemeMode.SYSTEM`                   |
+| Token overrides at run time         | `ThemeProvider`'s `tokens` (§4)           | none                                        | none                                       |
+| Customer theme files, a theme build | none                                      | none                                        | none                                       |
+| A high-contrast theme               | none (§7)                                 | none                                        | none                                       |
+
+White-labeling goes as far as the web's `tokens` override today: the native packages draw
+Kozmos's palette only. The customer themes, theme files, build step and onboarding written before
+the code are kept in [docs/proposals/theming-plan.md](../docs/proposals/theming-plan.md).
 
 ### Key Principles
 
-1. **Token-based theming** — All styles derive from tokens
-2. **Semantic tokens** — Use `color-primary`, not `color-blue`
-3. **Contrast preservation** — Ensure WCAG AA compliance
-4. **Platform consistency** — Same theme works across all platforms
-5. **Runtime switching** — Support light/dark/system modes
-6. **Minimal footprint** — Only ship what's needed
+1. **Roles, not palette steps:** a part reads a role (`bg-primary`, `--semantics-border-subtle`),
+   so a theme changes what the role holds, not every part.
+2. **Contrast is checked:** `pnpm tokens:contrast:check` holds the colour pairs to their minimums
+   in both themes (§9).
+3. **The platforms agree:** the parity checks compare each platform's tokens with the others'.
+4. **The theme follows the system** unless the product sets it.
 
 ---
 
@@ -46,927 +55,205 @@ Kozmos supports three levels of customization:
 
 ### Token Hierarchy
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           Token Hierarchy                                │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Primitive Tokens (Raw values)                                          │
-│  ├── color.blue.500: oklch(0.55 0.22 264)                              │
-│  ├── color.neutral.100: oklch(0.97 0 0)                                │
-│  └── spacing.4: 16px                                                    │
-│                                                                          │
-│          ↓ Reference                                                     │
-│                                                                          │
-│  Semantic Tokens (Purpose-based)                                        │
-│  ├── color.primary: {color.blue.500}                                   │
-│  ├── color.background.default: {color.neutral.100}                     │
-│  └── spacing.component.padding: {spacing.4}                            │
-│                                                                          │
-│          ↓ Reference                                                     │
-│                                                                          │
-│  Component Tokens (Component-specific)                                  │
-│  ├── button.primary.background: {color.primary}                        │
-│  ├── button.primary.text: {color.on-primary}                           │
-│  └── button.padding: {spacing.component.padding}                       │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+The tokens live in `packages/tokens/src/tokens-light.json` and `tokens-dark.json`, in three
+collections:
+
+| Collection   | What it holds                                                                                                                           |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `Primitives` | The palettes and scales: `Colors` (theme, emotional, background, foreground, transparent), `Layout`, `Radius`, `Typography`, `Opacity`… |
+| `Semantics`  | The roles: `Surface`, `Border`, `Radius`, `Emotion`, `Elevation`, `Overlay`, `Motion`, `Data`, `Category`…                              |
+| `Components` | Values for particular parts: `Primary Buttons`, `Secondary Buttons`, `Tertiary Buttons`, `HTML elements`                                |
+
+A semantic token is usually a reference to a primitive: `Semantics.Border.Subtle` is
+`{Primitives.Colors.background.200}`. The build resolves every reference, so each output holds its
+own value: `--semantics-border-subtle` is `#c7cad1` in the light theme, not a `var()` of the
+primitive. Overriding a primitive therefore changes only what reads that primitive (§4).
 
 ### Theme File Structure
 
 ```
-packages/tokens/
-├── src/
-│   ├── primitives/
-│   │   ├── colors.json          # Raw color palette (Display P3)
-│   │   ├── typography.json      # Font families, sizes, weights
-│   │   ├── spacing.json         # Spacing scale
-│   │   └── radii.json           # Border radius scale
-│   │
-│   ├── semantic/
-│   │   ├── colors.light.json    # Light mode semantic colors
-│   │   ├── colors.dark.json     # Dark mode semantic colors
-│   │   ├── typography.json      # Semantic type styles
-│   │   └── spacing.json         # Semantic spacing
-│   │
-│   ├── components/
-│   │   ├── button.json          # Button-specific tokens
-│   │   ├── input.json           # Input-specific tokens
-│   │   └── ...
-│   │
-│   └── themes/
-│       ├── default/
-│       │   └── theme.json       # Default Pointr theme
-│       ├── customer-a/
-│       │   └── theme.json       # Customer A overrides
-│       └── customer-b/
-│           └── theme.json       # Customer B overrides
+packages/tokens/src/
+├── tokens-light.json          # Every token, light theme
+├── tokens-dark.json           # Every token, dark theme
+├── raw/                       # Exports of the Figma file's variable collections
+├── component-contracts.json   # What the component checks hold the tokens to
+└── contrast-contract.json     # The colour pairs and their minimum contrast
 ```
+
+There are no per-customer theme folders. [token-implementation.md](./token-implementation.md)
+has the build and its outputs.
 
 ---
 
 ## 3. Token Categories
 
-### 3.1 Brand Colors (Always Customizable)
+Each category, with a variable of it as the web reads it:
 
-```json
-// themes/customer-a/theme.json
-{
-  "$schema": "../../schemas/theme.schema.json",
-  "name": "Customer A",
-  "brand": {
-    "primary": {
-      "$value": "oklch(0.65 0.18 145)",
-      "$description": "Customer A brand green"
-    },
-    "secondary": {
-      "$value": "oklch(0.55 0.12 280)",
-      "$description": "Customer A accent purple"
-    },
-    "accent": {
-      "$value": "oklch(0.70 0.20 45)",
-      "$description": "Customer A highlight orange"
-    }
-  }
-}
-```
+| Category           | Example                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| Brand              | `--primitives-colors-theme-600`, the `primary` and `ring` role                         |
+| Page and text      | `--primitives-colors-background-0`, `--primitives-colors-foreground-0`                 |
+| Surfaces           | `--semantics-surface-0` to `--semantics-surface-300`                                   |
+| Emotions           | `--semantics-emotion-danger-surface`, `--primitives-colors-emotional-success-600`      |
+| Borders            | `--semantics-border-subtle`, `--semantics-border-input`                                |
+| Radius (unitless)  | `--semantics-radius-control`, `--semantics-radius-container`                           |
+| Spacing (unitless) | `--primitives-layout-spacing-200`                                                      |
+| Elevation          | `--semantics-elevation-raised`, `--semantics-elevation-floating`                       |
+| Motion             | `--semantics-motion-duration-standard`, `--semantics-motion-easing-standard`           |
+| Typography         | `--primitives-typography-font-family-primary`, `--primitives-typography-font-size-100` |
+| Data visualisation | `--semantics-data-blue`                                                                |
+| Components         | `--components-primary-buttons-themed-button-background-idle`                           |
 
-### 3.2 Semantic Colors (Derived from Brand)
-
-```json
-{
-  "color": {
-    "primary": { "$value": "{brand.primary}" },
-    "primary-hover": {
-      "$value": "oklch(from {brand.primary} calc(l - 0.05) c h)"
-    },
-    "primary-active": {
-      "$value": "oklch(from {brand.primary} calc(l - 0.10) c h)"
-    },
-    "on-primary": { "$value": "#ffffff" },
-
-    "secondary": { "$value": "{brand.secondary}" },
-    "on-secondary": { "$value": "#ffffff" },
-
-    "background": {
-      "default": { "$value": "{primitive.neutral.50}" },
-      "subtle": { "$value": "{primitive.neutral.100}" },
-      "muted": { "$value": "{primitive.neutral.200}" }
-    },
-
-    "foreground": {
-      "default": { "$value": "{primitive.neutral.900}" },
-      "muted": { "$value": "{primitive.neutral.600}" },
-      "subtle": { "$value": "{primitive.neutral.400}" }
-    },
-
-    "border": {
-      "default": { "$value": "{primitive.neutral.200}" },
-      "strong": { "$value": "{primitive.neutral.300}" }
-    },
-
-    "success": { "$value": "{primitive.green.500}" },
-    "warning": { "$value": "{primitive.yellow.500}" },
-    "error": { "$value": "{primitive.red.500}" },
-    "info": { "$value": "{primitive.blue.500}" }
-  }
-}
-```
-
-### 3.3 Emotional Colors (Customer Configurable)
-
-```json
-{
-  "emotional": {
-    "wayfinding": {
-      "$value": "{brand.primary}",
-      "$description": "Color for navigation paths and waypoints"
-    },
-    "destination": {
-      "$value": "{brand.accent}",
-      "$description": "Color for destination markers"
-    },
-    "poi-default": {
-      "$value": "{primitive.neutral.500}",
-      "$description": "Default POI marker color"
-    },
-    "poi-highlight": {
-      "$value": "{brand.secondary}",
-      "$description": "Highlighted POI color"
-    },
-    "route-primary": {
-      "$value": "{brand.primary}",
-      "$description": "Primary navigation route"
-    },
-    "route-alternative": {
-      "$value": "{primitive.neutral.400}",
-      "$description": "Alternative route options"
-    }
-  }
-}
-```
-
-### 3.4 Typography
-
-```json
-{
-  "typography": {
-    "fontFamily": {
-      "sans": {
-        "$value": "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
-      },
-      "mono": { "$value": "'JetBrains Mono', monospace" }
-    },
-    "fontSize": {
-      "xs": { "$value": "0.75rem" },
-      "sm": { "$value": "0.875rem" },
-      "base": { "$value": "1rem" },
-      "lg": { "$value": "1.125rem" },
-      "xl": { "$value": "1.25rem" },
-      "2xl": { "$value": "1.5rem" },
-      "3xl": { "$value": "1.875rem" }
-    },
-    "fontWeight": {
-      "normal": { "$value": "400" },
-      "medium": { "$value": "500" },
-      "semibold": { "$value": "600" },
-      "bold": { "$value": "700" }
-    },
-    "lineHeight": {
-      "tight": { "$value": "1.25" },
-      "normal": { "$value": "1.5" },
-      "relaxed": { "$value": "1.75" }
-    }
-  }
-}
-```
-
-### 3.5 Spacing & Layout
-
-```json
-{
-  "spacing": {
-    "0": { "$value": "0" },
-    "1": { "$value": "4px" },
-    "2": { "$value": "8px" },
-    "3": { "$value": "12px" },
-    "4": { "$value": "16px" },
-    "5": { "$value": "20px" },
-    "6": { "$value": "24px" },
-    "8": { "$value": "32px" },
-    "10": { "$value": "40px" },
-    "12": { "$value": "48px" },
-    "16": { "$value": "64px" }
-  },
-  "radius": {
-    "none": { "$value": "0" },
-    "sm": { "$value": "4px" },
-    "md": { "$value": "8px" },
-    "lg": { "$value": "12px" },
-    "xl": { "$value": "16px" },
-    "full": { "$value": "9999px" }
-  }
-}
-```
+The unitless ones are shared with iOS and Android, so a web rule multiplies them:
+`calc(var(--semantics-radius-container) * 1px)`. [component-inventory.md](./component-inventory.md)
+and the Tailwind configuration in `packages/react/tailwind.config.js` show which roles the parts
+read.
 
 ---
 
 ## 4. White-label Configuration
 
-### 4.1 Theme Configuration File
+### 4.1 Overriding Tokens on the Web
 
-```typescript
-// kozmos.config.ts
-import { defineConfig } from "@kozmos/tokens";
+`ThemeProvider` takes `tokens`, custom properties it sets on its element and on its portal
+container, and that nested providers inherit. Because each variable holds its own resolved value
+(§2), an override names every variable it changes: a new brand colour on the default Button's fill
+is its two button variables, not the theme primitive alone.
 
-export default defineConfig({
-  // Customer identification
-  customer: "customer-a",
+```tsx
+import { Button, ThemeProvider } from "@kozmos-ds/react";
 
-  // Theme overrides
-  theme: {
-    brand: {
-      primary: "oklch(0.65 0.18 145)", // Customer green
-      secondary: "oklch(0.55 0.12 280)", // Customer purple
-      accent: "oklch(0.70 0.20 45)", // Customer orange
-    },
+const brand = {
+  "--primitives-colors-theme-600": "#0b7a5c",
+  "--components-primary-buttons-themed-button-background-idle": "#0b7a5c",
+  "--components-primary-buttons-themed-button-background-hover": "#096650",
+} as const;
 
-    // Optional: Override specific semantic tokens
-    semantic: {
-      "color.success": "oklch(0.60 0.20 150)",
-    },
-
-    // Optional: Override typography
-    typography: {
-      fontFamily: {
-        sans: "'Roboto', sans-serif",
-      },
-    },
-
-    // Optional: Override radius scale
-    radius: {
-      md: "4px", // Sharper corners
-    },
-  },
-
-  // Feature flags
-  features: {
-    darkMode: true,
-    highContrast: true,
-    rtl: true,
-  },
-
-  // Output configuration
-  output: {
-    css: true,
-    swift: true,
-    kotlin: true,
-    reactNative: true,
-  },
-});
-```
-
-### 4.2 Build-time Theme Generation
-
-```typescript
-// scripts/build-theme.ts
-import StyleDictionary from "style-dictionary";
-import { loadConfig } from "./config-loader";
-
-async function buildCustomerTheme(customerId: string) {
-  const config = await loadConfig(customerId);
-
-  const sd = new StyleDictionary({
-    source: [
-      "src/primitives/**/*.json",
-      "src/semantic/**/*.json",
-      `src/themes/${customerId}/**/*.json`,
-    ],
-    platforms: {
-      css: {
-        transformGroup: "css",
-        buildPath: `dist/${customerId}/`,
-        files: [
-          {
-            destination: "tokens.css",
-            format: "css/variables",
-            options: {
-              selector: `:root, [data-theme="${customerId}"]`,
-            },
-          },
-        ],
-      },
-      swift: {
-        transformGroup: "swift",
-        buildPath: `dist/${customerId}/ios/`,
-        files: [
-          {
-            destination: "KozmosTokens.swift",
-            format: "ios-swift/class.swift",
-            className: "KozmosTokens",
-          },
-        ],
-      },
-      kotlin: {
-        transformGroup: "compose",
-        buildPath: `dist/${customerId}/android/`,
-        files: [
-          {
-            destination: "KozmosTokens.kt",
-            format: "compose/object",
-          },
-        ],
-      },
-    },
-  });
-
-  await sd.buildAllPlatforms();
+export function BrandedApp() {
+  return (
+    <ThemeProvider tokens={brand}>
+      <Button>Book a visit</Button>
+    </ThemeProvider>
+  );
 }
 ```
 
-### 4.3 Runtime Theme Override
+- **Both themes:** an inline property outranks the stylesheet's dark theme, so one set of
+  overrides applies in light and dark. To differ, control `theme` and pass the set that matches.
+- **Contrast is yours:** `pnpm tokens:contrast:check` reads the token files, not your overrides.
+- **`DesignConfigProvider`** takes `tokens` too, beside its glass, motion and accessibility
+  configuration, and passes them to the `ThemeProvider` it renders.
 
-```typescript
-// For dynamic theming at runtime
-interface ThemeOverrides {
-  brand?: {
-    primary?: string;
-    secondary?: string;
-    accent?: string;
-  };
-  radius?: {
-    md?: string;
-  };
-}
+### 4.2 Build-time Themes
 
-function applyThemeOverrides(overrides: ThemeOverrides) {
-  const root = document.documentElement;
+None: the token build writes Kozmos's two themes only, and no command generates another.
 
-  if (overrides.brand?.primary) {
-    root.style.setProperty("--kozmos-color-primary", overrides.brand.primary);
-    // Also update derived colors
-    root.style.setProperty(
-      "--kozmos-color-primary-hover",
-      adjustLightness(overrides.brand.primary, -0.05),
-    );
-  }
+### 4.3 On iOS and Android
 
-  if (overrides.radius?.md) {
-    root.style.setProperty("--kozmos-radius-md", overrides.radius.md);
-  }
-}
-```
+None: `KozmosColors` (SwiftUI) and `KozmosThemeTokens` (Compose) are generated from the token
+files, and neither platform takes overrides at run time.
 
 ---
 
 ## 5. Platform Implementations
 
-### 5.1 React (Web) - CSS Variables
+### 5.1 React (Web)
 
-```tsx
-// ThemeProvider.tsx
-import { createContext, useContext, useEffect, useState } from "react";
+`ThemeProvider` is the boundary a theme applies inside: it renders an element with
+`data-kozmos-root` and `data-theme` (`light` or `dark`), and `@kozmos-ds/react/style.css` defines
+the token variables for each theme on it (troubleshooting.md §3.1). Its props:
 
-type Theme = "light" | "dark" | "system";
-type ColorScheme = "light" | "dark";
+| Prop                 | What it does                                                              |
+| -------------------- | ------------------------------------------------------------------------- |
+| `defaultTheme`       | `"light"`, `"dark"` or `"system"` (the default), uncontrolled             |
+| `theme`              | The same, controlled: the caller owns the preference and its persistence  |
+| `onThemeChange`      | Called with the new preference when `setTheme` is called                  |
+| `storageKey`         | Opt-in persistence in `localStorage`, under a key your product owns       |
+| `defaultSystemTheme` | What `"system"` renders on the server and in the first render (`"light"`) |
+| `dir`                | `"ltr"` or `"rtl"`, for the element and for Radix's `DirectionProvider`   |
+| `tokens`             | Token overrides (§4)                                                      |
 
-interface ThemeContextValue {
-  theme: Theme;
-  colorScheme: ColorScheme;
-  setTheme: (theme: Theme) => void;
-  customTokens?: Record<string, string>;
-}
-
-const ThemeContext = createContext<ThemeContextValue | null>(null);
-
-export function KozmosThemeProvider({
-  children,
-  defaultTheme = "system",
-  customTokens,
-}: {
-  children: React.ReactNode;
-  defaultTheme?: Theme;
-  customTokens?: Record<string, string>;
-}) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [colorScheme, setColorScheme] = useState<ColorScheme>("light");
-
-  useEffect(() => {
-    // Apply custom tokens
-    if (customTokens) {
-      const root = document.documentElement;
-      Object.entries(customTokens).forEach(([key, value]) => {
-        root.style.setProperty(`--kozmos-${key}`, value);
-      });
-    }
-  }, [customTokens]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const updateColorScheme = () => {
-      const resolvedScheme =
-        theme === "system" ? (mediaQuery.matches ? "dark" : "light") : theme;
-
-      setColorScheme(resolvedScheme as ColorScheme);
-      document.documentElement.setAttribute(
-        "data-color-scheme",
-        resolvedScheme,
-      );
-    };
-
-    updateColorScheme();
-    mediaQuery.addEventListener("change", updateColorScheme);
-    return () => mediaQuery.removeEventListener("change", updateColorScheme);
-  }, [theme]);
-
-  return (
-    <ThemeContext.Provider
-      value={{ theme, colorScheme, setTheme, customTokens }}
-    >
-      {children}
-    </ThemeContext.Provider>
-  );
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context)
-    throw new Error("useTheme must be used within KozmosThemeProvider");
-  return context;
-}
-```
-
-```css
-/* tokens.css - Generated by Style Dictionary */
-:root,
-[data-color-scheme="light"] {
-  --kozmos-color-primary: oklch(0.55 0.22 264);
-  --kozmos-color-primary-hover: oklch(0.5 0.22 264);
-  --kozmos-color-primary-active: oklch(0.45 0.22 264);
-  --kozmos-color-on-primary: #ffffff;
-
-  --kozmos-color-background-default: oklch(0.99 0 0);
-  --kozmos-color-background-subtle: oklch(0.97 0 0);
-  --kozmos-color-foreground-default: oklch(0.15 0 0);
-  --kozmos-color-foreground-muted: oklch(0.4 0 0);
-
-  --kozmos-color-border-default: oklch(0.9 0 0);
-
-  --kozmos-radius-md: 8px;
-  --kozmos-spacing-4: 16px;
-}
-
-[data-color-scheme="dark"] {
-  --kozmos-color-primary: oklch(0.65 0.2 264);
-  --kozmos-color-primary-hover: oklch(0.7 0.2 264);
-  --kozmos-color-on-primary: #000000;
-
-  --kozmos-color-background-default: oklch(0.15 0 0);
-  --kozmos-color-background-subtle: oklch(0.2 0 0);
-  --kozmos-color-foreground-default: oklch(0.95 0 0);
-  --kozmos-color-foreground-muted: oklch(0.7 0 0);
-
-  --kozmos-color-border-default: oklch(0.3 0 0);
-}
-
-/* Customer theme override example */
-[data-theme="customer-a"] {
-  --kozmos-color-primary: oklch(0.65 0.18 145);
-  --kozmos-color-primary-hover: oklch(0.6 0.18 145);
-}
-```
+`useTheme()` returns `theme`, `resolvedTheme` and `setTheme`, and throws outside a provider.
 
 ### 5.2 iOS (SwiftUI)
 
+`KozmosThemeProvider { … }` reads the preference from `@AppStorage("selectedTheme")` (`"light"`,
+`"dark"` or `"system"`) in its `ThemeManager`, which it provides as an environment object, and
+applies it with `.preferredColorScheme`, which sets the scheme of the whole presentation it is in.
+`KozmosColors` holds a light and a dark value for each colour, and SwiftUI picks one for the
+scheme a view draws in; `.environment(\.colorScheme, …)` sets it for one view.
+
 ```swift
-// KozmosTheme.swift
 import SwiftUI
+import Kozmos
 
-public struct KozmosTheme {
-    public enum ColorScheme {
-        case light
-        case dark
-        case system
-    }
-
-    // Brand colors (customizable)
-    public var primary: Color
-    public var secondary: Color
-    public var accent: Color
-
-    // Semantic colors (derived)
-    public var background: Color
-    public var foreground: Color
-    public var border: Color
-
-    // Status colors
-    public var success: Color
-    public var warning: Color
-    public var error: Color
-
-    public static let `default` = KozmosTheme(
-        primary: Color("Primary", bundle: .kozmos),
-        secondary: Color("Secondary", bundle: .kozmos),
-        accent: Color("Accent", bundle: .kozmos),
-        background: Color("Background", bundle: .kozmos),
-        foreground: Color("Foreground", bundle: .kozmos),
-        border: Color("Border", bundle: .kozmos),
-        success: Color("Success", bundle: .kozmos),
-        warning: Color("Warning", bundle: .kozmos),
-        error: Color("Error", bundle: .kozmos)
-    )
-
-    public static func custom(
-        primary: Color,
-        secondary: Color? = nil,
-        accent: Color? = nil
-    ) -> KozmosTheme {
-        var theme = KozmosTheme.default
-        theme.primary = primary
-        theme.secondary = secondary ?? theme.secondary
-        theme.accent = accent ?? theme.accent
-        return theme
-    }
-}
-
-// Environment key
-struct KozmosThemeKey: EnvironmentKey {
-    static let defaultValue = KozmosTheme.default
-}
-
-extension EnvironmentValues {
-    public var kozmosTheme: KozmosTheme {
-        get { self[KozmosThemeKey.self] }
-        set { self[KozmosThemeKey.self] = newValue }
-    }
-}
-
-// Theme provider
-public struct KozmosThemeProvider<Content: View>: View {
-    let theme: KozmosTheme
-    let colorScheme: KozmosTheme.ColorScheme
-    let content: Content
-
-    @Environment(\.colorScheme) private var systemColorScheme
-
-    public init(
-        theme: KozmosTheme = .default,
-        colorScheme: KozmosTheme.ColorScheme = .system,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.theme = theme
-        self.colorScheme = colorScheme
-        self.content = content()
-    }
-
-    public var body: some View {
-        content
-            .environment(\.kozmosTheme, theme)
-            .preferredColorScheme(resolvedColorScheme)
-    }
-
-    private var resolvedColorScheme: SwiftUI.ColorScheme? {
-        switch colorScheme {
-        case .light: return .light
-        case .dark: return .dark
-        case .system: return nil
+@main
+struct GuideApp: App {
+    var body: some Scene {
+        WindowGroup {
+            KozmosThemeProvider {
+                KozmosButton("Book a visit") {}
+            }
         }
-    }
-}
-
-// Usage in components
-struct KozmosButton: View {
-    @Environment(\.kozmosTheme) var theme
-
-    var body: some View {
-        Button("Navigate") {}
-            .foregroundColor(theme.primary)
     }
 }
 ```
 
 ### 5.3 Android (Jetpack Compose)
 
+`KozmosThemeProvider { … }` (`com.kozmos.components.themeprovider`) keeps a `KozmosThemeManager`,
+whose mode is `KozmosThemeMode.SYSTEM` until set, provides it as `LocalThemeManager`, and provides
+`LocalKozmosUseDarkTokens` and a Material 3 theme to match. The components read
+`KozmosThemeTokens`, which follows `LocalKozmosUseDarkTokens`.
+
 ```kotlin
-// KozmosTheme.kt
-package com.pointr.kozmos.theme
-
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
-
-@Immutable
-data class KozmosColors(
-    val primary: Color,
-    val primaryHover: Color,
-    val onPrimary: Color,
-    val secondary: Color,
-    val onSecondary: Color,
-    val background: Color,
-    val backgroundSubtle: Color,
-    val foreground: Color,
-    val foregroundMuted: Color,
-    val border: Color,
-    val success: Color,
-    val warning: Color,
-    val error: Color,
-    val isDark: Boolean
-)
-
-val LocalKozmosColors = staticCompositionLocalOf { lightKozmosColors() }
-
-fun lightKozmosColors(
-    primary: Color = Color(0xFF2563EB),
-    secondary: Color = Color(0xFF7C3AED)
-) = KozmosColors(
-    primary = primary,
-    primaryHover = primary.copy(alpha = 0.9f),
-    onPrimary = Color.White,
-    secondary = secondary,
-    onSecondary = Color.White,
-    background = Color(0xFFFAFAFA),
-    backgroundSubtle = Color(0xFFF5F5F5),
-    foreground = Color(0xFF171717),
-    foregroundMuted = Color(0xFF737373),
-    border = Color(0xFFE5E5E5),
-    success = Color(0xFF22C55E),
-    warning = Color(0xFFF59E0B),
-    error = Color(0xFFEF4444),
-    isDark = false
-)
-
-fun darkKozmosColors(
-    primary: Color = Color(0xFF60A5FA),
-    secondary: Color = Color(0xFFA78BFA)
-) = KozmosColors(
-    primary = primary,
-    primaryHover = primary.copy(alpha = 0.9f),
-    onPrimary = Color.Black,
-    secondary = secondary,
-    onSecondary = Color.Black,
-    background = Color(0xFF171717),
-    backgroundSubtle = Color(0xFF262626),
-    foreground = Color(0xFFFAFAFA),
-    foregroundMuted = Color(0xFFA3A3A3),
-    border = Color(0xFF404040),
-    success = Color(0xFF4ADE80),
-    warning = Color(0xFFFBBF24),
-    error = Color(0xFFF87171),
-    isDark = true
-)
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.themeprovider.KozmosThemeMode
+import com.kozmos.components.themeprovider.KozmosThemeProvider
+import com.kozmos.components.themeprovider.LocalThemeManager
 
 @Composable
-fun KozmosTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    customPrimary: Color? = null,
-    customSecondary: Color? = null,
-    content: @Composable () -> Unit
-) {
-    val colors = if (darkTheme) {
-        darkKozmosColors(
-            primary = customPrimary ?: Color(0xFF60A5FA),
-            secondary = customSecondary ?: Color(0xFFA78BFA)
-        )
-    } else {
-        lightKozmosColors(
-            primary = customPrimary ?: Color(0xFF2563EB),
-            secondary = customSecondary ?: Color(0xFF7C3AED)
-        )
-    }
-
-    CompositionLocalProvider(LocalKozmosColors provides colors) {
-        content()
-    }
-}
-
-// Extension for easy access
-object KozmosTheme {
-    val colors: KozmosColors
-        @Composable
-        @ReadOnlyComposable
-        get() = LocalKozmosColors.current
-}
-
-// Usage
-@Composable
-fun KozmosButton(text: String, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = KozmosTheme.colors.primary,
-            contentColor = KozmosTheme.colors.onPrimary
-        )
-    ) {
-        Text(text)
+fun GuideScreen() {
+    KozmosThemeProvider {
+        val themeManager = LocalThemeManager.current
+        KozmosButton(onClick = { themeManager.setThemeMode(KozmosThemeMode.DARK) }) {
+            Text("Dark")
+        }
     }
 }
 ```
+
+The mode lives in a `remember`, so it is not persisted.
 
 ### 5.4 React Native
 
-```tsx
-// theme/index.tsx
-import { createContext, useContext, useMemo } from "react";
-import { useColorScheme } from "react-native";
-
-interface KozmosTheme {
-  colors: {
-    primary: string;
-    primaryHover: string;
-    onPrimary: string;
-    secondary: string;
-    background: string;
-    foreground: string;
-    border: string;
-    success: string;
-    warning: string;
-    error: string;
-  };
-  spacing: {
-    xs: number;
-    sm: number;
-    md: number;
-    lg: number;
-    xl: number;
-  };
-  radius: {
-    sm: number;
-    md: number;
-    lg: number;
-    full: number;
-  };
-  isDark: boolean;
-}
-
-const lightTheme: KozmosTheme = {
-  colors: {
-    primary: "#2563EB",
-    primaryHover: "#1D4ED8",
-    onPrimary: "#FFFFFF",
-    secondary: "#7C3AED",
-    background: "#FAFAFA",
-    foreground: "#171717",
-    border: "#E5E5E5",
-    success: "#22C55E",
-    warning: "#F59E0B",
-    error: "#EF4444",
-  },
-  spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 },
-  radius: { sm: 4, md: 8, lg: 12, full: 9999 },
-  isDark: false,
-};
-
-const darkTheme: KozmosTheme = {
-  ...lightTheme,
-  colors: {
-    primary: "#60A5FA",
-    primaryHover: "#93C5FD",
-    onPrimary: "#000000",
-    secondary: "#A78BFA",
-    background: "#171717",
-    foreground: "#FAFAFA",
-    border: "#404040",
-    success: "#4ADE80",
-    warning: "#FBBF24",
-    error: "#F87171",
-  },
-  isDark: true,
-};
-
-interface ThemeOverrides {
-  primary?: string;
-  secondary?: string;
-}
-
-const ThemeContext = createContext<KozmosTheme>(lightTheme);
-
-export function KozmosThemeProvider({
-  children,
-  overrides,
-  forceDark,
-}: {
-  children: React.ReactNode;
-  overrides?: ThemeOverrides;
-  forceDark?: boolean;
-}) {
-  const colorScheme = useColorScheme();
-  const isDark = forceDark ?? colorScheme === "dark";
-
-  const theme = useMemo(() => {
-    const baseTheme = isDark ? darkTheme : lightTheme;
-
-    if (!overrides) return baseTheme;
-
-    return {
-      ...baseTheme,
-      colors: {
-        ...baseTheme.colors,
-        ...(overrides.primary && { primary: overrides.primary }),
-        ...(overrides.secondary && { secondary: overrides.secondary }),
-      },
-    };
-  }, [isDark, overrides]);
-
-  return (
-    <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
-  );
-}
-
-export function useKozmosTheme() {
-  return useContext(ThemeContext);
-}
-
-// Usage
-function NavigationButton() {
-  const theme = useKozmosTheme();
-
-  return (
-    <TouchableOpacity
-      style={{
-        backgroundColor: theme.colors.primary,
-        padding: theme.spacing.md,
-        borderRadius: theme.radius.md,
-      }}
-    >
-      <Text style={{ color: theme.colors.onPrimary }}>Start Navigation</Text>
-    </TouchableOpacity>
-  );
-}
-```
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What
+this section held, from the original scope, is kept as a proposal in
+[docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 
 ## 6. Dark Mode
 
-### 6.1 Color Adjustments for Dark Mode
+### 6.1 How Each Platform Switches
 
-```json
-// semantic/colors.dark.json
-{
-  "color": {
-    "primary": {
-      "$value": "oklch(0.70 0.18 264)",
-      "$description": "Lighter primary for dark backgrounds"
-    },
-    "primary-hover": {
-      "$value": "oklch(0.75 0.18 264)"
-    },
-    "on-primary": {
-      "$value": "#000000",
-      "$description": "Dark text on light primary"
-    },
-
-    "background": {
-      "default": { "$value": "oklch(0.15 0 0)" },
-      "subtle": { "$value": "oklch(0.18 0 0)" },
-      "elevated": { "$value": "oklch(0.22 0 0)" }
-    },
-
-    "foreground": {
-      "default": { "$value": "oklch(0.95 0 0)" },
-      "muted": { "$value": "oklch(0.70 0 0)" }
-    },
-
-    "border": {
-      "default": { "$value": "oklch(0.30 0.01 0)" }
-    }
-  }
-}
-```
+- **Web:** `ThemeProvider` sets `data-theme="dark"`, and the stylesheet redefines every token
+  variable for it. The standalone token CSS does the same under `[data-theme="dark"]`
+  (`@kozmos-ds/tokens/css/dark.css`).
+- **SwiftUI:** each `KozmosColors` colour resolves for the view's colour scheme.
+- **Compose:** each `KozmosThemeTokens` colour reads `LocalKozmosUseDarkTokens`, or the system's
+  theme without a provider.
 
 ### 6.2 Dark Mode Best Practices
 
-```css
-/* Elevation through brightness, not shadows */
-[data-color-scheme="dark"] {
-  /* Level 0: Base */
-  --kozmos-surface-0: oklch(0.15 0 0);
-
-  /* Level 1: Cards */
-  --kozmos-surface-1: oklch(0.18 0 0);
-
-  /* Level 2: Popovers */
-  --kozmos-surface-2: oklch(0.22 0 0);
-
-  /* Level 3: Modals */
-  --kozmos-surface-3: oklch(0.25 0 0);
-
-  /* Shadows are subtle in dark mode */
-  --kozmos-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-/* Images and media */
-[data-color-scheme="dark"] img {
-  filter: brightness(0.9) contrast(1.1);
-}
-
-/* Reduce pure white */
-[data-color-scheme="dark"] {
-  --kozmos-color-white: oklch(0.95 0 0);
-}
-```
+1. **Read roles, never a literal:** a hex value, or a Tailwind palette class such as `bg-white`,
+   stays the same in the dark theme.
+2. **Read `KozmosThemeTokens` in Compose,** not `KozmosColors` or `KozmosColorsDark`, which hold one
+   theme each.
+3. **Check both themes:** the visual review draws every story in light and dark, and the story
+   audit runs axe in both.
 
 ---
 
@@ -974,70 +261,14 @@ function NavigationButton() {
 
 ### 7.1 High Contrast Tokens
 
-```json
-// semantic/colors.high-contrast.json
-{
-  "color": {
-    "primary": {
-      "$value": "oklch(0.45 0.30 264)",
-      "$description": "Higher saturation for visibility"
-    },
-    "foreground": {
-      "default": { "$value": "#000000" }
-    },
-    "background": {
-      "default": { "$value": "#ffffff" }
-    },
-    "border": {
-      "default": { "$value": "#000000" }
-    },
-    "focus-ring": {
-      "$value": "#000000",
-      "$description": "Maximum contrast focus"
-    }
-  }
-}
-```
+None: the tokens have no high-contrast theme, and `KozmosColors` picks a colour by light or dark
+only, not by iOS's Increase Contrast setting.
 
 ### 7.2 Windows High Contrast Support
 
-```css
-@media (forced-colors: active) {
-  .kozmos-button {
-    border: 2px solid ButtonText;
-    background: ButtonFace;
-    color: ButtonText;
-  }
-
-  .kozmos-button:hover {
-    border-color: Highlight;
-  }
-
-  .kozmos-button:focus {
-    outline: 3px solid Highlight;
-    outline-offset: 2px;
-  }
-
-  .kozmos-button:disabled {
-    border-color: GrayText;
-    color: GrayText;
-  }
-
-  .kozmos-input {
-    border: 2px solid ButtonText;
-    background: Field;
-    color: FieldText;
-  }
-
-  .kozmos-link {
-    color: LinkText;
-  }
-
-  .kozmos-link:visited {
-    color: VisitedText;
-  }
-}
-```
+`@kozmos-ds/react/style.css` has no `forced-colors` rules, so in Windows' contrast themes the
+browser's own forced colours apply. [accessibility-guide.md](./accessibility-guide.md) §7.4 has
+what an app can add.
 
 ---
 
@@ -1046,22 +277,24 @@ function NavigationButton() {
 ### 8.1 Theme Switcher Component
 
 ```tsx
-// ThemeSwitcher.tsx
-import { useTheme } from "@kozmos/react";
+import { SegmentedControl, useTheme, type Theme } from "@kozmos-ds/react";
+
+const choices = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
 
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
-
   return (
-    <KozmosSegmentedControl
+    <SegmentedControl
+      label="Theme"
       value={theme}
-      onChange={setTheme}
-      options={[
-        { value: "light", label: "Light", icon: <SunIcon /> },
-        { value: "dark", label: "Dark", icon: <MoonIcon /> },
-        { value: "system", label: "System", icon: <MonitorIcon /> },
-      ]}
-      aria-label="Color theme"
+      items={choices}
+      onValueChange={(next) => {
+        if (next) setTheme(next as Theme);
+      }}
     />
   );
 }
@@ -1069,44 +302,14 @@ export function ThemeSwitcher() {
 
 ### 8.2 Persisting Theme Preference
 
-```typescript
-// hooks/usePersistedTheme.ts
-import { useState, useEffect } from "react";
-
-type Theme = "light" | "dark" | "system";
-
-const STORAGE_KEY = "kozmos-theme-preference";
-
-export function usePersistedTheme(defaultTheme: Theme = "system") {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return defaultTheme;
-    return (localStorage.getItem(STORAGE_KEY) as Theme) || defaultTheme;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
-
-  return [theme, setTheme] as const;
-}
-```
+Persistence is opt-in: give `ThemeProvider` a `storageKey` your product owns, and it stores the
+preference in `localStorage` and reads it back after mounting. A controlled `theme` stores nothing:
+keep it where your product keeps its settings.
 
 ### 8.3 No Flash on Load
 
-```html
-<!-- Add to <head> before any stylesheets -->
-<script>
-  (function () {
-    const theme = localStorage.getItem("kozmos-theme-preference");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    const colorScheme =
-      theme === "system" || !theme ? (prefersDark ? "dark" : "light") : theme;
-    document.documentElement.setAttribute("data-color-scheme", colorScheme);
-  })();
-</script>
-```
+The provider renders `defaultSystemTheme` until it has mounted, so pass the theme you know on the
+server as `theme` ([troubleshooting.md](./troubleshooting.md) §3.2).
 
 ---
 
@@ -1114,173 +317,34 @@ export function usePersistedTheme(defaultTheme: Theme = "system") {
 
 ### 9.1 Contrast Validation
 
-```typescript
-// scripts/validate-theme.ts
-import { oklch, wcagContrast } from "culori";
-
-interface ValidationResult {
-  valid: boolean;
-  errors: string[];
-  warnings: string[];
-}
-
-function validateTheme(theme: Record<string, string>): ValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  // Check text contrast
-  const textOnBackground = wcagContrast(
-    theme["color-foreground-default"],
-    theme["color-background-default"],
-  );
-
-  if (textOnBackground < 4.5) {
-    errors.push(
-      `Text contrast too low: ${textOnBackground.toFixed(2)} (needs 4.5:1)`,
-    );
-  }
-
-  // Check primary button contrast
-  const textOnPrimary = wcagContrast(
-    theme["color-on-primary"],
-    theme["color-primary"],
-  );
-
-  if (textOnPrimary < 4.5) {
-    errors.push(`Primary button contrast too low: ${textOnPrimary.toFixed(2)}`);
-  }
-
-  // Check focus ring contrast
-  const focusOnBackground = wcagContrast(
-    theme["color-focus-ring"],
-    theme["color-background-default"],
-  );
-
-  if (focusOnBackground < 3) {
-    warnings.push(
-      `Focus ring contrast could be improved: ${focusOnBackground.toFixed(2)}`,
-    );
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings,
-  };
-}
-```
+`pnpm tokens:contrast:check` (`scripts/check-token-contrast.mjs`) holds every pair in
+`packages/tokens/src/contrast-contract.json`, and every button emotion in each of its states, to its
+minimum contrast, in the light and the dark theme.
 
 ### 9.2 CI Validation
 
-There is no theme-validation workflow and no `validate:themes` or `check:contrast` script. CI's
-`Web Build & Test` job (`.github/workflows/ci.yml`) checks themes on every pull request with these:
-
-```bash
-# Every contrast pair in packages/tokens/src/contrast-contract.json, in light and dark
-pnpm tokens:contrast:check
-
-# The native palettes follow the theme: Compose reads its generated themed accessor
-pnpm tokens:theme:check
-
-# Themes and stylesheets stay scoped to their module, in a browser
-pnpm test:themes
-```
+CI's `Web Build & Test` runs the contrast check and the parity checks. Among them,
+`pnpm tokens:theme:check` keeps every component drawing in the theme it is in: no Compose source
+reads a one-theme palette, and only the theme provider sets a window's colour scheme.
 
 ---
 
 ## 10. Customer Onboarding
 
-### 10.1 Quick Start Guide
-
-````markdown
-# Setting Up Your Brand Theme
-
-## Step 1: Prepare Your Colors
-
-Provide your brand colors in any format:
-
-- Hex: #2563EB
-- RGB: rgb(37, 99, 235)
-- HSL: hsl(220, 83%, 53%)
-- oklch: oklch(0.55 0.22 264) (recommended)
-
-We need:
-
-- **Primary**: Main brand color (buttons, links)
-- **Secondary**: Accent color (optional)
-- **Accent**: Highlight color (optional)
-
-## Step 2: Create Theme File
-
-```json
-// themes/your-company/theme.json
-{
-  "name": "Your Company",
-  "brand": {
-    "primary": "#YOUR_PRIMARY_COLOR",
-    "secondary": "#YOUR_SECONDARY_COLOR"
-  }
-}
-```
-````
-
-## Step 3: Generate Theme
-
-```bash
-npx @kozmos/tokens build --theme your-company
-```
-
-## Step 4: Use in Your App
-
-```tsx
-import "@kozmos/tokens/themes/your-company.css";
-
-<KozmosThemeProvider theme="your-company">
-  <App />
-</KozmosThemeProvider>;
-```
-
-````
-
-### 10.2 Theme Request Template
-
-```yaml
-# Customer Theme Request
-
-## Company Information
-- Company Name:
-- Contact Email:
-- SDK Platforms: [ ] Web [ ] iOS [ ] Android [ ] React Native
-
-## Brand Colors
-- Primary Color:
-- Secondary Color (optional):
-- Accent Color (optional):
-
-## Design Assets
-- [ ] Logo (SVG preferred)
-- [ ] Brand Guidelines PDF
-- [ ] Figma link (if available)
-
-## Requirements
-- [ ] Dark mode support needed
-- [ ] High contrast mode needed
-- [ ] RTL language support needed
-- [ ] Custom typography needed
-
-## Notes
-Additional requirements or preferences:
-````
+There is no onboarding tooling: no theme file, no command that builds a customer theme, and no
+theme request process. A customer's brand on the web is a set of `tokens` overrides (§4); on iOS
+and Android it is not possible yet. The quick start and request template written before the code
+are kept in [docs/proposals/theming-plan.md](../docs/proposals/theming-plan.md).
 
 ---
 
 ## Related Documents
 
-- [Token Implementation](./token-implementation.md) — Style Dictionary configuration
+- [Token Implementation](./token-implementation.md) — the token source, build and outputs
 - [Design Philosophy](./design-philosophy.md) — Visual language principles
 - [Accessibility Guide](./accessibility-guide.md) — Contrast requirements
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last updated:** 2026-02-08
+**Last updated:** 2026-09-29

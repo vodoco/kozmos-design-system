@@ -2,7 +2,7 @@
 
 # LocationPin
 
-LocationPin is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A map marker with optional result number, custom content, external label and category tint. Selected, featured and off-floor states distinguish the marker; the SDK host owns geographic placement and selection state.
 
 - **Import:** `import { LocationPin } from "@kozmos-ds/react";`
 - **Group:** Product SDK

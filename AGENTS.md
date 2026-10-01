@@ -32,6 +32,7 @@ Figma library they come from. This file is what a coding agent needs before chan
 | `tests/visual`                                    | the visual review's suite and its committed baselines             |
 | `docs/`                                           | the written documentation                                         |
 | `docs/claude-design/`                             | what the Claude Design artifact carries, generated (below)        |
+| `docs/proposals/`                                 | designs that were never built, kept as history: none of it exists |
 | `.ai-skills/`                                     | the knowledge base for AI assistants, kept true by `skills:check` |
 | `.changeset/`, `release/`                         | changes waiting for a release, and the plan a release publishes   |
 

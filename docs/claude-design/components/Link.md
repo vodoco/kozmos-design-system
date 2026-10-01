@@ -2,7 +2,7 @@
 
 # Link
 
-Link is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A styled anchor for navigation, with default and subtle colour treatments. Supply `href` and meaningful link text; use Button for an action that does not navigate.
 
 - **Import:** `import { Link } from "@kozmos-ds/react";`
 - **Group:** Navigation

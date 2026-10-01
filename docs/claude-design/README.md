@@ -58,10 +58,10 @@ These notes are about the artifact Claude Design builds from this repository, no
 
 ### Action (4)
 
-- [FloatingActionButton](components/FloatingActionButton.md): FloatingActionButton is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [FloatingActionButton](components/FloatingActionButton.md): A round, elevated Button for a prominent action, with a plus icon by default.
 - [IconButton](components/IconButton.md): IconButtons are used for actions that don't require a label, such as "flaging" or "liking" an item.
-- [SplitButton](components/SplitButton.md): SplitButton is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [ToggleButton](components/ToggleButton.md): ToggleButton is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [SplitButton](components/SplitButton.md): Pairs a primary action with a separate dropdown of related actions.
+- [ToggleButton](components/ToggleButton.md): A button that maintains a pressed/unpressed choice, with default or outline styling.
 
 ### Components (32)
 
@@ -77,23 +77,23 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [Dialog](components/Dialog.md): A window overlaid on existing content.
 - [EmptyState](components/EmptyState.md): The `EmptyState` component is used to communicate a zero-results condition or an empty state of an interface securely across all platforms.
 - [FieldWrapper](components/FieldWrapper.md): The label, description, helper text, and error message that surround a form control — without the control itself.
-- [FileUpload](components/FileUpload.md): FileUpload is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [FileUpload](components/FileUpload.md): A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback.
 - [Input](components/Input.md): Inputs allow users to enter text into a UI.
 - [Label](components/Label.md): Names a form control.
 - [Listbox](components/Listbox.md): An always-visible list of selectable options, in single or multiple mode.
 - [MultiSelect](components/MultiSelect.md): A filterable field for choosing several options, each shown as a removable chip.
 - [NumberInput](components/NumberInput.md): A numeric field with optional stepper buttons and `min` / `max` / `step` clamping.
-- [OTPInput](components/OTPInput.md): OTPInput is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [OTPInput](components/OTPInput.md): A segmented numeric code field with configurable length, paste handling and field feedback.
 - [PasswordInput](components/PasswordInput.md): A text input for secrets, with a toggle that reveals what has been typed.
-- [POICard](components/POICard.md): POICard is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [POICard](components/POICard.md): A general-purpose place card with optional imagery, subtitle, description, badges and actions.
 - [Radio](components/Radio.md): A set of checkable buttons—known as radio buttons—where no more than one of the buttons can be checked at a time.
 - [ScrollArea](components/ScrollArea.md): A scrollable region with consistent scrollbar treatment across platforms.
-- [SearchBar](components/SearchBar.md): SearchBar is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [SearchBar](components/SearchBar.md): A search row with a controlled query, clear action and an optional trailing control.
 - [Select](components/Select.md): Displays a list of options for the user to pick from—triggered by a button.
 - [Slider](components/Slider.md): Adjusts a numeric value or range.
 - [Switch](components/Switch.md): A control that allows the user to toggle between checked and not checked.
-- [Tabs](components/Tabs.md): Tabs is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Textarea](components/Textarea.md): Textarea is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Tabs](components/Tabs.md): Switches between related content panels within the same interface.
+- [Textarea](components/Textarea.md): A multiline text field with a label, validation message and optional character count.
 - [TimePicker](components/TimePicker.md): TimePicker retains native time-entry behavior.
 - [UserLocationMarker](components/UserLocationMarker.md): Shows a map position and optional heading.
 - [WayfindingCard](components/WayfindingCard.md): Displays route-planning content with an optional close action.
@@ -103,41 +103,41 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [Accordion](components/Accordion.md): A vertically stacked set of interactive headings that each reveal a section of content.
 - [Avatar](components/Avatar.md): An image element with a fallback for representing the user.
 - [Chip](components/Chip.md): `Chip` presents compact filter, category, and removable selection values.
-- [List](components/List.md): List is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [List](components/List.md): A bordered vertical list with standard or compact row density.
 - [MetaStrip](components/MetaStrip.md): A row of small facts about one thing, each a label and a value.
-- [Separator](components/Separator.md): Separator is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Table](components/Table.md): Table is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Tag](components/Tag.md): Tag is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Separator](components/Separator.md): A horizontal or vertical divider between related sections.
+- [Table](components/Table.md): Styled semantic table parts for headers, body rows, cells, footers and captions.
+- [Tag](components/Tag.md): A compact label for metadata or status, with variant and emotion colours and an optional remove action.
 - [Timeline](components/Timeline.md): Displays ordered events with composed time, title, and description primitives.
 - [Tree](components/Tree.md): Tree presents hierarchical data with disclosure, selection, keyboard navigation, optional counts, metadata, and safe nested row actions.
 
 ### Feedback (6)
 
 - [Alert](components/Alert.md): Displays a callout for user attention.
-- [Backdrop](components/Backdrop.md): Backdrop is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Backdrop](components/Backdrop.md): A full-viewport scrim that visually separates foreground content from the page.
 - [Progress](components/Progress.md): Communicates progress with an accessible name.
-- [Skeleton](components/Skeleton.md): Skeleton is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Skeleton](components/Skeleton.md): A loading placeholder shaped as a text line, block or circle, with configurable dimensions.
 - [Spinner](components/Spinner.md): Indeterminate loading: three quarters of a circle, turning.
 - [Toast](components/Toast.md): A succinct message that is displayed temporarily.
 
 ### Foundations (8)
 
-- [Box](components/Box.md): Box is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Container](components/Container.md): Container is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Grid](components/Grid.md): Grid is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Heading](components/Heading.md): Heading is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Icon](components/Icon.md): Icon is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Stack](components/Stack.md): Stack is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Box](components/Box.md): A minimal layout wrapper that renders a `div`, or passes its props to one child with `asChild`.
+- [Container](components/Container.md): Constrains content width and applies consistent horizontal insets.
+- [Grid](components/Grid.md): Arranges children in a CSS grid with explicit column, row, flow, alignment and gap options.
+- [Heading](components/Heading.md): Renders a semantic heading using the Kozmos level-based type scale.
+- [Icon](components/Icon.md): Renders a Pointr icon supplied as a component or registry name with standard size and colour variants.
+- [Stack](components/Stack.md): Arranges children in a flex row or column with standard gap, alignment, justification and wrapping options.
 - [Surface](components/Surface.md): What a surface over content is made of.
-- [Text](components/Text.md): Text is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Text](components/Text.md): Applies Kozmos typography, colour, alignment and optional truncation to body text.
 
 ### Input (1)
 
-- [Rating](components/Rating.md): Rating is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Rating](components/Rating.md): Collects or displays a rating using stars or a thumbs-up/down choice.
 
 ### Inputs (1)
 
-- [Search](components/Search.md): Search is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Search](components/Search.md): A search input with a leading search icon, optional field label and validation message.
 
 ### Map (10)
 
@@ -146,7 +146,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [ManoeuvreCard](components/ManoeuvreCard.md): The current manoeuvre, floating over the map during navigation: its arrow, the instruction, how far and how long, and a grab bar that opens the full itinerary in its place.
 - [MapControlsGroup](components/MapControlsGroup.md): The stacked zoom, compass, and locate affordances that sit over a map.
 - [MapOverlay](components/MapOverlay.md): A positioned surface that floats product chrome above the map canvas.
-- [MapView](components/MapView.md): MapView is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [MapView](components/MapView.md): A named surface that contains the map renderer supplied by the host, not a map SDK itself.
 - [RouteProgressRail](components/RouteProgressRail.md): How far along the route the visitor is, as a rail: a dot where it starts, a disc carrying the current manoeuvre's arrow that travels the track, a dot where it ends.
 - [RouteSummary](components/RouteSummary.md): The `RouteSummary` serves as the primary bottom-anchored modal sheet during active turn-by-turn Wayfinding sessions.
 - [RoutingInputGroup](components/RoutingInputGroup.md): The `RoutingInputGroup` maps Pointr's timeline logic into physical multi-point data entry boxes, allowing dynamic addition/reduction of navigational stops while keeping layout structures aligned cleanly against timeline borders.
@@ -154,21 +154,21 @@ These notes are about the artifact Claude Design builds from this repository, no
 
 ### Navigation (9)
 
-- [BottomNavigation](components/BottomNavigation.md): BottomNavigation is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Breadcrumb](components/Breadcrumb.md): Breadcrumb is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Link](components/Link.md): Link is a component of `@kozmos-ds/react` whose docs do not describe it yet.
-- [Menu](components/Menu.md): Menu is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [BottomNavigation](components/BottomNavigation.md): A bottom navigation bar of icon-and-label destinations with active, disabled and optional badge states.
+- [Breadcrumb](components/Breadcrumb.md): Composes a navigation trail from links, separators and a non-interactive current-page label.
+- [Link](components/Link.md): A styled anchor for navigation, with default and subtle colour treatments.
+- [Menu](components/Menu.md): A dropdown menu composition for commands, checkbox or radio choices, groups and submenus.
 - [Navbar](components/Navbar.md): Horizontal app navigation shell.
 - [NavigationItem](components/NavigationItem.md): Reusable navigation row/item primitive for top navigation, side navigation, and the rail.
-- [Pagination](components/Pagination.md): Pagination is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Pagination](components/Pagination.md): Composes page navigation from numbered links, previous/next controls and ellipses.
 - [Sidebar](components/Sidebar.md): Vertical navigation shell.
-- [Stepper](components/Stepper.md): Stepper is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Stepper](components/Stepper.md): Shows progress through a labelled sequence, marking earlier steps complete and one step current.
 
 ### Overlay (4)
 
-- [BottomSheet](components/BottomSheet.md): BottomSheet is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [BottomSheet](components/BottomSheet.md): A bottom-edge Drawer composition with a handle, optional close button and safe-area-aware spacing.
 - [Drawer](components/Drawer.md): Drawer presents contextual content from an edge of the viewport without committing to a dashboard, map, or CMS-specific layout.
-- [Popover](components/Popover.md): Popover is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [Popover](components/Popover.md): An anchored surface for supporting content or small interactions, composed from a trigger and content.
 - [Tooltip](components/Tooltip.md): A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.
 
 ### Platform (2)
@@ -194,7 +194,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [CategoryTile](components/CategoryTile.md): Product category action with controlled selection, multiline localization-safe labels, an optional count drawn as the system's counter at the icon square's top-right (its localized label spoken, not drawn), and a minimum 44px target.
 - [FloorSelector](components/FloorSelector.md): A controlled floor selector with vertical-list, horizontal-list, compact-stepper and collapsible presentations.
 - [LanguageSwitcher](components/LanguageSwitcher.md): A web-only language control built from Kozmos Select. iOS and Android deliberately follow device/app language and do not have this button.
-- [LocationPin](components/LocationPin.md): LocationPin is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+- [LocationPin](components/LocationPin.md): A map marker with optional result number, custom content, external label and category tint.
 - [MapAttribution](components/MapAttribution.md): Provider-neutral map credits and an independently optional brand slot, available on React, SwiftUI and Compose.
 - [MapControlButton](components/MapControlButton.md): Product/SDK map action with icon-only and labelled presentations.
 - [MapStatusPill](components/MapStatusPill.md): One status on the map, drawn as a compact pill in one of five tones (decision 39).
@@ -220,7 +220,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 
 ### System (1)
 
-- [ThemeProvider](components/ThemeProvider.md): A module boundary, never a document-global theme switch.
+- [ThemeProvider](components/ThemeProvider.md): Scopes light, dark or system appearance, reading direction and token overrides to a Kozmos subtree and its owned portals.
 
 ### Utilities (1)
 

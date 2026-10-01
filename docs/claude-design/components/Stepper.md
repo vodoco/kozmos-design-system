@@ -2,7 +2,7 @@
 
 # Stepper
 
-Stepper is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Shows progress through a labelled sequence, marking earlier steps complete and one step current. `currentStep` is zero-based; it displays progress rather than providing navigation or form validation.
 
 - **Import:** `import { Stepper } from "@kozmos-ds/react";`
 - **Group:** Navigation

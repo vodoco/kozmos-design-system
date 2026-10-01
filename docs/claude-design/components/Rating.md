@@ -2,7 +2,7 @@
 
 # Rating
 
-Rating is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Collects or displays a rating using stars or a thumbs-up/down choice. Use `value` and `onChange` for input, `readOnly` for display, and the label props to provide localized accessible names.
 
 - **Import:** `import { Rating } from "@kozmos-ds/react";`
 - **Group:** Input

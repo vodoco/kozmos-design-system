@@ -2,6 +2,11 @@
 
 > **Purpose:** Comprehensive security guidelines for the Kozmos Design System.
 
+Host-application recommendations below are not features supplied or verified by the component
+library. Kozmos does not configure an application's CSP, authentication, transport or mobile
+credential storage. For repository vulnerability-reporting instructions, read
+[SECURITY.md](../SECURITY.md); a confirmed private communication channel is pending owner setup.
+
 ---
 
 ## 1. Security Principles
@@ -18,17 +23,18 @@
 
 ### Safe Patterns
 
-```typescript
-// Use textContent for text insertion
-element.textContent = userInput;
+```tsx
+export function Greeting({ name }: { name: string }) {
+  return <p>Hello, {name}</p>; // JSX escapes what it renders
+}
 
-// React JSX auto-escapes
-<div>{userInput}</div>
-
-// Use DOMPurify for HTML
-import DOMPurify from 'dompurify';
-const clean = DOMPurify.sanitize(dirty);
+export function showStatus(element: HTMLElement, text: string) {
+  element.textContent = text; // text, never parsed as HTML
+}
 ```
+
+HTML that comes from outside the app is sanitised before it is rendered, with a library of the
+app's own (DOMPurify is one; Kozmos installs none), and never inserted as raw HTML as it arrived.
 
 ### URL Validation
 
@@ -76,10 +82,6 @@ const cspPolicy = {
 ```typescript
 // Never store tokens in localStorage
 // Use HttpOnly cookies or secure storage
-
-// React Native
-import * as SecureStore from "expo-secure-store";
-await SecureStore.setItemAsync("token", value);
 ```
 
 ---
@@ -100,9 +102,7 @@ await SecureStore.setItemAsync("token", value);
 
 ### React Native
 
-- Use react-native-keychain
-- Prevent screenshots on sensitive screens
-- Detect jailbreak/root in production
+There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack Compose. What this section held, from the original scope, is kept as a proposal in [docs/proposals/other-platforms.md](../docs/proposals/other-platforms.md).
 
 ---
 

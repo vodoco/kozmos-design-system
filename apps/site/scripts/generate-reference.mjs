@@ -110,15 +110,15 @@ export function platformsOf(status) {
 // ---- What each component is ---------------------------------------------------
 
 /**
- * The words 36 components' docs open with in place of a description
- * (GAPS.md, GAP-81). They say nothing, so they count as no description.
+ * The former placeholder introduction (GAPS.md, GAP-81). Keep rejecting it
+ * if it returns: it says nothing, so it counts as no description.
  */
 const PLACEHOLDER = /^Displays the \S+ interface topology natively\.$/;
 
 /**
  * The first paragraph after the mdx's title: prose, not an import, a JSX
  * block or a heading. Markdown emphasis is dropped; inline code is kept.
- * The placeholder some docs carry is no description.
+ * A placeholder is no description.
  */
 export function readDescription(mdx) {
   const lines = mdx.split("\n");

@@ -2,7 +2,7 @@
 
 # SplitButton
 
-SplitButton is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Pairs a primary action with a separate dropdown of related actions. Supply `onMainClick` for the primary button and `menuItems` for the alternatives; `disabled` applies to both triggers.
 
 - **Import:** `import { SplitButton } from "@kozmos-ds/react";`
 - **Group:** Action

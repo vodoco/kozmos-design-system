@@ -16,7 +16,7 @@ import { compilerOptions, hostWith, ts } from "./claude-design-typescript.mjs";
 export const DECLARATIONS = "packages/react/dist/index.d.ts";
 
 /** Where a declaration lives, which decides whether a card lists it. */
-function originOf(file) {
+export function originOf(file) {
   if (file.includes("/@types/react/")) return "react";
   if (/\/(framer-motion|motion-dom|motion-utils)\//.test(file)) return "motion";
   if (file.includes("/@radix-ui/")) return "radix";
@@ -116,17 +116,24 @@ export function firstSentence(text) {
 /**
  * The published API: every export of the declarations, what kind of thing it
  * is, and — for a component — each prop it takes.
+ *
+ * `declarations` and `virtual` read another entry point instead, from memory
+ * (path → text): the tests hand it declarations they emitted from sources of
+ * their own.
  */
-export function readPublishedApi(root) {
-  const file = path.join(root, DECLARATIONS);
-  if (!fs.existsSync(file))
+export function readPublishedApi(
+  root,
+  { declarations = path.join(root, DECLARATIONS), virtual = new Map() } = {},
+) {
+  const file = declarations;
+  if (!virtual.has(file) && !fs.existsSync(file))
     throw new Error(
       `${DECLARATIONS} is missing. The Claude Design cards are read from the built types: run \`pnpm --filter "@kozmos-ds/react..." build\` first.`,
     );
   const program = ts.createProgram({
     rootNames: [file],
     options: compilerOptions,
-    host: hostWith(),
+    host: hostWith(virtual),
   });
   const checker = program.getTypeChecker();
   const dts = program.getSourceFile(file);
@@ -181,7 +188,8 @@ export function readPublishedApi(root) {
   }
 
   function packageOf(fileName) {
-    const real = fs.realpathSync(fileName);
+    // A file served from memory has no real path of its own.
+    const real = fs.existsSync(fileName) ? fs.realpathSync(fileName) : fileName;
     const match = real.match(/\/packages\/([^/]+)\/dist\//);
     if (match) return `@kozmos-ds/${match[1]}`;
     const npm = real.match(/\/node_modules\/((?:@[^/]+\/)?[^/]+)\//g);
@@ -283,7 +291,7 @@ function findLocal(api, name) {
  * arguments of an `Omit` or a `Pick`, an interface's bases, an
  * intersection's parts.
  */
-function declarationsOf(checker, type, name, seen = new Set()) {
+export function declarationsOf(checker, type, name, seen = new Set()) {
   if (!type || seen.has(type) || seen.size > 64) return [];
   seen.add(type);
   const own = checker.getPropertyOfType(type, name)?.declarations;

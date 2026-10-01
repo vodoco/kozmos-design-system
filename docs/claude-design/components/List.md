@@ -2,7 +2,7 @@
 
 # List
 
-List is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A bordered vertical list with standard or compact row density. Compose ListItem children for content rows; use POIResultList for SDK search results and their selection/action contract.
 
 - **Import:** `import { List, ListItem } from "@kozmos-ds/react";`
 - **Group:** Data Display

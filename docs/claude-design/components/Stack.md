@@ -2,7 +2,7 @@
 
 # Stack
 
-Stack is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Arranges children in a flex row or column with standard gap, alignment, justification and wrapping options. Use it for one-dimensional composition without repeating layout classes.
 
 - **Import:** `import { Stack } from "@kozmos-ds/react";`
 - **Group:** Foundations

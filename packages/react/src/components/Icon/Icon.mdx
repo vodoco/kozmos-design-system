@@ -7,7 +7,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # Icon
 
-Displays the Icon interface topology natively.
+Renders a Pointr icon supplied as a component or registry name with standard size and colour variants.
+Icons are decorative by default; provide an accessible label when the icon itself conveys information.
 
 <Canvas>
   <Story of={IconStories.Default} />
@@ -57,12 +58,12 @@ import com.kozmos.components.icon.KozmosIconSize
 
 @Composable
 fun IconExample() {
-    KozmosIcon(
-        name = "bell-01",
-        size = KozmosIconSize.Md,
-        color = KozmosIconColor.Default,
-        contentDescription = "Notifications"
-    )
+KozmosIcon(
+name = "bell-01",
+size = KozmosIconSize.Md,
+color = KozmosIconColor.Default,
+contentDescription = "Notifications"
+)
 }
 
     `}

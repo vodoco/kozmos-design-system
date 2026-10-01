@@ -147,6 +147,31 @@ export function readModules(root, componentNames) {
   return modules;
 }
 
+/**
+ * Which module each export belongs to. A directory that re-exports a name by
+ * name publishes it as its own (DateRangePicker, declared beside DatePicker);
+ * otherwise a name is its declaring module's. `declarer` is where it is
+ * declared, which is still where its defaults are.
+ */
+export function exportOwners(modules, exportNames) {
+  const owner = new Map();
+  const declarer = new Map();
+  for (const module of modules)
+    for (const name of module.reexports)
+      if (exportNames.has(name) && !owner.has(name)) owner.set(name, module);
+  for (const module of modules)
+    for (const name of module.names) {
+      if (!exportNames.has(name)) continue;
+      if (!declarer.has(name)) declarer.set(name, module);
+      if (!owner.has(name)) owner.set(name, module);
+    }
+  const ownedBy = (module) =>
+    [...new Set([...module.reexports, ...module.names])].filter(
+      (name) => owner.get(name) === module,
+    );
+  return { owner, declarer, ownedBy };
+}
+
 /** The function a component is: `forwardRef((props, ref) => …)`, `function X(…)`. */
 function implementationOf(sources, name) {
   for (const source of sources)

@@ -40,19 +40,23 @@ Use this abbreviated checklist for quick audits:
 
 ### Quick Pass/Fail Criteria
 
-| Criterion | Pass | Fail |
-|-----------|------|------|
-| Uses Figma Variables | All tokens from Variables | Any hardcoded hex/values |
-| Has all states | 5+ states defined | Missing hover/focus/disabled |
-| Auto Layout | 100% Auto Layout | Any fixed positioning |
-| Naming | PascalCase/Variant | Inconsistent naming |
-| Description | Filled in | Empty |
+| Criterion            | Pass                      | Fail                         |
+| -------------------- | ------------------------- | ---------------------------- |
+| Uses Figma Variables | All tokens from Variables | Any hardcoded hex/values     |
+| Has all states       | 5+ states defined         | Missing hover/focus/disabled |
+| Auto Layout          | 100% Auto Layout          | Any fixed positioning        |
+| Naming               | PascalCase/Variant        | Inconsistent naming          |
+| Description          | Filled in                 | Empty                        |
 
 ---
 
 ## 2. Component Structure Requirements
 
 ### File Organization
+
+An example layout. The Core Library itself is painted by the importer plugin,
+`figma/foundations-importer`, whose layout registry names the component sets it paints, and
+`pnpm figma:verify` checks the published file against it.
 
 ```
 Kozmos Design System (Library File)
@@ -68,7 +72,7 @@ Kozmos Design System (Library File)
 │   └── ...
 ├── 📁 Composites
 │   ├── Card
-│   ├── Modal
+│   ├── Dialog
 │   ├── SearchPanel
 │   └── ...
 └── 📁 Templates
@@ -87,12 +91,12 @@ Kozmos Design System (Library File)
 
 ### Naming Convention
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Main Component | `PascalCase` | `Button`, `SearchInput` |
-| Variant Group | `PascalCase/variant=Value` | `Button/variant=Primary` |
-| Sub-component | `_PascalCase` | `_ButtonIcon` |
-| Internal layer | `lowercase-kebab` | `icon-wrapper` |
+| Type           | Convention                 | Example                  |
+| -------------- | -------------------------- | ------------------------ |
+| Main Component | `PascalCase`               | `Button`, `SearchInput`  |
+| Variant Group  | `PascalCase/variant=Value` | `Button/variant=Primary` |
+| Sub-component  | `_PascalCase`              | `_ButtonIcon`            |
+| Internal layer | `lowercase-kebab`          | `icon-wrapper`           |
 
 ### Checklist: Naming
 
@@ -110,14 +114,14 @@ Kozmos Design System (Library File)
 
 Every component should define relevant variant properties:
 
-| Property | Type | Common Values |
-|----------|------|---------------|
-| `variant` | String | solid, outline, ghost, link |
-| `size` | String | sm, md, lg |
-| `state` | String | default, hover, focus, active, disabled |
-| `mode` | Boolean / String | light, dark |
-| `hasIcon` | Boolean | true, false |
-| `iconPosition` | String | start, end |
+| Property       | Type             | Common Values                           |
+| -------------- | ---------------- | --------------------------------------- |
+| `variant`      | String           | solid, outline, ghost, link             |
+| `size`         | String           | sm, md, lg                              |
+| `state`        | String           | default, hover, focus, active, disabled |
+| `mode`         | Boolean / String | light, dark                             |
+| `hasIcon`      | Boolean          | true, false                             |
+| `iconPosition` | String           | start, end                              |
 
 ### Checklist: Variants
 
@@ -144,12 +148,14 @@ disabled=True     →    disabled={true}
 ### Anti-patterns to Avoid
 
 ❌ **Don't:**
+
 - Create separate components for each variant (use variant properties)
 - Use "State 1", "State 2" naming
 - Mix naming conventions within same property
 - Have variants that can't be achieved in code
 
 ✅ **Do:**
+
 - Use variant properties for all variations
 - Use semantic names (hover, focus, disabled)
 - Match naming to code exactly
@@ -161,14 +167,14 @@ disabled=True     →    disabled={true}
 
 ### Token Categories
 
-| Category | Figma Variable Collection | Example |
-|----------|---------------------------|---------|
-| **Colors** | Kozmos/Color | `color/text/primary` |
-| **Typography** | Kozmos/Typography | `font/size/400` |
-| **Spacing** | Kozmos/Spacing | `space/400` |
-| **Radius** | Kozmos/Radius | `radius/200` |
-| **Shadow** | Kozmos/Effects | `shadow/200` |
-| **Motion** | Kozmos/Motion | `motion/duration/normal` |
+| Category       | Figma Variable Collection | Example                  |
+| -------------- | ------------------------- | ------------------------ |
+| **Colors**     | Kozmos/Color              | `color/text/primary`     |
+| **Typography** | Kozmos/Typography         | `font/size/400`          |
+| **Spacing**    | Kozmos/Spacing            | `space/400`              |
+| **Radius**     | Kozmos/Radius             | `radius/200`             |
+| **Shadow**     | Kozmos/Effects            | `shadow/200`             |
+| **Motion**     | Kozmos/Motion             | `motion/duration/normal` |
 
 ### Checklist: Variable Usage
 
@@ -191,13 +197,14 @@ disabled=True     →    disabled={true}
 
 ### Variable Naming Alignment
 
-Figma Variables must map to code tokens:
+Figma Variables map to code tokens by their collection and path, which the token build turns into
+each platform's name:
 
-| Figma Variable | CSS Variable | Swift | Kotlin |
-|----------------|--------------|-------|--------|
-| `color/text/primary` | `--kozmos-color-text-primary` | `.textPrimary` | `KozmosTokens.color.text.primary` |
-| `space/400` | `--kozmos-space-400` | `.space400` | `KozmosTokens.space[400]` |
-| `radius/200` | `--kozmos-radius-200` | `.radius200` | `KozmosTokens.radius[200]` |
+| Figma variable (collection / name) | CSS variable                       | Swift                                         | Kotlin                                          |
+| ---------------------------------- | ---------------------------------- | --------------------------------------------- | ----------------------------------------------- |
+| Primitives / `Colors/foreground/0` | `--primitives-colors-foreground-0` | `KozmosColors.primitivesColorsForeground0`    | `KozmosThemeTokens.primitivesColorsForeground0` |
+| Semantics / `Surface/0`            | `--semantics-surface-0`            | `KozmosColors.semanticsSurface0`              | `KozmosThemeTokens.semanticsSurface0`           |
+| Primitives / `Layout/spacing/200`  | `--primitives-layout-spacing-200`  | `KozmosDimensions.primitivesLayoutSpacing200` | `KozmosDimensions.primitivesLayoutSpacing200`   |
 
 ---
 
@@ -207,24 +214,24 @@ Figma Variables must map to code tokens:
 
 Every interactive component needs these states:
 
-| State | Trigger | Visual Change |
-|-------|---------|---------------|
-| **Default** | Initial | Base appearance |
-| **Hover** | Mouse over | Subtle highlight |
-| **Focus** | Keyboard focus | Focus ring |
-| **Active/Pressed** | Click/tap | Pressed appearance |
-| **Disabled** | `disabled` prop | Muted, no interaction |
-| **Loading** | `loading` prop | Spinner, disabled interaction |
+| State              | Trigger         | Visual Change                 |
+| ------------------ | --------------- | ----------------------------- |
+| **Default**        | Initial         | Base appearance               |
+| **Hover**          | Mouse over      | Subtle highlight              |
+| **Focus**          | Keyboard focus  | Focus ring                    |
+| **Active/Pressed** | Click/tap       | Pressed appearance            |
+| **Disabled**       | `disabled` prop | Muted, no interaction         |
+| **Loading**        | `loading` prop  | Spinner, disabled interaction |
 
 ### Additional States (as needed)
 
-| State | When Needed | Example |
-|-------|-------------|---------|
-| **Error/Invalid** | Form inputs | Red border, error icon |
-| **Success** | Validation | Green border, checkmark |
-| **Selected** | Toggle/selection | Background change |
-| **Expanded** | Accordion/dropdown | Chevron rotation |
-| **Empty** | Data display | Placeholder content |
+| State             | When Needed        | Example                 |
+| ----------------- | ------------------ | ----------------------- |
+| **Error/Invalid** | Form inputs        | Red border, error icon  |
+| **Success**       | Validation         | Green border, checkmark |
+| **Selected**      | Toggle/selection   | Background change       |
+| **Expanded**      | Accordion/dropdown | Chevron rotation        |
+| **Empty**         | Data display       | Placeholder content     |
 
 ### Checklist: State Coverage
 
@@ -256,13 +263,13 @@ Every interactive component needs these states:
 
 ### What to Annotate
 
-| Annotation | Purpose | Example |
-|------------|---------|---------|
-| **Focus order** | Tab sequence | 1 → 2 → 3 → 4 |
-| **Labels** | Screen reader text | "Search button" |
-| **Roles** | ARIA roles | button, checkbox, dialog |
-| **States** | ARIA states | aria-expanded, aria-checked |
-| **Descriptions** | Extended help | "Opens search panel" |
+| Annotation       | Purpose            | Example                     |
+| ---------------- | ------------------ | --------------------------- |
+| **Focus order**  | Tab sequence       | 1 → 2 → 3 → 4               |
+| **Labels**       | Screen reader text | "Search button"             |
+| **Roles**        | ARIA roles         | button, checkbox, dialog    |
+| **States**       | ARIA states        | aria-expanded, aria-checked |
+| **Descriptions** | Extended help      | "Opens search panel"        |
 
 ### Checklist: Accessibility
 
@@ -312,13 +319,13 @@ Use Figma plugins to verify contrast:
 
 ### Breakpoints (Reference)
 
-| Name | Width | Target |
-|------|-------|--------|
-| **Mobile** | 320-479px | Phones |
-| **Mobile Large** | 480-767px | Large phones |
-| **Tablet** | 768-1023px | Tablets |
-| **Desktop** | 1024-1439px | Laptops |
-| **Desktop Large** | 1440px+ | Monitors |
+| Name              | Width       | Target       |
+| ----------------- | ----------- | ------------ |
+| **Mobile**        | 320-479px   | Phones       |
+| **Mobile Large**  | 480-767px   | Large phones |
+| **Tablet**        | 768-1023px  | Tablets      |
+| **Desktop**       | 1024-1439px | Laptops      |
+| **Desktop Large** | 1440px+     | Monitors     |
 
 ### Checklist: Responsive Behavior
 
@@ -368,15 +375,18 @@ Every component needs a description in Figma:
 Primary action trigger for user interactions.
 
 ### Usage
+
 - Use solid variant for primary actions
 - Use outline variant for secondary actions
 - Use ghost variant for tertiary/inline actions
 
 ### Do's
+
 ✅ Use clear, action-oriented labels
 ✅ Limit to one primary button per section
 
 ### Don'ts
+
 ❌ Don't use for navigation (use Link)
 ❌ Don't disable without explanation
 ```
@@ -400,7 +410,7 @@ Include in component or separate documentation page:
 │ 📋 Developer Handoff Notes              │
 ├─────────────────────────────────────────┤
 │ Component: SearchPanel                  │
-│ Package: @kozmos/react                   │
+│ Package: @kozmos-ds/react                   │
 │ Status: Beta                            │
 │                                         │
 │ Props to implement:                     │
@@ -424,13 +434,13 @@ Include in component or separate documentation page:
 
 Before creating `.figma.*` files, document the mapping:
 
-| Figma Property | Figma Values | Code Prop | Code Type |
-|----------------|--------------|-----------|-----------|
-| variant | Solid, Outline, Ghost | variant | "solid" \| "outline" \| "ghost" |
-| size | Small, Medium, Large | size | "sm" \| "md" \| "lg" |
-| disabled | true, false | disabled | boolean |
-| hasLeftIcon | true, false | (slot) | React.ReactNode |
-| Label | (text) | children | React.ReactNode |
+| Figma Property | Figma Values          | Code Prop | Code Type                       |
+| -------------- | --------------------- | --------- | ------------------------------- |
+| variant        | Solid, Outline, Ghost | variant   | "solid" \| "outline" \| "ghost" |
+| size           | Small, Medium, Large  | size      | "sm" \| "md" \| "lg"            |
+| disabled       | true, false           | disabled  | boolean                         |
+| hasLeftIcon    | true, false           | (slot)    | React.ReactNode                 |
+| Label          | (text)                | children  | React.ReactNode                 |
 
 ### Checklist: Code Connect Ready
 
@@ -463,7 +473,7 @@ Before publishing Code Connect:
 - [ ] `.figma.kt` (Android) created
 - [ ] Props mapped correctly
 - [ ] Imports are correct
-- [ ] `figma connect parse` passes
+- [ ] `pnpm figma:parse:linked` and `pnpm figma:parse:native:linked` pass
 - [ ] Preview in Figma Dev Mode verified
 
 ---
@@ -475,12 +485,14 @@ Before publishing Code Connect:
 Run through this checklist before publishing to team library:
 
 #### Structure ✓
+
 - [ ] Component is main component (purple diamond)
 - [ ] Component is in correct folder/page
 - [ ] Naming follows conventions
 - [ ] No unnamed layers ("Frame 1", "Group 2")
 
 #### Tokens ✓
+
 - [ ] All colors from Variables
 - [ ] All spacing from Variables
 - [ ] All typography from styles/Variables
@@ -488,12 +500,14 @@ Run through this checklist before publishing to team library:
 - [ ] No hardcoded values
 
 #### Variants ✓
+
 - [ ] All variant properties defined
 - [ ] All variant combinations work
 - [ ] Variant names match code
 - [ ] Default variant marked
 
 #### States ✓
+
 - [ ] Default state complete
 - [ ] Hover state complete
 - [ ] Focus state with ring
@@ -503,6 +517,7 @@ Run through this checklist before publishing to team library:
 - [ ] Error state (if applicable)
 
 #### Accessibility ✓
+
 - [ ] Focus order annotated
 - [ ] Labels provided
 - [ ] Touch targets ≥44×44px
@@ -510,19 +525,22 @@ Run through this checklist before publishing to team library:
 - [ ] Motion is optional
 
 #### Responsive ✓
+
 - [ ] Auto Layout throughout
 - [ ] Constraints set
 - [ ] Works at 320px width
 - [ ] Works at 1440px width
 
 #### Documentation ✓
+
 - [ ] Description filled in
 - [ ] Usage guidelines written
 - [ ] Handoff notes complete
 
 #### Code Connect ✓
+
 - [ ] Property mapping documented
-- [ ] Ready for .figma.* file creation
+- [ ] Ready for .figma.\* file creation
 
 ### Publication Checklist
 
@@ -531,7 +549,7 @@ Run through this checklist before publishing to team library:
 - [ ] No changes pending in Figma branch
 - [ ] Published to library
 - [ ] Announced in #design-system channel
-- [ ] Updated component inventory
+- [ ] Code Connect still parses (`pnpm figma:parse:linked`)
 
 ---
 
@@ -539,20 +557,25 @@ Run through this checklist before publishing to team library:
 
 ### Variant Property Cheat Sheet
 
+The properties the Code Connect files map, `packages/react/src/components/<Name>/<Name>.figma.tsx`:
+
 ```
-Button:    variant(solid|outline|ghost) × size(sm|md|lg) × state(default|hover|focus|active|disabled) × hasIcon(true|false)
-Input:     size(sm|md|lg) × state(default|hover|focus|disabled|error) × hasPrefix(true|false) × hasSuffix(true|false)
-Checkbox:  state(unchecked|checked|indeterminate) × disabled(true|false)
-Modal:     size(sm|md|lg|full)
+Button:    Variant(Default|Secondary|Destructive|Outline|Ghost|Link|Glass) × Size(Default|Small|Large|Icon) × State(Default|Disabled|Loading)
+Input:     State(Default|Focus|Disabled|Readonly) × Status(Default|Error|Warning|Success) × Show Helper Text
+Checkbox:  Checked(Unchecked|Checked) × State(Default|Disabled|Error)
+Dialog:    Title Text, Description Text, Body Text, and slots for its fields and actions
 ```
 
 ### Token Quick Reference
 
+Variables are named by collection and path, as `packages/tokens/src/raw/` exports them:
+
 ```
-Colors:    color/text/primary, color/background/primary, color/interactive/primary
-Spacing:   space/100(4), space/200(8), space/400(16), space/600(24), space/800(32)
-Radius:    radius/100(4), radius/200(8), radius/300(12), radius/full
-Typography: font/size/100...900, font/weight/regular|medium|semibold|bold
+Colors:     Primitives  Colors/foreground/0…1000, Colors/background/0…1000, Colors/theme/0…1000
+Surfaces:   Semantics   Surface/0, 100, 200, 300
+Spacing:    Primitives  Layout/spacing/0, 25, 50, 75, 100 (8), 150, 200 (16) … 1000
+Radius:     Primitives  Layout/radius/0, 50, 100 … 1000
+Typography: Primitives  Typography/font/family, weight, size
 ```
 
 ### State Visual Guide
@@ -571,11 +594,12 @@ Error    → Red border, error icon
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-07 | Initial Figma audit checklist |
+| Version | Date       | Changes                                        |
+| ------- | ---------- | ---------------------------------------------- |
+| 1.0.0   | 2026-02-07 | Initial Figma audit checklist                  |
+| 1.1.0   | 2026-09-29 | Real token names and the repository's commands |
 
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last Updated:** 2026-02-07
+**Last Updated:** 2026-09-29

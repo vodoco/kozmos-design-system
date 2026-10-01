@@ -2,7 +2,7 @@
 
 # Tabs
 
-Tabs is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+Switches between related content panels within the same interface. Compose TabsList, TabsTrigger and TabsContent with matching values; the Radix-backed root supports controlled and uncontrolled selection.
 
 - **Import:** `import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kozmos-ds/react";`
 - **Group:** Components
