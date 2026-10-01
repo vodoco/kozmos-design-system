@@ -18,6 +18,13 @@ but no `onAction` draws them disabled on every platform. Disabled actions do not
 invoke a callback or report an action analytics event. Adding or removing the handler
 updates their availability; an action explicitly marked disabled remains disabled.
 
+Result actions have a **44-unit minimum height and width** on web, iOS and Android
+(GAP-056), including disabled actions. The control grows for larger text rather
+than imposing a fixed-height clip. iOS includes the padding inside the button's
+hit area; Android retains Material's larger touch-target policy. The Figma importer
+draws 44px action buttons. This is the SDK's sizing contract, not a claim that every
+smaller control necessarily fails WCAG, or that physical-device acceptance is complete.
+
 <Canvas of={Stories.Default} />
 <Canvas of={Stories.FeaturedSelected} />
 <Controls />

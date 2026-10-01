@@ -583,16 +583,18 @@ private fun KozmosPOIResultActionButton(
             BorderStroke(1.dp, KozmosThemeTokens.semanticsBorderSubtle)
         }
     ) {
-        Text(
-            text = entry.label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = foreground,
-            modifier = Modifier.padding(
+        // Keep Material's larger touch-target policy; 44dp is the painted
+        // content minimum, not a request to shrink Android's hit target.
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp).padding(
                 horizontal = KozmosDimensions.primitivesLayoutSpacing200,
                 vertical = KozmosDimensions.primitivesLayoutSpacing100
             )
-        )
+        ) {
+            Text(text = entry.label, style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold, color = foreground)
+        }
     }
 }
 
