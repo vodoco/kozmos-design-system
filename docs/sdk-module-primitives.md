@@ -11,6 +11,10 @@ icons stays 0.5.0. Matching SwiftUI/Compose source is in the repository, not a n
 registry release. See [release evidence](release-process.md#070).
 Post-release source status below is reconciled to main `7c006e06aa904894217fb4df799d9e6ff1e60c4b`;
 merged maintenance is not an additional npm release.
+P01's three source slices are now assembled in an unreleased integration candidate:
+GAP-109 (named manoeuvre containers), GAP-056 (result-action targets), and GAP-101
+(named shell controls). Candidate verification and the normal merge gates remain;
+this is not a claim that these changes are on main, published or adopted in products.
 For all 121 supplied product gaps (latest source intake 2026-10-01), their criteria and corrected statuses, read the
 [product design gap register](product-design-gap-register.md). The site has a
 [separate gap register](../apps/site/GAPS.md).
@@ -454,8 +458,9 @@ Do not let the new chrome conceal already-recorded behavior gaps:
   result-list footer is optional backlog: the current Search with AI design uses the header.
 - **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks;
   GAP-097 step metrics; GAP-104 endpoint actions. React GAP-094/GAP-100 are already fixed.
-- **Accessibility/layout:** result actions remain 40px against the requested SDK 44px target
-  (GAP-056); actual keyboard/device acceptance remains. Wide shell content fitting and the
+- **Accessibility/layout:** the P01 candidate raises result actions to a 44px/pt/dp minimum
+  (GAP-056), retaining larger native targets and growth for large text. This is unreleased;
+  actual keyboard/device acceptance remains. Wide shell content fitting and the
   iOS QA header's equal top/side padding are implemented, not missing components.
   Compact-stepper RTL separators are fixed in 0.7.0. Do not
   equate the 44px product target with every WCAG minimum-target rule.
@@ -589,19 +594,19 @@ These do not block P01 or initial reproduction work in P02:
 
 ### Findings to carry into implementation
 
-- Current ManoeuvreCard tests explicitly expect no open-card region for arbitrary child
-  content. Change that expectation with a failing accessibility regression, not simply a
-  passing test that happens to mount the built-in named Itinerary. Native cards also drop
-  their outer label when expanded; inspect their actual grouped accessibility output before
-  claiming cross-platform closure. Preserve independent child actions and focus restoration.
-- GAP-101's older top control slot is not the only affected surface: inspect the newer
-  bottom-start/end controls and their portaled menus too. Localized names, hidden/out-of-room
-  regions and duplicate nested landmarks need an explicit test matrix before adding wrappers.
-- Native result actions use private action-button implementations, not the generic Button.
-  SwiftUI uses text plus padding with no explicit minimum; Compose uses a clickable Surface
-  whose effective hit area can differ from the painted frame. Measure both painted and hit
-  bounds at relevant text sizes. Do not infer GAP-056 parity from the generic Button's 44-unit
-  setting or from React's height class alone.
+- P01 replaces the prior open-card expectation with a named ManoeuvreCard region for arbitrary
+  child content. SwiftUI and Compose keep their outer names too. Regression tests preserve
+  independent child actions and focus/scroll behavior; physical screen-reader speech/order
+  and real product boards remain separate acceptance.
+- P01 names both the legacy shell controls and the newer bottom corners, with translated
+  labels and hidden/out-of-room checks. FloorSelector's trigger stays in the corner landmark;
+  its portaled popup is a separately named dialog connected by `aria-controls`, not a DOM
+  child of that landmark. Custom consumer portals still own their accessibility lifecycle.
+- P01 changes the native result components' own action implementations, not just the generic
+  Button: SwiftUI minimum dimensions are inside the padded Button label, and Compose keeps
+  the platform's larger interactive-target policy. Named tests measure targets, large text,
+  disabled state and callbacks, including taps in the padded SwiftUI label. Preserve these
+  checks through integration; source implementation is not device or external Figma adoption.
 - Reconcile the implementation's adjacent semantics during each batch: for example, the
   current manoeuvre instruction uses physical `text-left`, and the native shell handle has
   English strings in source. These are inspection leads, not newly allocated product GAP IDs

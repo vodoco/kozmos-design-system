@@ -33,8 +33,11 @@ verification. The imported suggestions, priorities and canvas comments are requi
 to evaluate, not authorization to change APIs, publish packages or run external build kits.
 No external canvas was opened or modified for this sync.
 
-This is not a component implementation or a release plan approved for publication. It identifies
-what to reuse, what remains, what is uncertain, and the evidence needed to close it.
+This register is not a release plan approved for publication. It identifies what to reuse,
+what remains, what is uncertain, and the evidence needed to close it. The P01 integration
+candidate implements GAP-056, GAP-101 and GAP-109 across React, SwiftUI and Compose, with
+regressions and consumer documentation. Their row statuses mean **implemented, unreleased**,
+not merged, CI-approved, published or accepted on physical devices or product boards.
 
 ### Confirmed decisions and the released 0.7.0 increment
 
