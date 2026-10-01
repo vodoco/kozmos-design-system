@@ -6,8 +6,14 @@ implement every historical suggestion without checking its current criterion.
 
 ## Baseline and scope
 
-Reconciled against released main `0bab68bb5f924fd1bd1b74ff561ee6e78695a92b` on
-2026-09-29: React 0.6.0, icons 0.5.0, product-contracts 0.5.0 and tokens 0.2.0.
+Release reconciliation: `a3dc6f935b7914dedd17067036ebadcde737bfd9`, published
+2026-10-01: React 0.7.0, product-contracts 0.6.0 and tokens 0.3.0 on `latest`;
+icons remains 0.5.0. SwiftUI and Compose changes are available in this repository,
+not as newly published native registry packages. See the
+[release evidence](release-process.md#070) and [maintenance checklist](design-system-maintenance.md#post-publication-documentation-checklist).
+The original row-by-row source reconciliation was performed against React 0.6.0
+(`0bab68bb5f924fd1bd1b74ff561ee6e78695a92b`) on 2026-09-29; that historical evidence
+is not being relabelled as a fresh reproduction of all 108 rows.
 The input is the user-supplied **Kozmos Design System Gaps.md**, dated September 28 and
 updated September 29, plus the seven SDK reference screenshots listed in the companion plan.
 
@@ -21,7 +27,7 @@ implementation facts. No external canvas/build-kit commands were executed to per
 This is not a component implementation or a release plan approved for publication. It identifies
 what to reuse, what remains, what is uncertain, and the evidence needed to close it.
 
-### Confirmed follow-up decisions and unreleased increment
+### Confirmed decisions and the released 0.7.0 increment
 
 Enhancements must ship in sync across React, iOS and Android. The current component increment
 adds collapsed floor-availability cues and full-name hints on all three targets, plus logical
@@ -30,12 +36,12 @@ badges in lists, **off by default** behind `showResultCounts`; the closed tile n
 This supersedes the historical GAP-070 request for a closed-tile count. It is no longer a defect
 to omit that count. Historical rows below remain unchanged for traceability.
 
-The unreleased follow-up also fixes native stale floor selection (no first-floor substitution
+The released source also fixes native stale floor selection (no first-floor substitution
 or fabricated stepper choices), preserves Android's existing positional formatter calls, and
 corrects web compact-stepper RTL separators. The separator fix addresses only one GAP-086
 subissue; do not treat it as closure of the complete RTL or shell requirements.
 
-The unreleased shell foundation adds measured logical bottom-start/end slots to all three
+The released shell foundation adds measured logical bottom-start/end slots to all three
 targets, wrapping on narrow hosts and hiding the complete region when height is insufficient.
 Bottom camera padding is opt-in. Compose now measures panel/top-bar/safe-area insets instead
 of only echoing input; native shells no longer force a 448pt/dp minimum. React reports a
@@ -45,10 +51,10 @@ The popup follow-up now bounds long lists in registered shell corners, scrolls w
 floor targets, reveals selection and dismisses when the region disappears across all three targets.
 SDK-UI-001 and SDK-UI-002 remain partial: full keyboard/device acceptance, standalone/native
 window edge cases, real SDK wiring, Figma mapping and consuming-board adoption still need work.
-The follow-up LanguageSwitcher is implemented locally for web. The user explicitly confirmed
+LanguageSwitcher is published for web. The user explicitly confirmed
 no native language button: iOS and Android use device/app language. This is an intentional
 exception to synchronized UI implementation, not a missing native port. Actual web SDK locale
-application and native runtime locale handling remain host work. The unreleased attribution
+application and native runtime locale handling remain host work. The released attribution
 and information components now exist across React, SwiftUI and Compose. MapInfoPanel and its
 MapInfo host preserve the map/browse subtree, reserve a logical-end pane on wide screens and
 open full-screen on compact/mobile hosts. The browser example includes this flow. The live
@@ -70,7 +76,10 @@ panel on the same side, while the native bounds helpers refused to open in that 
 Shell-bound menus now permit horizontal displacement into the clear map region on all three
 targets. Short/long panels in LTR/RTL have named browser checks; native helpers have separate
 regressions for horizontal displacement and retain vertical/standalone availability guards.
-These changes remain **unreleased** until integration, required CI and publication are complete.
+These library changes are **released in React 0.7.0**, with corresponding SwiftUI/Compose
+source in the release commit. Integration PR #175, security PR #174 and version PR #176 are
+merged. Publication and documentation deployment are verified; none of these facts closes
+host adoption, Figma mapping or physical-device acceptance by itself.
 
 ### Keep the three ID namespaces separate
 
@@ -102,14 +111,14 @@ a React package release is not proof of native, Vue, Figma or artifact deploymen
 
 ## Important corrections to the supplied snapshot
 
-| Area                              | Verified repository state                                                                                          | Still needed                                                                                                                                                                |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Level switcher, GAP-080 / GAP-070 | Collapsible selector, user-level dot, open-list result markers, selection/focus behavior exist.                    | Cues, hints and default-off optional counts implemented in the unreleased increment; shell placement, host data, design adoption and long-list/embedded behavior remain.    |
-| GAP-094 and GAP-100               | React 0.6.0 removes the default instruction clamp and makes the itinerary scrolling group focusable.               | Named feature-board adoption and native assistive-technology acceptance, not another implementation of those React fixes.                                                   |
-| `GAP-102`                         | Exported MapStatusPill is available in 0.6.0 with tones, optional icon and live-region policy.                     | Map-local placement and real recalculation/loading/status event wiring.                                                                                                     |
-| GAP-089 / GAP-090                 | Consuming instructions, full API cards and compiling typed examples are generated in this repo.                    | Refresh the external artifact and prove use from a new design session. GAP-091 remains an external admin setting.                                                           |
-| GAP-039 / GAP-043 / GAP-105       | Chart, microphone, Copy01 and Star01 artwork already exists as named icon exports.                                 | Registry/consumer access where requested; SearchBar voice remains a product decision. Do not duplicate icon artwork.                                                        |
-| SDK map screen                    | iOS QA uses Kozmos floor controls and the new information composition over Pointr; SDK-owned credits are retained. | Real web/Android SDK hosts, floor/route adapter acceptance, native app locale handling and physical accessibility checks. Native language buttons are intentionally absent. |
+| Area                              | Verified repository state                                                                                                                       | Still needed                                                                                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Level switcher, GAP-080 / GAP-070 | React 0.7.0: collapsible selector, availability cues, hints, bounded lists and default-off optional counts; corresponding native source exists. | Actual host floor ordering/data, keyboard/device acceptance and design/consumer adoption remain; the closed tile intentionally never shows a count.                         |
+| GAP-094 and GAP-100               | React 0.6.0 removes the default instruction clamp and makes the itinerary scrolling group focusable.                                            | Named feature-board adoption and native assistive-technology acceptance, not another implementation of those React fixes.                                                   |
+| `GAP-102`                         | Exported MapStatusPill is available in 0.6.0 with tones, optional icon and live-region policy.                                                  | Map-local placement and real recalculation/loading/status event wiring.                                                                                                     |
+| GAP-089 / GAP-090                 | Consuming instructions, full API cards and compiling typed examples are generated in this repo.                                                 | Refresh the external artifact and prove use from a new design session. GAP-091 remains an external admin setting.                                                           |
+| GAP-039 / GAP-043 / GAP-105       | Chart, microphone, Copy01 and Star01 artwork already exists as named icon exports.                                                              | Registry/consumer access where requested; SearchBar voice remains a product decision. Do not duplicate icon artwork.                                                        |
+| SDK map screen                    | iOS QA uses Kozmos floor controls and the new information composition over Pointr; SDK-owned credits are retained.                              | Real web/Android SDK hosts, floor/route adapter acceptance, native app locale handling and physical accessibility checks. Native language buttons are intentionally absent. |
 
 ## New SDK reference requirements
 
@@ -117,14 +126,14 @@ These are product coverage gaps, not assertions that every underlying primitive 
 Detailed states, ownership, acceptance criteria and sequencing are in
 [sdk-module-primitives.md](sdk-module-primitives.md).
 
-| ID         | Requirement and current state                                                                                                                                                                                                                                                                                                                                                    | Reuse / related gaps                                                                                              | Acceptance before closure                                                                                                                                                                                                |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| SDK-UI-001 | **Level switcher completion — partial.** Library cues, hints, opt-in list counts and bounded scrolling are implemented locally on all three targets. Native SDK host ordering/wiring is separate, not fixed by the library increment.                                                                                                                                            | FloorSelector; GAP-070, GAP-080, GAP-086; existing PR #160 host work.                                             | Top-first real host levels, correct selection/default, placement above zoom, real keyboard/AT and device-window checks, publication and consumer adoption.                                                               |
-| SDK-UI-002 | **Independent map control placement — partial, foundation implemented locally.** All three targets now have registered logical bottom corners with wrapping and bounded floor popups; React reports a combined envelope and native targets measured edge insets.                                                                                                                 | AdaptiveMapShell, MapOverlay, MapControlButton, MapControlsGroup; GAP-081, GAP-084, GAP-085, GAP-101.             | Full corner/credits/status coexistence, keyboard/device acceptance, real SDK wiring and consumer adoption remain.                                                                                                        |
-| SDK-UI-003 | **Language switcher — web composition implemented locally; host wiring remains.** Bottom-start placement, native-name labels, controlled committed selection, pending/error/retry and bounded menus. Native device/app language without a button is the confirmed policy.                                                                                                        | LanguageSwitcher, Select, AdaptiveMapShell; host locale adapter.                                                  | Verify real supported locales, app/SDK application and fallback, race-safe commits, persistence/state preservation, native OS locale handling, Figma and consumer adoption.                                              |
-| SDK-UI-004 | **Locally implemented presentation and shell placement on React/iOS/Android:** supplied credits, bundled Pointr logo, replacement/hidden branding, compact single-line scrolling credits between bottom corners. Corners retain equal bottom/side insets; attribution alone moves up when custom corners leave insufficient width. Provider resolution stays in the SDK adapter. | MapAttribution; AdaptiveMapShell attribution slot; host-approved custom assets/content.                           | Remaining: actual SDK wiring/deduplication and camera application, custom overlays/status coexistence, approved custom assets/copy, physical-device acceptance and Figma adoption. No claim of full integration closure. |
-| SDK-UI-005 | **Info button and panel — implemented locally; iOS QA adoption verified in simulator.** React/SwiftUI/Compose hosts; desktop end pane and full-screen mobile. Real iOS SDK renderer resize, selected POI and query retention verified.                                                                                                                                           | MapInfoPanel / MapInfo, MapControlButton and Accordion; map-browse-flow stories; apps/PointrPlayground/README.md. | Web/Android live SDK host adoption; route/floor-specific state checks; approved localized consumer content; physical VoiceOver/TalkBack; design mapping and release verification. No production-adoption claim.          |
-| SDK-UI-006 | **Exit building action — missing reference-screen composition/behavior contract.** User screenshots include Exit Main Mall.                                                                                                                                                                                                                                                      | Existing button/control primitives; host building/navigation state.                                               | Localized building-specific label, host-owned exit callback/state policy, correct visibility and focus, no stale indoor controls after exit. Confirm route/selection retention before wiring.                            |
+| ID         | Requirement and current state                                                                                                                                                                                                                                                                                                                                      | Reuse / related gaps                                                                                              | Acceptance before closure                                                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| SDK-UI-001 | **Level switcher completion — partial.** Library cues, hints, opt-in list counts and bounded scrolling ship in React 0.7.0 and the corresponding native source. Native SDK host ordering/wiring is separate, not fixed by the library increment.                                                                                                                   | FloorSelector; GAP-070, GAP-080, GAP-086; existing PR #160 host work.                                             | Top-first real host levels, correct selection/default, placement above zoom, real keyboard/AT and device-window checks, Figma and consumer adoption.                                                                     |
+| SDK-UI-002 | **Independent map control placement — partial, foundation released.** All three targets now have registered logical bottom corners with wrapping and bounded floor popups; React reports a combined envelope and native targets measured edge insets.                                                                                                              | AdaptiveMapShell, MapOverlay, MapControlButton, MapControlsGroup; GAP-081, GAP-084, GAP-085, GAP-101.             | Full corner/credits/status coexistence, keyboard/device acceptance, real SDK wiring and consumer adoption remain.                                                                                                        |
+| SDK-UI-003 | **Language switcher — web composition published in 0.7.0; host wiring remains.** Bottom-start placement, native-name labels, controlled committed selection, pending/error/retry and bounded menus. Native device/app language without a button is the confirmed policy.                                                                                           | LanguageSwitcher, Select, AdaptiveMapShell; host locale adapter.                                                  | Verify real supported locales, app/SDK application and fallback, race-safe commits, persistence/state preservation, native OS locale handling, Figma and consumer adoption.                                              |
+| SDK-UI-004 | **Released React presentation and matching iOS/Android source:** supplied credits, bundled Pointr logo, replacement/hidden branding, compact single-line scrolling credits between bottom corners. Corners retain equal bottom/side insets; attribution alone moves up when custom corners leave insufficient width. Provider resolution stays in the SDK adapter. | MapAttribution; AdaptiveMapShell attribution slot; host-approved custom assets/content.                           | Remaining: actual SDK wiring/deduplication and camera application, custom overlays/status coexistence, approved custom assets/copy, physical-device acceptance and Figma adoption. No claim of full integration closure. |
+| SDK-UI-005 | **Info button and panel — released library; iOS QA adoption verified in simulator.** React/SwiftUI/Compose hosts; desktop end pane and full-screen mobile. Real iOS SDK renderer resize, selected POI and query retention verified.                                                                                                                                | MapInfoPanel / MapInfo, MapControlButton and Accordion; map-browse-flow stories; apps/PointrPlayground/README.md. | Web/Android live SDK host adoption; route/floor-specific state checks; approved localized consumer content; physical VoiceOver/TalkBack; design mapping. Release delivery is verified, not production adoption.          |
+| SDK-UI-006 | **Exit building action — missing reference-screen composition/behavior contract.** User screenshots include Exit Main Mall.                                                                                                                                                                                                                                        | Existing button/control primitives; host building/navigation state.                                               | Localized building-specific label, host-owned exit callback/state policy, correct visibility and focus, no stale indoor controls after exit. Confirm route/selection retention before wiring.                            |
 
 ## Evidence and review limits
 
@@ -143,7 +152,7 @@ Repository evidence:
 [native SDK screen](../apps/PointrPlayground/Sources/App/SDKMapScreen.swift),
 [generated artifact documentation](claude-design/README.md).
 
-Baseline verification supporting the released-state reconciliation:
+Historical 0.6.0 baseline verification (2026-09-29; not rerun as a 0.7.0 all-gap audit):
 
 - FloorSelector: 24 React tests passed.
 - ManoeuvreCard: 17 React tests passed.
@@ -151,26 +160,35 @@ Baseline verification supporting the released-state reconciliation:
 - Claude Design generated-documentation suite: 10 tests passed, including typed examples.
 - These focused checks ran in the installed post-release audit checkout. A path-restricted
   Git comparison first confirmed that these components, contracts, icons, generated cards
-  and documentation-test sources were identical to the baseline above. Its dev-dependency
+  and documentation-test sources were identical to the historical 0.6.0 baseline. Its dev-dependency
   security changes are not being counted as released product features.
 - At that baseline review, no new full browser/device/Figma comparison, live SDK walkthrough, all-108-row reproduction,
   external feature canvas refresh or organization-artifact configuration was performed.
   JSDOM checks do not prove rendered geometry. Native source presence is not a simulator,
   VoiceOver or TalkBack pass.
 
-Unreleased implementation has additional named checks: the `test:map-controls` command
+The 0.7.0 implementation has additional named checks: the `test:map-controls` command
 covers floor availability, registered corners, bounded menus, language transitions,
 attribution geometry, browsing and information panels in each configured browser.
 SwiftUI and Compose have matching component/layout tests and rendered references; the iOS
 QA application additionally has information-panel simulator UI tests. These checks are
 acceptance evidence for their own scenarios, not a reproduction of all 108 historical rows.
-Use the integration PR's current CI results for release readiness; local logs and handoff
+The exact release-merge [main CI run 36792093361](https://github.com/vodoco/kozmos-design-system/actions/runs/36792093361)
+passed all 17 jobs, including both native jobs. The
+[publication run 36828049714](https://github.com/vodoco/kozmos-design-system/actions/runs/36828049714)
+passed; npm versions, latest tags and candidate integrity were read back, and a fresh npm
+React 19 installation server-rendered a Button. The
+[Pages run 36792093275](https://github.com/vodoco/kozmos-design-system/actions/runs/36792093275)
+deployed the site and Storybook from the same commit; their live entry pages and Storybook
+index were reachable. This is delivery evidence, not a new visual walkthrough of every story.
+For future release readiness use exact candidate CI evidence; local logs and handoff
 notes are not substitutes for required checks, physical assistive-technology testing,
 Figma mapping or consumer adoption.
 
 The native host's floor ordering and related integration changes are already proposed in
-[PR #160](https://github.com/vodoco/kozmos-design-system/pull/160), open and unmerged at this
-baseline. Review/reuse that work instead of producing an overlapping independent fix.
+[PR #160](https://github.com/vodoco/kozmos-design-system/pull/160), still open and unmerged
+when checked on 2026-10-01. The released SDKMapScreen still sorts floors ascending.
+Review/reuse that work instead of producing an overlapping independent fix.
 Open PR work is not counted as completed here.
 
 ## Original feature evidence

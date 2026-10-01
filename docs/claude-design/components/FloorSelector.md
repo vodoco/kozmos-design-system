@@ -2,7 +2,7 @@
 
 # FloorSelector
 
-FloorSelector is a component of `@kozmos-ds/react` whose docs do not describe it yet.
+A controlled floor selector with vertical-list, horizontal-list, compact-stepper and collapsible presentations. The host supplies top-first floors and the selected ID; Kozmos renders selection, availability cues and optional result counts without choosing a floor or changing the map itself.
 
 - **Import:** `import { FloorSelector } from "@kozmos-ds/react";`
 - **Group:** Product SDK

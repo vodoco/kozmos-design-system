@@ -44,8 +44,10 @@ continues to accept map gestures. Expanded popup containment is a separate conce
 these slots are not a replacement for a bounded popup implementation.
 In particular, a portaled popup has its own visibility and focus lifecycle; hiding
 its anchor region is not proof that the popup has closed. Host integration must
-coordinate that transition. Bounded floor-popup handling is the next implementation
-slice, before calling the complete map-controls composition release-ready.
+coordinate that transition. FloorSelector already coordinates it through the registered
+shell region: its popup is bounded, scrolls to selection and dismisses when the region
+disappears. Beside a long same-side panel, it may move horizontally into the clear map
+region. This behavior does not automatically extend to arbitrary custom popup children.
 
 `bottomControlsPadCamera` defaults to `false`. Enable it to reserve a conservative
 bottom camera band. React always includes the visible region's bounding envelope in

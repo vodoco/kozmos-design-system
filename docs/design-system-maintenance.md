@@ -114,6 +114,54 @@ currently pre-1.0: SemVer does not promise API stability for `0.x`, so explicitl
 breaking change and the project's chosen compatibility expectations. Do not use the pre-1.0
 exception as a reason to surprise consumers. Prefer deprecation and a migration path where practical.
 
+## Post-publication documentation checklist
+
+Treat delivery and documentation reconciliation as separate completion gates. A successful
+release workflow cannot determine whether a hand-maintained plan still calls shipped work
+"unreleased", and a generated-card freshness check cannot judge whether its prose is useful.
+
+1. Record the exact source SHA, package versions/channel, main-push CI, publication run,
+   registry integrity/readback and created tags/releases in the release process's history.
+2. Update the baseline and implementation status in `docs/product-design-gap-register.md`
+   and `docs/sdk-module-primitives.md`. Preserve historical IDs, original requirements and
+   dated evidence. Do not turn library publication into host/Figma/device closure.
+3. Reconcile architecture guides and changed component MDX, including defaults, removed
+   limitations and migrations. Fix a placeholder summary in the source MDX/JSDoc; regenerate
+   API cards instead of editing output. Scan at least the changed feature's docs:
+
+   ```sh
+   rg -n 'unreleased|not published|implemented locally|next implementation|pre-publication' docs packages/react/src/components --glob '*.md' --glob '*.mdx'
+   ```
+
+   Review matches individually. Historical release notes and genuine future work must not be
+   globally replaced. Check counts/versions against their dated evidence instead of treating
+   every old number as a current claim.
+
+4. Build React and its dependencies, then regenerate and validate AI docs:
+
+   ```sh
+   pnpm --filter "@kozmos-ds/react..." build
+   pnpm skills:build
+   pnpm skills:check
+   node --test apps/site/scripts/generate-reference.test.mjs apps/site/scripts/check-storybook-links.test.mjs
+   git diff --check
+   ```
+
+   Inspect the generated diff, local links, the changed Storybook docs and the migration text.
+   Source tests/freshness are not live-site verification. Check package scripts and prerequisites
+   before running additional browser/native tests; use the exact candidate checks above.
+
+5. Verify the Pages workflow's source SHA and deploy result, then the public website,
+   Storybook index/iframe and affected docs/stories. A successful Site test is not a deployment.
+   Pages only auto-builds for its configured paths: a docs-only Markdown PR may correctly not
+   redeploy the site; component MDX does trigger it. Never call an unmerged local fix live.
+6. External artifact upload, product-board adoption and native registry delivery each need
+   independent evidence. Keep them pending until an owner verifies the actual destination.
+
+Submit documentation corrections through a PR and retain the normal merge gates. No package
+bump or npm republication is needed for documentation that does not change shipped output.
+Do not rerun a publication or move existing tags to include post-release documentation edits.
+
 ## Evidence and remaining risk
 
 Attach test commands, exact commit/artifact identifiers, counts, visual review and known gaps

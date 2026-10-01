@@ -5,7 +5,10 @@ the September 5 inventory, which predates the shipped collapsible floor selector
 states, metadata strip, itinerary and map-status component. It does **not** propose removing
 the existing public Product / SDK components.
 
-Baseline: released main `0bab68bb5f924fd1bd1b74ff561ee6e78695a92b`, reviewed 2026-09-29.
+Baseline: release commit `a3dc6f935b7914dedd17067036ebadcde737bfd9`, reconciled 2026-10-01.
+React 0.7.0, tokens 0.3.0 and product-contracts 0.6.0 are published on `latest`;
+icons stays 0.5.0. Matching SwiftUI/Compose source is in the repository, not a native
+registry release. See [release evidence](release-process.md#070).
 For all 108 inherited product gaps, their criteria and corrected statuses, read the
 [product design gap register](product-design-gap-register.md). The site has a
 [separate gap register](../apps/site/GAPS.md).
@@ -16,13 +19,14 @@ Kozmos already has a substantial component foundation. The missing work is now a
 of reusable presentation components, shared layout support, host-owned data/SDK integration,
 and complete-screen verification. Component coverage alone is not a finished SDK experience.
 
-This plan recommends:
+Next work after the 0.7.0 library release:
 
-1. Reuse and refine the existing level switcher and map controls.
-2. Establish supported map-corner and panel placement before adding more floating controls.
-3. Add the bottom-left language selector, independent branding/attribution presentation, and
-   the info trigger/panel as reusable, host-controlled compositions.
-4. Wire them to the actual SDK, then verify complete screens and platform parity.
+1. Reuse the shipped level switcher, logical map-corner slots, attribution and Info components;
+   use the web-only language switcher where the SDK host supports it.
+2. Review existing PR #160 for the iOS host's floor ordering/default selection and lifecycle work.
+3. Complete real web/Android SDK adapters, locale/provider ownership and full-screen acceptance.
+4. Confirm exit-building state policy before composing that remaining action, and validate
+   physical-device accessibility, Figma mapping and consuming-app adoption separately.
 
 The user confirmed **React, iOS and Android enhancements in sync**, not React first with
 native parity deferred. **Explicit exception: LanguageSwitcher is web-only.** The user confirmed
@@ -40,7 +44,7 @@ No new version, merge or publication is authorized by this plan.
 - Keep per-floor search-result badges, **off by default** through `showResultCounts = false`.
   Positive supplied counts appear only after opt-in, in expanded/vertical/horizontal lists.
   The closed tile and compact stepper never show a count. Hidden counts are not announced.
-- This unreleased component increment implements those cues, full-name hints and the count
+- The 0.7.0 release implements those cues, full-name hints and the count
   option across all three targets; logical MapOverlay start/end corners are also implemented.
   Web focus/hover, iOS hover/long press and Android focus/hover use existing tooltip components.
 - Native physical left/right overlay names now stay physical in RTL; use start/end to mirror.
@@ -54,7 +58,7 @@ No new version, merge or publication is authorized by this plan.
   three targets, with width-dependent wrapping, RTL mirroring and opt-in bottom camera padding.
   Native shells respect bounded hosts shorter than the former 448pt/dp minimum. Compose now
   reports measured panel/top-bar/safe-area insets rather than just echoing caller values.
-- The next unreleased slice bounds many-floor lists to the registered shell band on all three
+- The released popup support bounds many-floor lists to the registered shell band on all three
   targets, with scrolling instead of smaller floor targets and dismissal when the region disappears.
   React reveals the selected floor after portal measurement; native lists scroll to selection.
 - This is **not full closure of SDK-UI-001/002**: full keyboard/safe-area/device coverage,
@@ -96,22 +100,22 @@ same radius.
 
 ## Current coverage: reuse versus implement
 
-| Area                          | Present in released source                                                                                                                        | Remaining work                                                                                                                                                           |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Map control button            | Controlled pressed state, disabled/loading, accessible state words, labelled/icon-only presentation, reveal-on-change behavior.                   | Map each host action/mode to the right semantics; not every button is an on/off toggle.                                                                                  |
-| MapControlsGroup              | Zoom, compass, location modes and step-free callbacks/labels.                                                                                     | Fixed composition, not an arbitrary-children cluster. Adding language/info is not solved by passing children to it.                                                      |
-| FloorSelector                 | Four variants including collapsible; current-user-floor dot, expanded-list counts, localized spoken counts, disabled floors and focus management. | Reference hints/chevrons, large-list containment, supported placement, real host data/order and agreed closed-tile count policy.                                         |
-| MapOverlay / AdaptiveMapShell | Anchoring, collision inputs, panels, safe-area inputs, layout callbacks. Native iOS additionally has top/bottom controls placement.               | Consistent independent corner registration, keyboard avoidance and coexistence with credits, panels and popups across platforms.                                         |
-| MapStatusPill                 | Exported, tested in-map status surface, tones, icon override and live-region policy.                                                              | SDK status/event mapping and placement; do not rebuild it as a Toast.                                                                                                    |
-| Language switcher             | Generic select/popover building blocks; native session chooses device-preferred SDK language at startup.                                          | Web LanguageSwitcher is implemented locally but unreleased; actual host locale persistence and SDK/app synchronization remain. Native has no dedicated button by design. |
-| Branding / credits            | Renderer integration boundary and prototype logo asset exist.                                                                                     | Shared MapAttribution presentation is implemented locally but unreleased. Approved host assets/copy, renderer ownership and collision integration remain.                |
-| Info trigger / panel          | MapInfoPanel / MapInfo exist locally across React, SwiftUI and Compose. The iOS Pointr QA host now replaces the disabled SDK Info control.        | iPhone modal isolation and iPad SDK resize/POI/query retention passed live simulator tests. Web/Android live hosts and physical-device/route-specific acceptance remain. |
-| Exit building                 | Button primitives and host building state.                                                                                                        | Product-owned exit behavior, label, visibility and state reset/retention policy.                                                                                         |
-| POI details                   | POIDetailPanel/Content, taxonomy-driven property handling, media, tags and MetaStrip.                                                             | Real-data/empty-state and whole-screen validation. Internal attribute sections are not proof of a public generic AttributeSection.                                       |
-| Opening hours / handles       | OpeningHours Storybook composition; handles inside existing sheet/shell components.                                                               | Decide if a public reusable part is actually needed before extracting another component.                                                                                 |
-| Wayfinding                    | RouteProgressRail, Itinerary, DirectionStep and ManoeuvreCard.                                                                                    | Structured instruction parts/languages, step metrics and endpoint actions remain product gaps.                                                                           |
-| Search / browse               | SearchBar, CategoryTile, BrowseCategoriesPanel and POI result components.                                                                         | Result footer, scope/original-language/area contracts and active product gaps remain; existing components do not close every filter/carousel need.                       |
-| Design/agent consumption      | Generated component API cards, examples, Code Connect and checks exist.                                                                           | External artifact freshness, public documentation accuracy and actual native/Figma parity must be proven separately.                                                     |
+| Area                          | Present in released source                                                                                                                                        | Remaining work                                                                                                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Map control button            | Controlled pressed state, disabled/loading, accessible state words, labelled/icon-only presentation, reveal-on-change behavior.                                   | Map each host action/mode to the right semantics; not every button is an on/off toggle.                                                                                  |
+| MapControlsGroup              | Zoom, compass, location modes and step-free callbacks/labels.                                                                                                     | Fixed composition, not an arbitrary-children cluster. Adding language/info is not solved by passing children to it.                                                      |
+| FloorSelector                 | Four variants, availability cues, full-name hints, default-off list counts, stale-ID preservation and shell-bounded scrolling; native source counterparts.        | Real SDK floor ordering/default selection, device/keyboard acceptance and consuming-host adoption. Closed-tile counts are intentionally absent.                          |
+| MapOverlay / AdaptiveMapShell | Logical bottom corners, measured attribution, content-fitting panels, collision-aware floor menus and safe-area/layout callbacks across the three targets.        | Full native rectangle snapshots, physical keyboard/IME tests, custom overlay/status coexistence and renderer camera application.                                         |
+| MapStatusPill                 | Exported, tested in-map status surface, tones, icon override and live-region policy.                                                                              | SDK status/event mapping and placement; do not rebuild it as a Toast.                                                                                                    |
+| Language switcher             | Published web LanguageSwitcher: native names, controlled selection, pending/error/retry and bounded menu. Native has no language button by design.                | Actual host locale persistence, fallback and SDK/app synchronization; native runtime locale handling.                                                                    |
+| Branding / credits            | Published MapAttribution with bundled Pointr logo, replaceable/hidden branding, ordered credits and centered measured shell placement; native source equivalents. | Approved host assets/copy, provider resolution/deduplication, custom overlay coexistence and actual renderer integration remain.                                         |
+| Info trigger / panel          | MapInfoPanel / MapInfo are published for React, with corresponding SwiftUI and Compose source. The iOS Pointr QA host now replaces the disabled SDK Info control. | iPhone modal isolation and iPad SDK resize/POI/query retention passed live simulator tests. Web/Android live hosts and physical-device/route-specific acceptance remain. |
+| Exit building                 | Button primitives and host building state.                                                                                                                        | Product-owned exit behavior, label, visibility and state reset/retention policy.                                                                                         |
+| POI details                   | POIDetailPanel/Content, taxonomy-driven property handling, media, tags and MetaStrip.                                                                             | Real-data/empty-state and whole-screen validation. Internal attribute sections are not proof of a public generic AttributeSection.                                       |
+| Opening hours / handles       | OpeningHours Storybook composition; handles inside existing sheet/shell components.                                                                               | Decide if a public reusable part is actually needed before extracting another component.                                                                                 |
+| Wayfinding                    | RouteProgressRail, Itinerary, DirectionStep and ManoeuvreCard.                                                                                                    | Structured instruction parts/languages, step metrics and endpoint actions remain product gaps.                                                                           |
+| Search / browse               | SearchBar, CategoryTile, BrowseCategoriesPanel and POI result components.                                                                                         | Result footer, scope/original-language/area contracts and active product gaps remain; existing components do not close every filter/carousel need.                       |
+| Design/agent consumption      | Generated component API cards, examples, Code Connect and checks exist.                                                                                           | External artifact freshness, public documentation accuracy and actual native/Figma parity must be proven separately.                                                     |
 
 Public source entry points:
 [React exports](../packages/react/src/index.ts),
@@ -147,8 +151,8 @@ visitor-floor dot. The full level name is available as an accessible label.
 
 ### Confirmed gaps and important distinctions
 
-- Availability chevrons, full-name hints and optional counts are implemented in the current
-  unreleased increment across React/SwiftUI/Compose. Visual approval and host adoption remain.
+- Availability chevrons, full-name hints and optional counts ship in React 0.7.0 and the
+  corresponding SwiftUI/Compose source. Product visual approval and host adoption remain.
 - The closed tile deliberately omits counts, as now confirmed by the user. GAP-070's historic
   closed-tile acceptance wording is superseded: keep counts only in lists, off by default.
   Host opt-in/data wiring and design/board adoption still need verification.
@@ -157,10 +161,12 @@ visitor-floor dot. The full level name is available as an accessible label.
   levels ascending and supplies neither userFloor nor result counts.
 - [PR #160](https://github.com/vodoco/kozmos-design-system/pull/160) already proposes top-first
   ordering/default-level and other native integration work. It is open, not a completed fix.
-- The React popover is portaled and does not expose a FloorSelector-specific shell collision
-  boundary. Verify map-local portals/containment instead of assuming viewport containment is
-  correct for an embedded map. Site GAP-95 is relevant.
-- The compact-stepper's physical border classes are corrected in the unreleased increment
+- The React popover is portaled. In registered AdaptiveMapShell bottom corners it uses the
+  shell's internal bounded region, including horizontal displacement beside a long panel;
+  standalone selectors remain viewport-bounded. There is no separate public FloorSelector
+  collision-boundary prop. Verify real host containment rather than assuming every arbitrary
+  MapOverlay sibling participates. Site GAP-95 retains its own consumer acceptance criterion.
+- The compact-stepper's physical border classes are corrected in 0.7.0
   (product GAP-086 subissue); its logical separators are covered by the built-package browser check.
 - Stale IDs remain host-owned. Preserve their raw label until the host supplies a valid selection;
   disable stepping in both directions, emit no automatic selection, and do not mark the first
@@ -199,7 +205,7 @@ The layout must support all required positions together, not as isolated stories
 The confirmed RTL policy mirrors these corners: language goes to bottom-right and floor/zoom
 to bottom-left. Existing physical left/right APIs remain physical; logical start/end APIs mirror.
 
-### Shell foundation: current unreleased support and remaining boundaries
+### Shell foundation: released support and remaining boundaries
 
 | Target  | Current shell behavior                                                                                                                           | Required before claiming shared placement parity                                                                                  |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -208,8 +214,8 @@ to bottom-left. Existing physical left/right APIs remain physical; logical start
 | Compose | Registered bottom corners with wrapping/RTL, measured top-bar/panel/safe-area camera insets and short bounded hosts. Legacy top controls remain. | Full rectangle snapshot parity, IME/device/assistive-technology acceptance and host wiring remain.                                |
 
 Inspect the implementations under `packages/{react,ios,android}` before changing the API;
-the older adaptive-layout document describes the initial React foundation, not current native
-equivalence. Adding corner slots without reconciling these differences would leave parity incomplete.
+the [adaptive-layout guide](adaptive-map-layout.md) distinguishes the React geometry contract
+from native support. Do not add duplicate corner slots or infer full parity from their existence.
 Avoid app-specific offsets, full-screen invisible hit surfaces and renderer-padding feedback loops.
 
 The corner slots retain the legacy controls slot and resolve their region against measured
@@ -269,7 +275,7 @@ Acceptance:
 
 ## SDK-UI-003: bottom-left language selector
 
-The unreleased web `LanguageSwitcher` now composes the supported Select pattern, not a second
+The released web `LanguageSwitcher` composes the supported Select pattern, not a second
 localization framework. Native iOS/Android deliberately have no language button and follow the
 effective device/app locale. Native runtime locale change handling still belongs to each host.
 
@@ -306,7 +312,7 @@ Integration acceptance still required (the library does not certify SDK applicat
 
 Treat **branding visibility** and **required attribution** as independent settings.
 
-Locally implemented on React, SwiftUI and Compose: MapAttribution with ordered credits
+Published for React, with SwiftUI and Compose source in the same release: MapAttribution with ordered credits
 (unique id, plain-text label, optional absolute HTTP(S) href), optional approved brand content,
 independent showBrand and a localized region label. Unsafe links remain plain text.
 The official Pointr logo is bundled locally by default, with a replacement brand slot
@@ -355,7 +361,7 @@ Acceptance:
 
 ## SDK-UI-005: information button and panel
 
-**Unreleased library implementation:** MapInfoPanel / KozmosMapInfoPanel and the MapInfo /
+**Released library implementation:** MapInfoPanel / KozmosMapInfoPanel and the MapInfo /
 KozmosMapInfo responsive hosts now exist on React, SwiftUI and Compose. The web map-browse
 example includes the Info trigger and retains its browse/POI state. The
 [iOS Pointr QA app](../apps/PointrPlayground/README.md) now uses the same native host against
@@ -407,7 +413,8 @@ localization. Integration also exposed and fixed keyboard height being counted t
 SwiftUI shell bottom padding; the shell still avoids the keyboard.
 
 Remaining acceptance is other consuming-app adoption, route/floor-specific preservation,
-physical-device VoiceOver/TalkBack, design mapping and release approval. Do not close this
+physical-device VoiceOver/TalkBack and design mapping. Library release approval is complete,
+not an approval of each consuming product. Do not close this
 requirement solely because the component stories render or the package compiles.
 
 Wide search/POI panel follow-up: all three library shells now fit short content
@@ -443,8 +450,9 @@ Do not let the new chrome conceal already-recorded behavior gaps:
 - **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks;
   GAP-097 step metrics; GAP-104 endpoint actions. React GAP-094/GAP-100 are already fixed.
 - **Accessibility/layout:** result actions remain 40px against the requested SDK 44px target
-  (GAP-056); shell keyboard and header spacing remain. Compact-stepper RTL separators are fixed
-  locally but not released. Do not
+  (GAP-056); actual keyboard/device acceptance remains. Wide shell content fitting and the
+  iOS QA header's equal top/side padding are implemented, not missing components.
+  Compact-stepper RTL separators are fixed in 0.7.0. Do not
   equate the 44px product target with every WCAG minimum-target rule.
 - **Icons:** named chart/microphone/copy/star artwork exists, but named exports and the string
   registry are different APIs. GAP-105 requires registry availability, not new artwork.
@@ -457,14 +465,14 @@ Do not let the new chrome conceal already-recorded behavior gaps:
 - **Platform claims:** React npm publication does not publish native packages or make the
   private Vue harness a full Vue design system. Publish supported-target guidance honestly.
 
-## Proposed implementation batches and release boundaries
+## Implementation batches and remaining acceptance
 
 | Batch                            | Deliverable                                                                                                                                                                                 | Dependencies / acceptance                                                                         |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | 0 — decisions and inventory      | Target sync, RTL, floor cues and count policy confirmed above; settle branding/credit source, info content owner and exit behavior. Review existing PR #160 before overlapping native work. | No speculative public API or duplicate component.                                                 |
-| 1 — floor and shell foundation   | Refine FloorSelector reference affordances and shared placement/containment. Add a complete mock-map screen story with all intended slots, including long/empty states.                     | SDK-UI-001 / SDK-UI-002; regression tests for existing shell/selector consumers.                  |
-| 2 — language and credits         | Controlled language composition, host-facing locale contract, brand/attribution presentation and configuration stories.                                                                     | Stable slots; approved assets and provider metadata policy; SDK-UI-003 / SDK-UI-004.              |
-| 3 — info and exit                | Info trigger/panel composition, FAQ/legal/version contract, exit callback, responsive panel coordination.                                                                                   | SDK-UI-005 / SDK-UI-006; focus/occlusion tests.                                                   |
+| 1 — floor and shell foundation   | Library delivered in 0.7.0 with native source and map-browse stories. Adopt supported slots and verify each real host.                                                                      | SDK-UI-001 / SDK-UI-002; regression tests for existing shell/selector consumers.                  |
+| 2 — language and credits         | Library delivered in 0.7.0 (language web-only). Real SDK locale/provider adapters and approved consumer content remain.                                                                     | Stable slots; approved assets and provider metadata policy; SDK-UI-003 / SDK-UI-004.              |
+| 3 — info and exit                | Info presentation shipped; iOS QA Info integration verified in simulator. Exit policy/composition and other real hosts remain.                                                              | SDK-UI-005 / SDK-UI-006; focus/occlusion tests.                                                   |
 | 4 — real SDK integration         | Connect controls to real floor/language/venue/status data and lifecycle; replace corresponding default UI through documented configuration.                                                 | Mock stories are not the only proof; verify real SDK events, unavailable data and error recovery. |
 | 5 — design and consumer adoption | Native parity belongs to every preceding batch; finish Figma via existing pipeline, Code Connect, generated cards and product-board adoption.                                               | Named device tests and readback, consumer examples, visual checks, external artifact adoption.    |
 
@@ -474,6 +482,30 @@ bump. No new package version, merge or publication is authorized by this plannin
 Keep unrelated security/release maintenance separate from UI implementation.
 
 ## Definition of done and validation matrix
+
+### Prioritized follow-up and where to change it
+
+| Priority | Work and entry point                                                                                                                                                                                            | Completion evidence                                                                                                                                                                                                                    |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | Browser-floor discrepancy: `packages/react/package.json`, consumer README and `docs/embedding-isolation.md`. Firefox 128 is declared although Mozilla documents default `@scope` support in 146.                | Test shipped utility CSS on minimum engines; agree the support policy; update manifest, documentation and migration together in a separate compatibility PR. No silent floor increase or CSS workaround.                               |
+| 2        | iOS QA floor ordering/default selection and lifecycle: existing [PR #160](https://github.com/vodoco/kozmos-design-system/pull/160), SDKMapScreen and SDKSession.                                                | Refresh/review that work; named simulator tests for top-first ordering, default level, detent restoration, saved filters and stop callbacks. Preserve the new Info integration.                                                        |
+| 3        | Documentation/adoption: existing [PR #166](https://github.com/vodoco/kozmos-design-system/pull/166), [PR #168](https://github.com/vodoco/kozmos-design-system/pull/168), component MDX and generated API cards. | Reconcile against current main rather than replay old version numbers or replaced plans. Check remaining placeholder summaries and actual external Claude Design/Figma/board adoption. Do not close or merge these PRs by implication. |
+| 4        | Real web/Android SDK hosts; use `apps/docs/stories/examples/MapBrowseFlow.tsx` as a presentation recipe, not a real SDK adapter.                                                                                | Real floor/locale/provider/status events, persistence, race/failure handling and camera/layout changes; no duplicate default/custom controls or attribution.                                                                           |
+| 5        | Exit-building composition plus cross-platform device/design acceptance.                                                                                                                                         | Confirm exit route/selection policy first. Verify physical VoiceOver/TalkBack, IME/safe areas, large text, RTL, custom branding and named product/Figma screens.                                                                       |
+
+The source API cards are maintained at `docs/claude-design/components/`; change their source
+MDX/JSDoc and run `pnpm skills:build`, never edit generated output. The post-publication audit
+found 34 other generated component summaries still falling back to "docs do not describe it
+yet" after FloorSelector's summary was corrected. That is a content-quality backlog, not
+missing component APIs or a failed type-generation check. Broad source-doc cleanup belongs
+with the existing documentation PRs, not an unreviewed change to every component.
+
+Keep separate maintenance risks visible: the Storybook dev-server fix in #174 does not
+resolve the private Vue playground advisories. Dependabot update jobs also failed on the
+release commit; the failure cause and remediation need separate investigation. Neither is
+a failed release/main CI run, and neither should be labelled fixed by this documentation pass.
+
+### Implementation checks
 
 | Dimension            | Minimum acceptance                                                                                                                                                                                                     |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -496,6 +528,7 @@ pnpm test:adaptive
 pnpm test:overlays
 pnpm test:map-sheet
 pnpm test:search-sheet
+pnpm test:map-controls
 pnpm test:poi-details
 pnpm contracts:parity:check
 pnpm components:contract:check
@@ -510,6 +543,8 @@ UI pass. Follow [AGENTS.md](../AGENTS.md), [visual review](visual-review.md),
 [adaptive layout](adaptive-map-layout.md), [embedding isolation](embedding-isolation.md),
 and [release process](release-process.md).
 
-The initial baseline reconciliation ran only the 49 focused React tests and 10 generated-documentation tests
-listed in the companion register. The broader matrix above remains implementation acceptance work,
+The initial 0.6.0 baseline reconciliation ran the 49 focused React tests and 10 generated-documentation tests
+listed in the companion register. For 0.7.0, exact main CI, publication and Pages deployment
+are recorded in [release evidence](release-process.md#070). The broader product/device matrix
+above remains implementation acceptance work,
 **not a claim that every screen, SDK integration or adoption check has already passed**.

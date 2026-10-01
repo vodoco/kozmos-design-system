@@ -4,9 +4,9 @@
  */
 
 /**
- * Whether the four public packages are on npm. True since 2026-09-24:
- * `npm view @kozmos-ds/react version` answers 0.4.0, and tokens, icons and
- * product-contracts are published beside it.
+ * Whether the four public packages are on npm. True since 2026-09-23.
+ * This flag is not a version: query npm or read the dated release evidence
+ * in docs/release-process.md for package versions.
  */
 export const PACKAGES_PUBLISHED = true;
 

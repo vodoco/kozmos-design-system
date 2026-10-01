@@ -29,7 +29,8 @@ FieldWrapper, Label, PasswordInput and NumberInput use precompiled component-own
 the remaining utility-based components still require native CSS `@scope`.
 This is an unfinished compatibility migration, **not a broadly compatible release**.
 The production browser/WebView support matrix must be approved and tested before
-release. Unsupported engines will render the unmigrated parts incorrectly.
+product adoption; package publication is not that certification. Unsupported engines will
+render the unmigrated parts incorrectly. See the known Firefox floor discrepancy below.
 
 `inputVariants` and `buttonVariants` retain their arguments but return opaque,
 namespaced recipe classes. Do not depend on the individual class strings.
@@ -65,6 +66,13 @@ follow the host document's root font size.
 
 ## Browsers
 
+**Known discrepancy, under review:** this table and the published 0.7.0 manifest declare
+Firefox 128, but Mozilla documents [`@scope` enabled by default in Firefox 146](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146).
+Do not treat Firefox 128–145 as validated for components that still use scoped utilities.
+The table below records the existing declared contract, not verified minimum-engine results.
+Correcting the manifest/support policy requires a separately reviewed compatibility change;
+neither current-engine CI nor this warning certifies 146 as sufficient for every Kozmos feature.
+
 |                 |      |
 | --------------- | ---- |
 | Chrome, Edge    | 118  |
@@ -72,20 +80,21 @@ follow the host document's root font size.
 | Firefox         | 128  |
 | Android WebView | 118  |
 
-The floor is `@scope`, which fences the component styles off from a host page so
-a product's own CSS and Kozmos's cannot overwrite each other. It landed in those
-versions, and a browser below one of them **discards the whole block** rather
-than ignoring the rule: 955 of the stylesheet's 1,227 rules live inside one.
+The dependency behind the floor is `@scope`, which bounds component selectors to their
+intended scopes. A browser without support discards the scoped block. The Firefox entry
+above does not match that dependency. Scope is not complete isolation against arbitrary host
+selectors; see [embedding limitations](../../docs/embedding-isolation.md).
 
-What that costs below the floor is not all or nothing. Measured across 43
+What that costs below the floor is not all or nothing. An earlier measurement across 43
 elements, 30 render identically without `@scope` and 13 do not: the 31
-components that carry their own CSS are unaffected, the 73 styled by utilities
+components that carried their own CSS were unaffected, the 73 styled by utilities
 lose their layout and colour. `Button`, `Input` and `Heading` are in the first
 group; `AISearchButton`, `Tag` and `Skeleton` are in the second.
 
-Lowering this floor is the work of moving the remaining components to their own
-CSS, and every one of them moved lowers it a little. Raising it would be a
-breaking change, so it starts where the code actually is.
+Those are historical sample counts, not a fresh 0.7.0 whole-library census.
+Supporting older engines requires migrating remaining scoped components and checking other
+used features, not just editing the browser list. A changed support promise needs explicit
+compatibility review and migration notes.
 
 ## Use
 
