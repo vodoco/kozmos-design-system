@@ -208,9 +208,9 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         .kozmosSurface(shape, style: surface)
         .kozmosElevation(KozmosShadows.semanticsElevationFloating)
         .accessibilityElement(children: .contain)
-        // Open, the card has no name of its own: the itinerary inside is the
-        // named thing, and two groups called the same would be read twice.
-        .accessibilityLabel(isExpanded ? "" : manoeuvreLabel)
+        // Keep the card named even when custom itinerary content has no
+        // container of its own. Contain, rather than combine, its controls.
+        .accessibilityLabel(manoeuvreLabel)
     }
 }
 

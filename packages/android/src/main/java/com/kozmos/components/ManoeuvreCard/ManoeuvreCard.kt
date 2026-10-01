@@ -152,7 +152,7 @@ fun KozmosManoeuvreCard(
     Surface(
         // Open, the card has no name of its own: the itinerary inside is the
         // named thing, and two nodes called the same would be read twice.
-        modifier = modifier.then(if (expanded) Modifier else Modifier.semantics { contentDescription = manoeuvreLabel }),
+        modifier = modifier.semantics { contentDescription = manoeuvreLabel },
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer),
         color = KozmosSurfaceDefaults.tint(surface),
         border = KozmosSurfaceDefaults.border(surface),
