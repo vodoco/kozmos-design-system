@@ -1,6 +1,12 @@
 # Kozmos Component Lifecycle
 
-> **Purpose:** This document defines the complete lifecycle of a component from initial proposal to eventual removal. Use this as a reference when proposing new components, understanding component stability guarantees, or planning deprecations.
+> **Status: proposed lifecycle, not a current support guarantee.** The stages, durations,
+> on-call roles, response deadlines and automatic deprecation mechanisms below are a planning
+> model. They are not an implemented per-component maturity registry or owner-approved SLA.
+> Kozmos is pre-1.0; read the actual component docs, changelogs and platform coverage before
+> claiming stability or parity. [The maintenance policy](../docs/design-system-maintenance.md)
+> governs validation and [the release process](../docs/release-process.md) governs publication.
+> Private communication setup remains pending in [SECURITY.md](../SECURITY.md).
 
 ---
 
@@ -197,7 +203,7 @@ packages/react/src/components/ComponentName/
 
 \*Requires deprecation cycle first
 
-#### Support Level
+#### Proposed Support Level (requires owner approval)
 
 - Bug reports: 48-hour initial response
 - Critical bugs: Hotfix within 24 hours
@@ -361,7 +367,7 @@ Process:
 
 ---
 
-## Quick Reference: What Can I Use?
+## Proposed stage meanings (not component acceptance evidence)
 
 | Stage      | Production Safe? | API Stable?     | Support Level    |
 | ---------- | ---------------- | --------------- | ---------------- |

@@ -1745,6 +1745,13 @@ Components/props scheduled for removal include:
 
 > **Full document:** [.ai-skills/incident-playbook.md](../.ai-skills/incident-playbook.md)
 
+This section preserves the original proposal, not an active SLA or release runbook.
+Its communication channels, staffing, deadlines and SPM/Maven publication were not established.
+The owner will provide a verified private contact when ready; see [SECURITY.md](../SECURITY.md).
+The current [release process](release-process.md) overrides the historical hotfix steps below:
+reviewed main, exact successful CI, explicit dispatch and protected owner approval. No direct
+publication or version reuse is permitted.
+
 When a released component breaks production, follow the incident playbook:
 
 #### Severity Levels
