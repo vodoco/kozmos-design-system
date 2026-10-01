@@ -1,6 +1,7 @@
 # Controlled npm releases
 
-Status (2026-09-28): in use. It has published every release since 0.1.0 (2026-09-23);
+Status (2026-10-01): in use; React 0.7.0 is published (evidence below).
+It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
 
@@ -24,8 +25,9 @@ GitHub Releases.
    at each verification, including at the start of the publish job.
 4. Repository variable `NPM_RELEASE_ENABLED=true` and an `npm-release`
    environment carrying an exact `main` branch policy, holding `NPM_TOKEN` as an
-   environment secret, and requiring Olcay's approval with administrator bypass
-   off; the policy refuses a release if either is undone. See "The approval gate".
+   environment secret, and requiring Olcay's approval (its one required reviewer is
+   his account, `vodoco`, User id 10688082) with administrator bypass off; the
+   policy refuses a release if either is undone. See "The approval gate".
 
 Global concurrency serializes releases without cancelling a running publish.
 There is no automatic version PR, publication, git tag or GitHub release; tags and
@@ -71,9 +73,9 @@ what it will ship.
 
 - `NPM_RELEASE_ENABLED` is `true`. Setting it to `false` stops every release at once.
 - `npm-release` has a selected branch rule for `main` (not a wildcard or tag), Olcay
-  as required reviewer (self-approval allowed) and administrator bypass off. The REST
-  environment response exposes the reviewer and the bypass setting, and the policy
-  asserts both. Administrators and
+  as its only required reviewer (self-approval allowed) and administrator bypass off.
+  The REST environment response exposes the reviewers and the bypass setting, and the
+  policy asserts both, exactly as "The approval gate" says. Administrators and
   trusted workflow authors remain a trust boundary: automation that runs as Olcay's
   account could approve a publish, so it never does. That is a rule; a separate
   automation account without the right would make it a fence.
@@ -101,6 +103,22 @@ dispatches and approves, and administrator bypass off. The dispatch is no longer
 human act: the publish job waits under "Review deployments" until Olcay approves. The
 credential fence stays too: `NPM_TOKEN` is an environment secret that only the publish job,
 on `main`, can read.
+
+What `scripts/release/policy.mjs` checks, in the pre-flight and again in both release jobs,
+against GitHub's live `environments/npm-release` response:
+
+- **Exactly one required reviewer, Olcay's account:** one entry across the environment's
+  required-reviewer rules, of type `User`, whose account id is `10688082` (`vodoco`). Only
+  his account may approve (Olcay's decision, 2026-09-28). The id is compared, not the login:
+  a login can be renamed and later registered by someone else, and an account id cannot.
+  Another account, a team, a second reviewer beside him, or an entry without that id is
+  refused. So is a rule with no reviewers, or no rule at all.
+- **Administrator bypass off:** `can_admins_bypass` must be `false`. A response without the
+  field is refused, not read as off.
+- **A branch rule restricted to `main`:** a `branch_policy` rule, custom branch policies, and
+  exactly one policy, the branch `main`.
+
+What no check here can do:
 
 - Protect main and the release workflow/plan from unreviewed edits as part of
   repository governance. Local scripts cannot prevent an administrator or someone
@@ -135,8 +153,36 @@ GitHub references: [environment protection and plan restrictions](https://docs.g
    tested main, not a moving checkout.
 5. Check each package version, integrity and dist-tag (the script verifies these after
    each publish), then from the registry: `npm view`, and a clean install into an empty
-   project. Then `pnpm release:tag <sha>` for the tags and GitHub Releases; it refuses a
-   commit that no successful Release run published, or whose versions npm lacks.
+   project. Then `pnpm release:tag <sha>` for the tags and GitHub Releases (`--dry-run`
+   first); it refuses a commit that no successful Release run published, or whose versions
+   npm lacks, and it checks every tag and release already there before it makes any (below).
+6. Complete the [post-publication documentation checklist](design-system-maintenance.md#post-publication-documentation-checklist).
+   Publication does not rewrite maintained plans from "unreleased" to "released". Reconcile
+   those claims with evidence, preserve open host/device/design acceptance, and verify the
+   deployed site and Storybook separately. Use a documentation PR; do not bump packages again
+   for status prose or edit generated API cards by hand.
+
+## Tags and GitHub Releases
+
+`pnpm release:tag <sha>` makes one git tag and one GitHub Release per package the plan at
+`<sha>` shipped: `<package>@<version>`, with that version's changelog section as the notes,
+dependencies first and React last.
+
+- **The channel carries over.** A semver prerelease (`0.6.0-beta.1`) is made a GitHub
+  prerelease (`--prerelease`). Only a stable React release on `latest` is marked Latest;
+  every other release gets `--latest=false`, so a prerelease, or anything on `next`, is
+  never Latest. A plan that names neither `next` nor `latest` is refused.
+- **Existing tags and releases are checked first, all of them.** Before the first release
+  is made, each planned tag is looked up and resolved to its commit, through any annotated
+  tags, and must be `<sha>`. A release that already exists must be on such a tag. A tag or a
+  release at another commit, a draft release, or a release without its tag refuses the whole
+  run, naming each conflict, and nothing is created. It never moves or deletes a tag or a
+  release: a conflict is settled by hand.
+- **A failed lookup is not an absence.** Only GitHub's 404 means "there is none". Any other
+  answer (401, 403, 5xx) or no answer at all (the network) refuses the run.
+- **Running it again is safe.** A tag and release that already exist at `<sha>` are left as
+  they are, and only the missing ones are made. `--dry-run` makes every check and creates
+  nothing.
 
 ## Failure and recovery
 
@@ -156,10 +202,11 @@ Four workflow regression tests failed against the original configuration before
 the replacement. A later retry-tag regression failed before its preflight correction.
 The other safety tests are additional coverage, not claimed as old reproduced bugs.
 
-Measured locally: **35 release tests passed**, all package builds passed, ordinary
+Historical initial workflow validation (not current test totals): **35 release tests passed**, all package builds passed, ordinary
 React 18/19 tarball checks passed (14 exports, three CommonJS entries and 11 README
 samples), and the isolated export smoke test verified all four retained real-package
-tarballs. The three known declaration issues remain unchanged. ESLint, frozen-lockfile
+tarballs. The three declaration issues were unchanged in that initial batch, not a statement
+that they remain in today's release. ESLint, frozen-lockfile
 installation, diff checks and Actionlint 1.7.12 passed. Actionlint checked workflow
 syntax/expressions with its optional shellcheck/pyflakes integrations disabled; those
 external tools were not installed. The official Actionlint archive digest was verified
@@ -223,3 +270,30 @@ On 2026-09-28, 0.5.0 was the first release through the approval gate:
 - **Tags:** `pnpm release:tag` created the three tags and releases.
 - **A missed step:** its dispatch skipped the credential check, which passed when run afterwards.
   That is why the pre-flight now runs it.
+
+### 0.7.0
+
+Published on 2026-10-01 from `a3dc6f935b7914dedd17067036ebadcde737bfd9` after integration
+[#175](https://github.com/vodoco/kozmos-design-system/pull/175), Storybook development-server
+security [#174](https://github.com/vodoco/kozmos-design-system/pull/174), and version
+[#176](https://github.com/vodoco/kozmos-design-system/pull/176). This entry records that
+release, not permission to dispatch another one.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.7.0, tokens 0.3.0, product-contracts 0.6.0 on npm `latest`; icons 0.5.0 unchanged and omitted from this publication.                                                                                                                                                                                      |
+| Exact main-push CI      | [36792093361](https://github.com/vodoco/kozmos-design-system/actions/runs/36792093361): all 17 jobs succeeded, including web, iOS and Android.                                                                                                                                                                    |
+| Preflight / publication | Credential placement, exact CI/main identity and unpublished versions passed preflight. [36828049714](https://github.com/vodoco/kozmos-design-system/actions/runs/36828049714) succeeded after Olcay's protected approval; it published the tested candidate tarballs.                                            |
+| Registry readback       | All three versions and `latest` tags matched; SHA-512 integrities matched the retained candidate manifest; npm exposed provenance metadata.                                                                                                                                                                       |
+| Installed consumer      | A fresh npm installation of React package 0.7.0 with React 19 resolved tokens 0.3.0, icons 0.5.0 and contracts 0.6.0, loaded the package and server-rendered a Button. The prepare job also ran its broader React 18/19 tarball checks.                                                                           |
+| Tags / GitHub releases  | `release:tag` dry-run passed, created all three planned tags/releases, and a second dry-run verified their commit targets. Notes matched the committed changelog sections. React 0.7.0 is Latest; no icons release was created.                                                                                   |
+| Website / Storybook     | [Pages 36792093275](https://github.com/vodoco/kozmos-design-system/actions/runs/36792093275) built and deployed this exact SHA. Live site, Storybook manager, iframe and story index returned HTTP 200; new SDK component docs and map-browse stories were present. This is not a fresh all-screen visual review. |
+
+Change details and migration notes: [React](../packages/react/CHANGELOG.md#070),
+[tokens](../packages/tokens/CHANGELOG.md#030),
+[contracts](../packages/product-contracts/CHANGELOG.md#060), and
+[generated AI changelog](../.ai-skills/api-changelog.md).
+Consumers upgrading FloorSelector from 0.6.0 must opt into `showResultCounts` to retain
+list badges; closed-tile counts remain absent. Native source changes are not native registry
+publication. Figma, external Claude Design artifacts and product deployments are independent.
+Private Vue playground dependency advisories remain separately scoped; #174 did not fix them.

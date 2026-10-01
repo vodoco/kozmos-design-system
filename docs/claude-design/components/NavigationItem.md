@@ -2,7 +2,7 @@
 
 # NavigationItem
 
-Reusable navigation row/item primitive for top navigation, side navigation, and compact rails.
+Reusable navigation row/item primitive for top navigation, side navigation, and the rail.
 
 - **Import:** `import { NavigationItem } from "@kozmos-ds/react";`
 - **Group:** Navigation

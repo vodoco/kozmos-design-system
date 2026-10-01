@@ -25,6 +25,8 @@ const branch = (
   floorLabel: string,
   durationLabel: string,
   distanceLabel: string,
+  // Counted from 1: the number the branch's map marker shows.
+  resultIndex: number,
 ) => {
   const poi: POIPresentation = {
     id,
@@ -39,7 +41,7 @@ const branch = (
     poi,
     result: {
       poiId: id,
-      resultIndex: 0,
+      resultIndex,
       selected: false,
       featured: false,
       floorId: id,
@@ -49,11 +51,11 @@ const branch = (
 };
 
 const items = [
-  branch("a", "Current floor", "4 min", "260 m"),
-  branch("b", "Second floor", "5 min", "300 m"),
-  branch("c", "Second floor", "7 min", "420 m"),
-  branch("d", "Third floor", "8 min", "440 m"),
-  branch("e", "Fourth floor", "10 min", "500 m"),
+  branch("a", "Current floor", "4 min", "260 m", 1),
+  branch("b", "Second floor", "5 min", "300 m", 2),
+  branch("c", "Second floor", "7 min", "420 m", 3),
+  branch("d", "Third floor", "8 min", "440 m", 4),
+  branch("e", "Fourth floor", "10 min", "500 m", 5),
 ];
 
 /** One branch stands for the group; the count is of what is hidden. */

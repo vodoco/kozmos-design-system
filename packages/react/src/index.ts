@@ -110,6 +110,8 @@ export * from "./components/Surface";
 export * from "./components/DynamicIsland";
 export * from "./components/MapControlsGroup";
 export * from "./components/MapControlButton";
+export * from "./components/LanguageSwitcher";
+export * from "./components/MapAttribution";
 export * from "./components/MapStatusPill";
 export * from "./components/SaveLocationCard";
 export * from "./components/FeedbackCard";
@@ -122,3 +124,4 @@ export * from "./utils/analytics";
 // The one derivation a product composing its own row needs: floor and building
 // joined the way every platform joins them.
 export { poiLocationLabel } from "./utils";
+export * from "./components/MapInfoPanel";

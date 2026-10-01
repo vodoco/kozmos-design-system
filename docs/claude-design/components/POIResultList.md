@@ -114,6 +114,35 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
 
   Each result's words for a walk shown as a band: POIResultCard's.
 
+- `numbered`: `boolean`, optional.
+
+  Number every result, grouped or not, with its `result.resultIndex`: the
+  number its pin shows on the map. Off unless the product turns it on, for
+  a list whose pins are numbered: quick access, where a category chosen in
+  the browse grid lists that category's places and the map pins them.
+  Kozmos cannot tell that list from any other, so the product says so.
+
+  The list draws the numbers it is given and never renumbers. A featured
+  result keeps its Featured tab and shows no number, since its pin shows
+  its logo, so number the results that are not featured, in the order the
+  pins are numbered. A number takes the place of a badge. POIResultCard's
+  `numbered`, given to every card.
+
+- `idPrefix`: `string`, optional.
+
+  Names this list's results apart from another list's on the same page
+  that shows one of the same places: the search's results and an
+  assistant's answer, say. Every result's id becomes
+  `getPOIResultDomId(poiId, idPrefix)`, with its action row's and
+  unavailable note's following it, so each list's references stay inside
+  it, and a map pin names the card in the list it belongs to with the same
+  call.
+
+  Left out, the ids are `getPOIResultDomId(poiId)`, as they have always
+  been: on a page with more than one list, give every list but one its
+  own. Keep it the same on the server and in the browser: a word, or an id
+  from React's `useId()`.
+
 - `scrollSelectedIntoView`: `boolean`, optional, default `true`.
 
   Bring the selected result into view when `selectedPoiId` changes — by
@@ -129,7 +158,14 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
   `data-kozmos-scroller`, as AdaptiveMapShell's sheet does; with nothing
   around the list that scrolls, the page does.
 
-  Turn it off for a product that already scrolls the panel itself.
+  Each selection is brought in once, when its result is in `items`: a
+  selection that comes before its results waits for them, and a new array
+  of the same results moves nothing. A result that leaves the list and
+  comes back is brought in again.
+
+  Turn it off for a product that already scrolls the panel itself. A
+  selection made while it is off waits too: turned back on, the list
+  brings in the one it has not brought in yet.
 
 - `children`: `ReactNode`, optional.
 
@@ -201,6 +237,33 @@ interface POIResultCardProps extends Omit<
    * passes its own, for one band or all five.
    */
   travelTimeBandLabels?: Partial<Record<TravelTimeBand, string>>;
+  /**
+   * Draw the result's number, `result.resultIndex`, in its tab: the number
+   * its pin shows on the map. Off unless the product turns it on, for a list
+   * whose pins are numbered, as quick access's are when a category's places
+   * are listed and pinned.
+   *
+   * The card draws the number it is given and never renumbers, so the
+   * product numbers the results the way it numbers the pins. A featured
+   * result keeps its Featured tab and shows no number, as its pin shows its
+   * logo; a number takes the place of a badge, so the list's numbers match
+   * the pins. The number leads the result's accessible name ("2, Burger
+   * King"); a `selectionLabel` replaces that whole name, so it says the
+   * number itself.
+   */
+  numbered?: boolean;
+  /**
+   * Names this card apart from another card for the same place on the page:
+   * the search's results and an assistant's answer can both show it. The
+   * card's id becomes `getPOIResultDomId(poi.id, idPrefix)`, and its action
+   * row's and unavailable note's ids follow it, so each card's references
+   * stay its own. Left out, the id is `getPOIResultDomId(poi.id)`, as it has
+   * always been. An `id` given to the card wins over both.
+   *
+   * Keep it the same on the server and in the browser: a word, or an id from
+   * React's `useId()`. `POIResultList` and `POIResultGroup` pass theirs on.
+   */
+  idPrefix?: string;
 }
 ```
 
@@ -296,6 +359,16 @@ From `@kozmos-ds/product-contracts`.
 ```ts
 interface POIResultPresentation {
   poiId: string;
+  /**
+   * The result's number, counted from 1: the number its map marker shows, so
+   * the row and its pin share one number. A numbered list (POIResultList's
+   * `numbered`) draws it in the result's tab, and analytics reports it as
+   * the result's position. Kozmos draws and reports it as given and never
+   * renumbers, so number the results the way the map numbers their pins.
+   * A featured result's marker shows its logo, not a number, and its card
+   * shows Featured, so its number is never drawn: in a numbered list,
+   * number the others 1, 2, 3 in pin order.
+   */
   resultIndex: number;
   selected: boolean;
   /** Set in the CMS. Draws the starred tab here, and the logo on the marker. */
@@ -305,7 +378,10 @@ interface POIResultPresentation {
   travelEstimate?: TravelEstimatePresentation;
   available?: boolean;
   unavailableReason?: string;
-  /** A quiet tab: why this result is in this list. Ignored when featured. */
+  /**
+   * A quiet tab: why this result is in this list. Ignored when featured, and
+   * in a numbered list, where the number takes its place.
+   */
   badge?: POIResultBadgePresentation;
   /**
    * Whether this result answers the query exactly, stands in for one that

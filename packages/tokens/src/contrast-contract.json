@@ -66,6 +66,12 @@
   ],
   "pairs": [
     {
+      "name": "map attribution text against its halo",
+      "background": "semantics-map-attribution-halo",
+      "foreground": "semantics-map-attribution-text",
+      "minimum": 4.5
+    },
+    {
       "name": "app background / foreground",
       "background": "primitives-colors-background-0",
       "foreground": "primitives-colors-foreground-0",

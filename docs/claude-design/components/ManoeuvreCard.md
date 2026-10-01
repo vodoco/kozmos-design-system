@@ -72,6 +72,13 @@ the card never decides what a route is made of. Open, the card is as tall
 as the itinerary up to `maxItineraryHeight`, past which the itinerary
 scrolls: a long route must not cover the map.
 
+Focus goes with the disclosure (review T4). Opening takes away the
+instruction, and closing hides the grab bar; focus that was on the part
+that went moves to the part that took its place — the itinerary on
+opening, the instruction on closing. Focus anywhere else, or none, is
+left where it is, whether the change came from the card, a pointer or
+the product.
+
 It forwards its ref to `HTMLElement`. Its props are `ManoeuvreCardProps`, which extends `Omit<React.HTMLAttributes<HTMLElement>, "children">`.
 
 - `surface`: `SurfaceVariant`, optional, default `"solid"`.
@@ -81,6 +88,14 @@ It forwards its ref to `HTMLElement`. Its props are `ManoeuvreCardProps`, which 
 - `type`: `DirectionType`, **required**.
 - `instruction`: `string`, **required**.
 - `detail`: `string`, optional.
+- `instructionLines`: `number`, optional.
+
+  The most lines the instruction is drawn in before it ends in an
+  ellipsis. Unset, the whole instruction shows and the card grows with
+  it: a cut instruction can lose the turn itself (GAP-094). A value
+  under one line shows the whole instruction. Assistive technology hears
+  the whole instruction either way.
+
 - `expanded`: `boolean`, **required**.
 
   Open into the itinerary instead of the manoeuvre.
@@ -93,6 +108,12 @@ It forwards its ref to `HTMLElement`. Its props are `ManoeuvreCardProps`, which 
   What the closed card is called to assistive technology. Open, the card
   has no name of its own: the itinerary inside it is the named thing, and
   two landmarks called the same would be read twice.
+
+- `itineraryLabel`: `string`, optional, default `"Itinerary"`.
+
+  What the open card's scrolling itinerary is called when it takes focus:
+  the name the product gives the itinerary it holds (`Itinerary`'s
+  `label`).
 
 - `maxItineraryHeight`: `number`, optional, default `320`.
 

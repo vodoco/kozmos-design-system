@@ -250,6 +250,23 @@ final class KozmosMapShellHostedFillTests: XCTestCase {
                       "standing alone, the browser's panel presentation drew \(describe(pixels.color(at: point))), not its fill")
     }
 
+    /// The sheet presentation standing alone keeps its fill too, as the web's
+    /// browser and Android's do: the presentation says only whether a rule
+    /// runs under the search row, and the fill follows the host. It painted
+    /// none wherever it was, so outside a shell the map showed through it.
+    @MainActor func testStandingAloneTheBrowsersSheetPresentationKeepsItsFill() async throws {
+        let size = CGSize(width: 390, height: 500)
+        let view = ZStack { Color.red; browser(.sheet) }
+            .frame(width: size.width, height: size.height)
+            .environment(\.layoutDirection, .leftToRight)
+            .environment(\.colorScheme, .light)
+        let pixels = try await render(view, size: size, "s12-browser-sheet-standing-alone")
+        let point = insidePart(of: CGRect(origin: .zero, size: size))
+        print("S12 iOS, the browser's sheet presentation standing alone: \(describe(pixels.color(at: point)))")
+        XCTAssertTrue(isWhite(pixels.color(at: point)),
+                      "standing alone, the browser's sheet presentation drew \(describe(pixels.color(at: point))), not its fill")
+    }
+
     /// The guard: outside a shell nothing says a surface is there, and the
     /// preview keeps its fill.
     @MainActor func testStandingAloneTheRoutePreviewKeepsItsFill() async throws {

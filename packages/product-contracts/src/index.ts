@@ -270,6 +270,16 @@ export interface POIResultActionPresentation {
 
 export interface POIResultPresentation {
   poiId: string;
+  /**
+   * The result's number, counted from 1: the number its map marker shows, so
+   * the row and its pin share one number. A numbered list (POIResultList's
+   * `numbered`) draws it in the result's tab, and analytics reports it as
+   * the result's position. Kozmos draws and reports it as given and never
+   * renumbers, so number the results the way the map numbers their pins.
+   * A featured result's marker shows its logo, not a number, and its card
+   * shows Featured, so its number is never drawn: in a numbered list,
+   * number the others 1, 2, 3 in pin order.
+   */
   resultIndex: number;
   selected: boolean;
   /** Set in the CMS. Draws the starred tab here, and the logo on the marker. */
@@ -279,7 +289,10 @@ export interface POIResultPresentation {
   travelEstimate?: TravelEstimatePresentation;
   available?: boolean;
   unavailableReason?: string;
-  /** A quiet tab: why this result is in this list. Ignored when featured. */
+  /**
+   * A quiet tab: why this result is in this list. Ignored when featured, and
+   * in a numbered list, where the number takes its place.
+   */
   badge?: POIResultBadgePresentation;
   /**
    * Whether this result answers the query exactly, stands in for one that
@@ -497,7 +510,7 @@ export interface AdaptiveMapLayout {
 }
 
 export interface MapOcclusion {
-  kind: "panel" | "top-bar" | "controls";
+  kind: "panel" | "top-bar" | "controls" | "attribution";
   /** Shell-local bounds; intersect with mapBounds before sending to a renderer. */
   bounds: MapLayoutRect;
 }

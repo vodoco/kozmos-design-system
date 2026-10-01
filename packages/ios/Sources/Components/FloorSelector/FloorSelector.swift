@@ -26,8 +26,8 @@ public enum KozmosFloorSelectorVariant: String, CaseIterable, Sendable {
 /// assistive technology hears the full `label`. The `[String]` initializer is
 /// for venues whose IDs are already the labels — it shows each ID as-is.
 ///
-/// A presentation's `resultCount` marks the level with a small count at its
-/// button's trailing top, so a visitor can see the answer is upstairs without
+/// With `showResultCounts: true` (off by default), a presentation's `resultCount`
+/// marks the level with a small count at its button's trailing top, so a visitor can see the answer is upstairs without
 /// changing level to find out (row 69, GAP-070). Only a count above zero is
 /// marked: `nil` is unknown, which is not the same as none, and a level with a
 /// real zero reads as itself.
@@ -35,6 +35,8 @@ public struct KozmosFloorSelector: View {
     let floors: [KozmosFloorPresentation]
     @Binding var selectedFloor: String
     let variant: KozmosFloorSelectorVariant
+    /// Explicit opt-in. Hidden counts are omitted from VoiceOver as well.
+    let showResultCounts: Bool
     let label: String
     /// What the compact stepper's two buttons are called, for a visitor who
     /// cannot see them: the previous level in list order is on the up chevron,
@@ -90,6 +92,9 @@ public struct KozmosFloorSelector: View {
     @ScaledMetric(relativeTo: .subheadline)
     private var markerPadding: CGFloat = KozmosDimensions.primitivesLayoutSpacing50
 
+    @Environment(\.kozmosMapPopupRegion) private var popupRegion
+    @Environment(\.layoutDirection) private var layoutDirection
+    @State private var anchorFrame: CGRect = .zero
     @State private var isExpanded = false
     /// The map control's own size, read off the tile: the column's levels take
     /// it, so the column's bottom level lies exactly over the tile whatever
@@ -106,7 +111,7 @@ public struct KozmosFloorSelector: View {
     #if os(iOS)
     /// The UIKit element over the tile, which knows where the tile is in its
     /// window and where the window's safe area begins; SwiftUI says neither.
-    @State private var anchor = KozmosFloorSwitcherAnchor()
+    @StateObject private var anchor = KozmosFloorSwitcherAnchor()
     #endif
     /// Bumped when the column closes on a choice or on Escape: VoiceOver goes
     /// back to the tile, which names the level now shown.
@@ -118,6 +123,7 @@ public struct KozmosFloorSelector: View {
         floors: [KozmosFloorPresentation],
         selectedFloor: Binding<String>,
         variant: KozmosFloorSelectorVariant = .verticalList,
+        showResultCounts: Bool = false,
         label: String = "Floor selector",
         previousFloorLabel: String = "Floor up",
         nextFloorLabel: String = "Floor down",
@@ -129,6 +135,7 @@ public struct KozmosFloorSelector: View {
         self.floors = floors
         self._selectedFloor = selectedFloor
         self.variant = variant
+        self.showResultCounts = showResultCounts
         self.label = label
         self.previousFloorLabel = previousFloorLabel
         self.nextFloorLabel = nextFloorLabel
@@ -143,11 +150,12 @@ public struct KozmosFloorSelector: View {
         floors: [KozmosFloorPresentation],
         selectedFloor: Binding<String>,
         variant: KozmosFloorSelectorVariant,
+        showResultCounts: Bool = false,
         label: String = "Floor selector",
         userFloor: String? = nil,
         expanded: Bool
     ) {
-        self.init(floors: floors, selectedFloor: selectedFloor, variant: variant, label: label, userFloor: userFloor)
+        self.init(floors: floors, selectedFloor: selectedFloor, variant: variant, showResultCounts: showResultCounts, label: label, userFloor: userFloor)
         self._isExpanded = State(initialValue: expanded)
     }
 
@@ -156,6 +164,7 @@ public struct KozmosFloorSelector: View {
         floors: [String],
         selectedFloor: Binding<String>,
         variant: KozmosFloorSelectorVariant = .verticalList,
+        showResultCounts: Bool = false,
         label: String = "Floor selector",
         previousFloorLabel: String = "Floor up",
         nextFloorLabel: String = "Floor down",
@@ -169,6 +178,7 @@ public struct KozmosFloorSelector: View {
             },
             selectedFloor: selectedFloor,
             variant: variant,
+            showResultCounts: showResultCounts,
             label: label,
             previousFloorLabel: previousFloorLabel,
             nextFloorLabel: nextFloorLabel,
@@ -179,7 +189,7 @@ public struct KozmosFloorSelector: View {
     }
 
     private func select(_ floor: KozmosFloorPresentation) {
-        guard !floor.disabled else { return }
+        guard !floor.disabled, floors.contains(where: { $0.id == floor.id && !$0.disabled }) else { return }
         if variant == .collapsible {
             close(returningFocus: true)
         }
@@ -196,8 +206,9 @@ public struct KozmosFloorSelector: View {
     /// Opens or closes the switcher's column.
     private func setExpanded(_ open: Bool) {
         guard open != isExpanded else { return }
+        if open && (floors.isEmpty || popupFrame == nil) { return }
         #if os(iOS)
-        if open { growsDown = anchor.roomAbove < columnReachAboveTile }
+        if open { growsDown = (popupFrame?.minY ?? 0) >= anchorFrame.minY - Self.columnInset }
         #endif
         if open, let floor = selectedPresentation {
             trackEvent(
@@ -219,12 +230,29 @@ public struct KozmosFloorSelector: View {
         if returningFocus { tileFocusRequest += 1 }
     }
 
-    var selectedIndex: Int {
-        floors.firstIndex { $0.id == selectedFloor } ?? 0
+    var selectedIndex: Int? {
+        floors.firstIndex { $0.id == selectedFloor }
+    }
+
+    /// Decorative direction cues, never independent stepping buttons.
+    var availableAbove: Bool {
+        guard let index = floors.firstIndex(where: { $0.id == selectedFloor }) else { return false }
+        return floors[..<index].contains { !$0.disabled }
+    }
+
+    var availableBelow: Bool {
+        guard let index = floors.firstIndex(where: { $0.id == selectedFloor }) else { return false }
+        return floors.dropFirst(index + 1).contains { !$0.disabled }
     }
 
     private var selectedPresentation: KozmosFloorPresentation? {
-        floors.first { $0.id == selectedFloor } ?? floors.first
+        if let floor = floors.first(where: { $0.id == selectedFloor }) { return floor }
+        // The host owns selection. A stale ID is not the first floor, and
+        // cannot become a selectable option merely because we display it.
+        guard !selectedFloor.isEmpty else { return nil }
+        return KozmosFloorPresentation(
+            id: selectedFloor, label: selectedFloor, shortLabel: selectedFloor, disabled: true
+        )
     }
 
     /// Whether the closed tile shows the level the visitor is on: it carries
@@ -350,11 +378,27 @@ public struct KozmosFloorSelector: View {
     /// column, which opens inside an overlay on a spring, never reached the
     /// switcher (measured on iOS 26.5). The same both ways round: the column
     /// reaches past the tile equally on either side.
+    private var popupFrame: CGRect? {
+        guard popupRegion?.available != false, !floors.isEmpty, anchorFrame.width > 0 else { return nil }
+        #if os(iOS)
+        let bounds = popupRegion?.bounds ?? anchor.visibleBounds
+        #else
+        // Standalone macOS keeps the previous unbounded presentation; an embedded
+        // shell provides real bounds. Never invent a desktop/window size.
+        guard let bounds = popupRegion?.bounds else {
+            return CGRect(x: anchorFrame.minX - Self.columnInset,
+                          y: anchorFrame.maxY + Self.columnInset - columnHeight,
+                          width: tileSize.width + 2 * Self.columnInset, height: columnHeight)
+        }
+        #endif
+        return kozmosFloorPopupFrame(anchor: anchorFrame, bounds: bounds, desiredHeight: columnHeight,
+                                    inset: Self.columnInset, rtl: layoutDirection == .rightToLeft,
+                                    allowHorizontalShift: popupRegion != nil)
+    }
+
     var columnFrameOverTile: CGRect {
-        let inset = Self.columnInset
-        let height = columnHeight
-        let top = growsDown ? -inset : tileSize.height + inset - height
-        return CGRect(x: -inset, y: top, width: tileSize.width + 2 * inset, height: height)
+        guard let frame = popupFrame else { return .zero }
+        return frame.offsetBy(dx: -anchorFrame.minX, dy: -anchorFrame.minY)
     }
 
     /// The closed tile, with the column over it while it is open.
@@ -362,18 +406,15 @@ public struct KozmosFloorSelector: View {
     private var switcher: some View {
         if let shown = selectedPresentation {
             tile(shown)
-                .overlay(alignment: growsDown ? .topTrailing : .bottomTrailing) {
+                .kozmosTooltip(shown.label, side: .left)
+                 .overlay(alignment: .top) {
                     column
-                        // Reaching past the tile by its inset, so the bottom
-                        // level lies on the tile — or the top one, where the
-                        // column grows down: the overlay reads the guide on the
-                        // edge it aligns. Alignment guides mirror right to
-                        // left, as an offset would not — set here, on the
-                        // column as a whole: set inside its `if`, they never
-                        // reach this overlay (measured).
-                        .alignmentGuide(.top) { $0[.top] + Self.columnInset }
-                        .alignmentGuide(.bottom) { $0[.bottom] - Self.columnInset }
-                        .alignmentGuide(.trailing) { $0[.trailing] - Self.columnInset }
+                        .offset(x: columnFrameOverTile.midX - tileSize.width / 2,
+                                y: columnFrameOverTile.minY)
+                }
+                .onPreferenceChange(KozmosFloorAnchorFrameKey.self) { anchorFrame = $0 }
+                .onChange(of: popupFrame) { frame in
+                    if frame == nil && isExpanded { focusedLevel = nil; close(returningFocus: false) }
                 }
                 .onPreferenceChange(KozmosFloorTileSizeKey.self) { if let measured = $0 { tileSize = measured } }
                 .accessibilityElement(children: .contain)
@@ -389,14 +430,15 @@ public struct KozmosFloorSelector: View {
     @ViewBuilder
     private func tile(_ floor: KozmosFloorPresentation) -> some View {
         let control = KozmosMapControlButton(label: tileLabel, action: { setExpanded(!isExpanded) }) {
-            Text(floor.shortLabel)
-                .font(KozmosTypography.subheadline)
-                .bold()
-                .lineLimit(1)
-                // The map control's square does not grow with the text, as the
-                // lists' squares do: the label shrinks further before it would
-                // truncate. Recorded in the pull request for the map control.
-                .minimumScaleFactor(0.5)
+            VStack(spacing: 0) {
+                directionCue("chevron.up", visible: availableAbove)
+                Text(floor.shortLabel)
+                    .font(KozmosTypography.subheadline)
+                    .bold()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                directionCue("chevron.down", visible: availableBelow)
+            }
         }
         .overlay(alignment: .topTrailing) {
             if tileShowsUserFloor { userFloorDot }
@@ -404,6 +446,7 @@ public struct KozmosFloorSelector: View {
         .background(
             GeometryReader { proxy in
                 Color.clear.preference(key: KozmosFloorTileSizeKey.self, value: proxy.size)
+                    .preference(key: KozmosFloorAnchorFrameKey.self, value: proxy.frame(in: .global))
             }
         )
         #if os(iOS)
@@ -431,6 +474,16 @@ public struct KozmosFloorSelector: View {
         #endif
     }
 
+    private func directionCue(_ symbol: String, visible: Bool) -> some View {
+        Image(systemName: symbol)
+            .resizable()
+            .scaledToFit()
+            .frame(width: KozmosDimensions.primitivesLayoutSizing200,
+                   height: KozmosDimensions.primitivesLayoutSpacing75)
+            .opacity(visible ? 1 : 0)
+            .accessibilityHidden(true)
+    }
+
     /// The open state: every level in a column over the tile, top floor first,
     /// its bottom level where the tile was — or its top one, where there is no
     /// room above the tile — the tile grows into it. It wears the map-control
@@ -439,19 +492,22 @@ public struct KozmosFloorSelector: View {
     /// grown by the column's inset, so the levels' corners stay concentric.
     @ViewBuilder
     private var column: some View {
-        if variant == .collapsible, isExpanded {
+        if variant == .collapsible, isExpanded, let popupFrame {
             let edge = RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl + Self.columnInset,
                                         style: .continuous)
             let surface = KozmosColors.primitivesColorsBackground0
-            VStack(spacing: Self.columnInset) {
-                ForEach(floors) { floor in
-                    columnLevel(floor)
+            ScrollViewReader { reader in
+                ScrollView(.vertical) {
+                    VStack(spacing: Self.columnInset) {
+                        ForEach(floors) { floor in columnLevel(floor).id(floor.id) }
+                    }
+                    .padding(Self.columnInset)
                 }
+                .onAppear { reader.scrollTo(selectedFloor, anchor: .center); focusedLevel = selectedFloor }
             }
-            .padding(Self.columnInset)
+            .frame(width: popupFrame.width, height: popupFrame.height)
             .background(surface, in: edge)
             .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: edge, fill: surface)
-            .fixedSize()
             .accessibilityElement(children: .contain)
             .accessibilityLabel(label)
             .accessibilityAction(.escape) { close(returningFocus: true) }
@@ -462,7 +518,6 @@ public struct KozmosFloorSelector: View {
                     .opacity(0)
                     .accessibilityHidden(true)
             )
-            .onAppear { focusedLevel = selectedFloor }
             .transition(
                 reduceMotion
                     ? .opacity
@@ -508,6 +563,7 @@ public struct KozmosFloorSelector: View {
         .buttonStyle(.plain)
         .disabled(floor.disabled)
         .accessibilityLabel(spokenLabel(floor))
+        .kozmosTooltip(floor.label, side: .left)
         .accessibilityAddTraits(isCurrent ? [.isButton, .isSelected] : .isButton)
         #if os(iOS)
         // VoiceOver lands on the current level when the column opens. iOS
@@ -534,7 +590,7 @@ public struct KozmosFloorSelector: View {
 
     /// The next selectable floor in list order, skipping any that are closed.
     func reachableIndex(step: Int) -> Int? {
-        guard !floors.isEmpty else { return nil }
+        guard let selectedIndex, step == -1 || step == 1 else { return nil }
         var candidate = selectedIndex + step
         while floors.indices.contains(candidate) {
             if !floors[candidate].disabled { return candidate }
@@ -552,7 +608,7 @@ public struct KozmosFloorSelector: View {
     /// view says nothing; the switcher's closed tile shows that level too, and
     /// is drawn without one.
     func markedResultCount(_ floor: KozmosFloorPresentation) -> Int? {
-        guard variant != .compactStepper, let count = floor.resultCount, count > 0 else { return nil }
+        guard showResultCounts, variant != .compactStepper, let count = floor.resultCount, count > 0 else { return nil }
         return count
     }
 
@@ -667,6 +723,12 @@ struct KozmosFloorSwitcherElement: UIViewRepresentable {
     func makeUIView(context: Context) -> ElementView {
         let view = ElementView(focusRequest: focusRequest)
         anchor.view = view
+        view.boundsChanged = { [weak anchor] bounds in
+            DispatchQueue.main.async {
+                guard let anchor, anchor.visibleBounds != bounds else { return }
+                anchor.visibleBounds = bounds
+            }
+        }
         return view
     }
 
@@ -686,6 +748,7 @@ struct KozmosFloorSwitcherElement: UIViewRepresentable {
     }
 
     final class ElementView: UIView, UIGestureRecognizerDelegate {
+        var boundsChanged: (CGRect) -> Void = { _ in }
         var toggle: () -> Void = {}
         var escape: () -> Void = {}
         var tappedOutside: () -> Void = {}
@@ -727,6 +790,21 @@ struct KozmosFloorSwitcherElement: UIViewRepresentable {
         override func didMoveToWindow() {
             super.didMoveToWindow()
             watchForTapsOutside()
+            reportBounds()
+        }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            reportBounds()
+        }
+
+        override func safeAreaInsetsDidChange() {
+            super.safeAreaInsetsDidChange()
+            reportBounds()
+        }
+
+        private func reportBounds() {
+            boundsChanged(window.map { $0.bounds.inset(by: $0.safeAreaInsets) } ?? .zero)
         }
 
         /// Watches the window while the column is open, and nothing otherwise.
@@ -785,11 +863,12 @@ struct KozmosFloorSwitcherElement: UIViewRepresentable {
 /// The switcher's hold on its UIKit element, kept in its state, so that as the
 /// column opens it can ask how much room there is above the tile.
 @MainActor
-final class KozmosFloorSwitcherAnchor {
+final class KozmosFloorSwitcherAnchor: ObservableObject {
     weak var view: KozmosFloorSwitcherElement.ElementView?
 
     /// The room above the tile in its window; unbounded before the tile is in
     /// one, so the column grows up, as it always has.
     var roomAbove: CGFloat { view?.roomAbove ?? .greatestFiniteMagnitude }
+    @Published var visibleBounds: CGRect = .zero
 }
 #endif

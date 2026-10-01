@@ -228,12 +228,14 @@ changelogLines.push(
 );
 changelogLines.push("");
 changelogLines.push(
-  "Every package is on 0.x. There has been no 1.0, no major version and no",
+  "Follow each release's migration notes before upgrading. 0.x releases can change APIs and behaviour",
 );
 changelogLines.push(
-  "breaking-change migration, so there are no codemods and nothing to migrate",
+  "and may require consumer changes even without a major version bump.",
 );
-changelogLines.push("from. A minor bump can still change behaviour: read the entry.");
+changelogLines.push(
+  "Automated codemods are not guaranteed; apply and verify the documented migration steps.",
+);
 changelogLines.push("");
 for (const [name, version] of Object.entries(manifests).sort()) {
   const dir = name.replace("@kozmos-ds/", "");

@@ -8,22 +8,27 @@ export interface LocationPinProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "default" | "primary" | "secondary" | "accent";
   size?: "sm" | "md" | "lg";
   label?: string;
+  /** The result's number, as its card's number tab shows it. At rest the pin
+   *  is quiet — the outlined marker on the background, its ring and number in
+   *  its colour — and it fills only when `selected`, as the tab does. */
   number?: number;
   markerContent?: React.ReactNode;
+  /** Grows the pin, and fills a numbered one. */
   selected?: boolean;
   featured?: boolean;
   disabled?: boolean;
-  /** On another floor: the marker inverts to a hollow outline on the
-   *  background and the number takes the foreground, so shape carries the
-   *  state, as on iOS and Compose. */
+  /** On another floor: the outlined marker with a dashed ring, on the
+   *  background, and the number in the foreground, so shape carries the
+   *  state, as on iOS and Compose. The dashes tell it from a quiet numbered
+   *  pin at rest, which is outlined too; it never fills, selected or not. */
   offFloor?: boolean;
   externalLabel?: string;
   labelPlacement?: "top" | "right" | "bottom" | "left";
   resultId?: string;
   /** A category's colours for the marker — its fill, solid, with its ink for
    *  the number — over the variant's; a featured pin keeps the alert colour.
-   *  Off the floor the fill outlines the marker and the number takes the
-   *  foreground. */
+   *  A numbered pin at rest and a pin off the floor are outlined in the fill,
+   *  with the number in the foreground. */
   tint?: CategoryTint;
 }
 
@@ -76,6 +81,17 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       accent: "text-accent-foreground",
     };
 
+    // Each variant's colour where it is a ring and a number on the surface —
+    // a quiet pin, or one off the floor. Secondary's own colour is a surface
+    // grey (background/200, 1.6:1 on the surface), so it takes the muted
+    // foreground there, the grey native's secondary pin is drawn in.
+    const outlineClasses = {
+      default: "text-foreground",
+      primary: "text-primary",
+      secondary: "text-muted-foreground",
+      accent: "text-accent",
+    };
+
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
       if (disabled) return;
       trackEvent("LocationPin", "location_pin_clicked", {
@@ -102,6 +118,21 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
     const isInteractive = Boolean(onClick);
     const visibleContent = markerContent ?? number;
     const hasContent = visibleContent !== undefined && visibleContent !== null;
+    // Decision 55 (Olcay, 2026-09-29): a numbered pin on this floor is quiet
+    // at rest — the surface, a ring and the number in its colour — and filled
+    // only when selected, as the result card's number tab is. A featured pin
+    // (its logo on the map), a pin showing markerContent and a pin with no
+    // number keep their fill.
+    const quiet =
+      markerContent == null &&
+      number != null &&
+      !selected &&
+      !featured &&
+      !offFloor;
+    // Off the floor and quiet both draw the outlined marker; a dashed ring is
+    // what says another floor, so the two never read alike.
+    const outlined = quiet || offFloor;
+    const tinted = Boolean(tint) && !featured;
     const externalLabelClasses = {
       top: "bottom-full left-1/2 mb-1 -translate-x-1/2",
       right: "left-full top-1/2 ml-1 -translate-y-1/2",
@@ -146,33 +177,40 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
         {...props}
       >
         <span className="relative flex items-center justify-center">
-          {/* On the floor the marker is solid in its colour and the number is
-              inked for that fill, as on iOS, Compose and in Figma. Off the
-              floor it inverts to a hollow outline on the background with the
-              number in the foreground (Olcay, 2026-09-21). A number takes the
-              place of the head's dot. */}
+          {/* Selected, featured, or showing a logo, the marker is solid in its
+              colour and the number is inked for that fill, as on iOS, Compose
+              and in Figma. A numbered pin at rest is quiet: the outlined
+              marker on the background, its ring and number in its colour.
+              Off the floor it is the outlined marker with a dashed ring and
+              the number in the foreground (Olcay, 2026-09-21), so shape, not
+              colour, tells the floor. A number takes the place of the head's
+              dot. */}
           <MapPin
             aria-hidden="true"
             className={cn(
               sizeClasses[size],
-              variantClasses[variant],
-              offFloor ? "fill-background" : "fill-current",
+              outlined ? outlineClasses[variant] : variantClasses[variant],
+              outlined ? "fill-background" : "fill-current",
+              offFloor && "[&>path:last-child]:[stroke-dasharray:2_4.5]",
               hasContent && "[&_circle]:hidden",
             )}
-            style={tint && !featured ? { color: tint.fill } : undefined}
+            style={tinted ? { color: tint?.fill } : undefined}
           />
           {hasContent && (
             <span
               aria-hidden="true"
               className={cn(
                 "absolute inset-x-0 top-[18%] truncate px-1 text-center text-[10px] font-bold leading-none",
-                offFloor ? "text-foreground" : inkClasses[variant],
+                // A tint's fill fails 4.5:1 as text on the background for six
+                // of the eight categories (yellow reads 1.92:1), so an
+                // outlined tinted pin's number is in the foreground.
+                offFloor || (quiet && tinted)
+                  ? "text-foreground"
+                  : quiet
+                    ? outlineClasses[variant]
+                    : inkClasses[variant],
               )}
-              style={
-                tint && !featured && !offFloor
-                  ? { color: tint.onFill }
-                  : undefined
-              }
+              style={tinted && !outlined ? { color: tint?.onFill } : undefined}
             >
               {visibleContent}
             </span>

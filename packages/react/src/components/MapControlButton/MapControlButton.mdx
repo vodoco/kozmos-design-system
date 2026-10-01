@@ -28,6 +28,12 @@ compass, the location control and the floor tile:
 The surface is owned CSS (`kozmos-map-control`), so it holds in a host without
 `@scope`; a class passed in `className` still wins over it.
 
+SwiftUI and Compose draw no blur: the surface is opaque, so a blur behind it
+would not show, and the control looks the same without one. SwiftUI casts the
+same three shadows. Compose casts one 8dp elevation (`KozmosShadows.kt`),
+Material's key and ambient light, where the web casts three: Compose here has
+no layered shadow.
+
 **In the dark theme it stays borderless** (decision 47): the surface is the
 page's own, `background/0`, and no edge is drawn round it, as in the light. The
 Figma file draws the light theme only, so the dark shadow is Kozmos's own: the

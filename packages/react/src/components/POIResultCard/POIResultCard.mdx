@@ -15,6 +15,48 @@ results remain readable but cannot invoke `onSelect`.
 <Canvas of={Stories.FeaturedSelected} />
 <Controls />
 
+## One tab: Featured, a number, or a badge
+
+A card draws at most one tab inside its top-start corner (the right in a right-to-left language).
+It shares the card's outer curve and edge; only its inner corner rounds. The name begins below
+the tab, never underneath it. What it says decides how it looks, and the first that applies wins:
+
+1. **Featured** (`result.featured`): the SDK's bright amber under dark words, with a star, and the
+   card's edge in the same amber, selected or not (the ring says which card is selected). It is the
+   alert fill pair, `--semantics-emotion-alert-fill` and `--semantics-emotion-alert-on-fill`, which
+   stays bright in both themes. Featured is set in the CMS and read beyond the card: a featured
+   result's pin shows its logo on the map.
+2. **A number** (`numbered`, off unless the product turns it on): the result's `resultIndex`, the
+   number its pin shows. At rest the tab is quiet, outlined on the card's own fill, and the card
+   keeps its grey edge, so a number never reads as the selected card. Selected, the tab fills with
+   the primary colour as the card's edge turns primary, the way the selected pin stands out from
+   the rest.
+3. **A badge** (`result.badge`): why the result is in this list, such as "Alternative". It is quiet:
+   a neutral tab with no star, on the card's grey edge, so it is never taken for Featured (GAP-054).
+
+So a featured result shows Featured and no number, and a numbered result shows its number rather
+than its badge, so the list's numbers match the pins.
+
+- **The numbers are the product's.** The card draws the `resultIndex` it is given and never
+  renumbers. `resultIndex` counts from 1: it is the number the result's map marker shows, and the
+  position analytics reports. Turn numbering on for a list whose pins are numbered, with
+  `POIResultList`'s `numbered`; quick access is the case, where a category chosen in the browse
+  grid lists its places and the map pins them. Number the results that are not featured 1, 2, 3 in
+  pin order, since a featured result's pin shows its logo.
+- **What is heard.** The number's tab is decorative. The number leads the result's accessible name
+  instead, "2, Burger King …", so it is heard once, with the result it numbers, and no words are
+  added. A `selectionLabel` replaces that whole name, so a product that passes one says the number
+  in its own words. The Featured and badge tabs are read as text, as they always were.
+- **In a group.** A `POIResultGroup` row has no edge of its own to hang a tab from, so a numbered
+  row draws its number before its name, painted as the tab is.
+- **The colours** are owned rules, so they hold without `@scope`, and each tab's words read at
+  4.5:1 or more on its fill in both themes: Featured 10.56:1 light and 13.14:1 dark; the number
+  6.10:1 and 7.76:1 at rest, 6.24:1 and 6.17:1 selected; the badge 4.80:1 and 6.51:1. iOS and
+  Android draw the same pairs.
+
+<Canvas of={Stories.Tabs} />
+<Canvas of={Stories.TabsRightToLeft} />
+
 ## A walk shown as a band
 
 A result list shows the walk to a place as a band: **Nearby** under a minute, then **1–2 min**,
@@ -85,18 +127,20 @@ import Kozmos
 
 // The walk the product already has, and its exact time in the visitor's words.
 struct WalkingResult: View {
-    let poi: KozmosPOIPresentation
-    let walkSeconds: Double
-    let walkLabel: String
-    let bandLabels: [KozmosTravelTimeBand: String]
-    let onSelect: (String) -> Void
+let poi: KozmosPOIPresentation
+// The result's number, counted from 1: the one its map marker shows.
+let number: Int
+let walkSeconds: Double
+let walkLabel: String
+let bandLabels: [KozmosTravelTimeBand: String]
+let onSelect: (String) -> Void
 
     var body: some View {
         KozmosPOIResultCard(
             poi: poi,
             result: KozmosPOIResultPresentation(
                 poiId: poi.id,
-                resultIndex: 0,
+                resultIndex: number,
                 // The list shows the band; the details card keeps durationLabel.
                 travelEstimate: KozmosTravelEstimatePresentation(
                     durationSeconds: walkSeconds,
@@ -109,8 +153,9 @@ struct WalkingResult: View {
             onSelect: onSelect
         )
     }
+
 }
-    `}
+`}
     kotlin={`
 import androidx.compose.runtime.Composable
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
@@ -122,28 +167,30 @@ import com.kozmos.contracts.KozmosTravelTimeBand
 // The walk the product already has, and its exact time in the visitor's words.
 @Composable
 fun WalkingResult(
-    poi: KozmosPOIPresentation,
-    walkSeconds: Double,
-    walkLabel: String,
-    bandLabels: Map<KozmosTravelTimeBand, String>,
-    onSelect: (String) -> Unit
+poi: KozmosPOIPresentation,
+// The result's number, counted from 1: the one its map marker shows.
+number: Int,
+walkSeconds: Double,
+walkLabel: String,
+bandLabels: Map<KozmosTravelTimeBand, String>,
+onSelect: (String) -> Unit
 ) {
-    KozmosPOIResultCard(
-        poi = poi,
-        result = KozmosPOIResultPresentation(
-            poiId = poi.id,
-            resultIndex = 0,
-            // The list shows the band; the details card keeps durationLabel.
-            travelEstimate = KozmosTravelEstimatePresentation(
-                durationSeconds = walkSeconds,
-                durationLabel = walkLabel,
-                band = KozmosTravelTimeBand.forDuration(walkSeconds)
-            )
-        ),
-        onSelect = onSelect,
-        // English until the product passes its own words.
-        travelTimeBandLabels = bandLabels
-    )
+KozmosPOIResultCard(
+poi = poi,
+result = KozmosPOIResultPresentation(
+poiId = poi.id,
+resultIndex = number,
+// The list shows the band; the details card keeps durationLabel.
+travelEstimate = KozmosTravelEstimatePresentation(
+durationSeconds = walkSeconds,
+durationLabel = walkLabel,
+band = KozmosTravelTimeBand.forDuration(walkSeconds)
+)
+),
+onSelect = onSelect,
+// English until the product passes its own words.
+travelTimeBandLabels = bandLabels
+)
 }
-    `}
+`}
 />
