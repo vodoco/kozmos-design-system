@@ -61,11 +61,19 @@ It forwards its ref to `HTMLDivElement`. Its props are `AdaptiveMapShellProps`, 
 - `mapStatus`: `MapReadiness`, optional, default `"ready"`.
 - `mapStatusContent`: `React.ReactNode`, optional.
 - `controls`: `React.ReactNode`, optional.
+- `controlsLabel`: `string`, optional, default `"Map controls"`.
+
+  Accessible name of the legacy controls landmark. Supply translated words.
+
 - `controlsBottomStart`: `React.ReactNode`, optional.
 
   Logical bottom corners above the panel. Wide clusters wrap without overlapping.
 
 - `controlsBottomEnd`: `React.ReactNode`, optional.
+- `bottomControlsLabel`: `string`, optional, default `"Map corner controls"`.
+
+  Accessible name shared by both registered bottom corners, distinct from controlsLabel.
+
 - `attribution`: `React.ReactNode`, optional.
 
   Measured map credits above sheets, centered across the full map independently of side panels.

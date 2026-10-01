@@ -9,7 +9,13 @@ Baseline: release commit `a3dc6f935b7914dedd17067036ebadcde737bfd9`, reconciled 
 React 0.7.0, tokens 0.3.0 and product-contracts 0.6.0 are published on `latest`;
 icons stays 0.5.0. Matching SwiftUI/Compose source is in the repository, not a native
 registry release. See [release evidence](release-process.md#070).
-For all 108 inherited product gaps, their criteria and corrected statuses, read the
+Post-release source status below is reconciled to main `7c006e06aa904894217fb4df799d9e6ff1e60c4b`;
+merged maintenance is not an additional npm release.
+P01's three source slices are now assembled in an unreleased integration candidate:
+GAP-109 (named manoeuvre containers), GAP-056 (result-action targets), and GAP-101
+(named shell controls). Candidate verification and the normal merge gates remain;
+this is not a claim that these changes are on main, published or adopted in products.
+For all 121 supplied product gaps (latest source intake 2026-10-01), their criteria and corrected statuses, read the
 [product design gap register](product-design-gap-register.md). The site has a
 [separate gap register](../apps/site/GAPS.md).
 
@@ -23,7 +29,8 @@ Next work after the 0.7.0 library release:
 
 1. Reuse the shipped level switcher, logical map-corner slots, attribution and Info components;
    use the web-only language switcher where the SDK host supports it.
-2. Review existing PR #160 for the iOS host's floor ordering/default selection and lifecycle work.
+2. Reuse merged PR #160 for the iOS host's floor ordering/default selection and lifecycle work;
+   validate additional real-device/consumer scenarios instead of duplicating it.
 3. Complete real web/Android SDK adapters, locale/provider ownership and full-screen acceptance.
 4. Confirm exit-building state policy before composing that remaining action, and validate
    physical-device accessibility, Figma mapping and consuming-app adoption separately.
@@ -157,10 +164,12 @@ visitor-floor dot. The full level name is available as an accessible label.
   closed-tile acceptance wording is superseded: keep counts only in lists, off by default.
   Host opt-in/data wiring and design/board adoption still need verification.
 - The component preserves supplied order. Its contract expects top-first levels.
-  [SDKMapScreen](../apps/PointrPlayground/Sources/App/SDKMapScreen.swift) currently sorts native
-  levels ascending and supplies neither userFloor nor result counts.
-- [PR #160](https://github.com/vodoco/kozmos-design-system/pull/160) already proposes top-first
-  ordering/default-level and other native integration work. It is open, not a completed fix.
+  On current main, [SDKMapScreen](../apps/PointrPlayground/Sources/App/SDKMapScreen.swift)
+  consumes the top-first levels from [SDKFloorPolicy](../apps/PointrPlayground/Sources/App/SDKFloorPolicy.swift).
+  User-floor/result-count wiring and real-device acceptance remain separate host requirements.
+- [PR #160](https://github.com/vodoco/kozmos-design-system/pull/160) merged at
+  `5792335ef8056749573e37b2b400dbaf4dee2dc7`; ordering/default-level and lifecycle source fixes
+  are complete on main, not part of a new npm publication. Do not repeat the old ascending-order finding.
 - The React popover is portaled. In registered AdaptiveMapShell bottom corners it uses the
   shell's internal bounded region, including horizontal displacement beside a long panel;
   standalone selectors remain viewport-bounded. There is no separate public FloorSelector
@@ -445,12 +454,13 @@ The screenshot also exposes Exit Main Mall. A styled button alone is not the fea
 Do not let the new chrome conceal already-recorded behavior gaps:
 
 - **Product contracts:** GAP-021 language-not-listed, GAP-028 result booking, GAP-044 authored
-  name, GAP-046 area, GAP-047 travel breakdown, GAP-065 native/shared grouping and GAP-092
-  result-list footer.
+  name, GAP-046 area, GAP-047 travel breakdown and GAP-065 native/shared grouping. GAP-092's
+  result-list footer is optional backlog: the current Search with AI design uses the header.
 - **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks;
   GAP-097 step metrics; GAP-104 endpoint actions. React GAP-094/GAP-100 are already fixed.
-- **Accessibility/layout:** result actions remain 40px against the requested SDK 44px target
-  (GAP-056); actual keyboard/device acceptance remains. Wide shell content fitting and the
+- **Accessibility/layout:** the P01 candidate raises result actions to a 44px/pt/dp minimum
+  (GAP-056), retaining larger native targets and growth for large text. This is unreleased;
+  actual keyboard/device acceptance remains. Wide shell content fitting and the
   iOS QA header's equal top/side padding are implemented, not missing components.
   Compact-stepper RTL separators are fixed in 0.7.0. Do not
   equate the 44px product target with every WCAG minimum-target rule.
@@ -465,16 +475,176 @@ Do not let the new chrome conceal already-recorded behavior gaps:
 - **Platform claims:** React npm publication does not publish native packages or make the
   private Vue harness a full Vue design system. Publish supported-target guidance honestly.
 
-## Implementation batches and remaining acceptance
+## Product-gap implementation programme
 
-| Batch                            | Deliverable                                                                                                                                                                                 | Dependencies / acceptance                                                                         |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| 0 — decisions and inventory      | Target sync, RTL, floor cues and count policy confirmed above; settle branding/credit source, info content owner and exit behavior. Review existing PR #160 before overlapping native work. | No speculative public API or duplicate component.                                                 |
-| 1 — floor and shell foundation   | Library delivered in 0.7.0 with native source and map-browse stories. Adopt supported slots and verify each real host.                                                                      | SDK-UI-001 / SDK-UI-002; regression tests for existing shell/selector consumers.                  |
-| 2 — language and credits         | Library delivered in 0.7.0 (language web-only). Real SDK locale/provider adapters and approved consumer content remain.                                                                     | Stable slots; approved assets and provider metadata policy; SDK-UI-003 / SDK-UI-004.              |
-| 3 — info and exit                | Info presentation shipped; iOS QA Info integration verified in simulator. Exit policy/composition and other real hosts remain.                                                              | SDK-UI-005 / SDK-UI-006; focus/occlusion tests.                                                   |
-| 4 — real SDK integration         | Connect controls to real floor/language/venue/status data and lifecycle; replace corresponding default UI through documented configuration.                                                 | Mock stories are not the only proof; verify real SDK events, unavailable data and error recovery. |
-| 5 — design and consumer adoption | Native parity belongs to every preceding batch; finish Figma via existing pipeline, Code Connect, generated cards and product-board adoption.                                               | Named device tests and readback, consumer examples, visual checks, external artifact adoption.    |
+This is a proposed execution plan for the reconciled 121-row product register, not permission
+to implement every imported suggestion or to publish. The 63 source-backlog rows are assigned
+exactly once below: 55 to work packages (some conditional or adoption-only), eight to explicit
+dispositions. The 58 source-reported React closures stay in the register and in regression
+coverage; they are not 58 new implementation tasks or proof of all-target completion.
+
+### Scope and invariants
+
+- Build on current main, not the published 0.7.0 source alone. First submit the documentation
+  reconciliation through its own PR; preserve the existing local edits. Refresh each subsequent
+  branch normally against main and inspect other actors' changes before writing.
+- Preserve public behavior unless a change is explicitly reviewed. Prefer additive contracts
+  and opt-in presentation variants; document migration when an approved default changes.
+  Keep old string instructions, absent optional fields and existing native call sites working.
+- Implement shared presentation behavior on React, SwiftUI and Compose in the same work package.
+  Equivalent outcomes do not require identical DOM/native APIs. Missing native components need
+  an implementation plan, not a checkbox saying an equivalent prop exists. Native language
+  buttons remain intentionally absent: device/app language is the agreed policy.
+- The host owns ranking, result indices, floor/venue data, routing state, clustering algorithms,
+  provider attribution policy and SDK rendering. The DS owns presentation contracts, reusable
+  components, semantics and layout. Do not move host behavior into a component to close a row.
+- Preserve approved POI behavior: at most three populated metadata items, adaptive centering,
+  horizontally scrolling actions, correct absent values and taxonomy-driven presentation.
+  Preserve logical corner placement, full-map-centered attribution, safe-area handling and
+  retained map/POI/query state while panels open and close.
+- No CSS overrides against private component structure, blanket padding patches, arbitrary
+  clipping, guessed SDK subview hiding, weakened assertions, tolerance increases or new
+  baselines used merely to hide a regression.
+
+### Work packages and order
+
+Wave 1 is the recommended first milestone. Wave 2 is not a reason to hold proven Wave 1 fixes
+indefinitely. Wave 3 contains conditional product/platform work, not an automatic commitment.
+Each package may need several small PRs; contract and platform changes must reach a verified
+integration candidate together before claiming that package complete.
+
+| Package                                          | Primary gaps                                                                             | Implementation boundary                                                                                                                                                                                                                                                              | Dependencies and decisive checks                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P01 — accessible regions and SDK action targets  | GAP-101, GAP-109, GAP-056                                                                | Name the shell control region and keep the opened manoeuvre content discoverable; reconcile 44px result actions on all applicable platforms. Do not invent native ARIA roles.                                                                                                        | **Wave 1, first.** Reproduce arbitrary itinerary children, not only the already named Itinerary. Verify no duplicate names, keyboard scroll access, open/close focus restoration and disabled action behavior. Check rendered action targets; 40px is a product mismatch, not automatically a WCAG failure.                                                        |
+| P02 — shell-owned spacing                        | GAP-085, GAP-114                                                                         | Specify header-to-content spacing and gripless-sheet top insets. Distinguish shell padding from hosted parts' own padding; update layout measurement and native inset propagation together.                                                                                          | **Wave 1, after P01 baseline.** Header/no-header × grip/no-grip × side/bottom × short/long content. Preserve a 16px content gap where requested, handle clearance, content-fitting height, detents and collision reporting; no doubled POI padding. P07 adopts the same contract for assistant headers.                                                            |
+| P03 — critical language contracts                | GAP-093, GAP-096, GAP-021                                                                | Design backward-compatible instruction text parts with secondary emphasis/language and a separate staff-language match representation. Use two cohesive sub-PRs if needed; UI-language fallback must not imply staff language availability.                                          | **Wave 1.** Establish shared fixtures first. Preserve exact German/Japanese/Arabic ordering and legacy strings; do not flatten away part-language metadata in accessible output. Test native speech behavior and unknown versus explicitly unlisted language data.                                                                                                 |
+| P04 — numbered result and marker enhancement     | GAP-119, GAP-120                                                                         | Add combined number/Featured presentation, approved tab geometry and an explicit SDK-style marker appearance; retain existing numbering and featured/logo support.                                                                                                                   | **Wave 1, after appearance decision below.** Test Featured in first/middle/last position, grouped rows, large indices, translated labels, RTL, themes, selected/off-floor states, keyboard activation and card-pin identity. No component-generated rank or hard-coded provider color.                                                                             |
+| P05 — richer result data and actions             | GAP-028, GAP-031, GAP-044, GAP-046, GAP-047, GAP-065                                     | Independently specify result booking/custom capabilities, name wrapping, authored name/language, area identity, travel breakdown and cross-platform grouping. Do not force all six into one PR.                                                                                      | **Wave 2; build on P03/P04.** Fixtures cover missing/partial data and existing callers. Group identity and representative selection come from data, not localized labels. Only actionable capabilities produce enabled actions; validate time units/totals without fabricating values.                                                                             |
+| P06 — route presentation                         | GAP-097, GAP-103, GAP-104, GAP-110, GAP-111, GAP-112, GAP-113                            | Three slices: approved direction glyphs/types; step metrics/rail waypoints/endpoint actions; hosted summary and route-preview composition without nested card chrome.                                                                                                                | **Wave 2; after P02/P03 and glyph approval.** Preserve current direction values, route focus and controlled host state. Test multi-floor transitions, enter/exit, long translated instructions, preview → details → back, start/end and previous/next. Coordinate P11 semantic map colors without making all route UI depend on a map-style migration.             |
+| P07 — Notice and assistant family                | GAP-059, GAP-063, GAP-064, GAP-115, GAP-118, GAP-121                                     | First inventory missing native assistant primitives. Build native Notice and the minimal coherent assistant family alongside React improvements: icon omission/alignment, progress composition, actionable replies, latest-answer reading position and hosted header/banner spacing. | **Wave 2; after P02, P03 and relevant P05 result contracts.** This is a substantial parity track, not six padding edits. Test first-open focus, close return, streaming, user scroll preservation, long answers, reduced motion, download/error/retry, offline and timeout. Optional replies are actions, not toggle chips; progress must not flood announcements. |
+| P08 — search, language and keyboard resilience   | GAP-010, GAP-053, GAP-084                                                                | Resolve CJK wrapping from real fixtures; add a supported recent-search composition and keyboard/list semantics; design web keyboard avoidance with explicit ownership and fallback.                                                                                                  | **Wave 2; after P02.** Do not break every long word or shrink text arbitrarily. Recent-search removal needs focus continuity, not nested interactive options. Test mobile Safari/Android browser IME, pinch zoom, rotation, embedded maps and already-resized viewports; avoid double subtraction of keyboard/safe-area insets.                                    |
+| P09 — reusable layout and content utilities      | GAP-035, GAP-058, GAP-098, GAP-105, GAP-106, GAP-107, GAP-116                            | Add approved token-backed title sizing, child sizing and block insets; numeric units, existing icon registry entries, persona marks and below-name tree metadata. Keep each independent primitive reviewable.                                                                        | **Wave 3, only with an active consumer fixture.** Preserve existing Container inline inset semantics and native call compatibility. Validate narrow/RTL/large-text layouts, unit announcements and persona identification without color alone. Reuse Copy01/Star01 artwork. Source-listed Vue-only requests do not imply a public Vue package.                     |
+| P10 — dashboard-specific density and composition | GAP-014, GAP-036, GAP-037, GAP-039, GAP-040, GAP-041, GAP-042, GAP-050, GAP-051, GAP-052 | Confirm the real Dashboard delivery target, then group active needs into form density, settings/page/publish compositions and table/navigation semantics. Reproduce the date-icon issue before choosing a fix.                                                                       | **Conditional Wave 3, gated by GAP-016/platform ownership.** Several source boards were removed. Do not build every dormant suggestion. Dense pointer styles must not shrink SDK touch defaults. Validate the actual supported Vue/React integration and do not claim native Vue support from a React wrapper.                                                     |
+| P11 — map-specific visual vocabulary             | GAP-073, GAP-075, GAP-095                                                                | Agree DS versus renderer ownership for indoor/route/landmark tokens and cluster-marker presentation. Implement approved light/dark/themed states and an adapter example, not a second map engine.                                                                                    | **Conditional Wave 3.** Needs SDK/design owner input and P04 marker semantics. Verify default/current/destination differentiation and cluster count names. The host clusters, filters by floor and zooms; real SDK styles must adopt approved values before claiming visual parity.                                                                                |
+| P12 — external design-system adoption            | GAP-089, GAP-090, GAP-091                                                                | Reuse the merged docs generator. Refresh the actual Claude Design bundle, validate fresh-session real-component use, and have an organization owner configure its default system.                                                                                                    | **Can start after baseline and repeat for changed APIs.** A compiled example is not a successful external install. Record artifact/version and named board evidence; no organization-setting changes without approval. Each affected Figma component is updated through its existing pipeline, not recreated with new identities.                                  |
+
+### Explicit dispositions
+
+Every source-backlog row below is accounted for, but is not an unconditional coding task.
+
+| Gaps    | Disposition and recommendation                                                                                                                                                                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GAP-086 | React divider fix already shipped. Retain its RTL regression and record any remaining consumer/native acceptance; do not reimplement it.                                                                                                                  |
+| GAP-016 | Owner/platform decision: whether to fund a public native Vue library, continue the private wrapper or use a different supported integration. No publication implied. Blocks P10 commitment, not Waves 1–2.                                                |
+| GAP-038 | No active chart criterion. Defer until a real dashboard requirement defines chart types, accessible table fallback and target framework.                                                                                                                  |
+| GAP-043 | Resolve search-microphone requirement versus the agreed keyboard-dictation policy. Preserve current SearchBar behavior meanwhile; assistant voice conversation is a different capability.                                                                 |
+| GAP-045 | Prefer OS-owned device chrome. Close as not applicable only after product-owner confirmation; keep prototype framing separate from runtime components.                                                                                                    |
+| GAP-092 | Current Search with AI uses a header Notice. Defer footer API until an active use case needs it; P07 handles the active Notice problem.                                                                                                                   |
+| GAP-099 | Current route-update design uses MapStatusPill. Defer Toast placement extension until a consumer still needs it; test status/sheet coexistence in integration.                                                                                            |
+| GAP-117 | Recommend preserving the existing button default and, if every location-mode change should reveal, adding an explicit mode-change trigger at the group level. Confirm this against decision 40; otherwise correct the wrapper's over-broad documentation. |
+
+### Decisions before their affected packages
+
+These do not block P01 or initial reproduction work in P02:
+
+1. **Numbered cards/pins:** recommended compatibility policy is an opt-in SDK presentation
+   first, including numbered Featured tabs; do not silently replace every existing consumer's
+   appearance. A changed default instead requires explicit approval and migration guidance.
+2. **Marker styling:** approve semantic selected/resting colors and geometry in both themes,
+   including white-label behavior. Do not assume the screenshot's green is universal branding.
+3. **Location-mode reveal:** confirm GAP-117's behavior choice above; same visible words can still
+   describe a different mode, but the current test explicitly preserves collapsed behavior.
+4. **Navigation artwork/map tokens:** identify approved glyphs and the renderer/style owner.
+   Dedicated UI glyphs and SDK sprites are different delivery artifacts.
+5. **Conditional Dashboard and host work:** confirm Vue direction, access to real web/Android
+   SDK hosts, external artifact/Figma owners and exit-building route/selection policy.
+
+### Test and self-review gate for every package
+
+1. **Baseline:** pin current main and affected package/toolchain versions; identify component,
+   shared contract/token, native and real consumer impacts. Record acceptance fixtures and
+   supported states before implementation. Do not count a stale worktree or dist as current.
+2. **Reproduce:** add the narrowest meaningful failing regression against unfixed behavior.
+   For enhancements, the new-contract fixture should fail until implemented. Geometry needs a
+   built-package browser or hosted native view, not a class-name assertion alone.
+3. **Implement:** shared contracts/fixtures first, then all applicable platforms and adapters.
+   Rebuild affected workspace packages before testing consumers. Preserve old signatures and
+   defaults unless the migration decision explicitly changes them.
+4. **Self-check:** run changed and dependent tests; inspect both themes, LTR/RTL, 320px/narrow
+   embedded map, phone/tablet/desktop, long text, empty/loading/error and controlled-state
+   transitions. Include large text, reduced motion, keyboard/focus and accessibility checks.
+   Preserve platform-appropriate touch targets; a 44px web requirement must not shrink an
+   existing larger native target. For native changes read back executed simulator/JUnit test
+   names, not just exit codes.
+5. **Review:** inspect the diff and real consuming composition. Web visual baselines use the
+   pinned Docker renderer; native references use the established renderer. Never bless a
+   screenshot difference before explaining it. Verify old result/floor/Info flows still work.
+6. **Document:** update public JSDoc/MDX, Storybook states, native guidance, migration text,
+   product-register reconciliation and Figma mapping requirements. Build React dependencies,
+   regenerate API cards with `pnpm skills:build`, then run `pnpm skills:check` when APIs/docs
+   change. Add a changeset for shipped output; no hand-edited generated artifacts.
+7. **Merge readiness:** after hook formatting, verify all 19 required checks on the exact
+   up-to-date PR head, plus selected Site/visual/bundle/browser workflows. No bypass or blind
+   rerun. After merge verify exact-main CI and relevant deployment before continuing merges.
+   Focused local suites keep iteration fast; they do not replace required gates.
+8. **Accept:** record implemented, locally checked, CI-verified, released and consumer-adopted
+   separately. Physical VoiceOver/TalkBack, real SDK adapters and external Figma/artifact use
+   stay pending without their own evidence. Unexpected scope expansion pauses that package
+   for a decision rather than spreading fixes into unrelated work.
+
+### Findings to carry into implementation
+
+- P01 replaces the prior open-card expectation with a named ManoeuvreCard region for arbitrary
+  child content. SwiftUI and Compose keep their outer names too. Regression tests preserve
+  independent child actions and focus/scroll behavior; physical screen-reader speech/order
+  and real product boards remain separate acceptance.
+- P01 names both the legacy shell controls and the newer bottom corners, with translated
+  labels and hidden/out-of-room checks. FloorSelector's trigger stays in the corner landmark;
+  its portaled popup is a separately named dialog connected by `aria-controls`, not a DOM
+  child of that landmark. Custom consumer portals still own their accessibility lifecycle.
+- P01 changes the native result components' own action implementations, not just the generic
+  Button: SwiftUI minimum dimensions are inside the padded Button label, and Compose keeps
+  the platform's larger interactive-target policy. Named tests measure targets, large text,
+  disabled state and callbacks, including taps in the padded SwiftUI label. Preserve these
+  checks through integration; source implementation is not device or external Figma adoption.
+- Reconcile the implementation's adjacent semantics during each batch: for example, the
+  current manoeuvre instruction uses physical `text-left`, and the native shell handle has
+  English strings in source. These are inspection leads, not newly allocated product GAP IDs
+  or silently authorized broad rewrites. Reproduce and link them to existing RTL/localization
+  requirements; coordinate additional scope rather than declaring every historical closure global.
+- A work-package accounting check proves no source row was dropped. It does not prove all
+  behaviors were audited. Keep source-confirmed limitations, runtime reproductions and actual
+  consumer acceptance separate, including when an existing test codifies outdated behavior.
+
+### First delivery and release boundaries
+
+Start with the documentation baseline, then **P01**, then **P02**. Follow with P03 and the
+approved P04 appearance. This produces a useful early milestone without waiting for the
+entire native assistant or Dashboard programme. Do not promise a date for those larger tracks
+before inventory and failing fixtures establish their actual size.
+
+Implementation work and release preparation are separate approvals. No version number is
+reserved by this plan. When a release is requested, aggregate reviewed changesets, prepare
+the separate version PR and validate the exact version-merge main SHA, package artifacts and
+native execution under [the release process](release-process.md). Publication remains behind
+the owner's protected approval. Post-publish verification uses the actual installed artifacts,
+plus deployed website/Storybook and updated product-board evidence; do not republish old bytes
+or mark every target done because npm succeeded.
+
+Full-suite reruns are not required after each prose edit or repeated review of an unchanged
+artifact. Follow [the maintenance policy](design-system-maintenance.md) for affected local
+tests, shared-dependency impact, required PR gates and complete release-candidate checks.
+
+## SDK implementation batches and remaining acceptance
+
+| Batch                            | Deliverable                                                                                                                                                                                       | Dependencies / acceptance                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 0 — decisions and inventory      | Target sync, RTL, floor cues and count policy confirmed above; settle branding/credit source, info content owner and exit behavior. Reuse merged PR #160; do not duplicate its native host fixes. | No speculative public API or duplicate component.                                                 |
+| 1 — floor and shell foundation   | Library delivered in 0.7.0 with native source and map-browse stories. Adopt supported slots and verify each real host.                                                                            | SDK-UI-001 / SDK-UI-002; regression tests for existing shell/selector consumers.                  |
+| 2 — language and credits         | Library delivered in 0.7.0 (language web-only). Real SDK locale/provider adapters and approved consumer content remain.                                                                           | Stable slots; approved assets and provider metadata policy; SDK-UI-003 / SDK-UI-004.              |
+| 3 — info and exit                | Info presentation shipped; iOS QA Info integration verified in simulator. Exit policy/composition and other real hosts remain.                                                                    | SDK-UI-005 / SDK-UI-006; focus/occlusion tests.                                                   |
+| 4 — real SDK integration         | Connect controls to real floor/language/venue/status data and lifecycle; replace corresponding default UI through documented configuration.                                                       | Mock stories are not the only proof; verify real SDK events, unavailable data and error recovery. |
+| 5 — design and consumer adoption | Native parity belongs to every preceding batch; finish Figma via existing pipeline, Code Connect, generated cards and product-board adoption.                                                     | Named device tests and readback, consumer examples, visual checks, external artifact adoption.    |
 
 Use reviewable PRs with explicit acceptance scope. Public runtime/contracts changes need
 changesets and compatibility checks. Documentation-only reconciliation does not need a version
@@ -485,20 +655,19 @@ Keep unrelated security/release maintenance separate from UI implementation.
 
 ### Prioritized follow-up and where to change it
 
-| Priority | Work and entry point                                                                                                                                                                                                   | Completion evidence                                                                                                                                                                                                                    |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1        | Browser compatibility: Firefox 128 styling failures reproduced; owner approved Firefox 146+ on 2026-10-01. Manifest, migration notes and regression guards are prepared for the next release; 0.7.0 remains unchanged. | Merge/release the separately reviewed support correction. Broader minimum-engine and embedded-WebView acceptance remains open; representative Firefox checks are not whole-library certification.                                      |
-| 2        | iOS QA floor ordering/default selection and lifecycle: existing [PR #160](https://github.com/vodoco/kozmos-design-system/pull/160), SDKMapScreen and SDKSession.                                                       | Refresh/review that work; named simulator tests for top-first ordering, default level, detent restoration, saved filters and stop callbacks. Preserve the new Info integration.                                                        |
-| 3        | Documentation/adoption: existing [PR #166](https://github.com/vodoco/kozmos-design-system/pull/166), [PR #168](https://github.com/vodoco/kozmos-design-system/pull/168), component MDX and generated API cards.        | Reconcile against current main rather than replay old version numbers or replaced plans. Check remaining placeholder summaries and actual external Claude Design/Figma/board adoption. Do not close or merge these PRs by implication. |
-| 4        | Real web/Android SDK hosts; use `apps/docs/stories/examples/MapBrowseFlow.tsx` as a presentation recipe, not a real SDK adapter.                                                                                       | Real floor/locale/provider/status events, persistence, race/failure handling and camera/layout changes; no duplicate default/custom controls or attribution.                                                                           |
-| 5        | Exit-building composition plus cross-platform device/design acceptance.                                                                                                                                                | Confirm exit route/selection policy first. Verify physical VoiceOver/TalkBack, IME/safe areas, large text, RTL, custom branding and named product/Figma screens.                                                                       |
+| Priority | Work and entry point                                                                                                                                                                                | Completion evidence / remaining work                                                                                                                                                                                            |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | Newly reconciled product requirements: GAP-109/101 accessibility, GAP-085/114/121 spacing, GAP-093/096 instruction contracts, GAP-119/120 numbered cards/pins.                                      | Follow the [product register's queue](product-design-gap-register.md#implementation-queue-after-reconciliation). Reproduce first; implement shared enhancements in sync, with explicit native coverage and consumer acceptance. |
+| 2        | Real web/Android SDK hosts; use `apps/docs/stories/examples/MapBrowseFlow.tsx` as a presentation recipe, not a real SDK adapter.                                                                    | Real floor/locale/provider/status events, persistence, race/failure handling and camera/layout changes; no duplicate default/custom controls or attribution.                                                                    |
+| 3        | External documentation/design adoption: repo work in [#166](https://github.com/vodoco/kozmos-design-system/pull/166) and [#168](https://github.com/vodoco/kozmos-design-system/pull/168) is merged. | Generated full APIs, compiling examples and replacement introductions are present on main. Refresh the external Claude Design bundle; prove new-session use and Figma/feature-board adoption independently.                     |
+| 4        | iOS host acceptance: [#160](https://github.com/vodoco/kozmos-design-system/pull/160), #164 and #180 are merged.                                                                                     | Reuse existing floor-policy, lifecycle and interaction fixes. Simulator evidence is recorded by maintenance; physical AT, all route/floor preservation combinations and other real SDK hosts remain open.                       |
+| 5        | Exit-building composition and compatibility maintenance.                                                                                                                                            | Confirm exit route/selection policy. Firefox 146+ policy/tests/docs in #178 are merged but not newly published; whole-library minimum-engine and embedded-WebView certification remain separate.                                |
 
 The source API cards are maintained at `docs/claude-design/components/`; change their source
-MDX/JSDoc and run `pnpm skills:build`, never edit generated output. The post-publication audit
-found 34 other generated component summaries still falling back to "docs do not describe it
-yet" after FloorSelector's summary was corrected. That is a content-quality backlog, not
-missing component APIs or a failed type-generation check. Broad source-doc cleanup belongs
-with the existing documentation PRs, not an unreviewed change to every component.
+MDX/JSDoc and run `pnpm skills:build`, never edit generated output. The former placeholder
+introduction backlog was addressed by merged #166/#168; do not re-list it as untouched work.
+That does not prove the external artifact was uploaded or adopted. Follow the complete target
+matrix below before closing a product requirement.
 
 Keep separate maintenance risks visible: the Storybook dev-server fix in #174 does not
 resolve the private Vue playground advisories. Dependabot update jobs also failed on the

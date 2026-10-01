@@ -132,8 +132,9 @@ try {
         assert.equal(await current.count(), 1, "steps reading as current");
         assert.equal(await current.textContent(), "Take Elevator down to First Floor");
         const list = await box(itinerary.getByRole("list"));
-        // Open, the card has no name of its own; the itinerary inside is the named region.
-        assert.equal(await page.getByRole("region", { name: "Current manoeuvre" }).count(), 0, "the open card keeps its closed name");
+        // The card and the nested itinerary keep distinct names in both states.
+        assert.equal(await card.count(), 1, "the open card lost its container name");
+        assert.equal(await card.getByRole("region", { name: "Itinerary", exact: true }).count(), 1);
         const cardBox = await box(page.locator(".kozmos-manoeuvre-card"));
         assert.ok(cardBox.height - list.height < 60, `the open card does not hug its itinerary: card ${cardBox.height}, list ${list.height}`);
         const bar2 = page.getByRole("button", { name: "Hide itinerary" });
@@ -152,6 +153,23 @@ try {
         const scroller = page.locator(".kozmos-manoeuvre-itinerary");
         assert.equal(await scroller.evaluate((n) => n.style.maxHeight), "320px", "the itinerary is not capped");
         assert.equal(await scroller.evaluate((n) => getComputedStyle(n).overflowY), "auto", "the itinerary cannot scroll past the cap");
+      });
+
+      // GAP-109: the card owns a landmark even without the Itinerary component.
+      await finish(await open("map-manoeuvrecard--custom-content"), "card-custom-content", async (page) => {
+        await page.getByText("Continue to the gate").waitFor({ timeout: 60000 });
+        const card = page.getByRole("region", { name: "Navigation en cours", exact: true });
+        assert.equal(await card.count(), 1, "ordinary itinerary content has no named card region");
+        assert.equal(await card.getByText("Continue to the gate").count(), 1);
+        const close = card.getByRole("button", { name: "Masquer le trajet" });
+        assert.equal(await close.count(), 1, "the card excludes its close control");
+        const landmarks = await new AxeBuilder({ page }).include(".kozmos-manoeuvre-card").withRules(["region"]).analyze();
+        assert.deepEqual(landmarks.violations, [], "ordinary itinerary content is outside a landmark");
+        await close.focus();
+        await page.keyboard.press("Enter");
+        await page.locator(".kozmos-manoeuvre-itinerary").waitFor({ state: "hidden" });
+        assert.equal(await card.getByText("Continue to the gate").count(), 0);
+        assert.equal((await focusState(page)).name, "Take Elevator down to First Floor, 58 m · Second Floor");
       });
 
       // 3. The rail: the disc's centre at the track's middle at 0.5.
@@ -321,6 +339,9 @@ try {
         await instruction.focus();
         for (const key of ["Enter", "Space", "Enter"]) {
           await page.keyboard.press(key);
+          // Input dispatch can return before React commits its disclosure.
+          // Wait for that state, not a timeout or a synthetic focus change.
+          await page.getByRole("group", { name: "Itinerary", exact: true }).waitFor();
           const opened = await focusState(page);
           assert.deepEqual(
             { role: opened.role, name: opened.name, hidden: opened.hidden, tabbable: opened.tabbable },
@@ -331,6 +352,7 @@ try {
           await page.keyboard.press("Tab");
           assert.equal((await focusState(page)).name, "Hide itinerary", "Tab from the itinerary does not reach Hide");
           await page.keyboard.press(key);
+          await instruction.waitFor();
           const closed = await focusState(page);
           assert.deepEqual(
             { name: closed.name, hidden: closed.hidden, tabbable: closed.tabbable },
@@ -356,6 +378,7 @@ try {
         await instruction.waitFor({ timeout: 60000 });
         await recordFocusAtClick(page);
         await instruction.click();
+        await page.getByRole("group", { name: "Itinerary", exact: true }).waitFor();
         const [atOpen] = await page.evaluate(() => window.__focusAtClick);
         const opened = await focusState(page);
         if (atOpen.name === instructionName) {
@@ -365,6 +388,7 @@ try {
           assert.deepEqual({ tag: opened.tag, name: opened.name }, { tag: atOpen.tag, name: atOpen.name }, "opening moved focus a pointer had not put in the card");
         }
         await page.getByRole("button", { name: "Hide itinerary" }).click();
+        await instruction.waitFor();
         const [, atClose] = await page.evaluate(() => window.__focusAtClick);
         const closed = await focusState(page);
         assert.equal(closed.hidden, false, "focus rests on the hidden grab bar");
@@ -382,7 +406,7 @@ try {
         await end.waitFor({ timeout: 60000 });
         await end.focus();
         await page.keyboard.press("Enter");
-        await page.getByRole("region", { name: "Aktuelles Manöver" }).waitFor();
+        await page.locator(".kozmos-manoeuvre-itinerary").waitFor({ state: "hidden" });
         assert.equal(await end.evaluate((n) => n === document.activeElement), true, "closing the card from the product's own control took focus from it");
       });
     }

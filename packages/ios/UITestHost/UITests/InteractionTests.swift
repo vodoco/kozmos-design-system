@@ -23,6 +23,88 @@ final class InteractionTests: XCTestCase {
         XCTAssertEqual(result, .completed, "callbacks: \(app.staticTexts["received-events"].label)", file: file, line: line)
     }
 
+    func testMapControlRegionsHaveNamesAndKeepChildActions() {
+        launch("map-control-regions")
+        for name in ["Map controls", "Map corner controls"] {
+            XCTAssertTrue(app.otherElements[name].exists, name)
+        }
+        app.buttons["Locate"].tap()
+        app.buttons["Language"].tap()
+        app.buttons["Zoom"].tap()
+        received("locate|language|zoom")
+        func inspect(_ expected: String) {
+            app.buttons["Inspect control accessibility"].tap()
+            XCTAssertEqual(app.staticTexts["control-accessibility-report"].label, expected)
+        }
+        let visible = "Language|Locate|Map controls|Map corner controls|Zoom"
+        inspect(visible)
+        app.buttons["Toggle map size"].tap()
+        inspect("no controls")
+        for name in ["Locate", "Language", "Zoom"] { XCTAssertFalse(app.buttons[name].isHittable, name) }
+        app.buttons["Toggle map size"].tap()
+        inspect(visible)
+        app.buttons["Zoom"].tap()
+        received("locate|language|zoom|zoom")
+    }
+
+    func testMapControlRegionNamesCanBeLocalized() {
+        launch("map-control-regions-localized")
+        XCTAssertTrue(app.otherElements["Kartensteuerung"].exists)
+        XCTAssertTrue(app.otherElements["Weitere Kartensteuerung"].exists)
+        XCTAssertFalse(app.otherElements["Map controls"].exists)
+        app.buttons["Zoom"].tap()
+        received("zoom")
+    }
+
+    func testAbsentMapControlsDoNotCreateEmptyContainers() {
+        launch("map-control-regions-empty")
+        XCTAssertFalse(app.otherElements["Map controls"].exists)
+        XCTAssertFalse(app.otherElements["Map corner controls"].exists)
+    }
+
+    func testResultActionsHaveAtLeast44PointTargets() {
+        launch("result-action-targets")
+        for name in ["Go", "Details", "Order ahead"] {
+            let target = app.buttons[name]
+            XCTAssertGreaterThanOrEqual(target.frame.height, 44, name)
+            XCTAssertGreaterThanOrEqual(target.frame.width, 44, name)
+        }
+        XCTAssertFalse(app.buttons["Order ahead"].isEnabled)
+        // Tap inside the padded top edge, not just the text at its centre.
+        app.buttons["Go"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)).tap()
+        received("navigate cafe")
+        app.buttons["Details"].tap()
+        received("navigate cafe|details cafe")
+    }
+
+    func testResultActionTargetsGrowForDynamicType() {
+        launch("result-action-targets-large")
+        for name in ["Go", "Details", "Order ahead"] {
+            XCTAssertGreaterThan(app.buttons[name].frame.height, 44, name)
+        }
+    }
+
+    func testExpandedManoeuvreKeepsItsNameAndChildControls() {
+        launch("manoeuvre-custom")
+        let card = app.otherElements["Navigation en cours"]
+        XCTAssertTrue(card.exists, "the expanded card lost its localized container name")
+        XCTAssertTrue(card.staticTexts["Continue to the gate"].exists)
+        let close = card.buttons["Masquer le trajet"]
+        XCTAssertTrue(close.isHittable)
+        close.tap()
+        received("toggle")
+        XCTAssertTrue(card.exists, "the closed card lost its name")
+        XCTAssertFalse(card.staticTexts["Continue to the gate"].exists)
+        // XCUI exposes the accessibility-focused instruction as a button
+        // containing a button with the same label. Target the card's direct
+        // control, not an arbitrary first descendant with that name.
+        let instruction = card.children(matching: .button).matching(identifier: "Turn right")
+        XCTAssertEqual(instruction.count, 1)
+        instruction.element.tap()
+        received("toggle|toggle")
+        XCTAssertTrue(card.staticTexts["Continue to the gate"].exists)
+    }
+
     func testAnInteractiveChipIsAButtonThatSaysWhetherItIsSelected() {
         launch("traits")
         XCTAssertTrue(app.buttons["Vegan"].isSelected)

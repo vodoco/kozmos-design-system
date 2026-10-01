@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -148,6 +149,44 @@ class KozmosManoeuvreCardTest {
             }
         }
         return checkNotNull(layout) { "the card was never laid out" }
+    }
+
+    // GAP-109: ordinary content must not need to supply the card's name.
+    @Test
+    fun expandedCardKeepsItsNameAndChildControls() {
+        var hasName = false
+        var hasText = false
+        var hasClose = false
+        record("named-card", durationMillis = 1000L) {
+            val view = LocalView.current
+            Box(Modifier.width(358.dp)) {
+                MaterialTheme {
+                    KozmosManoeuvreCard(type = DirectionType.Right, instruction = german,
+                        expanded = true, onToggle = {}, collapseLabel = "Masquer le trajet",
+                        manoeuvreLabel = "Navigation en cours") {
+                        Text("Continue to the gate")
+                    }
+                }
+            }
+            LaunchedEffect(Unit) {
+                settle()
+                val card = nodes(view).firstOrNull {
+                    it.config.getOrNull(SemanticsProperties.ContentDescription) == listOf("Navigation en cours")
+                }
+                hasName = card != null
+                val children = card?.flatten().orEmpty()
+                hasText = children.any {
+                    it.config.getOrNull(SemanticsProperties.Text)?.any { text -> text.text == "Continue to the gate" } == true
+                }
+                hasClose = children.any {
+                    it.config.getOrNull(SemanticsProperties.ContentDescription) == listOf("Masquer le trajet") &&
+                        it.config.getOrNull(SemanticsActions.OnClick) != null
+                }
+            }
+        }
+        assertTrue("the expanded card lost its localized container name", hasName)
+        assertTrue("the container swallowed its content", hasText)
+        assertTrue("the close control is not reachable", hasClose)
     }
 
     // GAP-094, the whole instruction

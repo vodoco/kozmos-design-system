@@ -29,6 +29,25 @@ moves the sheet, however far the content has scrolled; a sideways one stays with
 header, for a row of chips that scrolls. Under a grab handle it keeps its first control
 clear of the handle's target (WCAG 2.5.8). In a side panel it is the panel's first row.
 
+## Accessible control regions
+
+The `controls` slot has a named landmark, `controlsLabel` (default **Map controls**).
+Both registered bottom corners share a second landmark, `bottomControlsLabel`
+(default **Map corner controls**). Pass non-empty translated names; keep the two
+names distinct when both regions are present. These labels describe groups of map
+controls, not the map renderer or the details panel.
+
+SwiftUI exposes named accessibility containers with the same labels; Compose exposes
+named traversal groups. Child controls keep their own names, states and actions—these
+containers do not merge the buttons into one control or add toolbar arrow-key behavior.
+Omitted slots create no control region. Regions hidden because they cannot fit are
+also hidden from accessibility, while their state remains mounted.
+
+The built-in FloorSelector's trigger stays in the bottom landmark; its portaled popup
+is a separately named dialog connected through `aria-controls`, with its tooltip
+descriptions inside that dialog. Custom popup content must preserve its accessible
+ownership and visibility lifecycle; the shell cannot reparent arbitrary consumer portals.
+
 ## Registered bottom corners
 
 Use `controlsBottomStart` for the logical start corner and `controlsBottomEnd` for

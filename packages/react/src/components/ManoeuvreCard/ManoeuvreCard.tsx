@@ -29,9 +29,8 @@ export interface ManoeuvreCardProps extends Omit<
   expandLabel?: string;
   collapseLabel?: string;
   /**
-   * What the closed card is called to assistive technology. Open, the card
-   * has no name of its own: the itinerary inside it is the named thing, and
-   * two landmarks called the same would be read twice.
+   * The card's accessible name in both states, including with custom
+   * itinerary content. Use a name distinct from the itinerary's own label.
    */
   manoeuvreLabel?: string;
   /**
@@ -153,7 +152,7 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
     return (
       <section
         ref={ref}
-        aria-label={expanded ? undefined : manoeuvreLabel}
+        aria-label={manoeuvreLabel}
         className={cn(
           `kozmos-manoeuvre-card ${surfaceClass(surface)} flex w-full flex-col gap-3 rounded-container px-4 pb-1 pt-4 text-foreground shadow-floating`,
           className,
@@ -164,7 +163,8 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
           // The itinerary scrolls here past the cap, so the keyboard must be
           // able to reach it (GAP-100, axe's scrollable-region-focusable): a
           // stop of its own, named after the itinerary it holds. A group,
-          // not a landmark: the itinerary inside is that already.
+          // not another landmark: the card already supplies one, and a
+          // nested Itinerary may supply its own distinct landmark.
           <div
             ref={itineraryRef}
             role="group"

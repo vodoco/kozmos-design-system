@@ -1,6 +1,7 @@
 package com.kozmos.components.adaptivemapshell
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
@@ -34,6 +35,56 @@ class BottomControlsTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
     @Before fun bindMain() { Dispatchers.setMain(Handler(Looper.getMainLooper()).asCoroutineDispatcher("paparazzi-main")) }
     @After fun resetMain() { Dispatchers.resetMain() }
+
+    @Test fun bothControlRegionsHaveNamesAndKeepTheirChildren() {
+        var presses = 0
+        val tree = paparazzi.readSettledSemantics {
+            MaterialTheme {
+                KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 600.dp),
+                    controls = { Box(Modifier.size(44.dp).clickable { presses++ }.semantics { contentDescription = "Locate" }) },
+                    controlsBottomStart = { Box(Modifier.size(44.dp).clickable { presses++ }.semantics { contentDescription = "Language" }) },
+                    controlsBottomEnd = { Box(Modifier.size(44.dp).clickable { presses++ }.semantics { contentDescription = "Zoom" }) })
+            }
+        }
+        for (name in listOf("Map controls", "Map corner controls", "Locate", "Language", "Zoom")) {
+            assertTrue("Missing $name", tree.names().contains(name))
+        }
+        for (name in listOf("Locate", "Language", "Zoom")) assertTrue(tree.named(name).click!!.invoke())
+        assertEquals(3, presses)
+    }
+
+    @Test fun controlNamesCanBeLocalized() {
+        val tree = paparazzi.readSettledSemantics {
+            MaterialTheme {
+                KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 600.dp),
+                    controlsLabel = "Kartensteuerung", bottomControlsLabel = "Weitere Kartensteuerung",
+                    controls = { Box(Modifier.size(44.dp).semantics { contentDescription = "Locate" }) },
+                    controlsBottomEnd = { Box(Modifier.size(44.dp).semantics { contentDescription = "Zoom" }) })
+            }
+        }
+        assertTrue(tree.names().containsAll(listOf("Kartensteuerung", "Weitere Kartensteuerung", "Locate", "Zoom")))
+        assertFalse(tree.names().contains("Map controls"))
+    }
+
+    @Test fun absentControlsDoNotCreateEmptyContainers() {
+        val tree = paparazzi.readSettledSemantics {
+            MaterialTheme { KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 600.dp)) }
+        }
+        assertFalse(tree.names().contains("Map controls"))
+        assertFalse(tree.names().contains("Map corner controls"))
+    }
+
+    @Test fun cornerPositionalSignatureAndTrailingCallbackStillCompile() {
+        val tree = paparazzi.readSettledSemantics {
+            MaterialTheme {
+                KozmosAdaptiveMapShell({}, Modifier.size(360.dp, 300.dp), "Positional map", KozmosMapReadiness.Ready,
+                    null, null, null, null, null, "Details", KozmosMapPanelPlacement.End,
+                    KozmosMapCollisionInsets.Zero, null, com.kozmos.components.surface.KozmosSurfaceStyle.Solid,
+                    KozmosDefaultPanelDetents, null, null, null, false, null) { _ -> }
+            }
+        }
+        assertTrue(tree.names().contains("Positional map"))
+    }
 
     @Test fun existingPositionalSignatureStillCompilesAndMounts() {
         val onDetent: (KozmosMapPanelDetent) -> Unit = {}
@@ -69,6 +120,19 @@ class BottomControlsTest {
         }
         assertFalse(tree.names().contains("start"))
         assertFalse(tree.names().contains("end"))
+        assertFalse(tree.names().contains("Map corner controls"))
+    }
+
+    @Test fun hiddenLegacyControlsDoNotLeaveANamedContainer() {
+        val tree = paparazzi.readSettledSemantics {
+            MaterialTheme {
+                KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 40.dp),
+                    controls = { Box(Modifier.size(44.dp).semantics { contentDescription = "Locate" }) },
+                    attribution = { Box(Modifier.size(100.dp, 20.dp)) })
+            }
+        }
+        assertFalse(tree.names().contains("Map controls"))
+        assertFalse(tree.names().contains("Locate"))
     }
 
     @Test fun cameraPaddingIsOffByDefault() = cameraPadding(false)

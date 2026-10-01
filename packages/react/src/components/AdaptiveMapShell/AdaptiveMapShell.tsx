@@ -47,9 +47,13 @@ export interface AdaptiveMapShellProps extends React.HTMLAttributes<HTMLDivEleme
   mapStatus?: MapReadiness;
   mapStatusContent?: React.ReactNode;
   controls?: React.ReactNode;
+  /** Accessible name of the legacy controls landmark. Supply translated words. */
+  controlsLabel?: string;
   /** Logical bottom corners above the panel. Wide clusters wrap without overlapping. */
   controlsBottomStart?: React.ReactNode;
   controlsBottomEnd?: React.ReactNode;
+  /** Accessible name shared by both registered bottom corners, distinct from controlsLabel. */
+  bottomControlsLabel?: string;
   /** Measured map credits above sheets, centered across the full map independently of side panels. */
   attribution?: React.ReactNode;
   /** Opt in to conservative bottom camera padding for the measured corner region. */
@@ -207,8 +211,10 @@ const AdaptiveMapShell = React.forwardRef<
       mapStatus = "ready",
       mapStatusContent,
       controls,
+      controlsLabel = "Map controls",
       controlsBottomStart,
       controlsBottomEnd,
+      bottomControlsLabel = "Map corner controls",
       attribution,
       bottomControlsPadCamera = false,
       topBar,
@@ -1049,6 +1055,8 @@ const AdaptiveMapShell = React.forwardRef<
         {controls && (
           <div
             ref={buttons}
+            role="region"
+            aria-label={controlsLabel}
             hidden={unavailable || controlsOutOfRoom}
             className="absolute z-30 overflow-auto"
             style={{
@@ -1107,6 +1115,8 @@ const AdaptiveMapShell = React.forwardRef<
             )}
             <div
               ref={bottomControls}
+              role="region"
+              aria-label={bottomControlsLabel}
               data-kozmos-bottom-controls=""
               data-settling={
                 isSheet && settling && dragHeight === null ? "" : undefined

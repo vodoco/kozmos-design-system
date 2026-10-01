@@ -1,11 +1,31 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Itinerary } from "../Itinerary";
 import { ManoeuvreCard, manoeuvreDescription } from "./ManoeuvreCard";
 
 describe("ManoeuvreCard", () => {
+  it("keeps a named region around arbitrary expanded content and its close control", () => {
+    render(
+      <ManoeuvreCard
+        type="left"
+        instruction="Turn left"
+        expanded
+        onToggle={() => {}}
+        manoeuvreLabel="Navigation en cours"
+        collapseLabel="Masquer le trajet"
+      >
+        <p>Continue to the gate</p>
+      </ManoeuvreCard>,
+    );
+    const card = screen.getByRole("region", { name: "Navigation en cours" });
+    expect(within(card).getByText("Continue to the gate")).toBeInTheDocument();
+    expect(
+      within(card).getByRole("button", { name: "Masquer le trajet" }),
+    ).toBeInTheDocument();
+  });
+
   it("reads the instruction then the detail, and nothing for an absent detail", () => {
     expect(manoeuvreDescription("Turn left", "58 m · 1 min")).toBe(
       "Turn left, 58 m · 1 min",
@@ -60,8 +80,9 @@ describe("ManoeuvreCard", () => {
       </ManoeuvreCard>,
     );
 
-    // No name of its own: the itinerary inside is the named thing.
-    expect(screen.queryByRole("region")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Current manoeuvre" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("FROM Dunkin")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Turn left/ }),
@@ -256,8 +277,14 @@ describe("ManoeuvreCard: the itinerary the keyboard can scroll (GAP-100)", () =>
     expect(scroller).toContainElement(
       screen.getByRole("region", { name: "Itinerary" }),
     );
-    // A group, not a second landmark: the itinerary inside is the landmark.
-    expect(screen.getAllByRole("region")).toHaveLength(1);
+    // The scrolling group adds no landmark. The card and itinerary have
+    // distinct names, and the card also contains the close control.
+    expect(screen.getAllByRole("region")).toHaveLength(2);
+    expect(
+      screen.getByRole("region", { name: "Current manoeuvre" }),
+    ).toContainElement(
+      screen.getByRole("region", { name: "Itinerary", exact: true }),
+    );
   });
 
   it("takes the product's name for the itinerary it scrolls", () => {

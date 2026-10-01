@@ -32,6 +32,11 @@ component API and record any hardcoded text as a localization gap. Native Chip n
 the Compose localized overload. Its default remains English (`Remove <text>`); the app must
 pass its translation. Existing Compose positional calls and trailing click lambdas remain supported.
 
+AdaptiveMapShell accepts `controlsLabel` (default "Map controls") and
+`bottomControlsLabel` (default "Map corner controls") on React, SwiftUI and Compose.
+Pass distinct, non-empty translated names when both slots are present. These name
+containers, not their child buttons, which retain their own localized labels and actions.
+
 | What              | Who does it                                                                                  |
 | ----------------- | -------------------------------------------------------------------------------------------- |
 | **Translations**  | The app, with its own library and files; Kozmos takes the translated words as props          |
