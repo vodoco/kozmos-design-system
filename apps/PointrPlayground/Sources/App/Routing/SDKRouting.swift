@@ -171,10 +171,10 @@ extension SDKSession {
 extension SDKSession: PTRWayfindingManagerDelegate {
     @objc(onWayfindingManagerReadyForSite:)
     nonisolated func onWayfindingManagerReady(for site: PTRSite) {
-        Task { @MainActor in
-            self.wayfindingReady = true
-            self.log.notice("wayfinding ready for \(site.name, privacy: .public), \(self.millisecondsSinceStart, privacy: .public) ms after start")
-            if SDKRoutePresenter.retriesOnReadiness(phase: self.phase, status: self.routeStatus) { self.retryRouteCalculation() }
+        onMain { session in
+            session.wayfindingReady = true
+            session.log.notice("wayfinding ready for \(site.name, privacy: .public), \(session.millisecondsSinceStart, privacy: .public) ms after start")
+            if SDKRoutePresenter.retriesOnReadiness(phase: session.phase, status: session.routeStatus) { session.retryRouteCalculation() }
         }
     }
 }
