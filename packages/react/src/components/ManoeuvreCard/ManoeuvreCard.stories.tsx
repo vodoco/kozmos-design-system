@@ -63,6 +63,16 @@ export const Closed: Story = {};
 
 export const Open: Story = { args: { expanded: true } };
 
+/** Ordinary itinerary content does not have to provide its own landmark. */
+export const CustomContent: Story = {
+  args: {
+    expanded: true,
+    manoeuvreLabel: "Navigation en cours",
+    collapseLabel: "Masquer le trajet",
+    children: <p>Continue to the gate</p>,
+  },
+};
+
 /** The whole instruction, however many lines it takes: the card grows with it. */
 export const LongInstruction: Story = {
   args: {

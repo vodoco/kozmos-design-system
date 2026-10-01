@@ -115,6 +115,12 @@ fun ShortManoeuvre(steps: List<KozmosItineraryStep>) {
 
 ## Reaching the itinerary
 
+The card keeps its `manoeuvreLabel` in both states (GAP-109): a named region on the web,
+and a named container on iOS and Android. Custom itinerary content does not need to
+supply a landmark. Its steps and close control stay separately accessible; the
+container does not combine or replace them. Localize the card name (default
+"Current manoeuvre") distinctly from the itinerary name (default "Itinerary").
+
 Past its cap the itinerary scrolls, and every step stays reachable (GAP-100):
 
 - **On the web** the box that scrolls is a stop of its own in the tab order: a group named after the itinerary it holds, `itineraryLabel` ("Itinerary" until the product passes its own words, the same as `Itinerary`'s `label`). Tab reaches it, Page Down, Space and End scroll it, and it draws the focus ring. It is a group, not a second landmark: the `Itinerary` inside is that already. Before, it could not take focus (axe's `scrollable-region-focusable`, serious), so a keyboard could not reach the steps past the cap.
