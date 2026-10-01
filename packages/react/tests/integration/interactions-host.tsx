@@ -12,6 +12,7 @@ import {
   MenuTrigger,
   MultiSelect,
   POIDetailPanel,
+  POIResultCard,
   POIResultList,
   SegmentedControl,
   ThemeProvider,
@@ -421,6 +422,7 @@ function ToolsSelect() {
 }
 
 const scenarios: Record<string, () => ReactElement> = {
+  "result-action-targets": () => <ResultActionTargets />,
   "late-results": () => <LateResults reveal />,
   "reveal-later": () => <LateResults reveal={false} />,
   "held-choice": () => <HeldChoice />,
@@ -444,6 +446,28 @@ const scenarios: Record<string, () => ReactElement> = {
   ),
   "shell-product-container": () => <ShellProductContainer />,
 };
+
+function ResultActionTargets() {
+  const [pressed, setPressed] = useState("");
+  return (
+    <div style={{ width: "100%", maxWidth: 400 }}>
+      <POIResultCard
+        poi={results[0].poi}
+        result={{
+          ...results[0].result,
+          selected: true,
+          actions: [
+            { action: "navigate", label: "Go", primary: true },
+            { action: "details", label: "Details" },
+            { action: "order", label: "Order ahead", disabled: true },
+          ],
+        }}
+        onAction={(action) => setPressed(action)}
+      />
+      <output data-testid="action-received">{pressed}</output>
+    </div>
+  );
+}
 
 window.interactions = {
   mount(name) {

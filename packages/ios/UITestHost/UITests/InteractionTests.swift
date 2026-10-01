@@ -23,6 +23,28 @@ final class InteractionTests: XCTestCase {
         XCTAssertEqual(result, .completed, "callbacks: \(app.staticTexts["received-events"].label)", file: file, line: line)
     }
 
+    func testResultActionsHaveAtLeast44PointTargets() {
+        launch("result-action-targets")
+        for name in ["Go", "Details", "Order ahead"] {
+            let target = app.buttons[name]
+            XCTAssertGreaterThanOrEqual(target.frame.height, 44, name)
+            XCTAssertGreaterThanOrEqual(target.frame.width, 44, name)
+        }
+        XCTAssertFalse(app.buttons["Order ahead"].isEnabled)
+        // Tap inside the padded top edge, not just the text at its centre.
+        app.buttons["Go"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)).tap()
+        received("navigate cafe")
+        app.buttons["Details"].tap()
+        received("navigate cafe|details cafe")
+    }
+
+    func testResultActionTargetsGrowForDynamicType() {
+        launch("result-action-targets-large")
+        for name in ["Go", "Details", "Order ahead"] {
+            XCTAssertGreaterThan(app.buttons[name].frame.height, 44, name)
+        }
+    }
+
     func testAnInteractiveChipIsAButtonThatSaysWhetherItIsSelected() {
         launch("traits")
         XCTAssertTrue(app.buttons["Vegan"].isSelected)

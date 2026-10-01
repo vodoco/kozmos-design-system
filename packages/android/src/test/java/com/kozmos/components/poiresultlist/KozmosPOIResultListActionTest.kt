@@ -3,6 +3,9 @@ package com.kozmos.components.poiresultlist
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.ReadNode
 import com.kozmos.components.ReadSemantics
@@ -30,6 +33,46 @@ import org.junit.Test
 class KozmosPOIResultListActionTest {
     @get:Rule
     val paparazzi = semanticsPaparazzi()
+
+    @Test
+    fun resultActionsHaveAtLeast44DpTargets() {
+        var minimum = 0f
+        val tree = paparazzi.readSemantics {
+            minimum = with(LocalDensity.current) { 44.dp.toPx() }
+            MaterialTheme {
+                KozmosPOIResultList(items = items(listOf(go, details,
+                    KozmosPOIResultActionPresentation(KozmosPOIResultAction.Order, "Order ahead", disabled = true))),
+                    resultCountLabel = "2 results", selectedPoiId = "cafe", onSelect = {}, onAction = { _, _ -> })
+            }
+        }
+        for (label in listOf("Go", "Details", "Order ahead")) {
+            val target = tree.showing(label)
+            assertTrue("$label height ${target.frame.height}, expected at least $minimum", target.frame.height >= minimum)
+            assertTrue("$label width ${target.frame.width}, expected at least $minimum", target.frame.width >= minimum)
+        }
+        assertFalse(tree.showing("Order ahead").enabled)
+    }
+
+    @Test
+    fun resultActionTargetsGrowForLargeText() {
+        var minimum = 0f
+        val tree = paparazzi.readSemantics {
+            val density = LocalDensity.current.density
+            minimum = 44 * density
+            CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
+                MaterialTheme {
+                    KozmosPOIResultList(items = items(listOf(go, details,
+                        KozmosPOIResultActionPresentation(KozmosPOIResultAction.Order, "Order ahead", disabled = true))), resultCountLabel = "2 results",
+                        selectedPoiId = "cafe", onSelect = {}, onAction = { _, _ -> })
+                }
+            }
+        }
+        for (label in listOf("Go", "Details", "Order ahead")) {
+            val target = tree.showing(label)
+            assertTrue("$label is capped at 44dp for large text", target.frame.height > minimum)
+            assertTrue("$label shrinks below 44dp for large text", target.frame.width >= minimum)
+        }
+    }
 
     private val cafe = KozmosPOIPresentation(id = "cafe", name = "Harbour Coffee", floorLabel = "Level 2")
 
