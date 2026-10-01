@@ -18,6 +18,8 @@ public struct KozmosChip<Icon: View>: View {
     public let size: KozmosChipSize
     public let selected: Bool
     public let disabled: Bool
+    /// Full accessible label for the remove button; defaults to "Remove <text>".
+    public let removeLabel: String
     public let icon: Icon?
     public let onRemove: (() -> Void)?
     public let action: (() -> Void)?
@@ -29,6 +31,7 @@ public struct KozmosChip<Icon: View>: View {
         selected: Bool = false,
         active: Bool? = nil,
         disabled: Bool = false,
+        removeLabel: String? = nil,
         onRemove: (() -> Void)? = nil,
         @ViewBuilder icon: () -> Icon,
         action: (() -> Void)? = nil
@@ -38,6 +41,7 @@ public struct KozmosChip<Icon: View>: View {
         self.size = size
         self.selected = active ?? selected
         self.disabled = disabled
+        self.removeLabel = removeLabel ?? "Remove \(text)"
         self.icon = icon()
         self.onRemove = onRemove
         self.action = action
@@ -71,7 +75,7 @@ public struct KozmosChip<Icon: View>: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Remove \(text)")
+                .accessibilityLabel(removeLabel)
             }
         }
         .padding(.horizontal, horizontalPadding)
@@ -256,6 +260,7 @@ public extension KozmosChip where Icon == EmptyView {
         selected: Bool = false,
         active: Bool? = nil,
         disabled: Bool = false,
+        removeLabel: String? = nil,
         onRemove: (() -> Void)? = nil,
         action: (() -> Void)? = nil
     ) {
@@ -264,6 +269,7 @@ public extension KozmosChip where Icon == EmptyView {
         self.size = size
         self.selected = active ?? selected
         self.disabled = disabled
+        self.removeLabel = removeLabel ?? "Remove \(text)"
         self.icon = nil
         self.onRemove = onRemove
         self.action = action

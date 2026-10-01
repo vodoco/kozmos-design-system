@@ -65,6 +65,29 @@ fun KozmosChip(
     leadingIcon: (@Composable () -> Unit)? = null,
     onRemove: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null
+) = KozmosChip(
+    text = text, modifier = modifier, variant = variant, size = size,
+    selected = selected, active = active, enabled = enabled, leadingIcon = leadingIcon,
+    onRemove = onRemove, removeLabel = "Remove $text", onClick = onClick
+)
+
+/**
+ * Localized form of [KozmosChip]. [removeLabel] names the remove button in full.
+ * The original overload preserves positional arguments and trailing onClick lambdas.
+ */
+@Composable
+fun KozmosChip(
+    text: String,
+    modifier: Modifier = Modifier,
+    variant: ChipVariant = ChipVariant.Neutral,
+    size: ChipSize = ChipSize.Default,
+    selected: Boolean = false,
+    active: Boolean? = null,
+    enabled: Boolean = true,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    onRemove: (() -> Unit)? = null,
+    removeLabel: String,
+    onClick: (() -> Unit)? = null
 ) {
     val isSelected = active ?: selected
     val colors = chipColors(variant = variant, selected = isSelected)
@@ -133,7 +156,7 @@ fun KozmosChip(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Remove $text",
+                        contentDescription = removeLabel,
                         modifier = Modifier.size(12.dp),
                         tint = colors.content
                     )

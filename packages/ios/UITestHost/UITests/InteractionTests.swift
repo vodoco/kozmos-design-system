@@ -83,6 +83,20 @@ final class InteractionTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Open now"].exists)
     }
 
+    func testTheRemoveLabelCanBeLocalizedInBothInitializers() {
+        launch("localized-remove")
+        app.buttons["Kaffee"].tap()
+        received("Kaffee")
+        app.buttons["Kaffee entfernen"].tap()
+        app.buttons["Tee entfernen"].tap()
+        received("Kaffee|remove Kaffee|remove Tee")
+        XCTAssertFalse(app.buttons["Remove Kaffee"].exists)
+        XCTAssertFalse(app.buttons["Remove Tee"].exists)
+        XCTAssertFalse(app.buttons["Milch entfernen"].isEnabled)
+        app.buttons["Milch entfernen"].tap()
+        received("Kaffee|remove Kaffee|remove Tee")
+    }
+
     func testADisabledChipIsHeardAsDimmedAndRunsNothing() {
         launch("disabled-chip")
         XCTAssertTrue(app.buttons["Vegan"].isSelected)
