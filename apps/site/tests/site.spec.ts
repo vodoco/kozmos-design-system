@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { contrastRatio, formatRatio, parseColour } from "../src/lib/contrast";
+import { withoutCode } from "../src/site/inline-code";
 
 type PlatformState = "implemented" | "linked" | "not-yet" | "not-expected";
 
@@ -4431,7 +4432,13 @@ test("the search opens from the keyboard or the header and takes you there", asy
   await page.keyboard.press("Control+k");
   const field = dialog.getByRole("searchbox", { name: "Search the site" });
   await field.fill("button");
-  await expect(dialog.getByText(/results?$/)).toBeVisible();
+  // Purposeful component descriptions now match more than the twelve shown.
+  // Verify the capped announcement and list, not just the uncapped wording.
+  await expect(dialog.locator('[aria-live="polite"]')).toHaveText(
+    /^The best 12 of \d+ results; type more to narrow them\.$/,
+  );
+  await expect(dialog.getByRole("option")).toHaveCount(12);
+  await expect(dialog.getByRole("option").first()).toHaveText(/^Button/);
   await page.keyboard.press("ArrowDown");
   await expect(dialog.getByRole("listbox", { name: "Results" })).toBeFocused();
 
@@ -4776,12 +4783,16 @@ test.describe("components", () => {
       page.getByText("Its docs page is not written yet"),
     ).toBeVisible();
 
-    // Docs whose first paragraph is a placeholder (GAP-81) say they have none.
+    // GAP-81: the real description replaces the old placeholder notice.
     await page.goto("/components/backdrop");
     await hydrated(page);
+    expect(byName("Backdrop").description).toContain("A full-viewport scrim");
+    await expect(page.locator("main")).toContainText(
+      withoutCode(byName("Backdrop").description),
+    );
     await expect(
       page.getByText("Its docs have no description yet."),
-    ).toBeVisible();
+    ).toHaveCount(0);
   });
 });
 

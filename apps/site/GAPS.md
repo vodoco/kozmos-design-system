@@ -118,7 +118,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-78 | `Switch` cannot lead with its label                              | Core                   | open         |
 | GAP-79 | The Pointr icons ship, but cannot be asked for by name           | Product / SDK          | open         |
 | GAP-80 | No row actions: nothing shows on hover outside `Tree`            | Core                   | open         |
-| GAP-81 | 36 of 112 components carry placeholder documentation             | Core                   | left visible |
+| GAP-81 | Components carried placeholder documentation                     | Core                   | fixed        |
 | GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible |
 | GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | composed     |
 | GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | open         |
@@ -1613,27 +1613,27 @@ Text"])`) and the Get started page shows — touches it.
   and is reachable from the keyboard — with an overflow button among the
   icons.
 
-## GAP-81 · 36 of 112 components carry placeholder documentation
+## GAP-81 · Components carried placeholder documentation
 
-- **What:** 37 components describe themselves as "Displays the X interface
+- **What:** Components described themselves as "Displays the X interface
   topology natively" — a placeholder that says nothing about what the part is
-  for or when to reach for it. `SegmentedControl` shows what the others could
-  be: it says to use it for one choice from a short visible set, to prefer
+  for or when to reach for it. `SegmentedControl` provided the model:
+  it says to use it for one choice from a short visible set, to prefer
   `Radio` for longer lists and `Tabs` when the selection changes which
-  content is visible. `Tabs` itself carries the placeholder, so the pair
-  cannot be told apart from the documentation.
+  content is visible. `Tabs` itself carried the placeholder, so the pair
+  could not be told apart from the documentation.
 - **Evidence:** counted from the component docs the site reads: 36 of 112 open
   with "Displays the <Name> interface topology natively." on 2026-09-28 (37 of
   104 on 2026-09-24).
-- **Now:** left visible: each of their pages says "Its docs have no
-  description yet." where it used to print the placeholder, and the search
-  shows its lane instead. ThemeProvider's page reads the component's own doc
-  comment. The generator counts the placeholder as no description
-  (`scripts/generate-reference.mjs`).
+- **Now:** fixed in source: the placeholder introductions have been replaced
+  with component-specific purpose and usage guidance. The site, search and
+  generated API cards consume those descriptions. `skills:check` rejects the
+  generic topology sentence; the site end-to-end test verifies Backdrop's real
+  description and the absence of the old missing-description notice. This
+  closes the placeholder-introduction gap, not all documentation or parity work.
 - **Lane:** Core.
-- **Fix in Kozmos:** a sentence per component saying what it is for and when
-  to choose it over its neighbour, in `SegmentedControl`'s manner. The site's
-  pages will show them the day they land.
+- **Maintenance:** keep introductions specific to the implemented component;
+  build and verify the generated documentation when those descriptions change.
 
 ## GAP-82 · A category pill's fill is 2.52:1 on its own field
 
