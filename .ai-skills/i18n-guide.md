@@ -27,8 +27,10 @@ Kozmos ships no translation catalogue or i18n library. Components accept many vi
 accessible labels through props, often with an English default (POIResultCard's `featuredLabel`
 defaults to "Featured"). An app passes in the text produced by its own translation system.
 This is not a claim that every string on every platform is overridable: inspect the relevant
-component API and record any hardcoded text as a localization gap. In particular, the native
-Chip removal action still needs a caller-provided localized label.
+component API and record any hardcoded text as a localization gap. Native Chip now accepts
+`removeLabel` for the complete localized removal action name in both SwiftUI initializers and
+the Compose localized overload. Its default remains English (`Remove <text>`); the app must
+pass its translation. Existing Compose positional calls and trailing click lambdas remain supported.
 
 | What              | Who does it                                                                                  |
 | ----------------- | -------------------------------------------------------------------------------------------- |
