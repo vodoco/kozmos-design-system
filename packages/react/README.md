@@ -66,24 +66,32 @@ follow the host document's root font size.
 
 ## Browsers
 
-**Known discrepancy, under review:** this table and the published 0.7.0 manifest declare
-Firefox 128, but Mozilla documents [`@scope` enabled by default in Firefox 146](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146).
-Do not treat Firefox 128–145 as validated for components that still use scoped utilities.
-The table below records the existing declared contract, not verified minimum-engine results.
-Correcting the manifest/support policy requires a separately reviewed compatibility change;
-neither current-engine CI nor this warning certifies 146 as sufficient for every Kozmos feature.
+**Next-release support correction:** Firefox now requires 146 or newer. The published
+0.7.0 manifest incorrectly declared 128; existing npm packages are not changed by this
+source update. Mozilla documents [`@scope` enabled by default in Firefox 146](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146).
+This is an explicit breaking support-policy correction, not a new legacy-browser fallback.
 
 |                 |      |
 | --------------- | ---- |
 | Chrome, Edge    | 118  |
 | Safari, iOS     | 17.4 |
-| Firefox         | 128  |
+| Firefox         | 146  |
 | Android WebView | 118  |
 
 The dependency behind the floor is `@scope`, which bounds component selectors to their
-intended scopes. A browser without support discards the scoped block. The Firefox entry
-above does not match that dependency. Scope is not complete isolation against arbitrary host
-selectors; see [embedding limitations](../../docs/embedding-isolation.md).
+intended scopes. A browser without support discards the scoped block. Scope is not complete
+isolation against arbitrary host selectors; see [embedding limitations](../../docs/embedding-isolation.md).
+
+**Migrating:** require Firefox 146+ in your product's browser policy. If Firefox 128–145 is
+required, the library's remaining scoped CSS needs an architectural migration before adoption;
+pinning 0.7.0 does not fix its rendering defects. Do not remove the scope boundary or enable
+experimental browser preferences as a workaround. Other declared minimums are unchanged.
+
+The built-package regression reproduced unstyled Badge and zero-height Separator in Firefox
+128.0, while owned-CSS Button/Input retained their geometry. The same cases pass in Firefox
+146.0.1, including nested light/dark providers. These are representative checks, not full
+minimum-version or embedded-WebView certification. CI guards the Firefox declaration and
+tests remaining scoped utilities separately from the owned form controls.
 
 What that costs below the floor is not all or nothing. An earlier measurement across 43
 elements, 30 render identically without `@scope` and 13 do not: the 31
