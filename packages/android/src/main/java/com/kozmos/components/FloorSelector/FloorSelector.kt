@@ -157,6 +157,42 @@ fun KozmosFloorSelector(
 }
 
 /**
+ * The selector of [KozmosFloorPresentation]s as 0.5.0 declared it: its
+ * parameters, in its order, [resultCountLabel] last. A call that passes them
+ * by position still compiles, and so does one that passes [resultCountLabel]
+ * as a trailing lambda: the parameters added since, userFloor and
+ * userFloorLabel, sit before resultCountLabel so that the lambda stays last,
+ * and this overload keeps the positional call. It draws what the full one
+ * does, with no level marked as the visitor's.
+ */
+@JvmName("KozmosFloorSelectorOfLevelsAsReleased")
+@Composable
+fun KozmosFloorSelector(
+    floors: List<KozmosFloorPresentation>,
+    selectedFloor: String,
+    onFloorSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    variant: KozmosFloorSelectorVariant = KozmosFloorSelectorVariant.VerticalList,
+    label: String = "Floor selector",
+    previousFloorLabel: String = "Floor up",
+    nextFloorLabel: String = "Floor down",
+    resultCountLabel: (Int) -> String = { count -> if (count == 1) "1 result" else "$count results" }
+) {
+    KozmosFloorSelector(
+        floors = floors,
+        selectedFloor = selectedFloor,
+        onFloorSelect = onFloorSelect,
+        modifier = modifier,
+        variant = variant,
+        label = label,
+        previousFloorLabel = previousFloorLabel,
+        nextFloorLabel = nextFloorLabel,
+        userFloor = null,
+        resultCountLabel = resultCountLabel
+    )
+}
+
+/**
  * Switches the active level of a venue, as the product presents its levels.
  *
  * Each button shows the level's `shortLabel` while selection and analytics stay

@@ -212,8 +212,6 @@ fun KozmosMapControlButton(
     modifier: Modifier = Modifier,
     icon: (@Composable () -> Unit)? = null,
     stateLabel: String? = null,
-    stateDescription: String? = null,
-    showLabel: Boolean = true,
     presentation: KozmosMapControlButtonPresentation = KozmosMapControlButtonPresentation.IconOnly,
     emphasis: KozmosMapControlButtonEmphasis = KozmosMapControlButtonEmphasis.Tinted,
     labelPlacement: KozmosMapControlButtonLabelPlacement = KozmosMapControlButtonLabelPlacement.Inline,
@@ -222,7 +220,11 @@ fun KozmosMapControlButton(
     revealOnChange: Boolean = false,
     revealDurationMillis: Long = 2500L,
     revealDelayMillis: Long = 0L,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    // After every parameter 0.5.0 had, so a 0.5.0 call that passed them by
+    // position still compiles.
+    stateDescription: String? = null,
+    showLabel: Boolean = true
 ) {
     val accessibleLabel = accessibleLabel(label, stateLabel, stateDescription)
     val appearance = KozmosMapControlButtonAppearance.resolve(pressed, emphasis)
