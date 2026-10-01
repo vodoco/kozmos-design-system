@@ -23,9 +23,12 @@
 
 ### i18n Strategy
 
-Kozmos ships no translations and no i18n library. A component's words are its props, many with an
-English default a product replaces (POIResultCard's `featuredLabel` defaults to "Featured"), so an
-app translates Kozmos the way it translates itself, and passes the result in.
+Kozmos ships no translation catalogue or i18n library. Components accept many visible and
+accessible labels through props, often with an English default (POIResultCard's `featuredLabel`
+defaults to "Featured"). An app passes in the text produced by its own translation system.
+This is not a claim that every string on every platform is overridable: inspect the relevant
+component API and record any hardcoded text as a localization gap. In particular, the native
+Chip removal action still needs a caller-provided localized label.
 
 | What              | Who does it                                                                                  |
 | ----------------- | -------------------------------------------------------------------------------------------- |
@@ -50,8 +53,9 @@ proposal in [docs/proposals/i18n-plan.md](../docs/proposals/i18n-plan.md).
 
 ## 2. Supported Languages
 
-Kozmos has no list of languages: it ships no strings of its own to translate, only English
-defaults a product replaces through props. The language matrix planned before the code is kept in
+Kozmos does not certify a list of fully translated languages: it has English defaults, many
+overridable labels and remaining localization gaps. The app owns its locale catalogue and must
+test its chosen languages, text expansion, accessible labels and RTL layouts. The language matrix planned before the code is kept in
 [docs/proposals/i18n-plan.md](../docs/proposals/i18n-plan.md).
 
 ---

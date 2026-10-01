@@ -1,9 +1,11 @@
 # Proposals: not built
 
-**Nothing in this folder exists.** Each document is a design written before, or instead of, the
-thing it describes, and is kept as planning history. None of its packages is published, none of
-its commands runs, and none of its APIs is in the code. Every heading in them says "Proposal", so
-that a passage read on its own still says so.
+**This folder is planning history, not an implementation reference.** These documents describe
+unbuilt proposals or earlier designs that differ from what was implemented. Some familiar
+packages, commands and concepts also exist in the current system; their presence here does not
+validate the proposed APIs or architecture. Check current source and the maintained references
+below before using any example. Headings are marked "Proposal" to retain that distinction when
+a passage is read on its own.
 
 What Kozmos is today:
 

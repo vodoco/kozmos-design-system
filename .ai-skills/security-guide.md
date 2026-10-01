@@ -2,6 +2,11 @@
 
 > **Purpose:** Comprehensive security guidelines for the Kozmos Design System.
 
+Host-application recommendations below are not features supplied or verified by the component
+library. Kozmos does not configure an application's CSP, authentication, transport or mobile
+credential storage. For repository vulnerability-reporting instructions, read
+[SECURITY.md](../SECURITY.md); a confirmed private communication channel is pending owner setup.
+
 ---
 
 ## 1. Security Principles
