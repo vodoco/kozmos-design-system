@@ -8,6 +8,17 @@ export function assertFirefoxScopeFloor(browserslist) {
     Array.isArray(browserslist),
     "Expected an explicit browser floor list",
   );
+  // Browserslist entries are unioned. A broad query beside the Firefox row
+  // can admit older versions, so a different query policy needs review.
+  for (const entry of browserslist) {
+    assert.ok(
+      typeof entry === "string" &&
+        /^(chrome|edge|safari|ios_saf|firefox|android) >= \d+(?:\.\d+)?$/.test(
+          entry,
+        ),
+      "Review the browser policy before using anything except explicit supported-engine minimums",
+    );
+  }
   const declarations = browserslist.filter((entry) =>
     /^(?:firefox|ff)\b/i.test(entry),
   );

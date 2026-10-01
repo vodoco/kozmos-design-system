@@ -40,3 +40,14 @@ test("missing, ambiguous or broadened Firefox declarations require policy review
     assert.throws(() => assertFirefoxScopeFloor(declarations));
   }
 });
+
+test("a broad union cannot silently reintroduce Firefox below the declared minimum", () => {
+  for (const query of [
+    "defaults",
+    "last 100 Firefox versions",
+    "> 0%",
+    "firefox 128",
+  ]) {
+    assert.throws(() => assertFirefoxScopeFloor(["firefox >= 146", query]));
+  }
+});
