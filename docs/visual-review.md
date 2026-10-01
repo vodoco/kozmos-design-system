@@ -21,10 +21,12 @@ official Playwright image (`mcr.microsoft.com/playwright:v1.58.2-noble`) and com
   fonts, which never update underneath a baseline. Map canvases (WebGL, from tiles) and the slots of
   outside symbols are **masked** (drawn as solid magenta): their size and place are compared, their
   pixels are not. A symbol scaled into its slot rasterised a pixel or two differently from run to run.
-- **Exact.** Colours are compared exactly (`threshold: 0`): Playwright's default tolerance passed a
-  whole token step (the Skeleton's move from background/100 to /200) as unchanged.
+- **Sensitive to token changes.** Colours are compared at `threshold: 0.02`: this permits tiny
+  anti-aliasing rounding differences. Playwright's default tolerance passed a whole token step
+  (the Skeleton's move from background/100 to /200) as unchanged. See the configuration's
+  measured comparison; this is not a claim of byte-identical screenshots.
 - **Still.** The clock is fixed (2026-01-15 10:30 UTC), `Math.random` is seeded, animations and
-  transitions are stopped, the caret is hidden, and the page asks for reduced motion.
+  transitions are prevented before the first render, the caret is hidden, and the page asks for reduced motion.
 - **Opting out.** Give a story the tag `no-visual`, with a comment saying why.
 
 The suite is `tests/visual/stories.visual.ts`; its configuration is `playwright.visual.config.ts`;
@@ -91,3 +93,11 @@ Two such bugs were found by running the review on a slower machine (2026-09-28):
   motion lives in its own story tagged `no-visual`.
 
 The suite fixes `Date`, not timers.
+
+A further timing defect was reproduced on 2026-10-01: disabling entrance animations only
+after rendering left floor-tooltip SVG arrows with different edge pixels, despite identical
+final geometry and stable successive screenshots. Installing the stillness stylesheet before
+application code ran matched the existing baseline; changing only that timing reproduced
+the failed CI drawing. `tests/visual/stillness.visual.ts` checks the component's first computed
+styles, including its pseudo-element, so a late-only suppression cannot regress unnoticed.
+This does not change production motion, mask arrows, or relax comparison tolerances.
