@@ -19,6 +19,8 @@ type Config = {
   padCamera?: boolean;
   hideStart?: boolean;
   contentHeight?: number;
+  controlsLabel?: string;
+  bottomControlsLabel?: string;
 };
 declare global {
   interface Window {
@@ -37,6 +39,8 @@ function Fixture({
   padCamera = false,
   hideStart = false,
   contentHeight = 100,
+  controlsLabel,
+  bottomControlsLabel,
 }: Config) {
   const [presses, setPresses] = useState(0);
   const [floor, setFloor] = useState("1");
@@ -44,6 +48,8 @@ function Fixture({
     <ThemeProvider dir={dir} defaultTheme="light">
       <AdaptiveMapShell
         style={{ width, height }}
+        controlsLabel={controlsLabel}
+        bottomControlsLabel={bottomControlsLabel}
         map={
           <button
             aria-label="Map surface"

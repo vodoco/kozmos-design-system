@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import AxeBuilder from "@axe-core/playwright";
 import {
   buildReactFixture,
   launchFixtureBrowser,
@@ -14,7 +15,10 @@ const overlaps = (a, b) =>
   a.y < b.y + b.height &&
   b.y < a.y + a.height;
 try {
-  const page = await browser.newPage({ viewport: { width: 900, height: 900 } });
+  const context = await browser.newContext({
+    viewport: { width: 900, height: 900 },
+  });
+  const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.setContent('<div id="root" style="margin:32px"></div>');
@@ -42,6 +46,22 @@ try {
     await page.evaluate((config) => window.renderShellCorners(config), config);
     await page.getByRole("button", { name: "Zoom in", exact: true }).waitFor();
     await settleLayout(page);
+    const corners = page.getByRole("region", {
+      name: "Map corner controls",
+      exact: true,
+    });
+    assert.equal(
+      await corners
+        .getByRole("button", { name: "Zoom in", exact: true })
+        .count(),
+      1,
+    );
+    assert.equal(
+      await page
+        .getByRole("region", { name: "Map controls", exact: true })
+        .count(),
+      config.legacy ? 1 : 0,
+    );
     const start = await page
       .getByRole("button", { name: /Start-side probe/ })
       .boundingBox();
@@ -137,6 +157,13 @@ try {
     0,
   );
   assert.equal(
+    await page
+      .getByRole("region", { name: "Map corner controls", exact: true })
+      .count(),
+    0,
+    "hidden corners must not leave an empty landmark",
+  );
+  assert.equal(
     await page.getByRole("button", { name: "Zoom out", exact: true }).count(),
     0,
   );
@@ -200,6 +227,46 @@ try {
     "a conditional false slot contributes no empty flex item or gap",
   );
   assert.deepEqual(errors, []);
+  await page.evaluate(() =>
+    window.renderShellCorners({
+      dir: "rtl",
+      width: 700,
+      height: 420,
+      legacy: true,
+      controlsLabel: "Kartensteuerung",
+      bottomControlsLabel: "Weitere Kartensteuerung",
+    }),
+  );
+  await settleLayout(page);
+  assert.equal(
+    await page
+      .getByRole("region", { name: "Kartensteuerung", exact: true })
+      .getByRole("button", { name: "Legacy controls" })
+      .count(),
+    1,
+  );
+  assert.equal(
+    await page
+      .getByRole("region", { name: "Weitere Kartensteuerung", exact: true })
+      .getByRole("button", { name: "Zoom in", exact: true })
+      .count(),
+    1,
+  );
+  const regions = await new AxeBuilder({ page })
+    .withRules(["region"])
+    .analyze();
+  assert.deepEqual(
+    regions.violations.map(({ id, nodes }) => ({
+      id,
+      targets: nodes.map(({ target }) => target),
+    })),
+    [],
+    "legacy and corner controls pass axe's region rule together",
+  );
+  assert.deepEqual(errors, []);
+  console.log(
+    "PASS GAP-101 named, localized control landmarks preserve child controls and hidden state",
+  );
   fs.mkdirSync("test-results/shell-corners", { recursive: true });
   await page.screenshot({
     path:

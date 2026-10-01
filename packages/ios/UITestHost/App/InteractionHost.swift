@@ -18,6 +18,7 @@ private struct InteractionFixture: View {
     @State private var openNow = true
     @State private var galleryIndex = 1
     @State private var replaced = false
+    @State private var controlAccessibilityReport = "not inspected"
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -43,6 +44,28 @@ private struct InteractionFixture: View {
     private func action(_ action: KozmosPOIResultAction, _ id: String) { events.append("\(action.rawValue) \(id)") }
     private func select(_ id: String) { events.append("select \(id)") }
 
+    // XCUI's `exists` also includes visually present but accessibility-hidden
+    // views. Read the public UIKit accessibility tree while XCUI activates it;
+    // the test checks the same labels before hiding, while hidden, and restored.
+    private func accessibleLabels() -> [String] {
+        var seen: Set<ObjectIdentifier> = []
+        func visit(_ node: NSObject) -> [String] {
+            guard seen.insert(ObjectIdentifier(node)).inserted,
+                  !node.accessibilityElementsHidden else { return [] }
+            if let view = node as? UIView, view.isHidden || view.alpha == 0 { return [] }
+            let labels = node.accessibilityLabel.map { [$0] } ?? []
+            let children: [NSObject]
+            if let items = node.accessibilityElements as? [NSObject], !items.isEmpty { children = items }
+            else if case let count = node.accessibilityElementCount(), count != NSNotFound, count > 0 {
+                children = (0..<count).compactMap { node.accessibilityElement(at: $0) as? NSObject }
+            } else if let view = node as? UIView { children = view.subviews }
+            else { children = [] }
+            return labels + children.flatMap { visit($0) }
+        }
+        return UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).flatMap { visit($0) }
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             fixture
@@ -56,6 +79,26 @@ private struct InteractionFixture: View {
 
     @ViewBuilder private var fixture: some View {
         switch scenario {
+        case "map-control-regions", "map-control-regions-localized":
+            KozmosAdaptiveMapShell(
+                attribution: AnyView(Text("Attribution")),
+                controlsLabel: scenario == "map-control-regions-localized" ? "Kartensteuerung" : "Map controls",
+                bottomControlsLabel: scenario == "map-control-regions-localized" ? "Weitere Kartensteuerung" : "Map corner controls",
+                controlsBottomStart: { Button("Language") { events.append("language") } },
+                controlsBottomEnd: { Button("Zoom") { events.append("zoom") } },
+                map: { Color.clear }, mapStatusContent: { EmptyView() },
+                controls: { Button("Locate") { events.append("locate") } },
+                panel: { EmptyView() })
+                .frame(height: selected ? 40 : 500)
+            Button("Toggle map size") { selected.toggle() }
+            Button("Inspect control accessibility") {
+                let names = ["Map controls", "Map corner controls", "Locate", "Language", "Zoom"]
+                let labels = Set(accessibleLabels()).intersection(names).sorted()
+                controlAccessibilityReport = labels.isEmpty ? "no controls" : labels.joined(separator: "|")
+            }
+            Text(controlAccessibilityReport).accessibilityIdentifier("control-accessibility-report")
+        case "map-control-regions-empty":
+            KozmosAdaptiveMapShell(map: { Color.clear }, panel: { EmptyView() }).frame(height: 500)
         case "traits":
             KozmosChip(text: "Vegan", selected: true, action: {})
             KozmosChip(text: "Halal", action: {})
