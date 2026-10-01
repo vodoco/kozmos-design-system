@@ -5,12 +5,11 @@ import Kozmos
 
 struct SDKMapScreen: View {
     @StateObject private var session = SDKSession()
-    /// The sheet rests collapsed on the search row and the first tile row, as
-    /// the prototype's does; the field's focus opens it to large.
-    @State private var detent: KozmosMapPanelDetent = .collapsed
-    /// Where the search sheet was when a place opened, restored when the
-    /// place's card closes or its route ends.
-    @State private var searchDetent: KozmosMapPanelDetent = .collapsed
+    /// Where the sheet rests, and where it returns to as places open and
+    /// close and routes begin and end (`SDKSheetDetents`). It rests collapsed
+    /// on the search row and the first tile row, as the prototype's does; the
+    /// field's focus opens it to large.
+    @State private var sheet = SDKSheetDetents()
     @FocusState private var searchFocused: Bool
     /// Whether the manoeuvre card over the map is open into the itinerary.
     @State private var itineraryExpanded = false
@@ -35,13 +34,13 @@ struct SDKMapScreen: View {
                     content: SDKMapInformation.current(venue: session.building?.name),
                     // A full browse sheet owns the compact screen. Do not put
                     // a floating map button over its search/close controls.
-                    available: horizontalSizeClass == .regular || detent != .large,
+                    available: horizontalSizeClass == .regular || sheet.detent != .large,
                     triggerLabel: "Map information"
                 ) {
                     KozmosAdaptiveMapShell(
                         mapLabel: "Design-QA indoor map", mapStatus: session.failure != nil ? .error : (session.status == "Ready" ? .ready : .loading),
                         panelLabel: panelLabel, panelPlacement: .start,
-                        controlsPlacement: .bottom, panelDetent: $detent,
+                        controlsPlacement: .bottom, panelDetent: $sheet.detent,
                         // Navigating, the sheet also fits its summary; browsing, the
                         // prototype's three stops.
                         panelDetents: session.phase == .directions ? [.collapsed, .content, .medium, .large] : [.collapsed, .medium, .large],
@@ -93,34 +92,20 @@ struct SDKMapScreen: View {
         // Full-screen Info covers this screen; it is not leaving the SDK host.
         .onDisappear { if !informationOpen { session.stop() } }
         .onChange(of: informationOpen) { if $0 { searchFocused = false } }
-        .onChange(of: session.phase) { phase in
-            itineraryExpanded = false
-            // Navigating, the sheet holds a summary and a row of buttons: it
-            // rests fitted to them, and the map has the rest. Choosing a
-            // starting point needs the picker's list: half height. Back from
-            // a route, the search sheet returns where it was.
-            switch phase {
-            case .directions: detent = .content
-            case .routeSetup: detent = .medium
-            case .browse: detent = searchDetent
-            }
-        }
-        // A place opens at half height and remembers where the search sheet
-        // was; its card closing returns there, query and results intact.
-        .onChange(of: session.selected?.identifier) { id in
-            guard session.phase == .browse else { return }
-            if id != nil {
-                searchDetent = detent
+        // The selection and the phase as one value: a place tapped on the map
+        // mid-route changes both at once, and the sheet takes them together.
+        .onChange(of: SDKSheetDetents.Input(selection: session.selected?.identifier, phase: session.phase)) { input in
+            if input.phase != sheet.input.phase { itineraryExpanded = false }
+            // A place opening drops the field's focus.
+            if input.phase == .browse, input.selection != nil, input.selection != sheet.input.selection {
                 searchFocused = false
-                detent = .medium
-            } else {
-                detent = searchDetent
             }
+            sheet.update(input)
         }
         // Tapping the field opens the sheet to large, where the results have
         // the height; a drag that lands anywhere else drops the focus.
-        .onChange(of: searchFocused) { focused in if focused { detent = .large } }
-        .onChange(of: detent) { detent in if detent != .large { searchFocused = false } }
+        .onChange(of: searchFocused) { focused in if focused { sheet.detent = .large } }
+        .onChange(of: sheet.detent) { detent in if detent != .large { searchFocused = false } }
     }
 
     /// Browsing and choosing a starting point, the search bar; navigating, the
@@ -169,10 +154,12 @@ struct SDKMapScreen: View {
                 KozmosMapControlsGroup(onZoomIn: { session.zoom(1) }, onZoomOut: { session.zoom(-1) },
                                        onCompassReset: { widget.mapViewController.resetNorth() })
             }
+            // The SDK's level switcher (decision 38), top floor first. It
+            // marks no level as the visitor's: this host has no visitor
+            // position (location, motion and Bluetooth are declined), and the
+            // switcher never guesses one.
             KozmosFloorSelector(
-                floors: (session.building?.levels ?? []).sorted { $0.index < $1.index }.map {
-                    .init(id: SDKPOIAdapter.floorId($0), label: $0.name, shortLabel: $0.shortName)
-                },
+                floors: session.floors,
                 selectedFloor: .init(get: { session.selectedFloorId }, set: session.selectFloor),
                 variant: .collapsible)
         }
@@ -204,9 +191,9 @@ struct SDKMapScreen: View {
                     case .navigate:
                         session.startRouteSetup()
                     case .favourite:
-                        if !session.favourites.insert(id).inserted { session.favourites.remove(id) }
+                        session.toggleFavourite(id)
                     case .bookmark:
-                        if !session.saved.insert(id).inserted { session.saved.remove(id) }
+                        session.toggleSaved(id)
                     default: break
                     }
                 },
