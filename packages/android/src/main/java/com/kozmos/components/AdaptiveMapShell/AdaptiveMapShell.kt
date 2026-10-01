@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
@@ -222,6 +223,10 @@ fun KozmosAdaptiveMapShell(
     controlsBottomEnd: (@Composable () -> Unit)? = null,
     bottomControlsPadCamera: Boolean = false,
     attribution: (@Composable () -> Unit)? = null,
+    /** Translatable name for the legacy controls container; children remain independently accessible. */
+    controlsLabel: String = "Map controls",
+    /** Translatable name shared by both registered bottom corners. */
+    bottomControlsLabel: String = "Map corner controls",
     onPanelDetentChange: ((KozmosMapPanelDetent) -> Unit)? = null
 ) {
     val density = LocalDensity.current
@@ -326,7 +331,10 @@ fun KozmosAdaptiveMapShell(
             val controlsFit = attribution == null || controlsHeight <= (band - attributionReserve).coerceAtLeast(0.dp)
             Box(
                 modifier = Modifier
-                    .then(if (controlsFit) Modifier else Modifier.clearAndSetSemantics {})
+                    .then(if (controlsFit) Modifier.semantics {
+                        contentDescription = controlsLabel
+                        isTraversalGroup = true
+                    } else Modifier.clearAndSetSemantics {})
                     .layout { measurable, constraints ->
                         val placeable = measurable.measure(constraints)
                         layout(placeable.width, placeable.height) {
@@ -376,6 +384,7 @@ fun KozmosAdaptiveMapShell(
                 val popupFitsBelowPanel = with(density) { belowPanelBounds.height >= (bottomControlsHeight + gap * 10).roundToPx() }
                 CompositionLocalProvider(LocalMapPopupRegion provides MapPopupRegion(popupBounds, bottomBand > 0.dp)) {
                 BottomControlsLayout(
+                    label = bottomControlsLabel,
                     start = controlsBottomStart?.let { content -> {
                         val region = LocalMapPopupRegion.current
                         CompositionLocalProvider(LocalMapPopupRegion provides region?.copy(bounds = if (panel != null && isRegularWidth && panelPlacement == KozmosMapPanelPlacement.Start && popupFitsBelowPanel) belowPanelBounds else popupBounds)) {
@@ -487,6 +496,43 @@ fun KozmosAdaptiveMapShell(
         }
     }
 }
+
+/** The 0.7 positional signature, including its trailing detent callback. */
+@Composable
+fun KozmosAdaptiveMapShell(
+    map: @Composable () -> Unit,
+    modifier: Modifier,
+    mapLabel: String,
+    mapStatus: KozmosMapReadiness,
+    mapStatusContent: (@Composable () -> Unit)?,
+    controls: (@Composable () -> Unit)?,
+    topBar: (@Composable () -> Unit)?,
+    panel: (@Composable () -> Unit)?,
+    panelHeader: (@Composable () -> Unit)?,
+    panelLabel: String,
+    panelPlacement: KozmosMapPanelPlacement,
+    collisionInsets: KozmosMapCollisionInsets,
+    onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Unit)?,
+    panelSurface: KozmosSurfaceStyle,
+    panelDetents: List<KozmosMapPanelDetent>,
+    panelDetent: KozmosMapPanelDetent?,
+    controlsBottomStart: (@Composable () -> Unit)?,
+    controlsBottomEnd: (@Composable () -> Unit)?,
+    bottomControlsPadCamera: Boolean,
+    attribution: (@Composable () -> Unit)?,
+    onPanelDetentChange: ((KozmosMapPanelDetent) -> Unit)?
+) = KozmosAdaptiveMapShell(
+    map = map, modifier = modifier, mapLabel = mapLabel, mapStatus = mapStatus,
+    mapStatusContent = mapStatusContent, controls = controls, topBar = topBar,
+    panel = panel, panelHeader = panelHeader, panelLabel = panelLabel,
+    panelPlacement = panelPlacement, collisionInsets = collisionInsets,
+    onCollisionInsetsChange = onCollisionInsetsChange, panelSurface = panelSurface,
+    panelDetents = panelDetents, panelDetent = panelDetent,
+    controlsBottomStart = controlsBottomStart, controlsBottomEnd = controlsBottomEnd,
+    bottomControlsPadCamera = bottomControlsPadCamera, attribution = attribution,
+    controlsLabel = "Map controls", bottomControlsLabel = "Map corner controls",
+    onPanelDetentChange = onPanelDetentChange
+)
 
 /**
  * The pre-corner positional signature. Keep it for source consumers; named

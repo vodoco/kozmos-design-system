@@ -23,6 +23,45 @@ final class InteractionTests: XCTestCase {
         XCTAssertEqual(result, .completed, "callbacks: \(app.staticTexts["received-events"].label)", file: file, line: line)
     }
 
+    func testMapControlRegionsHaveNamesAndKeepChildActions() {
+        launch("map-control-regions")
+        for name in ["Map controls", "Map corner controls"] {
+            XCTAssertTrue(app.otherElements[name].exists, name)
+        }
+        app.buttons["Locate"].tap()
+        app.buttons["Language"].tap()
+        app.buttons["Zoom"].tap()
+        received("locate|language|zoom")
+        func inspect(_ expected: String) {
+            app.buttons["Inspect control accessibility"].tap()
+            XCTAssertEqual(app.staticTexts["control-accessibility-report"].label, expected)
+        }
+        let visible = "Language|Locate|Map controls|Map corner controls|Zoom"
+        inspect(visible)
+        app.buttons["Toggle map size"].tap()
+        inspect("no controls")
+        for name in ["Locate", "Language", "Zoom"] { XCTAssertFalse(app.buttons[name].isHittable, name) }
+        app.buttons["Toggle map size"].tap()
+        inspect(visible)
+        app.buttons["Zoom"].tap()
+        received("locate|language|zoom|zoom")
+    }
+
+    func testMapControlRegionNamesCanBeLocalized() {
+        launch("map-control-regions-localized")
+        XCTAssertTrue(app.otherElements["Kartensteuerung"].exists)
+        XCTAssertTrue(app.otherElements["Weitere Kartensteuerung"].exists)
+        XCTAssertFalse(app.otherElements["Map controls"].exists)
+        app.buttons["Zoom"].tap()
+        received("zoom")
+    }
+
+    func testAbsentMapControlsDoNotCreateEmptyContainers() {
+        launch("map-control-regions-empty")
+        XCTAssertFalse(app.otherElements["Map controls"].exists)
+        XCTAssertFalse(app.otherElements["Map corner controls"].exists)
+    }
+
     func testAnInteractiveChipIsAButtonThatSaysWhetherItIsSelected() {
         launch("traits")
         XCTAssertTrue(app.buttons["Vegan"].isSelected)

@@ -85,6 +85,18 @@ try {
     await tile.click();
     const popup = page.getByRole("dialog", { name: "Floor selector" });
     await popup.waitFor();
+    assert.equal(
+      await tile.evaluate((el) =>
+        el.closest('[role="region"]')?.getAttribute("aria-label"),
+      ),
+      "Map corner controls",
+      "the popup trigger stays in its owning landmark",
+    );
+    assert.equal(
+      await tile.getAttribute("aria-controls"),
+      await popup.getAttribute("id"),
+      "the independently named dialog remains connected to its trigger across the portal",
+    );
     await settleLayout(page);
     const bounds = await popup.boundingBox();
     const map = await page

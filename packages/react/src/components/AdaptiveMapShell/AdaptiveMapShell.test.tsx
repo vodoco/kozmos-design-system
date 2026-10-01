@@ -8,6 +8,56 @@ describe("AdaptiveMapShell", () => {
     vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(600);
   });
   afterEach(() => vi.restoreAllMocks());
+  it("names both control regions without merging their buttons", () => {
+    render(
+      <AdaptiveMapShell
+        map={<div />}
+        controls={<button>Locate</button>}
+        controlsBottomStart={<button>Language</button>}
+        controlsBottomEnd={<button>Zoom</button>}
+      />,
+    );
+    expect(
+      screen.getByRole("region", { name: "Map controls" }),
+    ).toContainElement(screen.getByRole("button", { name: "Locate" }));
+    const corners = screen.getByRole("region", { name: "Map corner controls" });
+    expect(corners).toContainElement(
+      screen.getByRole("button", { name: "Language" }),
+    );
+    expect(corners).toContainElement(
+      screen.getByRole("button", { name: "Zoom" }),
+    );
+  });
+
+  it("localizes control landmarks and omits absent slots", () => {
+    const { rerender } = render(
+      <AdaptiveMapShell
+        map={<div />}
+        controlsLabel="Kartensteuerung"
+        bottomControlsLabel="Weitere Kartensteuerung"
+        controls={<button>Locate</button>}
+        controlsBottomEnd={<button>Zoom</button>}
+      />,
+    );
+    expect(
+      screen.getByRole("region", { name: "Kartensteuerung" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("region", { name: "Weitere Kartensteuerung" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Map controls" })).toBeNull();
+    rerender(
+      <AdaptiveMapShell
+        map={<div />}
+        controls={false}
+        controlsBottomStart={null}
+        controlsBottomEnd={false}
+      />,
+    );
+    expect(screen.getAllByRole("region")).toHaveLength(1);
+    expect(screen.getByRole("region", { name: "Map" })).toBeVisible();
+  });
+
   it("labels renderer and panel regions without impersonating a map", () => {
     render(
       <AdaptiveMapShell

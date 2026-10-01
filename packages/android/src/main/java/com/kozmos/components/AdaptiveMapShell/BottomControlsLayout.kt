@@ -8,6 +8,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
@@ -34,11 +37,15 @@ internal fun BottomControlsLayout(
     start: (@Composable () -> Unit)?,
     end: (@Composable () -> Unit)?,
     availableHeight: Dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    label: String? = null
 ) {
     var fits by remember { mutableStateOf(false) }
     val region = LocalMapPopupRegion.current
-    Layout(modifier = modifier.then(if (fits) Modifier else Modifier.clearAndSetSemantics {}), content = {
+    Layout(modifier = modifier.then(if (fits && region?.available != false) Modifier.semantics {
+        if (label != null) contentDescription = label
+        isTraversalGroup = true
+    } else Modifier.clearAndSetSemantics {}), content = {
         CompositionLocalProvider(LocalMapPopupRegion provides region?.copy(available = region.available && fits)) {
             Box { start?.invoke() }
             Box { end?.invoke() }

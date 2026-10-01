@@ -186,6 +186,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private let mapStatus: KozmosMapReadiness
     private let mapStatusContent: MapStatusContent
     private let controls: Controls
+    private let controlsLabel: String
+    private let bottomControlsLabel: String
     private let controlsBottomStart: AnyView
     private let controlsBottomEnd: AnyView
     private let hasBottomControls: Bool
@@ -261,6 +263,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Void)? = nil,
         bottomControlsPadCamera: Bool = false,
         attribution: AnyView? = nil,
+        controlsLabel: String = "Map controls",
+        bottomControlsLabel: String = "Map corner controls",
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
@@ -283,6 +287,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         self.map = map()
         self.mapStatusContent = mapStatusContent()
         self.controls = controls()
+        self.controlsLabel = controlsLabel
+        self.bottomControlsLabel = bottomControlsLabel
         self.bottomControlsPadCamera = bottomControlsPadCamera
         self.attribution = attribution
         self.controlsBottomStart = AnyView(controlsBottomStart())
@@ -692,6 +698,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         - (controlsPlacement == .bottom && cornerHeight > 0 ? cornerHeight + gap : 0))
                     let controlsFit = attribution == nil || (controlBand > 0 && controlsSize.height <= controlBand)
                     controls
+                        .accessibilityElement(children: .contain)
+                        .accessibilityLabel(controlsLabel)
                         .background(
                             GeometryReader { proxy in
                                 Color.clear.preference(
@@ -761,6 +769,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     }
                     .frame(width: max(0, geometry.size.width - safeArea.leading - safeArea.trailing - gap * 2))
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel(bottomControlsLabel)
                     .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(bounds: popupBounds, available: bottomControlsHeight <= band && band > 0))
                     .background(GeometryReader { proxy in
                         Color.clear.preference(key: KozmosBottomControlsHeightKey.self, value: proxy.size.height)
@@ -1182,6 +1192,8 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
         onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Void)? = nil,
         bottomControlsPadCamera: Bool = false,
         attribution: AnyView? = nil,
+        controlsLabel: String = "Map controls",
+        bottomControlsLabel: String = "Map corner controls",
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
@@ -1203,6 +1215,8 @@ public extension KozmosAdaptiveMapShell where TopBar == EmptyView {
             onCollisionInsetsChange: onCollisionInsetsChange,
             bottomControlsPadCamera: bottomControlsPadCamera,
             attribution: attribution,
+            controlsLabel: controlsLabel,
+            bottomControlsLabel: bottomControlsLabel,
             controlsBottomStart: controlsBottomStart,
             controlsBottomEnd: controlsBottomEnd,
             map: map,
@@ -1229,6 +1243,8 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
         onCollisionInsetsChange: ((KozmosMapCollisionInsets) -> Void)? = nil,
         bottomControlsPadCamera: Bool = false,
         attribution: AnyView? = nil,
+        controlsLabel: String = "Map controls",
+        bottomControlsLabel: String = "Map corner controls",
         @ViewBuilder controlsBottomStart: () -> BottomStart = { EmptyView() },
         @ViewBuilder controlsBottomEnd: () -> BottomEnd = { EmptyView() },
         @ViewBuilder map: () -> Map,
@@ -1248,6 +1264,8 @@ where TopBar == EmptyView, MapStatusContent == EmptyView, Controls == EmptyView 
             onCollisionInsetsChange: onCollisionInsetsChange,
             bottomControlsPadCamera: bottomControlsPadCamera,
             attribution: attribution,
+            controlsLabel: controlsLabel,
+            bottomControlsLabel: bottomControlsLabel,
             controlsBottomStart: controlsBottomStart,
             controlsBottomEnd: controlsBottomEnd,
             map: map,
