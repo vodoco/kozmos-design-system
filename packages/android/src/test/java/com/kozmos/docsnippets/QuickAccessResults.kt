@@ -9,7 +9,7 @@ import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 
 // The places of the category chosen in the browse grid, numbered by the
-// product as their pins are: the featured ones show their logo and no number.
+// product: SDK cards retain the number alongside Featured or badge labels.
 @Composable
 fun QuickAccessResults(
     results: List<KozmosPOIResultListItem>,

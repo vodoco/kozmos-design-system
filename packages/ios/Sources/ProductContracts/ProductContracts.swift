@@ -374,9 +374,11 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
     /// (`KozmosPOIResultList`'s `numbered`) draws it in the result's tab, and
     /// analytics reports it as the result's position. Kozmos draws and
     /// reports it as given and never renumbers, so number the results the way
-    /// the map numbers their pins. A featured result's marker shows its logo,
-    /// not a number, and its card shows Featured, so its number is never
-    /// drawn: in a numbered list, number the others 1, 2, 3 in pin order.
+    /// the map numbers their pins. With numbering enabled, SDK presentation
+    /// keeps the number alongside Featured or badge labels, including grouped
+    /// rows. Only explicit legacy presentation hides a Featured number and
+    /// lets a number replace a badge. Marker sprites and logos are host-owned;
+    /// a logo does not suppress the SDK card's supplied number.
     public let resultIndex: Int
     public let selected: Bool
     public let featured: Bool
@@ -386,8 +388,9 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
     public let travelEstimate: KozmosTravelEstimatePresentation?
     public let available: Bool?
     public let unavailableReason: String?
-    /// A quiet tab: why this result is in this list. Ignored when `featured`,
-    /// and in a numbered list, where the number takes its place.
+    /// A quiet tab: why this result is in this list. Ignored when `featured`.
+    /// SDK presentation keeps it beside the supplied number when numbering
+    /// is enabled; only legacy presentation replaces it with a number.
     public let badge: KozmosPOIResultBadgePresentation?
     /// Whether this result answers the query exactly, stands in for one that
     /// would, or has not been confirmed. Absent means exact.

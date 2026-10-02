@@ -106,8 +106,8 @@ const dining = (
   },
 });
 
-// Its pin shows its logo, so its number is never drawn: the others are
-// numbered 1 to 5 in pin order, and it takes the next.
+// The host supplies 6 even though Featured displays first. SDK cards retain
+// that number; the list never derives an index from display order or logos.
 const featuredBurgerKing = dining("burger-king", "Burger King", 6, 2);
 
 /** Dining, chosen in the browse grid: its places, numbered as their pins are. */
@@ -134,10 +134,9 @@ const quickAccessDining: POIResultListEntry[] = [
  * Quick access: a category chosen in the browse grid lists that category's
  * places, and the map pins them with numbers. The product turns `numbered`
  * on for this list, and each result shows its own `resultIndex`, the number
- * on its pin; the selected one's tab fills, as its pin stands out. The
- * featured result keeps its Featured tab and no number, as its pin shows its
- * logo, so the product numbers the others 1, 2, 3 in pin order. A grouped
- * branch has its number before its name.
+ * on its pin; the selected one's tab fills, as its pin stands out. SDK rows
+ * combine that number with Featured or badge labels in the same corner tab,
+ * grouped or standalone. Marker sprites and logos remain host-owned.
  */
 export const QuickAccessNumbered: Story = {
   args: {
