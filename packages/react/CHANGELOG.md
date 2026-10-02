@@ -1,5 +1,36 @@
 # @kozmos-ds/react
 
+## 0.8.0
+
+### Minor Changes
+
+- b734587: Add optional `POIResultPresentation.languageNotListed` and localized result-card/list/group disclosure. Only explicit `true` renders a note; missing data, authored-name language and interface language never imply staff-language availability. Existing calls stay unchanged. Native source mirrors the contract, and Swift selection copies now preserve the existing summary as well as the new language evidence.
+- aa32bb7: Correct the declared Firefox minimum from 128 to 146. This is a breaking support-policy correction: the remaining scoped utility CSS requires native `@scope`, enabled by default in Firefox 146. Firefox 128 was incorrectly advertised as supported; Badge and Separator lose their styling there even though owned-CSS controls such as Button and Input still render correctly.
+
+  Consumers must use Firefox 146 or newer, or defer adoption while their browser requirements are reviewed. There is no legacy-browser polyfill or CSS fallback in this change. Existing published packages are not modified. Other declared browser minimums are unchanged, and this prerequisite does not certify every component or a product's embedded WebView. Add a manifest regression guard and exercise built scoped utility styles with nested themes in Firefox CI.
+
+- b94423b: Accept ordered instruction parts in DirectionStep, ManoeuvreCard and Itinerary, preserving secondary emphasis, caller-supplied word order and per-part speech language alongside legacy strings. SwiftUI and Compose equivalents retain native string calls and itinerary source-copy compatibility. Hosts still own translated wording; physical assistive-technology and product adoption require separate acceptance.
+- d096d4f: Make the approved SDK result presentation the default: shared neutral selected/hover surfaces, combined numbered Featured and badge tabs, matching corner radii, wrapping names and an outlined navigation icon on Go actions. Grouped and standalone results share the treatment. `presentationStyle="legacy"` preserves the prior appearance for staged migration; numbering remains opt-in and product-supplied.
+
+  Add themed result surface tokens. SwiftUI and Compose source implementations adopt the same default and add directly composable expandable result groups. Existing callbacks and positional native calls remain supported. Review changed card heights and accessible names; SDK sprite integration and physical accessibility acceptance are separate from this source change.
+
+### Patch Changes
+
+- 13347cf: Give AdaptiveMapShell's controls and registered bottom corners distinct named accessibility regions. New optional controlsLabel and bottomControlsLabel props default to "Map controls" and "Map corner controls" and accept translated names. Child controls stay independently accessible, and hidden or omitted regions do not introduce navigable empty landmarks. SwiftUI and Compose source implementations expose equivalent named containers while preserving existing native call signatures. Layout and keyboard behavior are unchanged.
+- 13347cf: Keep ManoeuvreCard's accessible container name when expanded, including with custom itinerary content. The existing manoeuvreLabel now names both states, while itinerary content and the close control remain separately accessible. Matching SwiftUI and Compose source changes preserve the same behavior.
+- 59ff7d4: Disable POI result-card actions when no `onAction` handler is supplied, matching iOS and Android. The actions remain visible but cannot produce analytics-only presses. Supply an `onAction` handler to make them actionable; an explicitly disabled action stays disabled.
+- 393cdc4: Give AdaptiveMapShell a 16-unit gap below its fixed panel header and a 16-unit top inset in gripless sheets. Hosted surfaceless POI, browse and route components consume that supplied inset instead of doubling it. Content-fitted sheets include their border and do not retain empty height after the grip appears. SwiftUI and Compose source follow the same spacing contract.
+
+  Remove product-owned 16-unit spacer workarounds directly below panelHeader, and redundant top padding on outer content wrappers in gripless sheets or side panels. For example, a navigation panel wrapper using `p-4` becomes `px-4 pb-4`: the shell supplies its top 16. Bordered cards retain padding inside their own border; do not remove that padding. Publication, Figma regeneration and consuming-app adoption are separate steps.
+
+- 13347cf: Give POIResultCard actions a 44px-equivalent minimum target instead of a fixed 40px height, allowing growth with larger text. SwiftUI and Compose source implementations and the Figma importer now use the same minimum painted height; SwiftUI includes padding in the tappable label and Android retains its larger platform touch-target policy. Selected results may be taller than before; handlers and disabled behavior are unchanged.
+- Updated dependencies [b734587]
+- Updated dependencies [b94423b]
+- Updated dependencies [d096d4f]
+- Updated dependencies [0d6b764]
+  - @kozmos-ds/product-contracts@0.7.0
+  - @kozmos-ds/tokens@0.4.0
+
 ## 0.7.0
 
 ### Minor Changes
