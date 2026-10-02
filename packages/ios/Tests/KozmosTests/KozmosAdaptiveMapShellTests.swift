@@ -760,8 +760,7 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
         let header = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
         XCTAssertEqual(header.height, 200, accuracy: 1.5, "the collapsed sheet cuts the header: \(header)")
         XCTAssertEqual(header.maxY, size.height - 16, accuracy: 1.5, "the margin under the header is not 16: \(header)")
-        let content = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isBlue), "nothing follows the header")
-        XCTAssertEqual(content.height, 16, accuracy: 1.5, "more than the margin shows under the header: \(content)")
+        XCTAssertNil(pixels.boundingBox(in: whole, where: Self.isBlue), "the collapsed header's trailing 16 is the shell gap, not a partial result")
     }
 
     /// A header is not a peek anchor: a search row's 44 under the handle's
@@ -777,7 +776,7 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
         let header = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
         XCTAssertEqual(header.minY, size.height - 160 + 16 + 4, accuracy: 1.5, "the collapsed sheet is not a fifth of the shell: \(header)")
         let content = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isBlue), "nothing follows the header")
-        XCTAssertEqual(content.height, 160 - 16 - 4 - 44, accuracy: 1.5, "the content under the header is not what a fifth leaves: \(content)")
+        XCTAssertEqual(content.height, 160 - 16 - 4 - 44 - 16, accuracy: 1.5, "the content under the header is not what a fifth leaves after the gap: \(content)")
     }
 
     /// An anchor marked in the header is honoured, and outranks one in the
@@ -801,7 +800,7 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
     }
 
     /// Fitted to its content, the sheet counts the header: the handle's row
-    /// and its clearance, the 80-point header and the 300-point panel, 400,
+    /// and its clearance, the 80-point header, 16 gap and 300-point panel, 416,
     /// with the map above.
     @MainActor func testTheContentFittedSheetCountsTheHeader() async throws {
         let pixels = try await RenderedPixels.render(shell(detent: .constant(.content), detents: [.collapsed, .content, .large]) {
@@ -810,9 +809,9 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
             Color.blue.frame(height: 300)
         }, size: size)
         let header = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isGreen), "the header is not drawn")
-        XCTAssertEqual(header.minY, size.height - 400 + 16 + 4, accuracy: 1.5, "the fitted sheet does not count the header: \(header)")
+        XCTAssertEqual(header.minY, size.height - 416 + 16 + 4, accuracy: 1.5, "the fitted sheet does not count the header and gap: \(header)")
         let content = try XCTUnwrap(pixels.boundingBox(in: whole, where: Self.isBlue), "no content drawn")
-        XCTAssertEqual(content.minY, header.maxY, accuracy: 1.5, "the content does not follow the header: \(content)")
+        XCTAssertEqual(content.minY, header.maxY + 16, accuracy: 1.5, "the content does not keep the header gap: \(content)")
         XCTAssertEqual(content.maxY, size.height, accuracy: 1.5, "the content is cut: \(content)")
         let map = pixels.color(at: CGPoint(x: 40, y: header.minY - 40))
         XCTAssertTrue(Self.isRed(map.r, map.g, map.b), "the map is not just above the fitted sheet: \(map)")
@@ -872,12 +871,12 @@ final class KozmosMapShellPanelHeaderTests: XCTestCase {
             .environment(\.layoutDirection, direction)
             let pixels = try await RenderedPixels.render(view, size: wide)
             let header = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isGreen), "\(direction): the header is not drawn")
-            XCTAssertEqual(header.minY, 16, accuracy: 1.5, "\(direction): the header is not the panel's first row: \(header)")
+            XCTAssertEqual(header.minY, 32, accuracy: 1.5, "\(direction): the header does not keep the panel's top inset: \(header)")
             XCTAssertEqual(header.height, 72, accuracy: 1.5)
             XCTAssertEqual(header.minX, direction == .leftToRight ? 1024 - 16 - 416 : 16, accuracy: 1.5,
                            "\(direction): the header is not in the panel: \(header)")
             let content = try XCTUnwrap(pixels.boundingBox(in: region, where: Self.isBlue), "\(direction): no content drawn")
-            XCTAssertEqual(content.minY, header.maxY, accuracy: 1.5, "\(direction): the content does not follow the header: \(content)")
+            XCTAssertEqual(content.minY, header.maxY + 16, accuracy: 1.5, "\(direction): the content does not keep the header gap: \(content)")
             XCTAssertEqual(content.maxY, wide.height - 16, accuracy: 1.5, "\(direction): the content does not fill the panel under the header: \(content)")
         }
     }

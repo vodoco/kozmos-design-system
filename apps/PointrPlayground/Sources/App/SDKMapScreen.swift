@@ -222,13 +222,11 @@ struct SDKMapScreen: View {
     /// tile. Every part is a Kozmos component; the shell draws the surface.
     @ViewBuilder private var searchSheet: some View {
         VStack(spacing: 0) {
-            // Wide panels have no handle: keep the same 16pt top and side
-            // inset. Compact sheets retain the clearance under their handle.
+            // Consume the shell's top inset; keep only any remaining top-up
+            // and handle clearance, not another size-class-specific margin.
             searchRow
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
-                .padding(.top, horizontalSizeClass == .regular
-                    ? KozmosDimensions.primitivesLayoutSpacing200
-                    : KozmosDimensions.primitivesLayoutSpacing100)
+                .modifier(SDKPanelTopPadding())
             // What follows the row crossfades as the row's state changes.
             Group {
                 if let category = session.category {
@@ -435,7 +433,9 @@ extension SDKMapScreen {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(KozmosDimensions.primitivesLayoutSpacing200)
+            .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+            .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing200)
+            .modifier(SDKPanelTopPadding())
             KozmosSearchBar(text: $session.originQuery, placeholder: "Choose a starting point")
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
             routeStatusRow
@@ -507,7 +507,9 @@ extension SDKMapScreen {
                     type: currentStep.map { SDKRoutePresenter.directionType(forMessageType: $0.messageType, transitionSubType: $0.transitionSubType) } ?? .destination,
                     label: "Step \(session.stepIndex + 1) of \(steps.count)")
             }
-            .padding(KozmosDimensions.primitivesLayoutSpacing200)
+            .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+            .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing200)
+            .modifier(SDKPanelTopPadding())
             .onChange(of: session.stepIndex) { index in
                 // Next and Previous keep VoiceOver's focus on the button; the
                 // step that changed under it is announced.
@@ -531,6 +533,18 @@ extension SDKMapScreen {
             }
             .padding(KozmosDimensions.primitivesLayoutSpacing200)
         }
+    }
+}
+
+/// This host's custom first rows follow the shell's documented inset contract,
+/// just like the library's hosted browse/details/route components. Read the
+/// environment here, below the shell, rather than in SDKMapScreen above it.
+struct SDKPanelTopPadding: ViewModifier {
+    @Environment(\.kozmosPanelInsetTop) private var supplied
+    @Environment(\.kozmosPanelClearanceTop) private var clearance
+
+    func body(content: Content) -> some View {
+        content.padding(.top, max(0, KozmosDimensions.primitivesLayoutSpacing200 - supplied) + clearance)
     }
 }
 

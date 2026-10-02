@@ -23,17 +23,16 @@ final class KozmosMapShellPanelHeaderTopTests: XCTestCase {
         XCTAssertEqual(header.panelHeaderTop(isRegularWidth: false), 4, accuracy: 0.001)
     }
 
-    /// No grabber — a single detent — beside the map, where the header is the
-    /// panel's first row, or no header at all: nothing.
-    func testWithNoGrabberBesideTheMapOrWithNoHeaderNothing() {
+    /// Gripless headers receive the same top inset as generic content.
+    func testWithNoGrabberOrBesideTheMapTheHeaderKeepsSixteen() {
         let cases: [(String, CGFloat)] = [
             ("a single detent", shell(detents: [.medium]) { Color.blue.frame(height: 44) }.panelHeaderTop(isRegularWidth: false)),
             ("beside the map", shell { Color.blue.frame(height: 44) }.panelHeaderTop(isRegularWidth: true)),
-            ("no header", shell().panelHeaderTop(isRegularWidth: false)),
         ]
         for (name, top) in cases {
-            XCTAssertEqual(top, 0, accuracy: 0.001, "\(name): the header starts \(top) below the top")
+            XCTAssertEqual(top, 16, accuracy: 0.001, "\(name): the header starts \(top) below the top")
         }
+        XCTAssertEqual(shell().panelHeaderTop(isRegularWidth: false), 0)
     }
 }
 
@@ -49,6 +48,56 @@ final class KozmosMapShellPanelHeaderTopTests: XCTestCase {
 /// measures is found where it was drawn.
 final class KozmosMapShellHostedBrowseTests: XCTestCase {
     private let phone = CGSize(width: 390, height: 800)
+
+    @MainActor func testGenericContentKeepsSixteenBelowHeaderWithAndWithoutGrabber() async throws {
+        for detents: [KozmosMapPanelDetent] in [[.content], [.content, .large]] {
+            let pixels = try await render(sheet(detents: detents, detent: .content) {
+                Self.magenta.frame(width: 100, height: 100)
+            } header: { Color.green.frame(height: 44) }, size: phone, "p02-generic-header")
+            let header = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: phone), where: Self.isGreen))
+            let content = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: phone), where: Self.isMagenta))
+            XCTAssertEqual(content.minY - header.maxY, 16, accuracy: 1)
+        }
+    }
+
+    @MainActor func testGenericGriplessContentKeepsSixteenFromTop() async throws {
+        let pixels = try await render(sheet(detents: [.content], detent: .content) {
+            Self.magenta.frame(width: 100, height: 100)
+        }, size: phone, "p02-gripless")
+        let panel = try sheetPanel(in: pixels, size: phone)
+        let content = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: phone), where: Self.isMagenta))
+        XCTAssertEqual(content.minY - panel.minY, 16, accuracy: 1)
+        XCTAssertEqual(panel.height, 116, accuracy: 1)
+    }
+
+    @MainActor func testGenericSidePanelKeepsTopAndHeaderGapsInBothDirections() async throws {
+        let wide = CGSize(width: 1024, height: 700)
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            for hasHeader in [false, true] {
+                let view = Group {
+                    if hasHeader {
+                        KozmosAdaptiveMapShell(
+                            map: { Color.red }, panel: { Self.magenta.frame(width: 100, height: 100) },
+                            panelHeader: { Color.green.frame(height: 44) }
+                        )
+                    } else {
+                        KozmosAdaptiveMapShell(map: { Color.red }, panel: { Self.magenta.frame(width: 100, height: 100) })
+                    }
+                }.environment(\.horizontalSizeClass, .regular)
+                    .environment(\.layoutDirection, direction)
+                    .environment(\.colorScheme, .light)
+                let pixels = try await RenderedPixels.render(view, size: wide)
+                let content = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: wide), where: Self.isMagenta))
+                if hasHeader {
+                    let header = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: wide), where: Self.isGreen))
+                    XCTAssertEqual(header.minY, 32, accuracy: 1)
+                    XCTAssertEqual(content.minY - header.maxY, 16, accuracy: 1)
+                } else {
+                    XCTAssertEqual(content.minY, 32, accuracy: 1)
+                }
+            }
+        }
+    }
 
     private static func isLight(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool { r > 150 && g > 150 && b > 150 }
     /// The stand-in for a search field or a product's row: nothing else here

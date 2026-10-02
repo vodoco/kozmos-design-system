@@ -241,6 +241,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// part with its own top padding tops it up rather than stacking its
     /// padding on top of this (GAP-083).
     private static var grabberRowHeight: CGFloat { KozmosDimensions.primitivesLayoutSpacing200 }
+    private static var panelContentSpacing: CGFloat { KozmosDimensions.primitivesLayoutSpacing200 }
 
     /// WCAG 2.5.8: a target smaller than 24 points keeps a 24-point circle on
     /// its centre clear of every other target. The grabber's row is one.
@@ -441,14 +442,12 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// content's first control must still sit below that (GAP-083): handed to
     /// the content as `kozmosPanelInsetTop` and `kozmosPanelClearanceTop`, so a
     /// part with its own top padding tops it up rather than adding to it.
-    /// Under a grabber, its 16-point row, and half of what the row falls short
-    /// of a 24-point target, 4, so the grabber keeps its spacing. Nothing with
-    /// no grabber, under a panel header, which sits there instead, or beside
-    /// the map, where a native side panel starts its content at its top edge
-    /// (the web's leaves 16 above it).
+    /// The shell supplies 16 points: the grabber's row, the header's bottom
+    /// gap, or gripless top padding. Only a directly preceding grabber also
+    /// requires its 4-point target clearance.
     func panelContentTop(isRegularWidth: Bool) -> (inset: CGFloat, clearance: CGFloat) {
-        guard drawsGrabber(isRegularWidth: isRegularWidth), panelHeader == nil else { return (0, 0) }
-        return (Self.grabberRowHeight, Self.grabberClearance)
+        let underGrabber = drawsGrabber(isRegularWidth: isRegularWidth) && panelHeader == nil
+        return (underGrabber ? Self.grabberRowHeight : Self.panelContentSpacing, underGrabber ? Self.grabberClearance : 0)
     }
 
     /// How far the panel header starts below the grabber's row: the
@@ -456,11 +455,11 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     /// keeps the grabber's target its WCAG 2.5.8 spacing — as the web's header
     /// has since #109, and as the panel's content keeps it when no header sits
     /// there (decision 14). It sat flush under the row, 8 from the grabber's
-    /// centre. Nothing with no grabber, and beside the map, where the header
-    /// is the panel's first row.
+    /// centre. Without a grabber, including beside the map, the header keeps
+    /// the same 16-point top inset as the panel's content.
     func panelHeaderTop(isRegularWidth: Bool) -> CGFloat {
-        guard drawsGrabber(isRegularWidth: isRegularWidth), panelHeader != nil else { return 0 }
-        return Self.grabberClearance
+        guard panelHeader != nil else { return 0 }
+        return drawsGrabber(isRegularWidth: isRegularWidth) ? Self.grabberClearance : Self.panelContentSpacing
     }
 
     /// The panel's content, told what the panel leaves above it.
@@ -469,6 +468,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         return panel
             .environment(\.kozmosPanelInsetTop, top.inset)
             .environment(\.kozmosPanelClearanceTop, top.clearance)
+            .padding(.top, !drawsGrabber(isRegularWidth: isRegularWidth) && panelHeader == nil ? Self.panelContentSpacing : 0)
     }
 
     // MARK: - Collision insets
@@ -857,6 +857,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                 VStack(spacing: 0) {
                     if let panelHeader {
                         panelHeader.fixedSize(horizontal: false, vertical: true)
+                            .padding(.vertical, Self.panelContentSpacing)
                     }
                     hostedPanel
                 }
@@ -1095,6 +1096,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                 .transformAnchorPreference(key: KozmosMapShellPeekAnchorKey.self, value: .bounds) { anchors, bounds in
                     anchors = KozmosPanelPeekAnchors(header: anchors.content, headerBounds: bounds)
                 }
+                .padding(.bottom, Self.panelContentSpacing)
                 .padding(.top, panelHeaderTop(isRegularWidth: isRegularWidth))
         }
     }

@@ -112,10 +112,9 @@ val KozmosDefaultPanelDetents: List<KozmosMapPanelDetent> =
 
 /**
  * What the shell's panel leaves empty above its content (GAP-083): the
- * handle's 16dp row on a sheet that draws one; nothing on a sheet with a
- * single detent, which draws no handle, under a `panelHeader`, which sits
- * there instead, or beside the map, where a side panel starts its content at
- * its top edge. A part with its own top padding and no surface of its own tops
+ * handle's 16dp row, the 16dp gap below a `panelHeader`, or the shell's
+ * 16dp top inset when neither is present (including beside the map).
+ * A part with its own top padding and no surface of its own tops
  * it up to what it needs rather than adding to it, as `KozmosPOIDetailPanel`
  * does in its sheet presentation and `KozmosBrowseCategoriesPanel` and
  * `KozmosRoutePreviewPanel` do; a part that draws its own bordered surface
@@ -151,6 +150,7 @@ val LocalKozmosPanelSurface = compositionLocalOf<KozmosSurfaceStyle?> { null }
 
 /** The handle's row: deliberately shallow, an affordance at the sheet's top edge. */
 private val SheetHandleRowHeight = KozmosDimensions.primitivesLayoutSpacing200
+private val PanelContentSpacing = KozmosDimensions.primitivesLayoutSpacing200
 
 /**
  * WCAG 2.5.8: a target smaller than 24dp keeps a 24dp circle on its centre
@@ -464,13 +464,14 @@ fun KozmosAdaptiveMapShell(
                     ) {
                         Column {
                             if (panelHeader != null) {
-                                Box(modifier = Modifier.fillMaxWidth()) { panelHeader() }
+                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = gap)) { panelHeader() }
                             }
-                            Box(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
-                                // A side panel starts its content at its top edge,
-                                // with no handle: it leaves nothing above it.
+                            Box(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
+                                .padding(top = if (panelHeader == null) gap else 0.dp)) {
+                                // The shell supplied top padding or the header's
+                                // bottom gap. Hosted parts must not add it again.
                                 CompositionLocalProvider(
-                                    LocalKozmosPanelInsetTop provides 0.dp,
+                                    LocalKozmosPanelInsetTop provides gap,
                                     LocalKozmosPanelClearanceTop provides 0.dp,
                                     content = panel
                                 )
@@ -686,7 +687,7 @@ private fun BottomSheet(
         // top padding to top up rather than add to (GAP-083): the handle's
         // row, and its target's clearance — unless a header sits there.
         val underHandle = showsHandle && panelHeader == null
-        val insetTop = if (underHandle) SheetHandleRowHeight else 0.dp
+        val insetTop = if (underHandle) SheetHandleRowHeight else PanelContentSpacing
         val clearanceTop = if (underHandle) HandleClearance else 0.dp
         Layout(
             content = {
@@ -716,6 +717,8 @@ private fun BottomSheet(
                                 .layoutId(SheetPart.Header)
                                 .fillMaxWidth()
                                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                                .padding(top = if (showsHandle) 0.dp else PanelContentSpacing,
+                                    bottom = PanelContentSpacing)
                         ) { panelHeader() }
                     }
                     Box(
@@ -725,6 +728,7 @@ private fun BottomSheet(
                             // The sheet's surface reaches the bottom edge; what it
                             // holds keeps above the navigation bar.
                             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+                            .padding(top = if (!showsHandle && panelHeader == null) PanelContentSpacing else 0.dp)
                     ) {
                         CompositionLocalProvider(
                             LocalKozmosPanelInsetTop provides insetTop,
@@ -763,6 +767,8 @@ private fun BottomSheet(
             // (`headerCollapsedHeight`); a header that draws nothing is none.
             val headerLine = header?.get(KozmosPanelPeekAnchorLine) ?: AlignmentLine.Unspecified
             val contentLine = content[KozmosPanelPeekAnchorLine]
+            val headerGap = PanelContentSpacing.roundToPx()
+            val headerPadding = headerGap + if (handle == null) headerGap else 0
             val fresh = KozmosPanelMeasures(
                 contentHeight = (contentTop + content.height).toDp(),
                 peekBottom = when {
@@ -770,7 +776,10 @@ private fun BottomSheet(
                     contentLine != AlignmentLine.Unspecified -> (contentTop + contentLine).toDp()
                     else -> 0.dp
                 },
-                headerBottom = if (header != null && header.height > 0) contentTop.toDp() else 0.dp
+                // Exclude shell padding: an empty header is still empty,
+                // and the collapsed peek margin already supplies its gap.
+                headerBottom = if (header != null && header.height > headerPadding)
+                    (contentTop - headerGap).toDp() else 0.dp
             )
             if (fresh != measures) measures = fresh
             val (freshSmallest, freshLargest, freshSettled) = heights(fresh)

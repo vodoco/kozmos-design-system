@@ -11,10 +11,13 @@ icons stays 0.5.0. Matching SwiftUI/Compose source is in the repository, not a n
 registry release. See [release evidence](release-process.md#070).
 Post-release source status below is reconciled to main `7c006e06aa904894217fb4df799d9e6ff1e60c4b`;
 merged maintenance is not an additional npm release.
-P01's three source slices are now assembled in an unreleased integration candidate:
+P01's three source slices merged in #185 at `13347cf5aea0e319570a7ff5ce95174c03b6c30d`, unreleased:
 GAP-109 (named manoeuvre containers), GAP-056 (result-action targets), and GAP-101
-(named shell controls). Candidate verification and the normal merge gates remain;
-this is not a claim that these changes are on main, published or adopted in products.
+(named shell controls). Exact-main CI, selected workflows and deployed docs were verified;
+this is not a claim that the changes are published to npm or adopted in products.
+P02 is an unreleased candidate for shell-owned 16-unit header gaps and gripless top
+insets across React/SwiftUI/Compose, with fitted-height and hosted-inset regression checks.
+CI and external Figma/consumer adoption remain separate acceptance gates.
 For all 121 supplied product gaps (latest source intake 2026-10-01), their criteria and corrected statuses, read the
 [product design gap register](product-design-gap-register.md). The site has a
 [separate gap register](../apps/site/GAPS.md).

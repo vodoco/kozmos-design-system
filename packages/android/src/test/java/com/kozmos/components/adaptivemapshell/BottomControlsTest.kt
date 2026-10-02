@@ -160,7 +160,7 @@ class BottomControlsTest {
             val map = tree.named("Map").bounds
             val panel = tree.named("Map details").bounds
             val start = tree.named("start").bounds
-            if (contentHeight == 100) assertEquals(100f, panel.height / density, 1f)
+            if (contentHeight == 100) assertEquals(116f, panel.height / density, 1f)
             assertTrue(panel.bottom + 16f * density <= start.top)
             assertTrue(panel.height <= 412f * density + 1)
             assertFalse(panel.overlaps(start))

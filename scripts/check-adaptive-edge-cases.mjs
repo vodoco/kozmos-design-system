@@ -20,6 +20,26 @@ const axeSource = fs.readFileSync(
 const { code, css } = await buildReactFixture("adaptive-host.tsx");
 const browser = await launchFixtureBrowser();
 let failures = 0;
+
+// P02 gives the shell ownership of the header-to-content gap. Check its
+// rendered bounds as well as the child's zero top-up, so a missing inset
+// cannot pass merely because both participants dropped their old padding.
+async function assertHeaderGap(page, firstSelector) {
+  const gap = await page.evaluate((selector) => {
+    const header = document.querySelector("[data-kozmos-panel-header]");
+    const first = document.querySelector(selector);
+    const lastHeaderRow = header?.querySelector("button:last-child");
+    if (!first || !lastHeaderRow) throw new Error("Missing header gap targets");
+    return (
+      first.getBoundingClientRect().top -
+      lastHeaderRow.getBoundingClientRect().bottom
+    );
+  }, firstSelector);
+  assert(
+    Math.abs(gap - 16) <= 1,
+    `shell-owned header-to-content gap: ${gap}, expected 16`,
+  );
+}
 // GAP-083: where a hosted details card's close button sits in the panel —
 // from the panel's top edge, and from its end edge (the left, right to left).
 // Counted first, so a missing card fails on an assertion, not a timeout.
@@ -976,10 +996,10 @@ const cases = [
     },
   ],
   [
-    "a single-detent sheet draws no grip, and the card keeps its own top padding",
+    "a single-detent sheet supplies the details card's top inset once",
     async (page) => {
-      // The guard: with no grip the shell leaves nothing above the content,
-      // so the card's header must keep its 16 or the button meets the edge.
+      // P02: the shell supplies 16 without a grip; the surfaceless card
+      // consumes it rather than adding another 16.
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.evaluate(() => {
         window.showDetails("sheet");
@@ -991,7 +1011,8 @@ const cases = [
       await settleLayout(page);
       const at = await closeInsets(page);
       assert(!at.grip, "a single detent draws no grip");
-      assert.equal(at.headerTop, 16, "the header keeps its own 16");
+      assert.equal(at.headerTop, 0, "the header consumes the shell's inset");
+      assert.equal(at.top, 17, "16 inside the shell's border");
       assert(
         Math.abs(at.top - at.end) <= 1,
         `close button ${at.top} from the top and ${at.end} from the side`,
@@ -1050,10 +1071,9 @@ const cases = [
     },
   ],
   [
-    "under a panel header, the details card keeps its own top padding",
+    "under a panel header, the details card consumes the shell's gap",
     async (page) => {
-      // A header sits between the grip and the content: the space above the
-      // card is the header, not empty, so the card's 16 separates them.
+      // The shell's bottom padding separates header content from the card.
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.evaluate(() => {
         window.showPanelHeader();
@@ -1064,9 +1084,10 @@ const cases = [
       const at = await closeInsets(page);
       assert.equal(
         at.headerTop,
-        16,
-        "the header keeps its own 16 under a panel header",
+        0,
+        "the card does not duplicate the shell's gap",
       );
+      await assertHeaderGap(page, 'button[aria-label="Close details"]');
     },
   ],
   [
@@ -1167,10 +1188,9 @@ const cases = [
     },
   ],
   [
-    "a single-detent sheet draws no grip, and the category browser keeps its own top padding",
+    "a single-detent sheet supplies the category browser's top inset once",
     async (page) => {
-      // The guard: with no grip the shell leaves nothing above the content,
-      // so the search row keeps its 16 or the field meets the sheet's edge.
+      // The shell, not the search row, now supplies the first 16.
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.evaluate(() => {
         window.showBrowse();
@@ -1182,7 +1202,8 @@ const cases = [
       await settleLayout(page);
       const at = await browseInsets(page);
       assert(!at.grip, "a single detent draws no grip");
-      assert.equal(at.rows[0], 16, "the search row keeps its own 16");
+      assert.equal(at.rows[0], 0, "the search row consumes the shell's inset");
+      assert.equal(at.top, 17, "16 inside the shell's border");
       assert(
         Math.abs(at.top - at.start) <= 1,
         `search field ${at.top} from the top and ${at.start} from the side`,
@@ -1223,7 +1244,7 @@ const cases = [
     },
   ],
   [
-    "under a panel header holding the search, the category browser keeps its own 16 and the header's field keeps the grip's clearance",
+    "under a panel header holding the search, the shell supplies the category gap and retains grip clearance",
     async (page) => {
       // Many products put the search field in the panel header now; the
       // browser then has no search row of its own, and its tiles sit under
@@ -1237,7 +1258,8 @@ const cases = [
       await settleLayout(page);
       const at = await browseInsets(page);
       assert.equal(at.control, "first tile");
-      assert.equal(at.rows[0], 16, "the tiles keep their own 16");
+      assert.equal(at.rows[0], 0, "the tiles consume the shell's gap");
+      await assertHeaderGap(page, ".kozmos-category-tile");
       const field = await page
         .getByRole("textbox", { name: "Search this sheet" })
         .evaluate((input) => {
@@ -1262,8 +1284,8 @@ const cases = [
       );
       assert.equal(
         field.tileUnderHeader,
-        16,
-        "the first tile sits 16 under the header",
+        0,
+        "the first tile follows the header's already-padded box",
       );
     },
   ],
@@ -1372,10 +1394,9 @@ const cases = [
     },
   ],
   [
-    "a single-detent sheet draws no grip, and the route preview keeps its own top padding",
+    "a single-detent sheet supplies the route preview's top inset once",
     async (page) => {
-      // The guard: with no grip the shell leaves nothing above the content,
-      // so the row keeps its 16 or the label meets the sheet's edge.
+      // The shell, not the destination row, supplies the first 16.
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.evaluate(() => {
         window.showRoute();
@@ -1387,7 +1408,8 @@ const cases = [
       await settleLayout(page);
       const at = await routeInsets(page);
       assert(!at.grip, "a single detent draws no grip");
-      assert.equal(at.row, 16, "the destination row keeps its own 16");
+      assert.equal(at.row, 0, "the destination row consumes the shell's inset");
+      assert.equal(at.top, 17, "16 inside the shell's border");
       assert(
         Math.abs(at.top - at.start) <= 1,
         `destination label ${at.top} from the top and ${at.start} from the side`,
@@ -1429,10 +1451,9 @@ const cases = [
     },
   ],
   [
-    "under a panel header, the route preview keeps its own top padding",
+    "under a panel header, the route preview consumes the shell's gap",
     async (page) => {
-      // A header sits between the grip and the content: the space above the
-      // preview is the header, not empty, so the row's 16 separates them.
+      // The shell's bottom padding separates header content from the row.
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.evaluate(() => {
         window.showPanelHeader();
@@ -1444,8 +1465,12 @@ const cases = [
       assert(at.grip, "this sheet draws its grip");
       assert.equal(
         at.row,
-        16,
-        "the destination row keeps its own 16 under a panel header",
+        0,
+        "the destination row does not duplicate the shell's gap",
+      );
+      await assertHeaderGap(
+        page,
+        '[aria-label="Route preview"] header > :first-child',
       );
     },
   ],

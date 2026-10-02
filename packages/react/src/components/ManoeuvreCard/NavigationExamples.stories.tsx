@@ -1,5 +1,6 @@
 import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
+import { expect, waitFor } from "@storybook/test";
 import { AdaptiveMapShell } from "../AdaptiveMapShell";
 import { Button } from "../Button";
 import { Itinerary, type ItineraryStep } from "../Itinerary";
@@ -106,8 +107,9 @@ function NavigationExample() {
         </ManoeuvreCard>
       }
       panel={
-        <div className="flex flex-col gap-4 p-4">
+        <div className="flex flex-col gap-4 px-4 pb-4">
           <RouteSummary
+            data-navigation-summary
             destination={route.destination}
             durationText={minutes(remainingSeconds)}
             distanceText={`${remainingMetres} m`}
@@ -384,8 +386,9 @@ function PhoneNavigation({
           </ManoeuvreCard>
         }
         panel={
-          <div className="p-4">
+          <div className="px-4 pb-4">
             <RouteSummary
+              data-navigation-summary
               destination={phone.destination}
               durationText={phone.duration}
               distanceText={phone.distance}
@@ -412,6 +415,21 @@ const meta = {
   title: "Examples/Navigation",
   component: NavigationExample,
   parameters: { layout: "fullscreen" },
+  play: async ({ canvasElement }) => {
+    // The shell now owns the first 16px. A consumer's former p-4 wrapper
+    // must not double it; measure the real composition, not a class name.
+    await waitFor(() => {
+      const panel = canvasElement.querySelector("aside");
+      const summary = canvasElement.querySelector("[data-navigation-summary]");
+      expect(panel).not.toBeNull();
+      expect(summary).not.toBeNull();
+      const gap =
+        summary!.getBoundingClientRect().top -
+        panel!.getBoundingClientRect().top -
+        panel!.clientTop;
+      expect(Math.abs(gap - 16)).toBeLessThanOrEqual(1);
+    });
+  },
 } satisfies Meta<typeof NavigationExample>;
 
 export default meta;
