@@ -1,6 +1,6 @@
 {
   "name": "@kozmos-ds/react",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "React components for the Kozmos design system: core controls and map, POI and wayfinding compositions, styled from Kozmos tokens.",
   "keywords": [
     "kozmos",

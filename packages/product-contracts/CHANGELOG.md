@@ -1,5 +1,16 @@
 # @kozmos-ds/product-contracts
 
+## 0.7.0
+
+### Minor Changes
+
+- b734587: Add optional `POIResultPresentation.languageNotListed` and localized result-card/list/group disclosure. Only explicit `true` renders a note; missing data, authored-name language and interface language never imply staff-language availability. Existing calls stay unchanged. Native source mirrors the contract, and Swift selection copies now preserve the existing summary as well as the new language evidence.
+- b94423b: Accept ordered instruction parts in DirectionStep, ManoeuvreCard and Itinerary, preserving secondary emphasis, caller-supplied word order and per-part speech language alongside legacy strings. SwiftUI and Compose equivalents retain native string calls and itinerary source-copy compatibility. Hosts still own translated wording; physical assistive-technology and product adoption require separate acceptance.
+
+### Patch Changes
+
+- 0d6b764: Correct result-number and badge documentation to distinguish the default SDK presentation from explicit legacy behavior. Numbered SDK cards retain the supplied number alongside Featured or badge labels, including grouped rows. Marker sprites remain host-owned. Types and runtime behavior are unchanged.
+
 ## 0.6.0
 
 ### Minor Changes
