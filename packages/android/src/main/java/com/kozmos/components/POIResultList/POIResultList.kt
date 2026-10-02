@@ -25,6 +25,28 @@ import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.components.surface.kozmosDashedEdge
 
+/** Preserves the existing positional and trailing-action list API. */
+@Composable
+fun KozmosPOIResultList(
+    items: List<KozmosPOIResultListItem>,
+    resultCountLabel: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "Points of interest",
+    selectedPoiId: String? = null,
+    featuredLabel: String = "Featured",
+    emptyState: (@Composable () -> Unit)? = null,
+    currentFloorId: String? = null,
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    numbered: Boolean = false,
+    actionsLabel: String = "Actions for this result",
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultList(
+    items, resultCountLabel, onSelect, modifier, label, selectedPoiId,
+    featuredLabel, emptyState, currentFloorId, travelTimeBandLabels, numbered,
+    actionsLabel, "Language not listed", onAction
+)
+
 /** One row of a POI result list, pairing a POI with its result metadata. */
 data class KozmosPOIResultListItem(
     val poi: KozmosPOIPresentation,
@@ -72,6 +94,7 @@ fun KozmosPOIResultList(
     numbered: Boolean = false,
     /** Names each result's action row for TalkBack: the card's. */
     actionsLabel: String = "Actions for this result",
+    languageNotListedLabel: String,
     /**
      * Runs an action from the selected result's action row, told which
      * action and the POI's ID. Without it those actions are drawn disabled.
@@ -123,6 +146,7 @@ fun KozmosPOIResultList(
                     result = item.result.selecting(selectedPoiId),
                     onSelect = onSelect,
                     featuredLabel = featuredLabel,
+                    languageNotListedLabel = languageNotListedLabel,
                     actionsLabel = actionsLabel,
                     travelTimeBandLabels = travelTimeBandLabels,
                     numbered = numbered,

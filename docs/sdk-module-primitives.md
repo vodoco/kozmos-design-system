@@ -15,9 +15,14 @@ P01's three source slices merged in #185 at `13347cf5aea0e319570a7ff5ce95174c03b
 GAP-109 (named manoeuvre containers), GAP-056 (result-action targets), and GAP-101
 (named shell controls). Exact-main CI, selected workflows and deployed docs were verified;
 this is not a claim that the changes are published to npm or adopted in products.
-P02 is an unreleased candidate for shell-owned 16-unit header gaps and gripless top
-insets across React/SwiftUI/Compose, with fitted-height and hosted-inset regression checks.
-CI and external Figma/consumer adoption remain separate acceptance gates.
+P02 merged in #186 at `393cdc4430c84e8a3fdbd1383e6a99a987b3ef70`, unreleased:
+shell-owned 16-unit header gaps and gripless top insets across React/SwiftUI/Compose,
+with fitted-height and hosted-inset regressions. Exact-main CI and deployment passed;
+live docs and navigation spacing were verified. External Figma/consumer adoption remains separate.
+P03's staff-language slice is a candidate: optional explicit `languageNotListed`
+evidence and localized card/list disclosure across all three platforms. Unknown does
+not mean unlisted, and UI language never implies staff availability. Structured
+instruction parts and foreign-language speech metadata remain P03's next slice.
 For all 121 supplied product gaps (latest source intake 2026-10-01), their criteria and corrected statuses, read the
 [product design gap register](product-design-gap-register.md). The site has a
 [separate gap register](../apps/site/GAPS.md).

@@ -394,6 +394,10 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
     /// offers - a restaurant may book where a shop does not - so the card draws
     /// what it is given and never assumes a fixed pair.
     public let actions: [KozmosPOIResultActionPresentation]
+    /// Explicit host evidence that the requested staff language is not listed.
+    /// nil is unknown; false hides the note, not a guarantee of staff availability.
+    /// Independent of query match, authored-name language and device/UI locale.
+    public let languageNotListed: Bool?
 
     public init(
         poiId: String,
@@ -409,7 +413,8 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         unitLabel: String? = nil,
         nameLanguage: String? = nil,
         summary: String? = nil,
-        actions: [KozmosPOIResultActionPresentation] = []
+        actions: [KozmosPOIResultActionPresentation] = [],
+        languageNotListed: Bool? = nil
     ) {
         self.poiId = poiId
         self.resultIndex = resultIndex
@@ -425,6 +430,7 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         self.nameLanguage = nameLanguage
         self.summary = summary
         self.actions = actions
+        self.languageNotListed = languageNotListed
     }
 
     /// Mirrors the web rule: only an explicit `false` marks a result unavailable.
@@ -452,7 +458,9 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
             match: match,
             unitLabel: unitLabel,
             nameLanguage: nameLanguage,
-            actions: actions
+            summary: summary,
+            actions: actions,
+            languageNotListed: languageNotListed
         )
     }
 }

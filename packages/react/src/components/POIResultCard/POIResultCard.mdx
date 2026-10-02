@@ -29,6 +29,27 @@ smaller control necessarily fails WCAG, or that physical-device acceptance is co
 <Canvas of={Stories.FeaturedSelected} />
 <Controls />
 
+## Requested staff language
+
+`result.languageNotListed === true` draws a quiet, wrapping **Language not listed**
+note below the select row. Pass `languageNotListedLabel` to localize it or name the
+requested language. Lists and groups forward that label; native cards and lists
+use the same field and label. The note is also announced with the select row,
+even when a custom `selectionLabel` replaces its name. On web it is an accessible
+description, preserving the custom name and any unavailable explanation.
+
+Missing data is unknown. `false` merely suppresses this note: neither value proves
+that staff speak a language. The host supplies explicit evidence, may group results
+using it, and owns ranking and the requested language. `match`, `nameLanguage`, UI
+translation fallback and device locale do not infer this field. Selection, actions
+and availability remain independent. Existing callers need no migration.
+
+Swift's `selecting` copy preserves the field and the existing `summary`; previously
+that copy dropped `summary`. Native source support is not native registry delivery
+or physical VoiceOver/TalkBack acceptance.
+
+<Canvas of={Stories.StaffLanguageNotListed} />
+
 ## One tab: Featured, a number, or a badge
 
 A card draws at most one tab inside its top-start corner (the right in a right-to-left language).

@@ -39,6 +39,8 @@ export interface POIResultGroupProps extends Omit<
   /** Names the group for assistive technology, e.g. "Starbucks, 9 results". */
   label?: string;
   featuredLabel?: string;
+  /** Localized explicit staff-language disclosure, forwarded to every member. */
+  languageNotListedLabel?: string;
   actionsLabel?: string;
   currentFloorId?: string;
   /** Each member's words for a walk shown as a band: POIResultCard's. */
@@ -89,6 +91,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
       hideLabel = "Hide",
       label,
       featuredLabel,
+      languageNotListedLabel,
       actionsLabel,
       currentFloorId,
       travelTimeBandLabels,
@@ -134,6 +137,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
                 appearance="row"
                 currentFloorId={currentFloorId}
                 featuredLabel={featuredLabel}
+                languageNotListedLabel={languageNotListedLabel}
                 idPrefix={idPrefix}
                 numbered={numbered}
                 onAction={onAction}

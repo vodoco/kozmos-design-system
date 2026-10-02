@@ -300,6 +300,14 @@ export interface POIResultPresentation {
    */
   match?: POIResultMatch;
   /**
+   * Explicit host evidence that the requested staff language is not listed.
+   * Absence is unknown; false suppresses this disclosure, not a promise that
+   * staff speak a language. Independent of query match, nameLanguage and UI
+   * locale. Kozmos never infers this from missing translations or reorders
+   * results; hosts may group results using this field.
+   */
+  languageNotListed?: boolean;
+  /**
    * The unit or suite, where a venue has them: "Unit 214", "Suite 3B".
    * Separate from floorLabel because a visitor is told both.
    */

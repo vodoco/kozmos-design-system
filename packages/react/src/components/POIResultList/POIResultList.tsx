@@ -150,6 +150,8 @@ export interface POIResultListProps extends Omit<
   resultCountLabel: string;
   emptyState?: React.ReactNode;
   featuredLabel?: string;
+  /** Localized explicit staff-language disclosure, forwarded to every card/group. */
+  languageNotListedLabel?: string;
   /** Names each result's action row for assistive technology. */
   actionsLabel?: string;
   /** The floor the map shows: a result on it carries a dot before its floor. */
@@ -239,6 +241,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       resultCountLabel,
       emptyState,
       featuredLabel,
+      languageNotListedLabel,
       actionsLabel,
       currentFloorId,
       header,
@@ -396,6 +399,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                       defaultExpanded={entry.defaultExpanded}
                       expanded={entry.expanded}
                       featuredLabel={featuredLabel}
+                      languageNotListedLabel={languageNotListedLabel}
                       hideLabel={hideLabel}
                       idPrefix={idPrefix}
                       items={entry.items.map((item) => ({
@@ -424,6 +428,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                     actionsLabel={actionsLabel}
                     currentFloorId={currentFloorId}
                     featuredLabel={featuredLabel}
+                    languageNotListedLabel={languageNotListedLabel}
                     idPrefix={idPrefix}
                     numbered={numbered}
                     onAction={onAction}
