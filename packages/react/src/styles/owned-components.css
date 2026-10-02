@@ -595,6 +595,9 @@
      square; only the first row shares the container's outer top corner. */
   .kozmos-poi-result-card[data-presentation-style="sdk"]
     .kozmos-poi-result-tab {
+    /* A block-level flex box avoids the button's anonymous baseline line box.
+       The tab stays in flow and inside the selection hit area, flush at top. */
+    display: flex;
     position: relative;
     width: fit-content;
     max-width: 100%;

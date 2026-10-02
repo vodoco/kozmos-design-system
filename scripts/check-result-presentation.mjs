@@ -57,7 +57,9 @@ try {
           const s = getComputedStyle(tab);
           const r = tab.getBoundingClientRect();
           const n = name.getBoundingClientRect();
+          const button = e.querySelector(":scope > button");
           return {
+            topGap: r.top - button.getBoundingClientRect().top,
             topStart: s.borderStartStartRadius,
             bottomEnd: s.borderEndEndRadius,
             overlap: r.bottom > n.top,
@@ -68,6 +70,10 @@ try {
             minimum: s.minHeight,
           };
         });
+        assert.ok(
+          Math.abs(geometry.topGap) < 0.1,
+          `${id}: tag must be flush with selection row (gap ${geometry.topGap}px)`,
+        );
         assert.equal(
           geometry.topStart,
           id === "group-alternative" || id === "group-standard"
@@ -125,6 +131,17 @@ try {
   }
   await page.setViewportSize({ width: 320, height: 900 });
   await page.evaluate(() => (document.documentElement.style.fontSize = "32px"));
+  for (const gap of await page
+    .locator(".kozmos-poi-result-card [data-tab]")
+    .evaluateAll((tabs) =>
+      tabs.map(
+        (tab) =>
+          tab.getBoundingClientRect().top -
+          tab.parentElement.getBoundingClientRect().top,
+      ),
+    )) {
+    assert.ok(Math.abs(gap) < 0.1, `200% text: tag top gap ${gap}px`);
+  }
   assert.equal(
     await page.evaluate(
       () => document.documentElement.scrollWidth > innerWidth,
@@ -139,7 +156,7 @@ try {
     });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: SDK result production build — both themes, RTL/LTR, six card/group states, corner radii, hover/selection, independent actions, keyboard, collapse/expand and 320px enlarged text.",
+    "PASS: SDK result production build — both themes, RTL/LTR, six card/group states, flush tag alignment, corner radii, hover/selection, independent actions, keyboard, collapse/expand and 320px enlarged text.",
   );
 } finally {
   await browser.close();
