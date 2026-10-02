@@ -187,8 +187,16 @@ function measurePeekBottom(
 function measureHeaderBottom(header: HTMLElement | null): number {
   const sheet = header?.parentElement;
   if (!header || !sheet) return 0;
+  const style = getComputedStyle(header);
+  const topPadding = parseFloat(style.paddingTop) || 0;
+  const bottomPadding = parseFloat(style.paddingBottom) || 0;
+  // Padding belongs to layout, not to the header's visible content. In
+  // particular an empty slot must not raise the collapsed detent.
+  if (header.offsetHeight <= topPadding + bottomPadding) return 0;
   const bottom =
-    header.getBoundingClientRect().bottom - sheet.getBoundingClientRect().top;
+    header.getBoundingClientRect().bottom -
+    bottomPadding -
+    sheet.getBoundingClientRect().top;
   return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
 }
 const position = (rect: MapLayoutRect): React.CSSProperties => ({
@@ -281,6 +289,7 @@ const AdaptiveMapShell = React.forwardRef<
       attributionHeight: 0,
       panelContentHeight: 0,
       panelHeaderHeight: 0,
+      panelBorderHeight: 0,
       panelHeight: 0,
       /** The panel header's bottom edge from the sheet's top; 0 when none. */
       headerBottom: 0,
@@ -320,6 +329,9 @@ const AdaptiveMapShell = React.forwardRef<
       const element = root.current!;
       const measure = () => {
         const safeStyle = getComputedStyle(safeArea.current!);
+        const panelStyle = panelElement.current
+          ? getComputedStyle(panelElement.current)
+          : null;
         const next = {
           ready: true,
           width: element.clientWidth,
@@ -344,6 +356,10 @@ const AdaptiveMapShell = React.forwardRef<
           // What the panel holds, not what it was given: the scroll height.
           panelContentHeight: panelContent.current?.scrollHeight ?? 0,
           panelHeaderHeight: panelHeaderElement.current?.offsetHeight ?? 0,
+          panelBorderHeight: panelStyle
+            ? (parseFloat(panelStyle.borderTopWidth) || 0) +
+              (parseFloat(panelStyle.borderBottomWidth) || 0)
+            : 0,
           panelHeight: panelElement.current?.offsetHeight ?? 0,
           headerBottom: measureHeaderBottom(panelHeaderElement.current),
           handleHeight: handleElement.current?.offsetHeight ?? 0,
@@ -451,7 +467,10 @@ const AdaptiveMapShell = React.forwardRef<
     // What the sheet holds, the header included. Whether it draws a handle is
     // decided on this, without the handle, so the handle's own height can
     // never fold two detents into one and take the handle away again.
-    const held = measured.panelHeaderHeight + measured.panelContentHeight;
+    const held =
+      measured.panelHeaderHeight +
+      measured.panelContentHeight +
+      measured.panelBorderHeight;
     const showsHandle =
       orderPanelDetents(detents, sheetHeight, {
         contentHeight: held,
@@ -1279,7 +1298,7 @@ const AdaptiveMapShell = React.forwardRef<
             {hasPanelHeader && (
               <div
                 ref={panelHeaderElement}
-                className={cn("flex-none", !isSheet && "pt-4")}
+                className={cn("flex-none pb-4", !drawsHandle && "pt-4")}
                 data-kozmos-panel-header=""
                 style={
                   {
@@ -1309,12 +1328,18 @@ const AdaptiveMapShell = React.forwardRef<
               data-kozmos-scroller=""
               className={cn(
                 "min-h-0 overscroll-contain",
-                layout.presentation === "side" ? "flex-auto" : "flex-1",
-                // A side panel has no grip, so nothing was making the space
-                // the sheet's grip makes: the search field sat 1px under the
-                // panel's top edge. 16 matches where the field starts below
-                // the sheet's grip. A header takes that row when there is one.
-                !isSheet && !hasPanelHeader && "pt-4",
+                // A fitted sheet measures intrinsic content. Growing its
+                // scroller to yesterday's measured height feeds that empty
+                // space back into the next measurement (notably when a grip
+                // appears and replaces the gripless top inset).
+                isSheet && activeDetent === "content"
+                  ? "flex-initial"
+                  : layout.presentation === "side"
+                    ? "flex-auto"
+                    : "flex-1",
+                // Without a grip or header the shell still supplies its top
+                // inset, in a fitted bottom sheet as well as a side panel.
+                !drawsHandle && !hasPanelHeader && "pt-4",
               )}
               // A finger scrolls the list natively at the largest detent;
               // at the list's top only downward panning (into the list) is
@@ -1335,18 +1360,12 @@ const AdaptiveMapShell = React.forwardRef<
                       ? "pan-y"
                       : "pan-down"
                     : "none",
-                  // What the panel leaves empty above its content: the grip's
-                  // row on a sheet, the side panel's 16, nothing when a
-                  // header sits there or a single detent draws no grip. A part
-                  // with its own top padding tops it up to what it needs
-                  // rather than adding to it: the details card's close button
-                  // sat 33 from the top and 17 from the side (GAP-083).
-                  "--kozmos-panel-inset-top": hasPanelHeader
-                    ? "0px"
-                    : isSheet
-                      ? drawsHandle
-                        ? "calc(var(--primitives-layout-spacing-200) * 1px)"
-                        : "0px"
+                  // The shell supplies either the grip's row, the header's
+                  // bottom gap, or gripless top padding. Hosted parts subtract
+                  // this from their own padding instead of adding it twice.
+                  "--kozmos-panel-inset-top":
+                    drawsHandle && !hasPanelHeader
+                      ? "calc(var(--primitives-layout-spacing-200) * 1px)"
                       : "1rem",
                   // And how far its first control must still sit below that,
                   // so the grip's target keeps its clear space.

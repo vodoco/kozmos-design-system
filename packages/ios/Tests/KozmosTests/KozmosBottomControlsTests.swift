@@ -54,8 +54,10 @@ final class KozmosBottomControlsTests: XCTestCase {
                 let panel = try XCTUnwrap(frames["panel"])
                 let start = try XCTUnwrap(frames["start"])
                 let end = try XCTUnwrap(frames["end"])
-                XCTAssertEqual(panel.minY, 16, accuracy: 1)
-                XCTAssertEqual(panel.height, min(contentHeight, 412), accuracy: 1)
+                // This probe is the content scroll view, below the shell's
+                // 16-point top inset (the shell itself still starts at 16).
+                XCTAssertEqual(panel.minY, 32, accuracy: 1)
+                XCTAssertEqual(panel.height, min(contentHeight, 396), accuracy: 1)
                 XCTAssertFalse(panel.intersects(start))
                 XCTAssertEqual(direction == .leftToRight ? start.minX : 1000 - start.maxX, 16, accuracy: 1)
                 XCTAssertEqual(start.maxY, 584, accuracy: 1)

@@ -218,14 +218,14 @@ describe("AdaptiveMapShell sheet detents", () => {
     );
   });
 
-  it("tells its content it leaves nothing above it without a grip", () => {
-    expect(insetTop(sheet({ panelFraction: 0.3 }))).toBe("0px");
+  it("tells its content it supplies 16 above it without a grip", () => {
+    expect(insetTop(sheet({ panelFraction: 0.3 }))).toBe("1rem");
   });
 
-  it("tells its content it leaves nothing above it under a panel header", () => {
+  it("tells its content it supplies a 16 gap under a panel header", () => {
     expect(
       insetTop(sheet({ panelHeader: <input aria-label="Search" /> })),
-    ).toBe("0px");
+    ).toBe("1rem");
   });
 
   it("tells a side panel's content it leaves 16 above it", () => {

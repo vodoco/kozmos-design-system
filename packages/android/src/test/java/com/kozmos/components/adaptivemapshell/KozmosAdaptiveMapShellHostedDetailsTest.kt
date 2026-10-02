@@ -329,18 +329,17 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
     }
 
     /**
-     * A native side panel leaves nothing above its content — the web's keeps
-     * 16 there — so the card keeps its own 16: the button 16 from the
-     * panel's top and 16 from its end.
+     * A bordered card keeps its own 16 inside its border, in addition to
+     * the shell's 16 above the card. Surfaceless cards consume that inset.
      */
     @Test
-    fun inASidePanelTheCloseButtonSitsAsFarDownAsIn() {
+    fun inASidePanelTheBorderedCardKeepsItsInternalPadding() {
         paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_C)
         val tree = read(presentation = KozmosPOIDetailPanelPresentation.Panel)
         tree.assertSidePanel()
         val at = tree.closeButton()
         println("GAP-083 Android, side panel: the close button ${at.down} from the top, ${at.inward} from the end")
-        assertEquals("the close button is ${at.down} from the panel's top and ${at.inward} from its end", at.inward, at.down, 0.5f)
+        assertEquals("the bordered card keeps its own top padding below the shell inset", at.inward + 16f, at.down, 0.5f)
         assertEquals("the close button is ${at.inward} from the panel's end", 16f, at.inward, 0.5f)
     }
 
@@ -376,23 +375,23 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
         assertEquals(16.dp to 4.dp, told())
     }
 
-    /** A single detent draws no handle: nothing is left above the content. */
+    /** A single detent draws no handle: the shell supplies the top inset. */
     @Test
-    fun withASingleDetentTheContentIsToldNothing() {
-        assertEquals(0.dp to 0.dp, told(detents = listOf(KozmosMapPanelDetent.Medium)))
+    fun withASingleDetentTheContentIsToldTheTopInset() {
+        assertEquals(16.dp to 0.dp, told(detents = listOf(KozmosMapPanelDetent.Medium)))
     }
 
-    /** A panel header sits in the handle's place: the space above the content is the header. */
+    /** The header supplies a 16dp gap below itself. */
     @Test
-    fun underAPanelHeaderTheContentIsToldNothing() {
-        assertEquals(0.dp to 0.dp, told { Box(modifier = Modifier.fillMaxWidth().height(56.dp)) })
+    fun underAPanelHeaderTheContentIsToldTheGap() {
+        assertEquals(16.dp to 0.dp, told { Box(modifier = Modifier.fillMaxWidth().height(56.dp)) })
     }
 
-    /** A side panel starts its content at its top edge. */
+    /** A side panel supplies the same top inset as a gripless sheet. */
     @Test
-    fun besideTheMapTheContentIsToldNothing() {
+    fun besideTheMapTheContentIsToldTheTopInset() {
         paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_C)
-        assertEquals(0.dp to 0.dp, told())
+        assertEquals(16.dp to 0.dp, told())
     }
 
     /** Right to left the panel's end is its left edge. */
@@ -405,7 +404,7 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
         assertEquals("right to left, the side panel is not on the left", 16f, panel.left / density, 0.5f)
         val at = tree.closeButton(LayoutDirection.Rtl)
         println("GAP-083 Android, side panel right to left: the close button ${at.down} from the top, ${at.inward} from the left")
-        assertEquals("the close button is ${at.down} from the panel's top and ${at.inward} from its left", at.inward, at.down, 0.5f)
+        assertEquals("the RTL bordered card keeps its own padding below the shell inset", at.inward + 16f, at.down, 0.5f)
         assertEquals("the close button is ${at.inward} from the panel's left", 16f, at.inward, 0.5f)
     }
 }

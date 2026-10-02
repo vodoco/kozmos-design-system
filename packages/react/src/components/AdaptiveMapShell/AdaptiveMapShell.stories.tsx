@@ -179,7 +179,7 @@ export const SheetPanelHeader: Story = {
     panelPresentation: "bottom",
     panelLabel: "Places",
     panelHeader: (
-      <div className="px-4 pb-2">
+      <div className="px-4">
         <Input aria-label="Search places" placeholder="Search" />
       </div>
     ),
@@ -234,6 +234,15 @@ export const SheetWithPlaceDetails: Story = {
         onClose={() => undefined}
       />
     ),
+  },
+};
+
+/** One fitted detent: no grip, but the shell still owns the top inset. */
+export const GriplessFittedPanel: Story = {
+  args: {
+    ...SheetWithPlaceDetails.args,
+    panelDetents: ["content"],
+    panelDetent: "content",
   },
 };
 

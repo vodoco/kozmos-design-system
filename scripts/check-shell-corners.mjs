@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import "./check-panel-spacing.mjs";
 import fs from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import {

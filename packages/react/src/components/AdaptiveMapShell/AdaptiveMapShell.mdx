@@ -83,14 +83,16 @@ automatically: register opposite corners with the shell.
 
 <Canvas of={Stories.SheetPanelHeader} />
 <Canvas of={Stories.SheetWithPlaceDetails} />
+<Canvas of={Stories.GriplessFittedPanel} />
 <Canvas of={Stories.SheetWithBrowseCategories} />
 <Canvas of={Stories.SheetWithRoutePreview} />
 
 The panel tells its content how much space it already leaves above it, so a part that brings its
 own top padding can top it up rather than add to it:
 
-- `--kozmos-panel-inset-top` is the empty space above the content: the grip's row on a sheet that
-  draws one, `1rem` in a side panel, and `0px` with no grip or under a `panelHeader`.
+- `--kozmos-panel-inset-top` is the space already supplied above the content: the grip's
+  16px row, the 16px gap below a `panelHeader`, or the `1rem` top inset in a gripless
+  sheet or side panel. Do not add another 16px spacer below `panelHeader`.
 - `--kozmos-panel-clearance-top` is how far the content's first control must still sit below that
   so the grip's 16px target keeps its WCAG 2.5.8 spacing: 4px under a grip, `0px` elsewhere. A
   panel header keeps the same clearance itself.
@@ -243,8 +245,9 @@ above it, so a part that brings its own top padding tops it up rather than addin
 (GAP-083): `kozmosPanelInsetTop` and `kozmosPanelClearanceTop` in the SwiftUI environment,
 `LocalKozmosPanelInsetTop` and `LocalKozmosPanelClearanceTop` in Compose. Under a grab
 handle they are its 16-point row and 4 points of clearance, so the handle's target keeps
-its WCAG 2.5.8 spacing; with no handle (a single detent), under a `panelHeader`, and in a
-side panel, which starts its content at its top edge, both are zero. `KozmosPOIDetailPanel`
+its WCAG 2.5.8 spacing. With no handle (a single detent), under a `panelHeader`, and in a
+side panel, the shell supplies 16 points of inset and zero clearance. The header owns
+its bottom gap, so the content scrolls below that fixed gap. `KozmosPOIDetailPanel`
 in its sheet presentation, which paints no surface of its own, uses both, so its close
 button sits as far from the panel's top as from its side: 16 and 16 under a handle, where
 its header's buttons stay clear of the handle's circle, and 20 and 16 where they would not,

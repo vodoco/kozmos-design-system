@@ -118,7 +118,7 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
         val sheetTop = shellBottom - KozmosMapPanelDetent.Large.height(shellHeight).value
         assertEquals("the header is not under the handle's row", sheetTop + 16f + 4f, dp(header.top), 0.5f)
         assertEquals("the header is not its own height", 72f, dp(header.height), 0.5f)
-        assertEquals("the content does not start under the header", dp(header.bottom), dp(part("content").top), 0.5f)
+        assertEquals("the content does not keep the header gap", dp(header.bottom) + 16f, dp(part("content").top), 0.5f)
     }
 
     /**
@@ -136,7 +136,7 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
             )
         )
         val header = part("header")
-        assertEquals("the margin under the header is not 16", shellBottom - 16f, dp(header.bottom), 0.5f)
+        assertEquals("the margin under the visible header is not 16", shellBottom - 16f, dp(header.bottom), 0.5f)
         assertEquals("the collapsed sheet cuts the header", 200f, dp(shown.getValue("header").height), 0.5f)
     }
 
@@ -189,7 +189,7 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
 
     /**
      * Fitted to its content, the sheet counts the handle and its 4 of
-     * clearance, the 80 header and the 300 panel: 400. Offered with large
+     * clearance, the 80 header, 16 gap and the 300 panel: 416. Offered with large
      * only: with a shorter detent on offer the sheet eases from its
      * unmeasured medium to the measured height after the first frame, and a
      * snapshot draws the start of that ease.
@@ -205,8 +205,8 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
             )
         )
         val header = part("header")
-        assertEquals("the fitted sheet does not count the header", shellBottom - 400f + 16f + 4f, dp(header.top), 0.5f)
-        assertEquals("the content does not follow the header", dp(header.bottom), dp(part("content").top), 0.5f)
+        assertEquals("the fitted sheet does not count the header and gap", shellBottom - 416f + 16f + 4f, dp(header.top), 0.5f)
+        assertEquals("the content does not keep the header gap", dp(header.bottom) + 16f, dp(part("content").top), 0.5f)
         assertEquals("the content is cut", shellBottom, dp(part("content").bottom), 0.5f)
     }
 
@@ -224,8 +224,8 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
         val header = part("header")
         val content = part("content")
         // The panel floats 16 in from the map's edges.
-        assertEquals("the header is not the panel's first row", 16f, dp(header.top), 0.5f)
-        assertEquals("the content does not follow the header", dp(header.bottom), dp(content.top), 0.5f)
+        assertEquals("the header does not keep the panel's top inset", 32f, dp(header.top), 0.5f)
+        assertEquals("the content does not keep the header gap", dp(header.bottom) + 16f, dp(content.top), 0.5f)
         assertEquals("the content does not fill the panel under the header", shellBottom - 16f, dp(content.bottom), 0.5f)
         assertEquals("the header is not as wide as the panel", dp(content.width), dp(header.width), 0.5f)
     }

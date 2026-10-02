@@ -48,6 +48,38 @@ class KozmosAdaptiveMapShellHostedBrowseTest {
 
     private var density = 1f
 
+    @Test fun genericContentKeepsSixteenBelowHeaderWithAndWithoutHandle() {
+        for (detents in listOf(listOf(KozmosMapPanelDetent.Content), listOf(KozmosMapPanelDetent.Content, KozmosMapPanelDetent.Large))) {
+            val tree = read(detents = detents, detent = KozmosMapPanelDetent.Content,
+                header = { Field("Header probe") }, panel = { Field("Content probe") })
+            assertEquals(16f, (tree.named("Content probe").bounds.top - tree.named("Header probe").bounds.bottom) / density, 0.5f)
+        }
+    }
+
+    @Test fun genericGriplessContentKeepsSixteenFromTop() {
+        val tree = read(detents = listOf(KozmosMapPanelDetent.Content), detent = KozmosMapPanelDetent.Content,
+            panel = { Field("Content probe") })
+        assertEquals(16f, tree.placed(tree.named("Content probe").bounds).down, 0.5f)
+        assertEquals(maxOf(60f, tree.merged.first().bounds.height / density * 0.2f), tree.named("Map details").bounds.height / density, 0.5f)
+    }
+
+    @Test fun genericSidePanelKeepsTopAndHeaderGapsInBothDirections() {
+        paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_C)
+        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            for (hasHeader in listOf(false, true)) {
+                val tree = read(direction = direction,
+                    header = if (hasHeader) ({ Field("Header probe") }) else null,
+                    panel = { Field("Content probe") })
+                val panel = tree.named("Map details").bounds
+                val content = tree.named("Content probe").bounds
+                val first = if (hasHeader) tree.named("Header probe").bounds else content
+                assertEquals(16f, (first.top - panel.top) / density, 0.5f)
+                if (hasHeader) assertEquals(16f, (content.top - first.bottom) / density, 0.5f)
+                assertEquals(if (hasHeader) 120f else 60f, panel.height / density, 0.5f)
+            }
+        }
+    }
+
     /** Eight tiles, two rows of four, as a venue's quick access has them. */
     private val categories = listOf("Gates", "Check-in", "Security", "Dining", "Shopping", "Toilets", "Parking", "Help")
         .map { KozmosCategoryPresentation(id = it.lowercase(), label = it) }
@@ -231,9 +263,9 @@ class KozmosAdaptiveMapShellHostedBrowseTest {
         assertEquals("the header's field is ${at.down} from the sheet's top", 20f, at.down, 0.5f)
     }
 
-    /** With a single detent there is no handle to keep clear: the header starts at the sheet's top, as it did. */
+    /** Without a handle the shell supplies a 16dp top inset for the header. */
     @Test
-    fun withASingleDetentThePanelHeaderStartsAtTheSheetsTop() {
+    fun withASingleDetentThePanelHeaderKeepsTheTopInset() {
         val tree = read(
             detents = listOf(KozmosMapPanelDetent.Medium),
             header = { Field("Search this sheet", Modifier.padding(horizontal = 16.dp)) },
@@ -243,7 +275,7 @@ class KozmosAdaptiveMapShellHostedBrowseTest {
         assertEquals("a single detent draws a handle", false, tree.drawsHandle())
         val at = tree.placed(tree.named("Search this sheet").bounds)
         println("Decision 14 Android, panel header in a single-detent sheet: its field ${at.down} from the sheet's top")
-        assertEquals("the header's field is ${at.down} from the sheet's top", 0f, at.down, 0.5f)
+        assertEquals("the header's field is ${at.down} from the sheet's top", 16f, at.down, 0.5f)
     }
 
     /**

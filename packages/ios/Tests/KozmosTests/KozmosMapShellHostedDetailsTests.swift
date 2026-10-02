@@ -21,16 +21,15 @@ final class KozmosMapShellPanelContentTopTests: XCTestCase {
         XCTAssertEqual(top.clearance, 4, accuracy: 0.001)
     }
 
-    /// No grabber — a single detent — a panel header in the grabber's place,
-    /// or a side panel, which starts its content at its top edge: nothing.
-    func testWithNoGrabberUnderAHeaderOrBesideTheMapTheContentIsToldNothing() {
+    /// The shell supplies its own top inset or a gap under the header.
+    func testWithNoGrabberUnderAHeaderOrBesideTheMapTheContentIsToldSixteen() {
         let cases: [(String, (inset: CGFloat, clearance: CGFloat))] = [
             ("a single detent", shell(detents: [.medium]).panelContentTop(isRegularWidth: false)),
             ("under a panel header", shell { Color.blue.frame(height: 60) }.panelContentTop(isRegularWidth: false)),
             ("beside the map", shell().panelContentTop(isRegularWidth: true)),
         ]
         for (name, top) in cases {
-            XCTAssertEqual(top.inset, 0, accuracy: 0.001, "\(name): the content is told \(top.inset) is left above it")
+            XCTAssertEqual(top.inset, 16, accuracy: 0.001, "\(name): the content is told \(top.inset) is left above it")
             XCTAssertEqual(top.clearance, 0, accuracy: 0.001, "\(name): the content is asked to keep \(top.clearance) clear")
         }
         XCTAssertFalse(shell(detents: [.medium]).drawsGrabber(isRegularWidth: false), "a single detent draws a grabber")
@@ -407,11 +406,9 @@ final class KozmosMapShellHostedDetailsTests: XCTestCase {
 
     // MARK: Beside the map
 
-    /// A native side panel leaves nothing above its content — the web's
-    /// keeps 16 there — so the card keeps its own 16: the button 16 from the
-    /// panel's top and 16 from its end, the left right to left. Both the
-    /// bordered card and the surfaceless one, which products host there too.
-    @MainActor func testInASidePanelTheCloseButtonSitsAsFarDownAsIn() async throws {
+    /// Surfaceless cards consume the shell's 16; bordered cards retain their
+    /// own 16 inside the border, below that shell inset, in both directions.
+    @MainActor func testInASidePanelCardsRespectShellAndInternalInsets() async throws {
         let wide = CGSize(width: 1024, height: 700)
         for presentation in [KozmosPOIDetailPanel.Presentation.panel, .sheet] {
             for direction in [LayoutDirection.leftToRight, .rightToLeft] {
@@ -426,12 +423,13 @@ final class KozmosMapShellHostedDetailsTests: XCTestCase {
                 // content rather than extending to the map's vertical centre.
                 let panel = try panel(in: pixels, size: wide, through: CGPoint(x: rightToLeft ? 224 : 800, y: 80))
                 XCTAssertEqual(panel.width, 416, accuracy: 1.5, "\(name): not the side panel: \(panel)")
-                let close = try closeButton(in: pixels, from: panel.minY + 10, end: rightToLeft ? panel.minX : panel.maxX,
+                let borderedInset: CGFloat = presentation == .panel ? 16 : 0
+                let close = try closeButton(in: pixels, from: panel.minY + borderedInset + 10, end: rightToLeft ? panel.minX : panel.maxX,
                                             rightToLeft: rightToLeft)
                 let down = close.minY - panel.minY
                 let inward = rightToLeft ? close.minX - panel.minX : panel.maxX - close.maxX
                 print("GAP-083 iOS, side panel, \(name): the close button \(down) from the top, \(inward) from the end")
-                XCTAssertEqual(down, inward, accuracy: 1, "\(name): the close button is \(down) from the panel's top and \(inward) from its end")
+                XCTAssertEqual(down, inward + borderedInset, accuracy: 1, "\(name): shell and internal card insets must not be conflated")
                 XCTAssertEqual(inward, 16, accuracy: 1, "\(name): the close button is \(inward) from the panel's end")
             }
         }

@@ -49,10 +49,9 @@ struct KozmosPanelClearanceTopKey: EnvironmentKey {
 
 public extension EnvironmentValues {
     /// What the shell's panel leaves empty above its content (GAP-083): the
-    /// grabber's 16-point row on a sheet that draws one; nothing on a sheet
-    /// with a single detent, which draws no grabber, under a `panelHeader`,
-    /// which sits there instead, or beside the map, where a side panel starts
-    /// its content at its top edge. A part with its own top padding and no
+    /// grabber's 16-point row, the 16-point gap below a `panelHeader`, or
+    /// the shell's 16-point top inset when neither is present (including
+    /// beside the map). A part with its own top padding and no
     /// surface of its own tops it up to what it needs rather than adding to
     /// it, as `KozmosPOIDetailPanel` and `KozmosBrowseCategoriesPanel` do in
     /// their sheet presentations and `KozmosRoutePreviewPanel` does; a part
