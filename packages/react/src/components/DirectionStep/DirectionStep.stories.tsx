@@ -17,6 +17,20 @@ export const Default: Story = {
   },
 };
 
+/** Qualifiers stay in language-owned order, inside the same wrapping sentence. */
+export const InstructionParts: Story = {
+  args: {
+    type: "right",
+    lang: "ja",
+    instruction: [
+      { text: "左側の", role: "secondary" },
+      { text: "Bean & Leaf Café", lang: "en" },
+      { text: "で右折してください" },
+    ],
+    distance: "100 m",
+  },
+};
+
 /** The transitions: a level change by lift, escalator, stairs or something unnamed, a walkway, turning back. */
 export const Transitions: Story = {
   render: () => (

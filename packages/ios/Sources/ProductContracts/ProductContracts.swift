@@ -1,5 +1,23 @@
 import Foundation
 
+public enum KozmosInstructionPartRole: String, Sendable, Hashable, Codable {
+    case secondary
+}
+
+/// Ordered localized words, including their own whitespace/punctuation.
+public struct KozmosInstructionPart: Sendable, Hashable, Codable {
+    public let text: String
+    public let role: KozmosInstructionPartRole?
+    /// BCP 47 speech language; nil inherits the surrounding language.
+    public let lang: String?
+
+    public init(text: String, role: KozmosInstructionPartRole? = nil, lang: String? = nil) {
+        self.text = text
+        self.role = role
+        self.lang = lang
+    }
+}
+
 /// Platform-neutral, already-localized presentation models.
 ///
 /// These mirror the TypeScript contracts in `@kozmos-ds/product-contracts` so that

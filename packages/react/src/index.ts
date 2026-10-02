@@ -1,4 +1,9 @@
 import "./index.css";
+export type {
+  Instruction,
+  InstructionPart,
+  InstructionPartRole,
+} from "@kozmos-ds/product-contracts";
 
 export * from "./components/Box/Box";
 export * from "./components/Stack/Stack";

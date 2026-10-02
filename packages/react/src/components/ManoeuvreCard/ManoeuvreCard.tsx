@@ -1,4 +1,6 @@
 import React from "react";
+import type { Instruction } from "@kozmos-ds/product-contracts";
+import { InstructionText, instructionText } from "../../utils/instruction";
 import { cn } from "../../utils";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import {
@@ -13,7 +15,8 @@ export interface ManoeuvreCardProps extends Omit<
   /** What the card sits on: solid by default, glass where the product asks for it. */
   surface?: SurfaceVariant;
   type: DirectionType;
-  instruction: string;
+  /** Legacy text or ordered inline parts; caller owns spacing, word order and language. */
+  instruction: Instruction;
   detail?: string;
   /**
    * The most lines the instruction is drawn in before it ends in an
@@ -46,8 +49,12 @@ export interface ManoeuvreCardProps extends Omit<
 }
 
 /** What assistive technology hears for the closed card: the instruction, then the detail. */
-export function manoeuvreDescription(instruction: string, detail?: string) {
-  return detail ? `${instruction}, ${detail}` : instruction;
+export function manoeuvreDescription(
+  instruction: Instruction,
+  detail?: string,
+) {
+  const text = instructionText(instruction);
+  return detail ? `${text}, ${detail}` : text;
 }
 
 /** The whole lines a product's `instructionLines` asks for, or none. */
@@ -181,10 +188,16 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
           <button
             ref={instructionRef}
             type="button"
-            className="flex w-full items-start gap-3 bg-transparent p-0 text-left text-inherit"
+            className="flex w-full items-start gap-3 bg-transparent p-0 text-start text-inherit"
             onClick={onToggle}
             aria-expanded={false}
-            aria-label={manoeuvreDescription(instruction, detail)}
+            // A flattened label would discard the inline foreign-language spans.
+            // Keep the legacy string name unchanged; rich names come from content.
+            aria-label={
+              typeof instruction === "string"
+                ? manoeuvreDescription(instruction, detail)
+                : undefined
+            }
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center text-primary">
               <DirectionIcon type={type} className="h-6 w-6" />
@@ -203,7 +216,7 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
                       } as React.CSSProperties)
                 }
               >
-                {instruction}
+                <InstructionText instruction={instruction} />
               </span>
               {/* Muted, and on glass the foreground colour (decision 48). */}
               {detail ? (

@@ -86,7 +86,10 @@ It forwards its ref to `HTMLElement`. Its props are `ManoeuvreCardProps`, which 
   What the card sits on: solid by default, glass where the product asks for it.
 
 - `type`: `DirectionType`, **required**.
-- `instruction`: `string`, **required**.
+- `instruction`: `Instruction`, **required**.
+
+  Legacy text or ordered inline parts; caller owns spacing, word order and language.
+
 - `detail`: `string`, optional.
 - `instructionLines`: `number`, optional.
 
@@ -169,6 +172,38 @@ type DirectionType =
   | "turn-back";
 ```
 
+### Instruction
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Legacy strings remain valid. Parts concatenate verbatim, without added separators. */
+type Instruction = string | readonly InstructionPart[];
+```
+
+### InstructionPart
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Ordered, already-localized words. Include the required spaces/punctuation in text. */
+interface InstructionPart {
+  text: string;
+  role?: InstructionPartRole;
+  /** BCP 47 speech language for these words; absent inherits the surrounding language. */
+  lang?: string;
+}
+```
+
+### InstructionPartRole
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** A side qualifier is secondary, never a second turn. */
+type InstructionPartRole = "secondary";
+```
+
 ## Also exported
 
-- `manoeuvreDescription`: `(instruction: string, detail?: string) => string`. What assistive technology hears for the closed card: the instruction, then the detail.
+- `manoeuvreDescription`: `(instruction: Instruction, detail?: string) => string`. What assistive technology hears for the closed card: the instruction, then the detail.

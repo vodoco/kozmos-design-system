@@ -35,6 +35,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.semantics.expand
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.onClick
@@ -51,6 +53,9 @@ import com.kozmos.components.surface.LocalKozmosSurfaceStyle
 import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.contracts.KozmosInstructionPart
+import com.kozmos.components.instruction.instructionAnnotatedText
+import com.kozmos.components.instruction.hasSpeechLanguage
 
 /** What TalkBack hears for the closed card: the instruction, then the detail. */
 fun manoeuvreDescription(instruction: String, detail: String?): String =
@@ -110,7 +115,7 @@ internal fun manoeuvreCardFocusAfter(expanded: Boolean, from: ManoeuvreCardPart?
 @Composable
 fun KozmosManoeuvreCard(
     type: DirectionType,
-    instruction: String,
+    instruction: List<KozmosInstructionPart>,
     expanded: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
@@ -123,6 +128,9 @@ fun KozmosManoeuvreCard(
     instructionLines: Int? = null,
     itinerary: @Composable () -> Unit
 ) {
+    val instructionText = instructionAnnotatedText(instruction, surface)
+    val hasLanguage = instruction.hasSpeechLanguage()
+    val spokenText = if (detail.isNullOrEmpty()) instructionText else instructionText + AnnotatedString(", $detail")
     val instructionFocus = remember { FocusRequester() }
     val barFocus = remember { FocusRequester() }
     // The part that has input focus, the keyboard's.
@@ -204,7 +212,11 @@ fun KozmosManoeuvreCard(
                         }
                         .clickable(onClickLabel = expandLabel, role = Role.Button, onClick = onToggle)
                         .semantics(mergeDescendants = true) {
-                            contentDescription = manoeuvreDescription(instruction, detail)
+                            if (hasLanguage) {
+                                text = spokenText
+                            } else {
+                                contentDescription = manoeuvreDescription(instruction.joinToString("") { it.text }, detail)
+                            }
                             expand { toggleFromService(ManoeuvreCardPart.Instruction); true }
                         },
                     verticalAlignment = Alignment.Top
@@ -220,10 +232,11 @@ fun KozmosManoeuvreCard(
                             modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300)
                         )
                     }
-                    Column(modifier = Modifier.weight(1f).padding(start = KozmosDimensions.primitivesLayoutSpacing150)) {
+                    Column(modifier = Modifier.weight(1f).padding(start = KozmosDimensions.primitivesLayoutSpacing150)
+                        .then(if (hasLanguage) Modifier.clearAndSetSemantics {} else Modifier)) {
                         // Whole unless the product asks for a limit (GAP-094).
                         Text(
-                            text = instruction,
+                            text = instructionText,
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                             color = KozmosThemeTokens.primitivesColorsForeground100,
                             maxLines = manoeuvreInstructionLineLimit(instructionLines) ?: Int.MAX_VALUE,
@@ -284,6 +297,26 @@ fun KozmosManoeuvreCard(
         }
     }
 }
+
+/** Legacy strings and the full positional/trailing-lambda API remain supported. */
+@Composable
+fun KozmosManoeuvreCard(
+    type: DirectionType,
+    instruction: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    detail: String? = null,
+    expandLabel: String = "Show itinerary",
+    collapseLabel: String = "Hide itinerary",
+    manoeuvreLabel: String = "Current manoeuvre",
+    maxItineraryHeight: Dp = 320.dp,
+    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    instructionLines: Int? = null,
+    itinerary: @Composable () -> Unit
+) = KozmosManoeuvreCard(type, listOf(KozmosInstructionPart(instruction)), expanded, onToggle,
+    modifier, detail, expandLabel, collapseLabel, manoeuvreLabel, maxItineraryHeight,
+    surface, instructionLines, itinerary)
 
 /**
  * [KozmosManoeuvreCard] as 0.5.0 declared it: its parameters, in its order,

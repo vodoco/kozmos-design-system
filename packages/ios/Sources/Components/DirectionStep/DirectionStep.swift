@@ -36,13 +36,18 @@ public enum DirectionType: Sendable, CaseIterable {
 
 public struct KozmosDirectionStep: View {
     let type: DirectionType
-    let instruction: String
+    let instructionParts: [KozmosInstructionPart]
+    var instruction: String { instructionParts.map(\.text).joined() }
     let distance: String?
     let duration: String?
     
     public init(type: DirectionType, instruction: String, distance: String? = nil, duration: String? = nil) {
+        self.init(type: type, instruction: [KozmosInstructionPart(text: instruction)], distance: distance, duration: duration)
+    }
+
+    public init(type: DirectionType, instruction: [KozmosInstructionPart], distance: String? = nil, duration: String? = nil) {
         self.type = type
-        self.instruction = instruction
+        self.instructionParts = instruction
         self.distance = distance
         self.duration = duration
     }
@@ -67,7 +72,7 @@ public struct KozmosDirectionStep: View {
                 .accessibilityHidden(true)
             
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
-                Text(instruction)
+                KozmosInstructionText(parts: instructionParts)
                     .font(KozmosTypography.body)
                     .fontWeight(.medium)
                 
@@ -86,7 +91,6 @@ public struct KozmosDirectionStep: View {
             RoundedRectangle(cornerRadius: KozmosDimensions.primitivesLayoutSpacing150)
                 .stroke(KozmosColors.primitivesColorsBackground300, lineWidth: 1)
         )
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Self.accessibilityDescription(instruction: instruction, distance: distance, duration: duration))
+        .kozmosInstructionAccessibility(instructionParts, suffix: [distance, duration].compactMap { $0 })
     }
 }

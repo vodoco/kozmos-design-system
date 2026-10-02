@@ -1,5 +1,17 @@
 package com.kozmos.contracts
 
+enum class KozmosInstructionPartRole(val value: String) {
+    Secondary("secondary")
+}
+
+/** Ordered localized words, including their own whitespace/punctuation. */
+data class KozmosInstructionPart(
+    val text: String,
+    val role: KozmosInstructionPartRole? = null,
+    /** BCP 47 speech language; null inherits the surrounding language. */
+    val lang: String? = null
+)
+
 /**
  * Platform-neutral, already-localized presentation models.
  *

@@ -30,7 +30,10 @@ export function DirectionStepExample() {
 It forwards its ref to `HTMLDivElement`. Its props are `DirectionStepProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
 - `type`: `DirectionType`, **required**.
-- `instruction`: `string`, **required**.
+- `instruction`: `Instruction`, **required**.
+
+  Legacy text or ordered inline parts with secondary emphasis and speech language.
+
 - `distance`: `string`, optional.
 - `duration`: `string`, optional.
 - `children`: `ReactNode`, optional.
@@ -77,6 +80,38 @@ type DirectionType =
   | "level-down"
   | "transition"
   | "turn-back";
+```
+
+### Instruction
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Legacy strings remain valid. Parts concatenate verbatim, without added separators. */
+type Instruction = string | readonly InstructionPart[];
+```
+
+### InstructionPart
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Ordered, already-localized words. Include the required spaces/punctuation in text. */
+interface InstructionPart {
+  text: string;
+  role?: InstructionPartRole;
+  /** BCP 47 speech language for these words; absent inherits the surrounding language. */
+  lang?: string;
+}
+```
+
+### InstructionPartRole
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** A side qualifier is secondary, never a second turn. */
+type InstructionPartRole = "secondary";
 ```
 
 ## Also exported

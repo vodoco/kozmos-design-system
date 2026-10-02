@@ -6,6 +6,20 @@
  * each platform renders the same meaning without embedding English formatters.
  */
 
+/** A side qualifier is secondary, never a second turn. */
+export type InstructionPartRole = "secondary";
+
+/** Ordered, already-localized words. Include the required spaces/punctuation in text. */
+export interface InstructionPart {
+  text: string;
+  role?: InstructionPartRole;
+  /** BCP 47 speech language for these words; absent inherits the surrounding language. */
+  lang?: string;
+}
+
+/** Legacy strings remain valid. Parts concatenate verbatim, without added separators. */
+export type Instruction = string | readonly InstructionPart[];
+
 /**
  * Whether a place is open, and how close that is to changing.
  *

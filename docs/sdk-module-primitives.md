@@ -19,10 +19,13 @@ P02 merged in #186 at `393cdc4430c84e8a3fdbd1383e6a99a987b3ef70`, unreleased:
 shell-owned 16-unit header gaps and gripless top insets across React/SwiftUI/Compose,
 with fitted-height and hosted-inset regressions. Exact-main CI and deployment passed;
 live docs and navigation spacing were verified. External Figma/consumer adoption remains separate.
-P03's staff-language slice is a candidate: optional explicit `languageNotListed`
-evidence and localized card/list disclosure across all three platforms. Unknown does
-not mean unlisted, and UI language never implies staff availability. Structured
-instruction parts and foreign-language speech metadata remain P03's next slice.
+P03's staff-language slice merged in #187 at `b734587172714391d2046ddddf7d7b2b36da5ee8`,
+unreleased: optional explicit `languageNotListed` evidence and localized card/list
+disclosure across all three platforms. Unknown does not mean unlisted, and UI language
+never implies staff availability. P03's structured-instruction slice is a candidate:
+ordered text/secondary/language parts across the three navigation components, with legacy
+String calls preserved. Inline language metadata survives the native accessibility bridge;
+physical speech and external product/Figma acceptance remain separate.
 For all 121 supplied product gaps (latest source intake 2026-10-01), their criteria and corrected statuses, read the
 [product design gap register](product-design-gap-register.md). The site has a
 [separate gap register](../apps/site/GAPS.md).

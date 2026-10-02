@@ -2,6 +2,7 @@ import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { ManoeuvreCard } from "./ManoeuvreCard";
 import { Itinerary } from "../Itinerary";
+import type { InstructionPart } from "@kozmos-ds/product-contracts";
 
 const steps = [
   {
@@ -94,4 +95,66 @@ export const InstructionLines: Story = {
     detail: "120 m · First Floor",
     instructionLines: 2,
   },
+};
+
+const germanParts: readonly InstructionPart[] = [
+  { text: "Biegen Sie bei " },
+  { text: "Marlow Pharmacy", lang: "en" },
+  { text: " auf der linken Seite", role: "secondary" },
+  { text: " rechts ab" },
+];
+const japaneseParts: readonly InstructionPart[] = [
+  { text: "左側の", role: "secondary" },
+  { text: "Bean & Leaf Café", lang: "en" },
+  { text: "で右折してください" },
+];
+const arabicParts: readonly InstructionPart[] = [
+  { text: "عند " },
+  { text: "Lumen Books", lang: "en" },
+  { text: " على يسارك", role: "secondary" },
+  { text: " انعطف يميناً" },
+];
+
+function localizedItinerary(instruction: readonly InstructionPart[]) {
+  return (
+    <Itinerary
+      origin="Main Entrance"
+      destination="Gate 3"
+      steps={[{ id: "one", instruction, type: "right", current: true }]}
+    />
+  );
+}
+export const GermanParts: Story = {
+  args: {
+    type: "right",
+    lang: "de",
+    surface: "solid",
+    instruction: germanParts,
+    children: localizedItinerary(germanParts),
+  },
+};
+export const JapaneseParts: Story = {
+  args: {
+    type: "right",
+    lang: "ja",
+    surface: "solid",
+    instruction: japaneseParts,
+    children: localizedItinerary(japaneseParts),
+  },
+};
+export const ArabicParts: Story = {
+  args: {
+    type: "right",
+    lang: "ar",
+    dir: "rtl",
+    surface: "solid",
+    instruction: arabicParts,
+    children: localizedItinerary(arabicParts),
+  },
+};
+export const PartsItinerary: Story = {
+  args: { ...ArabicParts.args, expanded: true },
+};
+export const GlassParts: Story = {
+  args: { ...GermanParts.args, surface: "glass" },
 };
