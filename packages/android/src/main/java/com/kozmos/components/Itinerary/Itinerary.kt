@@ -27,8 +27,8 @@ import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.contracts.KozmosInstructionPart
-import com.kozmos.components.instruction.instructionAnnotatedText
-import com.kozmos.components.instruction.hasSpeechLanguage
+import com.kozmos.utils.instructionAnnotatedText
+import com.kozmos.utils.hasSpeechLanguage
 
 /** One step of an itinerary, as the products present it. */
 class KozmosItineraryStep(

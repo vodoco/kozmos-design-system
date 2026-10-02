@@ -1,4 +1,4 @@
-package com.kozmos.components.instruction
+package com.kozmos.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color

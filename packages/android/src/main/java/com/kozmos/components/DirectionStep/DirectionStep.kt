@@ -2,7 +2,7 @@ package com.kozmos.components.directionstep
 
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.contracts.KozmosInstructionPart
-import com.kozmos.components.instruction.instructionAnnotatedText
+import com.kozmos.utils.instructionAnnotatedText
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
