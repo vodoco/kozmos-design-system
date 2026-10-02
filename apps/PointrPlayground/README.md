@@ -30,7 +30,9 @@ The SDK's own Info control stays disabled through `SDKMapPolicy`.
 - Wide iPad: logical-end Info alongside the resized SDK renderer. Browse/POI
   occupies the logical start. Closing restores the available map width.
 - Wide browse/POI panels fit short content and cap long scrolling content.
-  Search uses equal 16-point top and side padding. Registered bottom controls
+  Search uses equal 16-point top and side padding. The shell supplies the top
+  inset; custom search and route rows consume `kozmosPanelInsetTop` and retain
+  `kozmosPanelClearanceTop` instead of adding a second outer margin. Registered bottom controls
   retain the map's outer corner positions, with a reserved band below the panel.
 - The compact Info trigger yields while the browse sheet fills the screen.
   Directions leave space beside their top banner for the Info control.

@@ -19,7 +19,11 @@ final class InformationUITests: XCTestCase {
             let browse = app.descendants(matching: .any).matching(identifier: "search-sheet").firstMatch
             XCTAssertTrue(browse.waitForExistence(timeout: 10))
             XCTAssertLessThan(browse.frame.height, app.frame.height - 120, "Initial wide browse panel must fit its categories")
-            XCTAssertEqual(field.frame.minY - browse.frame.minY, field.frame.minX - browse.frame.minX,
+            // Measure from the shell surface, not the content stack nested
+            // inside its inset: the latter would miss duplicated top padding.
+            let panel = app.otherElements["QA places"].firstMatch
+            XCTAssertTrue(panel.waitForExistence(timeout: 10))
+            XCTAssertEqual(field.frame.minY - panel.frame.minY, field.frame.minX - panel.frame.minX,
                            accuracy: 2, "Search top padding must match its side padding")
         }
         field.tap()
