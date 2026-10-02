@@ -100,6 +100,12 @@ own top padding can top it up rather than add to it:
   unnamed ones and `cqi` or `cqw` units among them, read the product's own containers. Only the
   details card below is a container, of itself.
 
+Migration: remove redundant top padding on an outer content wrapper where the shell now
+supplies the first 16. For example, a gripless navigation panel's `p-4` wrapper becomes
+`px-4 pb-4`; its RouteSummary retains padding inside its own card. The same ownership rule
+applies to native outer stacks/columns. Keep intentional card-internal padding and spacing
+between content rows; only the duplicated shell-edge or fixed-header gap is removed.
+
 Every part at the top of the panel keeps the grip's clearance, so no first control sits inside the
 grip's 24px circle:
 
@@ -330,8 +336,8 @@ SwiftUI mirrors this through `KozmosPanelScrollView`, which fits its content whe
 hosted in a side panel. Compose content must retain bounded scrolling (for example,
 a lazy list/grid) and must not force an infinite minimum height. Custom content
 that explicitly fills available height can still take the panel's height cap.
-Search headers should use the same 16-unit top and side padding on wide hosts;
-compact headers keep the existing grab-handle clearance.
+On wide hosts the shell supplies a search header's 16-unit top inset; the header supplies
+its own 16-unit horizontal padding. Compact headers keep the existing grab-handle clearance.
 
 Use BrowseCategoriesPanel's search slot for SearchBar, not the shell's topBar. Dock the
 panel at start on desktop; the same content becomes a bottom sheet on compact hosts.
