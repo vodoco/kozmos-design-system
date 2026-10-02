@@ -53,6 +53,7 @@ public struct KozmosPOIResultCard: View {
     private let poi: KozmosPOIPresentation
     private let result: KozmosPOIResultPresentation
     private let featuredLabel: String
+    private let languageNotListedLabel: String
     private let selectionLabel: String?
     /// The floor the map shows: a result on it carries a dot before its floor.
     private let currentFloorId: String?
@@ -84,11 +85,13 @@ public struct KozmosPOIResultCard: View {
         travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
         numbered: Bool = false,
         onSelect: @escaping (String) -> Void,
-        onAction: ((KozmosPOIResultAction, String) -> Void)? = nil
+        onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
+        languageNotListedLabel: String = "Language not listed"
     ) {
         self.poi = poi
         self.result = result
         self.featuredLabel = featuredLabel
+        self.languageNotListedLabel = languageNotListedLabel
         self.selectionLabel = selectionLabel
         self.currentFloorId = currentFloorId
         self.actionsLabel = actionsLabel
@@ -250,7 +253,9 @@ public struct KozmosPOIResultCard: View {
     }
 
     var accessibilityDescription: String {
-        if let selectionLabel { return selectionLabel }
+        if let selectionLabel {
+            return [selectionLabel, languageDisclosure].compactMap { $0 }.joined(separator: ", ")
+        }
         return [
             result.featured ? featuredLabel : nil,
             // The number leads the name, "2, Burger King": the tab that draws
@@ -261,10 +266,15 @@ public struct KozmosPOIResultCard: View {
             poi.locationLabel,
             poi.availabilityLabel,
             travelTimeText,
-            available ? nil : result.unavailableReason
+            available ? nil : result.unavailableReason,
+            languageDisclosure
         ]
         .compactMap { $0 }
         .joined(separator: ", ")
+    }
+
+    var languageDisclosure: String? {
+        result.languageNotListed == true ? languageNotListedLabel : nil
     }
 
     /// An unavailable result is still readable, but must not be announced as an
@@ -371,6 +381,17 @@ public struct KozmosPOIResultCard: View {
             // heard an unavailable result as an enabled button (measured
             // 2026-09-29).
             .disabled(!available)
+
+            if let languageDisclosure {
+                Text(languageDisclosure)
+                    .font(KozmosTypography.subheadline)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
+                    .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing150)
+                    // The select row already announces this, including custom names.
+                    .accessibilityHidden(true)
+            }
 
             if !visibleActions.isEmpty {
                 Divider().overlay(KozmosColors.semanticsBorderSubtle)

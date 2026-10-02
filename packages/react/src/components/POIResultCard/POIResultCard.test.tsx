@@ -31,6 +31,58 @@ const result: POIResultPresentation = {
 };
 
 describe("POIResultCard", () => {
+  it("only discloses explicitly unlisted staff language, even with a custom selection name", () => {
+    const props = {
+      poi,
+      onSelect: vi.fn(),
+      selectionLabel: "Choose this place",
+    };
+    const { rerender } = render(
+      <POIResultCard
+        {...props}
+        result={{ ...result, languageNotListed: true }}
+      />,
+    );
+    expect(screen.getByText("Language not listed")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Choose this place" }),
+    ).toHaveAccessibleDescription("Language not listed");
+    for (const languageNotListed of [false, undefined]) {
+      rerender(
+        <POIResultCard
+          {...props}
+          result={{
+            ...result,
+            languageNotListed,
+            nameLanguage: "tr",
+            match: "unconfirmed",
+          }}
+        />,
+      );
+      expect(screen.queryByText("Language not listed")).not.toBeInTheDocument();
+    }
+  });
+
+  it("localizes staff-language disclosure independently of unavailable state", () => {
+    render(
+      <POIResultCard
+        poi={poi}
+        onSelect={vi.fn()}
+        languageNotListedLabel="Türkçe listelenmemiş"
+        result={{
+          ...result,
+          languageNotListed: true,
+          available: false,
+          unavailableReason: "Closed for repair",
+        }}
+      />,
+    );
+    expect(screen.getByRole("button")).toHaveAccessibleDescription(
+      "Closed for repair Türkçe listelenmemiş",
+    );
+    expect(screen.getByText("Türkçe listelenmemiş")).toBeVisible();
+  });
+
   it("keeps actions without a handler disabled and emits no action analytics", () => {
     const onDispatch = vi.fn();
     const onSelect = vi.fn();

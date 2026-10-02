@@ -84,6 +84,10 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
 - `resultCountLabel`: `string`, **required**.
 - `emptyState`: `React.ReactNode`, optional.
 - `featuredLabel`: `string`, optional.
+- `languageNotListedLabel`: `string`, optional.
+
+  Localized explicit staff-language disclosure, forwarded to every card/group.
+
 - `actionsLabel`: `string`, optional.
 
   Names each result's action row for assistive technology.
@@ -218,6 +222,8 @@ interface POIResultCardProps extends Omit<
    */
   onAction?: (action: POIResultAction, poiId: string) => void;
   featuredLabel?: string;
+  /** Localized disclosure shown only for result.languageNotListed === true. */
+  languageNotListedLabel?: string;
   selectionLabel?: string;
   /** Names the action row for assistive technology. */
   actionsLabel?: string;
@@ -389,6 +395,14 @@ interface POIResultPresentation {
    * would, or has not been confirmed. Absent means exact.
    */
   match?: POIResultMatch;
+  /**
+   * Explicit host evidence that the requested staff language is not listed.
+   * Absence is unknown; false suppresses this disclosure, not a promise that
+   * staff speak a language. Independent of query match, nameLanguage and UI
+   * locale. Kozmos never infers this from missing translations or reorders
+   * results; hosts may group results using this field.
+   */
+  languageNotListed?: boolean;
   /**
    * The unit or suite, where a venue has them: "Unit 214", "Suite 3B".
    * Separate from floorLabel because a visitor is told both.

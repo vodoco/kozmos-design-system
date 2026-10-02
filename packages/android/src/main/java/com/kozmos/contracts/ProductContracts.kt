@@ -329,7 +329,12 @@ data class KozmosPOIResultPresentation(
      * offers - a restaurant may book where a shop does not - so the card draws
      * what it is given and never assumes a fixed pair.
      */
-    val actions: List<KozmosPOIResultActionPresentation> = emptyList()
+    val actions: List<KozmosPOIResultActionPresentation> = emptyList(),
+    /** Explicit host evidence that the requested staff language is not listed.
+     * null is unknown; false hides the note, not a guarantee of staff availability.
+     * Independent of query match, authored-name language and device/UI locale.
+     */
+    val languageNotListed: Boolean? = null
 ) {
     /** Mirrors the web rule: only an explicit `false` marks a result unavailable. */
     val isAvailable: Boolean

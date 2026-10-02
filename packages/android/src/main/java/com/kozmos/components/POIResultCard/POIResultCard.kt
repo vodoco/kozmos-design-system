@@ -116,6 +116,7 @@ fun KozmosPOIResultCard(
      * [selectionLabel] replaces all of it.
      */
     numbered: Boolean = false,
+    languageNotListedLabel: String,
     onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     val trackEvent = LocalKozmosAnalytics.current
@@ -136,7 +137,7 @@ fun KozmosPOIResultCard(
             ?: estimate.durationLabel
     }
 
-    val accessibilityDescription = selectionLabel ?: listOfNotNull(
+    val baseDescription = selectionLabel ?: listOfNotNull(
         // The number leads the name, "2, Burger King": the tab that draws it
         // is left out of what TalkBack reads, so it is heard once.
         numberText,
@@ -147,6 +148,8 @@ fun KozmosPOIResultCard(
         travelTimeText,
         if (available) null else result.unavailableReason
     ).joinToString(", ")
+    val languageDisclosure = languageNotListedLabel.takeIf { result.languageNotListed == true }
+    val accessibilityDescription = listOfNotNull(baseDescription, languageDisclosure).joinToString(", ")
 
     Surface(
         onClick = {
@@ -290,6 +293,19 @@ fun KozmosPOIResultCard(
                             )
                         }
                     }
+                }
+
+                languageDisclosure?.let { label ->
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = KozmosThemeTokens.primitivesColorsForeground500,
+                        modifier = Modifier.padding(
+                            start = KozmosDimensions.primitivesLayoutSpacing200,
+                            end = KozmosDimensions.primitivesLayoutSpacing200,
+                            bottom = KozmosDimensions.primitivesLayoutSpacing150
+                        )
+                    )
                 }
 
                 if (visibleActions.isNotEmpty()) {
@@ -537,6 +553,25 @@ fun KozmosPOIResultCard(
         onAction = onAction
     )
 }
+
+/** Preserves every existing positional and trailing-action call. */
+@Composable
+fun KozmosPOIResultCard(
+    poi: KozmosPOIPresentation,
+    result: KozmosPOIResultPresentation,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    featuredLabel: String = "Featured",
+    currentFloorId: String? = null,
+    selectionLabel: String? = null,
+    actionsLabel: String = "Actions for this result",
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    numbered: Boolean = false,
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultCard(
+    poi, result, onSelect, modifier, featuredLabel, currentFloorId, selectionLabel,
+    actionsLabel, travelTimeBandLabels, numbered, "Language not listed", onAction
+)
 
 /** The bands' words, and the only English the card holds for them. */
 internal fun englishTravelTimeBandLabel(band: KozmosTravelTimeBand): String = when (band) {

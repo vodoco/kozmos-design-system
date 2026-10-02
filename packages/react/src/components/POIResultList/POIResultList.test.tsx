@@ -30,6 +30,29 @@ const createItem = (id: string, index: number): POIResultListItem => {
 };
 
 describe("POIResultList", () => {
+  it("forwards localized staff-language disclosure to individual and grouped rows", () => {
+    const marked = (id: string) => {
+      const item = createItem(id, 1);
+      return { ...item, result: { ...item.result, languageNotListed: true } };
+    };
+    render(
+      <POIResultList
+        items={[
+          marked("one"),
+          { id: "group", label: "Branches", items: [marked("two")] },
+        ]}
+        selectedPoiId="two"
+        onSelect={vi.fn()}
+        resultCountLabel="2 results"
+        languageNotListedLabel="Türkçe listelenmemiş"
+      />,
+    );
+    expect(screen.getAllByText("Türkçe listelenmemiş")).toHaveLength(2);
+    for (const button of screen.getAllByRole("button")) {
+      expect(button).toHaveAccessibleDescription("Türkçe listelenmemiş");
+    }
+  });
+
   it("controls one selected result and emits its stable ID", () => {
     const onSelect = vi.fn();
     render(

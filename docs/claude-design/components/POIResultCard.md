@@ -66,6 +66,10 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultCardProps`, which 
   Without a handler, the actions remain visible but disabled.
 
 - `featuredLabel`: `string`, optional, default `"Featured"`.
+- `languageNotListedLabel`: `string`, optional, default `"Language not listed"`.
+
+  Localized disclosure shown only for result.languageNotListed === true.
+
 - `selectionLabel`: `string`, optional.
 - `actionsLabel`: `string`, optional, default `"Actions for this result"`.
 
@@ -196,6 +200,14 @@ interface POIResultPresentation {
    * would, or has not been confirmed. Absent means exact.
    */
   match?: POIResultMatch;
+  /**
+   * Explicit host evidence that the requested staff language is not listed.
+   * Absence is unknown; false suppresses this disclosure, not a promise that
+   * staff speak a language. Independent of query match, nameLanguage and UI
+   * locale. Kozmos never infers this from missing translations or reorders
+   * results; hosts may group results using this field.
+   */
+  languageNotListed?: boolean;
   /**
    * The unit or suite, where a venue has them: "Unit 214", "Suite 3B".
    * Separate from floorLabel because a visitor is told both.

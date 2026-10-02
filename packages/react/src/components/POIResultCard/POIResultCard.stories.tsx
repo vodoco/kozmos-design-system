@@ -52,6 +52,15 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+/** Staff-language evidence is separate from query match and UI translation. */
+export const StaffLanguageNotListed: Story = {
+  args: {
+    result: { ...meta.args.result, languageNotListed: true },
+    languageNotListedLabel:
+      "Requested staff language is not listed for this place",
+  },
+};
+
 export const FeaturedSelected: Story = {
   args: {
     result: {

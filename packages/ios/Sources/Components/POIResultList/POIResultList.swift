@@ -29,6 +29,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
     private let resultCountLabel: String
     private let selectedPoiId: String?
     private let featuredLabel: String
+    private let languageNotListedLabel: String
     private let currentFloorId: String?
     /// Names each result's action row for VoiceOver: the card's.
     private let actionsLabel: String
@@ -59,6 +60,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         numbered: Bool = false,
         onSelect: @escaping (String) -> Void,
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
+        languageNotListedLabel: String = "Language not listed",
         @ViewBuilder emptyState: () -> EmptyStateContent
     ) {
         self.items = items
@@ -66,6 +68,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         self.label = label
         self.selectedPoiId = selectedPoiId
         self.featuredLabel = featuredLabel
+        self.languageNotListedLabel = languageNotListedLabel
         self.currentFloorId = currentFloorId
         self.actionsLabel = actionsLabel
         self.travelTimeBandLabels = travelTimeBandLabels
@@ -88,7 +91,8 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
             travelTimeBandLabels: travelTimeBandLabels,
             numbered: numbered,
             onSelect: onSelect,
-            onAction: onAction
+            onAction: onAction,
+            languageNotListedLabel: languageNotListedLabel
         )
     }
 
@@ -143,7 +147,8 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
         travelTimeBandLabels: [KozmosTravelTimeBand: String] = [:],
         numbered: Bool = false,
         onSelect: @escaping (String) -> Void,
-        onAction: ((KozmosPOIResultAction, String) -> Void)? = nil
+        onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
+        languageNotListedLabel: String = "Language not listed"
     ) {
         self.init(
             items: items,
@@ -156,7 +161,8 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
             travelTimeBandLabels: travelTimeBandLabels,
             numbered: numbered,
             onSelect: onSelect,
-            onAction: onAction
+            onAction: onAction,
+            languageNotListedLabel: languageNotListedLabel
         ) {
             EmptyView()
         }

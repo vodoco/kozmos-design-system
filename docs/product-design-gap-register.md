@@ -34,10 +34,19 @@ to evaluate, not authorization to change APIs, publish packages or run external 
 No external canvas was opened or modified for this sync.
 
 This register is not a release plan approved for publication. It identifies what to reuse,
-what remains, what is uncertain, and the evidence needed to close it. The P01 integration
-candidate implements GAP-056, GAP-101 and GAP-109 across React, SwiftUI and Compose, with
-regressions and consumer documentation. Their row statuses mean **implemented, unreleased**,
-not merged, CI-approved, published or accepted on physical devices or product boards.
+what remains, what is uncertain, and the evidence needed to close it. P01 (#185)
+implements GAP-056, GAP-101 and GAP-109; P02 (#186) implements the shell-spacing
+portion of GAP-085/114 across React, SwiftUI and Compose. Both are merged and
+exact-main CI/deployment verified, but **unreleased** and not accepted on every
+physical device or external product board.
+
+P03 staff-language candidate: GAP-021 now has optional `languageNotListed` data
+and localized card/list disclosure on all three platforms (groups too on React).
+Explicit true is required; unknown data, query match and UI/name language never
+infer staff availability. Host grouping/ranking and physical assistive-technology
+acceptance remain separate. GAP-093/096 structured instructions remain the next
+P03 slice. This candidate note supersedes GAP-021's imported missing-field finding
+below, not its original requirement, and is not yet a merged/released claim.
 
 ### Confirmed decisions and the released 0.7.0 increment
 

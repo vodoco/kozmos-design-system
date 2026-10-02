@@ -38,6 +38,8 @@ export interface POIResultCardProps extends Omit<
    */
   onAction?: (action: POIResultAction, poiId: string) => void;
   featuredLabel?: string;
+  /** Localized disclosure shown only for result.languageNotListed === true. */
+  languageNotListedLabel?: string;
   selectionLabel?: string;
   /** Names the action row for assistive technology. */
   actionsLabel?: string;
@@ -141,6 +143,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       onSelect,
       onAction,
       featuredLabel = "Featured",
+      languageNotListedLabel = "Language not listed",
       selectionLabel,
       actionsLabel = "Actions for this result",
       currentFloorId,
@@ -176,6 +179,14 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
     const bandLabel =
       band && (travelTimeBandLabels?.[band] ?? travelTimeBandLabel[band]);
     const unavailableId = `${id}-unavailable`;
+    const languageNotListedId = `${id}-language-not-listed`;
+    const describedBy =
+      [
+        !available && result.unavailableReason ? unavailableId : undefined,
+        result.languageNotListed === true ? languageNotListedId : undefined,
+      ]
+        .filter(Boolean)
+        .join(" ") || undefined;
     // A unit is narrower than a floor and a visitor is told both, so it leads
     // the line: "Unit 214 · Level 2 · Terminal 2" (GAP-022).
     const locationLabel = [result.unitLabel, poiLocationLabel(poi)]
@@ -302,7 +313,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
 
         <button
           aria-controls={showActions ? actionsId : undefined}
-          aria-describedby={!available ? unavailableId : undefined}
+          aria-describedby={describedBy}
           aria-expanded={
             (result.actions?.length ?? 0) > 0 ? showActions : undefined
           }
@@ -442,6 +453,15 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
             )}
           </span>
         </button>
+
+        {result.languageNotListed === true && (
+          <p
+            id={languageNotListedId}
+            className="px-4 pb-3 text-sm text-muted-foreground"
+          >
+            {languageNotListedLabel}
+          </p>
+        )}
 
         {/* A sibling of the select button, never a child of it. A button inside
             a button is invalid HTML: the browser closes the outer one, and
