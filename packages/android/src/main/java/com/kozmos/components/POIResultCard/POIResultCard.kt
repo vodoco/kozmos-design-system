@@ -2,6 +2,9 @@ package com.kozmos.components.poiresultcard
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,12 +20,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +63,31 @@ import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
+
+/** Neutral SDK result presentation is the default; Legacy supports staged migration. */
+enum class KozmosPOIResultPresentationStyle { Legacy, Sdk }
+enum class KozmosPOIResultAppearance { Card, Row }
+
+/** Preserves the previous full positional signature and trailing callback. */
+@Composable
+fun KozmosPOIResultCard(
+    poi: KozmosPOIPresentation,
+    result: KozmosPOIResultPresentation,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    featuredLabel: String = "Featured",
+    currentFloorId: String? = null,
+    selectionLabel: String? = null,
+    actionsLabel: String = "Actions for this result",
+    travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    numbered: Boolean = false,
+    languageNotListedLabel: String,
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultCard(
+    poi, result, onSelect, modifier, featuredLabel, currentFloorId, selectionLabel,
+    actionsLabel, travelTimeBandLabels, numbered, languageNotListedLabel,
+    KozmosPOIResultPresentationStyle.Sdk, onAction = onAction
+)
 
 /** Characters `encodeURIComponent` leaves untouched. */
 private const val URI_COMPONENT_UNRESERVED =
@@ -116,13 +147,19 @@ fun KozmosPOIResultCard(
      * [selectionLabel] replaces all of it.
      */
     numbered: Boolean = false,
-    languageNotListedLabel: String,
+    languageNotListedLabel: String = "Language not listed",
+    presentationStyle: KozmosPOIResultPresentationStyle,
+    appearance: KozmosPOIResultAppearance = KozmosPOIResultAppearance.Card,
     onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
 ) {
     val trackEvent = LocalKozmosAnalytics.current
     val available = result.isAvailable
-    val tab = kozmosPOIResultTab(result, numbered, featuredLabel)
-    val numberText = (tab as? KozmosPOIResultTab.Number)?.number
+    val sdk = presentationStyle == KozmosPOIResultPresentationStyle.Sdk
+    val secondaryText = if (sdk) KozmosThemeTokens.primitivesColorsForeground400 else KozmosThemeTokens.primitivesColorsForeground500
+    val interaction = remember { MutableInteractionSource() }
+    val hovered by interaction.collectIsHoveredAsState()
+    val tab = kozmosPOIResultTab(result, numbered, featuredLabel, presentationStyle)
+    val numberText = if (sdk && numbered) result.resultIndex.toString() else (tab as? KozmosPOIResultTab.Number)?.number
     // The tab and the name's clearance grow with the reader's font size.
     val tabHeight = with(LocalDensity.current) { 16.sp.toDp() }
 
@@ -141,13 +178,14 @@ fun KozmosPOIResultCard(
         // The number leads the name, "2, Burger King": the tab that draws it
         // is left out of what TalkBack reads, so it is heard once.
         numberText,
+        if (sdk && tab !is KozmosPOIResultTab.Number) tab?.words else null,
         poi.name,
         poi.categoryLabel,
         poi.locationLabel,
         poi.availabilityLabel,
         travelTimeText,
         if (available) null else result.unavailableReason
-    ).joinToString(", ")
+    ).filter { it.isNotEmpty() }.joinToString(", ")
     val languageDisclosure = languageNotListedLabel.takeIf { result.languageNotListed == true }
     val accessibilityDescription = listOfNotNull(baseDescription, languageDisclosure).joinToString(", ")
 
@@ -170,20 +208,28 @@ fun KozmosPOIResultCard(
         },
         modifier = modifier
             .fillMaxWidth()
+            .hoverable(interaction, enabled = sdk && available)
             .semantics {
                 contentDescription = accessibilityDescription
                 selected = result.selected
             },
         enabled = available,
-        shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
-        color = KozmosThemeTokens.primitivesColorsBackground0,
-        border = BorderStroke(
-            width = if (result.selected) 2.dp else 1.dp,
-            color = kozmosPOIResultCardEdge(selected = result.selected, featured = tab is KozmosPOIResultTab.Featured)
+        shape = RoundedCornerShape(if (appearance == KozmosPOIResultAppearance.Card) KozmosDimensions.semanticsRadiusControl else 0.dp),
+        color = when {
+            sdk && result.selected -> KozmosThemeTokens.semanticsResultSelectedSurface
+            sdk && hovered -> KozmosThemeTokens.semanticsResultHoverSurface
+            else -> KozmosThemeTokens.primitivesColorsBackground0
+        },
+        border = if (appearance == KozmosPOIResultAppearance.Row) null else BorderStroke(
+            width = if (result.selected && !sdk) 2.dp else 1.dp,
+            color = kozmosPOIResultCardEdge(selected = result.selected && !sdk, featured = tab is KozmosPOIResultTab.Featured)
         )
     ) {
         Box {
             Column(modifier = Modifier.fillMaxWidth()) {
+                if (sdk && tab != null) {
+                    KozmosPOIResultTabView(tab, result.selected, sdk = true, number = numberText)
+                }
                 // 80 tall: the prototype's row.
                 Row(
                     modifier = Modifier
@@ -192,7 +238,7 @@ fun KozmosPOIResultCard(
                         .padding(
                             start = KozmosDimensions.primitivesLayoutSpacing200,
                             end = KozmosDimensions.primitivesLayoutSpacing200,
-                            top = if (tab != null) tabHeight + KozmosDimensions.primitivesLayoutSpacing100 else KozmosDimensions.primitivesLayoutSpacing150,
+                            top = if (tab != null && !sdk) tabHeight + KozmosDimensions.primitivesLayoutSpacing100 else KozmosDimensions.primitivesLayoutSpacing150,
                             bottom = KozmosDimensions.primitivesLayoutSpacing150
                         ),
                     verticalAlignment = Alignment.CenterVertically,
@@ -211,7 +257,7 @@ fun KozmosPOIResultCard(
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Normal,
                             color = KozmosThemeTokens.primitivesColorsForeground100,
-                            maxLines = 1,
+                            maxLines = if (sdk) Int.MAX_VALUE else 1,
                             overflow = TextOverflow.Ellipsis
                         )
 
@@ -219,7 +265,7 @@ fun KozmosPOIResultCard(
                             Text(
                                 text = categoryLabel,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = KozmosThemeTokens.primitivesColorsForeground500,
+                                color = secondaryText,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -243,7 +289,7 @@ fun KozmosPOIResultCard(
                             Text(
                                 text = poi.locationLabel,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = KozmosThemeTokens.primitivesColorsForeground500,
+                                color = secondaryText,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -259,11 +305,11 @@ fun KozmosPOIResultCard(
                                 // is still open, so it is not closed either.
                                 color = when (poi.availability) {
                                     KozmosPOIAvailability.Open ->
-                                        KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle
+                                        if (sdk) KozmosThemeTokens.semanticsEmotionSuccessText else KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle
                                     KozmosPOIAvailability.OpeningSoon,
                                     KozmosPOIAvailability.ClosingSoon ->
-                                        KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle
-                                    else -> KozmosThemeTokens.primitivesColorsForeground500
+                                        if (sdk) KozmosThemeTokens.semanticsEmotionAlertText else KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle
+                                    else -> secondaryText
                                 }
                             )
                         }
@@ -299,7 +345,7 @@ fun KozmosPOIResultCard(
                     Text(
                         text = label,
                         style = MaterialTheme.typography.bodySmall,
-                        color = KozmosThemeTokens.primitivesColorsForeground500,
+                        color = secondaryText,
                         modifier = Modifier.padding(
                             start = KozmosDimensions.primitivesLayoutSpacing200,
                             end = KozmosDimensions.primitivesLayoutSpacing200,
@@ -329,6 +375,7 @@ fun KozmosPOIResultCard(
                             KozmosPOIResultActionButton(
                                 entry = entry,
                                 enabled = canRun,
+                                showsNavigationIcon = sdk && entry.action == KozmosPOIResultAction.Navigate,
                                 onClick = {
                                     if (canRun) {
                                         trackEvent(
@@ -356,7 +403,7 @@ fun KozmosPOIResultCard(
                     Text(
                         text = result.unavailableReason,
                         style = MaterialTheme.typography.bodySmall,
-                        color = KozmosThemeTokens.primitivesColorsForeground500,
+                        color = secondaryText,
                         modifier = Modifier.padding(
                             horizontal = KozmosDimensions.primitivesLayoutSpacing200,
                             vertical = KozmosDimensions.primitivesLayoutSpacing100
@@ -364,7 +411,7 @@ fun KozmosPOIResultCard(
                     )
                 }
             }
-            if (tab != null) {
+            if (tab != null && !sdk) {
                 KozmosPOIResultTabView(tab = tab, selected = result.selected, modifier = Modifier.align(Alignment.TopStart))
             }
         }
@@ -390,9 +437,11 @@ internal sealed class KozmosPOIResultTab {
 internal fun kozmosPOIResultTab(
     result: KozmosPOIResultPresentation,
     numbered: Boolean,
-    featuredLabel: String
+    featuredLabel: String,
+    presentationStyle: KozmosPOIResultPresentationStyle = KozmosPOIResultPresentationStyle.Legacy
 ): KozmosPOIResultTab? = when {
     result.featured -> KozmosPOIResultTab.Featured(featuredLabel)
+    presentationStyle == KozmosPOIResultPresentationStyle.Sdk && result.badge != null -> KozmosPOIResultTab.Badge(result.badge.label)
     numbered -> KozmosPOIResultTab.Number(result.resultIndex.toString())
     result.badge != null -> KozmosPOIResultTab.Badge(result.badge.label)
     else -> null
@@ -459,14 +508,14 @@ internal fun kozmosPOIResultTabPaint(tab: KozmosPOIResultTab, selected: Boolean)
  * reads, because it leads the result's own description.
  */
 @Composable
-private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean, modifier: Modifier = Modifier) {
+private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean, modifier: Modifier = Modifier, sdk: Boolean = false, number: String? = null) {
     val paint = kozmosPOIResultTabPaint(tab, selected)
-    val innerRadius = KozmosDimensions.primitivesLayoutSpacing100 - 1.dp
+    val innerRadius = if (sdk) KozmosDimensions.semanticsRadiusControl else KozmosDimensions.primitivesLayoutSpacing100 - 1.dp
     val shape = RoundedCornerShape(bottomEnd = innerRadius)
-    val tabHeight = with(LocalDensity.current) { 16.sp.toDp() }
+    val tabHeight = with(LocalDensity.current) { (if (sdk) 20.sp else 16.sp).toDp() }
     Row(
         modifier = modifier
-            .then(if (tab is KozmosPOIResultTab.Number) Modifier.clearAndSetSemantics { } else Modifier)
+            .then(if (sdk || tab is KozmosPOIResultTab.Number) Modifier.clearAndSetSemantics { } else Modifier)
             .clip(shape)
             .background(paint.fill)
             .drawWithContent {
@@ -492,10 +541,13 @@ private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean, m
                 }
             }
             .heightIn(min = tabHeight)
-            .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing75),
+            .padding(horizontal = if (sdk) 10.dp else KozmosDimensions.primitivesLayoutSpacing75, vertical = if (sdk) 1.dp else 0.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
+        horizontalArrangement = Arrangement.spacedBy(if (sdk) 7.dp else KozmosDimensions.primitivesLayoutSpacing50)
     ) {
+        if (sdk && number != null && tab !is KozmosPOIResultTab.Number) {
+            Text(number, fontSize = 11.sp, lineHeight = 16.sp, color = paint.ink, maxLines = 1)
+        }
         if (tab is KozmosPOIResultTab.Featured) {
             Icon(
                 imageVector = Icons.Default.Star,
@@ -511,10 +563,10 @@ private fun KozmosPOIResultTabView(tab: KozmosPOIResultTab, selected: Boolean, m
                 lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None)
             ),
             fontSize = 11.sp,
-            lineHeight = 14.sp,
+            lineHeight = if (sdk) 16.sp else 14.sp,
             fontWeight = FontWeight.Normal,
             color = paint.ink,
-            maxLines = 1,
+            maxLines = if (sdk) Int.MAX_VALUE else 1,
             overflow = TextOverflow.Ellipsis
         )
     }
@@ -594,6 +646,7 @@ internal fun englishTravelTimeBandLabel(band: KozmosTravelTimeBand): String = wh
 private fun KozmosPOIResultActionButton(
     entry: KozmosPOIResultActionPresentation,
     enabled: Boolean,
+    showsNavigationIcon: Boolean,
     onClick: () -> Unit
 ) {
     val background = if (entry.primary) {
@@ -627,8 +680,11 @@ private fun KozmosPOIResultActionButton(
                 vertical = KozmosDimensions.primitivesLayoutSpacing100
             )
         ) {
-            Text(text = entry.label, style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold, color = foreground)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)) {
+                if (showsNavigationIcon) Icon(Icons.Outlined.NearMe, contentDescription = null, tint = foreground, modifier = Modifier.size(20.dp))
+                Text(text = entry.label, style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold, color = foreground)
+            }
         }
     }
 }

@@ -1,16 +1,22 @@
 import SwiftUI
 
+/// SDK is the default; legacy supports staged migration without changing product data.
+public enum KozmosPOIResultPresentationStyle: Sendable { case legacy, sdk }
+/// A group owns its border and outer corners; interior rows supply only content.
+public enum KozmosPOIResultAppearance: Sendable { case card, row }
+
 /// The card supplies the outside corner. This path supplies only the inside
 /// bottom-end corner and mirrors logically, including the quiet tab's edge.
 private struct POIResultTabShape: Shape {
     var rightToLeft: Bool
     var edgeOnly = false
+    var radius: CGFloat = KozmosDimensions.primitivesLayoutSpacing100 - 1
 
     func path(in rect: CGRect) -> Path {
         let inset: CGFloat = edgeOnly ? 0.5 : 0
         let end = rect.maxX - inset
         let bottom = rect.maxY - inset
-        let radius = min(KozmosDimensions.primitivesLayoutSpacing100 - 1, min(rect.width, rect.height))
+        let radius = min(radius, min(rect.width, rect.height))
         var path = Path()
         path.move(to: CGPoint(x: end, y: rect.minY))
         path.addLine(to: CGPoint(x: end, y: bottom - radius))
@@ -49,6 +55,7 @@ public struct KozmosPOIResultCard: View {
     @Environment(\.kozmosAnalytics) private var trackEvent
     @Environment(\.layoutDirection) private var layoutDirection
     @ScaledMetric(relativeTo: .caption2) private var tabHeight = KozmosDimensions.primitivesLayoutSizing200
+    @State private var hovered = false
 
     private let poi: KozmosPOIPresentation
     private let result: KozmosPOIResultPresentation
@@ -65,11 +72,14 @@ public struct KozmosPOIResultCard: View {
     /// Draw the result's number, `result.resultIndex`, in its tab: the number
     /// its pin shows on the map. Off unless the product turns it on, for a
     /// list whose pins are numbered, as quick access's are. The card draws
-    /// the number it is given and never renumbers. A featured result keeps
-    /// its Featured tab and shows no number, as its pin shows its logo; a
-    /// number takes the place of a badge. The number leads what VoiceOver
+    /// the number it is given and never renumbers. SDK tabs combine the number
+    /// with Featured or a badge. Only legacy presentation hides Featured's
+    /// number and lets a number replace a badge. The number leads what VoiceOver
     /// says ("2, Burger King"); a `selectionLabel` replaces all of it.
     let numbered: Bool
+    let presentationStyle: KozmosPOIResultPresentationStyle
+    let appearance: KozmosPOIResultAppearance
+    private var sdk: Bool { presentationStyle == .sdk }
     private let onSelect: (String) -> Void
     /// Runs an action from the selected result's row, told which action and
     /// the POI's ID. Without it the row's actions are drawn disabled.
@@ -86,7 +96,9 @@ public struct KozmosPOIResultCard: View {
         numbered: Bool = false,
         onSelect: @escaping (String) -> Void,
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
-        languageNotListedLabel: String = "Language not listed"
+        languageNotListedLabel: String = "Language not listed",
+        presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
+        appearance: KozmosPOIResultAppearance = .card
     ) {
         self.poi = poi
         self.result = result
@@ -97,6 +109,8 @@ public struct KozmosPOIResultCard: View {
         self.actionsLabel = actionsLabel
         self.travelTimeBandLabels = travelTimeBandLabels
         self.numbered = numbered
+        self.presentationStyle = presentationStyle
+        self.appearance = appearance
         self.onSelect = onSelect
         self.onAction = onAction
     }
@@ -119,11 +133,12 @@ public struct KozmosPOIResultCard: View {
     /// The number drawn, when the list is numbered and the result is not
     /// featured: `resultIndex` as given.
     var numberText: String? {
-        numbered && !result.featured ? "\(result.resultIndex)" : nil
+        numbered && (sdk || !result.featured) ? "\(result.resultIndex)" : nil
     }
 
     var tab: Tab? {
         if result.featured { return .featured }
+        if sdk, let badge = result.badge { return .badge(badge.label) }
         if let numberText { return .number(numberText) }
         if let badge = result.badge { return .badge(badge.label) }
         return nil
@@ -244,11 +259,11 @@ public struct KozmosPOIResultCard: View {
     private var availabilityTone: Color {
         switch poi.availability {
         case .open:
-            return KozmosColors.componentsPrimaryButtonsSuccessButtonBackgroundIdle
+            return sdk ? KozmosColors.semanticsEmotionSuccessText : KozmosColors.componentsPrimaryButtonsSuccessButtonBackgroundIdle
         case .openingSoon, .closingSoon:
-            return KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle
+            return sdk ? KozmosColors.semanticsEmotionAlertText : KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle
         default:
-            return KozmosColors.primitivesColorsForeground500
+            return sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500
         }
     }
 
@@ -257,10 +272,12 @@ public struct KozmosPOIResultCard: View {
             return [selectionLabel, languageDisclosure].compactMap { $0 }.joined(separator: ", ")
         }
         return [
-            result.featured ? featuredLabel : nil,
+            !sdk && result.featured ? featuredLabel : nil,
             // The number leads the name, "2, Burger King": the tab that draws
             // it is hidden from VoiceOver, so it is heard once.
             numberText,
+            sdk && result.featured ? featuredLabel : nil,
+            sdk && !result.featured ? result.badge?.label : nil,
             poi.name,
             poi.categoryLabel,
             poi.locationLabel,
@@ -269,7 +286,7 @@ public struct KozmosPOIResultCard: View {
             available ? nil : result.unavailableReason,
             languageDisclosure
         ]
-        .compactMap { $0 }
+        .compactMap { $0 }.filter { !$0.isEmpty }
         .joined(separator: ", ")
     }
 
@@ -303,17 +320,22 @@ public struct KozmosPOIResultCard: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button(action: handleSelect) {
+                VStack(alignment: .leading, spacing: 0) {
+                    if sdk, let tab, let paint = tabPaint {
+                        tabView(tab, paint).allowsHitTesting(false)
+                    }
                 HStack(alignment: .center, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                     VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                         Text(poi.name)
                             .font(KozmosTypography.body)
                             .foregroundColor(KozmosColors.primitivesColorsForeground100)
-                            .lineLimit(1)
+                            .lineLimit(sdk ? nil : 1)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         if let categoryLabel = poi.categoryLabel {
                             Text(categoryLabel)
                                 .font(KozmosTypography.subheadline)
-                                .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                                .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
                                 .lineLimit(1)
                         }
 
@@ -329,7 +351,7 @@ public struct KozmosPOIResultCard: View {
                                 .font(KozmosTypography.subheadline)
                                 .lineLimit(1)
                         }
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
 
                         if let availabilityLabel = poi.availabilityLabel {
                             Text(availabilityLabel)
@@ -352,8 +374,9 @@ public struct KozmosPOIResultCard: View {
                 // 80 tall: the prototype's row.
                 .frame(minHeight: KozmosDimensions.primitivesLayoutSizing1000 - KozmosDimensions.primitivesLayoutSpacing150 * 2)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
-                .padding(.top, tab == nil ? KozmosDimensions.primitivesLayoutSpacing150 : tabHeight + KozmosDimensions.primitivesLayoutSpacing100)
+                .padding(.top, sdk || tab == nil ? KozmosDimensions.primitivesLayoutSpacing150 : tabHeight + KozmosDimensions.primitivesLayoutSpacing100)
                 .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing150)
+                }
                 // The row has no fill of its own, so without an explicit hit
                 // shape only the text and the logo are tappable and the gaps
                 // between them swallow taps.
@@ -385,7 +408,7 @@ public struct KozmosPOIResultCard: View {
             if let languageDisclosure {
                 Text(languageDisclosure)
                     .font(KozmosTypography.subheadline)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
                     .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing150)
@@ -398,7 +421,7 @@ public struct KozmosPOIResultCard: View {
 
                 HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                     ForEach(visibleActions) { entry in
-                        KozmosPOIResultActionButton(entry: entry, enabled: canRun(entry)) {
+                        KozmosPOIResultActionButton(entry: entry, enabled: canRun(entry), showsNavigationIcon: sdk && entry.action == .navigate) {
                             guard canRun(entry) else { return }
                             handleAction(entry.action)
                         }
@@ -416,22 +439,23 @@ public struct KozmosPOIResultCard: View {
 
                 Text(unavailableReason)
                     .font(KozmosTypography.caption)
-                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                    .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
                     .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
                     .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
             }
         }
-        .background(KozmosColors.primitivesColorsBackground0)
+        .background(surfaceColor)
+        .onHover { hovered = $0 }
         .overlay(alignment: .topLeading) {
-            if let tab, let paint = tabPaint {
+            if !sdk, let tab, let paint = tabPaint {
                 tabView(tab, paint)
                     .allowsHitTesting(false)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: appearance == .row ? 0 : KozmosDimensions.semanticsRadiusControl, style: sdk ? .circular : .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
-                .stroke(edgeColor, lineWidth: result.selected ? 2 : 1)
+            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: sdk ? .circular : .continuous)
+                .stroke(appearance == .row ? .clear : edgeColor, lineWidth: result.selected && !sdk ? 2 : 1)
         )
         .accessibilityIdentifier(kozmosPOIResultIdentifier(poi.id))
     }
@@ -442,9 +466,16 @@ public struct KozmosPOIResultCard: View {
     /// takes its tab's amber (Olcay, 2026-09-29), and every other card the
     /// container edge: a number and a badge never recolour it.
     var edgeColor: Color {
-        if result.selected { return KozmosColors.primitivesColorsTheme500 }
+        if result.selected && !sdk { return KozmosColors.primitivesColorsTheme500 }
         if tab == .featured { return KozmosColors.semanticsEmotionAlertFill }
         return KozmosColors.semanticsBorderSubtle
+    }
+
+    var surfaceColor: Color {
+        guard sdk else { return KozmosColors.primitivesColorsBackground0 }
+        if result.selected { return KozmosColors.semanticsResultSelectedSurface }
+        if hovered && available { return KozmosColors.semanticsResultHoverSurface }
+        return KozmosColors.primitivesColorsBackground0
     }
 
     /// The one tab, at the card's leading edge. Featured and a badge are read
@@ -457,7 +488,8 @@ public struct KozmosPOIResultCard: View {
     /// Its height and the clearance before the name scale with Dynamic Type.
     @ViewBuilder
     private func tabView(_ tab: Tab, _ paint: TabPaint) -> some View {
-        let shape = POIResultTabShape(rightToLeft: layoutDirection == .rightToLeft)
+        let radius = sdk ? KozmosDimensions.semanticsRadiusControl : KozmosDimensions.primitivesLayoutSpacing100 - 1
+        let shape = POIResultTabShape(rightToLeft: layoutDirection == .rightToLeft, radius: radius)
         let words: String = {
             switch tab {
             case .featured: return featuredLabel
@@ -465,7 +497,10 @@ public struct KozmosPOIResultCard: View {
             case .badge(let label): return label
             }
         }()
-        HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+        HStack(spacing: sdk ? 7 : KozmosDimensions.primitivesLayoutSpacing50) {
+            if sdk, let numberText, !tab.isNumber {
+                Text(numberText).font(KozmosTypography.caption2).monospacedDigit().fixedSize()
+            }
             if tab == .featured {
                 Image(systemName: "star.fill")
                     .font(KozmosTypography.caption2)
@@ -473,16 +508,18 @@ public struct KozmosPOIResultCard: View {
             }
             Text(words)
                 .font(KozmosTypography.caption2)
-                .lineLimit(1)
+                .lineLimit(sdk ? nil : 1)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundColor(paint.ink)
-        .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing75)
-        .frame(minHeight: tabHeight)
+        .padding(.horizontal, sdk ? 10 : KozmosDimensions.primitivesLayoutSpacing75)
+        .padding(.vertical, sdk ? 1 : 0)
+        .frame(minHeight: sdk ? tabHeight * 1.25 : tabHeight)
         .background(paint.fill)
         .clipShape(shape)
-        .overlay(POIResultTabShape(rightToLeft: layoutDirection == .rightToLeft, edgeOnly: true)
+        .overlay(POIResultTabShape(rightToLeft: layoutDirection == .rightToLeft, edgeOnly: true, radius: radius)
             .stroke(paint.edge ?? .clear, lineWidth: 1))
-        .accessibilityHidden(tab.isNumber)
+        .accessibilityHidden(sdk || tab.isNumber)
     }
 
     /// The logo when there is one, 48 at radius Control; nothing otherwise.
@@ -517,6 +554,7 @@ private struct KozmosPOIResultActionButton: View {
     /// False for a disabled action, and for any action the card has no
     /// handler for.
     let enabled: Bool
+    let showsNavigationIcon: Bool
     let action: () -> Void
 
     private var foreground: Color {
@@ -544,7 +582,10 @@ private struct KozmosPOIResultActionButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(entry.label)
+            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                if showsNavigationIcon { Image(systemName: "location").accessibilityHidden(true) }
+                Text(entry.label)
+            }
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(foreground)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)

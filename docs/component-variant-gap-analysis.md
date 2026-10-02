@@ -31,12 +31,12 @@ an implementation backlog item.
 | Components scanned                        | 116    |
 | Declaring at least one React variant axis | 52     |
 | Variations that are compositional only    | 64     |
-| Components with variant gaps — iOS        | 15/52  |
-| Components with variant gaps — Android    | 15/52  |
-| Components with variant gaps — Figma      | 17/52  |
+| Components with variant gaps — iOS        | 14/52  |
+| Components with variant gaps — Android    | 14/52  |
+| Components with variant gaps — Figma      | 18/52  |
 | Components with variant gaps — Vue        | 7/52   |
-| Components absent entirely — iOS          | 10/116 |
-| Components absent entirely — Android      | 9/116  |
+| Components absent entirely — iOS          | 9/116  |
+| Components absent entirely — Android      | 8/116  |
 | Components absent entirely — Figma        | 20/116 |
 | Components absent entirely — Vue          | 19/116 |
 
@@ -121,8 +121,7 @@ Notice
   - figma: component/set absent
   - vue: component absent
 POIResultCard
-  - ios missing axes -> appearance (card, row)
-  - android missing axes -> appearance (card, row)
+  - figma missing axes -> presentationStyle (legacy, sdk)
 Surface
   - ios: component/set absent
   - figma: component/set absent
@@ -203,13 +202,13 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 10 of 116
+### iOS — 9 of 116
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, POIResultGroup, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, Surface, UserMessage.
 
-### Android — 9 of 116
+### Android — 8 of 116
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, POIResultGroup, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, UserMessage.
 
 ### Figma — 20 of 116
 

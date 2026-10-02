@@ -38,10 +38,10 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
     /// Number every result with its `resultIndex`, the number its pin shows:
     /// the card's `numbered`, given to every card. Off unless the product
     /// turns it on, for a list whose pins are numbered, as quick access's
-    /// are. The list never renumbers: a featured result shows Featured and no
-    /// number, since its pin shows its logo, so number the others in pin
-    /// order.
+    /// are. The list never renumbers; SDK presentation retains the supplied
+    /// number alongside Featured or a badge. Legacy retains its old precedence.
     private let numbered: Bool
+    private let presentationStyle: KozmosPOIResultPresentationStyle
     private let onSelect: (String) -> Void
     /// Runs an action from the selected result's action row, told which
     /// action and the POI's ID.
@@ -61,6 +61,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         onSelect: @escaping (String) -> Void,
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
         languageNotListedLabel: String = "Language not listed",
+        presentationStyle: KozmosPOIResultPresentationStyle = .sdk,
         @ViewBuilder emptyState: () -> EmptyStateContent
     ) {
         self.items = items
@@ -73,6 +74,7 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
         self.actionsLabel = actionsLabel
         self.travelTimeBandLabels = travelTimeBandLabels
         self.numbered = numbered
+        self.presentationStyle = presentationStyle
         self.onSelect = onSelect
         self.onAction = onAction
         self.emptyState = emptyState()
@@ -92,7 +94,8 @@ public struct KozmosPOIResultList<EmptyStateContent: View>: View {
             numbered: numbered,
             onSelect: onSelect,
             onAction: onAction,
-            languageNotListedLabel: languageNotListedLabel
+            languageNotListedLabel: languageNotListedLabel,
+            presentationStyle: presentationStyle
         )
     }
 
@@ -148,7 +151,8 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
         numbered: Bool = false,
         onSelect: @escaping (String) -> Void,
         onAction: ((KozmosPOIResultAction, String) -> Void)? = nil,
-        languageNotListedLabel: String = "Language not listed"
+        languageNotListedLabel: String = "Language not listed",
+        presentationStyle: KozmosPOIResultPresentationStyle = .sdk
     ) {
         self.init(
             items: items,
@@ -162,7 +166,8 @@ public extension KozmosPOIResultList where EmptyStateContent == EmptyView {
             numbered: numbered,
             onSelect: onSelect,
             onAction: onAction,
-            languageNotListedLabel: languageNotListedLabel
+            languageNotListedLabel: languageNotListedLabel,
+            presentationStyle: presentationStyle
         ) {
             EmptyView()
         }

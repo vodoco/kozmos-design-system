@@ -118,6 +118,7 @@ function ResultTabs({ id }: { id: string }) {
   const card = (name: string, extra?: Partial<POIResultPresentation>) => (
     <POIResultCard
       data-testid={`${id}-tab-${name}`}
+      presentationStyle="legacy"
       numbered={name !== "badge"}
       poi={poi(name)}
       result={result(name, extra)}
@@ -132,6 +133,7 @@ function ResultTabs({ id }: { id: string }) {
       {card("badge", { badge: { label: "Alternative" } })}
       <POIResultGroup
         data-testid={`${id}-tab-group`}
+        presentationStyle="legacy"
         items={[
           {
             poi: poi("row-selected"),

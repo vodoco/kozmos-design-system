@@ -300,6 +300,8 @@
   <integer name="primitives_layout_radius_900">96</integer>
   <integer name="primitives_layout_radius_1000">128</integer>
   <integer name="primitives_layout_radius_full">9999</integer>
+  <color name="semantics_result_selected_surface">#ff14161a</color>
+  <color name="semantics_result_hover_surface">#ff202329</color>
   <color name="semantics_map_attribution_text">#ff464a53</color>
   <color name="semantics_map_attribution_halo">#ffffffff</color>
   <dimen name="semantics_map_attribution_halo_width">1.00dp</dimen>

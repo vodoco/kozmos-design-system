@@ -273,9 +273,16 @@ camera control, branding/provider policy and product ranking in their host adapt
 - **GAP-117:** the wrapper's “every mode change” promise conflicts with the button's intentional
   pressed/label-only reveal and GAP-087's decision. Clarify the desired behavior or narrow
   the promise; do not silently rewrite the tested behavior.
-- **GAP-119/120:** the latest exported design requests are recorded, not treated as permission
-  to replace existing public appearances. Decide opt-in versus changed default and migration
-  guidance before implementation; do not hard-code SDK green or restyle component internals.
+- **GAP-119:** the owner subsequently approved the SDK card appearance as the new default
+  with migration notes and an explicit legacy option. The final tab uses the star itself as
+  the Featured separator (no dot or dash), equal 16-unit outer/inner radii, 10-unit side padding
+  and 1-unit vertical padding. Interior grouped tabs keep only the rounded bottom-end corner.
+  Selection is pale neutral; pointer hover is 5% darker than the approved prior hover fill.
+  Native expandable groups are included in this implementation slice. Source rows below
+  preserve the imported request; these later decisions supersede its proposed punctuation.
+- **GAP-120:** sprite assets and SDK layer/style integration are separate from the card
+  implementation. The owner manages integration; do not claim live map acceptance or
+  hard-code a provider's selected green into the component contract.
 - **GAP-092:** no longer blocks the current Search with AI design, which uses Notice in the
   list header. Footer capability can remain optional backlog.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.

@@ -46,11 +46,13 @@ export interface POIResultGroupProps extends Omit<
   /** Each member's words for a walk shown as a band: POIResultCard's. */
   travelTimeBandLabels?: POIResultCardProps["travelTimeBandLabels"];
   /**
-   * Number each member with its `result.resultIndex`, before its name:
+   * Number each member with its `result.resultIndex`, in its corner tab:
    * POIResultCard's `numbered`, given to every member. POIResultList passes
    * its own.
    */
   numbered?: boolean;
+  /** Forward the SDK presentation to every member, without changing product numbering. */
+  presentationStyle?: POIResultCardProps["presentationStyle"];
   /**
    * Names the members' ids apart from another rendering of the same places
    * on the page: POIResultCard's, given to every member. POIResultList passes
@@ -96,6 +98,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
       currentFloorId,
       travelTimeBandLabels,
       numbered,
+      presentationStyle = "sdk",
       idPrefix,
       ...props
     },
@@ -119,10 +122,11 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
       <section
         aria-label={label}
         className={cn(
-          "overflow-hidden rounded-control border border-border bg-card",
+          "kozmos-poi-result-group overflow-hidden rounded-control border border-border bg-card",
           className,
         )}
         data-expanded={open || undefined}
+        data-presentation-style={presentationStyle}
         ref={ref}
         {...props}
       >
@@ -140,6 +144,7 @@ const POIResultGroup = React.forwardRef<HTMLElement, POIResultGroupProps>(
                 languageNotListedLabel={languageNotListedLabel}
                 idPrefix={idPrefix}
                 numbered={numbered}
+                presentationStyle={presentationStyle}
                 onAction={onAction}
                 onSelect={onSelect}
                 poi={poi}

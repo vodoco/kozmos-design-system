@@ -50,7 +50,44 @@ or physical VoiceOver/TalkBack acceptance.
 
 <Canvas of={Stories.StaffLanguageNotListed} />
 
-## One tab: Featured, a number, or a badge
+## Default SDK presentation and migration
+
+`presentationStyle="sdk"` is now the default on React, SwiftUI and Compose.
+Selection uses the same pale neutral surface for standalone and grouped rows,
+not a blue card outline. Keyboard focus remains a separate visible indicator.
+Pointer hover is 5% darker than the approved prior hover fill: `#EEEFF0` in light
+mode; selected cards retain `#F9FAFB`, even while hovered. Both colors have themed
+`Semantics.Result` tokens; no touch-only hover state is introduced.
+
+With `numbered`, the corner tab reads **1234 ★ Featured**, **1234 Alternative** or
+**1234**. The star is the Featured separator, with no dash or dot. Numbering remains
+off unless requested, and uses the supplied `resultIndex` even for Featured—never a
+new list position. The product still owns sprite numbering and selected map layers.
+
+Tabs have 10-unit side padding, 1-unit vertical padding and a 20-unit minimum height.
+Their top-start and bottom-end radii are both 16. In a group, only the first row shares
+the outer rounded top-start; subsequent rows have square starts and retain the rounded
+bottom-end tab. Labels participate in layout and may grow; names wrap instead of being
+forced onto one line. `navigate` actions gain a decorative outlined navigation icon;
+their localized label and callbacks do not change.
+
+**Migration:** no data or handler signature change is required. Expect changed card heights,
+wrapping names, accessible names that include the combined tab once, and updated visual
+baselines. Consumers relying on the former appearance can temporarily set
+`presentationStyle="legacy"`, Swift `.legacy`, or Compose
+`KozmosPOIResultPresentationStyle.Legacy` on a card/list/group. Lists forward this setting.
+Custom `selectionLabel` still replaces the whole accessible name. White-label consumers
+may override the two result surface tokens; verify their text contrast and focus treatment.
+Physical screen-reader review, Figma adoption and SDK sprite integration remain separate.
+
+<Canvas of={Stories.SDKNumberedFeatured} />
+<Canvas of={Stories.SDKAlternative} />
+<Canvas of={Stories.Tabs} />
+<Canvas of={Stories.TabsRightToLeft} />
+
+## Legacy presentation: one tab, with precedence
+
+The following precedence applies only to explicit `presentationStyle="legacy"`.
 
 A card draws at most one tab inside its top-start corner (the right in a right-to-left language).
 It shares the card's outer curve and edge; only its inner corner rounds. The name begins below
@@ -89,8 +126,7 @@ than its badge, so the list's numbers match the pins.
   6.10:1 and 7.76:1 at rest, 6.24:1 and 6.17:1 selected; the badge 4.80:1 and 6.51:1. iOS and
   Android draw the same pairs.
 
-<Canvas of={Stories.Tabs} />
-<Canvas of={Stories.TabsRightToLeft} />
+<Canvas of={Stories.LegacyMigration} />
 
 ## A walk shown as a band
 

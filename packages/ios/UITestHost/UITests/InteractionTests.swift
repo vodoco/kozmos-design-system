@@ -9,11 +9,36 @@ final class InteractionTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws { app?.terminate() }
 
+    func testResultGroupExpansionPreservesSelectionAndSeparateActions() {
+        launch("result-group")
+        XCTAssertFalse(app.buttons["1, Gate 12, Level 1"].exists)
+        app.buttons["Show 1 more"].tap()
+        let row = app.buttons["1, Gate 12, Level 1"]
+        XCTAssertTrue(row.waitForExistence(timeout: 3))
+        row.tap()
+        app.buttons["Go"].tap()
+        received("expanded true|select gate/12|navigate gate/12")
+        app.buttons["Hide"].tap()
+        XCTAssertFalse(row.exists)
+        app.buttons["Show 1 more"].tap()
+        XCTAssertTrue(row.isSelected)
+        XCTAssertTrue(app.buttons["Details"].exists)
+        received("expanded true|select gate/12|navigate gate/12|expanded false|expanded true")
+    }
+
     private func launch(_ scenario: String) {
         app = XCUIApplication()
         app.launchArguments = [scenario]
         app.launch()
         XCTAssertTrue(app.staticTexts["received-events"].waitForExistence(timeout: 5))
+    }
+
+    func testResultCornerTagIsInsideTheSelectionHitArea() {
+        launch("result-group")
+        let group = app.descendants(matching: .any).matching(identifier: "result-group-container").firstMatch
+        XCTAssertTrue(group.waitForExistence(timeout: 3))
+        group.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 20, dy: 10)).tap()
+        received("select cafe")
     }
 
     private func received(_ value: String, file: StaticString = #filePath, line: UInt = #line) {

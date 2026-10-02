@@ -20,6 +20,7 @@ private struct InteractionFixture: View {
     @State private var replaced = false
     @State private var controlAccessibilityReport = "not inspected"
     @State private var manoeuvreExpanded = true
+    @State private var groupedSelection: String?
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -80,6 +81,12 @@ private struct InteractionFixture: View {
 
     @ViewBuilder private var fixture: some View {
         switch scenario {
+        case "result-group":
+            KozmosPOIResultGroup(items: items([go, .init(action: .details, label: "Details")]),
+                label: "Coffee branches", onExpandedChange: { events.append("expanded \($0)") },
+                selectedPoiId: groupedSelection, numbered: true,
+                onSelect: { groupedSelection = $0; select($0) }, onAction: action)
+                .accessibilityIdentifier("result-group-container")
         case "map-control-regions", "map-control-regions-localized":
             KozmosAdaptiveMapShell(
                 attribution: AnyView(Text("Attribution")),

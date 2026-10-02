@@ -36,11 +36,22 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
             result: result(featured: featured, selected: selected, badge: badge),
             selectionLabel: selectionLabel,
             numbered: numbered,
-            onSelect: { _ in }
+            onSelect: { _ in },
+            presentationStyle: .legacy
         )
     }
 
     // MARK: Which tab
+
+    func testSDKFeaturedAndAlternativeKeepTheirOriginalNumber() {
+        let featured = KozmosPOIResultCard(poi: poi, result: result(featured: true), numbered: true, onSelect: { _ in })
+        XCTAssertEqual(featured.presentationStyle, .sdk)
+        XCTAssertEqual(featured.numberText, "2")
+        XCTAssertTrue(featured.accessibilityDescription.hasPrefix("2, Featured, Burger King"))
+        let alternative = KozmosPOIResultCard(poi: poi, result: result(badge: "Alternative"), numbered: true, onSelect: { _ in }, presentationStyle: .sdk)
+        XCTAssertEqual(alternative.tab, .badge("Alternative"))
+        XCTAssertTrue(alternative.accessibilityDescription.hasPrefix("2, Alternative, Burger King"))
+    }
 
     func testANumberShowsOnlyWhenTheProductNumbersTheList() {
         // An upgrade changes nothing: without `numbered` there is no tab.
@@ -91,6 +102,36 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
     }
 
     #if os(iOS)
+    @MainActor func testSDKSelectionUsesTheNeutralSurfaceInBothThemesAndDirections() async throws {
+        let size = CGSize(width: 320, height: 300)
+        for scheme in [ColorScheme.light, .dark] {
+            for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+                let value = KozmosPOIResultCard(poi: poi, result: result(featured: true, selected: true), numbered: true, onSelect: { _ in })
+                let view = value.frame(width: size.width, height: size.height, alignment: .top)
+                    .environment(\.layoutDirection, direction).environment(\.colorScheme, scheme)
+                let drawn = try await RenderedPixels.render(view, size: size)
+                let expected = try await RenderedPixels.render(KozmosColors.semanticsResultSelectedSurface.environment(\.colorScheme, scheme), size: size)
+                let actual = drawn.color(at: CGPoint(x: 160, y: 25))
+                let wanted = expected.color(at: CGPoint(x: 160, y: 25))
+                XCTAssertLessThan(abs(Int(actual.0) - Int(wanted.0)) + abs(Int(actual.1) - Int(wanted.1)) + abs(Int(actual.2) - Int(wanted.2)), 6, "\(scheme) \(direction): selected fill")
+                let attachment = XCTAttachment(image: drawn.image)
+                attachment.name = "sdk-result-selected-\(scheme)-\(direction)"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+        }
+    }
+
+    func testSDKResultSurfaceTextContrastAndFeaturedEdge() {
+        let value = KozmosPOIResultCard(poi: poi, result: result(featured: true, selected: true), numbered: true, onSelect: { _ in })
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            XCTAssertTrue(same(value.edgeColor, KozmosColors.semanticsEmotionAlertFill, style))
+            for fill in [KozmosColors.semanticsResultSelectedSurface, KozmosColors.semanticsResultHoverSurface] {
+                XCTAssertGreaterThanOrEqual(contrast(KozmosColors.primitivesColorsForeground400, fill, style), 4.5)
+            }
+        }
+    }
+
     // MARK: How each tab is painted, light and dark
 
     private typealias RGBA = (r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat)

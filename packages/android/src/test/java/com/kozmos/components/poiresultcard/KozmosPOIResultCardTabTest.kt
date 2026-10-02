@@ -77,6 +77,13 @@ class KozmosPOIResultCardTabTest {
     // region which tab, and what is heard
 
     @Test
+    fun sdkAlternativeKeepsItsLabelWhenNumbered() {
+        assertEquals(KozmosPOIResultTab.Badge("Alternative"), kozmosPOIResultTab(
+            result(badge = "Alternative"), true, "Featured", KozmosPOIResultPresentationStyle.Sdk
+        ))
+    }
+
+    @Test
     fun aNumberShowsOnlyWhenTheProductNumbersTheList() {
         // An upgrade changes nothing: without `numbered` there is no tab.
         assertNull(kozmosPOIResultTab(result(), numbered = false, featuredLabel = "Featured"))
@@ -84,7 +91,7 @@ class KozmosPOIResultCardTabTest {
             KozmosPOIResultTab.Number("2"),
             kozmosPOIResultTab(result(), numbered = true, featuredLabel = "Featured")
         )
-        val plain = name { KozmosPOIResultCard(poi = poi, result = result(), onSelect = {}) }
+        val plain = name { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(), onSelect = {}) }
         assertTrue(plain, plain.startsWith("Burger King"))
     }
 
@@ -105,33 +112,33 @@ class KozmosPOIResultCardTabTest {
             kozmosPOIResultTab(result(badge = "Alternative"), numbered = false, featuredLabel = "Featured")
         )
         val shown = texts {
-            KozmosPOIResultCard(poi = poi, result = result(badge = "Alternative"), onSelect = {}, numbered = true)
+            KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(badge = "Alternative"), onSelect = {}, numbered = true)
         }
         assertTrue(shown.toString(), "Alternative" !in shown)
     }
 
     @Test
     fun theNumberLeadsWhatTalkBackSaysAndItsTabIsNotReadTwice() {
-        val numbered = name { KozmosPOIResultCard(poi = poi, result = result(), onSelect = {}, numbered = true) }
+        val numbered = name { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(), onSelect = {}, numbered = true) }
         assertTrue(numbered, numbered.startsWith("2, Burger King"))
         // The tab that draws it is left out of what TalkBack reads, so "2"
         // is not read again; it is still drawn.
         val card: @Composable () -> Unit = {
-            KozmosPOIResultCard(poi = poi, result = result(), onSelect = {}, numbered = true)
+            KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(), onSelect = {}, numbered = true)
         }
         assertTrue(heard(card).toString(), "2" !in heard(card))
         assertTrue(texts(card).toString(), "2" in texts(card))
         // Featured shows no number, so none is heard.
         val featured = name {
-            KozmosPOIResultCard(poi = poi, result = result(featured = true), onSelect = {}, numbered = true)
+            KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true), onSelect = {}, numbered = true)
         }
         assertTrue(featured, !featured.startsWith("2,"))
         // A badge stays read, as it always was.
-        val badge = heard { KozmosPOIResultCard(poi = poi, result = result(badge = "Alternative"), onSelect = {}) }
+        val badge = heard { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(badge = "Alternative"), onSelect = {}) }
         assertTrue(badge.toString(), "Alternative" in badge)
         // The product's own words, number and all.
         val own = name {
-            KozmosPOIResultCard(
+            KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy,
                 poi = poi,
                 result = result(),
                 onSelect = {},
@@ -145,10 +152,10 @@ class KozmosPOIResultCardTabTest {
     @Test
     fun theListNumbersEveryCardItDraws() {
         val items = listOf(KozmosPOIResultListItem(poi, result()))
-        val off = name { KozmosPOIResultList(items = items, resultCountLabel = "1 result", onSelect = {}) }
+        val off = name { KozmosPOIResultList(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, items = items, resultCountLabel = "1 result", onSelect = {}) }
         assertTrue(off, off.startsWith("Burger King"))
         val on = name {
-            KozmosPOIResultList(items = items, resultCountLabel = "1 result", onSelect = {}, numbered = true)
+            KozmosPOIResultList(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, items = items, resultCountLabel = "1 result", onSelect = {}, numbered = true)
         }
         assertTrue(on, on.startsWith("2, Burger King"))
     }
@@ -173,7 +180,7 @@ class KozmosPOIResultCardTabTest {
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
                         Box(Modifier.padding(16.dp).width(240.dp)) {
                             MaterialTheme {
-                                KozmosPOIResultCard(poi = poi, result = value, onSelect = {}, numbered = numbered)
+                                KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = value, onSelect = {}, numbered = numbered)
                             }
                         }
                     }
@@ -222,7 +229,7 @@ class KozmosPOIResultCardTabTest {
                         }) {
                             Box(Modifier.padding(16.dp).width(240.dp)) {
                                 MaterialTheme {
-                                    KozmosPOIResultCard(poi = poi, result = value, onSelect = {}, numbered = true)
+                                    KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = value, onSelect = {}, numbered = true)
                                 }
                             }
                         }
@@ -266,7 +273,7 @@ class KozmosPOIResultCardTabTest {
             CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
                 Box(Modifier.padding(16.dp).width(240.dp)) {
                     MaterialTheme {
-                        KozmosPOIResultCard(poi = poi, result = result(featured = true), onSelect = {})
+                        KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true), onSelect = {})
                     }
                 }
             }
@@ -323,7 +330,7 @@ class KozmosPOIResultCardTabTest {
             // Featured's colour as the released card drew it, and as it is now.
             val alert = swatch(dark) { KozmosThemeTokens.componentsPrimaryButtonsAlertButtonBackgroundIdle }
             val amber = swatch(dark) { KozmosThemeTokens.semanticsEmotionAlertFill }
-            val badge = scene(dark) { KozmosPOIResultCard(poi = poi, result = result(badge = "Alternative"), onSelect = {}) }
+            val badge = scene(dark) { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(badge = "Alternative"), onSelect = {}) }
             val badgeMuted = pixelsOf(badge, muted)
             val badgeAlert = pixelsOf(badge, alert) + pixelsOf(badge, amber)
             println("GAP-054 Android, $theme: the badge draws $badgeMuted muted pixels and $badgeAlert in Featured's ${DrawnPixels.hex(alert)} or ${DrawnPixels.hex(amber)}")
@@ -345,9 +352,9 @@ class KozmosPOIResultCardTabTest {
             val theme = if (dark) "dark" else "light"
             val amber = swatch(dark) { KozmosThemeTokens.semanticsEmotionAlertFill }
             val themed = swatch(dark) { KozmosThemeTokens.primitivesColorsTheme500 }
-            val rest = scene(dark) { KozmosPOIResultCard(poi = poi, result = result(featured = true), onSelect = {}) }
+            val rest = scene(dark) { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true), onSelect = {}) }
             val selected = scene(dark) {
-                KozmosPOIResultCard(poi = poi, result = result(featured = true, selected = true), onSelect = {})
+                KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true, selected = true), onSelect = {})
             }
             val (restAmber, selectedAmber) = pixelsOf(rest, amber) to pixelsOf(selected, amber)
             val selectedThemed = pixelsOf(selected, themed)
@@ -376,9 +383,9 @@ class KozmosPOIResultCardTabTest {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             val primary = swatch(dark) { KozmosThemeTokens.primitivesColorsTheme600 }
-            val rest = scene(dark) { KozmosPOIResultCard(poi = poi, result = result(), onSelect = {}, numbered = true) }
+            val rest = scene(dark) { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(), onSelect = {}, numbered = true) }
             val selected = scene(dark) {
-                KozmosPOIResultCard(poi = poi, result = result(selected = true), onSelect = {}, numbered = true)
+                KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(selected = true), onSelect = {}, numbered = true)
             }
             val (restPrimary, selectedPrimary) = pixelsOf(rest, primary) to pixelsOf(selected, primary)
             println("GAP-054 Android, $theme: primary pixels, number at rest $restPrimary, selected $selectedPrimary")

@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
+import com.kozmos.components.poiresultcard.KozmosPOIResultPresentationStyle
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultAction
 import com.kozmos.contracts.KozmosPOIResultPresentation
@@ -52,6 +53,19 @@ data class KozmosPOIResultListItem(
     val poi: KozmosPOIPresentation,
     val result: KozmosPOIResultPresentation
 )
+
+/** Preserves the previous full positional and trailing-action signature. */
+@Composable
+fun KozmosPOIResultList(
+    items: List<KozmosPOIResultListItem>, resultCountLabel: String, onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier, label: String = "Points of interest", selectedPoiId: String? = null,
+    featuredLabel: String = "Featured", emptyState: (@Composable () -> Unit)? = null,
+    currentFloorId: String? = null, travelTimeBandLabels: Map<KozmosTravelTimeBand, String> = emptyMap(),
+    numbered: Boolean = false, actionsLabel: String = "Actions for this result", languageNotListedLabel: String,
+    onAction: ((KozmosPOIResultAction, String) -> Unit)? = null
+) = KozmosPOIResultList(items, resultCountLabel, onSelect, modifier, label, selectedPoiId,
+    featuredLabel, emptyState, currentFloorId, travelTimeBandLabels, numbered, actionsLabel,
+    languageNotListedLabel, KozmosPOIResultPresentationStyle.Sdk, onAction)
 
 /**
  * A list of POI search results.
@@ -94,7 +108,8 @@ fun KozmosPOIResultList(
     numbered: Boolean = false,
     /** Names each result's action row for TalkBack: the card's. */
     actionsLabel: String = "Actions for this result",
-    languageNotListedLabel: String,
+    languageNotListedLabel: String = "Language not listed",
+    presentationStyle: KozmosPOIResultPresentationStyle,
     /**
      * Runs an action from the selected result's action row, told which
      * action and the POI's ID. Without it those actions are drawn disabled.
@@ -150,6 +165,7 @@ fun KozmosPOIResultList(
                     actionsLabel = actionsLabel,
                     travelTimeBandLabels = travelTimeBandLabels,
                     numbered = numbered,
+                    presentationStyle = presentationStyle,
                     onAction = onAction
                 )
             }

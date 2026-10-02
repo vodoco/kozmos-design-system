@@ -564,9 +564,10 @@ Every source-backlog row below is accounted for, but is not an unconditional cod
 
 These do not block P01 or initial reproduction work in P02:
 
-1. **Numbered cards/pins:** recommended compatibility policy is an opt-in SDK presentation
-   first, including numbered Featured tabs; do not silently replace every existing consumer's
-   appearance. A changed default instead requires explicit approval and migration guidance.
+1. **Numbered cards:** the owner approved the SDK presentation as the new default, with
+   migration notes and an explicit legacy appearance. This includes numbered Featured tabs,
+   neutral selection, the approved hover adjustment and expandable native groups pulled
+   forward from P05. Numbering still uses host-supplied indices and is explicitly enabled.
 2. **Marker styling:** approve semantic selected/resting colors and geometry in both themes,
    including white-label behavior. Do not assume the screenshot's green is universal branding.
 3. **Location-mode reveal:** confirm GAP-117's behavior choice above; same visible words can still
@@ -637,8 +638,10 @@ These do not block P01 or initial reproduction work in P02:
 
 The documentation baseline and **P01–P03** source increments are merged. Complete the
 acceptance gates below without repeating their implementation or calling them published.
-P04 appearance remains the next planned work package; acceptance of P02/P03 does not itself
-authorize starting it. Confirm continuation before beginning that work. Do not promise
+P04 result-card appearance and the native grouping slice of P05 are now owner-approved for
+implementation across React, SwiftUI and Compose. This does not authorize publication or
+the remaining P05 data/action contracts. Marker sprites remain a separate asset handoff:
+the owner manages their SDK style integration. Do not promise
 a date for the larger native assistant or Dashboard tracks before inventory and failing
 fixtures establish their actual size.
 

@@ -52,6 +52,43 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const SDKNumberedFeatured: Story = {
+  args: {
+    numbered: true,
+    onAction: fn(),
+    poi: { ...poi, name: "Northfield Artisan Bakery & Coffee Roastery" },
+    result: {
+      ...meta.args.result,
+      resultIndex: 1234,
+      featured: true,
+      selected: true,
+      actions: [
+        { action: "navigate", label: "Go", primary: true },
+        { action: "details", label: "Details" },
+      ],
+    },
+  },
+};
+
+export const SDKAlternative: Story = {
+  args: {
+    numbered: true,
+    result: {
+      ...meta.args.result,
+      resultIndex: 2345,
+      badge: { label: "Alternative" },
+    },
+  },
+};
+
+export const LegacyMigration: Story = {
+  args: {
+    presentationStyle: "legacy",
+    numbered: true,
+    result: { ...meta.args.result, featured: true, selected: true },
+  },
+};
+
 /** Staff-language evidence is separate from query match and UI translation. */
 export const StaffLanguageNotListed: Story = {
   args: {

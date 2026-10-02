@@ -25,7 +25,7 @@
     "test:browser-selection": "node --test scripts/lib/built-react-fixture.test.mjs scripts/lib/firefox-support.test.mjs",
     "test:scoped-utilities": "node scripts/check-scoped-utilities.mjs",
     "test:browser-compatibility": "node scripts/check-browser-compatibility.mjs",
-    "test:owned-css": "node scripts/check-owned-css.mjs",
+    "test:owned-css": "node scripts/check-owned-css.mjs && node scripts/check-result-presentation.mjs",
     "test:token-alpha": "node scripts/check-token-alpha.mjs",
     "test:temporal-css": "node scripts/check-temporal-css.mjs",
     "test:storybook-regressions": "node scripts/check-storybook-regressions.mjs",

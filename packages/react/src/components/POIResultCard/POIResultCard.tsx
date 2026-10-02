@@ -8,7 +8,7 @@ import {
   type POIResultPresentation,
   type TravelTimeBand,
 } from "@kozmos-ds/product-contracts";
-import { Star01 as Star } from "@kozmos-ds/icons";
+import { Star01 as Star, NavigationPointer01 } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
@@ -54,6 +54,8 @@ export interface POIResultCardProps extends Omit<
    * design separates them with dividers instead.
    */
   appearance?: "card" | "row";
+  /** SDK design by default: combined corner tabs, neutral selection, wrapping names and Go icon. Use legacy only for a staged migration. */
+  presentationStyle?: "legacy" | "sdk";
   /**
    * The words for a walk shown as a band, when `result.travelEstimate.band`
    * is set (decision 50). English by default; a product that translates
@@ -67,12 +69,11 @@ export interface POIResultCardProps extends Omit<
    * are listed and pinned.
    *
    * The card draws the number it is given and never renumbers, so the
-   * product numbers the results the way it numbers the pins. A featured
-   * result keeps its Featured tab and shows no number, as its pin shows its
-   * logo; a number takes the place of a badge, so the list's numbers match
-   * the pins. The number leads the result's accessible name ("2, Burger
-   * King"); a `selectionLabel` replaces that whole name, so it says the
-   * number itself.
+   * product numbers results the way it numbers pins. The default SDK design
+   * combines the number with Featured (a star separator) or a badge. Legacy
+   * presentation hides Featured numbers and lets numbers replace badges.
+   * The number leads the accessible name; a `selectionLabel` replaces that
+   * whole name, so it must include the number itself if needed.
    */
   numbered?: boolean;
   /**
@@ -148,6 +149,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       actionsLabel = "Actions for this result",
       currentFloorId,
       appearance = "card",
+      presentationStyle = "sdk",
       travelTimeBandLabels,
       numbered = false,
       idPrefix,
@@ -158,20 +160,23 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
   ) => {
     const { trackEvent } = useKozmosAnalytics();
     const available = result.available !== false;
-    // One tab, and what it says decides how it looks. Featured is the CMS's
-    // word and the map acts on it too (its pin draws the logo), so it wins;
-    // then the number, which pairs the result with its pin; then the badge,
-    // which only says why the result is in the list.
+    const sdk = presentationStyle === "sdk";
+    // One tab: SDK combines the host's number with Featured or a badge.
+    // Legacy keeps its original Featured > number > badge precedence.
     const number =
-      numbered && !result.featured ? String(result.resultIndex) : undefined;
+      numbered && (sdk || !result.featured)
+        ? String(result.resultIndex)
+        : undefined;
     const tab: { kind: "featured" | "number" | "badge"; label: string } | null =
       result.featured
         ? { kind: "featured", label: featuredLabel }
-        : number !== undefined
-          ? { kind: "number", label: number }
-          : result.badge
-            ? { kind: "badge", label: result.badge.label }
-            : null;
+        : sdk && result.badge
+          ? { kind: "badge", label: result.badge.label }
+          : number !== undefined
+            ? { kind: "number", label: number }
+            : result.badge
+              ? { kind: "badge", label: result.badge.label }
+              : null;
     // The list shows the band when the product sets one (decision 50); the
     // exact minutes stay in the estimate for the details card. A band this
     // version has no words for falls back to the exact minutes.
@@ -228,7 +233,10 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
 
     const name = (
       <span
-        className="block min-w-0 truncate text-lg font-normal leading-tight text-foreground"
+        className={cn(
+          "kozmos-poi-result-name block min-w-0 text-lg font-normal leading-tight text-foreground",
+          !sdk && "truncate",
+        )}
         // Story 2 shows an authored name exactly as authored, which leaves a
         // screen reader saying a Japanese name in the voice of the interface
         // language. The tag tells it which voice to use, and is set only when
@@ -249,30 +257,53 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
       onSelect(poi.id);
     };
 
+    const cornerTab = tab && (
+      <span
+        aria-hidden={sdk || tab.kind === "number" || undefined}
+        className="kozmos-poi-result-tab pointer-events-none absolute start-0 top-0 inline-flex h-4 items-center gap-1 whitespace-nowrap pe-1.5 ps-[5px] pt-px text-[11px] font-normal leading-[14px]"
+        data-selected={result.selected || undefined}
+        data-tab={tab.kind}
+      >
+        {sdk && number !== undefined && tab.kind !== "number" && (
+          <span>{number}</span>
+        )}
+        {tab.kind === "featured" && (
+          <Star aria-hidden="true" className="h-2.5 w-2.5 fill-current" />
+        )}
+        {sdk ? <span>{tab.label}</span> : tab.label}
+      </span>
+    );
+
     return (
       <article
         ref={ref}
         className={cn(
           "kozmos-poi-result-card relative bg-card text-card-foreground",
           appearance === "card" && "rounded-control border",
-          appearance === "card" && result.selected && "ring-2 ring-primary/20",
+          !sdk &&
+            appearance === "card" &&
+            result.selected &&
+            "ring-2 ring-primary/20",
           // Only Featured recolours the card's edge, in its tab's amber (an
-          // owned rule), selected or not: the ring says which is selected. A
+          // owned rule), selected or not. Legacy uses a selection ring; SDK
+          // uses the neutral selection surface. A
           // number keeps the grey edge, so it never reads as the selected
           // card, and a badge is quiet: it must not read as featured
           // (GAP-054).
           appearance === "card" &&
             (tab?.kind === "featured"
               ? "kozmos-poi-result-card-featured"
-              : result.selected
+              : result.selected && !sdk
                 ? "border-primary"
                 : "border-border"),
           // A row states its selection with a fill, since it has no border of
           // its own to thicken.
-          appearance === "row" && result.selected && "bg-primary/5",
+          !sdk && appearance === "row" && result.selected && "bg-primary/5",
           className,
         )}
         data-appearance={appearance}
+        data-presentation-style={presentationStyle}
+        data-available={available}
         data-current-floor={onCurrentFloor || undefined}
         data-featured={result.featured || undefined}
         data-poi-id={poi.id}
@@ -280,36 +311,10 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
         id={id}
         {...props}
       >
-        {/* One tab per card, painted for what it says (owned CSS, so the
-            paint holds without @scope):
-            - Featured: the SDK's bright amber under dark words, the alert
-              fill pair, with a star, and the card's edge in the same amber.
-              It is set in the CMS and read beyond this card.
-            - A number: the pin's number. Quiet, outlined on the card's own
-              fill, until the result is selected; then filled in the primary
-              colour, as the selected card's edge is. Decorative: the number
-              is said at the start of the result's name instead.
-            - A badge: quiet, a neutral fill with no star, on the card's grey
-              edge (GAP-054). It is read, as it always was.
-            It sits inside the card, in its top-start corner (Olcay,
-            2026-09-29; Figma "Search - Quick Access", 9273:45990): the
-            card's edge is its top and start, its outer corner is the card's,
-            and only its inner corner is its own. 16 tall with its edge, 11/14
-            words, 6 in from the card's outer edge on either side. In a
-            right-to-left language it is the top-right corner. */}
-        {appearance === "card" && tab && (
-          <span
-            aria-hidden={tab.kind === "number" || undefined}
-            className="kozmos-poi-result-tab pointer-events-none absolute start-0 top-0 inline-flex h-4 items-center gap-1 whitespace-nowrap pe-1.5 ps-[5px] pt-px text-[11px] font-normal leading-[14px]"
-            data-selected={result.selected || undefined}
-            data-tab={tab.kind}
-          >
-            {tab.kind === "featured" && (
-              <Star aria-hidden="true" className="h-2.5 w-2.5 fill-current" />
-            )}
-            {tab.label}
-          </span>
-        )}
+        {/* Owned CSS preserves legacy geometry and gives SDK tabs normal-flow
+            height, matching outer/inner radii and wider padding. The combined
+            SDK tab is decorative: its words are announced once by the row. */}
+        {!sdk && appearance === "card" && cornerTab}
 
         <button
           aria-controls={showActions ? actionsId : undefined}
@@ -332,125 +337,140 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           // are one thing to a visitor and are announced together.
           aria-current={result.selected ? "location" : undefined}
           className={cn(
-            "grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[inherit] px-4 py-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
-            // The tab takes the card's top-start corner, so the name begins
-            // below it: 24 down, 8 under the tab, as the design has it.
-            appearance === "card" && tab && "pt-6",
+            "block min-h-20 w-full rounded-[inherit] text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
           )}
           disabled={!available}
           onClick={handleSelect}
           type="button"
         >
-          <span className="min-w-0">
-            {number !== undefined && (
-              // The number leads the result's name, "2, Burger King": the tab
-              // that draws it is decorative. The space after it keeps WebKit
-              // from running it into the name.
-              <>
-                <span className="kozmos-poi-result-number-name">{`${number},`}</span>{" "}
-              </>
+          {sdk && cornerTab}
+          <span
+            className={cn(
+              "grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3",
+              !sdk && appearance === "card" && tab && "pt-6",
             )}
-            {appearance === "row" && number !== undefined ? (
-              // A row in a POIResultGroup has no edge of its own to hang a
-              // tab from, so its number stands before its name, painted as
-              // the tab is.
-              <span className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className="kozmos-poi-result-tab inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control px-1.5 text-xs font-semibold"
-                  data-placement="inline"
-                  data-selected={result.selected || undefined}
-                  data-tab="number"
-                >
-                  {number}
+          >
+            <span className="min-w-0">
+              {sdk && (number !== undefined || tab) && (
+                <>
+                  <span className="kozmos-poi-result-number-name">
+                    {[number, tab?.kind !== "number" ? tab?.label : undefined]
+                      .filter(Boolean)
+                      .join(", ")}
+                    {","}
+                  </span>{" "}
+                </>
+              )}
+              {!sdk && number !== undefined && (
+                // The number leads the result's name, "2, Burger King": the tab
+                // that draws it is decorative. The space after it keeps WebKit
+                // from running it into the name.
+                <>
+                  <span className="kozmos-poi-result-number-name">{`${number},`}</span>{" "}
+                </>
+              )}
+              {!sdk && appearance === "row" && number !== undefined ? (
+                // A row in a POIResultGroup has no edge of its own to hang a
+                // tab from, so its number stands before its name, painted as
+                // the tab is.
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="kozmos-poi-result-tab inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-control px-1.5 text-xs font-semibold"
+                    data-placement="inline"
+                    data-selected={result.selected || undefined}
+                    data-tab="number"
+                  >
+                    {number}
+                  </span>
+                  {name}
                 </span>
-                {name}
+              ) : (
+                name
+              )}
+              {poi.categoryLabel && (
+                <span className="mt-0.5 block truncate text-sm text-muted-foreground">
+                  {poi.categoryLabel}
+                </span>
+              )}
+              <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+                {onCurrentFloor && (
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 shrink-0 rounded-pill bg-primary"
+                  />
+                )}
+                <span className="truncate">{locationLabel}</span>
               </span>
-            ) : (
-              name
-            )}
-            {poi.categoryLabel && (
-              <span className="mt-0.5 block truncate text-sm text-muted-foreground">
-                {poi.categoryLabel}
-              </span>
-            )}
-            <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
-              {onCurrentFloor && (
+              {result.summary && (
+                // One generated line about this result, already localized.
+                // Two lines at most: a result card is scanned, and a summary
+                // that grows makes the cards below it move (GAP-029).
+                <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
+                  {result.summary}
+                </span>
+              )}
+              {attributes.length > 0 && (
+                <ul className="mt-1.5 flex list-none flex-wrap gap-1 p-0">
+                  {attributes.map((attribute) => (
+                    <li
+                      className={cn(
+                        "inline-flex max-w-full items-center gap-1 rounded-pill border px-2 py-0.5 text-xs font-medium",
+                        attributeTone[attribute.kind ?? "service"],
+                      )}
+                      key={attribute.id}
+                    >
+                      {attribute.iconUrl && (
+                        <img
+                          alt=""
+                          aria-hidden="true"
+                          className="h-3 w-3 shrink-0"
+                          src={attribute.iconUrl}
+                        />
+                      )}
+                      <span className="truncate">{attribute.label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {poi.availabilityLabel && (
                 <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 shrink-0 rounded-pill bg-primary"
+                  className={cn(
+                    "mt-1 block text-xs font-semibold",
+                    poi.availability
+                      ? availabilityTone[poi.availability]
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {poi.availabilityLabel}
+                </span>
+              )}
+            </span>
+
+            <span className="flex shrink-0 flex-col items-end gap-2">
+              {poi.logo && (
+                <img
+                  alt={poi.logo.alt}
+                  className="h-12 w-12 rounded-control border border-border object-contain"
+                  src={poi.logo.src}
                 />
               )}
-              <span className="truncate">{locationLabel}</span>
+              {result.travelEstimate && (
+                <span
+                  className={cn(
+                    "whitespace-nowrap text-sm",
+                    // The word says Nearby, so the tone is never the only
+                    // signal; the colour is an owned rule, so it holds where
+                    // the utilities do not.
+                    band && bandLabel && travelTimeTone(band) === "success"
+                      ? "kozmos-travel-time-success"
+                      : "text-foreground",
+                  )}
+                >
+                  {bandLabel || result.travelEstimate.durationLabel}
+                </span>
+              )}
             </span>
-            {result.summary && (
-              // One generated line about this result, already localized.
-              // Two lines at most: a result card is scanned, and a summary
-              // that grows makes the cards below it move (GAP-029).
-              <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
-                {result.summary}
-              </span>
-            )}
-            {attributes.length > 0 && (
-              <ul className="mt-1.5 flex list-none flex-wrap gap-1 p-0">
-                {attributes.map((attribute) => (
-                  <li
-                    className={cn(
-                      "inline-flex max-w-full items-center gap-1 rounded-pill border px-2 py-0.5 text-xs font-medium",
-                      attributeTone[attribute.kind ?? "service"],
-                    )}
-                    key={attribute.id}
-                  >
-                    {attribute.iconUrl && (
-                      <img
-                        alt=""
-                        aria-hidden="true"
-                        className="h-3 w-3 shrink-0"
-                        src={attribute.iconUrl}
-                      />
-                    )}
-                    <span className="truncate">{attribute.label}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {poi.availabilityLabel && (
-              <span
-                className={cn(
-                  "mt-1 block text-xs font-semibold",
-                  poi.availability
-                    ? availabilityTone[poi.availability]
-                    : "text-muted-foreground",
-                )}
-              >
-                {poi.availabilityLabel}
-              </span>
-            )}
-          </span>
-
-          <span className="flex shrink-0 flex-col items-end gap-2">
-            {poi.logo && (
-              <img
-                alt={poi.logo.alt}
-                className="h-12 w-12 rounded-control border border-border object-contain"
-                src={poi.logo.src}
-              />
-            )}
-            {result.travelEstimate && (
-              <span
-                className={cn(
-                  "whitespace-nowrap text-sm",
-                  // The word says Nearby, so the tone is never the only
-                  // signal; the colour is an owned rule, so it holds where
-                  // the utilities do not.
-                  band && bandLabel && travelTimeTone(band) === "success"
-                    ? "kozmos-travel-time-success"
-                    : "text-foreground",
-                )}
-              >
-                {bandLabel || result.travelEstimate.durationLabel}
-              </span>
-            )}
           </span>
         </button>
 
@@ -489,6 +509,12 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                   onClick={() => handleAction(entry.action)}
                   type="button"
                 >
+                  {sdk && entry.action === "navigate" && (
+                    <NavigationPointer01
+                      aria-hidden="true"
+                      className="h-5 w-5 shrink-0"
+                    />
+                  )}
                   <span className="truncate">{entry.label}</span>
                 </button>
               ))}

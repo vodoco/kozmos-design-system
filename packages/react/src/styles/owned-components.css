@@ -590,6 +590,53 @@
   .kozmos-poi-result-number-name {
     @apply sr-only;
   }
+  /* SDK is the default presentation. Tabs participate in layout so translated
+     labels and enlarged type never cover the name. Group interiors are
+     square; only the first row shares the container's outer top corner. */
+  .kozmos-poi-result-card[data-presentation-style="sdk"]
+    .kozmos-poi-result-tab {
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    height: auto;
+    min-height: 20px;
+    padding: 1px 10px;
+    gap: 7px;
+    line-height: 16px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+    border-start-start-radius: calc(var(--semantics-radius-control) * 1px);
+    border-end-end-radius: calc(var(--semantics-radius-control) * 1px);
+  }
+  .kozmos-poi-result-card[data-presentation-style="sdk"]
+    .kozmos-poi-result-tab
+    > svg {
+    flex-shrink: 0;
+  }
+  .kozmos-poi-result-card[data-presentation-style="sdk"]
+    .kozmos-poi-result-name {
+    overflow-wrap: anywhere;
+  }
+  .kozmos-poi-result-group
+    > ul
+    > li:not(:first-child)
+    > [data-presentation-style="sdk"]
+    .kozmos-poi-result-tab {
+    border-start-start-radius: 0;
+  }
+  .kozmos-poi-result-card[data-presentation-style="sdk"][data-selected],
+  .kozmos-poi-result-group[data-presentation-style="sdk"] > button {
+    background-color: var(--semantics-result-selected-surface);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .kozmos-poi-result-card[data-presentation-style="sdk"][data-available="true"]:not(
+        [data-selected]
+      ):hover,
+    .kozmos-poi-result-group[data-presentation-style="sdk"] > button:hover {
+      background-color: var(--semantics-result-hover-surface);
+    }
+  }
   /* The result card has two moments, and they are not the same kind of move.
 
      Selection recolours the card in place, so it is a transition: the card is
