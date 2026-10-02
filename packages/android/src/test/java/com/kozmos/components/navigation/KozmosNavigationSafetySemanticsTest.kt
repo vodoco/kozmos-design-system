@@ -3,6 +3,8 @@ package com.kozmos.components.navigation
 import androidx.compose.material3.MaterialTheme
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.KozmosDirectionStep
+import com.kozmos.components.itinerary.KozmosItinerary
+import com.kozmos.components.itinerary.KozmosItineraryStep
 import com.kozmos.components.routepreviewpanel.KozmosRoutePreviewPanel
 import com.kozmos.components.routinginputgroup.KozmosRoutePoint
 import com.kozmos.components.routinginputgroup.KozmosRoutingInputGroup
@@ -17,6 +19,15 @@ import org.junit.Test
 
 class KozmosNavigationSafetySemanticsTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
+
+    @Test fun itineraryMetricsAreVisibleAndReadWithTheStep() {
+        val step = KozmosItineraryStep("a", "Turn left", DirectionType.Left, duration = "0 min")
+        assertEquals("0 min", step.copy(isCurrent = true).duration)
+        assertNotEquals(step, step.copy(duration = "1 min"))
+        val tree = paparazzi.readSemantics { MaterialTheme { KozmosItinerary("A", listOf(step), "B") } }
+        assertTrue(tree.unmerged.flatMap { it.texts }.contains("0 min"))
+        assertNotNull(tree.named("Turn left, 0 min"))
+    }
 
     @Test fun durationOnlyHasNoOrphanSeparator() {
         val tree = paparazzi.readSemantics {

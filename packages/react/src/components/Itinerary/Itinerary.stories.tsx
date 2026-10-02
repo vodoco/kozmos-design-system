@@ -35,6 +35,34 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const StepMetrics: Story = {
+  args: {
+    steps: [
+      {
+        id: "turn",
+        instruction: "Turn left",
+        type: "left",
+        current: true,
+        distance: "8 m",
+        duration: "Less than 1 min",
+      },
+      {
+        id: "lift",
+        instruction: "Take the elevator up to Level 2",
+        type: "lift-up",
+        duration: "1 min",
+      },
+      {
+        id: "exit",
+        instruction: "Continue to the destination",
+        type: "straight",
+        distance: "24 m",
+      },
+      { id: "destination", instruction: "Destination", type: "destination" },
+    ],
+  },
+};
+
 export const NoCurrentStep: Story = {
   args: { steps: meta.args.steps.map((step) => ({ ...step, current: false })) },
 };

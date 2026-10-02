@@ -41,6 +41,16 @@ final class KozmosNavigationPartsTests: XCTestCase {
     }
 
     #if os(iOS)
+    @MainActor func testItineraryDrawsDurationWithoutDistance() async throws {
+        let view = KozmosItinerary(origin: "", steps: [
+            KozmosItineraryStep(id: "a", instruction: "", type: .left, duration: "0 min")
+        ], destination: "", originLabel: "", destinationLabel: "")
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .environment(\.colorScheme, .light).background(Color.white)
+        let pixels = try await RenderedPixels.render(view, size: CGSize(width: 240, height: 120))
+        let text = pixels.count(in: CGRect(x: 55, y: 0, width: 180, height: 120), where: RenderedPixels.isInk)
+        XCTAssertGreaterThan(text, 40, "the duration-only itinerary metric is absent")
+    }
     // MARK: Drawn
 
     /// The secondary danger foreground, #B01736 in light: the End button's

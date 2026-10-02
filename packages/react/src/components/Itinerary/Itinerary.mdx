@@ -25,6 +25,13 @@ font; a `lang` value preserves a foreign landmark's speech language. Supply exac
 spaces and punctuation, including German/Japanese qualifiers in their correct position.
 The current-step state stays independent of these text styles.
 
+Each step also accepts optional localized `distance` and `duration` labels. These
+are estimates for that step, not remaining-route estimates or actual arrival totals.
+Either label can stand alone; missing/empty labels draw nothing, while a supplied
+`"0 min"` is kept. Metrics appear below the instruction and are read after it without
+discarding speech-language metadata. Native initializers and Kotlin copy operations
+accept the same optional fields, retaining the original positional arguments.
+
 SwiftUI/Compose accept arrays/lists of `KozmosInstructionPart` through the itinerary
 step's overloaded initializer/constructor. Their `instruction` String accessor remains;
 `instructionParts` preserves the canonical metadata. Kotlin's existing copy and

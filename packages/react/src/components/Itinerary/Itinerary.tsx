@@ -15,6 +15,10 @@ export interface ItineraryStep {
   type: DirectionType;
   /** The step under way. */
   current?: boolean;
+  /** Localized estimate for this step, not an actual journey total. */
+  distance?: string;
+  /** Localized estimate for this step. Missing and empty values are omitted. */
+  duration?: string;
 }
 
 export interface ItineraryProps extends React.HTMLAttributes<HTMLElement> {
@@ -89,8 +93,15 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
               >
                 <DirectionIcon type={step.type} className="h-4 w-4" />
               </span>
-              <span className="min-w-0">
-                <InstructionText instruction={step.instruction} />
+              <span className="min-w-0 flex flex-col gap-0.5">
+                <span>
+                  <InstructionText instruction={step.instruction} />
+                </span>
+                {(step.distance || step.duration) && (
+                  <span className="kozmos-muted-text text-sm font-normal">
+                    {[step.distance, step.duration].filter(Boolean).join(" • ")}
+                  </span>
+                )}
               </span>
             </li>
           ))}

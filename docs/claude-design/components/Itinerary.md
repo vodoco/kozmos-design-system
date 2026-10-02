@@ -84,6 +84,10 @@ interface ItineraryStep {
   type: DirectionType;
   /** The step under way. */
   current?: boolean;
+  /** Localized estimate for this step, not an actual journey total. */
+  distance?: string;
+  /** Localized estimate for this step. Missing and empty values are omitted. */
+  duration?: string;
 }
 ```
 

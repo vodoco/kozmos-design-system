@@ -18,6 +18,44 @@ const steps: ItineraryStep[] = [
 ];
 
 describe("Itinerary", () => {
+  it("renders optional step metrics without inventing missing values or dropping language", () => {
+    const metricSteps = [
+      {
+        id: "a",
+        type: "left" as const,
+        instruction: [{ text: "Gauche", lang: "fr" }],
+        duration: "0 min",
+      },
+      {
+        id: "b",
+        type: "right" as const,
+        instruction: "Right",
+        distance: "12 m",
+      },
+      {
+        id: "c",
+        type: "straight" as const,
+        instruction: "Ahead",
+        distance: "20 m",
+        duration: "1 min",
+      },
+      {
+        id: "d",
+        type: "destination" as const,
+        instruction: "There",
+        distance: "",
+        duration: "",
+      },
+    ];
+    render(<Itinerary origin="A" steps={metricSteps} destination="B" />);
+    expect(screen.getByText("0 min")).toBeInTheDocument();
+    expect(screen.getByText("12 m")).toBeInTheDocument();
+    expect(screen.getByText("20 m • 1 min")).toBeInTheDocument();
+    expect(screen.getByText("Gauche")).toHaveAttribute("lang", "fr");
+    expect(screen.getByText("There").closest("li")).toHaveTextContent(
+      /^There$/,
+    );
+  });
   it("lists the origin, every step and the destination, in order", () => {
     render(
       <Itinerary

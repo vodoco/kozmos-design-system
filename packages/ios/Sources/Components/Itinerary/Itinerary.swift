@@ -8,16 +8,21 @@ public struct KozmosItineraryStep: Identifiable, Hashable, Sendable {
     public var instruction: String { instructionParts.map(\.text).joined() }
     public let type: DirectionType
     public let isCurrent: Bool
+    /// Localized estimates for this step, not actual journey totals.
+    public let distance: String?
+    public let duration: String?
 
-    public init(id: String, instruction: String, type: DirectionType, isCurrent: Bool = false) {
-        self.init(id: id, instruction: [KozmosInstructionPart(text: instruction)], type: type, isCurrent: isCurrent)
+    public init(id: String, instruction: String, type: DirectionType, isCurrent: Bool = false, distance: String? = nil, duration: String? = nil) {
+        self.init(id: id, instruction: [KozmosInstructionPart(text: instruction)], type: type, isCurrent: isCurrent, distance: distance, duration: duration)
     }
 
-    public init(id: String, instruction: [KozmosInstructionPart], type: DirectionType, isCurrent: Bool = false) {
+    public init(id: String, instruction: [KozmosInstructionPart], type: DirectionType, isCurrent: Bool = false, distance: String? = nil, duration: String? = nil) {
         self.id = id
         self.instructionParts = instruction
         self.type = type
         self.isCurrent = isCurrent
+        self.distance = distance
+        self.duration = duration
     }
 }
 
@@ -88,11 +93,17 @@ public struct KozmosItinerary: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500)
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: 20, alignment: .leading)
-            KozmosInstructionText(parts: step.instructionParts)
-                .font(step.isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-                .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
+                KozmosInstructionText(parts: step.instructionParts)
+                    .font(step.isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
+                    .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100)
+                let metrics = [step.distance, step.duration].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " • ")
+                if !metrics.isEmpty {
+                    Text(metrics).font(KozmosTypography.subheadline).kozmosMutedText()
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .kozmosInstructionAccessibility(step.instructionParts, selected: step.isCurrent)
+        .kozmosInstructionAccessibility(step.instructionParts, suffix: [step.distance, step.duration].compactMap { $0 }, selected: step.isCurrent)
     }
 }
