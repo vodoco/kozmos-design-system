@@ -11,6 +11,10 @@ import SwiftUI
 /// washed in foreground/900 at 5 %, which showed on neither theme, the swap was
 /// a 40 circle 28 down, and the rail theme/500 over foreground/300.
 final class KozmosRoutingInputGroupTests: XCTestCase {
+    func testLegacyTrailingRemovalAndLocalizedInitializersCompile() {
+        _ = KozmosRoutingInputGroup(points: [], onPointChange: { _, _ in }, onSwap: nil, onAddPoint: nil) { (_: String) in }
+        _ = KozmosRoutingInputGroup(points: [KozmosRoutePoint(id: "a", value: "Lobby", label: "Desde")], swapLabel: "Intercambiar", addPointLabel: "Añadir", removePointLabel: { "Quitar \($0.label ?? "parada")" }, onPointChange: { _, _ in })
+    }
     #if os(iOS)
     @MainActor func testTheGroupIsLaidOutAsReactsIs() async throws {
         let group = KozmosRoutingInputGroup(

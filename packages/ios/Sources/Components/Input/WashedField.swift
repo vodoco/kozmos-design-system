@@ -10,6 +10,7 @@ struct KozmosWashedField: View {
     @Binding var text: String
     let placeholder: String
     var multiline: Bool = false
+    var label: String? = nil
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -31,7 +32,7 @@ struct KozmosWashedField: View {
         .foregroundColor(KozmosColors.primitivesColorsForeground0)
         .tint(KozmosColors.primitivesColorsTheme600)
         .focused($focused)
-        .accessibilityLabel(placeholder)
+        .accessibilityLabel(label ?? placeholder)
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
         .background(
             RoundedRectangle(cornerRadius: radius, style: .continuous)

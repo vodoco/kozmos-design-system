@@ -17,6 +17,12 @@ final class KozmosNavigationPartsTests: XCTestCase {
 
     // MARK: The rail's arithmetic
 
+    func testNonFiniteProgressStaysAtTheStart() {
+        for progress in [Double.nan, Double.infinity, -Double.infinity] {
+            XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: progress, width: 300), 10)
+        }
+    }
+
     /// The disc starts just after the start dot, ends just before the end
     /// dot, and never leaves the rail whatever progress it is given.
     func testTheDiscTravelsFromAfterTheStartDotToBeforeTheEndDot() {

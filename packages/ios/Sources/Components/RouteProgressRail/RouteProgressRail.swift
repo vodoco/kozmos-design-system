@@ -25,12 +25,16 @@ public struct KozmosRouteProgressRail: View {
     /// Where the disc's leading edge sits for a progress, in a rail `width`
     /// wide: from just after the start dot to just before the end dot.
     static func discLeading(progress: Double, width: CGFloat) -> CGFloat {
-        let clamped = CGFloat(min(max(progress, 0), 1))
+        let clamped = CGFloat(normalizedProgress(progress))
         let travel = max(width - dot * 2 - disc, 0)
         return dot + travel * clamped
     }
 
-    private var clamped: Double { min(max(progress, 0), 1) }
+    static func normalizedProgress(_ progress: Double) -> Double {
+        progress.isFinite ? min(max(progress, 0), 1) : 0
+    }
+
+    private var clamped: Double { Self.normalizedProgress(progress) }
 
     public var body: some View {
         GeometryReader { geometry in

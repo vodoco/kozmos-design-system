@@ -4,11 +4,13 @@ public struct KozmosRoutePoint: Identifiable, Equatable {
     public let id: String
     public let value: String
     public let placeholder: String?
+    public let label: String?
 
-    public init(id: String, value: String, placeholder: String? = nil) {
+    public init(id: String, value: String, placeholder: String? = nil, label: String? = nil) {
         self.id = id
         self.value = value
         self.placeholder = placeholder
+        self.label = label
     }
 }
 
@@ -21,6 +23,9 @@ public struct KozmosRoutingInputGroup: View {
     private let onSwap: (() -> Void)?
     private let onAddPoint: (() -> Void)?
     private let onRemovePoint: ((String) -> Void)?
+    private let swapLabel: String
+    private let addPointLabel: String
+    private let removePointLabel: (KozmosRoutePoint) -> String
 
     /// `surface` is what the group is made of, as React's `surface` prop: `.solid`
     /// (the default) or `.glass`, for a card over the map. Until 2026-09-22
@@ -28,6 +33,9 @@ public struct KozmosRoutingInputGroup: View {
     public init(
         points: [KozmosRoutePoint],
         surface: KozmosSurfaceStyle = .solid,
+        swapLabel: String = "Swap route points",
+        addPointLabel: String = "Add route point",
+        removePointLabel: @escaping (KozmosRoutePoint) -> String = { "Remove \($0.label ?? $0.placeholder ?? ($0.value.isEmpty ? "route point" : $0.value))" },
         onPointChange: @escaping (String, String) -> Void,
         onSwap: (() -> Void)? = nil,
         onAddPoint: (() -> Void)? = nil,
@@ -39,6 +47,9 @@ public struct KozmosRoutingInputGroup: View {
         self.onSwap = onSwap
         self.onAddPoint = onAddPoint
         self.onRemovePoint = onRemovePoint
+        self.swapLabel = swapLabel
+        self.addPointLabel = addPointLabel
+        self.removePointLabel = removePointLabel
     }
 
     public var body: some View {
@@ -53,13 +64,14 @@ public struct KozmosRoutingInputGroup: View {
                                 get: { point.value },
                                 set: { onPointChange(point.id, $0) }
                             ),
-                            placeholder: point.placeholder ?? defaultPlaceholder(for: index)
+                            placeholder: point.placeholder ?? defaultPlaceholder(for: index),
+                            label: point.label ?? (index == 0 ? "Origin" : index == points.count - 1 ? "Destination" : "Stop \(index)")
                         )
 
                         if canRemove(index: index), let onRemovePoint {
                             iconAction(
                                 systemName: "xmark",
-                                label: "Remove \(point.placeholder ?? (point.value.isEmpty ? "route point" : point.value))",
+                                label: removePointLabel(point),
                                 filled: false
                             ) {
                                 trackEvent(KozmosAnalyticsEvent(eventName: "point_removed", component: "RoutingInputGroup", properties: ["pointId": point.id]))
@@ -78,7 +90,7 @@ public struct KozmosRoutingInputGroup: View {
             VStack(spacing: 0) {
                 let swaps = points.count == 2 && onSwap != nil
                 if swaps, let onSwap {
-                    iconAction(systemName: "arrow.up.arrow.down", label: "Swap route points", filled: true) {
+                    iconAction(systemName: "arrow.up.arrow.down", label: swapLabel, filled: true) {
                         trackEvent(KozmosAnalyticsEvent(eventName: "points_swapped", component: "RoutingInputGroup"))
                         onSwap()
                     }
@@ -86,7 +98,7 @@ public struct KozmosRoutingInputGroup: View {
                 }
 
                 if let onAddPoint {
-                    iconAction(systemName: "plus", label: "Add route point", filled: false) {
+                    iconAction(systemName: "plus", label: addPointLabel, filled: false) {
                         trackEvent(KozmosAnalyticsEvent(eventName: "point_added", component: "RoutingInputGroup"))
                         onAddPoint()
                     }

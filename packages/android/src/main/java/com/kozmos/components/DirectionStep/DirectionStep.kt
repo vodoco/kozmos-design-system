@@ -131,9 +131,10 @@ fun KozmosDirectionStep(
                 style = MaterialTheme.typography.titleMedium,
                 color = KozmosThemeTokens.primitivesColorsForeground100
             )
-            if (distance != null || duration != null) {
+            val metrics = listOfNotNull(distance, duration).filter { it.isNotEmpty() }.joinToString(" • ")
+            if (metrics.isNotEmpty()) {
                 Text(
-                    text = "${distance ?: ""} ${if (duration != null) "• $duration" else ""}",
+                    text = metrics,
                     style = MaterialTheme.typography.bodySmall,
                     color = KozmosThemeTokens.primitivesColorsForeground500
                 )

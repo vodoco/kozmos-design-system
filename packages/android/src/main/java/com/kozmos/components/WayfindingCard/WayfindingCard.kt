@@ -148,8 +148,7 @@ fun KozmosWayfindingInputRow(
                     .clickable(role = Role.Button, onClickLabel = swapLabel) {
                         trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(
                             component = "WayfindingInputRow",
-                            eventName = "wayfinding_route_swapped",
-                            properties = mapOf("origin" to originValue, "destination" to destinationValue)
+                            eventName = "wayfinding_route_swapped"
                         ))
                         onSwap()
                     }

@@ -197,6 +197,7 @@ fun KozmosRoutePreviewPanel(
                     options.forEach { option ->
                         KozmosRouteOptionCard(
                             option = option,
+                            enabled = ready,
                             onSelect = onOptionSelect,
                             modifier = Modifier.width(208.dp)
                         )

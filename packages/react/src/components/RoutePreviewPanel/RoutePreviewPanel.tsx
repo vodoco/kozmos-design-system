@@ -107,6 +107,7 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
                   <li className="list-none snap-start" key={option.id}>
                     <RouteOptionCard
                       className="h-full"
+                      disabled={!ready}
                       onSelect={onOptionSelect}
                       option={option}
                     />

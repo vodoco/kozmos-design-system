@@ -11,6 +11,8 @@ How far along the route the visitor is, as a rail: a dot where it starts, a disc
 
 Products measure progress by ground covered, so a lift or a level change — no distance — does not move the disc.
 
+Non-finite numeric input (NaN or either infinity) is normalized to zero on every platform. This is a defensive rendering fallback, not evidence of a known starting position. Progress of one never triggers arrival; only the host can confirm arrival.
+
 <Canvas>
   <Story of={RouteProgressRailStories.Midway} />
 </Canvas>

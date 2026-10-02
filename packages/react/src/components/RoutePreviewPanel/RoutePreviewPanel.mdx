@@ -11,6 +11,8 @@ Route calculation and alternative-selection composition. The horizontal list
 uses snap points and a localized count cue; continuation is disabled until a
 selected route is ready and available.
 
+Outside `ready`, previous options may remain visible when `statusContent` is omitted, but cannot be selected. Supply localized status content to explain calculation or failure; it replaces the options and is announced as a status or alert. Neither an available old option nor omitted status content makes a route ready.
+
 <Canvas of={Stories.Ready} />
 <Canvas of={Stories.Calculating} />
 

@@ -29,6 +29,30 @@ const options: RouteOptionPresentation[] = [
 ];
 
 describe("RoutePreviewPanel", () => {
+  it.each(["calculating", "error", "no-route"] as const)(
+    "prevents stale option selection while %s without optional status content",
+    (status) => {
+      const onSelect = vi.fn();
+      render(
+        <RoutePreviewPanel
+          destinationName="Destination"
+          backLabel="Back"
+          continueLabel="Continue"
+          onBack={() => undefined}
+          onContinue={() => undefined}
+          onOptionSelect={onSelect}
+          options={options}
+          status={status}
+        />,
+      );
+      const staleOption = screen.getByRole("button", { name: /Quickest/ });
+      expect(staleOption).toBeDisabled();
+      fireEvent.click(staleOption);
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    },
+  );
+
   it("selects alternatives and continues with the selected stable ID", () => {
     const onSelect = vi.fn();
     const onContinue = vi.fn();

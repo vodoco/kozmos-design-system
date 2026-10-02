@@ -98,7 +98,7 @@ public struct KozmosWayfindingInputRow: View {
                     KozmosWayfindingField(text: $destinationValue, placeholder: destinationPlaceholder, label: destinationLabel)
                 }
                 Button(action: {
-                    trackEvent(KozmosAnalyticsEvent(eventName: "wayfinding_route_swapped", component: "WayfindingInputRow", properties: ["origin": originValue, "destination": destinationValue]))
+                    trackEvent(KozmosAnalyticsEvent(eventName: "wayfinding_route_swapped", component: "WayfindingInputRow"))
                     onSwap()
                 }) {
                     Image(systemName: "arrow.up.arrow.down")

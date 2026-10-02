@@ -24,6 +24,12 @@ import org.junit.Test
  * muted foreground. Until 2026-09-22 the fields were Material's, 56 high.
  */
 class KozmosRoutingInputGroupPaparazziTest {
+    // Source compatibility: the original last callback remains a removal callback.
+    @androidx.compose.runtime.Composable
+    private fun legacyPositionalAndTrailingCall() {
+        KozmosRoutingInputGroup(emptyList(), { _, _ -> }, Modifier,
+            com.kozmos.components.surface.KozmosSurfaceStyle.Solid, null, null) { _: String -> }
+    }
     @get:Rule
     val paparazzi = Paparazzi(maxPercentDifference = 0.0)
 

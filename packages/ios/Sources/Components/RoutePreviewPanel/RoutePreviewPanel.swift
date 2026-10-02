@@ -136,7 +136,7 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                                 ForEach(options) { option in
-                                    KozmosRouteOptionCard(option: option, onSelect: onOptionSelect)
+                                    KozmosRouteOptionCard(option: option, isDisabled: !ready, onSelect: onOptionSelect)
                                         .frame(width: 208)
                                 }
                             }

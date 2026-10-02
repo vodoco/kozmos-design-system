@@ -149,7 +149,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [MapView](components/MapView.md): A named surface that contains the map renderer supplied by the host, not a map SDK itself.
 - [RouteProgressRail](components/RouteProgressRail.md): How far along the route the visitor is, as a rail: a dot where it starts, a disc carrying the current manoeuvre's arrow that travels the track, a dot where it ends.
 - [RouteSummary](components/RouteSummary.md): The `RouteSummary` serves as the primary bottom-anchored modal sheet during active turn-by-turn Wayfinding sessions.
-- [RoutingInputGroup](components/RoutingInputGroup.md): The `RoutingInputGroup` maps Pointr's timeline logic into physical multi-point data entry boxes, allowing dynamic addition/reduction of navigational stops while keeping layout structures aligned cleanly against timeline borders.
+- [RoutingInputGroup](components/RoutingInputGroup.md): Editable route points with stable IDs and controlled change, swap, add and remove callbacks.
 - [SaveLocationCard](components/SaveLocationCard.md): A prompt offering to keep a place in the user's saved locations, with routing and note shortcuts.
 
 ### Navigation (9)

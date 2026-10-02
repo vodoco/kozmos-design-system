@@ -29,7 +29,7 @@ object KozmosRouteProgressRailGeometry {
     val disc = 34.dp
     val track = KozmosDimensions.primitivesLayoutSpacing75
 
-    fun clamp(progress: Float): Float = if (progress.isNaN()) 0f else progress.coerceIn(0f, 1f)
+    fun clamp(progress: Float): Float = if (progress.isFinite()) progress.coerceIn(0f, 1f) else 0f
 
     /**
      * Where the disc's leading edge sits for a progress, in a rail `width`

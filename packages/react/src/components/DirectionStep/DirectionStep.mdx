@@ -21,6 +21,8 @@ A step of a route: the arrow, the instruction, the distance and the duration. Th
 
 ## Ordered instruction parts
 
+Distance and duration are independently optional localized labels. Either can appear alone; when both are present they are joined with a separator. Empty labels are omitted, but a supplied zero-valued label such as `0 min` is retained. The component does not calculate or infer metrics.
+
 Pass a string as before, or an ordered array of `{ text, role?, lang? }`.
 Include whitespace and punctuation in `text`. The optional `secondary` role is a
 muted, regular-weight qualifier at the same size (full foreground on glass for contrast); `lang` supplies a BCP 47 speech

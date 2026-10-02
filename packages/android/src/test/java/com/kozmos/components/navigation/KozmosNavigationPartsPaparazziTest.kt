@@ -53,6 +53,13 @@ class KozmosNavigationPartsPaparazziTest {
         assertEquals(10.dp, g.discLeading(0.5f, 20.dp))
     }
 
+    @Test
+    fun nonFiniteProgressStaysAtTheStart() {
+        for (progress in listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)) {
+            assertEquals(10.dp, KozmosRouteProgressRailGeometry.discLeading(progress, 300.dp))
+        }
+    }
+
     /** Closed: the arrow, the instruction, the detail, the grab bar. */
     @Test
     fun theClosedCard() {

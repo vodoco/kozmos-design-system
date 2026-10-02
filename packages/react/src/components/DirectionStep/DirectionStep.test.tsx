@@ -3,6 +3,25 @@ import { DirectionStep, DIRECTION_TYPES } from "./DirectionStep";
 import { describe, it, expect } from "vitest";
 
 describe("DirectionStep", () => {
+  it.each([
+    [undefined, "2 min", "2 min"],
+    ["50 m", undefined, "50 m"],
+    ["50 m", "2 min", "50 m • 2 min"],
+    ["", "0 min", "0 min"],
+  ])("joins only provided metrics (%s, %s)", (distance, duration, expected) => {
+    const { container } = render(
+      <DirectionStep
+        type="left"
+        instruction="Turn left"
+        distance={distance}
+        duration={duration}
+      />,
+    );
+    expect(container.querySelectorAll("p")[1].textContent?.trim()).toBe(
+      expected,
+    );
+  });
+
   it("renders instruction and distance", () => {
     render(
       <DirectionStep type="left" instruction="Turn left" distance="50m" />,

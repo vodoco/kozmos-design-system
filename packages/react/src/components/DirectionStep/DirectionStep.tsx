@@ -121,7 +121,7 @@ const DirectionStep = React.forwardRef<HTMLDivElement, DirectionStepProps>(
           </p>
           {(distance || duration) && (
             <p className="text-sm text-muted-foreground">
-              {distance} {duration && `• ${duration}`}
+              {[distance, duration].filter(Boolean).join(" • ")}
             </p>
           )}
         </div>

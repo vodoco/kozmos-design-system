@@ -76,8 +76,9 @@ public struct KozmosDirectionStep: View {
                     .font(KozmosTypography.body)
                     .fontWeight(.medium)
                 
-                if let dist = distance {
-                    Text(dist + (duration != nil ? " • \(duration!)" : ""))
+                let metrics = [distance, duration].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " • ")
+                if !metrics.isEmpty {
+                    Text(metrics)
                         .font(KozmosTypography.caption)
                         .foregroundColor(KozmosColors.primitivesColorsForeground500)
                 }

@@ -21,6 +21,28 @@ final class KozmosDirectionStepTests: XCTestCase {
 
 
     #if os(iOS)
+    @MainActor func testDurationOnlyIsDrawnAndAbsentMetricsLeaveNoText() async throws {
+        for duration in [String?.none, "0 min"] {
+            // An empty instruction isolates the metric pixels from antialiased
+            // instruction text; spoken ordering is covered separately above.
+            let view = KozmosDirectionStep(type: .left, instruction: "", duration: duration)
+                .environment(\.colorScheme, .light)
+                .background(Color.white)
+            let pixels = try await RenderedPixels.render(view, size: CGSize(width: 240, height: 80))
+            // Inside the text column, excluding the border and the blue glyph:
+            // only the optional metrics use this medium foreground shade.
+            let metrics = pixels.count(in: CGRect(x: 70, y: 12, width: 150, height: 56)) { r, g, b in
+                r > 90 && r < 180 && g > 90 && g < 180 && b > 90 && b < 180
+                    && abs(Int(r) - Int(g)) < 20 && abs(Int(g) - Int(b)) < 20
+            }
+            if duration == nil {
+                XCTAssertLessThan(metrics, 20)
+            } else {
+                XCTAssertGreaterThan(metrics, 40, "duration-only metric is not drawn")
+            }
+        }
+    }
+
     /// Every direction has a glyph the platform can draw: rendered in the
     /// theme colour, each one leaves theme pixels behind.
     @MainActor func testEveryDirectionDrawsAnArrow() async throws {
@@ -33,4 +55,3 @@ final class KozmosDirectionStepTests: XCTestCase {
     }
     #endif
 }
-

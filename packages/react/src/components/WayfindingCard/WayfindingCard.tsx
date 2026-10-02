@@ -5,7 +5,7 @@ import { Button } from "../Button/Button";
 import {
   X,
   MarkerPin01 as MapPin,
-  ArrowDown as ArrowDownUp,
+  SwitchVertical01 as ArrowDownUp,
 } from "@kozmos-ds/icons";
 import { inputVariants } from "../Input/Input";
 import { useKozmosAnalytics } from "../../utils/analytics";
@@ -145,10 +145,7 @@ export const WayfindingInputRow = React.forwardRef<
             variant="secondary"
             className="absolute end-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-pill shadow-raised z-10"
             onClick={() => {
-              trackEvent("WayfindingInputRow", "wayfinding_route_swapped", {
-                origin: originValue,
-                destination: destinationValue,
-              });
+              trackEvent("WayfindingInputRow", "wayfinding_route_swapped");
               onSwap?.();
             }}
             type="button"
