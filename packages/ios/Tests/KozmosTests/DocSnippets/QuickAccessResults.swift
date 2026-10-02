@@ -6,7 +6,7 @@ import SwiftUI
 import Kozmos
 
 // The places of the category chosen in the browse grid, numbered by the
-// product as their pins are: the featured ones show their logo and no number.
+// product: SDK cards retain the number alongside Featured or badge labels.
 struct QuickAccessResults: View {
     let results: [KozmosPOIResultListItem]
     // "6 places", in the visitor's language.

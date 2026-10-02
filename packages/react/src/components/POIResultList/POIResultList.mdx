@@ -21,14 +21,20 @@ pins them with numbers. Pass `numbered` for that list, and every result, grouped
 own `result.resultIndex`, the number on its pin, counted from 1. It is off unless the product turns
 it on: Kozmos cannot tell a quick-access list from a search's, so the product says which it is.
 
-- **The list draws the numbers it is given and never renumbers.** A featured result keeps its
-  Featured tab and shows no number, as its pin shows its logo; so number the other results, in the
-  order their pins are numbered, and the list and the map agree.
-- **A number takes the place of a badge**, for the same reason.
-- **The selected result's number fills** with the primary colour, as its pin stands out; the rest
-  are quiet, on the cards' grey edges, so a number is never taken for the selection.
+- **The list draws the numbers it is given and never renumbers.** The default SDK presentation
+  keeps the supplied number beside Featured or a badge: `1234 ★ Featured`, `1234 Alternative`,
+  or `1234`. Grouped and standalone rows use the same corner tab, not a number beside the name.
+  The host owns sprite and logo selection; a marker logo does not suppress the card's number.
+- **A selected number-only tab fills** with the primary colour; other number-only tabs are
+  quiet. Featured and badge tabs retain their own treatment. Every selected SDK row uses the
+  same pale neutral surface, whether grouped or standalone, and keyboard focus is separate.
 - **The number is heard with the name**, "2, Burger King …", and its tab is decorative.
   `POIResultCard` has the details.
+
+**Legacy migration:** explicit `presentationStyle="legacy"` retains the former precedence:
+Featured hides the number, a number replaces a badge, and grouped numbers precede the name.
+The default SDK presentation combines these labels instead. Numbering remains opt-in on
+React, SwiftUI and Compose; the list forwards its presentation style to its cards.
 
 <Canvas of={Stories.QuickAccessNumbered} />
 
@@ -37,7 +43,7 @@ it on: Kozmos cannot tell a quick-access list from a search's, so the product sa
 import { POIResultList, type POIResultListItem } from "@kozmos-ds/react";
 
 // The places of the category chosen in the browse grid, numbered by the
-// product as their pins are: the featured ones show their logo and no number.
+// product: SDK cards retain the number alongside Featured or badge labels.
 export function QuickAccessResults({
   results,
   countLabel,
@@ -66,7 +72,7 @@ import SwiftUI
 import Kozmos
 
 // The places of the category chosen in the browse grid, numbered by the
-// product as their pins are: the featured ones show their logo and no number.
+// product: SDK cards retain the number alongside Featured or badge labels.
 struct QuickAccessResults: View {
     let results: [KozmosPOIResultListItem]
     // "6 places", in the visitor's language.
@@ -91,7 +97,7 @@ import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 
 // The places of the category chosen in the browse grid, numbered by the
-// product as their pins are: the featured ones show their logo and no number.
+// product: SDK cards retain the number alongside Featured or badge labels.
 @Composable
 fun QuickAccessResults(
     results: List<KozmosPOIResultListItem>,

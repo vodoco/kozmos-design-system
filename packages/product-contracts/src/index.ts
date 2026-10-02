@@ -290,9 +290,11 @@ export interface POIResultPresentation {
    * `numbered`) draws it in the result's tab, and analytics reports it as
    * the result's position. Kozmos draws and reports it as given and never
    * renumbers, so number the results the way the map numbers their pins.
-   * A featured result's marker shows its logo, not a number, and its card
-   * shows Featured, so its number is never drawn: in a numbered list,
-   * number the others 1, 2, 3 in pin order.
+   * With numbering enabled, the default SDK presentation keeps this number
+   * alongside Featured or badge labels, including on grouped rows. Only
+   * explicit legacy presentation hides a Featured result's number and lets
+   * a number replace a badge. Marker sprites and logo display belong to the
+   * host; a logo does not suppress the SDK card's supplied number.
    */
   resultIndex: number;
   selected: boolean;
@@ -304,8 +306,9 @@ export interface POIResultPresentation {
   available?: boolean;
   unavailableReason?: string;
   /**
-   * A quiet tab: why this result is in this list. Ignored when featured, and
-   * in a numbered list, where the number takes its place.
+   * A quiet tab: why this result is in this list. Ignored when featured.
+   * SDK presentation keeps the badge beside the supplied number when
+   * numbering is enabled; only legacy presentation replaces it with a number.
    */
   badge?: POIResultBadgePresentation;
   /**

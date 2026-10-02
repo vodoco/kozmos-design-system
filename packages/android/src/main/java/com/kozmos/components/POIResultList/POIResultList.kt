@@ -102,8 +102,9 @@ fun KozmosPOIResultList(
      * Number every result with its `resultIndex`, the number its pin shows:
      * the card's `numbered`, given to every card. Off unless the product turns
      * it on, for a list whose pins are numbered, as quick access's are. The
-     * list never renumbers: a featured result shows Featured and no number,
-     * since its pin shows its logo, so number the others in pin order.
+     * list never renumbers. SDK rows keep the number alongside Featured or
+     * badge labels. Only explicit legacy presentation hides Featured numbers
+     * and lets a number replace a badge. Marker sprites remain host-owned.
      */
     numbered: Boolean = false,
     /** Names each result's action row for TalkBack: the card's. */

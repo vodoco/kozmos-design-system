@@ -25,6 +25,55 @@ const root = path.resolve(
 );
 const api = readPublishedApi(root);
 
+test("result API cards distinguish SDK numbering from legacy precedence", () => {
+  for (const name of ["POIResultCard", "POIResultGroup", "POIResultList"]) {
+    const text = fs.readFileSync(
+      path.join(root, "docs/claude-design/components", `${name}.md`),
+      "utf8",
+    );
+    const contract = text.split("interface POIResultPresentation {")[1];
+    assert.ok(contract, `${name}: embedded result contract is present`);
+    const numbering = contract.split("resultIndex: number;")[0];
+    assert.match(numbering, /SDK/, `${name}: document the default numbering`);
+    assert.match(numbering, /legacy/i, `${name}: scope the old precedence`);
+    assert.doesNotMatch(numbering, /number is never drawn/);
+    const badge = contract
+      .split("badge?:")[0]
+      .split("unavailableReason?: string;")[1];
+    assert.match(
+      badge,
+      /SDK/,
+      `${name}: numbered SDK badges retain their label`,
+    );
+    assert.match(
+      badge,
+      /legacy/i,
+      `${name}: scope badge replacement to legacy`,
+    );
+  }
+});
+
+test("numbered list guidance documents combined tabs before legacy migration", () => {
+  const text = fs.readFileSync(
+    path.join(
+      root,
+      "packages/react/src/components/POIResultList/POIResultList.mdx",
+    ),
+    "utf8",
+  );
+  const numbered = text.split("## Numbered results: quick access")[1];
+  assert.ok(numbered, "the numbered list guide exists");
+  const [defaults, legacy] = numbered.split("**Legacy migration:**");
+  assert.ok(legacy, "old precedence must be explicitly scoped to legacy");
+  assert.match(defaults, /1234 ★ Featured/);
+  assert.match(defaults, /1234 Alternative/);
+  assert.doesNotMatch(
+    defaults,
+    /shows no number|number takes the place of a badge/i,
+  );
+  assert.doesNotMatch(text, /featured ones show their logo and no number/);
+});
+
 test("component pages do not retain the generic generated description placeholder", () => {
   const directory = path.join(root, "packages/react/src/components");
   const placeholders = [];
