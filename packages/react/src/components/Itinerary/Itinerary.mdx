@@ -17,6 +17,21 @@ On a glass surface, in a glass `ManoeuvreCard`, the captions and the origin, mut
 
 <Controls />
 
+## Instruction wording and language
+
+Each step's `instruction` accepts a legacy string or ordered `{ text, role?, lang? }`
+parts. A `secondary` qualifier is muted and regular-weight without shrinking its
+font; a `lang` value preserves a foreign landmark's speech language. Supply exact
+spaces and punctuation, including German/Japanese qualifiers in their correct position.
+The current-step state stays independent of these text styles.
+
+SwiftUI/Compose accept arrays/lists of `KozmosInstructionPart` through the itinerary
+step's overloaded initializer/constructor. Their `instruction` String accessor remains;
+`instructionParts` preserves the canonical metadata. Kotlin's existing copy and
+destructuring calls remain source-compatible: copying only current state retains parts,
+whereas `copy(instruction = "new words")` resets to plain text. Recompile native callers
+after upgrading; native binary compatibility is not promised by this source change.
+
 ## Implementation
 
 <div className="subheading">Code</div>

@@ -29,7 +29,8 @@ enum KozmosManoeuvreCardPart: Hashable {
 /// whether the change came from the card or from the product.
 public struct KozmosManoeuvreCard<Itinerary: View>: View {
     let type: DirectionType
-    let instruction: String
+    let instructionParts: [KozmosInstructionPart]
+    var instruction: String { instructionParts.map(\.text).joined() }
     let detail: String?
     let instructionLines: Int?
     let isExpanded: Bool
@@ -67,8 +68,28 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         maxItineraryHeight: CGFloat = 320,
         @ViewBuilder itinerary: () -> Itinerary
     ) {
+        self.init(type: type, instruction: [KozmosInstructionPart(text: instruction)], detail: detail,
+                  instructionLines: instructionLines, isExpanded: isExpanded, onToggle: onToggle,
+                  expandLabel: expandLabel, collapseLabel: collapseLabel, manoeuvreLabel: manoeuvreLabel,
+                  surface: surface, maxItineraryHeight: maxItineraryHeight, itinerary: itinerary)
+    }
+
+    public init(
+        type: DirectionType,
+        instruction: [KozmosInstructionPart],
+        detail: String? = nil,
+        instructionLines: Int? = nil,
+        isExpanded: Bool,
+        onToggle: @escaping () -> Void,
+        expandLabel: String = "Show itinerary",
+        collapseLabel: String = "Hide itinerary",
+        manoeuvreLabel: String = "Current manoeuvre",
+        surface: KozmosSurfaceStyle = .solid,
+        maxItineraryHeight: CGFloat = 320,
+        @ViewBuilder itinerary: () -> Itinerary
+    ) {
         self.type = type
-        self.instruction = instruction
+        self.instructionParts = instruction
         self.detail = detail
         self.instructionLines = instructionLines
         self.isExpanded = isExpanded
@@ -153,7 +174,7 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                             .frame(width: KozmosDimensions.primitivesLayoutSizing400, height: KozmosDimensions.primitivesLayoutSizing400)
                         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                             // Whole unless the product asks for a limit (GAP-094).
-                            Text(instruction)
+                            KozmosInstructionText(parts: instructionParts)
                                 .font(KozmosTypography.title3.weight(.semibold))
                                 .foregroundColor(KozmosColors.primitivesColorsForeground100)
                                 .lineLimit(Self.instructionLineLimit(instructionLines))
@@ -171,10 +192,8 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Self.accessibilityDescription(instruction: instruction, detail: detail))
-                .accessibilityHint(expandLabel)
-                .accessibilityAddTraits(.isButton)
+                .kozmosInstructionAccessibility(instructionParts, suffix: [detail].compactMap { $0 },
+                                                hint: expandLabel, activate: toggle)
                 .kozmosVoiceOverFocus($voiceOverFocus, .instruction)
             }
             // The grab bar: the sign that the card opens, and the way to close it.

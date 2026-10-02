@@ -79,12 +79,21 @@ From `@kozmos-ds/react`.
 /** One step of an itinerary, as the products present it. */
 interface ItineraryStep {
   id: string;
-  /** The routing engine's own wording. */
-  instruction: string;
+  /** The routing engine's own wording, optionally ordered parts with role/language. */
+  instruction: Instruction;
   type: DirectionType;
   /** The step under way. */
   current?: boolean;
 }
+```
+
+### Instruction
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Legacy strings remain valid. Parts concatenate verbatim, without added separators. */
+type Instruction = string | readonly InstructionPart[];
 ```
 
 ### DirectionType
@@ -115,4 +124,27 @@ type DirectionType =
   | "level-down"
   | "transition"
   | "turn-back";
+```
+
+### InstructionPart
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Ordered, already-localized words. Include the required spaces/punctuation in text. */
+interface InstructionPart {
+  text: string;
+  role?: InstructionPartRole;
+  /** BCP 47 speech language for these words; absent inherits the surrounding language. */
+  lang?: string;
+}
+```
+
+### InstructionPartRole
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** A side qualifier is secondary, never a second turn. */
+type InstructionPartRole = "secondary";
 ```

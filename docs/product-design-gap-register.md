@@ -40,13 +40,22 @@ portion of GAP-085/114 across React, SwiftUI and Compose. Both are merged and
 exact-main CI/deployment verified, but **unreleased** and not accepted on every
 physical device or external product board.
 
-P03 staff-language candidate: GAP-021 now has optional `languageNotListed` data
+P03 staff-language source merged in #187 (unreleased): GAP-021 now has optional `languageNotListed` data
 and localized card/list disclosure on all three platforms (groups too on React).
 Explicit true is required; unknown data, query match and UI/name language never
 infer staff availability. Host grouping/ranking and physical assistive-technology
-acceptance remain separate. GAP-093/096 structured instructions remain the next
-P03 slice. This candidate note supersedes GAP-021's imported missing-field finding
-below, not its original requirement, and is not yet a merged/released claim.
+acceptance remain separate. This supersedes GAP-021's imported missing-field finding
+below, not its original requirement or the host's acceptance work.
+
+P03 structured-instruction candidate: GAP-093/096 now have a shared ordered
+`InstructionPart` contract (`text`, optional secondary `role`, optional BCP 47 `lang`),
+rendered by DirectionStep, Itinerary and ManoeuvreCard on React/SwiftUI/Compose.
+Legacy strings remain valid; parts keep caller-owned punctuation and word order.
+Secondary qualifiers use regular weight at the same size, with surface-aware contrast;
+foreign-name speech ranges are retained rather than flattened away. These candidate
+source changes supersede the imported missing-API findings, not physical VoiceOver/
+TalkBack pronunciation, real routing adapters or external Figma/product-board acceptance.
+They are not yet a merged or published claim.
 
 ### Confirmed decisions and the released 0.7.0 increment
 

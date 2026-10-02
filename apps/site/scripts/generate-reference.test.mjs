@@ -222,6 +222,7 @@ test("the generator reads the repository's components as they are", () => {
     components.map((component) => [component.name, component]),
   );
   assert.ok(components.length >= 100, `only ${components.length} components`);
+  assert.equal(byName.has("Instruction"), false, "Internal text helpers are not public components");
   assert.match(lanes.core.description, /Figma/);
 
   assert.deepEqual(byName.get("Button").platforms, {

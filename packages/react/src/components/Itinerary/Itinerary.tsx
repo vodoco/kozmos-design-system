@@ -1,4 +1,6 @@
 import React from "react";
+import type { Instruction } from "@kozmos-ds/product-contracts";
+import { InstructionText } from "../../utils/instruction";
 import { cn } from "../../utils";
 import {
   DirectionIcon,
@@ -8,8 +10,8 @@ import {
 /** One step of an itinerary, as the products present it. */
 export interface ItineraryStep {
   id: string;
-  /** The routing engine's own wording. */
-  instruction: string;
+  /** The routing engine's own wording, optionally ordered parts with role/language. */
+  instruction: Instruction;
   type: DirectionType;
   /** The step under way. */
   current?: boolean;
@@ -87,7 +89,9 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
               >
                 <DirectionIcon type={step.type} className="h-4 w-4" />
               </span>
-              <span>{step.instruction}</span>
+              <span className="min-w-0">
+                <InstructionText instruction={step.instruction} />
+              </span>
             </li>
           ))}
           {endpoint(destinationLabel, destination, true)}

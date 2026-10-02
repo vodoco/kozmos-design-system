@@ -4,13 +4,18 @@ import SwiftUI
 /// wording, the arrow it gets, and whether it is the step under way.
 public struct KozmosItineraryStep: Identifiable, Hashable, Sendable {
     public let id: String
-    public let instruction: String
+    public let instructionParts: [KozmosInstructionPart]
+    public var instruction: String { instructionParts.map(\.text).joined() }
     public let type: DirectionType
     public let isCurrent: Bool
 
     public init(id: String, instruction: String, type: DirectionType, isCurrent: Bool = false) {
+        self.init(id: id, instruction: [KozmosInstructionPart(text: instruction)], type: type, isCurrent: isCurrent)
+    }
+
+    public init(id: String, instruction: [KozmosInstructionPart], type: DirectionType, isCurrent: Bool = false) {
         self.id = id
-        self.instruction = instruction
+        self.instructionParts = instruction
         self.type = type
         self.isCurrent = isCurrent
     }
@@ -83,13 +88,11 @@ public struct KozmosItinerary: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500)
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: 20, alignment: .leading)
-            Text(step.instruction)
+            KozmosInstructionText(parts: step.instructionParts)
                 .font(step.isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
                 .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(step.instruction)
-        .accessibilityAddTraits(step.isCurrent ? .isSelected : [])
+        .kozmosInstructionAccessibility(step.instructionParts, selected: step.isCurrent)
     }
 }

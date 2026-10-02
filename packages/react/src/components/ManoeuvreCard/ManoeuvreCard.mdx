@@ -23,6 +23,39 @@ On `surface="glass"` the detail, muted elsewhere, takes the foreground colour, a
 
 <Controls />
 
+## Ordered instruction parts and language
+
+`instruction` accepts a legacy string or an ordered array of `InstructionPart`
+from `@kozmos-ds/product-contracts` (also re-exported by React):
+`{ text: string; role?: "secondary"; lang?: string }`.
+Supply the spaces and punctuation in `text`; the component never inserts separators
+or moves the qualifier to the end. German may put the side mid-sentence and Japanese
+before the landmark. `secondary` uses normal weight and muted foreground at the same
+font size. On glass it keeps the full-contrast foreground, distinguished by weight,
+following the existing surface policy. `lang` is the BCP 47 language of those words, not a request to translate them.
+Absent language inherits the surrounding language; hosts own translations and fallback names.
+
+The same parts work in `DirectionStep` and `ItineraryStep.instruction`. React preserves
+inline language spans instead of flattening rich content into an `aria-label`. Do not
+replace that content with a caller-supplied flat accessible name when language matters.
+iOS retains attributed speech-language ranges through a public UIKit accessibility
+element; Android retains `LocaleSpan` in the actual accessibility node's annotated text.
+Physical VoiceOver/TalkBack pronunciation and product integration still require device acceptance.
+
+Native callers pass an array/list of `KozmosInstructionPart`; existing String calls remain
+valid. Native itinerary `instruction` stays a String accessor; `instructionParts` is the
+canonical ordered value. Kotlin preserves the former data-class source constructor,
+destructuring and copy calls: `copy(isCurrent = true)` retains parts, while
+`copy(instruction = "new words")` replaces them with plain text. To replace styled words,
+pass a parts list to `copy(instruction = parts)`. Rebuild native consumers from source;
+this is not a native binary-compatibility guarantee or a native registry publication.
+
+<Canvas of={ManoeuvreCardStories.GermanParts} />
+<Canvas of={ManoeuvreCardStories.JapaneseParts} />
+<Canvas of={ManoeuvreCardStories.ArabicParts} />
+<Canvas of={ManoeuvreCardStories.PartsItinerary} />
+<Canvas of={ManoeuvreCardStories.GlassParts} />
+
 ## The whole instruction
 
 The card shows the whole instruction, and grows with it. Two lines cut ordinary instructions short: "Take the escalator near Fountain Court up to…" loses the level, and German "Biegen Sie bei Marlow Apotheke auf der linke…" loses the turn itself, "rechts ab" (GAP-094). Examples/Navigation's phone stories show English, German and Japanese instructions whole on a 390 phone, and the German itinerary scrolling.

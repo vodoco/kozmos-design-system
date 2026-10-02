@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.text
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -24,16 +26,41 @@ import com.kozmos.components.directionstep.icon
 import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.contracts.KozmosInstructionPart
+import com.kozmos.utils.instructionAnnotatedText
+import com.kozmos.utils.hasSpeechLanguage
 
 /** One step of an itinerary, as the products present it. */
-data class KozmosItineraryStep(
+class KozmosItineraryStep(
     val id: String,
-    /** The routing engine's own wording. */
-    val instruction: String,
+    instruction: List<KozmosInstructionPart>,
     val type: DirectionType,
     /** The step under way. */
     val isCurrent: Boolean = false
-)
+) {
+    /** A snapshot: a caller mutating its input list cannot leave text and metadata inconsistent. */
+    val instructionParts: List<KozmosInstructionPart> = instruction.toList()
+    val instruction: String get() = instructionParts.joinToString("") { it.text }
+
+    constructor(id: String, instruction: String, type: DirectionType, isCurrent: Boolean = false) :
+        this(id, listOf(KozmosInstructionPart(instruction)), type, isCurrent)
+
+    // Preserve the former data-class source API, without a second stale string/parts field.
+    fun copy(id: String = this.id, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent) =
+        KozmosItineraryStep(id, instructionParts, type, isCurrent)
+    fun copy(id: String = this.id, instruction: String, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent) =
+        KozmosItineraryStep(id, instruction, type, isCurrent)
+    fun copy(id: String = this.id, instruction: List<KozmosInstructionPart>, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent) =
+        KozmosItineraryStep(id, instruction, type, isCurrent)
+    operator fun component1() = id
+    operator fun component2() = instruction
+    operator fun component3() = type
+    operator fun component4() = isCurrent
+    override fun equals(other: Any?): Boolean = other is KozmosItineraryStep &&
+        id == other.id && instructionParts == other.instructionParts && type == other.type && isCurrent == other.isCurrent
+    override fun hashCode(): Int = 31 * (31 * (31 * id.hashCode() + instructionParts.hashCode()) + type.hashCode()) + isCurrent.hashCode()
+    override fun toString() = "KozmosItineraryStep(id=$id, instruction=$instruction, type=$type, isCurrent=$isCurrent)"
+}
 
 /**
  * The whole route as a list: where it starts, every step with the current
@@ -90,11 +117,13 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
 @Composable
 private fun StepRow(step: KozmosItineraryStep) {
     val colour = if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100
+    val instruction = instructionAnnotatedText(step.instructionParts)
+    val hasLanguage = step.instructionParts.hasSpeechLanguage()
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {
-                contentDescription = step.instruction
+                if (hasLanguage) text = instruction else contentDescription = step.instruction
                 selected = step.isCurrent
             },
         verticalAlignment = Alignment.Top
@@ -109,10 +138,11 @@ private fun StepRow(step: KozmosItineraryStep) {
                 .padding(end = KozmosDimensions.primitivesLayoutSpacing300)
         )
         Text(
-            text = step.instruction,
+            text = instruction,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (step.isCurrent) FontWeight.SemiBold else FontWeight.Normal),
             color = colour,
             modifier = Modifier.padding(start = KozmosDimensions.primitivesLayoutSpacing150)
+                .then(if (hasLanguage) Modifier.clearAndSetSemantics {} else Modifier)
         )
     }
 }

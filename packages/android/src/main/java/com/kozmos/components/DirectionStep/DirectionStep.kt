@@ -1,6 +1,8 @@
 package com.kozmos.components.directionstep
 
 import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.contracts.KozmosInstructionPart
+import com.kozmos.utils.instructionAnnotatedText
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -56,6 +58,15 @@ enum class DirectionType {
     TurnBack
 }
 
+@Composable
+fun KozmosDirectionStep(
+    type: DirectionType,
+    instruction: String,
+    modifier: Modifier = Modifier,
+    distance: String? = null,
+    duration: String? = null
+) = KozmosDirectionStep(type, listOf(KozmosInstructionPart(instruction)), modifier, distance, duration)
+
 /**
  * The arrow for a direction, one table for every part that draws one.
  * Turn icons must NOT auto-mirror: "turn left" stays a physical left turn
@@ -81,7 +92,7 @@ fun DirectionType.icon(): ImageVector = when (this) {
 @Composable
 fun KozmosDirectionStep(
     type: DirectionType,
-    instruction: String,
+    instruction: List<KozmosInstructionPart>,
     modifier: Modifier = Modifier,
     distance: String? = null,
     duration: String? = null
@@ -114,9 +125,9 @@ fun KozmosDirectionStep(
         
         Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing150))
         
-        Column {
+        Column(Modifier.weight(1f)) {
             Text(
-                text = instruction,
+                text = instructionAnnotatedText(instruction),
                 style = MaterialTheme.typography.titleMedium,
                 color = KozmosThemeTokens.primitivesColorsForeground100
             )

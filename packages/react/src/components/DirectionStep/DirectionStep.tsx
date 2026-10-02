@@ -1,4 +1,6 @@
 import React from "react";
+import type { Instruction } from "@kozmos-ds/product-contracts";
+import { InstructionText } from "../../utils/instruction";
 import {
   ArrowUp,
   ArrowDown,
@@ -91,9 +93,10 @@ export function DirectionIcon({
   return <Icon aria-hidden="true" className={className} />;
 }
 
-interface DirectionStepProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface DirectionStepProps extends React.HTMLAttributes<HTMLDivElement> {
   type: DirectionType;
-  instruction: string;
+  /** Legacy text or ordered inline parts with secondary emphasis and speech language. */
+  instruction: Instruction;
   distance?: string;
   duration?: string;
 }
@@ -109,11 +112,13 @@ const DirectionStep = React.forwardRef<HTMLDivElement, DirectionStepProps>(
         )}
         {...props}
       >
-        <div className="flex items-center justify-center w-10 h-10 mr-3 text-primary bg-primary/10 rounded-pill">
+        <div className="flex shrink-0 items-center justify-center w-10 h-10 me-3 text-primary bg-primary/10 rounded-pill">
           <DirectionIcon type={type} className="w-6 h-6" />
         </div>
-        <div className="flex-1">
-          <p className="font-medium text-foreground">{instruction}</p>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-foreground">
+            <InstructionText instruction={instruction} />
+          </p>
           {(distance || duration) && (
             <p className="text-sm text-muted-foreground">
               {distance} {duration && `• ${duration}`}

@@ -19,6 +19,19 @@ A step of a route: the arrow, the instruction, the distance and the duration. Th
 
 <Controls />
 
+## Ordered instruction parts
+
+Pass a string as before, or an ordered array of `{ text, role?, lang? }`.
+Include whitespace and punctuation in `text`. The optional `secondary` role is a
+muted, regular-weight qualifier at the same size (full foreground on glass for contrast); `lang` supplies a BCP 47 speech
+language for a foreign landmark. The sentence keeps its supplied word order and
+wraps as one inline flow. iOS and Android accept `[KozmosInstructionPart]` and
+`List<KozmosInstructionPart>` respectively; old String calls remain supported.
+All three renderers preserve speech-language metadata rather than flattening it
+into a replacement accessible label. Physical speech acceptance remains separate.
+
+<Canvas of={DirectionStepStories.InstructionParts} />
+
 ## Implementation
 
 <div className="subheading">Code</div>
@@ -56,101 +69,24 @@ duration: "1 min"
 )
 `}
     kotlin={`
-package com.kozmos.components.directionstep
-
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
-
-enum class DirectionType {
-Straight, Left, Right, Destination
-}
+import com.kozmos.components.directionstep.DirectionType
+import com.kozmos.components.directionstep.KozmosDirectionStep
+import com.kozmos.contracts.KozmosInstructionPart
+import com.kozmos.contracts.KozmosInstructionPartRole
 
 @Composable
-fun KozmosDirectionStep(
-type: DirectionType,
-instruction: String,
-modifier: Modifier = Modifier,
-distance: String? = null,
-duration: String? = null
-) {
-val icon = when (type) {
-DirectionType.Straight -> Icons.Default.ArrowUpward
-DirectionType.Left -> Icons.Default.ArrowBack // Approximated
-DirectionType.Right -> Icons.Default.ArrowForward
-DirectionType.Destination -> Icons.Default.LocationOn
+fun Example() {
+    KozmosDirectionStep(
+        type = DirectionType.Right,
+        instruction = listOf(
+            KozmosInstructionPart("Turn right at "),
+            KozmosInstructionPart("Marlow Pharmacy", lang = "en"),
+            KozmosInstructionPart(" on your left", role = KozmosInstructionPartRole.Secondary)
+        ),
+        distance = "40 m"
+    )
 }
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
-            .background(KozmosColors.primitivesColorsBackground0)
-            .border(1.dp, KozmosColors.primitivesColorsBackground300, RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
-            .padding(KozmosDimensions.primitivesLayoutSpacing150),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(KozmosDimensions.primitivesLayoutSizing500)
-                .clip(CircleShape)
-                .background(KozmosColors.primitivesColorsTheme500.copy(alpha = 0.1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = KozmosColors.primitivesColorsTheme500,
-                modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(KozmosDimensions.primitivesLayoutSpacing150))
-
-        Column {
-            Text(
-                text = instruction,
-                style = MaterialTheme.typography.titleMedium,
-                color = KozmosColors.primitivesColorsForeground100
-            )
-            if (distance != null || duration != null) {
-                Text(
-                    text = "\${distance ?: \"\"} \${if (duration != null) \"• \$duration\" else \"\"}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = KozmosColors.primitivesColorsForeground500
-                )
-            }
-        }
-    }
-
-}
-
     `}
 
 />
