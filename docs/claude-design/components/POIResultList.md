@@ -126,11 +126,13 @@ It forwards its ref to `HTMLElement`. Its props are `POIResultListProps`, which 
   the browse grid lists that category's places and the map pins them.
   Kozmos cannot tell that list from any other, so the product says so.
 
-  The list draws the numbers it is given and never renumbers. A featured
-  result keeps its Featured tab and shows no number, since its pin shows
-  its logo, so number the results that are not featured, in the order the
-  pins are numbered. A number takes the place of a badge. POIResultCard's
-  `numbered`, given to every card.
+  The list never renumbers. The default SDK design combines numbers with
+  Featured or badge labels. Legacy presentation retains its old precedence.
+  POIResultCard's `numbered`, given to every card.
+
+- `presentationStyle`: `POIResultCardProps["presentationStyle"]`, optional.
+
+  Forward the SDK presentation consistently to standalone results and groups.
 
 - `idPrefix`: `string`, optional.
 
@@ -238,6 +240,8 @@ interface POIResultCardProps extends Omit<
    * design separates them with dividers instead.
    */
   appearance?: "card" | "row";
+  /** SDK design by default: combined corner tabs, neutral selection, wrapping names and Go icon. Use legacy only for a staged migration. */
+  presentationStyle?: "legacy" | "sdk";
   /**
    * The words for a walk shown as a band, when `result.travelEstimate.band`
    * is set (decision 50). English by default; a product that translates
@@ -251,12 +255,11 @@ interface POIResultCardProps extends Omit<
    * are listed and pinned.
    *
    * The card draws the number it is given and never renumbers, so the
-   * product numbers the results the way it numbers the pins. A featured
-   * result keeps its Featured tab and shows no number, as its pin shows its
-   * logo; a number takes the place of a badge, so the list's numbers match
-   * the pins. The number leads the result's accessible name ("2, Burger
-   * King"); a `selectionLabel` replaces that whole name, so it says the
-   * number itself.
+   * product numbers results the way it numbers pins. The default SDK design
+   * combines the number with Featured (a star separator) or a badge. Legacy
+   * presentation hides Featured numbers and lets numbers replace badges.
+   * The number leads the accessible name; a `selectionLabel` replaces that
+   * whole name, so it must include the number itself if needed.
    */
   numbered?: boolean;
   /**

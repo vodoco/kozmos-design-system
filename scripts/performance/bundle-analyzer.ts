@@ -41,7 +41,10 @@ import { gzipSync } from "zlib";
 const MAX_EXPORT_GZIP_KB = 8;
 const MAX_BUTTON_GZIP_KB = 2;
 const MAX_TOTAL_GZIP_KB = 80;
-const MAX_CSS_GZIP_KB = 30;
+// Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
+// The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
+// saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
+const MAX_CSS_GZIP_KB = 30.5;
 const MIN_ESM_MODULES = 50;
 
 const REACT_PKG_DIR = path.resolve(__dirname, "../../packages/react");

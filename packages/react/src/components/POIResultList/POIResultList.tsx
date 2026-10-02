@@ -181,13 +181,13 @@ export interface POIResultListProps extends Omit<
    * the browse grid lists that category's places and the map pins them.
    * Kozmos cannot tell that list from any other, so the product says so.
    *
-   * The list draws the numbers it is given and never renumbers. A featured
-   * result keeps its Featured tab and shows no number, since its pin shows
-   * its logo, so number the results that are not featured, in the order the
-   * pins are numbered. A number takes the place of a badge. POIResultCard's
-   * `numbered`, given to every card.
+   * The list never renumbers. The default SDK design combines numbers with
+   * Featured or badge labels. Legacy presentation retains its old precedence.
+   * POIResultCard's `numbered`, given to every card.
    */
   numbered?: boolean;
+  /** Forward the SDK presentation consistently to standalone results and groups. */
+  presentationStyle?: POIResultCardProps["presentationStyle"];
   /**
    * Names this list's results apart from another list's on the same page
    * that shows one of the same places: the search's results and an
@@ -251,6 +251,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
       scrollSelectedIntoView = true,
       travelTimeBandLabels,
       numbered,
+      presentationStyle,
       idPrefix,
       ...props
     },
@@ -408,6 +409,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                       }))}
                       label={entry.label}
                       numbered={numbered}
+                      presentationStyle={presentationStyle}
                       onAction={onAction}
                       onExpandedChange={
                         onGroupExpandedChange &&
@@ -431,6 +433,7 @@ const POIResultList = React.forwardRef<HTMLElement, POIResultListProps>(
                     languageNotListedLabel={languageNotListedLabel}
                     idPrefix={idPrefix}
                     numbered={numbered}
+                    presentationStyle={presentationStyle}
                     onAction={onAction}
                     onSelect={onSelect}
                     poi={poi}

@@ -44,13 +44,27 @@ export async function buildReactFixture(entry) {
   };
 }
 
-export async function launchFixtureBrowser() {
+export async function launchFixtureBrowser({ pointer } = {}) {
+  if (pointer !== undefined && pointer !== "mouse" && pointer !== "touch")
+    throw new Error(`Unsupported fixture pointer: ${pointer}`);
   const requested = process.env.ADAPTIVE_BROWSER ?? "chromium";
   const engines = { chromium, chrome: chromium, firefox, webkit };
   if (!Object.hasOwn(engines, requested))
     throw new Error(`Unsupported ADAPTIVE_BROWSER: ${requested}`);
   const browser = await engines[requested].launch({
     channel: requested === "chrome" ? "chrome" : undefined,
+    // Headless Linux Firefox can report no physical pointer even when
+    // Playwright sends mouse events. Pin input capabilities only for tests
+    // explicitly exercising them; other fixtures retain their environment.
+    // Gecko LookAndFeel: Coarse=1, Fine=2, Hover=4.
+    // https://github.com/mozilla/gecko-dev/blob/master/widget/LookAndFeel.h
+    firefoxUserPrefs:
+      requested === "firefox" && pointer !== undefined
+        ? {
+            "ui.primaryPointerCapabilities": pointer === "mouse" ? 6 : 1,
+            "ui.allPointerCapabilities": pointer === "mouse" ? 6 : 1,
+          }
+        : undefined,
   });
   console.log(
     `Browser: ${requested} (${browser.browserType().name()} ${browser.version()})`,

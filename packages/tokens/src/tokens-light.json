@@ -2391,6 +2391,18 @@
     }
   },
   "Semantics": {
+    "Result": {
+      "selected surface": {
+        "$value": "#F9FAFB",
+        "$type": "color",
+        "$description": "Pale neutral SDK result selection; state is also exposed programmatically and through its actions/tab."
+      },
+      "hover surface": {
+        "$value": "#EEEFF0",
+        "$type": "color",
+        "$description": "Pointer-only SDK result hover: #FBFCFD mixed with 5% black. Selection takes precedence."
+      }
+    },
     "Map attribution": {
       "text": {
         "$value": "#464A53",

@@ -786,6 +786,26 @@ object KozmosThemeTokens {
         )
 
     /**
+     * Pale neutral SDK result selection; state is also exposed
+     * programmatically and through its actions/tab.
+     */
+    val semanticsResultSelectedSurface: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsResultSelectedSurface,
+            KozmosColorsDark.semanticsResultSelectedSurface
+        )
+
+    /**
+     * Pointer-only SDK result hover: #FBFCFD mixed with 5% black. Selection
+     * takes precedence.
+     */
+    val semanticsResultHoverSurface: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsResultHoverSurface,
+            KozmosColorsDark.semanticsResultHoverSurface
+        )
+
+    /**
      * Fixed dark-grey map credit fill; paired with a white halo regardless of
      * application theme.
      */

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { useState } from "react";
 import { fn } from "@storybook/test";
 import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import { POIResultGroup } from "./POIResultGroup";
@@ -65,3 +66,45 @@ export const Expanded: Story = { args: { items, defaultExpanded: true } };
 
 /** A group of one needs no control at all. */
 export const SingleBranch: Story = { args: { items: [items[0]] } };
+
+/** The approved default: every row keeps its supplied number, including Featured. */
+export const NumberedMixedStates: Story = {
+  args: { items, numbered: true, defaultExpanded: true },
+  render: function NumberedMixedStates(args) {
+    const [selected, setSelected] = useState("b");
+    return (
+      <POIResultGroup
+        {...args}
+        label="Northfield Bakery, three locations"
+        onSelect={(id) => {
+          setSelected(id);
+          args.onSelect(id);
+        }}
+        items={items.slice(0, 3).map((item, index) => ({
+          poi: {
+            ...item.poi,
+            name:
+              index === 0
+                ? "Northfield Artisan Bakery & Coffee Roastery"
+                : "Northfield Bakery",
+            logo: {
+              src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Crect width='48' height='48' rx='16' fill='%23963816'/%3E%3Ctext x='24' y='30' text-anchor='middle' fill='white' font-family='serif' font-size='20'%3ENB%3C/text%3E%3C/svg%3E",
+              alt: "",
+            },
+          },
+          result: {
+            ...item.result,
+            resultIndex: 1234 + index,
+            featured: index === 0,
+            badge: index === 1 ? { label: "Alternative" } : undefined,
+            selected: selected === item.poi.id,
+            actions: [
+              { action: "navigate", label: "Go", primary: true },
+              { action: "details", label: "Details" },
+            ],
+          },
+        }))}
+      />
+    );
+  },
+};

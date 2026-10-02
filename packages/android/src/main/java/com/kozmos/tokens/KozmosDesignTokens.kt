@@ -4,6 +4,8 @@ package com.kozmos.tokens
 import androidx.compose.ui.graphics.Color
 
 object KozmosDesignTokens {
+  val semanticsResultSelectedSurface = Color(0xfff9fafb)
+  val semanticsResultHoverSurface = Color(0xffeeeff0)
   val semanticsMapAttributionText = Color(0xff464a53)
   val semanticsMapAttributionHalo = Color(0xffffffff)
   val semanticsSurface0 = Color(0xffffffff)
