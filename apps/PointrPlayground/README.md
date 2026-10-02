@@ -77,6 +77,24 @@ playground is a mock-map component demo and the Android playground is a task-lis
 demo. Their platform components exist in the design system, but a live SDK host
 must be identified or implemented separately.
 
+## P02/P03 adoption boundaries
+
+The app adopts P02 shell-owned spacing through `SDKPanelTopPadding`. Its named
+`PanelTopPaddingTests.testCustomRowsConsumeShellInsetAndKeepHandleClearance` test
+covers four inset/clearance combinations in both LTR and RTL.
+
+P03's library APIs are implemented, but this app has not adopted their structured
+data paths: `SDKRoute.Step.message` is still a string passed to ManoeuvreCard and
+Itinerary, and the browse/origin result initializers do not provide
+`languageNotListed`. These are supported legacy/unknown states, not evidence of
+structured-language or staff-match integration. Do not parse translated direction
+sentences to invent language/secondary ranges, or infer staff availability from
+device language. Obtain authoritative SDK/query metadata before adapting those paths.
+
+Use the [P02/P03 acceptance checklist](../../docs/sdk-module-primitives.md#p02p03-acceptance-checklist)
+for physical VoiceOver/TalkBack and product-board scenarios. The historical evidence
+below is not a fresh physical-device or P03 end-to-end acceptance result.
+
 ## Verified scope (30 September 2026)
 
 - 50 app unit tests, including the two QA information-content tests, passed.

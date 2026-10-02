@@ -22,10 +22,13 @@ live docs and navigation spacing were verified. External Figma/consumer adoption
 P03's staff-language slice merged in #187 at `b734587172714391d2046ddddf7d7b2b36da5ee8`,
 unreleased: optional explicit `languageNotListed` evidence and localized card/list
 disclosure across all three platforms. Unknown does not mean unlisted, and UI language
-never implies staff availability. P03's structured-instruction slice is a candidate:
+never implies staff availability. P03's structured-instruction slice merged in
+[#188](https://github.com/vodoco/kozmos-design-system/pull/188) at
+`b94423b6c89c2a1dec2cd059d81ff905885dcf52`, unreleased:
 ordered text/secondary/language parts across the three navigation components, with legacy
 String calls preserved. Inline language metadata survives the native accessibility bridge;
-physical speech and external product/Figma acceptance remain separate.
+physical speech and external product/Figma acceptance remain separate. Exact-main CI,
+selected workflows, deployment and affected live Storybook content were verified.
 For all 121 supplied product gaps (latest source intake 2026-10-01), their criteria and corrected statuses, read the
 [product design gap register](product-design-gap-register.md). The site has a
 [separate gap register](../apps/site/GAPS.md).
@@ -464,12 +467,15 @@ The screenshot also exposes Exit Main Mall. A styled button alone is not the fea
 
 Do not let the new chrome conceal already-recorded behavior gaps:
 
-- **Product contracts:** GAP-021 language-not-listed, GAP-028 result booking, GAP-044 authored
+- **Product contracts:** GAP-021's optional language-not-listed field and localized disclosure
+  are merged in #187, unreleased; real staff-query evidence and host grouping/ranking remain.
+  Still-open contracts include GAP-028 result booking, GAP-044 authored
   name, GAP-046 area, GAP-047 travel breakdown and GAP-065 native/shared grouping. GAP-092's
   result-list footer is optional backlog: the current Search with AI design uses the header.
-- **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks;
-  GAP-097 step metrics; GAP-104 endpoint actions. React GAP-094/GAP-100 are already fixed.
-- **Accessibility/layout:** the P01 candidate raises result actions to a 44px/pt/dp minimum
+- **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks
+  are merged in #188, unreleased; SDK data adoption and physical speech acceptance remain.
+  GAP-097 step metrics and GAP-104 endpoint actions remain open. React GAP-094/GAP-100 are already fixed.
+- **Accessibility/layout:** merged P01 raises result actions to a 44px/pt/dp minimum
   (GAP-056), retaining larger native targets and growth for large text. This is unreleased;
   actual keyboard/device acceptance remains. Wide shell content fitting and the
   iOS QA header's equal top/side padding are implemented, not missing components.
@@ -618,9 +624,9 @@ These do not block P01 or initial reproduction work in P02:
   the platform's larger interactive-target policy. Named tests measure targets, large text,
   disabled state and callbacks, including taps in the padded SwiftUI label. Preserve these
   checks through integration; source implementation is not device or external Figma adoption.
-- Reconcile the implementation's adjacent semantics during each batch: for example, the
-  current manoeuvre instruction uses physical `text-left`, and the native shell handle has
-  English strings in source. These are inspection leads, not newly allocated product GAP IDs
+- Reconcile the implementation's adjacent semantics during each batch: P03 now uses logical
+  `text-start` for the React manoeuvre instruction; the native shell handle's English strings
+  remain a separate inspection lead, not newly allocated product GAP IDs
   or silently authorized broad rewrites. Reproduce and link them to existing RTL/localization
   requirements; coordinate additional scope rather than declaring every historical closure global.
 - A work-package accounting check proves no source row was dropped. It does not prove all
@@ -629,10 +635,12 @@ These do not block P01 or initial reproduction work in P02:
 
 ### First delivery and release boundaries
 
-Start with the documentation baseline, then **P01**, then **P02**. Follow with P03 and the
-approved P04 appearance. This produces a useful early milestone without waiting for the
-entire native assistant or Dashboard programme. Do not promise a date for those larger tracks
-before inventory and failing fixtures establish their actual size.
+The documentation baseline and **P01–P03** source increments are merged. Complete the
+acceptance gates below without repeating their implementation or calling them published.
+P04 appearance remains the next planned work package; acceptance of P02/P03 does not itself
+authorize starting it. Confirm continuation before beginning that work. Do not promise
+a date for the larger native assistant or Dashboard tracks before inventory and failing
+fixtures establish their actual size.
 
 Implementation work and release preparation are separate approvals. No version number is
 reserved by this plan. When a release is requested, aggregate reviewed changesets, prepare
@@ -645,6 +653,55 @@ or mark every target done because npm succeeded.
 Full-suite reruns are not required after each prose edit or repeated review of an unchanged
 artifact. Follow [the maintenance policy](design-system-maintenance.md) for affected local
 tests, shared-dependency impact, required PR gates and complete release-candidate checks.
+
+## P02/P03 acceptance checklist
+
+Keep source completion, SDK adoption and human acceptance as separate gates. The source
+increments are merged and unreleased; neither a green structural check nor a demo is
+evidence of adoption in every consuming app.
+
+| Gate                          | Verified scope                                                                                                                                                                                                                               | Remaining evidence                                                                                                                                                                                                                             |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shared library behavior       | P02 #186 and P03 #187/#188 implement React, SwiftUI and Compose together; exact-main CI and selected deployments passed. Live structured-instruction stories preserve language markup and interaction behavior.                              | A future release must validate its own final artifacts; these source changes are not in npm 0.7.0.                                                                                                                                             |
+| Real iOS shell spacing        | The QA app consumes `kozmosPanelInsetTop` and preserves `kozmosPanelClearanceTop`. `PanelTopPaddingTests.testCustomRowsConsumeShellInsetAndKeepHandleClearance` covers four inset cases in LTR and RTL; P02 recorded live phone/iPad checks. | Other hosts and product screens must remove obsolete spacing workarounds and verify their own geometry.                                                                                                                                        |
+| Real iOS instruction data     | `SDKRoute.Step.message` remains a string; `SDKMapScreen` passes it to ManoeuvreCard and Itinerary. Legacy calls remain supported.                                                                                                            | Obtain authoritative ordered parts, secondary roles and name-language metadata from the SDK/content owner, then adapt and test them. Do not guess roles or language by splitting a localized sentence.                                         |
+| Real iOS staff-language data  | The QA result initializers omit `languageNotListed`. This is unknown, not proof that a language is listed or unlisted.                                                                                                                       | A staff-language query and explicit match evidence must drive disclosure and any grouping/ranking. Device/UI locale is not that evidence.                                                                                                      |
+| Real web/Android SDK hosts    | The web playground is a mock-map component demo; Android is a task-list demo.                                                                                                                                                                | Identify or build separately scoped live SDK hosts before claiming end-to-end parity.                                                                                                                                                          |
+| Physical assistive technology | Automated tests cover inline language metadata, order and independent actions.                                                                                                                                                               | Human VoiceOver/TalkBack pronunciation, focus and large-text acceptance on actual devices; simulator metadata is not speech evidence.                                                                                                          |
+| External design adoption      | The repository importer contains DirectionStep and shell painters, but their current examples do not demonstrate P03 inline qualifiers/language ranges or the P02 header/grip spacing matrix.                                                | Read the current product boards/library and compare the criteria below. Local painter/contract checks do not prove the external file is current. Preserve stable node IDs through importer Update when a separately approved change is needed. |
+
+### Physical-device procedure
+
+1. Record the build/commit, device and OS, app locale, screen reader and installed voices.
+   Use German, Japanese and Arabic examples containing English landmark/building names,
+   plus a legacy plain-string instruction. Do not substitute synthetic structured fixtures
+   for a claim about real SDK data; label which is under test.
+2. Read DirectionStep, ManoeuvreCard and collapsed/expanded Itinerary. Confirm every part is
+   spoken once in caller order, qualifier text is retained and marked names use the expected
+   available voice. Record missing-voice fallback separately from lost language metadata.
+3. Navigate by screen-reader gestures and external keyboard where supported. Check that
+   controls remain independently actionable, expansion preserves focus, closing returns it,
+   and RTL does not reverse sentence content or create duplicate announcements.
+4. Enable larger text and exercise gripless/fitted, handled and header-bearing shells on
+   phone and landscape tablet. Check content is reachable without clipping, shell-owned
+   spacing is not doubled, and search/POI transitions preserve usable focus.
+5. Exercise explicit true, false and absent staff-language evidence. Only true should show
+   the localized disclosure; changing the UI locale alone must not change match evidence.
+6. Record pass/fail and reproduction steps by named scenario. Do not mark this gate complete
+   from an automated accessibility-tree assertion or a screenshot alone.
+
+### Product-board and host procedure
+
+- For GAP-085/114, compare fixed-header and gripless examples in compact/wide layouts,
+  LTR/RTL and large text. Verify the 16-unit shell inset/gap and remove the board's obsolete
+  `data-gap` spacer only after the consuming composition uses the new implementation.
+- For GAP-093/096, compare secondary qualifiers at regular weight and the same font size,
+  caller-owned word order/punctuation and readable surface-aware contrast. A Figma text node
+  cannot by itself certify runtime language markup or speech.
+- For GAP-021, compare the disclosure against real match data and the requested staff
+  language, including unknown data. Keep product grouping/ranking separate from the card's flag.
+- Record the external file/node revision and consuming build used for comparison. Do not
+  infer that an external board changed just because repository code or API cards changed.
 
 ## SDK implementation batches and remaining acceptance
 
