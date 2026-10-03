@@ -55,12 +55,13 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
     // The captions and the origin are muted, and on glass, in a glass
     // manoeuvre card, the foreground colour (decision 48).
     const endpoint = (caption: string, name: string, emphasised: boolean) => (
-      <li className="flex items-baseline gap-3 text-[15px]">
-        <span className="kozmos-muted-text w-10 shrink-0 text-xs uppercase">
+      <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[15px]">
+        <span className="kozmos-muted-text min-w-10 max-w-full shrink-0 text-xs uppercase [overflow-wrap:anywhere]">
           {caption}
         </span>
         <span
           className={cn(
+            "min-w-0 flex-1 basis-20 [overflow-wrap:anywhere]",
             emphasised
               ? "font-semibold kozmos-guidance-text"
               : "kozmos-muted-text",

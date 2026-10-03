@@ -35,6 +35,18 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+export const LongEndpoints: Story = {
+  args: {
+    originLabel: "Starting location",
+    destinationLabel: "Final destination",
+    origin:
+      "International arrivals reception and passenger assistance desk, North Terminal",
+    destination:
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    steps: [],
+  },
+};
+
 export const StepMetrics: Story = {
   args: {
     steps: [

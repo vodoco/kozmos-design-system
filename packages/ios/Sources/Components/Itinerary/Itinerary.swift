@@ -74,19 +74,32 @@ public struct KozmosItinerary: View {
     /// The captions and the origin are muted, and on glass, in a glass
     /// manoeuvre card, the foreground colour (decision 48).
     private func endpoint(_ label: String, name: String, emphasised: Bool) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-            Text(label.uppercased())
-                .font(KozmosTypography.caption2)
-                .kozmosMutedText()
-                .frame(width: KozmosDimensions.primitivesLayoutSizing500, alignment: .leading)
-            Text(name)
-                .font(emphasised ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-                .kozmosMutedText(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
+                endpointCaption(label).fixedSize(horizontal: true, vertical: false)
+                    .frame(minWidth: KozmosDimensions.primitivesLayoutSizing500, alignment: .leading)
+                endpointName(name, emphasised: emphasised)
+                    .frame(minWidth: 80, alignment: .leading)
+            }
+            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                endpointCaption(label).fixedSize(horizontal: false, vertical: true)
+                endpointName(name, emphasised: emphasised)
+            }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label), \(name)")
+    }
+
+    private func endpointCaption(_ label: String) -> some View {
+        Text(label.uppercased()).font(KozmosTypography.caption2).kozmosMutedText()
+    }
+
+    private func endpointName(_ name: String, emphasised: Bool) -> some View {
+        Text(name)
+            .font(emphasised ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
+            .kozmosMutedText(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func row(_ step: KozmosItineraryStep, isCurrent: Bool) -> some View {

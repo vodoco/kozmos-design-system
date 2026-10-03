@@ -3,6 +3,9 @@ package com.kozmos.components.itinerary
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -98,12 +101,14 @@ fun KozmosItinerary(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun Endpoint(label: String, name: String, emphasised: Boolean) {
-    Row(
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) { contentDescription = "$label, $name" },
-        verticalAlignment = Alignment.Top
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150),
+        verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
         // The caption and the origin are muted, and on glass, in a glass
         // manoeuvre card, the foreground colour (decision 48).
@@ -111,13 +116,13 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
             text = label.uppercase(),
             style = MaterialTheme.typography.labelSmall,
             color = kozmosMutedForeground(),
-            modifier = Modifier.width(KozmosDimensions.primitivesLayoutSizing500).padding(top = 3.dp)
+            modifier = Modifier.widthIn(min = KozmosDimensions.primitivesLayoutSizing500).padding(top = 3.dp)
         )
         Text(
             text = name,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (emphasised) FontWeight.SemiBold else FontWeight.Normal),
             color = LocalKozmosGuidanceForeground.current ?: if (emphasised) KozmosThemeTokens.primitivesColorsForeground100 else kozmosMutedForeground(),
-            modifier = Modifier.padding(start = KozmosDimensions.primitivesLayoutSpacing150)
+            modifier = Modifier.widthIn(min = 80.dp).weight(1f)
         )
     }
 }

@@ -20,10 +20,25 @@ import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Density
 import com.kozmos.components.wayfindingcard.KozmosWayfindingInputRow
 
 class KozmosNavigationSafetySemanticsTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
+
+    @Test fun endpointCaptionGrowsForLargeTextInsteadOfBreakingFrom() {
+        var density = 1f
+        val tree = paparazzi.readSemantics { MaterialTheme {
+            density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, 2f)) {
+                KozmosItinerary("Lobby", emptyList(), "Gallery")
+            }
+        } }
+        val caption = tree.unmerged.single { "FROM" in it.texts }
+        assertTrue("caption width ${caption.bounds.width / density}", caption.bounds.width / density > 40f)
+        assertTrue("caption wraps at large text", caption.bounds.height / density < 45f)
+    }
 
     @Test fun routingActionsHaveReal48DpTargets() {
         var density = 1f

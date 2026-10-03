@@ -59,6 +59,18 @@ final class KozmosNavigationPartsTests: XCTestCase {
     }
 
     #if os(iOS)
+    @MainActor func testLongEndpointNamesAreNotVisuallyTruncatedAtTwoLines() async throws {
+        let view = ZStack(alignment: .topLeading) {
+            Color.white
+            KozmosItinerary(origin: "", steps: [], destination: Array(repeating: "International arrivals reception", count: 5).joined(separator: " "), originLabel: "", destinationLabel: "")
+                .frame(width: 180, alignment: .leading)
+                .environment(\.colorScheme, .light)
+        }
+        let pixels = try await RenderedPixels.render(view, size: CGSize(width: 180, height: 400))
+        XCTAssertGreaterThan(pixels.count(in: CGRect(x: 0, y: 100, width: 180, height: 250), where: RenderedPixels.isDarkText), 200,
+            "The visible name must continue beyond two lines, not only survive in VoiceOver")
+    }
+
     @MainActor func testWaypointsAndCompletedTrackAreActuallyDrawn() async throws {
         let size = CGSize(width: 300, height: 34)
         let points = [KozmosRouteProgressWaypoint(id: "gallery", position: 0.5, type: .left, label: "Gallery")]

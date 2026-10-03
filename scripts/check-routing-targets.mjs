@@ -6,6 +6,32 @@ const browser = await launchFixtureBrowser();
 try {
   for (const width of [320, 1280]) {
     for (const theme of ["light", "dark"]) {
+      const itineraryPage = await browser.newPage({
+        viewport: { width, height: 800 },
+      });
+      await itineraryPage.goto(
+        `${base}/iframe.html?id=map-itinerary--long-endpoints&viewMode=story&globals=theme:${theme}`,
+      );
+      await itineraryPage.getByRole("region", { name: "Itinerary" }).waitFor();
+      for (const direction of ["ltr", "rtl"]) {
+        await itineraryPage.evaluate((dir) => {
+          document.documentElement.dir = dir;
+          document.documentElement.style.fontSize = "200%";
+        }, direction);
+        for (const span of await itineraryPage
+          .locator(".kozmos-itinerary li > span")
+          .all()) {
+          const geometry = await span.evaluate((node) => ({
+            width: node.clientWidth,
+            scroll: node.scrollWidth,
+          }));
+          assert.ok(
+            geometry.scroll <= geometry.width + 1,
+            `endpoint overflow ${JSON.stringify(geometry)}`,
+          );
+        }
+      }
+      await itineraryPage.close();
       for (const story of [
         "map-routinginputgroup--default",
         "map-routinginputgroup--with-stop",
