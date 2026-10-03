@@ -31,7 +31,7 @@ final class KozmosNavigationPartsTests: XCTestCase {
         XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: 0.5, width: 300), 133)
         XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: -1, width: 300), 10)
         XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: 2, width: 300), 256)
-        XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: 0.5, width: 20), 10, "a rail too short to travel keeps the disc at the start")
+        XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: 0.5, width: 20), 4, "a tiny rail scales its dots and disc inside its own bounds")
     }
 
     func testAnItineraryStepIsNotCurrentUnlessSaid() {
@@ -41,6 +41,22 @@ final class KozmosNavigationPartsTests: XCTestCase {
     }
 
     #if os(iOS)
+    @MainActor func testRailMirrorsTimelineAndOmitsUnknownPosition() async throws {
+        let size = CGSize(width: 300, height: 34)
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let view = KozmosRouteProgressRail(progress: 0.25, type: .left, label: "Journey")
+                .environment(\.layoutDirection, direction).environment(\.colorScheme, .light).background(Color.white)
+            let pixels = try await RenderedPixels.render(view, size: size)
+            let disc = try XCTUnwrap(pixels.boundingBox(in: CGRect(x: 12, y: 0, width: 276, height: 34), where: RenderedPixels.isTheme))
+            let leading = KozmosRouteProgressRail.discLeading(progress: 0.25, width: 300)
+            XCTAssertEqual(disc.minX, direction == .leftToRight ? leading : 300 - 34 - leading, accuracy: 1.5)
+            XCTAssertEqual(disc.width, 34, accuracy: 1.5)
+        }
+        let unknown = KozmosRouteProgressRail(progress: nil, type: .left, label: "Journey", valueText: "Position unavailable")
+            .environment(\.colorScheme, .light).background(Color.white)
+        let pixels = try await RenderedPixels.render(unknown, size: size)
+        XCTAssertEqual(pixels.count(in: CGRect(origin: .zero, size: size), where: RenderedPixels.isTheme), 0)
+    }
     @MainActor func testDefaultManoeuvreUsesOpaqueThemeFill() async throws {
         for scheme in [ColorScheme.light, .dark] {
             for expanded in [false, true] {

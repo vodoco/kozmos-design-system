@@ -2,6 +2,8 @@ package com.kozmos.components.navigation
 
 import androidx.compose.material3.MaterialTheme
 import com.kozmos.components.directionstep.DirectionType
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import com.kozmos.components.routeprogressrail.KozmosRouteProgressRail
 import com.kozmos.components.directionstep.KozmosDirectionStep
 import com.kozmos.components.itinerary.KozmosItinerary
 import com.kozmos.components.itinerary.KozmosItineraryStep
@@ -19,6 +21,15 @@ import org.junit.Test
 
 class KozmosNavigationSafetySemanticsTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
+
+    @Test fun unknownRailDoesNotAnnounceZeroAndAcceptsLocalizedDescription() {
+        val tree = paparazzi.readSemantics { MaterialTheme {
+            KozmosRouteProgressRail(null, DirectionType.Left, "Journey", valueText = "Position unbekannt")
+        } }
+        val rail = tree.named("Journey")
+        assertEquals(ProgressBarRangeInfo.Indeterminate, rail.progressRange)
+        assertEquals("Position unbekannt", rail.stateDescription)
+    }
 
     @Test fun itineraryMetricsAreVisibleAndReadWithTheStep() {
         val step = KozmosItineraryStep("a", "Turn left", DirectionType.Left, duration = "0 min")

@@ -9,7 +9,14 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 How far along the route the visitor is, as a rail: a dot where it starts, a disc carrying the current manoeuvre's arrow that travels the track, a dot where it ends. Progress is 0 to 1 and anything outside is clamped; the disc runs from just after the start dot to just before the end dot. Assistive technology hears the label the caller gives ("Step 2 of 4") and the progress as a percentage.
 
-Products measure progress by ground covered, so a lift or a level change — no distance — does not move the disc.
+The host chooses and consistently applies the progress basis. With distance-based progress, a zero-distance floor transition does not advance the disc. Do not mix time-based and distance-based progress or derive progress from formatted labels.
+
+Use `progress={null}` (Swift `nil`, Compose `null`) when position is unavailable. There is then no current-position disc and no numeric percentage. Supply a localized `valueText`, such as “Position unavailable”; do not use zero to stand for unknown. Swift formats its default numeric percentage with the host locale; the other platforms use their native accessibility progress semantics. `valueText` overrides the spoken value when supplied.
+
+The timeline follows reading direction, but physical turn glyphs do not mirror. Dots and the current disc scale down only when the containing width cannot accommodate their normal sizes, keeping geometry inside the rail. Hosts should still allocate a comfortably readable width.
+
+<Canvas of={RouteProgressRailStories.Unknown} />
+<Canvas of={RouteProgressRailStories.RightToLeft} />
 
 Non-finite numeric input (NaN or either infinity) is normalized to zero on every platform. This is a defensive rendering fallback, not evidence of a known starting position. Progress of one never triggers arrival; only the host can confirm arrival.
 
@@ -38,5 +45,5 @@ KozmosRouteProgressRail(progress: 0.5, type: .left, label: "Step 2 of 4")
 `}
     kotlin={`
 KozmosRouteProgressRail(progress = 0.5f, type = DirectionType.Left, label = "Step 2 of 4")
-    `}
+`}
 />

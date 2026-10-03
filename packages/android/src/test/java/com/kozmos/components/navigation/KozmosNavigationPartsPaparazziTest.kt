@@ -50,7 +50,7 @@ class KozmosNavigationPartsPaparazziTest {
         assertEquals(133.dp, g.discLeading(0.5f, 300.dp))
         assertEquals(10.dp, g.discLeading(-1f, 300.dp))
         assertEquals(256.dp, g.discLeading(2f, 300.dp))
-        assertEquals(10.dp, g.discLeading(0.5f, 20.dp))
+        assertEquals(4.dp, g.discLeading(0.5f, 20.dp))
     }
 
     @Test

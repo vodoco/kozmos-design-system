@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
@@ -94,7 +95,8 @@ data class ReadNode(
     val frame: Rect = bounds,
     /** False for a node composed but not placed: a lazy list's prefetched or recycled item. */
     val placed: Boolean = true,
-    val horizontalScrollMax: Float? = null
+    val horizontalScrollMax: Float? = null,
+    val progressRange: ProgressBarRangeInfo? = null
 )
 
 /**
@@ -282,5 +284,6 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
         ?.let { it.value() to it.maxValue() },
     frame = Rect(node.positionInRoot, node.size.toSize()),
     placed = node.layoutInfo.isPlaced,
-    horizontalScrollMax = node.config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)?.maxValue?.invoke()
+    horizontalScrollMax = node.config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)?.maxValue?.invoke(),
+    progressRange = node.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
 )

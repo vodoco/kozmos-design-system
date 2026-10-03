@@ -581,6 +581,59 @@ for (const theme of ["light", "dark"]) {
         },
       );
 
+      for (const variant of ["unknown", "right-to-left"]) {
+        await finish(
+          await open(`map-routeprogressrail--${variant}`),
+          `rail-${variant}`,
+          async (page) => {
+            const rail = page.getByRole("progressbar");
+            await rail.waitFor();
+            if (variant === "unknown") {
+              assert.equal(await rail.getAttribute("aria-valuenow"), null);
+              assert.equal(
+                await rail.getAttribute("aria-valuetext"),
+                "Position unavailable",
+              );
+              assert.equal(
+                await rail
+                  .locator('[data-testid="route-progress-disc"]')
+                  .count(),
+                0,
+              );
+            } else {
+              for (const width of [300, 54, 20, 4]) {
+                await rail.evaluate((node, width) => {
+                  node.style.width = `${width}px`;
+                }, width);
+                const r = await box(rail);
+                const d = await box(
+                  rail.locator('[data-testid="route-progress-disc"]'),
+                );
+                const dot = Math.min(10, width * 0.2),
+                  disc = Math.min(34, width * 0.6);
+                const leading =
+                  dot + Math.max(width - dot * 2 - disc, 0) * 0.25;
+                assert.ok(
+                  Math.abs(d.x - (r.right - leading - disc)) < 1,
+                  `RTL disc misplaced at width ${width}`,
+                );
+                assert.ok(
+                  d.x >= r.x - 1 && d.right <= r.right + 1,
+                  "disc escapes a narrow rail",
+                );
+                assert.ok(
+                  Math.abs(d.width - d.height) < 1,
+                  "responsive disc must remain round",
+                );
+              }
+              await rail.evaluate((node) => {
+                node.style.width = "";
+              });
+            }
+          },
+        );
+      }
+
       // 4. The summary's navigation layout: End on the heading's row, the
       //    stats on one row under it, the rail under those.
       await finish(

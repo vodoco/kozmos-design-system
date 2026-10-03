@@ -23,3 +23,10 @@ export const Midway: Story = {};
 export const Arriving: Story = {
   args: { progress: 0.84, type: "destination", label: "Step 4 of 4" },
 };
+
+export const Unknown: Story = {
+  args: { progress: null, valueText: "Position unavailable" },
+};
+export const RightToLeft: Story = {
+  args: { progress: 0.25, dir: "rtl", type: "left", valueText: "ربع الرحلة" },
+};

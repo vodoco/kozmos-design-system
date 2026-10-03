@@ -7,7 +7,9 @@ import {
 
 export interface RouteProgressRailProps extends React.HTMLAttributes<HTMLDivElement> {
   /** How far along the route, 0 to 1; anything outside is clamped. */
-  progress: number;
+  progress: number | null;
+  /** Localized progress description, particularly when progress is unknown (null). */
+  valueText?: string;
   /** The current manoeuvre, carried on the disc. */
   type: DirectionType;
   /** What the rail is called to assistive technology: "Step 2 of 4". */
@@ -26,8 +28,7 @@ export function clampProgress(progress: number) {
  * just after the start dot to just before the end dot.
  */
 export function discLeading(progress: number) {
-  const { dot, disc } = ROUTE_PROGRESS_RAIL;
-  return `calc(${dot}px + (100% - ${dot * 2 + disc}px) * ${clampProgress(progress)})`;
+  return `calc(min(10px, 20%) + max(0px, 100% - min(20px, 40%) - min(34px, 60%)) * ${clampProgress(progress)})`;
 }
 
 /**
@@ -39,9 +40,9 @@ export function discLeading(progress: number) {
 const RouteProgressRail = React.forwardRef<
   HTMLDivElement,
   RouteProgressRailProps
->(({ className, style, progress, type, label, ...props }, ref) => {
-  const { dot, disc, track } = ROUTE_PROGRESS_RAIL;
-  const clamped = clampProgress(progress);
+>(({ className, style, progress, type, label, valueText, ...props }, ref) => {
+  const { disc, track } = ROUTE_PROGRESS_RAIL;
+  const clamped = clampProgress(progress ?? 0);
   return (
     <div
       ref={ref}
@@ -49,7 +50,8 @@ const RouteProgressRail = React.forwardRef<
       aria-label={label}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-valuenow={Math.round(clamped * 100)}
+      aria-valuenow={progress === null ? undefined : Math.round(clamped * 100)}
+      aria-valuetext={valueText}
       className={cn("kozmos-route-rail relative w-full", className)}
       style={{ height: disc, ...style }}
       {...props}
@@ -57,26 +59,43 @@ const RouteProgressRail = React.forwardRef<
       <span
         aria-hidden="true"
         className="absolute top-1/2 -translate-y-1/2 rounded-pill bg-muted"
-        style={{ left: dot, right: dot, height: track }}
+        style={{ insetInline: "min(10px, 20%)", height: track }}
       />
       <span
         aria-hidden="true"
-        className="absolute left-0 top-1/2 -translate-y-1/2 rounded-pill bg-primary"
-        style={{ width: dot, height: dot }}
+        className={cn(
+          "absolute top-1/2 -translate-y-1/2 rounded-pill",
+          progress === null ? "bg-muted" : "bg-primary",
+        )}
+        style={{
+          insetInlineStart: 0,
+          width: "min(10px, 20%)",
+          aspectRatio: "1",
+        }}
       />
       <span
         aria-hidden="true"
-        className="absolute right-0 top-1/2 -translate-y-1/2 rounded-pill bg-muted"
-        style={{ width: dot, height: dot }}
+        className="absolute top-1/2 -translate-y-1/2 rounded-pill bg-muted"
+        style={{ insetInlineEnd: 0, width: "min(10px, 20%)", aspectRatio: "1" }}
       />
-      <span
-        aria-hidden="true"
-        data-testid="route-progress-disc"
-        className="absolute top-0 flex items-center justify-center rounded-pill bg-primary text-primary-foreground"
-        style={{ left: discLeading(clamped), width: disc, height: disc }}
-      >
-        <DirectionIcon type={type} className="h-4 w-4" />
-      </span>
+      {progress !== null && (
+        <span
+          aria-hidden="true"
+          data-testid="route-progress-disc"
+          className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center rounded-pill bg-primary text-primary-foreground"
+          style={{
+            insetInlineStart: discLeading(clamped),
+            width: "min(34px, 60%)",
+            aspectRatio: "1",
+          }}
+        >
+          <span
+            style={{ width: "50%", height: "50%", maxWidth: 16, maxHeight: 16 }}
+          >
+            <DirectionIcon type={type} className="h-full w-full" />
+          </span>
+        </span>
+      )}
     </div>
   );
 });

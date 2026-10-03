@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.directionstep.DirectionType
@@ -36,8 +37,10 @@ object KozmosRouteProgressRailGeometry {
      * wide: from just after the start dot to just before the end dot.
      */
     fun discLeading(progress: Float, width: Dp): Dp {
-        val travel = (width - dot * 2 - disc).coerceAtLeast(0.dp)
-        return dot + travel * clamp(progress)
+        val inset = minOf(dot, width.coerceAtLeast(0.dp) * 0.2f)
+        val diameter = minOf(disc, width.coerceAtLeast(0.dp) * 0.6f)
+        val travel = (width - inset * 2 - diameter).coerceAtLeast(0.dp)
+        return inset + travel * clamp(progress)
     }
 }
 
@@ -52,19 +55,31 @@ fun KozmosRouteProgressRail(
     type: DirectionType,
     label: String,
     modifier: Modifier = Modifier
+) = KozmosRouteProgressRail(progress, type, label, modifier, valueText = null)
+
+/** Null progress is unavailable, not zero; the host supplies its localized description. */
+@Composable
+fun KozmosRouteProgressRail(
+    progress: Float?,
+    type: DirectionType,
+    label: String,
+    modifier: Modifier = Modifier,
+    valueText: String? = null
 ) {
-    val clamped = KozmosRouteProgressRailGeometry.clamp(progress)
+    val clamped = KozmosRouteProgressRailGeometry.clamp(progress ?: 0f)
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .height(KozmosRouteProgressRailGeometry.disc)
-            .progressSemantics(clamped)
-            .semantics { contentDescription = label }
+            .then(if (progress == null) Modifier.progressSemantics() else Modifier.progressSemantics(clamped))
+            .semantics { contentDescription = label; if (valueText != null) stateDescription = valueText }
     ) {
+        val dot = minOf(KozmosRouteProgressRailGeometry.dot, maxWidth.coerceAtLeast(0.dp) * 0.2f)
+        val disc = minOf(KozmosRouteProgressRailGeometry.disc, maxWidth.coerceAtLeast(0.dp) * 0.6f)
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(horizontal = KozmosRouteProgressRailGeometry.dot)
+                .padding(horizontal = dot)
                 .fillMaxWidth()
                 .height(KozmosRouteProgressRailGeometry.track)
                 .background(KozmosThemeTokens.primitivesColorsBackground300, CircleShape)
@@ -72,20 +87,20 @@ fun KozmosRouteProgressRail(
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .size(KozmosRouteProgressRailGeometry.dot)
-                .background(KozmosThemeTokens.primitivesColorsTheme500, CircleShape)
+                .size(dot)
+                .background(if (progress == null) KozmosThemeTokens.primitivesColorsBackground300 else KozmosThemeTokens.primitivesColorsTheme500, CircleShape)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .size(KozmosRouteProgressRailGeometry.dot)
+                .size(dot)
                 .background(KozmosThemeTokens.primitivesColorsBackground300, CircleShape)
         )
-        Box(
+        if (progress != null) Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .offset(x = KozmosRouteProgressRailGeometry.discLeading(clamped, maxWidth))
-                .size(KozmosRouteProgressRailGeometry.disc)
+                .size(disc)
                 .background(KozmosThemeTokens.primitivesColorsTheme500, CircleShape),
             contentAlignment = Alignment.Center
         ) {
@@ -93,7 +108,7 @@ fun KozmosRouteProgressRail(
                 imageVector = type.icon(),
                 contentDescription = null,
                 tint = KozmosThemeTokens.primitivesColorsBackground0,
-                modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300)
+                modifier = Modifier.size(minOf(KozmosDimensions.primitivesLayoutSizing300, disc * (24f / 34f)))
             )
         }
     }

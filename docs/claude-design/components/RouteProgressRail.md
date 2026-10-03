@@ -36,9 +36,13 @@ as a percentage.
 
 It forwards its ref to `HTMLDivElement`. Its props are `RouteProgressRailProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
-- `progress`: `number`, **required**.
+- `progress`: `number | null`, **required**.
 
   How far along the route, 0 to 1; anything outside is clamped.
+
+- `valueText`: `string`, optional.
+
+  Localized progress description, particularly when progress is unknown (null).
 
 - `type`: `DirectionType`, **required**.
 
