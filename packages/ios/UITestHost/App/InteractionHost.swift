@@ -21,6 +21,8 @@ private struct InteractionFixture: View {
     @State private var controlAccessibilityReport = "not inspected"
     @State private var manoeuvreExpanded = true
     @State private var groupedSelection: String?
+    @State private var locationQuery = "Lobby"
+    @State private var routeLocation: KozmosListboxOption?
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -81,6 +83,20 @@ private struct InteractionFixture: View {
 
     @ViewBuilder private var fixture: some View {
         switch scenario {
+        case "combobox-location":
+            KozmosCombobox(value: Binding(get: { "" }, set: { events.append("select \($0)") }),
+                inputValue: $locationQuery,
+                options: [.init(value: "lobby", label: "Lobby", description: "North Terminal · Ground floor")],
+                label: "From", defaultOpen: true)
+        case "route-location", "route-location-loading":
+            KozmosRouteLocationField(label: "From", location: routeLocation, query: locationQuery,
+                options: [.init(value: "lobby", label: "Lobby", description: "North Terminal · Ground floor")],
+                status: scenario == "route-location-loading" ? .loading : .ready,
+                clearLabel: "Clear origin", mapLabel: "Choose on map",
+                onQueryChange: { locationQuery = $0 },
+                onSelect: { routeLocation = $0; events.append("select \($0.value)") },
+                onClear: { routeLocation = nil; locationQuery = ""; events.append("clear") },
+                onChooseMap: { events.append("map") })
         case "result-group":
             KozmosPOIResultGroup(items: items([go, .init(action: .details, label: "Details")]),
                 label: "Coffee branches", onExpandedChange: { events.append("expanded \($0)") },

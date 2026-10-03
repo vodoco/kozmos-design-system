@@ -50,6 +50,13 @@ export function ComboboxExample() {
 It forwards its ref to `HTMLInputElement`. Its props are `ComboboxProps`, which extends `Omit<React.InputHTMLAttributes<HTMLInputElement>, "children" | "defaultValue" | "onChange" | "value">`.
 
 - `clearable`: `boolean`, optional, default `true`.
+- `clearLabel`: `string`, optional, default `"Clear selection"`.
+- `openLabel`: `string`, optional, default `"Open options"`.
+- `closeLabel`: `string`, optional, default `"Close options"`.
+- `includeValueInAnalytics`: `boolean`, optional, default `true`.
+
+  Keep legacy generic analytics by default; sensitive place pickers must omit values.
+
 - `defaultInputValue`: `string`, optional.
 - `defaultValue`: `string`, optional.
 - `emptyText`: `string`, optional, default `"No results found"`.

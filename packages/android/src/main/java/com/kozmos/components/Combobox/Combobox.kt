@@ -31,11 +31,45 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.listbox.KozmosListbox
 import com.kozmos.components.listbox.KozmosListboxOption
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
+
+data class KozmosComboboxLabels(
+    val clear: String = "Clear selection",
+    val open: String = "Open options",
+    val close: String = "Close options"
+)
+
+// Preserve the released positional and trailing-lambda signature.
+@Composable
+fun KozmosCombobox(
+    value: String,
+    onValueChange: (String, KozmosListboxOption?) -> Unit,
+    inputValue: String,
+    onInputValueChange: (String) -> Unit,
+    options: List<KozmosListboxOption>,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    placeholder: String = "Select option",
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    status: KozmosInputStatus = KozmosInputStatus.Default,
+    error: Boolean = false,
+    helperText: String? = null,
+    errorMessage: String? = null,
+    emptyText: String = "No results found",
+    clearable: Boolean = true,
+    expanded: Boolean? = null,
+    defaultExpanded: Boolean = false,
+    onExpandedChange: ((Boolean) -> Unit)? = null
+) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
+    KozmosComboboxLabels(), modifier, label, placeholder, enabled, readOnly, status, error,
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
 
 @Composable
 fun KozmosCombobox(
@@ -44,6 +78,7 @@ fun KozmosCombobox(
     inputValue: String,
     onInputValueChange: (String) -> Unit,
     options: List<KozmosListboxOption>,
+    controlLabels: KozmosComboboxLabels,
     modifier: Modifier = Modifier,
     label: String? = null,
     placeholder: String = "Select option",
@@ -92,7 +127,7 @@ fun KozmosCombobox(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp)
+                .height(48.dp)
                 .background(colors.background, fieldShape)
                 .border(1.dp, colors.border, fieldShape),
             verticalAlignment = Alignment.CenterVertically
@@ -109,6 +144,7 @@ fun KozmosCombobox(
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = colors.text),
                 cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
                 modifier = Modifier
+                    .semantics { contentDescription = label ?: placeholder }
                     .weight(1f)
                     .fillMaxHeight(),
                 decorationBox = { innerTextField ->
@@ -138,17 +174,17 @@ fun KozmosCombobox(
                         onInputValueChange("")
                         setExpanded(false)
                     },
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(48.dp),
                     colors = IconButtonDefaults.iconButtonColors(contentColor = KozmosThemeTokens.primitivesColorsForeground500)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear selection", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Close, contentDescription = controlLabels.clear, modifier = Modifier.size(16.dp))
                 }
             }
 
             IconButton(
                 onClick = { if (enabled && !readOnly) setExpanded(!isExpanded) },
                 enabled = enabled && !readOnly,
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(48.dp),
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = KozmosThemeTokens.primitivesColorsForeground500,
                     disabledContentColor = KozmosThemeTokens.primitivesColorsForeground500
@@ -156,7 +192,7 @@ fun KozmosCombobox(
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Close options" else "Open options",
+                    contentDescription = if (isExpanded) controlLabels.close else controlLabels.open,
                     modifier = Modifier
                         .size(20.dp)
                         .rotate(if (isExpanded) 180f else 0f)

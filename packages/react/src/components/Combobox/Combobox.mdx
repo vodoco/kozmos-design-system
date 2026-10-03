@@ -25,6 +25,20 @@ need to look the option up again by id.
 Set `emptyText` to something that tells the user what to do next — "No venues
 match that name" beats "No results".
 
+Disclosure and clear buttons use 44 px/pt targets on web/iOS and 48 dp on Android.
+Use `clearLabel`, `openLabel` and `closeLabel` to localize these actions; Compose's
+equivalent overload accepts `KozmosComboboxLabels`. Existing native calls remain valid.
+The field keeps its accessible label when populated. SwiftUI options include their
+secondary description in the accessible name, and selection writes its binding once.
+
+`defaultInputValue` is an initial search draft, not a selected entity. A later selection
+change updates uncontrolled display text. Controlled `inputValue` remains host-owned.
+
+Web's existing generic `option_selected` analytics includes the value by default for
+compatibility. Set `includeValueInAnalytics={false}` for sensitive values. RouteLocationField
+does this automatically, so place IDs and search text are not sent in that event. Native
+Combobox does not emit automatic selection-value analytics.
+
 ## Implementation
 
 import { PlatformSnippets } from '../PlatformSnippets';

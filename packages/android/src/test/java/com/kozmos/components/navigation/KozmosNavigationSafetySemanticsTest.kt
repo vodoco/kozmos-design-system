@@ -22,10 +22,24 @@ import org.junit.Test
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.Density
+import com.kozmos.components.combobox.KozmosCombobox
 import com.kozmos.components.wayfindingcard.KozmosWayfindingInputRow
 
 class KozmosNavigationSafetySemanticsTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
+
+    @Test fun populatedComboboxHasAFieldName() {
+        var density = 1f
+        val tree = paparazzi.readSemantics { MaterialTheme {
+            density = LocalDensity.current.density
+            KozmosCombobox("", { _, _ -> }, "Lobby", {}, emptyList(), label = "From")
+        } }
+        assertNotNull(tree.named("From"))
+        for (name in listOf("Open options", "Clear selection")) {
+            assertTrue(name, tree.named(name).bounds.width / density >= 48f)
+            assertTrue(name, tree.named(name).bounds.height / density >= 48f)
+        }
+    }
 
     @Test fun endpointCaptionGrowsForLargeTextInsteadOfBreakingFrom() {
         var density = 1f

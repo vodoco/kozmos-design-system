@@ -1,0 +1,74 @@
+package com.kozmos.components.routelocationfield
+
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonVariant
+import com.kozmos.components.combobox.KozmosCombobox
+import com.kozmos.components.combobox.KozmosComboboxLabels
+import com.kozmos.components.iconbutton.KozmosIconButton
+import com.kozmos.components.iconbutton.KozmosIconButtonSize
+import com.kozmos.components.iconbutton.KozmosIconButtonVariant
+import com.kozmos.components.input.KozmosInputStatus
+import com.kozmos.components.listbox.KozmosListboxOption
+import com.kozmos.components.surface.kozmosMutedForeground
+import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.tokens.KozmosThemeTokens
+
+enum class KozmosRouteLocationStatus { Idle, Loading, Ready, Empty, Error }
+
+/** Resolved identity is separate from query text. The host owns search, cancellation and focus. */
+@Composable
+fun KozmosRouteLocationField(
+    label: String, location: KozmosListboxOption?, query: String, options: List<KozmosListboxOption>,
+    onQueryChange: (String) -> Unit, onSelect: (KozmosListboxOption) -> Unit, onClear: () -> Unit,
+    modifier: Modifier = Modifier, onChooseMap: (() -> Unit)? = null,
+    status: KozmosRouteLocationStatus = KozmosRouteLocationStatus.Idle, statusText: String? = null,
+    placeholder: String = "Search for a place", clearLabel: String = "Clear location",
+    openLabel: String = "Open options", closeLabel: String = "Close options",
+    mapLabel: String = "Select from the map", emptyText: String = "No locations found", enabled: Boolean = true
+) {
+    val counts = options.groupingBy { it.value }.eachCount()
+    val allowed = status == KozmosRouteLocationStatus.Idle || status == KozmosRouteLocationStatus.Ready
+    val suggestions = if (allowed) options.filter { it.value.isNotBlank() && counts[it.value] == 1 } else emptyList()
+    val message = statusText ?: when (status) {
+        KozmosRouteLocationStatus.Loading -> "Searching locations…"
+        KozmosRouteLocationStatus.Error -> "Locations are unavailable"
+        KozmosRouteLocationStatus.Empty -> emptyText
+        else -> null
+    }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)) {
+        if (location != null) {
+            Column(Modifier.fillMaxWidth().border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)).padding(KozmosDimensions.primitivesLayoutSpacing150),
+                verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)) {
+                    Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = kozmosMutedForeground())
+                    KozmosIconButton(Icons.Default.Close, onClear, clearLabel, variant = KozmosIconButtonVariant.Outline, size = KozmosIconButtonSize.Lg, enabled = enabled)
+                }
+                Text(location.label, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = KozmosThemeTokens.primitivesColorsForeground100)
+                if (!location.description.isNullOrEmpty()) Text(location.description, style = MaterialTheme.typography.bodyMedium, color = kozmosMutedForeground())
+            }
+        } else {
+            KozmosCombobox("", { _, option -> if (enabled && allowed && option != null && !option.disabled) onSelect(option) }, query, onQueryChange, suggestions,
+                controlLabels = KozmosComboboxLabels(clearLabel, openLabel, closeLabel),
+                label = label, placeholder = placeholder, enabled = enabled, status = if (status == KozmosRouteLocationStatus.Error) KozmosInputStatus.Error else KozmosInputStatus.Default,
+                helperText = message, emptyText = message ?: emptyText, clearable = false)
+            if (query.isNotEmpty()) KozmosButton(onClear, modifier = Modifier.fillMaxWidth(), variant = KozmosButtonVariant.Outline, enabled = enabled) { Text(clearLabel) }
+        }
+        if (onChooseMap != null) KozmosButton(onChooseMap, modifier = Modifier.fillMaxWidth(), variant = KozmosButtonVariant.Outline, enabled = enabled) { Text(mapLabel) }
+    }
+}

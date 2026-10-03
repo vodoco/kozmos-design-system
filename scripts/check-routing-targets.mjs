@@ -36,6 +36,7 @@ try {
         "map-routinginputgroup--default",
         "map-routinginputgroup--with-stop",
         "components-wayfindingcard--default",
+        "components-combobox--default",
       ]) {
         const page = await browser.newPage({
           viewport: { width, height: 800 },
@@ -43,7 +44,7 @@ try {
         await page.goto(
           `${base}/iframe.html?id=${story}&viewMode=story&globals=theme:${theme}`,
         );
-        await page.getByRole("textbox").first().waitFor();
+        await page.locator("input").first().waitFor();
         const buttons = page.getByRole("button");
         assert.ok((await buttons.count()) > 0);
         for (const button of await buttons.all()) {

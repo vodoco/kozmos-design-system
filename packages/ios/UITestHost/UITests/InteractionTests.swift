@@ -9,6 +9,52 @@ final class InteractionTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws { app?.terminate() }
 
+    func testPopulatedComboboxKeepsItsFieldName() {
+        launch("combobox-location")
+        XCTAssertEqual(app.textFields["From"].value as? String, "Lobby")
+        for name in ["Close options", "Clear selection"] {
+            XCTAssertGreaterThanOrEqual(app.buttons[name].frame.width, 44)
+            XCTAssertGreaterThanOrEqual(app.buttons[name].frame.height, 44)
+        }
+    }
+
+    func testComboboxSelectionCallsTheBindingOnce() {
+        launch("combobox-location")
+        app.buttons["Lobby, North Terminal · Ground floor"].tap()
+        received("select lobby")
+    }
+
+    func testRouteLocationResolvesAndClearsIdentitySeparatelyFromQuery() {
+        launch("route-location")
+        let field = app.textFields["From"]
+        XCTAssertEqual(field.value as? String, "Lobby")
+        received("none")
+        field.tap()
+        field.typeText(" ")
+        received("none")
+        app.buttons["Lobby, North Terminal · Ground floor"].tap()
+        received("select lobby")
+        XCTAssertFalse(field.exists)
+        XCTAssertTrue(app.staticTexts["North Terminal · Ground floor"].exists)
+        let clear = app.buttons["Clear origin"]
+        XCTAssertGreaterThanOrEqual(clear.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(clear.frame.height, 44)
+        clear.tap()
+        received("select lobby|clear")
+        XCTAssertTrue(field.exists)
+        app.buttons["Choose on map"].tap()
+        received("select lobby|clear|map")
+    }
+
+    func testRouteLocationLoadingDoesNotOfferStaleSuggestions() {
+        launch("route-location-loading")
+        app.buttons["Open options"].tap()
+        XCTAssertFalse(app.buttons["Lobby"].exists)
+        XCTAssertTrue(app.textFields["From"].isEnabled)
+        app.buttons["Choose on map"].tap()
+        received("map")
+    }
+
     func testResultGroupExpansionPreservesSelectionAndSeparateActions() {
         launch("result-group")
         XCTAssertFalse(app.buttons["1, Gate 12, Level 1"].exists)
