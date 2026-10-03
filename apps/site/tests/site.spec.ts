@@ -4797,7 +4797,7 @@ test.describe("components", () => {
 });
 
 for (const colorScheme of ["light", "dark"] as const) {
-  test(`arrival reference inline code reflows with increased text spacing in ${colorScheme}`, async ({
+  test(`arrival reference code and neighbours reflow with increased text spacing in ${colorScheme}`, async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme });
@@ -4806,10 +4806,11 @@ for (const colorScheme of ["light", "dark"] as const) {
     await hydrated(page);
     const code = page.locator(".site-page-header code");
     await expect(code).toHaveText('presentation="standalone"');
-    // User text-spacing overrides must not turn an inline API expression
-    // into an unbreakable minimum width. Host monospace fonts also vary.
+    // API expressions and adjacent long component identifiers must reflow
+    // with user text spacing; both proportional and monospace fonts vary.
     await page.addStyleTag({
-      content: "code { letter-spacing: 0.12em !important; }",
+      content:
+        ".site-inline-code, .site-prev-next { letter-spacing: 0.12em !important; }",
     });
     expect(
       await page.evaluate(
@@ -4817,6 +4818,12 @@ for (const colorScheme of ["light", "dark"] as const) {
       ),
     ).toBeLessThanOrEqual(0);
     await expect(code).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "← AdaptiveMapShell" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "BrowseCategoriesPanel →" }),
+    ).toBeVisible();
   });
 }
 

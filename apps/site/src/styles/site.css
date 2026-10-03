@@ -1780,7 +1780,9 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
 
 .site-prev-next {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--site-space-300);
+  overflow-wrap: anywhere;
   margin-block-start: var(--site-space-700);
 }
