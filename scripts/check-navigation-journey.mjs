@@ -57,6 +57,24 @@ try {
         await page.evaluate(() => {
           document.documentElement.style.fontSize = "200%";
         });
+        assert.deepEqual(
+          await dialog.evaluate((node) => {
+            // Flush layout so a text-size change has instantiated transitions.
+            node.getBoundingClientRect();
+            return node
+              .getAnimations()
+              .filter(
+                (animation) =>
+                  animation instanceof CSSTransition &&
+                  /^(width|max-width|max-height|font-size|padding-|row-gap|column-gap)/.test(
+                    animation.transitionProperty,
+                  ),
+              )
+              .map((animation) => animation.transitionProperty);
+          }),
+          [],
+          "Text resizing must not animate dialog geometry independently of its title and close control",
+        );
         const bounds = await dialog.boundingBox();
         assert.ok(
           bounds.x >= 0 &&
@@ -77,17 +95,17 @@ try {
           return range.getBoundingClientRect().toJSON();
         });
         const closeAtZoom = await close.boundingBox();
-        assert.ok(
-          title.x + title.width <= closeAtZoom.x ||
-            title.y >= closeAtZoom.y + closeAtZoom.height ||
-            title.y + title.height <= closeAtZoom.y,
-          "Recovery title overlaps Close",
-        );
-        await checkAxe(page);
         await page.screenshot({
           path: `${output}/${story}-${theme}-${width}.png`,
           fullPage: true,
         });
+        assert.ok(
+          title.x + title.width <= closeAtZoom.x ||
+            title.y >= closeAtZoom.y + closeAtZoom.height ||
+            title.y + title.height <= closeAtZoom.y,
+          `Recovery title overlaps Close: ${JSON.stringify({ story, theme, width, title, closeAtZoom })}`,
+        );
+        await checkAxe(page);
         await close.press("Escape");
         await dialog.waitFor({ state: "hidden" });
         await page.waitForFunction(
