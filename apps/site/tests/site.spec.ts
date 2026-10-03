@@ -4796,6 +4796,30 @@ test.describe("components", () => {
   });
 });
 
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`arrival reference inline code reflows with increased text spacing in ${colorScheme}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto("/components/arrival-panel");
+    await hydrated(page);
+    const code = page.locator(".site-page-header code");
+    await expect(code).toHaveText('presentation="standalone"');
+    // User text-spacing overrides must not turn an inline API expression
+    // into an unbreakable minimum width. Host monospace fonts also vary.
+    await page.addStyleTag({
+      content: "code { letter-spacing: 0.12em !important; }",
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      ),
+    ).toBeLessThanOrEqual(0);
+    await expect(code).toBeVisible();
+  });
+}
+
 // Every component page, in both themes, in one browser: the sampled pages
 // above run in all three. Each page must answer, name itself, say where the
 // component exists as the data does, link to Storybook, pass axe and log

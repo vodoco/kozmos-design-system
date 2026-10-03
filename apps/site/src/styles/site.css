@@ -347,6 +347,12 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* Inline API expressions must reflow too, including wide host monospace
+   fonts and a reader's increased letter spacing. Keep the full expression. */
+.site-inline-code {
+  overflow-wrap: anywhere;
+}
+
 .site-section {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
