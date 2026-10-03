@@ -10,6 +10,8 @@ import { PlatformSnippets } from '../PlatformSnippets';
 
 A window overlaid on existing content.
 
+Web `DialogContent` keeps its dismiss target at least 44 pixels, reserves title clearance and scrolls long content within the viewport. Set `closeLabel` for a localized dismiss action. Keep titles and descriptions short; the dialog is not a replacement for a full-screen task. For controlled recovery without a persistent DialogTrigger, explicitly restore focus in `onCloseAutoFocus` to a surviving control after dismissal. A missing or removed trigger cannot restore itself. Native modal focus isolation and physical VoiceOver/TalkBack acceptance belong to the consuming host; a rendered overlay alone does not prove them.
+
 <Canvas>
   <Story of={DialogStories.Default} />
 </Canvas>

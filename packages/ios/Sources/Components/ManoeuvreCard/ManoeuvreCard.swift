@@ -167,8 +167,7 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                 // the itinerary, and VoiceOver hears the manoeuvre with that hint.
                 Button(action: toggle) {
                     HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-                        Image(systemName: type.iconName)
-                            .font(.system(size: 22, weight: .semibold))
+                        KozmosDirectionGlyph(type: type, size: 22)
                             .foregroundColor(appearance == .theme ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsTheme500)
                             .frame(width: KozmosDimensions.primitivesLayoutSizing400, height: KozmosDimensions.primitivesLayoutSizing400)
                         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {

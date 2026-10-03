@@ -28,6 +28,7 @@ const PRODUCT_SDK_COMPONENT_NAMES = new Set([
   "AdaptiveMapShell",
   "ArrivalPanel",
   "RouteLocationField",
+  "RouteSetupPanel",
   "BrowseCategoriesPanel",
   "CategoryTile",
   "DirectionStep",

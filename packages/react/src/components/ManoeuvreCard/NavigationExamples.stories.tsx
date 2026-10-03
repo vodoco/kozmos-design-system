@@ -17,7 +17,7 @@ const route = {
     {
       id: "1",
       instruction: "Take Elevator down to First Floor",
-      type: "straight",
+      type: "lift-down",
       metres: 58,
       seconds: 60,
       floor: "Second Floor",
@@ -25,7 +25,7 @@ const route = {
     {
       id: "2",
       instruction: "Take Corridor to Garage B",
-      type: "straight",
+      type: "transition",
       metres: 71,
       seconds: 70,
       floor: "First Floor",
@@ -33,7 +33,7 @@ const route = {
     {
       id: "3",
       instruction: "Take Walkway to Terminal B",
-      type: "right",
+      type: "transition",
       metres: 40,
       seconds: 45,
       floor: "First Floor",

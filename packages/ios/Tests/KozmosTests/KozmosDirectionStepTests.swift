@@ -21,6 +21,19 @@ final class KozmosDirectionStepTests: XCTestCase {
 
 
     #if os(iOS)
+    @MainActor func testTransportAndTravelDirectionsHaveSixDistinctDrawings() async throws {
+        var signatures = Set<String>()
+        for type in [DirectionType.liftUp, .liftDown, .stairsUp, .stairsDown, .escalatorUp, .escalatorDown] {
+            let pixels = try await RenderedPixels.render(KozmosDirectionStep(type: type, instruction: "").environment(\.colorScheme, .light), size: CGSize(width: 120, height: 80))
+            let signature = (0..<80).flatMap { y in (0..<80).map { x -> String in
+                let color = pixels.color(at: CGPoint(x: x, y: y))
+                return RenderedPixels.isTheme(color.r, color.g, color.b) ? "1" : "0"
+            } }.joined()
+            signatures.insert(signature)
+        }
+        XCTAssertEqual(signatures.count, 6, "Transport and up/down must be visible, not only spoken")
+    }
+
     @MainActor func testDurationOnlyIsDrawnAndAbsentMetricsLeaveNoText() async throws {
         for duration in [String?.none, "0 min"] {
             // An empty instruction isolates the metric pixels from antialiased

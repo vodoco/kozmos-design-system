@@ -1,0 +1,85 @@
+{
+  "provenance": "Original Kozmos navigation artwork authored for the navigation completion review. Not imported from or approved in Figma. MIT repository license. 24-unit canvas, 2-unit rounded stroke; physical directions never mirror with reading direction.",
+  "glyphs": [
+    {
+      "name": "ElevatorUp",
+      "kind": "lift-up",
+      "paths": [
+        "M2 3 L14 3 L14 21 L2 21 Z",
+        "M9.5 8 C9.5 10 6.5 10 6.5 8 C6.5 6 9.5 6 9.5 8 Z",
+        "M5 17 L5 13 L11 13 L11 17 M8 13 L8 19",
+        "M20 19 L20 5 M17 8 L20 5 L23 8"
+      ]
+    },
+    {
+      "name": "ElevatorDown",
+      "kind": "lift-down",
+      "paths": [
+        "M2 3 L14 3 L14 21 L2 21 Z",
+        "M9.5 8 C9.5 10 6.5 10 6.5 8 C6.5 6 9.5 6 9.5 8 Z",
+        "M5 17 L5 13 L11 13 L11 17 M8 13 L8 19",
+        "M20 5 L20 19 M17 16 L20 19 L23 16"
+      ]
+    },
+    {
+      "name": "StairsUp",
+      "kind": "stairs-up",
+      "paths": [
+        "M2 21 L2 17 L6 17 L6 13 L10 13 L10 9 L14 9 L14 5",
+        "M20 19 L20 5 M17 8 L20 5 L23 8"
+      ]
+    },
+    {
+      "name": "StairsDown",
+      "kind": "stairs-down",
+      "paths": [
+        "M2 21 L2 17 L6 17 L6 13 L10 13 L10 9 L14 9 L14 5",
+        "M20 5 L20 19 M17 16 L20 19 L23 16"
+      ]
+    },
+    {
+      "name": "EscalatorUp",
+      "kind": "escalator-up",
+      "paths": [
+        "M2 17 L6 17 L12 11 L15 11 M2 21 L6 21 L12 15 L15 15",
+        "M6 15 L6 11 M7.5 7 C7.5 9 4.5 9 4.5 7 C4.5 5 7.5 5 7.5 7 Z",
+        "M20 19 L20 5 M17 8 L20 5 L23 8"
+      ]
+    },
+    {
+      "name": "EscalatorDown",
+      "kind": "escalator-down",
+      "paths": [
+        "M2 17 L6 17 L12 11 L15 11 M2 21 L6 21 L12 15 L15 15",
+        "M6 15 L6 11 M7.5 7 C7.5 9 4.5 9 4.5 7 C4.5 5 7.5 5 7.5 7 Z",
+        "M20 5 L20 19 M17 16 L20 19 L23 16"
+      ]
+    },
+    {
+      "name": "RampUp",
+      "kind": "ramp-up",
+      "paths": ["M2 20 L14 8 L14 20 Z", "M20 19 L20 5 M17 8 L20 5 L23 8"]
+    },
+    {
+      "name": "RampDown",
+      "kind": "ramp-down",
+      "paths": ["M2 20 L14 8 L14 20 Z", "M20 5 L20 19 M17 16 L20 19 L23 16"]
+    },
+    {
+      "name": "RouteEnter",
+      "kind": "enter",
+      "paths": [
+        "M13 3 L21 3 L21 21 L13 21 M13 3 L13 7 M13 17 L13 21",
+        "M2 12 L16 12 M12 8 L16 12 L12 16"
+      ]
+    },
+    {
+      "name": "RouteExit",
+      "kind": "exit",
+      "paths": [
+        "M13 3 L21 3 L21 21 L13 21 M13 3 L13 7 M13 17 L13 21",
+        "M16 12 L2 12 M6 8 L2 12 L6 16"
+      ]
+    }
+  ]
+}

@@ -1,24 +1,10 @@
 import SwiftUI
 
-/// What a step of a route asks for. The four turns, and the transitions the
-/// routing engines describe: a level change by lift, escalator or stairs —
-/// up or down — or by something unnamed; a same-level transition, a
-/// walkway or a corridor to another building; and turning back. Each
-/// platform draws the closest glyph its own icon set has, and the
-/// instruction's words carry the rest.
-public enum DirectionType: Sendable, CaseIterable {
-    case straight, left, right, destination
-    case liftUp, liftDown
-    case escalatorUp, escalatorDown
-    case stairsUp, stairsDown
-    /// A level change by a transition the route does not name.
-    case levelUp, levelDown
-    /// A transition on the same level: a walkway, a corridor, another building.
-    case transition
-    case turnBack
+/// Legacy spelling retained as a source-compatible alias of the shared semantic vocabulary.
+public typealias DirectionType = KozmosDirectionKind
 
-    /// SF Symbols has no lift and no escalator: those, and an unnamed level
-    /// change, show the direction of travel; stairs have their own figure.
+extension KozmosDirectionKind {
+    /// System fallbacks only. Transport/ramp/entry glyphs use the shared owned paths first.
     var iconName: String {
         switch self {
         case .straight: return "arrow.up"
@@ -30,6 +16,11 @@ public enum DirectionType: Sendable, CaseIterable {
         case .stairsUp, .stairsDown: return "figure.stairs"
         case .transition: return "arrow.forward.to.line"
         case .turnBack: return "arrow.uturn.backward"
+        case .walking: return "figure.walk"
+        case .enter: return "rectangle.portrait.and.arrow.right"
+        case .exit: return "rectangle.portrait.and.arrow.right"
+        case .rampUp: return "arrow.up"
+        case .rampDown: return "arrow.down"
         }
     }
 }
@@ -66,7 +57,7 @@ public struct KozmosDirectionStep: View {
                 .fill(KozmosColors.primitivesColorsTheme500.opacity(0.1))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: KozmosDimensions.primitivesLayoutSizing500)
                 .overlay(
-                    Image(systemName: type.iconName)
+                    KozmosDirectionGlyph(type: type, size: 24)
                         .foregroundColor(KozmosColors.primitivesColorsTheme500)
                 )
                 .accessibilityHidden(true)

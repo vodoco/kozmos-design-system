@@ -104,8 +104,7 @@ public struct KozmosItinerary: View {
 
     private func row(_ step: KozmosItineraryStep, isCurrent: Bool) -> some View {
         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-            Image(systemName: step.type.iconName)
-                .font(.system(size: 14, weight: .semibold))
+            KozmosDirectionGlyph(type: step.type, size: 14)
                 .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: 20, alignment: .leading)
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {

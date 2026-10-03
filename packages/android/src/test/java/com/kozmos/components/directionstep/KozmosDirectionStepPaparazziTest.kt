@@ -11,7 +11,7 @@ import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
 import org.junit.Test
 
-/** Every direction, with the glyph Material has for it: the turns, then the transitions. */
+/** Every direction, with shared transport artwork and platform turn/walking glyphs. */
 class KozmosDirectionStepPaparazziTest {
     @get:Rule
     val paparazzi = Paparazzi(maxPercentDifference = 0.0)
@@ -31,6 +31,11 @@ class KozmosDirectionStepPaparazziTest {
 
     @Test
     fun theEscalatorsStairsLevelsAndTheRest() {
-        paparazzi.snapshot(composable = column(DirectionType.values().drop(7)))
+        paparazzi.snapshot(composable = column(DirectionType.values().drop(7).take(7)))
+    }
+
+    @Test
+    fun walkingEntriesAndRamps() {
+        paparazzi.snapshot(composable = column(DirectionType.values().drop(14)))
     }
 }

@@ -26,7 +26,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
 | Core                   | 83         | 83/83 | 83/83     | 71/83   | 75/83 | 71/83   | 76/83   | 71/83       |
 | Code-Only / Utility    | 5          | 5/5   | 5/5       | —       | 5/5   | —       | 5/5     | —           |
-| Product / SDK          | 28         | 28/28 | 28/28     | 22/28   | 27/28 | 22/28   | 27/28   | 22/28       |
+| Product / SDK          | 29         | 29/29 | 29/29     | 22/29   | 28/29 | 22/29   | 28/29   | 22/29       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
 
 ## Core
@@ -160,6 +160,7 @@ Map, wayfinding, CMS, dashboard, or product-specific compositions that should co
 | RouteLocationField    | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | RouteOptionCard       | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | RoutePreviewPanel     | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| RouteSetupPanel       | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | RouteSummary          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | RoutingInputGroup     | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | SaveLocationCard      | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -185,18 +186,18 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 ## Summary
 
-- Web components: 118/118
-- Web stories: 118/118
-- Web tests: 118/118
-- Web Code Connect files: 95/113
-- Web Code Connect scaffolds: 0/113
-- Web Code Connect linked: 95/113
-- iOS components: 109/118
-- iOS Code Connect files: 95/113
-- iOS Code Connect scaffolds: 0/113
-- iOS Code Connect linked: 95/113
-- Android components: 110/118
-- Android Code Connect files: 95/113
-- Android Code Connect scaffolds: 0/113
-- Android Code Connect linked: 95/113
-- Code Connect not applicable: 5/118
+- Web components: 119/119
+- Web stories: 119/119
+- Web tests: 119/119
+- Web Code Connect files: 95/114
+- Web Code Connect scaffolds: 0/114
+- Web Code Connect linked: 95/114
+- iOS components: 110/119
+- iOS Code Connect files: 95/114
+- iOS Code Connect scaffolds: 0/114
+- iOS Code Connect linked: 95/114
+- Android components: 111/119
+- Android Code Connect files: 95/114
+- Android Code Connect scaffolds: 0/114
+- Android Code Connect linked: 95/114
+- Code Connect not applicable: 5/119

@@ -106,7 +106,7 @@ public struct KozmosRouteProgressRail: View {
                     Circle().fill(KozmosColors.primitivesColorsBackground300)
                         .overlay(Circle().stroke(KozmosColors.primitivesColorsBackground400, lineWidth: 1))
                         .frame(width: 24, height: 24)
-                        .overlay(Image(systemName: point.type.iconName).font(.system(size: 14, weight: .semibold))
+                        .overlay(KozmosDirectionGlyph(type: point.type, size: 14)
                             .foregroundColor(KozmosColors.primitivesColorsForeground100))
                         .offset(x: 15 + max(width - 54, 0) * point.position)
                 }
@@ -114,8 +114,7 @@ public struct KozmosRouteProgressRail: View {
                     .fill(KozmosColors.primitivesColorsTheme500)
                     .frame(width: disc, height: disc)
                     .overlay(
-                        Image(systemName: type.iconName)
-                            .font(.system(size: min(15, disc * 0.47), weight: .semibold))
+                        KozmosDirectionGlyph(type: type, size: min(15, disc * 0.47))
                             .foregroundColor(KozmosColors.primitivesColorsBackground0)
                     )
                     .offset(x: Self.discLeading(progress: clamped, width: width))

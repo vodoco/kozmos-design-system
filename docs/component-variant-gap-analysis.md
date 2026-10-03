@@ -28,17 +28,17 @@ an implementation backlog item.
 
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
-| Components scanned                        | 118    |
+| Components scanned                        | 119    |
 | Declaring at least one React variant axis | 55     |
-| Variations that are compositional only    | 63     |
+| Variations that are compositional only    | 64     |
 | Components with variant gaps — iOS        | 14/55  |
 | Components with variant gaps — Android    | 14/55  |
-| Components with variant gaps — Figma      | 21/55  |
-| Components with variant gaps — Vue        | 10/55  |
-| Components absent entirely — iOS          | 9/118  |
-| Components absent entirely — Android      | 8/118  |
-| Components absent entirely — Figma        | 22/118 |
-| Components absent entirely — Vue          | 21/118 |
+| Components with variant gaps — Figma      | 22/55  |
+| Components with variant gaps — Vue        | 11/55  |
+| Components absent entirely — iOS          | 9/119  |
+| Components absent entirely — Android      | 8/119  |
+| Components absent entirely — Figma        | 23/119 |
+| Components absent entirely — Vue          | 22/119 |
 
 <!-- /generated:headline -->
 
@@ -131,6 +131,9 @@ POIResultCard
 RouteLocationField
   - figma: component/set absent
   - vue: component absent
+RouteSetupPanel
+  - figma: component/set absent
+  - vue: component absent
 Surface
   - ios: component/set absent
   - figma: component/set absent
@@ -211,21 +214,21 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 9 of 118
+### iOS — 9 of 119
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, Surface, UserMessage.
 
-### Android — 8 of 118
+### Android — 8 of 119
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, UserMessage.
 
-### Figma — 22 of 118
+### Figma — 23 of 119
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, FieldWrapper, Icon, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, Surface, ThemeProvider, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, FieldWrapper, Icon, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
 
-### Vue — 21 of 118
+### Vue — 22 of 119
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, CategoryField, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, CategoryField, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, UserMessage.
 
 <!-- /generated:absent -->
 

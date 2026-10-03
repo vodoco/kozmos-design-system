@@ -552,6 +552,29 @@ public struct KozmosCategoryPresentation: Sendable, Hashable, Identifiable {
     }
 }
 
+/// Semantic manoeuvre. Raw-value initialization returns nil for unknown engine values; never infer a turn.
+public enum KozmosDirectionKind: String, Sendable, Hashable, CaseIterable {
+    case straight
+    case left
+    case right
+    case destination
+    case liftUp = "lift-up"
+    case liftDown = "lift-down"
+    case escalatorUp = "escalator-up"
+    case escalatorDown = "escalator-down"
+    case stairsUp = "stairs-up"
+    case stairsDown = "stairs-down"
+    case levelUp = "level-up"
+    case levelDown = "level-down"
+    case transition
+    case turnBack = "turn-back"
+    case walking
+    case enter
+    case exit
+    case rampUp = "ramp-up"
+    case rampDown = "ramp-down"
+}
+
 public enum KozmosRoutePreference: String, Sendable, Hashable, CaseIterable {
     case quickest
     case stepFree = "step-free"

@@ -105,29 +105,8 @@ type Instruction = string | readonly InstructionPart[];
 From `@kozmos-ds/react`.
 
 ```ts
-/**
- * What a step of a route asks for. The four turns, and the transitions the
- * routing engines describe: a level change by lift, escalator or stairs — up
- * or down — or by something unnamed; a same-level transition, a walkway or a
- * corridor to another building; and turning back. Each platform draws the
- * closest glyph its own icon set has, and the instruction's words carry the
- * rest.
- */
-type DirectionType =
-  | "straight"
-  | "left"
-  | "right"
-  | "destination"
-  | "lift-up"
-  | "lift-down"
-  | "escalator-up"
-  | "escalator-down"
-  | "stairs-up"
-  | "stairs-down"
-  | "level-up"
-  | "level-down"
-  | "transition"
-  | "turn-back";
+/** Legacy export retained as an alias of the shared semantic manoeuvre contract. */
+type DirectionType = DirectionKind;
 ```
 
 ### InstructionPart
@@ -142,6 +121,34 @@ interface InstructionPart {
   /** BCP 47 speech language for these words; absent inherits the surrounding language. */
   lang?: string;
 }
+```
+
+### DirectionKind
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Semantic manoeuvre, independent of UI reading direction. Unknown engine values must not be guessed as a turn. */
+type DirectionKind =
+  | "straight"
+  | "left"
+  | "right"
+  | "destination"
+  | "lift-up"
+  | "lift-down"
+  | "escalator-up"
+  | "escalator-down"
+  | "stairs-up"
+  | "stairs-down"
+  | "level-up"
+  | "level-down"
+  | "transition"
+  | "turn-back"
+  | "walking"
+  | "enter"
+  | "exit"
+  | "ramp-up"
+  | "ramp-down";
 ```
 
 ### InstructionPartRole

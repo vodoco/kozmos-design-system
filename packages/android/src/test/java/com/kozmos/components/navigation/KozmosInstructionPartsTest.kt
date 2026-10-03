@@ -133,7 +133,7 @@ class KozmosInstructionPartsTest {
                     // The card's explicit surface wins over its ancestor's contrary value.
                     CompositionLocalProvider(LocalKozmosSurfaceStyle provides
                         if (surface == KozmosSurfaceStyle.Glass) KozmosSurfaceStyle.Solid else KozmosSurfaceStyle.Glass) {
-                        MaterialTheme { KozmosManoeuvreCard(DirectionType.Right, parts, false, {}, surface = surface) {} }
+                        MaterialTheme { KozmosManoeuvreCard(DirectionType.Right, parts, false, {}, appearance = com.kozmos.components.manoeuvrecard.KozmosManoeuvreAppearance.Background, surface = surface) {} }
                     }
                 }
             }

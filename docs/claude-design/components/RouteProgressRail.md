@@ -86,15 +86,17 @@ interface RouteProgressWaypoint {
 From `@kozmos-ds/react`.
 
 ```ts
-/**
- * What a step of a route asks for. The four turns, and the transitions the
- * routing engines describe: a level change by lift, escalator or stairs — up
- * or down — or by something unnamed; a same-level transition, a walkway or a
- * corridor to another building; and turning back. Each platform draws the
- * closest glyph its own icon set has, and the instruction's words carry the
- * rest.
- */
-type DirectionType =
+/** Legacy export retained as an alias of the shared semantic manoeuvre contract. */
+type DirectionType = DirectionKind;
+```
+
+### DirectionKind
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Semantic manoeuvre, independent of UI reading direction. Unknown engine values must not be guessed as a turn. */
+type DirectionKind =
   | "straight"
   | "left"
   | "right"
@@ -108,7 +110,12 @@ type DirectionType =
   | "level-up"
   | "level-down"
   | "transition"
-  | "turn-back";
+  | "turn-back"
+  | "walking"
+  | "enter"
+  | "exit"
+  | "ramp-up"
+  | "ramp-down";
 ```
 
 ## Also exported

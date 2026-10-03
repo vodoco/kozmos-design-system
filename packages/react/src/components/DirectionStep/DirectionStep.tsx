@@ -1,5 +1,5 @@
 import React from "react";
-import type { Instruction } from "@kozmos-ds/product-contracts";
+import type { Instruction, DirectionKind } from "@kozmos-ds/product-contracts";
 import { InstructionText } from "../../utils/instruction";
 import {
   ArrowUp,
@@ -8,33 +8,23 @@ import {
   ArrowRight,
   MarkerPin01,
   FlipBackward,
+  Walking,
+  ElevatorUp,
+  ElevatorDown,
+  EscalatorUp,
+  EscalatorDown,
+  StairsUp,
+  StairsDown,
+  RampUp,
+  RampDown,
+  RouteEnter,
+  RouteExit,
   type KozmosIconComponent,
 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 
-/**
- * What a step of a route asks for. The four turns, and the transitions the
- * routing engines describe: a level change by lift, escalator or stairs — up
- * or down — or by something unnamed; a same-level transition, a walkway or a
- * corridor to another building; and turning back. Each platform draws the
- * closest glyph its own icon set has, and the instruction's words carry the
- * rest.
- */
-export type DirectionType =
-  | "straight"
-  | "left"
-  | "right"
-  | "destination"
-  | "lift-up"
-  | "lift-down"
-  | "escalator-up"
-  | "escalator-down"
-  | "stairs-up"
-  | "stairs-down"
-  | "level-up"
-  | "level-down"
-  | "transition"
-  | "turn-back";
+/** Legacy export retained as an alias of the shared semantic manoeuvre contract. */
+export type DirectionType = DirectionKind;
 
 export const DIRECTION_TYPES: readonly DirectionType[] = [
   "straight",
@@ -51,31 +41,38 @@ export const DIRECTION_TYPES: readonly DirectionType[] = [
   "level-down",
   "transition",
   "turn-back",
+  "walking",
+  "enter",
+  "exit",
+  "ramp-up",
+  "ramp-down",
 ];
 
 /**
- * The arrow for each direction, one table for every part that draws one.
- * Pointr has no lift, escalator or stairs glyph either, so a level change
- * shows the direction of travel and the instruction's words name what carries
- * it. These are the same outlines the Figma component swaps in: its fourteen
- * variants resolve to arrow-up, arrow-down, arrow-left, arrow-right,
- * marker-pin-01 and flip-backward, and nothing finer.
+ * One mapping for step, card, itinerary and rail. Transport/ramp/entry paths
+ * are original Kozmos artwork shared with the native generators, not a claim
+ * of Figma approval. Walking reuses the existing SDK walking mark.
  */
 export const DIRECTION_ICONS: Record<DirectionType, KozmosIconComponent> = {
   straight: ArrowUp,
   left: ArrowLeft,
   right: ArrowRight,
   destination: MarkerPin01,
-  "lift-up": ArrowUp,
-  "lift-down": ArrowDown,
-  "escalator-up": ArrowUp,
-  "escalator-down": ArrowDown,
-  "stairs-up": ArrowUp,
-  "stairs-down": ArrowDown,
+  "lift-up": ElevatorUp,
+  "lift-down": ElevatorDown,
+  "escalator-up": EscalatorUp,
+  "escalator-down": EscalatorDown,
+  "stairs-up": StairsUp,
+  "stairs-down": StairsDown,
   "level-up": ArrowUp,
   "level-down": ArrowDown,
   transition: ArrowRight,
   "turn-back": FlipBackward,
+  walking: Walking,
+  enter: RouteEnter,
+  exit: RouteExit,
+  "ramp-up": RampUp,
+  "ramp-down": RampDown,
 };
 
 /**
@@ -89,8 +86,12 @@ export function DirectionIcon({
   type: DirectionType;
   className?: string;
 }) {
-  const Icon = DIRECTION_ICONS[type];
-  return <Icon aria-hidden="true" className={className} />;
+  // Runtime adapters may still send an unknown value. Keep the instruction,
+  // omit an unknown mark rather than inventing a straight or left turn.
+  const Icon = Object.prototype.hasOwnProperty.call(DIRECTION_ICONS, type)
+    ? DIRECTION_ICONS[type]
+    : undefined;
+  return Icon ? <Icon aria-hidden="true" className={className} /> : null;
 }
 
 export interface DirectionStepProps extends React.HTMLAttributes<HTMLDivElement> {

@@ -14,4 +14,5 @@
 export type { KozmosIconProps } from "./iconProps.js";
 export * from "./registry.js";
 export * from "./owned/icons.js";
+export * from "./owned/navigation.generated.js";
 export * from "./pointr/icons.generated.js";

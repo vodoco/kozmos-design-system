@@ -38,103 +38,103 @@ The site's roadmap page (`/roadmap`) is this table under the handoff's
 priorities, read at build time, so a row changed here changes the page;
 keep the table's four columns and its statuses as they are.
 
-| ID     | What                                                             | Lane                   | Status       |
-| ------ | ---------------------------------------------------------------- | ---------------------- | ------------ |
-| GAP-01 | `NavigationItem` `asChild` throws                                | Core                   | open         |
-| GAP-02 | `reset.css` ships raw Tailwind `theme()` calls                   | Core                   | open         |
-| GAP-03 | A pre-rendered page starts in the light theme                    | Core                   | left visible |
-| GAP-04 | `Grid` cannot reflow, and a caller cannot make it                | Core                   | composed     |
-| GAP-05 | No code block; `Text` has no monospace option                    | Core                   | composed     |
-| GAP-06 | No skip link or visually-hidden text                             | Core                   | composed     |
-| GAP-07 | Icons a website needs ship, but `Icon` cannot name them          | Core                   | open         |
-| GAP-08 | No footer                                                        | Core                   | composed     |
-| GAP-09 | `buttonVariants` on a link keeps the link's underline            | Core                   | left visible |
-| GAP-10 | No image or brand-mark primitive                                 | Core                   | composed     |
-| GAP-11 | `EmptyState`'s title is not a heading                            | Core                   | open         |
-| GAP-12 | `Alert` is always `role="alert"`, `AlertTitle` always an `h5`    | Core                   | fixed        |
-| GAP-13 | `SelectTrigger` has no label; `Textarea` no helper text          | Core                   | composed     |
-| GAP-14 | `CardTitle` is always an `h3`                                    | Core                   | composed     |
-| GAP-15 | No icon by name for a venue's everyday categories                | Product / SDK          | open         |
-| GAP-16 | `TabsList` neither wraps nor scrolls                             | Core                   | composed     |
-| GAP-17 | `AdaptiveMapShell`'s panel is an `<aside>`                       | Product / SDK          | open         |
-| GAP-18 | `POIDetailPanel` has no presentation for the shell's panel       | Product / SDK          | left visible |
-| GAP-19 | `Navbar` is always sticky                                        | Core                   | composed     |
-| GAP-20 | `SearchBar`'s field is unstyled in WebKit (Safari, iOS)          | Product / SDK          | left visible |
-| GAP-21 | `Heading` cannot reach the tokens' heading scale                 | Core                   | composed     |
-| GAP-22 | Font-weight tokens carry names, not weights                      | Core                   | open         |
-| GAP-23 | Component-layer colours are baked values, not ramp aliases       | Core                   | composed     |
-| GAP-24 | `DynamicIsland` pins itself to the viewport                      | Platform / form factor | open         |
-| GAP-25 | `MapView` insists on 400px of height                             | Product / SDK          | composed     |
-| GAP-26 | `Text` cannot inherit its colour                                 | Core                   | open         |
-| GAP-27 | `useTheme` does not report the direction                         | Core                   | composed     |
-| GAP-28 | `SearchBar`'s search landmark cannot be named                    | Product / SDK          | open         |
-| GAP-29 | `BottomNavigation` is always fixed to the viewport               | Core                   | open         |
-| GAP-30 | `Sidebar`'s navigation landmark cannot be named                  | Core                   | open         |
-| GAP-31 | Emotion text is under 4.5:1 on every surface but white           | Core                   | fixed        |
-| GAP-32 | `ChipGroup` carries no role                                      | Core                   | composed     |
-| GAP-33 | No token for the route line on the map                           | Product / SDK          | composed     |
-| GAP-34 | `Backdrop` pins itself to the viewport                           | Core                   | composed     |
-| GAP-35 | `BrowseCategoriesPanel` is four columns at any width             | Product / SDK          | composed     |
-| GAP-36 | `ToastViewport` pins itself to the viewport                      | Core                   | composed     |
-| GAP-37 | `SearchBar` shows the browser's clear button beside its own      | Product / SDK          | fixed        |
-| GAP-38 | The map sheet's handle is 4px tall and its grip invisible        | Product / SDK          | fixed        |
-| GAP-39 | `RouteSummary`'s title is always an `h2`                         | Product / SDK          | left visible |
-| GAP-40 | Map overlays draw over the sticky `Navbar`                       | Product / SDK          | composed     |
-| GAP-41 | `Navbar` has no narrow-screen pattern                            | Core                   | composed     |
-| GAP-42 | `CardTitle`'s line height is 1.0                                 | Core                   | left visible |
-| GAP-43 | Controls with touch targets under 44px                           | Core                   | left visible |
-| GAP-44 | `Switch` is always as wide as its container                      | Core                   | left visible |
-| GAP-45 | The first brand variant's 600 fails in the dark theme            | Core                   | left visible |
-| GAP-46 | `Stepper` has no narrow form                                     | Core                   | composed     |
-| GAP-47 | `Sidebar` has no narrow-screen form                              | Core                   | composed     |
-| GAP-48 | A `Tree` row's meta never shrinks                                | Core                   | composed     |
-| GAP-49 | `SearchBar` drops its analytics when a caller handles keys       | Product / SDK          | open         |
-| GAP-50 | Spinner, Skeleton and the loading Button ignore reduced motion   | Core                   | fixed        |
-| GAP-51 | No polite announcer                                              | Core                   | composed     |
-| GAP-52 | The provider's preflight zeroes a caller's border                | Core                   | composed     |
-| GAP-53 | A map shell cannot fill a rounded screen                         | Product / SDK          | left visible |
-| GAP-54 | No light: glow, gradient, blur or ambient motion                 | Core                   | composed     |
-| GAP-55 | A `Listbox`'s column is as wide as its widest option             | Core                   | composed     |
-| GAP-56 | `Button` puts no space between an icon and its label             | Core                   | fixed        |
-| GAP-57 | A `Button`'s label cannot wrap                                   | Core                   | composed     |
-| GAP-58 | `Toast` draws no background of its own                           | Core                   | open         |
-| GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it   | Platform / form factor | open         |
-| GAP-60 | `DynamicIsland` keeps no room for the camera it wraps            | Platform / form factor | open         |
-| GAP-61 | No glyph mirrors for right to left                               | Core                   | left visible |
-| GAP-62 | `Combobox` and `MultiSelect` draw their list in the page         | Core                   | open         |
-| GAP-63 | `ColorPicker`'s swatch is a circle around a rectangle            | Core                   | open         |
-| GAP-64 | `ChipGroup` always wraps, and never centres its chips            | Core                   | open         |
-| GAP-65 | `Textarea`'s resize grip paints outside its rounded corner       | Core                   | left visible |
-| GAP-66 | `EmptyState`'s words are left-aligned in a centred block         | Core                   | fixed        |
-| GAP-67 | `Menu` opens centred on its trigger                              | Core                   | left visible |
-| GAP-68 | `BottomNavigation`'s taller density overflows its own bar        | Core                   | open         |
-| GAP-69 | Lift, escalator and stairs share one arrow                       | Product / SDK          | left visible |
-| GAP-70 | `SelectTrigger` hides a second `FieldWrapper`                    | Core                   | open         |
-| GAP-71 | `AISearchButton` has no hover state                              | Core                   | open         |
-| GAP-72 | `MapOverlay` clips what floats on it                             | Product / SDK          | fixed        |
-| GAP-73 | `SplitButton`'s outline variant loses its border                 | Core                   | open         |
-| GAP-74 | `Tooltip` draws a line across its tail                           | Core                   | open         |
-| GAP-75 | `ToggleButton` puts no space between icon and label              | Core                   | composed     |
-| GAP-76 | Dates and times are the browser's controls                       | Core                   | left visible |
-| GAP-77 | No drag and drop: no handle, no dragging state, no target        | Core                   | open         |
-| GAP-78 | `Switch` cannot lead with its label                              | Core                   | open         |
-| GAP-79 | The Pointr icons ship, but cannot be asked for by name           | Product / SDK          | open         |
-| GAP-80 | No row actions: nothing shows on hover outside `Tree`            | Core                   | open         |
-| GAP-81 | Components carried placeholder documentation                     | Core                   | fixed        |
-| GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible |
-| GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | composed     |
-| GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | open         |
-| GAP-85 | `POIResultGroup`'s label makes every group a landmark            | Product / SDK          | open         |
-| GAP-86 | No microphone or speaker glyph for the assistant's controls      | Core                   | fixed        |
-| GAP-87 | `AIInputBar`'s `disabled` does not reach its `trailing` slot     | Core                   | open         |
-| GAP-88 | `ActionCard`'s title is a paragraph, not a heading               | Core                   | left visible |
-| GAP-89 | `BrowseCategoriesPanel`'s tiles overlap below about 360px        | Product / SDK          | open         |
-| GAP-90 | The brand family is named but no font is shipped                 | Core                   | composed     |
-| GAP-91 | `AdaptiveMapShell` cuts its top bar's and controls' shadows      | Product / SDK          | left visible |
-| GAP-92 | `AdaptiveMapShell` does not say which edge its controls sit on   | Product / SDK          | composed     |
-| GAP-93 | `AICompanionPanel` leaves what it covers in the tab order        | Core                   | fixed        |
-| GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | open         |
-| GAP-95 | `FloorSelector`'s column can grow out of the map it floats on    | Product / SDK          | left visible |
+| ID     | What                                                             | Lane                   | Status        |
+| ------ | ---------------------------------------------------------------- | ---------------------- | ------------- |
+| GAP-01 | `NavigationItem` `asChild` throws                                | Core                   | open          |
+| GAP-02 | `reset.css` ships raw Tailwind `theme()` calls                   | Core                   | open          |
+| GAP-03 | A pre-rendered page starts in the light theme                    | Core                   | left visible  |
+| GAP-04 | `Grid` cannot reflow, and a caller cannot make it                | Core                   | composed      |
+| GAP-05 | No code block; `Text` has no monospace option                    | Core                   | composed      |
+| GAP-06 | No skip link or visually-hidden text                             | Core                   | composed      |
+| GAP-07 | Icons a website needs ship, but `Icon` cannot name them          | Core                   | open          |
+| GAP-08 | No footer                                                        | Core                   | composed      |
+| GAP-09 | `buttonVariants` on a link keeps the link's underline            | Core                   | left visible  |
+| GAP-10 | No image or brand-mark primitive                                 | Core                   | composed      |
+| GAP-11 | `EmptyState`'s title is not a heading                            | Core                   | open          |
+| GAP-12 | `Alert` is always `role="alert"`, `AlertTitle` always an `h5`    | Core                   | fixed         |
+| GAP-13 | `SelectTrigger` has no label; `Textarea` no helper text          | Core                   | composed      |
+| GAP-14 | `CardTitle` is always an `h3`                                    | Core                   | composed      |
+| GAP-15 | No icon by name for a venue's everyday categories                | Product / SDK          | open          |
+| GAP-16 | `TabsList` neither wraps nor scrolls                             | Core                   | composed      |
+| GAP-17 | `AdaptiveMapShell`'s panel is an `<aside>`                       | Product / SDK          | open          |
+| GAP-18 | `POIDetailPanel` has no presentation for the shell's panel       | Product / SDK          | left visible  |
+| GAP-19 | `Navbar` is always sticky                                        | Core                   | composed      |
+| GAP-20 | `SearchBar`'s field is unstyled in WebKit (Safari, iOS)          | Product / SDK          | left visible  |
+| GAP-21 | `Heading` cannot reach the tokens' heading scale                 | Core                   | composed      |
+| GAP-22 | Font-weight tokens carry names, not weights                      | Core                   | open          |
+| GAP-23 | Component-layer colours are baked values, not ramp aliases       | Core                   | composed      |
+| GAP-24 | `DynamicIsland` pins itself to the viewport                      | Platform / form factor | open          |
+| GAP-25 | `MapView` insists on 400px of height                             | Product / SDK          | composed      |
+| GAP-26 | `Text` cannot inherit its colour                                 | Core                   | open          |
+| GAP-27 | `useTheme` does not report the direction                         | Core                   | composed      |
+| GAP-28 | `SearchBar`'s search landmark cannot be named                    | Product / SDK          | open          |
+| GAP-29 | `BottomNavigation` is always fixed to the viewport               | Core                   | open          |
+| GAP-30 | `Sidebar`'s navigation landmark cannot be named                  | Core                   | open          |
+| GAP-31 | Emotion text is under 4.5:1 on every surface but white           | Core                   | fixed         |
+| GAP-32 | `ChipGroup` carries no role                                      | Core                   | composed      |
+| GAP-33 | No token for the route line on the map                           | Product / SDK          | composed      |
+| GAP-34 | `Backdrop` pins itself to the viewport                           | Core                   | composed      |
+| GAP-35 | `BrowseCategoriesPanel` is four columns at any width             | Product / SDK          | composed      |
+| GAP-36 | `ToastViewport` pins itself to the viewport                      | Core                   | composed      |
+| GAP-37 | `SearchBar` shows the browser's clear button beside its own      | Product / SDK          | fixed         |
+| GAP-38 | The map sheet's handle is 4px tall and its grip invisible        | Product / SDK          | fixed         |
+| GAP-39 | `RouteSummary`'s title is always an `h2`                         | Product / SDK          | left visible  |
+| GAP-40 | Map overlays draw over the sticky `Navbar`                       | Product / SDK          | composed      |
+| GAP-41 | `Navbar` has no narrow-screen pattern                            | Core                   | composed      |
+| GAP-42 | `CardTitle`'s line height is 1.0                                 | Core                   | left visible  |
+| GAP-43 | Controls with touch targets under 44px                           | Core                   | left visible  |
+| GAP-44 | `Switch` is always as wide as its container                      | Core                   | left visible  |
+| GAP-45 | The first brand variant's 600 fails in the dark theme            | Core                   | left visible  |
+| GAP-46 | `Stepper` has no narrow form                                     | Core                   | composed      |
+| GAP-47 | `Sidebar` has no narrow-screen form                              | Core                   | composed      |
+| GAP-48 | A `Tree` row's meta never shrinks                                | Core                   | composed      |
+| GAP-49 | `SearchBar` drops its analytics when a caller handles keys       | Product / SDK          | open          |
+| GAP-50 | Spinner, Skeleton and the loading Button ignore reduced motion   | Core                   | fixed         |
+| GAP-51 | No polite announcer                                              | Core                   | composed      |
+| GAP-52 | The provider's preflight zeroes a caller's border                | Core                   | composed      |
+| GAP-53 | A map shell cannot fill a rounded screen                         | Product / SDK          | left visible  |
+| GAP-54 | No light: glow, gradient, blur or ambient motion                 | Core                   | composed      |
+| GAP-55 | A `Listbox`'s column is as wide as its widest option             | Core                   | composed      |
+| GAP-56 | `Button` puts no space between an icon and its label             | Core                   | fixed         |
+| GAP-57 | A `Button`'s label cannot wrap                                   | Core                   | composed      |
+| GAP-58 | `Toast` draws no background of its own                           | Core                   | open          |
+| GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it   | Platform / form factor | open          |
+| GAP-60 | `DynamicIsland` keeps no room for the camera it wraps            | Platform / form factor | open          |
+| GAP-61 | No glyph mirrors for right to left                               | Core                   | left visible  |
+| GAP-62 | `Combobox` and `MultiSelect` draw their list in the page         | Core                   | open          |
+| GAP-63 | `ColorPicker`'s swatch is a circle around a rectangle            | Core                   | open          |
+| GAP-64 | `ChipGroup` always wraps, and never centres its chips            | Core                   | open          |
+| GAP-65 | `Textarea`'s resize grip paints outside its rounded corner       | Core                   | left visible  |
+| GAP-66 | `EmptyState`'s words are left-aligned in a centred block         | Core                   | fixed         |
+| GAP-67 | `Menu` opens centred on its trigger                              | Core                   | left visible  |
+| GAP-68 | `BottomNavigation`'s taller density overflows its own bar        | Core                   | open          |
+| GAP-69 | Lift, escalator and stairs share one arrow                       | Product / SDK          | candidate fix |
+| GAP-70 | `SelectTrigger` hides a second `FieldWrapper`                    | Core                   | open          |
+| GAP-71 | `AISearchButton` has no hover state                              | Core                   | open          |
+| GAP-72 | `MapOverlay` clips what floats on it                             | Product / SDK          | fixed         |
+| GAP-73 | `SplitButton`'s outline variant loses its border                 | Core                   | open          |
+| GAP-74 | `Tooltip` draws a line across its tail                           | Core                   | open          |
+| GAP-75 | `ToggleButton` puts no space between icon and label              | Core                   | composed      |
+| GAP-76 | Dates and times are the browser's controls                       | Core                   | left visible  |
+| GAP-77 | No drag and drop: no handle, no dragging state, no target        | Core                   | open          |
+| GAP-78 | `Switch` cannot lead with its label                              | Core                   | open          |
+| GAP-79 | The Pointr icons ship, but cannot be asked for by name           | Product / SDK          | open          |
+| GAP-80 | No row actions: nothing shows on hover outside `Tree`            | Core                   | open          |
+| GAP-81 | Components carried placeholder documentation                     | Core                   | fixed         |
+| GAP-82 | A category pill's fill is 2.52:1 on its own field                | Product / SDK          | left visible  |
+| GAP-83 | `AIMessageList`'s scrolling thread cannot take focus             | Core                   | composed      |
+| GAP-84 | A `POIResultGroup` inside a list loses its words and its control | Product / SDK          | open          |
+| GAP-85 | `POIResultGroup`'s label makes every group a landmark            | Product / SDK          | open          |
+| GAP-86 | No microphone or speaker glyph for the assistant's controls      | Core                   | fixed         |
+| GAP-87 | `AIInputBar`'s `disabled` does not reach its `trailing` slot     | Core                   | open          |
+| GAP-88 | `ActionCard`'s title is a paragraph, not a heading               | Core                   | left visible  |
+| GAP-89 | `BrowseCategoriesPanel`'s tiles overlap below about 360px        | Product / SDK          | open          |
+| GAP-90 | The brand family is named but no font is shipped                 | Core                   | composed      |
+| GAP-91 | `AdaptiveMapShell` cuts its top bar's and controls' shadows      | Product / SDK          | left visible  |
+| GAP-92 | `AdaptiveMapShell` does not say which edge its controls sit on   | Product / SDK          | composed      |
+| GAP-93 | `AICompanionPanel` leaves what it covers in the tab order        | Core                   | fixed         |
+| GAP-94 | `Text`'s muted colour does not follow a glass surface            | Core                   | open          |
+| GAP-95 | `FloorSelector`'s column can grow out of the map it floats on    | Product / SDK          | left visible  |
 
 ---
 
@@ -1417,6 +1417,12 @@ Text"])`) and the Get started page shows — touches it.
   rather than `h-16`), and stop overriding the density's width.
 
 ## GAP-69 · Lift, escalator and stairs share one arrow
+
+- **Candidate correction:** the navigation completion source now draws distinct
+  lift, escalator and stairs up/down pairs, plus ramp and entry/exit, from original
+  shared Kozmos vectors. The DirectionStep Glyph Atlas shows small/large sizes and
+  RTL. This is not publication or external artwork approval; SDK map sprites and
+  physical-device legibility remain separate. The evidence below records the original defect.
 
 - **What:** `DIRECTION_ICONS` (`DirectionStep.tsx:61`) maps fourteen
   manoeuvre types onto eight glyphs: `lift-up`, `escalator-up`, `stairs-up`

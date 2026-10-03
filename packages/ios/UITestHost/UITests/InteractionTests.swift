@@ -9,6 +9,46 @@ final class InteractionTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws { app?.terminate() }
 
+    func testComposedJourneyRequiresConfirmedArrivalAndRetainsDestination() {
+        launch("navigation-journey")
+        app.buttons["Continue"].tap()
+        app.buttons["Deliver no route"].tap()
+        XCTAssertTrue(app.staticTexts["Route unavailable"].exists)
+        app.buttons["Back to route setup"].tap()
+        XCTAssertTrue(app.staticTexts["Lobby"].exists)
+        app.buttons["Continue"].tap()
+        app.buttons["Deliver calculated route"].tap()
+        app.buttons["Start navigation"].tap()
+        app.buttons["Report 100 percent"].tap()
+        XCTAssertFalse(app.staticTexts["You've arrived"].exists)
+        app.buttons["Confirm arrival"].tap()
+        XCTAssertTrue(app.staticTexts["You've arrived"].exists)
+        XCTAssertFalse(app.staticTexts["Journey time"].exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Selected destination: Gallery"].exists)
+        XCTAssertTrue(app.staticTexts["Done handled: 1"].exists)
+    }
+
+    func testRouteSetupBlocksUnresolvedAndPendingButAllowsCancellation() {
+        for scenario in ["route-setup-pending", "route-setup-unresolved"] {
+            launch(scenario)
+            XCTAssertFalse(app.buttons["Weiter"].isEnabled)
+            app.buttons["Schließen"].tap()
+            received("close")
+            app.terminate()
+        }
+    }
+
+    func testRouteSetupValidContinuationIsExplicitAndFullWidth() {
+        launch("route-setup-ready")
+        XCTAssertTrue(app.staticTexts["Lobby → Gallery"].exists)
+        let button = app.buttons["Weiter"]
+        XCTAssertGreaterThan(button.frame.width, 300)
+        XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+        button.tap()
+        received("continue")
+    }
+
     func testPopulatedComboboxKeepsItsFieldName() {
         launch("combobox-location")
         XCTAssertEqual(app.textFields["From"].value as? String, "Lobby")

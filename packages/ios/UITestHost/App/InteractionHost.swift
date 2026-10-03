@@ -83,6 +83,14 @@ private struct InteractionFixture: View {
 
     @ViewBuilder private var fixture: some View {
         switch scenario {
+        case "navigation-journey":
+            NavigationJourneyFixture()
+        case "route-setup-ready", "route-setup-pending", "route-setup-unresolved":
+            KozmosRouteSetupPanel(ready: scenario != "route-setup-unresolved", pending: scenario == "route-setup-pending",
+                title: "Route planen", continueLabel: "Weiter", closeLabel: "Schließen",
+                onContinue: { events.append("continue") }, onClose: { events.append("close") }) {
+                    Text("Lobby → Gallery")
+                }
         case "combobox-location":
             KozmosCombobox(value: Binding(get: { "" }, set: { events.append("select \($0)") }),
                 inputValue: $locationQuery,
@@ -209,6 +217,53 @@ private struct InteractionFixture: View {
             }
         default:
             Text("Unknown fixture: \(scenario)")
+        }
+    }
+}
+
+/// Offline composition acceptance; real routing, request cancellation and arrival detection remain in the host adapter.
+private struct NavigationJourneyFixture: View {
+    @State private var phase = "setup"
+    @State private var progress: Double? = nil
+    @State private var doneCount = 0
+    @State private var expanded = false
+    private let origin = KozmosListboxOption(value: "lobby", label: "Lobby", description: "Ground floor")
+    private let destination = KozmosListboxOption(value: "gallery", label: "Gallery", description: "Level 2")
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                if phase == "setup" || phase == "calculating" {
+                    KozmosRouteSetupPanel(ready: true, pending: phase == "calculating", continueLabel: phase == "calculating" ? "Calculating" : "Continue",
+                        onContinue: { phase = "calculating" }, onClose: { phase = "setup" }) {
+                        KozmosRouteLocationField(label: "From", location: origin, query: "", options: [], disabled: true, onQueryChange: { _ in }, onSelect: { _ in }, onClear: {})
+                        KozmosRouteLocationField(label: "To", location: destination, query: "", options: [], disabled: true, onQueryChange: { _ in }, onSelect: { _ in }, onClear: {})
+                    }
+                    if phase == "calculating" {
+                        KozmosButton("Deliver calculated route") { phase = "preview" }
+                        KozmosButton("Deliver no route") { phase = "recovery" }
+                    }
+                } else if phase == "recovery" {
+                    KozmosEmptyState(title: "Route unavailable", description: "Choose another starting point. Step-free preference has not changed.")
+                    KozmosButton("Back to route setup") { phase = "setup" }
+                } else if phase == "preview" {
+                    KozmosRoutePreviewPanel(destinationName: destination.label,
+                        options: [.init(id: "route-1", label: "Step-free", durationSeconds: 360, durationLabel: "6 min", distanceMetres: 220, distanceLabel: "220 m", preference: .stepFree, selected: true)],
+                        status: .ready, backLabel: "Back", continueLabel: "Start navigation", onOptionSelect: { _ in }, onBack: { phase = "setup" }, onContinue: { _ in phase = "navigating" })
+                } else if phase == "navigating" {
+                    KozmosManoeuvreCard(type: .liftUp, instruction: "Take the elevator to Level 2", isExpanded: expanded, onToggle: { expanded.toggle() }) { Text("Elevator to Level 2") }
+                    KozmosRouteProgressRail(progress: progress, type: .liftUp, label: "Journey progress")
+                    KozmosButton("Report 100 percent") { progress = 1 }
+                    KozmosButton("Confirm arrival") { phase = "arrived" }
+                    KozmosButton("End navigation") { phase = "browse" }
+                } else if phase == "arrived" {
+                    KozmosArrivalPanel(destination: destination.label, locationText: destination.description) {
+                        guard phase == "arrived" else { return }; doneCount += 1; phase = "browse"
+                    }
+                } else {
+                    Text("Selected destination: Gallery")
+                    Text("Done handled: \(doneCount)")
+                }
+            }
         }
     }
 }
