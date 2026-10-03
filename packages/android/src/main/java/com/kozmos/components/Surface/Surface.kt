@@ -48,6 +48,9 @@ enum class KozmosSurfaceStyle {
  */
 val LocalKozmosSurfaceStyle = compositionLocalOf<KozmosSurfaceStyle?> { null }
 
+/** Contrasting text inherited by instructions and itineraries on theme guidance. */
+internal val LocalKozmosGuidanceForeground = compositionLocalOf<Color?> { null }
+
 /**
  * Text that is muted elsewhere, as it is drawn on [surface] (decision 48): on
  * glass the foreground colour, so it reads at 4.5:1 over any map, where muted
@@ -55,7 +58,7 @@ val LocalKozmosSurfaceStyle = compositionLocalOf<KozmosSurfaceStyle?> { null }
  */
 @Composable
 internal fun kozmosMutedForeground(surface: KozmosSurfaceStyle? = LocalKozmosSurfaceStyle.current): Color =
-    if (surface == KozmosSurfaceStyle.Glass) {
+    LocalKozmosGuidanceForeground.current ?: if (surface == KozmosSurfaceStyle.Glass) {
         KozmosThemeTokens.primitivesColorsForeground100
     } else {
         KozmosThemeTokens.primitivesColorsForeground500

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.icon
 import com.kozmos.components.surface.kozmosMutedForeground
+import com.kozmos.components.surface.LocalKozmosGuidanceForeground
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.contracts.KozmosInstructionPart
@@ -114,7 +115,7 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
         Text(
             text = name,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (emphasised) FontWeight.SemiBold else FontWeight.Normal),
-            color = if (emphasised) KozmosThemeTokens.primitivesColorsForeground100 else kozmosMutedForeground(),
+            color = LocalKozmosGuidanceForeground.current ?: if (emphasised) KozmosThemeTokens.primitivesColorsForeground100 else kozmosMutedForeground(),
             modifier = Modifier.padding(start = KozmosDimensions.primitivesLayoutSpacing150)
         )
     }
@@ -122,7 +123,7 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
 
 @Composable
 private fun StepRow(step: KozmosItineraryStep) {
-    val colour = if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100
+    val colour = LocalKozmosGuidanceForeground.current ?: if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100
     val instruction = instructionAnnotatedText(step.instructionParts)
     val hasLanguage = step.instructionParts.hasSpeechLanguage()
     val metrics = listOfNotNull(step.distance, step.duration).filter { it.isNotEmpty() }
@@ -140,7 +141,7 @@ private fun StepRow(step: KozmosItineraryStep) {
         Icon(
             imageVector = step.type.icon(),
             contentDescription = null,
-            tint = if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground500,
+            tint = LocalKozmosGuidanceForeground.current ?: if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground500,
             modifier = Modifier
                 .width(KozmosDimensions.primitivesLayoutSizing500)
                 .height(20.dp)

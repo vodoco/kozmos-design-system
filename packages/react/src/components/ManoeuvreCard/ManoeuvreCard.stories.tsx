@@ -34,7 +34,7 @@ const meta = {
     detail: "58 m · Second Floor",
     expanded: false,
     onToggle: () => {},
-    surface: "glass",
+    appearance: "theme",
     children: (
       <Itinerary
         origin="Dunkin'"
@@ -63,6 +63,11 @@ type Story = StoryObj<typeof meta>;
 export const Closed: Story = {};
 
 export const Open: Story = { args: { expanded: true } };
+
+export const Background: Story = { args: { appearance: "background" } };
+export const BackgroundGlass: Story = {
+  args: { appearance: "background", surface: "glass" },
+};
 
 /** Ordinary itinerary content does not have to provide its own landmark. */
 export const CustomContent: Story = {
@@ -156,5 +161,5 @@ export const PartsItinerary: Story = {
   args: { ...ArabicParts.args, expanded: true },
 };
 export const GlassParts: Story = {
-  args: { ...GermanParts.args, surface: "glass" },
+  args: { ...GermanParts.args, appearance: "background", surface: "glass" },
 };

@@ -140,7 +140,7 @@ describe("Itinerary", () => {
       expect(node.className).not.toMatch(/\btext-muted-foreground\b/);
     }
     expect(screen.getByText("Gate 12").className).toMatch(
-      /\btext-foreground\b/,
+      /\bkozmos-guidance-text\b/,
     );
   });
 });

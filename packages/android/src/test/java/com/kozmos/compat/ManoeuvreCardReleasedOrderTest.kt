@@ -152,7 +152,7 @@ class ManoeuvreCardReleasedOrderTest {
         val hide = open.named("Wegbeschreibung ausblenden")
         assertEquals("Wegbeschreibung ausblenden", hide.clickLabel)
         assertTrue("the open card does not draw its itinerary", open.unmerged.any { "Haupteingang" in it.texts })
-        assertEquals("the itinerary is not told it is on glass", listOf(KozmosSurfaceStyle.Glass), surfaces.distinct())
+        assertEquals("theme guidance must expose its effective opaque surface", listOf(KozmosSurfaceStyle.Solid), surfaces.distinct())
         val list = open.unmerged.single { it.scrolls }
         assertEquals("the itinerary is not capped at 240", 240f, list.heightPx / open.density, 1f)
         assertEquals(emptyList<String>(), toggled)

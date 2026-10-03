@@ -60,7 +60,9 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
         </span>
         <span
           className={cn(
-            emphasised ? "font-semibold text-foreground" : "kozmos-muted-text",
+            emphasised
+              ? "font-semibold kozmos-guidance-text"
+              : "kozmos-muted-text",
           )}
         >
           {name}
@@ -71,7 +73,7 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
       <section
         ref={ref}
         aria-label={label}
-        className={cn("kozmos-itinerary text-foreground", className)}
+        className={cn("kozmos-itinerary kozmos-guidance-text", className)}
         {...props}
       >
         <ol className="m-0 flex list-none flex-col gap-2 p-0">
@@ -82,13 +84,15 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
               aria-current={step.current ? "step" : undefined}
               className={cn(
                 "flex items-start gap-3 text-[15px]",
-                step.current ? "font-semibold text-primary" : "text-foreground",
+                step.current
+                  ? "font-semibold kozmos-guidance-accent"
+                  : "kozmos-guidance-text",
               )}
             >
               <span
                 className={cn(
                   "flex h-5 w-10 shrink-0 items-center",
-                  step.current ? "text-primary" : "text-muted-foreground",
+                  step.current ? "kozmos-guidance-accent" : "kozmos-muted-text",
                 )}
               >
                 <DirectionIcon type={step.type} className="h-4 w-4" />

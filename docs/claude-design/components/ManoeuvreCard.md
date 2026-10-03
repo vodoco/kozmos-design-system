@@ -46,7 +46,7 @@ export function ManoeuvreCardExample() {
           type="straight"
           instruction="Take Elevator down to First Floor"
           detail="58 m · Second Floor"
-          surface="glass"
+          appearance="theme"
           expanded={expanded}
           onToggle={() => setExpanded((open) => !open)}
         >
@@ -81,9 +81,13 @@ the product.
 
 It forwards its ref to `HTMLElement`. Its props are `ManoeuvreCardProps`, which extends `Omit<React.HTMLAttributes<HTMLElement>, "children">`.
 
+- `appearance`: `"theme" | "background"`, optional, default `"theme"`.
+
+  Theme-filled by default. Background restores the neutral solid/glass presentation.
+
 - `surface`: `SurfaceVariant`, optional, default `"solid"`.
 
-  What the card sits on: solid by default, glass where the product asks for it.
+  Material for background appearance only: solid by default. Theme appearance stays opaque.
 
 - `type`: `DirectionType`, **required**.
 - `instruction`: `Instruction`, **required**.

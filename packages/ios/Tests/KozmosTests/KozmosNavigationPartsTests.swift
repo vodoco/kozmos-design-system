@@ -41,6 +41,26 @@ final class KozmosNavigationPartsTests: XCTestCase {
     }
 
     #if os(iOS)
+    @MainActor func testDefaultManoeuvreUsesOpaqueThemeFill() async throws {
+        for scheme in [ColorScheme.light, .dark] {
+            for expanded in [false, true] {
+                let view = KozmosManoeuvreCard(type: .left, instruction: "Turn left", detail: "20 m", isExpanded: expanded, onToggle: {}, surface: .glass) {
+                    KozmosItinerary(origin: "Start", steps: [KozmosItineraryStep(id: "a", instruction: [KozmosInstructionPart(text: "Continue", role: .secondary)], type: .left, duration: "1 min")], destination: "End")
+                }.padding(16).environment(\.colorScheme, scheme).background(Color.gray)
+                let pixels = try await RenderedPixels.render(view, size: CGSize(width: 360, height: 360))
+                let region = CGRect(x: 16, y: 0, width: 328, height: 360)
+                let fill = scheme == .light ? (16, 81, 232) : (88, 135, 243)
+                let bounds = try XCTUnwrap(pixels.boundingBox(in: region) {
+                    abs(Int($0) - fill.0) < 4 && abs(Int($1) - fill.1) < 4 && abs(Int($2) - fill.2) < 4
+                }, "missing exact theme fill in \(scheme)")
+                XCTAssertGreaterThan(bounds.width * bounds.height, 10000)
+                let onFill = scheme == .light ? 255 : 0
+                XCTAssertGreaterThan(pixels.count(in: bounds.insetBy(dx: 12, dy: 12)) {
+                    abs(Int($0) - onFill) < 4 && abs(Int($1) - onFill) < 4 && abs(Int($2) - onFill) < 4
+                }, 100, "missing contrasting content in \(scheme), expanded \(expanded)")
+            }
+        }
+    }
     @MainActor func testItineraryDrawsDurationWithoutDistance() async throws {
         let view = KozmosItinerary(origin: "", steps: [
             KozmosItineraryStep(id: "a", instruction: "", type: .left, duration: "0 min")
@@ -84,7 +104,7 @@ final class KozmosNavigationPartsTests: XCTestCase {
         let size = CGSize(width: 360, height: 220)
         for expanded in [false, true] {
             let view = KozmosManoeuvreCard(type: .left, instruction: "Turn left", detail: "58 m · 1 min",
-                                           isExpanded: expanded, onToggle: {}) {
+                                           isExpanded: expanded, onToggle: {}, appearance: .background) {
                 Color.green.frame(height: 40)
             }
             .padding(16)

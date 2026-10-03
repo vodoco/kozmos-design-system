@@ -243,11 +243,11 @@ for (const theme of ["light", "dark"]) {
             "qualifiers retain the sentence's size",
           );
           assert.equal(styles.weight, "400", "qualifiers use regular weight");
-          if (fixture.glass)
+          if (fixture.glass || !fixture.step)
             assert.equal(
               styles.secondaryColor,
               styles.color,
-              "glass keeps full-contrast foreground",
+              "theme guidance and background glass keep full-contrast foreground",
             );
           else
             assert.notEqual(
@@ -291,6 +291,33 @@ for (const theme of ["light", "dark"]) {
         });
       }
 
+      for (const glass of [false, true]) {
+        await finish(
+          await open(`map-manoeuvrecard--background${glass ? "-glass" : ""}`),
+          `card-background${glass ? "-glass" : ""}`,
+          async (page) => {
+            const card = page.getByRole("region", {
+              name: "Current manoeuvre",
+            });
+            await card.waitFor();
+            assert.equal(
+              await card.getAttribute("data-appearance"),
+              "background",
+            );
+            assert.ok(
+              (await card.getAttribute("class")).includes(
+                `kozmos-surface-${glass ? "glass" : "solid"}`,
+              ),
+            );
+            await card.getByRole("button").click();
+            await card
+              .getByRole("region", { name: "Itinerary", exact: true })
+              .waitFor();
+            await card.getByRole("button", { name: "Hide itinerary" }).click();
+          },
+        );
+      }
+
       // 1. The card, closed: one button that reads the manoeuvre; the grab bar silent.
       await finish(
         await open("map-manoeuvrecard--closed"),
@@ -309,6 +336,37 @@ for (const theme of ["light", "dark"]) {
             "the closed card shows its itinerary",
           );
           const bar = card.locator('[aria-label="Show itinerary"]');
+          assert.ok(
+            (await box(bar)).height >= 44,
+            "the disclosure target is under 44px",
+          );
+          assert.equal(await card.getAttribute("data-appearance"), "theme");
+          const palette = await card.evaluate((node) => {
+            const probe = document.createElement("span");
+            probe.style.backgroundColor = "var(--primitives-colors-theme-600)";
+            probe.style.color = "var(--primitives-colors-foreground-1000)";
+            node.append(probe);
+            const expected = getComputedStyle(probe);
+            const actual = getComputedStyle(node);
+            const result = {
+              fill: actual.backgroundColor,
+              foreground: actual.color,
+              expectedFill: expected.backgroundColor,
+              expectedForeground: expected.color,
+            };
+            probe.remove();
+            return result;
+          });
+          assert.equal(
+            palette.fill,
+            palette.expectedFill,
+            "guidance uses the opaque theme fill",
+          );
+          assert.equal(
+            palette.foreground,
+            palette.expectedForeground,
+            "guidance uses its paired contrasting foreground",
+          );
           assert.equal(
             await bar.getAttribute("aria-hidden"),
             "true",
@@ -349,11 +407,18 @@ for (const theme of ["light", "dark"]) {
             1,
           );
           const cardBox = await box(page.locator(".kozmos-manoeuvre-card"));
-          assert.ok(
-            cardBox.height - list.height < 60,
-            `the open card does not hug its itinerary: card ${cardBox.height}, list ${list.height}`,
-          );
           const bar2 = page.getByRole("button", { name: "Hide itinerary" });
+          const barBox = await box(bar2);
+          assert.ok(
+            barBox.height >= 44,
+            "the open disclosure target is under 44px",
+          );
+          // The interactive target is now 44px, rather than the old 13px grip.
+          // Check the remaining chrome separately so an inflated card cannot hide here.
+          assert.ok(
+            cardBox.height - list.height - barBox.height < 47,
+            `the open card does not hug its itinerary: card ${cardBox.height}, list ${list.height}, target ${barBox.height}`,
+          );
           assert.equal(await bar2.getAttribute("aria-expanded"), "true");
           await bar2.click();
           await manoeuvre.waitFor();

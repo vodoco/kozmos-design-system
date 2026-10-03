@@ -34,6 +34,7 @@ public struct KozmosItineraryStep: Identifiable, Hashable, Sendable {
 /// VoiceOver hears the endpoints as "From, name" and "To, name", each step as
 /// one element, the current one selected.
 public struct KozmosItinerary: View {
+    @Environment(\.kozmosGuidanceForeground) private var guidance
     let origin: String
     let steps: [KozmosItineraryStep]
     let destination: String
@@ -91,12 +92,12 @@ public struct KozmosItinerary: View {
         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             Image(systemName: step.type.iconName)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500)
+                .foregroundColor(guidance ?? (step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: 20, alignment: .leading)
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                 KozmosInstructionText(parts: step.instructionParts)
                     .font(step.isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-                    .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100)
+                    .foregroundColor(guidance ?? (step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100))
                 let metrics = [step.distance, step.duration].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " • ")
                 if !metrics.isEmpty {
                     Text(metrics).font(KozmosTypography.subheadline).kozmosMutedText()
