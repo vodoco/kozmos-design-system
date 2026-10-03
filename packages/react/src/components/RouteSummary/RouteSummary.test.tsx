@@ -3,6 +3,41 @@ import { describe, expect, it, vi } from "vitest";
 import { RouteSummary } from "./RouteSummary";
 
 describe("RouteSummary", () => {
+  it("hosts navigation without another surface and omits unavailable metrics", () => {
+    const { container } = render(
+      <RouteSummary
+        destination="Gate 3"
+        presentation="hosted"
+        onEndRoute={() => {}}
+      />,
+    );
+    expect(container.firstChild).toHaveAttribute("data-presentation", "hosted");
+    expect(container.firstChild).not.toHaveClass(
+      "kozmos-surface-solid",
+      "p-4",
+      "shadow-overlay",
+    );
+    expect(container.querySelector("p")).toBeNull();
+    expect(screen.getByRole("heading")).not.toHaveClass("line-clamp-2");
+  });
+  it("keeps supplied zero metrics and replaces failed destination media decoratively", () => {
+    const { container } = render(
+      <RouteSummary
+        destination="Gate 3"
+        durationText="0 min"
+        destinationImage="/missing.png"
+        onEndRoute={() => {}}
+      />,
+    );
+    expect(screen.getByText("0 min")).toBeInTheDocument();
+    const image = container.querySelector("img")!;
+    expect(image).toHaveAttribute("alt", "");
+    fireEvent.error(image);
+    expect(container.querySelector("img")).toBeNull();
+    expect(
+      container.querySelector('[data-destination-media="fallback"]'),
+    ).not.toBeNull();
+  });
   it("renders active route details and ends the route", () => {
     const onEndRoute = vi.fn();
 

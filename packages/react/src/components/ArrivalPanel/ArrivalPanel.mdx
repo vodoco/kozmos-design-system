@@ -1,0 +1,40 @@
+import { Meta, Canvas } from '@storybook/blocks';
+import { PlatformSnippets } from '../PlatformSnippets';
+import * as Stories from './ArrivalPanel.stories';
+
+<Meta of={Stories} />
+
+# Arrival Panel
+
+Host-confirmed arrival content for an existing bottom sheet or panel. Hosted by default: no duplicate surface, radius, elevation or outer padding. Use `presentation="standalone"` only when this component owns that presentation.
+
+<Canvas of={Stories.ActualMetrics} />
+
+Only supplied **actual journey** time and distance are shown. Missing values are omitted; `0 min` is a valid supplied value. Never copy remaining estimates into actual totals. A progress value of 100% does not confirm arrival.
+
+The host owns confirmed arrival, route identity, deduplicating repeated events, focus, one announcement, safe areas and dismissal. `onDone` requests completion; the component does not dismiss itself. Set `pending` while asynchronous completion runs. Recommended completion ends navigation and returns to the map with the destination still selected. Close, End and Done are distinct actions.
+
+Destination images are decorative beside the destination name, with a fixed-size fallback on failure. Every visible label can be localized. The panel imposes no fixed height: its sheet host must support scrolling and enlarged text.
+
+<Canvas of={Stories.Hosted} />
+<Canvas of={Stories.Arabic} />
+
+## All platforms
+
+<PlatformSnippets
+  react={`
+import { ArrivalPanel } from "@kozmos-ds/react";
+
+export function Example() {
+  return <ArrivalPanel destination="Northfield Bakery" actualDurationText="6 min" actualDistanceText="202 m" onDone={() => {}} />;
+}
+`}
+  swift={`
+KozmosArrivalPanel(destination: "Northfield Bakery", actualDurationText: "6 min", actualDistanceText: "202 m", onDone: {})
+`}
+  kotlin={`
+KozmosArrivalPanel(destination = "Northfield Bakery", actualDurationText = "6 min", actualDistanceText = "202 m", onDone = {})
+`}
+/>
+
+The callbacks above are integration points, not an arrival detector or a complete SDK host. No journey data is computed or persisted by the panel.

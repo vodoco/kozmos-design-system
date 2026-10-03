@@ -171,6 +171,65 @@ for (const theme of ["light", "dark"]) {
         );
       };
 
+      for (const variant of [
+        "hosted",
+        "actual-metrics",
+        "pending",
+        "zero-duration",
+        "long-destination",
+        "missing-image",
+        "arabic",
+      ]) {
+        await finish(
+          await open(`map-arrivalpanel--${variant}`),
+          `arrival-${variant}`,
+          async (page) => {
+            const panel = page.locator(".kozmos-arrival-panel");
+            await panel.waitFor();
+            const done = panel.getByRole("button");
+            assert.equal(await done.count(), 1);
+            assert.equal(await done.isDisabled(), variant === "pending");
+            const outer = await box(panel);
+            const action = await box(done);
+            assert.ok(
+              Math.abs(action.width - outer.width) <= 1,
+              "Done must fill the hosted panel",
+            );
+            assert.ok(action.height >= 44, "Done target must be at least 44px");
+            assert.equal(
+              await panel.locator("[aria-live]").count(),
+              0,
+              "The host owns arrival announcements",
+            );
+            if (variant === "hosted")
+              assert.equal(await panel.locator("dl").count(), 0);
+            if (variant === "zero-duration")
+              assert.equal(
+                await panel.getByText("0 min", { exact: true }).count(),
+                1,
+              );
+            if (variant === "missing-image")
+              await panel
+                .locator('[data-destination-media="fallback"]')
+                .waitFor();
+            await page.evaluate(() => {
+              document.documentElement.style.fontSize = "200%";
+            });
+            const overflow = await panel.evaluate(
+              (node) => node.scrollWidth - node.clientWidth,
+            );
+            assert.ok(
+              overflow <= 1,
+              `Arrival text overflows by ${overflow}px at 200%`,
+            );
+            assert.ok(
+              (await box(done)).bottom <= (await box(panel)).bottom + 1,
+              "Done must remain inside the growing content",
+            );
+          },
+        );
+      }
+
       // Ordered fragments remain one sentence at narrow/large-text sizes. A
       // flattened aria-label would erase the landmark's speech language.
       for (const fixture of [

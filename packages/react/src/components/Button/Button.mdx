@@ -8,6 +8,8 @@ import * as ButtonStories from "./Button.stories";
 
 Buttons allow users to take actions, and make choices, with a single tap.
 
+For a full-width action, React uses `className="w-full"`, Compose uses `Modifier.fillMaxWidth()`, and SwiftUI uses `KozmosButton("Done", fillsWidth: true) { ... }`. SwiftUI's opt-in expands the painted label and hit area, not just an outer container; existing buttons keep their intrinsic width by default.
+
 <Canvas>
   <Story of={ButtonStories.Default} />
 </Canvas>

@@ -227,8 +227,10 @@ if (unexported.length) {
 }
 lines.push("");
 
-const cardExists = (name) =>
-  fs.existsSync(path.join(root, CARDS_DIR, `${name}.md`));
+// Link the cards this invocation generates, not yesterday's files. A new
+// component must produce a fresh inventory in one build, including on CI.
+const claudeDesign = await buildClaudeDesignDocs(root);
+const cardExists = (name) => claudeDesign.files.has(`${CARDS_DIR}/${name}.md`);
 for (const category of [...byCategory.keys()].sort()) {
   const entries = byCategory.get(category);
   lines.push(`### ${category} (${entries.length})`);
@@ -369,7 +371,6 @@ const changelogCurrent = read(CHANGELOG_OUT);
  * whose component has gone is stale too, so a removed component cannot leave
  * its card behind for an assistant to mount.
  */
-const claudeDesign = await buildClaudeDesignDocs(root);
 const cardsDir = path.join(root, CARDS_DIR);
 const retired = (fs.existsSync(cardsDir) ? fs.readdirSync(cardsDir) : [])
   .filter((file) => file.endsWith(".md"))

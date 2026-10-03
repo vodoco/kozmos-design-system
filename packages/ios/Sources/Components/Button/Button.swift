@@ -40,6 +40,7 @@ public struct KozmosButton: View {
     let size: KozmosButtonSize
     let isDisabled: Bool
     let isLoading: Bool
+    let fillsWidth: Bool
     let action: () -> Void
     
     public init(
@@ -49,6 +50,7 @@ public struct KozmosButton: View {
         size: KozmosButtonSize = .default,
         isDisabled: Bool = false,
         isLoading: Bool = false,
+        fillsWidth: Bool = false,
         action: @escaping () -> Void
     ) {
         self.label = label
@@ -57,6 +59,7 @@ public struct KozmosButton: View {
         self.size = size
         self.isDisabled = isDisabled
         self.isLoading = isLoading
+        self.fillsWidth = fillsWidth
         self.action = action
     }
     
@@ -80,6 +83,7 @@ public struct KozmosButton: View {
             .foregroundColor(foregroundColor)
             .frame(
                 minWidth: size == .icon ? 44 : nil,
+                maxWidth: fillsWidth ? .infinity : nil,
                 minHeight: 44
             )
             .kozmosButtonSurface(

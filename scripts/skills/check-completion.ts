@@ -26,6 +26,7 @@ const INTERNAL_COMPONENT_NAMES = new Set(["GlassSettingsPanel"]);
 const NON_COMPONENT_DIRECTORIES = new Set(["Motion"]);
 const PRODUCT_SDK_COMPONENT_NAMES = new Set([
   "AdaptiveMapShell",
+  "ArrivalPanel",
   "BrowseCategoriesPanel",
   "CategoryTile",
   "DirectionStep",

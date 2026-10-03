@@ -111,6 +111,7 @@ export * from "./components/UserLocationMarker";
 export * from "./components/RoutingInputGroup";
 export * from "./components/RouteProgressRail";
 export * from "./components/RouteSummary";
+export * from "./components/ArrivalPanel";
 export * from "./components/Surface";
 export * from "./components/DynamicIsland";
 export * from "./components/MapControlsGroup";

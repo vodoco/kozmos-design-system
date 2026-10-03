@@ -28,17 +28,17 @@ an implementation backlog item.
 
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
-| Components scanned                        | 116    |
-| Declaring at least one React variant axis | 52     |
-| Variations that are compositional only    | 64     |
-| Components with variant gaps — iOS        | 14/52  |
-| Components with variant gaps — Android    | 14/52  |
-| Components with variant gaps — Figma      | 18/52  |
-| Components with variant gaps — Vue        | 7/52   |
-| Components absent entirely — iOS          | 9/116  |
-| Components absent entirely — Android      | 8/116  |
-| Components absent entirely — Figma        | 20/116 |
-| Components absent entirely — Vue          | 19/116 |
+| Components scanned                        | 117    |
+| Declaring at least one React variant axis | 54     |
+| Variations that are compositional only    | 63     |
+| Components with variant gaps — iOS        | 14/54  |
+| Components with variant gaps — Android    | 14/54  |
+| Components with variant gaps — Figma      | 20/54  |
+| Components with variant gaps — Vue        | 9/54   |
+| Components absent entirely — iOS          | 9/117  |
+| Components absent entirely — Android      | 8/117  |
+| Components absent entirely — Figma        | 21/117 |
+| Components absent entirely — Vue          | 20/117 |
 
 <!-- /generated:headline -->
 
@@ -74,6 +74,9 @@ AdaptiveMapShell
 Alert
   - ios missing axes -> live (off, polite, assertive)
   - android missing axes -> live (off, polite, assertive)
+ArrivalPanel
+  - figma: component/set absent
+  - vue: component absent
 BottomNavigation
   - ios missing axes -> density (default, compact)
   - android missing axes -> density (default, compact)
@@ -101,6 +104,9 @@ Link
 List
   - ios missing axes -> density (default, compact)
   - android missing axes -> density (default, compact)
+ManoeuvreCard
+  - figma: component/set absent
+  - vue: component absent
 MapAttribution
   - figma: component/set absent
   - vue: component absent
@@ -202,21 +208,21 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 9 of 116
+### iOS — 9 of 117
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, Surface, UserMessage.
 
-### Android — 8 of 116
+### Android — 8 of 117
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, UserMessage.
 
-### Figma — 20 of 116
+### Figma — 21 of 117
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, FieldWrapper, Icon, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteProgressRail, Surface, ThemeProvider, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, FieldWrapper, Icon, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteProgressRail, Surface, ThemeProvider, UserMessage.
 
-### Vue — 19 of 116
+### Vue — 20 of 117
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, CategoryField, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteProgressRail, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, CategoryField, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteProgressRail, Surface, UserMessage.
 
 <!-- /generated:absent -->
 
