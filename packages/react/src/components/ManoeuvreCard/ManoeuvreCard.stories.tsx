@@ -8,18 +8,18 @@ const steps = [
   {
     id: "1",
     instruction: "Take Elevator down to First Floor",
-    type: "straight" as const,
+    type: "lift-down" as const,
     current: true,
   },
   {
     id: "2",
     instruction: "Take Corridor to Garage B",
-    type: "straight" as const,
+    type: "transition" as const,
   },
   {
     id: "3",
     instruction: "Take Walkway to Terminal B",
-    type: "straight" as const,
+    type: "transition" as const,
   },
   { id: "4", instruction: "Destination", type: "destination" as const },
 ];
@@ -29,7 +29,7 @@ const meta = {
   component: ManoeuvreCard,
   parameters: { layout: "padded" },
   args: {
-    type: "straight",
+    type: "lift-down",
     instruction: "Take Elevator down to First Floor",
     detail: "58 m · Second Floor",
     expanded: false,
@@ -82,6 +82,7 @@ export const CustomContent: Story = {
 /** The whole instruction, however many lines it takes: the card grows with it. */
 export const LongInstruction: Story = {
   args: {
+    type: "escalator-up",
     instruction:
       "Take the escalator up to the Departures level and continue past the security checkpoint",
     detail: "120 m · First Floor",
@@ -95,6 +96,7 @@ export const LongInstruction: Story = {
  */
 export const InstructionLines: Story = {
   args: {
+    type: "escalator-up",
     instruction:
       "Take the escalator up to the Departures level and continue past the security checkpoint",
     detail: "120 m · First Floor",

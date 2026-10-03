@@ -26,12 +26,12 @@ export function ItineraryExample() {
           {
             id: "1",
             instruction: "Take Elevator down to First Floor",
-            type: "straight",
+            type: "lift-down",
           },
           {
             id: "2",
             instruction: "Take Corridor to Garage B",
-            type: "straight",
+            type: "transition",
             current: true,
           },
           {

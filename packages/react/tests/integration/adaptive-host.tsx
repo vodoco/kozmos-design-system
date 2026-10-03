@@ -337,6 +337,9 @@ function floatingCard(card: FloatingCard, surface: "glass" | "solid") {
     case "manoeuvre-open":
       return (
         <ManoeuvreCard
+          // This fixture verifies neutral solid/glass contrast; theme guidance
+          // is covered by the navigation appearance suite.
+          appearance="background"
           type="straight"
           instruction="Take the lift down to Level 1"
           detail="58 m · Level 2"

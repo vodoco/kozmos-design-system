@@ -21,18 +21,18 @@ const steps = [
   {
     id: "1",
     instruction: "Take Elevator down to First Floor",
-    type: "straight" as const,
+    type: "lift-down" as const,
     current: true,
   },
   {
     id: "2",
     instruction: "Take Corridor to Garage B",
-    type: "straight" as const,
+    type: "transition" as const,
   },
   {
     id: "3",
     instruction: "Take Walkway to Terminal B",
-    type: "straight" as const,
+    type: "transition" as const,
   },
   { id: "4", instruction: "Destination", type: "destination" as const },
 ];
@@ -43,7 +43,7 @@ export function ManoeuvreCardExample() {
     <ThemeProvider defaultTheme="light">
       <div className="max-w-[402px] bg-muted/40 p-3">
         <ManoeuvreCard
-          type="straight"
+          type="lift-down"
           instruction="Take Elevator down to First Floor"
           detail="58 m · Second Floor"
           appearance="theme"

@@ -59,8 +59,8 @@ export function Example() {
     <Itinerary
       origin="Dunkin'"
       steps={[
-        { id: "1", instruction: "Take Elevator down to First Floor", type: "straight" },
-        { id: "2", instruction: "Take Corridor to Garage B", type: "straight", current: true },
+        { id: "1", instruction: "Take Elevator down to First Floor", type: "lift-down" },
+        { id: "2", instruction: "Take Corridor to Garage B", type: "transition", current: true },
         { id: "3", instruction: "Destination", type: "destination" },
       ]}
       destination="Airport Shuttles"
@@ -74,8 +74,8 @@ import SwiftUI
 KozmosItinerary(
     origin: "Dunkin'",
     steps: [
-        KozmosItineraryStep(id: "1", instruction: "Take Elevator down to First Floor", type: .straight),
-        KozmosItineraryStep(id: "2", instruction: "Take Corridor to Garage B", type: .straight, isCurrent: true),
+        KozmosItineraryStep(id: "1", instruction: "Take Elevator down to First Floor", type: .liftDown),
+        KozmosItineraryStep(id: "2", instruction: "Take Corridor to Garage B", type: .transition, isCurrent: true),
         KozmosItineraryStep(id: "3", instruction: "Destination", type: .destination),
     ],
     destination: "Airport Shuttles")
@@ -84,8 +84,8 @@ KozmosItinerary(
 KozmosItinerary(
     origin = "Dunkin'",
     steps = listOf(
-        KozmosItineraryStep("1", "Take Elevator down to First Floor", DirectionType.Straight),
-        KozmosItineraryStep("2", "Take Corridor to Garage B", DirectionType.Straight, isCurrent = true),
+        KozmosItineraryStep("1", "Take Elevator down to First Floor", DirectionType.LiftDown),
+        KozmosItineraryStep("2", "Take Corridor to Garage B", DirectionType.Transition, isCurrent = true),
         KozmosItineraryStep("3", "Destination", DirectionType.Destination)
     ),
     destination = "Airport Shuttles"
