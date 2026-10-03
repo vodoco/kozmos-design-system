@@ -30,3 +30,26 @@ export const Unknown: Story = {
 export const RightToLeft: Story = {
   args: { progress: 0.25, dir: "rtl", type: "left", valueText: "ربع الرحلة" },
 };
+
+export const Waypoints: Story = {
+  args: {
+    progress: 0.2,
+    showCompletedTrack: true,
+    waypoints: [
+      { id: "entrance", position: 0, type: "straight", label: "Entrance" },
+      { id: "gallery", position: 0.5, type: "left", label: "Gallery entrance" },
+      {
+        id: "gallery-turn",
+        position: 0.51,
+        type: "right",
+        label: "Turn right into gallery",
+      },
+      {
+        id: "destination",
+        position: 1,
+        type: "destination",
+        label: "Destination",
+      },
+    ],
+  },
+};

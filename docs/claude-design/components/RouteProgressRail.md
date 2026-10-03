@@ -44,6 +44,14 @@ It forwards its ref to `HTMLDivElement`. Its props are `RouteProgressRailProps`,
 
   Localized progress description, particularly when progress is unknown (null).
 
+- `waypoints`: `readonly RouteProgressWaypoint[]`, optional, default `[]`.
+
+  Optional transition markers. Invalid/ambiguous IDs or positions are omitted.
+
+- `showCompletedTrack`: `boolean`, optional, default `false`.
+
+  Opt into a static completed segment. Unknown progress never paints completion.
+
 - `type`: `DirectionType`, **required**.
 
   The current manoeuvre, carried on the disc.
@@ -57,6 +65,21 @@ It forwards its ref to `HTMLDivElement`. Its props are `RouteProgressRailProps`,
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
 
 ## Types these props take
+
+### RouteProgressWaypoint
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A host-owned transition; positions share the rail's distance/time basis. */
+interface RouteProgressWaypoint {
+  id: string;
+  position: number;
+  type: DirectionType;
+  /** Localized transport, destination floor and/or landmark description. */
+  label: string;
+}
+```
 
 ### DirectionType
 

@@ -15,6 +15,7 @@ import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
 import com.kozmos.components.manoeuvrecard.manoeuvreDescription
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressRail
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressRailGeometry
+import com.kozmos.components.routeprogressrail.KozmosRouteProgressWaypoint
 import com.kozmos.components.routesummary.KozmosRouteSummary
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -34,6 +35,26 @@ class KozmosNavigationPartsPaparazziTest {
         KozmosItineraryStep("3", "Take Walkway to Terminal B", DirectionType.Right),
         KozmosItineraryStep("4", "Destination", DirectionType.Destination)
     )
+
+    @Test
+    fun waypointsPreserveCoincidentSemanticsAndAvoidVisualCollisions() {
+        val g = KozmosRouteProgressRailGeometry
+        val points = listOf(
+            KozmosRouteProgressWaypoint("end", 1f, DirectionType.Destination, "Destination"),
+            KozmosRouteProgressWaypoint("lift", 0.5f, DirectionType.LiftUp, "Elevator to level 2"),
+            KozmosRouteProgressWaypoint("same", 0.5f, DirectionType.Right, "Turn right"),
+            KozmosRouteProgressWaypoint("start", 0f, DirectionType.Straight, "Entrance")
+        )
+        assertEquals(listOf("start", "lift", "same", "end"), g.validWaypoints(points).map { it.id })
+        assertEquals(listOf("start", "lift", "end"), g.visibleWaypoints(points, 300.dp, null).map { it.id })
+        assertEquals(listOf("start", "end"), g.visibleWaypoints(points, 300.dp, 0.5f).map { it.id })
+        assertEquals(emptyList<KozmosRouteProgressWaypoint>(), g.visibleWaypoints(points, 20.dp, null))
+        assertEquals(1, g.visibleWaypoints(points, 54.dp, null).size)
+        assertEquals(listOf("start", "same", "end"), g.validWaypoints(points + listOf(
+            KozmosRouteProgressWaypoint("lift", 0.1f, DirectionType.Left, "Ambiguous"),
+            KozmosRouteProgressWaypoint("bad", Float.NaN, DirectionType.Left, "Invalid")
+        )).map { it.id })
+    }
 
     @Test
     fun theClosedCardReadsInstructionThenDetail() {

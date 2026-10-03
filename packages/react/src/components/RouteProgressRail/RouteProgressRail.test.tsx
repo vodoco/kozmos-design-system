@@ -7,6 +7,29 @@ import {
 } from "./RouteProgressRail";
 
 describe("RouteProgressRail", () => {
+  it("describes every valid waypoint even when markers collide, and exposes completed track only when requested", () => {
+    render(
+      <RouteProgressRail
+        progress={0.5}
+        type="left"
+        label="Journey"
+        showCompletedTrack
+        waypoints={[
+          { id: "a", position: 0.5, type: "left", label: "Gallery entrance" },
+          {
+            id: "b",
+            position: 0.5,
+            type: "right",
+            label: "Turn right into gallery",
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("progressbar")).toHaveAccessibleDescription(
+      "Gallery entrance; Turn right into gallery",
+    );
+    expect(screen.getByTestId("route-completed-track")).toBeInTheDocument();
+  });
   it("represents unknown progress without claiming zero or a current position", () => {
     render(
       <RouteProgressRail

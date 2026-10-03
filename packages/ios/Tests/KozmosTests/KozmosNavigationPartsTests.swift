@@ -17,6 +17,24 @@ final class KozmosNavigationPartsTests: XCTestCase {
 
     // MARK: The rail's arithmetic
 
+    func testWaypointLayoutPreservesCoincidentSemanticsAndAvoidsVisualCollisions() {
+        let points = [
+            KozmosRouteProgressWaypoint(id: "end", position: 1, type: .destination, label: "Destination"),
+            KozmosRouteProgressWaypoint(id: "lift", position: 0.5, type: .liftUp, label: "Elevator to level 2"),
+            KozmosRouteProgressWaypoint(id: "same", position: 0.5, type: .right, label: "Turn right"),
+            KozmosRouteProgressWaypoint(id: "start", position: 0, type: .straight, label: "Entrance")
+        ]
+        XCTAssertEqual(KozmosRouteProgressRail.validWaypoints(points).map(\.id), ["start", "lift", "same", "end"])
+        XCTAssertEqual(KozmosRouteProgressRail.visibleWaypoints(points, width: 300, progress: nil).map(\.id), ["start", "lift", "end"])
+        XCTAssertEqual(KozmosRouteProgressRail.visibleWaypoints(points, width: 300, progress: 0.5).map(\.id), ["start", "end"])
+        XCTAssertTrue(KozmosRouteProgressRail.visibleWaypoints(points, width: 20, progress: nil).isEmpty)
+        XCTAssertEqual(KozmosRouteProgressRail.visibleWaypoints(points, width: 54, progress: nil).count, 1)
+        XCTAssertEqual(KozmosRouteProgressRail.validWaypoints(points + [
+            KozmosRouteProgressWaypoint(id: "lift", position: 0.1, type: .left, label: "Ambiguous"),
+            KozmosRouteProgressWaypoint(id: "bad", position: .nan, type: .left, label: "Invalid")
+        ]).map(\.id), ["start", "same", "end"])
+    }
+
     func testNonFiniteProgressStaysAtTheStart() {
         for progress in [Double.nan, Double.infinity, -Double.infinity] {
             XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: progress, width: 300), 10)
@@ -41,6 +59,21 @@ final class KozmosNavigationPartsTests: XCTestCase {
     }
 
     #if os(iOS)
+    @MainActor func testWaypointsAndCompletedTrackAreActuallyDrawn() async throws {
+        let size = CGSize(width: 300, height: 34)
+        let points = [KozmosRouteProgressWaypoint(id: "gallery", position: 0.5, type: .left, label: "Gallery")]
+        let marker = KozmosRouteProgressRail(progress: nil, type: .left, label: "Journey", waypoints: points)
+            .environment(\.colorScheme, .light).background(Color.white)
+        let pixels = try await RenderedPixels.render(marker, size: size)
+        XCTAssertGreaterThan(pixels.count(in: CGRect(x: 138, y: 0, width: 24, height: 34), where: RenderedPixels.isDarkText), 20)
+        for known in [true, false] {
+            let view = KozmosRouteProgressRail(progress: known ? 0.5 : nil, type: .left, label: "Journey", showCompletedTrack: true)
+                .environment(\.colorScheme, .light).background(Color.white)
+            let drawn = try await RenderedPixels.render(view, size: size)
+            let completed = drawn.count(in: CGRect(x: 50, y: 14, width: 50, height: 6), where: RenderedPixels.isTheme)
+            if known { XCTAssertGreaterThan(completed, 100) } else { XCTAssertEqual(completed, 0) }
+        }
+    }
     @MainActor func testRailMirrorsTimelineAndOmitsUnknownPosition() async throws {
         let size = CGSize(width: 300, height: 34)
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {

@@ -634,6 +634,84 @@ for (const theme of ["light", "dark"]) {
         );
       }
 
+      await finish(
+        await open("map-routeprogressrail--waypoints"),
+        "rail-waypoints",
+        async (page) => {
+          const rail = page.getByRole("progressbar");
+          await rail.waitFor();
+          const description = await rail.getAttribute("aria-describedby");
+          assert.equal(
+            await page.locator(`[id="${description}"]`).textContent(),
+            "Entrance; Gallery entrance; Turn right into gallery; Destination",
+          );
+          for (const direction of ["ltr", "rtl"]) {
+            for (const width of [300, 120, 20]) {
+              await rail.evaluate(
+                (node, { direction, width }) => {
+                  node.dir = direction;
+                  node.style.width = `${width}px`;
+                },
+                { direction, width },
+              );
+              await page.waitForFunction(
+                ({ width }) => {
+                  const node = document.querySelector('[role="progressbar"]');
+                  return width < 54
+                    ? node.querySelectorAll("[data-waypoint-id]").length === 0
+                    : node.querySelectorAll("[data-waypoint-id]").length > 0;
+                },
+                { width },
+              );
+              // Two frames deliver ResizeObserver and the React layout update.
+              await page.evaluate(
+                () =>
+                  new Promise((resolve) =>
+                    requestAnimationFrame(() => requestAnimationFrame(resolve)),
+                  ),
+              );
+              const r = await box(rail);
+              const disc = await box(
+                rail.locator('[data-testid="route-progress-disc"]'),
+              );
+              const marks = await rail.locator("[data-waypoint-id]").all();
+              let previous;
+              for (const mark of marks) {
+                const m = await box(mark);
+                assert.ok(
+                  m.x >= r.x && m.right <= r.right,
+                  "waypoint escapes rail",
+                );
+                assert.ok(
+                  Math.abs(m.x + m.width / 2 - disc.x - disc.width / 2) >= 32,
+                  "waypoint overlaps current position",
+                );
+                if (previous)
+                  assert.ok(
+                    Math.abs(m.x - previous.x) >= 27,
+                    "waypoints overlap",
+                  );
+                previous = m;
+              }
+              const track = await box(
+                rail.locator('[data-testid="route-completed-track"]'),
+              );
+              assert.ok(
+                track.x >= r.x - 1 && track.right <= r.right + 1,
+                "completion escapes rail",
+              );
+              if (direction === "ltr")
+                assert.ok(Math.abs(track.right - disc.x - disc.width / 2) < 1);
+              else assert.ok(Math.abs(track.x - disc.x - disc.width / 2) < 1);
+            }
+          }
+          await rail.evaluate((node) => {
+            node.dir = "ltr";
+            node.style.width = "";
+          });
+        },
+      );
+
       // 4. The summary's navigation layout: End on the heading's row, the
       //    stats on one row under it, the rail under those.
       await finish(
