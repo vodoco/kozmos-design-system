@@ -3,6 +3,7 @@ import SwiftUI
 public enum KozmosRouteLocationStatus: String, CaseIterable, Sendable {
     case idle, loading, ready, empty, error
 }
+public enum KozmosRouteLocationFilterMode: Sendable { case local, host }
 
 /// A resolved place is separate from editable search text. The host owns search, identity and focus.
 public struct KozmosRouteLocationField: View {
@@ -19,6 +20,7 @@ public struct KozmosRouteLocationField: View {
     private let mapLabel: String
     private let emptyText: String
     private let disabled: Bool
+    private let filterMode: KozmosRouteLocationFilterMode
     private let onQueryChange: (String) -> Void
     private let onSelect: (KozmosListboxOption) -> Void
     private let onClear: () -> Void
@@ -29,12 +31,14 @@ public struct KozmosRouteLocationField: View {
                 placeholder: String = "Search for a place", clearLabel: String = "Clear location",
                 openLabel: String = "Open options", closeLabel: String = "Close options",
                 mapLabel: String = "Select from the map", emptyText: String = "No locations found", disabled: Bool = false,
+                filterMode: KozmosRouteLocationFilterMode = .local,
                 onQueryChange: @escaping (String) -> Void, onSelect: @escaping (KozmosListboxOption) -> Void,
                 onClear: @escaping () -> Void, onChooseMap: (() -> Void)? = nil) {
         self.label = label; self.location = location; self.query = query; self.options = options
         self.status = status; self.statusText = statusText; self.placeholder = placeholder; self.clearLabel = clearLabel
         self.mapLabel = mapLabel; self.emptyText = emptyText; self.disabled = disabled
         self.openLabel = openLabel; self.closeLabel = closeLabel
+        self.filterMode = filterMode
         self.onQueryChange = onQueryChange; self.onSelect = onSelect; self.onClear = onClear; self.onChooseMap = onChooseMap
     }
 
@@ -78,7 +82,7 @@ public struct KozmosRouteLocationField: View {
                 }), inputValue: Binding(get: { query }, set: onQueryChange), options: suggestions,
                     label: label, placeholder: placeholder, disabled: disabled, status: status == .error ? .error : .default,
                     helperText: message, emptyText: message ?? emptyText, clearable: false,
-                    openLabel: openLabel, closeLabel: closeLabel)
+                    openLabel: openLabel, closeLabel: closeLabel, filterLocally: filterMode == .local)
                 if !query.isEmpty { KozmosButton(clearLabel, variant: .outline, isDisabled: disabled, fillsWidth: true, action: onClear) }
             }
             if let onChooseMap { KozmosButton(mapLabel, variant: .outline, isDisabled: disabled, fillsWidth: true, action: onChooseMap) }

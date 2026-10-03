@@ -95,6 +95,24 @@ final class InteractionTests: XCTestCase {
         received("map")
     }
 
+    func testHostFilteredRouteLocationSelectsSynonymButLoadingAndLocalDoNot() {
+        for scenario in ["route-synonym-local", "route-synonym-loading", "route-synonym-host"] {
+            launch(scenario)
+            app.buttons["Open options"].tap()
+            let result = app.buttons["Elevator, Ground floor"]
+            if scenario == "route-synonym-host" {
+                XCTAssertTrue(result.exists)
+                result.tap()
+                received("select e1")
+                XCTAssertFalse(app.textFields["From"].exists)
+            } else {
+                XCTAssertFalse(result.exists)
+                XCTAssertTrue(app.textFields["From"].isEnabled)
+            }
+            app.terminate()
+        }
+    }
+
     func testResultGroupExpansionPreservesSelectionAndSeparateActions() {
         launch("result-group")
         XCTAssertFalse(app.buttons["1, Gate 12, Level 1"].exists)

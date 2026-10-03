@@ -139,6 +139,7 @@ const RoutingInputGroup = React.forwardRef<
                 index < points.length - 1 &&
                 onRemovePoint && (
                   <Button
+                    type="button"
                     variant="ghost"
                     size="icon"
                     className="w-11 h-11 shrink-0 text-muted-foreground hover:text-destructive-text"
@@ -156,6 +157,7 @@ const RoutingInputGroup = React.forwardRef<
         <div className="flex flex-col gap-2 shrink-0 justify-center">
           {points.length === 2 && onSwap && (
             <Button
+              type="button"
               variant="ghost"
               size="icon"
               className="w-11 h-11 mt-6 shrink-0 bg-secondary hover:bg-secondary/80 text-foreground"
@@ -167,6 +169,7 @@ const RoutingInputGroup = React.forwardRef<
           )}
           {onAddPoint && (
             <Button
+              type="button"
               variant="ghost"
               size="icon"
               className={cn(

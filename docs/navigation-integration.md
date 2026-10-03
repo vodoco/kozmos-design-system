@@ -67,6 +67,13 @@ RouteLocationField can emit a query callback during selection as well as the res
 cross-platform callback order is not promised. Request only while the field is unresolved.
 Automatic field analytics omit query/location IDs, but the host still owns consent and logging.
 
+For SDK/server search, set RouteLocationField `filterMode="host"` (SwiftUI `.host`,
+Compose `KozmosRouteLocationFilterMode.Host`). Results retain their supplied ranking and
+synonym matches; the default local mode preserves existing substring filtering. Neither mode
+accepts ambiguous IDs or stale suggestions in a non-ready state. The controlled journey also
+demonstrates explicit focus restoration after selecting/clearing either endpoint, including
+transitions that remain in setup; ordinary query updates do not move focus.
+
 Recovery distinguishes no route, unavailable step-free route, unavailable position, offline and
 transient errors. Retry is only useful when the host can retry; otherwise offer point editing
 or return to map. Never replace a requested accessible route with stairs. Show only safe diagnostic
@@ -75,18 +82,18 @@ do not certify native modal focus trapping or restoration.
 
 ## Source map for changes
 
-| Change                            | Edit here                                                                                                                                                                                |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web component layout and behavior | `packages/react/src/components/{ManoeuvreCard,Itinerary,DirectionStep,RouteSummary,RouteProgressRail,ArrivalPanel,RouteLocationField,RouteSetupPanel,RoutePreviewPanel}`                 |
-| SwiftUI equivalents               | `packages/ios/Sources/Components/` under the same component names; `Sources/Utilities/DirectionGlyph.swift` for the shared drawing view                                                  |
-| Compose equivalents               | `packages/android/src/main/java/com/kozmos/components/` under the same component names                                                                                                   |
-| Shared semantic values            | `packages/product-contracts/src/index.ts`, Swift `Sources/ProductContracts/ProductContracts.swift`, Kotlin `contracts/ProductContracts.kt`                                               |
-| Original navigation artwork       | `packages/icons/src/owned/navigation-glyphs.json`; run the generator below, never hand-edit generated files                                                                              |
-| Guidance roles and layout CSS     | `packages/react/src/index.css`, `src/styles/owned-components.css` and the existing surface/guidance utilities on native; use tokens, not customer-specific literals                      |
-| Controlled example and reducer    | `apps/docs/stories/examples/NavigationJourney.stories.tsx`, `navigationJourney.ts`, `navigationJourney.test.ts`                                                                          |
-| Native composition examples       | `packages/ios/UITestHost/App/InteractionHost.swift` (`navigation-journey`), Android `KozmosJourneyCompositionTest.kt`                                                                    |
-| Browser checks                    | `scripts/check-navigation-examples.mjs`, `check-navigation-glyphs.mjs`, `check-routing-targets.mjs`, `check-route-location.mjs`, `check-route-setup.mjs`, `check-navigation-journey.mjs` |
-| API examples and guidance         | Component `.mdx` and `.stories.tsx`; generated API cards under `docs/claude-design/` come from `pnpm skills:build`                                                                       |
+| Change                            | Edit here                                                                                                                                                                                                                |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web component layout and behavior | `packages/react/src/components/{ManoeuvreCard,Itinerary,DirectionStep,RouteSummary,RouteProgressRail,ArrivalPanel,RouteLocationField,RouteSetupPanel,RoutePreviewPanel}`                                                 |
+| SwiftUI equivalents               | `packages/ios/Sources/Components/` under the same component names; `Sources/Utilities/DirectionGlyph.swift` for the shared drawing view                                                                                  |
+| Compose equivalents               | `packages/android/src/main/java/com/kozmos/components/` under the same component names                                                                                                                                   |
+| Shared semantic values            | `packages/product-contracts/src/index.ts`, Swift `Sources/ProductContracts/ProductContracts.swift`, Kotlin `contracts/ProductContracts.kt`                                                                               |
+| Original navigation artwork       | `packages/icons/src/owned/navigation-glyphs.json`; run the generator below, never hand-edit generated files                                                                                                              |
+| Guidance roles and layout CSS     | `packages/react/src/index.css`, `src/styles/owned-components.css` and the existing surface/guidance utilities on native; use tokens, not customer-specific literals                                                      |
+| Controlled example and reducer    | `apps/docs/stories/examples/NavigationJourney.stories.tsx`, `navigationJourney.ts`, `navigationJourney.test.ts`                                                                                                          |
+| Native composition examples       | `packages/ios/UITestHost/App/InteractionHost.swift` (`navigation-journey`), Android `KozmosJourneyCompositionTest.kt`                                                                                                    |
+| Browser checks                    | `scripts/check-navigation-actions.mjs`, `check-navigation-examples.mjs`, `check-navigation-glyphs.mjs`, `check-routing-targets.mjs`, `check-route-location.mjs`, `check-route-setup.mjs`, `check-navigation-journey.mjs` |
+| API examples and guidance         | Component `.mdx` and `.stories.tsx`; generated API cards under `docs/claude-design/` come from `pnpm skills:build`                                                                                                       |
 
 The ten transport/ramp/entry vectors are original repository artwork for review, not imported
 or approved Figma assets. They are available as named `@kozmos-ds/icons` exports such as
@@ -155,7 +162,8 @@ package-registry delivery. Host acceptance still needs offline/reconnect, changi
 floors and locales, background/resume, location permission changes, long real venue names,
 screen readers and hardware keyboards. Retain existing map provider attribution.
 
-The broader backlog still includes inline itinerary endpoint Edit actions (GAP-104), the full
+The broader backlog still includes inline itinerary endpoint Edit actions (GAP-104), a dedicated
+Previous/Next actions slot for RouteSummary (the remaining part of GAP-110), the full
 POIDetailPanel route-preview/details slot (GAP-111), and renderer styling ownership. Current
 examples use the existing preview and setup components instead; they are not claimed to close
 those APIs. The Apple Account screenshot is unrelated application UI, not a new Kozmos requirement.

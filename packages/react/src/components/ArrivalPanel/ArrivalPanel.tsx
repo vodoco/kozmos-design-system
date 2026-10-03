@@ -101,7 +101,8 @@ export const ArrivalPanel = React.forwardRef<HTMLDivElement, ArrivalPanelProps>(
         </dl>
       )}
       <Button
-        className="w-full"
+        type="button"
+        className="h-auto min-h-11 w-full whitespace-normal [overflow-wrap:anywhere]"
         onClick={onDone}
         disabled={pending}
         aria-busy={pending || undefined}

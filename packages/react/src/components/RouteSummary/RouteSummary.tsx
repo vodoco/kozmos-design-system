@@ -82,18 +82,19 @@ const RouteSummaryNavigation = React.forwardRef<
       {...props}
       data-presentation={presentation}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         {destinationImage && (
           <DestinationImage key={destinationImage} src={destinationImage} />
         )}
-        <h2 className="m-0 min-w-0 flex-1 break-words text-xl font-semibold leading-tight text-foreground">
+        <h2 className="m-0 min-w-0 flex-1 basis-40 break-words text-xl font-semibold leading-tight text-foreground">
           {destination}
         </h2>
         <Button
+          type="button"
           variant="outline"
           emotion="danger"
           size="sm"
-          className="shrink-0 rounded-pill"
+          className="h-auto min-h-11 max-w-full shrink-0 whitespace-normal rounded-pill [overflow-wrap:anywhere]"
           onClick={onEndRoute}
         >
           {endLabel}
@@ -158,6 +159,7 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
           </div>
           {state === "active" && (
             <Button
+              type="button"
               variant="destructive"
               size="icon"
               className="h-11 w-11 shrink-0 rounded-pill"
@@ -172,6 +174,7 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
         {/* Primary Action Row - if in preview mode */}
         {state === "preview" && onStartNavigation && (
           <Button
+            type="button"
             size="lg"
             className="w-full h-12 rounded-pill font-semibold text-base shadow-raised"
             onClick={onStartNavigation}

@@ -28,7 +28,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Search: Story = {
   render: function Search(args) {
-    const [query, setQuery] = React.useState("");
+    const [query, setQuery] = React.useState(args.query);
     const [location, setLocation] = React.useState<typeof lobby | null>(null);
     return (
       <RouteLocationField
@@ -48,6 +48,16 @@ export const Search: Story = {
   },
 };
 export const Resolved: Story = { args: { location: lobby } };
+export const HostFiltered: Story = {
+  render: Search.render,
+  args: {
+    query: "lift",
+    filterMode: "host",
+    options: [
+      { value: "elevator-1", label: "Elevator", description: "Ground floor" },
+    ],
+  },
+};
 export const Loading: Story = { args: { query: "North", status: "loading" } };
 export const Empty: Story = {
   args: { query: "Gallery", status: "empty", options: [] },

@@ -16,6 +16,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Hosted: Story = {};
+export const LongAction: Story = {
+  tags: ["viewport-phone"],
+  args: {
+    doneLabel: "Finish navigation and return to the selected destination",
+  },
+};
 export const ActualMetrics: Story = {
   args: { actualDurationText: "6 min", actualDistanceText: "202 m" },
 };

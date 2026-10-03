@@ -36,7 +36,7 @@
     "test:storybook-audit": "node scripts/audit-storybook.mjs",
     "test:storybook-interactions": "node scripts/check-storybook-interactions.mjs",
     "test:poi-details": "node scripts/check-poi-detail-examples.mjs",
-    "test:navigation": "pnpm exec vitest run apps/docs/stories/examples/navigationJourney.test.ts && node scripts/check-navigation-examples.mjs && node scripts/check-navigation-glyphs.mjs && node scripts/check-routing-targets.mjs && node scripts/check-route-location.mjs && node scripts/check-route-setup.mjs && node scripts/check-navigation-journey.mjs",
+    "test:navigation": "pnpm exec vitest run apps/docs/stories/examples/navigationJourney.test.ts && node scripts/check-navigation-actions.mjs && node scripts/check-navigation-examples.mjs && node scripts/check-navigation-glyphs.mjs && node scripts/check-routing-targets.mjs && node scripts/check-route-location.mjs && node scripts/check-route-setup.mjs && node scripts/check-navigation-journey.mjs",
     "test:map-sheet": "node scripts/check-map-sheet.mjs",
     "test:search-sheet": "node scripts/check-search-sheet.mjs",
     "test:poi-gallery": "node scripts/check-poi-gallery.mjs",

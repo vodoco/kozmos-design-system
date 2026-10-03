@@ -67,7 +67,8 @@ for the remaining integration, physical-device and design acceptance gates.
 
 Navigation completion candidate reconciliation (not merged/released evidence): GAP-097 now
 has optional distance/duration per itinerary step; GAP-103 has stable, validated waypoint
-markers and an optional completed segment; GAP-110 has hosted summary presentation;
+markers and an optional completed segment; GAP-110 has hosted summary presentation, but its
+dedicated Previous/Next actions slot remains open;
 GAP-112/113 have shared direction types and original generated transition artwork across
 React/SwiftUI/Compose. These supersede the corresponding missing-source findings below
 for this candidate, while preserving their original requirements. RoutingInputGroup endpoint

@@ -19,6 +19,40 @@ const props = {
 };
 
 describe("RouteLocationField", () => {
+  it("preserves host-ranked synonym results only in explicit host filter mode", () => {
+    const host = { filterMode: "host" as const };
+    const elevator = {
+      value: "e1",
+      label: "Elevator",
+      description: "Ground floor",
+    };
+    const { rerender } = render(
+      <RouteLocationField {...props} query="lift" options={[elevator]} />,
+    );
+    fireEvent.focus(screen.getByRole("combobox"));
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    rerender(
+      <RouteLocationField
+        {...props}
+        {...host}
+        query="lift"
+        options={[elevator]}
+      />,
+    );
+    expect(
+      screen.getByRole("option", { name: /Elevator/ }),
+    ).toBeInTheDocument();
+    rerender(
+      <RouteLocationField
+        {...props}
+        {...host}
+        query="lift"
+        options={[elevator]}
+        status="loading"
+      />,
+    );
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+  });
   it("does not include a place identity in automatic selection analytics", () => {
     const onDispatch = vi.fn();
     const { unmount } = render(

@@ -96,6 +96,14 @@ private struct InteractionFixture: View {
                 inputValue: $locationQuery,
                 options: [.init(value: "lobby", label: "Lobby", description: "North Terminal · Ground floor")],
                 label: "From", defaultOpen: true)
+        case "route-synonym-local", "route-synonym-host", "route-synonym-loading":
+            KozmosRouteLocationField(label: "From", location: routeLocation, query: "lift",
+                options: [.init(value: "e1", label: "Elevator", description: "Ground floor")],
+                status: scenario == "route-synonym-loading" ? .loading : .ready,
+                filterMode: scenario == "route-synonym-local" ? .local : .host,
+                onQueryChange: { _ in },
+                onSelect: { routeLocation = $0; events.append("select \($0.value)") },
+                onClear: { routeLocation = nil })
         case "route-location", "route-location-loading":
             KozmosRouteLocationField(label: "From", location: routeLocation, query: locationQuery,
                 options: [.init(value: "lobby", label: "Lobby", description: "North Terminal · Ground floor")],

@@ -133,6 +133,63 @@ try {
         .waitFor();
       await input.press("ArrowDown");
       await input.press("Enter");
+      await page.waitForFunction(
+        () =>
+          document.activeElement?.getAttribute("aria-label") === "Clear origin",
+        null,
+        { timeout: 3000 },
+      );
+      await page
+        .getByRole("button", { name: "Clear origin", exact: true })
+        .press("Enter");
+      await page.waitForFunction(
+        () => document.activeElement?.getAttribute("role") === "combobox",
+        null,
+        { timeout: 3000 },
+      );
+      assert.equal(
+        await input.evaluate((node) => node === document.activeElement),
+        true,
+        "Clear origin restores its own field",
+      );
+      await input.fill("North");
+      await page
+        .getByRole("option", { name: /North terminal lobby/ })
+        .waitFor();
+      await input.press("ArrowDown");
+      await input.press("Enter");
+      await page
+        .getByRole("button", { name: "Clear destination", exact: true })
+        .focus();
+      await page
+        .getByRole("button", { name: "Clear destination", exact: true })
+        .press("Enter");
+      const destinationInput = page.getByRole("combobox", {
+        name: "To",
+        exact: true,
+      });
+      await page.waitForFunction(
+        () => document.activeElement?.getAttribute("role") === "combobox",
+        null,
+        { timeout: 3000 },
+      );
+      assert.equal(
+        await destinationInput.evaluate(
+          (node) => node === document.activeElement,
+        ),
+        true,
+        "Clear destination must not focus origin",
+      );
+      await destinationInput.fill("Gallery");
+      await destinationInput.press("ArrowDown");
+      await destinationInput.press("Enter");
+      await page.waitForFunction(
+        () =>
+          document.activeElement?.getAttribute("aria-label") ===
+          "Clear destination",
+        null,
+        { timeout: 3000 },
+      );
       await page.getByRole("button", { name: "Continue", exact: true }).click();
       await page.getByRole("button", { name: "Cancel calculation" }).click();
       assert.equal(

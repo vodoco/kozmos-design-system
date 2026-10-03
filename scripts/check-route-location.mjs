@@ -12,6 +12,7 @@ try {
     for (const theme of ["light", "dark"]) {
       for (const story of [
         "search",
+        "host-filtered",
         "resolved",
         "loading",
         "empty",
@@ -61,6 +62,17 @@ try {
               .evaluate((n) => n === document.activeElement),
             true,
           );
+        } else if (story === "host-filtered") {
+          const input = page.getByRole("combobox", { name: "From" });
+          assert.equal(await input.inputValue(), "lift");
+          await input.press("ArrowDown");
+          await page.getByRole("option", { name: /Elevator/ }).waitFor();
+          await input.press("Enter");
+          await page.getByText("Elevator", { exact: true }).waitFor();
+          assert.equal(await page.getByRole("combobox").count(), 0);
+          await page.getByRole("button", { name: "Clear location" }).click();
+          await input.waitFor();
+          assert.equal(await input.inputValue(), "");
         } else if (["loading", "empty", "error"].includes(story)) {
           await page.getByRole("combobox").focus();
           await page.getByRole("combobox").press("ArrowDown");

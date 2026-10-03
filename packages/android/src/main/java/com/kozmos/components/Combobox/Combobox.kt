@@ -45,6 +45,12 @@ data class KozmosComboboxLabels(
     val close: String = "Close options"
 )
 
+internal fun filteredComboboxOptions(options: List<KozmosListboxOption>, inputValue: String, filterLocally: Boolean): List<KozmosListboxOption> {
+    if (!filterLocally) return options
+    val query = inputValue.trim().lowercase()
+    return options.filter { option -> query.isEmpty() || option.label.lowercase().contains(query) || option.value.lowercase().contains(query) || (option.description?.lowercase()?.contains(query) == true) }
+}
+
 // Preserve the released positional and trailing-lambda signature.
 @Composable
 fun KozmosCombobox(
@@ -93,6 +99,34 @@ fun KozmosCombobox(
     expanded: Boolean? = null,
     defaultExpanded: Boolean = false,
     onExpandedChange: ((Boolean) -> Unit)? = null
+) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
+    controlLabels, true, modifier, label, placeholder, enabled, readOnly, status, error,
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
+
+/** Explicit host filtering without changing either existing positional/trailing-lambda overload. */
+@Composable
+fun KozmosCombobox(
+    value: String,
+    onValueChange: (String, KozmosListboxOption?) -> Unit,
+    inputValue: String,
+    onInputValueChange: (String) -> Unit,
+    options: List<KozmosListboxOption>,
+    controlLabels: KozmosComboboxLabels,
+    filterLocally: Boolean,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    placeholder: String = "Select option",
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    status: KozmosInputStatus = KozmosInputStatus.Default,
+    error: Boolean = false,
+    helperText: String? = null,
+    errorMessage: String? = null,
+    emptyText: String = "No results found",
+    clearable: Boolean = true,
+    expanded: Boolean? = null,
+    defaultExpanded: Boolean = false,
+    onExpandedChange: ((Boolean) -> Unit)? = null
 ) {
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
     val isExpanded = expanded ?: internalExpanded
@@ -102,13 +136,7 @@ fun KozmosCombobox(
     }
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
-    val filteredOptions = options.filter { option ->
-        val query = inputValue.trim().lowercase()
-        query.isEmpty() ||
-            option.label.lowercase().contains(query) ||
-            option.value.lowercase().contains(query) ||
-            (option.description?.lowercase()?.contains(query) == true)
-    }
+    val filteredOptions = filteredComboboxOptions(options, inputValue, filterLocally)
     val colors = selectionFieldColors(effectiveStatus, enabled, readOnly)
     val fieldShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
 

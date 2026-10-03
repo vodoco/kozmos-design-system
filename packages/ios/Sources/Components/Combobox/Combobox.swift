@@ -17,6 +17,8 @@ public struct KozmosCombobox: View {
     public let clearLabel: String
     public let openLabel: String
     public let closeLabel: String
+    /// Disable only when the host already filtered/ranked the supplied options.
+    public let filterLocally: Bool
 
     @State private var isOpen: Bool
 
@@ -37,7 +39,8 @@ public struct KozmosCombobox: View {
         defaultOpen: Bool = false,
         clearLabel: String = "Clear selection",
         openLabel: String = "Open options",
-        closeLabel: String = "Close options"
+        closeLabel: String = "Close options",
+        filterLocally: Bool = true
     ) {
         self._value = value
         self._inputValue = inputValue
@@ -54,6 +57,7 @@ public struct KozmosCombobox: View {
         self.clearable = clearable
         self.clearLabel = clearLabel; self.openLabel = openLabel; self.closeLabel = closeLabel
         self._isOpen = State(initialValue: defaultOpen)
+        self.filterLocally = filterLocally
     }
 
     public var body: some View {
@@ -147,7 +151,8 @@ public struct KozmosCombobox: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var filteredOptions: [KozmosListboxOption] {
+    var filteredOptions: [KozmosListboxOption] {
+        guard filterLocally else { return options }
         let query = inputValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !query.isEmpty else { return options }
         return options.filter { option in

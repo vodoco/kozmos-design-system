@@ -13,7 +13,11 @@ Controlled place search with a separate resolved-place identity, building/floor 
 
 `query` is editable text, never a location identity. `location.value` and suggestion values are stable host entity IDs. `onSelect` delivers the complete suggestion, including its secondary context. Blank or duplicate suggestion IDs are omitted rather than resolved arbitrarily. The host clears both identity and query in `onClear`.
 
-`idle` and `ready` allow suggestions; `loading`, `empty` and `error` omit stale suggestions while keeping the query editable. Disabling the whole field also disables clearing and map selection. The map button sits outside the suggestion list. Supplied suggestions use the existing Combobox's case-insensitive local filtering of label, ID and description.
+`idle` and `ready` allow suggestions; `loading`, `empty` and `error` omit stale suggestions while keeping the query editable. Disabling the whole field also disables clearing and map selection. The map button sits outside the suggestion list. The default `filterMode="local"` uses case-insensitive substring filtering of label, ID and description.
+
+For SDK/server-ranked results, choose `filterMode="host"` (`.host` on SwiftUI; `KozmosRouteLocationFilterMode.Host` on Compose). This preserves the supplied order and synonym/fuzzy/translated matches without filtering them again. Blank/duplicate IDs and non-ready states remain guarded in both modes. The host still owns request cancellation and rejecting stale responses.
+
+<Canvas of={Stories.HostFiltered} />
 
 Localize the field, placeholder, status/empty text and clear/map/open/close labels. Resolved names and context wrap; suggestion rows retain the existing compact Combobox presentation, with full names and context available to assistive technology.
 

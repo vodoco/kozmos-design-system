@@ -21,6 +21,8 @@ export interface RouteLocationFieldProps extends Omit<
   location: ComboboxOption | null;
   query: string;
   options: ComboboxOption[];
+  /** Local substring filtering by default. Host preserves the supplied search results and ranking. */
+  filterMode?: "local" | "host";
   onQueryChange: (query: string) => void;
   onSelect: (location: ComboboxOption) => void;
   /** Host clears the resolved identity/query and owns focus restoration. */
@@ -49,6 +51,7 @@ export const RouteLocationField = React.forwardRef<
       location,
       query,
       options,
+      filterMode = "local",
       onQueryChange,
       onSelect,
       onClear,
@@ -125,6 +128,7 @@ export const RouteLocationField = React.forwardRef<
             inputValue={query}
             onInputValueChange={onQueryChange}
             options={suggestions}
+            filterOption={filterMode === "host" ? () => true : undefined}
             onValueChange={(_, option) => {
               if (!disabled && allowed && option && !option.disabled)
                 onSelect(option);
@@ -142,6 +146,7 @@ export const RouteLocationField = React.forwardRef<
         {!location && query && (
           <Button
             type="button"
+            className="h-auto min-h-11 whitespace-normal [overflow-wrap:anywhere]"
             variant="outline"
             disabled={disabled}
             onClick={onClear}
@@ -152,6 +157,7 @@ export const RouteLocationField = React.forwardRef<
         {onChooseMap && (
           <Button
             type="button"
+            className="h-auto min-h-11 whitespace-normal [overflow-wrap:anywhere]"
             variant="outline"
             disabled={disabled}
             onClick={onChooseMap}

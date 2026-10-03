@@ -31,6 +31,13 @@ equivalent overload accepts `KozmosComboboxLabels`. Existing native calls remain
 The field keeps its accessible label when populated. SwiftUI options include their
 secondary description in the accessible name, and selection writes its binding once.
 
+When a host has already filtered and ranked suggestions, web can supply
+`filterOption={() => true}`. SwiftUI accepts `filterLocally: false`; Compose's
+explicit overload accepts both `controlLabels` and `filterLocally = false`.
+Local substring filtering remains the default, and both previous Compose overloads
+retain their positional and trailing-lambda signatures. For places, prefer
+RouteLocationField's `filterMode` so identity and readiness guards remain in place.
+
 `defaultInputValue` is an initial search draft, not a selected entity. A later selection
 change updates uncontrolled display text. Controlled `inputValue` remains host-owned.
 

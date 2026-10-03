@@ -61,6 +61,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `RouteLocationFieldProps`
 
 - `query`: `string`, **required**.
 - `options`: `ComboboxOption[]`, **required**.
+- `filterMode`: `"local" | "host"`, optional, default `"local"`.
+
+  Local substring filtering by default. Host preserves the supplied search results and ranking.
+
 - `onQueryChange`: `(query: string) => void`, **required**.
 - `onSelect`: `(location: ComboboxOption) => void`, **required**.
 - `onClear`: `() => void`, **required**.

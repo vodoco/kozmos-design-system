@@ -30,6 +30,7 @@ import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
 enum class KozmosRouteLocationStatus { Idle, Loading, Ready, Empty, Error }
+enum class KozmosRouteLocationFilterMode { Local, Host }
 
 /** Resolved identity is separate from query text. The host owns search, cancellation and focus. */
 @Composable
@@ -40,7 +41,8 @@ fun KozmosRouteLocationField(
     status: KozmosRouteLocationStatus = KozmosRouteLocationStatus.Idle, statusText: String? = null,
     placeholder: String = "Search for a place", clearLabel: String = "Clear location",
     openLabel: String = "Open options", closeLabel: String = "Close options",
-    mapLabel: String = "Select from the map", emptyText: String = "No locations found", enabled: Boolean = true
+    mapLabel: String = "Select from the map", emptyText: String = "No locations found", enabled: Boolean = true,
+    filterMode: KozmosRouteLocationFilterMode = KozmosRouteLocationFilterMode.Local
 ) {
     val counts = options.groupingBy { it.value }.eachCount()
     val allowed = status == KozmosRouteLocationStatus.Idle || status == KozmosRouteLocationStatus.Ready
@@ -65,6 +67,7 @@ fun KozmosRouteLocationField(
         } else {
             KozmosCombobox("", { _, option -> if (enabled && allowed && option != null && !option.disabled) onSelect(option) }, query, onQueryChange, suggestions,
                 controlLabels = KozmosComboboxLabels(clearLabel, openLabel, closeLabel),
+                filterLocally = filterMode == KozmosRouteLocationFilterMode.Local,
                 label = label, placeholder = placeholder, enabled = enabled, status = if (status == KozmosRouteLocationStatus.Error) KozmosInputStatus.Error else KozmosInputStatus.Default,
                 helperText = message, emptyText = message ?: emptyText, clearable = false)
             if (query.isNotEmpty()) KozmosButton(onClear, modifier = Modifier.fillMaxWidth(), variant = KozmosButtonVariant.Outline, enabled = enabled) { Text(clearLabel) }

@@ -91,6 +91,24 @@ function NavigationJourney({
   const [destinationQuery, setDestinationQuery] = React.useState("");
   const panelRef = React.useRef<HTMLDivElement>(null);
   const browseRef = React.useRef<HTMLButtonElement>(null);
+  const originRef = React.useRef<HTMLDivElement>(null);
+  const destinationRef = React.useRef<HTMLDivElement>(null);
+  const fieldFocus = React.useRef<{
+    point: "origin" | "destination";
+    resolved: boolean;
+  } | null>(null);
+  React.useLayoutEffect(() => {
+    const intent = fieldFocus.current;
+    if (!intent) return;
+    fieldFocus.current = null;
+    const field =
+      intent.point === "origin" ? originRef.current : destinationRef.current;
+    field
+      ?.querySelector<HTMLElement>(
+        intent.resolved ? "button" : '[role="combobox"]',
+      )
+      ?.focus();
+  }, [state.origin, state.destination, state.query, destinationQuery]);
   const routeId = state.route?.id;
 
   React.useEffect(() => {
@@ -128,6 +146,7 @@ function NavigationJourney({
       onClose={() => dispatch({ type: pending ? "cancel" : "end" })}
     >
       <RouteLocationField
+        ref={originRef}
         label="From"
         location={state.origin}
         query={state.query}
@@ -137,12 +156,14 @@ function NavigationJourney({
           !state.origin && !state.suggestions.length ? "loading" : "ready"
         }
         onQueryChange={(query) => dispatch({ type: "query", query })}
-        onSelect={(location) =>
-          dispatch({ type: "select", point: "origin", location })
-        }
-        onClear={() =>
-          dispatch({ type: "select", point: "origin", location: null })
-        }
+        onSelect={(location) => {
+          fieldFocus.current = { point: "origin", resolved: true };
+          dispatch({ type: "select", point: "origin", location });
+        }}
+        onClear={() => {
+          fieldFocus.current = { point: "origin", resolved: false };
+          dispatch({ type: "select", point: "origin", location: null });
+        }}
         clearLabel="Clear origin"
         onChooseMap={() => {
           setCandidateValid(false);
@@ -150,6 +171,7 @@ function NavigationJourney({
         }}
       />
       <RouteLocationField
+        ref={destinationRef}
         label="To"
         location={state.destination}
         query={destinationQuery}
@@ -157,10 +179,12 @@ function NavigationJourney({
         disabled={pending}
         onQueryChange={setDestinationQuery}
         onSelect={(location) => {
+          fieldFocus.current = { point: "destination", resolved: true };
           setDestinationQuery("");
           dispatch({ type: "select", point: "destination", location });
         }}
         onClear={() => {
+          fieldFocus.current = { point: "destination", resolved: false };
           setDestinationQuery("");
           dispatch({ type: "select", point: "destination", location: null });
         }}
