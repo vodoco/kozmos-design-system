@@ -74,10 +74,17 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
     }
 
     private var selectedOption: KozmosRouteOptionPresentation? {
-        options.first { $0.selected && $0.available }
+        let selected = options.filter(\.selected)
+        return selected.count == 1 && selected[0].available ? selected[0] : nil
     }
 
-    private var ready: Bool { status == .ready }
+    private var validIds: Bool {
+        options.allSatisfy { !$0.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } && Set(options.map(\.id)).count == options.count
+    }
+    private var ready: Bool { status == .ready && validIds }
+    private var identifiedOptions: [(key: String, option: KozmosRouteOptionPresentation)] {
+        options.enumerated().map { (key: validIds ? $0.element.id : String($0.offset), option: $0.element) }
+    }
 
     /// The destination row's top padding. Hosted in the shell's panel, the
     /// space the panel leaves above it — a grabber's row — is the preview's
@@ -135,8 +142,8 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-                                ForEach(options) { option in
-                                    KozmosRouteOptionCard(option: option, isDisabled: !ready, onSelect: onOptionSelect)
+                                ForEach(identifiedOptions, id: \.key) { entry in
+                                    KozmosRouteOptionCard(option: entry.option, isDisabled: !ready, onSelect: onOptionSelect)
                                         .frame(width: 208)
                                 }
                             }

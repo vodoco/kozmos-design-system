@@ -84,6 +84,7 @@ fun KozmosItinerary(
     destinationLabel: String = "To",
     label: String = "Itinerary"
 ) {
+    val uniqueCurrent = steps.count { it.isCurrent } == 1
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -91,7 +92,7 @@ fun KozmosItinerary(
         verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
     ) {
         Endpoint(originLabel, origin, emphasised = false)
-        steps.forEach { step -> StepRow(step) }
+        steps.forEach { step -> StepRow(step, uniqueCurrent && step.isCurrent) }
         Endpoint(destinationLabel, destination, emphasised = true)
     }
 }
@@ -122,8 +123,8 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
 }
 
 @Composable
-private fun StepRow(step: KozmosItineraryStep) {
-    val colour = LocalKozmosGuidanceForeground.current ?: if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100
+private fun StepRow(step: KozmosItineraryStep, isCurrent: Boolean) {
+    val colour = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100
     val instruction = instructionAnnotatedText(step.instructionParts)
     val hasLanguage = step.instructionParts.hasSpeechLanguage()
     val metrics = listOfNotNull(step.distance, step.duration).filter { it.isNotEmpty() }
@@ -134,14 +135,14 @@ private fun StepRow(step: KozmosItineraryStep) {
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {
                 if (hasLanguage) text = spoken else contentDescription = description
-                selected = step.isCurrent
+                selected = isCurrent
             },
         verticalAlignment = Alignment.Top
     ) {
         Icon(
             imageVector = step.type.icon(),
             contentDescription = null,
-            tint = LocalKozmosGuidanceForeground.current ?: if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground500,
+            tint = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground500,
             modifier = Modifier
                 .width(KozmosDimensions.primitivesLayoutSizing500)
                 .height(20.dp)
@@ -151,7 +152,7 @@ private fun StepRow(step: KozmosItineraryStep) {
             .then(if (hasLanguage) Modifier.clearAndSetSemantics {} else Modifier)) {
             Text(
                 text = instruction,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (step.isCurrent) FontWeight.SemiBold else FontWeight.Normal),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal),
                 color = colour
             )
             if (metrics.isNotEmpty()) {

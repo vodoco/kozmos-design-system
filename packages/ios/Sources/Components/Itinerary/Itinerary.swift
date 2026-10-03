@@ -59,10 +59,11 @@ public struct KozmosItinerary: View {
     }
 
     public var body: some View {
+        let uniqueCurrent = steps.filter(\.isCurrent).count == 1
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             endpoint(originLabel, name: origin, emphasised: false)
             ForEach(steps) { step in
-                row(step)
+                row(step, isCurrent: uniqueCurrent && step.isCurrent)
             }
             endpoint(destinationLabel, name: destination, emphasised: true)
         }
@@ -88,16 +89,16 @@ public struct KozmosItinerary: View {
         .accessibilityLabel("\(label), \(name)")
     }
 
-    private func row(_ step: KozmosItineraryStep) -> some View {
+    private func row(_ step: KozmosItineraryStep, isCurrent: Bool) -> some View {
         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             Image(systemName: step.type.iconName)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(guidance ?? (step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500))
+                .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: 20, alignment: .leading)
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                 KozmosInstructionText(parts: step.instructionParts)
-                    .font(step.isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-                    .foregroundColor(guidance ?? (step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100))
+                    .font(isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
+                    .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100))
                 let metrics = [step.distance, step.duration].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " • ")
                 if !metrics.isEmpty {
                     Text(metrics).font(KozmosTypography.subheadline).kozmosMutedText()
@@ -105,6 +106,6 @@ public struct KozmosItinerary: View {
             }
             .fixedSize(horizontal: false, vertical: true)
         }
-        .kozmosInstructionAccessibility(step.instructionParts, suffix: [step.distance, step.duration].compactMap { $0 }, selected: step.isCurrent)
+        .kozmosInstructionAccessibility(step.instructionParts, suffix: [step.distance, step.duration].compactMap { $0 }, selected: isCurrent)
     }
 }

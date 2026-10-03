@@ -81,4 +81,25 @@ class KozmosNavigationSafetySemanticsTest {
             assertFalse("stale route enabled during $status", route.enabled)
         }
     }
+
+    @Test fun ambiguousRouteSnapshotsCannotContinue() {
+        val first = KozmosRouteOptionPresentation("a", "Quickest", 240.0, "4 min", 150.0, "150 m", KozmosRoutePreference.Quickest, selected = true)
+        for (options in listOf(listOf(first, first.copy(id = "b")), listOf(first, first.copy(selected = false)))) {
+            val tree = paparazzi.readSemantics { MaterialTheme {
+                KozmosRoutePreviewPanel("Gallery", options, KozmosRouteReadiness.Ready, "Back", "Continue", {}, {}, {})
+            } }
+            assertFalse(tree.merged.single { "Continue" in it.texts && it.click != null }.enabled)
+        }
+    }
+
+    @Test fun multipleCurrentStepsAreNotChosen() {
+        val tree = paparazzi.readSemantics { MaterialTheme {
+            KozmosItinerary("A", listOf(
+                KozmosItineraryStep("a", "Left", DirectionType.Left, isCurrent = true),
+                KozmosItineraryStep("b", "Right", DirectionType.Right, isCurrent = true)
+            ), "B")
+        } }
+        assertFalse(tree.named("Left").selected == true)
+        assertFalse(tree.named("Right").selected == true)
+    }
 }

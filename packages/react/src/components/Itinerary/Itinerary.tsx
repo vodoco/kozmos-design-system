@@ -51,6 +51,7 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
     },
     ref,
   ) => {
+    const currentCount = steps.filter((step) => step.current).length;
     // The captions and the origin are muted, and on glass, in a glass
     // manoeuvre card, the foreground colour (decision 48).
     const endpoint = (caption: string, name: string, emphasised: boolean) => (
@@ -81,10 +82,12 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
           {steps.map((step) => (
             <li
               key={step.id}
-              aria-current={step.current ? "step" : undefined}
+              aria-current={
+                step.current && currentCount === 1 ? "step" : undefined
+              }
               className={cn(
                 "flex items-start gap-3 text-[15px]",
-                step.current
+                step.current && currentCount === 1
                   ? "font-semibold kozmos-guidance-accent"
                   : "kozmos-guidance-text",
               )}
@@ -92,7 +95,9 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
               <span
                 className={cn(
                   "flex h-5 w-10 shrink-0 items-center",
-                  step.current ? "kozmos-guidance-accent" : "kozmos-muted-text",
+                  step.current && currentCount === 1
+                    ? "kozmos-guidance-accent"
+                    : "kozmos-muted-text",
                 )}
               >
                 <DirectionIcon type={step.type} className="h-4 w-4" />

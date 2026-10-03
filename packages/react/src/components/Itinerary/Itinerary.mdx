@@ -25,6 +25,11 @@ font; a `lang` value preserves a foreign landmark's speech language. Supply exac
 spaces and punctuation, including German/Japanese qualifiers in their correct position.
 The current-step state stays independent of these text styles.
 
+The host must supply at most one current step and stable unique step IDs. If several
+steps are marked current, none is emphasized or announced as current; the component
+does not choose an arbitrary step. Correct the host snapshot rather than relying on
+this defensive fallback to repair a route.
+
 Each step also accepts optional localized `distance` and `duration` labels. These
 are estimates for that step, not remaining-route estimates or actual arrival totals.
 Either label can stand alone; missing/empty labels draw nothing, while a supplied

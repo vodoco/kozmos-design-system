@@ -18,6 +18,20 @@ const steps: ItineraryStep[] = [
 ];
 
 describe("Itinerary", () => {
+  it("does not arbitrarily emphasize a step when more than one is current", () => {
+    render(
+      <Itinerary
+        origin="A"
+        destination="B"
+        steps={steps.map((step) => ({ ...step, current: true }))}
+      />,
+    );
+    expect(
+      screen
+        .getAllByRole("listitem")
+        .some((item) => item.hasAttribute("aria-current")),
+    ).toBe(false);
+  });
   it("renders optional step metrics without inventing missing values or dropping language", () => {
     const metricSteps = [
       {

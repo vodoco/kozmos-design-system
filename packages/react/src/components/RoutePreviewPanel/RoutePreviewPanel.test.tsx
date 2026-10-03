@@ -29,6 +29,32 @@ const options: RouteOptionPresentation[] = [
 ];
 
 describe("RoutePreviewPanel", () => {
+  it.each(["multiple-selected", "duplicate-id"])(
+    "does not continue an ambiguous %s snapshot",
+    (kind) => {
+      const onContinue = vi.fn();
+      const bad =
+        kind === "multiple-selected"
+          ? options.map((option) => ({ ...option, selected: true }))
+          : [options[0], { ...options[1], id: options[0].id }];
+      render(
+        <RoutePreviewPanel
+          destinationName="Gallery"
+          options={bad}
+          status="ready"
+          backLabel="Back"
+          continueLabel="Continue"
+          onBack={() => {}}
+          onOptionSelect={() => {}}
+          onContinue={onContinue}
+        />,
+      );
+      const button = screen.getByRole("button", { name: "Continue" });
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+      expect(onContinue).not.toHaveBeenCalled();
+    },
+  );
   it.each(["calculating", "error", "no-route"] as const)(
     "prevents stale option selection while %s without optional status content",
     (status) => {
