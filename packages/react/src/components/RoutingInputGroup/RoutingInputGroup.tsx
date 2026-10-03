@@ -4,7 +4,7 @@ import { surfaceClass, type SurfaceVariant } from "../Surface";
 import { Input } from "../Input";
 import { Button } from "../Button";
 import {
-  ArrowDown as ArrowDownUp,
+  SwitchVertical01 as ArrowDownUp,
   Plus,
   X,
   Circle,
@@ -16,6 +16,8 @@ export interface RoutePoint {
   id: string;
   value: string;
   placeholder?: string;
+  /** Localized field identity, independent of the editable value or hint. */
+  label?: string;
 }
 
 export interface RoutingInputGroupProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -26,6 +28,9 @@ export interface RoutingInputGroupProps extends React.HTMLAttributes<HTMLDivElem
   onSwap?: () => void;
   onAddPoint?: () => void;
   onRemovePoint?: (id: string) => void;
+  swapLabel?: string;
+  addPointLabel?: string;
+  removePointLabel?: (point: RoutePoint) => string;
 }
 
 const RoutingInputGroup = React.forwardRef<
@@ -41,6 +46,10 @@ const RoutingInputGroup = React.forwardRef<
       onSwap,
       onAddPoint,
       onRemovePoint,
+      swapLabel = "Swap route points",
+      addPointLabel = "Add route point",
+      removePointLabel = (point) =>
+        `Remove ${point.label || point.placeholder || point.value || "route point"}`,
       ...props
     },
     ref,
@@ -101,7 +110,7 @@ const RoutingInputGroup = React.forwardRef<
         </div>
 
         {/* Inputs List */}
-        <div className="flex flex-col gap-3 grow">
+        <div className="min-w-0 flex flex-col gap-3 grow">
           {points.map((point, index) => (
             <div key={point.id} className="flex items-center gap-2">
               {/* A field keeps the control radius and the standard focus ring,
@@ -109,6 +118,14 @@ const RoutingInputGroup = React.forwardRef<
                   rounded-panel (24) and drew no ring (ring-0): the only field
                   in the system with no visible focus. */}
               <Input
+                aria-label={
+                  point.label ||
+                  (index === 0
+                    ? "Origin"
+                    : index === points.length - 1
+                      ? "Destination"
+                      : `Stop ${index}`)
+                }
                 value={point.value}
                 onChange={(e) => onPointChange(point.id, e.target.value)}
                 placeholder={
@@ -122,11 +139,12 @@ const RoutingInputGroup = React.forwardRef<
                 index < points.length - 1 &&
                 onRemovePoint && (
                   <Button
+                    type="button"
                     variant="ghost"
                     size="icon"
-                    className="w-10 h-10 shrink-0 text-muted-foreground hover:text-destructive-text"
+                    className="w-11 h-11 shrink-0 text-muted-foreground hover:text-destructive-text"
                     onClick={() => handleRemove(point.id)}
-                    aria-label={`Remove ${point.placeholder || point.value || "route point"}`}
+                    aria-label={removePointLabel(point)}
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -139,25 +157,27 @@ const RoutingInputGroup = React.forwardRef<
         <div className="flex flex-col gap-2 shrink-0 justify-center">
           {points.length === 2 && onSwap && (
             <Button
+              type="button"
               variant="ghost"
               size="icon"
-              className="w-10 h-10 mt-6 shrink-0 bg-secondary hover:bg-secondary/80 text-foreground"
+              className="w-11 h-11 mt-6 shrink-0 bg-secondary hover:bg-secondary/80 text-foreground"
               onClick={handleSwap}
-              aria-label="Swap route points"
+              aria-label={swapLabel}
             >
               <ArrowDownUp className="w-4 h-4" />
             </Button>
           )}
           {onAddPoint && (
             <Button
+              type="button"
               variant="ghost"
               size="icon"
               className={cn(
-                "w-10 h-10 shrink-0 text-muted-foreground",
+                "w-11 h-11 shrink-0 text-muted-foreground",
                 points.length === 2 ? "mt-5" : "mt-0",
               )}
               onClick={handleAdd}
-              aria-label="Add route point"
+              aria-label={addPointLabel}
             >
               <Plus className="w-4 h-4" />
             </Button>

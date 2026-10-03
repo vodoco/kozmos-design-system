@@ -9,7 +9,13 @@ export function withCode(text: string): ReactNode {
   const parts = text.split("`");
   if (parts.length % 2 === 0) return text;
   return parts.map((part, index) =>
-    index % 2 === 1 ? <code key={index}>{part}</code> : part,
+    index % 2 === 1 ? (
+      <code key={index} className="site-inline-code">
+        {part}
+      </code>
+    ) : (
+      part
+    ),
   );
 }
 

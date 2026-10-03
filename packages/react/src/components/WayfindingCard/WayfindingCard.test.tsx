@@ -1,8 +1,41 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { WayfindingCard, WayfindingInputRow } from "./WayfindingCard";
 import { describe, it, expect, vi } from "vitest";
+import { AnalyticsProvider } from "../../utils/analytics";
+import { SwitchVertical01 } from "@kozmos-ds/icons";
 
 describe("WayfindingCard", () => {
+  it("uses a swap glyph and omits raw locations from swap telemetry", () => {
+    const onDispatch = vi.fn();
+    const { unmount } = render(
+      <AnalyticsProvider onDispatch={onDispatch}>
+        <WayfindingInputRow
+          originValue="Private origin"
+          destinationValue="Private destination"
+        />
+        <span data-testid="expected-swap">
+          <SwitchVertical01 />
+        </span>
+      </AnalyticsProvider>,
+    );
+    const swap = screen.getByRole("button", {
+      name: "Swap origin and destination",
+    });
+    expect(swap.querySelector("svg")?.innerHTML).toBe(
+      screen.getByTestId("expected-swap").querySelector("svg")?.innerHTML,
+    );
+    fireEvent.click(swap);
+    unmount();
+    expect(onDispatch).toHaveBeenCalledTimes(1);
+    const event = onDispatch.mock.calls[0][0].find(
+      (item: { eventName: string }) =>
+        item.eventName === "wayfinding_route_swapped",
+    );
+    expect(event).toBeDefined();
+    expect(event.eventName).toBe("wayfinding_route_swapped");
+    expect(event.properties ?? {}).toEqual({});
+  });
+
   it("does not submit a surrounding form when closing navigation", () => {
     const submit = vi.fn();
     render(

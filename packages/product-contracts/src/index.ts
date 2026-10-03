@@ -460,6 +460,28 @@ export interface CategoryPresentation {
   resultCountLabel?: string;
 }
 
+/** Semantic manoeuvre, independent of UI reading direction. Unknown engine values must not be guessed as a turn. */
+export type DirectionKind =
+  | "straight"
+  | "left"
+  | "right"
+  | "destination"
+  | "lift-up"
+  | "lift-down"
+  | "escalator-up"
+  | "escalator-down"
+  | "stairs-up"
+  | "stairs-down"
+  | "level-up"
+  | "level-down"
+  | "transition"
+  | "turn-back"
+  | "walking"
+  | "enter"
+  | "exit"
+  | "ramp-up"
+  | "ramp-down";
+
 export type RoutePreference = "quickest" | "step-free" | "custom";
 
 export interface RouteOptionPresentation {

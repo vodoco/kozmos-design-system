@@ -171,6 +171,65 @@ for (const theme of ["light", "dark"]) {
         );
       };
 
+      for (const variant of [
+        "hosted",
+        "actual-metrics",
+        "pending",
+        "zero-duration",
+        "long-destination",
+        "missing-image",
+        "arabic",
+      ]) {
+        await finish(
+          await open(`map-arrivalpanel--${variant}`),
+          `arrival-${variant}`,
+          async (page) => {
+            const panel = page.locator(".kozmos-arrival-panel");
+            await panel.waitFor();
+            const done = panel.getByRole("button");
+            assert.equal(await done.count(), 1);
+            assert.equal(await done.isDisabled(), variant === "pending");
+            const outer = await box(panel);
+            const action = await box(done);
+            assert.ok(
+              Math.abs(action.width - outer.width) <= 1,
+              "Done must fill the hosted panel",
+            );
+            assert.ok(action.height >= 44, "Done target must be at least 44px");
+            assert.equal(
+              await panel.locator("[aria-live]").count(),
+              0,
+              "The host owns arrival announcements",
+            );
+            if (variant === "hosted")
+              assert.equal(await panel.locator("dl").count(), 0);
+            if (variant === "zero-duration")
+              assert.equal(
+                await panel.getByText("0 min", { exact: true }).count(),
+                1,
+              );
+            if (variant === "missing-image")
+              await panel
+                .locator('[data-destination-media="fallback"]')
+                .waitFor();
+            await page.evaluate(() => {
+              document.documentElement.style.fontSize = "200%";
+            });
+            const overflow = await panel.evaluate(
+              (node) => node.scrollWidth - node.clientWidth,
+            );
+            assert.ok(
+              overflow <= 1,
+              `Arrival text overflows by ${overflow}px at 200%`,
+            );
+            assert.ok(
+              (await box(done)).bottom <= (await box(panel)).bottom + 1,
+              "Done must remain inside the growing content",
+            );
+          },
+        );
+      }
+
       // Ordered fragments remain one sentence at narrow/large-text sizes. A
       // flattened aria-label would erase the landmark's speech language.
       for (const fixture of [
@@ -243,11 +302,11 @@ for (const theme of ["light", "dark"]) {
             "qualifiers retain the sentence's size",
           );
           assert.equal(styles.weight, "400", "qualifiers use regular weight");
-          if (fixture.glass)
+          if (fixture.glass || !fixture.step)
             assert.equal(
               styles.secondaryColor,
               styles.color,
-              "glass keeps full-contrast foreground",
+              "theme guidance and background glass keep full-contrast foreground",
             );
           else
             assert.notEqual(
@@ -291,6 +350,33 @@ for (const theme of ["light", "dark"]) {
         });
       }
 
+      for (const glass of [false, true]) {
+        await finish(
+          await open(`map-manoeuvrecard--background${glass ? "-glass" : ""}`),
+          `card-background${glass ? "-glass" : ""}`,
+          async (page) => {
+            const card = page.getByRole("region", {
+              name: "Current manoeuvre",
+            });
+            await card.waitFor();
+            assert.equal(
+              await card.getAttribute("data-appearance"),
+              "background",
+            );
+            assert.ok(
+              (await card.getAttribute("class")).includes(
+                `kozmos-surface-${glass ? "glass" : "solid"}`,
+              ),
+            );
+            await card.getByRole("button").click();
+            await card
+              .getByRole("region", { name: "Itinerary", exact: true })
+              .waitFor();
+            await card.getByRole("button", { name: "Hide itinerary" }).click();
+          },
+        );
+      }
+
       // 1. The card, closed: one button that reads the manoeuvre; the grab bar silent.
       await finish(
         await open("map-manoeuvrecard--closed"),
@@ -309,6 +395,37 @@ for (const theme of ["light", "dark"]) {
             "the closed card shows its itinerary",
           );
           const bar = card.locator('[aria-label="Show itinerary"]');
+          assert.ok(
+            (await box(bar)).height >= 44,
+            "the disclosure target is under 44px",
+          );
+          assert.equal(await card.getAttribute("data-appearance"), "theme");
+          const palette = await card.evaluate((node) => {
+            const probe = document.createElement("span");
+            probe.style.backgroundColor = "var(--primitives-colors-theme-600)";
+            probe.style.color = "var(--primitives-colors-foreground-1000)";
+            node.append(probe);
+            const expected = getComputedStyle(probe);
+            const actual = getComputedStyle(node);
+            const result = {
+              fill: actual.backgroundColor,
+              foreground: actual.color,
+              expectedFill: expected.backgroundColor,
+              expectedForeground: expected.color,
+            };
+            probe.remove();
+            return result;
+          });
+          assert.equal(
+            palette.fill,
+            palette.expectedFill,
+            "guidance uses the opaque theme fill",
+          );
+          assert.equal(
+            palette.foreground,
+            palette.expectedForeground,
+            "guidance uses its paired contrasting foreground",
+          );
           assert.equal(
             await bar.getAttribute("aria-hidden"),
             "true",
@@ -349,11 +466,18 @@ for (const theme of ["light", "dark"]) {
             1,
           );
           const cardBox = await box(page.locator(".kozmos-manoeuvre-card"));
-          assert.ok(
-            cardBox.height - list.height < 60,
-            `the open card does not hug its itinerary: card ${cardBox.height}, list ${list.height}`,
-          );
           const bar2 = page.getByRole("button", { name: "Hide itinerary" });
+          const barBox = await box(bar2);
+          assert.ok(
+            barBox.height >= 44,
+            "the open disclosure target is under 44px",
+          );
+          // The interactive target is now 44px, rather than the old 13px grip.
+          // Check the remaining chrome separately so an inflated card cannot hide here.
+          assert.ok(
+            cardBox.height - list.height - barBox.height < 47,
+            `the open card does not hug its itinerary: card ${cardBox.height}, list ${list.height}, target ${barBox.height}`,
+          );
           assert.equal(await bar2.getAttribute("aria-expanded"), "true");
           await bar2.click();
           await manoeuvre.waitFor();
@@ -454,6 +578,137 @@ for (const theme of ["light", "dark"]) {
             ) <= 1,
             "the disc is not centred on the rail",
           );
+        },
+      );
+
+      for (const variant of ["unknown", "right-to-left"]) {
+        await finish(
+          await open(`map-routeprogressrail--${variant}`),
+          `rail-${variant}`,
+          async (page) => {
+            const rail = page.getByRole("progressbar");
+            await rail.waitFor();
+            if (variant === "unknown") {
+              assert.equal(await rail.getAttribute("aria-valuenow"), null);
+              assert.equal(
+                await rail.getAttribute("aria-valuetext"),
+                "Position unavailable",
+              );
+              assert.equal(
+                await rail
+                  .locator('[data-testid="route-progress-disc"]')
+                  .count(),
+                0,
+              );
+            } else {
+              for (const width of [300, 54, 20, 4]) {
+                await rail.evaluate((node, width) => {
+                  node.style.width = `${width}px`;
+                }, width);
+                const r = await box(rail);
+                const d = await box(
+                  rail.locator('[data-testid="route-progress-disc"]'),
+                );
+                const dot = Math.min(10, width * 0.2),
+                  disc = Math.min(34, width * 0.6);
+                const leading =
+                  dot + Math.max(width - dot * 2 - disc, 0) * 0.25;
+                assert.ok(
+                  Math.abs(d.x - (r.right - leading - disc)) < 1,
+                  `RTL disc misplaced at width ${width}`,
+                );
+                assert.ok(
+                  d.x >= r.x - 1 && d.right <= r.right + 1,
+                  "disc escapes a narrow rail",
+                );
+                assert.ok(
+                  Math.abs(d.width - d.height) < 1,
+                  "responsive disc must remain round",
+                );
+              }
+              await rail.evaluate((node) => {
+                node.style.width = "";
+              });
+            }
+          },
+        );
+      }
+
+      await finish(
+        await open("map-routeprogressrail--waypoints"),
+        "rail-waypoints",
+        async (page) => {
+          const rail = page.getByRole("progressbar");
+          await rail.waitFor();
+          const description = await rail.getAttribute("aria-describedby");
+          assert.equal(
+            await page.locator(`[id="${description}"]`).textContent(),
+            "Entrance; Gallery entrance; Turn right into gallery; Destination",
+          );
+          for (const direction of ["ltr", "rtl"]) {
+            for (const width of [300, 120, 20]) {
+              await rail.evaluate(
+                (node, { direction, width }) => {
+                  node.dir = direction;
+                  node.style.width = `${width}px`;
+                },
+                { direction, width },
+              );
+              await page.waitForFunction(
+                ({ width }) => {
+                  const node = document.querySelector('[role="progressbar"]');
+                  return width < 54
+                    ? node.querySelectorAll("[data-waypoint-id]").length === 0
+                    : node.querySelectorAll("[data-waypoint-id]").length > 0;
+                },
+                { width },
+              );
+              // Two frames deliver ResizeObserver and the React layout update.
+              await page.evaluate(
+                () =>
+                  new Promise((resolve) =>
+                    requestAnimationFrame(() => requestAnimationFrame(resolve)),
+                  ),
+              );
+              const r = await box(rail);
+              const disc = await box(
+                rail.locator('[data-testid="route-progress-disc"]'),
+              );
+              const marks = await rail.locator("[data-waypoint-id]").all();
+              let previous;
+              for (const mark of marks) {
+                const m = await box(mark);
+                assert.ok(
+                  m.x >= r.x && m.right <= r.right,
+                  "waypoint escapes rail",
+                );
+                assert.ok(
+                  Math.abs(m.x + m.width / 2 - disc.x - disc.width / 2) >= 32,
+                  "waypoint overlaps current position",
+                );
+                if (previous)
+                  assert.ok(
+                    Math.abs(m.x - previous.x) >= 27,
+                    "waypoints overlap",
+                  );
+                previous = m;
+              }
+              const track = await box(
+                rail.locator('[data-testid="route-completed-track"]'),
+              );
+              assert.ok(
+                track.x >= r.x - 1 && track.right <= r.right + 1,
+                "completion escapes rail",
+              );
+              if (direction === "ltr")
+                assert.ok(Math.abs(track.right - disc.x - disc.width / 2) < 1);
+              else assert.ok(Math.abs(track.x - disc.x - disc.width / 2) < 1);
+            }
+          }
+          await rail.evaluate((node) => {
+            node.dir = "ltr";
+            node.style.width = "";
+          });
         },
       );
 

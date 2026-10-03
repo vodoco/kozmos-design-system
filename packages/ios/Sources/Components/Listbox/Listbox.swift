@@ -81,7 +81,7 @@ public struct KozmosListbox: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(disabled || option.disabled)
-                    .accessibilityLabel(option.label)
+                    .accessibilityLabel([option.label, option.description].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "))
                     .accessibilityAddTraits(selectedValues.contains(option.value) ? .isSelected : [])
                 }
             }

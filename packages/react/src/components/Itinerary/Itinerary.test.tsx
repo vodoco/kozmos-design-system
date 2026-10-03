@@ -18,6 +18,58 @@ const steps: ItineraryStep[] = [
 ];
 
 describe("Itinerary", () => {
+  it("does not arbitrarily emphasize a step when more than one is current", () => {
+    render(
+      <Itinerary
+        origin="A"
+        destination="B"
+        steps={steps.map((step) => ({ ...step, current: true }))}
+      />,
+    );
+    expect(
+      screen
+        .getAllByRole("listitem")
+        .some((item) => item.hasAttribute("aria-current")),
+    ).toBe(false);
+  });
+  it("renders optional step metrics without inventing missing values or dropping language", () => {
+    const metricSteps = [
+      {
+        id: "a",
+        type: "left" as const,
+        instruction: [{ text: "Gauche", lang: "fr" }],
+        duration: "0 min",
+      },
+      {
+        id: "b",
+        type: "right" as const,
+        instruction: "Right",
+        distance: "12 m",
+      },
+      {
+        id: "c",
+        type: "straight" as const,
+        instruction: "Ahead",
+        distance: "20 m",
+        duration: "1 min",
+      },
+      {
+        id: "d",
+        type: "destination" as const,
+        instruction: "There",
+        distance: "",
+        duration: "",
+      },
+    ];
+    render(<Itinerary origin="A" steps={metricSteps} destination="B" />);
+    expect(screen.getByText("0 min")).toBeInTheDocument();
+    expect(screen.getByText("12 m")).toBeInTheDocument();
+    expect(screen.getByText("20 m • 1 min")).toBeInTheDocument();
+    expect(screen.getByText("Gauche")).toHaveAttribute("lang", "fr");
+    expect(screen.getByText("There").closest("li")).toHaveTextContent(
+      /^There$/,
+    );
+  });
   it("lists the origin, every step and the destination, in order", () => {
     render(
       <Itinerary
@@ -102,7 +154,7 @@ describe("Itinerary", () => {
       expect(node.className).not.toMatch(/\btext-muted-foreground\b/);
     }
     expect(screen.getByText("Gate 12").className).toMatch(
-      /\btext-foreground\b/,
+      /\bkozmos-guidance-text\b/,
     );
   });
 });

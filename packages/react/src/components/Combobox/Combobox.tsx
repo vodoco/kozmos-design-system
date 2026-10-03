@@ -18,6 +18,11 @@ export interface ComboboxProps extends Omit<
   "children" | "defaultValue" | "onChange" | "value"
 > {
   clearable?: boolean;
+  clearLabel?: string;
+  openLabel?: string;
+  closeLabel?: string;
+  /** Keep legacy generic analytics by default; sensitive place pickers must omit values. */
+  includeValueInAnalytics?: boolean;
   defaultInputValue?: string;
   defaultValue?: string;
   emptyText?: string;
@@ -69,6 +74,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     {
       className,
       clearable = true,
+      clearLabel = "Clear selection",
+      openLabel = "Open options",
+      closeLabel = "Close options",
+      includeValueInAnalytics = true,
       defaultInputValue,
       defaultValue,
       disabled,
@@ -114,6 +123,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const selectedOption = options.find(
       (option) => option.value === selectedValue,
     );
+    const previousSelection = React.useRef({
+      value: selectedValue,
+      label: selectedOption?.label,
+    });
     const [uncontrolledInputValue, setUncontrolledInputValue] = React.useState(
       defaultInputValue ?? selectedOption?.label ?? "",
     );
@@ -151,10 +164,19 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     }, [disabled, readOnly]);
 
     React.useEffect(() => {
-      if (inputValue === undefined) {
+      const previous = previousSelection.current;
+      if (
+        inputValue === undefined &&
+        (previous.value !== selectedValue ||
+          previous.label !== selectedOption?.label)
+      ) {
         setUncontrolledInputValue(selectedOption?.label ?? "");
       }
-    }, [inputValue, selectedOption?.label]);
+      previousSelection.current = {
+        value: selectedValue,
+        label: selectedOption?.label,
+      };
+    }, [inputValue, selectedValue, selectedOption?.label]);
 
     React.useEffect(() => {
       setActiveIndex(firstEnabledIndex(filteredOptions));
@@ -187,7 +209,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       }
       setInputValue(option.label);
       setOpen(false);
-      trackEvent("Combobox", "option_selected", { value: option.value });
+      trackEvent(
+        "Combobox",
+        "option_selected",
+        includeValueInAnalytics ? { value: option.value } : undefined,
+      );
       onValueChange?.(option.value, option);
     };
 
@@ -239,7 +265,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
             autoComplete="off"
             className={cn(
               inputVariants({ status: resolvedStatus }),
-              "pr-20",
+              canClear ? "pe-24" : "pe-12",
               className,
             )}
             disabled={disabled}
@@ -290,12 +316,12 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
             }}
             {...props}
           />
-          <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center gap-1">
+          <div className="pointer-events-none absolute inset-y-0 end-0 flex items-center">
             {canClear && (
               <button
                 type="button"
-                className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                aria-label="Clear selection"
+                className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                aria-label={clearLabel}
                 onClick={clearSelection}
               >
                 <X className="h-4 w-4" aria-hidden="true" />
@@ -303,8 +329,8 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
             )}
             <button
               type="button"
-              className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label={open ? "Close options" : "Open options"}
+              className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={open ? closeLabel : openLabel}
               disabled={disabled || readOnly}
               onClick={() => setOpen((current) => !current)}
             >

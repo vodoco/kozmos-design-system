@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +51,7 @@ import com.kozmos.components.directionstep.icon
 import com.kozmos.components.surface.KozmosSurfaceDefaults
 import com.kozmos.components.surface.KozmosSurfaceStyle
 import com.kozmos.components.surface.LocalKozmosSurfaceStyle
+import com.kozmos.components.surface.LocalKozmosGuidanceForeground
 import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
@@ -69,6 +71,9 @@ internal fun manoeuvreInstructionLineLimit(lines: Int?): Int? = lines?.takeIf { 
 
 /** The parts of the manoeuvre card that can hold focus. */
 internal enum class ManoeuvreCardPart { Instruction, Itinerary, Bar }
+
+/** Theme guidance is opaque; Background uses the chosen solid/glass surface. */
+enum class KozmosManoeuvreAppearance { Theme, Background }
 
 /**
  * Where focus goes as the card opens or closes, from the part it was on: null
@@ -127,10 +132,31 @@ fun KozmosManoeuvreCard(
     surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
     instructionLines: Int? = null,
     itinerary: @Composable () -> Unit
+) = KozmosManoeuvreCard(type, instruction, expanded, onToggle, KozmosManoeuvreAppearance.Theme,
+    modifier, detail, expandLabel, collapseLabel, manoeuvreLabel, maxItineraryHeight,
+    surface, instructionLines, itinerary)
+
+/** Explicit appearance without changing the released positional argument order. */
+@Composable
+fun KozmosManoeuvreCard(
+    type: DirectionType,
+    instruction: List<KozmosInstructionPart>,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    appearance: KozmosManoeuvreAppearance,
+    modifier: Modifier = Modifier,
+    detail: String? = null,
+    expandLabel: String = "Show itinerary",
+    collapseLabel: String = "Hide itinerary",
+    manoeuvreLabel: String = "Current manoeuvre",
+    maxItineraryHeight: Dp = 320.dp,
+    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    instructionLines: Int? = null,
+    itinerary: @Composable () -> Unit
 ) {
-    val instructionText = instructionAnnotatedText(instruction, surface)
+    val themed = appearance == KozmosManoeuvreAppearance.Theme
+    val guidanceForeground = if (themed) KozmosThemeTokens.primitivesColorsForeground1000 else null
     val hasLanguage = instruction.hasSpeechLanguage()
-    val spokenText = if (detail.isNullOrEmpty()) instructionText else instructionText + AnnotatedString(", $detail")
     val instructionFocus = remember { FocusRequester() }
     val barFocus = remember { FocusRequester() }
     // The part that has input focus, the keyboard's.
@@ -162,13 +188,19 @@ fun KozmosManoeuvreCard(
         // named thing, and two nodes called the same would be read twice.
         modifier = modifier.semantics { contentDescription = manoeuvreLabel },
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer),
-        color = KozmosSurfaceDefaults.tint(surface),
-        border = KozmosSurfaceDefaults.border(surface),
+        color = if (themed) KozmosThemeTokens.primitivesColorsTheme600 else KozmosSurfaceDefaults.tint(surface),
+        contentColor = guidanceForeground ?: contentColorFor(KozmosSurfaceDefaults.tint(surface)),
+        border = if (themed) null else KozmosSurfaceDefaults.border(surface),
         shadowElevation = 8.dp
     ) {
         // What the card holds is drawn on its surface: its muted text, and
         // the itinerary's, reads it (decision 48).
-        CompositionLocalProvider(LocalKozmosSurfaceStyle provides surface) {
+        CompositionLocalProvider(
+            LocalKozmosSurfaceStyle provides if (themed) KozmosSurfaceStyle.Solid else surface,
+            LocalKozmosGuidanceForeground provides guidanceForeground
+        ) {
+        val instructionText = instructionAnnotatedText(instruction, surface)
+        val spokenText = if (detail.isNullOrEmpty()) instructionText else instructionText + AnnotatedString(", $detail")
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -228,7 +260,7 @@ fun KozmosManoeuvreCard(
                         Icon(
                             imageVector = type.icon(),
                             contentDescription = null,
-                            tint = KozmosThemeTokens.primitivesColorsTheme500,
+                            tint = guidanceForeground ?: KozmosThemeTokens.primitivesColorsTheme500,
                             modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300)
                         )
                     }
@@ -238,7 +270,7 @@ fun KozmosManoeuvreCard(
                         Text(
                             text = instructionText,
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                            color = KozmosThemeTokens.primitivesColorsForeground100,
+                            color = guidanceForeground ?: KozmosThemeTokens.primitivesColorsForeground100,
                             maxLines = manoeuvreInstructionLineLimit(instructionLines) ?: Int.MAX_VALUE,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -283,6 +315,7 @@ fun KozmosManoeuvreCard(
                     // focus there would be on something TalkBack cannot see.
                     .focusProperties { canFocus = expanded }
                     .clickable(onClick = onToggle, role = Role.Button)
+                    .heightIn(min = 48.dp)
                     .padding(vertical = KozmosDimensions.primitivesLayoutSpacing50),
                 contentAlignment = Alignment.Center
             ) {
@@ -290,7 +323,7 @@ fun KozmosManoeuvreCard(
                     modifier = Modifier
                         .width(36.dp)
                         .height(5.dp)
-                        .background(KozmosThemeTokens.primitivesColorsBackground300, CircleShape)
+                        .background(guidanceForeground ?: KozmosThemeTokens.primitivesColorsBackground300, CircleShape)
                 )
             }
         }
@@ -299,6 +332,26 @@ fun KozmosManoeuvreCard(
 }
 
 /** Legacy strings and the full positional/trailing-lambda API remain supported. */
+@Composable
+fun KozmosManoeuvreCard(
+    type: DirectionType,
+    instruction: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    appearance: KozmosManoeuvreAppearance,
+    modifier: Modifier = Modifier,
+    detail: String? = null,
+    expandLabel: String = "Show itinerary",
+    collapseLabel: String = "Hide itinerary",
+    manoeuvreLabel: String = "Current manoeuvre",
+    maxItineraryHeight: Dp = 320.dp,
+    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    instructionLines: Int? = null,
+    itinerary: @Composable () -> Unit
+) = KozmosManoeuvreCard(type, listOf(KozmosInstructionPart(instruction)), expanded, onToggle,
+    appearance, modifier, detail, expandLabel, collapseLabel, manoeuvreLabel, maxItineraryHeight,
+    surface, instructionLines, itinerary)
+
 @Composable
 fun KozmosManoeuvreCard(
     type: DirectionType,

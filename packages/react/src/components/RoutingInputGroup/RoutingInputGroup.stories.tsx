@@ -26,7 +26,7 @@ export const Default: Story = {
 
     return (
       <RoutingInputGroup
-        className="w-[420px]"
+        style={{ width: "min(420px, calc(100vw - 32px))" }}
         points={points}
         onPointChange={(id, value) =>
           setPoints((current) =>
@@ -64,7 +64,7 @@ export const WithStop: Story = {
 
     return (
       <RoutingInputGroup
-        className="w-[420px]"
+        style={{ width: "min(420px, calc(100vw - 32px))" }}
         points={points}
         onPointChange={(id, value) =>
           setPoints((current) =>

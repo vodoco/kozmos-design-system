@@ -15,6 +15,32 @@ const option = {
 };
 
 describe("RouteOptionCard", () => {
+  it("keeps repeated route identities scoped to their own warning and preserves caller descriptions", () => {
+    render(
+      <>
+        <p id="context">Context</p>
+        <RouteOptionCard
+          option={{ ...option, warning: "First warning" }}
+          onSelect={() => undefined}
+          aria-describedby="context"
+        />
+        <RouteOptionCard
+          option={{ ...option, warning: "Second warning" }}
+          onSelect={() => undefined}
+        />
+      </>,
+    );
+    const first = screen.getByText("First warning");
+    const second = screen.getByText("Second warning");
+    expect(first.id).not.toBe(second.id);
+    expect(first.closest("button")).toHaveAccessibleDescription(
+      "Context First warning",
+    );
+    expect(second.closest("button")).toHaveAccessibleDescription(
+      "Second warning",
+    );
+  });
+
   it("exposes selected state and emits the stable route ID", () => {
     const onSelect = vi.fn();
     render(<RouteOptionCard onSelect={onSelect} option={option} />);

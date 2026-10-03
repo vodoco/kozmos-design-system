@@ -9,6 +9,110 @@ final class InteractionTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws { app?.terminate() }
 
+    func testComposedJourneyRequiresConfirmedArrivalAndRetainsDestination() {
+        launch("navigation-journey")
+        app.buttons["Continue"].tap()
+        app.buttons["Deliver no route"].tap()
+        XCTAssertTrue(app.staticTexts["Route unavailable"].exists)
+        app.buttons["Back to route setup"].tap()
+        XCTAssertTrue(app.staticTexts["Lobby"].exists)
+        app.buttons["Continue"].tap()
+        app.buttons["Deliver calculated route"].tap()
+        app.buttons["Start navigation"].tap()
+        app.buttons["Report 100 percent"].tap()
+        XCTAssertFalse(app.staticTexts["You've arrived"].exists)
+        app.buttons["Confirm arrival"].tap()
+        XCTAssertTrue(app.staticTexts["You've arrived"].exists)
+        XCTAssertFalse(app.staticTexts["Journey time"].exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Selected destination: Gallery"].exists)
+        XCTAssertTrue(app.staticTexts["Done handled: 1"].exists)
+    }
+
+    func testRouteSetupBlocksUnresolvedAndPendingButAllowsCancellation() {
+        for scenario in ["route-setup-pending", "route-setup-unresolved"] {
+            launch(scenario)
+            XCTAssertFalse(app.buttons["Weiter"].isEnabled)
+            app.buttons["Schließen"].tap()
+            received("close")
+            app.terminate()
+        }
+    }
+
+    func testRouteSetupValidContinuationIsExplicitAndFullWidth() {
+        launch("route-setup-ready")
+        XCTAssertTrue(app.staticTexts["Lobby → Gallery"].exists)
+        let button = app.buttons["Weiter"]
+        XCTAssertGreaterThan(button.frame.width, 300)
+        XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+        button.tap()
+        received("continue")
+    }
+
+    func testPopulatedComboboxKeepsItsFieldName() {
+        launch("combobox-location")
+        XCTAssertEqual(app.textFields["From"].value as? String, "Lobby")
+        for name in ["Close options", "Clear selection"] {
+            XCTAssertGreaterThanOrEqual(app.buttons[name].frame.width, 44)
+            XCTAssertGreaterThanOrEqual(app.buttons[name].frame.height, 44)
+        }
+    }
+
+    func testComboboxSelectionCallsTheBindingOnce() {
+        launch("combobox-location")
+        app.buttons["Lobby, North Terminal · Ground floor"].tap()
+        received("select lobby")
+    }
+
+    func testRouteLocationResolvesAndClearsIdentitySeparatelyFromQuery() {
+        launch("route-location")
+        let field = app.textFields["From"]
+        XCTAssertEqual(field.value as? String, "Lobby")
+        received("none")
+        field.tap()
+        field.typeText(" ")
+        received("none")
+        app.buttons["Lobby, North Terminal · Ground floor"].tap()
+        received("select lobby")
+        XCTAssertFalse(field.exists)
+        XCTAssertTrue(app.staticTexts["North Terminal · Ground floor"].exists)
+        let clear = app.buttons["Clear origin"]
+        XCTAssertGreaterThanOrEqual(clear.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(clear.frame.height, 44)
+        clear.tap()
+        received("select lobby|clear")
+        XCTAssertTrue(field.exists)
+        app.buttons["Choose on map"].tap()
+        received("select lobby|clear|map")
+    }
+
+    func testRouteLocationLoadingDoesNotOfferStaleSuggestions() {
+        launch("route-location-loading")
+        app.buttons["Open options"].tap()
+        XCTAssertFalse(app.buttons["Lobby"].exists)
+        XCTAssertTrue(app.textFields["From"].isEnabled)
+        app.buttons["Choose on map"].tap()
+        received("map")
+    }
+
+    func testHostFilteredRouteLocationSelectsSynonymButLoadingAndLocalDoNot() {
+        for scenario in ["route-synonym-local", "route-synonym-loading", "route-synonym-host"] {
+            launch(scenario)
+            app.buttons["Open options"].tap()
+            let result = app.buttons["Elevator, Ground floor"]
+            if scenario == "route-synonym-host" {
+                XCTAssertTrue(result.exists)
+                result.tap()
+                received("select e1")
+                XCTAssertFalse(app.textFields["From"].exists)
+            } else {
+                XCTAssertFalse(result.exists)
+                XCTAssertTrue(app.textFields["From"].isEnabled)
+            }
+            app.terminate()
+        }
+    }
+
     func testResultGroupExpansionPreservesSelectionAndSeparateActions() {
         launch("result-group")
         XCTAssertFalse(app.buttons["1, Gate 12, Level 1"].exists)

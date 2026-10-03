@@ -36,9 +36,21 @@ as a percentage.
 
 It forwards its ref to `HTMLDivElement`. Its props are `RouteProgressRailProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
 
-- `progress`: `number`, **required**.
+- `progress`: `number | null`, **required**.
 
   How far along the route, 0 to 1; anything outside is clamped.
+
+- `valueText`: `string`, optional.
+
+  Localized progress description, particularly when progress is unknown (null).
+
+- `waypoints`: `readonly RouteProgressWaypoint[]`, optional, default `[]`.
+
+  Optional transition markers. Invalid/ambiguous IDs or positions are omitted.
+
+- `showCompletedTrack`: `boolean`, optional, default `false`.
+
+  Opt into a static completed segment. Unknown progress never paints completion.
 
 - `type`: `DirectionType`, **required**.
 
@@ -54,20 +66,37 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## Types these props take
 
+### RouteProgressWaypoint
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A host-owned transition; positions share the rail's distance/time basis. */
+interface RouteProgressWaypoint {
+  id: string;
+  position: number;
+  type: DirectionType;
+  /** Localized transport, destination floor and/or landmark description. */
+  label: string;
+}
+```
+
 ### DirectionType
 
 From `@kozmos-ds/react`.
 
 ```ts
-/**
- * What a step of a route asks for. The four turns, and the transitions the
- * routing engines describe: a level change by lift, escalator or stairs — up
- * or down — or by something unnamed; a same-level transition, a walkway or a
- * corridor to another building; and turning back. Each platform draws the
- * closest glyph its own icon set has, and the instruction's words carry the
- * rest.
- */
-type DirectionType =
+/** Legacy export retained as an alias of the shared semantic manoeuvre contract. */
+type DirectionType = DirectionKind;
+```
+
+### DirectionKind
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Semantic manoeuvre, independent of UI reading direction. Unknown engine values must not be guessed as a turn. */
+type DirectionKind =
   | "straight"
   | "left"
   | "right"
@@ -81,7 +110,12 @@ type DirectionType =
   | "level-up"
   | "level-down"
   | "transition"
-  | "turn-back";
+  | "turn-back"
+  | "walking"
+  | "enter"
+  | "exit"
+  | "ramp-up"
+  | "ramp-down";
 ```
 
 ## Also exported

@@ -11,6 +11,33 @@ const options = [
 ];
 
 describe("Combobox", () => {
+  it("keeps an initial search query until the selected identity changes", () => {
+    const { rerender } = render(
+      <Combobox options={options} value="" defaultInputValue="draft" />,
+    );
+    expect(screen.getByRole("combobox")).toHaveValue("draft");
+    rerender(
+      <Combobox options={options} value="overview" defaultInputValue="draft" />,
+    );
+    expect(screen.getByRole("combobox")).toHaveValue("Overview");
+    rerender(<Combobox options={options} value="" defaultInputValue="draft" />);
+    expect(screen.getByRole("combobox")).toHaveValue("");
+  });
+  it("localizes disclosure and clearing controls", async () => {
+    const user = userEvent.setup();
+    render(
+      <Combobox
+        options={options}
+        inputValue="Overview"
+        clearLabel="Effacer"
+        openLabel="Ouvrir"
+        closeLabel="Fermer"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Effacer" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ouvrir" }));
+    expect(screen.getByRole("button", { name: "Fermer" })).toBeInTheDocument();
+  });
   it("selects an option with keyboard navigation", async () => {
     const user = userEvent.setup();
     const handleValueChange = vi.fn();

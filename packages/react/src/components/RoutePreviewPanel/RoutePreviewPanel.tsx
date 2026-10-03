@@ -52,10 +52,13 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
     },
     ref,
   ) => {
-    const selectedOption = options.find(
-      (option) => option.selected && option.available,
-    );
-    const ready = status === "ready";
+    const selected = options.filter((option) => option.selected);
+    const selectedOption =
+      selected.length === 1 && selected[0].available ? selected[0] : undefined;
+    const validIds =
+      options.every((option) => option.id.trim()) &&
+      new Set(options.map((option) => option.id)).size === options.length;
+    const ready = status === "ready" && validIds;
     // The destination row is the top of AdaptiveMapShell's panel when the
     // preview is its content: `kozmos-route-preview-first-row` tops its 16 up
     // to what the panel already leaves above it rather than adding 16 to it,
@@ -103,10 +106,14 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
           ) : (
             <div aria-label={optionsLabel} role="group">
               <ul className="m-0 grid snap-x snap-mandatory auto-cols-[min(78%,14rem)] grid-flow-col gap-3 overflow-x-auto overscroll-x-contain p-0 pb-3">
-                {options.map((option) => (
-                  <li className="list-none snap-start" key={option.id}>
+                {options.map((option, index) => (
+                  <li
+                    className="list-none snap-start"
+                    key={validIds ? option.id : index}
+                  >
                     <RouteOptionCard
                       className="h-full"
+                      disabled={!ready}
                       onSelect={onOptionSelect}
                       option={option}
                     />
@@ -146,7 +153,9 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
             className="flex-1"
             disabled={!ready || !selectedOption}
             isLoading={status === "calculating"}
-            onClick={() => selectedOption && onContinue(selectedOption.id)}
+            onClick={() =>
+              ready && selectedOption && onContinue(selectedOption.id)
+            }
             type="button"
           >
             {continueLabel}

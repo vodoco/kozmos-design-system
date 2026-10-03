@@ -8,7 +8,7 @@ import * as RouteSummaryStories from './RouteSummary.stories';
 
 <Canvas of={RouteSummaryStories.Active} />
 
-The `RouteSummary` serves as the primary bottom-anchored modal sheet during active turn-by-turn Wayfinding sessions. It safely structures ETAs, unit distances, and core routing logic into a distinct hardware-independent layer.
+`RouteSummary` presents route estimates and actions. It is not a modal sheet or routing engine: the host owns sheet placement, safe areas, focus, route state and routing logic.
 
 On `surface="glass"` the distance, muted elsewhere, takes the foreground colour, so it reads at 4.5:1 over any map (decision 48). The navigation layout draws its text in the foreground colour already.
 
@@ -32,6 +32,12 @@ import { NavigationPointer01 } from '@kozmos-ds/icons';
 Given a `destination`, the summary takes the navigation layout: the destination's name with End beside it in the danger outline, the time, distance and arrival on one row, and the caller's progress — a `RouteProgressRail` in the products — below. The estimate layout above is unchanged.
 
 <Canvas of={RouteSummaryStories.Navigation_} />
+
+Use `presentation="hosted"` inside an existing sheet: this removes the summary's outer padding, surface, radius and shadow. Standalone remains the default for compatibility. Navigation metrics are optional and represent remaining estimates, not actual journey totals. Omitted values stay absent; supplied zero-valued labels stay visible. `destinationImage` is decorative and retains its fixed-size fallback on failure. Long destination names wrap without a two-line clamp.
+
+Swift uses `presentation: .hosted`; Compose uses `presentation = KozmosRoutePresentation.Hosted`. Compose retains the original navigation overload for positional source compatibility; the optional-metrics overload requires explicit presentation. The estimate layout is unchanged.
+
+<Canvas of={RouteSummaryStories.HostedWithImage} />
 
 <PlatformSnippets
     react={`

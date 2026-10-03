@@ -108,7 +108,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-66 | `EmptyState`'s words are left-aligned in a centred block         | Core                   | fixed        |
 | GAP-67 | `Menu` opens centred on its trigger                              | Core                   | left visible |
 | GAP-68 | `BottomNavigation`'s taller density overflows its own bar        | Core                   | open         |
-| GAP-69 | Lift, escalator and stairs share one arrow                       | Product / SDK          | left visible |
+| GAP-69 | Lift, escalator and stairs share one arrow                       | Product / SDK          | fixed        |
 | GAP-70 | `SelectTrigger` hides a second `FieldWrapper`                    | Core                   | open         |
 | GAP-71 | `AISearchButton` has no hover state                              | Core                   | open         |
 | GAP-72 | `MapOverlay` clips what floats on it                             | Product / SDK          | fixed        |
@@ -1417,6 +1417,12 @@ Text"])`) and the Get started page shows — touches it.
   rather than `h-16`), and stop overriding the density's width.
 
 ## GAP-69 · Lift, escalator and stairs share one arrow
+
+- **Candidate correction:** the navigation completion source now draws distinct
+  lift, escalator and stairs up/down pairs, plus ramp and entry/exit, from original
+  shared Kozmos vectors. The DirectionStep Glyph Atlas shows small/large sizes and
+  RTL. This is not publication or external artwork approval; SDK map sprites and
+  physical-device legibility remain separate. The evidence below records the original defect.
 
 - **What:** `DIRECTION_ICONS` (`DirectionStep.tsx:61`) maps fourteen
   manoeuvre types onto eight glyphs: `lift-up`, `escalator-up`, `stairs-up`

@@ -43,10 +43,11 @@ func kozmosMutedForeground(
 /// it sits in without being told.
 struct KozmosMutedText: ViewModifier {
     @Environment(\.kozmosSurfaceStyle) private var surface
+    @Environment(\.kozmosGuidanceForeground) private var guidance
     let muted: Color
 
     func body(content: Content) -> some View {
-        content.foregroundColor(kozmosMutedForeground(on: surface, muted: muted))
+        content.foregroundColor(guidance ?? kozmosMutedForeground(on: surface, muted: muted))
     }
 }
 

@@ -29,6 +29,56 @@ const options: RouteOptionPresentation[] = [
 ];
 
 describe("RoutePreviewPanel", () => {
+  it.each(["multiple-selected", "duplicate-id"])(
+    "does not continue an ambiguous %s snapshot",
+    (kind) => {
+      const onContinue = vi.fn();
+      const bad =
+        kind === "multiple-selected"
+          ? options.map((option) => ({ ...option, selected: true }))
+          : [options[0], { ...options[1], id: options[0].id }];
+      render(
+        <RoutePreviewPanel
+          destinationName="Gallery"
+          options={bad}
+          status="ready"
+          backLabel="Back"
+          continueLabel="Continue"
+          onBack={() => {}}
+          onOptionSelect={() => {}}
+          onContinue={onContinue}
+        />,
+      );
+      const button = screen.getByRole("button", { name: "Continue" });
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+      expect(onContinue).not.toHaveBeenCalled();
+    },
+  );
+  it.each(["calculating", "error", "no-route"] as const)(
+    "prevents stale option selection while %s without optional status content",
+    (status) => {
+      const onSelect = vi.fn();
+      render(
+        <RoutePreviewPanel
+          destinationName="Destination"
+          backLabel="Back"
+          continueLabel="Continue"
+          onBack={() => undefined}
+          onContinue={() => undefined}
+          onOptionSelect={onSelect}
+          options={options}
+          status={status}
+        />,
+      );
+      const staleOption = screen.getByRole("button", { name: /Quickest/ });
+      expect(staleOption).toBeDisabled();
+      fireEvent.click(staleOption);
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
+    },
+  );
+
   it("selects alternatives and continues with the selected stable ID", () => {
     const onSelect = vi.fn();
     const onContinue = vi.fn();

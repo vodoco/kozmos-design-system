@@ -6,6 +6,37 @@ import { Itinerary } from "../Itinerary";
 import { ManoeuvreCard, manoeuvreDescription } from "./ManoeuvreCard";
 
 describe("ManoeuvreCard", () => {
+  it("defaults to opaque theme guidance and exposes the legacy background appearance", () => {
+    const { rerender } = render(
+      <ManoeuvreCard
+        type="left"
+        instruction="Left"
+        expanded={false}
+        onToggle={() => {}}
+        surface="glass"
+      />,
+    );
+    expect(screen.getByRole("region")).toHaveAttribute(
+      "data-appearance",
+      "theme",
+    );
+    expect(screen.getByRole("region")).not.toHaveClass("kozmos-surface-glass");
+    rerender(
+      <ManoeuvreCard
+        type="left"
+        instruction="Left"
+        expanded={false}
+        onToggle={() => {}}
+        surface="glass"
+        appearance="background"
+      />,
+    );
+    expect(screen.getByRole("region")).toHaveAttribute(
+      "data-appearance",
+      "background",
+    );
+    expect(screen.getByRole("region")).toHaveClass("kozmos-surface-glass");
+  });
   it("keeps a named region around arbitrary expanded content and its close control", () => {
     render(
       <ManoeuvreCard
@@ -97,13 +128,14 @@ describe("ManoeuvreCard", () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it("is solid by default and glass on request", () => {
+  it("uses solid by default and glass on request for background appearance", () => {
     const { rerender } = render(
       <ManoeuvreCard
         type="left"
         instruction="Turn left"
         expanded={false}
         onToggle={() => {}}
+        appearance="background"
       />,
     );
     const card = screen.getByRole("region", { name: "Current manoeuvre" });
@@ -115,6 +147,7 @@ describe("ManoeuvreCard", () => {
         expanded={false}
         onToggle={() => {}}
         surface="glass"
+        appearance="background"
       />,
     );
     expect(card).toHaveClass("kozmos-surface-glass");

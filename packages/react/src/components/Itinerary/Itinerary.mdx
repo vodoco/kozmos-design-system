@@ -9,6 +9,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 The whole route as a list: where it starts, every step with the current one emphasised, where it ends. The steps are the routing engine's own words with the arrow the product gives each; the origin and destination sit under their labels. Assistive technology reads the endpoints with their labels and each step as one item, the current one marked as such.
 
+Endpoint captions grow with localized text instead of being forced into a 40-unit column. The endpoint moves onto another line when needed; long place names remain visible rather than being limited to two lines. The host owns the itinerary's scroll container.
+
 On a glass surface, in a glass `ManoeuvreCard`, the captions and the origin, muted elsewhere, take the foreground colour, so they read at 4.5:1 over any map (decision 48).
 
 <Canvas>
@@ -24,6 +26,18 @@ parts. A `secondary` qualifier is muted and regular-weight without shrinking its
 font; a `lang` value preserves a foreign landmark's speech language. Supply exact
 spaces and punctuation, including German/Japanese qualifiers in their correct position.
 The current-step state stays independent of these text styles.
+
+The host must supply at most one current step and stable unique step IDs. If several
+steps are marked current, none is emphasized or announced as current; the component
+does not choose an arbitrary step. Correct the host snapshot rather than relying on
+this defensive fallback to repair a route.
+
+Each step also accepts optional localized `distance` and `duration` labels. These
+are estimates for that step, not remaining-route estimates or actual arrival totals.
+Either label can stand alone; missing/empty labels draw nothing, while a supplied
+`"0 min"` is kept. Metrics appear below the instruction and are read after it without
+discarding speech-language metadata. Native initializers and Kotlin copy operations
+accept the same optional fields, retaining the original positional arguments.
 
 SwiftUI/Compose accept arrays/lists of `KozmosInstructionPart` through the itinerary
 step's overloaded initializer/constructor. Their `instruction` String accessor remains;
@@ -45,8 +59,8 @@ export function Example() {
     <Itinerary
       origin="Dunkin'"
       steps={[
-        { id: "1", instruction: "Take Elevator down to First Floor", type: "straight" },
-        { id: "2", instruction: "Take Corridor to Garage B", type: "straight", current: true },
+        { id: "1", instruction: "Take Elevator down to First Floor", type: "lift-down" },
+        { id: "2", instruction: "Take Corridor to Garage B", type: "transition", current: true },
         { id: "3", instruction: "Destination", type: "destination" },
       ]}
       destination="Airport Shuttles"
@@ -60,8 +74,8 @@ import SwiftUI
 KozmosItinerary(
     origin: "Dunkin'",
     steps: [
-        KozmosItineraryStep(id: "1", instruction: "Take Elevator down to First Floor", type: .straight),
-        KozmosItineraryStep(id: "2", instruction: "Take Corridor to Garage B", type: .straight, isCurrent: true),
+        KozmosItineraryStep(id: "1", instruction: "Take Elevator down to First Floor", type: .liftDown),
+        KozmosItineraryStep(id: "2", instruction: "Take Corridor to Garage B", type: .transition, isCurrent: true),
         KozmosItineraryStep(id: "3", instruction: "Destination", type: .destination),
     ],
     destination: "Airport Shuttles")
@@ -70,8 +84,8 @@ KozmosItinerary(
 KozmosItinerary(
     origin = "Dunkin'",
     steps = listOf(
-        KozmosItineraryStep("1", "Take Elevator down to First Floor", DirectionType.Straight),
-        KozmosItineraryStep("2", "Take Corridor to Garage B", DirectionType.Straight, isCurrent = true),
+        KozmosItineraryStep("1", "Take Elevator down to First Floor", DirectionType.LiftDown),
+        KozmosItineraryStep("2", "Take Corridor to Garage B", DirectionType.Transition, isCurrent = true),
         KozmosItineraryStep("3", "Destination", DirectionType.Destination)
     ),
     destination = "Airport Shuttles"

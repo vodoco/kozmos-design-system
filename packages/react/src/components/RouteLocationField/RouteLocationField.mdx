@@ -1,0 +1,50 @@
+import { Meta, Canvas } from '@storybook/blocks';
+import { PlatformSnippets } from '../PlatformSnippets';
+import * as Stories from './RouteLocationField.stories';
+
+<Meta of={Stories} />
+
+# Route Location Field
+
+Controlled place search with a separate resolved-place identity, building/floor context, explicit clearing and a choose-on-map action.
+
+<Canvas of={Stories.Search} />
+<Canvas of={Stories.Resolved} />
+
+`query` is editable text, never a location identity. `location.value` and suggestion values are stable host entity IDs. `onSelect` delivers the complete suggestion, including its secondary context. Blank or duplicate suggestion IDs are omitted rather than resolved arbitrarily. The host clears both identity and query in `onClear`.
+
+`idle` and `ready` allow suggestions; `loading`, `empty` and `error` omit stale suggestions while keeping the query editable. Disabling the whole field also disables clearing and map selection. The map button sits outside the suggestion list. The default `filterMode="local"` uses case-insensitive substring filtering of label, ID and description.
+
+For SDK/server-ranked results, choose `filterMode="host"` (`.host` on SwiftUI; `KozmosRouteLocationFilterMode.Host` on Compose). This preserves the supplied order and synonym/fuzzy/translated matches without filtering them again. Blank/duplicate IDs and non-ready states remain guarded in both modes. The host still owns request cancellation and rejecting stale responses.
+
+<Canvas of={Stories.HostFiltered} />
+
+Localize the field, placeholder, status/empty text and clear/map/open/close labels. Resolved names and context wrap; suggestion rows retain the existing compact Combobox presentation, with full names and context available to assistive technology.
+
+Automatic selection analytics omit place IDs and query text. The host still receives the
+resolved suggestion through the explicit selection callback and owns its data/consent policy.
+
+The host owns requests, cancellation, focus restoration, keyboard/sheet insets and announcements. Ignore stale responses after selection, a newer query, clearing or leaving setup. Combobox may report a selected label through `onQueryChange` as well as calling `onSelect`; callback ordering is not a cross-platform contract. Drive requests from unresolved query state, not every callback without checking resolved identity.
+
+<Canvas of={Stories.Loading} />
+<Canvas of={Stories.Error} />
+
+## All platforms
+
+<PlatformSnippets
+  react={`
+import { RouteLocationField } from "@kozmos-ds/react";
+
+export function Example() {
+  return <RouteLocationField label="From" location={{ value: "lobby", label: "Lobby", description: "North Terminal · Ground floor" }} query="" options={[]} onQueryChange={() => {}} onSelect={() => {}} onClear={() => {}} />;
+}
+`}
+  swift={`
+KozmosRouteLocationField(label: "From", location: KozmosListboxOption(value: "lobby", label: "Lobby", description: "North Terminal · Ground floor"), query: "", options: [], onQueryChange: { _ in }, onSelect: { _ in }, onClear: {})
+`}
+  kotlin={`
+KozmosRouteLocationField(label = "From", location = KozmosListboxOption("lobby", "Lobby", "North Terminal · Ground floor"), query = "", options = emptyList(), onQueryChange = {}, onSelect = {}, onClear = {})
+`}
+/>
+
+These callback placeholders document the public API, not a routing engine or request controller. Host acceptance must include native keyboard/focus, real assistive technology and SDK search lifecycle checks.

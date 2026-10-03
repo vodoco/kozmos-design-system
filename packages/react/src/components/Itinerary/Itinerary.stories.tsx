@@ -12,12 +12,12 @@ const meta = {
       {
         id: "1",
         instruction: "Take Elevator down to First Floor",
-        type: "straight",
+        type: "lift-down",
       },
       {
         id: "2",
         instruction: "Take Corridor to Garage B",
-        type: "straight",
+        type: "transition",
         current: true,
       },
       {
@@ -34,6 +34,46 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const LongEndpoints: Story = {
+  args: {
+    originLabel: "Starting location",
+    destinationLabel: "Final destination",
+    origin:
+      "International arrivals reception and passenger assistance desk, North Terminal",
+    destination:
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    steps: [],
+  },
+};
+
+export const StepMetrics: Story = {
+  args: {
+    steps: [
+      {
+        id: "turn",
+        instruction: "Turn left",
+        type: "left",
+        current: true,
+        distance: "8 m",
+        duration: "Less than 1 min",
+      },
+      {
+        id: "lift",
+        instruction: "Take the elevator up to Level 2",
+        type: "lift-up",
+        duration: "1 min",
+      },
+      {
+        id: "exit",
+        instruction: "Continue to the destination",
+        type: "straight",
+        distance: "24 m",
+      },
+      { id: "destination", instruction: "Destination", type: "destination" },
+    ],
+  },
+};
 
 export const NoCurrentStep: Story = {
   args: { steps: meta.args.steps.map((step) => ({ ...step, current: false })) },

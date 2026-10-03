@@ -142,14 +142,13 @@ fun KozmosWayfindingInputRow(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .padding(end = 12.dp)
-                    .size(32.dp)
+                    .size(48.dp)
                     .shadow(KozmosShadows.semanticsElevationRaised, CircleShape)
                     .background(KozmosThemeTokens.primitivesColorsBackground200, CircleShape)
                     .clickable(role = Role.Button, onClickLabel = swapLabel) {
                         trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(
                             component = "WayfindingInputRow",
-                            eventName = "wayfinding_route_swapped",
-                            properties = mapOf("origin" to originValue, "destination" to destinationValue)
+                            eventName = "wayfinding_route_swapped"
                         ))
                         onSwap()
                     }
@@ -168,7 +167,7 @@ fun KozmosWayfindingInputRow(
 
 /**
  * One of the row's fields: 40 high, the control radius, 12 in from the start
- * and 48 from the end so the text clears the swap button, the raised shadow
+ * and 68 from the end so the text clears the swap button, the raised shadow
  * and no border. Focus draws React's 1 dp ring in the accent, 2 dp out.
  *
  * The fill is background/50, opaque. React washes the field in muted at half,
@@ -220,7 +219,7 @@ private fun WayfindingField(
         decorationBox = { inner ->
             Box(
                 contentAlignment = Alignment.CenterStart,
-                modifier = Modifier.fillMaxSize().padding(start = 12.dp, end = 48.dp)
+                modifier = Modifier.fillMaxSize().padding(start = 12.dp, end = 68.dp)
             ) {
                 if (value.isEmpty()) {
                     Text(placeholder, style = textStyle, color = placeholderColor, maxLines = 1)

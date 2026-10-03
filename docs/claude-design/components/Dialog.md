@@ -111,7 +111,11 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## DialogContent
 
-It forwards its ref to `HTMLDivElement`. Its props are `Omit<DialogPrimitive.DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { portalContainer?: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"] }`.
+It forwards its ref to `HTMLDivElement`. Its props are `Omit<DialogPrimitive.DialogContentProps & React.RefAttributes<HTMLDivElement>, "ref"> & { closeLabel?: string; portalContainer?: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"] }`.
+
+- `closeLabel`: `string`, optional, default `"Close"`.
+
+  Localized name of the persistent dismiss control.
 
 - `portalContainer`: `React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>["container"]`, optional.
 - `asChild`: `boolean`, optional.

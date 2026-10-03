@@ -396,6 +396,31 @@ data class KozmosCategoryPresentation(
     val resultCountLabel: String? = null
 )
 
+/** Semantic manoeuvre. Unrecognized engine values must not be guessed as a turn. */
+enum class KozmosDirectionKind(val value: String) {
+    Straight("straight"),
+    Left("left"),
+    Right("right"),
+    Destination("destination"),
+    LiftUp("lift-up"),
+    LiftDown("lift-down"),
+    EscalatorUp("escalator-up"),
+    EscalatorDown("escalator-down"),
+    StairsUp("stairs-up"),
+    StairsDown("stairs-down"),
+    LevelUp("level-up"),
+    LevelDown("level-down"),
+    Transition("transition"),
+    TurnBack("turn-back"),
+    Walking("walking"),
+    Enter("enter"),
+    Exit("exit"),
+    RampUp("ramp-up"),
+    RampDown("ramp-down");
+
+    companion object { fun fromValue(value: String): KozmosDirectionKind? = entries.firstOrNull { it.value == value } }
+}
+
 enum class KozmosRoutePreference(val value: String) {
     Quickest("quickest"),
     StepFree("step-free"),

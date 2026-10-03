@@ -7,9 +7,13 @@ import * as RoutingInputGroupStories from './RoutingInputGroup.stories';
 
 <Canvas of={RoutingInputGroupStories.Default} />
 
-The `RoutingInputGroup` maps Pointr's timeline logic into physical multi-point data entry boxes, allowing dynamic addition/reduction of navigational stops while keeping layout structures aligned cleanly against timeline borders.
+Editable route points with stable IDs and controlled change, swap, add and remove callbacks. The host owns routing and resolved-place identity; changing text does not confirm a place.
+
+Set each point's `label` to its localized field name, independently of `placeholder` and the current value. Without a label, the group names the first field Origin, the last Destination and intermediate fields Stop followed by their index. Localize `swapLabel`, `addPointLabel` and `removePointLabel` too. SwiftUI accepts the same named initializer arguments; Compose's localized overload accepts `KozmosRoutingInputLabels`, preserving existing positional and trailing-removal-lambda calls.
 
 ## React Usage
+
+Swap, add and remove actions occupy at least 44px on web, 44pt on iOS and 48dp on Android. These are the control bounds, not an invisible overlapping hit-area extension.
 
 ```tsx
 import { RoutingInputGroup } from '@kozmos-ds/react';
@@ -26,4 +30,4 @@ import { RoutingInputGroup } from '@kozmos-ds/react';
 />
 ```
 
-When rendering precisely two inputs (`len == 2`), the component natively injects a visual physical swap `ArrowDownUp` actuator instead of the generic `<Plus />` structure, reflecting exactly the Wayfinding parity behaviors out-of-the-box.
+With two points and an `onSwap` callback, the group shows a two-way vertical swap button. Add is a separate action shown when `onAddPoint` is supplied; it is not replaced by Swap. Remove applies only to intermediate stops, not clearing an origin or destination.

@@ -34,17 +34,21 @@ const RouteOptionCard = React.forwardRef<
       icon = preferenceIcons[option.preference],
       type = "button",
       disabled: disabledProp,
+      "aria-describedby": describedBy,
       ...props
     },
     ref,
   ) => {
     const disabled = !option.available || disabledProp;
-    const warningId = option.warning ? `route-${option.id}-warning` : undefined;
+    const instanceId = React.useId();
+    const warningId = option.warning ? `${instanceId}-warning` : undefined;
 
     return (
       <button
         ref={ref}
-        aria-describedby={warningId}
+        aria-describedby={
+          [describedBy, warningId].filter(Boolean).join(" ") || undefined
+        }
         aria-pressed={option.selected}
         className={cn(
           // The fill is owned: the background colour, and for the chosen

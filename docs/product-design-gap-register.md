@@ -65,6 +65,24 @@ for the remaining integration, physical-device and design acceptance gates.
 
 ### Confirmed decisions and the released 0.7.0 increment
 
+Navigation completion candidate reconciliation (not merged/released evidence): GAP-097 now
+has optional distance/duration per itinerary step; GAP-103 has stable, validated waypoint
+markers and an optional completed segment; GAP-110 has hosted summary presentation, but its
+dedicated Previous/Next actions slot remains open;
+GAP-112/113 have shared direction types and original generated transition artwork across
+React/SwiftUI/Compose. These supersede the corresponding missing-source findings below
+for this candidate, while preserving their original requirements. RoutingInputGroup endpoint
+targets and long itinerary endpoint wrapping are corrected; GAP-104's inline itinerary Edit
+actions remain a separate API requirement and are not implied by those corrections.
+GAP-111's full POI route-preview/details composition is still partial: the controlled example
+uses RoutePreviewPanel rather than adding an itinerary slot to POIDetailPanel.
+
+ArrivalPanel, RouteLocationField and RouteSetupPanel fill additional screenshot requirements.
+The [integration guide](navigation-integration.md) distinguishes presentation, example host
+state and live SDK ownership. Physical accessibility, real host adapters, original-artwork
+approval/external Figma adoption, renderer sprites and native registry delivery remain open.
+No existing gap ID is reused for these additions, and no external board is claimed updated.
+
 Enhancements must ship in sync across React, iOS and Android. The current component increment
 adds collapsed floor-availability cues and full-name hints on all three targets, plus logical
 MapOverlay start/end positions for RTL mirroring. The user confirmed keeping per-floor result

@@ -8,12 +8,13 @@ import SwiftUI
 struct KozmosInstructionText: View {
   let parts: [KozmosInstructionPart]
   @Environment(\.kozmosSurfaceStyle) private var surface
+  @Environment(\.kozmosGuidanceForeground) private var guidance
   var body: some View {
     parts.reduce(Text("")) { sentence, part in
       let text = Text(verbatim: part.text)
       return sentence
         + (part.role == .secondary
-          ? text.fontWeight(.regular).foregroundColor(kozmosMutedForeground(on: surface))
+          ? text.fontWeight(.regular).foregroundColor(guidance ?? kozmosMutedForeground(on: surface))
           : text)
     }
   }

@@ -11,7 +11,16 @@ The current manoeuvre, floating over the map during navigation: its arrow, the i
 
 Open, the card is as tall as the itinerary up to a cap (320 by default), past which the itinerary scrolls: a long route must not cover the map. The closed card is one button that reads the instruction, then the detail; the grab bar is silent then, and becomes the way to close the card once it is open.
 
-On `surface="glass"` the detail, muted elsewhere, takes the foreground colour, and so do the itinerary's captions and origin inside it, so they read at 4.5:1 over any map (decision 48). Muted over a saturated map they read as low as 2.5:1 on iOS and Android and 3.6:1 on the web. On iOS and Android the card tells what it holds which surface it is on (`kozmosSurfaceStyle`, `LocalKozmosSurfaceStyle`).
+## Appearance and migration
+
+The default is now `appearance="theme"`: an opaque theme-600 fill with contrasting foreground-1000 text, icons and grip. The light theme pairs blue with white; the dark theme pairs lighter blue with black. Detail, qualifiers and the expanded itinerary inherit the same full-contrast foreground. Current steps remain distinguished by weight and accessibility state, not colour alone. Theme appearance stays opaque even when `surface="glass"` is supplied.
+
+To retain the previous neutral presentation, set `appearance="background"`. Its `surface` remains `"solid"` by default, with `"glass"` available. SwiftUI uses `appearance: .background`; Compose uses `appearance = KozmosManoeuvreAppearance.Background`. Existing native positional and trailing-lambda calls remain source-compatible and receive the new theme default. Rebuild native consumers; this is not a binary-compatibility guarantee.
+
+On background glass, the detail and itinerary captions use the full foreground colour rather than the muted solid-surface colour (decision 48). The card communicates that effective surface to native content. Brand overrides must preserve the contrast of the paired theme-600/foreground-1000 tokens; changing a fill alone is not a contrast guarantee. The disclosure grip has a minimum 44 px/pt target on web/iOS and 48 dp on Android.
+
+<Canvas of={ManoeuvreCardStories.Background} />
+<Canvas of={ManoeuvreCardStories.BackgroundGlass} />
 
 <Canvas>
   <Story of={ManoeuvreCardStories.Closed} />
@@ -31,7 +40,7 @@ from `@kozmos-ds/product-contracts` (also re-exported by React):
 Supply the spaces and punctuation in `text`; the component never inserts separators
 or moves the qualifier to the end. German may put the side mid-sentence and Japanese
 before the landmark. `secondary` uses normal weight and muted foreground at the same
-font size. On glass it keeps the full-contrast foreground, distinguished by weight,
+font size. On theme guidance and background glass it keeps the full-contrast foreground, distinguished by weight,
 following the existing surface policy. `lang` is the BCP 47 language of those words, not a request to translate them.
 Absent language inherits the surrounding language; hosts own translations and fallback names.
 

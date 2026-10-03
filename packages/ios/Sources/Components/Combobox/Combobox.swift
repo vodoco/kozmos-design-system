@@ -14,6 +14,11 @@ public struct KozmosCombobox: View {
     public let errorMessage: String?
     public let emptyText: String
     public let clearable: Bool
+    public let clearLabel: String
+    public let openLabel: String
+    public let closeLabel: String
+    /// Disable only when the host already filtered/ranked the supplied options.
+    public let filterLocally: Bool
 
     @State private var isOpen: Bool
 
@@ -31,7 +36,11 @@ public struct KozmosCombobox: View {
         errorMessage: String? = nil,
         emptyText: String = "No results found",
         clearable: Bool = true,
-        defaultOpen: Bool = false
+        defaultOpen: Bool = false,
+        clearLabel: String = "Clear selection",
+        openLabel: String = "Open options",
+        closeLabel: String = "Close options",
+        filterLocally: Bool = true
     ) {
         self._value = value
         self._inputValue = inputValue
@@ -46,7 +55,9 @@ public struct KozmosCombobox: View {
         self.errorMessage = errorMessage
         self.emptyText = emptyText
         self.clearable = clearable
+        self.clearLabel = clearLabel; self.openLabel = openLabel; self.closeLabel = closeLabel
         self._isOpen = State(initialValue: defaultOpen)
+        self.filterLocally = filterLocally
     }
 
     public var body: some View {
@@ -59,6 +70,7 @@ public struct KozmosCombobox: View {
 
             HStack(spacing: 0) {
                 TextField(placeholder, text: $inputValue)
+                    .accessibilityLabel(label ?? placeholder)
                     .disabled(disabled || readOnly)
                     .font(KozmosTypography.subheadline)
                     .foregroundColor(textColor)
@@ -75,11 +87,12 @@ public struct KozmosCombobox: View {
                     Button(action: clearSelection) {
                         Image(systemName: "xmark")
                             .font(.subheadline.weight(.semibold))
-                            .frame(width: 36, height: 44)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .foregroundColor(KozmosColors.primitivesColorsForeground500)
-                    .accessibilityLabel("Clear selection")
+                    .accessibilityLabel(clearLabel)
                 }
 
                 Button(action: toggleOpen) {
@@ -87,11 +100,12 @@ public struct KozmosCombobox: View {
                         .font(.subheadline.weight(.semibold))
                         .rotationEffect(.degrees(isOpen ? 180 : 0))
                         .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .disabled(disabled || readOnly)
                 .foregroundColor(KozmosColors.primitivesColorsForeground500)
-                .accessibilityLabel(isOpen ? "Close options" : "Open options")
+                .accessibilityLabel(isOpen ? closeLabel : openLabel)
             }
             .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44)
             .background(fieldBackgroundColor)
@@ -121,8 +135,7 @@ public struct KozmosCombobox: View {
                         multiple: false,
                         disabled: disabled,
                         maxHeight: 256
-                    ) { nextValues, option in
-                        value = nextValues.first ?? ""
+                    ) { _, option in
                         inputValue = option.label
                         isOpen = false
                     }
@@ -138,7 +151,8 @@ public struct KozmosCombobox: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var filteredOptions: [KozmosListboxOption] {
+    var filteredOptions: [KozmosListboxOption] {
+        guard filterLocally else { return options }
         let query = inputValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !query.isEmpty else { return options }
         return options.filter { option in

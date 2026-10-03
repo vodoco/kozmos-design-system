@@ -2,10 +2,11 @@ import React from "react";
 import { cn } from "../../utils";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import { Button } from "../Button";
+import { DestinationImage } from "../../utils/navigation-presentation";
 import { X, NavigationPointer01 as Navigation } from "@kozmos-ds/icons";
 
 interface RouteSummaryBaseProps extends React.HTMLAttributes<HTMLDivElement> {
-  distanceText: string;
+  distanceText?: string;
   onEndRoute: () => void;
   /** What the summary sits on: solid by default, glass where the product asks for it. */
   surface?: SurfaceVariant;
@@ -13,6 +14,7 @@ interface RouteSummaryBaseProps extends React.HTMLAttributes<HTMLDivElement> {
 
 /** The summary as it was: the estimate over the distance, End as an icon. */
 export interface RouteSummaryEstimateProps extends RouteSummaryBaseProps {
+  distanceText: string;
   destination?: undefined;
   etaText: string;
   onStartNavigation?: () => void;
@@ -29,7 +31,12 @@ export interface RouteSummaryEstimateProps extends RouteSummaryBaseProps {
  */
 export interface RouteSummaryNavigationProps extends RouteSummaryBaseProps {
   destination: string;
-  durationText: string;
+  /** Localized remaining estimate; omitted when the host cannot provide one. */
+  durationText?: string;
+  /** Decorative destination image; failures retain a same-size map-pin fallback. */
+  destinationImage?: string;
+  /** Hosted content has no independent surface, radius, shadow or outer padding. */
+  presentation?: "standalone" | "hosted";
   arrivalText?: string;
   endLabel?: string;
   progress?: React.ReactNode;
@@ -50,6 +57,8 @@ const RouteSummaryNavigation = React.forwardRef<
     {
       className,
       destination,
+      destinationImage,
+      presentation = "standalone",
       durationText,
       distanceText,
       arrivalText,
@@ -63,28 +72,43 @@ const RouteSummaryNavigation = React.forwardRef<
   ) => (
     <div
       ref={ref}
-      className={cn(surfaceClass(surface), LAYOUT, "gap-3", className)}
+      className={cn(
+        presentation === "hosted"
+          ? "kozmos-reset flex w-full flex-col text-foreground"
+          : cn(surfaceClass(surface), LAYOUT),
+        "gap-3",
+        className,
+      )}
       {...props}
+      data-presentation={presentation}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="m-0 line-clamp-2 min-w-0 flex-1 text-xl font-semibold leading-tight text-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {destinationImage && (
+          <DestinationImage key={destinationImage} src={destinationImage} />
+        )}
+        <h2 className="m-0 min-w-0 flex-1 basis-40 break-words text-xl font-semibold leading-tight text-foreground">
           {destination}
         </h2>
         <Button
+          type="button"
           variant="outline"
           emotion="danger"
           size="sm"
-          className="shrink-0 rounded-pill"
+          className="h-auto min-h-11 max-w-full shrink-0 whitespace-normal rounded-pill [overflow-wrap:anywhere]"
           onClick={onEndRoute}
         >
           {endLabel}
         </Button>
       </div>
-      <p className="m-0 flex items-baseline gap-3 text-[15px] text-foreground">
-        <span className="font-semibold">{durationText}</span>
-        <span>{distanceText}</span>
-        {arrivalText ? <span className="ml-auto">{arrivalText}</span> : null}
-      </p>
+      {(durationText || distanceText || arrivalText) && (
+        <p className="m-0 flex flex-wrap items-baseline gap-3 text-[15px] text-foreground">
+          {durationText && (
+            <span className="font-semibold">{durationText}</span>
+          )}
+          {distanceText && <span>{distanceText}</span>}
+          {arrivalText ? <span className="ms-auto">{arrivalText}</span> : null}
+        </p>
+      )}
       {progress}
     </div>
   ),
@@ -135,6 +159,7 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
           </div>
           {state === "active" && (
             <Button
+              type="button"
               variant="destructive"
               size="icon"
               className="h-11 w-11 shrink-0 rounded-pill"
@@ -149,6 +174,7 @@ const RouteSummary = React.forwardRef<HTMLDivElement, RouteSummaryProps>(
         {/* Primary Action Row - if in preview mode */}
         {state === "preview" && onStartNavigation && (
           <Button
+            type="button"
             size="lg"
             className="w-full h-12 rounded-pill font-semibold text-base shadow-raised"
             onClick={onStartNavigation}

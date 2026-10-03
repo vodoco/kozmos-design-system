@@ -333,6 +333,25 @@
      than the line breaks rather than running out of the card. Only a
      product that asks for a limit, `instructionLines`, gets one: the
      ellipsis at that many lines. */
+  .kozmos-manoeuvre-card[data-appearance="theme"] {
+    --kozmos-guidance-foreground: var(--primitives-colors-foreground-1000);
+    --kozmos-surface-muted-foreground: var(--kozmos-guidance-foreground);
+    background-color: var(--primitives-colors-theme-600);
+    color: var(--kozmos-guidance-foreground);
+  }
+  .kozmos-guidance-text {
+    color: var(--kozmos-guidance-foreground, var(--primitives-colors-foreground-0));
+  }
+  .kozmos-guidance-accent {
+    color: var(--kozmos-guidance-foreground, var(--primitives-colors-theme-600));
+  }
+  .kozmos-manoeuvre-grip {
+    background-color: var(--kozmos-guidance-foreground, var(--primitives-colors-background-300));
+  }
+  .kozmos-manoeuvre-card button:focus-visible {
+    outline: 2px solid var(--kozmos-guidance-foreground, var(--primitives-colors-theme-600));
+    outline-offset: 2px;
+  }
   .kozmos-manoeuvre-instruction {
     overflow-wrap: anywhere;
   }
@@ -347,6 +366,7 @@
      cut it. */
   .kozmos-manoeuvre-itinerary:focus-visible {
     @apply outline outline-2 outline-ring;
+    outline-color: var(--kozmos-guidance-foreground, var(--primitives-colors-theme-600));
     outline-offset: -2px;
   }
   /* A route option is a card of its own: the background colour, and the

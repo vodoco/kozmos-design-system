@@ -1,8 +1,48 @@
 import { render, screen } from "@testing-library/react";
-import { DirectionStep, DIRECTION_TYPES } from "./DirectionStep";
+import {
+  DirectionStep,
+  DIRECTION_TYPES,
+  DIRECTION_ICONS,
+} from "./DirectionStep";
+import { ArrowUp, ArrowDown } from "@kozmos-ds/icons";
 import { describe, it, expect } from "vitest";
 
 describe("DirectionStep", () => {
+  it("distinguishes transport and travel direction instead of substituting arrows", () => {
+    const icons = [
+      "lift-up",
+      "lift-down",
+      "stairs-up",
+      "stairs-down",
+      "escalator-up",
+      "escalator-down",
+    ].map((type) => DIRECTION_ICONS[type as keyof typeof DIRECTION_ICONS]);
+    expect(new Set(icons).size).toBe(6);
+    expect(icons).not.toContain(ArrowUp);
+    expect(icons).not.toContain(ArrowDown);
+    expect(DIRECTION_TYPES).toContain("walking");
+    expect(DIRECTION_TYPES).toContain("ramp-up");
+    expect(DIRECTION_TYPES).toContain("enter");
+  });
+  it.each([
+    [undefined, "2 min", "2 min"],
+    ["50 m", undefined, "50 m"],
+    ["50 m", "2 min", "50 m • 2 min"],
+    ["", "0 min", "0 min"],
+  ])("joins only provided metrics (%s, %s)", (distance, duration, expected) => {
+    const { container } = render(
+      <DirectionStep
+        type="left"
+        instruction="Turn left"
+        distance={distance}
+        duration={duration}
+      />,
+    );
+    expect(container.querySelectorAll("p")[1].textContent?.trim()).toBe(
+      expected,
+    );
+  });
+
   it("renders instruction and distance", () => {
     render(
       <DirectionStep type="left" instruction="Turn left" distance="50m" />,
