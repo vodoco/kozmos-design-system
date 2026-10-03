@@ -110,7 +110,7 @@ const RoutingInputGroup = React.forwardRef<
         </div>
 
         {/* Inputs List */}
-        <div className="flex flex-col gap-3 grow">
+        <div className="min-w-0 flex flex-col gap-3 grow">
           {points.map((point, index) => (
             <div key={point.id} className="flex items-center gap-2">
               {/* A field keeps the control radius and the standard focus ring,
@@ -141,7 +141,7 @@ const RoutingInputGroup = React.forwardRef<
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-10 h-10 shrink-0 text-muted-foreground hover:text-destructive-text"
+                    className="w-11 h-11 shrink-0 text-muted-foreground hover:text-destructive-text"
                     onClick={() => handleRemove(point.id)}
                     aria-label={removePointLabel(point)}
                   >
@@ -158,7 +158,7 @@ const RoutingInputGroup = React.forwardRef<
             <Button
               variant="ghost"
               size="icon"
-              className="w-10 h-10 mt-6 shrink-0 bg-secondary hover:bg-secondary/80 text-foreground"
+              className="w-11 h-11 mt-6 shrink-0 bg-secondary hover:bg-secondary/80 text-foreground"
               onClick={handleSwap}
               aria-label={swapLabel}
             >
@@ -170,7 +170,7 @@ const RoutingInputGroup = React.forwardRef<
               variant="ghost"
               size="icon"
               className={cn(
-                "w-10 h-10 shrink-0 text-muted-foreground",
+                "w-11 h-11 shrink-0 text-muted-foreground",
                 points.length === 2 ? "mt-5" : "mt-0",
               )}
               onClick={handleAdd}

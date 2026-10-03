@@ -2,11 +2,13 @@ import SwiftUI
 
 public struct KozmosWayfindingCard<Content: View>: View {
     let title: String
+    let closeLabel: String
     let onClose: (() -> Void)?
     let content: Content
     
-    public init(title: String = "Navigation", onClose: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
+    public init(title: String = "Navigation", closeLabel: String = "Close navigation", onClose: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
+        self.closeLabel = closeLabel
         self.onClose = onClose
         self.content = content()
     }
@@ -21,7 +23,11 @@ public struct KozmosWayfindingCard<Content: View>: View {
                     Button(action: onClose) {
                         Image(systemName: "xmark")
                             .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(closeLabel)
                 }
             }
             .padding()
@@ -104,7 +110,7 @@ public struct KozmosWayfindingInputRow: View {
                     Image(systemName: "arrow.up.arrow.down")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(KozmosColors.primitivesColorsForeground0)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 44, height: 44)
                         .background(
                             Circle()
                                 .fill(KozmosColors.primitivesColorsBackground200)
@@ -122,7 +128,7 @@ public struct KozmosWayfindingInputRow: View {
 }
 
 /// One of the row's fields: 40 high, the control radius, 12 in from the start
-/// and 48 from the end so the text clears the swap button, the raised shadow
+/// and 64 from the end so the text clears the swap button, the raised shadow
 /// and no border. Focus draws React's 1 pt ring in the accent, 2 pt out.
 ///
 /// The fill is background/50, opaque. React washes the field in muted at half,
@@ -149,7 +155,7 @@ private struct KozmosWayfindingField: View {
         .focused($focused)
         .accessibilityLabel(label)
         .padding(.leading, 12)
-        .padding(.trailing, 48)
+        .padding(.trailing, 64)
         .frame(height: 40)
         .background(
             RoundedRectangle(cornerRadius: radius)

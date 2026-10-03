@@ -8,6 +8,35 @@ import Darwin
 
 final class KozmosNavigationSelectionTests: XCTestCase {
     #if os(iOS)
+    @MainActor func testRoutingActionsHaveReal44PointTargets() async throws {
+        let points = [KozmosRoutePoint(id: "a", value: "Lobby"), KozmosRoutePoint(id: "b", value: "Gallery")]
+        let group = KozmosRoutingInputGroup(points: points, onPointChange: { _, _ in }, onSwap: {}, onAddPoint: {})
+        try await inspect(group) { tree in
+            for name in ["Swap route points", "Add route point"] {
+                let button = try XCTUnwrap(tree.first { $0.accessibilityLabel == name })
+                XCTAssertGreaterThanOrEqual(button.accessibilityFrame.width, 44, name)
+                XCTAssertGreaterThanOrEqual(button.accessibilityFrame.height, 44, name)
+            }
+        }
+        let row = KozmosWayfindingInputRow(originValue: .constant("Lobby"), destinationValue: .constant("Gallery"), onSwap: {})
+        try await inspect(row) { tree in
+            let button = try XCTUnwrap(tree.first { $0.accessibilityLabel == "Swap origin and destination" })
+            XCTAssertGreaterThanOrEqual(button.accessibilityFrame.width, 44)
+            XCTAssertGreaterThanOrEqual(button.accessibilityFrame.height, 44)
+        }
+        try await inspect(KozmosWayfindingCard(onClose: {}) { Text("Route") }) { tree in
+            let button = try XCTUnwrap(tree.first { $0.accessibilityTraits.contains(.button) })
+            XCTAssertGreaterThanOrEqual(button.accessibilityFrame.width, 44)
+            XCTAssertGreaterThanOrEqual(button.accessibilityFrame.height, 44)
+        }
+        let stops = [points[0], KozmosRoutePoint(id: "stop", value: "Cafe", label: "Stop"), points[1]]
+        try await inspect(KozmosRoutingInputGroup(points: stops, onPointChange: { _, _ in }, onRemovePoint: { _ in })) { tree in
+            let button = try XCTUnwrap(tree.first { $0.accessibilityLabel == "Remove Stop" })
+            XCTAssertGreaterThanOrEqual(button.accessibilityFrame.width, 44)
+            XCTAssertGreaterThanOrEqual(button.accessibilityFrame.height, 44)
+        }
+    }
+
     @MainActor func testAmbiguousRouteSnapshotsDisableContinuation() async throws {
         func option(_ id: String, selected: Bool) -> KozmosRouteOptionPresentation {
             .init(id: id, label: id, durationSeconds: 60, durationLabel: "1 min", distanceMetres: 10, distanceLabel: "10 m", preference: .quickest, selected: selected)

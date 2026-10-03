@@ -36,7 +36,7 @@
     "test:storybook-audit": "node scripts/audit-storybook.mjs",
     "test:storybook-interactions": "node scripts/check-storybook-interactions.mjs",
     "test:poi-details": "node scripts/check-poi-detail-examples.mjs",
-    "test:navigation": "node scripts/check-navigation-examples.mjs",
+    "test:navigation": "node scripts/check-navigation-examples.mjs && node scripts/check-routing-targets.mjs",
     "test:map-sheet": "node scripts/check-map-sheet.mjs",
     "test:search-sheet": "node scripts/check-search-sheet.mjs",
     "test:poi-gallery": "node scripts/check-poi-gallery.mjs",

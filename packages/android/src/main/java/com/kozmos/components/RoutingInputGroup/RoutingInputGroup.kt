@@ -212,7 +212,7 @@ private fun RouteTimeline(points: List<KozmosRoutePoint>) {
 }
 
 /**
- * One of the group's 40 icon actions, with the control radius. `filled` is the
+ * One of the group's 48dp icon actions, with the control radius. `filled` is the
  * swap's secondary fill with the page ink; the others are ghost in the muted
  * foreground, as React's are.
  */
@@ -228,7 +228,7 @@ private fun RoutingAction(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(40.dp)
+            .size(48.dp)
             .clip(shape)
             .background(if (filled) KozmosThemeTokens.primitivesColorsBackground200 else Color.Transparent, shape)
             .clickable(role = Role.Button, onClickLabel = label, onClick = onClick)

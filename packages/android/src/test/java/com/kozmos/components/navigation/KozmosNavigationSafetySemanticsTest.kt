@@ -19,9 +19,37 @@ import com.kozmos.contracts.KozmosRouteReadiness
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
+import androidx.compose.ui.platform.LocalDensity
+import com.kozmos.components.wayfindingcard.KozmosWayfindingInputRow
 
 class KozmosNavigationSafetySemanticsTest {
     @get:Rule val paparazzi = semanticsPaparazzi()
+
+    @Test fun routingActionsHaveReal48DpTargets() {
+        var density = 1f
+        val points = listOf(KozmosRoutePoint("a", "Lobby"), KozmosRoutePoint("b", "Gallery"))
+        val group = paparazzi.readSemantics { MaterialTheme {
+            density = LocalDensity.current.density
+            KozmosRoutingInputGroup(points, { _, _ -> }, onSwap = {}, onAddPoint = {})
+        } }
+        for (name in listOf("Swap route points", "Add route point")) {
+            val button = group.named(name)
+            assertTrue("$name width ${button.bounds.width / density}", button.bounds.width / density >= 48f)
+            assertTrue("$name height ${button.bounds.height / density}", button.bounds.height / density >= 48f)
+        }
+        val row = paparazzi.readSemantics { MaterialTheme {
+            KozmosWayfindingInputRow("Lobby", {}, "Gallery", {}, {})
+        } }
+        val swap = row.named("Swap origin and destination")
+        assertTrue(swap.bounds.width / density >= 48f)
+        assertTrue(swap.bounds.height / density >= 48f)
+        val stops = paparazzi.readSemantics { MaterialTheme {
+            KozmosRoutingInputGroup(listOf(points[0], KozmosRoutePoint("stop", "Cafe", label = "Stop"), points[1]), { _, _ -> }, onRemovePoint = {})
+        } }
+        val remove = stops.named("Remove Stop")
+        assertTrue(remove.bounds.width / density >= 48f)
+        assertTrue(remove.bounds.height / density >= 48f)
+    }
 
     @Test fun unknownRailDoesNotAnnounceZeroAndAcceptsLocalizedDescription() {
         val tree = paparazzi.readSemantics { MaterialTheme {

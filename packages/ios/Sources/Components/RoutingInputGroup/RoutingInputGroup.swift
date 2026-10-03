@@ -146,7 +146,7 @@ public struct KozmosRoutingInputGroup: View {
         .accessibilityHidden(true)
     }
 
-    /// One of the group's 40 icon actions, with the control radius. `filled`
+    /// One of the group's 44-point icon actions, with the control radius. `filled`
     /// is the swap's secondary fill with the page ink; the others are ghost in
     /// the muted foreground, as React's are.
     private func iconAction(systemName: String, label: String, filled: Bool, action: @escaping () -> Void) -> some View {
@@ -155,7 +155,7 @@ public struct KozmosRoutingInputGroup: View {
                 .font(.system(size: 13, weight: .semibold))
                 .frame(width: 16, height: 16)
                 .foregroundColor(filled ? KozmosColors.primitivesColorsForeground0 : KozmosColors.primitivesColorsForeground400)
-                .frame(width: 40, height: 40)
+                .frame(width: 44, height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
                         .fill(filled ? KozmosColors.primitivesColorsBackground200 : Color.clear)
