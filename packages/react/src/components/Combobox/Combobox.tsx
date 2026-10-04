@@ -93,6 +93,19 @@ function firstEnabledIndex(options: { disabled?: boolean }[]) {
   return options.findIndex((option) => !option.disabled);
 }
 
+/**
+ * The entry made active for the visitor, as the popup opens or the query
+ * changes: the first option that can be chosen, never a command. A command
+ * runs only when the visitor moves to it, or Enter on text that matches
+ * nothing would run "Current position" or "Select from map" in its place.
+ */
+function firstAutomaticKey(entries: PopupEntry[]) {
+  const first = entries.find(
+    (entry) => entry.kind === "value" && !entry.disabled,
+  );
+  return first ? entryKey(first) : null;
+}
+
 export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
   (
     {
@@ -184,10 +197,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       ],
       [filteredOptions, validActions],
     );
-    const [activeKey, setActiveKey] = React.useState<string | null>(() => {
-      const first = entries[firstEnabledIndex(entries)];
-      return first ? entryKey(first) : null;
-    });
+    const [activeKey, setActiveKey] = React.useState<string | null>(() =>
+      firstAutomaticKey(entries),
+    );
     const activeIndex = entries.findIndex(
       (entry) => !entry.disabled && entryKey(entry) === activeKey,
     );
@@ -256,8 +268,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
           )
         )
           return previous;
-        const first = entries[firstEnabledIndex(entries)];
-        return first ? entryKey(first) : null;
+        return firstAutomaticKey(entries);
       });
     }, [entries, visibleInputValue]);
 
@@ -387,7 +398,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
                   event.defaultPrevented ||
                   disabled ||
                   readOnly ||
-                  event.nativeEvent.isComposing
+                  event.nativeEvent.isComposing ||
+                  // Safari's Enter that commits a composition: isComposing
+                  // is already false, keyCode is still 229.
+                  event.nativeEvent.keyCode === 229
                 )
                   return;
                 if (event.key === "ArrowDown") {

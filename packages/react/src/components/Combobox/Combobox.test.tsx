@@ -126,6 +126,65 @@ describe("Combobox", () => {
     expect(oldAction).not.toHaveBeenCalled();
   });
 
+  it("never runs a command for Enter on text that matches nothing", async () => {
+    // Commands are picked, never chosen for the visitor: Enter after typing
+    // a place that matches nothing ran the first command ("Current
+    // position", "Select from map") in its place.
+    const user = userEvent.setup();
+    const onAction = vi.fn();
+    const onValueChange = vi.fn();
+    render(
+      <Combobox
+        options={options}
+        onValueChange={onValueChange}
+        popupActions={[{ id: "map", label: "Select from map", onAction }]}
+      />,
+    );
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "Gate 99");
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+    await user.keyboard("{Enter}");
+    expect(onAction).not.toHaveBeenCalled();
+    expect(onValueChange).not.toHaveBeenCalled();
+    // A command is still reached by moving to it.
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(onAction).toHaveBeenCalledOnce();
+  });
+
+  it("makes the first matching option active as the query changes, not a command", async () => {
+    const user = userEvent.setup();
+    render(
+      <Combobox
+        options={options}
+        popupActions={[
+          { id: "map", label: "Select from map", onAction: vi.fn() },
+        ]}
+      />,
+    );
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "Det");
+    expect(input).toHaveAttribute(
+      "aria-activedescendant",
+      screen.getByRole("option", { name: "Details" }).id,
+    );
+  });
+
+  it("does not choose on the Enter that commits an IME composition in Safari", async () => {
+    // Safari reports that Enter with isComposing false but keyCode 229.
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(<Combobox options={options} onValueChange={onValueChange} />);
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "Det");
+    fireEvent.keyDown(input, { key: "Enter", keyCode: 229 });
+    expect(onValueChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onValueChange).toHaveBeenCalledOnce();
+  });
+
   it("keeps an active value by identity on reorder and falls back when disabled or filtered", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<Combobox options={options} />);

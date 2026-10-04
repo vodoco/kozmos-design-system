@@ -79,6 +79,16 @@ try {
           });
           await current.waitFor();
           assert.equal(await page.getByRole("option").count(), 2);
+          // Enter on typed text that matches nothing chooses nothing: a
+          // command is picked by the visitor, never chosen for them.
+          assert.equal(await input.getAttribute("aria-activedescendant"), null);
+          await input.press("Enter");
+          assert.equal(
+            await page.getByRole("combobox", { name: "From" }).count(),
+            1,
+            "Enter on an unmatched place left the endpoint unresolved",
+          );
+          await current.waitFor();
           for (const dir of ["ltr", "rtl"]) {
             await page.evaluate((direction) => {
               document.documentElement.dir = direction;

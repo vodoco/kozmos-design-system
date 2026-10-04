@@ -1,4 +1,6 @@
+import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RouteLocationField } from "./RouteLocationField";
 import { AnalyticsProvider } from "../../utils/analytics";
@@ -189,6 +191,33 @@ describe("RouteLocationField", () => {
     expect(
       screen.queryByRole("option", { name: "Current position" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("does not turn Enter on an unmatched place into the current position", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const onChooseMap = vi.fn();
+    const position = { value: "fix-1", label: "Current position" };
+    function Host() {
+      const [query, setQuery] = React.useState("");
+      return (
+        <RouteLocationField
+          {...props}
+          query={query}
+          onQueryChange={setQuery}
+          currentPosition={position}
+          onChooseMap={onChooseMap}
+          onSelect={onSelect}
+        />
+      );
+    }
+    render(<Host />);
+    const input = screen.getByRole("combobox");
+    await user.click(input);
+    await user.type(input, "Gate 99");
+    await user.keyboard("{Enter}");
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(onChooseMap).not.toHaveBeenCalled();
   });
 
   it("selects the exact suggestion with its secondary location context", () => {
