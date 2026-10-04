@@ -62,7 +62,9 @@ try {
       .boundingBox();
     assert.ok(box.y + box.height <= zoom.y, "floor selector is above zoom");
     await tile.focus();
-    await page.getByRole("tooltip").waitFor();
+    // The full-name hint is visual, hidden from assistive technology, so
+    // found by Radix's copy rather than by role.
+    await page.locator('[role="tooltip"]').waitFor();
     await tile.click();
     const list = page.getByRole("dialog", { name: "Floor selector" });
     await list.waitFor();
