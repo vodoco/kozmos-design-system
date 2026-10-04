@@ -150,8 +150,11 @@ final class InteractionTests: XCTestCase {
         XCTAssertTrue(command.isHittable)
         command.tap()
         received("map")
+        // Replacing a long list updates the measured ScrollView height on a
+        // later layout pass. Wait for the command's actual hit area to settle,
+        // independently of the synchronous callback report above.
+        XCTAssertTrue(command.wait(for: \.isHittable, toEqual: true, timeout: 3))
         XCTAssertLessThan(popup.frame.height, 256)
-        XCTAssertTrue(command.isHittable)
         XCTAssertTrue(app.staticTexts["No matches"].exists)
     }
 
@@ -318,10 +321,14 @@ final class InteractionTests: XCTestCase {
     }
 
     private func received(_ value: String, file: StaticString = #filePath, line: UInt = #line) {
-        let predicate = NSPredicate(format: "label == %@", value)
-        let result = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate,
-                                                                   object: app.staticTexts["received-events"])], timeout: 3)
-        XCTAssertEqual(result, .completed, "callbacks: \(app.staticTexts["received-events"].label)", file: file, line: line)
+        // These fixture callbacks are synchronous; XCUI actions synchronize with
+        // the app before the next accessibility query. Compare one snapshot,
+        // including callback order and duplicates, rather than placing a second
+        // three-second polling deadline around a potentially slow AX read.
+        // Asynchronous fixture work needs its own completion signal, not retries
+        // here that could accept an initially incorrect callback report.
+        let actual = app.staticTexts["received-events"].label
+        XCTAssertEqual(actual, value, "callbacks", file: file, line: line)
     }
 
     func testMapControlRegionsHaveNamesAndKeepChildActions() {
