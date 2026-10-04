@@ -38,6 +38,16 @@ try {
       await dialog.waitFor();
       await settleLayout(page);
       const bounds = await dialog.boundingBox();
+      assert.equal(
+        await dialog.getByText("About this map", { exact: true }).count(),
+        1,
+        "the dialog's name is its visible heading, with no hidden copy",
+      );
+      assert.equal(
+        await dialog.getByRole("region").count(),
+        0,
+        "the panel does not repeat the dialog's name as a landmark",
+      );
       assert.ok(
         await page
           .getByRole("button", { name: "Close information" })
@@ -159,6 +169,16 @@ try {
         assert.ok(
           await dialog.isVisible(),
           "desktop info remains open while browsing",
+        );
+        await page.keyboard.press("Escape");
+        await settleLayout(page);
+        assert.ok(
+          await dialog.isVisible(),
+          "Escape in the map's search leaves desktop info open",
+        );
+        assert.ok(
+          await search.evaluate((node) => node === document.activeElement),
+          "and leaves focus in the search",
         );
         await faq.focus();
       }

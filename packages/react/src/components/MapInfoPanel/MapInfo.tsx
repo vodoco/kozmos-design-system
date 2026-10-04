@@ -5,8 +5,12 @@ import { MapControlButton } from "../MapControlButton";
 import { createThemePortal } from "../../theme/ThemePortal";
 import { cn } from "../../utils";
 import { MapInfoPanel, type MapInfoPanelProps } from "./MapInfoPanel";
+import { MapInfoDialogTitle } from "./map-info-title";
 
 const Portal = createThemePortal(Dialog.Portal);
+const DialogHeading = ({ children }: { children: React.ReactElement }) => (
+  <Dialog.Title asChild>{children}</Dialog.Title>
+);
 const useLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 export interface MapInfoProps extends Omit<
@@ -44,6 +48,7 @@ export const MapInfo = React.forwardRef<HTMLDivElement, MapInfoProps>(
     const root = React.useRef<HTMLDivElement>(null);
     const trigger = React.useRef<HTMLButtonElement>(null);
     const close = React.useRef<HTMLButtonElement>(null);
+    const pane = React.useRef<HTMLDivElement>(null);
     const [wide, setWide] = React.useState(false);
     const [faq, setFAQ] = React.useState("");
     const shown = open && available;
@@ -94,6 +99,7 @@ export const MapInfo = React.forwardRef<HTMLDivElement, MapInfoProps>(
           <Portal container={wide ? root.current : undefined}>
             {!wide && <Dialog.Overlay className="kozmos-map-info-backdrop" />}
             <Dialog.Content
+              ref={pane}
               className="kozmos-map-info-dialog"
               data-presentation={wide ? "side" : "full-screen"}
               aria-modal={wide ? undefined : true}
@@ -104,22 +110,37 @@ export const MapInfo = React.forwardRef<HTMLDivElement, MapInfoProps>(
               }}
               onCloseAutoFocus={(event) => {
                 event.preventDefault();
+                // Focus that was in the closed pane is now on the page body.
+                // Focus anywhere else is the visitor's: leave it there.
+                const active = document.activeElement;
+                if (active && active !== document.body) return;
                 (trigger.current ?? root.current)?.focus();
+              }}
+              onEscapeKeyDown={(event) => {
+                // Beside the map the pane is not modal: an Escape typed in the
+                // map's search or controls is theirs, not a request to close.
+                const active = document.activeElement;
+                if (
+                  wide &&
+                  active &&
+                  active !== document.body &&
+                  !pane.current?.contains(active)
+                )
+                  event.preventDefault();
               }}
               onInteractOutside={(event) => {
                 if (wide) event.preventDefault();
               }}
             >
-              <Dialog.Title asChild>
-                <span className="sr-only">{panelProps.content.title}</span>
-              </Dialog.Title>
-              <MapInfoPanel
-                {...panelProps}
-                closeButtonRef={close}
-                expandedFAQ={faq}
-                onExpandedFAQChange={setFAQ}
-                onClose={() => onOpenChange(false)}
-              />
+              <MapInfoDialogTitle.Provider value={DialogHeading}>
+                <MapInfoPanel
+                  {...panelProps}
+                  closeButtonRef={close}
+                  expandedFAQ={faq}
+                  onExpandedFAQChange={setFAQ}
+                  onClose={() => onOpenChange(false)}
+                />
+              </MapInfoDialogTitle.Provider>
             </Dialog.Content>
           </Portal>
         </div>
