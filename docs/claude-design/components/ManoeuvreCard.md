@@ -81,13 +81,15 @@ the product.
 
 It forwards its ref to `HTMLElement`. Its props are `ManoeuvreCardProps`, which extends `Omit<React.HTMLAttributes<HTMLElement>, "children">`.
 
-- `appearance`: `"theme" | "background"`, optional, default `"theme"`.
+- `appearance`: `"theme" | "background"`, optional.
 
-  Theme-filled by default. Background restores the neutral solid/glass presentation.
+  Theme-filled by default. Background restores the neutral solid/glass
+  presentation, and is what a caller that sets `surface` gets unless it
+  also sets an appearance.
 
-- `surface`: `SurfaceVariant`, optional, default `"solid"`.
+- `surface`: `SurfaceVariant`, optional.
 
-  Material for background appearance only: solid by default. Theme appearance stays opaque.
+  Material for background appearance: solid by default. Setting it asks for background.
 
 - `type`: `DirectionType`, **required**.
 - `instruction`: `Instruction`, **required**.

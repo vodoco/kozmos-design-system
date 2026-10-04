@@ -96,7 +96,11 @@ type SurfaceVariant = "solid" | "glass";
     durationText?: string;
     /** Decorative destination image; failures retain a same-size map-pin fallback. */
     destinationImage?: string;
-    /** Hosted content has no independent surface, radius, shadow or outer padding. */
+    /**
+     * Hosted content has no independent surface, radius, shadow or outer
+     * padding. Unset, it is hosted in the map shell's panel and standalone
+     * anywhere else (decision 43).
+     */
     presentation?: "standalone" | "hosted";
     arrivalText?: string;
     endLabel?: string;
