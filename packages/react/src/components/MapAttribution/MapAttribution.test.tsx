@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MapAttribution } from "./MapAttribution";
 
 const credits = [
@@ -87,5 +87,32 @@ describe("MapAttribution", () => {
       <MapAttribution credits={[]} showBrand={false} />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+  describe("the credit line", () => {
+    afterEach(() => vi.restoreAllMocks());
+    const scroller = (container: HTMLElement) =>
+      container.querySelector<HTMLElement>(".kozmos-map-attribution-scroll")!;
+
+    it("adds no tab stop while it fits", () => {
+      const { container } = render(<MapAttribution credits={credits} />);
+      expect(scroller(container)).toHaveAttribute("tabindex", "-1");
+      expect(scroller(container)).not.toHaveAttribute("role");
+    });
+
+    it("is a named tab stop when it overflows, so a keyboard can scroll it", () => {
+      vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(
+        400,
+      );
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(
+        200,
+      );
+      const { container } = render(
+        <MapAttribution credits={credits} label="Credits" />,
+      );
+      expect(scroller(container)).toHaveAttribute("tabindex", "0");
+      expect(screen.getByRole("group", { name: "Credits" })).toBe(
+        scroller(container),
+      );
+    });
   });
 });

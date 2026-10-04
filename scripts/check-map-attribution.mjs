@@ -87,11 +87,22 @@ try {
     }
     // WebKit's default keyboard preference skips links on Tab; Option-Tab
     // is its native navigation gesture for all interactive elements.
-    await region.locator(".kozmos-map-attribution-scroll").focus();
-    await page.keyboard.press(
-      browser.browserType().name() === "webkit" ? "Alt+Tab" : "Tab",
+    const tab = browser.browserType().name() === "webkit" ? "Alt+Tab" : "Tab";
+    const scroll = region.locator(".kozmos-map-attribution-scroll");
+    assert.equal(
+      await scroll.getAttribute("tabindex"),
+      "-1",
+      "a credit line that fits is out of the tab order",
     );
     const link = page.getByRole("link");
+    // From the link, back one stop: nothing in the attribution before it.
+    await link.focus();
+    await page.keyboard.press(`Shift+${tab}`);
+    assert.ok(
+      await scroll.evaluate((node) => node !== document.activeElement),
+      "the credit line is not a stop before its link",
+    );
+    await link.focus();
     assert.ok(
       await link.evaluate((node) => node === document.activeElement),
       "credit link is keyboard reachable",
@@ -120,6 +131,14 @@ try {
     assert.ok(
       fits,
       "long credit at 200% text stays on one scalable, horizontally scrollable line",
+    );
+    await link.focus();
+    await page.keyboard.press(`Shift+${tab}`);
+    assert.ok(
+      await region
+        .getByRole("group", { name: "Map attribution" })
+        .evaluate((node) => node === document.activeElement),
+      "an overflowing credit line is a named stop a keyboard can scroll",
     );
     await link.focus();
     assert.ok(

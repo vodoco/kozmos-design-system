@@ -23,6 +23,9 @@ export interface MapAttributionProps extends React.HTMLAttributes<HTMLElement> {
   label?: string;
 }
 
+const useLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+
 function safeLink(href?: string): string | undefined {
   if (!href) return undefined;
   try {
@@ -64,7 +67,27 @@ export const MapAttribution = React.forwardRef<
     ref,
   ) => {
     const visibleBrand = showBrand && brand != null && brand !== false;
-    if (!visibleBrand && credits.length === 0) return null;
+    const hasCredits = credits.length > 0;
+    // The credits are one line that scrolls sideways when it is longer than
+    // the space. Only then is it a tab stop, so that a keyboard can scroll it;
+    // a line that fits would be an unnamed stop that does nothing. It is taken
+    // out explicitly, since Firefox makes any scroll box with overflow a stop,
+    // and the line's underline ink overflows it by a pixel.
+    const scrollRef = React.useRef<HTMLDivElement>(null);
+    const [overflows, setOverflows] = React.useState(false);
+    useLayoutEffect(() => {
+      const node = scrollRef.current;
+      if (!node) return;
+      const measure = () =>
+        setOverflows(node.scrollWidth > node.clientWidth + 1);
+      measure();
+      if (typeof ResizeObserver === "undefined") return;
+      const sizes = new ResizeObserver(measure);
+      sizes.observe(node);
+      if (node.firstElementChild) sizes.observe(node.firstElementChild);
+      return () => sizes.disconnect();
+    }, [hasCredits]);
+    if (!visibleBrand && !hasCredits) return null;
     return (
       <section
         ref={ref}
@@ -79,16 +102,19 @@ export const MapAttribution = React.forwardRef<
       >
         {visibleBrand && (
           <div
-            className={cn(
-              "flex min-w-0 justify-center",
-              credits.length > 0 && "mb-1",
-            )}
+            className={cn("flex min-w-0 justify-center", hasCredits && "mb-1")}
           >
             {brand}
           </div>
         )}
-        {credits.length > 0 && (
-          <div className="kozmos-map-attribution-scroll" tabIndex={0}>
+        {hasCredits && (
+          <div
+            ref={scrollRef}
+            className="kozmos-map-attribution-scroll"
+            {...(overflows
+              ? { tabIndex: 0, role: "group", "aria-label": label }
+              : { tabIndex: -1 })}
+          >
             <ul className="m-0 flex w-max min-w-full list-none items-center justify-center gap-x-1 p-0">
               {credits.map((credit) => {
                 const href = safeLink(credit.href);
