@@ -756,16 +756,25 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     let cornersAvailable = bottomControlsHeight <= band && band > 0
                     let popupFitsBelowPanel = belowPanelBounds.height >= bottomControlsHeight + gap * 10
                     KozmosBottomControlsLayout {
-                        controlsBottomStart
-                            .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
-                                bounds: hasPanel && isRegularWidth && panelPlacement == .start && popupFitsBelowPanel ? belowPanelBounds : popupBounds,
-                                available: cornersAvailable))
-                            .background(GeometryReader { p in Color.clear.preference(key: KozmosBottomCornerWidthsKey.self, value: [0: p.size.width]) })
-                        controlsBottomEnd
-                            .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
-                                bounds: hasPanel && isRegularWidth && panelPlacement == .end && popupFitsBelowPanel ? belowPanelBounds : popupBounds,
-                                available: cornersAvailable))
-                            .background(GeometryReader { p in Color.clear.preference(key: KozmosBottomCornerWidthsKey.self, value: [1: p.size.width]) })
+                        // A stack per corner, as Compose has a Box: the layout
+                        // tells the corners apart by place, and a corner with
+                        // nothing in it (`EmptyView`, an `if` that is false) is
+                        // no subview on its own. A stack is one whatever it
+                        // holds, and measures nothing when it holds nothing.
+                        ZStack {
+                            controlsBottomStart
+                                .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
+                                    bounds: hasPanel && isRegularWidth && panelPlacement == .start && popupFitsBelowPanel ? belowPanelBounds : popupBounds,
+                                    available: cornersAvailable))
+                                .background(GeometryReader { p in Color.clear.preference(key: KozmosBottomCornerWidthsKey.self, value: [0: p.size.width]) })
+                        }
+                        ZStack {
+                            controlsBottomEnd
+                                .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
+                                    bounds: hasPanel && isRegularWidth && panelPlacement == .end && popupFitsBelowPanel ? belowPanelBounds : popupBounds,
+                                    available: cornersAvailable))
+                                .background(GeometryReader { p in Color.clear.preference(key: KozmosBottomCornerWidthsKey.self, value: [1: p.size.width]) })
+                        }
                     }
                     .frame(width: max(0, geometry.size.width - safeArea.leading - safeArea.trailing - gap * 2))
                     .fixedSize(horizontal: false, vertical: true)
