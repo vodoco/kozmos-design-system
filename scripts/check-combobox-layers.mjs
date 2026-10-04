@@ -39,19 +39,35 @@ try {
           await trigger.press("Enter");
           const field = page.getByRole("combobox");
           await field.click();
-          await page
-            .locator("[data-combobox-popup]")
-            .waitFor({ state: "attached" });
-          if (mode !== "status")
-            await expect(page.locator("[data-combobox-popup]")).toBeVisible();
           if (mode === "status") {
+            // Only a status, already shown once as the field's helper text:
+            // the open popup has nothing to show, so it is not drawn, takes no
+            // layer, and the first Escape is the parent's.
             await expect(
               page.getByText("Locations unavailable", { exact: true }),
             ).toHaveCount(1);
             await expect(field).toHaveAccessibleDescription(
               "Locations unavailable",
             );
+            await expect(page.locator("[data-combobox-popup]")).toHaveCount(0);
+            await page.keyboard.press("Escape");
+            await page.waitForFunction(
+              () =>
+                document.querySelector("[data-close-count]")?.textContent ===
+                "1",
+            );
+            await expect(
+              trigger,
+              `${host}/${layout}/${mode}: parent restores trigger focus`,
+            ).toBeFocused();
+            console.log(`PASS ${host}/${layout}/${mode}`);
+            count++;
+            continue;
           }
+          await page
+            .locator("[data-combobox-popup]")
+            .waitFor({ state: "attached" });
+          await expect(page.locator("[data-combobox-popup]")).toBeVisible();
           if (mode === "toggle") await field.press("Tab");
           if (mode === "ime")
             await field.dispatchEvent("keydown", {
