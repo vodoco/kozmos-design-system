@@ -69,8 +69,10 @@ public struct KozmosIcon: View {
 
     public var body: some View {
         Group {
-            if let glyph = KozmosPointrGlyph.named(Self.resolvedIconName(name)) {
-                // SF Symbols has nothing for this name: Pointr's own outline.
+            if let glyph = KozmosPointrGlyph.named(Self.resolvedIconName(name))
+                ?? KozmosPointrGlyph.navigationArtwork(Self.resolvedIconName(name)) {
+                // SF Symbols has nothing for this name: Pointr's own outline,
+                // or the navigation artwork a product opts into by name.
                 glyph.stroke(style: KozmosPointrGlyph.style(size: size.pointSize))
                     // These are physical symbols, not logical forward/back arrows.
                     .environment(\.layoutDirection, .leftToRight)

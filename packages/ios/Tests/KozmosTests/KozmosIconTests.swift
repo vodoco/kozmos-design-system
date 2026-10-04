@@ -61,4 +61,38 @@ final class KozmosIconTests: XCTestCase {
         let spine = try XCTUnwrap(drawn.boundingBox(in: row, where: { _, _, _, a in a > 128 }), "no spine was drawn")
         XCTAssertEqual(spine.width, 2 * size / 24, accuracy: 0.5, "the spine is \(spine.width) across at \(size)")
     }
+
+    /// The direction marks' Pointr icons are names a product can draw too,
+    /// each Pointr's own outline rather than the stand-in.
+    @MainActor func testTheDirectionMarksArePointrIconsByName() throws {
+        let standIn = try DrawnPixels.draw(KozmosIcon("no-such-kozmos-name", size: .xl), scale: 3)
+        for name in ["log-in-01", "log-out-01", "arrow-up-right", "arrow-down-right"] {
+            XCTAssertNotNil(KozmosPointrGlyph.named(name), "\(name) is not drawn from Pointr's outline")
+            let drawn = try DrawnPixels.draw(KozmosIcon(name, size: .xl), scale: 3)
+            XCTAssertNotEqual(drawn.largestDifference(from: standIn), 0, "\(name) draws the stand-in")
+        }
+    }
+
+    /// The original navigation artwork awaits design approval (D5): no
+    /// direction draws it, and a product opts in by the names
+    /// `@kozmos-ds/icons` exports it under.
+    @MainActor func testTheOriginalNavigationArtworkIsOptInByName() throws {
+        let names = [
+            "elevator-up": "lift-up", "elevator-down": "lift-down", "stairs-up": "stairs-up", "stairs-down": "stairs-down",
+            "escalator-up": "escalator-up", "escalator-down": "escalator-down", "ramp-up": "ramp-up", "ramp-down": "ramp-down",
+            "route-enter": "enter", "route-exit": "exit",
+        ]
+        let size = KozmosIconSize.xl.pointSize
+        for (name, kind) in names {
+            let artwork = try XCTUnwrap(KozmosNavigationGlyphPaths.path(kind), "no artwork for \(kind)")
+            // The artwork as the icon draws an outline: stroked 2 on the grid, in the default colour.
+            let expected = try DrawnPixels.draw(
+                KozmosPointrGlyph(runs: [], canonicalPath: artwork).stroke(style: KozmosPointrGlyph.style(size: size))
+                    .foregroundColor(KozmosColors.primitivesColorsForeground100).frame(width: size, height: size), scale: 3)
+            let drawn = try DrawnPixels.draw(KozmosIcon(name, size: .xl), scale: 3)
+            XCTAssertEqual(drawn.largestDifference(from: expected), 0, "\(name) is not the \(kind) artwork")
+            let rtl = try DrawnPixels.draw(KozmosIcon(name, size: .xl).environment(\.layoutDirection, .rightToLeft), scale: 3)
+            XCTAssertEqual(drawn.largestDifference(from: rtl), 0, "\(name) mirrors right to left")
+        }
+    }
 }

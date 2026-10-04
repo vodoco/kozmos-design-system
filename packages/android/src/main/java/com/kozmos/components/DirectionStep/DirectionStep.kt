@@ -20,7 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.DirectionsWalk
-import com.kozmos.utils.KozmosNavigationGlyphs
+import com.kozmos.components.icon.KozmosPointrGlyphs
 import androidx.compose.material.icons.filled.UTurnLeft
 import androidx.compose.material.icons.filled.ArrowRightAlt
 import androidx.compose.material.icons.filled.LocationOn
@@ -53,29 +53,27 @@ fun KozmosDirectionStep(
  * The arrow for a direction, one table for every part that draws one.
  * Turn icons must NOT auto-mirror: "turn left" stays a physical left turn
  * in RTL locales. Only reading-order affordances (back, forward, chevrons)
- * belong to Icons.AutoMirrored. Transport/ramp/entry drawings use the same
- * original Kozmos vector source as web and Swift; the words remain authoritative.
+ * belong to Icons.AutoMirrored. Only approved marks (D5, 2026-10-04): a level
+ * change by any means shows the up or down arrow main drew, and the words
+ * name the lift, escalator or stairs; entry, exit and the ramps are Pointr's
+ * LogIn01, LogOut01, ArrowUpRight and ArrowDownRight, as React draws them.
+ * The original transport artwork awaits design approval: KozmosIcon draws it
+ * by name, and no direction does.
  */
 fun DirectionType.icon(): ImageVector = when (this) {
     DirectionType.Straight -> Icons.Default.ArrowUpward
     DirectionType.Left -> Icons.Default.TurnLeft
     DirectionType.Right -> Icons.Default.TurnRight
     DirectionType.Destination -> Icons.Default.LocationOn
-    DirectionType.LiftUp -> KozmosNavigationGlyphs.ElevatorUp
-    DirectionType.LiftDown -> KozmosNavigationGlyphs.ElevatorDown
-    DirectionType.EscalatorUp -> KozmosNavigationGlyphs.EscalatorUp
-    DirectionType.EscalatorDown -> KozmosNavigationGlyphs.EscalatorDown
-    DirectionType.StairsUp -> KozmosNavigationGlyphs.StairsUp
-    DirectionType.StairsDown -> KozmosNavigationGlyphs.StairsDown
-    DirectionType.LevelUp -> Icons.Default.ArrowUpward
-    DirectionType.LevelDown -> Icons.Default.ArrowDownward
+    DirectionType.LiftUp, DirectionType.EscalatorUp, DirectionType.StairsUp, DirectionType.LevelUp -> Icons.Default.ArrowUpward
+    DirectionType.LiftDown, DirectionType.EscalatorDown, DirectionType.StairsDown, DirectionType.LevelDown -> Icons.Default.ArrowDownward
     DirectionType.Transition -> Icons.Default.ArrowRightAlt
     DirectionType.TurnBack -> Icons.Default.UTurnLeft
     DirectionType.Walking -> Icons.Default.DirectionsWalk
-    DirectionType.Enter -> KozmosNavigationGlyphs.RouteEnter
-    DirectionType.Exit -> KozmosNavigationGlyphs.RouteExit
-    DirectionType.RampUp -> KozmosNavigationGlyphs.RampUp
-    DirectionType.RampDown -> KozmosNavigationGlyphs.RampDown
+    DirectionType.Enter -> KozmosPointrGlyphs.LogIn01
+    DirectionType.Exit -> KozmosPointrGlyphs.LogOut01
+    DirectionType.RampUp -> KozmosPointrGlyphs.ArrowUpRight
+    DirectionType.RampDown -> KozmosPointrGlyphs.ArrowDownRight
 }
 
 @Composable
