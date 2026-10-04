@@ -40,8 +40,11 @@ Android say the state in the screen reader's own words.
 
 The collapsed tile's arrows are availability indicators, not separate buttons: up when a
 selectable floor exists above, down when one exists below, and neither for a single floor.
-Activate the whole tile to open the list. Full floor names are available as hints (web focus/hover;
-iOS hover/long press; Android focus/hover) and remain the accessible names.
+Activate the whole tile to open the list. Full floor names are available as hints (web keyboard
+focus/hover; iOS hover/long press; Android focus/hover) and remain the accessible names. The hints
+are visual: they are not given to screen readers as descriptions or hints, which would read each
+name twice. On web a hint does not open for the focus the selector moves itself, to the current
+level as the column opens or back to the tile as it closes.
 
 Long collapsed lists scroll without reducing floor targets. In AdaptiveMapShell's registered
 bottom corners, the popup stays within the available map band and closes when that region

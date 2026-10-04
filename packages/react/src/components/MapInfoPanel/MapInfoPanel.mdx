@@ -63,8 +63,11 @@ On iOS the host uses fullScreenCover; Android uses a full-width system Dialog wi
 bar insets. Native platforms use device/app locale; there is no language selector here.
 
 Desktop remains non-modal: search and map interaction continue, without dismissing Info
-on an outside click. Compact presentation isolates focus and background interaction. Close
-and Escape (web/hardware keyboard), or Android Back, dismiss it. Focus returns to the trigger.
+on an outside click, and an Escape pressed in the map's search or controls is theirs, not
+Info's. Compact presentation isolates focus and background interaction. Close, Escape with
+focus in Info (web/hardware keyboard), or Android Back, dismiss it. Focus returns to the
+trigger when it was in Info; focus the visitor has moved elsewhere stays there. On web the
+dialog is named by the panel's visible heading, once.
 The trigger is hidden while Info is open and when available=false. Callers own open state;
 temporarily hiding availability does not discard that state. FAQ state is kept by the wrapper
 across presentation changes; standalone panels can own or receive controlled disclosure state.
