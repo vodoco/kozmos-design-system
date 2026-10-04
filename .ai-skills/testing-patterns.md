@@ -37,7 +37,7 @@
 ### Component Maturity
 
 Kozmos marks no component alpha, beta or stable, so nothing is tested by maturity. Every React
-component directory has a test and a story (113 of 113), and in CI every story is audited by axe
+component directory has a test and a story (116 of 116), and in CI every story is audited by axe
 and drawn by the visual review, with nothing to register.
 
 ### What to Test

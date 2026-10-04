@@ -313,8 +313,8 @@ builds Storybook (`pnpm turbo run build --filter=@kozmos-ds/docs`) and runs Ligh
 
 ## 10. Benchmark History
 
-The published versions are what `npm view @kozmos-ds/react versions` lists: 0.1.0 to 0.5.0 on
-2026-09-29, and 0.1.0 of `@kozmos-ds/tokens`. The bundle is the one measure with a history, which
+The published versions are what `npm view @kozmos-ds/react versions` lists: 0.1.0 to 0.8.0 on
+2026-10-04, and 0.1.0 to 0.4.0 of `@kozmos-ds/tokens`. The bundle is the one measure with a history, which
 `scripts/performance/bundle-analyzer.ts` records in its opening comment:
 
 | Date       | What changed                                                                                            |
