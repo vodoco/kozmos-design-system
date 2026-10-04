@@ -419,7 +419,8 @@ describe("POIResultCard", () => {
         currentFloorId={result.floorId}
       />,
     );
-    expect(screen.getByRole("button")).toHaveClass("min-h-20");
+    // The owned rule that holds the 80px minimum, in a browser without @scope too.
+    expect(screen.getByRole("button")).toHaveClass("kozmos-poi-result-select");
     expect(
       screen.queryByText(String(result.resultIndex)),
     ).not.toBeInTheDocument();
@@ -797,6 +798,138 @@ describe("POIResultCard", () => {
       expect(
         container.querySelector("article [data-tab='number']"),
       ).toHaveAttribute("data-selected", "true");
+    });
+  });
+
+  describe('the legacy presentation keeps its tab rules (presentationStyle="legacy")', () => {
+    // The tab rules before the SDK presentation became the default (#190).
+    // Legacy still ships, for a staged migration, so its rules keep their
+    // tests: one tab per card, Featured over the number over the badge, the
+    // badge read aloud, the selection ring and the number before a row's name.
+    const plain = { ...result, featured: false, selected: false };
+    const tabOf = (container: HTMLElement) =>
+      container.querySelector<HTMLElement>("article > span");
+
+    it("reads a badge aloud: it says why the result is in the list", () => {
+      const { container } = render(
+        <POIResultCard
+          presentationStyle="legacy"
+          poi={poi}
+          result={{ ...plain, badge: { label: "Alternative" } }}
+          onSelect={vi.fn()}
+        />,
+      );
+      const tab = screen.getByText("Alternative");
+      expect(tab).toBe(tabOf(container));
+      expect(tab).toHaveAttribute("data-tab", "badge");
+      expect(tab).not.toHaveAttribute("aria-hidden");
+    });
+
+    it("rings the selected card, Featured or not", () => {
+      render(
+        <POIResultCard
+          presentationStyle="legacy"
+          poi={poi}
+          result={{ ...plain, featured: true, selected: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      const card = screen.getByRole("article");
+      expect(card).toHaveClass("kozmos-poi-result-card-featured", "ring-2");
+      expect(card).not.toHaveClass("border-primary");
+    });
+
+    it("starts the name below the corner tab", () => {
+      const { container, rerender } = render(
+        <POIResultCard
+          presentationStyle="legacy"
+          poi={poi}
+          result={{ ...plain, featured: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(tabOf(container)).toHaveClass("absolute", "start-0", "top-0");
+      expect(
+        screen.getByRole("button").querySelector(":scope > span"),
+      ).toHaveClass("pt-6");
+      rerender(
+        <POIResultCard
+          presentationStyle="legacy"
+          poi={poi}
+          result={plain}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(
+        screen.getByRole("button").querySelector(":scope > span"),
+      ).not.toHaveClass("pt-6");
+    });
+
+    it("edges the selected numbered card in the primary colour", () => {
+      const { container } = render(
+        <POIResultCard
+          presentationStyle="legacy"
+          numbered
+          poi={poi}
+          result={{ ...plain, selected: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(tabOf(container)).toHaveAttribute("data-selected", "true");
+      expect(screen.getByRole("article")).toHaveClass("border-primary");
+    });
+
+    it("shows Featured, not a number, on a featured result", () => {
+      const { container } = render(
+        <POIResultCard
+          presentationStyle="legacy"
+          numbered
+          poi={poi}
+          result={{ ...plain, featured: true }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(tabOf(container)).toHaveAttribute("data-tab", "featured");
+      expect(screen.queryByText("2")).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /^Burger King/ }),
+      ).toBeVisible();
+    });
+
+    it("shows the number, not a badge, on a numbered result that has one", () => {
+      const { container } = render(
+        <POIResultCard
+          presentationStyle="legacy"
+          numbered
+          poi={poi}
+          result={{ ...plain, badge: { label: "Alternative" } }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(tabOf(container)).toHaveAttribute("data-tab", "number");
+      expect(screen.queryByText("Alternative")).not.toBeInTheDocument();
+    });
+
+    it("draws a grouped row's number before its name", () => {
+      const { container } = render(
+        <POIResultCard
+          presentationStyle="legacy"
+          appearance="row"
+          numbered
+          poi={poi}
+          result={plain}
+          onSelect={vi.fn()}
+        />,
+      );
+      const number = container.querySelector<HTMLElement>(
+        "button [data-tab='number']",
+      );
+      expect(number).toHaveTextContent(/^2$/);
+      expect(number).toHaveAttribute("data-placement", "inline");
+      expect(tabOf(container)).toBeNull();
+      expect(
+        screen.getByRole("button", { name: /^2, Burger King/ }),
+      ).toBeVisible();
     });
   });
 

@@ -238,6 +238,29 @@ const CollapsibleFloorSelector = React.forwardRef<
     const popupRegion = React.useContext(MapPopupRegionContext);
     const canExpand = (popupRegion?.available ?? true) && options.length > 0;
     const [hintOpen, setHintOpen] = React.useState(false);
+    // The full name is a visual hint for a short label, and every button
+    // already says that name, so the hint is not wired as a description, which
+    // would read it twice. Nor does it open for focus this selector moves
+    // itself, to the current level as the column opens or back to the tile as
+    // it closes: that is not a visitor arriving at a level.
+    const movingFocus = React.useRef(false);
+    const moveFocus = (
+      element: HTMLElement | null | undefined,
+      options?: FocusOptions,
+    ) => {
+      movingFocus.current = true;
+      try {
+        element?.focus(options);
+      } finally {
+        movingFocus.current = false;
+      }
+    };
+    const hintTrigger = {
+      "aria-describedby": undefined,
+      onFocus: (event: React.FocusEvent<HTMLElement>) => {
+        if (movingFocus.current) event.preventDefault();
+      },
+    };
     React.useEffect(() => {
       if (!canExpand) {
         setOpen(false);
@@ -292,6 +315,9 @@ const CollapsibleFloorSelector = React.forwardRef<
           width: tile?.offsetWidth || 44,
           height: tile?.offsetHeight || 44,
         });
+        // The column covers the tile, so a hover hint opened before it can
+        // never see the pointer leave, and would reappear when it closes.
+        setHintOpen(false);
       }
       setOpen(next);
     };
@@ -326,7 +352,7 @@ const CollapsibleFloorSelector = React.forwardRef<
               open={canExpand && !open && hintOpen}
               onOpenChange={setHintOpen}
             >
-              <TooltipTrigger asChild>
+              <TooltipTrigger asChild {...hintTrigger}>
                 <PopoverTrigger asChild>
                   {/* The map's own control, surface and states and all: nothing
                 here restyles it, so the tile follows the shared map-control
@@ -373,6 +399,7 @@ const CollapsibleFloorSelector = React.forwardRef<
                 </PopoverTrigger>
               </TooltipTrigger>
               <TooltipContent
+                aria-hidden
                 side={tooltipSide}
                 portalContainer={tileRef.current?.parentElement}
               >
@@ -404,17 +431,25 @@ const CollapsibleFloorSelector = React.forwardRef<
                 event.preventDefault();
                 const active = tileRef.current?.ownerDocument.activeElement;
                 if (!active || active === active.ownerDocument.body) {
-                  if (canExpand) tileRef.current?.focus();
+                  if (canExpand) moveFocus(tileRef.current);
                   else popupRegion?.focusFallback();
                 }
               }}
               onOpenAutoFocus={(event) => {
                 // The current level, where a visitor who opened the column to
-                // look around already is, rather than the top floor.
+                // look around already is, rather than the top floor. With no
+                // current level, the first that can be chosen, as Radix would,
+                // but moved here so that it opens no hint either.
                 const current = currentRef.current;
-                if (current && !current.disabled) {
+                const target =
+                  current && !current.disabled
+                    ? current
+                    : content?.querySelector<HTMLButtonElement>(
+                        "button:not(:disabled)",
+                      );
+                if (target) {
                   event.preventDefault();
-                  current.focus({ preventScroll: true });
+                  moveFocus(target, { preventScroll: true });
                 }
               }}
             >
@@ -426,7 +461,11 @@ const CollapsibleFloorSelector = React.forwardRef<
                   const count = markedResultCount(floor);
                   return (
                     <Tooltip key={floor.id}>
-                      <TooltipTrigger asChild disabled={floor.disabled}>
+                      <TooltipTrigger
+                        asChild
+                        disabled={floor.disabled}
+                        {...hintTrigger}
+                      >
                         <Button
                           ref={isCurrent ? currentRef : undefined}
                           aria-label={spokenLabel(
@@ -466,6 +505,7 @@ const CollapsibleFloorSelector = React.forwardRef<
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent
+                        aria-hidden
                         side={tooltipSide}
                         portalContainer={popup}
                         onEscapeKeyDown={() => setOpen(false)}

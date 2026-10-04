@@ -32,7 +32,11 @@ describe("language and accessibility", () => {
     expect(screen.getByRole("button", { name: "Clear search" })).toBeVisible();
 
     rerender(
-      <SearchBar clearLabel="Aramayı temizle" onChange={vi.fn()} value="coffee" />,
+      <SearchBar
+        clearLabel="Aramayı temizle"
+        onChange={vi.fn()}
+        value="coffee"
+      />,
     );
     expect(
       screen.getByRole("button", { name: "Aramayı temizle" }),
@@ -64,13 +68,27 @@ describe("language and accessibility", () => {
   it("aligns a result row from the start", () => {
     const { container } = render(
       <POIResultCard
-        poi={{ id: "p", name: "Cafe", floorLabel: "Level 2", media: [], actions: [] }}
-        result={{ poiId: "p", resultIndex: 0, selected: false, featured: false }}
+        poi={{
+          id: "p",
+          name: "Cafe",
+          floorLabel: "Level 2",
+          media: [],
+          actions: [],
+        }}
+        result={{
+          poiId: "p",
+          resultIndex: 0,
+          selected: false,
+          featured: false,
+        }}
         onSelect={vi.fn()}
       />,
     );
     const row = container.querySelector("button");
-    expect(row?.className).toMatch(/text-start/);
+    // Its alignment is the owned rule's, text-start, which the result
+    // check (scripts/check-result-presentation.mjs) measures in both
+    // directions; never a physical left.
+    expect(row).toHaveClass("kozmos-poi-result-select");
     expect(row?.className).not.toMatch(/text-left/);
   });
 

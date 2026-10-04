@@ -55,7 +55,16 @@ function App() {
     <ThemeProvider theme={dark ? "dark" : "light"} dir={rtl ? "rtl" : "ltr"}>
       <button onClick={() => setDark(!dark)}>Theme</button>
       <button onClick={() => setRtl(!rtl)}>Direction</button>
-      <main style={{ width: "100%", maxWidth: 390, padding: 16 }}>
+      {/* The host page's own box: without the stylesheet's @scope rules it
+          gets no border-box from Kozmos, and its padding would overflow. */}
+      <main
+        style={{
+          width: "100%",
+          maxWidth: 390,
+          padding: 16,
+          boxSizing: "border-box",
+        }}
+      >
         <POIResultGroup
           {...props}
           label="Grouped results"

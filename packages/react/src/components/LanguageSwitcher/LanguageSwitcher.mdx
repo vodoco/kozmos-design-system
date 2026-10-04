@@ -45,7 +45,9 @@ All interface copy is overridable: `label`, `placeholder`, `pendingLabel`, `retr
 An unknown selected ID is displayed verbatim, never silently substituted with the first option.
 Zero options and an already-selected sole enabled option keep a visible disabled control. A sole
 valid option remains selectable when recovering from an unknown selection. Pending prevents
-further requests; same-value and disabled choices do not emit callbacks.
+further requests; same-value and disabled choices do not emit callbacks. While pending, the
+trigger keeps keyboard focus and is announced as unavailable (`aria-disabled`): it is not
+`disabled`, which would drop focus to the page while the host applies the language.
 
 <Canvas of={Stories.Pending} />
 <Canvas of={Stories.Failed} />

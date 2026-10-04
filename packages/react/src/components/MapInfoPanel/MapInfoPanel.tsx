@@ -9,6 +9,7 @@ import {
 import { Button } from "../Button";
 import { Link } from "../Link";
 import { cn } from "../../utils";
+import { MapInfoDialogTitle } from "./map-info-title";
 
 export interface MapInfoEntry {
   id: string;
@@ -91,6 +92,17 @@ export const MapInfoPanel = React.forwardRef<HTMLElement, MapInfoPanelProps>(
   ) => {
     const generatedId = React.useId();
     const headingId = titleId ?? generatedId;
+    const DialogTitle = React.useContext(MapInfoDialogTitle);
+    const heading = (
+      <h2
+        // Inside the dialog its title gives the id; even an undefined id here
+        // would override it.
+        {...(DialogTitle ? {} : { id: headingId })}
+        className="m-0 text-xl font-semibold text-foreground"
+      >
+        {content.title}
+      </h2>
+    );
     const entry = (item: MapInfoEntry) => {
       const href = safeMapInfoHref(item.href);
       return href ? (
@@ -110,7 +122,7 @@ export const MapInfoPanel = React.forwardRef<HTMLElement, MapInfoPanelProps>(
       <section
         ref={ref}
         className={cn("kozmos-map-info-panel", className)}
-        aria-labelledby={headingId}
+        aria-labelledby={DialogTitle ? undefined : headingId}
         {...props}
       >
         <div className="kozmos-map-info-close">
@@ -128,12 +140,7 @@ export const MapInfoPanel = React.forwardRef<HTMLElement, MapInfoPanelProps>(
           {brand != null && (
             <div className="kozmos-map-info-brand">{brand}</div>
           )}
-          <h2
-            id={headingId}
-            className="m-0 text-xl font-semibold text-foreground"
-          >
-            {content.title}
-          </h2>
+          {DialogTitle ? <DialogTitle>{heading}</DialogTitle> : heading}
         </div>
         {content.introduction && (
           <p className="m-0 text-sm text-muted-foreground whitespace-pre-line">

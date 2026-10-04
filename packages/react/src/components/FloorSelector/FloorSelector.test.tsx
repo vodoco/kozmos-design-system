@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -421,13 +422,28 @@ describe("FloorSelector collapsible", () => {
   it("shows the full floor name on keyboard focus without creating another action", async () => {
     render(<Controlled />);
     const tile = tileNamed("First floor");
-    fireEvent.focus(tile);
-    expect(await screen.findByRole("tooltip")).toHaveTextContent("First floor");
+    act(() => tile.focus());
+    // A visual hint: the bubble shows the name, but the tile already says it.
+    expect((await screen.findAllByText("First floor")).length).toBeGreaterThan(
+      0,
+    );
+    expect(tile).not.toHaveAttribute("aria-describedby");
+    expect(tile).toHaveAccessibleDescription("");
     expect(
       within(
         screen.getByRole("group", { name: "Floor selector" }),
       ).getAllByRole("button"),
     ).toHaveLength(1);
+  });
+
+  it("never describes a level by the name it already has", async () => {
+    render(<Controlled />);
+    const { list } = await open();
+    for (const row of within(list).getAllByRole("button")) {
+      act(() => row.focus());
+      expect(row).not.toHaveAttribute("aria-describedby");
+      expect(row).toHaveAccessibleDescription("");
+    }
   });
 
   it("grows into a column of every level, says it is open, and moves focus to the current level", async () => {

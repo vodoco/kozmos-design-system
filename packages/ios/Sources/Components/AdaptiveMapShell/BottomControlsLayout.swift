@@ -2,6 +2,8 @@ import SwiftUI
 
 /// Two logical corners in one measured region. Keep both subviews in the
 /// same tree when wrapping so focus and local state survive a resize.
+/// Exactly two subviews, start then end: wrap each corner in a container,
+/// because an empty corner is otherwise no subview at all.
 struct KozmosBottomControlsLayout: Layout {
     var gap: CGFloat = KozmosDimensions.primitivesLayoutSpacing200
 

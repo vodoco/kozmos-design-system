@@ -1,7 +1,14 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { MapInfoPanel, safeMapInfoHref } from "./MapInfoPanel";
+import { MapInfo } from "./MapInfo";
 
 afterEach(cleanup);
 const content = {
@@ -94,5 +101,32 @@ describe("MapInfoPanel", () => {
       "tel:",
     ])
       expect(safeMapInfoHref(href)).toBeUndefined();
+  });
+  it("is a region named by its heading on its own", () => {
+    render(<MapInfoPanel content={content} onClose={() => {}} />);
+    expect(
+      screen.getByRole("region", { name: content.title }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("MapInfo", () => {
+  it("names its dialog once, by the panel's visible heading", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(
+      <MapInfo open onOpenChange={() => {}} content={content}>
+        <div>Map</div>
+      </MapInfo>,
+    );
+    const dialog = screen.getByRole("dialog", { name: content.title });
+    const heading = within(dialog).getByRole("heading", {
+      name: content.title,
+    });
+    expect(dialog).toHaveAttribute("aria-labelledby", heading.id);
+    // No hidden copy of the title, and no second landmark with its name.
+    expect(within(dialog).getAllByText(content.title)).toHaveLength(1);
+    expect(within(dialog).queryByRole("region")).toBeNull();
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 });
