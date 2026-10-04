@@ -3,34 +3,40 @@ import SwiftUI
 /// Legacy spelling retained as a source-compatible alias of the shared semantic vocabulary.
 public typealias DirectionType = KozmosDirectionKind
 
-/// A direction's mark: an SF Symbol, or a Pointr outline SF Symbols has no match for.
+/// A direction's mark: an SF Symbol, or Pointr's wayfinding artwork by its
+/// kind in `KozmosNavigationGlyphPaths`.
 enum KozmosDirectionMark: Equatable {
     case symbol(String)
-    case pointr(String)
+    case wayfinding(String)
 }
 
 extension KozmosDirectionKind {
-    /// Only approved marks (D5, 2026-10-04): the SF Symbols main drew, with a
-    /// level change by any means showing its direction of travel and the words
-    /// naming the lift, escalator or stairs; the walking figure; and Pointr's
-    /// LogIn01, LogOut01, ArrowUpRight and ArrowDownRight, as React draws them.
-    /// The original transport artwork awaits design approval: `KozmosIcon`
-    /// draws it by name, and no direction does.
+    /// The mark React draws for each direction (2026-10-04): lifts,
+    /// escalators, stairs, ramps, entry, exit, the turns, turning back and the
+    /// destination are Pointr's wayfinding artwork from Pointr Maps - Express,
+    /// filled; straight on, a level change, transition and walking keep the
+    /// SF Symbols main drew.
     var mark: KozmosDirectionMark {
         switch self {
         case .straight: return .symbol("arrow.up")
-        case .left: return .symbol("arrow.turn.up.left")
-        case .right: return .symbol("arrow.turn.up.right")
-        case .destination: return .symbol("mappin.and.ellipse")
-        case .liftUp, .escalatorUp, .stairsUp, .levelUp: return .symbol("arrow.up.to.line")
-        case .liftDown, .escalatorDown, .stairsDown, .levelDown: return .symbol("arrow.down.to.line")
+        case .left: return .wayfinding("wf-hard-left")
+        case .right: return .wayfinding("wf-hard-right")
+        case .destination: return .wayfinding("wf-arriving")
+        case .liftUp: return .wayfinding("lift-up")
+        case .liftDown: return .wayfinding("lift-down")
+        case .escalatorUp: return .wayfinding("escalator-up")
+        case .escalatorDown: return .wayfinding("escalator-down")
+        case .stairsUp: return .wayfinding("stairs-up")
+        case .stairsDown: return .wayfinding("stairs-down")
+        case .levelUp: return .symbol("arrow.up.to.line")
+        case .levelDown: return .symbol("arrow.down.to.line")
         case .transition: return .symbol("arrow.forward.to.line")
-        case .turnBack: return .symbol("arrow.uturn.backward")
+        case .turnBack: return .wayfinding("wf-turn-back")
         case .walking: return .symbol("figure.walk")
-        case .enter: return .pointr("log-in-01")
-        case .exit: return .pointr("log-out-01")
-        case .rampUp: return .pointr("arrow-up-right")
-        case .rampDown: return .pointr("arrow-down-right")
+        case .enter: return .wayfinding("enter")
+        case .exit: return .wayfinding("exit")
+        case .rampUp: return .wayfinding("ramp-up")
+        case .rampDown: return .wayfinding("ramp-down")
         }
     }
 }

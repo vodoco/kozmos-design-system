@@ -9,10 +9,9 @@ struct KozmosDirectionGlyph: View {
             switch type.mark {
             case .symbol(let name):
                 Image(systemName: name).font(.system(size: size, weight: .semibold))
-            case .pointr(let name):
-                KozmosPointrGlyph.named(name).map {
-                    $0.stroke(style: KozmosPointrGlyph.style(size: size)).frame(width: size, height: size)
-                }
+            case .wayfinding(let kind):
+                // Solid artwork, filled in the tint at any size.
+                KozmosPointrGlyph.wayfinding(kind).map { $0.painted(size: size).frame(width: size, height: size) }
             }
         }
         .environment(\.layoutDirection, .leftToRight)

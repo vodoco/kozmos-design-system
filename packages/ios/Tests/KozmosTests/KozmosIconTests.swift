@@ -3,8 +3,8 @@ import SwiftUI
 @testable import Kozmos
 
 /// The names `KozmosIcon` draws. Most are SF Symbols; a name SF Symbols has
-/// no glyph for is drawn from Pointr's own outline, the one React draws from
-/// `@kozmos-ds/icons`, and never a stand-in.
+/// no glyph for is drawn from Pointr's own outline or its wayfinding artwork,
+/// the one React draws from `@kozmos-ds/icons`, and never a stand-in.
 ///
 /// Drawn without a window by `DrawnPixels`, so these run in `swift test` on a
 /// Mac as well as on a simulator.
@@ -62,9 +62,10 @@ final class KozmosIconTests: XCTestCase {
         XCTAssertEqual(spine.width, 2 * size / 24, accuracy: 0.5, "the spine is \(spine.width) across at \(size)")
     }
 
-    /// The direction marks' Pointr icons are names a product can draw too,
-    /// each Pointr's own outline rather than the stand-in.
-    @MainActor func testTheDirectionMarksArePointrIconsByName() throws {
+    /// Pointr's entry, exit and diagonal arrows stay names a product can
+    /// draw, each Pointr's own outline rather than the stand-in, though no
+    /// direction draws them now.
+    @MainActor func testPointrsEntryExitAndDiagonalArrowsStayIconsByName() throws {
         let standIn = try DrawnPixels.draw(KozmosIcon("no-such-kozmos-name", size: .xl), scale: 3)
         for name in ["log-in-01", "log-out-01", "arrow-up-right", "arrow-down-right"] {
             XCTAssertNotNil(KozmosPointrGlyph.named(name), "\(name) is not drawn from Pointr's outline")
@@ -73,24 +74,67 @@ final class KozmosIconTests: XCTestCase {
         }
     }
 
-    /// The original navigation artwork awaits design approval (D5): no
-    /// direction draws it, and a product opts in by the names
-    /// `@kozmos-ds/icons` exports it under.
-    @MainActor func testTheOriginalNavigationArtworkIsOptInByName() throws {
-        let names = [
-            "elevator-up": "lift-up", "elevator-down": "lift-down", "stairs-up": "stairs-up", "stairs-down": "stairs-down",
-            "escalator-up": "escalator-up", "escalator-down": "escalator-down", "ramp-up": "ramp-up", "ramp-down": "ramp-down",
-            "route-enter": "enter", "route-exit": "exit",
-        ]
+    /// One glyph of the wayfinding artwork, as navigation-glyphs.json lists it.
+    struct WayfindingGlyph: Decodable {
+        let name: String
+        let kind: String
+        let paint: String
+    }
+
+    /// The wayfinding artwork's source, found by walking up from this file to
+    /// the repository: `@kozmos-ds/icons` exports each glyph under `name`, and
+    /// the Compose suite reads the same file.
+    static func wayfindingGlyphs() throws -> [WayfindingGlyph] {
+        struct Source: Decodable { let glyphs: [WayfindingGlyph] }
+        var directory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        var found: URL?
+        while directory.path != "/" {
+            let candidate = directory.appendingPathComponent("packages/icons/src/owned/navigation-glyphs.json")
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                found = candidate
+                break
+            }
+            directory.deleteLastPathComponent()
+        }
+        let source = try XCTUnwrap(found, "no navigation-glyphs.json above \(#filePath)")
+        return try JSONDecoder().decode(Source.self, from: Data(contentsOf: source)).glyphs
+    }
+
+    /// The name a glyph is drawn by: its export name in kebab case,
+    /// ElevatorUpAndDown as elevator-up-and-down.
+    static func iconName(_ exportName: String) -> String {
+        var name = ""
+        for (index, character) in exportName.enumerated() {
+            if character.isUppercase && index > 0 { name.append("-") }
+            name.append(contentsOf: character.lowercased())
+        }
+        return name
+    }
+
+    /// Pointr's wayfinding artwork from Pointr Maps - Express is drawn by
+    /// name, filled in the icon's colour, never mirrored: the ten the
+    /// directions draw (elevator-up … route-exit) and the thirteen only a
+    /// name draws. Every glyph in the shared source has its name, so a glyph
+    /// added there without one fails here and in the Compose suite alike.
+    @MainActor func testTheWayfindingArtworkIsDrawnFilledByName() throws {
+        let glyphs = try Self.wayfindingGlyphs()
+        XCTAssertEqual(glyphs.count, 23, "the Express wayfinding set is 23 glyphs")
         let size = KozmosIconSize.xl.pointSize
-        for (name, kind) in names {
-            let artwork = try XCTUnwrap(KozmosNavigationGlyphPaths.path(kind), "no artwork for \(kind)")
-            // The artwork as the icon draws an outline: stroked 2 on the grid, in the default colour.
+        let standIn = try DrawnPixels.draw(KozmosIcon("no-such-kozmos-name", size: .xl), scale: 3)
+        for glyph in glyphs {
+            let name = Self.iconName(glyph.name)
+            XCTAssertEqual(glyph.paint, "fill", "\(glyph.name) is not solid artwork")
+            // The name belongs to no other icon: not an SF Symbol, not a Pointr outline.
+            XCTAssertEqual(KozmosIcon.symbolName(for: name), "questionmark.circle", "\(name) is already an SF Symbol's name")
+            XCTAssertNil(KozmosPointrGlyph.named(name), "\(name) is already a Pointr outline's name")
+
+            let artwork = try XCTUnwrap(KozmosNavigationGlyphPaths.path(glyph.kind), "no artwork for \(glyph.kind)")
             let expected = try DrawnPixels.draw(
-                KozmosPointrGlyph(runs: [], canonicalPath: artwork).stroke(style: KozmosPointrGlyph.style(size: size))
+                ExpressArtwork(path: artwork).fill()
                     .foregroundColor(KozmosColors.primitivesColorsForeground100).frame(width: size, height: size), scale: 3)
             let drawn = try DrawnPixels.draw(KozmosIcon(name, size: .xl), scale: 3)
-            XCTAssertEqual(drawn.largestDifference(from: expected), 0, "\(name) is not the \(kind) artwork")
+            XCTAssertNotEqual(drawn.largestDifference(from: standIn), 0, "\(name) draws the stand-in")
+            XCTAssertEqual(drawn.largestDifference(from: expected), 0, "\(name) is not the \(glyph.kind) artwork, filled")
             let rtl = try DrawnPixels.draw(KozmosIcon(name, size: .xl).environment(\.layoutDirection, .rightToLeft), scale: 3)
             XCTAssertEqual(drawn.largestDifference(from: rtl), 0, "\(name) mirrors right to left")
         }
