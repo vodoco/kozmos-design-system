@@ -124,6 +124,7 @@ for (const [mode, stylesheet] of [
                 side: s.paddingInlineStart,
                 top: s.paddingTop,
                 minimum: s.minHeight,
+                align: getComputedStyle(button).textAlign,
               };
             });
             assert.ok(
@@ -141,6 +142,11 @@ for (const [mode, stylesheet] of [
             assert.equal(geometry.side, "10px");
             assert.equal(geometry.top, "1px");
             assert.equal(geometry.minimum, "20px");
+            assert.equal(
+              geometry.align,
+              "start",
+              `${mode}: ${id}: the row aligns from its start`,
+            );
             assert.equal(geometry.overlap, false, `${id}: tag/name overlap`);
             assert.equal(geometry.overflow, false, `${id}: overflow`);
             assert.equal(geometry.nameClipped, false, `${id}: name clipping`);
