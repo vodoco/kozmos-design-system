@@ -102,6 +102,14 @@ final class InteractionTests: XCTestCase {
         }
     }
 
+    func testComboboxCaptionIsHeardOnceAsTheFieldsName() {
+        launch("combobox-caption")
+        XCTAssertEqual(app.textFields["From"].value as? String, "Lobby")
+        app.buttons["Inspect field accessibility"].tap()
+        // VoiceOver said "From", then "From, text field": the caption is the field's name, not an element.
+        XCTAssertEqual(app.staticTexts["field-accessibility-report"].label, "Lobby")
+    }
+
     func testComboboxSelectionCallsTheBindingOnce() {
         launch("combobox-location")
         app.buttons["Lobby, North Terminal · Ground floor"].tap()
@@ -115,6 +123,36 @@ final class InteractionTests: XCTestCase {
         received("open false|map false")
         XCTAssertFalse(app.buttons["Map"].exists)
         XCTAssertEqual(app.textFields["From"].value as? String, "unmatched")
+    }
+
+    func testPickerCommandOpenedFromTheChevronLeavesTheKeyboardDown() {
+        launch("combobox-action-closed")
+        let field = app.textFields["From"]
+        XCTAssertFalse(hasKeyboardFocus(field))
+        app.buttons["Open options"].tap()
+        app.buttons["Map"].tap()
+        received("map")
+        XCTAssertFalse(app.buttons["Map"].exists)
+        XCTAssertFalse(hasKeyboardFocus(field), "A command must not focus a field the visitor had not focused")
+        XCTAssertFalse(app.keyboards.firstMatch.waitForExistence(timeout: 1), "No keyboard over the map the host shows next")
+        XCTAssertEqual(app.keyboards.count, 0)
+    }
+
+    func testPickerCommandHandsFocusBackToAFieldThatHadIt() {
+        launch("combobox-action-closed")
+        let field = app.textFields["From"]
+        field.tap()
+        field.typeText("x")
+        XCTAssertTrue(hasKeyboardFocus(field))
+        app.buttons["Map"].tap()
+        received("map")
+        XCTAssertFalse(app.buttons["Map"].exists)
+        XCTAssertTrue(hasKeyboardFocus(field), "The visitor was typing: the field keeps its focus")
+    }
+
+    /// XCUI's own snapshot attribute; XCUIElement has no public accessor for it.
+    private func hasKeyboardFocus(_ element: XCUIElement) -> Bool {
+        (element.value(forKey: "hasKeyboardFocus") as? Bool) ?? false
     }
 
     func testPickerCommandDoesNotReopenWhenHostUpdatesItsQuery() {

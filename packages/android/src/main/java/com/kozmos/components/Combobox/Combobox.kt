@@ -23,8 +23,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import com.kozmos.components.listbox.KozmosPickerAction
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +38,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.listbox.KozmosListbox
@@ -152,6 +155,10 @@ fun KozmosCombobox(
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
     val isExpanded = (expanded ?: internalExpanded) && enabled && !readOnly
     val inputFocus = remember { FocusRequester() }
+    var inputFocused by remember { mutableStateOf(false) }
+    // Whether the field had focus while the popup was open: only then does a command hand it back.
+    var restoresInputFocus by remember { mutableStateOf(false) }
+    LaunchedEffect(isExpanded) { if (isExpanded) restoresInputFocus = inputFocused }
     val setExpanded: (Boolean) -> Unit = { next ->
         if (expanded == null) internalExpanded = next
         onExpandedChange?.invoke(next)
@@ -170,7 +177,9 @@ fun KozmosCombobox(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = colors.label
+                color = colors.label,
+                // The field carries this name; heard here too, it is said twice.
+                modifier = Modifier.clearAndSetSemantics { }
             )
         }
 
@@ -195,6 +204,10 @@ fun KozmosCombobox(
                 cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
                 modifier = Modifier
                     .focusRequester(inputFocus)
+                    .onFocusChanged {
+                        inputFocused = it.isFocused
+                        if (it.isFocused && isExpanded) restoresInputFocus = true
+                    }
                     .semantics { contentDescription = label ?: placeholder }
                     .weight(1f)
                     .fillMaxHeight(),
@@ -279,7 +292,9 @@ fun KozmosCombobox(
                     emptyText = emptyText.takeUnless { it == supportingText },
                     actions = popupActions.map { action -> action.copy(onAction = {
                         if (enabled && !readOnly && !action.disabled) {
-                            inputFocus.requestFocus()
+                            // Focusing a field that did not have focus raises the keyboard
+                            // over the map a command may be sending the visitor to.
+                            if (restoresInputFocus) inputFocus.requestFocus()
                             setExpanded(false)
                             action.onAction()
                         }

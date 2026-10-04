@@ -25,6 +25,9 @@ public struct KozmosCombobox: View {
     @State private var internalOpen: Bool
     @FocusState private var inputFocused: Bool
     @AccessibilityFocusState private var inputAccessibilityFocused: Bool
+    /// Whether the field had keyboard focus while the popup was open: only
+    /// then does a command hand it back.
+    @State private var restoresInputFocus = false
     private var isOpen: Bool { (expanded?.wrappedValue ?? internalOpen) && !disabled && !readOnly }
     private func setOpen(_ next: Bool) {
         if let expanded { expanded.wrappedValue = next } else { internalOpen = next }
@@ -74,9 +77,11 @@ public struct KozmosCombobox: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing75) {
             if let label = label {
+                // The field carries this name; heard here too, it is said twice.
                 Text(label)
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(labelColor)
+                    .accessibilityHidden(true)
             }
 
             HStack(spacing: 0) {
@@ -150,7 +155,9 @@ public struct KozmosCombobox: View {
                         actions: popupActions.map { action in
                             KozmosPickerAction(id: action.id, label: action.label, disabled: action.disabled) {
                                 guard !disabled, !readOnly, !action.disabled else { return }
-                                inputFocused = true
+                                // Focusing a field that did not have focus raises the keyboard
+                                // over the map a command may be sending the visitor to.
+                                if restoresInputFocus { inputFocused = true }
                                 inputAccessibilityFocused = true
                                 setOpen(false)
                                 action.action()
@@ -173,6 +180,12 @@ public struct KozmosCombobox: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onChange(of: isOpen) { open in
+            if open { restoresInputFocus = inputFocused }
+        }
+        .onChange(of: inputFocused) { focused in
+            if focused && isOpen { restoresInputFocus = true }
+        }
     }
 
     var filteredOptions: [KozmosListboxOption] {

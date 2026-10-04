@@ -21,7 +21,8 @@ final class KozmosNavigationSelectionTests: XCTestCase {
     @MainActor func testMapChoiceIsNotAnExternalRouteButton() async throws {
         try await inspect(KozmosRouteLocationField(label: "From", location: nil, query: "", options: [],
             onQueryChange: { _ in }, onSelect: { _ in }, onClear: {}, onChooseMap: {})) { tree in
-            XCTAssertTrue(tree.contains { $0.accessibilityLabel == "From" }, "Must inspect a real route field")
+            // The caption is the text field's name, which this traversal cannot see.
+            XCTAssertTrue(tree.contains { $0.accessibilityLabel == "Open options" }, "Must inspect a real route field")
             XCTAssertFalse(tree.contains { $0.accessibilityLabel == "Select from the map" })
         }
     }

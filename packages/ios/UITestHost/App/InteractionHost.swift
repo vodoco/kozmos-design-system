@@ -19,6 +19,7 @@ private struct InteractionFixture: View {
     @State private var galleryIndex = 1
     @State private var replaced = false
     @State private var controlAccessibilityReport = "not inspected"
+    @State private var fieldAccessibilityReport = "not inspected"
     @State private var manoeuvreExpanded = true
     @State private var groupedSelection: String?
     @State private var locationQuery = "Lobby"
@@ -54,19 +55,30 @@ private struct InteractionFixture: View {
     // views. Read the public UIKit accessibility tree while XCUI activates it;
     // the test checks the same labels before hiding, while hidden, and restored.
     private func accessibleLabels() -> [String] {
+        accessibleNodes().compactMap(\.accessibilityLabel)
+    }
+
+    /// What VoiceOver can land on that is named `name`, each by its value:
+    /// a field says what it holds, a caption nothing.
+    private func accessibleValues(named name: String) -> [String] {
+        accessibleNodes().filter { $0.isAccessibilityElement && $0.accessibilityLabel == name }
+            .map { $0.accessibilityValue ?? "" }
+    }
+
+    private func accessibleNodes() -> [NSObject] {
         var seen: Set<ObjectIdentifier> = []
-        func visit(_ node: NSObject) -> [String] {
+        func visit(_ node: NSObject) -> [NSObject] {
             guard seen.insert(ObjectIdentifier(node)).inserted,
                   !node.accessibilityElementsHidden else { return [] }
             if let view = node as? UIView, view.isHidden || view.alpha == 0 { return [] }
-            let labels = node.accessibilityLabel.map { [$0] } ?? []
+            let labelled = node.accessibilityLabel == nil ? [] : [node]
             let children: [NSObject]
             if let items = node.accessibilityElements as? [NSObject], !items.isEmpty { children = items }
             else if case let count = node.accessibilityElementCount(), count != NSNotFound, count > 0 {
                 children = (0..<count).compactMap { node.accessibilityElement(at: $0) as? NSObject }
             } else if let view = node as? UIView { children = view.subviews }
             else { children = [] }
-            return labels + children.flatMap { visit($0) }
+            return labelled + children.flatMap { visit($0) }
         }
         return UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows).flatMap { visit($0) }
@@ -128,6 +140,16 @@ private struct InteractionFixture: View {
                     events.append("map \(pickerExpanded)")
                 }],
                 expanded: Binding(get: { pickerExpanded }, set: { pickerExpanded = $0; events.append("open \($0)") }))
+        case "combobox-caption":
+            KozmosCombobox(inputValue: $locationQuery, options: [], label: "From")
+            Button("Inspect field accessibility") {
+                let values = accessibleValues(named: "From")
+                fieldAccessibilityReport = values.isEmpty ? "none" : values.map { $0.isEmpty ? "caption" : $0 }.joined(separator: "|")
+            }
+            Text(fieldAccessibilityReport).accessibilityIdentifier("field-accessibility-report")
+        case "combobox-action-closed":
+            KozmosCombobox(inputValue: $locationQuery, options: [], label: "From",
+                popupActions: [.init(id: "map", label: "Map") { events.append("map") }])
         case "picker-action-disabled":
             KozmosListbox(options: [], selectedValues: .constant(["map"]),
                 actions: [.init(id: "map", label: "Map", disabled: true) { events.append("map") }], emptyText: "No matches")
