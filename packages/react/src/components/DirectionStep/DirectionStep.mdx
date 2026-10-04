@@ -9,7 +9,7 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 A step of a route: the symbol, instruction and optional distance and duration. The shared `DirectionKind` vocabulary includes `straight`, `left`, `right`, `destination`, `walking`, `turn-back`, `enter`, `exit`, same-level `transition`, unnamed `level-up` / `level-down`, and explicit `lift`, `stairs`, `escalator` and `ramp` up/down pairs. Choose the actual route instruction, not a generic arrow that hides its transport mode.
 
-Lift, stairs, escalator, ramp and entry/exit symbols use original Kozmos vector paths generated for all three platforms from `packages/icons/src/owned/navigation-glyphs.json`. These are reviewable repository artwork, not a claim of external Figma approval. Walking uses the existing SDK mark on web and platform walking symbols on native. Physical direction does not mirror in RTL; text layout does. Symbols are decorative: assistive technology hears the supplied instruction.
+Every direction draws an approved mark: lifts, escalators, stairs and level changes the up and down arrows, ramps the diagonal arrows, entry and exit the Pointr log-in and log-out marks, and walking the existing SDK mark on web and platform walking symbols on native. Original lift, escalator, stairs, ramp and entry/exit artwork, generated for all three platforms from `packages/icons/src/owned/navigation-glyphs.json`, awaits design approval: `@kozmos-ds/icons` exports it by name (`ElevatorUp`, `EscalatorUp`, `StairsUp`, `RampUp`, `RouteEnter` and their pairs) for a product to opt into, the Glyph Atlas story shows it for review, and no default draws it until it is approved. Physical direction does not mirror in RTL; text layout does. Symbols are decorative: assistive technology hears the supplied instruction.
 
 The old `DirectionType` name remains a source alias. Native consumers must rebuild; the enum identity has moved to the shared contracts, and exhaustive switches need the added cases. Swift raw-value initialization and Kotlin `KozmosDirectionKind.fromValue` allow adapters to reject unknown values. Unknown runtime web values omit the symbol and retain the instruction rather than invent a turn. The host must decide whether an unknown route instruction is safe to present.
 
@@ -87,16 +87,16 @@ import com.kozmos.contracts.KozmosInstructionPartRole
 
 @Composable
 fun Example() {
-    KozmosDirectionStep(
-        type = DirectionType.Right,
-        instruction = listOf(
-            KozmosInstructionPart("Turn right at "),
-            KozmosInstructionPart("Marlow Pharmacy", lang = "en"),
-            KozmosInstructionPart(" on your left", role = KozmosInstructionPartRole.Secondary)
-        ),
-        distance = "40 m"
-    )
+KozmosDirectionStep(
+type = DirectionType.Right,
+instruction = listOf(
+KozmosInstructionPart("Turn right at "),
+KozmosInstructionPart("Marlow Pharmacy", lang = "en"),
+KozmosInstructionPart(" on your left", role = KozmosInstructionPartRole.Secondary)
+),
+distance = "40 m"
+)
 }
-    `}
+`}
 
 />

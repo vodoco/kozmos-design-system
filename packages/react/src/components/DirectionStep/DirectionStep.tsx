@@ -8,17 +8,11 @@ import {
   ArrowRight,
   MarkerPin01,
   FlipBackward,
+  ArrowUpRight,
+  ArrowDownRight,
+  LogIn01,
+  LogOut01,
   Walking,
-  ElevatorUp,
-  ElevatorDown,
-  EscalatorUp,
-  EscalatorDown,
-  StairsUp,
-  StairsDown,
-  RampUp,
-  RampDown,
-  RouteEnter,
-  RouteExit,
   type KozmosIconComponent,
 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
@@ -49,30 +43,32 @@ export const DIRECTION_TYPES: readonly DirectionType[] = [
 ];
 
 /**
- * One mapping for step, card, itinerary and rail. Transport/ramp/entry paths
- * are original Kozmos artwork shared with the native generators, not a claim
- * of Figma approval. Walking reuses the existing SDK walking mark.
+ * One mapping for step, card, itinerary and rail, drawn only with approved
+ * marks: the Pointr icon set and the existing SDK walking mark. The original
+ * lift, escalator, stairs, ramp and entry artwork awaits design approval
+ * (Olcay, 2026-10-04): @kozmos-ds/icons exports it by name for products to
+ * opt into, and no default draws it until it is approved.
  */
 export const DIRECTION_ICONS: Record<DirectionType, KozmosIconComponent> = {
   straight: ArrowUp,
   left: ArrowLeft,
   right: ArrowRight,
   destination: MarkerPin01,
-  "lift-up": ElevatorUp,
-  "lift-down": ElevatorDown,
-  "escalator-up": EscalatorUp,
-  "escalator-down": EscalatorDown,
-  "stairs-up": StairsUp,
-  "stairs-down": StairsDown,
+  "lift-up": ArrowUp,
+  "lift-down": ArrowDown,
+  "escalator-up": ArrowUp,
+  "escalator-down": ArrowDown,
+  "stairs-up": ArrowUp,
+  "stairs-down": ArrowDown,
   "level-up": ArrowUp,
   "level-down": ArrowDown,
   transition: ArrowRight,
   "turn-back": FlipBackward,
   walking: Walking,
-  enter: RouteEnter,
-  exit: RouteExit,
-  "ramp-up": RampUp,
-  "ramp-down": RampDown,
+  enter: LogIn01,
+  exit: LogOut01,
+  "ramp-up": ArrowUpRight,
+  "ramp-down": ArrowDownRight,
 };
 
 /**

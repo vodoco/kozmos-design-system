@@ -4,22 +4,64 @@ import {
   DIRECTION_TYPES,
   DIRECTION_ICONS,
 } from "./DirectionStep";
-import { ArrowUp, ArrowDown } from "@kozmos-ds/icons";
+import {
+  ArrowUp,
+  ArrowDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  LogIn01,
+  LogOut01,
+  Walking,
+  ElevatorUp,
+  ElevatorDown,
+  EscalatorUp,
+  EscalatorDown,
+  StairsUp,
+  StairsDown,
+  RampUp,
+  RampDown,
+  RouteEnter,
+  RouteExit,
+} from "@kozmos-ds/icons";
 import { describe, it, expect } from "vitest";
 
 describe("DirectionStep", () => {
-  it("distinguishes transport and travel direction instead of substituting arrows", () => {
-    const icons = [
-      "lift-up",
+  it("draws only approved marks by default until the navigation artwork is approved", () => {
+    // Olcay, 2026-10-04 (D5): the original lift/escalator/stairs/ramp/entry
+    // artwork awaits design review. It ships as named icons for products to
+    // opt into; no default draws it.
+    for (const type of ["lift-up", "escalator-up", "stairs-up", "level-up"])
+      expect(DIRECTION_ICONS[type as keyof typeof DIRECTION_ICONS]).toBe(
+        ArrowUp,
+      );
+    for (const type of [
       "lift-down",
-      "stairs-up",
-      "stairs-down",
-      "escalator-up",
       "escalator-down",
-    ].map((type) => DIRECTION_ICONS[type as keyof typeof DIRECTION_ICONS]);
-    expect(new Set(icons).size).toBe(6);
-    expect(icons).not.toContain(ArrowUp);
-    expect(icons).not.toContain(ArrowDown);
+      "stairs-down",
+      "level-down",
+    ])
+      expect(DIRECTION_ICONS[type as keyof typeof DIRECTION_ICONS]).toBe(
+        ArrowDown,
+      );
+    expect(DIRECTION_ICONS.enter).toBe(LogIn01);
+    expect(DIRECTION_ICONS.exit).toBe(LogOut01);
+    expect(DIRECTION_ICONS["ramp-up"]).toBe(ArrowUpRight);
+    expect(DIRECTION_ICONS["ramp-down"]).toBe(ArrowDownRight);
+    expect(DIRECTION_ICONS.walking).toBe(Walking);
+    const proposed = [
+      ElevatorUp,
+      ElevatorDown,
+      EscalatorUp,
+      EscalatorDown,
+      StairsUp,
+      StairsDown,
+      RampUp,
+      RampDown,
+      RouteEnter,
+      RouteExit,
+    ];
+    for (const icon of Object.values(DIRECTION_ICONS))
+      expect(proposed).not.toContain(icon);
     expect(DIRECTION_TYPES).toContain("walking");
     expect(DIRECTION_TYPES).toContain("ramp-up");
     expect(DIRECTION_TYPES).toContain("enter");

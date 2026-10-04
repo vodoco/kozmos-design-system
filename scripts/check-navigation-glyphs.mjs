@@ -23,38 +23,52 @@ try {
     const rtlColumn = page
       .getByRole("heading", { name: "RTL", exact: true })
       .locator("..");
-    assert.equal(await ltr.locator("svg").count(), 19 * 3);
-    assert.equal(await rtlColumn.locator("svg").count(), 19 * 3);
-    const rows = ltr.locator(":scope > div");
-    const shapes = new Set();
-    for (const kind of [
-      "lift-up",
-      "lift-down",
-      "stairs-up",
-      "stairs-down",
-      "escalator-up",
-      "escalator-down",
+    // The defaults every direction draws: approved marks only (Olcay,
+    // 2026-10-04), so lifts, escalators and stairs share the up and down
+    // arrows. The proposed navigation artwork is shown below them for design
+    // review; it must stay distinct and, like every physical direction, never
+    // mirror in right to left.
+    const set = (column, name) =>
+      column.locator(`:scope > [data-glyph-set="${name}"]`);
+    assert.equal(await set(ltr, "default").count(), 19);
+    assert.equal(await set(rtlColumn, "default").count(), 19);
+    assert.equal(await set(ltr, "proposed").count(), 10);
+    for (const [name, distinct] of [
+      ["default", 2],
+      ["proposed", 6],
     ]) {
-      const row = rows.filter({ has: page.getByText(kind, { exact: true }) });
-      const rtl = rtlColumn
-        .locator(":scope > div")
-        .filter({ has: page.getByText(kind, { exact: true }) });
-      const paths = await row.locator("svg").first().innerHTML();
-      shapes.add(paths);
-      assert.equal(
-        await rtl.locator("svg").first().innerHTML(),
-        paths,
-        "Physical direction must not mirror in RTL",
-      );
-      for (const [i, size] of [14, 24, 32].entries()) {
-        const svg = row.locator("svg").nth(i);
-        const box = await svg.boundingBox();
-        assert.equal(box.width, size);
-        assert.equal(box.height, size);
-        assert.equal(await svg.getAttribute("aria-hidden"), "true");
+      const shapes = new Set();
+      for (const kind of [
+        "lift-up",
+        "lift-down",
+        "stairs-up",
+        "stairs-down",
+        "escalator-up",
+        "escalator-down",
+      ]) {
+        const row = set(ltr, name).filter({
+          has: page.getByText(kind, { exact: true }),
+        });
+        const rtl = set(rtlColumn, name).filter({
+          has: page.getByText(kind, { exact: true }),
+        });
+        const paths = await row.locator("svg").first().innerHTML();
+        shapes.add(paths);
+        assert.equal(
+          await rtl.locator("svg").first().innerHTML(),
+          paths,
+          `${name} ${kind}: physical direction must not mirror in RTL`,
+        );
+        for (const [i, size] of [14, 24, 32].entries()) {
+          const svg = row.locator("svg").nth(i);
+          const box = await svg.boundingBox();
+          assert.equal(box.width, size);
+          assert.equal(box.height, size);
+          assert.equal(await svg.getAttribute("aria-hidden"), "true");
+        }
       }
+      assert.equal(shapes.size, distinct, `${name}: distinct glyphs`);
     }
-    assert.equal(shapes.size, 6);
     const axe = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();
@@ -63,7 +77,7 @@ try {
     await context.close();
   }
   console.log(
-    "Navigation glyph atlas: 19 directions × 3 sizes × LTR/RTL × 2 themes passed",
+    "Navigation glyph atlas: 19 default directions (approved marks) and 10 proposed glyphs × 3 sizes × LTR/RTL × 2 themes passed",
   );
 } finally {
   await browser.close();
