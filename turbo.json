@@ -9,6 +9,7 @@
         "build.mjs",
         "package.json",
         "postcss.config.*",
+        "postcss/**",
         "tailwind.config.*",
         "tsconfig.json",
         "tsconfig.*.json",
