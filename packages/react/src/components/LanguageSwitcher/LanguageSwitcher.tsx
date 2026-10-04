@@ -74,11 +74,16 @@ export const LanguageSwitcher = React.forwardRef<
     );
     const display = selected?.label ?? (selectedLocale || placeholder);
     const blocked = disabled || pending || region?.available === false;
-    const canChange =
-      !blocked &&
-      languages.some(
+    // Unavailable: nothing to choose or nowhere to show it. Pending is not
+    // unavailable: the trigger keeps focus while the host applies the choice,
+    // so it is aria-disabled rather than disabled, which would drop focus.
+    const unavailable =
+      disabled ||
+      region?.available === false ||
+      !languages.some(
         (language) => !language.disabled && language.id !== selectedLocale,
       );
+    const canChange = !unavailable && !pending;
     React.useEffect(() => {
       if (!canChange) setOpen(false);
     }, [canChange]);
@@ -88,7 +93,7 @@ export const LanguageSwitcher = React.forwardRef<
         <Select
           value={selectedLocale}
           dir={direction}
-          disabled={!canChange}
+          disabled={unavailable}
           open={open && canChange}
           onOpenChange={(next) => setOpen(next && canChange)}
           onValueChange={(locale) => {
@@ -108,6 +113,7 @@ export const LanguageSwitcher = React.forwardRef<
             className="h-12 min-w-32 max-w-full border-0 shadow-map-control"
             aria-label={`${label}, ${display}`}
             aria-busy={pending || undefined}
+            aria-disabled={(pending && !unavailable) || undefined}
             aria-describedby={
               error ? `${id}-error` : pending ? `${id}-pending` : undefined
             }
@@ -135,7 +141,7 @@ export const LanguageSwitcher = React.forwardRef<
                 "min(8rem, var(--radix-select-content-available-width))",
             }}
             onCloseAutoFocus={(event) => {
-              if (!canChange) {
+              if (unavailable) {
                 event.preventDefault();
                 if (document.activeElement === document.body)
                   region?.focusFallback();
@@ -157,15 +163,14 @@ export const LanguageSwitcher = React.forwardRef<
             ))}
           </SelectContent>
         </Select>
-        {pending && (
-          <p
-            id={`${id}-pending`}
-            role="status"
-            className="mt-2 text-sm text-muted-foreground"
-          >
-            {pendingLabel}
-          </p>
-        )}
+        {/* Mounted throughout: a live region inserted with its text is often not announced. */}
+        <p
+          id={`${id}-pending`}
+          role="status"
+          className={pending ? "mt-2 text-sm text-muted-foreground" : "sr-only"}
+        >
+          {pending ? pendingLabel : null}
+        </p>
         {error && (
           <div className="mt-2 text-sm text-destructive-text">
             <p id={`${id}-error`} role="alert">

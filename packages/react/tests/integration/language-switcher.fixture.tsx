@@ -14,6 +14,8 @@ type Config = {
   long?: boolean;
   width?: number;
   panelHeight?: number;
+  /** The documented async host: a request marks the change pending at once. */
+  pendOnRequest?: boolean;
 };
 declare global {
   interface Window {
@@ -29,15 +31,17 @@ const languages = [
   { id: "ar", label: "العربية", direction: "rtl" as const },
 ];
 const root = createRoot(document.getElementById("root")!);
-window.renderLanguage = ({
-  dir = "ltr",
-  locale = "en",
-  height = 400,
-  pending = false,
-  long = false,
-  width = 360,
-  panelHeight,
-}) =>
+window.renderLanguage = (config) => {
+  const {
+    dir = "ltr",
+    locale = "en",
+    height = 400,
+    pending = false,
+    long = false,
+    width = 360,
+    panelHeight,
+    pendOnRequest = false,
+  } = config;
   root.render(
     <ThemeProvider dir={dir}>
       <AdaptiveMapShell
@@ -68,9 +72,14 @@ window.renderLanguage = ({
                   }))
                 : languages
             }
-            onLocaleRequest={(value) => window.localeRequests.push(value)}
+            onLocaleRequest={(value) => {
+              window.localeRequests.push(value);
+              if (pendOnRequest)
+                window.renderLanguage({ ...config, pending: true });
+            }}
           />
         }
       />
     </ThemeProvider>,
   );
+};
