@@ -1,5 +1,6 @@
 import React from "react";
 import { MapPopupRegionContext } from "./map-popup-region";
+import { MapShellPanelContext } from "./map-shell-panel";
 import type {
   AdaptiveMapLayoutSnapshot,
   MapCollisionInsets,
@@ -1385,7 +1386,9 @@ const AdaptiveMapShell = React.forwardRef<
               }
               onScroll={onContentScroll}
             >
-              {panel}
+              <MapShellPanelContext.Provider value={true}>
+                {panel}
+              </MapShellPanelContext.Provider>
             </div>
           </aside>
         )}

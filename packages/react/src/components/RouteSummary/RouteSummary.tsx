@@ -3,6 +3,7 @@ import { cn } from "../../utils";
 import { surfaceClass, type SurfaceVariant } from "../Surface";
 import { Button } from "../Button";
 import { DestinationImage } from "../../utils/navigation-presentation";
+import { MapShellPanelContext } from "../AdaptiveMapShell/map-shell-panel";
 import { X, NavigationPointer01 as Navigation } from "@kozmos-ds/icons";
 
 interface RouteSummaryBaseProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -35,7 +36,11 @@ export interface RouteSummaryNavigationProps extends RouteSummaryBaseProps {
   durationText?: string;
   /** Decorative destination image; failures retain a same-size map-pin fallback. */
   destinationImage?: string;
-  /** Hosted content has no independent surface, radius, shadow or outer padding. */
+  /**
+   * Hosted content has no independent surface, radius, shadow or outer
+   * padding. Unset, it is hosted in the map shell's panel and standalone
+   * anywhere else (decision 43).
+   */
   presentation?: "standalone" | "hosted";
   arrivalText?: string;
   endLabel?: string;
@@ -58,7 +63,7 @@ const RouteSummaryNavigation = React.forwardRef<
       className,
       destination,
       destinationImage,
-      presentation = "standalone",
+      presentation: presentationProp,
       durationText,
       distanceText,
       arrivalText,
@@ -69,49 +74,56 @@ const RouteSummaryNavigation = React.forwardRef<
       ...props
     },
     ref,
-  ) => (
-    <div
-      ref={ref}
-      className={cn(
-        presentation === "hosted"
-          ? "kozmos-reset flex w-full flex-col text-foreground"
-          : cn(surfaceClass(surface), LAYOUT),
-        "gap-3",
-        className,
-      )}
-      {...props}
-      data-presentation={presentation}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {destinationImage && (
-          <DestinationImage key={destinationImage} src={destinationImage} />
+  ) => {
+    const inShellPanel = React.useContext(MapShellPanelContext);
+    const presentation =
+      presentationProp ?? (inShellPanel ? "hosted" : "standalone");
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          presentation === "hosted"
+            ? "kozmos-reset flex w-full flex-col text-foreground"
+            : cn(surfaceClass(surface), LAYOUT),
+          "gap-3",
+          className,
         )}
-        <h2 className="m-0 min-w-0 flex-1 basis-40 break-words text-xl font-semibold leading-tight text-foreground">
-          {destination}
-        </h2>
-        <Button
-          type="button"
-          variant="outline"
-          emotion="danger"
-          size="sm"
-          className="h-auto min-h-11 max-w-full shrink-0 whitespace-normal rounded-pill [overflow-wrap:anywhere]"
-          onClick={onEndRoute}
-        >
-          {endLabel}
-        </Button>
-      </div>
-      {(durationText || distanceText || arrivalText) && (
-        <p className="m-0 flex flex-wrap items-baseline gap-3 text-[15px] text-foreground">
-          {durationText && (
-            <span className="font-semibold">{durationText}</span>
+        {...props}
+        data-presentation={presentation}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {destinationImage && (
+            <DestinationImage key={destinationImage} src={destinationImage} />
           )}
-          {distanceText && <span>{distanceText}</span>}
-          {arrivalText ? <span className="ms-auto">{arrivalText}</span> : null}
-        </p>
-      )}
-      {progress}
-    </div>
-  ),
+          <h2 className="m-0 min-w-0 flex-1 basis-40 break-words text-xl font-semibold leading-tight text-foreground">
+            {destination}
+          </h2>
+          <Button
+            type="button"
+            variant="outline"
+            emotion="danger"
+            size="sm"
+            className="h-auto min-h-11 max-w-full shrink-0 whitespace-normal rounded-pill [overflow-wrap:anywhere]"
+            onClick={onEndRoute}
+          >
+            {endLabel}
+          </Button>
+        </div>
+        {(durationText || distanceText || arrivalText) && (
+          <p className="m-0 flex flex-wrap items-baseline gap-3 text-[15px] text-foreground">
+            {durationText && (
+              <span className="font-semibold">{durationText}</span>
+            )}
+            {distanceText && <span>{distanceText}</span>}
+            {arrivalText ? (
+              <span className="ms-auto">{arrivalText}</span>
+            ) : null}
+          </p>
+        )}
+        {progress}
+      </div>
+    );
+  },
 );
 RouteSummaryNavigation.displayName = "RouteSummaryNavigation";
 

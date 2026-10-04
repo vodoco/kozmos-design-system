@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { RouteSummary } from "./RouteSummary";
+import { AdaptiveMapShell } from "../AdaptiveMapShell";
 
 describe("RouteSummary", () => {
   it("hosts navigation without another surface and omits unavailable metrics", () => {
@@ -215,5 +216,40 @@ describe("RouteSummary", () => {
     const distance = screen.getByText("201 m");
     expect(distance.classList.contains("kozmos-muted-text")).toBe(true);
     expect(distance.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
+  describe("presentation inside the map shell (decision 43)", () => {
+    const summary = (presentation?: "standalone" | "hosted") => (
+      <RouteSummary
+        destination="Gate 3"
+        presentation={presentation}
+        onEndRoute={() => {}}
+      />
+    );
+    const presentationOf = (container: HTMLElement) =>
+      container
+        .querySelector("[data-presentation]")
+        ?.getAttribute("data-presentation");
+
+    it("stands alone outside the shell", () => {
+      const { container } = render(summary());
+      expect(presentationOf(container)).toBe("standalone");
+    });
+
+    it("is hosted in the shell's panel without the product asking", () => {
+      const { container } = render(
+        <AdaptiveMapShell map={<div />} panel={summary()} />,
+      );
+      expect(presentationOf(container)).toBe("hosted");
+      expect(container.querySelector("[data-presentation]")).not.toHaveClass(
+        "shadow-overlay",
+      );
+    });
+
+    it("keeps an explicit presentation in the shell", () => {
+      const { container } = render(
+        <AdaptiveMapShell map={<div />} panel={summary("standalone")} />,
+      );
+      expect(presentationOf(container)).toBe("standalone");
+    });
   });
 });

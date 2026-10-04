@@ -33,7 +33,7 @@ Given a `destination`, the summary takes the navigation layout: the destination'
 
 <Canvas of={RouteSummaryStories.Navigation_} />
 
-Use `presentation="hosted"` inside an existing sheet: this removes the summary's outer padding, surface, radius and shadow. Standalone remains the default for compatibility. Navigation metrics are optional and represent remaining estimates, not actual journey totals. Omitted values stay absent; supplied zero-valued labels stay visible. `destinationImage` is decorative and retains its fixed-size fallback on failure. Long destination names wrap without a two-line clamp.
+Hosted removes the summary's outer padding, surface, radius and shadow. Left unset, `presentation` is hosted in `AdaptiveMapShell`'s panel, whose surface is the one surface there (decision 43), and standalone anywhere else, as before. Pass `presentation="hosted"` inside a sheet of your own, or `"standalone"` to keep the card in the shell. Navigation metrics are optional and represent remaining estimates, not actual journey totals. Omitted values stay absent; supplied zero-valued labels stay visible. `destinationImage` is decorative and retains its fixed-size fallback on failure. Long destination names wrap without a two-line clamp.
 
 Swift uses `presentation: .hosted`; Compose uses `presentation = KozmosRoutePresentation.Hosted`. Compose retains the original navigation overload for positional source compatibility; the optional-metrics overload requires explicit presentation. The estimate layout is unchanged.
 
