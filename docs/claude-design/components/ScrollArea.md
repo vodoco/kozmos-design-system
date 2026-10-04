@@ -5,7 +5,7 @@
 A scrollable region with consistent scrollbar treatment across platforms.
 
 - **Import:** `import { ScrollArea } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-scrollarea--docs>
 

@@ -5,7 +5,7 @@
 Product result pattern that shares a stable POI ID and result index with its map marker. Selection is controlled through `result.selected`; unavailable results remain readable but cannot invoke `onSelect`.
 
 - **Import:** `import { POIResultCard } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-poiresultcard--docs>
 

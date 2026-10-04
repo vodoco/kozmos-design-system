@@ -5,7 +5,7 @@
 Pairs a primary action with a separate dropdown of related actions. Supply `onMainClick` for the primary button and `menuItems` for the alternatives; `disabled` applies to both triggers.
 
 - **Import:** `import { SplitButton } from "@kozmos-ds/react";`
-- **Group:** Action
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/action-splitbutton--docs>
 

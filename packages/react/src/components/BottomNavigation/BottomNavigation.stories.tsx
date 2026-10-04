@@ -7,7 +7,8 @@ import {
 } from "@kozmos-ds/icons";
 
 const meta: Meta<typeof BottomNavigation> = {
-  title: "Navigation/BottomNavigation",
+  id: "navigation-bottomnavigation",
+  title: "Core/Layout/BottomNavigation",
   component: BottomNavigation,
 };
 

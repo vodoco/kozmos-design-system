@@ -5,7 +5,7 @@
 The visitor's turn. Filled and right-aligned against the assistant's outlined, left-aligned bubble: the two differ by side and fill, not by colour alone.
 
 - **Import:** `import { UserMessage } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** Core
 - **Platforms:** React; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-usermessage--docs>
 

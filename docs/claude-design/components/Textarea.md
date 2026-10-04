@@ -5,7 +5,7 @@
 A multiline text field with a label, validation message and optional character count. The count's limit is a soft maximum; use the native `maxLength` prop only when input should be capped.
 
 - **Import:** `import { Textarea } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-textarea--docs>
 

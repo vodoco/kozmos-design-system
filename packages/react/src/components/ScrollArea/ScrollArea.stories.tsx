@@ -3,7 +3,8 @@ import { ScrollArea } from "./ScrollArea";
 import { Card } from "../Card";
 
 const meta = {
-  title: "Components/ScrollArea",
+  id: "components-scrollarea",
+  title: "Core/Layout/ScrollArea",
   component: ScrollArea,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof ScrollArea>;

@@ -9,7 +9,8 @@ const lobby = {
   description: "North Terminal · Ground floor",
 };
 const meta = {
-  title: "Map/RouteLocationField",
+  id: "map-routelocationfield",
+  title: "SDK/Navigation/RouteLocationField",
   component: RouteLocationField,
   parameters: { layout: "padded" },
   args: {
@@ -48,6 +49,16 @@ export const Search: Story = {
   },
 };
 export const Resolved: Story = { args: { location: lobby } };
+export const WithCurrentPosition: Story = {
+  render: Search.render,
+  args: {
+    currentPosition: {
+      value: "position-fix-17",
+      label: "Current position",
+      description: "North Terminal · Ground floor",
+    },
+  },
+};
 export const HostFiltered: Story = {
   render: Search.render,
   args: {

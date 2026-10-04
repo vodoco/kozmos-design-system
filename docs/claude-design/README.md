@@ -56,160 +56,89 @@ These notes are about the artifact Claude Design builds from this repository, no
 
 ## The components
 
-### Action (4)
+### Core (74)
 
-- [FloatingActionButton](components/FloatingActionButton.md): A round, elevated Button for a prominent action, with a plus icon by default.
-- [IconButton](components/IconButton.md): IconButtons are used for actions that don't require a label, such as "flaging" or "liking" an item.
-- [SplitButton](components/SplitButton.md): Pairs a primary action with a separate dropdown of related actions.
-- [ToggleButton](components/ToggleButton.md): A button that maintains a pressed/unpressed choice, with default or outline styling.
-
-### Components (32)
-
+- [Accordion](components/Accordion.md): A vertically stacked set of interactive headings that each reveal a section of content.
+- [ActionCard](components/ActionCard.md): Rich content inside an assistant turn — a `POIResultList`, a `POIResultCard`, a hand-off.
+- [Alert](components/Alert.md): Displays a callout for user attention.
+- [Avatar](components/Avatar.md): An image element with a fallback for representing the user.
+- [Backdrop](components/Backdrop.md): A full-viewport scrim that visually separates foreground content from the page.
 - [Badge](components/Badge.md): Displays compact metadata, status, or categorization.
+- [BottomNavigation](components/BottomNavigation.md): A bottom navigation bar of icon-and-label destinations with active, disabled and optional badge states.
+- [BottomSheet](components/BottomSheet.md): A bottom-edge Drawer composition with a handle, optional close button and safe-area-aware spacing.
+- [Box](components/Box.md): A minimal layout wrapper that renders a `div`, or passes its props to one child with `asChild`.
+- [Breadcrumb](components/Breadcrumb.md): Composes a navigation trail from links, separators and a non-interactive current-page label.
 - [Button](components/Button.md): Buttons allow users to take actions, and make choices, with a single tap.
 - [Card](components/Card.md): Displays a card with header, content, and footer.
 - [Checkbox](components/Checkbox.md): A control that allows the user to toggle between checked and unchecked states.
+- [Chip](components/Chip.md): `Chip` presents compact filter, category, and removable selection values.
 - [ColorPicker](components/ColorPicker.md): A colour field with a swatch trigger, a palette of presets, an alpha slider, and a switchable text format.
 - [Combobox](components/Combobox.md): A single-select field that filters its options as the user types.
+- [Container](components/Container.md): Constrains content width and applies consistent horizontal insets.
 - [Counter](components/Counter.md): Displays a compact count for badges, filters, unread items, and status summaries.
 - [DatePicker](components/DatePicker.md): DatePicker retains the browser's native date input.
 - [DateRangePicker](components/DateRangePicker.md): The range adapts to its container width rather than the screen width: narrow modules stack the individually labelled fields.
 - [Dialog](components/Dialog.md): A window overlaid on existing content.
+- [Drawer](components/Drawer.md): Drawer presents contextual content from an edge of the viewport without committing to a dashboard, map, or CMS-specific layout.
+- [DynamicIsland](components/DynamicIsland.md): This React component is a visual activity capsule.
 - [EmptyState](components/EmptyState.md): The `EmptyState` component is used to communicate a zero-results condition or an empty state of an interface securely across all platforms.
+- [FeedbackCard](components/FeedbackCard.md): A rating and comment prompt for collecting feedback on the wayfinding experience.
 - [FieldWrapper](components/FieldWrapper.md): The label, description, helper text, and error message that surround a form control — without the control itself.
 - [FileUpload](components/FileUpload.md): A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback.
+- [FloatingActionButton](components/FloatingActionButton.md): A round, elevated Button for a prominent action, with a plus icon by default.
+- [Grid](components/Grid.md): Arranges children in a CSS grid with explicit column, row, flow, alignment and gap options.
+- [IconButton](components/IconButton.md): IconButtons are used for actions that don't require a label, such as "flaging" or "liking" an item.
 - [Input](components/Input.md): Inputs allow users to enter text into a UI.
 - [Label](components/Label.md): Names a form control.
-- [Listbox](components/Listbox.md): An always-visible list of selectable options, in single or multiple mode.
-- [MultiSelect](components/MultiSelect.md): A filterable field for choosing several options, each shown as a removable chip.
-- [NumberInput](components/NumberInput.md): A numeric field with optional stepper buttons and `min` / `max` / `step` clamping.
-- [OTPInput](components/OTPInput.md): A segmented numeric code field with configurable length, paste handling and field feedback.
-- [PasswordInput](components/PasswordInput.md): A text input for secrets, with a toggle that reveals what has been typed.
-- [POICard](components/POICard.md): A general-purpose place card with optional imagery, subtitle, description, badges and actions.
-- [Radio](components/Radio.md): A set of checkable buttons—known as radio buttons—where no more than one of the buttons can be checked at a time.
-- [ScrollArea](components/ScrollArea.md): A scrollable region with consistent scrollbar treatment across platforms.
-- [SearchBar](components/SearchBar.md): A search row with a controlled query, clear action and an optional trailing control.
-- [Select](components/Select.md): Displays a list of options for the user to pick from—triggered by a button.
-- [Slider](components/Slider.md): Adjusts a numeric value or range.
-- [Switch](components/Switch.md): A control that allows the user to toggle between checked and not checked.
-- [Tabs](components/Tabs.md): Switches between related content panels within the same interface.
-- [Textarea](components/Textarea.md): A multiline text field with a label, validation message and optional character count.
-- [TimePicker](components/TimePicker.md): TimePicker retains native time-entry behavior.
-- [UserLocationMarker](components/UserLocationMarker.md): Shows a map position and optional heading.
-- [WayfindingCard](components/WayfindingCard.md): Displays route-planning content with an optional close action.
-
-### Data Display (10)
-
-- [Accordion](components/Accordion.md): A vertically stacked set of interactive headings that each reveal a section of content.
-- [Avatar](components/Avatar.md): An image element with a fallback for representing the user.
-- [Chip](components/Chip.md): `Chip` presents compact filter, category, and removable selection values.
-- [List](components/List.md): A bordered vertical list with standard or compact row density.
-- [MetaStrip](components/MetaStrip.md): A row of small facts about one thing, each a label and a value.
-- [Separator](components/Separator.md): A horizontal or vertical divider between related sections.
-- [Table](components/Table.md): Styled semantic table parts for headers, body rows, cells, footers and captions.
-- [Tag](components/Tag.md): A compact label for metadata or status, with variant and emotion colours and an optional remove action.
-- [Timeline](components/Timeline.md): Displays ordered events with composed time, title, and description primitives.
-- [Tree](components/Tree.md): Tree presents hierarchical data with disclosure, selection, keyboard navigation, optional counts, metadata, and safe nested row actions.
-
-### Feedback (6)
-
-- [Alert](components/Alert.md): Displays a callout for user attention.
-- [Backdrop](components/Backdrop.md): A full-viewport scrim that visually separates foreground content from the page.
-- [Progress](components/Progress.md): Communicates progress with an accessible name.
-- [Skeleton](components/Skeleton.md): A loading placeholder shaped as a text line, block or circle, with configurable dimensions.
-- [Spinner](components/Spinner.md): Indeterminate loading: three quarters of a circle, turning.
-- [Toast](components/Toast.md): A succinct message that is displayed temporarily.
-
-### Foundations (8)
-
-- [Box](components/Box.md): A minimal layout wrapper that renders a `div`, or passes its props to one child with `asChild`.
-- [Container](components/Container.md): Constrains content width and applies consistent horizontal insets.
-- [Grid](components/Grid.md): Arranges children in a CSS grid with explicit column, row, flow, alignment and gap options.
-- [Heading](components/Heading.md): Renders a semantic heading using the Kozmos level-based type scale.
-- [Icon](components/Icon.md): Renders a Pointr icon supplied as a component or registry name with standard size and colour variants.
-- [Stack](components/Stack.md): Arranges children in a flex row or column with standard gap, alignment, justification and wrapping options.
-- [Surface](components/Surface.md): What a surface over content is made of.
-- [Text](components/Text.md): Applies Kozmos typography, colour, alignment and optional truncation to body text.
-
-### Input (1)
-
-- [Rating](components/Rating.md): Collects or displays a rating using stars or a thumbs-up/down choice.
-
-### Inputs (1)
-
-- [Search](components/Search.md): A search input with a leading search icon, optional field label and validation message.
-
-### Map (13)
-
-- [ArrivalPanel](components/ArrivalPanel.md): Host-confirmed arrival content for an existing bottom sheet or panel.
-- [DirectionStep](components/DirectionStep.md): A step of a route: the symbol, instruction and optional distance and duration.
-- [Itinerary](components/Itinerary.md): The whole route as a list: where it starts, every step with the current one emphasised, where it ends.
-- [ManoeuvreCard](components/ManoeuvreCard.md): The current manoeuvre, floating over the map during navigation: its arrow, the instruction, how far and how long, and a grab bar that opens the full itinerary in its place.
-- [MapControlsGroup](components/MapControlsGroup.md): The stacked zoom, compass, and locate affordances that sit over a map.
-- [MapOverlay](components/MapOverlay.md): A positioned surface that floats product chrome above the map canvas.
-- [MapView](components/MapView.md): A named surface that contains the map renderer supplied by the host, not a map SDK itself.
-- [RouteLocationField](components/RouteLocationField.md): Controlled place search with a separate resolved-place identity, building/floor context, explicit clearing and a choose-on-map action.
-- [RouteProgressRail](components/RouteProgressRail.md): How far along the route the visitor is, as a rail: a dot where it starts, a disc carrying the current manoeuvre's arrow that travels the track, a dot where it ends.
-- [RouteSetupPanel](components/RouteSetupPanel.md): Hosted route setup content with a named heading, explicit cancellation and a Continue action gated by host-validated readiness.
-- [RouteSummary](components/RouteSummary.md): `RouteSummary` presents route estimates and actions.
-- [RoutingInputGroup](components/RoutingInputGroup.md): Editable route points with stable IDs and controlled change, swap, add and remove callbacks.
-- [SaveLocationCard](components/SaveLocationCard.md): A prompt offering to keep a place in the user's saved locations, with routing and note shortcuts.
-
-### Navigation (9)
-
-- [BottomNavigation](components/BottomNavigation.md): A bottom navigation bar of icon-and-label destinations with active, disabled and optional badge states.
-- [Breadcrumb](components/Breadcrumb.md): Composes a navigation trail from links, separators and a non-interactive current-page label.
 - [Link](components/Link.md): A styled anchor for navigation, with default and subtle colour treatments.
+- [List](components/List.md): A bordered vertical list with standard or compact row density.
+- [Listbox](components/Listbox.md): An always-visible list of selectable options, in single or multiple mode.
 - [Menu](components/Menu.md): A dropdown menu composition for commands, checkbox or radio choices, groups and submenus.
+- [MetaStrip](components/MetaStrip.md): A row of small facts about one thing, each a label and a value.
+- [MultiSelect](components/MultiSelect.md): A filterable field for choosing several options, each shown as a removable chip.
 - [Navbar](components/Navbar.md): Horizontal app navigation shell.
 - [NavigationItem](components/NavigationItem.md): Reusable navigation row/item primitive for top navigation, side navigation, and the rail.
-- [Pagination](components/Pagination.md): Composes page navigation from numbered links, previous/next controls and ellipses.
-- [Sidebar](components/Sidebar.md): Vertical navigation shell.
-- [Stepper](components/Stepper.md): Shows progress through a labelled sequence, marking earlier steps complete and one step current.
-
-### Overlay (4)
-
-- [BottomSheet](components/BottomSheet.md): A bottom-edge Drawer composition with a handle, optional close button and safe-area-aware spacing.
-- [Drawer](components/Drawer.md): Drawer presents contextual content from an edge of the viewport without committing to a dashboard, map, or CMS-specific layout.
-- [Popover](components/Popover.md): An anchored surface for supporting content or small interactions, composed from a trigger and content.
-- [Tooltip](components/Tooltip.md): A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.
-
-### Platform (2)
-
-- [DynamicIsland](components/DynamicIsland.md): This React component is a visual activity capsule.
-- [FeedbackCard](components/FeedbackCard.md): A rating and comment prompt for collecting feedback on the wayfinding experience.
-
-### Product (1)
-
-- [MapInfoPanel](components/MapInfoPanel.md): Information about a map: host-provided introduction, optional branding, FAQs, copyright/provider credits, support/legal links and explicitly labelled versions.
-
-### Product SDK (25)
-
-- [ActionCard](components/ActionCard.md): Rich content inside an assistant turn — a `POIResultList`, a `POIResultCard`, a hand-off.
-- [AdaptiveMapShell](components/AdaptiveMapShell.md): Map-engine-neutral layout driven by its container, not the browser viewport.
-- [AICompanionPanel](components/AICompanionPanel.md): The assistant surface.
-- [AIInputBar](components/AIInputBar.md): Text in, question out.
-- [AIMessage](components/AIMessage.md): An assistant turn.
-- [AIMessageList](components/AIMessageList.md): The thread: `role="log"` with `aria-live="polite"`, because turns arrive over time and must be heard without taking the visitor's place.
-- [AISearchButton](components/AISearchButton.md): The AI search, beside the search field: a 48 disc inside a 66 ring whose gradient runs through the theme's own ramp — from the 300 step to the 600 and back — with a 16 icon.
-- [BrowseCategoriesPanel](components/BrowseCategoriesPanel.md): Scrollable Product/SDK category composition.
-- [CategoryField](components/CategoryField.md): The search field's form once a quick-access category is chosen — the prototype's, measured: 48 tall, the control radius, the category's colour at 12 % with a 1-pixel border of it, the icon at 28 in the colour, the name at 15 semibold in the foreground, a 22-tall count pill filled with the colour, a 32 clear at the trailing edge with its cross in the foreground, in a 44 hit area as the search bar's clear is.
-- [CategoryTile](components/CategoryTile.md): Product category action with controlled selection, multiline localization-safe labels, an optional count drawn as the system's counter at the icon square's top-right (its localized label spoken, not drawn), and a minimum 44px target.
-- [FloorSelector](components/FloorSelector.md): A controlled floor selector with vertical-list, horizontal-list, compact-stepper and collapsible presentations.
-- [LanguageSwitcher](components/LanguageSwitcher.md): A web-only language control built from Kozmos Select. iOS and Android deliberately follow device/app language and do not have this button.
-- [LocationPin](components/LocationPin.md): A map marker with optional result number, custom content, external label and category tint.
-- [MapAttribution](components/MapAttribution.md): Provider-neutral map credits and an independently optional brand slot, available on React, SwiftUI and Compose.
-- [MapControlButton](components/MapControlButton.md): Product/SDK map action with icon-only and labelled presentations.
-- [MapStatusPill](components/MapStatusPill.md): One status on the map, drawn as a compact pill in one of five tones (decision 39).
 - [Notice](components/Notice.md): A short notice that opens for the long version.
-- [POIDetailPanel](components/POIDetailPanel.md): Typed Product/SDK detail anatomy for partial and complete POI data.
-- [POIMediaGallery](components/POIMediaGallery.md): POI media sequence with explicit position, 44px controls and alternative text.
-- [POIResultCard](components/POIResultCard.md): Product result pattern that shares a stable POI ID and result index with its map marker.
-- [POIResultGroup](components/POIResultGroup.md): One venue, many branches.
-- [POIResultList](components/POIResultList.md): Controlled list composition that keeps result selection synchronized by POI ID.
-- [RouteOptionCard](components/RouteOptionCard.md): Controlled route alternative with localized duration and distance labels, selection semantics, availability, and warning support.
-- [RoutePreviewPanel](components/RoutePreviewPanel.md): Route calculation and alternative-selection composition.
+- [NumberInput](components/NumberInput.md): A numeric field with optional stepper buttons and `min` / `max` / `step` clamping.
+- [OTPInput](components/OTPInput.md): A segmented numeric code field with configurable length, paste handling and field feedback.
+- [Pagination](components/Pagination.md): Composes page navigation from numbered links, previous/next controls and ellipses.
+- [PasswordInput](components/PasswordInput.md): A text input for secrets, with a toggle that reveals what has been typed.
+- [Popover](components/Popover.md): An anchored surface for supporting content or small interactions, composed from a trigger and content.
+- [Progress](components/Progress.md): Communicates progress with an accessible name.
+- [Radio](components/Radio.md): A set of checkable buttons—known as radio buttons—where no more than one of the buttons can be checked at a time.
+- [Rating](components/Rating.md): Collects or displays a rating using stars or a thumbs-up/down choice.
+- [ScrollArea](components/ScrollArea.md): A scrollable region with consistent scrollbar treatment across platforms.
+- [Search](components/Search.md): A search input with a leading search icon, optional field label and validation message.
+- [SegmentedControl](components/SegmentedControl.md): Use SegmentedControl when users choose one option from a short, visible set.
+- [Select](components/Select.md): Displays a list of options for the user to pick from—triggered by a button.
+- [Separator](components/Separator.md): A horizontal or vertical divider between related sections.
+- [Sidebar](components/Sidebar.md): Vertical navigation shell.
+- [Skeleton](components/Skeleton.md): A loading placeholder shaped as a text line, block or circle, with configurable dimensions.
+- [Slider](components/Slider.md): Adjusts a numeric value or range.
+- [Spinner](components/Spinner.md): Indeterminate loading: three quarters of a circle, turning.
+- [SplitButton](components/SplitButton.md): Pairs a primary action with a separate dropdown of related actions.
+- [Stack](components/Stack.md): Arranges children in a flex row or column with standard gap, alignment, justification and wrapping options.
+- [Stepper](components/Stepper.md): Shows progress through a labelled sequence, marking earlier steps complete and one step current.
+- [Surface](components/Surface.md): What a surface over content is made of.
+- [Switch](components/Switch.md): A control that allows the user to toggle between checked and not checked.
+- [Table](components/Table.md): Styled semantic table parts for headers, body rows, cells, footers and captions.
+- [Tabs](components/Tabs.md): Switches between related content panels within the same interface.
+- [Tag](components/Tag.md): A compact label for metadata or status, with variant and emotion colours and an optional remove action.
+- [Textarea](components/Textarea.md): A multiline text field with a label, validation message and optional character count.
+- [Timeline](components/Timeline.md): Displays ordered events with composed time, title, and description primitives.
+- [TimePicker](components/TimePicker.md): TimePicker retains native time-entry behavior.
+- [Toast](components/Toast.md): A succinct message that is displayed temporarily.
+- [ToggleButton](components/ToggleButton.md): A button that maintains a pressed/unpressed choice, with default or outline styling.
+- [Tooltip](components/Tooltip.md): A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.
+- [Tree](components/Tree.md): Tree presents hierarchical data with disclosure, selection, keyboard navigation, optional counts, metadata, and safe nested row actions.
 - [UserMessage](components/UserMessage.md): The visitor's turn.
+
+### Foundations (4)
+
+- [Heading](components/Heading.md): Renders a semantic heading using the Kozmos level-based type scale.
+- [Icon](components/Icon.md): Renders a Pointr icon supplied as a component or registry name with standard size and colour variants.
+- [Text](components/Text.md): Applies Kozmos typography, colour, alignment and optional truncation to body text.
+- [ThemeProvider](components/ThemeProvider.md): Scopes light, dark or system appearance, reading direction and token overrides to a Kozmos subtree and its owned portals.
 
 ### Providers (3)
 
@@ -217,17 +146,49 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [KozmosTheme](components/KozmosTheme.md): Compatibility name for the unified scoped configuration provider.
 - [AnalyticsProvider](components/AnalyticsProvider.md): High-performance batched telemetry provider for Kozmos.
 
-### Selection (1)
+### SDK (41)
 
-- [SegmentedControl](components/SegmentedControl.md): Use SegmentedControl when users choose one option from a short, visible set.
-
-### System (1)
-
-- [ThemeProvider](components/ThemeProvider.md): Scopes light, dark or system appearance, reading direction and token overrides to a Kozmos subtree and its owned portals.
-
-### Utilities (1)
-
+- [AdaptiveMapShell](components/AdaptiveMapShell.md): Map-engine-neutral layout driven by its container, not the browser viewport.
+- [AICompanionPanel](components/AICompanionPanel.md): The assistant surface.
+- [AIInputBar](components/AIInputBar.md): Text in, question out.
+- [AIMessage](components/AIMessage.md): An assistant turn.
+- [AIMessageList](components/AIMessageList.md): The thread: `role="log"` with `aria-live="polite"`, because turns arrive over time and must be heard without taking the visitor's place.
+- [AISearchButton](components/AISearchButton.md): The AI search, beside the search field: a 48 disc inside a 66 ring whose gradient runs through the theme's own ramp — from the 300 step to the 600 and back — with a 16 icon.
+- [ArrivalPanel](components/ArrivalPanel.md): Host-confirmed arrival content for an existing bottom sheet or panel.
+- [BrowseCategoriesPanel](components/BrowseCategoriesPanel.md): Scrollable Product/SDK category composition.
+- [CategoryField](components/CategoryField.md): The search field's form once a quick-access category is chosen — the prototype's, measured: 48 tall, the control radius, the category's colour at 12 % with a 1-pixel border of it, the icon at 28 in the colour, the name at 15 semibold in the foreground, a 22-tall count pill filled with the colour, a 32 clear at the trailing edge with its cross in the foreground, in a 44 hit area as the search bar's clear is.
+- [CategoryTile](components/CategoryTile.md): Product category action with controlled selection, multiline localization-safe labels, an optional count drawn as the system's counter at the icon square's top-right (its localized label spoken, not drawn), and a minimum 44px target.
+- [DirectionStep](components/DirectionStep.md): A step of a route: the symbol, instruction and optional distance and duration.
+- [FloorSelector](components/FloorSelector.md): A controlled floor selector with vertical-list, horizontal-list, compact-stepper and collapsible presentations.
+- [Itinerary](components/Itinerary.md): The whole route as a list: where it starts, every step with the current one emphasised, where it ends.
+- [LanguageSwitcher](components/LanguageSwitcher.md): A web-only language control built from Kozmos Select. iOS and Android deliberately follow device/app language and do not have this button.
+- [LocationPin](components/LocationPin.md): A map marker with optional result number, custom content, external label and category tint.
+- [ManoeuvreCard](components/ManoeuvreCard.md): The current manoeuvre, floating over the map during navigation: its arrow, the instruction, how far and how long, and a grab bar that opens the full itinerary in its place.
+- [MapAttribution](components/MapAttribution.md): Provider-neutral map credits and an independently optional brand slot, available on React, SwiftUI and Compose.
+- [MapControlButton](components/MapControlButton.md): Product/SDK map action with icon-only and labelled presentations.
+- [MapControlsGroup](components/MapControlsGroup.md): The stacked zoom, compass, and locate affordances that sit over a map.
+- [MapInfoPanel](components/MapInfoPanel.md): Information about a map: host-provided introduction, optional branding, FAQs, copyright/provider credits, support/legal links and explicitly labelled versions.
+- [MapOverlay](components/MapOverlay.md): A positioned surface that floats product chrome above the map canvas.
+- [MapStatusPill](components/MapStatusPill.md): One status on the map, drawn as a compact pill in one of five tones (decision 39).
+- [MapView](components/MapView.md): A named surface that contains the map renderer supplied by the host, not a map SDK itself.
 - [NavigationAnnouncer](components/NavigationAnnouncer.md): An invisible live region that speaks turn-by-turn guidance to assistive technology.
+- [POICard](components/POICard.md): A general-purpose place card with optional imagery, subtitle, description, badges and actions.
+- [POIDetailPanel](components/POIDetailPanel.md): Typed Product/SDK detail anatomy for partial and complete POI data.
+- [POIMediaGallery](components/POIMediaGallery.md): POI media sequence with explicit position, 44px controls and alternative text.
+- [POIResultCard](components/POIResultCard.md): Product result pattern that shares a stable POI ID and result index with its map marker.
+- [POIResultGroup](components/POIResultGroup.md): One venue, many branches.
+- [POIResultList](components/POIResultList.md): Controlled list composition that keeps result selection synchronized by POI ID.
+- [RouteLocationField](components/RouteLocationField.md): Controlled place search with a separate resolved-place identity, building/floor context, explicit clearing and a choose-on-map action.
+- [RouteOptionCard](components/RouteOptionCard.md): Controlled route alternative with localized duration and distance labels, selection semantics, availability, and warning support.
+- [RoutePreviewPanel](components/RoutePreviewPanel.md): Route calculation and alternative-selection composition.
+- [RouteProgressRail](components/RouteProgressRail.md): Pass `activeLeg={{ start: 0, end: 0.4 }}` to show the route rather than the legacy step disc.
+- [RouteSetupPanel](components/RouteSetupPanel.md): Hosted route setup content with a named heading, explicit cancellation and a Continue action gated by host-validated readiness.
+- [RouteSummary](components/RouteSummary.md): `RouteSummary` presents route estimates and actions.
+- [RoutingInputGroup](components/RoutingInputGroup.md): Editable route points with stable IDs and controlled change, swap, add and remove callbacks.
+- [SaveLocationCard](components/SaveLocationCard.md): A prompt offering to keep a place in the user's saved locations, with routing and note shortcuts.
+- [SearchBar](components/SearchBar.md): A search row with a controlled query, clear action and an optional trailing control.
+- [UserLocationMarker](components/UserLocationMarker.md): Shows a map position and optional heading.
+- [WayfindingCard](components/WayfindingCard.md): Displays route-planning content with an optional close action.
 
 ## Everything else `@kozmos-ds/react` exports
 

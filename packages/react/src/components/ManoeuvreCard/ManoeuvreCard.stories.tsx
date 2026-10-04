@@ -25,7 +25,8 @@ const steps = [
 ];
 
 const meta = {
-  title: "Map/ManoeuvreCard",
+  id: "map-manoeuvrecard",
+  title: "SDK/Navigation/ManoeuvreCard",
   component: ManoeuvreCard,
   parameters: { layout: "padded" },
   args: {

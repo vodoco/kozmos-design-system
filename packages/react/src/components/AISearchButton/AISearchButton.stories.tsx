@@ -3,7 +3,8 @@ import { AISearchButton } from "./AISearchButton";
 import { SearchBar } from "../SearchBar";
 
 const meta = {
-  title: "Product SDK/AISearchButton",
+  id: "product-sdk-aisearchbutton",
+  title: "SDK/Assistant/AISearchButton",
   component: AISearchButton,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof AISearchButton>;

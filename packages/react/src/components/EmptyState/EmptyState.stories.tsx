@@ -4,7 +4,8 @@ import { Button } from "../Button";
 import { SearchMd as Search } from "@kozmos-ds/icons";
 
 const meta = {
-  title: "Components/EmptyState",
+  id: "components-emptystate",
+  title: "Core/Feedback/EmptyState",
   component: EmptyState,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof EmptyState>;

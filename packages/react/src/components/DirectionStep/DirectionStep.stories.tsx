@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { DirectionStep, DirectionIcon, DIRECTION_TYPES } from "./DirectionStep";
 
 const meta: Meta<typeof DirectionStep> = {
-  title: "Map/DirectionStep",
+  id: "map-directionstep",
+  title: "SDK/Navigation/DirectionStep",
   component: DirectionStep,
 };
 

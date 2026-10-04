@@ -3,7 +3,8 @@ import { Textarea } from "./Textarea";
 import { Label } from "../Label/Label";
 
 const meta = {
-  title: "Components/Textarea",
+  id: "components-textarea",
+  title: "Core/Inputs/Textarea",
   component: Textarea,
   parameters: {
     layout: "centered",

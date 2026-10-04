@@ -5,7 +5,7 @@
 Shows a map position and optional heading. Supply these values from your map adapter; the component does not query device location. The example rotates only when requested, and the marker rings respect reduced-motion preferences.
 
 - **Import:** `import { UserLocationMarker } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-userlocationmarker--docs>
 
@@ -61,6 +61,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `UserLocationMarkerProps`
 
 - `heading`: `number`, optional, default `0`.
 - `showHeading`: `boolean`, optional, default `true`.
+- `compact`: `boolean`, optional, default `false`.
+
+  Dot only, without the map halo, heading cone or pulse (for compact compositions).
+
 - `label`: `string`, optional, default `"User location"`.
 
   What the marker is called, for a visitor who cannot see it. Hard-coded

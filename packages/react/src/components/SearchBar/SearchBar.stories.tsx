@@ -4,7 +4,8 @@ import { MapOverlay } from "../MapOverlay";
 import { useState } from "react";
 
 const meta = {
-  title: "Components/SearchBar",
+  id: "components-searchbar",
+  title: "SDK/Search and browse/SearchBar",
   component: SearchBar,
   parameters: {
     layout: "centered",

@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { AIInputBar, type AIVoiceState } from "./AIInputBar";
 
 const meta = {
-  title: "Product SDK/AIInputBar",
+  id: "product-sdk-aiinputbar",
+  title: "SDK/Assistant/AIInputBar",
   component: AIInputBar,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof AIInputBar>;

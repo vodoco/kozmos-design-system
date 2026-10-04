@@ -5,7 +5,7 @@
 Adjusts a numeric value or range. In React, provide `label`, `aria-label` or `aria-labelledby` for a single thumb. For ranges, provide distinct, localized `thumbLabels` (for example, minimum and maximum price). Helper/error descriptions are associated with the interactive thumbs.
 
 - **Import:** `import { Slider } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-slider--docs>
 

@@ -8,7 +8,8 @@ import { MapControlsGroup } from "../MapControlsGroup";
 import { FloorSelector } from "../FloorSelector/FloorSelector";
 
 const meta = {
-  title: "Map/MapOverlay",
+  id: "map-mapoverlay",
+  title: "SDK/Map controls/MapOverlay",
   component: MapOverlay,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof MapOverlay>;

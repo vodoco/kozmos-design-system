@@ -3,7 +3,8 @@ import { useState } from "react";
 import { RoutingInputGroup, type RoutePoint } from "./RoutingInputGroup";
 
 const meta = {
-  title: "Map/RoutingInputGroup",
+  id: "map-routinginputgroup",
+  title: "SDK/Navigation/RoutingInputGroup",
   component: RoutingInputGroup,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof RoutingInputGroup>;

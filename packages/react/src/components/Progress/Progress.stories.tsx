@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Progress } from "./Progress";
+import { Progress, ProgressTrack } from "./Progress";
+import { Box } from "../Box";
 import { useEffect, useState } from "react";
 
 const meta: Meta<typeof Progress> = {
-  title: "Feedback/Progress",
+  id: "feedback-progress",
+  title: "Core/Feedback/Progress",
   component: Progress,
 };
 
@@ -20,6 +22,39 @@ export const Default: Story = {
     value: 66,
     className: "w-3/5",
   },
+};
+
+export const SelectedSection: Story = {
+  render: () => (
+    <Box role="img" aria-label="Selected section from 20 to 60 percent">
+      <ProgressTrack
+        activeRange={{ start: 0.2, end: 0.6 }}
+        value={null}
+        positionMode="static"
+        appearance="gradient"
+        motion="directional"
+      />
+    </Box>
+  ),
+};
+
+export const LivePosition: Story = {
+  render: () => (
+    <Box
+      role="progressbar"
+      aria-label="Journey progress"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={30}
+    >
+      <ProgressTrack
+        activeRange={{ start: 0.2, end: 0.6 }}
+        value={0.3}
+        appearance="gradient"
+        motion="directional"
+      />
+    </Box>
+  ),
 };
 
 // Progress moving after it appears. Left out of the visual review: what it

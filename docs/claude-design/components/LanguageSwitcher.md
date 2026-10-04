@@ -5,7 +5,7 @@
 A web-only language control built from Kozmos Select. iOS and Android deliberately follow device/app language and do not have this button. This is a product decision, not a native parity gap.
 
 - **Import:** `import { LanguageSwitcher } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-languageswitcher--docs>
 

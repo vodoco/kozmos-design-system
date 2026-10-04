@@ -5,7 +5,7 @@
 Constrains content width and applies consistent horizontal insets. Use `inset="window"` for viewport-responsive page padding and `inset="panel"` for fixed padding inside a narrow panel.
 
 - **Import:** `import { Container } from "@kozmos-ds/react";`
-- **Group:** Foundations
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/foundations-container--docs>
 

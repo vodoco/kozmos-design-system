@@ -10,7 +10,8 @@ import {
 import { Button } from "../Button";
 
 const meta: Meta<typeof BottomSheet> = {
-  title: "Overlay/BottomSheet",
+  id: "overlay-bottomsheet",
+  title: "Core/Overlays/BottomSheet",
   component: BottomSheet,
 };
 

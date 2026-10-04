@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { MapAttribution } from "./MapAttribution";
 
 const meta: Meta<typeof MapAttribution> = {
-  title: "Product SDK/MapAttribution",
+  id: "product-sdk-mapattribution",
+  title: "SDK/Map controls/MapAttribution",
   component: MapAttribution,
   parameters: { layout: "centered" },
   args: {

@@ -5,7 +5,7 @@
 One venue, many branches.
 
 - **Import:** `import { POIResultGroup } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-poiresultgroup--docs>
 

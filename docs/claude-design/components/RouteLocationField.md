@@ -5,7 +5,7 @@
 Controlled place search with a separate resolved-place identity, building/floor context, explicit clearing and a choose-on-map action.
 
 - **Import:** `import { RouteLocationField } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-routelocationfield--docs>
 
@@ -71,7 +71,23 @@ It forwards its ref to `HTMLDivElement`. Its props are `RouteLocationFieldProps`
 
   Host clears the resolved identity/query and owns focus restoration.
 
+- `onEdit`: `() => void`, optional.
+
+  Begin replacing a resolved place. The host retains its identity until selection and owns focus.
+
+- `onCancelEdit`: `() => void`, optional.
+
+  While showing an unresolved draft, restore the host's retained place and focus.
+
+- `changeLabel`: `string`, optional, default `"Change"`.
+- `cancelEditLabel`: `string`, optional, default `"Cancel"`.
+- `clearSearchLabel`: `string`, optional, default `"Clear search"`.
 - `onChooseMap`: `() => void`, optional.
+- `currentPosition`: `ComboboxOption | null`, optional.
+
+  A usable blue-dot position resolved by the host, or null when unavailable. No permission/position inference.
+
+- `currentPositionLabel`: `string`, optional, default `"Current position"`.
 - `status`: `RouteLocationStatus`, optional, default `"idle"`.
 - `statusText`: `string`, optional.
 

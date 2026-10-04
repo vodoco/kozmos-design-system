@@ -14,7 +14,8 @@ import {
 const sides: DrawerSide[] = ["right", "left", "top", "bottom"];
 
 const meta: Meta<typeof DrawerContent> = {
-  title: "Overlay/Drawer",
+  id: "overlay-drawer",
+  title: "Core/Overlays/Drawer",
   component: DrawerContent,
   argTypes: {
     side: {

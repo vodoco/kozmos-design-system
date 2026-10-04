@@ -3,7 +3,8 @@ import { ToggleButton } from "./ToggleButton";
 import { Bold01 as Bold } from "@kozmos-ds/icons";
 
 const meta: Meta<typeof ToggleButton> = {
-  title: "Action/ToggleButton",
+  id: "action-togglebutton",
+  title: "Core/Actions/ToggleButton",
   component: ToggleButton,
 };
 

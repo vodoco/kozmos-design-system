@@ -6,7 +6,8 @@ import { LocationPin, type LocationPinProps } from "./LocationPin";
 import { ThemeProvider } from "../ThemeProvider/ThemeProvider";
 
 const meta: Meta<typeof LocationPin> = {
-  title: "Product SDK/LocationPin",
+  id: "product-sdk-locationpin",
+  title: "SDK/Map controls/LocationPin",
   component: LocationPin,
   parameters: { layout: "centered" },
   args: { onClick: fn() },

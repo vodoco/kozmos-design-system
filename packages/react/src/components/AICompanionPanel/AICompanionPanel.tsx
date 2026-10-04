@@ -1,4 +1,5 @@
 import React from "react";
+import { IconButton } from "../IconButton/IconButton";
 import { Stars01, XClose } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { inertOutside } from "../../utils/modal-inert";
@@ -322,16 +323,17 @@ const AICompanionPanel = React.forwardRef<
             {title}
           </Text>
           {onClose && (
-            <button
+            <IconButton
               aria-label={closeLabel}
               // The mark stays 36; `kozmos-ai-companion-close` carries the
               // 44px target in the owned stylesheet.
-              className="kozmos-ai-companion-close inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border border-border text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              emotion="neutral"
+              className="kozmos-ai-companion-close h-9 w-9 shrink-0 rounded-pill border border-border"
               onClick={onClose}
               type="button"
             >
               <XClose aria-hidden="true" className="h-4 w-4" />
-            </button>
+            </IconButton>
           )}
         </div>
         {banner && <div className="shrink-0 px-4 pt-4">{banner}</div>}

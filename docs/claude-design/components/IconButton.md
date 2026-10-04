@@ -5,7 +5,7 @@
 IconButtons are used for actions that don't require a label, such as "flaging" or "liking" an item.
 
 - **Import:** `import { IconButton } from "@kozmos-ds/react";`
-- **Group:** Action
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/action-iconbutton--docs>
 

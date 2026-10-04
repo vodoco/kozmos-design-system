@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { SaveLocationCard } from "./SaveLocationCard";
 
 const meta = {
-  title: "Map/SaveLocationCard",
+  id: "map-savelocationcard",
+  title: "SDK/Place details/SaveLocationCard",
   component: SaveLocationCard,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof SaveLocationCard>;

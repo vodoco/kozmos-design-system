@@ -5,7 +5,7 @@
 Editable route points with stable IDs and controlled change, swap, add and remove callbacks. The host owns routing and resolved-place identity; changing text does not confirm a place.
 
 - **Import:** `import { RoutingInputGroup } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-routinginputgroup--docs>
 

@@ -3,7 +3,8 @@ import { Alert, AlertTitle, AlertDescription } from "./Alert";
 import { Terminal } from "@kozmos-ds/icons";
 
 const meta: Meta<typeof Alert> = {
-  title: "Feedback/Alert",
+  id: "feedback-alert",
+  title: "Core/Feedback/Alert",
   component: Alert,
 };
 

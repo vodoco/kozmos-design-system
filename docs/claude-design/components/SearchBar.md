@@ -5,7 +5,7 @@
 A search row with a controlled query, clear action and an optional trailing control. Its floating variant supplies the surface styling; the host or MapOverlay owns placement and search-result behaviour.
 
 - **Import:** `import { SearchBar } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-searchbar--docs>
 

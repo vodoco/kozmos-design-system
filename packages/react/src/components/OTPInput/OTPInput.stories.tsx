@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { OTPInput } from "./OTPInput";
 
 const meta = {
-  title: "Components/OTPInput",
+  id: "components-otpinput",
+  title: "Core/Inputs/OTPInput",
   component: OTPInput,
   parameters: {
     layout: "centered",

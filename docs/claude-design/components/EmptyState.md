@@ -5,7 +5,7 @@
 The `EmptyState` component is used to communicate a zero-results condition or an empty state of an interface securely across all platforms.
 
 - **Import:** `import { EmptyState, EmptyStateDensity } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-emptystate--docs>
 

@@ -5,7 +5,7 @@
 The thread: `role="log"` with `aria-live="polite"`, because turns arrive over time and must be heard without taking the visitor's place. Polite, never assertive — an assistant reply does not interrupt.
 
 - **Import:** `import { AIMessageList } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-aimessagelist--docs>
 

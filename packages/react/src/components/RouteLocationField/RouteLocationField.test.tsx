@@ -19,6 +19,35 @@ const props = {
 };
 
 describe("RouteLocationField", () => {
+  it("distinguishes changing a resolved place from clearing a search", () => {
+    const onEdit = vi.fn();
+    const onClear = vi.fn();
+    const onCancelEdit = vi.fn();
+    const { rerender } = render(
+      <RouteLocationField
+        {...props}
+        location={lobby}
+        onEdit={onEdit}
+        onClear={onClear}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Change From" }));
+    expect(onEdit).toHaveBeenCalledOnce();
+    expect(onClear).not.toHaveBeenCalled();
+    rerender(
+      <RouteLocationField
+        {...props}
+        query="draft"
+        onClear={onClear}
+        onCancelEdit={onCancelEdit}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Cancel From" }));
+    expect(onCancelEdit).toHaveBeenCalledOnce();
+    expect(onClear).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(onClear).toHaveBeenCalledOnce();
+  });
   it("preserves host-ranked synonym results only in explicit host filter mode", () => {
     const host = { filterMode: "host" as const };
     const elevator = {
@@ -116,11 +145,50 @@ describe("RouteLocationField", () => {
     expect(field).not.toBeDisabled();
     fireEvent.focus(field);
     fireEvent.keyDown(field, { key: "ArrowDown" });
-    expect(screen.queryByRole("option")).not.toBeInTheDocument();
-    const map = screen.getByRole("button", { name: "Choose on map" });
-    expect(map.closest('[role="listbox"]')).toBeNull();
+    expect(
+      screen.queryByRole("option", { name: /Lobby/ }),
+    ).not.toBeInTheDocument();
+    const map = screen.getByRole("option", { name: "Choose on map" });
+    expect(map.closest("[data-combobox-popup]")).not.toBeNull();
+    expect(map.closest('[role="listbox"]')).not.toBeNull();
     fireEvent.click(map);
     expect(onChooseMap).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers a host-resolved current position independently of search matches and never invents one", () => {
+    const onSelect = vi.fn();
+    const position = {
+      value: "position-fix-17",
+      label: "Current position",
+      description: "Ground floor",
+    };
+    const { rerender } = render(
+      <RouteLocationField {...props} query="no match" onSelect={onSelect} />,
+    );
+    fireEvent.focus(screen.getByRole("combobox"));
+    expect(
+      screen.queryByRole("option", { name: "Current position" }),
+    ).not.toBeInTheDocument();
+    rerender(
+      <RouteLocationField
+        {...props}
+        query="no match"
+        currentPosition={position}
+        onSelect={onSelect}
+      />,
+    );
+    fireEvent.click(screen.getByRole("option", { name: "Current position" }));
+    expect(onSelect).toHaveBeenCalledWith(position);
+    rerender(
+      <RouteLocationField
+        {...props}
+        currentPosition={{ ...position, value: " " }}
+      />,
+    );
+    fireEvent.focus(screen.getByRole("combobox"));
+    expect(
+      screen.queryByRole("option", { name: "Current position" }),
+    ).not.toBeInTheDocument();
   });
 
   it("selects the exact suggestion with its secondary location context", () => {

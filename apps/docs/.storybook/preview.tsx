@@ -35,6 +35,11 @@ const preview: Preview = {
     ),
   ],
   parameters: {
+    options: {
+      storySort: {
+        order: ["Foundations", "Core", "SDK", "Examples", "Guides"],
+      },
+    },
     // A canvas paint selector is not a component theme. The Theme toolbar
     // changes both together, including owned portal tokens.
     backgrounds: { disable: true },

@@ -8,7 +8,8 @@ const items = [
 ];
 
 const meta: Meta<typeof SegmentedControl> = {
-  title: "Selection/SegmentedControl",
+  id: "selection-segmentedcontrol",
+  title: "Core/Inputs/SegmentedControl",
   component: SegmentedControl,
   args: {
     defaultValue: "overview",

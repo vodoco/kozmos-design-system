@@ -11,7 +11,8 @@ import {
 } from "@kozmos-ds/icons";
 
 const meta = {
-  title: "Components/POICard",
+  id: "components-poicard",
+  title: "SDK/Search and browse/POICard",
   component: POICard,
   parameters: {
     layout: "centered",

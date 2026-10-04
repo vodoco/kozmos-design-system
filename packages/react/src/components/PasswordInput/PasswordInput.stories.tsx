@@ -3,7 +3,8 @@ import { PasswordInput } from "./PasswordInput";
 import { ThemeProvider } from "../ThemeProvider";
 
 const meta = {
-  title: "Components/PasswordInput",
+  id: "components-passwordinput",
+  title: "Core/Inputs/PasswordInput",
   component: PasswordInput,
   args: {
     label: "Password",

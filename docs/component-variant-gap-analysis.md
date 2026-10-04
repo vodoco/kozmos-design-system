@@ -29,12 +29,12 @@ an implementation backlog item.
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
 | Components scanned                        | 119    |
-| Declaring at least one React variant axis | 55     |
-| Variations that are compositional only    | 64     |
-| Components with variant gaps — iOS        | 14/55  |
-| Components with variant gaps — Android    | 14/55  |
-| Components with variant gaps — Figma      | 22/55  |
-| Components with variant gaps — Vue        | 11/55  |
+| Declaring at least one React variant axis | 57     |
+| Variations that are compositional only    | 62     |
+| Components with variant gaps — iOS        | 15/57  |
+| Components with variant gaps — Android    | 15/57  |
+| Components with variant gaps — Figma      | 24/57  |
+| Components with variant gaps — Vue        | 12/57  |
 | Components absent entirely — iOS          | 9/119  |
 | Components absent entirely — Android      | 8/119  |
 | Components absent entirely — Figma        | 23/119 |
@@ -81,6 +81,10 @@ BottomNavigation
   - ios missing axes -> density (default, compact)
   - android missing axes -> density (default, compact)
   - figma missing axes -> density (default, compact)
+Combobox
+  - ios missing axes -> popupLayout (overlay, inline)
+  - android missing axes -> popupLayout (overlay, inline)
+  - figma missing axes -> popupLayout (overlay, inline)
 Container
   - ios missing axes -> inset (window, panel)
   - android missing axes -> inset (window, panel)
@@ -129,6 +133,9 @@ Notice
 POIResultCard
   - figma missing axes -> presentationStyle (legacy, sdk)
 RouteLocationField
+  - figma: component/set absent
+  - vue: component absent
+RouteProgressRail
   - figma: component/set absent
   - vue: component absent
 RouteSetupPanel

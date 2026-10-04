@@ -17,7 +17,8 @@ const gallery = {
   description: "North Terminal · Level 2",
 };
 const meta = {
-  title: "Map/RouteSetupPanel",
+  id: "map-routesetuppanel",
+  title: "SDK/Navigation/RouteSetupPanel",
   component: RouteSetupPanel,
   parameters: { layout: "padded" },
   args: { ready: false, onContinue: fn(), onClose: fn(), children: null },

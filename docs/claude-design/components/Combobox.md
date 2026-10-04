@@ -5,7 +5,7 @@
 A single-select field that filters its options as the user types.
 
 - **Import:** `import { Combobox } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-combobox--docs>
 
@@ -68,6 +68,14 @@ It forwards its ref to `HTMLInputElement`. Its props are `ComboboxProps`, which 
 - `onInputValueChange`: `(value: string) => void`, optional.
 - `onValueChange`: `(value: string, option?: ComboboxOption) => void`, optional.
 - `options`: `ComboboxOption[]`, **required**.
+- `popupActions`: `ComboboxPopupAction[]`, optional, default `NO_ACTIONS`.
+
+  Unfiltered action choices after suggestions. Share arrow/Enter navigation, but never become a value/query.
+
+- `popupLayout`: `"overlay" | "inline"`, optional, default `"overlay"`.
+
+  Inline participates in a sheet's scroll/layout instead of overlaying later fields.
+
 - `status`: `InputStatus`, optional, default `"default"`.
 - `value`: `string`, optional.
 - `wrapperClassName`: `string`, optional.
@@ -86,6 +94,21 @@ interface ComboboxOption {
   disabled?: boolean;
   label: string;
   value: string;
+}
+```
+
+### ComboboxPopupAction
+
+From `@kozmos-ds/react`.
+
+```ts
+interface ComboboxPopupAction {
+  /** Stable nonblank identity. All commands sharing a duplicate ID are omitted. */
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+  onAction: () => void;
 }
 ```
 

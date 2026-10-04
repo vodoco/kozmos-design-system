@@ -5,7 +5,7 @@
 A dropdown menu composition for commands, checkbox or radio choices, groups and submenus. Compose its trigger and content parts; use Select for a form value and Popover for arbitrary supporting content.
 
 - **Import:** `import { Menu, MenuCheckboxItem, MenuContent, MenuGroup, MenuItem, MenuLabel, MenuPortal, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuShortcut, MenuSub, MenuSubContent, MenuSubTrigger, MenuTrigger } from "@kozmos-ds/react";`
-- **Group:** Navigation
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/navigation-menu--docs>
 

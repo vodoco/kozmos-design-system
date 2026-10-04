@@ -17,7 +17,8 @@ const Demo = () => {
 };
 
 const meta: Meta<typeof ThemeProvider> = {
-  title: "System/ThemeProvider",
+  id: "system-themeprovider",
+  title: "Foundations/Theming/ThemeProvider",
   component: ThemeProvider,
 };
 

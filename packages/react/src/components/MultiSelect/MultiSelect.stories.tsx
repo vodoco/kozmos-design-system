@@ -9,7 +9,8 @@ const options = [
 ];
 
 const meta = {
-  title: "Components/MultiSelect",
+  id: "components-multiselect",
+  title: "Core/Inputs/MultiSelect",
   component: MultiSelect,
   parameters: {
     layout: "centered",

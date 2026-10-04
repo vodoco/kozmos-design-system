@@ -780,9 +780,19 @@ for (const theme of ["light", "dark"]) {
             "Take Corridor to Garage B",
             "the second step is not current after Next",
           );
-          // The sheet is fitted to its content — the summary and the buttons —
+          // The sheet is fitted to its content — the summary, not fixture controls —
           // and on the glass surface; the map has the rest.
           const sheet = page.getByRole("complementary", { name: "Directions" });
+          assert.equal(
+            await sheet.locator('[data-presentation="hosted"]').count(),
+            1,
+            "shell owns the surface; summary must be hosted",
+          );
+          assert.equal(
+            await sheet.getByRole("button", { name: "Next step" }).count(),
+            0,
+            "fixture controls must stay outside product chrome",
+          );
           const sheetBox = await box(sheet);
           const contentHeight = await sheet
             .locator("> div")
@@ -973,10 +983,35 @@ for (const theme of ["light", "dark"]) {
             }),
             "End does not scroll the focused itinerary to its destination",
           );
-          const destination = await box(
-            scroller.getByText("Flughafen-Shuttles", { exact: true }),
+          // Keyboard scrolling can still be moving the page after the inner
+          // scroll offset reaches its end. Read both rectangles in one frame;
+          // separate protocol calls mixed coordinates from different frames.
+          const destinationNode = scroller.getByText("Flughafen-Shuttles", {
+            exact: true,
+          });
+          await page.waitForFunction(
+            (node) => {
+              const destination = node.getBoundingClientRect();
+              const shown = node
+                .closest(".kozmos-manoeuvre-itinerary")
+                .getBoundingClientRect();
+              return (
+                destination.bottom <= shown.bottom + 1 &&
+                destination.y >= shown.y
+              );
+            },
+            await destinationNode.elementHandle(),
+            { timeout: 5000 },
           );
-          const shown = await box(scroller);
+          const { destination, shown } = await destinationNode.evaluate(
+            (node) => ({
+              destination: node.getBoundingClientRect().toJSON(),
+              shown: node
+                .closest(".kozmos-manoeuvre-itinerary")
+                .getBoundingClientRect()
+                .toJSON(),
+            }),
+          );
           assert.ok(
             destination.bottom <= shown.bottom + 1 && destination.y >= shown.y,
             `the destination is not in view at the itinerary's end: ${JSON.stringify({ destination, shown })}`,

@@ -39,6 +39,13 @@ if component source is unchanged.
   pnpm ci:local --workflow bundle-size.yml --job analyze-bundle
   ```
 
+  The local runner prints a temporary log directory and retains each executed
+  step's complete stdout/stderr there. It streams output to disk, so verbose
+  checks such as Code Connect parsing cannot be terminated by an in-memory pipe
+  limit. Failed steps print the last meaningful lines and their full-log path;
+  inspect that file before deciding whether a retry or repair is warranted.
+  `--verbose` streams directly to the terminal instead.
+
 - Check the actual consuming story at 320 px and desktop widths in both themes, as well as its
   isolated component. `STORY_SCOPE=all STORY_FILTER='<affected-story-id-regex>' pnpm test:storybook-audit`
   audits a freshly built, served Storybook. The full story audit remains a required CI check.
@@ -48,6 +55,10 @@ if component source is unchanged.
 - Run **both** macOS `swift test` and the named iOS simulator target when changing SwiftUI
   layout or its tests. Window-dependent geometry/scrolling tests require a hosted view, not a
   detached renderer. Keep pixel scale explicit rather than dependent on the runner's display.
+- Accessibility absence checks need a positive control: prove that the intended field or
+  surface is actually observable before asserting that its actions are hidden. A custom
+  UIKit tree walk can return no children for lazy or disabled SwiftUI content. Use the
+  real interaction host when that happens; an empty traversal is not evidence of correct hiding.
 - Measure the whole bundle as well as individual exports and CSS. Optimize first; a budget
   increase requires an explicit, measured decision. A new component passing its own budget
   does not imply the total library passes.
@@ -104,6 +115,11 @@ Maintain compilable import examples, stable exports, discoverable tokens, typed 
 composition recipes and migration guidance. AI-facing documentation should be generated from the
 same built types and tested examples as developer documentation. Keep private credentials, tenant
 configuration and live SDK state outside the reusable component API and committed examples.
+
+The tarball recipe checks compile React examples; they do not compile the SwiftUI or
+Compose strings in platform tabs. Type-check changed native snippets against the actual
+native library/compiler, including imports, supplied data and callback arity. Until a
+repository-wide native-snippet gate exists, report native documentation coverage separately.
 
 Treat Figma, code and documentation as coordinated artifacts, with recorded mismatches and
 ownership. Include built-package consumer tests: source tests miss broken exports, declaration

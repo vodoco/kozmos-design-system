@@ -22,7 +22,8 @@ const poi: POIPresentation = {
 };
 
 const meta = {
-  title: "Product SDK/POIResultCard",
+  id: "product-sdk-poiresultcard",
+  title: "SDK/Search and browse/POIResultCard",
   component: POIResultCard,
   parameters: { layout: "fullscreen" },
   decorators: [
@@ -130,6 +131,26 @@ export const SelectedWithActions: Story = {
         { action: "navigate", label: "Go", primary: true },
         { action: "details", label: "Details" },
         { action: "bookmark", label: "Book" },
+      ],
+    },
+  },
+};
+
+/** Translated actions must remain readable, not ellipsized or pushed off-card. */
+export const LongActionLabels: Story = {
+  args: {
+    onAction: fn(),
+    result: {
+      ...meta.args.result,
+      selected: true,
+      actions: [
+        {
+          action: "navigate",
+          label: "Wegbeschreibung zum ausgewählten Ziel anzeigen",
+          primary: true,
+        },
+        { action: "details", label: "Barrierefreiheitsinformationen" },
+        { action: "bookmark", label: "Für einen späteren Besuch speichern" },
       ],
     },
   },

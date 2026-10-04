@@ -137,7 +137,8 @@ function MapSearchExample() {
 }
 
 const meta = {
-  title: "Examples/Map Based Search",
+  id: "examples-map-based-search",
+  title: "Examples/Map browsing/Search",
   parameters: { layout: "fullscreen" },
   render: () => <MapSearchExample />,
 } satisfies Meta;

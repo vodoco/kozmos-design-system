@@ -1,8 +1,7 @@
-
 import { Canvas, Meta, Story, Source } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
-import * as DialogStories from './Dialog.stories';
-import { PlatformSnippets } from '../PlatformSnippets';
+import * as DialogStories from "./Dialog.stories";
+import { PlatformSnippets } from "../PlatformSnippets";
 
 <Meta of={DialogStories} />
 
@@ -11,6 +10,16 @@ import { PlatformSnippets } from '../PlatformSnippets';
 A window overlaid on existing content.
 
 Web `DialogContent` keeps its dismiss target at least 44 pixels, reserves title clearance and scrolls long content within the viewport. Set `closeLabel` for a localized dismiss action. Keep titles and descriptions short; the dialog is not a replacement for a full-screen task. For controlled recovery without a persistent DialogTrigger, explicitly restore focus in `onCloseAutoFocus` to a surviving control after dismissal. A missing or removed trigger cannot restore itself. Native modal focus isolation and physical VoiceOver/TalkBack acceptance belong to the consuming host; a rendered overlay alone does not prove them.
+
+## Recovery overlays
+
+Use Core Dialog, IconButton and Button; do not draw a separate SDK modal or copy their interaction styles. Dialog's persistent close control is a Core IconButton. Keep the explanation specific, with one recommended action: choose a starting point when position is unavailable, or retry when the request can be retried. Never silently relax a step-free preference.
+
+For short recovery choices, use `DialogFooter layout="stacked"`, put the primary Button first and a ghost Button such as “Explore map” last. This opt-in layout keeps visual, reading and tab order aligned, fills the available width and wraps long translations. The default `responsive` layout retains its existing desktop row/mobile reversed-column behavior for compatibility.
+
+In controlled recovery, use `onOpenAutoFocus` to focus the non-destructive recommended action. On close, restore to the screen actually revealed: the starting-point input, map action, or enabled calculation-cancel control. Escape and the close button dismiss the message without discarding confirmed places. Do not remove keyboard focus rings to simplify the appearance.
+
+See **Examples / Navigation journey** for five controlled failure states and actual callbacks. The stacked-footer prop and revised visual treatment are currently React-specific; the native APIs below support primary/secondary actions but do not yet expose this stacked layout. Do not treat a web preview as native modal parity.
 
 <Canvas>
   <Story of={DialogStories.Default} />
@@ -76,80 +85,46 @@ import {
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-// Usage example modifier
-extension View {
-    func kozmosDialog(isPresented: Binding<Bool>, title: String, message: String) -> some View {
-        self.alert(isPresented: isPresented) {
-            Alert(
-                title: Text(title).foregroundColor(KozmosColors.semanticColorTextDefault),
-                message: Text(message).foregroundColor(KozmosColors.semanticColorTextMuted),
-                dismissButton: .default(Text("OK"))
-            )
-        }
-    }
-}
+struct RecoveryExample: View {
+@State private var isPresented = true
 
-// Or Custom View
-struct KozmosDialogView<Content: View>: View {
-    let title: String
-    let description: String
-    let content: Content
-    
     var body: some View {
-        VStack(spacing: 16) {
-            Text(title)
-                .font(.headline)
-                .foregroundColor(KozmosColors.semanticColorTextDefault)
-            Text(description)
-                .font(.subheadline)
-                .foregroundColor(KozmosColors.semanticColorTextMuted)
-                .multilineTextAlignment(.center)
-            
-            content
-        }
-        .padding()
-        .background(KozmosColors.semanticColorSurfaceDefault)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 4)
-        .padding()
+        KozmosDialog(
+            isPresented: $isPresented,
+            title: "Starting position unavailable",
+            description: "Choose a known starting point before trying again.",
+            primaryActionTitle: "Choose starting point",
+            secondaryActionTitle: "Explore map",
+            onPrimaryAction: { isPresented = false },
+            onSecondaryAction: { isPresented = false }
+        )
     }
+
 }
-    `}
+`}
     kotlin={`
-package com.kozmos.components.dialog
-
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import com.kozmos.components.dialog.KozmosDialog
 
 @Composable
-fun KozmosDialog(
-    onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+fun RecoveryExample(
+onDismiss: () -> Unit,
+onChooseStartingPoint: () -> Unit,
+onExploreMap: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismissRequest) {
-        Surface(
-            shape = RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius200),
-            color = MaterialTheme.colorScheme.surface,
-            modifier = modifier
-        ) {
-            Box(modifier = Modifier.padding(KozmosDimensions.primitivesLayoutSpacing300)) {
-                content()
-            }
-        }
-    }
+KozmosDialog(
+onDismissRequest = onDismiss,
+title = "Starting position unavailable",
+description = "Choose a known starting point before trying again.",
+primaryActionText = "Choose starting point",
+secondaryActionText = "Explore map",
+onPrimaryAction = onChooseStartingPoint,
+onSecondaryAction = onExploreMap
+)
 }
 
     `}
+
 />

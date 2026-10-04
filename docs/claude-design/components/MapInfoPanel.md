@@ -5,7 +5,7 @@
 Information about a map: host-provided introduction, optional branding, FAQs, copyright/provider credits, support/legal links and explicitly labelled versions. Available as React MapInfoPanel, SwiftUI KozmosMapInfoPanel and Compose KozmosMapInfoPanel. MapInfo / KozmosMapInfo supplies the trigger and responsive presentation around a map shell.
 
 - **Import:** `import { MapInfo, MapInfoPanel } from "@kozmos-ds/react";`
-- **Group:** Product
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-mapinfopanel--docs>
 

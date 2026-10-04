@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Slider } from "./Slider";
 
 const meta: Meta<typeof Slider> = {
-  title: "Components/Slider",
+  id: "components-slider",
+  title: "Core/Inputs/Slider",
   component: Slider,
 };
 

@@ -5,7 +5,7 @@
 POI media sequence with explicit position, 44px controls and alternative text. An empty array renders nothing. A failed image displays a localized failure label; changing its source retries it. This story uses synthetic labelled tiles, not venue photographs.
 
 - **Import:** `import { POIMediaGallery } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-poimediagallery--docs>
 

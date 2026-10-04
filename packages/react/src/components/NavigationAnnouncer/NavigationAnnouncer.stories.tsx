@@ -3,7 +3,8 @@ import { AnalyticsProvider } from "../../utils/analytics";
 import { NavigationAnnouncer } from "./NavigationAnnouncer";
 
 const meta = {
-  title: "Utilities/NavigationAnnouncer",
+  id: "utilities-navigationannouncer",
+  title: "SDK/Navigation/NavigationAnnouncer",
   component: NavigationAnnouncer,
   args: {
     message: "Proceed to gate A",

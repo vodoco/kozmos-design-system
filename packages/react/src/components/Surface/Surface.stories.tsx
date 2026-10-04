@@ -3,7 +3,8 @@ import { Surface } from "./Surface";
 import { Text } from "../Text";
 
 const meta = {
-  title: "Foundations/Surface",
+  id: "foundations-surface",
+  title: "Core/Layout/Surface",
   component: Surface,
   parameters: { layout: "padded" },
   render: (args) => (

@@ -24,6 +24,14 @@ list, so it composes inside them and inside your own surfaces.
 mode from your own state rather than inferring it from the value's type — an
 array of one is ambiguous otherwise.
 
+Native Listbox accepts optional `actions` (`KozmosPickerAction`) and `emptyText`.
+Commands use Core Buttons and never change selected values. Their IDs must be
+nonblank and unique; disabled commands remain visible but inert. The containing
+Combobox, rather than Listbox itself, owns closing and input-focus requests.
+`maxHeight` is a scrolling cap, not a fixed height: short lists hug their content,
+including when long results are replaced by a short or empty set. Long lists keep
+their scrolling viewport and their commands remain reachable by scrolling.
+
 ## Implementation
 
 import { PlatformSnippets } from "../PlatformSnippets";
@@ -95,6 +103,7 @@ import Kozmos
 
 struct FloorList: View {
 @State private var selected: [String] = ["l1"]
+let floors: [KozmosListboxOption]
 
     var body: some View {
         KozmosListbox(
@@ -122,7 +131,7 @@ var selected by remember { mutableStateOf(listOf("l1")) }
     KozmosListbox(
         options = options,
         selectedValues = selected,
-        onSelectionChange = { selected = it },
+        onSelectionChange = { values, _ -> selected = values },
         multiple = false,
         maxHeight = 280.dp
     )
@@ -133,7 +142,7 @@ var selected by remember { mutableStateOf(listOf("l1")) }
 
 ## Accessibility
 
-- Renders as a listbox with `option` children, so selection state is announced
+- On React, renders as a listbox with `option` children, so selection state is announced
   rather than inferred from styling.
 - Always supply a meaningful `aria-label` or `aria-labelledby`; an option's name
   does not name the listbox itself.
@@ -141,6 +150,12 @@ var selected by remember { mutableStateOf(listOf("l1")) }
   commit selection; selection does **not** automatically follow focus.
 - The default maximum height is 16rem; React has no `maxHeight` prop. Use `style`
   or your own CSS class to customize it.
+
+SwiftUI exposes selected traits on option buttons; Compose uses selectable rows
+with explicit selected state, including single and multiple modes. Native command
+buttons do not become selected, even if a command and location have the same ID.
+Native keyboard and VoiceOver/TalkBack acceptance must be verified in the host;
+the web ARIA and keyboard contract above is not a claim of identical native behavior.
 
 ## Stories
 

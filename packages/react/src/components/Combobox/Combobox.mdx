@@ -1,11 +1,19 @@
-import { Meta, Story, Canvas, Source } from '@storybook/blocks';
-import * as ComboboxStories from './Combobox.stories';
+import { Meta, Story, Canvas, Source } from "@storybook/blocks";
+import * as ComboboxStories from "./Combobox.stories";
 
 <Meta of={ComboboxStories} />
 
 # Combobox
 
 A single-select field that filters its options as the user types.
+
+On React, an open suggestions popup owns the first Escape, including inside Core
+Dialog, Popover or the assistant panel. It closes only the suggestions and keeps
+focus on the input; a later Escape can dismiss the enclosing surface. This also
+applies to inline popups and empty results. A host `onKeyDown` that prevents Escape,
+or an IME-composing Escape, leaves both layers open. IME cancellation is not
+prevented at the browser level. The field participates in the existing overlay
+layer stack without portaling, adding focus traps or changing its placement.
 
 ## Usage
 
@@ -48,7 +56,54 @@ Combobox does not emit automatic selection-value analytics.
 
 ## Implementation
 
-import { PlatformSnippets } from '../PlatformSnippets';
+### React popup commands
+
+Use `popupLayout="inline"` inside a content-sized or clipping sheet so the open dropdown
+participates in layout and scrolling. The default remains `overlay` for existing consumers.
+
+`popupActions` adds persistent commands below the filtered suggestions inside the popup.
+Each has a stable `id`, localized `label`, optional decorative `icon`/`disabled`, and `onAction`.
+IDs must be nonblank and unique among commands: all entries sharing a duplicate ID
+are omitted, not resolved to an arbitrary callback. A command and location may share
+the same string ID because their identities are separate.
+These are separately typed action choices, not location values. They are
+unfiltered and available with no matching results; they never update the selected value,
+input text or option-selection analytics. Arrow keys navigate both suggestions and actions;
+Enter activates the highlighted row. Escape closes the popup and returns focus to the input. An action
+closes and restores input focus before invoking its callback, allowing a host to move focus
+to a new map/dialog. Disabled/read-only fields cannot invoke them. Home/End reach the first/last
+enabled choice.
+
+Matching empty-state and supporting text is rendered once by the field, retaining
+its accessible description. An empty popup with no commands adds no box or shadow;
+its open state still owns the first Escape before an enclosing overlay can close.
+
+### Native popup commands
+
+SwiftUI and Compose also accept `popupActions: [KozmosPickerAction]` / `List<KozmosPickerAction>`.
+Each command has a stable, nonblank, unique `id`, localized `label`, `disabled` flag and
+callback (`action` in Swift, `onAction` in Kotlin). Blank and duplicate IDs are omitted.
+Commands are rendered as Core ghost Buttons inside Core Listbox, below suggestions;
+they remain available for unmatched queries and empty/error suggestion states. They
+never write a selected value or query, or acquire selected-option semantics.
+Identical supporting and empty-state text is rendered once, below the field/popup,
+instead of repeating the same loading/error message. Native lists fit short content
+and retain a height-capped scrolling viewport for longer results.
+
+SwiftUI optionally accepts `expanded: Binding<Bool>`; Compose retains `expanded` and
+`onExpandedChange`. User edits can open the picker; host query updates alone do not
+reopen it after a selection or command. Commands request input focus and request closure **before** invoking
+the callback. A controlling host must honour that closure request and owns focus in any
+new map/dialog it opens. Disabled/read-only fields hide the popup even if forced open.
+Native keyboard/assistive-technology behavior uses native controls; the React arrow-key
+and overlay-layer implementation is not a claim of identical native behavior. Verify
+VoiceOver/TalkBack, keyboard insets and focus transfer in the integrating application.
+
+Compose's new action overload requires `controlLabels`, `filterLocally` and `popupActions`;
+all three older overloads retain positional and trailing-lambda compatibility. Swift's
+new parameters default to no commands and uncontrolled expansion.
+
+import { PlatformSnippets } from "../PlatformSnippets";
 
 <div className="subheading">Platform Code</div>
 
@@ -96,9 +151,10 @@ import { ref } from "vue"
 
 const venue = ref("")
 const venues = [
-  { value: "cafe", label: "Kozmos Cafe" },
-  { value: "atrium", label: "North Atrium" },
+{ value: "cafe", label: "Kozmos Cafe" },
+{ value: "atrium", label: "North Atrium" },
 ]
+
 </script>
 
 <template>
@@ -116,8 +172,10 @@ import SwiftUI
 import Kozmos
 
 struct VenuePicker: View {
-    @State private var venue = ""
-    @State private var query = ""
+@State private var venue = ""
+@State private var query = ""
+let venues: [KozmosListboxOption]
+let chooseMap: () -> Void
 
     var body: some View {
         KozmosCombobox(
@@ -127,34 +185,42 @@ struct VenuePicker: View {
             label: "Venue",
             placeholder: "Search venues",
             emptyText: "No venues match that name",
-            clearable: true
+            clearable: true,
+            popupActions: [.init(id: "choose-map", label: "Select from the map", action: chooseMap)]
         )
     }
+
 }
-  `}
+`}
   kotlin={`
 package com.kozmos.example
 
 import androidx.compose.runtime.*
 import com.kozmos.components.combobox.KozmosCombobox
+import com.kozmos.components.combobox.KozmosComboboxLabels
 import com.kozmos.components.listbox.KozmosListboxOption
+import com.kozmos.components.listbox.KozmosPickerAction
 
 @Composable
-fun VenuePicker(options: List<KozmosListboxOption>) {
-    var venue by remember { mutableStateOf("") }
-    var query by remember { mutableStateOf("") }
+fun VenuePicker(options: List<KozmosListboxOption>, chooseMap: () -> Unit) {
+var venue by remember { mutableStateOf("") }
+var query by remember { mutableStateOf("") }
 
     KozmosCombobox(
         value = venue,
-        onValueChange = { venue = it },
+        onValueChange = { value, _ -> venue = value },
         inputValue = query,
         onInputValueChange = { query = it },
         options = options,
+        controlLabels = KozmosComboboxLabels(),
+        filterLocally = true,
+        popupActions = listOf(KozmosPickerAction("choose-map", "Select from the map", onAction = chooseMap)),
         label = "Venue",
         placeholder = "Search venues"
     )
+
 }
-  `}
+`}
 />
 
 ## Accessibility
@@ -169,7 +235,9 @@ fun VenuePicker(options: List<KozmosListboxOption>) {
 ## Stories
 
 ### Default
+
 <Canvas of={ComboboxStories.Default} />
 
 ### With Validation
+
 <Canvas of={ComboboxStories.WithValidation} />

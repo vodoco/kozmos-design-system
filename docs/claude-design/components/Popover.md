@@ -5,7 +5,7 @@
 An anchored surface for supporting content or small interactions, composed from a trigger and content. An optional PopoverArrow connects it visually to its anchor; owned portals retain the enclosing Kozmos theme.
 
 - **Import:** `import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from "@kozmos-ds/react";`
-- **Group:** Overlay
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/overlay-popover--docs>
 

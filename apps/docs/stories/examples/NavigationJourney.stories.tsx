@@ -76,12 +76,17 @@ const actionClass = "h-auto min-h-11 whitespace-normal";
 /** A deterministic host adapter demonstration. Fixture controls below the map are NOT product UI. */
 function NavigationJourney({
   initialFailure,
+  initialResolved = false,
+  hasCurrentPosition = false,
 }: {
   initialFailure?: JourneyFailure;
+  initialResolved?: boolean;
+  hasCurrentPosition?: boolean;
 }) {
   const [state, dispatch] = React.useReducer(journeyReducer, {
     ...initialJourney,
     destination: gallery,
+    ...(initialResolved ? { origin: lobby } : {}),
     ...(initialFailure
       ? { origin: lobby, phase: "recovery" as const, failure: initialFailure }
       : {}),
@@ -89,8 +94,13 @@ function NavigationJourney({
   const [expanded, setExpanded] = React.useState(false);
   const [candidateValid, setCandidateValid] = React.useState(false);
   const [destinationQuery, setDestinationQuery] = React.useState("");
+  const [editingPoint, setEditingPoint] = React.useState<
+    "origin" | "destination" | null
+  >(null);
+  const [draftQuery, setDraftQuery] = React.useState("");
   const panelRef = React.useRef<HTMLDivElement>(null);
   const browseRef = React.useRef<HTMLButtonElement>(null);
+  const recoveryActionRef = React.useRef<HTMLButtonElement>(null);
   const originRef = React.useRef<HTMLDivElement>(null);
   const destinationRef = React.useRef<HTMLDivElement>(null);
   const fieldFocus = React.useRef<{
@@ -108,7 +118,23 @@ function NavigationJourney({
         intent.resolved ? "button" : '[role="combobox"]',
       )
       ?.focus();
-  }, [state.origin, state.destination, state.query, destinationQuery]);
+  }, [
+    state.origin,
+    state.destination,
+    state.query,
+    destinationQuery,
+    editingPoint,
+  ]);
+  const editPoint = (point: "origin" | "destination") => {
+    fieldFocus.current = { point, resolved: false };
+    setDraftQuery("");
+    setEditingPoint(point);
+  };
+  const cancelPointEdit = (point: "origin" | "destination") => {
+    fieldFocus.current = { point, resolved: true };
+    setDraftQuery("");
+    setEditingPoint(null);
+  };
   const routeId = state.route?.id;
 
   React.useEffect(() => {
@@ -138,34 +164,68 @@ function NavigationJourney({
 
   const setup = (
     <RouteSetupPanel
-      ready={!!state.origin && !!state.destination}
+      ready={!editingPoint && !!state.origin && !!state.destination}
       pending={pending}
       continueLabel={pending ? "Calculating step-free route…" : "Continue"}
       closeLabel={pending ? "Cancel calculation" : "Close route setup"}
       onContinue={calculate}
-      onClose={() => dispatch({ type: pending ? "cancel" : "end" })}
+      onClose={() => {
+        setEditingPoint(null);
+        setDraftQuery("");
+        dispatch({ type: pending ? "cancel" : "end" });
+      }}
     >
       <RouteLocationField
         ref={originRef}
         label="From"
-        location={state.origin}
-        query={state.query}
-        options={state.suggestions}
+        currentPosition={
+          hasCurrentPosition
+            ? {
+                value: "fixture-position-17",
+                label: "Current position",
+                description: "North Terminal · Ground floor",
+              }
+            : null
+        }
+        location={editingPoint === "origin" ? null : state.origin}
+        query={editingPoint === "origin" ? draftQuery : state.query}
+        options={editingPoint === "origin" ? places : state.suggestions}
+        onEdit={() => editPoint("origin")}
+        onCancelEdit={
+          editingPoint === "origin"
+            ? () => cancelPointEdit("origin")
+            : undefined
+        }
         disabled={pending}
         status={
           !state.origin && !state.suggestions.length ? "loading" : "ready"
         }
-        onQueryChange={(query) => dispatch({ type: "query", query })}
+        onQueryChange={(query) =>
+          editingPoint === "origin"
+            ? setDraftQuery(query)
+            : dispatch({ type: "query", query })
+        }
         onSelect={(location) => {
           fieldFocus.current = { point: "origin", resolved: true };
+          setEditingPoint(null);
+          setDraftQuery("");
           dispatch({ type: "select", point: "origin", location });
         }}
         onClear={() => {
+          if (editingPoint === "origin") {
+            setDraftQuery("");
+            originRef.current
+              ?.querySelector<HTMLInputElement>("input")
+              ?.focus();
+            return;
+          }
           fieldFocus.current = { point: "origin", resolved: false };
           dispatch({ type: "select", point: "origin", location: null });
         }}
         clearLabel="Clear origin"
         onChooseMap={() => {
+          setEditingPoint(null);
+          setDraftQuery("");
           setCandidateValid(false);
           dispatch({ type: "choose-map" });
         }}
@@ -173,17 +233,34 @@ function NavigationJourney({
       <RouteLocationField
         ref={destinationRef}
         label="To"
-        location={state.destination}
-        query={destinationQuery}
+        location={editingPoint === "destination" ? null : state.destination}
+        query={editingPoint === "destination" ? draftQuery : destinationQuery}
+        onEdit={() => editPoint("destination")}
+        onCancelEdit={
+          editingPoint === "destination"
+            ? () => cancelPointEdit("destination")
+            : undefined
+        }
         options={places}
         disabled={pending}
-        onQueryChange={setDestinationQuery}
+        onQueryChange={
+          editingPoint === "destination" ? setDraftQuery : setDestinationQuery
+        }
         onSelect={(location) => {
           fieldFocus.current = { point: "destination", resolved: true };
+          setEditingPoint(null);
+          setDraftQuery("");
           setDestinationQuery("");
           dispatch({ type: "select", point: "destination", location });
         }}
         onClear={() => {
+          if (editingPoint === "destination") {
+            setDraftQuery("");
+            destinationRef.current
+              ?.querySelector<HTMLInputElement>("input")
+              ?.focus();
+            return;
+          }
           fieldFocus.current = { point: "destination", resolved: false };
           setDestinationQuery("");
           dispatch({ type: "select", point: "destination", location: null });
@@ -247,6 +324,7 @@ function NavigationJourney({
           <div
             ref={panelRef}
             tabIndex={-1}
+            role="group"
             aria-label={`${state.phase} journey`}
             className="flex min-w-0 flex-col gap-4 px-4 pb-4"
           >
@@ -320,7 +398,9 @@ function NavigationJourney({
                     valueText={
                       state.route?.progress == null ? "Unknown" : undefined
                     }
-                    showCompletedTrack
+                    activeLeg={state.route?.activeLeg}
+                    motion="directional"
+                    appearance="gradient"
                     waypoints={[
                       {
                         id: "elevator",
@@ -366,13 +446,21 @@ function NavigationJourney({
         }}
       >
         <DialogContent
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            recoveryActionRef.current?.focus();
+          }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            // These controls replace one another; restore to the surviving setup action, never a removed trigger.
+            // The action determines the surviving screen. Never steal browse focus
+            // or try to focus a disabled Continue while a retry is calculating.
             requestAnimationFrame(() => {
               const buttons =
-                panelRef.current?.querySelectorAll<HTMLButtonElement>("button");
+                panelRef.current?.querySelectorAll<HTMLButtonElement>(
+                  "button:not(:disabled)",
+                );
               const target =
+                browseRef.current ??
                 panelRef.current?.querySelector<HTMLInputElement>("input") ??
                 (buttons && buttons[buttons.length - 1]);
               (target ?? panelRef.current)?.focus();
@@ -385,26 +473,22 @@ function NavigationJourney({
               {failure?.description ?? "Choose another starting point."}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter layout="stacked">
+            {failure?.retry && (
+              <Button ref={recoveryActionRef} onClick={calculate}>
+                Retry calculation
+              </Button>
+            )}
             <Button
-              className={actionClass}
-              variant="outline"
-              onClick={() => dispatch({ type: "end" })}
-            >
-              Explore map
-            </Button>
-            <Button
-              className={actionClass}
-              variant="outline"
+              ref={failure?.retry ? undefined : recoveryActionRef}
+              variant={failure?.retry ? "outline" : "default"}
               onClick={() => dispatch({ type: "edit" })}
             >
               Choose another starting point
             </Button>
-            {failure?.retry && (
-              <Button className={actionClass} onClick={calculate}>
-                Retry calculation
-              </Button>
-            )}
+            <Button variant="ghost" onClick={() => dispatch({ type: "end" })}>
+              Explore map
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -459,7 +543,12 @@ function NavigationJourney({
             <Button
               className={actionClass}
               onClick={() =>
-                dispatch({ type: "progress", routeId, progress: 1 })
+                dispatch({
+                  type: "progress",
+                  routeId,
+                  progress: 1,
+                  activeLeg: { start: 0.5, end: 1 },
+                })
               }
             >
               Report 100% progress
@@ -497,15 +586,24 @@ function NavigationJourney({
 }
 
 const meta = {
-  title: "Examples/Navigation journey",
+  id: "examples-navigation-journey",
+  title: "Examples/Navigation/Journey",
   component: NavigationJourney,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof NavigationJourney>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const ControlledJourney: Story = {};
+export const SelectedLocations: Story = { args: { initialResolved: true } };
+export const BlueDotAvailable: Story = { args: { hasCurrentPosition: true } };
 export const UnavailableRoute: Story = { args: { initialFailure: "no-route" } };
 export const UnavailableStepFree: Story = {
   args: { initialFailure: "step-free-unavailable" },
 };
 export const OfflineRecovery: Story = { args: { initialFailure: "offline" } };
+export const UnavailablePosition: Story = {
+  args: { initialFailure: "position-unavailable" },
+};
+export const InterruptedCalculation: Story = {
+  args: { initialFailure: "transient" },
+};

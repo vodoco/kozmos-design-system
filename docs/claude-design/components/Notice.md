@@ -5,7 +5,7 @@
 A short notice that opens for the long version.
 
 - **Import:** `import { Notice } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** Core
 - **Platforms:** React; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-notice--docs>
 

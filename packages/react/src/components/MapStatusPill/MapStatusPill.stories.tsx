@@ -19,7 +19,8 @@ const onTheMapGrey: Decorator = (Story, context) =>
   );
 
 const meta = {
-  title: "Product SDK/MapStatusPill",
+  id: "product-sdk-mapstatuspill",
+  title: "SDK/Map controls/MapStatusPill",
   component: MapStatusPill,
   parameters: { layout: "centered" },
   decorators: [onTheMapGrey],

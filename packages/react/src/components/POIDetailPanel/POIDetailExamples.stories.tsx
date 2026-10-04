@@ -178,7 +178,8 @@ function Example({
 }
 
 const meta = {
-  title: "Product SDK/POI Detail Examples",
+  id: "product-sdk-poi-detail-examples",
+  title: "Examples/Place details/Venue scenarios",
   component: POIDetailPanel,
   parameters: { layout: "fullscreen" },
   args: {

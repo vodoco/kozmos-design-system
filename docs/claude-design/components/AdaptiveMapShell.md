@@ -5,7 +5,7 @@
 Map-engine-neutral layout driven by its container, not the browser viewport. Give the shell a definite height (or a bounded parent for its default `height: 100%`). The old 448px minimum has been removed so a short landscape host can constrain it.
 
 - **Import:** `import { AdaptiveMapShell } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-adaptivemapshell--docs>
 

@@ -13,6 +13,7 @@ try {
       for (const story of [
         "search",
         "host-filtered",
+        "with-current-position",
         "resolved",
         "loading",
         "empty",
@@ -43,6 +44,7 @@ try {
           await input.press("Escape");
           assert.equal(await page.getByRole("option").count(), 0);
           await input.press("ArrowDown");
+          await input.press("Home");
           await input.press("Enter");
           await page
             .getByText("North terminal lobby", { exact: true })
@@ -52,21 +54,83 @@ try {
           await input.waitFor();
           assert.equal(await input.inputValue(), "");
           await input.focus();
-          await input.press("Tab");
-          await page
-            .getByRole("button", { name: "Close options" })
-            .press("Tab");
+          await input.press("End");
           assert.equal(
+            await input.getAttribute("aria-activedescendant"),
             await page
-              .getByRole("button", { name: "Select from the map" })
-              .evaluate((n) => n === document.activeElement),
+              .getByRole("option", { name: "Select from the map" })
+              .getAttribute("id"),
+          );
+          await input.press("Escape");
+          assert.equal(
+            await input.evaluate((n) => n === document.activeElement),
             true,
           );
+        } else if (story === "with-current-position") {
+          const input = page.getByRole("combobox", { name: "From" });
+          await input.fill("no matching place");
+          const current = page.getByRole("option", {
+            name: "Current position",
+            exact: true,
+          });
+          const map = page.getByRole("option", {
+            name: "Select from the map",
+            exact: true,
+          });
+          await current.waitFor();
+          assert.equal(await page.getByRole("option").count(), 2);
+          for (const dir of ["ltr", "rtl"]) {
+            await page.evaluate((direction) => {
+              document.documentElement.dir = direction;
+              document.documentElement.style.fontSize = "200%";
+            }, dir);
+            for (const action of [current, map]) {
+              const rect = await action.boundingBox();
+              assert.ok(
+                rect.height >= 44 && rect.width >= 44,
+                "dropdown choices retain touch targets",
+              );
+            }
+            assert.ok(
+              await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth + 1,
+              ),
+            );
+            assert.deepEqual(
+              (
+                await new AxeBuilder({ page })
+                  .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                  .analyze()
+              ).violations.map((v) => v.id),
+              [],
+            );
+          }
+          await page.evaluate(() => {
+            document.documentElement.dir = "ltr";
+            document.documentElement.style.fontSize = "";
+          });
+          assert.equal(
+            await map.evaluate(
+              (n) =>
+                !!n.closest("[data-combobox-popup]") &&
+                !!n.closest('[role="listbox"]'),
+            ),
+            true,
+          );
+          await input.press("Home");
+          assert.equal(
+            await input.getAttribute("aria-activedescendant"),
+            await current.getAttribute("id"),
+          );
+          await input.press("Enter");
+          await page.getByText("Current position", { exact: true }).waitFor();
+          assert.equal(await page.getByRole("combobox").count(), 0);
         } else if (story === "host-filtered") {
           const input = page.getByRole("combobox", { name: "From" });
           assert.equal(await input.inputValue(), "lift");
           await input.press("ArrowDown");
           await page.getByRole("option", { name: /Elevator/ }).waitFor();
+          await input.press("Home");
           await input.press("Enter");
           await page.getByText("Elevator", { exact: true }).waitFor();
           assert.equal(await page.getByRole("combobox").count(), 0);
@@ -78,9 +142,12 @@ try {
           await page.getByRole("combobox").press("ArrowDown");
           assert.equal(
             await page.getByRole("option").count(),
-            0,
+            1,
             "non-ready state offered stale options",
           );
+          await page
+            .getByRole("option", { name: "Select from the map", exact: true })
+            .waitFor();
         }
         for (const button of await page.getByRole("button").all()) {
           const rect = await button.boundingBox();

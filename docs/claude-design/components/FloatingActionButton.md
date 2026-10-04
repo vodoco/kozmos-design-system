@@ -5,7 +5,7 @@
 A round, elevated Button for a prominent action, with a plus icon by default. It stays inline unless `placement="fixed"` is selected; give an icon-only action a meaningful accessible name.
 
 - **Import:** `import { FloatingActionButton } from "@kozmos-ds/react";`
-- **Group:** Action
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/action-floatingactionbutton--docs>
 

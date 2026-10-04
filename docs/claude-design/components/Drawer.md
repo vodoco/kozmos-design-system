@@ -5,7 +5,7 @@
 Drawer presents contextual content from an edge of the viewport without committing to a dashboard, map, or CMS-specific layout.
 
 - **Import:** `import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerOverlay, DrawerPortal, DrawerTitle, DrawerTrigger } from "@kozmos-ds/react";`
-- **Group:** Overlay
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/overlay-drawer--docs>
 

@@ -6,17 +6,55 @@
  * Description: Generates the folder structure for a new React component.
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 const componentName = process.argv[2];
+const family = process.argv[3];
 
-if (!componentName) {
-  console.error('Please provide a component name.');
+if (!componentName || !/^[A-Z][A-Za-z0-9]*$/.test(componentName)) {
+  console.error(
+    'Provide a PascalCase component name and a catalogue family, e.g. ExampleControl "Core/Inputs".',
+  );
   process.exit(1);
 }
 
-const baseDir = path.join(process.cwd(), 'packages/react/src/components', componentName);
+const cataloguePath = path.join(
+  process.cwd(),
+  "scripts/storybook/catalogue.json",
+);
+const catalogue = JSON.parse(fs.readFileSync(cataloguePath, "utf8"));
+const families = new Set<string>(
+  catalogue.entries
+    .filter(
+      (entry: { component?: string; title: string }) =>
+        entry.component && /^(Core|SDK|Foundations)\//.test(entry.title),
+    )
+    .map((entry: { title: string }) =>
+      entry.title.split("/").slice(0, -1).join("/"),
+    ),
+);
+if (!families.has(family)) {
+  console.error(
+    `Choose an existing component catalogue family: ${[...families].sort().join(", ")}`,
+  );
+  process.exit(1);
+}
+const storyTitle = `${family}/${componentName}`;
+const storyId = storyTitle
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-|-$/g, "");
+if (catalogue.entries.some((entry: { id: string }) => entry.id === storyId)) {
+  console.error(`Story ID ${storyId} already exists.`);
+  process.exit(1);
+}
+
+const baseDir = path.join(
+  process.cwd(),
+  "packages/react/src/components",
+  componentName,
+);
 
 if (fs.existsSync(baseDir)) {
   console.error(`Component ${componentName} already exists.`);
@@ -24,7 +62,6 @@ if (fs.existsSync(baseDir)) {
 }
 
 fs.mkdirSync(baseDir, { recursive: true });
-
 
 // 1. Component File
 const componentContent = `import React from 'react';
@@ -81,14 +118,18 @@ ${componentName}.displayName = '${componentName}';
 fs.writeFileSync(path.join(baseDir, `${componentName}.tsx`), componentContent);
 
 // 2. Index File
-fs.writeFileSync(path.join(baseDir, 'index.ts'), `export * from './${componentName}';\n`);
+fs.writeFileSync(
+  path.join(baseDir, "index.ts"),
+  `export * from './${componentName}';\n`,
+);
 
 // 3. Story File
 const storyContent = `import type { Meta, StoryObj } from '@storybook/react';
 import { ${componentName} } from './${componentName}';
 
 const meta = {
-  title: 'Components/${componentName}',
+  id: '${storyId}',
+  title: '${storyTitle}',
   component: ${componentName},
   parameters: {
     layout: 'centered',
@@ -124,7 +165,10 @@ export const Outline: Story = {
 };
 `;
 
-fs.writeFileSync(path.join(baseDir, `${componentName}.stories.tsx`), storyContent);
+fs.writeFileSync(
+  path.join(baseDir, `${componentName}.stories.tsx`),
+  storyContent,
+);
 
 // 4. Test File
 const testContent = `import { render, screen } from '@testing-library/react';
@@ -142,10 +186,26 @@ describe('${componentName}', () => {
 fs.writeFileSync(path.join(baseDir, `${componentName}.test.tsx`), testContent);
 
 // 5. Update Main Export
-const mainIndexData = fs.readFileSync(path.join(process.cwd(), 'packages/react/src/index.ts'), 'utf-8');
+const mainIndexData = fs.readFileSync(
+  path.join(process.cwd(), "packages/react/src/index.ts"),
+  "utf-8",
+);
 if (!mainIndexData.includes(`./components/${componentName}/${componentName}`)) {
-  fs.appendFileSync(path.join(process.cwd(), 'packages/react/src/index.ts'), `export * from './components/${componentName}/${componentName}';\n`);
+  fs.appendFileSync(
+    path.join(process.cwd(), "packages/react/src/index.ts"),
+    `export * from './components/${componentName}/${componentName}';\n`,
+  );
   console.log(`✅ Exported ${componentName} in packages/react/src/index.ts`);
 }
 
-console.log(`✅ Component ${componentName} scaffolded successfully at ${baseDir}`);
+catalogue.entries.push({
+  file: `packages/react/src/components/${componentName}/${componentName}.stories.tsx`,
+  id: storyId,
+  title: storyTitle,
+  component: componentName,
+  exports: ["Default", "Outline"],
+});
+fs.writeFileSync(cataloguePath, JSON.stringify(catalogue, null, 2) + "\n");
+console.log(
+  `✅ Component ${componentName} scaffolded at ${baseDir} and registered as ${storyTitle}. Review its implementation before shipping; its catalogue family is not an architecture certification.`,
+);

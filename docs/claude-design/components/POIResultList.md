@@ -5,7 +5,7 @@
 Controlled list composition that keeps result selection synchronized by POI ID. `resultCountLabel` is localized by the consumer and announced when results change. The empty state should tell the person how to recover.
 
 - **Import:** `import { POIResultList } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-poiresultlist--docs>
 

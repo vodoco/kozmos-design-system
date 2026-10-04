@@ -5,7 +5,7 @@
 A succinct message that is displayed temporarily.
 
 - **Import:** `import { Toast, ToastAction, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "@kozmos-ds/react";`
-- **Group:** Feedback
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/feedback-toast--docs>
 

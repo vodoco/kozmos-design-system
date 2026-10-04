@@ -5,7 +5,7 @@
 The assistant surface. It covers the frame and leaves the search sheet untouched beneath, so closing it returns the visitor to the search they left.
 
 - **Import:** `import { AICompanionPanel } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-aicompanionpanel--docs>
 
@@ -57,13 +57,13 @@ export function AICompanionPanelExample() {
             <UserMessage>Where is the nearest accessible restroom?</UserMessage>
             <AIMessage
               actionCard={
-                <ActionCard title="2 results">
+                <ActionCard title="1 result">
                   <POIResultCard
                     onSelect={() => {}}
                     poi={poi}
                     result={{
                       poiId: poi.id,
-                      resultIndex: 1,
+                      resultIndex: 0,
                       selected: false,
                       featured: false,
                       floorId: poi.floorId,

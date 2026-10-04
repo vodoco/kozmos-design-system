@@ -45,3 +45,30 @@ export function visibleWaypoints(
     return true;
   });
 }
+
+/** Route markers share one coordinate system. The active end gets first priority;
+ * the location dot lives on a separate row and never hides a transition. */
+export function visibleRouteWaypoints(
+  points: readonly RouteProgressWaypoint[],
+  width: number,
+  activeEnd?: number,
+  activeWaypointId?: string,
+) {
+  if (width < 24) return [];
+  const travel = Math.max(0, width - 24);
+  const selected: RouteProgressWaypoint[] = [];
+  const sorted = validWaypoints(points).sort(
+    (a, b) =>
+      Number(b.position === activeEnd) * (b.id === activeWaypointId ? 2 : 1) -
+      Number(a.position === activeEnd) * (a.id === activeWaypointId ? 2 : 1),
+  );
+  for (const point of sorted) {
+    if (
+      selected.every(
+        (other) => Math.abs(point.position - other.position) * travel >= 28,
+      )
+    )
+      selected.push(point);
+  }
+  return selected.sort((a, b) => a.position - b.position);
+}

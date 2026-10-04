@@ -11,7 +11,8 @@ import { UserMessage } from "../UserMessage";
 import { POIResultCard } from "../POIResultCard";
 
 const meta = {
-  title: "Product SDK/AICompanionPanel",
+  id: "product-sdk-aicompanionpanel",
+  title: "SDK/Assistant/AICompanionPanel",
   component: AICompanionPanel,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof AICompanionPanel>;
@@ -57,13 +58,13 @@ export const Conversation: Story = {
               </UserMessage>
               <AIMessage
                 actionCard={
-                  <ActionCard title="2 results">
+                  <ActionCard title="1 result">
                     <POIResultCard
                       onSelect={fn()}
                       poi={poi}
                       result={{
                         poiId: poi.id,
-                        resultIndex: 1,
+                        resultIndex: 0,
                         selected: false,
                         featured: false,
                         floorId: poi.floorId,

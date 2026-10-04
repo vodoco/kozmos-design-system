@@ -3,7 +3,8 @@ import { MetaStrip, MetaStripItem } from "./MetaStrip";
 import { Icon } from "../Icon/Icon";
 
 const meta: Meta<typeof MetaStrip> = {
-  title: "Data Display/MetaStrip",
+  id: "data-display-metastrip",
+  title: "Core/Data display/MetaStrip",
   component: MetaStrip,
   parameters: { layout: "padded" },
 };

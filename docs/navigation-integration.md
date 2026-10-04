@@ -41,11 +41,50 @@ Missing metrics are omitted. A supplied localized `0 min` remains valid. Estimat
 distance/time belong to the active route; actual completed totals belong to confirmed arrival
 and must never be copied from estimates. Components do not calculate, localize or infer totals.
 
-The rail accepts normalized progress; null/nil means unknown. Invalid numeric input is
-normalized for safe drawing, not converted into arrival. Waypoints have stable IDs and
+The rail accepts normalized progress; null/nil means unknown. Legacy step-disc calls
+clamp numbers for drawing. Active-leg calls instead treat invalid or out-of-section
+positions as unknown; neither mode infers arrival. Waypoints have stable IDs and
 normalized positions. Invalid or ambiguous IDs/positions are omitted. Coincident descriptions
 remain accessible while overlapping visual markers are thinned. Extremely narrow tracks omit
-markers rather than clip them. Replace route progress and waypoint data together on reroute.
+transition glyphs rather than overlap them. Replace route progress and waypoint data together on reroute.
+
+### Active-leg route rail
+
+Supply `activeLeg` (normalized start/end on the route's cumulative distance basis) to opt into
+the route display. `positionMode="static"` colours only the selected section, without a dot or
+percentage. `positionMode="live"` (default) colours journey start to the supplied blue dot;
+the accumulated fill never resets at transitions. `appearance="theme"` is the default;
+`"gradient"` runs theme-to-success across that coloured portion and grows with live progress.
+Unavailable live position is not static selection and paints no distance. Future legs stay neutral.
+The SDK composes the shared
+`ProgressTrack` and `UserLocationMarker`; it does not calculate route geometry or location.
+
+Keep the active leg host-controlled: reaching an elevator does not automatically advance it.
+Supply `activeWaypointId` when multiple transitions share the same position. Null, nonfinite
+or out-of-leg positions are unknown, not 0%. Update the leg, position and waypoints together
+on reroute and reject old route IDs. Hosts should allocate at least 24 units of rail width,
+and offer the full itinerary for dense transitions. Existing callers without `activeLeg`
+retain the legacy step-disc presentation.
+
+`motion="directional"` opts into Core-owned rounded dash flow: over the selected static
+section, or on the neutral section ahead of the dot up to the next transition. It never
+simulates movement or runs into later sections. At the section end it stops until the host
+confirms the next section. Set `motion="none"` for suspended guidance, unreliable location,
+arrival or the user's motion preference. Reduced motion keeps a static cue; background views
+stop animation clocks. Provide a user-accessible pause/preference control. The guidance fixture
+includes Core toggles for live/static positioning and motion; these are not SDK positioning controls.
+On web, both the OS preference and `DesignConfigProvider`'s reduced-motion setting
+stop the flow. Forced-colour mode uses system Highlight/GrayText instead of a gradient;
+the optional decorative dashes are omitted, but supplied distance and location remain.
+The journey reducer validates a sample against its newly supplied section (or the
+current section if omitted). Invalid samples become unknown, never a clamped 0%/100%.
+
+For local changes, start with `Progress/Progress` (generic track),
+`UserLocationMarker/UserLocationMarker` (compact dot) and `RouteProgressRail` (SDK composition)
+under each platform's components directory. `Examples/Navigation/Guidance` provides separate
+fixture controls for walking within a leg and confirming the next step. Those controls are
+not production navigation UI. Run `pnpm test:route-track` against a fresh Storybook build
+(`STORYBOOK_URL` selects the server), and `pnpm test:storybook-catalogue` before moving stories.
 
 ## Host lifecycle
 
@@ -73,6 +112,22 @@ synonym matches; the default local mode preserves existing substring filtering. 
 accepts ambiguous IDs or stale suggestions in a non-ready state. The controlled journey also
 demonstrates explicit focus restoration after selecting/clearing either endpoint, including
 transitions that remain in setup; ordinary query updates do not move focus.
+
+For selected endpoints, `onEdit` makes the centered Core text action read “Change”
+(`changeLabel` localizes it) on React, SwiftUI and Compose. Without `onEdit`, the
+action remains a text clear action invoking `onClear`; it is not relabelled Change
+while still destroying the selected identity. The host retains its original place
+while displaying an unresolved draft, and restores it through `onCancelEdit`
+(`cancelEditLabel`). These callbacks never automatically change the host's state.
+Native map/current-position choices now use Core Combobox's `KozmosPickerAction`
+commands inside the unresolved picker. Existing callbacks remain compatible, but
+the map action is no longer below the selected endpoint. Open Change/Clear, then
+open the picker. Supply `currentPosition` only for a host-validated usable fix;
+`currentPositionLabel` localizes its command. Core requests closure before activation
+and leaves query/value unchanged; current-position selection calls `onSelect` with
+the exact supplied object. Hosts still own map focus and revalidation at activation.
+Do not pass synthetic locations to simulate commands. See the Combobox platform docs
+for optional controlled expansion and the preserved Compose overloads.
 
 Recovery distinguishes no route, unavailable step-free route, unavailable position, offline and
 transient errors. Retry is only useful when the host can retry; otherwise offer point editing

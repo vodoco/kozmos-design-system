@@ -10,6 +10,8 @@ component's docs, stories and controls, and its code on every platform (decision
 
 ## How Kozmos works
 
+- [`storybook-catalogue.md`](storybook-catalogue.md) — component versus scenario navigation, stable story IDs and safe catalogue changes.
+
 - [`style-playbook.md`](style-playbook.md) — before you change how Kozmos looks: the roles, the
   cookbook, the traps and the checks that keep Figma, the web and native in agreement.
 - [`figma-change-workflow.md`](figma-change-workflow.md) — when a change crosses code, the token
@@ -28,6 +30,8 @@ component's docs, stories and controls, and its code on every platform (decision
 
 ## Product and SDK
 
+- [`sdk-core-composition.md`](sdk-core-composition.md) — Core ownership, the cross-platform
+  SDK composition audit, outstanding primitive gaps and staged migration checks.
 - [`navigation-integration.md`](navigation-integration.md) — navigation configuration, lifecycle
   ownership, migration, editable source map and reproducible web/native checks.
 

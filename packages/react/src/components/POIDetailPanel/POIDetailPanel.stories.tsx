@@ -30,7 +30,8 @@ const poi: POIPresentation = {
 };
 
 const meta = {
-  title: "Product SDK/POIDetailPanel",
+  id: "product-sdk-poidetailpanel",
+  title: "SDK/Place details/POIDetailPanel",
   component: POIDetailPanel,
   parameters: { layout: "fullscreen" },
   decorators: [

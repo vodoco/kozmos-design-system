@@ -5,7 +5,7 @@
 Arranges children in a CSS grid with explicit column, row, flow, alignment and gap options. Use it for two-dimensional layouts; use Stack for a row or column of content.
 
 - **Import:** `import { Grid } from "@kozmos-ds/react";`
-- **Group:** Foundations
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/foundations-grid--docs>
 

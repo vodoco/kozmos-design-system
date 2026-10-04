@@ -1,4 +1,5 @@
 /** Example HOST state, not a Kozmos routing engine or published contract. Replace fixtures with SDK events. */
+import { validProgressRange } from "@kozmos-ds/react";
 export interface JourneyPlace {
   value: string;
   label: string;
@@ -25,7 +26,11 @@ export interface JourneyState {
   destination: JourneyPlace | null;
   query: string;
   suggestions: JourneyPlace[];
-  route: { id: string; progress: number | null } | null;
+  route: {
+    id: string;
+    progress: number | null;
+    activeLeg: { start: number; end: number };
+  } | null;
   failure?: JourneyFailure;
   actual?: { duration?: string; distance?: string };
   doneCount: number;
@@ -52,7 +57,12 @@ export type JourneyEvent =
   | { type: "confirm-map"; location: JourneyPlace | null }
   | { type: "result"; requestId: number; routeId: string }
   | { type: "failure"; requestId: number; reason: JourneyFailure }
-  | { type: "progress"; routeId: string; progress: number | null }
+  | {
+      type: "progress";
+      routeId: string;
+      progress: number | null;
+      activeLeg?: { start: number; end: number };
+    }
   | { type: "arrive"; routeId: string; actual?: JourneyState["actual"] };
 export const initialJourney: JourneyState = {
   phase: "setup",
@@ -115,7 +125,11 @@ export function journeyReducer(
         ? {
             ...state,
             phase: "preview",
-            route: { id: event.routeId, progress: null },
+            route: {
+              id: event.routeId,
+              progress: null,
+              activeLeg: { start: 0, end: 0.5 },
+            },
           }
         : state;
     case "failure":
@@ -139,21 +153,28 @@ export function journeyReducer(
       return state.phase === "preview" && state.route
         ? { ...state, phase: "navigating" }
         : state;
-    case "progress":
+    case "progress": {
+      const activeLeg = event.activeLeg ?? state.route?.activeLeg;
       return state.phase === "navigating" && state.route?.id === event.routeId
         ? {
             ...state,
             route: {
               ...state.route,
+              activeLeg: event.activeLeg ?? state.route.activeLeg,
+              // Never turn an invalid SDK sample into a convincing start/end
+              // position. Validate against the same atomic section snapshot.
               progress:
-                event.progress === null
-                  ? null
-                  : Number.isFinite(event.progress)
-                    ? Math.min(1, Math.max(0, event.progress))
-                    : 0,
+                validProgressRange(activeLeg) &&
+                event.progress !== null &&
+                Number.isFinite(event.progress) &&
+                event.progress >= activeLeg.start &&
+                event.progress <= activeLeg.end
+                  ? event.progress
+                  : null,
             },
           }
         : state;
+    }
     case "arrive":
       return state.phase === "navigating" && state.route?.id === event.routeId
         ? { ...state, phase: "arrived", actual: event.actual }

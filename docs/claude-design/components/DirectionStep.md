@@ -5,7 +5,7 @@
 A step of a route: the symbol, instruction and optional distance and duration. The shared `DirectionKind` vocabulary includes `straight`, `left`, `right`, `destination`, `walking`, `turn-back`, `enter`, `exit`, same-level `transition`, unnamed `level-up` / `level-down`, and explicit `lift`, `stairs`, `escalator` and `ramp` up/down pairs. Choose the actual route instruction, not a generic arrow that hides its transport mode.
 
 - **Import:** `import { DirectionIcon, DirectionStep } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-directionstep--docs>
 

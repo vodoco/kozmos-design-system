@@ -11,11 +11,22 @@ Communicates progress with an accessible name. React's `value` is measured again
 `max` (100 by default), and the visual fill and announced value use the same scale.
 Use `null` or omit `value` when progress is indeterminate.
 
+`ProgressTrack` is the decorative Core primitive for a host-selected normalized interval. In `positionMode="static"` it colours only `activeRange` and ignores `value`. In `positionMode="live"` (default), a valid `value` paints continuously from zero to that value; null, nonfinite or out-of-range values paint nothing. Use `appearance="theme"` (default) or `"gradient"`: the gradient spans the coloured portion and grows with a live value, without resetting at a section change.
+
+`motion="directional"` opts into a decorative dash flow over the selected static interval or from the live value to the interval's end. It never changes the value. Motion defaults to `"none"`; callers use that value to pause guidance or honour their user's preference. Reduced motion leaves stationary dashes; hidden/background views stop their clock. The owning control supplies accessible semantics: static section information is not indeterminate progress. Native counterparts are `KozmosProgressTrack`, `KozmosProgressRange`, `KozmosProgressPositionMode` and `KozmosProgressMotion`.
+
+Web honours both the operating system and `DesignConfigProvider` reduced-motion settings. In forced-colour mode it uses the user's system palette and omits decorative dashes, preserving the distinction between selected/travelled and remaining distance without relying on a gradient.
+
 <Canvas>
   <Story of={ProgressStories.Default} />
 </Canvas>
 
 <Controls />
+
+## Shared directional track
+
+<Canvas of={ProgressStories.SelectedSection} />
+<Canvas of={ProgressStories.LivePosition} />
 
 ## Implementation
 

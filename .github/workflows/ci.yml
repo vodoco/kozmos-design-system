@@ -60,6 +60,9 @@ jobs:
       - name: Verify Storybook Development Server Security
         run: pnpm test:storybook-security
 
+      - name: Verify Storybook Catalogue And Stable Links
+        run: pnpm test:storybook-catalogue
+
       # A pull request that changes what a published package ships says how it
       # is released: a changeset naming the package, or an empty one when it
       # needs none (Olcay's decision 8). Only the four npm packages' shipped
@@ -441,6 +444,7 @@ jobs:
             test-results/map-sheet
             test-results/search-sheet
             test-results/navigation-examples
+            test-results/sdk-core-controls
           if-no-files-found: ignore
           retention-days: 7
 

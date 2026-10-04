@@ -5,7 +5,7 @@
 Switches between related content panels within the same interface. Compose TabsList, TabsTrigger and TabsContent with matching values; the Radix-backed root supports controlled and uncontrolled selection.
 
 - **Import:** `import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-tabs--docs>
 

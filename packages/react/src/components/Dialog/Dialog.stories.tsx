@@ -12,7 +12,8 @@ import { Button } from "../Button/Button";
 import { Input } from "../Input/Input";
 
 const meta = {
-  title: "Components/Dialog",
+  id: "components-dialog",
+  title: "Core/Overlays/Dialog",
   component: Dialog,
 } satisfies Meta<typeof Dialog>;
 export default meta;

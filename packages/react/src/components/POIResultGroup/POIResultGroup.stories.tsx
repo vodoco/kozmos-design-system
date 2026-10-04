@@ -5,7 +5,8 @@ import type { POIPresentation } from "@kozmos-ds/product-contracts";
 import { POIResultGroup } from "./POIResultGroup";
 
 const meta = {
-  title: "Product SDK/POIResultGroup",
+  id: "product-sdk-poiresultgroup",
+  title: "SDK/Search and browse/POIResultGroup",
   component: POIResultGroup,
   parameters: { layout: "centered" },
   decorators: [

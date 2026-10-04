@@ -5,7 +5,7 @@
 Scopes light, dark or system appearance, reading direction and token overrides to a Kozmos subtree and its owned portals. It does not switch the host document's theme; persistence is opt-in through `storageKey`, or owned by the caller in controlled mode.
 
 - **Import:** `import { ThemeProvider } from "@kozmos-ds/react";`
-- **Group:** System
+- **Group:** Foundations
 - **Platforms:** React, SwiftUI and Compose; no Figma component by design.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/system-themeprovider--docs>
 

@@ -5,7 +5,7 @@
 Reusable navigation row/item primitive for top navigation, side navigation, and the rail.
 
 - **Import:** `import { NavigationItem } from "@kozmos-ds/react";`
-- **Group:** Navigation
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/navigation-navigationitem--docs>
 

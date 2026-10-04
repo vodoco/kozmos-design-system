@@ -5,7 +5,7 @@
 Scrollable Product/SDK category composition. Search and actions remain ahead of the category grid in DOM and keyboard order, while safe-area padding keeps the last row reachable on mobile.
 
 - **Import:** `import { BrowseCategoriesPanel } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-browsecategoriespanel--docs>
 

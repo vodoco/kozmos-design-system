@@ -5,7 +5,7 @@
 Shows progress through a labelled sequence, marking earlier steps complete and one step current. `currentStep` is zero-based; it displays progress rather than providing navigation or form validation.
 
 - **Import:** `import { Stepper } from "@kozmos-ds/react";`
-- **Group:** Navigation
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/navigation-stepper--docs>
 

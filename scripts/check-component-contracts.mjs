@@ -2178,8 +2178,16 @@ assertContains(
     assertContains(
       files.reactCategoryField,
       source.reactCategoryField,
-      `group flex h-${twips(hit)} w-${twips(hit)} shrink-0`,
-      `React CategoryField clear target ${hit}`,
+      /<IconButton\s+type="button"\s+aria-label=\{clearLabel\}/,
+      "React CategoryField clear composes Core IconButton",
+    );
+    // The target contract belongs to Core now, not copied utility classes in
+    // the SDK field. Keep asserting the same dimensions at their actual owner.
+    assertContains(
+      files.reactIconButton,
+      source.reactIconButton,
+      `return "h-${twips(hit)} w-${twips(hit)} px-0"`,
+      `Core IconButton supplies CategoryField clear target ${hit}`,
     );
     assertContains(
       files.reactCategoryField,
@@ -10283,14 +10291,26 @@ assertAllVariants(
 assertContains(
   files.androidButton,
   source.androidButton,
-  "KozmosButtonSize.Sm -> 44.dp",
-  "Android Button small 44dp height",
+  "KozmosButtonSize.Sm -> 48.dp",
+  "Android Button small 48dp minimum target",
 );
 assertContains(
   files.androidButton,
   source.androidButton,
-  "KozmosButtonSize.Default -> 44.dp",
-  "Android Button default 44dp height",
+  "KozmosButtonSize.Default -> 48.dp",
+  "Android Button default 48dp minimum target",
+);
+assertContains(
+  files.androidButton,
+  source.androidButton,
+  "KozmosButtonSize.Lg -> 48.dp",
+  "Android Button large 48dp minimum target",
+);
+assertContains(
+  files.androidButton,
+  source.androidButton,
+  "else Modifier.heightIn(min = height)",
+  "Android labelled Button grows above its minimum instead of clipping large text",
 );
 assertContains(
   files.androidButton,

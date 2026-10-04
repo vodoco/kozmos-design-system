@@ -5,7 +5,7 @@
 This React component is a visual activity capsule. It does not integrate with ActivityKit, read device status, or start location services. The examples contain simulated navigation content; native system integration is a separate concern.
 
 - **Import:** `import { DynamicIsland } from "@kozmos-ds/react";`
-- **Group:** Platform
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/platform-dynamicisland--docs>
 

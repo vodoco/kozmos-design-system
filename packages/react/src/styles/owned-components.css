@@ -1,6 +1,122 @@
 /* Build-time component CSS. Tailwind expands @apply; consumers need neither
    Tailwind nor native @scope. Every target is explicitly component-owned. */
 @kozmos-owned {
+  /* Core owns the track; SDK rails place landmarks on its shared axis. */
+  .kozmos-progress-track {
+    position: relative;
+    height: 6px;
+    width: 100%;
+    border-radius: 999px;
+    background: var(--primitives-colors-background-300);
+  }
+  .kozmos-progress-track-active,
+  .kozmos-progress-track-flow {
+    position: absolute;
+    inset-block: 0;
+    border-radius: inherit;
+    background: var(--primitives-colors-theme-600);
+  }
+  .kozmos-progress-track-active[data-appearance="gradient"] {
+    background: linear-gradient(
+      to right,
+      var(--primitives-colors-theme-600),
+      var(--primitives-colors-emotional-success-600)
+    );
+  }
+  .kozmos-progress-track-active[data-appearance="gradient"]:dir(rtl) {
+    background: linear-gradient(
+      to left,
+      var(--primitives-colors-theme-600),
+      var(--primitives-colors-emotional-success-600)
+    );
+  }
+  .kozmos-progress-track-flow {
+    color: var(--primitives-colors-background-600);
+    background: radial-gradient(ellipse 4px 1.5px at center, currentColor 90%, transparent 100%) 0 center / 20px 6px repeat-x;
+    animation: track-flow 1s linear infinite;
+  }
+  .kozmos-progress-track-flow[data-mode="static"] { color: rgb(255 255 255 / 65%); }
+  .kozmos-progress-track-flow:dir(rtl) { animation-direction: reverse; }
+  @keyframes track-flow { to { background-position-x: 20px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .kozmos-progress-track-flow { animation: none; }
+  }
+  [data-kozmos-motion="reduced"] .kozmos-progress-track-flow {
+    animation: none;
+  }
+  /* Forced colours suppress gradients. Use the user's system palette, not
+     brand colours, and keep selected/travelled distance visibly distinct. */
+  @media (forced-colors: active) {
+    .kozmos-progress-track {
+      forced-color-adjust: none;
+      background: GrayText;
+    }
+    .kozmos-progress-track .kozmos-progress-track-active[data-appearance] {
+      background: Highlight;
+    }
+    .kozmos-progress-track-flow {
+      display: none;
+    }
+    .kozmos-route-track-endpoint,
+    .kozmos-route-track-waypoint::after {
+      background: CanvasText;
+      forced-color-adjust: none;
+    }
+  }
+  .kozmos-route-track {
+    position: relative;
+    height: 48px;
+  }
+  .kozmos-route-track-axis {
+    position: absolute;
+    inset-inline: min(12px, 50%);
+    top: 35px;
+  }
+  .kozmos-route-track-endpoint,
+  .kozmos-route-track-location,
+  .kozmos-route-track-waypoint {
+    position: absolute;
+  }
+  .kozmos-route-track-endpoint {
+    top: -2px;
+    margin-inline-start: -5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--primitives-colors-background-500);
+  }
+  .kozmos-route-track-location {
+    top: -6px;
+    margin-inline-start: -9px;
+  }
+  .kozmos-route-track-waypoint {
+    top: -35px;
+    margin-inline-start: -12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--primitives-colors-background-0);
+    color: var(--primitives-colors-foreground-100);
+    border: 1px solid var(--primitives-colors-background-400);
+  }
+  .kozmos-route-track-waypoint::after {
+    content: "";
+    position: absolute;
+    top: 24px;
+    width: 1px;
+    height: 10px;
+    background: var(--primitives-colors-background-500);
+  }
+  /* A single Core footer recipe, not separate SDK button overrides. */
+  .kozmos-dialog-footer[data-layout="stacked"] > .kozmos-button {
+    height: auto;
+    min-height: 2.75rem;
+    width: 100%;
+    white-space: normal;
+  }
   .kozmos-map-attribution {
     font-size: calc(var(--primitives-typography-font-size-50) * 1rem / 16);
     line-height: 1.2;
@@ -340,16 +456,26 @@
     color: var(--kozmos-guidance-foreground);
   }
   .kozmos-guidance-text {
-    color: var(--kozmos-guidance-foreground, var(--primitives-colors-foreground-0));
+    color: var(
+      --kozmos-guidance-foreground,
+      var(--primitives-colors-foreground-0)
+    );
   }
   .kozmos-guidance-accent {
-    color: var(--kozmos-guidance-foreground, var(--primitives-colors-theme-600));
+    color: var(
+      --kozmos-guidance-foreground,
+      var(--primitives-colors-theme-600)
+    );
   }
   .kozmos-manoeuvre-grip {
-    background-color: var(--kozmos-guidance-foreground, var(--primitives-colors-background-300));
+    background-color: var(
+      --kozmos-guidance-foreground,
+      var(--primitives-colors-background-300)
+    );
   }
   .kozmos-manoeuvre-card button:focus-visible {
-    outline: 2px solid var(--kozmos-guidance-foreground, var(--primitives-colors-theme-600));
+    outline: 2px solid
+      var(--kozmos-guidance-foreground, var(--primitives-colors-theme-600));
     outline-offset: 2px;
   }
   .kozmos-manoeuvre-instruction {
@@ -366,7 +492,10 @@
      cut it. */
   .kozmos-manoeuvre-itinerary:focus-visible {
     @apply outline outline-2 outline-ring;
-    outline-color: var(--kozmos-guidance-foreground, var(--primitives-colors-theme-600));
+    outline-color: var(
+      --kozmos-guidance-foreground,
+      var(--primitives-colors-theme-600)
+    );
     outline-offset: -2px;
   }
   /* A route option is a card of its own: the background colour, and the

@@ -5,7 +5,7 @@
 Host-confirmed arrival content for an existing bottom sheet or panel. Hosted by default: no duplicate surface, radius, elevation or outer padding. Use `presentation="standalone"` only when this component owns that presentation.
 
 - **Import:** `import { ArrivalPanel } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-arrivalpanel--docs>
 

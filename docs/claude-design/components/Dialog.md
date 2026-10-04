@@ -5,7 +5,7 @@
 A window overlaid on existing content.
 
 - **Import:** `import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-dialog--docs>
 
@@ -169,7 +169,11 @@ It also takes the attributes React's DOM types give it (`className`, `style`, `i
 
 ## DialogFooter
 
-Its props are `React.HTMLAttributes<HTMLDivElement>`.
+Its props are `React.HTMLAttributes<HTMLDivElement> & { layout?: "responsive" | "stacked" }`.
+
+- `layout`: `"responsive" | "stacked"`, optional, default `"responsive"`.
+
+  Stacked keeps DOM, reading and visual order aligned; put the recommended action first.
 
 - `children`: `ReactNode`, optional.
 

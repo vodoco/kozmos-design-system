@@ -5,7 +5,7 @@
 Displays a card with header, content, and footer.
 
 - **Import:** `import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-card--docs>
 

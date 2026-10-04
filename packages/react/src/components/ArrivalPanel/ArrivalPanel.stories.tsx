@@ -3,7 +3,8 @@ import { fn } from "@storybook/test";
 import { ArrivalPanel } from "./ArrivalPanel";
 
 const meta = {
-  title: "Map/ArrivalPanel",
+  id: "map-arrivalpanel",
+  title: "SDK/Navigation/ArrivalPanel",
   component: ArrivalPanel,
   parameters: { layout: "padded" },
   args: {

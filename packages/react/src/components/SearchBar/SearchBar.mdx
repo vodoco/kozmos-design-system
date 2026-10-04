@@ -10,6 +10,18 @@ import { PlatformSnippets } from "../PlatformSnippets";
 A search row with a controlled query, clear action and an optional trailing control.
 Its floating variant supplies the surface styling; the host or MapOverlay owns placement and search-result behaviour.
 
+On React, the clear action composes Core IconButton. It keeps a 44px target and
+a decorative 24px mark, uses `clearLabel` as its accessible name, and does not
+submit a surrounding form. `disabled` and `readOnly` also disable clearing.
+Enabled clearing calls `onChange("")` and `onClear` once; the usual Core Button
+analytics event accompanies SearchBar's `search_cleared` event. The decorated
+input itself still awaits the shared Core field-composition capability.
+
+Clearing returns focus to the input before calling the host, so `onClear` may
+deliberately move focus elsewhere. Forwarded refs still expose the input. Host
+`onKeyDown` handlers run first; prevented or IME-composing Enter events do not
+emit `search_initiated`.
+
 <Canvas>
   <Story of={SearchBarStories.Default} />
 </Canvas>

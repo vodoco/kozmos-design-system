@@ -5,7 +5,7 @@
 Buttons allow users to take actions, and make choices, with a single tap.
 
 - **Import:** `import { Button } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-button--docs>
 

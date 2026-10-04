@@ -5,7 +5,7 @@
 Inputs allow users to enter text into a UI. They typically appear in forms and dialogs.
 
 - **Import:** `import { Input } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-input--docs>
 

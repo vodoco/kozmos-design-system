@@ -5,7 +5,7 @@
 A loading placeholder shaped as a text line, block or circle, with configurable dimensions. Match its size to the content it replaces and provide loading announcements in the surrounding UI.
 
 - **Import:** `import { Skeleton } from "@kozmos-ds/react";`
-- **Group:** Feedback
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/feedback-skeleton--docs>
 

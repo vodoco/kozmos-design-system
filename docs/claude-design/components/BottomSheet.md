@@ -5,7 +5,7 @@
 A bottom-edge Drawer composition with a handle, optional close button and safe-area-aware spacing. Provide `title` for a visually hidden accessible name or render BottomSheetTitle; use AdaptiveMapShell for a persistent map panel with detents.
 
 - **Import:** `import { BottomSheet, BottomSheetClose, BottomSheetContent, BottomSheetDescription, BottomSheetFooter, BottomSheetHeader, BottomSheetTitle, BottomSheetTrigger } from "@kozmos-ds/react";`
-- **Group:** Overlay
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/overlay-bottomsheet--docs>
 

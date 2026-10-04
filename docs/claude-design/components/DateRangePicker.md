@@ -5,7 +5,7 @@
 The range adapts to its container width rather than the screen width: narrow modules stack the individually labelled fields. The group heading names the range. Each date's bounds respect both the sibling date and the caller's `min`/`max`.
 
 - **Import:** `import { DateRangePicker } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-daterangepicker--docs>
 

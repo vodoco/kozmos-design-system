@@ -5,7 +5,7 @@
 A colour field with a swatch trigger, a palette of presets, an alpha slider, and a switchable text format.
 
 - **Import:** `import { ColorPicker } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-colorpicker--docs>
 

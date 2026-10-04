@@ -17,7 +17,8 @@ import { ThemeProvider } from "../ThemeProvider";
 import { NavigationItem } from "./NavigationItem";
 
 const meta: Meta<typeof NavigationItem> = {
-  title: "Navigation/NavigationItem",
+  id: "navigation-navigationitem",
+  title: "Core/Layout/NavigationItem",
   component: NavigationItem,
 };
 

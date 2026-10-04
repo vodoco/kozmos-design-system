@@ -25,6 +25,67 @@ const navigate = () => {
   );
 };
 describe("host journey example state", () => {
+  it.each([-0.1, 1.2, 0.8, Infinity, NaN])(
+    "does not turn inconsistent position %s into valid progress",
+    (progress) => {
+      const state = reduce(navigate(), {
+        type: "progress",
+        routeId: "route-1",
+        progress,
+      });
+      expect(state.route?.progress).toBeNull();
+      expect(state.phase).toBe("navigating");
+    },
+  );
+  it("validates the position against the same newly supplied section snapshot", () => {
+    const state = reduce(navigate(), {
+      type: "progress",
+      routeId: "route-1",
+      progress: 0.6,
+      activeLeg: { start: 0.5, end: 1 },
+    });
+    expect(state.route?.progress).toBe(0.6);
+    expect(
+      reduce(state, { type: "progress", routeId: "route-1", progress: 0.4 })
+        .route?.progress,
+    ).toBeNull();
+    expect(
+      reduce(state, {
+        type: "progress",
+        routeId: "route-1",
+        progress: 0.6,
+        activeLeg: { start: 0.7, end: 0.5 },
+      }).route?.progress,
+    ).toBeNull();
+  });
+  it("keeps a transition host-controlled and treats invalid position as unknown", () => {
+    const atLift = reduce(navigate(), {
+      type: "progress",
+      routeId: "route-1",
+      progress: 0.5,
+    });
+    expect(atLift.route?.activeLeg).toEqual({ start: 0, end: 0.5 });
+    const afterLift = reduce(atLift, {
+      type: "progress",
+      routeId: "route-1",
+      progress: 0.6,
+      activeLeg: { start: 0.5, end: 1 },
+    });
+    expect(afterLift.route?.activeLeg).toEqual({ start: 0.5, end: 1 });
+    expect(
+      reduce(afterLift, {
+        type: "progress",
+        routeId: "old",
+        progress: 0,
+        activeLeg: { start: 0, end: 0.5 },
+      }),
+    ).toEqual(afterLift);
+    expect(
+      reduce(afterLift, { type: "progress", routeId: "route-1", progress: NaN })
+        .route?.progress,
+    ).toBeNull();
+    expect(afterLift.phase).toBe("navigating");
+  });
   it("never treats typed text as a resolved origin", () => {
     const s = reduce(setup(), { type: "query", query: "Lobby" });
     expect(s.origin).toBeNull();
@@ -67,7 +128,9 @@ describe("host journey example state", () => {
       type: "progress",
       routeId: "route-1",
       progress: 1,
+      activeLeg: { start: 0.5, end: 1 },
     });
+    expect(s.route?.progress).toBe(1);
     expect(s.phase).toBe("navigating");
     expect(reduce(s, { type: "arrive", routeId: "old" })).toBe(s);
     const arrived = reduce(s, { type: "arrive", routeId: "route-1" });

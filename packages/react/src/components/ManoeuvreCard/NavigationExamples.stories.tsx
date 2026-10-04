@@ -16,8 +16,8 @@ const route = {
   steps: [
     {
       id: "1",
-      instruction: "Take Elevator down to First Floor",
-      type: "lift-down",
+      instruction: "Follow the route to the elevator",
+      type: "walking",
       metres: 58,
       seconds: 60,
       floor: "Second Floor",
@@ -63,17 +63,31 @@ function minutes(seconds: number) {
 
 /**
  * The navigation screen: the manoeuvre card in the shell's top slot, opening
- * into the itinerary; the navigation summary with the rail in the panel over
- * Previous and Next step. The same composition as the Pointr QA app on iOS.
+ * into the itinerary; the shell owns the summary's surface. The buttons below
+ * the map simulate host updates and are explicitly not navigation UI.
  */
 function NavigationExample() {
   const [index, setIndex] = React.useState(0);
   const [expanded, setExpanded] = React.useState(false);
+  const [legFraction, setLegFraction] = React.useState(0);
+  const [live, setLive] = React.useState(true);
+  const [animate, setAnimate] = React.useState(true);
   const step = route.steps[index];
   const total = route.steps.reduce((sum, s) => sum + s.metres, 0);
   const rest = route.steps.slice(index);
   const remainingMetres = rest.reduce((sum, s) => sum + s.metres, 0);
   const remainingSeconds = rest.reduce((sum, s) => sum + s.seconds, 0);
+  const legStart = (total - remainingMetres) / total;
+  const legEnd = legStart + step.metres / total;
+  const position = legStart + (legEnd - legStart) * legFraction;
+  const transitions = route.steps.map((s, i) => ({
+    id: s.id,
+    position:
+      route.steps.slice(0, i + 1).reduce((sum, part) => sum + part.metres, 0) /
+      total,
+    type: i === 0 ? ("lift-down" as const) : s.type,
+    label: i === 0 ? "Elevator down to First Floor" : s.instruction,
+  }));
   const steps: ItineraryStep[] = route.steps.map((s, i) => ({
     id: s.id,
     instruction: s.instruction,
@@ -82,66 +96,123 @@ function NavigationExample() {
   }));
   const last = index === route.steps.length - 1;
   return (
-    <AdaptiveMapShell
-      className="h-[720px]"
-      mapLabel="Example map"
-      map={<div className="h-full w-full bg-muted/40" />}
-      panelLabel="Directions"
-      panelPresentation="bottom"
-      panelSizing="content"
-      panelSurface="glass"
-      topBar={
-        <ManoeuvreCard
-          type={step.type}
-          instruction={step.instruction}
-          detail={`${step.metres} m · ${step.floor}`}
-          expanded={expanded}
-          onToggle={() => setExpanded((open) => !open)}
-          surface="glass"
-        >
-          <Itinerary
-            origin={route.origin}
-            steps={steps}
-            destination={route.destination}
-          />
-        </ManoeuvreCard>
-      }
-      panel={
-        <div className="flex flex-col gap-4 px-4 pb-4">
-          <RouteSummary
-            data-navigation-summary
-            destination={route.destination}
-            durationText={minutes(remainingSeconds)}
-            distanceText={`${remainingMetres} m`}
-            arrivalText="Arrive 12:58"
+    <>
+      <AdaptiveMapShell
+        className="h-[720px]"
+        mapLabel="Example map"
+        map={<div className="h-full w-full bg-muted/40" />}
+        panelLabel="Directions"
+        panelPresentation="bottom"
+        panelSizing="content"
+        panelSurface="glass"
+        topBar={
+          <ManoeuvreCard
+            type={step.type}
+            instruction={step.instruction}
+            detail={`${step.metres} m · ${step.floor}`}
+            expanded={expanded}
+            onToggle={() => setExpanded((open) => !open)}
             surface="glass"
-            onEndRoute={() => setIndex(0)}
-            progress={
-              <RouteProgressRail
-                progress={(total - remainingMetres) / total}
-                type={step.type}
-                label={`Step ${index + 1} of ${route.steps.length}`}
-              />
-            }
-          />
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              disabled={index === 0}
-              onClick={() => setIndex((i) => Math.max(i - 1, 0))}
-            >
-              Previous step
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={() => (last ? setIndex(0) : setIndex((i) => i + 1))}
-            >
-              {last ? "Finish" : "Next step"}
-            </Button>
+          >
+            <Itinerary
+              origin={route.origin}
+              steps={steps}
+              destination={route.destination}
+            />
+          </ManoeuvreCard>
+        }
+        panel={
+          <div className="flex flex-col gap-4 px-4 pb-4">
+            <RouteSummary
+              data-navigation-summary
+              presentation="hosted"
+              destination={route.destination}
+              durationText={minutes(
+                remainingSeconds - step.seconds * legFraction,
+              )}
+              distanceText={`${Math.round(remainingMetres - step.metres * legFraction)} m`}
+              arrivalText="Arrive 12:58"
+              surface="glass"
+              onEndRoute={() => {
+                setIndex(0);
+                setLegFraction(0);
+              }}
+              progress={
+                <RouteProgressRail
+                  progress={position}
+                  positionMode={live ? "live" : "static"}
+                  motion={animate ? "directional" : "none"}
+                  valueText={
+                    live ? undefined : `Selected section: ${step.instruction}`
+                  }
+                  activeLeg={{ start: legStart, end: legEnd }}
+                  activeWaypointId={step.id}
+                  appearance="gradient"
+                  waypoints={transitions}
+                  type={step.type}
+                  label={`Step ${index + 1} of ${route.steps.length}`}
+                />
+              }
+            />
           </div>
+        }
+      />
+      <div
+        className="flex flex-col gap-3 p-4"
+        role="group"
+        aria-label="Fixture controls — not product navigation"
+      >
+        <p className="m-0 text-sm text-muted-foreground">
+          Fixture controls — simulate distance along a leg and host-confirmed
+          transitions, not live positioning.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            aria-pressed={live}
+            onClick={() => setLive((value) => !value)}
+          >
+            Live position
+          </Button>
+          <Button
+            variant="outline"
+            aria-pressed={animate}
+            onClick={() => setAnimate((value) => !value)}
+          >
+            Directional motion
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto min-h-11 max-w-full whitespace-normal"
+            disabled={index === 0}
+            onClick={() => {
+              setIndex((i) => Math.max(i - 1, 0));
+              setLegFraction(0);
+            }}
+          >
+            Previous step
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setLegFraction((value) => Math.min(1, value + 0.25))}
+            disabled={legFraction === 1}
+          >
+            Advance within leg
+          </Button>
+          <Button
+            type="button"
+            className="h-auto min-h-11 max-w-full flex-1 whitespace-normal"
+            onClick={() => {
+              setIndex((i) => (last ? 0 : i + 1));
+              setLegFraction(0);
+            }}
+          >
+            {last ? "Finish" : "Next step"}
+          </Button>
         </div>
-      }
-    />
+      </div>
+    </>
   );
 }
 
@@ -166,6 +237,10 @@ interface PhoneRoute {
   destination: string;
   /** The step under way, whose instruction the card shows. */
   current: number;
+  /** Explicit distance snapshot for this fixture, never inferred from instruction count. */
+  routeMetres: number;
+  travelledMetres: number;
+  legMetres: { start: number; end: number };
   detail: string;
   progress: string;
   duration: string;
@@ -191,6 +266,9 @@ const english: PhoneRoute = {
   origin: "Main Entrance",
   destination: "Airport Shuttles",
   current: 1,
+  routeMetres: 600,
+  travelledMetres: 180,
+  legMetres: { start: 120, end: 220 },
   detail: "40 m · Ground Floor",
   progress: "Step 2 of 5",
   duration: "6 min",
@@ -239,6 +317,9 @@ const german: PhoneRoute = {
   origin: "Haupteingang",
   destination: "Flughafen-Shuttles",
   current: 2,
+  routeMetres: 800,
+  travelledMetres: 190,
+  legMetres: { start: 150, end: 230 },
   detail: "40 m · Ebene 1",
   progress: "Schritt 3 von 9",
   duration: "9 Min.",
@@ -312,6 +393,9 @@ const japanese: PhoneRoute = {
   origin: "正面入口",
   destination: "空港シャトル乗り場",
   current: 1,
+  routeMetres: 600,
+  travelledMetres: 180,
+  legMetres: { start: 120, end: 220 },
   detail: "40 m · 1階",
   progress: "ステップ 2/4",
   duration: "6分",
@@ -389,6 +473,7 @@ function PhoneNavigation({
           <div className="px-4 pb-4">
             <RouteSummary
               data-navigation-summary
+              presentation="hosted"
               destination={phone.destination}
               durationText={phone.duration}
               distanceText={phone.distance}
@@ -398,7 +483,28 @@ function PhoneNavigation({
               onEndRoute={() => setExpanded(false)}
               progress={
                 <RouteProgressRail
-                  progress={(phone.current + 0.5) / phone.steps.length}
+                  progress={phone.travelledMetres / phone.routeMetres}
+                  motion="directional"
+                  activeLeg={{
+                    start: phone.legMetres.start / phone.routeMetres,
+                    end: phone.legMetres.end / phone.routeMetres,
+                  }}
+                  activeWaypointId={step.id}
+                  appearance="gradient"
+                  waypoints={[
+                    {
+                      id: step.id,
+                      position: phone.legMetres.end / phone.routeMetres,
+                      type: step.type,
+                      label: step.instruction,
+                    },
+                    {
+                      id: "destination",
+                      position: 1,
+                      type: "destination",
+                      label: phone.destination,
+                    },
+                  ]}
                   type={step.type}
                   label={phone.progress}
                 />
@@ -412,7 +518,8 @@ function PhoneNavigation({
 }
 
 const meta = {
-  title: "Examples/Navigation",
+  id: "examples-navigation",
+  title: "Examples/Navigation/Guidance",
   component: NavigationExample,
   parameters: { layout: "fullscreen" },
   play: async ({ canvasElement }) => {

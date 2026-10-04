@@ -1,4 +1,5 @@
 import React from "react";
+import { IconButton } from "../IconButton/IconButton";
 import {
   Microphone01,
   MicrophoneOff01,
@@ -287,14 +288,15 @@ const AIInputBar = React.forwardRef<HTMLFormElement, AIInputBarProps>(
             </span>
           </>
         )}
-        <button
+        <IconButton
           aria-label={sendLabel}
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-primary text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          variant="default"
+          className="shrink-0 rounded-pill"
           disabled={!canSend}
           type="submit"
         >
           <Send01 aria-hidden="true" className="h-5 w-5" />
-        </button>
+        </IconButton>
       </form>
     );
   },

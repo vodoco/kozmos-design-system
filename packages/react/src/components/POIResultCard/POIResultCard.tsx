@@ -11,6 +11,7 @@ import {
 import { Star01 as Star, NavigationPointer01 } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { Button } from "../Button/Button";
 
 /**
  * The DOM id of a place's result card: what `LocationPin`'s `resultId` names
@@ -492,18 +493,17 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           <div className="kozmos-poi-result-actions">
             <div
               aria-label={actionsLabel}
-              className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3"
+              className="flex min-w-0 flex-wrap items-center gap-2 border-t border-border px-4 py-3"
               id={actionsId}
               role="group"
             >
               {actions.map((entry, index) => (
-                <button
-                  className={cn(
-                    "inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
-                    entry.primary
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "border border-border bg-card text-foreground hover:bg-muted",
-                  )}
+                <Button
+                  variant={entry.primary ? "default" : "outline"}
+                  emotion={entry.primary ? "themed" : "neutral"}
+                  // The row owns available space; Core still owns the action's
+                  // appearance and interaction. Translations grow vertically.
+                  className="h-auto min-h-11 min-w-11 max-w-full whitespace-normal"
                   disabled={entry.disabled || !onAction}
                   key={`${entry.action}-${index}`}
                   onClick={() => handleAction(entry.action)}
@@ -515,8 +515,10 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                       className="h-5 w-5 shrink-0"
                     />
                   )}
-                  <span className="truncate">{entry.label}</span>
-                </button>
+                  <span className="min-w-0 [overflow-wrap:anywhere]">
+                    {entry.label}
+                  </span>
+                </Button>
               ))}
             </div>
           </div>

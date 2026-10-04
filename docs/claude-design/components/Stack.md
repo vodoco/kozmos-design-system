@@ -5,7 +5,7 @@
 Arranges children in a flex row or column with standard gap, alignment, justification and wrapping options. Use it for one-dimensional composition without repeating layout classes.
 
 - **Import:** `import { Stack } from "@kozmos-ds/react";`
-- **Group:** Foundations
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/foundations-stack--docs>
 

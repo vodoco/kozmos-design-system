@@ -1,8 +1,7 @@
 import React from "react";
 import { cn } from "../../utils";
 import { Button } from "../Button";
-import { IconButton } from "../IconButton";
-import { X } from "@kozmos-ds/icons";
+import { MarkerPin01 } from "@kozmos-ds/icons";
 import { Combobox, type ComboboxOption } from "../Combobox";
 
 export type RouteLocationStatus =
@@ -27,7 +26,17 @@ export interface RouteLocationFieldProps extends Omit<
   onSelect: (location: ComboboxOption) => void;
   /** Host clears the resolved identity/query and owns focus restoration. */
   onClear: () => void;
+  /** Begin replacing a resolved place. The host retains its identity until selection and owns focus. */
+  onEdit?: () => void;
+  /** While showing an unresolved draft, restore the host's retained place and focus. */
+  onCancelEdit?: () => void;
+  changeLabel?: string;
+  cancelEditLabel?: string;
+  clearSearchLabel?: string;
   onChooseMap?: () => void;
+  /** A usable blue-dot position resolved by the host, or null when unavailable. No permission/position inference. */
+  currentPosition?: ComboboxOption | null;
+  currentPositionLabel?: string;
   status?: RouteLocationStatus;
   /** Localized explanation of loading, empty or error state. */
   statusText?: string;
@@ -55,7 +64,14 @@ export const RouteLocationField = React.forwardRef<
       onQueryChange,
       onSelect,
       onClear,
+      onEdit,
+      onCancelEdit,
+      changeLabel = "Change",
+      cancelEditLabel = "Cancel",
+      clearSearchLabel = "Clear search",
       onChooseMap,
+      currentPosition,
+      currentPositionLabel = "Current position",
       status = "idle",
       statusText,
       placeholder = "Search for a place",
@@ -70,6 +86,7 @@ export const RouteLocationField = React.forwardRef<
     },
     ref,
   ) => {
+    const inputId = React.useId();
     const allowed = status === "idle" || status === "ready";
     const counts = new Map<string, number>();
     for (const option of options)
@@ -88,6 +105,35 @@ export const RouteLocationField = React.forwardRef<
           : status === "empty"
             ? emptyText
             : undefined);
+    const actions = (
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {!location && query && (
+          <Button
+            type="button"
+            className="h-auto min-h-11 max-w-full whitespace-normal [overflow-wrap:anywhere]"
+            variant="ghost"
+            disabled={disabled}
+            onClick={onClear}
+            onMouseDown={(event) => event.preventDefault()}
+          >
+            {clearSearchLabel}
+          </Button>
+        )}
+        {!location && onCancelEdit && (
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-auto min-h-11 max-w-full whitespace-normal [overflow-wrap:anywhere]"
+            disabled={disabled}
+            onClick={onCancelEdit}
+            onMouseDown={(event) => event.preventDefault()}
+            aria-label={`${cancelEditLabel} ${label}`}
+          >
+            {cancelEditLabel}
+          </Button>
+        )}
+      </div>
+    );
     return (
       <div
         {...props}
@@ -95,21 +141,38 @@ export const RouteLocationField = React.forwardRef<
         className={cn("flex min-w-0 flex-col gap-2 text-foreground", className)}
       >
         {location ? (
-          <div className="flex min-w-0 flex-col gap-2 rounded-control border border-border p-3">
-            <div className="flex min-w-0 items-center justify-between gap-3">
+          <div
+            className={cn(
+              "min-w-0 gap-2 rounded-control border border-border p-3",
+              onEdit
+                ? "grid grid-cols-[minmax(0,1fr)_fit-content(50%)] gap-x-3"
+                : "flex flex-col",
+            )}
+          >
+            <div
+              className={
+                onEdit
+                  ? "contents"
+                  : "flex min-w-0 items-center justify-between gap-3"
+              }
+            >
               <span className="kozmos-muted-text min-w-0 text-sm [overflow-wrap:anywhere]">
                 {label}
               </span>
-              <IconButton
+              <Button
                 type="button"
-                variant="outline"
-                className="shrink-0"
-                aria-label={clearLabel}
+                variant="ghost"
+                className={cn(
+                  "h-auto min-h-11 max-w-full shrink-0 whitespace-normal [overflow-wrap:anywhere]",
+                  onEdit &&
+                    "col-start-2 row-start-1 row-span-2 min-w-0 self-center",
+                )}
+                aria-label={onEdit ? `${changeLabel} ${label}` : clearLabel}
                 disabled={disabled}
-                onClick={onClear}
+                onClick={onEdit ?? onClear}
               >
-                <X aria-hidden="true" />
-              </IconButton>
+                {onEdit ? changeLabel : clearLabel}
+              </Button>
             </div>
             <div className="min-w-0 [overflow-wrap:anywhere]">
               <p className="m-0 text-base font-semibold">{location.label}</p>
@@ -121,49 +184,61 @@ export const RouteLocationField = React.forwardRef<
             </div>
           </div>
         ) : (
-          <Combobox
-            includeValueInAnalytics={false}
-            label={label}
-            value=""
-            inputValue={query}
-            onInputValueChange={onQueryChange}
-            options={suggestions}
-            filterOption={filterMode === "host" ? () => true : undefined}
-            onValueChange={(_, option) => {
-              if (!disabled && allowed && option && !option.disabled)
-                onSelect(option);
-            }}
-            clearable={false}
-            openLabel={openLabel}
-            closeLabel={closeLabel}
-            disabled={disabled}
-            placeholder={placeholder}
-            status={status === "error" ? "error" : "default"}
-            helperText={message}
-            emptyText={message ?? emptyText}
-          />
-        )}
-        {!location && query && (
-          <Button
-            type="button"
-            className="h-auto min-h-11 whitespace-normal [overflow-wrap:anywhere]"
-            variant="outline"
-            disabled={disabled}
-            onClick={onClear}
-          >
-            {clearLabel}
-          </Button>
-        )}
-        {onChooseMap && (
-          <Button
-            type="button"
-            className="h-auto min-h-11 whitespace-normal [overflow-wrap:anywhere]"
-            variant="outline"
-            disabled={disabled}
-            onClick={onChooseMap}
-          >
-            {mapLabel}
-          </Button>
+          <>
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+              <label
+                htmlFor={inputId}
+                className="kozmos-muted-text text-sm [overflow-wrap:anywhere]"
+              >
+                {label}
+              </label>
+              {actions}
+            </div>
+            <Combobox
+              popupLayout="inline"
+              id={inputId}
+              includeValueInAnalytics={false}
+              aria-label={label}
+              value=""
+              inputValue={query}
+              onInputValueChange={onQueryChange}
+              options={suggestions}
+              popupActions={[
+                ...(currentPosition?.value.trim() && !currentPosition.disabled
+                  ? [
+                      {
+                        id: "current-position",
+                        label: currentPositionLabel,
+                        onAction: () => onSelect(currentPosition),
+                      },
+                    ]
+                  : []),
+                ...(onChooseMap
+                  ? [
+                      {
+                        id: "choose-map",
+                        label: mapLabel,
+                        icon: <MarkerPin01 className="h-4 w-4" />,
+                        onAction: onChooseMap,
+                      },
+                    ]
+                  : []),
+              ]}
+              filterOption={filterMode === "host" ? () => true : undefined}
+              onValueChange={(_, option) => {
+                if (!disabled && allowed && option && !option.disabled)
+                  onSelect(option);
+              }}
+              clearable={false}
+              openLabel={openLabel}
+              closeLabel={closeLabel}
+              disabled={disabled}
+              placeholder={placeholder}
+              status={status === "error" ? "error" : "default"}
+              helperText={message}
+              emptyText={message ?? emptyText}
+            />
+          </>
         )}
       </div>
     );

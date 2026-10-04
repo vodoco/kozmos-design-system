@@ -37,7 +37,8 @@ const DAYS = [
 ] as const;
 
 const meta: Meta = {
-  title: "Examples/Opening Hours",
+  id: "examples-opening-hours",
+  title: "Examples/Place details/Opening hours",
   parameters: {
     layout: "centered",
     docs: {

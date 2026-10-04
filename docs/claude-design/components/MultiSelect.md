@@ -5,7 +5,7 @@
 A filterable field for choosing several options, each shown as a removable chip.
 
 - **Import:** `import { MultiSelect } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-multiselect--docs>
 

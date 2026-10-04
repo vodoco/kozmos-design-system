@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { UserMessage } from "./UserMessage";
 
 const meta = {
-  title: "Product SDK/UserMessage",
+  id: "product-sdk-usermessage",
+  title: "Core/Feedback/UserMessage",
   component: UserMessage,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof UserMessage>;

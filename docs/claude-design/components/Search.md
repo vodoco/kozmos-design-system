@@ -5,7 +5,7 @@
 A search input with a leading search icon, optional field label and validation message. Use Search for a form field; use SearchBar when you need a clear action and a trailing map-toolbar control.
 
 - **Import:** `import { Search } from "@kozmos-ds/react";`
-- **Group:** Inputs
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/inputs-search--docs>
 

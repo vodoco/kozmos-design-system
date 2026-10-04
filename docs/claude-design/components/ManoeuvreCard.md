@@ -5,7 +5,7 @@
 The current manoeuvre, floating over the map during navigation: its arrow, the instruction, how far and how long, and a grab bar that opens the full itinerary in its place. The card owns the toggle and what assistive technology hears of it; the itinerary it opens into is the caller's, so the card never decides what a route is made of.
 
 - **Import:** `import { ManoeuvreCard } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-manoeuvrecard--docs>
 

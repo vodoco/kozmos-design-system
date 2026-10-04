@@ -6,14 +6,7 @@ import type {
   POISupplementaryAction,
 } from "@kozmos-ds/product-contracts";
 import { NavigationPointer01 as Navigation, X } from "@kozmos-ds/icons";
-import {
-  Bookmark,
-  CalendarCheck01,
-  Heart,
-  Phone,
-  Share01,
-  ShoppingBag02,
-} from "@kozmos-ds/icons";
+import { Bookmark, Heart } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { scrollHorizontalWithKeyboard } from "../../utils/keyboard-scroll";
 import { Button } from "../Button";
@@ -72,14 +65,10 @@ export interface POIDetailPanelProps extends Omit<
 }
 
 const actionIcons = {
-  navigate: Navigation,
   favourite: Heart,
   bookmark: Bookmark,
-  share: Share01,
-  order: ShoppingBag02,
 };
-const supplementaryIcons = { book: CalendarCheck01, call: Phone };
-const isToggle = (action: POIAction) =>
+const isToggle = (action: POIAction): action is "favourite" | "bookmark" =>
   action === "favourite" || action === "bookmark";
 
 function ActionMessage({ state }: { state?: POIActionState }) {
@@ -258,7 +247,6 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
             }}
           >
             {actions.map((action) => {
-              const Icon = actionIcons[action];
               const state = actionStates[action];
               const estimate =
                 action === "navigate" ? details?.travelEstimate : undefined;
@@ -288,10 +276,9 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
                       : undefined
                   }
                 >
-                  <Icon
-                    aria-hidden="true"
-                    size={action === "navigate" ? 24 : 20}
-                  />
+                  {action === "navigate" && (
+                    <Navigation aria-hidden="true" size={24} />
+                  )}
                   <span>
                     {actionLabels[action]}
                     {estimate && (
@@ -307,7 +294,6 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
               );
             })}
             {details?.supplementaryActions?.map(({ action, label }) => {
-              const Icon = supplementaryIcons[action];
               const state = supplementaryActionStates[action];
               return (
                 <Button
@@ -320,7 +306,6 @@ const POIDetailPanel = React.forwardRef<HTMLElement, POIDetailPanelProps>(
                   isLoading={state?.loading}
                   onClick={() => onSupplementaryAction?.(action, poi.id)}
                 >
-                  <Icon aria-hidden="true" size={18} />
                   {label}
                 </Button>
               );

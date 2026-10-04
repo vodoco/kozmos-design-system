@@ -3,7 +3,8 @@ import { IconButton } from "./IconButton";
 import { Icon } from "../Icon/Icon";
 
 const meta: Meta<typeof IconButton> = {
-  title: "Action/IconButton",
+  id: "action-iconbutton",
+  title: "Core/Actions/IconButton",
   component: IconButton,
   argTypes: {
     variant: {

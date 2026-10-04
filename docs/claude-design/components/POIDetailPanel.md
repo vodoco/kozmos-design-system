@@ -5,7 +5,7 @@
 Typed Product/SDK detail anatomy for partial and complete POI data. Actions are controlled and receive explicit loading, disabled, pressed, status, and error states. The same content contract supports inline, sheet, and desktop panel presentations.
 
 - **Import:** `import { POIDetailPanel } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-poidetailpanel--docs>
 

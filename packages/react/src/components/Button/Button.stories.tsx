@@ -3,7 +3,8 @@ import { fn } from "@storybook/test";
 import { Button, BUTTON_EMOTIONS } from "./Button";
 
 const meta: Meta<typeof Button> = {
-  title: "Components/Button",
+  id: "components-button",
+  title: "Core/Actions/Button",
   component: Button,
   parameters: {
     layout: "centered",

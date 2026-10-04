@@ -2,10 +2,10 @@
 
 # RouteProgressRail
 
-How far along the route the visitor is, as a rail: a dot where it starts, a disc carrying the current manoeuvre's arrow that travels the track, a dot where it ends. Progress is 0 to 1 and anything outside is clamped; the disc runs from just after the start dot to just before the end dot. Assistive technology hears the label the caller gives ("Step 2 of 4") and the progress as a percentage.
+Pass `activeLeg={{ start: 0, end: 0.4 }}` to show the route rather than the legacy step disc. All values are normalized cumulative route distance, supplied by the host from the same route revision. `appearance="theme"` is the default; `appearance="gradient"` paints theme to success across the coloured portion.
 
 - **Import:** `import { RouteProgressRail } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-routeprogressrail--docs>
 
@@ -38,7 +38,8 @@ It forwards its ref to `HTMLDivElement`. Its props are `RouteProgressRailProps`,
 
 - `progress`: `number | null`, **required**.
 
-  How far along the route, 0 to 1; anything outside is clamped.
+  Absolute route position, 0 to 1. With activeLeg, null/nonfinite/outside
+  that interval means unknown; static mode ignores it. Legacy calls clamp.
 
 - `valueText`: `string`, optional.
 
@@ -51,6 +52,27 @@ It forwards its ref to `HTMLDivElement`. Its props are `RouteProgressRailProps`,
 - `showCompletedTrack`: `boolean`, optional, default `false`.
 
   Opt into a static completed segment. Unknown progress never paints completion.
+
+- `activeLeg`: `ProgressRange`, optional.
+
+  Opt into distance-based route presentation. Host advances this interval explicitly,
+  atomically with waypoints and progress on reroute; omitting it retains the legacy step disc.
+
+- `activeWaypointId`: `string`, optional.
+
+  Next transition ID at activeLeg.end; disambiguates coincident transitions.
+
+- `appearance`: `"theme" | "gradient"`, optional, default `"theme"`.
+
+  Gradient spans the selected static section, or journey start to the live dot.
+
+- `positionMode`: `"static" | "live"`, optional, default `"live"`.
+
+  Explicitly distinguish manual section selection from unavailable live positioning.
+
+- `motion`: `"none" | "directional"`, optional, default `"none"`.
+
+  Opt-in directional flow. Set none for paused, unreliable or completed guidance.
 
 - `type`: `DirectionType`, **required**.
 
@@ -78,6 +100,18 @@ interface RouteProgressWaypoint {
   type: DirectionType;
   /** Localized transport, destination floor and/or landmark description. */
   label: string;
+}
+```
+
+### ProgressRange
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A normalized, host-selected interval. Invalid intervals are not rendered. */
+interface ProgressRange {
+  start: number;
+  end: number;
 }
 ```
 

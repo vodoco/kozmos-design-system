@@ -5,7 +5,7 @@
 Product/SDK map action with icon-only and labelled presentations. The localized `label` is always the accessible action name; `stateLabel` communicates a controlled state such as “Off” without relying on colour.
 
 - **Import:** `import { MapControlButton } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-mapcontrolbutton--docs>
 

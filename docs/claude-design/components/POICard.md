@@ -5,7 +5,7 @@
 A general-purpose place card with optional imagery, subtitle, description, badges and actions. Its selectable identity and action footer are separate; use POIResultCard for SDK search-result state and POIDetailPanel for the full detail view.
 
 - **Import:** `import { POICard } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-poicard--docs>
 

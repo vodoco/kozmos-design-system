@@ -5,7 +5,8 @@ import { RouteSummary } from "./RouteSummary";
 import { RouteProgressRail } from "../RouteProgressRail";
 
 const meta = {
-  title: "Map/RouteSummary",
+  id: "map-routesummary",
+  title: "SDK/Navigation/RouteSummary",
   component: RouteSummary,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof RouteSummary>;

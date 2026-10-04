@@ -5,7 +5,7 @@
 Route calculation and alternative-selection composition. The horizontal list uses snap points and a localized count cue; continuation is disabled until a selected route is ready and available.
 
 - **Import:** `import { RoutePreviewPanel } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-routepreviewpanel--docs>
 

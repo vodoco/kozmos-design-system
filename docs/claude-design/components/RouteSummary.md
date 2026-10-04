@@ -5,7 +5,7 @@
 `RouteSummary` presents route estimates and actions. It is not a modal sheet or routing engine: the host owns sheet placement, safe areas, focus, route state and routing logic.
 
 - **Import:** `import { RouteSummary } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-routesummary--docs>
 

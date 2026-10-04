@@ -5,7 +5,7 @@
 An invisible live region that speaks turn-by-turn guidance to assistive technology.
 
 - **Import:** `import { NavigationAnnouncer } from "@kozmos-ds/react";`
-- **Group:** Utilities
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; no Figma component by design.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/utilities-navigationannouncer--docs>
 

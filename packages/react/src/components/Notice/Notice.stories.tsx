@@ -4,7 +4,8 @@ import { Notice } from "./Notice";
 import { Button } from "../Button";
 
 const meta = {
-  title: "Product SDK/Notice",
+  id: "product-sdk-notice",
+  title: "Core/Feedback/Notice",
   component: Notice,
   parameters: { layout: "centered" },
   decorators: [
@@ -44,8 +45,7 @@ export const Emergency: Story = {
     tone: "critical",
     collapsible: false,
     summary: "If someone's life is in danger, call 112 now",
-    children:
-      "Airport staff can help too. The nearest help points are below.",
+    children: "Airport staff can help too. The nearest help points are below.",
     action: (
       <Button onClick={fn()} variant="destructive">
         Call 112

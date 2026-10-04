@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Itinerary } from "./Itinerary";
 
 const meta = {
-  title: "Map/Itinerary",
+  id: "map-itinerary",
+  title: "SDK/Navigation/Itinerary",
   component: Itinerary,
   parameters: { layout: "padded" },
   args: {

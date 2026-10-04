@@ -5,7 +5,7 @@
 A map marker with optional result number, custom content, external label and category tint. Selected, featured and off-floor states distinguish the marker; the SDK host owns geographic placement and selection state.
 
 - **Import:** `import { LocationPin } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-locationpin--docs>
 

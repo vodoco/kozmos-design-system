@@ -5,7 +5,7 @@
 Hosted route setup content with a named heading, explicit cancellation and a Continue action gated by host-validated readiness.
 
 - **Import:** `import { RouteSetupPanel } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-routesetuppanel--docs>
 

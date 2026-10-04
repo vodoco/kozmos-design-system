@@ -201,6 +201,17 @@ export const Outline: Story = {};
   );
 });
 
+test("explicit Storybook IDs survive a title move without reading IDs in fixture data", () => {
+  const source = `const data = { id: "fixture-id" };
+const meta = { id: "components-button", title: "Core/Actions/Button" } satisfies Meta;
+export default meta;
+export const Default = {};`;
+  assert.equal(
+    readStories(source, "Button.stories.tsx").id,
+    "components-button",
+  );
+});
+
 test("a lane the site does not name stops the build", () => {
   assert.throws(
     () =>
@@ -222,7 +233,11 @@ test("the generator reads the repository's components as they are", () => {
     components.map((component) => [component.name, component]),
   );
   assert.ok(components.length >= 100, `only ${components.length} components`);
-  assert.equal(byName.has("Instruction"), false, "Internal text helpers are not public components");
+  assert.equal(
+    byName.has("Instruction"),
+    false,
+    "Internal text helpers are not public components",
+  );
   assert.match(lanes.core.description, /Figma/);
 
   assert.deepEqual(byName.get("Button").platforms, {

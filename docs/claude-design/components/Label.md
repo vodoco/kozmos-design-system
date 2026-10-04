@@ -5,7 +5,7 @@
 Names a form control. Set `htmlFor` to the control's `id`, and provide meaningful text. Label has no Outline variant; the old story was a mislabeled duplicate. Use FieldWrapper when you need required marks, helper text or error messages.
 
 - **Import:** `import { Label } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; no Figma component by design.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-label--docs>
 

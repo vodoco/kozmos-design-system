@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import * as Tokens from "@kozmos-ds/tokens";
 
 const meta: Meta = {
-  title: "Design System/Tokens/Map",
+  id: "design-system-tokens-map",
+  title: "Foundations/Tokens/Map",
 };
 
 export default meta;

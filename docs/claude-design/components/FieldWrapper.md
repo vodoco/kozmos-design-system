@@ -5,7 +5,7 @@
 The label, description, helper text, and error message that surround a form control — without the control itself.
 
 - **Import:** `import { FieldWrapper, FormField } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-fieldwrapper--docs>
 
