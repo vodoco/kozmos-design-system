@@ -105,7 +105,7 @@ final class KozmosNavigationPartsTests: XCTestCase {
     @MainActor func testDefaultManoeuvreUsesOpaqueThemeFill() async throws {
         for scheme in [ColorScheme.light, .dark] {
             for expanded in [false, true] {
-                let view = KozmosManoeuvreCard(type: .left, instruction: "Turn left", detail: "20 m", isExpanded: expanded, onToggle: {}, surface: .glass) {
+                let view = KozmosManoeuvreCard(type: .left, instruction: "Turn left", detail: "20 m", isExpanded: expanded, onToggle: {}) {
                     KozmosItinerary(origin: "Start", steps: [KozmosItineraryStep(id: "a", instruction: [KozmosInstructionPart(text: "Continue", role: .secondary)], type: .left, duration: "1 min")], destination: "End")
                 }.padding(16).environment(\.colorScheme, scheme).background(Color.gray)
                 let pixels = try await RenderedPixels.render(view, size: CGSize(width: 360, height: 360))

@@ -116,6 +116,11 @@ internal fun manoeuvreCardFocusAfter(expanded: Boolean, from: ManoeuvreCardPart?
  * [instructionLines] sits after 0.5.0's parameters and before [itinerary],
  * so the itinerary stays last for a trailing lambda; the overload below
  * keeps 0.5.0's positional call.
+ *
+ * The card is theme-filled unless [surface] is given: a surface named, as a
+ * 0.5.0 call that passed Glass named it, is the background appearance on
+ * that surface (D6). The overloads that take a [KozmosManoeuvreAppearance]
+ * follow the appearance named, whatever the surface.
  */
 @Composable
 fun KozmosManoeuvreCard(
@@ -129,12 +134,14 @@ fun KozmosManoeuvreCard(
     collapseLabel: String = "Hide itinerary",
     manoeuvreLabel: String = "Current manoeuvre",
     maxItineraryHeight: Dp = 320.dp,
-    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    surface: KozmosSurfaceStyle? = null,
     instructionLines: Int? = null,
     itinerary: @Composable () -> Unit
-) = KozmosManoeuvreCard(type, instruction, expanded, onToggle, KozmosManoeuvreAppearance.Theme,
+) = KozmosManoeuvreCard(type, instruction, expanded, onToggle,
+    // Null is what the caller left out: only a surface named turns the theme fill off.
+    if (surface == null) KozmosManoeuvreAppearance.Theme else KozmosManoeuvreAppearance.Background,
     modifier, detail, expandLabel, collapseLabel, manoeuvreLabel, maxItineraryHeight,
-    surface, instructionLines, itinerary)
+    surface ?: KozmosSurfaceStyle.Solid, instructionLines, itinerary)
 
 /** Explicit appearance without changing the released positional argument order. */
 @Composable
@@ -364,7 +371,7 @@ fun KozmosManoeuvreCard(
     collapseLabel: String = "Hide itinerary",
     manoeuvreLabel: String = "Current manoeuvre",
     maxItineraryHeight: Dp = 320.dp,
-    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    surface: KozmosSurfaceStyle? = null,
     instructionLines: Int? = null,
     itinerary: @Composable () -> Unit
 ) = KozmosManoeuvreCard(type, listOf(KozmosInstructionPart(instruction)), expanded, onToggle,
@@ -391,7 +398,7 @@ fun KozmosManoeuvreCard(
     collapseLabel: String = "Hide itinerary",
     manoeuvreLabel: String = "Current manoeuvre",
     maxItineraryHeight: Dp = 320.dp,
-    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    surface: KozmosSurfaceStyle? = null,
     itinerary: @Composable () -> Unit
 ) {
     KozmosManoeuvreCard(

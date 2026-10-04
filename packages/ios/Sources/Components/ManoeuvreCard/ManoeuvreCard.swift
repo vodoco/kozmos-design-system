@@ -8,8 +8,10 @@ enum KozmosManoeuvreCardPart: Hashable {
 /// The current manoeuvre, floating over the map during navigation: its arrow,
 /// the instruction, how far and how long, and a grab bar that opens the full
 /// itinerary in its place. Theme-filled by default, with contrasting instruction
-/// and detail text. Choose `appearance: .background` for the neutral solid/glass
-/// surface. The 36 × 5 grab bar has a minimum 44-point activation area.
+/// and detail text. A `surface:` named with no `appearance:` is the neutral
+/// solid or glass surface it names, as a 0.5.0 call got (D6); an `appearance:`
+/// named wins, `.background` on `surface` or solid. The 36 × 5 grab bar has a
+/// minimum 44-point activation area.
 ///
 /// The card owns the toggle and what VoiceOver hears of it. The itinerary it
 /// opens into is the caller's — `KozmosItinerary`, in the products — so the
@@ -64,9 +66,9 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         expandLabel: String = "Show itinerary",
         collapseLabel: String = "Hide itinerary",
         manoeuvreLabel: String = "Current manoeuvre",
-        surface: KozmosSurfaceStyle = .solid,
+        surface: KozmosSurfaceStyle? = nil,
         maxItineraryHeight: CGFloat = 320,
-        appearance: KozmosManoeuvreAppearance = .theme,
+        appearance: KozmosManoeuvreAppearance? = nil,
         @ViewBuilder itinerary: () -> Itinerary
     ) {
         self.init(type: type, instruction: [KozmosInstructionPart(text: instruction)], detail: detail,
@@ -85,9 +87,9 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         expandLabel: String = "Show itinerary",
         collapseLabel: String = "Hide itinerary",
         manoeuvreLabel: String = "Current manoeuvre",
-        surface: KozmosSurfaceStyle = .solid,
+        surface: KozmosSurfaceStyle? = nil,
         maxItineraryHeight: CGFloat = 320,
-        appearance: KozmosManoeuvreAppearance = .theme,
+        appearance: KozmosManoeuvreAppearance? = nil,
         @ViewBuilder itinerary: () -> Itinerary
     ) {
         self.type = type
@@ -99,8 +101,9 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         self.expandLabel = expandLabel
         self.collapseLabel = collapseLabel
         self.manoeuvreLabel = manoeuvreLabel
-        self.surface = surface
-        self.appearance = appearance
+        // Nil is what the caller left out: only a surface named turns the theme fill off.
+        self.surface = surface ?? .solid
+        self.appearance = appearance ?? (surface == nil ? .theme : .background)
         self.maxItineraryHeight = maxItineraryHeight
         self.itinerary = itinerary()
     }
