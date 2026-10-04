@@ -76,11 +76,12 @@ these entry points require their own audit before reuse as SDK examples.
 
 ### Missing Core capabilities to build before further migration
 
-**React popup-layer correction (local candidate):** Core Combobox now registers its
+**React popup-layer correction:** Core Combobox now registers its
 open suggestions with the same dismissable-layer stack as Dialog and Popover.
 The field owns bubble-phase Escape after its host handler: dismiss suggestions
 first, keep the enclosing surface open and return input focus. IME and prevented
-Escape retain both layers. Empty and inline popups share this behavior. This is
+Escape retain both layers. Inline popups share this behavior. An open popup with nothing to show is not drawn
+and takes no layer, so a parent's Escape is never swallowed. This is
 a Core correction inherited by SDK consumers, not a navigation-specific DOM
 exception. See `Combobox.layers.test.tsx` and `scripts/check-combobox-layers.mjs`;
 the latter is included in the three-engine `test:overlays` gate. It does not close

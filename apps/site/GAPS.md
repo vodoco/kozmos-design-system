@@ -465,7 +465,7 @@ keep the table's four columns and its statuses as they are.
 - **Why it matters:** Safari and iOS web views are WebKit, and the Pointr
   SDK's iOS hosts are among them. Visible in the examples' search fields and
   in the components page's own.
-- **Now:** fixed in the review candidate, not yet released. `SearchBar` owns
+- **Now:** fixed on main (#193), not yet released. `SearchBar` owns
   its native input recipe (`2e602272`), isolated from Core `Search`'s shared
   clear-button marker (`99a55303`). The former expected-failure test produced
   an unexpected pass in WebKit; `tests/site.spec.ts` now positively requires
@@ -1422,7 +1422,7 @@ Text"])`) and the Get started page shows — touches it.
 
 ## GAP-69 · Lift, escalator and stairs share one arrow
 
-- **Candidate correction:** the navigation completion source now draws distinct
+- **Now:** fixed on main (#193), not yet released: DirectionStep draws distinct
   lift, escalator and stairs up/down pairs, plus ramp and entry/exit, from original
   shared Kozmos vectors. The DirectionStep Glyph Atlas shows small/large sizes and
   RTL. This is not publication or external artwork approval; SDK map sprites and
@@ -1437,7 +1437,7 @@ Text"])`) and the Get started page shows — touches it.
   not match the rest of the set's weight.
 - **Evidence:** read from the map itself; the fourteen manoeuvres are shown
   on the DirectionStep page, where the three up arrows are identical.
-- **Now:** left visible in the wayfinding example: the quickest route goes up
+- **Before #193:** left visible in the wayfinding example: the quickest route goes up
   by escalator and the step-free one by lift. The DirectionStep and Itinerary
   pages showed all fourteen manoeuvres until the demos moved to Storybook on
   2026-09-28.

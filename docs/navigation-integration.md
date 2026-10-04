@@ -2,8 +2,8 @@
 
 Use this guide to configure, extend and verify Kozmos navigation presentation on React,
 SwiftUI and Compose. The component source and offline examples do not implement routing,
-map rendering or arrival detection. This navigation increment is a review candidate, not
-a publication claim. Read each component's Storybook API page for complete signatures.
+map rendering or arrival detection. Read each component's Storybook API page for complete
+signatures.
 
 ## What to use
 
@@ -221,4 +221,4 @@ The broader backlog still includes inline itinerary endpoint Edit actions (GAP-1
 Previous/Next actions slot for RouteSummary (the remaining part of GAP-110), the full
 POIDetailPanel route-preview/details slot (GAP-111), and renderer styling ownership. Current
 examples use the existing preview and setup components instead; they are not claimed to close
-those APIs. The Apple Account screenshot is unrelated application UI, not a new Kozmos requirement.
+those APIs.

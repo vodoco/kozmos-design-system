@@ -37,13 +37,13 @@ For all 121 supplied product gaps (latest source intake 2026-10-01), their crite
 
 ## Outcome and boundaries
 
-### Navigation completion candidate (not a release)
+### Navigation completion (#193)
 
-The navigation completion branch adds the reusable presentation requested in the
-reference screenshots. This section supersedes older missing-API statements for
-this candidate only; it does not certify publication, SDK wiring or external artwork adoption.
+The navigation completion adds the reusable presentation the product's navigation screens
+ask for. This section supersedes older missing-API statements; it does not certify
+publication, SDK wiring or external artwork adoption.
 
-| Area              | Candidate implementation                                                                                                                  | Remaining boundary                                                                                          |
+| Area              | Implementation                                                                                                                            | Remaining boundary                                                                                          |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Guidance          | Theme-filled ManoeuvreCard by default; explicit background/solid/glass option, expanded itinerary and optional per-step metrics           | Host supplies ordered localized instructions and current step                                               |
 | Direction symbols | Shared 19-case vocabulary; distinct lift/stairs/escalator/ramp up/down and enter/exit vectors generated for web/native; walking supported | Original repository artwork needs owner/external design adoption; SDK renderer sprites are different assets |
