@@ -6,6 +6,7 @@ import { X } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { IconButton } from "../IconButton";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 const Dialog: React.FC<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>
@@ -69,16 +70,18 @@ const DialogContent = React.forwardRef<
         {...props}
       >
         {children}
-        <DialogPrimitive.Close asChild>
-          <IconButton
-            type="button"
-            variant="outline"
-            className="absolute end-6 top-6"
-            aria-label={closeLabel}
-          >
-            <X aria-hidden="true" />
-          </IconButton>
-        </DialogPrimitive.Close>
+        <WithoutGenericClick>
+          <DialogPrimitive.Close asChild>
+            <IconButton
+              type="button"
+              variant="outline"
+              className="absolute end-6 top-6"
+              aria-label={closeLabel}
+            >
+              <X aria-hidden="true" />
+            </IconButton>
+          </DialogPrimitive.Close>
+        </WithoutGenericClick>
       </DialogPrimitive.Content>
     </DialogPortal>
   ),

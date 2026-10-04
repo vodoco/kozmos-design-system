@@ -11,6 +11,7 @@ import {
   MarkerPin01 as MapPin,
 } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 export interface RoutePoint {
   id: string;
@@ -138,16 +139,18 @@ const RoutingInputGroup = React.forwardRef<
                 index > 0 &&
                 index < points.length - 1 &&
                 onRemovePoint && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="w-11 h-11 shrink-0 text-muted-foreground hover:text-destructive-text"
-                    onClick={() => handleRemove(point.id)}
-                    aria-label={removePointLabel(point)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <WithoutGenericClick>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="w-11 h-11 shrink-0 text-muted-foreground hover:text-destructive-text"
+                      onClick={() => handleRemove(point.id)}
+                      aria-label={removePointLabel(point)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </WithoutGenericClick>
                 )}
             </div>
           ))}
@@ -156,31 +159,35 @@ const RoutingInputGroup = React.forwardRef<
         {/* Vertical Actions (Swap/Add) */}
         <div className="flex flex-col gap-2 shrink-0 justify-center">
           {points.length === 2 && onSwap && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="w-11 h-11 mt-6 shrink-0 bg-secondary hover:bg-secondary/80 text-foreground"
-              onClick={handleSwap}
-              aria-label={swapLabel}
-            >
-              <ArrowDownUp className="w-4 h-4" />
-            </Button>
+            <WithoutGenericClick>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="w-11 h-11 mt-6 shrink-0 bg-secondary hover:bg-secondary/80 text-foreground"
+                onClick={handleSwap}
+                aria-label={swapLabel}
+              >
+                <ArrowDownUp className="w-4 h-4" />
+              </Button>
+            </WithoutGenericClick>
           )}
           {onAddPoint && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "w-11 h-11 shrink-0 text-muted-foreground",
-                points.length === 2 ? "mt-5" : "mt-0",
-              )}
-              onClick={handleAdd}
-              aria-label={addPointLabel}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
+            <WithoutGenericClick>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "w-11 h-11 shrink-0 text-muted-foreground",
+                  points.length === 2 ? "mt-5" : "mt-0",
+                )}
+                onClick={handleAdd}
+                aria-label={addPointLabel}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </WithoutGenericClick>
           )}
         </div>
       </div>

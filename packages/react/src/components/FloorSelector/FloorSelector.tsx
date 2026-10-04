@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "../Tooltip";
 import { ThemeProviderContext } from "../../theme/theme-context";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 export type FloorSelectorOption = FloorPresentation | string;
 
@@ -454,67 +455,69 @@ const CollapsibleFloorSelector = React.forwardRef<
               }}
             >
               <div ref={setContent} className="kozmos-floor-selector-scroll">
-                {options.map((floor) => {
-                  const isCurrent = floor.id === selectedFloor;
-                  const isUserLevel =
-                    userFloor !== undefined && floor.id === userFloor;
-                  const count = markedResultCount(floor);
-                  return (
-                    <Tooltip key={floor.id}>
-                      <TooltipTrigger
-                        asChild
-                        disabled={floor.disabled}
-                        {...hintTrigger}
-                      >
-                        <Button
-                          ref={isCurrent ? currentRef : undefined}
-                          aria-label={spokenLabel(
-                            floor,
-                            resultCountLabel,
-                            isUserLevel ? userFloorLabel : undefined,
-                          )}
-                          aria-pressed={isCurrent}
-                          // The board's states: the current level outlined in the
-                          // theme's primary; on hover a light primary outline, and
-                          // pressed a full one; a closed level on the muted surface.
-                          className={cn(
-                            "relative border border-transparent p-0 text-sm font-semibold text-foreground hover:bg-transparent active:border-primary active:text-primary disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
-                            isCurrent
-                              ? "border-primary text-primary"
-                              : "hover:border-primary/40 hover:text-primary",
-                          )}
+                <WithoutGenericClick>
+                  {options.map((floor) => {
+                    const isCurrent = floor.id === selectedFloor;
+                    const isUserLevel =
+                      userFloor !== undefined && floor.id === userFloor;
+                    const count = markedResultCount(floor);
+                    return (
+                      <Tooltip key={floor.id}>
+                        <TooltipTrigger
+                          asChild
                           disabled={floor.disabled}
-                          onClick={() => {
-                            onChoose(floor.id);
-                            setOpen(false);
-                          }}
-                          size="icon"
-                          style={{
-                            height: tileSize.height,
-                            flexShrink: 0,
-                            minWidth: tileSize.width,
-                          }}
-                          type="button"
-                          variant="ghost"
+                          {...hintTrigger}
                         >
-                          {floor.shortLabel}
-                          {isUserLevel ? <UserLevelDot /> : null}
-                          {count !== undefined ? (
-                            <ResultMarker corner="bottom" count={count} />
-                          ) : null}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        aria-hidden
-                        side={tooltipSide}
-                        portalContainer={popup}
-                        onEscapeKeyDown={() => setOpen(false)}
-                      >
-                        {floor.label}
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+                          <Button
+                            ref={isCurrent ? currentRef : undefined}
+                            aria-label={spokenLabel(
+                              floor,
+                              resultCountLabel,
+                              isUserLevel ? userFloorLabel : undefined,
+                            )}
+                            aria-pressed={isCurrent}
+                            // The board's states: the current level outlined in the
+                            // theme's primary; on hover a light primary outline, and
+                            // pressed a full one; a closed level on the muted surface.
+                            className={cn(
+                              "relative border border-transparent p-0 text-sm font-semibold text-foreground hover:bg-transparent active:border-primary active:text-primary disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+                              isCurrent
+                                ? "border-primary text-primary"
+                                : "hover:border-primary/40 hover:text-primary",
+                            )}
+                            disabled={floor.disabled}
+                            onClick={() => {
+                              onChoose(floor.id);
+                              setOpen(false);
+                            }}
+                            size="icon"
+                            style={{
+                              height: tileSize.height,
+                              flexShrink: 0,
+                              minWidth: tileSize.width,
+                            }}
+                            type="button"
+                            variant="ghost"
+                          >
+                            {floor.shortLabel}
+                            {isUserLevel ? <UserLevelDot /> : null}
+                            {count !== undefined ? (
+                              <ResultMarker corner="bottom" count={count} />
+                            ) : null}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          aria-hidden
+                          side={tooltipSide}
+                          portalContainer={popup}
+                          onEscapeKeyDown={() => setOpen(false)}
+                        >
+                          {floor.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </WithoutGenericClick>
               </div>
             </PopoverContent>
           </Popover>
@@ -612,28 +615,32 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
             {selectedOption?.shortLabel ?? selectedFloor}
           </span>
           <span className="flex border-s border-border/70">
-            <IconButton
-              aria-label={previousFloorLabel}
-              className="h-11 w-11 rounded-none border-e border-border/70 bg-transparent p-0 shadow-none"
-              disabled={!previousOption}
-              onClick={() =>
-                previousOption && handleFloorSelect(previousOption.id)
-              }
-              type="button"
-              variant="ghost"
-            >
-              <ChevronUp aria-hidden="true" className="h-3.5 w-3.5" />
-            </IconButton>
-            <IconButton
-              aria-label={nextFloorLabel}
-              className="h-11 w-11 rounded-none bg-transparent p-0 shadow-none"
-              disabled={!nextOption}
-              onClick={() => nextOption && handleFloorSelect(nextOption.id)}
-              type="button"
-              variant="ghost"
-            >
-              <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
-            </IconButton>
+            <WithoutGenericClick>
+              <IconButton
+                aria-label={previousFloorLabel}
+                className="h-11 w-11 rounded-none border-e border-border/70 bg-transparent p-0 shadow-none"
+                disabled={!previousOption}
+                onClick={() =>
+                  previousOption && handleFloorSelect(previousOption.id)
+                }
+                type="button"
+                variant="ghost"
+              >
+                <ChevronUp aria-hidden="true" className="h-3.5 w-3.5" />
+              </IconButton>
+            </WithoutGenericClick>
+            <WithoutGenericClick>
+              <IconButton
+                aria-label={nextFloorLabel}
+                className="h-11 w-11 rounded-none bg-transparent p-0 shadow-none"
+                disabled={!nextOption}
+                onClick={() => nextOption && handleFloorSelect(nextOption.id)}
+                type="button"
+                variant="ghost"
+              >
+                <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
+              </IconButton>
+            </WithoutGenericClick>
           </span>
         </div>
       );
@@ -653,31 +660,33 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
         role="group"
         {...props}
       >
-        {options.map((floor) => {
-          const count = markedResultCount(floor);
-          return (
-            <Button
-              key={floor.id}
-              variant={selectedFloor === floor.id ? "default" : "ghost"}
-              size="sm"
-              aria-label={spokenLabel(floor, resultCountLabel)}
-              aria-pressed={selectedFloor === floor.id}
-              className={cn(
-                "relative h-11 w-11 p-0 font-medium",
-                variant === "horizontal-list" && "w-auto min-w-11 px-3",
-                selectedFloor === floor.id && "shadow-raised",
-              )}
-              disabled={floor.disabled}
-              onClick={() => handleFloorSelect(floor.id)}
-              type="button"
-            >
-              {floor.shortLabel}
-              {/* Only where the product gave a count above zero — absent is
+        <WithoutGenericClick>
+          {options.map((floor) => {
+            const count = markedResultCount(floor);
+            return (
+              <Button
+                key={floor.id}
+                variant={selectedFloor === floor.id ? "default" : "ghost"}
+                size="sm"
+                aria-label={spokenLabel(floor, resultCountLabel)}
+                aria-pressed={selectedFloor === floor.id}
+                className={cn(
+                  "relative h-11 w-11 p-0 font-medium",
+                  variant === "horizontal-list" && "w-auto min-w-11 px-3",
+                  selectedFloor === floor.id && "shadow-raised",
+                )}
+                disabled={floor.disabled}
+                onClick={() => handleFloorSelect(floor.id)}
+                type="button"
+              >
+                {floor.shortLabel}
+                {/* Only where the product gave a count above zero — absent is
                 unknown, which is not the same as none. */}
-              {count !== undefined ? <ResultMarker count={count} /> : null}
-            </Button>
-          );
-        })}
+                {count !== undefined ? <ResultMarker count={count} /> : null}
+              </Button>
+            );
+          })}
+        </WithoutGenericClick>
       </div>
     );
   },

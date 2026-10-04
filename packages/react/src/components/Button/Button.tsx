@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../utils";
 import { SpinnerArc } from "../Spinner/SpinnerArc";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { GenericClickTracking } from "../../utils/generic-click";
 
 /**
  * The six emotions the product drives, and which `Components.{Primary,
@@ -137,16 +138,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
+    // Off where a component reports this press with its own event.
+    const genericClick = React.useContext(GenericClickTracking);
 
     const tokens = VARIANT_TOKENS[(variant ?? "default") as ButtonVariant];
     const emotional = emotion && tokens ? tokens : null;
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      trackEvent("Button", "button_clicked", {
-        variant: variant || "default",
-        emotion: emotion || null,
-        disabled,
-      });
+      if (genericClick)
+        trackEvent("Button", "button_clicked", {
+          variant: variant || "default",
+          emotion: emotion || null,
+          disabled,
+        });
       onClick?.(e);
     };
 

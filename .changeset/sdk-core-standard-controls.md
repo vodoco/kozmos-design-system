@@ -1,11 +1,11 @@
 ---
-"@kozmos-ds/react": patch
+"@kozmos-ds/react": minor
 ---
 
 Compose POI result actions, category clear/count, assistant close/send and wayfinding
 inputs from Core Button, IconButton, Counter and Input. Preserve domain callbacks
 and explicit form behavior while using shared focus, disabled and theme treatments.
-Core Button analytics accompany the existing domain events. Custom selection,
+Core Button's generic `button_clicked` is not sent for a press the component already reports with its own event (see the analytics changeset). Custom selection,
 voice/input and native counterparts remain tracked migration work.
 The category group names its count once; its visual Counter is decorative rather
 than carrying an unsupported accessible label on a generic span.

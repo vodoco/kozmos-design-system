@@ -139,7 +139,8 @@ describe("SearchBar", () => {
     expect(
       events.map(({ component, eventName }) => [component, eventName]),
     ).toEqual([
-      ["Button", "button_clicked"],
+      // One press, one event: SearchBar reports the clear itself, so the
+      // Core button inside it adds no generic button_clicked (D9).
       ["SearchBar", "search_cleared"],
     ]);
     expect(JSON.stringify(events)).not.toContain("Museum");

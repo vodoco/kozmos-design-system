@@ -12,6 +12,7 @@ import { Star01 as Star, NavigationPointer01 } from "@kozmos-ds/icons";
 import { cn, poiLocationLabel } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button/Button";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 /**
  * The DOM id of a place's result card: what `LocationPin`'s `resultId` names
@@ -495,29 +496,31 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
               id={actionsId}
               role="group"
             >
-              {actions.map((entry, index) => (
-                <Button
-                  variant={entry.primary ? "default" : "outline"}
-                  emotion={entry.primary ? "themed" : "neutral"}
-                  // The row owns available space; Core still owns the action's
-                  // appearance and interaction. Translations grow vertically.
-                  className="h-auto min-h-11 min-w-11 max-w-full whitespace-normal"
-                  disabled={entry.disabled || !onAction}
-                  key={`${entry.action}-${index}`}
-                  onClick={() => handleAction(entry.action)}
-                  type="button"
-                >
-                  {sdk && entry.action === "navigate" && (
-                    <NavigationPointer01
-                      aria-hidden="true"
-                      className="h-5 w-5 shrink-0"
-                    />
-                  )}
-                  <span className="min-w-0 [overflow-wrap:anywhere]">
-                    {entry.label}
-                  </span>
-                </Button>
-              ))}
+              <WithoutGenericClick>
+                {actions.map((entry, index) => (
+                  <Button
+                    variant={entry.primary ? "default" : "outline"}
+                    emotion={entry.primary ? "themed" : "neutral"}
+                    // The row owns available space; Core still owns the action's
+                    // appearance and interaction. Translations grow vertically.
+                    className="h-auto min-h-11 min-w-11 max-w-full whitespace-normal"
+                    disabled={entry.disabled || !onAction}
+                    key={`${entry.action}-${index}`}
+                    onClick={() => handleAction(entry.action)}
+                    type="button"
+                  >
+                    {sdk && entry.action === "navigate" && (
+                      <NavigationPointer01
+                        aria-hidden="true"
+                        className="h-5 w-5 shrink-0"
+                      />
+                    )}
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                      {entry.label}
+                    </span>
+                  </Button>
+                ))}
+              </WithoutGenericClick>
             </div>
           </div>
         )}

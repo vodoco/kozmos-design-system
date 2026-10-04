@@ -4,6 +4,7 @@ import { cva } from "class-variance-authority";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { IconButton } from "../IconButton";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 const searchBarVariants = cva(
   "flex items-center w-full rounded-control bg-background shadow-floating px-3 h-11 border border-input transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
@@ -128,28 +129,30 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           {...props}
         />
         {value && value.length > 0 && (
-          <IconButton
-            onClick={() => {
-              // Clearing removes this button. Restore focus before callbacks so
-              // hosts can still intentionally move it elsewhere.
-              inputRef.current?.focus();
-              trackEvent("SearchBar", "search_cleared");
-              onChange?.("");
-              onClear?.();
-            }}
-            className="kozmos-search-clear ms-1 shrink-0 rounded-pill"
-            aria-label={clearLabel}
-            disabled={props.disabled || props.readOnly}
-            type="button"
-          >
-            {/* A 24 grey circle to see; the 44 button around it to hit. */}
-            <span
-              aria-hidden="true"
-              className="flex h-6 w-6 items-center justify-center rounded-pill bg-muted text-muted-foreground"
+          <WithoutGenericClick>
+            <IconButton
+              onClick={() => {
+                // Clearing removes this button. Restore focus before callbacks so
+                // hosts can still intentionally move it elsewhere.
+                inputRef.current?.focus();
+                trackEvent("SearchBar", "search_cleared");
+                onChange?.("");
+                onClear?.();
+              }}
+              className="kozmos-search-clear ms-1 shrink-0 rounded-pill"
+              aria-label={clearLabel}
+              disabled={props.disabled || props.readOnly}
+              type="button"
             >
-              <X className="h-3.5 w-3.5" />
-            </span>
-          </IconButton>
+              {/* A 24 grey circle to see; the 44 button around it to hit. */}
+              <span
+                aria-hidden="true"
+                className="flex h-6 w-6 items-center justify-center rounded-pill bg-muted text-muted-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </span>
+            </IconButton>
+          </WithoutGenericClick>
         )}
       </div>
     );
