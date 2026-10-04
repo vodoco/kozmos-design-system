@@ -6,14 +6,43 @@ import { Itinerary } from "../Itinerary";
 import { ManoeuvreCard, manoeuvreDescription } from "./ManoeuvreCard";
 
 describe("ManoeuvreCard", () => {
-  it("defaults to opaque theme guidance and exposes the legacy background appearance", () => {
+  it("defaults to opaque theme guidance, keeps a caller's surface, and lets an explicit appearance win", () => {
     const { rerender } = render(
       <ManoeuvreCard
         type="left"
         instruction="Left"
         expanded={false}
         onToggle={() => {}}
+      />,
+    );
+    expect(screen.getByRole("region")).toHaveAttribute(
+      "data-appearance",
+      "theme",
+    );
+    // A caller that sets a surface asked for that surface (Olcay, 2026-10-04,
+    // D6): it is not silently replaced by the theme fill.
+    rerender(
+      <ManoeuvreCard
+        type="left"
+        instruction="Left"
+        expanded={false}
+        onToggle={() => {}}
         surface="glass"
+      />,
+    );
+    expect(screen.getByRole("region")).toHaveAttribute(
+      "data-appearance",
+      "background",
+    );
+    expect(screen.getByRole("region")).toHaveClass("kozmos-surface-glass");
+    rerender(
+      <ManoeuvreCard
+        type="left"
+        instruction="Left"
+        expanded={false}
+        onToggle={() => {}}
+        surface="glass"
+        appearance="theme"
       />,
     );
     expect(screen.getByRole("region")).toHaveAttribute(

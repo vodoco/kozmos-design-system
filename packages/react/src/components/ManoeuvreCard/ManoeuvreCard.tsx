@@ -12,9 +12,13 @@ export interface ManoeuvreCardProps extends Omit<
   React.HTMLAttributes<HTMLElement>,
   "children"
 > {
-  /** Theme-filled by default. Background restores the neutral solid/glass presentation. */
+  /**
+   * Theme-filled by default. Background restores the neutral solid/glass
+   * presentation, and is what a caller that sets `surface` gets unless it
+   * also sets an appearance.
+   */
   appearance?: "theme" | "background";
-  /** Material for background appearance only: solid by default. Theme appearance stays opaque. */
+  /** Material for background appearance: solid by default. Setting it asks for background. */
   surface?: SurfaceVariant;
   type: DirectionType;
   /** Legacy text or ordered inline parts; caller owns spacing, word order and language. */
@@ -102,14 +106,19 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
       collapseLabel = "Hide itinerary",
       manoeuvreLabel = "Current manoeuvre",
       itineraryLabel = "Itinerary",
-      surface = "solid",
-      appearance = "theme",
+      surface: surfaceProp,
+      appearance: appearanceProp,
       maxItineraryHeight = 320,
       children,
       ...props
     },
     ref,
   ) => {
+    // A caller that sets a surface asked for it: theme fill is the default
+    // only where nothing was asked for (Olcay, 2026-10-04).
+    const appearance =
+      appearanceProp ?? (surfaceProp !== undefined ? "background" : "theme");
+    const surface = surfaceProp ?? "solid";
     const instructionRef = React.useRef<HTMLButtonElement>(null);
     const itineraryRef = React.useRef<HTMLDivElement>(null);
     const barRef = React.useRef<HTMLButtonElement>(null);
