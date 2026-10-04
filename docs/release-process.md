@@ -1,6 +1,6 @@
 # Controlled npm releases
 
-Status (2026-10-01): in use; React 0.7.0 is published (evidence below).
+Status (2026-10-04): in use; React 0.8.0 is published (evidence below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -297,3 +297,38 @@ Consumers upgrading FloorSelector from 0.6.0 must opt into `showResultCounts` to
 list badges; closed-tile counts remain absent. Native source changes are not native registry
 publication. Figma, external Claude Design artifacts and product deployments are independent.
 Private Vue playground dependency advisories remain separately scoped; #174 did not fix them.
+
+### 0.8.0
+
+Published on 2026-10-02 from `152a31349db8832d8b87a9d5ea52e229fca245b5`, the version merge
+[#192](https://github.com/vodoco/kozmos-design-system/pull/192), after
+[#177](https://github.com/vodoco/kozmos-design-system/pull/177)–[#191](https://github.com/vodoco/kozmos-design-system/pull/191):
+the Firefox 146 minimum (#178), P01 accessibility and result-action targets (#185), P02 panel
+spacing (#186), P03 staff language and ordered instruction parts (#187, #188) and P04's SDK
+result presentation (#190, #191). This entry records that release, not permission to dispatch
+another one.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                             |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.8.0, tokens 0.4.0, product-contracts 0.7.0 on npm `latest`; icons 0.5.0 unchanged and omitted from this publication.                                                                                                                                                |
+| Exact main-push CI      | [37056723298](https://github.com/vodoco/kozmos-design-system/actions/runs/37056723298): all 17 jobs succeeded, including web, iOS and Android.                                                                                                                              |
+| Preflight / publication | `pnpm release:preflight` against that run passed before the dispatch. [37061899561](https://github.com/vodoco/kozmos-design-system/actions/runs/37061899561) succeeded (prepare, guard, publish) after Olcay's protected `npm-release` approval.                            |
+| Registry readback       | All three versions are on `latest`, each with SLSA v1 provenance. Their SHA-512 integrities equal the tarballs in the run's `npm-candidate-37061899561-1` artifact (compared 2026-10-04).                                                                                   |
+| Installed consumer      | On 2026-10-04 a fresh npm installation of React 0.8.0 with React 19 resolved tokens 0.4.0, icons 0.5.0 and contracts 0.7.0, exposed 264 exports and server-rendered ThemeProvider, Button, SearchBar and MapStatusPill.                                                     |
+| Tags / GitHub releases  | `release:tag` was not run after the publish; it was run on 2026-10-04. Its dry-run passed, it created all three planned tags/releases at `152a3134`, and a second dry-run found all three in place. React 0.8.0 is Latest; no icons release was created.                    |
+| Website / Storybook     | [Pages 37056723174](https://github.com/vodoco/kozmos-design-system/actions/runs/37056723174) built and deployed this exact SHA. The live site, Storybook, its `index.json` and `iframe.html` returned HTTP 200 on 2026-10-04. This is not a fresh all-screen visual review. |
+
+Change details and migration notes: [React](../packages/react/CHANGELOG.md#080),
+[tokens](../packages/tokens/CHANGELOG.md#040),
+[contracts](../packages/product-contracts/CHANGELOG.md#070), and
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.7.0:
+
+- Firefox 146 or newer is required: the scoped utility styles need native `@scope`.
+- POIResultCard and its groups default to the SDK presentation; pass
+  `presentationStyle="legacy"` to keep the earlier tab during a staged migration.
+- AdaptiveMapShell now supplies 16 units below a fixed panel header and at the top of gripless
+  sheets: remove product spacers that did the same.
+- POIResultCard actions are disabled when no `onAction` is supplied, as on iOS and Android.
+
+Native source changes are not native registry publication. Figma, external Claude Design
+artifacts and product deployments are independent.
