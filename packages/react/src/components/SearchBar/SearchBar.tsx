@@ -3,6 +3,8 @@ import { SearchMd as Search, X } from "@kozmos-ds/icons";
 import { cva } from "class-variance-authority";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { IconButton } from "../IconButton";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 const searchBarVariants = cva(
   "flex items-center w-full rounded-control bg-background shadow-floating px-3 h-11 border border-input transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
@@ -58,6 +60,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       value,
       onChange,
       onClear,
+      onKeyDown,
       placeholder = "Search...",
       /**
        * The clear button's accessible name. Story 2 reads this interface in
@@ -72,6 +75,18 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
+    const inputRef = React.useRef<HTMLInputElement | null>(null);
+    // One callback for this field and the caller: the input is remounted when
+    // `trailing` comes or goes, and a handle made once kept the caller on the
+    // detached input.
+    const setRef = React.useCallback(
+      (node: HTMLInputElement | null) => {
+        inputRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref],
+    );
 
     const field = (
       <div
@@ -91,9 +106,9 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           className="h-[18px] w-[18px] text-muted-foreground me-2 shrink-0"
         />
         <input
-          ref={ref}
+          ref={setRef}
           className={cn(
-            "kozmos-search-input min-w-0 flex-1 bg-transparent border-none outline-none text-[15px] placeholder:text-muted-foreground",
+            "kozmos-reset kozmos-search-input kozmos-searchbar-input",
             className,
           )}
           aria-label={ariaLabel ?? placeholder}
@@ -102,32 +117,42 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            onKeyDown?.(e);
+            if (
+              e.key === "Enter" &&
+              !e.defaultPrevented &&
+              !e.nativeEvent.isComposing
+            ) {
               trackEvent("SearchBar", "search_initiated", { query: value });
             }
-            props.onKeyDown?.(e);
           }}
           {...props}
         />
         {value && value.length > 0 && (
-          <button
-            onClick={() => {
-              trackEvent("SearchBar", "search_cleared");
-              onChange?.("");
-              onClear?.();
-            }}
-            className="kozmos-search-clear ms-1 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={clearLabel}
-            type="button"
-          >
-            {/* A 24 grey circle to see; the 44 button around it to hit. */}
-            <span
-              aria-hidden="true"
-              className="flex h-6 w-6 items-center justify-center rounded-pill bg-muted text-muted-foreground"
+          <WithoutGenericClick>
+            <IconButton
+              onClick={() => {
+                // Clearing removes this button. Restore focus before callbacks so
+                // hosts can still intentionally move it elsewhere.
+                inputRef.current?.focus();
+                trackEvent("SearchBar", "search_cleared");
+                onChange?.("");
+                onClear?.();
+              }}
+              className="kozmos-search-clear ms-1 shrink-0 rounded-pill"
+              aria-label={clearLabel}
+              disabled={props.disabled || props.readOnly}
+              type="button"
             >
-              <X className="h-3.5 w-3.5" />
-            </span>
-          </button>
+              {/* A 24 grey circle to see; the 44 button around it to hit. */}
+              <span
+                aria-hidden="true"
+                className="flex h-6 w-6 items-center justify-center rounded-pill bg-muted text-muted-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </span>
+            </IconButton>
+          </WithoutGenericClick>
         )}
       </div>
     );

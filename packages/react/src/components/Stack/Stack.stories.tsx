@@ -3,7 +3,8 @@ import { Stack } from "./Stack";
 import { Box } from "../Box/Box";
 
 const meta: Meta<typeof Stack> = {
-  title: "Foundations/Stack",
+  id: "foundations-stack",
+  title: "Core/Layout/Stack",
   component: Stack,
   argTypes: {
     direction: { control: "radio", options: ["row", "column"] },

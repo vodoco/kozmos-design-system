@@ -11,7 +11,8 @@ import { Button } from "../Button/Button";
 import { useState } from "react";
 
 const meta: Meta<typeof Toast> = {
-  title: "Feedback/Toast",
+  id: "feedback-toast",
+  title: "Core/Feedback/Toast",
   component: Toast,
 };
 

@@ -3,7 +3,8 @@ import { fn } from "@storybook/test";
 import { RouteOptionCard } from "./RouteOptionCard";
 
 const meta = {
-  title: "Product SDK/RouteOptionCard",
+  id: "product-sdk-routeoptioncard",
+  title: "SDK/Navigation/RouteOptionCard",
   component: RouteOptionCard,
   parameters: { layout: "centered" },
   args: {

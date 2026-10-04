@@ -22,12 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
+import com.kozmos.components.icon.KozmosIcon
+import com.kozmos.components.icon.KozmosIconSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -293,11 +292,9 @@ fun KozmosPOIDetailPanel(
                                 enabled = !(state?.disabled ?: false),
                                 isLoading = state?.loading ?: false
                             ) {
-                                Icon(
-                                    imageVector = actionIcon(action),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                                if (action == KozmosPOIAction.Navigate) {
+                                    KozmosIcon("navigation-pointer-01", size = KozmosIconSize.Lg)
+                                }
                                 Text(actionLabels[action] ?: action.value)
                             }
                         }
@@ -435,11 +432,9 @@ internal fun sheetHeaderTop(inset: Dp, clearance: Dp, cardWidth: Dp, buttons: In
 // The outline glyphs, as the web's Heart and Bookmark and iOS's "heart" and
 // "bookmark" are: a pressed toggle shows its state by its fill, not its glyph.
 private fun actionIcon(action: KozmosPOIAction): ImageVector = when (action) {
-    KozmosPOIAction.Navigate -> Icons.Default.Navigation
     KozmosPOIAction.Favourite -> Icons.Default.FavoriteBorder
     KozmosPOIAction.Bookmark -> Icons.Default.BookmarkBorder
-    KozmosPOIAction.Share -> Icons.Default.Share
-    KozmosPOIAction.Order -> Icons.Default.ShoppingCart
+    else -> error("Only icon-only toggle actions belong in the header")
 }
 
 @Composable

@@ -9,6 +9,323 @@ final class InteractionTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws { app?.terminate() }
 
+    func testSavedLocationActionsKeepSeparateCallbacksAndTelemetry() {
+        launch("save-location-unsaved")
+        let save = app.buttons["Save Location"]
+        XCTAssertGreaterThanOrEqual(save.frame.height, 44)
+        XCTAssertFalse(app.buttons["Guide Me"].exists)
+        XCTAssertFalse(app.buttons["Edit location note"].exists)
+        save.tap()
+        received("save_toggled true|toggle")
+        app.terminate()
+        for scenario in ["save-location-saved", "save-location-large-rtl"] {
+            launch(scenario)
+            let remove = app.buttons["Remove Location"]
+            let guide = app.buttons["Guide Me"]
+            for button in [remove, guide] {
+                XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+                XCTAssertGreaterThanOrEqual(button.frame.minX, 0)
+                XCTAssertLessThanOrEqual(button.frame.maxX, app.frame.maxX)
+                XCTAssertTrue(button.isHittable)
+            }
+            guide.tap()
+            received("route_requested|route")
+            remove.tap()
+            received("route_requested|route|save_toggled false|toggle")
+            app.buttons["Edit location note"].tap()
+            received("route_requested|route|save_toggled false|toggle|edit")
+            app.terminate()
+        }
+    }
+
+    func testLegacyRouteSummaryKeepsEndAndStartAsSeparateCoreActions() {
+        launch("legacy-route-active")
+        let end = app.buttons["End route"]
+        XCTAssertGreaterThanOrEqual(end.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(end.frame.height, 44)
+        XCTAssertFalse(app.buttons["Start Navigation"].exists)
+        end.tap()
+        received("end")
+        app.terminate()
+        launch("legacy-route-preview")
+        XCTAssertFalse(app.buttons["End route"].exists)
+        app.buttons["Start Navigation"].tap()
+        received("start")
+    }
+
+    func testComposedJourneyRequiresConfirmedArrivalAndRetainsDestination() {
+        launch("navigation-journey")
+        app.buttons["Continue"].tap()
+        app.buttons["Deliver no route"].tap()
+        XCTAssertTrue(app.staticTexts["Route unavailable"].exists)
+        app.buttons["Back to route setup"].tap()
+        XCTAssertTrue(app.staticTexts["Lobby"].exists)
+        app.buttons["Continue"].tap()
+        app.buttons["Deliver calculated route"].tap()
+        app.buttons["Start navigation"].tap()
+        app.buttons["Report 100 percent"].tap()
+        XCTAssertFalse(app.staticTexts["You've arrived"].exists)
+        app.buttons["Confirm arrival"].tap()
+        XCTAssertTrue(app.staticTexts["You've arrived"].exists)
+        XCTAssertFalse(app.staticTexts["Journey time"].exists)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["Selected destination: Gallery"].exists)
+        XCTAssertTrue(app.staticTexts["Done handled: 1"].exists)
+    }
+
+    func testRouteSetupBlocksUnresolvedAndPendingButAllowsCancellation() {
+        for scenario in ["route-setup-pending", "route-setup-unresolved"] {
+            launch(scenario)
+            XCTAssertFalse(app.buttons["Weiter"].isEnabled)
+            app.buttons["Schließen"].tap()
+            received("close")
+            app.terminate()
+        }
+    }
+
+    func testRouteSetupValidContinuationIsExplicitAndFullWidth() {
+        launch("route-setup-ready")
+        XCTAssertTrue(app.staticTexts["Lobby → Gallery"].exists)
+        let button = app.buttons["Weiter"]
+        XCTAssertGreaterThan(button.frame.width, 300)
+        XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+        button.tap()
+        received("continue")
+    }
+
+    func testPopulatedComboboxKeepsItsFieldName() {
+        launch("combobox-location")
+        XCTAssertEqual(app.textFields["From"].value as? String, "Lobby")
+        for name in ["Close options", "Clear selection"] {
+            XCTAssertGreaterThanOrEqual(app.buttons[name].frame.width, 44)
+            XCTAssertGreaterThanOrEqual(app.buttons[name].frame.height, 44)
+        }
+    }
+
+    func testComboboxCaptionIsHeardOnceAsTheFieldsName() {
+        launch("combobox-caption")
+        XCTAssertEqual(app.textFields["From"].value as? String, "Lobby")
+        app.buttons["Inspect field accessibility"].tap()
+        // VoiceOver said "From", then "From, text field": the caption is the field's name, not an element.
+        XCTAssertEqual(app.staticTexts["field-accessibility-report"].label, "Lobby")
+    }
+
+    func testComboboxSelectionCallsTheBindingOnce() {
+        launch("combobox-location")
+        app.buttons["Lobby, North Terminal · Ground floor"].tap()
+        received("select lobby")
+        XCTAssertFalse(app.buttons["Close options"].exists)
+    }
+
+    func testPickerCommandClosesBeforeCallbackWithoutWritingQueryOrSelection() {
+        launch("combobox-action")
+        app.buttons["Map"].tap()
+        received("open false|map false")
+        XCTAssertFalse(app.buttons["Map"].exists)
+        XCTAssertEqual(app.textFields["From"].value as? String, "unmatched")
+    }
+
+    func testPickerCommandOpenedFromTheChevronLeavesTheKeyboardDown() {
+        launch("combobox-action-closed")
+        let field = app.textFields["From"]
+        XCTAssertFalse(hasKeyboardFocus(field))
+        app.buttons["Open options"].tap()
+        app.buttons["Map"].tap()
+        received("map")
+        XCTAssertFalse(app.buttons["Map"].exists)
+        XCTAssertFalse(hasKeyboardFocus(field), "A command must not focus a field the visitor had not focused")
+        XCTAssertFalse(app.keyboards.firstMatch.waitForExistence(timeout: 1), "No keyboard over the map the host shows next")
+        XCTAssertEqual(app.keyboards.count, 0)
+    }
+
+    func testPickerCommandHandsFocusBackToAFieldThatHadIt() {
+        launch("combobox-action-closed")
+        let field = app.textFields["From"]
+        field.tap()
+        field.typeText("x")
+        XCTAssertTrue(hasKeyboardFocus(field))
+        app.buttons["Map"].tap()
+        received("map")
+        XCTAssertFalse(app.buttons["Map"].exists)
+        XCTAssertTrue(hasKeyboardFocus(field), "The visitor was typing: the field keeps its focus")
+    }
+
+    /// XCUI's own snapshot attribute; XCUIElement has no public accessor for it.
+    private func hasKeyboardFocus(_ element: XCUIElement) -> Bool {
+        (element.value(forKey: "hasKeyboardFocus") as? Bool) ?? false
+    }
+
+    func testPickerCommandDoesNotReopenWhenHostUpdatesItsQuery() {
+        launch("combobox-action-updates-query")
+        app.buttons["Map"].tap()
+        received("open false|map false")
+        XCTAssertEqual(app.textFields["From"].value as? String, "Host draft")
+        XCTAssertFalse(app.buttons["Map"].exists)
+    }
+
+    func testPickerActionUsesButtonNotSelectedOptionAndHonoursDisabled() {
+        launch("picker-action-disabled")
+        let command = app.buttons["Map"]
+        XCTAssertTrue(command.exists)
+        XCTAssertFalse(command.isEnabled)
+        XCTAssertFalse(command.isSelected)
+        XCTAssertTrue(app.staticTexts["No matches"].exists)
+        XCTAssertLessThan(app.scrollViews.firstMatch.frame.height, 256, "Short content must not fill the height cap")
+        XCTAssertLessThan(app.scrollViews.firstMatch.frame.maxY - command.frame.maxY, 16, "No unused popup area after the command")
+        received("none")
+    }
+
+    func testLongPickerScrollsToCommandsAndShrinksWhenResultsAreReplaced() {
+        launch("picker-long")
+        let popup = app.scrollViews.firstMatch
+        XCTAssertTrue(popup.exists)
+        XCTAssertLessThanOrEqual(popup.frame.height, 256)
+        let command = app.buttons["Map"]
+        for _ in 0..<12 {
+            if command.isHittable { break }
+            popup.swipeUp()
+        }
+        XCTAssertTrue(command.isHittable)
+        command.tap()
+        received("map")
+        // Replacing a long list updates the measured ScrollView height on a
+        // later layout pass. Wait for the command's actual hit area to settle,
+        // independently of the synchronous callback report above.
+        XCTAssertTrue(command.wait(for: \.isHittable, toEqual: true, timeout: 3))
+        XCTAssertLessThan(popup.frame.height, 256)
+        XCTAssertTrue(app.staticTexts["No matches"].exists)
+    }
+
+    func testReadOnlyAndDisabledPickerCannotExposeActionsEvenWhenForcedOpen() {
+        for scenario in ["combobox-locked-readonly", "combobox-locked-disabled"] {
+            launch(scenario)
+            XCTAssertTrue(app.textFields["From"].exists)
+            XCTAssertFalse(app.textFields["From"].isEnabled)
+            XCTAssertTrue(app.buttons["Open options"].exists)
+            XCTAssertFalse(app.buttons["Open options"].isEnabled)
+            XCTAssertFalse(app.buttons["Map"].exists)
+            XCTAssertFalse(app.buttons["Lobby"].exists)
+            received("none")
+            app.terminate()
+        }
+    }
+
+    func testCurrentPositionRequiresUsableHostIdentityAndSurvivesSuggestionError() {
+        for scenario in ["route-current", "route-current-large-rtl", "route-current-missing", "route-current-disabled", "route-current-blank"] {
+            launch(scenario)
+            XCTAssertFalse(app.buttons["Current position"].exists)
+            app.buttons["Open options"].tap()
+            XCTAssertEqual(app.staticTexts.matching(identifier: "Locations are unavailable").count, 1)
+            if scenario == "route-current-large-rtl" {
+                XCTAssertGreaterThan(app.staticTexts["Locations are unavailable"].frame.height,
+                    app.textFields["From"].frame.height, "The long large-type status must wrap, not truncate to one line")
+            }
+            if scenario == "route-current" || scenario == "route-current-large-rtl" {
+                let action = app.buttons["Current position"]
+                assertEndpointAccessibilityHeight(action)
+                XCTAssertGreaterThanOrEqual(action.frame.minX, 0)
+                XCTAssertLessThanOrEqual(action.frame.maxX, app.frame.width)
+                let preview = XCTAttachment(screenshot: app.screenshot())
+                preview.name = "native-route-picker-\(scenario)"
+                preview.lifetime = .keepAlways
+                add(preview)
+                action.tap()
+                received("select blue-dot")
+                XCTAssertTrue(app.staticTexts["Host position"].exists)
+            } else {
+                XCTAssertFalse(app.buttons["Current position"].exists)
+                received("none")
+            }
+            app.terminate()
+        }
+    }
+
+    func testRouteLocationResolvesAndClearsIdentitySeparatelyFromQuery() {
+        launch("route-location")
+        let field = app.textFields["From"]
+        XCTAssertEqual(field.value as? String, "Lobby")
+        received("none")
+        field.tap()
+        field.typeText(" ")
+        received("none")
+        app.buttons["Lobby, North Terminal · Ground floor"].tap()
+        received("select lobby")
+        XCTAssertFalse(field.exists)
+        XCTAssertTrue(app.staticTexts["North Terminal · Ground floor"].exists)
+        let clear = app.buttons["Clear origin"]
+        XCTAssertGreaterThanOrEqual(clear.frame.width, 44)
+        assertEndpointAccessibilityHeight(clear)
+        XCTAssertEqual(clear.frame.midY,
+            (app.staticTexts["From"].frame.minY + app.staticTexts["North Terminal · Ground floor"].frame.maxY) / 2,
+            accuracy: 1, "The endpoint action is centered across label and location, not the label row")
+        clear.tap()
+        received("select lobby|clear")
+        XCTAssertTrue(field.exists)
+        XCTAssertFalse(app.buttons["Choose on map"].exists)
+        app.buttons["Open options"].tap()
+        app.buttons["Choose on map"].tap()
+        received("select lobby|clear|map")
+    }
+
+    func testRouteLocationLoadingDoesNotOfferStaleSuggestions() {
+        launch("route-location-loading")
+        app.buttons["Open options"].tap()
+        XCTAssertFalse(app.buttons["Lobby"].exists)
+        XCTAssertTrue(app.textFields["From"].isEnabled)
+        app.buttons["Choose on map"].tap()
+        received("map")
+    }
+
+    func testRouteLocationChangeAndCancelPreserveIdentityWithoutClear() {
+        for scenario in ["route-location-edit", "route-location-edit-rtl", "route-location-edit-large"] {
+            launch(scenario)
+            let change = app.buttons["Ändern From"]
+            assertEndpointAccessibilityHeight(change)
+            XCTAssertGreaterThanOrEqual(change.frame.minX, 0)
+            XCTAssertLessThanOrEqual(change.frame.maxX, app.frame.width)
+            XCTAssertEqual(change.frame.midY,
+                (app.staticTexts["From"].frame.minY + app.staticTexts["North Terminal · Ground floor"].frame.maxY) / 2,
+                accuracy: 1)
+            change.tap()
+            received("edit")
+            XCTAssertTrue(app.textFields["From"].exists)
+            app.buttons["Abbrechen"].tap()
+            received("edit|cancel")
+            XCTAssertTrue(app.staticTexts["North Terminal · Ground floor"].exists)
+            app.terminate()
+        }
+        launch("route-location-edit-disabled")
+        XCTAssertFalse(app.buttons["Ändern From"].isEnabled)
+        received("none")
+    }
+
+    private func assertEndpointAccessibilityHeight(_ button: XCUIElement) {
+        // AX rounds a centered frame's edges to physical pixels (e.g. 43 2/3pt
+        // for a 44pt allocated button on the pinned 3x simulator). The separate
+        // KozmosButtonContentTests layout probe requires >=44pt with NO tolerance.
+        let screenshot = app.screenshot().image
+        let pixelsPerPoint = screenshot.size.width * screenshot.scale / app.frame.width
+        XCTAssertGreaterThanOrEqual(button.frame.height + 1 / pixelsPerPoint, 44)
+    }
+
+    func testHostFilteredRouteLocationSelectsSynonymButLoadingAndLocalDoNot() {
+        for scenario in ["route-synonym-local", "route-synonym-loading", "route-synonym-host"] {
+            launch(scenario)
+            app.buttons["Open options"].tap()
+            let result = app.buttons["Elevator, Ground floor"]
+            if scenario == "route-synonym-host" {
+                XCTAssertTrue(result.exists)
+                result.tap()
+                received("select e1")
+                XCTAssertFalse(app.textFields["From"].exists)
+            } else {
+                XCTAssertFalse(result.exists)
+                XCTAssertTrue(app.textFields["From"].isEnabled)
+            }
+            app.terminate()
+        }
+    }
+
     func testResultGroupExpansionPreservesSelectionAndSeparateActions() {
         launch("result-group")
         XCTAssertFalse(app.buttons["1, Gate 12, Level 1"].exists)
@@ -42,10 +359,14 @@ final class InteractionTests: XCTestCase {
     }
 
     private func received(_ value: String, file: StaticString = #filePath, line: UInt = #line) {
-        let predicate = NSPredicate(format: "label == %@", value)
-        let result = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate,
-                                                                   object: app.staticTexts["received-events"])], timeout: 3)
-        XCTAssertEqual(result, .completed, "callbacks: \(app.staticTexts["received-events"].label)", file: file, line: line)
+        // These fixture callbacks are synchronous; XCUI actions synchronize with
+        // the app before the next accessibility query. Compare one snapshot,
+        // including callback order and duplicates, rather than placing a second
+        // three-second polling deadline around a potentially slow AX read.
+        // Asynchronous fixture work needs its own completion signal, not retries
+        // here that could accept an initially incorrect callback report.
+        let actual = app.staticTexts["received-events"].label
+        XCTAssertEqual(actual, value, "callbacks", file: file, line: line)
     }
 
     func testMapControlRegionsHaveNamesAndKeepChildActions() {

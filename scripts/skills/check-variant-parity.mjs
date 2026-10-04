@@ -640,7 +640,7 @@ function axesFromParameters(files, packageEnums) {
   return axes;
 }
 
-function iosAxes(component) {
+export function iosAxes(component) {
   const dir = path.join(IOS_DIR, component);
   const files = readDirSafe(dir)
     .filter((entry) => entry.name.endsWith(".swift"))
@@ -653,7 +653,8 @@ function iosAxes(component) {
     "swift",
   );
   const packageEnums = collectPackageEnums(
-    IOS_DIR,
+    // Public shared enums also live in Sources/Utilities and ProductContracts.
+    path.dirname(IOS_DIR),
     ".swift",
     /public enum (Kozmos[A-Za-z0-9]+)[^{]*\{/g,
     "swift",

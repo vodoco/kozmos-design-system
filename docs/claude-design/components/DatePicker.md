@@ -5,7 +5,7 @@
 DatePicker retains the browser's native date input. External `aria-describedby` IDs are merged with helper/error guidance; explicit error state cannot be hidden by `aria-invalid={false}`. The decorative icon follows the module's text direction.
 
 - **Import:** `import { DatePicker } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-datepicker--docs>
 

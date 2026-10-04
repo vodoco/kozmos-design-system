@@ -5,7 +5,7 @@
 Provider-neutral map credits and an independently optional brand slot, available on React, SwiftUI and Compose. The host supplies ordered entries with unique IDs, plain-text labels and optional absolute HTTP(S) destinations. Kozmos renders that content; it never selects a provider, invents copyright wording or inserts a year.
 
 - **Import:** `import { MapAttribution } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-mapattribution--docs>
 

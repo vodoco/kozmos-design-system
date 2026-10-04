@@ -9,7 +9,18 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { enumBodyValues } from "./check-variant-parity.mjs";
+import { enumBodyValues, iosAxes } from "./check-variant-parity.mjs";
+
+test("Swift component axes include shared utility enums", () => {
+  assert.deepEqual(iosAxes("ArrivalPanel").presentation, [
+    "standalone",
+    "hosted",
+  ]);
+  assert.deepEqual(iosAxes("ManoeuvreCard").appearance, [
+    "theme",
+    "background",
+  ]);
+});
 
 test("Kotlin entries are read through a doc comment that holds commas", () => {
   const block = `{

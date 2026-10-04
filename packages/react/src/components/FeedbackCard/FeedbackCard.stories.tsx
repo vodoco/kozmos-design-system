@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { FeedbackCard } from "./FeedbackCard";
 
 const meta = {
-  title: "Platform/FeedbackCard",
+  id: "platform-feedbackcard",
+  title: "Core/Feedback/FeedbackCard",
   component: FeedbackCard,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof FeedbackCard>;

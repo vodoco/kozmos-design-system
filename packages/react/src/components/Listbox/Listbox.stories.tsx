@@ -8,7 +8,8 @@ const options = [
 ];
 
 const meta = {
-  title: "Components/Listbox",
+  id: "components-listbox",
+  title: "Core/Inputs/Listbox",
   component: Listbox,
   args: { "aria-label": "Sort locations" },
   parameters: {

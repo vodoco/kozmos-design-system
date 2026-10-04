@@ -81,8 +81,9 @@ fun KozmosRoutePreviewPanel(
     statusContent: (@Composable () -> Unit)? = null,
     alert: (@Composable () -> Unit)? = null
 ) {
-    val selectedOption = options.firstOrNull { it.selected && it.available }
-    val ready = status == KozmosRouteReadiness.Ready
+    val selectedOption = options.filter { it.selected }.singleOrNull()?.takeIf { it.available }
+    val validIds = options.all { it.id.isNotBlank() } && options.map { it.id }.toSet().size == options.size
+    val ready = status == KozmosRouteReadiness.Ready && validIds
     val padding = KozmosDimensions.primitivesLayoutSpacing200
     // The destination row's top padding. Hosted in the shell's panel, the
     // space the panel leaves above it — the handle's row — is the preview's
@@ -197,6 +198,7 @@ fun KozmosRoutePreviewPanel(
                     options.forEach { option ->
                         KozmosRouteOptionCard(
                             option = option,
+                            enabled = ready,
                             onSelect = onOptionSelect,
                             modifier = Modifier.width(208.dp)
                         )

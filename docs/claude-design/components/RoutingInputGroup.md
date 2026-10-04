@@ -2,10 +2,10 @@
 
 # RoutingInputGroup
 
-The `RoutingInputGroup` maps Pointr's timeline logic into physical multi-point data entry boxes, allowing dynamic addition/reduction of navigational stops while keeping layout structures aligned cleanly against timeline borders.
+Editable route points with stable IDs and controlled change, swap, add and remove callbacks. The host owns routing and resolved-place identity; changing text does not confirm a place.
 
 - **Import:** `import { RoutingInputGroup } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-routinginputgroup--docs>
 
@@ -35,7 +35,7 @@ export function RoutingInputGroupExample() {
   return (
     <ThemeProvider defaultTheme="light">
       <RoutingInputGroup
-        className="w-[420px]"
+        style={{ width: "min(420px, calc(100vw - 32px))" }}
         points={points}
         onPointChange={(id, value) =>
           setPoints((current) =>
@@ -77,6 +77,9 @@ It forwards its ref to `HTMLDivElement`. Its props are `RoutingInputGroupProps`,
 - `onSwap`: `() => void`, optional.
 - `onAddPoint`: `() => void`, optional.
 - `onRemovePoint`: `(id: string) => void`, optional.
+- `swapLabel`: `string`, optional, default `"Swap route points"`.
+- `addPointLabel`: `string`, optional, default `"Add route point"`.
+- `removePointLabel`: `(point: RoutePoint) => string`, optional.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
@@ -105,5 +108,7 @@ interface RoutePoint {
   id: string;
   value: string;
   placeholder?: string;
+  /** Localized field identity, independent of the editable value or hint. */
+  label?: string;
 }
 ```

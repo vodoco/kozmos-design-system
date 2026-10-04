@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Container } from "./Container";
 
 const meta: Meta<typeof Container> = {
-  title: "Foundations/Container",
+  id: "foundations-container",
+  title: "Core/Layout/Container",
   component: Container,
 };
 

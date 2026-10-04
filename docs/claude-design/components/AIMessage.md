@@ -5,7 +5,7 @@
 An assistant turn.
 
 - **Import:** `import { AIMessage } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-aimessage--docs>
 

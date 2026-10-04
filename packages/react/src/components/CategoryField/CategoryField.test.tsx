@@ -23,14 +23,18 @@ describe("CategoryField", () => {
     expect(field.style.getPropertyValue("--kozmos-category-tint")).toBe(
       "var(--semantics-category-accent-yellow)",
     );
-    const pill = screen.getByLabelText("2 places");
+    const pill = field.querySelector('[data-slot="counter"]') as HTMLElement;
+    // The group already supplies the localized count. A second label on a
+    // generic span is unsupported and risks a duplicate count announcement.
+    expect(pill).toHaveAttribute("aria-hidden", "true");
+    expect(pill).not.toHaveAttribute("aria-label");
     expect(pill.style.getPropertyValue("background")).toBe(
       "var(--semantics-category-fill-yellow)",
     );
     expect(pill.style.getPropertyValue("color")).toBe(
       "var(--semantics-category-on-fill-yellow)",
     );
-    expect(screen.getByLabelText("2 places")).toHaveTextContent("2");
+    expect(pill).toHaveTextContent("2");
     fireEvent.click(screen.getByRole("button", { name: "Clear category" }));
     expect(onClear).toHaveBeenCalledTimes(1);
   });
@@ -77,16 +81,12 @@ describe("CategoryField", () => {
     render(<CategoryField label="Gates" onClear={() => undefined} />);
     const clear = screen.getByRole("button", { name: "Clear category" });
     // The button is the target, 44; the circle inside it is what shows, 32,
-    // and carries the focus ring (Olcay, 2026-09-21).
+    // while Core IconButton now owns one focus ring around the target.
     expect(clear).toHaveClass("h-11", "w-11");
-    expect(clear).not.toHaveClass("focus-visible:ring-2");
+    expect(clear).toHaveClass("kozmos-button");
     const circle = clear.firstElementChild as HTMLElement;
-    expect(circle).toHaveClass(
-      "h-8",
-      "w-8",
-      "rounded-pill",
-      "group-focus-visible:ring-2",
-    );
+    expect(circle).toHaveClass("h-8", "w-8", "rounded-pill");
+    expect(circle).not.toHaveClass("group-focus-visible:ring-2");
     // The trailing padding gives back the 6 the target adds on each side, so
     // the circle stays 8 from the field's edge.
     expect(screen.getByRole("group", { name: "Gates" })).toHaveClass("pr-0.5");

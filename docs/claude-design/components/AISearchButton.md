@@ -5,7 +5,7 @@
 The AI search, beside the search field: a 48 disc inside a 66 ring whose gradient runs through the theme's own ramp — from the 300 step to the 600 and back — with a 16 icon. The first gradient the system draws is made of tokens, so it follows the theme like everything else. The button shows the icon alone and is named by its label to assistive technology.
 
 - **Import:** `import { AISearchButton } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-aisearchbutton--docs>
 

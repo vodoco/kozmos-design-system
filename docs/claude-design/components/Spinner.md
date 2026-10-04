@@ -5,7 +5,7 @@
 Indeterminate loading: three quarters of a circle, turning. Use it when a wait has no measurable progress — `Progress` is the one that knows how far along it is.
 
 - **Import:** `import { Spinner } from "@kozmos-ds/react";`
-- **Group:** Feedback
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/feedback-spinner--docs>
 

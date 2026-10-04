@@ -59,7 +59,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-17 | `AdaptiveMapShell`'s panel is an `<aside>`                       | Product / SDK          | open         |
 | GAP-18 | `POIDetailPanel` has no presentation for the shell's panel       | Product / SDK          | left visible |
 | GAP-19 | `Navbar` is always sticky                                        | Core                   | composed     |
-| GAP-20 | `SearchBar`'s field is unstyled in WebKit (Safari, iOS)          | Product / SDK          | left visible |
+| GAP-20 | `SearchBar`'s field is unstyled in WebKit (Safari, iOS)          | Product / SDK          | fixed        |
 | GAP-21 | `Heading` cannot reach the tokens' heading scale                 | Core                   | composed     |
 | GAP-22 | Font-weight tokens carry names, not weights                      | Core                   | open         |
 | GAP-23 | Component-layer colours are baked values, not ramp aliases       | Core                   | composed     |
@@ -108,7 +108,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-66 | `EmptyState`'s words are left-aligned in a centred block         | Core                   | fixed        |
 | GAP-67 | `Menu` opens centred on its trigger                              | Core                   | left visible |
 | GAP-68 | `BottomNavigation`'s taller density overflows its own bar        | Core                   | open         |
-| GAP-69 | Lift, escalator and stairs share one arrow                       | Product / SDK          | left visible |
+| GAP-69 | Lift, escalator and stairs share one arrow                       | Product / SDK          | fixed        |
 | GAP-70 | `SelectTrigger` hides a second `FieldWrapper`                    | Core                   | open         |
 | GAP-71 | `AISearchButton` has no hover state                              | Core                   | open         |
 | GAP-72 | `MapOverlay` clips what floats on it                             | Product / SDK          | fixed        |
@@ -465,12 +465,16 @@ keep the table's four columns and its statuses as they are.
 - **Why it matters:** Safari and iOS web views are WebKit, and the Pointr
   SDK's iOS hosts are among them. Visible in the examples' search fields and
   in the components page's own.
-- **Now:** left visible. `tests/site.spec.ts` expects the field's style to fail
-  in WebKit only, so the test tells us when it is fixed.
+- **Now:** fixed on main (#193), not yet released. `SearchBar` owns
+  its native input recipe (`2e602272`), isolated from Core `Search`'s shared
+  clear-button marker (`99a55303`). The former expected-failure test produced
+  an unexpected pass in WebKit; `tests/site.spec.ts` now positively requires
+  15px text and no border in all three engines. The SDK browser checks also
+  cover the computed recipe and 200% text, and protect Core `Search`'s styling.
 - **Lane:** Product / SDK (`SearchBar`).
-- **Fix in Kozmos:** move `SearchBar`'s field to component-owned CSS like
-  `Input`, and add it to the WebKit form-compatibility checks. Confirm in a real
-  Safari too.
+- **Remaining acceptance:** confirm on physical Safari/iOS web views. This
+  browser repair is not a Core migration: a reusable decorated Core field is
+  still needed; see `docs/sdk-core-composition.md` at the repository root.
 
 ## GAP-21 · `Heading` cannot reach the tokens' heading scale
 
@@ -1418,6 +1422,12 @@ Text"])`) and the Get started page shows — touches it.
 
 ## GAP-69 · Lift, escalator and stairs share one arrow
 
+- **Now:** fixed on main (#193), not yet released: DirectionStep draws distinct
+  lift, escalator and stairs up/down pairs, plus ramp and entry/exit, from original
+  shared Kozmos vectors. The DirectionStep Glyph Atlas shows small/large sizes and
+  RTL. This is not publication or external artwork approval; SDK map sprites and
+  physical-device legibility remain separate. The evidence below records the original defect.
+
 - **What:** `DIRECTION_ICONS` (`DirectionStep.tsx:61`) maps fourteen
   manoeuvre types onto eight glyphs: `lift-up`, `escalator-up`, `stairs-up`
   and `level-up` are all `ArrowUpFromLine`, and the four "down" types are all
@@ -1427,7 +1437,7 @@ Text"])`) and the Get started page shows — touches it.
   not match the rest of the set's weight.
 - **Evidence:** read from the map itself; the fourteen manoeuvres are shown
   on the DirectionStep page, where the three up arrows are identical.
-- **Now:** left visible in the wayfinding example: the quickest route goes up
+- **Before #193:** left visible in the wayfinding example: the quickest route goes up
   by escalator and the step-free one by lift. The DirectionStep and Itinerary
   pages showed all fourteen manoeuvres until the demos moved to Storybook on
   2026-09-28.

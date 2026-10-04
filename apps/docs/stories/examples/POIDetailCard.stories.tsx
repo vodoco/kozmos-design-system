@@ -196,7 +196,8 @@ const QUICK_ACTIONS = [
 ] as const;
 
 const meta: Meta = {
-  title: "Examples/POI Detail Card",
+  id: "examples-poi-detail-card",
+  title: "Guides/Design gap references/POI details",
   parameters: {
     layout: "fullscreen",
     // The source is a 375-wide phone card. `BottomSheet` has no width or

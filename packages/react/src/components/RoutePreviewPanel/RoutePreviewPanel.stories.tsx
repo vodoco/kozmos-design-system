@@ -3,7 +3,8 @@ import { fn } from "@storybook/test";
 import { RoutePreviewPanel } from "./RoutePreviewPanel";
 
 const meta = {
-  title: "Product SDK/RoutePreviewPanel",
+  id: "product-sdk-routepreviewpanel",
+  title: "SDK/Navigation/RoutePreviewPanel",
   component: RoutePreviewPanel,
   parameters: { layout: "fullscreen" },
   decorators: [

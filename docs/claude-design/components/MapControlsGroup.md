@@ -5,7 +5,7 @@
 The stacked zoom, compass, and locate affordances that sit over a map.
 
 - **Import:** `import { MapControlsGroup } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-mapcontrolsgroup--docs>
 

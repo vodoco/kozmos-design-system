@@ -5,7 +5,7 @@
 An image element with a fallback for representing the user.
 
 - **Import:** `import { Avatar, AvatarFallback, AvatarImage } from "@kozmos-ds/react";`
-- **Group:** Data Display
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-avatar--docs>
 

@@ -335,7 +335,8 @@ public struct KozmosPOIDetailPanel: View {
                 ForEach(stripActions, id: \.self) { action in
                     POIDetailActionButton(
                         label: actionLabels[action] ?? action.rawValue,
-                        systemImage: Self.systemImage(for: action),
+                        systemImage: nil,
+                        iconName: action == .navigate ? "navigation-pointer-01" : nil,
                         estimate: action == .navigate ? details.travelEstimate.map {
                             [$0.durationLabel, $0.distanceLabel].compactMap { $0 }.joined(separator: " · ")
                         } : nil,
@@ -346,7 +347,7 @@ public struct KozmosPOIDetailPanel: View {
                     .accessibilityIdentifier("poi-action-\(action.rawValue)")
                 }
                 ForEach(details.supplementaryActions) { item in
-                    POIDetailActionButton(label: item.label, systemImage: item.systemImage,
+                    POIDetailActionButton(label: item.label, systemImage: nil,
                                          loadingLabel: loadingLabel,
                                          state: supplementaryActionStates[item.action] ?? .init(disabled: onSupplementaryAction == nil)) {
                         onSupplementaryAction?(item.action, poi.id)
@@ -385,6 +386,7 @@ public struct KozmosPOIDetailPanel: View {
 struct POIDetailActionButton: View {
     let label: String
     let systemImage: String?
+    var iconName: String? = nil
     var estimate: String? = nil
     var primary = false
     var iconOnly = false
@@ -403,6 +405,9 @@ struct POIDetailActionButton: View {
             HStack(spacing: 8) {
                 if state.loading {
                     ProgressView().controlSize(.small).tint(foreground)
+                } else if let iconName {
+                    KozmosIcon(iconName, size: .lg)
+                        .environment(\.kozmosIconHostInk, foreground)
                 } else if let systemImage {
                     Image(systemName: systemImage)
                         .font(primary ? .title3 : .body)

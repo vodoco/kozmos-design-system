@@ -7,10 +7,11 @@ enum KozmosManoeuvreCardPart: Hashable {
 
 /// The current manoeuvre, floating over the map during navigation: its arrow,
 /// the instruction, how far and how long, and a grab bar that opens the full
-/// itinerary in its place. Mirrors the product prototype's instruction card:
-/// 402 wide it is 378 × 119, radius 18, a solid surface unless the product asks for
-/// glass, the instruction 20/600
-/// over a 14 grey detail, a 36 × 5 grab bar at its foot.
+/// itinerary in its place. Theme-filled by default, with contrasting instruction
+/// and detail text. A `surface:` named with no `appearance:` is the neutral
+/// solid or glass surface it names, as a 0.5.0 call got (D6); an `appearance:`
+/// named wins, `.background` on `surface` or solid. The 36 × 5 grab bar has a
+/// minimum 44-point activation area.
 ///
 /// The card owns the toggle and what VoiceOver hears of it. The itinerary it
 /// opens into is the caller's — `KozmosItinerary`, in the products — so the
@@ -39,6 +40,7 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
     let collapseLabel: String
     let manoeuvreLabel: String
     let surface: KozmosSurfaceStyle
+    let appearance: KozmosManoeuvreAppearance
     let maxItineraryHeight: CGFloat
     let itinerary: Itinerary
 
@@ -64,14 +66,15 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         expandLabel: String = "Show itinerary",
         collapseLabel: String = "Hide itinerary",
         manoeuvreLabel: String = "Current manoeuvre",
-        surface: KozmosSurfaceStyle = .solid,
+        surface: KozmosSurfaceStyle? = nil,
         maxItineraryHeight: CGFloat = 320,
+        appearance: KozmosManoeuvreAppearance? = nil,
         @ViewBuilder itinerary: () -> Itinerary
     ) {
         self.init(type: type, instruction: [KozmosInstructionPart(text: instruction)], detail: detail,
                   instructionLines: instructionLines, isExpanded: isExpanded, onToggle: onToggle,
                   expandLabel: expandLabel, collapseLabel: collapseLabel, manoeuvreLabel: manoeuvreLabel,
-                  surface: surface, maxItineraryHeight: maxItineraryHeight, itinerary: itinerary)
+                  surface: surface, maxItineraryHeight: maxItineraryHeight, appearance: appearance, itinerary: itinerary)
     }
 
     public init(
@@ -84,8 +87,9 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         expandLabel: String = "Show itinerary",
         collapseLabel: String = "Hide itinerary",
         manoeuvreLabel: String = "Current manoeuvre",
-        surface: KozmosSurfaceStyle = .solid,
+        surface: KozmosSurfaceStyle? = nil,
         maxItineraryHeight: CGFloat = 320,
+        appearance: KozmosManoeuvreAppearance? = nil,
         @ViewBuilder itinerary: () -> Itinerary
     ) {
         self.type = type
@@ -97,7 +101,9 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         self.expandLabel = expandLabel
         self.collapseLabel = collapseLabel
         self.manoeuvreLabel = manoeuvreLabel
-        self.surface = surface
+        // Nil is what the caller left out: only a surface named turns the theme fill off.
+        self.surface = surface ?? .solid
+        self.appearance = appearance ?? (surface == nil ? .theme : .background)
         self.maxItineraryHeight = maxItineraryHeight
         self.itinerary = itinerary()
     }
@@ -126,10 +132,6 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         case (false, .itinerary), (false, .bar): return .instruction
         default: return nil
         }
-    }
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusContainer, style: .continuous)
     }
 
     /// The card's own toggle: it decides where VoiceOver goes while VoiceOver
@@ -168,15 +170,14 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                 // the itinerary, and VoiceOver hears the manoeuvre with that hint.
                 Button(action: toggle) {
                     HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-                        Image(systemName: type.iconName)
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(KozmosColors.primitivesColorsTheme500)
+                        KozmosDirectionGlyph(type: type, size: 22)
+                            .foregroundColor(appearance == .theme ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsTheme500)
                             .frame(width: KozmosDimensions.primitivesLayoutSizing400, height: KozmosDimensions.primitivesLayoutSizing400)
                         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                             // Whole unless the product asks for a limit (GAP-094).
                             KozmosInstructionText(parts: instructionParts)
                                 .font(KozmosTypography.title3.weight(.semibold))
-                                .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                                .foregroundColor(appearance == .theme ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsForeground100)
                                 .lineLimit(Self.instructionLineLimit(instructionLines))
                                 .fixedSize(horizontal: false, vertical: true)
                             if let detail, !detail.isEmpty {
@@ -199,10 +200,10 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
             // The grab bar: the sign that the card opens, and the way to close it.
             Button(action: toggle) {
                 Capsule()
-                    .fill(KozmosColors.primitivesColorsBackground300)
+                    .fill(appearance == .theme ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsBackground300)
                     .frame(width: 36, height: 5)
                     .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -224,7 +225,7 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
         .padding(.bottom, KozmosDimensions.primitivesLayoutSpacing50)
         .frame(maxWidth: .infinity)
-        .kozmosSurface(shape, style: surface)
+        .modifier(KozmosGuidanceSurface(appearance: appearance, surface: surface))
         .kozmosElevation(KozmosShadows.semanticsElevationFloating)
         .accessibilityElement(children: .contain)
         // Keep the card named even when custom itinerary content has no

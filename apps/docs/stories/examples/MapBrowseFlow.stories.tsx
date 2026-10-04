@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { MapBrowseFlow } from "./MapBrowseFlow";
 const meta = {
-  title: "Examples/Map browse flow",
+  id: "examples-map-browse-flow",
+  title: "Examples/Map browsing/Browse and select",
   component: MapBrowseFlow,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof MapBrowseFlow>;

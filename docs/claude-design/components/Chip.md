@@ -5,7 +5,7 @@
 `Chip` presents compact filter, category, and removable selection values. Use it when the item can be selected or dismissed; use `Badge` for passive metadata.
 
 - **Import:** `import { Chip, ChipGroup } from "@kozmos-ds/react";`
-- **Group:** Data Display
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-chip--docs>
 

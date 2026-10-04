@@ -5,7 +5,7 @@
 A row of small facts about one thing, each a label and a value.
 
 - **Import:** `import { MetaStrip, MetaStripItem } from "@kozmos-ds/react";`
-- **Group:** Data Display
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-metastrip--docs>
 

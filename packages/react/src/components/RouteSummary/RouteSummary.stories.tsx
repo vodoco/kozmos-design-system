@@ -5,7 +5,8 @@ import { RouteSummary } from "./RouteSummary";
 import { RouteProgressRail } from "../RouteProgressRail";
 
 const meta = {
-  title: "Map/RouteSummary",
+  id: "map-routesummary",
+  title: "SDK/Navigation/RouteSummary",
   component: RouteSummary,
   parameters: { layout: "fullscreen" },
 } satisfies Meta<typeof RouteSummary>;
@@ -58,4 +59,21 @@ export const Navigation_: Story = {
     ),
   },
   render: Active.render,
+};
+
+export const Hosted: Story = {
+  args: {
+    destination: "Northfield Artisan Bakery and Coffee Roastery",
+    presentation: "hosted",
+    onEndRoute: () => {},
+  },
+};
+
+export const HostedWithImage: Story = {
+  args: {
+    ...Hosted.args,
+    destinationImage: "/missing-destination-photo.png",
+    durationText: "0 min",
+    arrivalText: "Arrive 12:58",
+  },
 };

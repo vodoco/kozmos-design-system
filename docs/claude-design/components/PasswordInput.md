@@ -5,7 +5,7 @@
 A text input for secrets, with a toggle that reveals what has been typed.
 
 - **Import:** `import { PasswordInput } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-passwordinput--docs>
 

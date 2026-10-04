@@ -9,6 +9,7 @@ import {
   Edit03 as Edit3,
 } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 export interface SaveLocationCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** What the card sits on: solid by default, glass where the product asks for it. */
@@ -85,35 +86,39 @@ const SaveLocationCard = React.forwardRef<
 
         {/* Primary Actions */}
         <div className="flex flex-wrap items-center gap-3 w-full mt-2">
-          <Button
-            type="button"
-            variant={isSaved ? "outline" : "default"}
-            className="flex-1 font-medium"
-            onClick={() => {
-              trackEvent("SaveLocationCard", "save_toggled", {
-                isSaved: !isSaved,
-              });
-              onSaveToggle?.();
-            }}
-          >
-            <MapPin className="w-4 h-4" />
-            {isSaved ? "Remove Location" : "Save Location"}
-          </Button>
-
-          {isSaved && onRouteToLocation && (
+          <WithoutGenericClick>
             <Button
               type="button"
-              variant="default"
-              emotion="success"
+              variant={isSaved ? "outline" : "default"}
               className="flex-1 font-medium"
               onClick={() => {
-                trackEvent("SaveLocationCard", "route_requested", {});
-                onRouteToLocation();
+                trackEvent("SaveLocationCard", "save_toggled", {
+                  isSaved: !isSaved,
+                });
+                onSaveToggle?.();
               }}
             >
-              <Navigation className="w-4 h-4" />
-              Guide Me
+              <MapPin className="w-4 h-4" />
+              {isSaved ? "Remove Location" : "Save Location"}
             </Button>
+          </WithoutGenericClick>
+
+          {isSaved && onRouteToLocation && (
+            <WithoutGenericClick>
+              <Button
+                type="button"
+                variant="default"
+                emotion="success"
+                className="flex-1 font-medium"
+                onClick={() => {
+                  trackEvent("SaveLocationCard", "route_requested", {});
+                  onRouteToLocation();
+                }}
+              >
+                <Navigation className="w-4 h-4" />
+                Guide Me
+              </Button>
+            </WithoutGenericClick>
           )}
         </div>
       </div>

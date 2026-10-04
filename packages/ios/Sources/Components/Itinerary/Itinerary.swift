@@ -8,16 +8,21 @@ public struct KozmosItineraryStep: Identifiable, Hashable, Sendable {
     public var instruction: String { instructionParts.map(\.text).joined() }
     public let type: DirectionType
     public let isCurrent: Bool
+    /// Localized estimates for this step, not actual journey totals.
+    public let distance: String?
+    public let duration: String?
 
-    public init(id: String, instruction: String, type: DirectionType, isCurrent: Bool = false) {
-        self.init(id: id, instruction: [KozmosInstructionPart(text: instruction)], type: type, isCurrent: isCurrent)
+    public init(id: String, instruction: String, type: DirectionType, isCurrent: Bool = false, distance: String? = nil, duration: String? = nil) {
+        self.init(id: id, instruction: [KozmosInstructionPart(text: instruction)], type: type, isCurrent: isCurrent, distance: distance, duration: duration)
     }
 
-    public init(id: String, instruction: [KozmosInstructionPart], type: DirectionType, isCurrent: Bool = false) {
+    public init(id: String, instruction: [KozmosInstructionPart], type: DirectionType, isCurrent: Bool = false, distance: String? = nil, duration: String? = nil) {
         self.id = id
         self.instructionParts = instruction
         self.type = type
         self.isCurrent = isCurrent
+        self.distance = distance
+        self.duration = duration
     }
 }
 
@@ -29,6 +34,7 @@ public struct KozmosItineraryStep: Identifiable, Hashable, Sendable {
 /// VoiceOver hears the endpoints as "From, name" and "To, name", each step as
 /// one element, the current one selected.
 public struct KozmosItinerary: View {
+    @Environment(\.kozmosGuidanceForeground) private var guidance
     let origin: String
     let steps: [KozmosItineraryStep]
     let destination: String
@@ -53,10 +59,11 @@ public struct KozmosItinerary: View {
     }
 
     public var body: some View {
+        let uniqueCurrent = steps.filter(\.isCurrent).count == 1
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
             endpoint(originLabel, name: origin, emphasised: false)
             ForEach(steps) { step in
-                row(step)
+                row(step, isCurrent: uniqueCurrent && step.isCurrent)
             }
             endpoint(destinationLabel, name: destination, emphasised: true)
         }
@@ -67,32 +74,50 @@ public struct KozmosItinerary: View {
     /// The captions and the origin are muted, and on glass, in a glass
     /// manoeuvre card, the foreground colour (decision 48).
     private func endpoint(_ label: String, name: String, emphasised: Bool) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-            Text(label.uppercased())
-                .font(KozmosTypography.caption2)
-                .kozmosMutedText()
-                .frame(width: KozmosDimensions.primitivesLayoutSizing500, alignment: .leading)
-            Text(name)
-                .font(emphasised ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-                .kozmosMutedText(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
+                endpointCaption(label).fixedSize(horizontal: true, vertical: false)
+                    .frame(minWidth: KozmosDimensions.primitivesLayoutSizing500, alignment: .leading)
+                endpointName(name, emphasised: emphasised)
+                    .frame(minWidth: 80, alignment: .leading)
+            }
+            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                endpointCaption(label).fixedSize(horizontal: false, vertical: true)
+                endpointName(name, emphasised: emphasised)
+            }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label), \(name)")
     }
 
-    private func row(_ step: KozmosItineraryStep) -> some View {
+    private func endpointCaption(_ label: String) -> some View {
+        Text(label.uppercased()).font(KozmosTypography.caption2).kozmosMutedText()
+    }
+
+    private func endpointName(_ name: String, emphasised: Bool) -> some View {
+        Text(name)
+            .font(emphasised ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
+            .kozmosMutedText(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func row(_ step: KozmosItineraryStep, isCurrent: Bool) -> some View {
         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-            Image(systemName: step.type.iconName)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500)
+            KozmosDirectionGlyph(type: step.type, size: 14)
+                .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: 20, alignment: .leading)
-            KozmosInstructionText(parts: step.instructionParts)
-                .font(step.isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-                .foregroundColor(step.isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
+                KozmosInstructionText(parts: step.instructionParts)
+                    .font(isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
+                    .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100))
+                let metrics = [step.distance, step.duration].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " • ")
+                if !metrics.isEmpty {
+                    Text(metrics).font(KozmosTypography.subheadline).kozmosMutedText()
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .kozmosInstructionAccessibility(step.instructionParts, selected: step.isCurrent)
+        .kozmosInstructionAccessibility(step.instructionParts, suffix: [step.distance, step.duration].compactMap { $0 }, selected: isCurrent)
     }
 }

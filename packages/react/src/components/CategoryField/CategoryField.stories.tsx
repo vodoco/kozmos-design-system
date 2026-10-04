@@ -7,7 +7,8 @@ import { IconButton } from "../IconButton";
 import { Sliders01 as SlidersHorizontal } from "@kozmos-ds/icons";
 
 const meta = {
-  title: "Product SDK/CategoryField",
+  id: "product-sdk-categoryfield",
+  title: "SDK/Search and browse/CategoryField",
   component: CategoryField,
   parameters: { layout: "padded" },
   args: {

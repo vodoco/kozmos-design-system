@@ -17,12 +17,14 @@ import org.junit.Test
 /**
  * The row as React draws it, measured at React's width (a 360 host padded 16):
  * a rail of a 10 ring, a line and a 16 pin, 12 from two 40-high borderless
- * fields 8 apart, washed in muted at half and raised, with a 32 swap button
+ * fields 8 apart, washed in muted at half and raised, with a 48dp swap target
  * 12 in from their end, centred between them. Until 2026-09-22 Compose drew
  * two outlined Material fields with the swap in a row of its own.
  */
 class KozmosWayfindingInputRowPaparazziTest {
     @get:Rule
+    // Linux CI is the reference renderer for the dark golden. One edge pixel
+    // on macOS exceeds Paparazzi's off-by-two allowance; keep the strict gate.
     val paparazzi = Paparazzi(maxPercentDifference = 0.0)
 
     private fun row(dark: Boolean) = paparazzi.snapshot {

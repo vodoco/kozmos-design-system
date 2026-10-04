@@ -3,7 +3,8 @@ import { NumberInput } from "./NumberInput";
 import { ThemeProvider } from "../ThemeProvider";
 
 const meta = {
-  title: "Components/NumberInput",
+  id: "components-numberinput",
+  title: "Core/Inputs/NumberInput",
   component: NumberInput,
   parameters: {
     layout: "centered",

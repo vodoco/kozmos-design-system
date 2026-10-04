@@ -5,7 +5,7 @@
 Displays route-planning content with an optional close action. Localize `closeLabel` when providing `onClose`. `WayfindingInputRow` supports `originLabel`, `destinationLabel` and `swapLabel`; placeholders are hints, not replacements for those accessible names. Navigation actions do not submit a surrounding form.
 
 - **Import:** `import { WayfindingCard, WayfindingInputRow } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-wayfindingcard--docs>
 

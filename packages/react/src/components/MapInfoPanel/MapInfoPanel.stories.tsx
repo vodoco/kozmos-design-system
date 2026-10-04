@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { MapInfoPanel } from "./MapInfoPanel";
 
 const meta = {
-  title: "Product/SDK/MapInfoPanel",
+  id: "product-sdk-mapinfopanel",
+  title: "SDK/Map controls/MapInfoPanel",
   component: MapInfoPanel,
   parameters: { layout: "fullscreen" },
   args: {

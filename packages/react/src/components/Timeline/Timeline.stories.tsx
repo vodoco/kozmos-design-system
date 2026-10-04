@@ -8,7 +8,8 @@ import {
 } from "./Timeline";
 
 const meta: Meta<typeof Timeline> = {
-  title: "Data Display/Timeline",
+  id: "data-display-timeline",
+  title: "Core/Data display/Timeline",
   component: Timeline,
   argTypes: {
     density: {

@@ -5,7 +5,7 @@
 The search field's form once a quick-access category is chosen — the prototype's, measured: 48 tall, the control radius, the category's colour at 12 % with a 1-pixel border of it, the icon at 28 in the colour, the name at 15 semibold in the foreground, a 22-tall count pill filled with the colour, a 32 clear at the trailing edge with its cross in the foreground, in a 44 hit area as the search bar's clear is. It takes the field's place in the search row. The name and the cross are in the foreground because the category colour on its own wash fails 4.5:1 for seven of the eight tints (Olcay, 2026-09-21).
 
 - **Import:** `import { CategoryField } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/story/product-sdk-categoryfield--default>
 

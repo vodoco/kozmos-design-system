@@ -4,6 +4,7 @@ import {
   Accessibility,
   Heart,
   InfoCircle as Info,
+  NavigationPointer01,
   ShoppingBag01 as ShoppingBag,
   Utensils,
 } from "@kozmos-ds/icons";
@@ -22,7 +23,8 @@ import { MapAttribution } from "../MapAttribution";
 import { LanguageSwitcher } from "../LanguageSwitcher";
 
 const meta = {
-  title: "Product SDK/AdaptiveMapShell",
+  id: "product-sdk-adaptivemapshell",
+  title: "SDK/Map controls/AdaptiveMapShell",
   component: AdaptiveMapShell,
   parameters: { layout: "fullscreen" },
   args: {
@@ -150,12 +152,10 @@ export const SheetPeekAnchor: Story = {
           data-testid="card-go"
           {...panelPeekAnchorProps}
         >
-          <button
-            type="button"
-            className="h-14 rounded-control bg-primary px-5 text-primary-foreground"
-          >
+          <Button type="button" size="lg">
+            <NavigationPointer01 aria-hidden="true" className="h-5 w-5" />
             Go · 2 min
-          </button>
+          </Button>
         </div>
         <p className="px-4 text-sm" data-testid="card-body">
           {Array.from(

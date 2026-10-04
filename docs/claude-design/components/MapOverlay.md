@@ -5,7 +5,7 @@
 A positioned surface that floats product chrome above the map canvas.
 
 - **Import:** `import { MapOverlay } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-mapoverlay--docs>
 

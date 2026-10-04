@@ -2,6 +2,11 @@ package com.kozmos.components.poiresultlist
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
@@ -33,6 +38,34 @@ import org.junit.Test
 class KozmosPOIResultListActionTest {
     @get:Rule
     val paparazzi = semanticsPaparazzi()
+
+    @Test
+    fun longActionsRemainInsideANarrowCardAtLargeTextInBothDirections() {
+        val labels = listOf("Wegbeschreibung zu diesem Ziel anzeigen", "Weitere Informationen zu diesem Ort")
+        for (direction in LayoutDirection.values()) {
+            var width = 0f
+            val tree = paparazzi.readSemantics {
+                val density = LocalDensity.current.density
+                width = 320 * density
+                CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f),
+                    LocalLayoutDirection provides direction) {
+                    MaterialTheme {
+                        Box(Modifier.width(320.dp)) {
+                            KozmosPOIResultCard(poi = cafe,
+                                result = KozmosPOIResultPresentation(poiId = cafe.id, resultIndex = 0, selected = true,
+                                    actions = listOf(go.copy(label = labels[0]), details.copy(label = labels[1]))),
+                                onSelect = {}, onAction = { _, _ -> })
+                        }
+                    }
+                }
+            }
+            for (label in labels) {
+                val frame = tree.showing(label).frame
+                assertTrue("$direction action collapsed or overflowed: $label $frame / $width",
+                    frame.width > 0 && frame.left >= 0 && frame.right <= width)
+            }
+        }
+    }
 
     @Test
     fun resultActionsHaveAtLeast44DpTargets() {

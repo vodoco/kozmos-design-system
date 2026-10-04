@@ -12,7 +12,13 @@ export interface ManoeuvreCardProps extends Omit<
   React.HTMLAttributes<HTMLElement>,
   "children"
 > {
-  /** What the card sits on: solid by default, glass where the product asks for it. */
+  /**
+   * Theme-filled by default. Background restores the neutral solid/glass
+   * presentation, and is what a caller that sets `surface` gets unless it
+   * also sets an appearance.
+   */
+  appearance?: "theme" | "background";
+  /** Material for background appearance: solid by default. Setting it asks for background. */
   surface?: SurfaceVariant;
   type: DirectionType;
   /** Legacy text or ordered inline parts; caller owns spacing, word order and language. */
@@ -100,13 +106,19 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
       collapseLabel = "Hide itinerary",
       manoeuvreLabel = "Current manoeuvre",
       itineraryLabel = "Itinerary",
-      surface = "solid",
+      surface: surfaceProp,
+      appearance: appearanceProp,
       maxItineraryHeight = 320,
       children,
       ...props
     },
     ref,
   ) => {
+    // A caller that sets a surface asked for it: theme fill is the default
+    // only where nothing was asked for (Olcay, 2026-10-04).
+    const appearance =
+      appearanceProp ?? (surfaceProp !== undefined ? "background" : "theme");
+    const surface = surfaceProp ?? "solid";
     const instructionRef = React.useRef<HTMLButtonElement>(null);
     const itineraryRef = React.useRef<HTMLDivElement>(null);
     const barRef = React.useRef<HTMLButtonElement>(null);
@@ -161,10 +173,11 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
         ref={ref}
         aria-label={manoeuvreLabel}
         className={cn(
-          `kozmos-manoeuvre-card ${surfaceClass(surface)} flex w-full flex-col gap-3 rounded-container px-4 pb-1 pt-4 text-foreground shadow-floating`,
+          `kozmos-manoeuvre-card ${appearance === "background" ? surfaceClass(surface) : "kozmos-reset"} kozmos-guidance-text flex w-full flex-col gap-3 rounded-container px-4 pb-1 pt-4 shadow-floating`,
           className,
         )}
         {...props}
+        data-appearance={appearance}
       >
         {expanded ? (
           // The itinerary scrolls here past the cap, so the keyboard must be
@@ -199,14 +212,14 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
                 : undefined
             }
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center text-primary">
+            <span className="kozmos-guidance-accent flex h-8 w-8 shrink-0 items-center justify-center">
               <DirectionIcon type={type} className="h-6 w-6" />
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               {/* Whole unless the product asks for a limit (GAP-094):
                   owned CSS draws the limit, `data-lines`. */}
               <span
-                className="kozmos-manoeuvre-instruction text-xl font-semibold leading-tight text-foreground"
+                className="kozmos-manoeuvre-instruction kozmos-guidance-text text-xl font-semibold leading-tight"
                 data-lines={lines}
                 style={
                   lines === undefined
@@ -233,7 +246,7 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
         <button
           ref={barRef}
           type="button"
-          className="flex w-full justify-center bg-transparent py-1"
+          className="kozmos-manoeuvre-disclosure flex min-h-11 w-full items-center justify-center bg-transparent py-1"
           onClick={onToggle}
           onMouseDown={expanded ? undefined : (event) => event.preventDefault()}
           aria-label={expanded ? collapseLabel : expandLabel}
@@ -241,7 +254,7 @@ const ManoeuvreCard = React.forwardRef<HTMLElement, ManoeuvreCardProps>(
           aria-hidden={expanded ? undefined : true}
           tabIndex={expanded ? 0 : -1}
         >
-          <span className="h-[5px] w-9 rounded-pill bg-muted" />
+          <span className="kozmos-manoeuvre-grip h-[5px] w-9 rounded-pill" />
         </button>
       </section>
     );

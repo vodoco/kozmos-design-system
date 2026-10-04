@@ -5,7 +5,7 @@
 Product category action with controlled selection, multiline localization-safe labels, an optional count drawn as the system's counter at the icon square's top-right (its localized label spoken, not drawn), and a minimum 44px target.
 
 - **Import:** `import { CategoryTile } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-categorytile--docs>
 

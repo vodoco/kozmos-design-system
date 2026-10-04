@@ -4,7 +4,8 @@ import { UserMessage } from "../UserMessage";
 import { AIMessageList } from "./AIMessageList";
 
 const meta = {
-  title: "Product SDK/AIMessageList",
+  id: "product-sdk-aimessagelist",
+  title: "SDK/Assistant/AIMessageList",
   component: AIMessageList,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof AIMessageList>;

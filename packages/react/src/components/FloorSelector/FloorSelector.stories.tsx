@@ -14,7 +14,8 @@ const floors = [
 ];
 
 const meta: Meta<typeof FloorSelector> = {
-  title: "Product SDK/FloorSelector",
+  id: "product-sdk-floorselector",
+  title: "SDK/Map controls/FloorSelector",
   component: FloorSelector,
   args: {
     floors,

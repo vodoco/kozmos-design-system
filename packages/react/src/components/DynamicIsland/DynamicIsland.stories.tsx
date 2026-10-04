@@ -3,7 +3,8 @@ import { NavigationPointer01 as Navigation } from "@kozmos-ds/icons";
 import { DynamicIsland } from "./DynamicIsland";
 
 const meta = {
-  title: "Platform/DynamicIsland",
+  id: "platform-dynamicisland",
+  title: "Core/Layout/DynamicIsland",
   component: DynamicIsland,
   parameters: { layout: "fullscreen" },
   decorators: [

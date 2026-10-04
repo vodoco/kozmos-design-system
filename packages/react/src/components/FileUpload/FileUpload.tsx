@@ -4,6 +4,7 @@ import { cn, mergeAriaIds } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Button } from "../Button";
 import { FieldWrapper, type FieldStatus } from "../FieldWrapper";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 export interface FileUploadProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -291,16 +292,18 @@ const FileUpload = React.forwardRef<HTMLDivElement, FileUploadProps>(
                       {formatBytes(file.size)}
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`${removeLabel}: ${file.name}`}
-                    disabled={disabled}
-                    onClick={() => removeFile(file)}
-                  >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  </Button>
+                  <WithoutGenericClick>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`${removeLabel}: ${file.name}`}
+                      disabled={disabled}
+                      onClick={() => removeFile(file)}
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </WithoutGenericClick>
                 </li>
               ))}
             </ul>

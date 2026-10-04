@@ -3,6 +3,59 @@ const postcss = require("postcss");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const valueParser = require("postcss-value-parser");
 
+// Factor only the canonical pair of token-only theme rules. Keep BOTH selectors:
+// deleting the dark declaration alone would lower its cascade specificity.
+// Custom properties are resolved at use time, so shared aliases still resolve
+// against each root's own theme. Never reorder fallback/duplicate declarations,
+// mixed component recipes or multiple root definitions.
+function shareThemeTokens(foundations) {
+  const lightSelector = "[data-kozmos-root]";
+  const darkSelector = '[data-kozmos-root][data-theme="dark"]';
+  const themes = foundations.filter(
+    (rule) => rule.selector === lightSelector || rule.selector === darkSelector,
+  );
+  if (themes.length !== 2) return foundations;
+  const [light, dark] = themes;
+  if (light.selector !== lightSelector || dark.selector !== darkSelector)
+    return foundations;
+  const tokens = (rule) => {
+    const result = new Map();
+    for (const node of rule.nodes) {
+      if (node.type === "comment") continue;
+      if (
+        node.type !== "decl" ||
+        !node.prop.startsWith("--") ||
+        result.has(node.prop)
+      )
+        return null;
+      result.set(node.prop, node);
+    }
+    return result;
+  };
+  const left = tokens(light),
+    right = tokens(dark);
+  if (!left || !right) return foundations;
+  const shared = postcss.rule({
+    selector: `${lightSelector}, ${darkSelector}`,
+  });
+  for (const [name, declaration] of left) {
+    const other = right.get(name);
+    if (
+      !other ||
+      declaration.value !== other.value ||
+      Boolean(declaration.important) !== Boolean(other.important)
+    )
+      continue;
+    shared.append(declaration.clone());
+    declaration.remove();
+    other.remove();
+  }
+  if (!shared.nodes?.length) return foundations;
+  return foundations.flatMap((rule) =>
+    rule === light ? [shared, light] : [rule],
+  );
+}
+
 // Run after token imports and Tailwind expansion. Do not rewrite generated
 // selectors indiscriminately: roots, variants and keyframes have different semantics.
 module.exports = () => ({
@@ -81,7 +134,7 @@ module.exports = () => ({
       params: "([data-kozmos-root]) to ([data-kozmos-root])",
     });
     scope.append(root.nodes.slice());
-    root.append(...foundations, scope, ...owned);
+    root.append(...shareThemeTokens(foundations), scope, ...owned);
     root.append(
       postcss.parse(`
       [data-kozmos-root] {

@@ -4,7 +4,8 @@ import { kozmosIconDefinitions, kozmosIconNames } from "@kozmos-ds/icons";
 import { Settings01 as Settings } from "@kozmos-ds/icons";
 
 const meta: Meta<typeof Icon> = {
-  title: "Foundations/Icon",
+  id: "foundations-icon",
+  title: "Foundations/Icons/Icon",
   component: Icon,
   argTypes: {
     name: { control: "select", options: kozmosIconNames },

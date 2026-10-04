@@ -52,7 +52,6 @@ export const examples: readonly ExampleEntry[] = [
       "A phone’s map screen: search or browse the centre by category, pick a place from the list or the map, and read about it in a bottom sheet that rests at a peek, half or full height. The AI button beside the search opens the assistant, which answers with places and can hold a scripted voice conversation. The sheet is the SDK’s adaptive shell in a phone-sized frame.",
     gaps: [
       "GAP-17 · The map shell’s panel is an aside, a landmark that should not sit inside the page’s main.",
-      "GAP-20 · In Safari and other WebKit browsers, the search field is drawn as a small native field: Kozmos’s styles do not reach it there.",
       "GAP-29 · A phone app’s tab bar is missing: BottomNavigation pins itself to the browser’s viewport and cannot sit in the frame.",
       "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Icon cannot name any of them, and toilets and parking have no Kozmos glyph at all.",
       "GAP-53 · The phone’s rounded corners cut the sheet’s: the sheet keeps square, bordered bottom corners, and the shell has no edge-to-edge form.",
@@ -85,7 +84,6 @@ export const examples: readonly ExampleEntry[] = [
       "GAP-15 · Food and drink, toilets, accessible facilities, parking and first aid are left out: Icon cannot name any of them, and toilets and parking have no Kozmos glyph at all.",
       "GAP-17 · The map shell’s panel is an aside, a landmark that should not sit inside the page’s main.",
       "GAP-18 · The place details use the sheet presentation; on the shell’s panel, the action message’s block loses its background.",
-      "GAP-20 · In Safari and other WebKit browsers, the search field is drawn as a small native field: Kozmos’s styles do not reach it there.",
       "GAP-91 · The map shell’s top bar and controls sit in boxes that scroll, which cut their shadows off at the box’s edge.",
       "GAP-92 · The map shell does not say which edge it sets its controls against, so the example reads it from the layout the shell reports.",
     ],

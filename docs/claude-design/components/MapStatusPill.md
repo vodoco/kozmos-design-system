@@ -5,7 +5,7 @@
 One status on the map, drawn as a compact pill in one of five tones (decision 39). The SDK draws three parts for this — PositionStatus, Downloading Content and the Turn Back indicator — and the step-free route being calculated is a fourth (GAP-102). Kozmos draws them all with this one part.
 
 - **Import:** `import { MapStatusPill } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-mapstatuspill--docs>
 

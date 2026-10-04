@@ -4,6 +4,7 @@ import { Button, type ButtonProps } from "../Button/Button";
 import { ChevronDown } from "@kozmos-ds/icons";
 import { useKozmosAnalytics } from "../../utils/analytics";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "../Menu";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 // Simplified version relying on basic composition if dropdown-menu is not strictly available in this context
 // For this system, we'll simulate the structure or use a simple HTML select if needed,
@@ -40,18 +41,20 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
         className={cn("inline-flex rounded-control shadow-raised", className)}
         {...props}
       >
-        <Button
-          className="rounded-r-none border-r border-primary-foreground/20 focus:z-10"
-          onClick={(e) => {
-            trackEvent("SplitButton", "split_button_main_clicked");
-            onMainClick?.(e);
-          }}
-          variant={variant}
-          size={size}
-          disabled={disabled}
-        >
-          {children}
-        </Button>
+        <WithoutGenericClick>
+          <Button
+            className="rounded-r-none border-r border-primary-foreground/20 focus:z-10"
+            onClick={(e) => {
+              trackEvent("SplitButton", "split_button_main_clicked");
+              onMainClick?.(e);
+            }}
+            variant={variant}
+            size={size}
+            disabled={disabled}
+          >
+            {children}
+          </Button>
+        </WithoutGenericClick>
         <Menu>
           <MenuTrigger asChild>
             <Button

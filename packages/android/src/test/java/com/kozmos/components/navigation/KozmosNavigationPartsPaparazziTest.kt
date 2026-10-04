@@ -15,6 +15,7 @@ import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
 import com.kozmos.components.manoeuvrecard.manoeuvreDescription
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressRail
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressRailGeometry
+import com.kozmos.components.routeprogressrail.KozmosRouteProgressWaypoint
 import com.kozmos.components.routesummary.KozmosRouteSummary
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -36,6 +37,26 @@ class KozmosNavigationPartsPaparazziTest {
     )
 
     @Test
+    fun waypointsPreserveCoincidentSemanticsAndAvoidVisualCollisions() {
+        val g = KozmosRouteProgressRailGeometry
+        val points = listOf(
+            KozmosRouteProgressWaypoint("end", 1f, DirectionType.Destination, "Destination"),
+            KozmosRouteProgressWaypoint("lift", 0.5f, DirectionType.LiftUp, "Elevator to level 2"),
+            KozmosRouteProgressWaypoint("same", 0.5f, DirectionType.Right, "Turn right"),
+            KozmosRouteProgressWaypoint("start", 0f, DirectionType.Straight, "Entrance")
+        )
+        assertEquals(listOf("start", "lift", "same", "end"), g.validWaypoints(points).map { it.id })
+        assertEquals(listOf("start", "lift", "end"), g.visibleWaypoints(points, 300.dp, null).map { it.id })
+        assertEquals(listOf("start", "end"), g.visibleWaypoints(points, 300.dp, 0.5f).map { it.id })
+        assertEquals(emptyList<KozmosRouteProgressWaypoint>(), g.visibleWaypoints(points, 20.dp, null))
+        assertEquals(1, g.visibleWaypoints(points, 54.dp, null).size)
+        assertEquals(listOf("start", "same", "end"), g.validWaypoints(points + listOf(
+            KozmosRouteProgressWaypoint("lift", 0.1f, DirectionType.Left, "Ambiguous"),
+            KozmosRouteProgressWaypoint("bad", Float.NaN, DirectionType.Left, "Invalid")
+        )).map { it.id })
+    }
+
+    @Test
     fun theClosedCardReadsInstructionThenDetail() {
         assertEquals("Turn left, 58 m · 1 min", manoeuvreDescription("Turn left", "58 m · 1 min"))
         assertEquals("Turn left", manoeuvreDescription("Turn left", null))
@@ -50,7 +71,14 @@ class KozmosNavigationPartsPaparazziTest {
         assertEquals(133.dp, g.discLeading(0.5f, 300.dp))
         assertEquals(10.dp, g.discLeading(-1f, 300.dp))
         assertEquals(256.dp, g.discLeading(2f, 300.dp))
-        assertEquals(10.dp, g.discLeading(0.5f, 20.dp))
+        assertEquals(4.dp, g.discLeading(0.5f, 20.dp))
+    }
+
+    @Test
+    fun nonFiniteProgressStaysAtTheStart() {
+        for (progress in listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)) {
+            assertEquals(10.dp, KozmosRouteProgressRailGeometry.discLeading(progress, 300.dp))
+        }
     }
 
     /** Closed: the arrow, the instruction, the detail, the grab bar. */

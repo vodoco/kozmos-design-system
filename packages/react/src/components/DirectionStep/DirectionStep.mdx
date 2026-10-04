@@ -7,7 +7,15 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # DirectionStep
 
-A step of a route: the arrow, the instruction, the distance and the duration. The `type` is one of the four turns — `straight`, `left`, `right`, `destination` — or a transition: a level change by lift, escalator or stairs, up or down (`lift-up`, `escalator-down`, `stairs-up`…), by something the route does not name (`level-up`, `level-down`), a same-level `transition` — a walkway, a corridor, another building — and `turn-back`. Each platform draws the closest glyph its own icon set has: the web and iOS show a level change as the direction of travel (iOS has a figure for stairs), Android has a lift, an escalator and stairs of its own; the instruction's words carry the rest. The arrow is decorative: assistive technology hears the instruction.
+A step of a route: the symbol, instruction and optional distance and duration. The shared `DirectionKind` vocabulary includes `straight`, `left`, `right`, `destination`, `walking`, `turn-back`, `enter`, `exit`, same-level `transition`, unnamed `level-up` / `level-down`, and explicit `lift`, `stairs`, `escalator` and `ramp` up/down pairs. Choose the actual route instruction, not a generic arrow that hides its transport mode.
+
+Every direction draws an approved mark: lifts, escalators, stairs and level changes the up and down arrows, ramps the diagonal arrows, entry and exit the Pointr log-in and log-out marks, and walking the existing SDK mark on web and platform walking symbols on native. Original lift, escalator, stairs, ramp and entry/exit artwork, generated for all three platforms from `packages/icons/src/owned/navigation-glyphs.json`, awaits design approval: `@kozmos-ds/icons` exports it by name (`ElevatorUp`, `EscalatorUp`, `StairsUp`, `RampUp`, `RouteEnter` and their pairs) and `KozmosIcon` on iOS and Android draws it by name (`elevator-up`, `escalator-up`, `stairs-up`, `ramp-up`, `route-enter` and their pairs) for a product to opt into, the Glyph Atlas story shows it for review, and no default draws it until it is approved. Physical direction does not mirror in RTL; text layout does. Symbols are decorative: assistive technology hears the supplied instruction.
+
+The old `DirectionType` name remains a source alias. Native consumers must rebuild; the enum identity has moved to the shared contracts, and exhaustive switches need the added cases. Swift raw-value initialization and Kotlin `KozmosDirectionKind.fromValue` allow adapters to reject unknown values. Unknown runtime web values omit the symbol and retain the instruction rather than invent a turn. The host must decide whether an unknown route instruction is safe to present.
+
+Regenerate with `pnpm icons:navigation:generate`; verify with `pnpm icons:navigation:check`. Do not edit generated TS, Swift or Kotlin paths. The atlas shows 14, 24 and 32 pixel sizes; a physical-device legibility check remains separate.
+
+<Canvas of={DirectionStepStories.GlyphAtlas} />
 
 <Canvas>
   <Story of={DirectionStepStories.Transitions} />
@@ -20,6 +28,8 @@ A step of a route: the arrow, the instruction, the distance and the duration. Th
 <Controls />
 
 ## Ordered instruction parts
+
+Distance and duration are independently optional localized labels. Either can appear alone; when both are present they are joined with a separator. Empty labels are omitted, but a supplied zero-valued label such as `0 min` is retained. The component does not calculate or infer metrics.
 
 Pass a string as before, or an ordered array of `{ text, role?, lang? }`.
 Include whitespace and punctuation in `text`. The optional `secondary` role is a
@@ -77,16 +87,16 @@ import com.kozmos.contracts.KozmosInstructionPartRole
 
 @Composable
 fun Example() {
-    KozmosDirectionStep(
-        type = DirectionType.Right,
-        instruction = listOf(
-            KozmosInstructionPart("Turn right at "),
-            KozmosInstructionPart("Marlow Pharmacy", lang = "en"),
-            KozmosInstructionPart(" on your left", role = KozmosInstructionPartRole.Secondary)
-        ),
-        distance = "40 m"
-    )
+KozmosDirectionStep(
+type = DirectionType.Right,
+instruction = listOf(
+KozmosInstructionPart("Turn right at "),
+KozmosInstructionPart("Marlow Pharmacy", lang = "en"),
+KozmosInstructionPart(" on your left", role = KozmosInstructionPartRole.Secondary)
+),
+distance = "40 m"
+)
 }
-    `}
+`}
 
 />

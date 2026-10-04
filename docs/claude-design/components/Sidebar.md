@@ -5,7 +5,7 @@
 Vertical navigation shell. Compose persistent destinations with `NavigationItem` inside the `navigation` slot, and place workspace, tools, or account surfaces through the named `header`, `tools`, and `footer` slots.
 
 - **Import:** `import { Sidebar } from "@kozmos-ds/react";`
-- **Group:** Navigation
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/navigation-sidebar--docs>
 

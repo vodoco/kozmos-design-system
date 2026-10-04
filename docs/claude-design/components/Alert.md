@@ -5,7 +5,7 @@
 Displays a callout for user attention.
 
 - **Import:** `import { Alert, AlertDescription, AlertTitle } from "@kozmos-ds/react";`
-- **Group:** Feedback
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/feedback-alert--docs>
 

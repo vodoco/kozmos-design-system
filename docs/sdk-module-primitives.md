@@ -37,6 +37,30 @@ For all 121 supplied product gaps (latest source intake 2026-10-01), their crite
 
 ## Outcome and boundaries
 
+### Navigation completion (#193)
+
+The navigation completion adds the reusable presentation the product's navigation screens
+ask for. This section supersedes older missing-API statements; it does not certify
+publication, SDK wiring or external artwork adoption.
+
+| Area              | Implementation                                                                                                                            | Remaining boundary                                                                                          |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Guidance          | Theme-filled ManoeuvreCard by default; explicit background/solid/glass option, expanded itinerary and optional per-step metrics           | Host supplies ordered localized instructions and current step                                               |
+| Direction symbols | Shared 19-case vocabulary; distinct lift/stairs/escalator/ramp up/down and enter/exit vectors generated for web/native; walking supported | Original repository artwork needs owner/external design adoption; SDK renderer sprites are different assets |
+| Journey summary   | Hosted/standalone summary, optional estimates, stable waypoint rail, unknown progress, narrow/RTL layouts                                 | SDK owns estimates, route replacement and progress; 100% does not imply arrival                             |
+| Arrival           | ArrivalPanel with destination, optional actual distance/duration and controlled Done                                                      | Explicit confirmed-arrival event and actual metrics come from the host; no estimates relabeled as actuals   |
+| Setup             | Resolved RouteLocationField, readiness/pending RouteSetupPanel, map-point confirmation/list alternative                                   | Host supplies valid IDs/coordinates, search/cancellation, keyboard and sheet insets                         |
+| Recovery          | Existing Dialog/EmptyState composed for unavailable route, unavailable step-free route, unusable position, offline and transient failure  | No silent stairs fallback; host chooses safe retry and focus restoration                                    |
+
+Runnable web reference: Storybook **Examples / Navigation journey**. The pure example
+controller rejects stale request generations and outdated route events; its fixture buttons
+simulate SDK results, not a map engine. Native public-component references live in the iOS
+interaction host (`navigation-journey`) and Android `KozmosJourneyCompositionTest`.
+Their passing simulator/semantic checks do not certify physical VoiceOver/TalkBack or native
+modal focus isolation. See [navigation integration](navigation-integration.md) for the file map,
+configuration, migration and reproducible checks. GAP-111's complete POI route-details slot and
+P11 renderer styling are not implemented by these compositions.
+
 Kozmos already has a substantial component foundation. The missing work is now a combination
 of reusable presentation components, shared layout support, host-owned data/SDK integration,
 and complete-screen verification. Component coverage alone is not a finished SDK experience.

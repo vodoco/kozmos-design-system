@@ -32,7 +32,8 @@ const pois: POIPresentation[] = [
 ];
 
 const meta = {
-  title: "Product SDK/POIResultList",
+  id: "product-sdk-poiresultlist",
+  title: "SDK/Search and browse/POIResultList",
   component: POIResultList,
   parameters: { layout: "fullscreen" },
   decorators: [

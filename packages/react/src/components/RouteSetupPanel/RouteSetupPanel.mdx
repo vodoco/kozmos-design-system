@@ -1,0 +1,60 @@
+import { Meta, Canvas } from '@storybook/blocks';
+import { PlatformSnippets } from '../PlatformSnippets';
+import * as Stories from './RouteSetupPanel.stories';
+
+<Meta of={Stories} />
+
+# Route Setup Panel
+
+Hosted route setup content with a named heading, explicit cancellation and a Continue action gated by host-validated readiness.
+
+<Canvas of={Stories.Locations} />
+
+Place RouteLocationField instances in the content slot. Set `ready` only after all required points have resolved stable identities and passed host validation. Typed text alone is not a point. The component does not infer readiness by reading child fields, calculate a route or dismiss its sheet.
+
+`pending` disables Continue; close remains available so the host can cancel an in-flight request. The host should disable point editing during calculation or cancel/restart with a new request identity. Reject old calculation responses after close, a point change or a newer request. `onClose` is not End navigation or Done: it cancels setup and restores focus according to the host workflow.
+
+Hosted presentation adds no second surface, padding, safe-area or keyboard offset. Use `standalone` only when the component owns its surface. The containing sheet must scroll for long content and enlarged text. No automatic live announcement is emitted: retain one host-owned announcement path.
+
+<Canvas of={Stories.Pending} />
+
+## Map-selected starting point
+
+The same content frame can confirm a host-selected map point. Configure the title, description and action labels; put the selected building/floor context and a **choose-from-list alternative** in the content. The SDK owns reticle/camera synchronization, floor selection, coordinates and validity. Set `ready=false` for an invalid/unknown point; do not turn a pixel under the reticle into a valid location inside the design system.
+
+<Canvas of={Stories.MapConfirmation} />
+<Canvas of={Stories.InvalidMapPoint} />
+
+The map-confirmation stories are presentation fixtures, not a working map selector. Their callbacks are host integration points. Cancelling must discard an unconfirmed candidate and preserve the previously confirmed route point.
+
+## All platforms
+
+<PlatformSnippets
+  react={`
+import { RouteSetupPanel, RouteLocationField } from "@kozmos-ds/react";
+
+export function Example() {
+  return <RouteSetupPanel ready={false} onContinue={() => {}} onClose={() => {}}>
+    <RouteLocationField label="From" location={null} query="" options={[]} onQueryChange={() => {}} onSelect={() => {}} onClear={() => {}} />
+  </RouteSetupPanel>;
+}
+`}
+  swift={`
+KozmosRouteSetupPanel(ready: false, onContinue: {}, onClose: {}) {
+    KozmosRouteLocationField(label: "From", location: nil, query: "", options: [], onQueryChange: { _ in }, onSelect: { _ in }, onClear: {})
+}
+`}
+  kotlin={`
+KozmosRouteSetupPanel(ready = false, onContinue = {}, onClose = {}) {
+    KozmosRouteLocationField(label = "From", location = null, query = "", options = emptyList(), onQueryChange = {}, onSelect = {}, onClear = {})
+}
+`}
+/>
+
+## Recovery ownership
+
+Use the existing Dialog or EmptyState around a host-supplied explanation and explicit recovery actions. Preserve resolved inputs on calculation failure. Distinguish no route, unavailable step-free route, unusable position, offline and transient calculation errors; offer Retry only when the host can retry. Never silently replace an unavailable step-free route with stairs. Optional diagnostic text must come from a safe host error code, not raw query/location data. Dismissal restores focus to the action that opened recovery; editing the origin focuses the origin field instead. See [the controlled journey example](?path=/story/examples-navigation-journey--controlled-journey) for a runnable lifecycle, rather than treating these minimal snippets as request management.
+
+The example's event controls explicitly simulate the host: request IDs reject stale search/calculation responses, route IDs reject outdated arrival/progress events, and only confirmed arrival opens ArrivalPanel. Done returns to browsing with the destination selected and cannot finish twice. A 100% progress report is not arrival. The fixture uses a step-free route only; failure never substitutes another preference. Actual completed metrics are separate optional values, not derived from the remaining estimate.
+
+For native composition references, the iOS interaction host's `navigation-journey` fixture and Android `KozmosJourneyCompositionTest` use the public setup, preview, progress and arrival components. They are offline acceptance fixtures, not production request adapters or physical-device approval. Each SDK host must implement cancellation, request/route identity guards, its focus/announcement policy and confirmed arrival detection. Native recovery may be inline using EmptyState or hosted in the existing Dialog; these fixtures do not certify native modal focus isolation.

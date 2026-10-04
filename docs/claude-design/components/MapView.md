@@ -5,7 +5,7 @@
 A named surface that contains the map renderer supplied by the host, not a map SDK itself. Use `framed` for a map in page flow or `fill` inside AdaptiveMapShell for an edge-to-edge surface.
 
 - **Import:** `import { MapView } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-mapview--docs>
 

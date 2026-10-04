@@ -20,7 +20,8 @@ const iconByName = {
 };
 
 const meta = {
-  title: "Product SDK/BrowseCategoriesPanel",
+  id: "product-sdk-browsecategoriespanel",
+  title: "SDK/Search and browse/BrowseCategoriesPanel",
   component: BrowseCategoriesPanel,
   parameters: { layout: "fullscreen" },
   decorators: [
@@ -102,14 +103,62 @@ const quickAccessIcon = (file: string) =>
   `https://pointrmapstorage.blob.core.windows.net/taxonomy/${TAXONOMY_RELEASE}/quick-access/icons/png/2x/${file}.png`;
 
 const aviationQuickAccess = [
-  { id: "entrances-exits", label: "Entrances & Exits", colour: "green", icon: "entrance-exit-green", count: 6 },
-  { id: "check-in-baggage", label: "Check-in & Baggage", colour: "turquoise", icon: "service-space_office-turquoise", count: 14 },
-  { id: "security-immigration", label: "Security & Immigration", colour: "red", icon: "security-space-red", count: 5 },
-  { id: "gates", label: "Gates", colour: "yellow", icon: "transportation-space_boarding-gate-yellow", count: 88 },
-  { id: "customer-service", label: "Customer Service", colour: "blue", icon: "amenity-space_desk-blue", count: 9 },
-  { id: "parking-ground-transport", label: "Parking & Ground Transport", colour: "navy", icon: "parking-space-navy", count: 22 },
-  { id: "dining", label: "Dining", colour: "orange", icon: "food-beverage-space-orange", count: 37 },
-  { id: "shopping", label: "Shopping", colour: "pink", icon: "retail-space-pink", count: 41 },
+  {
+    id: "entrances-exits",
+    label: "Entrances & Exits",
+    colour: "green",
+    icon: "entrance-exit-green",
+    count: 6,
+  },
+  {
+    id: "check-in-baggage",
+    label: "Check-in & Baggage",
+    colour: "turquoise",
+    icon: "service-space_office-turquoise",
+    count: 14,
+  },
+  {
+    id: "security-immigration",
+    label: "Security & Immigration",
+    colour: "red",
+    icon: "security-space-red",
+    count: 5,
+  },
+  {
+    id: "gates",
+    label: "Gates",
+    colour: "yellow",
+    icon: "transportation-space_boarding-gate-yellow",
+    count: 88,
+  },
+  {
+    id: "customer-service",
+    label: "Customer Service",
+    colour: "blue",
+    icon: "amenity-space_desk-blue",
+    count: 9,
+  },
+  {
+    id: "parking-ground-transport",
+    label: "Parking & Ground Transport",
+    colour: "navy",
+    icon: "parking-space-navy",
+    count: 22,
+  },
+  {
+    id: "dining",
+    label: "Dining",
+    colour: "orange",
+    icon: "food-beverage-space-orange",
+    count: 37,
+  },
+  {
+    id: "shopping",
+    label: "Shopping",
+    colour: "pink",
+    icon: "retail-space-pink",
+    count: 41,
+  },
 ];
 
 export const AviationQuickAccess: Story = {

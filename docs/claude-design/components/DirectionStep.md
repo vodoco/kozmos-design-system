@@ -2,10 +2,10 @@
 
 # DirectionStep
 
-A step of a route: the arrow, the instruction, the distance and the duration. The `type` is one of the four turns — `straight`, `left`, `right`, `destination` — or a transition: a level change by lift, escalator or stairs, up or down (`lift-up`, `escalator-down`, `stairs-up`…), by something the route does not name (`level-up`, `level-down`), a same-level `transition` — a walkway, a corridor, another building — and `turn-back`. Each platform draws the closest glyph its own icon set has: the web and iOS show a level change as the direction of travel (iOS has a figure for stairs), Android has a lift, an escalator and stairs of its own; the instruction's words carry the rest. The arrow is decorative: assistive technology hears the instruction.
+A step of a route: the symbol, instruction and optional distance and duration. The shared `DirectionKind` vocabulary includes `straight`, `left`, `right`, `destination`, `walking`, `turn-back`, `enter`, `exit`, same-level `transition`, unnamed `level-up` / `level-down`, and explicit `lift`, `stairs`, `escalator` and `ramp` up/down pairs. Choose the actual route instruction, not a generic arrow that hides its transport mode.
 
 - **Import:** `import { DirectionIcon, DirectionStep } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-directionstep--docs>
 
@@ -57,15 +57,26 @@ Its props are `{ type: DirectionType; className?: string }`.
 From `@kozmos-ds/react`.
 
 ```ts
-/**
- * What a step of a route asks for. The four turns, and the transitions the
- * routing engines describe: a level change by lift, escalator or stairs — up
- * or down — or by something unnamed; a same-level transition, a walkway or a
- * corridor to another building; and turning back. Each platform draws the
- * closest glyph its own icon set has, and the instruction's words carry the
- * rest.
- */
-type DirectionType =
+/** Legacy export retained as an alias of the shared semantic manoeuvre contract. */
+type DirectionType = DirectionKind;
+```
+
+### Instruction
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Legacy strings remain valid. Parts concatenate verbatim, without added separators. */
+type Instruction = string | readonly InstructionPart[];
+```
+
+### DirectionKind
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Semantic manoeuvre, independent of UI reading direction. Unknown engine values must not be guessed as a turn. */
+type DirectionKind =
   | "straight"
   | "left"
   | "right"
@@ -79,16 +90,12 @@ type DirectionType =
   | "level-up"
   | "level-down"
   | "transition"
-  | "turn-back";
-```
-
-### Instruction
-
-From `@kozmos-ds/product-contracts`.
-
-```ts
-/** Legacy strings remain valid. Parts concatenate verbatim, without added separators. */
-type Instruction = string | readonly InstructionPart[];
+  | "turn-back"
+  | "walking"
+  | "enter"
+  | "exit"
+  | "ramp-up"
+  | "ramp-down";
 ```
 
 ### InstructionPart
@@ -117,4 +124,4 @@ type InstructionPartRole = "secondary";
 ## Also exported
 
 - `DIRECTION_TYPES`: `readonly DirectionType[]`.
-- `DIRECTION_ICONS`: `Record<DirectionType, KozmosIconComponent>`. The arrow for each direction, one table for every part that draws one.
+- `DIRECTION_ICONS`: `Record<DirectionType, KozmosIconComponent>`. One mapping for step, card, itinerary and rail, drawn only with approved marks: the Pointr icon set and the existing SDK walking mark.

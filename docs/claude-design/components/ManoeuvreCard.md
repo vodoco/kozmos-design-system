@@ -5,7 +5,7 @@
 The current manoeuvre, floating over the map during navigation: its arrow, the instruction, how far and how long, and a grab bar that opens the full itinerary in its place. The card owns the toggle and what assistive technology hears of it; the itinerary it opens into is the caller's, so the card never decides what a route is made of.
 
 - **Import:** `import { ManoeuvreCard } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-manoeuvrecard--docs>
 
@@ -21,18 +21,18 @@ const steps = [
   {
     id: "1",
     instruction: "Take Elevator down to First Floor",
-    type: "straight" as const,
+    type: "lift-down" as const,
     current: true,
   },
   {
     id: "2",
     instruction: "Take Corridor to Garage B",
-    type: "straight" as const,
+    type: "transition" as const,
   },
   {
     id: "3",
     instruction: "Take Walkway to Terminal B",
-    type: "straight" as const,
+    type: "transition" as const,
   },
   { id: "4", instruction: "Destination", type: "destination" as const },
 ];
@@ -43,10 +43,10 @@ export function ManoeuvreCardExample() {
     <ThemeProvider defaultTheme="light">
       <div className="max-w-[402px] bg-muted/40 p-3">
         <ManoeuvreCard
-          type="straight"
+          type="lift-down"
           instruction="Take Elevator down to First Floor"
           detail="58 m · Second Floor"
-          surface="glass"
+          appearance="theme"
           expanded={expanded}
           onToggle={() => setExpanded((open) => !open)}
         >
@@ -81,9 +81,15 @@ the product.
 
 It forwards its ref to `HTMLElement`. Its props are `ManoeuvreCardProps`, which extends `Omit<React.HTMLAttributes<HTMLElement>, "children">`.
 
-- `surface`: `SurfaceVariant`, optional, default `"solid"`.
+- `appearance`: `"theme" | "background"`, optional.
 
-  What the card sits on: solid by default, glass where the product asks for it.
+  Theme-filled by default. Background restores the neutral solid/glass
+  presentation, and is what a caller that sets `surface` gets unless it
+  also sets an appearance.
+
+- `surface`: `SurfaceVariant`, optional.
+
+  Material for background appearance: solid by default. Setting it asks for background.
 
 - `type`: `DirectionType`, **required**.
 - `instruction`: `Instruction`, **required**.
@@ -147,15 +153,26 @@ type SurfaceVariant = "solid" | "glass";
 From `@kozmos-ds/react`.
 
 ```ts
-/**
- * What a step of a route asks for. The four turns, and the transitions the
- * routing engines describe: a level change by lift, escalator or stairs — up
- * or down — or by something unnamed; a same-level transition, a walkway or a
- * corridor to another building; and turning back. Each platform draws the
- * closest glyph its own icon set has, and the instruction's words carry the
- * rest.
- */
-type DirectionType =
+/** Legacy export retained as an alias of the shared semantic manoeuvre contract. */
+type DirectionType = DirectionKind;
+```
+
+### Instruction
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Legacy strings remain valid. Parts concatenate verbatim, without added separators. */
+type Instruction = string | readonly InstructionPart[];
+```
+
+### DirectionKind
+
+From `@kozmos-ds/product-contracts`.
+
+```ts
+/** Semantic manoeuvre, independent of UI reading direction. Unknown engine values must not be guessed as a turn. */
+type DirectionKind =
   | "straight"
   | "left"
   | "right"
@@ -169,16 +186,12 @@ type DirectionType =
   | "level-up"
   | "level-down"
   | "transition"
-  | "turn-back";
-```
-
-### Instruction
-
-From `@kozmos-ds/product-contracts`.
-
-```ts
-/** Legacy strings remain valid. Parts concatenate verbatim, without added separators. */
-type Instruction = string | readonly InstructionPart[];
+  | "turn-back"
+  | "walking"
+  | "enter"
+  | "exit"
+  | "ramp-up"
+  | "ramp-down";
 ```
 
 ### InstructionPart

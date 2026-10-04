@@ -3,7 +3,8 @@ import { Label } from "./Label";
 import { Input } from "../Input";
 
 const meta = {
-  title: "Components/Label",
+  id: "components-label",
+  title: "Core/Inputs/Label",
   component: Label,
   parameters: {
     layout: "centered",

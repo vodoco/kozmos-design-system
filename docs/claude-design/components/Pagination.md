@@ -5,7 +5,7 @@
 Composes page navigation from numbered links, previous/next controls and ellipses. The host supplies destinations, the active page and pagination logic; the component does not fetch or slice data.
 
 - **Import:** `import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@kozmos-ds/react";`
-- **Group:** Navigation
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/navigation-pagination--docs>
 

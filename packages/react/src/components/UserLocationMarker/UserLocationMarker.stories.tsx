@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Button } from "../Button/Button";
 
 const meta = {
-  title: "Components/UserLocationMarker",
+  id: "components-userlocationmarker",
+  title: "SDK/Map controls/UserLocationMarker",
   component: UserLocationMarker,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof UserLocationMarker>;

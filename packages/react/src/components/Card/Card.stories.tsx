@@ -12,7 +12,8 @@ import { Input } from "../Input/Input";
 import { Label } from "../Label/Label";
 
 const meta = {
-  title: "Components/Card",
+  id: "components-card",
+  title: "Core/Layout/Card",
   component: Card,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof Card>;

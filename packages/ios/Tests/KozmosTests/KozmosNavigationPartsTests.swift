@@ -17,6 +17,30 @@ final class KozmosNavigationPartsTests: XCTestCase {
 
     // MARK: The rail's arithmetic
 
+    func testWaypointLayoutPreservesCoincidentSemanticsAndAvoidsVisualCollisions() {
+        let points = [
+            KozmosRouteProgressWaypoint(id: "end", position: 1, type: .destination, label: "Destination"),
+            KozmosRouteProgressWaypoint(id: "lift", position: 0.5, type: .liftUp, label: "Elevator to level 2"),
+            KozmosRouteProgressWaypoint(id: "same", position: 0.5, type: .right, label: "Turn right"),
+            KozmosRouteProgressWaypoint(id: "start", position: 0, type: .straight, label: "Entrance")
+        ]
+        XCTAssertEqual(KozmosRouteProgressRail.validWaypoints(points).map(\.id), ["start", "lift", "same", "end"])
+        XCTAssertEqual(KozmosRouteProgressRail.visibleWaypoints(points, width: 300, progress: nil).map(\.id), ["start", "lift", "end"])
+        XCTAssertEqual(KozmosRouteProgressRail.visibleWaypoints(points, width: 300, progress: 0.5).map(\.id), ["start", "end"])
+        XCTAssertTrue(KozmosRouteProgressRail.visibleWaypoints(points, width: 20, progress: nil).isEmpty)
+        XCTAssertEqual(KozmosRouteProgressRail.visibleWaypoints(points, width: 54, progress: nil).count, 1)
+        XCTAssertEqual(KozmosRouteProgressRail.validWaypoints(points + [
+            KozmosRouteProgressWaypoint(id: "lift", position: 0.1, type: .left, label: "Ambiguous"),
+            KozmosRouteProgressWaypoint(id: "bad", position: .nan, type: .left, label: "Invalid")
+        ]).map(\.id), ["start", "same", "end"])
+    }
+
+    func testNonFiniteProgressStaysAtTheStart() {
+        for progress in [Double.nan, Double.infinity, -Double.infinity] {
+            XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: progress, width: 300), 10)
+        }
+    }
+
     /// The disc starts just after the start dot, ends just before the end
     /// dot, and never leaves the rail whatever progress it is given.
     func testTheDiscTravelsFromAfterTheStartDotToBeforeTheEndDot() {
@@ -25,7 +49,7 @@ final class KozmosNavigationPartsTests: XCTestCase {
         XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: 0.5, width: 300), 133)
         XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: -1, width: 300), 10)
         XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: 2, width: 300), 256)
-        XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: 0.5, width: 20), 10, "a rail too short to travel keeps the disc at the start")
+        XCTAssertEqual(KozmosRouteProgressRail.discLeading(progress: 0.5, width: 20), 4, "a tiny rail scales its dots and disc inside its own bounds")
     }
 
     func testAnItineraryStepIsNotCurrentUnlessSaid() {
@@ -35,6 +59,79 @@ final class KozmosNavigationPartsTests: XCTestCase {
     }
 
     #if os(iOS)
+    @MainActor func testLongEndpointNamesAreNotVisuallyTruncatedAtTwoLines() async throws {
+        let view = ZStack(alignment: .topLeading) {
+            Color.white
+            KozmosItinerary(origin: "", steps: [], destination: Array(repeating: "International arrivals reception", count: 5).joined(separator: " "), originLabel: "", destinationLabel: "")
+                .frame(width: 180, alignment: .leading)
+                .environment(\.colorScheme, .light)
+        }
+        let pixels = try await RenderedPixels.render(view, size: CGSize(width: 180, height: 400))
+        XCTAssertGreaterThan(pixels.count(in: CGRect(x: 0, y: 100, width: 180, height: 250), where: RenderedPixels.isDarkText), 200,
+            "The visible name must continue beyond two lines, not only survive in VoiceOver")
+    }
+
+    @MainActor func testWaypointsAndCompletedTrackAreActuallyDrawn() async throws {
+        let size = CGSize(width: 300, height: 34)
+        let points = [KozmosRouteProgressWaypoint(id: "gallery", position: 0.5, type: .left, label: "Gallery")]
+        let marker = KozmosRouteProgressRail(progress: nil, type: .left, label: "Journey", waypoints: points)
+            .environment(\.colorScheme, .light).background(Color.white)
+        let pixels = try await RenderedPixels.render(marker, size: size)
+        XCTAssertGreaterThan(pixels.count(in: CGRect(x: 138, y: 0, width: 24, height: 34), where: RenderedPixels.isDarkText), 20)
+        for known in [true, false] {
+            let view = KozmosRouteProgressRail(progress: known ? 0.5 : nil, type: .left, label: "Journey", showCompletedTrack: true)
+                .environment(\.colorScheme, .light).background(Color.white)
+            let drawn = try await RenderedPixels.render(view, size: size)
+            let completed = drawn.count(in: CGRect(x: 50, y: 14, width: 50, height: 6), where: RenderedPixels.isTheme)
+            if known { XCTAssertGreaterThan(completed, 100) } else { XCTAssertEqual(completed, 0) }
+        }
+    }
+    @MainActor func testRailMirrorsTimelineAndOmitsUnknownPosition() async throws {
+        let size = CGSize(width: 300, height: 34)
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let view = KozmosRouteProgressRail(progress: 0.25, type: .left, label: "Journey")
+                .environment(\.layoutDirection, direction).environment(\.colorScheme, .light).background(Color.white)
+            let pixels = try await RenderedPixels.render(view, size: size)
+            let disc = try XCTUnwrap(pixels.boundingBox(in: CGRect(x: 12, y: 0, width: 276, height: 34), where: RenderedPixels.isTheme))
+            let leading = KozmosRouteProgressRail.discLeading(progress: 0.25, width: 300)
+            XCTAssertEqual(disc.minX, direction == .leftToRight ? leading : 300 - 34 - leading, accuracy: 1.5)
+            XCTAssertEqual(disc.width, 34, accuracy: 1.5)
+        }
+        let unknown = KozmosRouteProgressRail(progress: nil, type: .left, label: "Journey", valueText: "Position unavailable")
+            .environment(\.colorScheme, .light).background(Color.white)
+        let pixels = try await RenderedPixels.render(unknown, size: size)
+        XCTAssertEqual(pixels.count(in: CGRect(origin: .zero, size: size), where: RenderedPixels.isTheme), 0)
+    }
+    @MainActor func testDefaultManoeuvreUsesOpaqueThemeFill() async throws {
+        for scheme in [ColorScheme.light, .dark] {
+            for expanded in [false, true] {
+                let view = KozmosManoeuvreCard(type: .left, instruction: "Turn left", detail: "20 m", isExpanded: expanded, onToggle: {}) {
+                    KozmosItinerary(origin: "Start", steps: [KozmosItineraryStep(id: "a", instruction: [KozmosInstructionPart(text: "Continue", role: .secondary)], type: .left, duration: "1 min")], destination: "End")
+                }.padding(16).environment(\.colorScheme, scheme).background(Color.gray)
+                let pixels = try await RenderedPixels.render(view, size: CGSize(width: 360, height: 360))
+                let region = CGRect(x: 16, y: 0, width: 328, height: 360)
+                let fill = scheme == .light ? (16, 81, 232) : (88, 135, 243)
+                let bounds = try XCTUnwrap(pixels.boundingBox(in: region) {
+                    abs(Int($0) - fill.0) < 4 && abs(Int($1) - fill.1) < 4 && abs(Int($2) - fill.2) < 4
+                }, "missing exact theme fill in \(scheme)")
+                XCTAssertGreaterThan(bounds.width * bounds.height, 10000)
+                let onFill = scheme == .light ? 255 : 0
+                XCTAssertGreaterThan(pixels.count(in: bounds.insetBy(dx: 12, dy: 12)) {
+                    abs(Int($0) - onFill) < 4 && abs(Int($1) - onFill) < 4 && abs(Int($2) - onFill) < 4
+                }, 100, "missing contrasting content in \(scheme), expanded \(expanded)")
+            }
+        }
+    }
+    @MainActor func testItineraryDrawsDurationWithoutDistance() async throws {
+        let view = KozmosItinerary(origin: "", steps: [
+            KozmosItineraryStep(id: "a", instruction: "", type: .left, duration: "0 min")
+        ], destination: "", originLabel: "", destinationLabel: "")
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .environment(\.colorScheme, .light).background(Color.white)
+        let pixels = try await RenderedPixels.render(view, size: CGSize(width: 240, height: 120))
+        let text = pixels.count(in: CGRect(x: 55, y: 0, width: 180, height: 120), where: RenderedPixels.isInk)
+        XCTAssertGreaterThan(text, 40, "the duration-only itinerary metric is absent")
+    }
     // MARK: Drawn
 
     /// The secondary danger foreground, #B01736 in light: the End button's
@@ -68,7 +165,7 @@ final class KozmosNavigationPartsTests: XCTestCase {
         let size = CGSize(width: 360, height: 220)
         for expanded in [false, true] {
             let view = KozmosManoeuvreCard(type: .left, instruction: "Turn left", detail: "58 m · 1 min",
-                                           isExpanded: expanded, onToggle: {}) {
+                                           isExpanded: expanded, onToggle: {}, appearance: .background) {
                 Color.green.frame(height: 40)
             }
             .padding(16)

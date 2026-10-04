@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The row as React draws it, at React's width (328 inside a 360 host padded
 /// 16), measured from the pixels: a 10 ring at the rail's top, two 300 × 40
-/// fields 8 apart and 28 in, filled background/50, and a 32 swap button 12 in
+/// fields 8 apart and 28 in, filled background/50, and a 44 swap button 12 in
 /// from their end, centred between them. Until 2026-09-22 SwiftUI drew two
 /// outlined white fields with the swap in a row of its own.
 final class KozmosWayfindingInputRowTests: XCTestCase {
@@ -39,7 +39,7 @@ final class KozmosWayfindingInputRowTests: XCTestCase {
         for (name, got, want) in [
             ("origin field", origin, CGRect(x: 28, y: 0, width: 300, height: 40)),
             ("destination field", destination, CGRect(x: 28, y: 48, width: 300, height: 40)),
-            ("swap button", swap, CGRect(x: 284, y: 28, width: 32, height: 32)),
+            ("swap button", swap, CGRect(x: 272, y: 22, width: 44, height: 44)),
             ("start ring", ring, CGRect(x: 3, y: 12, width: 10, height: 10)),
         ] {
             XCTAssertEqual(got.minX, want.minX, accuracy: 1.5, "\(name) is \(got), React's is \(want)")

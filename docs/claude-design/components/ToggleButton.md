@@ -5,7 +5,7 @@
 A button that maintains a pressed/unpressed choice, with default or outline styling. Use `pressed` and `onPressedChange` for controlled state, or `defaultPressed` for an initial uncontrolled value.
 
 - **Import:** `import { ToggleButton } from "@kozmos-ds/react";`
-- **Group:** Action
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/action-togglebutton--docs>
 

@@ -1,35 +1,36 @@
 import SwiftUI
 
-/// What a step of a route asks for. The four turns, and the transitions the
-/// routing engines describe: a level change by lift, escalator or stairs —
-/// up or down — or by something unnamed; a same-level transition, a
-/// walkway or a corridor to another building; and turning back. Each
-/// platform draws the closest glyph its own icon set has, and the
-/// instruction's words carry the rest.
-public enum DirectionType: Sendable, CaseIterable {
-    case straight, left, right, destination
-    case liftUp, liftDown
-    case escalatorUp, escalatorDown
-    case stairsUp, stairsDown
-    /// A level change by a transition the route does not name.
-    case levelUp, levelDown
-    /// A transition on the same level: a walkway, a corridor, another building.
-    case transition
-    case turnBack
+/// Legacy spelling retained as a source-compatible alias of the shared semantic vocabulary.
+public typealias DirectionType = KozmosDirectionKind
 
-    /// SF Symbols has no lift and no escalator: those, and an unnamed level
-    /// change, show the direction of travel; stairs have their own figure.
-    var iconName: String {
+/// A direction's mark: an SF Symbol, or a Pointr outline SF Symbols has no match for.
+enum KozmosDirectionMark: Equatable {
+    case symbol(String)
+    case pointr(String)
+}
+
+extension KozmosDirectionKind {
+    /// Only approved marks (D5, 2026-10-04): the SF Symbols main drew, with a
+    /// level change by any means showing its direction of travel and the words
+    /// naming the lift, escalator or stairs; the walking figure; and Pointr's
+    /// LogIn01, LogOut01, ArrowUpRight and ArrowDownRight, as React draws them.
+    /// The original transport artwork awaits design approval: `KozmosIcon`
+    /// draws it by name, and no direction does.
+    var mark: KozmosDirectionMark {
         switch self {
-        case .straight: return "arrow.up"
-        case .left: return "arrow.turn.up.left"
-        case .right: return "arrow.turn.up.right"
-        case .destination: return "mappin.and.ellipse"
-        case .liftUp, .escalatorUp, .levelUp: return "arrow.up.to.line"
-        case .liftDown, .escalatorDown, .levelDown: return "arrow.down.to.line"
-        case .stairsUp, .stairsDown: return "figure.stairs"
-        case .transition: return "arrow.forward.to.line"
-        case .turnBack: return "arrow.uturn.backward"
+        case .straight: return .symbol("arrow.up")
+        case .left: return .symbol("arrow.turn.up.left")
+        case .right: return .symbol("arrow.turn.up.right")
+        case .destination: return .symbol("mappin.and.ellipse")
+        case .liftUp, .escalatorUp, .stairsUp, .levelUp: return .symbol("arrow.up.to.line")
+        case .liftDown, .escalatorDown, .stairsDown, .levelDown: return .symbol("arrow.down.to.line")
+        case .transition: return .symbol("arrow.forward.to.line")
+        case .turnBack: return .symbol("arrow.uturn.backward")
+        case .walking: return .symbol("figure.walk")
+        case .enter: return .pointr("log-in-01")
+        case .exit: return .pointr("log-out-01")
+        case .rampUp: return .pointr("arrow-up-right")
+        case .rampDown: return .pointr("arrow-down-right")
         }
     }
 }
@@ -66,7 +67,7 @@ public struct KozmosDirectionStep: View {
                 .fill(KozmosColors.primitivesColorsTheme500.opacity(0.1))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: KozmosDimensions.primitivesLayoutSizing500)
                 .overlay(
-                    Image(systemName: type.iconName)
+                    KozmosDirectionGlyph(type: type, size: 24)
                         .foregroundColor(KozmosColors.primitivesColorsTheme500)
                 )
                 .accessibilityHidden(true)
@@ -76,8 +77,9 @@ public struct KozmosDirectionStep: View {
                     .font(KozmosTypography.body)
                     .fontWeight(.medium)
                 
-                if let dist = distance {
-                    Text(dist + (duration != nil ? " • \(duration!)" : ""))
+                let metrics = [distance, duration].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " • ")
+                if !metrics.isEmpty {
+                    Text(metrics)
                         .font(KozmosTypography.caption)
                         .foregroundColor(KozmosColors.primitivesColorsForeground500)
                 }

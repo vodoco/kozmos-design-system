@@ -2566,7 +2566,7 @@ test.describe("design-system gaps, measured", () => {
   }) => {
     test.skip(
       browserName !== "chromium",
-      "the cancel button is a Blink and WebKit pseudo-element; WebKit's field is unstyled anyway (GAP-20)",
+      "the shared stylesheet's clear-button rule is inspected once in Chromium",
     );
     await page.goto("/components");
     await hydrated(page);
@@ -3083,17 +3083,9 @@ test.describe("venue explorer example", () => {
     await expect(mapPins(page)).toHaveCount(1);
   });
 
-  test("the search field is drawn as Kozmos draws it", async ({
-    page,
-    browserName,
-  }) => {
-    // GAP-20: WebKit does not apply Kozmos's @scope-d utilities to <input>, and
-    // SearchBar's field is one. Expected to fail there until Kozmos moves it to
-    // component-owned CSS, as it did Input's; a pass then fails this test.
-    test.fail(
-      browserName === "webkit",
-      "GAP-20: SearchBar's input is unstyled in WebKit",
-    );
+  test("the search field is drawn as Kozmos draws it", async ({ page }) => {
+    // GAP-20: SearchBar now owns its native input recipe. Require the same
+    // styling in every engine, including WebKit's scoped-utility regression.
     await page.goto("/examples/venue-explorer");
     await hydrated(page);
     const field = explorer(page).getByRole("searchbox", {
@@ -4795,6 +4787,37 @@ test.describe("components", () => {
     ).toHaveCount(0);
   });
 });
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`arrival reference code and neighbours reflow with increased text spacing in ${colorScheme}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto("/components/arrival-panel");
+    await hydrated(page);
+    const code = page.locator(".site-page-header code");
+    await expect(code).toHaveText('presentation="standalone"');
+    // API expressions and adjacent long component identifiers must reflow
+    // with user text spacing; both proportional and monospace fonts vary.
+    await page.addStyleTag({
+      content:
+        ".site-inline-code, .site-prev-next { letter-spacing: 0.12em !important; }",
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      ),
+    ).toBeLessThanOrEqual(0);
+    await expect(code).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "← AdaptiveMapShell" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "BrowseCategoriesPanel →" }),
+    ).toBeVisible();
+  });
+}
 
 // Every component page, in both themes, in one browser: the sampled pages
 // above run in all three. Each page must answer, name itself, say where the

@@ -28,17 +28,17 @@ an implementation backlog item.
 
 | Measure                                   | Result |
 | ----------------------------------------- | ------ |
-| Components scanned                        | 116    |
-| Declaring at least one React variant axis | 52     |
-| Variations that are compositional only    | 64     |
-| Components with variant gaps — iOS        | 14/52  |
-| Components with variant gaps — Android    | 14/52  |
-| Components with variant gaps — Figma      | 18/52  |
-| Components with variant gaps — Vue        | 7/52   |
-| Components absent entirely — iOS          | 9/116  |
-| Components absent entirely — Android      | 8/116  |
-| Components absent entirely — Figma        | 20/116 |
-| Components absent entirely — Vue          | 19/116 |
+| Components scanned                        | 119    |
+| Declaring at least one React variant axis | 57     |
+| Variations that are compositional only    | 62     |
+| Components with variant gaps — iOS        | 15/57  |
+| Components with variant gaps — Android    | 15/57  |
+| Components with variant gaps — Figma      | 24/57  |
+| Components with variant gaps — Vue        | 12/57  |
+| Components absent entirely — iOS          | 9/119  |
+| Components absent entirely — Android      | 8/119  |
+| Components absent entirely — Figma        | 23/119 |
+| Components absent entirely — Vue          | 22/119 |
 
 <!-- /generated:headline -->
 
@@ -74,10 +74,17 @@ AdaptiveMapShell
 Alert
   - ios missing axes -> live (off, polite, assertive)
   - android missing axes -> live (off, polite, assertive)
+ArrivalPanel
+  - figma: component/set absent
+  - vue: component absent
 BottomNavigation
   - ios missing axes -> density (default, compact)
   - android missing axes -> density (default, compact)
   - figma missing axes -> density (default, compact)
+Combobox
+  - ios missing axes -> popupLayout (overlay, inline)
+  - android missing axes -> popupLayout (overlay, inline)
+  - figma missing axes -> popupLayout (overlay, inline)
 Container
   - ios missing axes -> inset (window, panel)
   - android missing axes -> inset (window, panel)
@@ -101,6 +108,9 @@ Link
 List
   - ios missing axes -> density (default, compact)
   - android missing axes -> density (default, compact)
+ManoeuvreCard
+  - figma: component/set absent
+  - vue: component absent
 MapAttribution
   - figma: component/set absent
   - vue: component absent
@@ -122,6 +132,15 @@ Notice
   - vue: component absent
 POIResultCard
   - figma missing axes -> presentationStyle (legacy, sdk)
+RouteLocationField
+  - figma: component/set absent
+  - vue: component absent
+RouteProgressRail
+  - figma: component/set absent
+  - vue: component absent
+RouteSetupPanel
+  - figma: component/set absent
+  - vue: component absent
 Surface
   - ios: component/set absent
   - figma: component/set absent
@@ -202,21 +221,21 @@ The design-system contract here is the **spacing token**, not the container.
 
 <!-- generated:absent -->
 
-### iOS — 9 of 116
+### iOS — 9 of 119
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, Surface, UserMessage.
 
-### Android — 8 of 116
+### Android — 8 of 119
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, UserMessage.
 
-### Figma — 20 of 116
+### Figma — 23 of 119
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, FieldWrapper, Icon, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteProgressRail, Surface, ThemeProvider, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, FieldWrapper, Icon, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
 
-### Vue — 19 of 116
+### Vue — 22 of 119
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, CategoryField, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteProgressRail, Surface, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, AISearchButton, ActionCard, ArrivalPanel, CategoryField, Itinerary, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, MetaStrip, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, UserMessage.
 
 <!-- /generated:absent -->
 

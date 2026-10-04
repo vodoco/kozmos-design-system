@@ -33,6 +33,36 @@ const poi: POIPresentation = {
 };
 
 describe("POIDetailPanel", () => {
+  it("reserves the decorative pointer for Go and keeps other labelled actions text-only", () => {
+    render(
+      <POIDetailPanel
+        poi={{ ...poi, actions: [...poi.actions, "favourite", "bookmark"] }}
+        actionLabels={labels}
+        onAction={vi.fn()}
+        onClose={vi.fn()}
+        onSupplementaryAction={vi.fn()}
+        details={{
+          supplementaryActions: [
+            { action: "book", label: "Book" },
+            { action: "call", label: "Call" },
+          ],
+        }}
+      />,
+    );
+    const go = screen.getByRole("button", { name: "Go" });
+    expect(go.querySelector("svg")).toHaveAttribute("fill", "none");
+    expect(go.querySelector("path")?.getAttribute("d")).toMatch(
+      /^M3\.41345 10\.7445/,
+    );
+    for (const name of ["Share", "Order", "Book", "Call"])
+      expect(
+        screen.getByRole("button", { name }).querySelector("svg"),
+      ).toBeNull();
+    for (const name of ["Favourite", "Bookmark", "Close details"])
+      expect(
+        screen.getByRole("button", { name }).querySelector("svg"),
+      ).not.toBeNull();
+  });
   it("reveals focused buttons by scrolling only their action strip", () => {
     render(
       <POIDetailPanel poi={poi} actionLabels={labels} onAction={vi.fn()} />,

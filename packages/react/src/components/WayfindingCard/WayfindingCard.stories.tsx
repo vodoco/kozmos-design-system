@@ -4,7 +4,8 @@ import { MapOverlay } from "../MapOverlay";
 import { useState } from "react";
 
 const meta = {
-  title: "Components/WayfindingCard",
+  id: "components-wayfindingcard",
+  title: "SDK/Navigation/WayfindingCard",
   component: WayfindingCard,
   parameters: {
     layout: "centered",

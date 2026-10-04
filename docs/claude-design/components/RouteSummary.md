@@ -2,10 +2,10 @@
 
 # RouteSummary
 
-The `RouteSummary` serves as the primary bottom-anchored modal sheet during active turn-by-turn Wayfinding sessions. It safely structures ETAs, unit distances, and core routing logic into a distinct hardware-independent layer.
+`RouteSummary` presents route estimates and actions. It is not a modal sheet or routing engine: the host owns sheet placement, safe areas, focus, route state and routing logic.
 
 - **Import:** `import { RouteSummary } from "@kozmos-ds/react";`
-- **Group:** Map
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-routesummary--docs>
 
@@ -38,8 +38,8 @@ export function RouteSummaryExample() {
 
 It forwards its ref to `HTMLDivElement`. Its props are `RouteSummaryProps`, which is `RouteSummaryEstimateProps | RouteSummaryNavigationProps`.
 
+- `distanceText`: `string`, optional.
 - `destination`: `undefined`, optional.
-- `distanceText`: `string`, **required**.
 - `onEndRoute`: `() => void`, **required**.
 - `surface`: `SurfaceVariant`, optional, default `"solid"`.
 
@@ -71,6 +71,7 @@ type SurfaceVariant = "solid" | "glass";
   ```ts
   /** The summary as it was: the estimate over the distance, End as an icon. */
   interface RouteSummaryEstimateProps extends RouteSummaryBaseProps {
+    distanceText: string;
     destination?: undefined;
     etaText: string;
     onStartNavigation?: () => void;
@@ -91,7 +92,16 @@ type SurfaceVariant = "solid" | "glass";
    */
   interface RouteSummaryNavigationProps extends RouteSummaryBaseProps {
     destination: string;
-    durationText: string;
+    /** Localized remaining estimate; omitted when the host cannot provide one. */
+    durationText?: string;
+    /** Decorative destination image; failures retain a same-size map-pin fallback. */
+    destinationImage?: string;
+    /**
+     * Hosted content has no independent surface, radius, shadow or outer
+     * padding. Unset, it is hosted in the map shell's panel and standalone
+     * anywhere else (decision 43).
+     */
+    presentation?: "standalone" | "hosted";
     arrivalText?: string;
     endLabel?: string;
     progress?: React.ReactNode;

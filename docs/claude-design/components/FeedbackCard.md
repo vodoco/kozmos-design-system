@@ -5,7 +5,7 @@
 A rating and comment prompt for collecting feedback on the wayfinding experience.
 
 - **Import:** `import { FeedbackCard } from "@kozmos-ds/react";`
-- **Group:** Platform
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/platform-feedbackcard--docs>
 

@@ -2,6 +2,8 @@ package com.kozmos.components.routesummary
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,7 +29,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.surface.KozmosSurfaceDefaults
 import com.kozmos.components.surface.KozmosSurfaceStyle
@@ -37,6 +39,11 @@ import com.kozmos.components.button.KozmosButtonSize
 import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
+import com.kozmos.utils.KozmosRoutePanelSurface
+import com.kozmos.utils.KozmosDestinationImage
+
+enum class KozmosRoutePresentation { Standalone, Hosted }
 
 enum class KozmosRouteSummaryState {
     Active,
@@ -145,28 +152,47 @@ fun KozmosRouteSummary(
     endLabel: String = "End",
     surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
     progress: (@Composable () -> Unit)? = null
+) = KozmosRouteSummary(destination, durationText, distanceText, onEndRoute, null,
+    modifier, arrivalText, endLabel, surface, null, progress)
+
+/**
+ * The navigation layout with optional remaining estimates and decorative
+ * destination media. [presentation] null follows where it is: hosted in the
+ * map shell's panel, with no surface, radius, shadow or padding of its own
+ * (decision 43), and standalone elsewhere.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun KozmosRouteSummary(
+    destination: String,
+    durationText: String? = null,
+    distanceText: String? = null,
+    onEndRoute: () -> Unit,
+    presentation: KozmosRoutePresentation? = null,
+    modifier: Modifier = Modifier,
+    arrivalText: String? = null,
+    endLabel: String = "End",
+    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    destinationImage: String? = null,
+    progress: (@Composable () -> Unit)? = null
 ) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusPanel),
-        color = KozmosSurfaceDefaults.tint(surface),
-        tonalElevation = 6.dp,
-        shadowElevation = 12.dp,
-        border = KozmosSurfaceDefaults.border(surface)
-    ) {
+    val placed = presentation
+        ?: if (LocalKozmosPanelSurface.current == null) KozmosRoutePresentation.Standalone else KozmosRoutePresentation.Hosted
+    KozmosRoutePanelSurface(placed, surface, modifier) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(KozmosDimensions.primitivesLayoutSpacing200),
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                if (!destinationImage.isNullOrEmpty()) {
+                    KozmosDestinationImage(destinationImage)
+                    Spacer(Modifier.size(KozmosDimensions.primitivesLayoutSpacing150))
+                }
                 Text(
                     text = destination,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = KozmosThemeTokens.primitivesColorsForeground100,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f).semantics { heading() }
                 )
                 Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSpacing150))
@@ -179,22 +205,22 @@ fun KozmosRouteSummary(
                     Text(endLabel)
                 }
             }
-            Row(
-                verticalAlignment = Alignment.Bottom,
+            if (!durationText.isNullOrEmpty() || !distanceText.isNullOrEmpty() || !arrivalText.isNullOrEmpty()) FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150),
+                verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50),
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics(mergeDescendants = true) {}
             ) {
                 CompositionLocalProvider(LocalContentColor provides KozmosThemeTokens.primitivesColorsForeground100) {
-                    Text(
+                    if (!durationText.isNullOrEmpty()) Text(
                         text = durationText,
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                     )
-                    Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSpacing150))
-                    Text(text = distanceText, style = MaterialTheme.typography.bodyLarge)
-                    Spacer(modifier = Modifier.weight(1f))
-                    if (arrivalText != null) {
-                        Text(text = arrivalText, style = MaterialTheme.typography.bodyLarge)
+                    if (!distanceText.isNullOrEmpty()) Text(text = distanceText, style = MaterialTheme.typography.bodyLarge)
+                    if (!arrivalText.isNullOrEmpty()) {
+                        Text(text = arrivalText, style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                     }
                 }
             }

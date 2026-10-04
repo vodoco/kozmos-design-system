@@ -5,7 +5,7 @@
 A controlled floor selector with vertical-list, horizontal-list, compact-stepper and collapsible presentations. The host supplies top-first floors and the selected ID; Kozmos renders selection, availability cues and optional result counts without choosing a floor or changing the map itself.
 
 - **Import:** `import { FloorSelector } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-floorselector--docs>
 

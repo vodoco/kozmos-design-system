@@ -3,7 +3,8 @@ import { Input } from "../Input";
 import { FieldWrapper } from "./FieldWrapper";
 
 const meta = {
-  title: "Components/FieldWrapper",
+  id: "components-fieldwrapper",
+  title: "Core/Inputs/FieldWrapper",
   component: FieldWrapper,
   parameters: {
     layout: "centered",

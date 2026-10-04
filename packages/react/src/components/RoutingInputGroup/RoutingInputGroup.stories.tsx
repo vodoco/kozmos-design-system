@@ -3,7 +3,8 @@ import { useState } from "react";
 import { RoutingInputGroup, type RoutePoint } from "./RoutingInputGroup";
 
 const meta = {
-  title: "Map/RoutingInputGroup",
+  id: "map-routinginputgroup",
+  title: "SDK/Navigation/RoutingInputGroup",
   component: RoutingInputGroup,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof RoutingInputGroup>;
@@ -26,7 +27,7 @@ export const Default: Story = {
 
     return (
       <RoutingInputGroup
-        className="w-[420px]"
+        style={{ width: "min(420px, calc(100vw - 32px))" }}
         points={points}
         onPointChange={(id, value) =>
           setPoints((current) =>
@@ -64,7 +65,7 @@ export const WithStop: Story = {
 
     return (
       <RoutingInputGroup
-        className="w-[420px]"
+        style={{ width: "min(420px, calc(100vw - 32px))" }}
         points={points}
         onPointChange={(id, value) =>
           setPoints((current) =>

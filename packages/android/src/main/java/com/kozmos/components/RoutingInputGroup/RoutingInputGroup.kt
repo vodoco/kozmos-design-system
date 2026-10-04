@@ -44,8 +44,28 @@ import com.kozmos.components.surface.KozmosSurfaceStyle
 data class KozmosRoutePoint(
     val id: String,
     val value: String,
-    val placeholder: String? = null
+    val placeholder: String? = null,
+    val label: String? = null
 )
+
+/** Localized action names; field identities belong to each route point. */
+data class KozmosRoutingInputLabels(
+    val swap: String = "Swap route points",
+    val addPoint: String = "Add route point",
+    val removePoint: (KozmosRoutePoint) -> String = { "Remove ${it.label ?: it.placeholder ?: it.value.ifEmpty { "route point" }}" }
+)
+
+/** Preserves the original positional and trailing-removal-lambda calls. */
+@Composable
+fun KozmosRoutingInputGroup(
+    points: List<KozmosRoutePoint>,
+    onPointChange: (String, String) -> Unit,
+    modifier: Modifier = Modifier,
+    surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    onSwap: (() -> Unit)? = null,
+    onAddPoint: (() -> Unit)? = null,
+    onRemovePoint: ((String) -> Unit)? = null
+) = KozmosRoutingInputGroup(points, onPointChange, KozmosRoutingInputLabels(), modifier, surface, onSwap, onAddPoint, onRemovePoint)
 
 /**
  * [surface] is what the group is made of, as React's `surface` prop:
@@ -56,6 +76,7 @@ data class KozmosRoutePoint(
 fun KozmosRoutingInputGroup(
     points: List<KozmosRoutePoint>,
     onPointChange: (String, String) -> Unit,
+    labels: KozmosRoutingInputLabels,
     modifier: Modifier = Modifier,
     surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
     onSwap: (() -> Unit)? = null,
@@ -97,13 +118,14 @@ fun KozmosRoutingInputGroup(
                             value = point.value,
                             onValueChange = { onPointChange(point.id, it) },
                             placeholder = point.placeholder ?: defaultPlaceholder(index),
+                            label = point.label ?: if (index == 0) "Origin" else if (index == points.lastIndex) "Destination" else "Stop $index",
                             modifier = Modifier.weight(1f)
                         )
 
                         if (points.size > 2 && index > 0 && index < points.lastIndex && onRemovePoint != null) {
                             RoutingAction(
                                 icon = Icons.Default.Close,
-                                label = "Remove ${point.placeholder ?: point.value.ifEmpty { "route point" }}",
+                                label = labels.removePoint(point),
                                 filled = false
                             ) {
                                 trackEvent(KozmosAnalyticsEvent(component = "RoutingInputGroup", eventName = "point_removed", properties = mapOf("pointId" to point.id)))
@@ -123,7 +145,7 @@ fun KozmosRoutingInputGroup(
                 if (swaps) {
                     RoutingAction(
                         icon = Icons.Default.SwapVert,
-                        label = "Swap route points",
+                        label = labels.swap,
                         filled = true,
                         modifier = Modifier.padding(top = 24.dp)
                     ) {
@@ -135,7 +157,7 @@ fun KozmosRoutingInputGroup(
                 if (onAddPoint != null) {
                     RoutingAction(
                         icon = Icons.Default.Add,
-                        label = "Add route point",
+                        label = labels.addPoint,
                         filled = false,
                         modifier = Modifier.padding(top = if (points.size == 2) 20.dp + (if (swaps) 8.dp else 0.dp) else 0.dp)
                     ) {
@@ -190,7 +212,7 @@ private fun RouteTimeline(points: List<KozmosRoutePoint>) {
 }
 
 /**
- * One of the group's 40 icon actions, with the control radius. `filled` is the
+ * One of the group's 48dp icon actions, with the control radius. `filled` is the
  * swap's secondary fill with the page ink; the others are ghost in the muted
  * foreground, as React's are.
  */
@@ -206,7 +228,7 @@ private fun RoutingAction(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(40.dp)
+            .size(48.dp)
             .clip(shape)
             .background(if (filled) KozmosThemeTokens.primitivesColorsBackground200 else Color.Transparent, shape)
             .clickable(role = Role.Button, onClickLabel = label, onClick = onClick)

@@ -5,7 +5,7 @@
 Collects or displays a rating using stars or a thumbs-up/down choice. Use `value` and `onChange` for input, `readOnly` for display, and the label props to provide localized accessible names.
 
 - **Import:** `import { Rating } from "@kozmos-ds/react";`
-- **Group:** Input
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/input-rating--docs>
 

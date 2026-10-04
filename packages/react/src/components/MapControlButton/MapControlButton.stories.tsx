@@ -10,7 +10,8 @@ import { Accessibility } from "@kozmos-ds/icons";
 import { MapControlButton } from "./MapControlButton";
 
 const meta = {
-  title: "Product SDK/MapControlButton",
+  id: "product-sdk-mapcontrolbutton",
+  title: "SDK/Map controls/MapControlButton",
   component: MapControlButton,
   parameters: { layout: "centered" },
   args: { onClick: fn() },

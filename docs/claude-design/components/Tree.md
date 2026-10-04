@@ -5,7 +5,7 @@
 Tree presents hierarchical data with disclosure, selection, keyboard navigation, optional counts, metadata, and safe nested row actions. Use `TreeParentItemRow` and `TreeChildItemRow` when product screens need to compose custom trees from reusable parent and terminal row primitives.
 
 - **Import:** `import { Tree, TreeChildItemRow, TreeItemRow, TreeParentItemRow } from "@kozmos-ds/react";`
-- **Group:** Data Display
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-tree--docs>
 

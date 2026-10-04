@@ -41,8 +41,15 @@ fun KozmosUserLocationMarker(
     heading: Float = 0f,
     showHeading: Boolean = true,
     modifier: Modifier = Modifier,
-    label: String = "User location"
+    label: String = "User location",
+    compact: Boolean = false
 ) {
+    val dataBlue = KozmosThemeTokens.semanticsDataBlue
+    Box(modifier = modifier.size(if (compact) 18.dp else 64.dp).clearAndSetSemantics {
+        contentDescription = label
+        role = Role.Image
+    }, contentAlignment = Alignment.Center) {
+    if (!compact) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     
     val pulseScale by infiniteTransition.animateFloat(
@@ -65,20 +72,6 @@ fun KozmosUserLocationMarker(
         label = "pulseAlpha"
     )
 
-    // Read in composition: the cone's draw block runs outside it.
-    val dataBlue = KozmosThemeTokens.semanticsDataBlue
-
-    Box(
-        modifier = modifier
-            .size(64.dp)
-            // One node, an image, as React's `role="img"` is: the rings and the
-            // cone are drawing, and the name is the whole of what it says.
-            .clearAndSetSemantics {
-                contentDescription = label
-                role = Role.Image
-            },
-        contentAlignment = Alignment.Center
-    ) {
         // The halo: 64 at 14 %, still.
         Box(
             modifier = Modifier
@@ -100,7 +93,8 @@ fun KozmosUserLocationMarker(
         )
 
         // Heading Cone
-        if (showHeading) {
+        }
+        if (showHeading && !compact) {
             Box(
                 modifier = Modifier
                     .size(64.dp)
@@ -139,7 +133,7 @@ fun KozmosUserLocationMarker(
                 // The dot: 18, with a 3 white border.
                 .size(18.dp)
                 .background(KozmosThemeTokens.semanticsDataBlue, CircleShape)
-                .border(3.dp, Color.White, CircleShape)
+                .border(3.dp, if (compact) KozmosThemeTokens.primitivesColorsBackground0 else Color.White, CircleShape)
         )
     }
 }

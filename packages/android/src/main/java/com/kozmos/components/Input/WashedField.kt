@@ -38,7 +38,8 @@ internal fun KozmosWashedField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
-    multiline: Boolean = false
+    multiline: Boolean = false,
+    label: String? = null
 ) {
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
     val interaction = remember { MutableInteractionSource() }
@@ -58,7 +59,7 @@ internal fun KozmosWashedField(
             .then(if (multiline) Modifier.heightIn(min = 80.dp) else Modifier.height(40.dp))
             .background(KozmosThemeTokens.primitivesColorsForeground0.copy(alpha = wash), shape)
             .then(if (focused) Modifier.border(2.dp, ring, shape) else Modifier)
-            .semantics { contentDescription = placeholder },
+            .semantics { contentDescription = label ?: placeholder },
         decorationBox = { inner ->
             Box(
                 contentAlignment = if (multiline) Alignment.TopStart else Alignment.CenterStart,

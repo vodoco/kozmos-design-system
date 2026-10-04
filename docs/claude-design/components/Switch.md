@@ -5,7 +5,7 @@
 A control that allows the user to toggle between checked and not checked.
 
 - **Import:** `import { Switch } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-switch--docs>
 

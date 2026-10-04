@@ -5,7 +5,7 @@
 Displays a compact count for badges, filters, unread items, and status summaries.
 
 - **Import:** `import { Counter } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-counter--docs>
 

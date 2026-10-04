@@ -28,8 +28,47 @@
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
+import { createInterface } from "node:readline";
 import { parse } from "yaml";
 
+const argv = process.argv.slice(2);
+const valueOptions = new Set([
+  "--workflow",
+  "--job",
+  "--only",
+  "--from",
+  "--base",
+  "--shard",
+]);
+const switches = new Set(["--help", "--list", "--bail", "--verbose"]);
+for (let index = 0; index < argv.length; index++) {
+  const option = argv[index];
+  if (valueOptions.has(option)) {
+    if (!argv[index + 1] || argv[index + 1].startsWith("--")) {
+      console.error(`${option} requires a value`);
+      process.exit(2);
+    }
+    index++;
+  } else if (!switches.has(option)) {
+    console.error(`Unknown option: ${option}. Use --help for usage.`);
+    process.exit(2);
+  }
+}
+if (argv.includes("--help")) {
+  console.log(`Usage: pnpm ci:local [options]
+  --list                 List steps without running them
+  --workflow NAME.yml    Workflow file (default: ci.yml)
+  --job NAME             Job (default: web)
+  --only TEXT            Select step names containing TEXT
+  --from NUMBER          Start at step NUMBER
+  --shard TEXT           Select shard names containing TEXT
+  --base BRANCH          Pull request base (default: main)
+  --bail                 Stop on first failure
+  --verbose              Stream step output
+  --help                 Show this help without running steps`);
+  process.exit(0);
+}
 const root = execSync("git rev-parse --show-toplevel").toString().trim();
 
 // This repository keeps FIGMA_ACCESS_TOKEN in .env, and CI keeps it as a
@@ -42,7 +81,6 @@ if (fs.existsSync(dotenv)) {
       process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, "").trim();
   }
 }
-const argv = process.argv.slice(2);
 const flag = (name, fallback) => {
   const at = argv.indexOf(`--${name}`);
   return at === -1 ? fallback : argv[at + 1];
@@ -187,6 +225,10 @@ function releasePorts(ports) {
 // list, which is what makes the local run comparable to the remote one.
 const shards = job.strategy?.matrix?.shard ?? null;
 const wantedShard = flag("shard");
+if (wantedShard && !shards) {
+  console.error(`Job "${jobKey}" has no shard matrix`);
+  process.exit(2);
+}
 
 function expand(text, shard) {
   if (typeof text !== "string" || !shard) return text;
@@ -240,11 +282,21 @@ const steps = shards
 
 const only = flag("only");
 const from = Number(flag("from", 0));
+if (!Number.isInteger(from) || from < 0) {
+  console.error("--from requires a nonnegative integer");
+  process.exit(2);
+}
 const chosen = steps.filter(
   (s) =>
     s.number >= from &&
     (!only || s.name.toLowerCase().includes(String(only).toLowerCase())),
 );
+if (chosen.length === 0) {
+  console.error(
+    "No steps match the requested selection; nothing was verified.",
+  );
+  process.exit(2);
+}
 
 if (has("list")) {
   console.log(
@@ -307,20 +359,36 @@ let passed = 0;
 let failed = 0;
 let skipped = 0;
 const failures = [];
+// CI commands can legitimately print more than spawnSync's pipe buffer (for
+// example Code Connect's parsed JSON). Stream to retained files instead of
+// terminating a successful check when its output fills that buffer.
+const logDirectory = has("verbose")
+  ? null
+  : fs.mkdtempSync(path.join(os.tmpdir(), "kozmos-ci-local-logs-"));
+if (logDirectory) console.log(`Full step logs: ${logDirectory}\n`);
+let stepNumber = 0;
 
 for (const step of chosen) {
+  stepNumber += 1;
   if (step.skip) {
     console.log(`  SKIP  ${step.name}  — ${step.skip}`);
     skipped += 1;
     continue;
   }
   const started = Date.now();
-  const result = spawnSync("bash", ["-lc", step.run], {
-    cwd: step.cwd ? path.join(root, step.cwd) : root,
-    env: { ...process.env, ...resolveEnv(step.env), CI: "1" },
-    stdio: has("verbose") ? "inherit" : "pipe",
-    encoding: "utf8",
-  });
+  const logFile = logDirectory && path.join(logDirectory, `${stepNumber}.log`);
+  const logFd = logFile ? fs.openSync(logFile, "w") : null;
+  let result;
+  try {
+    result = spawnSync("bash", ["-lc", step.run], {
+      cwd: step.cwd ? path.join(root, step.cwd) : root,
+      env: { ...process.env, ...resolveEnv(step.env), CI: "1" },
+      stdio: logFd === null ? "inherit" : ["ignore", logFd, logFd],
+      encoding: "utf8",
+    });
+  } finally {
+    if (logFd !== null) fs.closeSync(logFd);
+  }
   const took = ((Date.now() - started) / 1000).toFixed(0);
   if (step.ports.length) releasePorts(step.ports);
   if (result.status === 0) {
@@ -329,22 +397,31 @@ for (const step of chosen) {
   } else {
     console.log(`  FAIL  ${step.name}  (${took}s)`);
     failed += 1;
-    failures.push({ step, result });
+    failures.push({ step, result, logFile });
     if (has("bail")) break;
   }
 }
 
-for (const { step, result } of failures) {
+for (const { step, result, logFile } of failures) {
   console.log(`\n---- ${step.name}\n`);
-  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`.trimEnd();
   // A served-storybook step ends with hundreds of request log lines, and the
   // assertion that actually failed is above them. Drop the noise first, then
   // keep enough of what is left to read.
-  const meaningful = output
-    .split("\n")
-    .filter(
-      (line) => !/^\[[A-Z]+\] 127\.0\.0\.1 - -|GET \/|^\[STATIC\]/.test(line),
-    );
+  const meaningful = [];
+  if (logFile) {
+    const lines = createInterface({
+      input: fs.createReadStream(logFile),
+      crlfDelay: Infinity,
+    });
+    for await (const line of lines) {
+      if (/^\[[A-Z]+\] 127\.0\.0\.1 - -|GET \/|^\[STATIC\]/.test(line))
+        continue;
+      meaningful.push(line);
+      if (meaningful.length > 60) meaningful.shift();
+    }
+    console.log(`Full output: ${logFile}`);
+  }
+  if (result.error) meaningful.push(result.error.message);
   console.log(
     meaningful.length
       ? meaningful.slice(-60).join("\n")

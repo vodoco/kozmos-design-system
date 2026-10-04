@@ -5,7 +5,7 @@
 What a surface over content is made of. Solid — the background colour with the subtle border — is the default on every platform. Glass is the glass surface role, composed from `Semantics.Effect.glass`: the theme's glass colour (white in light, black in dark) at the token's opacity, what shows through blurred and saturated by the token's numbers, an edge at the token's border opacity, light in both themes. A product chooses glass per surface; nothing is glass unless asked.
 
 - **Import:** `import { Surface } from "@kozmos-ds/react";`
-- **Group:** Foundations
+- **Group:** Core
 - **Platforms:** React and Compose; not linked to Figma yet.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/foundations-surface--docs>
 

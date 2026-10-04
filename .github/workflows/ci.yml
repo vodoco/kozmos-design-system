@@ -60,6 +60,9 @@ jobs:
       - name: Verify Storybook Development Server Security
         run: pnpm test:storybook-security
 
+      - name: Verify Storybook Catalogue And Stable Links
+        run: pnpm test:storybook-catalogue
+
       # A pull request that changes what a published package ships says how it
       # is released: a changeset naming the package, or an empty one when it
       # needs none (Olcay's decision 8). Only the four npm packages' shipped
@@ -441,6 +444,7 @@ jobs:
             test-results/map-sheet
             test-results/search-sheet
             test-results/navigation-examples
+            test-results/sdk-core-controls
           if-no-files-found: ignore
           retention-days: 7
 
@@ -638,6 +642,17 @@ jobs:
       - name: Test Android Library
         working-directory: packages/android
         run: ./gradlew verifyPaparazziDebug
+
+      # Retain the executed test inventory on success as well as failure.
+      # A green task alone does not prove which native tests actually ran.
+      - name: Upload Android Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-results
+          path: packages/android/build/test-results/testDebugUnitTest/TEST-*.xml
+          if-no-files-found: error
+          retention-days: 7
 
       # A golden that differs only on Linux cannot be read from the log; the
       # delta images Paparazzi writes show what moved, and by how much.

@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAddAlt
@@ -49,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.utils.KozmosNavigationGlyphs
 
 enum class KozmosIconSize(val dp: Dp) {
     Xs(12.dp),
@@ -105,8 +105,10 @@ internal fun resolveIconVector(rawName: String): ImageVector {
         "activity" -> Icons.AutoMirrored.Filled.ShowChart
         "alert-circle" -> Icons.Default.Info
         "alert-triangle" -> Icons.Default.Warning
+        "arrow-down-right" -> KozmosPointrGlyphs.ArrowDownRight
         "arrow-left" -> Icons.AutoMirrored.Filled.ArrowBack
         "arrow-right" -> Icons.AutoMirrored.Filled.ArrowForward
+        "arrow-up-right" -> KozmosPointrGlyphs.ArrowUpRight
         "bell-01" -> Icons.Default.Notifications
         "bluetooth-off" -> Icons.Default.BluetoothDisabled
         "building-01" -> Icons.Default.Business
@@ -124,11 +126,13 @@ internal fun resolveIconVector(rawName: String): ImageVector {
         "home-line" -> Icons.Default.Home
         "info-circle" -> Icons.Default.Info
         "lock-01" -> Icons.Default.Lock
+        "log-in-01" -> KozmosPointrGlyphs.LogIn01
+        "log-out-01" -> KozmosPointrGlyphs.LogOut01
         "map-01" -> Icons.Default.Map
         "marker-pin-01" -> Icons.Default.Place
         "menu-01" -> Icons.Default.Menu
         "minus" -> Icons.Default.Remove
-        "navigation-pointer-01" -> Icons.Default.Navigation
+        "navigation-pointer-01" -> KozmosNavigationGlyphs.NavigationPointer01
         "plus" -> Icons.Default.Add
         "qr-code-01" -> Icons.Default.QrCode2
         "route" -> Icons.Default.Route
@@ -141,6 +145,19 @@ internal fun resolveIconVector(rawName: String): ImageVector {
         "users-01" -> Icons.Default.PersonAddAlt
         "wifi" -> Icons.Default.Wifi
         "x-close" -> Icons.Default.Close
+        // The original navigation artwork, by the names @kozmos-ds/icons
+        // exports it under. Design has not approved it (D5, 2026-10-04): no
+        // direction draws it, and a product opts in by name.
+        "elevator-up" -> KozmosNavigationGlyphs.ElevatorUp
+        "elevator-down" -> KozmosNavigationGlyphs.ElevatorDown
+        "stairs-up" -> KozmosNavigationGlyphs.StairsUp
+        "stairs-down" -> KozmosNavigationGlyphs.StairsDown
+        "escalator-up" -> KozmosNavigationGlyphs.EscalatorUp
+        "escalator-down" -> KozmosNavigationGlyphs.EscalatorDown
+        "ramp-up" -> KozmosNavigationGlyphs.RampUp
+        "ramp-down" -> KozmosNavigationGlyphs.RampDown
+        "route-enter" -> KozmosNavigationGlyphs.RouteEnter
+        "route-exit" -> KozmosNavigationGlyphs.RouteExit
         else -> Icons.Default.Info
     }
 }

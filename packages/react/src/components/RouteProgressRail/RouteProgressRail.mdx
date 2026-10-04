@@ -7,9 +7,58 @@ import { PlatformSnippets } from "../PlatformSnippets";
 
 # RouteProgressRail
 
+## Distance-based route presentation
+
+Pass `activeLeg={{ start: 0, end: 0.4 }}` to show the route rather than the legacy step disc. All values are normalized **cumulative route distance**, supplied by the host from the same route revision. `appearance="theme"` is the default; `appearance="gradient"` paints theme to success across the coloured portion.
+
+- `positionMode="static"`: without live positioning, colour only the selected section between its endpoints. No blue dot and no invented percentage, even if a progress value is supplied.
+- `positionMode="live"` (default): colour from the journey's original start to a valid blue-dot position. The gradient grows with the dot and never resets when a transition is crossed. The future stays neutral. Zero shows a real dot with no distance fill; unavailable live position does **not** silently switch to static mode.
+
+The semantic-blue current-position dot is the shared compact `UserLocationMarker`; the line is the shared Core `ProgressTrack`. Fixed start/end centres, the track, waypoints and position use one axis. Transition glyphs sit above the line so the dot cannot cover them. In dense routes, the active leg's end gets priority; all valid descriptions remain available to assistive technology and the full itinerary must remain available visibly. Widths below 24 units omit transition glyphs.
+
+**The host advances the active leg, not the percentage.** Reaching an elevator does not confirm boarding or change floor. Reaching 100% does not confirm arrival. Update active leg, progress and waypoints atomically after confirming a transition or replacing a route; reject stale route IDs in the adapter. Null, nonfinite or out-of-leg progress hides the position and omits the numeric accessibility value. Invalid active intervals paint no active range. Use a localized `valueText` for the reason. A zero-length transition belongs at one waypoint position; do not invent distance for it.
+
+<Canvas of={RouteProgressRailStories.ActiveLeg} />
+<Canvas of={RouteProgressRailStories.WalkingWithinLeg} />
+<Canvas of={RouteProgressRailStories.AtTransition} />
+<Canvas of={RouteProgressRailStories.AfterTransition} />
+
+The map renderer remains host-owned. Feed it the same leg IDs, route revision and distance basis; the rail does not calculate routes, read positioning sensors or draw a map. Gradient success colour is a visual route treatment, not a success event. Brand token overrides still require contrast review. The compact dot has no pulse and moves only on supplied updates.
+
+### Directional motion
+
+`motion="directional"` adds small rounded dashes towards the next transition. In static mode they flow over the coloured selected section; in live mode they are neutral and run only ahead of the dot to `activeLeg.end`. Later sections never animate. This does not change progress, board a lift or confirm arrival. At the section end, unknown position or an invalid range, no flow is shown. Use `motion="none"` (default) while paused, unreliable, completed, or when the user turns animation off. Reduced motion keeps stationary dashes; web document visibility and native lifecycle stop background clocks. RTL reverses route flow, not physical direction glyphs. Hosts must expose a motion preference/pause control; the guidance example demonstrates this with a Core Button in its explicitly labelled fixture controls.
+
+<Canvas of={RouteProgressRailStories.StaticAfterTransition} />
+<Canvas of={RouteProgressRailStories.GuidancePaused} />
+<Canvas of={RouteProgressRailStories.LiveStart} />
+
+When multiple transitions share the active end position, set `activeWaypointId` to the host's next transition ID. This keeps, for example, the elevator visible instead of a coincident turn. It only prioritizes a valid waypoint at `activeLeg.end`; it cannot move a waypoint or invent distance. All coincident descriptions remain accessible.
+
+## Legacy step-disc presentation
+
 How far along the route the visitor is, as a rail: a dot where it starts, a disc carrying the current manoeuvre's arrow that travels the track, a dot where it ends. Progress is 0 to 1 and anything outside is clamped; the disc runs from just after the start dot to just before the end dot. Assistive technology hears the label the caller gives ("Step 2 of 4") and the progress as a percentage.
 
-Products measure progress by ground covered, so a lift or a level change — no distance — does not move the disc.
+The host chooses and consistently applies the progress basis. With distance-based progress, a zero-distance floor transition does not advance the disc. Do not mix time-based and distance-based progress or derive progress from formatted labels.
+
+Use `progress={null}` (Swift `nil`, Compose `null`) when position is unavailable. There is then no current-position disc and no numeric percentage. Supply a localized `valueText`, such as “Position unavailable”; do not use zero to stand for unknown. Swift formats its default numeric percentage with the host locale; the other platforms use their native accessibility progress semantics. `valueText` overrides the spoken value when supplied.
+
+The timeline follows reading direction, but physical turn glyphs do not mirror. Dots and the current disc scale down only when the containing width cannot accommodate their normal sizes, keeping geometry inside the rail. Hosts should still allocate a comfortably readable width.
+
+<Canvas of={RouteProgressRailStories.Unknown} />
+<Canvas of={RouteProgressRailStories.RightToLeft} />
+
+## Transition waypoints and completed track
+
+Pass `waypoints` with stable unique IDs, normalized positions on the **same progress basis**, semantic direction types and localized labels. Input order breaks ties for equal positions; the rail sorts by position without inventing distance for zero-length transitions. Invalid positions (non-finite or outside 0–1), empty IDs/labels and **all entries sharing a duplicate ID** are omitted. Validate these in the host adapter rather than relying on omission to repair a route.
+
+Markers are 24 pixels/points/dp. To prevent overlap, visual markers need a 28-unit centre gap from the preceding visible marker and a 33-unit gap from the current disc. Rails narrower than 54 units omit visual waypoints. This thinning does not remove valid descriptions: web exposes all labels in the rail's description (a progressbar's when live, an image's when static), Swift in its accessibility label and Compose in its description. The full itinerary remains the recommended visible alternative when transitions are dense. Markers are informational, not tiny interactive targets.
+
+`showCompletedTrack` opts into a static theme-coloured completed segment; it defaults to false for existing consumers. Unknown progress paints no completion. There is no animated stripe or inferred arrival. On reroute, replace progress and waypoints together from the new route snapshot; positions from the old route must not be reused with the new route.
+
+<Canvas of={RouteProgressRailStories.Waypoints} />
+
+Without `activeLeg`, non-finite progress (NaN or either infinity) is drawn at zero on every platform, a defensive rendering fallback, not evidence of a known starting position. With `activeLeg`, non-finite or out-of-section progress is unknown: no position is drawn. Non-finite waypoint positions are omitted. Progress of one never triggers arrival; only the host can confirm arrival.
 
 <Canvas>
   <Story of={RouteProgressRailStories.Midway} />
@@ -26,15 +75,20 @@ Products measure progress by ground covered, so a lift or a level change — no 
 import { RouteProgressRail } from "@kozmos-ds/react";
 
 export function Example() {
-  return <RouteProgressRail progress={0.5} type="left" label="Step 2 of 4" />;
+  return <RouteProgressRail progress={0.2} type="left" label="Journey" showCompletedTrack
+    waypoints={[{ id: "gallery", position: 0.5, type: "left", label: "Gallery entrance" }]} />;
 }
     `}
     swift={`
 import SwiftUI
 
-KozmosRouteProgressRail(progress: 0.5, type: .left, label: "Step 2 of 4")
+KozmosRouteProgressRail(progress: 0.2, type: .left, label: "Journey",
+waypoints: [KozmosRouteProgressWaypoint(id: "gallery", position: 0.5, type: .left, label: "Gallery entrance")],
+showCompletedTrack: true)
 `}
     kotlin={`
-KozmosRouteProgressRail(progress = 0.5f, type = DirectionType.Left, label = "Step 2 of 4")
-    `}
+KozmosRouteProgressRail(progress = 0.2f, type = DirectionType.Left, label = "Journey",
+waypoints = listOf(KozmosRouteProgressWaypoint("gallery", 0.5f, DirectionType.Left, "Gallery entrance")),
+showCompletedTrack = true)
+`}
 />

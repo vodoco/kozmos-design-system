@@ -5,7 +5,7 @@
 A file-selection surface with browsing, drag-and-drop, selected-file removal and validation feedback. Use its callbacks to receive files and perform uploads in the host; selecting a file does not upload it.
 
 - **Import:** `import { DropZone, FileUpload } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-fileupload--docs>
 

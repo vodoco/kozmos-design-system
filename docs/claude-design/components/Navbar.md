@@ -5,7 +5,7 @@
 Horizontal app navigation shell. Compose route items with `NavigationItem` inside the `navigation` slot, and pass product context through named slots such as `logo`, `context`, `primaryAction`, `actions`, `utilities`, and `account`.
 
 - **Import:** `import { Navbar } from "@kozmos-ds/react";`
-- **Group:** Navigation
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/navigation-navbar--docs>
 

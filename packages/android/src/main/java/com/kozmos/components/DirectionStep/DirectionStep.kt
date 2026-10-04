@@ -19,9 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.Elevator
-import androidx.compose.material.icons.filled.Escalator
-import androidx.compose.material.icons.filled.Stairs
+import androidx.compose.material.icons.filled.DirectionsWalk
+import com.kozmos.components.icon.KozmosPointrGlyphs
 import androidx.compose.material.icons.filled.UTurnLeft
 import androidx.compose.material.icons.filled.ArrowRightAlt
 import androidx.compose.material.icons.filled.LocationOn
@@ -38,25 +37,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
 
-/**
- * What a step of a route asks for. The four turns, and the transitions the
- * routing engines describe: a level change by lift, escalator or stairs — up
- * or down — or by something unnamed; a same-level transition, a walkway or a
- * corridor to another building; and turning back. Each platform draws the
- * closest glyph its own icon set has, and the instruction's words carry the
- * rest.
- */
-enum class DirectionType {
-    Straight, Left, Right, Destination,
-    LiftUp, LiftDown,
-    EscalatorUp, EscalatorDown,
-    StairsUp, StairsDown,
-    /** A level change by a transition the route does not name. */
-    LevelUp, LevelDown,
-    /** A transition on the same level: a walkway, a corridor, another building. */
-    Transition,
-    TurnBack
-}
+/** Legacy source import retained; the wire values live in the shared contract. */
+typealias DirectionType = com.kozmos.contracts.KozmosDirectionKind
 
 @Composable
 fun KozmosDirectionStep(
@@ -71,22 +53,27 @@ fun KozmosDirectionStep(
  * The arrow for a direction, one table for every part that draws one.
  * Turn icons must NOT auto-mirror: "turn left" stays a physical left turn
  * in RTL locales. Only reading-order affordances (back, forward, chevrons)
- * belong to Icons.AutoMirrored. Material has a lift, an escalator and
- * stairs of its own, with no direction: the instruction says up or down; an
- * unnamed level change shows the direction of travel.
+ * belong to Icons.AutoMirrored. Only approved marks (D5, 2026-10-04): a level
+ * change by any means shows the up or down arrow main drew, and the words
+ * name the lift, escalator or stairs; entry, exit and the ramps are Pointr's
+ * LogIn01, LogOut01, ArrowUpRight and ArrowDownRight, as React draws them.
+ * The original transport artwork awaits design approval: KozmosIcon draws it
+ * by name, and no direction does.
  */
 fun DirectionType.icon(): ImageVector = when (this) {
     DirectionType.Straight -> Icons.Default.ArrowUpward
     DirectionType.Left -> Icons.Default.TurnLeft
     DirectionType.Right -> Icons.Default.TurnRight
     DirectionType.Destination -> Icons.Default.LocationOn
-    DirectionType.LiftUp, DirectionType.LiftDown -> Icons.Default.Elevator
-    DirectionType.EscalatorUp, DirectionType.EscalatorDown -> Icons.Default.Escalator
-    DirectionType.StairsUp, DirectionType.StairsDown -> Icons.Default.Stairs
-    DirectionType.LevelUp -> Icons.Default.ArrowUpward
-    DirectionType.LevelDown -> Icons.Default.ArrowDownward
+    DirectionType.LiftUp, DirectionType.EscalatorUp, DirectionType.StairsUp, DirectionType.LevelUp -> Icons.Default.ArrowUpward
+    DirectionType.LiftDown, DirectionType.EscalatorDown, DirectionType.StairsDown, DirectionType.LevelDown -> Icons.Default.ArrowDownward
     DirectionType.Transition -> Icons.Default.ArrowRightAlt
     DirectionType.TurnBack -> Icons.Default.UTurnLeft
+    DirectionType.Walking -> Icons.Default.DirectionsWalk
+    DirectionType.Enter -> KozmosPointrGlyphs.LogIn01
+    DirectionType.Exit -> KozmosPointrGlyphs.LogOut01
+    DirectionType.RampUp -> KozmosPointrGlyphs.ArrowUpRight
+    DirectionType.RampDown -> KozmosPointrGlyphs.ArrowDownRight
 }
 
 @Composable
@@ -131,9 +118,10 @@ fun KozmosDirectionStep(
                 style = MaterialTheme.typography.titleMedium,
                 color = KozmosThemeTokens.primitivesColorsForeground100
             )
-            if (distance != null || duration != null) {
+            val metrics = listOfNotNull(distance, duration).filter { it.isNotEmpty() }.joinToString(" • ")
+            if (metrics.isNotEmpty()) {
                 Text(
-                    text = "${distance ?: ""} ${if (duration != null) "• $duration" else ""}",
+                    text = metrics,
                     style = MaterialTheme.typography.bodySmall,
                     color = KozmosThemeTokens.primitivesColorsForeground500
                 )

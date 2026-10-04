@@ -5,7 +5,7 @@
 A styled anchor for navigation, with default and subtle colour treatments. Supply `href` and meaningful link text; use Button for an action that does not navigate.
 
 - **Import:** `import { Link } from "@kozmos-ds/react";`
-- **Group:** Navigation
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/navigation-link--docs>
 

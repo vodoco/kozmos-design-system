@@ -4,7 +4,8 @@ import type { UserLocationState } from "@kozmos-ds/product-contracts";
 import { MapControlsGroup } from "./MapControlsGroup";
 
 const meta = {
-  title: "Map/MapControlsGroup",
+  id: "map-mapcontrolsgroup",
+  title: "SDK/Map controls/MapControlsGroup",
   component: MapControlsGroup,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof MapControlsGroup>;

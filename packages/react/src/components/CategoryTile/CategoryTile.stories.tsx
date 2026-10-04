@@ -4,7 +4,8 @@ import { Accessibility } from "@kozmos-ds/icons";
 import { CategoryTile } from "./CategoryTile";
 
 const meta = {
-  title: "Product SDK/CategoryTile",
+  id: "product-sdk-categorytile",
+  title: "SDK/Search and browse/CategoryTile",
   component: CategoryTile,
   parameters: { layout: "centered" },
   args: {

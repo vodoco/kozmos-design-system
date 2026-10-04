@@ -20,7 +20,8 @@ const options = [
 ];
 
 const meta = {
-  title: "Components/Combobox",
+  id: "components-combobox",
+  title: "Core/Inputs/Combobox",
   component: Combobox,
   parameters: {
     layout: "centered",

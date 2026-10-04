@@ -224,10 +224,50 @@ export function attachedStories(mdx) {
  * linked, and says so rather than linking somewhere wrong.
  */
 export function readStories(source, file) {
-  const title = source.match(/\btitle:\s*(["'])([^"'\n]+\/[^"'\n]+)\1/)?.[2];
+  const ast = ts.createSourceFile(
+    file,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const declarations = new Map();
+  let meta;
+  for (const statement of ast.statements) {
+    if (ts.isVariableStatement(statement))
+      for (const declaration of statement.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name))
+          declarations.set(declaration.name.text, declaration.initializer);
+      }
+    if (ts.isExportAssignment(statement) && !statement.isExportEquals)
+      meta = statement.expression;
+  }
+  if (meta && ts.isIdentifier(meta)) meta = declarations.get(meta.text);
+  while (
+    meta &&
+    (ts.isSatisfiesExpression(meta) ||
+      ts.isAsExpression(meta) ||
+      ts.isParenthesizedExpression(meta))
+  )
+    meta = meta.expression;
+  const textProperty = (name) => {
+    const property =
+      meta &&
+      ts.isObjectLiteralExpression(meta) &&
+      meta.properties.find(
+        (p) =>
+          ts.isPropertyAssignment(p) &&
+          p.name.getText(ast).replace(/["']/g, "") === name,
+      );
+    return property && ts.isStringLiteral(property.initializer)
+      ? property.initializer.text
+      : undefined;
+  };
+  const title = textProperty("title");
+  const id = textProperty("id");
   if (!title) throw new Error(`${file}: no "Group/Name" title in its meta`);
   const first = source.match(/^export const (\w+)/m)?.[1] ?? null;
-  return { title, first };
+  return { title, first, ...(id ? { id } : {}) };
 }
 
 /**
@@ -256,13 +296,13 @@ export function storybookPathOf(name) {
     }
     return null;
   }
-  const { title, first } = readStories(
+  const { title, first, id } = readStories(
     fs.readFileSync(storiesPath, "utf8"),
     path.relative(REPO_ROOT, storiesPath),
   );
-  if (attached) return `/docs/${sanitize(title)}--docs`;
+  if (attached) return `/docs/${id ?? sanitize(title)}--docs`;
   if (!first) return null;
-  return `/story/${sanitize(title)}--${sanitize(storyNameFromExport(first))}`;
+  return `/story/${id ?? sanitize(title)}--${sanitize(storyNameFromExport(first))}`;
 }
 
 // ---- The whole index ------------------------------------------------------

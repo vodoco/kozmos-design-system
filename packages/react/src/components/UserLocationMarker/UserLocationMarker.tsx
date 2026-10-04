@@ -4,6 +4,8 @@ import { cn } from "../../utils";
 export interface UserLocationMarkerProps extends React.HTMLAttributes<HTMLDivElement> {
   heading?: number; // 0 to 360 degrees
   showHeading?: boolean;
+  /** Dot only, without the map halo, heading cone or pulse (for compact compositions). */
+  compact?: boolean;
   /**
    * What the marker is called, for a visitor who cannot see it. Hard-coded
    * English until row 67, so a German or Japanese device announced "User
@@ -38,6 +40,7 @@ const UserLocationMarker = React.forwardRef<
       className,
       heading = 0,
       showHeading = true,
+      compact = false,
       label = "User location",
       offFloor = false,
       offFloorLabel = "User location, on another level",
@@ -53,13 +56,14 @@ const UserLocationMarker = React.forwardRef<
         aria-label={offFloor ? offFloorLabel : label}
         data-off-floor={offFloor || undefined}
         className={cn(
-          "relative flex items-center justify-center min-h-16 min-w-16",
+          "relative flex items-center justify-center",
+          compact ? "h-[18px] w-[18px]" : "min-h-16 min-w-16",
           className,
         )}
         {...props}
       >
         {/* The halo: 64 at 14 %, still. The ring: 48, pulsing. */}
-        {!offFloor && (
+        {!offFloor && !compact && (
           <>
             <div className="absolute h-16 w-16 rounded-pill bg-data-blue opacity-[0.14] outline-none pointer-events-none" />
             <div className="absolute h-12 w-12 rounded-pill bg-data-blue opacity-30 animate-ping motion-reduce:animate-none outline-none pointer-events-none" />
@@ -67,7 +71,7 @@ const UserLocationMarker = React.forwardRef<
         )}
 
         {/* Heading Cone (if active) */}
-        {showHeading && !offFloor && (
+        {showHeading && !offFloor && !compact && (
           <div
             className="absolute h-24 w-24 pointer-events-none"
             style={{

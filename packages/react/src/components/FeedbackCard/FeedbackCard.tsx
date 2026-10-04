@@ -7,6 +7,7 @@ import { Rating, type RatingVariant } from "../Rating";
 import { Textarea } from "../Textarea";
 import type { CharacterCount } from "../FieldWrapper/characterCount";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 export interface FeedbackCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** What the card sits on: solid by default, glass where the product asks for it. */
@@ -124,13 +125,15 @@ const FeedbackCard = React.forwardRef<HTMLDivElement, FeedbackCardProps>(
                 onChange={(e) => setComment(e.target.value)}
                 className="min-h-[80px] resize-none bg-black/5 dark:bg-white/10 border-transparent focus-visible:bg-black/10 dark:focus-visible:bg-white/20 transition-all duration-300"
               />
-              <Button
-                className="w-full font-medium"
-                disabled={rating === 0 || isSubmitting}
-                onClick={handleSubmit}
-              >
-                {isSubmitting ? submittingLabel : submitLabel}
-              </Button>
+              <WithoutGenericClick>
+                <Button
+                  className="w-full font-medium"
+                  disabled={rating === 0 || isSubmitting}
+                  onClick={handleSubmit}
+                >
+                  {isSubmitting ? submittingLabel : submitLabel}
+                </Button>
+              </WithoutGenericClick>
             </div>
           </>
         )}

@@ -5,7 +5,7 @@
 Styled semantic table parts for headers, body rows, cells, footers and captions. The wrapper supports horizontal overflow and keyboard scrolling; sorting, selection and data loading remain host responsibilities.
 
 - **Import:** `import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@kozmos-ds/react";`
-- **Group:** Data Display
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-table--docs>
 

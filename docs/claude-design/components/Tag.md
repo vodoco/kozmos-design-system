@@ -5,7 +5,7 @@
 A compact label for metadata or status, with variant and emotion colours and an optional remove action. Use Chip when the value is an interactive selection rather than a label.
 
 - **Import:** `import { Tag } from "@kozmos-ds/react";`
-- **Group:** Data Display
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/data-display-tag--docs>
 

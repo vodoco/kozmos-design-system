@@ -84,6 +84,24 @@ next boundary, so an outer dark module cannot darken a nested light module. Keyf
 and their animation references receive a `kozmos-` namespace. Token definitions and
 native generated token artifacts are unchanged.
 
+The React compiler shares identical token declarations between the canonical light
+and dark rules. The shared rule retains **both** selectors, including the dark
+selector's higher specificity; removing dark declarations and relying on inheritance
+would change host override behaviour. Differing values remain separate. Duplicate
+declarations, importance differences, mixed recipes and repeated root definitions
+are not treated as interchangeable. Public token names and values are unchanged.
+
+The implementation and regression tests are in `packages/react/postcss/scoped-css.cjs`
+and `scoped-css.test.cjs`. `turbo.json` includes `postcss/**` in build inputs so helper
+edits invalidate cached CSS. Run `pnpm test:css-build` and the scoped/owned CSS browser
+checks after compiler changes. For a before/after preservation check, retain the
+pre-change built stylesheet and run
+`node scripts/check-theme-css-equivalence.mjs <before.css>` after rebuilding;
+repeat with `ADAPTIVE_BROWSER=firefox` and `webkit`. It checks token value/importance/
+specificity, untouched non-token CSS, computed styles and pixels in nested themes
+with overrides and live theme switching. This is diagnostic equivalence evidence,
+not a substitute for pinned-Linux visual review or physical WebView acceptance.
+
 Scoped selectors include `:scope` specificity to beat ordinary host element resets
 and generic utility classes. This is not Shadow DOM: high-specificity host selectors,
 `!important`, inherited custom properties and document `rem` sizing remain relevant.

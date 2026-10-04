@@ -5,10 +5,11 @@ import { Button } from "../Button/Button";
 import {
   X,
   MarkerPin01 as MapPin,
-  ArrowDown as ArrowDownUp,
+  SwitchVertical01 as ArrowDownUp,
 } from "@kozmos-ds/icons";
-import { inputVariants } from "../Input/Input";
+import { Input } from "../Input/Input";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 export interface WayfindingCardProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
@@ -45,16 +46,18 @@ const WayfindingCard = React.forwardRef<HTMLDivElement, WayfindingCardProps>(
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{title}</CardTitle>
           {onClose && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              type="button"
-              aria-label={closeLabel}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <WithoutGenericClick>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleClose}
+                type="button"
+                aria-label={closeLabel}
+                className="h-11 w-11 shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </WithoutGenericClick>
           )}
         </CardHeader>
         <CardContent>
@@ -118,43 +121,36 @@ export const WayfindingInputRow = React.forwardRef<
         </div>
 
         <div className="min-w-0 flex-1 flex flex-col gap-2 relative">
-          <input
+          <Input
             aria-label={originLabel}
             value={originValue}
             onChange={(e) => onOriginChange?.(e.target.value)}
             placeholder={originPlaceholder}
-            className={cn(
-              inputVariants(),
-              "h-10 pe-12 border-none shadow-raised bg-muted/50 focus-visible:ring-1",
-            )}
+            className="h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1"
           />
-          <input
+          <Input
             aria-label={destinationLabel}
             value={destinationValue}
             onChange={(e) => onDestinationChange?.(e.target.value)}
             placeholder={destinationPlaceholder}
-            className={cn(
-              inputVariants(),
-              "h-10 pe-12 border-none shadow-raised bg-muted/50 focus-visible:ring-1",
-            )}
+            className="h-10 pe-16 border-none shadow-raised bg-muted/50 focus-visible:ring-1"
           />
 
-          <Button
-            aria-label={swapLabel}
-            size="icon"
-            variant="secondary"
-            className="absolute end-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-pill shadow-raised z-10"
-            onClick={() => {
-              trackEvent("WayfindingInputRow", "wayfinding_route_swapped", {
-                origin: originValue,
-                destination: destinationValue,
-              });
-              onSwap?.();
-            }}
-            type="button"
-          >
-            <ArrowDownUp className="w-4 h-4" />
-          </Button>
+          <WithoutGenericClick>
+            <Button
+              aria-label={swapLabel}
+              size="icon"
+              variant="secondary"
+              className="absolute end-3 top-1/2 -translate-y-1/2 h-11 w-11 rounded-pill shadow-raised z-10"
+              onClick={() => {
+                trackEvent("WayfindingInputRow", "wayfinding_route_swapped");
+                onSwap?.();
+              }}
+              type="button"
+            >
+              <ArrowDownUp className="w-4 h-4" />
+            </Button>
+          </WithoutGenericClick>
         </div>
       </div>
     );

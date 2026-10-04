@@ -3,6 +3,9 @@ package com.kozmos.components.itinerary
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,10 +23,12 @@ import androidx.compose.ui.semantics.text
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.icon
 import com.kozmos.components.surface.kozmosMutedForeground
+import com.kozmos.components.surface.LocalKozmosGuidanceForeground
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.contracts.KozmosInstructionPart
@@ -36,30 +41,35 @@ class KozmosItineraryStep(
     instruction: List<KozmosInstructionPart>,
     val type: DirectionType,
     /** The step under way. */
-    val isCurrent: Boolean = false
+    val isCurrent: Boolean = false,
+    /** Localized estimates for this step, not actual journey totals. */
+    val distance: String? = null,
+    val duration: String? = null
 ) {
     /** A snapshot: a caller mutating its input list cannot leave text and metadata inconsistent. */
     val instructionParts: List<KozmosInstructionPart> = instruction.toList()
     val instruction: String get() = instructionParts.joinToString("") { it.text }
 
-    constructor(id: String, instruction: String, type: DirectionType, isCurrent: Boolean = false) :
-        this(id, listOf(KozmosInstructionPart(instruction)), type, isCurrent)
+    constructor(id: String, instruction: String, type: DirectionType, isCurrent: Boolean = false, distance: String? = null, duration: String? = null) :
+        this(id, listOf(KozmosInstructionPart(instruction)), type, isCurrent, distance, duration)
 
     // Preserve the former data-class source API, without a second stale string/parts field.
-    fun copy(id: String = this.id, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent) =
-        KozmosItineraryStep(id, instructionParts, type, isCurrent)
-    fun copy(id: String = this.id, instruction: String, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent) =
-        KozmosItineraryStep(id, instruction, type, isCurrent)
-    fun copy(id: String = this.id, instruction: List<KozmosInstructionPart>, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent) =
-        KozmosItineraryStep(id, instruction, type, isCurrent)
+    fun copy(id: String = this.id, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent, distance: String? = this.distance, duration: String? = this.duration) =
+        KozmosItineraryStep(id, instructionParts, type, isCurrent, distance, duration)
+    fun copy(id: String = this.id, instruction: String, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent, distance: String? = this.distance, duration: String? = this.duration) =
+        KozmosItineraryStep(id, instruction, type, isCurrent, distance, duration)
+    fun copy(id: String = this.id, instruction: List<KozmosInstructionPart>, type: DirectionType = this.type, isCurrent: Boolean = this.isCurrent, distance: String? = this.distance, duration: String? = this.duration) =
+        KozmosItineraryStep(id, instruction, type, isCurrent, distance, duration)
     operator fun component1() = id
     operator fun component2() = instruction
     operator fun component3() = type
     operator fun component4() = isCurrent
+    operator fun component5() = distance
+    operator fun component6() = duration
     override fun equals(other: Any?): Boolean = other is KozmosItineraryStep &&
-        id == other.id && instructionParts == other.instructionParts && type == other.type && isCurrent == other.isCurrent
-    override fun hashCode(): Int = 31 * (31 * (31 * id.hashCode() + instructionParts.hashCode()) + type.hashCode()) + isCurrent.hashCode()
-    override fun toString() = "KozmosItineraryStep(id=$id, instruction=$instruction, type=$type, isCurrent=$isCurrent)"
+        id == other.id && instructionParts == other.instructionParts && type == other.type && isCurrent == other.isCurrent && distance == other.distance && duration == other.duration
+    override fun hashCode(): Int = 31 * (31 * (31 * (31 * (31 * id.hashCode() + instructionParts.hashCode()) + type.hashCode()) + isCurrent.hashCode()) + (distance?.hashCode() ?: 0)) + (duration?.hashCode() ?: 0)
+    override fun toString() = "KozmosItineraryStep(id=$id, instruction=$instruction, type=$type, isCurrent=$isCurrent, distance=$distance, duration=$duration)"
 }
 
 /**
@@ -77,6 +87,7 @@ fun KozmosItinerary(
     destinationLabel: String = "To",
     label: String = "Itinerary"
 ) {
+    val uniqueCurrent = steps.count { it.isCurrent } == 1
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -84,18 +95,20 @@ fun KozmosItinerary(
         verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
     ) {
         Endpoint(originLabel, origin, emphasised = false)
-        steps.forEach { step -> StepRow(step) }
+        steps.forEach { step -> StepRow(step, uniqueCurrent && step.isCurrent) }
         Endpoint(destinationLabel, destination, emphasised = true)
     }
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun Endpoint(label: String, name: String, emphasised: Boolean) {
-    Row(
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) { contentDescription = "$label, $name" },
-        verticalAlignment = Alignment.Top
+        horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150),
+        verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
         // The caption and the origin are muted, and on glass, in a glass
         // manoeuvre card, the foreground colour (decision 48).
@@ -103,46 +116,53 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
             text = label.uppercase(),
             style = MaterialTheme.typography.labelSmall,
             color = kozmosMutedForeground(),
-            modifier = Modifier.width(KozmosDimensions.primitivesLayoutSizing500).padding(top = 3.dp)
+            modifier = Modifier.widthIn(min = KozmosDimensions.primitivesLayoutSizing500).padding(top = 3.dp)
         )
         Text(
             text = name,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (emphasised) FontWeight.SemiBold else FontWeight.Normal),
-            color = if (emphasised) KozmosThemeTokens.primitivesColorsForeground100 else kozmosMutedForeground(),
-            modifier = Modifier.padding(start = KozmosDimensions.primitivesLayoutSpacing150)
+            color = LocalKozmosGuidanceForeground.current ?: if (emphasised) KozmosThemeTokens.primitivesColorsForeground100 else kozmosMutedForeground(),
+            modifier = Modifier.widthIn(min = 80.dp).weight(1f)
         )
     }
 }
 
 @Composable
-private fun StepRow(step: KozmosItineraryStep) {
-    val colour = if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100
+private fun StepRow(step: KozmosItineraryStep, isCurrent: Boolean) {
+    val colour = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100
     val instruction = instructionAnnotatedText(step.instructionParts)
     val hasLanguage = step.instructionParts.hasSpeechLanguage()
+    val metrics = listOfNotNull(step.distance, step.duration).filter { it.isNotEmpty() }
+    val description = (listOf(step.instruction) + metrics).filter { it.isNotEmpty() }.joinToString(", ")
+    val spoken = instruction + AnnotatedString(if (metrics.isEmpty()) "" else (if (instruction.isEmpty()) "" else ", ") + metrics.joinToString(", "))
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {
-                if (hasLanguage) text = instruction else contentDescription = step.instruction
-                selected = step.isCurrent
+                if (hasLanguage) text = spoken else contentDescription = description
+                selected = isCurrent
             },
         verticalAlignment = Alignment.Top
     ) {
         Icon(
             imageVector = step.type.icon(),
             contentDescription = null,
-            tint = if (step.isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground500,
+            tint = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground500,
             modifier = Modifier
                 .width(KozmosDimensions.primitivesLayoutSizing500)
                 .height(20.dp)
                 .padding(end = KozmosDimensions.primitivesLayoutSpacing300)
         )
-        Text(
-            text = instruction,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (step.isCurrent) FontWeight.SemiBold else FontWeight.Normal),
-            color = colour,
-            modifier = Modifier.padding(start = KozmosDimensions.primitivesLayoutSpacing150)
-                .then(if (hasLanguage) Modifier.clearAndSetSemantics {} else Modifier)
-        )
+        Column(modifier = Modifier.weight(1f).padding(start = KozmosDimensions.primitivesLayoutSpacing150)
+            .then(if (hasLanguage) Modifier.clearAndSetSemantics {} else Modifier)) {
+            Text(
+                text = instruction,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal),
+                color = colour
+            )
+            if (metrics.isNotEmpty()) {
+                Text(text = metrics.joinToString(" • "), style = MaterialTheme.typography.bodyMedium, color = kozmosMutedForeground())
+            }
+        }
     }
 }

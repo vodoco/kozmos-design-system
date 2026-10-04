@@ -15,7 +15,8 @@ import {
 } from "./Tree";
 
 const meta: Meta<typeof Tree> = {
-  title: "Data Display/Tree",
+  id: "data-display-tree",
+  title: "Core/Data display/Tree",
   component: Tree,
 };
 

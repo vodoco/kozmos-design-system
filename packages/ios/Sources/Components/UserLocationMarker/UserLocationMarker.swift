@@ -3,6 +3,7 @@ import SwiftUI
 public struct KozmosUserLocationMarker: View {
     public let heading: Double
     public let showHeading: Bool
+    public let compact: Bool
     /// What the marker is called, for a visitor who cannot see it. It had no
     /// name until row 67, so VoiceOver passed over the visitor's own position;
     /// React's was "User location" in English whatever the device's language.
@@ -11,10 +12,11 @@ public struct KozmosUserLocationMarker: View {
     /// One full expand-and-fade of the pulse, in seconds.
     private static let pulsePeriod: Double = 1.5
 
-    public init(heading: Double = 0, showHeading: Bool = true, label: String = "User location") {
+    public init(heading: Double = 0, showHeading: Bool = true, label: String = "User location", compact: Bool = false) {
         self.heading = heading
         self.showHeading = showHeading
         self.label = label
+        self.compact = compact
     }
 
     public var body: some View {
@@ -27,7 +29,7 @@ public struct KozmosUserLocationMarker: View {
             // repeating implicit animation left mid-flight by a rebuild renders
             // a stray ring adrift from the marker. A clock cannot get stranded.
             // The halo: 64 at 14 %, still.
-            Circle()
+            if !compact { Circle()
                 .fill(KozmosColors.semanticsDataBlue)
                 .opacity(0.14)
                 .frame(width: 64, height: 64)
@@ -41,9 +43,10 @@ public struct KozmosUserLocationMarker: View {
                     .scaleEffect(0.6 + 0.4 * phase)
                     .opacity(0.3 * (1 - phase))
             }
+            }
 
             // Heading Cone
-            if showHeading {
+            if showHeading && !compact {
                 ConeShape()
                     .fill(
                         RadialGradient(
@@ -65,11 +68,13 @@ public struct KozmosUserLocationMarker: View {
                 .fill(KozmosColors.semanticsDataBlue)
                 .frame(width: 18, height: 18)
                 .overlay(
-                    Circle()
-                        .stroke(Color.white, lineWidth: 3)
+                    Group {
+                        if compact { Circle().strokeBorder(KozmosColors.primitivesColorsBackground0, lineWidth: 3) }
+                        else { Circle().stroke(Color.white, lineWidth: 3) }
+                    }
                 )
         }
-        .frame(width: 64, height: 64)
+        .frame(width: compact ? 18 : 64, height: compact ? 18 : 64)
         // One element, an image, as React's `role="img"` is: the rings and the
         // cone are drawing, and the name is the whole of what it says.
         .accessibilityElement(children: .ignore)

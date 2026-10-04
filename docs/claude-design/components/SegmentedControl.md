@@ -5,7 +5,7 @@
 Use SegmentedControl when users choose one option from a short, visible set. Prefer Radio for longer lists and Tabs when the selected item changes visible content regions.
 
 - **Import:** `import { SegmentedControl } from "@kozmos-ds/react";`
-- **Group:** Selection
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/selection-segmentedcontrol--docs>
 

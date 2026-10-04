@@ -8,7 +8,8 @@ import { Utensils as Coffee, Utensils } from "@kozmos-ds/icons";
 import { useState } from "react";
 
 const meta = {
-  title: "Data Display/Chip",
+  id: "data-display-chip",
+  title: "Core/Data display/Chip",
   component: Chip,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof Chip>;

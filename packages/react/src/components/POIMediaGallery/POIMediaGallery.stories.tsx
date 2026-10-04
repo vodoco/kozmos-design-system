@@ -8,7 +8,8 @@ const image = (label: string, color: string) =>
   )}`;
 
 const meta = {
-  title: "Product SDK/POIMediaGallery",
+  id: "product-sdk-poimediagallery",
+  title: "SDK/Place details/POIMediaGallery",
   component: POIMediaGallery,
   parameters: { layout: "fullscreen" },
   decorators: [

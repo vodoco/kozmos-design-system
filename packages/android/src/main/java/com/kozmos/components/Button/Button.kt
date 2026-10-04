@@ -3,6 +3,7 @@ package com.kozmos.components.button
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -99,6 +101,7 @@ fun KozmosButton(
     isLoading: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
+    // Every size is drawn 44 tall, as on the web, on iOS and in Figma (D7).
     val height = when (size) {
         KozmosButtonSize.Default -> 44.dp
         KozmosButtonSize.Sm -> 44.dp
@@ -106,14 +109,19 @@ fun KozmosButton(
         KozmosButtonSize.Icon -> 44.dp
     }
 
-    val rootModifier = modifier
-        .height(height)
-        .then(if (size == KozmosButtonSize.Icon) Modifier.width(44.dp) else Modifier)
+    // A labelled surface grows with its label, and Material's minimum
+    // interactive size keeps its touch target at Android's 48dp, the 44
+    // centred in it. The icon size stays the fixed 44 square.
+    val rootModifier = if (size == KozmosButtonSize.Icon) {
+        modifier.height(height).then(Modifier.width(44.dp))
+    } else {
+        modifier.minimumInteractiveComponentSize().heightIn(min = height)
+    }
     
     val contentPadding = when (size) {
-        KozmosButtonSize.Default -> PaddingValues(horizontal = KozmosDimensions.primitivesLayoutSpacing200, vertical = 0.dp)
-        KozmosButtonSize.Sm -> PaddingValues(horizontal = KozmosDimensions.primitivesLayoutSpacing150, vertical = 0.dp)
-        KozmosButtonSize.Lg -> PaddingValues(horizontal = KozmosDimensions.primitivesLayoutSpacing400, vertical = 0.dp)
+        KozmosButtonSize.Default -> PaddingValues(horizontal = KozmosDimensions.primitivesLayoutSpacing200, vertical = KozmosDimensions.primitivesLayoutSpacing100)
+        KozmosButtonSize.Sm -> PaddingValues(horizontal = KozmosDimensions.primitivesLayoutSpacing150, vertical = KozmosDimensions.primitivesLayoutSpacing100)
+        KozmosButtonSize.Lg -> PaddingValues(horizontal = KozmosDimensions.primitivesLayoutSpacing400, vertical = KozmosDimensions.primitivesLayoutSpacing100)
         KozmosButtonSize.Icon -> PaddingValues(0.dp)
     }
 

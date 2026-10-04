@@ -22,6 +22,12 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import com.kozmos.components.listbox.KozmosPickerAction
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,12 +37,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import com.kozmos.components.input.KozmosInputStatus
 import com.kozmos.components.listbox.KozmosListbox
 import com.kozmos.components.listbox.KozmosListboxOption
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
+data class KozmosComboboxLabels(
+    val clear: String = "Clear selection",
+    val open: String = "Open options",
+    val close: String = "Close options"
+)
+
+internal fun filteredComboboxOptions(options: List<KozmosListboxOption>, inputValue: String, filterLocally: Boolean): List<KozmosListboxOption> {
+    if (!filterLocally) return options
+    val query = inputValue.trim().lowercase()
+    return options.filter { option -> query.isEmpty() || option.label.lowercase().contains(query) || option.value.lowercase().contains(query) || (option.description?.lowercase()?.contains(query) == true) }
+}
+
+// Preserve the released positional and trailing-lambda signature.
 @Composable
 fun KozmosCombobox(
     value: String,
@@ -58,22 +80,92 @@ fun KozmosCombobox(
     expanded: Boolean? = null,
     defaultExpanded: Boolean = false,
     onExpandedChange: ((Boolean) -> Unit)? = null
+) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
+    KozmosComboboxLabels(), modifier, label, placeholder, enabled, readOnly, status, error,
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
+
+@Composable
+fun KozmosCombobox(
+    value: String,
+    onValueChange: (String, KozmosListboxOption?) -> Unit,
+    inputValue: String,
+    onInputValueChange: (String) -> Unit,
+    options: List<KozmosListboxOption>,
+    controlLabels: KozmosComboboxLabels,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    placeholder: String = "Select option",
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    status: KozmosInputStatus = KozmosInputStatus.Default,
+    error: Boolean = false,
+    helperText: String? = null,
+    errorMessage: String? = null,
+    emptyText: String = "No results found",
+    clearable: Boolean = true,
+    expanded: Boolean? = null,
+    defaultExpanded: Boolean = false,
+    onExpandedChange: ((Boolean) -> Unit)? = null
+) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
+    controlLabels, true, modifier, label, placeholder, enabled, readOnly, status, error,
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
+
+/** Explicit host filtering without changing either existing positional/trailing-lambda overload. */
+@Composable
+fun KozmosCombobox(
+    value: String,
+    onValueChange: (String, KozmosListboxOption?) -> Unit,
+    inputValue: String,
+    onInputValueChange: (String) -> Unit,
+    options: List<KozmosListboxOption>,
+    controlLabels: KozmosComboboxLabels,
+    filterLocally: Boolean,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    placeholder: String = "Select option",
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    status: KozmosInputStatus = KozmosInputStatus.Default,
+    error: Boolean = false,
+    helperText: String? = null,
+    errorMessage: String? = null,
+    emptyText: String = "No results found",
+    clearable: Boolean = true,
+    expanded: Boolean? = null,
+    defaultExpanded: Boolean = false,
+    onExpandedChange: ((Boolean) -> Unit)? = null
+) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
+    controlLabels, filterLocally, emptyList(), modifier, label, placeholder, enabled, readOnly, status, error,
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
+
+/** Commands are unfiltered, do not change query/selection, and request dismissal before activation. */
+@Composable
+fun KozmosCombobox(
+    value: String, onValueChange: (String, KozmosListboxOption?) -> Unit,
+    inputValue: String, onInputValueChange: (String) -> Unit, options: List<KozmosListboxOption>,
+    controlLabels: KozmosComboboxLabels, filterLocally: Boolean,
+    popupActions: List<KozmosPickerAction>,
+    modifier: Modifier = Modifier, label: String? = null, placeholder: String = "Select option",
+    enabled: Boolean = true, readOnly: Boolean = false,
+    status: KozmosInputStatus = KozmosInputStatus.Default, error: Boolean = false,
+    helperText: String? = null, errorMessage: String? = null, emptyText: String = "No results found",
+    clearable: Boolean = true, expanded: Boolean? = null, defaultExpanded: Boolean = false,
+    onExpandedChange: ((Boolean) -> Unit)? = null
 ) {
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
-    val isExpanded = expanded ?: internalExpanded
+    val isExpanded = (expanded ?: internalExpanded) && enabled && !readOnly
+    val inputFocus = remember { FocusRequester() }
+    var inputFocused by remember { mutableStateOf(false) }
+    // Whether the field had focus while the popup was open: only then does a command hand it back.
+    var restoresInputFocus by remember { mutableStateOf(false) }
+    LaunchedEffect(isExpanded) { if (isExpanded) restoresInputFocus = inputFocused }
     val setExpanded: (Boolean) -> Unit = { next ->
         if (expanded == null) internalExpanded = next
         onExpandedChange?.invoke(next)
     }
     val effectiveStatus = if (error) KozmosInputStatus.Error else status
     val supportingText = errorMessage ?: helperText
-    val filteredOptions = options.filter { option ->
-        val query = inputValue.trim().lowercase()
-        query.isEmpty() ||
-            option.label.lowercase().contains(query) ||
-            option.value.lowercase().contains(query) ||
-            (option.description?.lowercase()?.contains(query) == true)
-    }
+    val filteredOptions = filteredComboboxOptions(options, inputValue, filterLocally)
     val colors = selectionFieldColors(effectiveStatus, enabled, readOnly)
     val fieldShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
 
@@ -85,14 +177,16 @@ fun KozmosCombobox(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = colors.label
+                color = colors.label,
+                // The field carries this name; heard here too, it is said twice.
+                modifier = Modifier.clearAndSetSemantics { }
             )
         }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp)
+                .height(48.dp)
                 .background(colors.background, fieldShape)
                 .border(1.dp, colors.border, fieldShape),
             verticalAlignment = Alignment.CenterVertically
@@ -109,6 +203,12 @@ fun KozmosCombobox(
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = colors.text),
                 cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
                 modifier = Modifier
+                    .focusRequester(inputFocus)
+                    .onFocusChanged {
+                        inputFocused = it.isFocused
+                        if (it.isFocused && isExpanded) restoresInputFocus = true
+                    }
+                    .semantics { contentDescription = label ?: placeholder }
                     .weight(1f)
                     .fillMaxHeight(),
                 decorationBox = { innerTextField ->
@@ -138,17 +238,17 @@ fun KozmosCombobox(
                         onInputValueChange("")
                         setExpanded(false)
                     },
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(48.dp),
                     colors = IconButtonDefaults.iconButtonColors(contentColor = KozmosThemeTokens.primitivesColorsForeground500)
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear selection", modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Close, contentDescription = controlLabels.clear, modifier = Modifier.size(16.dp))
                 }
             }
 
             IconButton(
                 onClick = { if (enabled && !readOnly) setExpanded(!isExpanded) },
                 enabled = enabled && !readOnly,
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(48.dp),
                 colors = IconButtonDefaults.iconButtonColors(
                     contentColor = KozmosThemeTokens.primitivesColorsForeground500,
                     disabledContentColor = KozmosThemeTokens.primitivesColorsForeground500
@@ -156,7 +256,7 @@ fun KozmosCombobox(
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Close options" else "Open options",
+                    contentDescription = if (isExpanded) controlLabels.close else controlLabels.open,
                     modifier = Modifier
                         .size(20.dp)
                         .rotate(if (isExpanded) 180f else 0f)
@@ -165,8 +265,8 @@ fun KozmosCombobox(
         }
 
         if (isExpanded) {
-            if (filteredOptions.isEmpty()) {
-                Text(
+            if (filteredOptions.isEmpty() && popupActions.isEmpty()) {
+                if (emptyText != supportingText) Text(
                     text = emptyText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = KozmosThemeTokens.primitivesColorsForeground500,
@@ -181,12 +281,24 @@ fun KozmosCombobox(
                     options = filteredOptions,
                     selectedValues = if (value.isEmpty()) emptyList() else listOf(value),
                     onSelectionChange = { nextValues, option ->
-                        onValueChange(nextValues.firstOrNull().orEmpty(), option)
-                        onInputValueChange(option.label)
-                        setExpanded(false)
+                        if (enabled && !readOnly && !option.disabled) {
+                            setExpanded(false)
+                            onValueChange(nextValues.firstOrNull().orEmpty(), option)
+                            onInputValueChange(option.label)
+                        }
                     },
-                    enabled = enabled,
-                    multiple = false
+                    enabled = enabled && !readOnly,
+                    multiple = false,
+                    emptyText = emptyText.takeUnless { it == supportingText },
+                    actions = popupActions.map { action -> action.copy(onAction = {
+                        if (enabled && !readOnly && !action.disabled) {
+                            // Focusing a field that did not have focus raises the keyboard
+                            // over the map a command may be sending the visitor to.
+                            if (restoresInputFocus) inputFocus.requestFocus()
+                            setExpanded(false)
+                            action.onAction()
+                        }
+                    }) }
                 )
             }
         }

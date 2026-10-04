@@ -5,7 +5,7 @@
 A minimal layout wrapper that renders a `div`, or passes its props to one child with `asChild`. It adds no spacing or surface styling of its own; use Stack, Grid or Container for those layout conventions.
 
 - **Import:** `import { Box } from "@kozmos-ds/react";`
-- **Group:** Foundations
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/foundations-box--docs>
 

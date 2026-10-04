@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { AIMessage } from "./AIMessage";
 
 const meta = {
-  title: "Product SDK/AIMessage",
+  id: "product-sdk-aimessage",
+  title: "SDK/Assistant/AIMessage",
   component: AIMessage,
   parameters: { layout: "centered" },
 } satisfies Meta<typeof AIMessage>;

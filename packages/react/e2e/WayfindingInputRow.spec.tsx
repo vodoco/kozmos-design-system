@@ -3,7 +3,7 @@ import React from "react";
 import { WayfindingInputRowFixture } from "./WayfindingInputRow.fixture";
 
 // The row the native rows are measured against: a rail of a 10 ring, a line
-// and a 16 pin, two 300 × 40 fields 8 apart and 28 in, and a 32 swap button
+// and a 16 pin, two 300 × 40 fields 8 apart and 28 in, and a 44 swap button
 // 12 in from their end, centred between them.
 async function measure(
   component: Awaited<
@@ -63,5 +63,5 @@ test("the fields are 40 high and 8 apart, with the swap centred at their end", a
   const b = await measure(await mount(<WayfindingInputRowFixture />));
   expect(b.origin).toEqual([28, 0, 300, 40]);
   expect(b.destination).toEqual([28, 48, 300, 40]);
-  expect(b.swap).toEqual([284, 28, 32, 32]);
+  expect(b.swap).toEqual([272, 22, 44, 44]);
 });

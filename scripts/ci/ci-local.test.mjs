@@ -78,9 +78,124 @@ function ciLocal(dir, ...args) {
   const result = spawnSync(
     process.execPath,
     [path.join(dir, "scripts/ci-local.mjs"), ...args],
-    { cwd: dir, encoding: "utf8" },
+    {
+      cwd: dir,
+      encoding: "utf8",
+      env: { ...process.env, TMPDIR: dir, TMP: dir, TEMP: dir },
+    },
   );
   return { status: result.status, log: `${result.stdout}${result.stderr}` };
+}
+
+for (const args of [
+  ["--help"],
+  ["--unknown"],
+  ["--job"],
+  ["--only", "--list"],
+]) {
+  test(`CLI ${args.join(" ")} never executes workflow steps`, (t) => {
+    const { dir } = repository(t);
+    fs.writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      JSON.stringify({
+        jobs: {
+          web: {
+            steps: [
+              { name: "Must not run", run: "touch unexpected-execution" },
+            ],
+          },
+        },
+      }),
+    );
+    const result = ciLocal(dir, ...args);
+    assert.equal(
+      fs.existsSync(path.join(dir, "unexpected-execution")),
+      false,
+      result.log,
+    );
+    assert.equal(result.status, args[0] === "--help" ? 0 : 2, result.log);
+    assert.match(
+      result.log,
+      args[0] === "--help" ? /Usage:/ : /Unknown option|requires a value/,
+    );
+  });
+}
+
+for (const args of [
+  ["--from", "abc"],
+  ["--from", "-1"],
+  ["--from", "1.5"],
+  ["--from", "999"],
+  ["--only", "missing-step"],
+  ["--shard", "missing-shard"],
+]) {
+  test(`CLI rejects an invalid or empty selection: ${args.join(" ")}`, (t) => {
+    const { dir } = repository(t);
+    fs.writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      JSON.stringify({
+        jobs: {
+          web: {
+            steps: [
+              { name: "Must not run", run: "touch unexpected-execution" },
+            ],
+          },
+        },
+      }),
+    );
+    const result = ciLocal(dir, ...args);
+    assert.equal(
+      fs.existsSync(path.join(dir, "unexpected-execution")),
+      false,
+      result.log,
+    );
+    assert.equal(result.status, 2, result.log);
+    assert.match(
+      result.log,
+      /nonnegative integer|No steps match|has no shard matrix/,
+    );
+  });
+}
+
+for (const fails of [false, true]) {
+  test(`large step output preserves ${fails ? "a late failure" : "a successful exit"}`, (t) => {
+    const { dir } = repository(t);
+    const program = `const fs = require("node:fs"); fs.writeSync(1, "output line\\n".repeat(200000)); fs.writeSync(2, "error line\\n".repeat(200000)); fs.writeSync(2, "FINAL_DIAGNOSTIC\\n"); process.exit(${fails ? 7 : 0})`;
+    fs.writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      JSON.stringify({
+        jobs: {
+          web: {
+            steps: [{ name: "Large output", run: `node -e '${program}'` }],
+          },
+        },
+      }),
+    );
+    const result = ciLocal(dir);
+    assert.equal(result.status, fails ? 1 : 0, result.log);
+    assert.match(
+      result.log,
+      fails ? /FAIL\s+Large output/ : /PASS\s+Large output/,
+    );
+    const logs = result.log.match(/Full step logs: (.+)/)?.[1];
+    assert.ok(
+      logs,
+      "Retain full output for inspection without piping it into memory",
+    );
+    const captured = fs.readFileSync(path.join(logs, "1.log"), "utf8");
+    assert.equal(
+      captured,
+      "output line\n".repeat(200000) +
+        "error line\n".repeat(200000) +
+        "FINAL_DIAGNOSTIC\n",
+    );
+    if (fails)
+      assert.match(
+        result.log,
+        /FINAL_DIAGNOSTIC/,
+        "Keep the actual late failure, not a buffer-limit truncation",
+      );
+  });
 }
 
 test("ci-local lists the changeset rule as a step it runs", (t) => {

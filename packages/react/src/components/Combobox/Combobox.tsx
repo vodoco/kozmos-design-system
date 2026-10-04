@@ -1,4 +1,5 @@
 import React from "react";
+import { DismissableLayer } from "@radix-ui/react-dismissable-layer";
 import { ChevronDown, X } from "@kozmos-ds/icons";
 import { cn, mergeAriaIds } from "../../utils";
 import { OptionRow } from "../Listbox/OptionRow";
@@ -13,11 +14,35 @@ export interface ComboboxOption {
   value: string;
 }
 
+export interface ComboboxPopupAction {
+  /** Stable nonblank identity. All commands sharing a duplicate ID are omitted. */
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+  onAction: () => void;
+}
+const NO_ACTIONS: ComboboxPopupAction[] = [];
+type PopupEntry =
+  | { kind: "value"; option: ComboboxOption; disabled?: boolean }
+  | { kind: "action"; action: ComboboxPopupAction; disabled?: boolean };
+
+function entryKey(entry: PopupEntry) {
+  return entry.kind === "value"
+    ? `value:${entry.option.value}`
+    : `action:${entry.action.id}`;
+}
+
 export interface ComboboxProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   "children" | "defaultValue" | "onChange" | "value"
 > {
   clearable?: boolean;
+  clearLabel?: string;
+  openLabel?: string;
+  closeLabel?: string;
+  /** Keep legacy generic analytics by default; sensitive place pickers must omit values. */
+  includeValueInAnalytics?: boolean;
   defaultInputValue?: string;
   defaultValue?: string;
   emptyText?: string;
@@ -29,6 +54,10 @@ export interface ComboboxProps extends Omit<
   onInputValueChange?: (value: string) => void;
   onValueChange?: (value: string, option?: ComboboxOption) => void;
   options: ComboboxOption[];
+  /** Unfiltered action choices after suggestions. Share arrow/Enter navigation, but never become a value/query. */
+  popupActions?: ComboboxPopupAction[];
+  /** Inline participates in a sheet's scroll/layout instead of overlaying later fields. */
+  popupLayout?: "overlay" | "inline";
   status?: InputStatus;
   value?: string;
   wrapperClassName?: string;
@@ -45,7 +74,7 @@ function defaultFilterOption(option: ComboboxOption, inputValue: string) {
 }
 
 function nextEnabledIndex(
-  options: ComboboxOption[],
+  options: { disabled?: boolean }[],
   currentIndex: number,
   direction: 1 | -1,
 ) {
@@ -60,8 +89,21 @@ function nextEnabledIndex(
   return -1;
 }
 
-function firstEnabledIndex(options: ComboboxOption[]) {
+function firstEnabledIndex(options: { disabled?: boolean }[]) {
   return options.findIndex((option) => !option.disabled);
+}
+
+/**
+ * The entry made active for the visitor, as the popup opens or the query
+ * changes: the first option that can be chosen, never a command. A command
+ * runs only when the visitor moves to it, or Enter on text that matches
+ * nothing would run "Current position" or "Select from map" in its place.
+ */
+function firstAutomaticKey(entries: PopupEntry[]) {
+  const first = entries.find(
+    (entry) => entry.kind === "value" && !entry.disabled,
+  );
+  return first ? entryKey(first) : null;
 }
 
 export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
@@ -69,6 +111,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     {
       className,
       clearable = true,
+      clearLabel = "Clear selection",
+      openLabel = "Open options",
+      closeLabel = "Close options",
+      includeValueInAnalytics = true,
       defaultInputValue,
       defaultValue,
       disabled,
@@ -85,6 +131,8 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       onKeyDown,
       onValueChange,
       options,
+      popupActions = NO_ACTIONS,
+      popupLayout = "overlay",
       placeholder = "Select option",
       readOnly,
       required,
@@ -114,6 +162,10 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     const selectedOption = options.find(
       (option) => option.value === selectedValue,
     );
+    const previousSelection = React.useRef({
+      value: selectedValue,
+      label: selectedOption?.label,
+    });
     const [uncontrolledInputValue, setUncontrolledInputValue] = React.useState(
       defaultInputValue ?? selectedOption?.label ?? "",
     );
@@ -122,20 +174,63 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       () => options.filter((option) => filterOption(option, visibleInputValue)),
       [filterOption, options, visibleInputValue],
     );
-    const [activeIndex, setActiveIndex] = React.useState(() =>
-      firstEnabledIndex(filteredOptions),
+    const validActions = React.useMemo(() => {
+      const counts = new Map<string, number>();
+      for (const action of popupActions)
+        counts.set(action.id, (counts.get(action.id) ?? 0) + 1);
+      return popupActions.filter(
+        (action) => action.id.trim() && counts.get(action.id) === 1,
+      );
+    }, [popupActions]);
+    const entries = React.useMemo<PopupEntry[]>(
+      () => [
+        ...filteredOptions.map((option) => ({
+          kind: "value" as const,
+          option,
+          disabled: option.disabled,
+        })),
+        ...validActions.map((action) => ({
+          kind: "action" as const,
+          action,
+          disabled: action.disabled,
+        })),
+      ],
+      [filteredOptions, validActions],
     );
+    const [activeKey, setActiveKey] = React.useState<string | null>(() =>
+      firstAutomaticKey(entries),
+    );
+    const activeIndex = entries.findIndex(
+      (entry) => !entry.disabled && entryKey(entry) === activeKey,
+    );
+    const setActiveIndex = (next: number | ((current: number) => number)) => {
+      setActiveKey((previous) => {
+        const current = entries.findIndex(
+          (entry) => !entry.disabled && entryKey(entry) === previous,
+        );
+        const index = typeof next === "function" ? next(current) : next;
+        return entries[index] ? entryKey(entries[index]) : null;
+      });
+    };
+    const previousQuery = React.useRef(visibleInputValue);
     const resolvedStatus: InputStatus = error ? "error" : status;
+    const supportingText =
+      typeof error === "string" && error ? error : helperText;
+    const showEmptyText = emptyText !== supportingText;
+    const hasPopupContent = entries.length > 0 || showEmptyText;
+    // Open with nothing to show is not shown: no layer to swallow a parent's
+    // Escape, and no Escape of its own to claim.
+    const popupVisible = open && hasPopupContent;
     const describedBy =
       error && typeof error === "string"
         ? errorId
         : helperText
           ? helperId
           : undefined;
-    const activeOption = activeIndex >= 0 ? filteredOptions[activeIndex] : null;
+    const activeOption = activeIndex >= 0 ? entries[activeIndex] : null;
     const activeOptionId =
       open && activeOption ? `${inputId}-option-${activeIndex}` : undefined;
-    const listboxOpen = open && filteredOptions.length > 0;
+    const listboxOpen = open && entries.length > 0;
 
     React.useEffect(() => {
       if (activeOptionId)
@@ -151,19 +246,41 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
     }, [disabled, readOnly]);
 
     React.useEffect(() => {
-      if (inputValue === undefined) {
+      const previous = previousSelection.current;
+      if (
+        inputValue === undefined &&
+        (previous.value !== selectedValue ||
+          previous.label !== selectedOption?.label)
+      ) {
         setUncontrolledInputValue(selectedOption?.label ?? "");
       }
-    }, [inputValue, selectedOption?.label]);
+      previousSelection.current = {
+        value: selectedValue,
+        label: selectedOption?.label,
+      };
+    }, [inputValue, selectedValue, selectedOption?.label]);
 
     React.useEffect(() => {
-      setActiveIndex(firstEnabledIndex(filteredOptions));
-    }, [filteredOptions]);
+      const queryChanged = previousQuery.current !== visibleInputValue;
+      previousQuery.current = visibleInputValue;
+      setActiveKey((previous) => {
+        if (
+          !queryChanged &&
+          entries.some(
+            (entry) => !entry.disabled && entryKey(entry) === previous,
+          )
+        )
+          return previous;
+        return firstAutomaticKey(entries);
+      });
+    }, [entries, visibleInputValue]);
 
     React.useEffect(() => {
       if (!open) return undefined;
 
       const handlePointerDown = (event: MouseEvent) => {
+        // A host toolbar may preserve input focus for its own clear/cancel action.
+        if (event.defaultPrevented) return;
         if (!rootRef.current?.contains(event.target as Node)) {
           setOpen(false);
         }
@@ -187,8 +304,19 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       }
       setInputValue(option.label);
       setOpen(false);
-      trackEvent("Combobox", "option_selected", { value: option.value });
+      trackEvent(
+        "Combobox",
+        "option_selected",
+        includeValueInAnalytics ? { value: option.value } : undefined,
+      );
       onValueChange?.(option.value, option);
+    };
+    const selectEntry = (entry: PopupEntry | null) => {
+      if (!entry || entry.disabled || disabled || readOnly) return;
+      if (entry.kind === "value") return selectOption(entry.option);
+      rootRef.current?.querySelector("input")?.focus();
+      setOpen(false);
+      entry.action.onAction();
     };
 
     const clearSelection = () => {
@@ -216,6 +344,16 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
         <div
           ref={rootRef}
           className="relative"
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || !popupVisible) return;
+            // This field owns the open popup's Escape, including a host veto or
+            // IME cancellation. Don't let a bubble-based parent dismiss too.
+            event.stopPropagation();
+            if (event.defaultPrevented || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            rootRef.current?.querySelector("input")?.focus();
+            setOpen(false);
+          }}
           onBlur={(event) => {
             if (
               !event.currentTarget.contains(event.relatedTarget as Node | null)
@@ -223,135 +361,205 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
               setOpen(false);
           }}
         >
-          <input
-            ref={ref}
-            id={inputId}
-            role="combobox"
-            aria-autocomplete="list"
-            aria-controls={listboxOpen ? listboxId : undefined}
-            aria-expanded={listboxOpen}
-            aria-haspopup="listbox"
-            aria-activedescendant={open ? activeOptionId : undefined}
-            aria-label={ariaLabel}
-            aria-labelledby={ariaLabelledBy}
-            aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
-            aria-invalid={resolvedStatus === "error" ? true : callerInvalid}
-            autoComplete="off"
-            className={cn(
-              inputVariants({ status: resolvedStatus }),
-              "pr-20",
-              className,
-            )}
-            disabled={disabled}
-            readOnly={readOnly}
-            placeholder={placeholder}
-            required={required}
-            value={visibleInputValue}
-            onBlur={onBlur}
-            onFocus={(event) => {
-              if (!readOnly && !disabled) setOpen(true);
-              onFocus?.(event);
-            }}
-            onChange={(event) => {
-              setInputValue(event.target.value);
-              if (!open) setOpen(true);
-            }}
-            onKeyDown={(event) => {
-              onKeyDown?.(event);
-              if (
-                event.defaultPrevented ||
-                disabled ||
-                readOnly ||
-                event.nativeEvent.isComposing
-              )
-                return;
-              if (event.key === "ArrowDown") {
-                event.preventDefault();
-                setOpen(true);
-                setActiveIndex((current) =>
-                  nextEnabledIndex(filteredOptions, current, 1),
-                );
-              } else if (event.key === "ArrowUp") {
-                event.preventDefault();
-                setOpen(true);
-                setActiveIndex((current) =>
-                  nextEnabledIndex(filteredOptions, current, -1),
-                );
-              } else if (event.key === "Home") {
-                setActiveIndex(firstEnabledIndex(filteredOptions));
-              } else if (event.key === "End") {
-                setActiveIndex(nextEnabledIndex(filteredOptions, 0, -1));
-              } else if (event.key === "Enter" && open) {
-                event.preventDefault();
-                selectOption(activeOption);
-              } else if (event.key === "Escape") {
-                setOpen(false);
-              }
-            }}
-            {...props}
-          />
-          <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center gap-1">
-            {canClear && (
+          <div className="relative">
+            <input
+              ref={ref}
+              id={inputId}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-controls={listboxOpen ? listboxId : undefined}
+              aria-expanded={listboxOpen}
+              aria-haspopup="listbox"
+              aria-activedescendant={open ? activeOptionId : undefined}
+              aria-label={ariaLabel}
+              aria-labelledby={ariaLabelledBy}
+              aria-describedby={mergeAriaIds(callerDescribedBy, describedBy)}
+              aria-invalid={resolvedStatus === "error" ? true : callerInvalid}
+              autoComplete="off"
+              className={cn(
+                inputVariants({ status: resolvedStatus }),
+                canClear ? "pe-24" : "pe-12",
+                className,
+              )}
+              disabled={disabled}
+              readOnly={readOnly}
+              placeholder={placeholder}
+              required={required}
+              value={visibleInputValue}
+              onBlur={onBlur}
+              onFocus={(event) => {
+                if (!readOnly && !disabled) setOpen(true);
+                onFocus?.(event);
+              }}
+              onChange={(event) => {
+                setInputValue(event.target.value);
+                if (!open) setOpen(true);
+              }}
+              onKeyDown={(event) => {
+                onKeyDown?.(event);
+                if (
+                  event.defaultPrevented ||
+                  disabled ||
+                  readOnly ||
+                  event.nativeEvent.isComposing ||
+                  // Safari's Enter that commits a composition: isComposing
+                  // is already false, keyCode is still 229.
+                  event.nativeEvent.keyCode === 229
+                )
+                  return;
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  setOpen(true);
+                  setActiveIndex((current) =>
+                    nextEnabledIndex(entries, current, 1),
+                  );
+                } else if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setOpen(true);
+                  setActiveIndex((current) =>
+                    nextEnabledIndex(entries, current, -1),
+                  );
+                } else if (event.key === "Home") {
+                  setActiveIndex(firstEnabledIndex(entries));
+                } else if (event.key === "End") {
+                  setActiveIndex(nextEnabledIndex(entries, 0, -1));
+                } else if (event.key === "Enter" && open) {
+                  event.preventDefault();
+                  selectEntry(activeOption);
+                }
+              }}
+              {...props}
+            />
+            <div className="pointer-events-none absolute inset-y-0 end-0 flex items-center">
+              {canClear && (
+                <button
+                  type="button"
+                  className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  aria-label={clearLabel}
+                  onClick={clearSelection}
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
               <button
                 type="button"
-                className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                aria-label="Clear selection"
-                onClick={clearSelection}
+                className="pointer-events-auto inline-flex h-11 w-11 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={open ? closeLabel : openLabel}
+                disabled={disabled || readOnly}
+                onClick={() => setOpen((current) => !current)}
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    open && "rotate-180",
+                  )}
+                  aria-hidden="true"
+                />
               </button>
-            )}
-            <button
-              type="button"
-              className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center rounded-control text-muted-foreground ring-offset-background hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label={open ? "Close options" : "Open options"}
-              disabled={disabled || readOnly}
-              onClick={() => setOpen((current) => !current)}
-            >
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  open && "rotate-180",
-                )}
-                aria-hidden="true"
-              />
-            </button>
-          </div>
-          {open && (
-            <div
-              id={listboxOpen ? listboxId : undefined}
-              role={listboxOpen ? "listbox" : "status"}
-              aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
-              aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
-              className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay"
-            >
-              {filteredOptions.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-muted-foreground">
-                  {emptyText}
-                </div>
-              ) : (
-                filteredOptions.map((option, index) => {
-                  const selected = option.value === selectedValue;
-                  const active = index === activeIndex;
-
-                  return (
-                    <OptionRow
-                      key={option.value}
-                      id={`${inputId}-option-${index}`}
-                      option={option}
-                      selected={selected}
-                      active={active}
-                      disabled={option.disabled}
-                      onMouseEnter={() => {
-                        if (!option.disabled) setActiveIndex(index);
-                      }}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => selectOption(option)}
-                    />
-                  );
-                })
-              )}
             </div>
+          </div>
+          {popupVisible && (
+            // Join Core overlays' layer ordering without moving focus out of
+            // the combobox input. No onDismiss: keyboard dismissal belongs to
+            // the field's bubble handler (after host/IME handling), not Radix's
+            // document capture handler. Existing blur/outside handling remains.
+            <DismissableLayer asChild>
+              <div
+                data-combobox-popup=""
+                className={cn(
+                  hasPopupContent &&
+                    "mt-1 max-h-64 w-full overflow-auto rounded-control border bg-popover p-3 text-popover-foreground shadow-overlay",
+                  hasPopupContent &&
+                    popupLayout === "overlay" &&
+                    "absolute z-50",
+                )}
+              >
+                {filteredOptions.length === 0 &&
+                  validActions.length > 0 &&
+                  showEmptyText && (
+                    <div
+                      role="status"
+                      className="px-3 py-2 text-sm text-muted-foreground"
+                    >
+                      {emptyText}
+                    </div>
+                  )}
+                <div
+                  id={listboxOpen ? listboxId : undefined}
+                  role={
+                    listboxOpen
+                      ? "listbox"
+                      : showEmptyText
+                        ? "status"
+                        : undefined
+                  }
+                  aria-label={listboxOpen ? (ariaLabel ?? label) : undefined}
+                  aria-labelledby={listboxOpen ? ariaLabelledBy : undefined}
+                >
+                  {entries.length === 0
+                    ? showEmptyText && (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">
+                          {emptyText}
+                        </div>
+                      )
+                    : entries.map((entry, index) => {
+                        if (entry.kind === "action")
+                          return (
+                            <div
+                              key={`action:${entry.action.id}`}
+                              role="option"
+                              id={`${inputId}-option-${index}`}
+                              aria-selected={false}
+                              aria-disabled={entry.disabled || undefined}
+                              data-active={
+                                index === activeIndex && !entry.disabled
+                                  ? "true"
+                                  : undefined
+                              }
+                              className={cn(
+                                "kozmos-reset kozmos-option min-h-11 items-center",
+                                index === filteredOptions.length &&
+                                  "border-t border-border",
+                              )}
+                              onMouseEnter={() => {
+                                if (!entry.disabled) setActiveIndex(index);
+                              }}
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => selectEntry(entry)}
+                            >
+                              {entry.action.icon && (
+                                <span aria-hidden="true" className="shrink-0">
+                                  {entry.action.icon}
+                                </span>
+                              )}
+                              <span className="min-w-0 flex-1 whitespace-normal font-medium [overflow-wrap:anywhere]">
+                                {entry.action.label}
+                              </span>
+                            </div>
+                          );
+                        const option = entry.option;
+                        const selected = option.value === selectedValue;
+                        const active = index === activeIndex;
+
+                        return (
+                          <OptionRow
+                            key={`value:${option.value}`}
+                            id={`${inputId}-option-${index}`}
+                            option={option}
+                            selected={selected}
+                            active={active}
+                            disabled={option.disabled}
+                            onMouseEnter={() => {
+                              if (!option.disabled) setActiveIndex(index);
+                            }}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => selectEntry(entry)}
+                          />
+                        );
+                      })}
+                </div>
+              </div>
+            </DismissableLayer>
           )}
         </div>
       </FieldWrapper>

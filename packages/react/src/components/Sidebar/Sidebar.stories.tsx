@@ -10,7 +10,8 @@ import {
 } from "@kozmos-ds/icons";
 
 const meta: Meta<typeof Sidebar> = {
-  title: "Navigation/Sidebar",
+  id: "navigation-sidebar",
+  title: "Core/Layout/Sidebar",
   component: Sidebar,
 };
 

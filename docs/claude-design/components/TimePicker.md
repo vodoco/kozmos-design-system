@@ -5,7 +5,7 @@
 TimePicker retains native time-entry behavior. External `aria-describedby` IDs merge with helper/error guidance, and an explicit component error remains invalid. The owned field layout follows module direction and exposes a focus indicator for native segments, including engines that do not match them with `:focus-visible`.
 
 - **Import:** `import { TimePicker } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-timepicker--docs>
 

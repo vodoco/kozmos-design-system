@@ -5,7 +5,7 @@
 Controlled route alternative with localized duration and distance labels, selection semantics, availability, and warning support.
 
 - **Import:** `import { RouteOptionCard } from "@kozmos-ds/react";`
-- **Group:** Product SDK
+- **Group:** SDK
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/product-sdk-routeoptioncard--docs>
 

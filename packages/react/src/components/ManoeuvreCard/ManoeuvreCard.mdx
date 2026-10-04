@@ -11,7 +11,16 @@ The current manoeuvre, floating over the map during navigation: its arrow, the i
 
 Open, the card is as tall as the itinerary up to a cap (320 by default), past which the itinerary scrolls: a long route must not cover the map. The closed card is one button that reads the instruction, then the detail; the grab bar is silent then, and becomes the way to close the card once it is open.
 
-On `surface="glass"` the detail, muted elsewhere, takes the foreground colour, and so do the itinerary's captions and origin inside it, so they read at 4.5:1 over any map (decision 48). Muted over a saturated map they read as low as 2.5:1 on iOS and Android and 3.6:1 on the web. On iOS and Android the card tells what it holds which surface it is on (`kozmosSurfaceStyle`, `LocalKozmosSurfaceStyle`).
+## Appearance and migration
+
+The default is now `appearance="theme"`: an opaque theme-600 fill with contrasting foreground-1000 text, icons and grip. The light theme pairs blue with white; the dark theme pairs lighter blue with black. Detail, qualifiers and the expanded itinerary inherit the same full-contrast foreground. Current steps remain distinguished by weight and accessibility state, not colour alone. A caller that sets `surface` without an appearance keeps that surface (the background appearance), so an existing `surface="glass"` stays glass; an explicit `appearance="theme"` stays opaque whatever `surface` says.
+
+To retain the previous neutral presentation, set `appearance="background"`. Its `surface` remains `"solid"` by default, with `"glass"` available. SwiftUI uses `appearance: .background`; Compose uses `appearance = KozmosManoeuvreAppearance.Background`. Existing native positional and trailing-lambda calls remain source-compatible: those that pass a surface keep it, and the rest receive the new theme default. Rebuild native consumers; this is not a binary-compatibility guarantee.
+
+On background glass, the detail and itinerary captions use the full foreground colour rather than the muted solid-surface colour (decision 48). The card communicates that effective surface to native content. Brand overrides must preserve the contrast of the paired theme-600/foreground-1000 tokens; changing a fill alone is not a contrast guarantee. The disclosure grip has a minimum 44 px/pt target on web/iOS and 48 dp on Android.
+
+<Canvas of={ManoeuvreCardStories.Background} />
+<Canvas of={ManoeuvreCardStories.BackgroundGlass} />
 
 <Canvas>
   <Story of={ManoeuvreCardStories.Closed} />
@@ -31,7 +40,7 @@ from `@kozmos-ds/product-contracts` (also re-exported by React):
 Supply the spaces and punctuation in `text`; the component never inserts separators
 or moves the qualifier to the end. German may put the side mid-sentence and Japanese
 before the landmark. `secondary` uses normal weight and muted foreground at the same
-font size. On glass it keeps the full-contrast foreground, distinguished by weight,
+font size. On theme guidance and background glass it keeps the full-contrast foreground, distinguished by weight,
 following the existing surface policy. `lang` is the BCP 47 language of those words, not a request to translate them.
 Absent language inherits the surrounding language; hosts own translations and fallback names.
 
@@ -79,29 +88,28 @@ import { useState } from "react";
 
 // A product that keeps the instruction to two lines, as Kozmos 0.5 drew it.
 export function ShortManoeuvre({ steps }: { steps: ItineraryStep[] }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <ManoeuvreCard
-      type="escalator-up"
-      instruction="Take the escalator near Fountain Court up to Level 1"
-      detail="40 m · Ground Floor"
-      instructionLines={2}
-      expanded={expanded}
-      onToggle={() => setExpanded((open) => !open)}
-    >
-      <Itinerary origin="Main Entrance" steps={steps} destination="Airport Shuttles" />
-    </ManoeuvreCard>
-  );
+const [expanded, setExpanded] = useState(false);
+return (
+<ManoeuvreCard
+type="escalator-up"
+instruction="Take the escalator near Fountain Court up to Level 1"
+detail="40 m · Ground Floor"
+instructionLines={2}
+expanded={expanded}
+onToggle={() => setExpanded((open) => !open)} >
+<Itinerary origin="Main Entrance" steps={steps} destination="Airport Shuttles" />
+</ManoeuvreCard>
+);
 }
-    `}
+`}
     swift={`
 import SwiftUI
 import Kozmos
 
 // A product that keeps the instruction to two lines, as Kozmos 0.5 drew it.
 struct ShortManoeuvre: View {
-    let steps: [KozmosItineraryStep]
-    @State private var expanded = false
+let steps: [KozmosItineraryStep]
+@State private var expanded = false
 
     var body: some View {
         KozmosManoeuvreCard(
@@ -115,6 +123,7 @@ struct ShortManoeuvre: View {
             KozmosItinerary(origin: "Main Entrance", steps: steps, destination: "Airport Shuttles")
         }
     }
+
 }
 `}
     kotlin={`
@@ -131,19 +140,19 @@ import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
 // A product that keeps the instruction to two lines, as Kozmos 0.5 drew it.
 @Composable
 fun ShortManoeuvre(steps: List<KozmosItineraryStep>) {
-    var expanded by remember { mutableStateOf(false) }
-    KozmosManoeuvreCard(
-        type = DirectionType.EscalatorUp,
-        instruction = "Take the escalator near Fountain Court up to Level 1",
-        expanded = expanded,
-        onToggle = { expanded = !expanded },
-        detail = "40 m · Ground Floor",
-        instructionLines = 2
-    ) {
-        KozmosItinerary(origin = "Main Entrance", steps = steps, destination = "Airport Shuttles")
-    }
+var expanded by remember { mutableStateOf(false) }
+KozmosManoeuvreCard(
+type = DirectionType.EscalatorUp,
+instruction = "Take the escalator near Fountain Court up to Level 1",
+expanded = expanded,
+onToggle = { expanded = !expanded },
+detail = "40 m · Ground Floor",
+instructionLines = 2
+) {
+KozmosItinerary(origin = "Main Entrance", steps = steps, destination = "Airport Shuttles")
 }
-    `}
+}
+`}
 />
 
 ## Reaching the itinerary
@@ -202,33 +211,33 @@ import SwiftUI
 @State private var expanded = false
 
 KozmosManoeuvreCard(
-    type: .left,
-    instruction: "Turn left onto the concourse",
-    detail: "58 m · Second Floor",
-    isExpanded: expanded,
-    onToggle: { expanded.toggle() }
+type: .left,
+instruction: "Turn left onto the concourse",
+detail: "58 m · Second Floor",
+isExpanded: expanded,
+onToggle: { expanded.toggle() }
 ) {
-    KozmosItinerary(
-        origin: "Dunkin'",
-        steps: [KozmosItineraryStep(id: "1", instruction: "Turn left onto the concourse", type: .left, isCurrent: true)],
-        destination: "Airport Shuttles")
+KozmosItinerary(
+origin: "Dunkin'",
+steps: [KozmosItineraryStep(id: "1", instruction: "Turn left onto the concourse", type: .left, isCurrent: true)],
+destination: "Airport Shuttles")
 }
 `}
     kotlin={`
 var expanded by remember { mutableStateOf(false) }
 
 KozmosManoeuvreCard(
-    type = DirectionType.Left,
-    instruction = "Turn left onto the concourse",
-    detail = "58 m · Second Floor",
-    expanded = expanded,
-    onToggle = { expanded = !expanded }
+type = DirectionType.Left,
+instruction = "Turn left onto the concourse",
+detail = "58 m · Second Floor",
+expanded = expanded,
+onToggle = { expanded = !expanded }
 ) {
-    KozmosItinerary(
-        origin = "Dunkin'",
-        steps = listOf(KozmosItineraryStep("1", "Turn left onto the concourse", DirectionType.Left, isCurrent = true)),
-        destination = "Airport Shuttles"
-    )
+KozmosItinerary(
+origin = "Dunkin'",
+steps = listOf(KozmosItineraryStep("1", "Turn left onto the concourse", DirectionType.Left, isCurrent = true)),
+destination = "Airport Shuttles"
+)
 }
-    `}
+`}
 />

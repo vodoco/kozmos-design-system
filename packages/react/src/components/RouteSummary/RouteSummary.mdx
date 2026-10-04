@@ -8,7 +8,7 @@ import * as RouteSummaryStories from './RouteSummary.stories';
 
 <Canvas of={RouteSummaryStories.Active} />
 
-The `RouteSummary` serves as the primary bottom-anchored modal sheet during active turn-by-turn Wayfinding sessions. It safely structures ETAs, unit distances, and core routing logic into a distinct hardware-independent layer.
+`RouteSummary` presents route estimates and actions. It is not a modal sheet or routing engine: the host owns sheet placement, safe areas, focus, route state and routing logic.
 
 On `surface="glass"` the distance, muted elsewhere, takes the foreground colour, so it reads at 4.5:1 over any map (decision 48). The navigation layout draws its text in the foreground colour already.
 
@@ -32,6 +32,12 @@ import { NavigationPointer01 } from '@kozmos-ds/icons';
 Given a `destination`, the summary takes the navigation layout: the destination's name with End beside it in the danger outline, the time, distance and arrival on one row, and the caller's progress — a `RouteProgressRail` in the products — below. The estimate layout above is unchanged.
 
 <Canvas of={RouteSummaryStories.Navigation_} />
+
+Hosted removes the summary's outer padding, surface, radius and shadow. Left unset, `presentation` is hosted in `AdaptiveMapShell`'s panel, whose surface is the one surface there (decision 43), and standalone anywhere else, as before. Pass `presentation="hosted"` inside a sheet of your own, or `"standalone"` to keep the card in the shell. Navigation metrics are optional and represent remaining estimates, not actual journey totals. Omitted values stay absent; supplied zero-valued labels stay visible. `destinationImage` is decorative and retains its fixed-size fallback on failure. Long destination names wrap without a two-line clamp.
+
+Swift and Compose follow the same rule: left out (`nil` or `null`), `presentation` is hosted in the map shell's panel and standalone elsewhere; `.hosted` or `KozmosRoutePresentation.Hosted` and their standalone counterparts choose. Compose retains the original navigation overload for positional source compatibility, and it follows the shell too. The estimate layout has no hosted presentation on any platform and is unchanged.
+
+<Canvas of={RouteSummaryStories.HostedWithImage} />
 
 <PlatformSnippets
     react={`

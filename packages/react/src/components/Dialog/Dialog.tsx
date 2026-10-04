@@ -5,6 +5,8 @@ import { X } from "@kozmos-ds/icons";
 
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
+import { IconButton } from "../IconButton";
+import { WithoutGenericClick } from "../../utils/generic-click";
 
 const Dialog: React.FC<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Root>
@@ -46,29 +48,44 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    /** Localized name of the persistent dismiss control. */
+    closeLabel?: string;
     portalContainer?: React.ComponentPropsWithoutRef<
       typeof DialogPrimitive.Portal
     >["container"];
   }
->(({ className, children, portalContainer, ...props }, ref) => (
-  <DialogPortal container={portalContainer}>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-overlay duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-container",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-marker opacity-75 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+>(
+  (
+    { className, children, portalContainer, closeLabel = "Close", ...props },
+    ref,
+  ) => (
+    <DialogPortal container={portalContainer}>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2 gap-6 border bg-background p-6 shadow-overlay transition-none duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-container",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+        <WithoutGenericClick>
+          <DialogPrimitive.Close asChild>
+            <IconButton
+              type="button"
+              variant="outline"
+              className="absolute end-6 top-6"
+              aria-label={closeLabel}
+            >
+              <X aria-hidden="true" />
+            </IconButton>
+          </DialogPrimitive.Close>
+        </WithoutGenericClick>
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  ),
+);
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({
@@ -76,10 +93,7 @@ const DialogHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left",
-      className,
-    )}
+    className={cn("flex min-w-0 flex-col gap-2 text-start", className)}
     {...props}
   />
 );
@@ -87,11 +101,19 @@ DialogHeader.displayName = "DialogHeader";
 
 const DialogFooter = ({
   className,
+  layout = "responsive",
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+}: React.HTMLAttributes<HTMLDivElement> & {
+  /** Stacked keeps DOM, reading and visual order aligned; put the recommended action first. */
+  layout?: "responsive" | "stacked";
+}) => (
   <div
+    data-layout={layout}
     className={cn(
-      "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+      "kozmos-dialog-footer flex min-w-0 gap-2 [overflow-wrap:anywhere]",
+      layout === "stacked"
+        ? "flex-col"
+        : "flex-col-reverse sm:flex-row sm:flex-wrap sm:justify-end",
       className,
     )}
     {...props}
@@ -106,7 +128,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
+      "min-h-11 min-w-0 py-2 pe-14 text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]",
       className,
     )}
     {...props}
@@ -120,7 +142,10 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn(
+      "min-w-0 text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]",
+      className,
+    )}
     {...props}
   />
 ));

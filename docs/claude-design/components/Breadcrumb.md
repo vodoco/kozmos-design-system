@@ -5,7 +5,7 @@
 Composes a navigation trail from links, separators and a non-interactive current-page label. Use the exported parts to reflect the page hierarchy; it does not infer routes or generate the trail.
 
 - **Import:** `import { Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@kozmos-ds/react";`
-- **Group:** Navigation
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/navigation-breadcrumb--docs>
 

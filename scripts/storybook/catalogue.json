@@ -1,0 +1,1203 @@
+{
+  "description": "Public Storybook navigation and stable URL IDs. Titles organize discovery; they do not certify Core-only implementation. Preserve exports when moving stories.",
+  "auditSdkComponents": [
+    "AICompanionPanel",
+    "AIInputBar",
+    "AIMessage",
+    "AIMessageList",
+    "AISearchButton",
+    "ActionCard",
+    "AdaptiveMapShell",
+    "ArrivalPanel",
+    "BrowseCategoriesPanel",
+    "CategoryField",
+    "CategoryTile",
+    "DirectionStep",
+    "FloorSelector",
+    "Itinerary",
+    "LanguageSwitcher",
+    "LocationPin",
+    "ManoeuvreCard",
+    "MapAttribution",
+    "MapControlButton",
+    "MapControlsGroup",
+    "MapInfoPanel",
+    "MapOverlay",
+    "MapStatusPill",
+    "MapView",
+    "Notice",
+    "POICard",
+    "POIDetailPanel",
+    "POIMediaGallery",
+    "POIResultCard",
+    "POIResultGroup",
+    "POIResultList",
+    "RouteLocationField",
+    "RouteOptionCard",
+    "RoutePreviewPanel",
+    "RouteProgressRail",
+    "RouteSetupPanel",
+    "RouteSummary",
+    "RoutingInputGroup",
+    "SaveLocationCard",
+    "SearchBar",
+    "UserLocationMarker",
+    "UserMessage",
+    "WayfindingCard"
+  ],
+  "entries": [
+    {
+      "file": "packages/react/src/components/AICompanionPanel/AICompanionPanel.stories.tsx",
+      "id": "product-sdk-aicompanionpanel",
+      "title": "SDK/Assistant/AICompanionPanel",
+      "component": "AICompanionPanel",
+      "exports": [
+        "Conversation",
+        "Streaming",
+        "OpenAndClose",
+        "VoiceConversation",
+        "TimedOut"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/AIInputBar/AIInputBar.stories.tsx",
+      "id": "product-sdk-aiinputbar",
+      "title": "SDK/Assistant/AIInputBar",
+      "component": "AIInputBar",
+      "exports": [
+        "Default",
+        "Empty",
+        "Disabled",
+        "VoiceIdle",
+        "VoiceConnecting",
+        "VoiceListening",
+        "VoiceSpeaking",
+        "VoiceUnavailable",
+        "VoiceError",
+        "VoiceConversation"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/AIMessage/AIMessage.stories.tsx",
+      "id": "product-sdk-aimessage",
+      "title": "SDK/Assistant/AIMessage",
+      "component": "AIMessage",
+      "exports": ["Default", "Streaming", "TimedOut"]
+    },
+    {
+      "file": "packages/react/src/components/AIMessageList/AIMessageList.stories.tsx",
+      "id": "product-sdk-aimessagelist",
+      "title": "SDK/Assistant/AIMessageList",
+      "component": "AIMessageList",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/AISearchButton/AISearchButton.stories.tsx",
+      "id": "product-sdk-aisearchbutton",
+      "title": "SDK/Assistant/AISearchButton",
+      "component": "AISearchButton",
+      "exports": ["Default", "BesideTheSearchField", "OnANarrowScreen"]
+    },
+    {
+      "file": "packages/react/src/components/Accordion/Accordion.stories.tsx",
+      "id": "data-display-accordion",
+      "title": "Core/Data display/Accordion",
+      "component": "Accordion",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/ActionCard/ActionCard.stories.tsx",
+      "id": "product-sdk-actioncard",
+      "title": "Core/Data display/ActionCard",
+      "component": "ActionCard",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/AdaptiveMapShell/AdaptiveMapShell.stories.tsx",
+      "id": "product-sdk-adaptivemapshell",
+      "title": "SDK/Map controls/AdaptiveMapShell",
+      "component": "AdaptiveMapShell",
+      "exports": [
+        "PanelAtEnd",
+        "NarrowHost",
+        "LandscapeHost",
+        "SeparatedRegions",
+        "Error",
+        "Sheet",
+        "SheetPeekAnchor",
+        "SheetPanelHeader",
+        "SheetWithPlaceDetails",
+        "GriplessFittedPanel",
+        "SheetWithBrowseCategories",
+        "SheetWithRoutePreview",
+        "GlassSheetWithBrowseCategories",
+        "GlassSheetWithRoutePreview",
+        "GlassSheetWithPlaceDetails",
+        "GlassSheetWithResults",
+        "RegisteredBottomCorners",
+        "RegisteredAttribution",
+        "AttributionWithSheet",
+        "AttributionBesidePanel"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/Alert/Alert.stories.tsx",
+      "id": "feedback-alert",
+      "title": "Core/Feedback/Alert",
+      "component": "Alert",
+      "exports": [
+        "Default",
+        "Destructive",
+        "Success",
+        "Warning",
+        "Info",
+        "LivenessAndTitle"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/ArrivalPanel/ArrivalPanel.stories.tsx",
+      "id": "map-arrivalpanel",
+      "title": "SDK/Navigation/ArrivalPanel",
+      "component": "ArrivalPanel",
+      "exports": [
+        "Hosted",
+        "LongAction",
+        "ActualMetrics",
+        "Standalone",
+        "Pending",
+        "ZeroDuration",
+        "LongDestination",
+        "MissingImage",
+        "Arabic"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/Avatar/Avatar.stories.tsx",
+      "id": "data-display-avatar",
+      "title": "Core/Data display/Avatar",
+      "component": "Avatar",
+      "exports": ["Default", "Fallback"]
+    },
+    {
+      "file": "packages/react/src/components/Backdrop/Backdrop.stories.tsx",
+      "id": "feedback-backdrop",
+      "title": "Core/Feedback/Backdrop",
+      "component": "Backdrop",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Badge/Badge.stories.tsx",
+      "id": "components-badge",
+      "title": "Core/Data display/Badge",
+      "component": "Badge",
+      "exports": ["Default", "Outline", "WithCounter", "Icon"]
+    },
+    {
+      "file": "packages/react/src/components/BottomNavigation/BottomNavigation.stories.tsx",
+      "id": "navigation-bottomnavigation",
+      "title": "Core/Layout/BottomNavigation",
+      "component": "BottomNavigation",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/BottomSheet/BottomSheet.stories.tsx",
+      "id": "overlay-bottomsheet",
+      "title": "Core/Overlays/BottomSheet",
+      "component": "BottomSheet",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Box/Box.stories.tsx",
+      "id": "foundations-box",
+      "title": "Core/Layout/Box",
+      "component": "Box",
+      "exports": ["Default", "AsChild"]
+    },
+    {
+      "file": "packages/react/src/components/Breadcrumb/Breadcrumb.stories.tsx",
+      "id": "navigation-breadcrumb",
+      "title": "Core/Layout/Breadcrumb",
+      "component": "Breadcrumb",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/BrowseCategoriesPanel/BrowseCategoriesPanel.stories.tsx",
+      "id": "product-sdk-browsecategoriespanel",
+      "title": "SDK/Search and browse/BrowseCategoriesPanel",
+      "component": "BrowseCategoriesPanel",
+      "exports": ["Default", "AviationQuickAccess", "Tinted"]
+    },
+    {
+      "file": "packages/react/src/components/Button/Button.stories.tsx",
+      "id": "components-button",
+      "title": "Core/Actions/Button",
+      "component": "Button",
+      "exports": [
+        "Default",
+        "Destructive",
+        "Outline",
+        "Secondary",
+        "Ghost",
+        "Link",
+        "Glass",
+        "Loading",
+        "Disabled",
+        "Emotions"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/Card/Card.stories.tsx",
+      "id": "components-card",
+      "title": "Core/Layout/Card",
+      "component": "Card",
+      "exports": ["Default", "Padding"]
+    },
+    {
+      "file": "packages/react/src/components/CategoryField/CategoryField.stories.tsx",
+      "id": "product-sdk-categoryfield",
+      "title": "SDK/Search and browse/CategoryField",
+      "component": "CategoryField",
+      "exports": ["Default", "InTheSearchRow", "Dining", "Bookmarks"]
+    },
+    {
+      "file": "packages/react/src/components/CategoryTile/CategoryTile.stories.tsx",
+      "id": "product-sdk-categorytile",
+      "title": "SDK/Search and browse/CategoryTile",
+      "component": "CategoryTile",
+      "exports": ["Default", "Selected", "Tinted"]
+    },
+    {
+      "file": "packages/react/src/components/Checkbox/Checkbox.stories.tsx",
+      "id": "components-checkbox",
+      "title": "Core/Inputs/Checkbox",
+      "component": "Checkbox",
+      "exports": ["Default", "Checked", "Disabled", "Error"]
+    },
+    {
+      "file": "packages/react/src/components/Chip/Chip.stories.tsx",
+      "id": "data-display-chip",
+      "title": "Core/Data display/Chip",
+      "component": "Chip",
+      "exports": ["Default", "Sizes", "Variants", "OneChoice"]
+    },
+    {
+      "file": "packages/react/src/components/ColorPicker/ColorPicker.stories.tsx",
+      "id": "components-colorpicker",
+      "title": "Core/Inputs/ColorPicker",
+      "component": "ColorPicker",
+      "exports": ["Default", "Compact", "Open", "NarrowOpen", "Error"]
+    },
+    {
+      "file": "packages/react/src/components/Combobox/Combobox.stories.tsx",
+      "id": "components-combobox",
+      "title": "Core/Inputs/Combobox",
+      "component": "Combobox",
+      "exports": ["Default", "WithValidation"]
+    },
+    {
+      "file": "packages/react/src/components/Container/Container.stories.tsx",
+      "id": "foundations-container",
+      "title": "Core/Layout/Container",
+      "component": "Container",
+      "exports": ["Default", "Fluid", "InAPanel"]
+    },
+    {
+      "file": "packages/react/src/components/Counter/Counter.stories.tsx",
+      "id": "components-counter",
+      "title": "Core/Inputs/Counter",
+      "component": "Counter",
+      "exports": ["Default", "Brand", "Small", "Destructive", "Emotions"]
+    },
+    {
+      "file": "packages/react/src/components/DatePicker/DatePicker.stories.tsx",
+      "id": "components-datepicker",
+      "title": "Core/Inputs/DatePicker",
+      "component": "DatePicker",
+      "exports": ["Default", "DateRange", "ValidationStates"]
+    },
+    {
+      "file": "packages/react/src/components/DateRangePicker/DateRangePicker.stories.tsx",
+      "id": "components-daterangepicker",
+      "title": "Core/Inputs/DateRangePicker",
+      "component": "DateRangePicker",
+      "exports": ["Default", "ResponsiveStack", "ValidationStates"]
+    },
+    {
+      "file": "packages/react/src/components/Dialog/Dialog.stories.tsx",
+      "id": "components-dialog",
+      "title": "Core/Overlays/Dialog",
+      "component": "Dialog",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/DirectionStep/DirectionStep.stories.tsx",
+      "id": "map-directionstep",
+      "title": "SDK/Navigation/DirectionStep",
+      "component": "DirectionStep",
+      "exports": ["Default", "GlyphAtlas", "InstructionParts", "Transitions"]
+    },
+    {
+      "file": "packages/react/src/components/Drawer/Drawer.stories.tsx",
+      "id": "overlay-drawer",
+      "title": "Core/Overlays/Drawer",
+      "component": "Drawer",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/DynamicIsland/DynamicIsland.stories.tsx",
+      "id": "platform-dynamicisland",
+      "title": "Core/Layout/DynamicIsland",
+      "component": "DynamicIsland",
+      "exports": ["Compact", "Expanded", "Minimal"]
+    },
+    {
+      "file": "packages/react/src/components/EmptyState/EmptyState.stories.tsx",
+      "id": "components-emptystate",
+      "title": "Core/Feedback/EmptyState",
+      "component": "EmptyState",
+      "exports": ["Default", "Compact"]
+    },
+    {
+      "file": "packages/react/src/components/FeedbackCard/FeedbackCard.stories.tsx",
+      "id": "platform-feedbackcard",
+      "title": "Core/Feedback/FeedbackCard",
+      "component": "FeedbackCard",
+      "exports": ["Default", "Submitting", "ThumbsWithACountedComment"]
+    },
+    {
+      "file": "packages/react/src/components/FieldWrapper/FieldWrapper.stories.tsx",
+      "id": "components-fieldwrapper",
+      "title": "Core/Inputs/FieldWrapper",
+      "component": "FieldWrapper",
+      "exports": ["Default", "ValidationStates"]
+    },
+    {
+      "file": "packages/react/src/components/FileUpload/FileUpload.stories.tsx",
+      "id": "components-fileupload",
+      "title": "Core/Inputs/FileUpload",
+      "component": "FileUpload",
+      "exports": ["Default", "Multiple", "Error"]
+    },
+    {
+      "file": "packages/react/src/components/FloatingActionButton/FloatingActionButton.stories.tsx",
+      "id": "action-floatingactionbutton",
+      "title": "Core/Actions/FloatingActionButton",
+      "component": "FloatingActionButton",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/FloorSelector/FloorSelector.stories.tsx",
+      "id": "product-sdk-floorselector",
+      "title": "SDK/Map controls/FloorSelector",
+      "component": "FloorSelector",
+      "exports": [
+        "VerticalList",
+        "HorizontalList",
+        "CompactStepper",
+        "Collapsible",
+        "CollapsibleCountsOffByDefault",
+        "CollapsibleTopFloor",
+        "CollapsibleBottomFloor",
+        "CollapsibleSingleFloor",
+        "CollapsibleOnYourLevel",
+        "CollapsibleOpen",
+        "CollapsibleOpenRightToLeft"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/Grid/Grid.stories.tsx",
+      "id": "foundations-grid",
+      "title": "Core/Layout/Grid",
+      "component": "Grid",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Heading/Heading.stories.tsx",
+      "id": "foundations-heading",
+      "title": "Foundations/Typography/Heading",
+      "component": "Heading",
+      "exports": ["Default", "AllLevels"]
+    },
+    {
+      "file": "packages/react/src/components/Icon/Icon.stories.tsx",
+      "id": "foundations-icon",
+      "title": "Foundations/Icons/Icon",
+      "component": "Icon",
+      "exports": ["Default", "Sizes", "Colors", "Registry"]
+    },
+    {
+      "file": "packages/react/src/components/IconButton/IconButton.stories.tsx",
+      "id": "action-iconbutton",
+      "title": "Core/Actions/IconButton",
+      "component": "IconButton",
+      "exports": ["Default", "Variants", "Sizes"]
+    },
+    {
+      "file": "packages/react/src/components/Input/Input.stories.tsx",
+      "id": "components-input",
+      "title": "Core/Inputs/Input",
+      "component": "Input",
+      "exports": ["Default", "WithHelperText", "WithError", "ValidationStates"]
+    },
+    {
+      "file": "packages/react/src/components/Itinerary/Itinerary.stories.tsx",
+      "id": "map-itinerary",
+      "title": "SDK/Navigation/Itinerary",
+      "component": "Itinerary",
+      "exports": ["Default", "LongEndpoints", "StepMetrics", "NoCurrentStep"]
+    },
+    {
+      "file": "packages/react/src/components/Label/Label.stories.tsx",
+      "id": "components-label",
+      "title": "Core/Inputs/Label",
+      "component": "Label",
+      "exports": ["Default", "WithInput"]
+    },
+    {
+      "file": "packages/react/src/components/LanguageSwitcher/LanguageSwitcher.stories.tsx",
+      "id": "product-sdk-languageswitcher",
+      "title": "SDK/Map controls/LanguageSwitcher",
+      "component": "LanguageSwitcher",
+      "exports": [
+        "Default",
+        "Pending",
+        "Failed",
+        "SingleLanguage",
+        "NoLanguages",
+        "RightToLeft",
+        "EmbeddedMap"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/Link/Link.stories.tsx",
+      "id": "navigation-link",
+      "title": "Core/Actions/Link",
+      "component": "Link",
+      "exports": ["Default", "Subtle"]
+    },
+    {
+      "file": "packages/react/src/components/List/List.stories.tsx",
+      "id": "data-display-list",
+      "title": "Core/Data display/List",
+      "component": "List",
+      "exports": ["Default", "Compact"]
+    },
+    {
+      "file": "packages/react/src/components/Listbox/Listbox.stories.tsx",
+      "id": "components-listbox",
+      "title": "Core/Inputs/Listbox",
+      "component": "Listbox",
+      "exports": ["Single", "Multiple"]
+    },
+    {
+      "file": "packages/react/src/components/LocationPin/LocationPin.stories.tsx",
+      "id": "product-sdk-locationpin",
+      "title": "SDK/Map controls/LocationPin",
+      "component": "LocationPin",
+      "exports": [
+        "Default",
+        "NumberedSelected",
+        "NumberedAtRest",
+        "NumberedOneSelected",
+        "FeaturedLogoAndPlain",
+        "OtherFloor",
+        "VariantsAtRest",
+        "InTheDark",
+        "RightToLeft",
+        "ExternalLabel",
+        "Tinted",
+        "TintedSelected",
+        "TintedOffFloor"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/ManoeuvreCard/ManoeuvreCard.stories.tsx",
+      "id": "map-manoeuvrecard",
+      "title": "SDK/Navigation/ManoeuvreCard",
+      "component": "ManoeuvreCard",
+      "exports": [
+        "Closed",
+        "Open",
+        "Background",
+        "BackgroundGlass",
+        "CustomContent",
+        "LongInstruction",
+        "InstructionLines",
+        "GermanParts",
+        "JapaneseParts",
+        "ArabicParts",
+        "PartsItinerary",
+        "GlassParts"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/ManoeuvreCard/NavigationExamples.stories.tsx",
+      "id": "examples-navigation",
+      "title": "Examples/Navigation/Guidance",
+      "component": "ManoeuvreCard",
+      "exports": [
+        "Directions",
+        "PhoneEnglish",
+        "PhoneGerman",
+        "PhoneJapanese",
+        "PhoneGermanItinerary"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/MapAttribution/MapAttribution.stories.tsx",
+      "id": "product-sdk-mapattribution",
+      "title": "SDK/Map controls/MapAttribution",
+      "component": "MapAttribution",
+      "exports": [
+        "Default",
+        "Surface",
+        "OverMap",
+        "Branded",
+        "WhiteLabel",
+        "Narrow",
+        "LongCredit",
+        "RightToLeft"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/MapControlButton/MapControlButton.stories.tsx",
+      "id": "product-sdk-mapcontrolbutton",
+      "title": "SDK/Map controls/MapControlButton",
+      "component": "MapControlButton",
+      "exports": [
+        "IconOnly",
+        "LabelledState",
+        "StackedState",
+        "StateAlone",
+        "FilledEmphasis",
+        "RevealsOnChange",
+        "RevealsAfterWork"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/MapControlsGroup/MapControlsGroup.stories.tsx",
+      "id": "map-mapcontrolsgroup",
+      "title": "SDK/Map controls/MapControlsGroup",
+      "component": "MapControlsGroup",
+      "exports": [
+        "Default",
+        "ZoomOnly",
+        "LocationStates",
+        "SDKLocationControl",
+        "StepFreeDuringWayfinding"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/MapInfoPanel/MapInfoPanel.stories.tsx",
+      "id": "product-sdk-mapinfopanel",
+      "title": "SDK/Map controls/MapInfoPanel",
+      "component": "MapInfoPanel",
+      "exports": ["Default", "ExpandedFAQ", "Minimal", "LongContent"]
+    },
+    {
+      "file": "packages/react/src/components/MapOverlay/MapOverlay.stories.tsx",
+      "id": "map-mapoverlay",
+      "title": "SDK/Map controls/MapOverlay",
+      "component": "MapOverlay",
+      "exports": ["Default", "BottomCenter", "MapControls"]
+    },
+    {
+      "file": "packages/react/src/components/MapStatusPill/MapStatusPill.stories.tsx",
+      "id": "product-sdk-mapstatuspill",
+      "title": "SDK/Map controls/MapStatusPill",
+      "component": "MapStatusPill",
+      "exports": [
+        "CalculatingPrecisePosition",
+        "FailedToCalculatePrecisePosition",
+        "WalkingImprovesAccuracy",
+        "Established",
+        "UpdatingRoute",
+        "NoBluetooth",
+        "WayfindingUnavailable",
+        "PreparingContent",
+        "UpdatingContent",
+        "UpToDate",
+        "TurnBack",
+        "CalculatingStepFreeRoute",
+        "LongerWordsWrap",
+        "RightToLeft",
+        "OnTheMap"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/MapView/MapView.stories.tsx",
+      "id": "map-mapview",
+      "title": "SDK/Map controls/MapView",
+      "component": "MapView",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Menu/Menu.stories.tsx",
+      "id": "navigation-menu",
+      "title": "Core/Layout/Menu",
+      "component": "Menu",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/MetaStrip/MetaStrip.stories.tsx",
+      "id": "data-display-metastrip",
+      "title": "Core/Data display/MetaStrip",
+      "component": "MetaStrip",
+      "exports": ["Default", "WithVisibleLabels", "Overflowing"]
+    },
+    {
+      "file": "packages/react/src/components/MultiSelect/MultiSelect.stories.tsx",
+      "id": "components-multiselect",
+      "title": "Core/Inputs/MultiSelect",
+      "component": "MultiSelect",
+      "exports": ["Default", "WithSelectedValues"]
+    },
+    {
+      "file": "packages/react/src/components/Navbar/Navbar.stories.tsx",
+      "id": "navigation-navbar",
+      "title": "Core/Layout/Navbar",
+      "component": "Navbar",
+      "exports": ["Default", "Contextual", "NarrowContainer"]
+    },
+    {
+      "file": "packages/react/src/components/NavigationAnnouncer/NavigationAnnouncer.stories.tsx",
+      "id": "utilities-navigationannouncer",
+      "title": "SDK/Navigation/NavigationAnnouncer",
+      "component": "NavigationAnnouncer",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/NavigationItem/NavigationItem.stories.tsx",
+      "id": "navigation-navigationitem",
+      "title": "Core/Layout/NavigationItem",
+      "component": "NavigationItem",
+      "exports": ["Side", "Top", "Rail", "RailRightToLeft", "DashboardRail"]
+    },
+    {
+      "file": "packages/react/src/components/Notice/Notice.stories.tsx",
+      "id": "product-sdk-notice",
+      "title": "Core/Feedback/Notice",
+      "component": "Notice",
+      "exports": ["Collapsed", "Expanded", "Emergency", "SingleLine"]
+    },
+    {
+      "file": "packages/react/src/components/NumberInput/NumberInput.stories.tsx",
+      "id": "components-numberinput",
+      "title": "Core/Inputs/NumberInput",
+      "component": "NumberInput",
+      "exports": [
+        "Default",
+        "WithHelperText",
+        "ValidationStates",
+        "WithoutSteppers",
+        "RightToLeft",
+        "ReadOnly"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/OTPInput/OTPInput.stories.tsx",
+      "id": "components-otpinput",
+      "title": "Core/Inputs/OTPInput",
+      "component": "OTPInput",
+      "exports": ["Default", "WithError", "ValidationStates"]
+    },
+    {
+      "file": "packages/react/src/components/POICard/POICard.stories.tsx",
+      "id": "components-poicard",
+      "title": "SDK/Search and browse/POICard",
+      "component": "POICard",
+      "exports": ["Default", "WithHeroImage", "InsideMapOverlay"]
+    },
+    {
+      "file": "packages/react/src/components/POIDetailPanel/POIDetailExamples.stories.tsx",
+      "id": "product-sdk-poi-detail-examples",
+      "title": "Examples/Place details/Venue scenarios",
+      "component": "POIDetailPanel",
+      "exports": [
+        "Restaurant",
+        "Entrance",
+        "Retail",
+        "Fitness",
+        "Parking",
+        "FullFieldCatalogue",
+        "OnMap",
+        "MissingData",
+        "FailedMedia",
+        "ActionStates",
+        "LongContent"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/POIDetailPanel/POIDetailPanel.stories.tsx",
+      "id": "product-sdk-poidetailpanel",
+      "title": "SDK/Place details/POIDetailPanel",
+      "component": "POIDetailPanel",
+      "exports": ["Inline", "Sheet", "DesktopPanel", "PartialData"]
+    },
+    {
+      "file": "packages/react/src/components/POIMediaGallery/POIMediaGallery.stories.tsx",
+      "id": "product-sdk-poimediagallery",
+      "title": "SDK/Place details/POIMediaGallery",
+      "component": "POIMediaGallery",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/POIResultCard/POIResultCard.stories.tsx",
+      "id": "product-sdk-poiresultcard",
+      "title": "SDK/Search and browse/POIResultCard",
+      "component": "POIResultCard",
+      "exports": [
+        "Default",
+        "SDKNumberedFeatured",
+        "SDKAlternative",
+        "LegacyMigration",
+        "StaffLanguageNotListed",
+        "FeaturedSelected",
+        "SelectedWithActions",
+        "LongActionLabels",
+        "AlternativeBadge",
+        "Tabs",
+        "TabsInTheDark",
+        "TabsRightToLeft",
+        "TravelTimeBands"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/POIResultGroup/POIResultGroup.stories.tsx",
+      "id": "product-sdk-poiresultgroup",
+      "title": "SDK/Search and browse/POIResultGroup",
+      "component": "POIResultGroup",
+      "exports": [
+        "Collapsed",
+        "Expanded",
+        "SingleBranch",
+        "NumberedMixedStates"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/POIResultList/POIResultList.stories.tsx",
+      "id": "product-sdk-poiresultlist",
+      "title": "SDK/Search and browse/POIResultList",
+      "component": "POIResultList",
+      "exports": [
+        "Default",
+        "Empty",
+        "QuickAccessNumbered",
+        "QuickAccessNumberedRightToLeft",
+        "SelectionComesIntoView"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/Pagination/Pagination.stories.tsx",
+      "id": "navigation-pagination",
+      "title": "Core/Layout/Pagination",
+      "component": "Pagination",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/PasswordInput/PasswordInput.stories.tsx",
+      "id": "components-passwordinput",
+      "title": "Core/Inputs/PasswordInput",
+      "component": "PasswordInput",
+      "exports": ["Default", "Visible", "Error", "WithoutToggle", "RightToLeft"]
+    },
+    {
+      "file": "packages/react/src/components/Popover/Popover.stories.tsx",
+      "id": "overlay-popover",
+      "title": "Core/Overlays/Popover",
+      "component": "Popover",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Progress/Progress.stories.tsx",
+      "id": "feedback-progress",
+      "title": "Core/Feedback/Progress",
+      "component": "Progress",
+      "exports": [
+        "Default",
+        "SelectedSection",
+        "LivePosition",
+        "AnimatedUpdate"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/Radio/Radio.stories.tsx",
+      "id": "components-radiogroup",
+      "title": "Core/Inputs/RadioGroup",
+      "component": "Radio",
+      "exports": ["Default", "Disabled", "Error"]
+    },
+    {
+      "file": "packages/react/src/components/Rating/Rating.stories.tsx",
+      "id": "input-rating",
+      "title": "Core/Inputs/Rating",
+      "component": "Rating",
+      "exports": ["Default", "Thumbs", "ReadOnly"]
+    },
+    {
+      "file": "packages/react/src/components/RouteLocationField/RouteLocationField.stories.tsx",
+      "id": "map-routelocationfield",
+      "title": "SDK/Navigation/RouteLocationField",
+      "component": "RouteLocationField",
+      "exports": [
+        "Search",
+        "Resolved",
+        "WithCurrentPosition",
+        "HostFiltered",
+        "Loading",
+        "Empty",
+        "Error",
+        "Disabled",
+        "LongLocation"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/RouteOptionCard/RouteOptionCard.stories.tsx",
+      "id": "product-sdk-routeoptioncard",
+      "title": "SDK/Navigation/RouteOptionCard",
+      "component": "RouteOptionCard",
+      "exports": ["Selected", "Unavailable"]
+    },
+    {
+      "file": "packages/react/src/components/RoutePreviewPanel/RoutePreviewPanel.stories.tsx",
+      "id": "product-sdk-routepreviewpanel",
+      "title": "SDK/Navigation/RoutePreviewPanel",
+      "component": "RoutePreviewPanel",
+      "exports": ["Ready", "Calculating"]
+    },
+    {
+      "file": "packages/react/src/components/RouteProgressRail/RouteProgressRail.stories.tsx",
+      "id": "map-routeprogressrail",
+      "title": "SDK/Navigation/RouteProgressRail",
+      "component": "RouteProgressRail",
+      "exports": [
+        "Start",
+        "Midway",
+        "Arriving",
+        "Unknown",
+        "RightToLeft",
+        "Waypoints",
+        "ActiveLeg",
+        "WalkingWithinLeg",
+        "AtTransition",
+        "AfterTransition",
+        "RoutePositionUnknown",
+        "RouteRightToLeft",
+        "ThemeRoute",
+        "StaticAfterTransition",
+        "GuidancePaused",
+        "LiveStart"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/RouteSetupPanel/RouteSetupPanel.stories.tsx",
+      "id": "map-routesetuppanel",
+      "title": "SDK/Navigation/RouteSetupPanel",
+      "component": "RouteSetupPanel",
+      "exports": [
+        "Locations",
+        "Pending",
+        "MapConfirmation",
+        "InvalidMapPoint",
+        "Standalone",
+        "LongLabels"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/RouteSummary/RouteSummary.stories.tsx",
+      "id": "map-routesummary",
+      "title": "SDK/Navigation/RouteSummary",
+      "component": "RouteSummary",
+      "exports": [
+        "Active",
+        "Preview",
+        "Navigation_",
+        "Hosted",
+        "HostedWithImage"
+      ]
+    },
+    {
+      "file": "packages/react/src/components/RoutingInputGroup/RoutingInputGroup.stories.tsx",
+      "id": "map-routinginputgroup",
+      "title": "SDK/Navigation/RoutingInputGroup",
+      "component": "RoutingInputGroup",
+      "exports": ["Default", "WithStop"]
+    },
+    {
+      "file": "packages/react/src/components/SaveLocationCard/SaveLocationCard.stories.tsx",
+      "id": "map-savelocationcard",
+      "title": "SDK/Place details/SaveLocationCard",
+      "component": "SaveLocationCard",
+      "exports": ["Unsaved", "Saved"]
+    },
+    {
+      "file": "packages/react/src/components/ScrollArea/ScrollArea.stories.tsx",
+      "id": "components-scrollarea",
+      "title": "Core/Layout/ScrollArea",
+      "component": "ScrollArea",
+      "exports": ["HorizontalQuickAccess", "VerticalContent"]
+    },
+    {
+      "file": "packages/react/src/components/Search/Search.stories.tsx",
+      "id": "inputs-search",
+      "title": "Core/Inputs/Search",
+      "component": "Search",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/SearchBar/SearchBar.stories.tsx",
+      "id": "components-searchbar",
+      "title": "SDK/Search and browse/SearchBar",
+      "component": "SearchBar",
+      "exports": ["Default", "FloatingOverlay"]
+    },
+    {
+      "file": "packages/react/src/components/SegmentedControl/SegmentedControl.stories.tsx",
+      "id": "selection-segmentedcontrol",
+      "title": "Core/Inputs/SegmentedControl",
+      "component": "SegmentedControl",
+      "exports": ["Default", "FullWidth", "Error", "Disabled"]
+    },
+    {
+      "file": "packages/react/src/components/Select/Select.stories.tsx",
+      "id": "components-select",
+      "title": "Core/Inputs/Select",
+      "component": "Select",
+      "exports": ["Default", "WithScroll", "Disabled", "WithError"]
+    },
+    {
+      "file": "packages/react/src/components/Separator/Separator.stories.tsx",
+      "id": "data-display-separator",
+      "title": "Core/Layout/Separator",
+      "component": "Separator",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Sidebar/Sidebar.stories.tsx",
+      "id": "navigation-sidebar",
+      "title": "Core/Layout/Sidebar",
+      "component": "Sidebar",
+      "exports": ["Default", "Rail"]
+    },
+    {
+      "file": "packages/react/src/components/Skeleton/Skeleton.stories.tsx",
+      "id": "feedback-skeleton",
+      "title": "Core/Feedback/Skeleton",
+      "component": "Skeleton",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Slider/Slider.stories.tsx",
+      "id": "components-slider",
+      "title": "Core/Inputs/Slider",
+      "component": "Slider",
+      "exports": ["Default", "Range"]
+    },
+    {
+      "file": "packages/react/src/components/Spinner/Spinner.stories.tsx",
+      "id": "feedback-spinner",
+      "title": "Core/Feedback/Spinner",
+      "component": "Spinner",
+      "exports": ["Default", "Small", "Large", "EverySize", "InAButton"]
+    },
+    {
+      "file": "packages/react/src/components/SplitButton/SplitButton.stories.tsx",
+      "id": "action-splitbutton",
+      "title": "Core/Actions/SplitButton",
+      "component": "SplitButton",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Stack/Stack.stories.tsx",
+      "id": "foundations-stack",
+      "title": "Core/Layout/Stack",
+      "component": "Stack",
+      "exports": ["Default", "Horizontal"]
+    },
+    {
+      "file": "packages/react/src/components/Stepper/Stepper.stories.tsx",
+      "id": "navigation-stepper",
+      "title": "Core/Layout/Stepper",
+      "component": "Stepper",
+      "exports": ["Default", "Interactive"]
+    },
+    {
+      "file": "packages/react/src/components/Surface/Surface.stories.tsx",
+      "id": "foundations-surface",
+      "title": "Core/Layout/Surface",
+      "component": "Surface",
+      "exports": ["Solid", "Glass", "GlassPanel"]
+    },
+    {
+      "file": "packages/react/src/components/Switch/Switch.stories.tsx",
+      "id": "components-switch",
+      "title": "Core/Inputs/Switch",
+      "component": "Switch",
+      "exports": ["Default", "Disabled", "Error"]
+    },
+    {
+      "file": "packages/react/src/components/Table/Table.stories.tsx",
+      "id": "data-display-table",
+      "title": "Core/Data display/Table",
+      "component": "Table",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Tabs/Tabs.stories.tsx",
+      "id": "components-tabs",
+      "title": "Core/Layout/Tabs",
+      "component": "Tabs",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Tag/Tag.stories.tsx",
+      "id": "data-display-tag",
+      "title": "Core/Data display/Tag",
+      "component": "Tag",
+      "exports": ["Default", "Removable", "Emotions"]
+    },
+    {
+      "file": "packages/react/src/components/Text/Text.stories.tsx",
+      "id": "foundations-text",
+      "title": "Foundations/Typography/Text",
+      "component": "Text",
+      "exports": ["Default", "Muted", "LargeBold"]
+    },
+    {
+      "file": "packages/react/src/components/Textarea/Textarea.stories.tsx",
+      "id": "components-textarea",
+      "title": "Core/Inputs/Textarea",
+      "component": "Textarea",
+      "exports": ["Default", "WithError", "CharacterCount"]
+    },
+    {
+      "file": "packages/react/src/components/ThemeProvider/ThemeProvider.stories.tsx",
+      "id": "system-themeprovider",
+      "title": "Foundations/Theming/ThemeProvider",
+      "component": "ThemeProvider",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/TimePicker/TimePicker.stories.tsx",
+      "id": "components-timepicker",
+      "title": "Core/Inputs/TimePicker",
+      "component": "TimePicker",
+      "exports": ["Default", "Error"]
+    },
+    {
+      "file": "packages/react/src/components/Timeline/Timeline.stories.tsx",
+      "id": "data-display-timeline",
+      "title": "Core/Data display/Timeline",
+      "component": "Timeline",
+      "exports": ["Detailed", "Basic", "Compact", "Default"]
+    },
+    {
+      "file": "packages/react/src/components/Toast/Toast.stories.tsx",
+      "id": "feedback-toast",
+      "title": "Core/Feedback/Toast",
+      "component": "Toast",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/ToggleButton/ToggleButton.stories.tsx",
+      "id": "action-togglebutton",
+      "title": "Core/Actions/ToggleButton",
+      "component": "ToggleButton",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Tooltip/Tooltip.stories.tsx",
+      "id": "overlay-tooltip",
+      "title": "Core/Overlays/Tooltip",
+      "component": "Tooltip",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/Tree/Tree.stories.tsx",
+      "id": "data-display-tree",
+      "title": "Core/Data display/Tree",
+      "component": "Tree",
+      "exports": ["Default", "WithRowActions", "RowPrimitive"]
+    },
+    {
+      "file": "packages/react/src/components/UserLocationMarker/UserLocationMarker.stories.tsx",
+      "id": "components-userlocationmarker",
+      "title": "SDK/Map controls/UserLocationMarker",
+      "component": "UserLocationMarker",
+      "exports": ["Default", "StaticNoHeading"]
+    },
+    {
+      "file": "packages/react/src/components/UserMessage/UserMessage.stories.tsx",
+      "id": "product-sdk-usermessage",
+      "title": "Core/Feedback/UserMessage",
+      "component": "UserMessage",
+      "exports": ["Default"]
+    },
+    {
+      "file": "packages/react/src/components/WayfindingCard/WayfindingCard.stories.tsx",
+      "id": "components-wayfindingcard",
+      "title": "SDK/Navigation/WayfindingCard",
+      "component": "WayfindingCard",
+      "exports": ["Default", "InsideMapOverlay"]
+    },
+    {
+      "file": "apps/docs/src/stories/Tokens.stories.tsx",
+      "id": "design-system-tokens-map",
+      "title": "Foundations/Tokens/Map",
+      "exports": [
+        "PrimitiveColors",
+        "SemanticAndComponentColors",
+        "ShapeAndSpacing",
+        "Typography"
+      ]
+    },
+    {
+      "file": "apps/docs/stories/examples/MapBrowseFlow.stories.tsx",
+      "id": "examples-map-browse-flow",
+      "title": "Examples/Map browsing/Browse and select",
+      "exports": [
+        "Desktop",
+        "Information",
+        "PhoneInformation",
+        "InformationRightToLeft",
+        "Phone",
+        "SelectedPlace",
+        "PhoneSelectedPlace",
+        "RightToLeft"
+      ]
+    },
+    {
+      "file": "apps/docs/stories/examples/MapSearch.stories.tsx",
+      "id": "examples-map-based-search",
+      "title": "Examples/Map browsing/Search",
+      "exports": ["Default"]
+    },
+    {
+      "file": "apps/docs/stories/examples/NavigationJourney.stories.tsx",
+      "id": "examples-navigation-journey",
+      "title": "Examples/Navigation/Journey",
+      "exports": [
+        "ControlledJourney",
+        "SelectedLocations",
+        "BlueDotAvailable",
+        "UnavailableRoute",
+        "UnavailableStepFree",
+        "OfflineRecovery",
+        "UnavailablePosition",
+        "InterruptedCalculation"
+      ]
+    },
+    {
+      "file": "apps/docs/stories/examples/OpeningHours.stories.tsx",
+      "id": "examples-opening-hours",
+      "title": "Examples/Place details/Opening hours",
+      "exports": ["Default"]
+    },
+    {
+      "file": "apps/docs/stories/examples/POIDetailCard.stories.tsx",
+      "id": "examples-poi-detail-card",
+      "title": "Guides/Design gap references/POI details",
+      "exports": ["Default"]
+    }
+  ]
+}

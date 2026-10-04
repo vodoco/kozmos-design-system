@@ -15,6 +15,10 @@ export interface ItineraryStep {
   type: DirectionType;
   /** The step under way. */
   current?: boolean;
+  /** Localized estimate for this step, not an actual journey total. */
+  distance?: string;
+  /** Localized estimate for this step. Missing and empty values are omitted. */
+  duration?: string;
 }
 
 export interface ItineraryProps extends React.HTMLAttributes<HTMLElement> {
@@ -47,16 +51,20 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
     },
     ref,
   ) => {
+    const currentCount = steps.filter((step) => step.current).length;
     // The captions and the origin are muted, and on glass, in a glass
     // manoeuvre card, the foreground colour (decision 48).
     const endpoint = (caption: string, name: string, emphasised: boolean) => (
-      <li className="flex items-baseline gap-3 text-[15px]">
-        <span className="kozmos-muted-text w-10 shrink-0 text-xs uppercase">
+      <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[15px]">
+        <span className="kozmos-muted-text min-w-10 max-w-full shrink-0 text-xs uppercase [overflow-wrap:anywhere]">
           {caption}
         </span>
         <span
           className={cn(
-            emphasised ? "font-semibold text-foreground" : "kozmos-muted-text",
+            "min-w-0 flex-1 basis-20 [overflow-wrap:anywhere]",
+            emphasised
+              ? "font-semibold kozmos-guidance-text"
+              : "kozmos-muted-text",
           )}
         >
           {name}
@@ -67,7 +75,7 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
       <section
         ref={ref}
         aria-label={label}
-        className={cn("kozmos-itinerary text-foreground", className)}
+        className={cn("kozmos-itinerary kozmos-guidance-text", className)}
         {...props}
       >
         <ol className="m-0 flex list-none flex-col gap-2 p-0">
@@ -75,22 +83,35 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
           {steps.map((step) => (
             <li
               key={step.id}
-              aria-current={step.current ? "step" : undefined}
+              aria-current={
+                step.current && currentCount === 1 ? "step" : undefined
+              }
               className={cn(
                 "flex items-start gap-3 text-[15px]",
-                step.current ? "font-semibold text-primary" : "text-foreground",
+                step.current && currentCount === 1
+                  ? "font-semibold kozmos-guidance-accent"
+                  : "kozmos-guidance-text",
               )}
             >
               <span
                 className={cn(
                   "flex h-5 w-10 shrink-0 items-center",
-                  step.current ? "text-primary" : "text-muted-foreground",
+                  step.current && currentCount === 1
+                    ? "kozmos-guidance-accent"
+                    : "kozmos-muted-text",
                 )}
               >
                 <DirectionIcon type={step.type} className="h-4 w-4" />
               </span>
-              <span className="min-w-0">
-                <InstructionText instruction={step.instruction} />
+              <span className="min-w-0 flex flex-col gap-0.5">
+                <span>
+                  <InstructionText instruction={step.instruction} />
+                </span>
+                {(step.distance || step.duration) && (
+                  <span className="kozmos-muted-text text-sm font-normal">
+                    {[step.distance, step.duration].filter(Boolean).join(" • ")}
+                  </span>
+                )}
               </span>
             </li>
           ))}

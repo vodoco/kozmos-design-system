@@ -5,7 +5,7 @@
 A set of checkable buttons—known as radio buttons—where no more than one of the buttons can be checked at a time.
 
 - **Import:** `import { RadioGroup, RadioGroupItem } from "@kozmos-ds/react";`
-- **Group:** Components
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/components-radiogroup--docs>
 

@@ -4,8 +4,8 @@
 
 Communicates progress with an accessible name. React's `value` is measured against `max` (100 by default), and the visual fill and announced value use the same scale. Use `null` or omit `value` when progress is indeterminate.
 
-- **Import:** `import { Progress } from "@kozmos-ds/react";`
-- **Group:** Feedback
+- **Import:** `import { Progress, ProgressTrack } from "@kozmos-ds/react";`
+- **Group:** Core
 - **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/feedback-progress--docs>
 
@@ -36,3 +36,48 @@ It forwards its ref to `HTMLDivElement`. Its props are `Omit<ProgressPrimitive.P
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## ProgressTrack
+
+Decorative track primitive. The owning progress control supplies its accessible semantics.
+
+It forwards its ref to `HTMLDivElement`. Its props are `ProgressTrackProps`, which extends `React.HTMLAttributes<HTMLDivElement>`.
+
+- `activeRange`: `ProgressRange`, optional.
+
+  Selected interval in static mode; bounds of the current section in live mode.
+
+- `value`: `number | null`, **required**.
+
+  Absolute normalized position; null/nonfinite/outside the active range means unknown.
+
+- `appearance`: `"theme" | "gradient"`, optional, default `"theme"`.
+- `positionMode`: `"static" | "live"`, optional, default `"live"`.
+
+  Static paints only the selected interval; live paints from zero to a valid value.
+
+- `motion`: `"none" | "directional"`, optional, default `"none"`.
+
+  Decorative direction, never simulated progress. Host disables when guidance pauses.
+
+- `children`: `ReactNode`, optional.
+
+It also takes the attributes React's DOM types give it (`className`, `style`, `id`, `aria-*`, the event handlers among them).
+
+## Types these props take
+
+### ProgressRange
+
+From `@kozmos-ds/react`.
+
+```ts
+/** A normalized, host-selected interval. Invalid intervals are not rendered. */
+interface ProgressRange {
+  start: number;
+  end: number;
+}
+```
+
+## Also exported
+
+- `validProgressRange`: `(range: ProgressRange | undefined) => range is ProgressRange`.

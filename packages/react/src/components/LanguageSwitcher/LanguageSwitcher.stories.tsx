@@ -12,7 +12,8 @@ const languages = [
   { id: "ar", label: "العربية", direction: "rtl" as const },
 ];
 const meta: Meta<typeof LanguageSwitcher> = {
-  title: "Product SDK/LanguageSwitcher",
+  id: "product-sdk-languageswitcher",
+  title: "SDK/Map controls/LanguageSwitcher",
   component: LanguageSwitcher,
   args: { languages, selectedLocale: "en", onLocaleRequest: fn() },
   parameters: { layout: "centered" },

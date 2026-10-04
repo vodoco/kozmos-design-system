@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react";
 import { Avatar, AvatarImage, AvatarFallback } from "./Avatar";
 
 const meta: Meta<typeof Avatar> = {
-  title: "Data Display/Avatar",
+  id: "data-display-avatar",
+  title: "Core/Data display/Avatar",
   component: Avatar,
 };
 
