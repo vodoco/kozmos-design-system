@@ -353,7 +353,12 @@ function NavigationJourney({
                 <Button
                   className={actionClass}
                   variant="outline"
-                  onClick={() => dispatch({ type: "edit" })}
+                  onClick={() => {
+                    // The list, with the confirmed origin kept until a new
+                    // one is chosen.
+                    dispatch({ type: "cancel-map" });
+                    editPoint("origin");
+                  }}
                 >
                   Choose from a list instead
                 </Button>
@@ -482,7 +487,10 @@ function NavigationJourney({
             <Button
               ref={failure?.retry ? undefined : recoveryActionRef}
               variant={failure?.retry ? "outline" : "default"}
-              onClick={() => dispatch({ type: "edit" })}
+              onClick={() => {
+                dispatch({ type: "edit" });
+                editPoint("origin");
+              }}
             >
               Choose another starting point
             </Button>

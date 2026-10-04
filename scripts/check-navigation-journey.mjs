@@ -254,6 +254,16 @@ try {
               1,
               "Recovery retains the destination",
             );
+          if (action === "Choose another starting point") {
+            // The confirmed origin is kept while it is being changed:
+            // cancelling restores it.
+            await page
+              .getByRole("button", { name: "Cancel", exact: true })
+              .click();
+            await page
+              .getByText("North terminal lobby", { exact: true })
+              .waitFor();
+          }
         }
         console.log(
           `ok recovery action destinations ${story} ${theme} ${width}`,

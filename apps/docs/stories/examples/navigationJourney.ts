@@ -140,11 +140,12 @@ export function journeyReducer(
     case "cancel":
       return { ...state, ...invalidate, phase: "setup" };
     case "edit":
+      // Back to setup to change a point. Confirmed points stay until a new
+      // one is chosen, so cancelling the change restores them.
       return {
         ...state,
         ...invalidate,
         phase: "setup",
-        origin: null,
         query: "",
       };
     case "end":

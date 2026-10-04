@@ -173,6 +173,22 @@ describe("host journey example state", () => {
     expect(failed.destination).toEqual(destination);
     expect(failed.route).toBeNull();
   });
+  it("keeps the confirmed origin when returning to setup to change it", () => {
+    // Recovery's "Choose another starting point": the confirmed point stays
+    // until a new one is chosen, so cancelling the change restores it.
+    const s = request();
+    const failed = reduce(s, {
+      type: "failure",
+      requestId: s.generation,
+      reason: "step-free-unavailable",
+    });
+    const editing = reduce(failed, { type: "edit" });
+    expect(editing.phase).toBe("setup");
+    expect(editing.origin).toEqual(origin);
+    expect(editing.destination).toEqual(destination);
+    expect(editing.route).toBeNull();
+    expect(editing.query).toBe("");
+  });
   it("cancels an unconfirmed map point without losing the confirmed origin", () => {
     const s = reduce(setup(), { type: "choose-map" });
     expect(reduce(s, { type: "cancel-map" }).origin).toEqual(origin);
