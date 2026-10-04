@@ -23,17 +23,22 @@ try {
     const rtlColumn = page
       .getByRole("heading", { name: "RTL", exact: true })
       .locator("..");
-    // The defaults every direction draws: lifts, escalators, stairs, ramps,
-    // entry and exit in Pointr Maps - Express's wayfinding artwork (Olcay,
-    // 2026-10-04), each its own solid shape; the rest of that set below them,
-    // by name. Like every physical direction, none mirrors in right to left.
+    // The defaults every direction draws: turns, turning back, the
+    // destination, lifts, escalators, stairs, ramps, entry and exit in Pointr
+    // Maps - Express's wayfinding artwork (Olcay, 2026-10-04), each its own
+    // solid shape; the rest of that set below them, by name. Like every
+    // physical direction, none mirrors in right to left.
     const set = (column, name) =>
       column.locator(`:scope > [data-glyph-set="${name}"]`);
     assert.equal(await set(ltr, "default").count(), 19);
     assert.equal(await set(rtlColumn, "default").count(), 19);
-    assert.equal(await set(ltr, "by-name").count(), 13);
-    assert.equal(await set(rtlColumn, "by-name").count(), 13);
+    assert.equal(await set(ltr, "by-name").count(), 9);
+    assert.equal(await set(rtlColumn, "by-name").count(), 9);
     const wayfinding = [
+      "left",
+      "right",
+      "turn-back",
+      "destination",
       "lift-up",
       "lift-down",
       "stairs-up",
@@ -51,11 +56,7 @@ try {
       "StairsNoDirection",
       "RampNoDirection",
       "RouteEntranceExit",
-      "HardLeft",
-      "HardRight",
-      "TurnBack",
       "FollowTheLine",
-      "Arriving",
       "CustomTransition",
       "SecurityControl",
       "Shuttle",
@@ -101,7 +102,7 @@ try {
     await context.close();
   }
   console.log(
-    "Navigation glyph atlas: 19 default directions (10 in Express wayfinding artwork) and 13 more wayfinding icons by name × 3 sizes × LTR/RTL × 2 themes passed",
+    "Navigation glyph atlas: 19 default directions (14 in Express wayfinding artwork) and 9 more wayfinding icons by name × 3 sizes × LTR/RTL × 2 themes passed",
   );
 } finally {
   await browser.close();

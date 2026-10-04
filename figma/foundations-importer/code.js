@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "6ff28c42a16d";
+const PLUGIN_BUILD = "1f964af45aa5";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -351,15 +351,16 @@ const DIRECTION_STEP_TYPES = [
   "Transition",
   "TurnBack",
 ];
-// Each case's symbol, as the code draws it on every platform: lifts,
-// escalators and stairs in Pointr's wayfinding artwork from Pointr Maps -
-// Express (the Icons page's wayfinding sources, KOZMOS_WAYFINDING_ICONS), the
-// rest from the Pointr Icon Library.
+// Each case's symbol, as the code draws it on every platform: turns, turning
+// back, the destination, lifts, escalators and stairs in Pointr's wayfinding
+// artwork from Pointr Maps - Express (the Icons page's wayfinding sources,
+// KOZMOS_WAYFINDING_ICONS); straight on, level changes and transitions, which
+// that set has no glyph for, the Pointr Icon Library's arrows.
 const DIRECTION_STEP_ICONS = {
   Straight: "arrow-up",
-  Left: "arrow-left",
-  Right: "arrow-right",
-  Destination: "marker-pin-01",
+  Left: "hard-left",
+  Right: "hard-right",
+  Destination: "arriving",
   LiftUp: "elevator-up",
   LiftDown: "elevator-down",
   EscalatorUp: "escalator-up",
@@ -369,7 +370,7 @@ const DIRECTION_STEP_ICONS = {
   LevelUp: "arrow-up",
   LevelDown: "arrow-down",
   Transition: "arrow-right",
-  TurnBack: "flip-backward",
+  TurnBack: "turn-back",
 };
 const FLOOR_SELECTOR_VARIANTS = [
   "VerticalList",

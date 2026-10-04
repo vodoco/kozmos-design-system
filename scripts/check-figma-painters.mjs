@@ -145,6 +145,10 @@ function pages() {
     "escalator-down",
     "stairs-up",
     "stairs-down",
+    "hard-left",
+    "hard-right",
+    "turn-back",
+    "arriving",
   ]) {
     icons.appendChild(mockWayfindingIconComponent(name));
   }
@@ -1920,12 +1924,16 @@ section("DirectionStep");
     return { component, stats };
   }
   for (const [type, iconName] of [
-    ["TurnBack", "flip-backward"],
+    ["TurnBack", "turn-back"],
+    ["Left", "hard-left"],
+    ["Right", "hard-right"],
     ["LiftDown", "elevator-down"],
     ["EscalatorUp", "escalator-up"],
     ["StairsDown", "stairs-down"],
-    ["Destination", "marker-pin-01"],
+    ["Destination", "arriving"],
     ["Straight", "arrow-up"],
+    ["LevelUp", "arrow-up"],
+    ["Transition", "arrow-right"],
   ]) {
     const { component, stats } = await paint(type);
     const badge = named(component, "Direction Icon");
@@ -1941,7 +1949,10 @@ section("DirectionStep");
     );
     // A Pointr outline takes the theme through its stroke, a solid
     // wayfinding glyph through its fill.
-    const solid = /^(elevator|escalator|stairs)-/.test(iconName);
+    const solid =
+      /^(elevator|escalator|stairs|hard)-/.test(iconName) ||
+      iconName === "turn-back" ||
+      iconName === "arriving";
     ok(
       icon &&
         icon.width === 24 &&

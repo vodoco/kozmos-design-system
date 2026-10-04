@@ -5,11 +5,7 @@ import {
   StairsNoDirection,
   RampNoDirection,
   RouteEntranceExit,
-  HardLeft,
-  HardRight,
-  TurnBack,
   FollowTheLine,
-  Arriving,
   CustomTransition,
   SecurityControl,
   Shuttle,
@@ -27,11 +23,7 @@ const BY_NAME: [string, KozmosIconComponent][] = [
   ["StairsNoDirection", StairsNoDirection],
   ["RampNoDirection", RampNoDirection],
   ["RouteEntranceExit", RouteEntranceExit],
-  ["HardLeft", HardLeft],
-  ["HardRight", HardRight],
-  ["TurnBack", TurnBack],
   ["FollowTheLine", FollowTheLine],
-  ["Arriving", Arriving],
   ["CustomTransition", CustomTransition],
   ["SecurityControl", SecurityControl],
   ["Shuttle", Shuttle],
@@ -56,8 +48,8 @@ export const Default: Story = {
 
 /**
  * Inspect physical direction at rail, row and guidance sizes in both reading
- * directions: the mark every direction draws, lifts, escalators, stairs,
- * ramps, entry and exit in Pointr Maps - Express's wayfinding artwork, and
+ * directions: the mark every direction draws, all but straight on, level
+ * changes and transitions in Pointr Maps - Express's wayfinding artwork, and
  * below them the rest of that set, which @kozmos-ds/icons exports by name.
  */
 export const GlyphAtlas: Story = {

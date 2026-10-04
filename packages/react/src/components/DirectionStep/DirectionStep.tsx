@@ -4,11 +4,12 @@ import { InstructionText } from "../../utils/instruction";
 import {
   ArrowUp,
   ArrowDown,
-  ArrowLeft,
   ArrowRight,
-  MarkerPin01,
-  FlipBackward,
   Walking,
+  HardLeft,
+  HardRight,
+  TurnBack,
+  Arriving,
   ElevatorUp,
   ElevatorDown,
   EscalatorUp,
@@ -49,16 +50,17 @@ export const DIRECTION_TYPES: readonly DirectionType[] = [
 ];
 
 /**
- * One mapping for step, card, itinerary and rail. Lifts, escalators, stairs,
- * ramps, entry and exit draw Pointr's wayfinding artwork from Pointr Maps -
- * Express (Olcay, 2026-10-04); turns, level changes, turn-back, destination
- * and walking keep the Pointr icon set's marks and the SDK walking mark.
+ * One mapping for step, card, itinerary and rail. Turns, turning back, the
+ * destination, lifts, escalators, stairs, ramps, entry and exit draw Pointr's
+ * wayfinding artwork from Pointr Maps - Express (Olcay, 2026-10-04); straight
+ * on, level changes and transitions, which the set has no glyph for, keep the
+ * Pointr icon set's arrows, and walking the SDK walking mark.
  */
 export const DIRECTION_ICONS: Record<DirectionType, KozmosIconComponent> = {
   straight: ArrowUp,
-  left: ArrowLeft,
-  right: ArrowRight,
-  destination: MarkerPin01,
+  left: HardLeft,
+  right: HardRight,
+  destination: Arriving,
   "lift-up": ElevatorUp,
   "lift-down": ElevatorDown,
   "escalator-up": EscalatorUp,
@@ -68,7 +70,7 @@ export const DIRECTION_ICONS: Record<DirectionType, KozmosIconComponent> = {
   "level-up": ArrowUp,
   "level-down": ArrowDown,
   transition: ArrowRight,
-  "turn-back": FlipBackward,
+  "turn-back": TurnBack,
   walking: Walking,
   enter: RouteEnter,
   exit: RouteExit,
