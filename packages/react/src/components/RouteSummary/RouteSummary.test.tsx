@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { RouteSummary } from "./RouteSummary";
 
 describe("RouteSummary", () => {
@@ -37,6 +37,57 @@ describe("RouteSummary", () => {
     expect(
       container.querySelector('[data-destination-media="fallback"]'),
     ).not.toBeNull();
+  });
+  describe("destination media", () => {
+    afterEach(() => vi.restoreAllMocks());
+    const media = (container: HTMLElement) =>
+      container
+        .querySelector("[data-destination-media]")
+        ?.getAttribute("data-destination-media");
+
+    it("falls back for an image that failed before the page hydrated", () => {
+      // A server-rendered image can fail before React listens for its error.
+      vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(
+        true,
+      );
+      vi.spyOn(
+        HTMLImageElement.prototype,
+        "naturalWidth",
+        "get",
+      ).mockReturnValue(0);
+      const { container } = render(
+        <RouteSummary
+          destination="Gate 3"
+          destinationImage="/missing.png"
+          onEndRoute={() => {}}
+        />,
+      );
+      expect(media(container)).toBe("fallback");
+    });
+
+    it("tries a new image after an earlier one failed (it is keyed by its source)", () => {
+      const { container, rerender } = render(
+        <RouteSummary
+          destination="Gate 3"
+          destinationImage="/missing.png"
+          onEndRoute={() => {}}
+        />,
+      );
+      fireEvent.error(container.querySelector("img")!);
+      expect(media(container)).toBe("fallback");
+      rerender(
+        <RouteSummary
+          destination="Gate 4"
+          destinationImage="/gate-4.png"
+          onEndRoute={() => {}}
+        />,
+      );
+      expect(media(container)).toBe("image");
+      expect(container.querySelector("img")).toHaveAttribute(
+        "src",
+        "/gate-4.png",
+      );
+    });
   });
   it("renders active route details and ends the route", () => {
     const onEndRoute = vi.fn();

@@ -14,6 +14,11 @@ export function DestinationImage({ src }: { src: string }) {
         <MapPin className="h-5 w-5" />
       ) : (
         <img
+          // An image that failed before React hydrated fired an error nothing
+          // heard: it mounts complete, with no width.
+          ref={(image) => {
+            if (image?.complete && image.naturalWidth === 0) setFailed(true);
+          }}
           src={src}
           alt=""
           className="h-full w-full object-cover"
