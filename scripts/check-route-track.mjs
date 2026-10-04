@@ -35,13 +35,26 @@ let count = 0;
 try {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
+  // The explicit AxeBuilder scan below is awaited for every route frame.
+  // Disable only the competing addon auto-run, never our accessibility checks.
+  const assertScanOwnership = async () => {
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.__STORYBOOK_PREVIEW__.storyStore.userGlobals.get().a11y.manual,
+      ),
+      true,
+      "The route check owns Axe execution; Storybook's addon must be manual",
+    );
+  };
   // Independent app preference and system high-contrast policy. The app signal
   // is the scope attribute emitted by DesignConfigProvider, not the OS query.
   await page.goto(
-    `${base}/iframe.html?id=map-routeprogressrail--walking-within-leg&viewMode=story`,
+    `${base}/iframe.html?id=map-routeprogressrail--walking-within-leg&viewMode=story&globals=a11y.manual:!true`,
   );
   const policyFlow = page.getByTestId("progress-directional-flow");
   await policyFlow.waitFor();
+  await assertScanOwnership();
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await policyFlow.evaluate((node) =>
     node.parentElement.setAttribute("data-kozmos-motion", "reduced"),
@@ -114,10 +127,11 @@ try {
         ["live-start", 0, 0, 0.4],
       ]) {
         await page.goto(
-          `${base}/iframe.html?id=map-routeprogressrail--${story}&viewMode=story&globals=theme:${theme}`,
+          `${base}/iframe.html?id=map-routeprogressrail--${story}&viewMode=story&globals=theme:${theme};a11y.manual:!true`,
         );
         const rail = page.locator(".kozmos-route-rail");
         await rail.waitFor();
+        await assertScanOwnership();
         await page.waitForFunction(() =>
           document.querySelector('[data-waypoint-id="lift"]'),
         );
@@ -246,7 +260,7 @@ try {
   ]) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(
-      `${base}/iframe.html?id=examples-navigation--${story}&viewMode=story`,
+      `${base}/iframe.html?id=examples-navigation--${story}&viewMode=story&globals=a11y.manual:!true`,
     );
     const rail = page.getByRole("progressbar");
     await rail.waitFor();
@@ -264,7 +278,7 @@ try {
   }
   // A scenario control must move the dot without changing the selected leg.
   await page.goto(
-    `${base}/iframe.html?id=examples-navigation--directions&viewMode=story`,
+    `${base}/iframe.html?id=examples-navigation--directions&viewMode=story&globals=a11y.manual:!true`,
   );
   await page.getByRole("button", { name: "Advance within leg" }).waitFor();
   const active = page.getByTestId("progress-active-range");
