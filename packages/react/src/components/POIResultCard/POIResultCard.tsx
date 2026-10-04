@@ -336,9 +336,7 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
           // same word. The two now agree, which matters: the pin and the row
           // are one thing to a visitor and are announced together.
           aria-current={result.selected ? "location" : undefined}
-          className={cn(
-            "block min-h-20 w-full rounded-[inherit] text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60",
-          )}
+          className="kozmos-reset kozmos-poi-result-select"
           disabled={!available}
           onClick={handleSelect}
           type="button"

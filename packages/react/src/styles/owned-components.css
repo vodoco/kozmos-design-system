@@ -585,6 +585,20 @@
     border-color: var(--primitives-colors-background-100);
     color: var(--primitives-colors-foreground-400);
   }
+  /* The result's selection button. The card is the surface, so the button
+     draws no chrome of its own. Owned, so that holds in a browser without
+     @scope too, where the browser's own button border and padding pushed the
+     SDK tab inside it 3px off the card's top. */
+  .kozmos-poi-result-select {
+    @apply block min-h-20 w-full rounded-[inherit] bg-transparent text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60;
+    cursor: pointer;
+    text-transform: none;
+    -webkit-appearance: button;
+    background-image: none;
+  }
+  .kozmos-poi-result-select:disabled {
+    cursor: not-allowed;
+  }
   /* The number, said at the start of the result's name while its tab is
      decorative: hidden here too, so it is never drawn twice. */
   .kozmos-poi-result-number-name {
@@ -619,6 +633,10 @@
   }
   .kozmos-poi-result-card[data-presentation-style="sdk"]
     .kozmos-poi-result-name {
+    /* A block, so that a long name wraps in its column, in a browser without
+       @scope too. */
+    display: block;
+    min-width: 0;
     overflow-wrap: anywhere;
   }
   .kozmos-poi-result-group
