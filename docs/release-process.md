@@ -1,6 +1,6 @@
 # Controlled npm releases
 
-Status (2026-10-04): in use; React 0.8.0 is published (evidence below).
+Status (2026-10-04): in use; React 0.8.1 is published (evidence below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -294,7 +294,9 @@ Change details and migration notes: [React](../packages/react/CHANGELOG.md#070),
 [contracts](../packages/product-contracts/CHANGELOG.md#060), and
 [generated AI changelog](../.ai-skills/api-changelog.md).
 Consumers upgrading FloorSelector from 0.6.0 must opt into `showResultCounts` to retain
-list badges; closed-tile counts remain absent. Native source changes are not native registry
+list badges; closed-tile counts remain absent. MapOverlay's position gained logical
+`topStart`/`topEnd`/`bottomStart`/`bottomEnd` (`TOP_START` and so on in Compose): a Swift or Kotlin
+`switch` over `KozmosOverlayPosition` or `OverlayPosition` must add the new cases. Native source changes are not native registry
 publication. Figma, external Claude Design artifacts and product deployments are independent.
 Private Vue playground dependency advisories remain separately scoped; #174 did not fix them.
 
@@ -332,3 +334,27 @@ Change details and migration notes: [React](../packages/react/CHANGELOG.md#080),
 
 Native source changes are not native registry publication. Figma, external Claude Design
 artifacts and product deployments are independent.
+
+### 0.8.1
+
+Published on 2026-10-04 from `42d442695581a2e0e5cda87fc1d56e4f406e7ca6`, the version merge
+[#196](https://github.com/vodoco/kozmos-design-system/pull/196), after the accessibility fixes in
+[#195](https://github.com/vodoco/kozmos-design-system/pull/195). A React patch alone: tokens 0.4.0,
+icons 0.5.0 and product-contracts 0.7.0 are unchanged.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.8.1 on npm `latest`, pinning tokens 0.4.0, icons 0.5.0 and product-contracts 0.7.0 exactly; nothing else published.                                                                                                                                   |
+| Exact main-push CI      | [37229344575](https://github.com/vodoco/kozmos-design-system/actions/runs/37229344575): all 17 jobs succeeded, including web, iOS and Android.                                                                                                                |
+| Preflight / publication | `pnpm release:preflight` against that run passed. [37231352856](https://github.com/vodoco/kozmos-design-system/actions/runs/37231352856) succeeded (prepare, guard, publish) after Olcay's protected `npm-release` approval.                                  |
+| Registry readback       | 0.8.1 is `latest`, with SLSA v1 provenance; its SHA-512 integrity equals the tarball in the run's `npm-candidate-37231352856-1` artifact.                                                                                                                     |
+| Installed consumer      | A fresh npm installation of React 0.8.1 with React 19 resolved tokens 0.4.0, icons 0.5.0 and contracts 0.7.0, exposed 264 exports and server-rendered ThemeProvider, Button and a pending LanguageSwitcher, whose trigger is `aria-disabled`, not `disabled`. |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created `@kozmos-ds/react@0.8.1` at `42d44269`, and a second dry-run found it in place. React 0.8.1 is Latest.                                                                                                               |
+| Website / Storybook     | [Pages 37229344552](https://github.com/vodoco/kozmos-design-system/actions/runs/37229344552) built and deployed this exact SHA. The live site, Storybook and its `index.json` returned HTTP 200. This is not a fresh all-screen visual review.                |
+
+Change details: [React](../packages/react/CHANGELOG.md#081) and the
+[generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.8.0: a pending
+LanguageSwitcher trigger is `aria-disabled="true"` rather than `disabled`, so a consumer test that
+expected `disabled` while pending must expect `aria-disabled`. No props change. The iOS fixes in
+#195 (the map shell no longer crashing with one bottom corner, floor levels read once) ship from the
+repository, not a native registry.
