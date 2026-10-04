@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -100,18 +101,22 @@ fun KozmosButton(
     isLoading: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
+    // Every size is drawn 44 tall, as on the web, on iOS and in Figma (D7).
     val height = when (size) {
-        // Labelled buttons use Android's 48dp target, with no fixed ceiling.
-        // The legacy icon-only size remains a separate compact contract.
-        KozmosButtonSize.Default -> 48.dp
-        KozmosButtonSize.Sm -> 48.dp
-        KozmosButtonSize.Lg -> 48.dp
+        KozmosButtonSize.Default -> 44.dp
+        KozmosButtonSize.Sm -> 44.dp
+        KozmosButtonSize.Lg -> 44.dp
         KozmosButtonSize.Icon -> 44.dp
     }
 
-    val rootModifier = modifier
-        .then(if (size == KozmosButtonSize.Icon) Modifier.height(height) else Modifier.heightIn(min = height))
-        .then(if (size == KozmosButtonSize.Icon) Modifier.width(44.dp) else Modifier)
+    // A labelled surface grows with its label, and Material's minimum
+    // interactive size keeps its touch target at Android's 48dp, the 44
+    // centred in it. The icon size stays the fixed 44 square.
+    val rootModifier = if (size == KozmosButtonSize.Icon) {
+        modifier.height(height).then(Modifier.width(44.dp))
+    } else {
+        modifier.minimumInteractiveComponentSize().heightIn(min = height)
+    }
     
     val contentPadding = when (size) {
         KozmosButtonSize.Default -> PaddingValues(horizontal = KozmosDimensions.primitivesLayoutSpacing200, vertical = KozmosDimensions.primitivesLayoutSpacing100)

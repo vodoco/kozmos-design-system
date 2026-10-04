@@ -225,7 +225,8 @@ class KozmosRouteLocationFieldTest {
             }) {
                 val action = read().merged.single { "Ändern" in it.texts && it.click != null }
                 assertEquals("Ändern From", action.description)
-                assertTrue(action.frame.height >= 48f * density - 1f)
+                // The Core Button: drawn at least 44dp, its 48dp target Material's (D7).
+                assertTrue(action.frame.height >= 44f * density - 1f)
                 assertTrue("$direction $scale: ${action.frame} must fit $host", action.frame.left >= host.left && action.frame.right <= host.right + 1f)
                 action.click!!.invoke()
                 frames(3)

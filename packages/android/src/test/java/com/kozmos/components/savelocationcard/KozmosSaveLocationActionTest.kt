@@ -47,8 +47,9 @@ class KozmosSaveLocationActionTest {
                     }
                     val label = if (saved) "Remove Location" else "Save Location"
                     val action = tree.merged.single { label in it.texts && it.click != null }
-                    assertTrue("$label $direction $fontScale must reserve at least 48dp: ${action.frame}",
-                        action.frame.height / density >= 47.9f)
+                    // The Core Button: drawn at least 44dp, its 48dp target Material's (D7).
+                    assertTrue("$label $direction $fontScale must be drawn at least 44dp: ${action.frame}",
+                        action.frame.height / density >= 43.9f)
                     assertTrue("$label stays inside its narrow host", action.frame.left >= 0f && action.frame.right <= 320f * density + 1f)
                     action.click!!.invoke()
                     assertEquals(1, changes)

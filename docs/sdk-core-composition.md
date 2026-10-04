@@ -322,11 +322,12 @@ Icon-only close/favourite/bookmark controls and loading indicators are unchanged
 Native pointer paths are generated from the canonical Pointr React artwork by
 `pnpm icons:navigation:generate`; do not substitute platform navigation arrows.
 
-The Android minimum for labelled buttons is now 48dp (Default, Sm and Lg).
-It is a real clickable surface, not merely an assumption that input outside
-the painted 44dp control will be expanded. The Icon size keeps its existing
-44dp contract. Parent clipping/overlapping targets and physical TalkBack/
-VoiceOver acceptance still require host review. Swift keeps its 44pt minimum.
+Android draws labelled buttons (Default, Sm and Lg) 44dp tall, as the web,
+iOS and Figma do, and they grow with a larger label instead of clipping it.
+Material's minimum interactive size gives each a 48dp touch target, the 44dp
+surface centred in it. The Icon size keeps its fixed 44dp square. Parent
+clipping/overlapping targets and physical TalkBack/VoiceOver acceptance still
+require host review. Swift keeps its 44pt minimum.
 
 Native checks from the repository root:
 
@@ -343,7 +344,7 @@ under `packages/android/build/test-results/testDebugUnitTest`. The Core growth
 and pointer tests, POI list action tests and native adapter composition guard
 are distinct checks: source composition alone does not prove runtime behavior.
 Do not accept changed Android goldens on macOS just to make verification green;
-review the changed 48dp geometry and record on the canonical Linux renderer.
+review the changed geometry and record on the canonical Linux renderer.
 
 ## Editing and checking
 

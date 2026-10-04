@@ -10291,26 +10291,26 @@ assertAllVariants(
 assertContains(
   files.androidButton,
   source.androidButton,
-  "KozmosButtonSize.Sm -> 48.dp",
-  "Android Button small 48dp minimum target",
+  "KozmosButtonSize.Sm -> 44.dp",
+  "Android Button small 44dp height",
 );
 assertContains(
   files.androidButton,
   source.androidButton,
-  "KozmosButtonSize.Default -> 48.dp",
-  "Android Button default 48dp minimum target",
+  "KozmosButtonSize.Default -> 44.dp",
+  "Android Button default 44dp height",
 );
 assertContains(
   files.androidButton,
   source.androidButton,
-  "KozmosButtonSize.Lg -> 48.dp",
-  "Android Button large 48dp minimum target",
+  "KozmosButtonSize.Lg -> 44.dp",
+  "Android Button large 44dp height",
 );
 assertContains(
   files.androidButton,
   source.androidButton,
-  "else Modifier.heightIn(min = height)",
-  "Android labelled Button grows above its minimum instead of clipping large text",
+  "modifier.minimumInteractiveComponentSize().heightIn(min = height)",
+  "Android labelled Button grows from 44dp, its 48dp target Material's minimum interactive size",
 );
 assertContains(
   files.androidButton,
