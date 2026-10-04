@@ -8,11 +8,17 @@ import {
   ArrowRight,
   MarkerPin01,
   FlipBackward,
-  ArrowUpRight,
-  ArrowDownRight,
-  LogIn01,
-  LogOut01,
   Walking,
+  ElevatorUp,
+  ElevatorDown,
+  EscalatorUp,
+  EscalatorDown,
+  StairsUp,
+  StairsDown,
+  RampUp,
+  RampDown,
+  RouteEnter,
+  RouteExit,
   type KozmosIconComponent,
 } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
@@ -43,32 +49,31 @@ export const DIRECTION_TYPES: readonly DirectionType[] = [
 ];
 
 /**
- * One mapping for step, card, itinerary and rail, drawn only with approved
- * marks: the Pointr icon set and the existing SDK walking mark. The original
- * lift, escalator, stairs, ramp and entry artwork awaits design approval
- * (Olcay, 2026-10-04): @kozmos-ds/icons exports it by name for products to
- * opt into, and no default draws it until it is approved.
+ * One mapping for step, card, itinerary and rail. Lifts, escalators, stairs,
+ * ramps, entry and exit draw Pointr's wayfinding artwork from Pointr Maps -
+ * Express (Olcay, 2026-10-04); turns, level changes, turn-back, destination
+ * and walking keep the Pointr icon set's marks and the SDK walking mark.
  */
 export const DIRECTION_ICONS: Record<DirectionType, KozmosIconComponent> = {
   straight: ArrowUp,
   left: ArrowLeft,
   right: ArrowRight,
   destination: MarkerPin01,
-  "lift-up": ArrowUp,
-  "lift-down": ArrowDown,
-  "escalator-up": ArrowUp,
-  "escalator-down": ArrowDown,
-  "stairs-up": ArrowUp,
-  "stairs-down": ArrowDown,
+  "lift-up": ElevatorUp,
+  "lift-down": ElevatorDown,
+  "escalator-up": EscalatorUp,
+  "escalator-down": EscalatorDown,
+  "stairs-up": StairsUp,
+  "stairs-down": StairsDown,
   "level-up": ArrowUp,
   "level-down": ArrowDown,
   transition: ArrowRight,
   "turn-back": FlipBackward,
   walking: Walking,
-  enter: LogIn01,
-  exit: LogOut01,
-  "ramp-up": ArrowUpRight,
-  "ramp-down": ArrowDownRight,
+  enter: RouteEnter,
+  exit: RouteExit,
+  "ramp-up": RampUp,
+  "ramp-down": RampDown,
 };
 
 /**

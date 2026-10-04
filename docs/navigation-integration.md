@@ -143,17 +143,20 @@ do not certify native modal focus trapping or restoration.
 | SwiftUI equivalents               | `packages/ios/Sources/Components/` under the same component names; `Sources/Utilities/DirectionGlyph.swift` for the shared drawing view                                                                                  |
 | Compose equivalents               | `packages/android/src/main/java/com/kozmos/components/` under the same component names                                                                                                                                   |
 | Shared semantic values            | `packages/product-contracts/src/index.ts`, Swift `Sources/ProductContracts/ProductContracts.swift`, Kotlin `contracts/ProductContracts.kt`                                                                               |
-| Original navigation artwork       | `packages/icons/src/owned/navigation-glyphs.json`; run the generator below, never hand-edit generated files                                                                                                              |
+| Wayfinding artwork (Express)      | `packages/icons/src/owned/navigation-glyphs.json`; run the generator below, never hand-edit generated files                                                                                                              |
 | Guidance roles and layout CSS     | `packages/react/src/index.css`, `src/styles/owned-components.css` and the existing surface/guidance utilities on native; use tokens, not customer-specific literals                                                      |
 | Controlled example and reducer    | `apps/docs/stories/examples/NavigationJourney.stories.tsx`, `navigationJourney.ts`, `navigationJourney.test.ts`                                                                                                          |
 | Native composition examples       | `packages/ios/UITestHost/App/InteractionHost.swift` (`navigation-journey`), Android `KozmosJourneyCompositionTest.kt`                                                                                                    |
 | Browser checks                    | `scripts/check-navigation-actions.mjs`, `check-navigation-examples.mjs`, `check-navigation-glyphs.mjs`, `check-routing-targets.mjs`, `check-route-location.mjs`, `check-route-setup.mjs`, `check-navigation-journey.mjs` |
 | API examples and guidance         | Component `.mdx` and `.stories.tsx`; generated API cards under `docs/claude-design/` come from `pnpm skills:build`                                                                                                       |
 
-The ten transport/ramp/entry vectors are original repository artwork for review, not imported
-or approved Figma assets. They are available as named `@kozmos-ds/icons` exports such as
-`ElevatorUp`, `StairsDown` and `EscalatorUp`; the existing general icon-name registry is not
-extended by this increment. Walking reuses the existing SDK web mark and platform native marks.
+The wayfinding glyphs are Pointr's own artwork from the Pointr Maps - Express design (Figma
+`BwtG2COVRqUWGPrIvP4jxr`, section `29853:51378`), each the 48px master scaled to the 24 grid and
+filled; `navigation-glyphs.json` names each one's Figma node, and its Exit departs from the file
+as its note says. Lifts, escalators, stairs, ramps, entry and exit draw them by default; the
+other thirteen are named `@kozmos-ds/icons` exports (`ElevatorUpAndDown`, `Shuttle`, …) and
+kebab-case `KozmosIcon` names on iOS and Android. Walking reuses the existing SDK web mark and
+platform native marks.
 Physical directions never mirror with reading direction. Unknown adapter values should retain
 their instruction without inventing a turn; the host decides whether to continue guidance.
 
