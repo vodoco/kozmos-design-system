@@ -8,6 +8,8 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.NearMe
+import com.kozmos.components.icon.KozmosIcon
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -63,6 +65,9 @@ import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonEmotion
+import com.kozmos.components.button.KozmosButtonVariant
 
 /** Neutral SDK result presentation is the default; Legacy supports staged migration. */
 enum class KozmosPOIResultPresentationStyle { Legacy, Sdk }
@@ -357,7 +362,8 @@ fun KozmosPOIResultCard(
                 if (visibleActions.isNotEmpty()) {
                     Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
-                    Row(
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(
                         modifier = Modifier
                             .fillMaxWidth()
                             .semantics(mergeDescendants = true) { contentDescription = actionsLabel }
@@ -365,7 +371,7 @@ fun KozmosPOIResultCard(
                                 horizontal = KozmosDimensions.primitivesLayoutSpacing200,
                                 vertical = KozmosDimensions.primitivesLayoutSpacing100
                             ),
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100),
                         horizontalArrangement = Arrangement.spacedBy(
                             KozmosDimensions.primitivesLayoutSpacing100
                         )
@@ -649,43 +655,14 @@ private fun KozmosPOIResultActionButton(
     showsNavigationIcon: Boolean,
     onClick: () -> Unit
 ) {
-    val background = if (entry.primary) {
-        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
-    } else {
-        KozmosThemeTokens.primitivesColorsBackground0
-    }
-    val foreground = if (entry.primary) {
-        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
-    } else {
-        KozmosThemeTokens.primitivesColorsForeground0
-    }
-
-    Surface(
+    KozmosButton(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
-        color = background,
-        border = if (entry.primary) {
-            null
-        } else {
-            BorderStroke(1.dp, KozmosThemeTokens.semanticsBorderSubtle)
-        }
+        variant = if (entry.primary) KozmosButtonVariant.Default else KozmosButtonVariant.Outline,
+        emotion = if (entry.primary) KozmosButtonEmotion.Themed else KozmosButtonEmotion.Neutral,
     ) {
-        // Keep Material's larger touch-target policy; 44dp is the painted
-        // content minimum, not a request to shrink Android's hit target.
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.defaultMinSize(minWidth = 44.dp, minHeight = 44.dp).padding(
-                horizontal = KozmosDimensions.primitivesLayoutSpacing200,
-                vertical = KozmosDimensions.primitivesLayoutSpacing100
-            )
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)) {
-                if (showsNavigationIcon) Icon(Icons.Outlined.NearMe, contentDescription = null, tint = foreground, modifier = Modifier.size(20.dp))
-                Text(text = entry.label, style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold, color = foreground)
-            }
-        }
+        if (showsNavigationIcon) KozmosIcon("navigation-pointer-01")
+        Text(text = entry.label)
     }
 }
 

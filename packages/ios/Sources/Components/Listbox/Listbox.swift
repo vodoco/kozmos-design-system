@@ -1,5 +1,21 @@
 import SwiftUI
 
+/// A picker command, never a selectable option or query value. IDs must be unique.
+public struct KozmosPickerAction: Identifiable {
+    public let id: String
+    public let label: String
+    public let disabled: Bool
+    public let action: () -> Void
+    public init(id: String, label: String, disabled: Bool = false, action: @escaping () -> Void) {
+        self.id = id; self.label = label; self.disabled = disabled; self.action = action
+    }
+}
+
+func validPickerActions(_ actions: [KozmosPickerAction]) -> [KozmosPickerAction] {
+    let counts = Dictionary(grouping: actions, by: \.id).mapValues(\.count)
+    return actions.filter { !$0.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && counts[$0.id] == 1 }
+}
+
 public struct KozmosListboxOption: Identifiable, Hashable {
     public let id: String
     public let value: String
@@ -22,12 +38,15 @@ public struct KozmosListboxOption: Identifiable, Hashable {
 }
 
 public struct KozmosListbox: View {
+    @State private var contentHeight: CGFloat?
     public let options: [KozmosListboxOption]
     @Binding public var selectedValues: [String]
     public let multiple: Bool
     public let disabled: Bool
     public let maxHeight: CGFloat
     public let onValueChange: (([String], KozmosListboxOption) -> Void)?
+    public let actions: [KozmosPickerAction]
+    public let emptyText: String?
 
     public init(
         options: [KozmosListboxOption],
@@ -35,6 +54,8 @@ public struct KozmosListbox: View {
         multiple: Bool = false,
         disabled: Bool = false,
         maxHeight: CGFloat = 256,
+        actions: [KozmosPickerAction] = [],
+        emptyText: String? = nil,
         onValueChange: (([String], KozmosListboxOption) -> Void)? = nil
     ) {
         self.options = options
@@ -43,11 +64,17 @@ public struct KozmosListbox: View {
         self.disabled = disabled
         self.maxHeight = maxHeight
         self.onValueChange = onValueChange
+        self.actions = actions; self.emptyText = emptyText
     }
 
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing50) {
+                if options.isEmpty, let emptyText {
+                    Text(emptyText).font(KozmosTypography.subheadline)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                        .padding(KozmosDimensions.primitivesLayoutSpacing150)
+                }
                 ForEach(options) { option in
                     Button(action: { commit(option) }) {
                         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
@@ -84,10 +111,21 @@ public struct KozmosListbox: View {
                     .accessibilityLabel([option.label, option.description].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "))
                     .accessibilityAddTraits(selectedValues.contains(option.value) ? .isSelected : [])
                 }
+                ForEach(validPickerActions(actions)) { action in
+                    KozmosButton(action.label, variant: .ghost, isDisabled: disabled || action.disabled,
+                        fillsWidth: true) {
+                        guard !disabled, !action.disabled else { return }
+                        action.action()
+                    }
+                }
             }
             .padding(KozmosDimensions.primitivesLayoutSpacing50)
+            .background(GeometryReader { proxy in
+                Color.clear.preference(key: KozmosListboxContentHeightKey.self, value: proxy.size.height)
+            })
         }
-        .frame(maxWidth: .infinity, maxHeight: maxHeight, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: min(contentHeight ?? maxHeight, maxHeight), alignment: .topLeading)
+        .onPreferenceChange(KozmosListboxContentHeightKey.self) { contentHeight = $0 }
         .background(KozmosColors.primitivesColorsBackground0)
         .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
         .overlay(
@@ -120,5 +158,14 @@ public struct KozmosListbox: View {
             return KozmosColors.primitivesColorsBackground100
         }
         return Color.clear
+    }
+}
+
+/// Measure the content, not the viewport: short lists hug their rows and long
+/// lists retain the caller's height cap and scrolling, including after filtering.
+private struct KozmosListboxContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

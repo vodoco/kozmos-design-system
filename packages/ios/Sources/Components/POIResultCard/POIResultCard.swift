@@ -419,15 +419,16 @@ public struct KozmosPOIResultCard: View {
             if !visibleActions.isEmpty {
                 Divider().overlay(KozmosColors.semanticsBorderSubtle)
 
-                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                    ForEach(visibleActions) { entry in
-                        KozmosPOIResultActionButton(entry: entry, enabled: canRun(entry), showsNavigationIcon: sdk && entry.action == .navigate) {
-                            guard canRun(entry) else { return }
-                            handleAction(entry.action)
-                        }
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                        actionButtons
                     }
-                    Spacer(minLength: 0)
+                    .fixedSize(horizontal: true, vertical: false)
+                    VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                        actionButtons
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
                 .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
                 .accessibilityElement(children: .contain)
@@ -522,6 +523,15 @@ public struct KozmosPOIResultCard: View {
         .accessibilityHidden(sdk || tab.isNumber)
     }
 
+    private var actionButtons: some View {
+        ForEach(visibleActions) { entry in
+            KozmosPOIResultActionButton(entry: entry, enabled: canRun(entry), showsNavigationIcon: sdk && entry.action == .navigate) {
+                guard canRun(entry) else { return }
+                handleAction(entry.action)
+            }
+        }
+    }
+
     /// The logo when there is one, 48 at radius Control; nothing otherwise.
     @ViewBuilder
     private var logo: some View {
@@ -557,49 +567,13 @@ private struct KozmosPOIResultActionButton: View {
     let showsNavigationIcon: Bool
     let action: () -> Void
 
-    private var foreground: Color {
-        entry.primary
-            ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
-            : KozmosColors.primitivesColorsForeground0
-    }
-
-    private var background: Color {
-        entry.primary
-            ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
-            : KozmosColors.primitivesColorsBackground0
-    }
-
-    private var border: Color {
-        entry.primary ? Color.clear : KozmosColors.semanticsBorderSubtle
-    }
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(
-            cornerRadius: KozmosDimensions.semanticsRadiusControl,
-            style: .continuous
-        )
-    }
-
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                if showsNavigationIcon { Image(systemName: "location").accessibilityHidden(true) }
-                Text(entry.label)
-            }
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(foreground)
-                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing200)
-                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
-                // Size the label inside the button, so the entire painted
-                // control is tappable. A minimum still permits Dynamic Type.
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Rectangle())
-        }
+        KozmosButton(entry.label,
+            variant: entry.primary ? .default : .outline,
+            emotion: entry.primary ? .themed : .neutral,
+            isDisabled: !enabled,
+            leadingIconName: showsNavigationIcon ? "navigation-pointer-01" : nil,
+            action: action)
             .buttonStyle(.plain)
-            .background(background)
-            .clipShape(shape)
-            .overlay(shape.stroke(border, lineWidth: 1))
-            .disabled(!enabled)
-            .opacity(enabled ? 1 : 0.6)
     }
 }

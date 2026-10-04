@@ -19,12 +19,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.icon
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.components.progress.KozmosProgressRange
+import com.kozmos.components.progress.KozmosProgressTrack
+import com.kozmos.components.progress.KozmosProgressTrackAppearance
+import com.kozmos.components.progress.KozmosProgressPositionMode
+import com.kozmos.components.progress.KozmosProgressMotion
+import com.kozmos.components.userlocationmarker.KozmosUserLocationMarker
 
 /** A host-owned transition positioned on the same basis as route progress. */
 data class KozmosRouteProgressWaypoint(val id: String, val position: Float, val type: DirectionType, val label: String)
@@ -52,6 +59,15 @@ object KozmosRouteProgressRailGeometry {
             if ((progress != null && kotlin.math.abs(27 + travel * progress - x) < 33) || x - last < 28) false
             else { last = x; true }
         }
+    }
+
+    fun visibleRouteWaypoints(points: List<KozmosRouteProgressWaypoint>, width: Dp, activeEnd: Float?, activeWaypointId: String? = null): List<KozmosRouteProgressWaypoint> {
+        if (width < 24.dp) return emptyList()
+        val selected = mutableListOf<KozmosRouteProgressWaypoint>()
+        validWaypoints(points).sortedBy { if (it.position != activeEnd) 2 else if (it.id == activeWaypointId) 0 else 1 }.forEach { point ->
+            if (selected.all { kotlin.math.abs(it.position - point.position) * (width.value - 24).coerceAtLeast(0f) >= 28 }) selected.add(point)
+        }
+        return selected.sortedBy { it.position }
     }
 
     /**
@@ -88,19 +104,46 @@ fun KozmosRouteProgressRail(
     modifier: Modifier = Modifier,
     valueText: String? = null,
     waypoints: List<KozmosRouteProgressWaypoint> = emptyList(),
-    showCompletedTrack: Boolean = false
+    showCompletedTrack: Boolean = false,
+    activeLeg: KozmosProgressRange? = null,
+    appearance: KozmosProgressTrackAppearance = KozmosProgressTrackAppearance.Theme,
+    activeWaypointId: String? = null,
+    positionMode: KozmosProgressPositionMode = KozmosProgressPositionMode.Live,
+    motion: KozmosProgressMotion = KozmosProgressMotion.None
 ) {
     val clamped = KozmosRouteProgressRailGeometry.clamp(progress ?: 0f)
+    val position = if (activeLeg != null) { if (positionMode == KozmosProgressPositionMode.Static) null else activeLeg.position(progress) } else if (progress == null) null else clamped
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(KozmosRouteProgressRailGeometry.disc)
-            .then(if (progress == null) Modifier.progressSemantics() else Modifier.progressSemantics(clamped))
+            .height(if (activeLeg != null) 48.dp else KozmosRouteProgressRailGeometry.disc)
+            .then(if (activeLeg != null && positionMode == KozmosProgressPositionMode.Static) Modifier else if (position == null) Modifier.progressSemantics() else Modifier.progressSemantics(position))
             .semantics {
                 contentDescription = (listOf(label) + KozmosRouteProgressRailGeometry.validWaypoints(waypoints).map { it.label }).joinToString("; ")
                 if (valueText != null) stateDescription = valueText
             }
     ) {
+        if (activeLeg != null) {
+            val railWidth = maxWidth
+            val inset = minOf(12.dp, maxWidth / 2)
+            val travel = (maxWidth - inset * 2).coerceAtLeast(0.dp)
+            Box(Modifier.fillMaxWidth().height(48.dp).clearAndSetSemantics { }) {
+                KozmosProgressTrack(activeLeg, position, Modifier.offset(x = inset, y = 33.dp).width(travel), appearance, positionMode, motion)
+                listOf(0f, 1f).forEach { end ->
+                    Box(Modifier.offset(x = inset + travel * end - 5.dp, y = 33.dp).size(10.dp)
+                        .background(KozmosThemeTokens.primitivesColorsBackground500, CircleShape))
+                }
+                KozmosRouteProgressRailGeometry.visibleRouteWaypoints(waypoints, railWidth, activeLeg.end.takeIf { activeLeg.isValid }, activeWaypointId).forEach { point ->
+                    val x = inset + travel * point.position
+                    Box(Modifier.offset(x = x, y = 24.dp).width(1.dp).height(11.dp).background(KozmosThemeTokens.primitivesColorsBackground500))
+                    Box(Modifier.offset(x = x - 12.dp).size(24.dp).background(KozmosThemeTokens.primitivesColorsBackground0, CircleShape)
+                        .border(1.dp, KozmosThemeTokens.primitivesColorsBackground400, CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(point.type.icon(), contentDescription = null, tint = KozmosThemeTokens.primitivesColorsForeground100, modifier = Modifier.size(16.dp))
+                    }
+                }
+                if (position != null) KozmosUserLocationMarker(modifier = Modifier.offset(x = inset + travel * position - 9.dp, y = 29.dp), compact = true)
+            }
+        } else {
         val dot = minOf(KozmosRouteProgressRailGeometry.dot, maxWidth.coerceAtLeast(0.dp) * 0.2f)
         val disc = minOf(KozmosRouteProgressRailGeometry.disc, maxWidth.coerceAtLeast(0.dp) * 0.6f)
         Box(
@@ -150,6 +193,7 @@ fun KozmosRouteProgressRail(
                 tint = KozmosThemeTokens.primitivesColorsBackground0,
                 modifier = Modifier.size(minOf(KozmosDimensions.primitivesLayoutSizing300, disc * (24f / 34f)))
             )
+        }
         }
     }
 }

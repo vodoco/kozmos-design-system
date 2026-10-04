@@ -9,6 +9,15 @@ import SwiftUI
 /// Drawn without a window by `DrawnPixels`, so these run in `swift test` on a
 /// Mac as well as on a simulator.
 final class KozmosIconTests: XCTestCase {
+    @MainActor func testNavigationPointerUsesTheUnfilledNortheastPointrOutline() throws {
+        XCTAssertNotNil(KozmosPointrGlyph.named("navigation-pointer-01"))
+        let size = KozmosIconSize.xl.pointSize
+        let drawn = try DrawnPixels.draw(KozmosIcon("navigation-pointer-01", size: .xl), scale: 3)
+        XCTAssertTrue(drawn.isDrawn(at: onTheGrid(20.5, 3.5, size: size)))
+        XCTAssertFalse(drawn.isDrawn(at: onTheGrid(16, 8, size: size)), "Pointer interior must remain unfilled")
+        let rtl = try DrawnPixels.draw(KozmosIcon("navigation-pointer-01", size: .xl).environment(\.layoutDirection, .rightToLeft), scale: 3)
+        XCTAssertEqual(drawn.largestDifference(from: rtl), 0, "Go is a location pointer, not a logical forward arrow")
+    }
     /// A point on Pointr's 24 grid, at an icon's size.
     private func onTheGrid(_ x: CGFloat, _ y: CGFloat, size: CGFloat) -> CGPoint {
         CGPoint(x: x * size / 24, y: y * size / 24)

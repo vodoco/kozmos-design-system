@@ -72,6 +72,8 @@ public struct KozmosIcon: View {
             if let glyph = KozmosPointrGlyph.named(Self.resolvedIconName(name)) {
                 // SF Symbols has nothing for this name: Pointr's own outline.
                 glyph.stroke(style: KozmosPointrGlyph.style(size: size.pointSize))
+                    // These are physical symbols, not logical forward/back arrows.
+                    .environment(\.layoutDirection, .leftToRight)
             } else {
                 Image(systemName: Self.symbolName(for: name))
                     .font(.system(size: size.pointSize, weight: .medium))

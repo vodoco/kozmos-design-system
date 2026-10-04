@@ -25,16 +25,29 @@ public struct KozmosRouteProgressRail: View {
     let valueText: String?
     let waypoints: [KozmosRouteProgressWaypoint]
     let showCompletedTrack: Bool
+    let activeLeg: KozmosProgressRange?
+    let activeWaypointId: String?
+    let appearance: KozmosProgressTrackAppearance
+    let positionMode: KozmosProgressPositionMode
+    let motion: KozmosProgressMotion
     @Environment(\.locale) private var locale
 
     public init(progress: Double?, type: DirectionType, label: String, valueText: String? = nil,
-                waypoints: [KozmosRouteProgressWaypoint] = [], showCompletedTrack: Bool = false) {
+                waypoints: [KozmosRouteProgressWaypoint] = [], showCompletedTrack: Bool = false,
+                activeLeg: KozmosProgressRange? = nil, appearance: KozmosProgressTrackAppearance = .theme,
+                activeWaypointId: String? = nil, positionMode: KozmosProgressPositionMode = .live,
+                motion: KozmosProgressMotion = .none) {
         self.progress = progress
         self.type = type
         self.label = label
         self.valueText = valueText
         self.waypoints = waypoints
         self.showCompletedTrack = showCompletedTrack
+        self.activeLeg = activeLeg
+        self.activeWaypointId = activeWaypointId
+        self.appearance = appearance
+        self.positionMode = positionMode
+        self.motion = motion
     }
 
     static let dot: CGFloat = 10
@@ -64,6 +77,16 @@ public struct KozmosRouteProgressRail: View {
         }
     }
 
+    static func visibleRouteWaypoints(_ points: [KozmosRouteProgressWaypoint], width: CGFloat, activeEnd: Double?, activeWaypointId: String? = nil) -> [KozmosRouteProgressWaypoint] {
+        guard width >= 24 else { return [] }
+        let ordered = validWaypoints(points)
+        let selectedEnd = ordered.first { $0.position == activeEnd && $0.id == activeWaypointId }
+        let priority = (selectedEnd.map { [$0] } ?? []) + ordered.filter { $0.position == activeEnd && $0.id != selectedEnd?.id } + ordered.filter { $0.position != activeEnd }
+        var selected: [KozmosRouteProgressWaypoint] = []
+        for point in priority where selected.allSatisfy({ abs($0.position - point.position) * max(0, width - 24) >= 28 }) { selected.append(point) }
+        return selected.sorted { $0.position < $1.position }
+    }
+
     /// Where the disc's leading edge sits for a progress, in a rail `width`
     /// wide: from just after the start dot to just before the end dot.
     static func discLeading(progress: Double, width: CGFloat) -> CGFloat {
@@ -79,8 +102,13 @@ public struct KozmosRouteProgressRail: View {
     }
 
     private var clamped: Double { Self.normalizedProgress(progress ?? 0) }
+    private var knownPosition: Double? { activeLeg == nil ? (progress == nil ? nil : clamped) : positionMode == .static ? nil : activeLeg?.position(progress) }
 
     public var body: some View {
+        Group {
+        if let activeLeg {
+            KozmosRouteTrack(activeLeg: activeLeg, progress: knownPosition, appearance: appearance, waypoints: waypoints, activeWaypointId: activeWaypointId, positionMode: positionMode, motion: motion)
+        } else {
         GeometryReader { geometry in
             let width = geometry.size.width
             let dot = min(Self.dot, max(width, 0) * 0.2)
@@ -125,9 +153,49 @@ public struct KozmosRouteProgressRail: View {
             .frame(width: width, height: Self.disc, alignment: .leading)
         }
         .frame(height: Self.disc)
+        }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(([label] + Self.validWaypoints(waypoints).map(\.label)).joined(separator: "; "))
-        .accessibilityValue(valueText ?? (progress == nil ? "" : clamped.formatted(.percent.precision(.fractionLength(0)).locale(locale))))
-        .accessibilityAddTraits(.updatesFrequently)
+        .accessibilityValue(valueText ?? (knownPosition.map { $0.formatted(.percent.precision(.fractionLength(0)).locale(locale)) } ?? ""))
+        .accessibilityAddTraits(activeLeg != nil && positionMode == .static ? [] : .updatesFrequently)
+    }
+}
+
+/// SDK placement only. Core owns the track; shared UserLocationMarker owns the dot.
+private struct KozmosRouteTrack: View {
+    let activeLeg: KozmosProgressRange
+    let progress: Double?
+    let appearance: KozmosProgressTrackAppearance
+    let waypoints: [KozmosRouteProgressWaypoint]
+    let activeWaypointId: String?
+    let positionMode: KozmosProgressPositionMode
+    let motion: KozmosProgressMotion
+    @Environment(\.layoutDirection) private var direction
+    var body: some View {
+        GeometryReader { geometry in
+            let width = geometry.size.width
+            let inset = min(12, width / 2)
+            let travel = max(0, width - inset * 2)
+            let x: (Double) -> CGFloat = { inset + travel * (direction == .rightToLeft ? 1 - $0 : $0) }
+            ZStack(alignment: .topLeading) {
+                KozmosProgressTrack(activeRange: activeLeg, value: progress, appearance: appearance, positionMode: positionMode, motion: motion)
+                    .frame(width: travel).position(x: width / 2, y: 38)
+                ForEach([0.0, 1.0], id: \.self) { position in
+                    Circle().fill(KozmosColors.primitivesColorsBackground500).frame(width: 10, height: 10)
+                        .position(x: x(position), y: 38)
+                }
+                ForEach(KozmosRouteProgressRail.visibleRouteWaypoints(waypoints, width: width, activeEnd: activeLeg.isValid ? activeLeg.end : nil, activeWaypointId: activeWaypointId)) { point in
+                    Rectangle().fill(KozmosColors.primitivesColorsBackground500).frame(width: 1, height: 11).position(x: x(point.position), y: 29.5)
+                    Circle().fill(KozmosColors.primitivesColorsBackground0)
+                        .overlay(Circle().strokeBorder(KozmosColors.primitivesColorsBackground400, lineWidth: 1))
+                        .overlay(KozmosDirectionGlyph(type: point.type, size: 16).foregroundColor(KozmosColors.primitivesColorsForeground100))
+                        .frame(width: 24, height: 24).position(x: x(point.position), y: 12)
+                }
+                if let progress {
+                    KozmosUserLocationMarker(compact: true).position(x: x(progress), y: 38)
+                }
+            }
+        }.frame(height: 48).accessibilityHidden(true)
     }
 }

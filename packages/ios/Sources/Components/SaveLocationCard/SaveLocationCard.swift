@@ -69,36 +69,17 @@ public struct KozmosSaveLocationCard: View {
             }
 
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-                Button {
+                KozmosButton(isSaved ? "Remove Location" : "Save Location", variant: isSaved ? .outline : .default,
+                             fillsWidth: true, leadingIconName: "marker-pin-01") {
                     trackEvent(KozmosAnalyticsEvent(eventName: "save_toggled", component: "SaveLocationCard", properties: ["isSaved": String(!isSaved)]))
                     onSaveToggle?()
-                } label: {
-                    Label(isSaved ? "Remove Location" : "Save Location", systemImage: "mappin")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 44)
                 }
-                .foregroundColor(isSaved ? KozmosColors.primitivesColorsTheme500 : KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
-                .background(isSaved ? Color.clear : KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
-                .overlay(
-                    RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous)
-                        .stroke(isSaved ? KozmosColors.primitivesColorsTheme500 : Color.clear, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
-                .buttonStyle(.plain)
 
                 if isSaved, let onRouteToLocation {
-                    Button {
+                    KozmosButton("Guide Me", emotion: .success, fillsWidth: true, leadingIconName: "navigation-pointer-01") {
                         trackEvent(KozmosAnalyticsEvent(eventName: "route_requested", component: "SaveLocationCard"))
                         onRouteToLocation()
-                    } label: {
-                        Label("Guide Me", systemImage: "location.north.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
-                    .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
-                    .background(KozmosColors.primitivesColorsEmotionalSuccess600)
-                    .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl, style: .continuous))
-                    .buttonStyle(.plain)
                 }
             }
         }

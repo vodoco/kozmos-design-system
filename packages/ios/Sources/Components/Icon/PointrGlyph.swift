@@ -3,17 +3,18 @@ import SwiftUI
 /// A Pointr Icon Library outline that SF Symbols has no counterpart for,
 /// drawn from Pointr's own path on the icons' 24 grid.
 ///
-/// `KozmosIcon` maps every other Kozmos name to an SF Symbol. For the names
-/// here SF Symbols has nothing to map to — it has no Bluetooth glyph at all,
-/// neither `bluetooth` nor `bluetooth.slash` — so the outline is drawn rather
-/// than a stand-in: the same art React draws from `@kozmos-ds/icons`.
+/// Used where an SF Symbol is absent or does not match the canonical outline.
+/// Go uses the same northeast, unfilled pointer as React, not location.north.
 struct KozmosPointrGlyph: Shape {
     /// Lines on the 24 grid: each run starts at its first point.
     let runs: [[CGPoint]]
+    var canonicalPath: Path? = nil
 
     /// The names this draws, from `packages/icons/src/pointr/icons.generated.ts`.
     static func named(_ name: String) -> KozmosPointrGlyph? {
         switch name {
+        case "navigation-pointer-01":
+            return KozmosPointrGlyph(runs: [], canonicalPath: KozmosNavigationGlyphPaths.path(name))
         case "bluetooth-off":
             // M6 17L12 12V22L17.4398 17.4668M12 7V2L18 7L15.0817 9.43194M21 21L3 3
             return KozmosPointrGlyph(runs: [
@@ -28,6 +29,9 @@ struct KozmosPointrGlyph: Shape {
 
     func path(in rect: CGRect) -> Path {
         let scale = min(rect.width, rect.height) / 24
+        if let canonicalPath {
+            return canonicalPath.applying(CGAffineTransform(a: scale, b: 0, c: 0, d: scale, tx: rect.minX, ty: rect.minY))
+        }
         var path = Path()
         for run in runs {
             guard let first = run.first else { continue }

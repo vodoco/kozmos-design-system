@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAddAlt
@@ -49,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.utils.KozmosNavigationGlyphs
 
 enum class KozmosIconSize(val dp: Dp) {
     Xs(12.dp),
@@ -128,7 +128,7 @@ internal fun resolveIconVector(rawName: String): ImageVector {
         "marker-pin-01" -> Icons.Default.Place
         "menu-01" -> Icons.Default.Menu
         "minus" -> Icons.Default.Remove
-        "navigation-pointer-01" -> Icons.Default.Navigation
+        "navigation-pointer-01" -> KozmosNavigationGlyphs.NavigationPointer01
         "plus" -> Icons.Default.Add
         "qr-code-01" -> Icons.Default.QrCode2
         "route" -> Icons.Default.Route

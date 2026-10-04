@@ -165,15 +165,7 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
                 Spacer()
 
                 if state == .active {
-                    Button(action: onEndRoute) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .bold))
-                            .frame(width: 40, height: 40)
-                            .foregroundColor(KozmosColors.componentsPrimaryButtonsDangerButtonForegroundContentIdle)
-                            .background(KozmosColors.componentsPrimaryButtonsDangerButtonBackgroundIdle)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
+                    KozmosIconButton(iconName: "xmark", variant: .destructive, action: onEndRoute)
                     .accessibilityLabel("End route")
                 }
             }

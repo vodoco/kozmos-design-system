@@ -41,8 +41,11 @@ public struct KozmosButton: View {
     let isDisabled: Bool
     let isLoading: Bool
     let fillsWidth: Bool
+    let leadingIconName: String?
     let action: () -> Void
     
+    /// A labelled action. `leadingIconName` is a decorative KozmosIcon name; loading
+    /// replaces it with the spinner. Existing label-only calls are unchanged.
     public init(
         _ label: String,
         variant: KozmosButtonVariant = .default,
@@ -51,6 +54,7 @@ public struct KozmosButton: View {
         isDisabled: Bool = false,
         isLoading: Bool = false,
         fillsWidth: Bool = false,
+        leadingIconName: String? = nil,
         action: @escaping () -> Void
     ) {
         self.label = label
@@ -60,6 +64,7 @@ public struct KozmosButton: View {
         self.isDisabled = isDisabled
         self.isLoading = isLoading
         self.fillsWidth = fillsWidth
+        self.leadingIconName = leadingIconName
         self.action = action
     }
     
@@ -74,12 +79,19 @@ public struct KozmosButton: View {
                     // wait is a defect.
                     KozmosSpinner(size: .sm, color: foregroundColor)
                         .accessibilityHidden(true)
+                } else if let leadingIconName {
+                    KozmosIcon(leadingIconName)
+                        .environment(\.kozmosIconHostInk, foregroundColor)
+                        .fixedSize()
+                        .accessibilityHidden(true)
                 }
                 Text(label)
                     .font(KozmosTypography.subheadline)
                     .fontWeight(.medium)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(padding)
+            .padding(.vertical, size == .icon ? 0 : KozmosDimensions.primitivesLayoutSpacing100)
             .foregroundColor(foregroundColor)
             .frame(
                 minWidth: size == .icon ? 44 : nil,

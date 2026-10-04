@@ -22,6 +22,10 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import com.kozmos.components.listbox.KozmosPickerAction
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -127,9 +131,27 @@ fun KozmosCombobox(
     expanded: Boolean? = null,
     defaultExpanded: Boolean = false,
     onExpandedChange: ((Boolean) -> Unit)? = null
+) = KozmosCombobox(value, onValueChange, inputValue, onInputValueChange, options,
+    controlLabels, filterLocally, emptyList(), modifier, label, placeholder, enabled, readOnly, status, error,
+    helperText, errorMessage, emptyText, clearable, expanded, defaultExpanded, onExpandedChange)
+
+/** Commands are unfiltered, do not change query/selection, and request dismissal before activation. */
+@Composable
+fun KozmosCombobox(
+    value: String, onValueChange: (String, KozmosListboxOption?) -> Unit,
+    inputValue: String, onInputValueChange: (String) -> Unit, options: List<KozmosListboxOption>,
+    controlLabels: KozmosComboboxLabels, filterLocally: Boolean,
+    popupActions: List<KozmosPickerAction>,
+    modifier: Modifier = Modifier, label: String? = null, placeholder: String = "Select option",
+    enabled: Boolean = true, readOnly: Boolean = false,
+    status: KozmosInputStatus = KozmosInputStatus.Default, error: Boolean = false,
+    helperText: String? = null, errorMessage: String? = null, emptyText: String = "No results found",
+    clearable: Boolean = true, expanded: Boolean? = null, defaultExpanded: Boolean = false,
+    onExpandedChange: ((Boolean) -> Unit)? = null
 ) {
     var internalExpanded by rememberSaveable { mutableStateOf(defaultExpanded) }
-    val isExpanded = expanded ?: internalExpanded
+    val isExpanded = (expanded ?: internalExpanded) && enabled && !readOnly
+    val inputFocus = remember { FocusRequester() }
     val setExpanded: (Boolean) -> Unit = { next ->
         if (expanded == null) internalExpanded = next
         onExpandedChange?.invoke(next)
@@ -172,6 +194,7 @@ fun KozmosCombobox(
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = colors.text),
                 cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
                 modifier = Modifier
+                    .focusRequester(inputFocus)
                     .semantics { contentDescription = label ?: placeholder }
                     .weight(1f)
                     .fillMaxHeight(),
@@ -229,8 +252,8 @@ fun KozmosCombobox(
         }
 
         if (isExpanded) {
-            if (filteredOptions.isEmpty()) {
-                Text(
+            if (filteredOptions.isEmpty() && popupActions.isEmpty()) {
+                if (emptyText != supportingText) Text(
                     text = emptyText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = KozmosThemeTokens.primitivesColorsForeground500,
@@ -245,12 +268,22 @@ fun KozmosCombobox(
                     options = filteredOptions,
                     selectedValues = if (value.isEmpty()) emptyList() else listOf(value),
                     onSelectionChange = { nextValues, option ->
-                        onValueChange(nextValues.firstOrNull().orEmpty(), option)
-                        onInputValueChange(option.label)
-                        setExpanded(false)
+                        if (enabled && !readOnly && !option.disabled) {
+                            setExpanded(false)
+                            onValueChange(nextValues.firstOrNull().orEmpty(), option)
+                            onInputValueChange(option.label)
+                        }
                     },
-                    enabled = enabled,
-                    multiple = false
+                    enabled = enabled && !readOnly,
+                    multiple = false,
+                    emptyText = emptyText.takeUnless { it == supportingText },
+                    actions = popupActions.map { action -> action.copy(onAction = {
+                        if (enabled && !readOnly && !action.disabled) {
+                            inputFocus.requestFocus()
+                            setExpanded(false)
+                            action.onAction()
+                        }
+                    }) }
                 )
             }
         }

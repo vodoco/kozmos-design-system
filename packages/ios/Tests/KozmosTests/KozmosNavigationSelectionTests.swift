@@ -7,7 +7,25 @@ import Darwin
 @testable import Kozmos
 
 final class KozmosNavigationSelectionTests: XCTestCase {
+    func testPickerActionsRequireUnambiguousStableIDs() {
+        let actions = [KozmosPickerAction(id: "dup", label: "First") {},
+            KozmosPickerAction(id: "dup", label: "Second") {}, KozmosPickerAction(id: " ", label: "Blank") {},
+            KozmosPickerAction(id: "valid", label: "Map") {}]
+        XCTAssertEqual(validPickerActions(actions).map(\.id), ["valid"])
+    }
+
     #if os(iOS)
+    // Picker command traits and locked-state visibility are asserted by the real
+    // XCUITest host. This local UIKit traversal cannot inspect those lazy/disabled
+    // field children reliably; absence from that traversal is not proof of hiding.
+    @MainActor func testMapChoiceIsNotAnExternalRouteButton() async throws {
+        try await inspect(KozmosRouteLocationField(label: "From", location: nil, query: "", options: [],
+            onQueryChange: { _ in }, onSelect: { _ in }, onClear: {}, onChooseMap: {})) { tree in
+            XCTAssertTrue(tree.contains { $0.accessibilityLabel == "From" }, "Must inspect a real route field")
+            XCTAssertFalse(tree.contains { $0.accessibilityLabel == "Select from the map" })
+        }
+    }
+
     @MainActor func testRoutingActionsHaveReal44PointTargets() async throws {
         let points = [KozmosRoutePoint(id: "a", value: "Lobby"), KozmosRoutePoint(id: "b", value: "Gallery")]
         let group = KozmosRoutingInputGroup(points: points, onPointChange: { _, _ in }, onSwap: {}, onAddPoint: {})

@@ -13,6 +13,15 @@ import org.junit.Test
  * stand-in, not as an error.
  */
 class IconNamesTest {
+    @Test
+    fun navigationPointerIsTheUnmirroredPointrOutline() {
+        val pointer = resolveIconVector("navigation-pointer-01")
+        assertEquals("NavigationPointer01", pointer.name)
+        assertEquals(false, pointer.autoMirror)
+        val path = pointer.root[0] as androidx.compose.ui.graphics.vector.VectorPath
+        assertEquals(null, path.fill)
+        assertEquals(2f, path.strokeLineWidth)
+    }
     /**
      * bluetooth-off, the map status pill's No Bluetooth (decision 39), is
      * Material's BluetoothDisabled: the B struck through, as Pointr's is.

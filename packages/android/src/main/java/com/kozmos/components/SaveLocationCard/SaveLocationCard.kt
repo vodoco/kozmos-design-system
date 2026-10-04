@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,12 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Navigation
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +25,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonVariant
+import com.kozmos.components.button.KozmosButtonEmotion
+import com.kozmos.components.icon.KozmosIcon
 import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
 import com.kozmos.tokens.KozmosThemeTokens
@@ -113,17 +112,15 @@ fun KozmosSaveLocationCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (isSaved) {
-                    OutlinedButton(
+                    KozmosButton(
                         onClick = {
                             trackEvent(KozmosAnalyticsEvent(component = "SaveLocationCard", eventName = "save_toggled", properties = mapOf("isSaved" to (!isSaved).toString())))
                             onSaveToggle?.invoke()
                         },
                         modifier = Modifier.weight(1f),
-                        border = BorderStroke(1.dp, KozmosThemeTokens.primitivesColorsTheme500),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = KozmosThemeTokens.primitivesColorsTheme500)
+                        variant = KozmosButtonVariant.Outline
                     ) {
                         Icon(Icons.Default.LocationOn, contentDescription = null)
-                        Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSpacing100))
                         Text("Remove Location")
                     }
                 } else {
@@ -145,9 +142,10 @@ fun KozmosSaveLocationCard(
                             trackEvent(KozmosAnalyticsEvent(component = "SaveLocationCard", eventName = "route_requested"))
                             onRouteToLocation()
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        emotion = KozmosButtonEmotion.Success
                     ) {
-                        Icon(Icons.Default.Navigation, contentDescription = null)
+                        KozmosIcon("navigation-pointer-01")
                         Text("Guide Me")
                     }
                 }

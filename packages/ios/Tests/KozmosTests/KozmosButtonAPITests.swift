@@ -10,6 +10,14 @@ import SwiftUI
 ///
 /// Rendering lives in `KozmosButtonImageSnapshotTests`.
 final class KozmosButtonAPITests: XCTestCase {
+    func testOptionalLeadingIconPreservesExistingCalls() {
+        let plain = KozmosButton("Go", action: {})
+        XCTAssertNil(plain.leadingIconName)
+        let decorated = KozmosButton("Go", leadingIconName: "navigation-pointer-01", action: {})
+        XCTAssertEqual(decorated.leadingIconName, "navigation-pointer-01")
+        XCTAssertEqual(decorated.label, plain.label)
+    }
+
     func testButtonDefaultVariant() {
         let view = KozmosButton("Label Binding", action: {})
         

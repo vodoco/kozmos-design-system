@@ -23,6 +23,8 @@ private struct InteractionFixture: View {
     @State private var groupedSelection: String?
     @State private var locationQuery = "Lobby"
     @State private var routeLocation: KozmosListboxOption?
+    @State private var routeLocationEditing = false
+    @State private var pickerExpanded = true
 
     private let cafe = KozmosPOIPresentation(id: "cafe", name: "Harbour Coffee", floorLabel: "Level 2")
     private let gate = KozmosPOIPresentation(id: "gate/12", name: "Gate 12", floorLabel: "Level 1")
@@ -83,6 +85,27 @@ private struct InteractionFixture: View {
 
     @ViewBuilder private var fixture: some View {
         switch scenario {
+        case "save-location-unsaved", "save-location-saved", "save-location-large-rtl":
+            KozmosSaveLocationCard(isSaved: scenario != "save-location-unsaved",
+                onSaveToggle: { events.append("toggle") },
+                onRouteToLocation: { events.append("route") },
+                onEditNote: { events.append("edit") })
+                .frame(width: 320)
+                .environment(\.layoutDirection, scenario == "save-location-large-rtl" ? .rightToLeft : .leftToRight)
+                .environment(\.dynamicTypeSize, scenario == "save-location-large-rtl" ? .accessibility3 : .large)
+                .environment(\.kozmosAnalytics, { event in
+                    if event.component == "SaveLocationCard" {
+                        let saved: String?
+                        if case .string(let value)? = event.properties?["isSaved"] { saved = value }
+                        else { saved = nil }
+                        events.append("\(event.eventName)\(saved.map { " \($0)" } ?? "")")
+                    }
+                })
+        case "legacy-route-active", "legacy-route-preview":
+            KozmosRouteSummary(etaText: "4 min", distanceText: "201 m",
+                state: scenario == "legacy-route-active" ? .active : .preview,
+                onEndRoute: { events.append("end") },
+                onStartNavigation: { events.append("start") })
         case "navigation-journey":
             NavigationJourneyFixture()
         case "route-setup-ready", "route-setup-pending", "route-setup-unresolved":
@@ -96,6 +119,45 @@ private struct InteractionFixture: View {
                 inputValue: $locationQuery,
                 options: [.init(value: "lobby", label: "Lobby", description: "North Terminal · Ground floor")],
                 label: "From", defaultOpen: true)
+        case "combobox-action", "combobox-action-updates-query":
+            KozmosCombobox(value: Binding(get: { "kept" }, set: { events.append("value \($0)") }),
+                inputValue: Binding(get: { scenario == "combobox-action" ? "unmatched" : locationQuery },
+                    set: { locationQuery = $0; events.append("query \($0)") }), options: [], label: "From",
+                popupActions: [.init(id: "map", label: "Map") {
+                    if scenario == "combobox-action-updates-query" { locationQuery = "Host draft" }
+                    events.append("map \(pickerExpanded)")
+                }],
+                expanded: Binding(get: { pickerExpanded }, set: { pickerExpanded = $0; events.append("open \($0)") }))
+        case "picker-action-disabled":
+            KozmosListbox(options: [], selectedValues: .constant(["map"]),
+                actions: [.init(id: "map", label: "Map", disabled: true) { events.append("map") }], emptyText: "No matches")
+        case "picker-long":
+            KozmosListbox(options: replaced ? [] : (0..<30).map { .init(value: "\($0)", label: "Place \($0)") },
+                actions: [.init(id: "map", label: "Map") { replaced = true; events.append("map") }], emptyText: "No matches")
+        case "combobox-locked-readonly", "combobox-locked-disabled":
+            KozmosCombobox(options: [.init(value: "lobby", label: "Lobby")], label: "From",
+                disabled: scenario == "combobox-locked-disabled", readOnly: scenario == "combobox-locked-readonly",
+                popupActions: [.init(id: "map", label: "Map") { events.append("map") }], expanded: .constant(true))
+        case "route-current", "route-current-missing", "route-current-disabled", "route-current-blank", "route-current-large-rtl":
+            KozmosRouteLocationField(label: "From", location: routeLocation, query: "unmatched", options: [], status: .error,
+                currentPosition: scenario == "route-current-missing" ? nil : .init(
+                    value: scenario == "route-current-blank" ? " " : "blue-dot", label: "Host position",
+                    disabled: scenario == "route-current-disabled"),
+                onQueryChange: { events.append("query \($0)") },
+                onSelect: { routeLocation = $0; events.append("select \($0.value)") }, onClear: {})
+                .frame(width: 320)
+                .environment(\.layoutDirection, scenario == "route-current-large-rtl" ? .rightToLeft : .leftToRight)
+                .environment(\.dynamicTypeSize, scenario == "route-current-large-rtl" ? .accessibility3 : .large)
+        case "route-location-edit", "route-location-edit-rtl", "route-location-edit-large", "route-location-edit-disabled":
+            KozmosRouteLocationField(label: "From",
+                location: routeLocationEditing ? nil : .init(value: "lobby", label: "Lobby", description: "North Terminal · Ground floor"),
+                query: "", options: [], disabled: scenario == "route-location-edit-disabled",
+                onQueryChange: { _ in }, onSelect: { _ in events.append("select") }, onClear: { events.append("clear") },
+                onEdit: { routeLocationEditing = true; events.append("edit") }, changeLabel: "Ändern",
+                onCancelEdit: { routeLocationEditing = false; events.append("cancel") }, cancelEditLabel: "Abbrechen")
+                .frame(width: 320)
+                .environment(\.layoutDirection, scenario == "route-location-edit-rtl" ? .rightToLeft : .leftToRight)
+                .environment(\.dynamicTypeSize, scenario == "route-location-edit-large" ? .accessibility3 : .large)
         case "route-synonym-local", "route-synonym-host", "route-synonym-loading":
             KozmosRouteLocationField(label: "From", location: routeLocation, query: "lift",
                 options: [.init(value: "e1", label: "Elevator", description: "Ground floor")],
@@ -111,8 +173,7 @@ private struct InteractionFixture: View {
                 clearLabel: "Clear origin", mapLabel: "Choose on map",
                 onQueryChange: { locationQuery = $0 },
                 onSelect: { routeLocation = $0; events.append("select \($0.value)") },
-                onClear: { routeLocation = nil; locationQuery = ""; events.append("clear") },
-                onChooseMap: { events.append("map") })
+                onClear: { routeLocation = nil; locationQuery = ""; events.append("clear") }) { events.append("map") }
         case "result-group":
             KozmosPOIResultGroup(items: items([go, .init(action: .details, label: "Details")]),
                 label: "Coffee branches", onExpandedChange: { events.append("expanded \($0)") },
@@ -124,10 +185,10 @@ private struct InteractionFixture: View {
                 attribution: AnyView(Text("Attribution")),
                 controlsLabel: scenario == "map-control-regions-localized" ? "Kartensteuerung" : "Map controls",
                 bottomControlsLabel: scenario == "map-control-regions-localized" ? "Weitere Kartensteuerung" : "Map corner controls",
-                controlsBottomStart: { Button("Language") { events.append("language") } },
-                controlsBottomEnd: { Button("Zoom") { events.append("zoom") } },
+                controlsBottomStart: { KozmosButton("Language", variant: .ghost) { events.append("language") } },
+                controlsBottomEnd: { KozmosButton("Zoom", variant: .ghost) { events.append("zoom") } },
                 map: { Color.clear }, mapStatusContent: { EmptyView() },
-                controls: { Button("Locate") { events.append("locate") } },
+                controls: { KozmosButton("Locate", variant: .ghost) { events.append("locate") } },
                 panel: { EmptyView() })
                 .frame(height: selected ? 40 : 500)
             Button("Toggle map size") { selected.toggle() }

@@ -2,7 +2,7 @@ package com.kozmos.components.listbox
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +19,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonVariant
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +38,14 @@ data class KozmosListboxOption(
     val disabled: Boolean = false
 )
 
+/** A picker command, never a selectable option or query value. IDs must be unique. */
+data class KozmosPickerAction(val id: String, val label: String, val disabled: Boolean = false, val onAction: () -> Unit)
+
+internal fun validPickerActions(actions: List<KozmosPickerAction>): List<KozmosPickerAction> {
+    val counts = actions.groupingBy { it.id }.eachCount()
+    return actions.filter { it.id.isNotBlank() && counts[it.id] == 1 }
+}
+
 @Composable
 fun KozmosListbox(
     options: List<KozmosListboxOption>,
@@ -43,7 +54,9 @@ fun KozmosListbox(
     modifier: Modifier = Modifier,
     multiple: Boolean = false,
     enabled: Boolean = true,
-    maxHeight: androidx.compose.ui.unit.Dp = 256.dp
+    maxHeight: androidx.compose.ui.unit.Dp = 256.dp,
+    actions: List<KozmosPickerAction> = emptyList(),
+    emptyText: String? = null
 ) {
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
 
@@ -58,6 +71,11 @@ fun KozmosListbox(
             .padding(KozmosDimensions.primitivesLayoutSpacing50),
         verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
+        if (options.isEmpty() && emptyText != null) {
+            Text(emptyText, style = MaterialTheme.typography.bodyMedium,
+                color = KozmosThemeTokens.primitivesColorsForeground500,
+                modifier = Modifier.padding(KozmosDimensions.primitivesLayoutSpacing150))
+        }
         options.forEach { option ->
             val selected = selectedValues.contains(option.value)
             val rowShape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
@@ -66,7 +84,7 @@ fun KozmosListbox(
                     .fillMaxWidth()
                     .clip(rowShape)
                     .background(if (selected) KozmosThemeTokens.primitivesColorsBackground100 else Color.Transparent)
-                    .clickable(enabled = enabled && !option.disabled) {
+                    .selectable(selected = selected, enabled = enabled && !option.disabled) {
                         val nextValues = if (multiple) {
                             if (selected) {
                                 selectedValues.filterNot { it == option.value }
@@ -117,5 +135,10 @@ fun KozmosListbox(
                 }
             }
         }
+        validPickerActions(actions).forEach { action -> key(action.id) {
+            KozmosButton(onClick = { if (enabled && !action.disabled) action.onAction() },
+                modifier = Modifier.fillMaxWidth(), variant = KozmosButtonVariant.Ghost,
+                enabled = enabled && !action.disabled) { Text(action.label) }
+        } }
     }
 }

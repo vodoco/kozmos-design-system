@@ -19,8 +19,16 @@ public struct KozmosCombobox: View {
     public let closeLabel: String
     /// Disable only when the host already filtered/ranked the supplied options.
     public let filterLocally: Bool
+    public let popupActions: [KozmosPickerAction]
+    private let expanded: Binding<Bool>?
 
-    @State private var isOpen: Bool
+    @State private var internalOpen: Bool
+    @FocusState private var inputFocused: Bool
+    @AccessibilityFocusState private var inputAccessibilityFocused: Bool
+    private var isOpen: Bool { (expanded?.wrappedValue ?? internalOpen) && !disabled && !readOnly }
+    private func setOpen(_ next: Bool) {
+        if let expanded { expanded.wrappedValue = next } else { internalOpen = next }
+    }
 
     public init(
         value: Binding<String> = .constant(""),
@@ -40,7 +48,9 @@ public struct KozmosCombobox: View {
         clearLabel: String = "Clear selection",
         openLabel: String = "Open options",
         closeLabel: String = "Close options",
-        filterLocally: Bool = true
+        filterLocally: Bool = true,
+        popupActions: [KozmosPickerAction] = [],
+        expanded: Binding<Bool>? = nil
     ) {
         self._value = value
         self._inputValue = inputValue
@@ -56,8 +66,9 @@ public struct KozmosCombobox: View {
         self.emptyText = emptyText
         self.clearable = clearable
         self.clearLabel = clearLabel; self.openLabel = openLabel; self.closeLabel = closeLabel
-        self._isOpen = State(initialValue: defaultOpen)
+        self._internalOpen = State(initialValue: defaultOpen)
         self.filterLocally = filterLocally
+        self.popupActions = popupActions; self.expanded = expanded
     }
 
     public var body: some View {
@@ -69,7 +80,9 @@ public struct KozmosCombobox: View {
             }
 
             HStack(spacing: 0) {
-                TextField(placeholder, text: $inputValue)
+                TextField(placeholder, text: editableInput)
+                    .focused($inputFocused)
+                    .accessibilityFocused($inputAccessibilityFocused)
                     .accessibilityLabel(label ?? placeholder)
                     .disabled(disabled || readOnly)
                     .font(KozmosTypography.subheadline)
@@ -77,10 +90,7 @@ public struct KozmosCombobox: View {
                     .padding(.leading, KozmosDimensions.primitivesLayoutSpacing150)
                     .frame(height: 44)
                     .onTapGesture {
-                        if !disabled && !readOnly { isOpen = true }
-                    }
-                    .onChange(of: inputValue) { _ in
-                        if !disabled && !readOnly { isOpen = true }
+                        if !disabled && !readOnly { setOpen(true) }
                     }
 
                 if clearable && !inputValue.isEmpty && !disabled && !readOnly {
@@ -116,28 +126,41 @@ public struct KozmosCombobox: View {
             )
 
             if isOpen {
-                if filteredOptions.isEmpty {
-                    Text(emptyText)
-                        .font(KozmosTypography.subheadline)
-                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
-                        .padding(KozmosDimensions.primitivesLayoutSpacing150)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(KozmosColors.primitivesColorsBackground0)
-                        .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                                .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
-                        )
+                if filteredOptions.isEmpty && popupActions.isEmpty {
+                    if emptyText != supportingText {
+                        Text(emptyText)
+                            .font(KozmosTypography.subheadline)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground500)
+                            .padding(KozmosDimensions.primitivesLayoutSpacing150)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(KozmosColors.primitivesColorsBackground0)
+                            .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+                                    .stroke(KozmosColors.semanticsBorderInput, lineWidth: 1)
+                            )
+                    }
                 } else {
                     KozmosListbox(
                         options: filteredOptions,
                         selectedValues: listboxSelection,
                         multiple: false,
-                        disabled: disabled,
-                        maxHeight: 256
+                        disabled: disabled || readOnly,
+                        maxHeight: 256,
+                        actions: popupActions.map { action in
+                            KozmosPickerAction(id: action.id, label: action.label, disabled: action.disabled) {
+                                guard !disabled, !readOnly, !action.disabled else { return }
+                                inputFocused = true
+                                inputAccessibilityFocused = true
+                                setOpen(false)
+                                action.action()
+                            }
+                        },
+                        emptyText: emptyText == supportingText ? nil : emptyText
                     ) { _, option in
+                        guard !disabled, !readOnly, !option.disabled else { return }
                         inputValue = option.label
-                        isOpen = false
+                        setOpen(false)
                     }
                 }
             }
@@ -146,6 +169,7 @@ public struct KozmosCombobox: View {
                 Text(supportingText)
                     .font(KozmosTypography.subheadline)
                     .foregroundColor(supportingTextColor)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -162,19 +186,35 @@ public struct KozmosCombobox: View {
         }
     }
 
+    // UIKit may write the unchanged text while focus moves away. Commands must
+    // not look like a new host search request merely because they close a picker.
+    // Open only for user edits, not host updates after selection or a command.
+    private var editableInput: Binding<String> {
+        Binding(get: { inputValue }, set: { next in
+            guard !disabled, !readOnly, next != inputValue else { return }
+            inputValue = next
+            setOpen(true)
+        })
+    }
+
     private var listboxSelection: Binding<[String]> {
-        Binding(get: { value.isEmpty ? [] : [value] }, set: { value = $0.first ?? "" })
+        Binding(get: { value.isEmpty ? [] : [value] }, set: {
+            guard !disabled, !readOnly else { return }
+            setOpen(false)
+            value = $0.first ?? ""
+        })
     }
 
     private func toggleOpen() {
         guard !disabled, !readOnly else { return }
-        isOpen.toggle()
+        setOpen(!isOpen)
     }
 
     private func clearSelection() {
+        guard !disabled, !readOnly else { return }
         value = ""
         inputValue = ""
-        isOpen = false
+        setOpen(false)
     }
 
     private var effectiveStatus: KozmosInputStatus {
