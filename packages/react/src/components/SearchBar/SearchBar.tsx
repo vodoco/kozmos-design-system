@@ -74,8 +74,18 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     ref,
   ) => {
     const { trackEvent } = useKozmosAnalytics();
-    const inputRef = React.useRef<HTMLInputElement>(null);
-    React.useImperativeHandle(ref, () => inputRef.current!, []);
+    const inputRef = React.useRef<HTMLInputElement | null>(null);
+    // One callback for this field and the caller: the input is remounted when
+    // `trailing` comes or goes, and a handle made once kept the caller on the
+    // detached input.
+    const setRef = React.useCallback(
+      (node: HTMLInputElement | null) => {
+        inputRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref],
+    );
 
     const field = (
       <div
@@ -95,7 +105,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           className="h-[18px] w-[18px] text-muted-foreground me-2 shrink-0"
         />
         <input
-          ref={inputRef}
+          ref={setRef}
           className={cn(
             "kozmos-reset kozmos-search-input kozmos-searchbar-input",
             className,

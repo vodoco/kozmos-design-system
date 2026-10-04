@@ -47,6 +47,21 @@ describe("SearchBar", () => {
     expect(ref.mock.lastCall?.[0]).toBeNull();
   });
 
+  it("keeps the caller's ref on the live input when the trailing slot comes or goes", () => {
+    // The input is remounted when `trailing` appears or disappears; an
+    // imperative handle made once left the caller holding the detached one.
+    const ref = React.createRef<HTMLInputElement>();
+    const { rerender } = render(<SearchBar ref={ref} value="" />);
+    expect(ref.current).toBe(screen.getByRole("searchbox"));
+    rerender(
+      <SearchBar ref={ref} value="" trailing={<button>Filters</button>} />,
+    );
+    expect(ref.current).toBe(screen.getByRole("searchbox"));
+    expect(ref.current?.isConnected).toBe(true);
+    rerender(<SearchBar ref={ref} value="" />);
+    expect(ref.current).toBe(screen.getByRole("searchbox"));
+  });
+
   it("composes the host keyboard handler with search initiation", () => {
     const dispatch = vi.fn((events: AnalyticsEvent[]) => events);
     const onKeyDown = vi.fn();
