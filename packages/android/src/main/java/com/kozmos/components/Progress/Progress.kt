@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 
@@ -41,9 +42,12 @@ enum class KozmosProgressTrackAppearance { Theme, Gradient }
 enum class KozmosProgressPositionMode { Static, Live }
 enum class KozmosProgressMotion { None, Directional }
 
-/** Core owns the clock and observes both reduced/disabled system animation and lifecycle. */
+/**
+ * Core owns the clock and observes both reduced/disabled system animation and lifecycle.
+ * A state, read where the cue is drawn, so the clock redraws the track without recomposing it.
+ */
 @Composable
-private fun progressFlowPhase(enabled: Boolean): Float {
+private fun progressFlowPhase(enabled: Boolean): FloatState {
     val resolver = LocalContext.current.contentResolver
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var resumed by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
@@ -57,12 +61,17 @@ private fun progressFlowPhase(enabled: Boolean): Float {
         resolver.registerContentObserver(Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE), false, settings)
         onDispose { lifecycle.removeObserver(observer); resolver.unregisterContentObserver(settings) }
     }
-    var phase by remember { mutableFloatStateOf(0f) }
+    val phase = remember { mutableFloatStateOf(0f) }
     LaunchedEffect(enabled, resumed, scale) {
-        phase = 0f
+        phase.floatValue = 0f
         if (enabled && resumed && scale > 0 && scale.isFinite()) {
-            val start = withFrameNanos { it }
-            while (true) withFrameNanos { phase = (((it - start) / 1_000_000_000.0 / scale) % 1.0).toFloat() * 20f }
+            // An infinite animation, as Compose's UI tests know one: a plain
+            // frame loop keeps a host's test from ever going idle.
+            var start = -1L
+            while (true) withInfiniteAnimationFrameNanos {
+                if (start < 0) start = it
+                phase.floatValue = (((it - start) / 1_000_000_000.0 / scale) % 1.0).toFloat() * 20f
+            }
         }
     }
     return phase
@@ -80,7 +89,7 @@ fun KozmosProgressTrack(activeRange: KozmosProgressRange?, value: Float?, modifi
     val success = KozmosThemeTokens.primitivesColorsEmotionalSuccess600
     val flowColor = if (positionMode == KozmosProgressPositionMode.Static) Color.White.copy(alpha = 0.65f) else KozmosThemeTokens.primitivesColorsBackground600
     val flow = if (motion == KozmosProgressMotion.Directional) activeRange?.flow(value, positionMode) else null
-    val phase = if (flow != null) progressFlowPhase(true) else 0f
+    val phase = if (flow != null) progressFlowPhase(true) else null
     Canvas(modifier.fillMaxWidth().height(10.dp)) {
         fun point(fraction: Float) = Offset((if (rtl) 1f - fraction else fraction) * size.width, size.height / 2)
         drawLine(neutral, point(0f), point(1f), 6.dp.toPx(), StrokeCap.Round)
@@ -93,7 +102,7 @@ fun KozmosProgressTrack(activeRange: KozmosProgressRange?, value: Float?, modifi
             val start = point(range.start); val end = point(range.end)
             clipRect(left = minOf(start.x, end.x), right = maxOf(start.x, end.x)) {
                 drawLine(flowColor, start, end, 3.dp.toPx(), StrokeCap.Round,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 15.dp.toPx()), -phase.dp.toPx()))
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 15.dp.toPx()), -(phase?.floatValue ?: 0f).dp.toPx()))
             }
         }
     }

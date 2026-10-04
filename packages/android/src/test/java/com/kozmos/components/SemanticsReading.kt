@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.toSize
 import app.cash.paparazzi.Paparazzi
 import app.cash.paparazzi.SnapshotHandler
@@ -34,6 +35,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * Paparazzi as a host rather than a camera: it composes, measures and lays out
@@ -96,7 +99,13 @@ data class ReadNode(
     /** False for a node composed but not placed: a lazy list's prefetched or recycled item. */
     val placed: Boolean = true,
     val horizontalScrollMax: Float? = null,
-    val progressRange: ProgressBarRangeInfo? = null
+    val progressRange: ProgressBarRangeInfo? = null,
+    /** Set on a node that can take focus: whether it has it. */
+    val focused: Boolean? = null,
+    /** How a node takes focus, as tapping a field or a keyboard moving to it does. */
+    val requestFocus: (() -> Boolean)? = null,
+    /** How a text field is typed into. */
+    val setText: ((String) -> Boolean)? = null
 )
 
 /**
@@ -144,7 +153,7 @@ fun Paparazzi.readSemantics(content: @Composable () -> Unit): ReadSemantics {
  * pressing a control and reading what follows, which [readSemantics] cannot
  * do: it composes once and is gone.
  */
-class LiveSemantics internal constructor(val view: View) {
+class LiveSemantics internal constructor(val view: View, private val recomposer: Recomposer) {
     fun read(): ReadSemantics {
         val owner = (view as ViewRootForTest).semanticsOwner
         return ReadSemantics(
@@ -158,6 +167,15 @@ class LiveSemantics internal constructor(val view: View) {
         private set
 
     suspend fun frames(count: Int = 1) = repeat(count) { withFrameNanos { framesSeen++ } }
+
+    /** How many times the composition has recomposed and applied changes. */
+    val recompositions: Long get() = recomposer.changeCount
+
+    /**
+     * Whether anything still waits on a frame or a recomposition: what a
+     * Compose UI test waits on before it calls the composition idle.
+     */
+    val hasPendingWork: Boolean get() = recomposer.hasPendingWork
 }
 
 /**
@@ -180,6 +198,8 @@ class LiveSemantics internal constructor(val view: View) {
  */
 fun Paparazzi.live(
     durationMillis: Long = 3000,
+    /** Added to the effects' context: an InfiniteAnimationPolicy, as a Compose UI test installs. */
+    effectContext: CoroutineContext = EmptyCoroutineContext,
     content: @Composable () -> Unit,
     script: suspend LiveSemantics.() -> Unit
 ) {
@@ -188,7 +208,7 @@ fun Paparazzi.live(
     var live: LiveSemantics? = null
 
     val clock = BroadcastFrameClock()
-    val effects = Handler(Looper.getMainLooper()).asCoroutineDispatcher("kozmos-live") + clock
+    val effects = Handler(Looper.getMainLooper()).asCoroutineDispatcher("kozmos-live") + clock + effectContext
     val recomposer = Recomposer(effects)
     val running = CoroutineScope(effects + Job())
     val choreographer = Choreographer.getInstance()
@@ -217,7 +237,7 @@ fun Paparazzi.live(
             content()
             LaunchedEffect(Unit) {
                 try {
-                    val started = LiveSemantics(view).also { live = it }
+                    val started = LiveSemantics(view, recomposer).also { live = it }
                     started.frames(2)
                     started.script()
                     finished = true
@@ -285,5 +305,8 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     frame = Rect(node.positionInRoot, node.size.toSize()),
     placed = node.layoutInfo.isPlaced,
     horizontalScrollMax = node.config.getOrNull(SemanticsProperties.HorizontalScrollAxisRange)?.maxValue?.invoke(),
-    progressRange = node.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
+    progressRange = node.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo),
+    focused = node.config.getOrNull(SemanticsProperties.Focused),
+    requestFocus = node.config.getOrNull(SemanticsActions.RequestFocus)?.action,
+    setText = node.config.getOrNull(SemanticsActions.SetText)?.action?.let { set -> { text: String -> set(AnnotatedString(text)) } }
 )
