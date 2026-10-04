@@ -38,7 +38,9 @@ full wording when the host is narrow or text is enlarged. Web defaults to the ex
 and Compose uses 11sp with a 14sp line height. Native system scaling remains enabled.
 The compact presentation uses text-height rows, 4-unit spacing between credits and a
 4-unit logo gap plus 2-unit paint/focus clearance. Credits are inline links, not
-48-unit map-control buttons. On web the scroll region and links are keyboard reachable.
+48-unit map-control buttons. On web the links are keyboard reachable, and while the credit line
+is longer than its space it is a tab stop too, a group named by `label`, so a keyboard can scroll
+it; a line that fits is no tab stop.
 The transparent map appearance has no bottom padding below the credit line: when the
 shell applies its 16-unit inset, the text's bottom aligns with the corner button frames.
 The opaque surface appearance retains its inner padding. Map-mode scrollbars are hidden

@@ -5,6 +5,9 @@ import {
   launchFixtureBrowser,
   settleLayout,
 } from "./lib/built-react-fixture.mjs";
+// An open hint. A closed one can still be in the page while it fades out.
+const OPEN_HINT =
+  '[data-state="instant-open"] [role="tooltip"], [data-state="delayed-open"] [role="tooltip"]';
 const fixture = await buildReactFixture("floor-popup.fixture.tsx");
 const browser = await launchFixtureBrowser();
 try {
@@ -24,11 +27,25 @@ try {
     .getByRole("group", { name: "Floor selector" })
     .getByRole("button")
     .click();
+  // Away from the column, which opens under the pointer: no hover hint.
+  await page.mouse.move(1, 1);
+  await settleLayout(page);
+  assert.equal(
+    await page.locator(OPEN_HINT).count(),
+    0,
+    "opening the list shows no hint on the level it focuses",
+  );
   const describedFloor = page
     .getByRole("dialog")
     .getByRole("button", { name: "Level 1", exact: true });
-  await describedFloor.focus();
-  const tooltip = page.getByRole("tooltip", { name: "Level 1", exact: true });
+  // A visitor arriving at a level by keyboard sees its full name. The bubble
+  // is hidden from assistive technology, so find it by Radix's copy.
+  await page.keyboard.press("Tab");
+  assert.ok(
+    await describedFloor.evaluate((node) => node === document.activeElement),
+    "Tab moves to the next level",
+  );
+  const tooltip = page.locator('[role="tooltip"]', { hasText: /^Level 1$/ });
   await tooltip.waitFor();
   await settleLayout(page);
   await page.evaluate(() =>
@@ -44,7 +61,14 @@ try {
   assert.equal(await tooltip.textContent(), "Level 1");
   assert.equal(
     await describedFloor.getAttribute("aria-describedby"),
-    await tooltip.getAttribute("id"),
+    null,
+    "the level already says its name: the hint does not describe it again",
+  );
+  assert.ok(
+    await tooltip.evaluate((node) =>
+      Boolean(node.closest('[aria-hidden="true"]')),
+    ),
+    "the hint is visual only",
   );
   assert.ok(
     await tooltip.evaluate((node) => Boolean(node.closest('[role="dialog"]'))),
@@ -142,9 +166,9 @@ try {
       exact: true,
     });
     await lastFloor.focus();
-    const longListHint = popup.getByRole("tooltip", {
-      name: "Level 39",
-      exact: true,
+    // Visual only, so found by Radix's copy rather than by role.
+    const longListHint = popup.locator('[role="tooltip"]', {
+      hasText: /^Level 39$/,
     });
     await longListHint.waitFor();
     await page.evaluate(() =>
@@ -183,12 +207,19 @@ try {
     );
     await tile.click();
     await popup.waitFor();
+    // Off the tile, so that only focus, not hover, can open its hint.
+    await page.mouse.move(1, 1);
     await page.keyboard.press("Escape");
     await popup.waitFor({ state: "hidden" });
     await settleLayout(page);
     assert.ok(
       await tile.evaluate((el) => el === document.activeElement),
       "Escape returns to tile",
+    );
+    assert.equal(
+      await page.locator(OPEN_HINT).count(),
+      0,
+      "focus handed back to the tile opens no hint",
     );
     await tile.click();
     await popup.waitFor();

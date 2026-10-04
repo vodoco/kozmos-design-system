@@ -431,6 +431,10 @@ final class KozmosFloorSelectorTests: XCTestCase {
         let window = NSWindow(contentRect: CGRect(origin: .zero, size: corner),
                               styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
+        // The drawings are measured against the light theme. Left to follow
+        // the Mac, the window draws the dark one whenever the Mac is Dark,
+        // as automatic appearance makes it at night.
+        window.appearance = NSAppearance(named: .aqua)
         window.contentView = host
         window.orderFront(nil)
         defer { window.close() }
@@ -504,6 +508,28 @@ final class KozmosFloorSelectorTests: XCTestCase {
                          "the closed switcher is filled with the theme")
         }
     }
+
+    #if os(macOS)
+    /// The drawings here are measured against the light theme. A Mac set to
+    /// change its appearance automatically is Dark at night, and a host
+    /// window left to follow it drew the dark theme: 13 assertions in 9 of
+    /// these tests failed after sunset. Dark for this test alone, the host
+    /// still draws the light theme's primary, which is neither the dark
+    /// theme's nor the white backdrop.
+    @MainActor func testTheMacHostDrawsTheLightThemeWhileTheMacIsDark() async throws {
+        let app = NSApplication.shared
+        let was = app.appearance
+        app.appearance = NSAppearance(named: .darkAqua)
+        defer { app.appearance = was }
+        XCTAssertEqual(app.effectiveAppearance.name, .darkAqua, "the app did not turn dark: this proves nothing")
+        let drawn = try await drawSwitcher(
+            KozmosColors.primitivesColorsTheme600.frame(width: tileSide, height: tileSide)
+        )
+        let centre = drawn.color(CGPoint(x: tileRect.midX, y: tileRect.midY))
+        let light = try near(KozmosColors.primitivesColorsTheme600)
+        XCTAssertTrue(light(centre.r, centre.g, centre.b), "the host drew \(centre), not the light theme's primary")
+    }
+    #endif
 
     @MainActor func testAvailabilityCuesAreDrawnWithoutGrowingTheTile() async throws {
         let upper = CGRect(x: tileRect.midX - 9, y: tileRect.midY - 16, width: 18, height: 7)
@@ -861,6 +887,58 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertTrue(translated.accessibilityActivate())
         await settle()
         XCTAssertNil(translated.accessibilityHint, "the open tile still says it shows every level")
+    }
+
+    /// A level's tooltip is its name, and its button is already called by
+    /// it: given to VoiceOver as a hint too, every level in the open column
+    /// was read twice. The column's levels sit in a scroll view, which no
+    /// in-process walk can read on iOS 26.5 (KozmosManoeuvreCardTests;
+    /// measured again on 2026-10-04, with UIKit's and SwiftUI's
+    /// accessibility bundles loaded), so this reads the tile's own SwiftUI
+    /// element, which takes its tooltip the same way. VoiceOver reads it on
+    /// a Mac; on iOS it is hidden behind the UIKit element. A tooltip
+    /// elsewhere keeps its hint.
+    @MainActor func testALevelIsNotHintedWithItsOwnName() async throws {
+        let automationWas = try XCTUnwrap(setAutomation(1), "libAccessibility has no automation switch here")
+        defer { _ = setAutomation(automationWas) }
+        let window = await host(VStack(alignment: .trailing) {
+            Button("Zoom in") {}.kozmosTooltip("Zooms the map in")
+            KozmosFloorSelector(floors: switcherLevels, selectedFloor: .constant("1"), variant: .collapsible)
+        })
+        defer { window.isHidden = true }
+        let nodes = everyNode(in: window)
+        let tile = try XCTUnwrap(nodes.first { !($0 is UIView) && $0.accessibilityLabel == "First floor" },
+                                 "no SwiftUI element for the tile")
+        XCTAssertNil(tile.accessibilityHint, "the tile is hinted with its own name")
+        let zoom = try XCTUnwrap(nodes.first { $0.accessibilityLabel == "Zoom in" }, "no element for the other tooltip's button")
+        XCTAssertEqual(zoom.accessibilityHint, "Zooms the map in", "a tooltip elsewhere lost its hint")
+    }
+
+    /// Every node the accessibility runtime knows under `node`, hidden ones
+    /// too: `automationElements` lists them, `accessibilityElements` does not.
+    @MainActor private func everyNode(in node: NSObject) -> [NSObject] {
+        var children: [NSObject] = []
+        if #available(iOS 17.0, *), let automation = node.automationElements as? [NSObject] { children += automation }
+        children += node.accessibilityElements as? [NSObject] ?? []
+        if let view = node as? UIView { children += view.subviews }
+        var seen: [NSObject] = []
+        for child in children where !seen.contains(where: { $0 === child }) { seen.append(child) }
+        return [node] + seen.flatMap { everyNode(in: $0) }
+    }
+
+    // SwiftUI hands its elements to UIKit only while the accessibility
+    // runtime is on, as KozmosManoeuvreCardTests sets out. Test-only: this
+    // hook is never linked into the library.
+    private static let accessibility = dlopen("/usr/lib/libAccessibility.dylib", RTLD_NOW)
+    private func setAutomation(_ on: Int32) -> Int32? {
+        typealias Get = @convention(c) () -> Int32
+        typealias Set = @convention(c) (Int32) -> Void
+        guard let library = Self.accessibility,
+              let get = dlsym(library, "_AXSAutomationEnabled"),
+              let set = dlsym(library, "_AXSSetAutomationEnabled") else { return nil }
+        let was = unsafeBitCast(get, to: Get.self)()
+        unsafeBitCast(set, to: Set.self)(on)
+        return was
     }
 
     /// The tile says the visitor's level with its own while it shows it, in

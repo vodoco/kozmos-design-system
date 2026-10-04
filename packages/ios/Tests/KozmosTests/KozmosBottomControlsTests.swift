@@ -1,5 +1,8 @@
 import SwiftUI
 import XCTest
+#if os(macOS)
+import AppKit
+#endif
 @testable import Kozmos
 
 final class KozmosBottomControlsTests: XCTestCase {
@@ -268,6 +271,144 @@ final class KozmosBottomControlsTests: XCTestCase {
         }
     }
 
+    private final class TestWindow: UIWindow {
+        override var safeAreaInsets: UIEdgeInsets { .zero }
+    }
+    #endif
+
+    // MARK: One corner, or a corner with nothing in it
+
+    /// The layout tells the corners apart by place, so each must be one
+    /// subview whatever it holds. An `EmptyView` or an `if` that is false is
+    /// no subview of its own: a shell given one corner read past its
+    /// subviews and crashed, "Index out of range". Hosted on a Mac as well,
+    /// so `swift test` runs these too. The end corner is what its default
+    /// gives, an `EmptyView`.
+    @MainActor func testAStartCornerAloneSitsAtTheStartEdge() async throws {
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let hosted = try await hostedCorners(direction: direction) {
+                Self.probe("start", width: 100, height: 44)
+            } end: {
+                EmptyView()
+            }
+            let start = try XCTUnwrap(hosted.frames["start"], "\(direction): the start corner was not laid out")
+            XCTAssertEqual(start.width, 100, accuracy: 1)
+            XCTAssertEqual(start.height, 44, accuracy: 1)
+            XCTAssertEqual(direction == .leftToRight ? start.minX : 360 - start.maxX, 16, accuracy: 1, "\(direction)")
+            XCTAssertEqual(start.maxY, 284, accuracy: 1, "\(direction)")
+            XCTAssertEqual(hosted.cameraPadding, 44 + 16, accuracy: 1, "\(direction): the empty end corner takes room")
+        }
+    }
+
+    /// The end corner alone stays at the end edge rather than taking the
+    /// start corner's place. The start corner is what its default gives.
+    @MainActor func testAnEndCornerAloneSitsAtTheEndEdge() async throws {
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let hosted = try await hostedCorners(direction: direction) {
+                EmptyView()
+            } end: {
+                Self.probe("end", width: 60, height: 140)
+            }
+            let end = try XCTUnwrap(hosted.frames["end"], "\(direction): the end corner was not laid out")
+            XCTAssertEqual(end.width, 60, accuracy: 1)
+            XCTAssertEqual(end.height, 140, accuracy: 1)
+            XCTAssertEqual(direction == .leftToRight ? 360 - end.maxX : end.minX, 16, accuracy: 1, "\(direction)")
+            XCTAssertEqual(end.maxY, 284, accuracy: 1, "\(direction)")
+            XCTAssertEqual(hosted.cameraPadding, 140 + 16, accuracy: 1, "\(direction)")
+        }
+    }
+
+    /// A corner the product supplies with nothing in it for now — a control
+    /// it shows only sometimes — takes no room, and the other corner keeps
+    /// its own edge, whichever of the two is empty.
+    @MainActor func testACornerWithNothingInItLeavesTheOtherAtItsEdge() async throws {
+        let shown = false
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let startOnly = try await hostedCorners(direction: direction) {
+                Self.probe("start", width: 100, height: 44)
+            } end: {
+                if shown { Self.probe("end", width: 60, height: 140) }
+            }
+            let start = try XCTUnwrap(startOnly.frames["start"], "\(direction): the start corner was not laid out")
+            XCTAssertNil(startOnly.frames["end"])
+            XCTAssertEqual(direction == .leftToRight ? start.minX : 360 - start.maxX, 16, accuracy: 1, "\(direction)")
+            XCTAssertEqual(start.maxY, 284, accuracy: 1, "\(direction)")
+            XCTAssertEqual(startOnly.cameraPadding, 44 + 16, accuracy: 1, "\(direction): the empty end corner takes room")
+
+            let endOnly = try await hostedCorners(direction: direction) {
+                if shown { Self.probe("start", width: 100, height: 44) }
+            } end: {
+                Self.probe("end", width: 60, height: 140)
+            }
+            let end = try XCTUnwrap(endOnly.frames["end"], "\(direction): the end corner was not laid out")
+            XCTAssertNil(endOnly.frames["start"])
+            XCTAssertEqual(direction == .leftToRight ? 360 - end.maxX : end.minX, 16, accuracy: 1, "\(direction)")
+            XCTAssertEqual(end.maxY, 284, accuracy: 1, "\(direction)")
+            XCTAssertEqual(endOnly.cameraPadding, 140 + 16, accuracy: 1, "\(direction)")
+        }
+    }
+
+    /// Both corners on one row, each at its own edge, their bottoms level.
+    @MainActor func testBothCornersSitAtTheirOwnEdges() async throws {
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let hosted = try await hostedCorners(direction: direction) {
+                Self.probe("start", width: 100, height: 44)
+            } end: {
+                Self.probe("end", width: 60, height: 140)
+            }
+            let start = try XCTUnwrap(hosted.frames["start"], "\(direction): the start corner was not laid out")
+            let end = try XCTUnwrap(hosted.frames["end"], "\(direction): the end corner was not laid out")
+            XCTAssertEqual(hosted.cameraPadding, 140 + 16, accuracy: 1, "\(direction)")
+            XCTAssertEqual(direction == .leftToRight ? start.minX : 360 - start.maxX, 16, accuracy: 1, "\(direction)")
+            XCTAssertEqual(direction == .leftToRight ? 360 - end.maxX : end.minX, 16, accuracy: 1, "\(direction)")
+            XCTAssertEqual(start.maxY, 284, accuracy: 1, "\(direction)")
+            XCTAssertEqual(end.maxY, 284, accuracy: 1, "\(direction)")
+        }
+    }
+
+    /// Where the probes in a shell's bottom corners are laid out, in a
+    /// 360 × 300 shell with no panel: 16 in from each edge. With the
+    /// camera padded for the corners, the padding is their region's height
+    /// and the 16 above it, so an empty corner can be seen to measure nothing.
+    @MainActor private func hostedCorners<Start: View, End: View>(
+        direction: LayoutDirection,
+        @ViewBuilder start: () -> Start,
+        @ViewBuilder end: () -> End
+    ) async throws -> (frames: [String: CGRect], cameraPadding: CGFloat) {
+        var frames: [String: CGRect] = [:]
+        var cameraPadding: CGFloat = -1
+        let size = CGSize(width: 360, height: 300)
+        let view = KozmosAdaptiveMapShell(
+            onCollisionInsetsChange: { cameraPadding = $0.bottom },
+            bottomControlsPadCamera: true,
+            controlsBottomStart: start, controlsBottomEnd: end,
+            map: { Color.clear }, panel: { EmptyView() }
+        )
+        .frame(width: size.width, height: size.height)
+        .environment(\.layoutDirection, direction)
+        .onPreferenceChange(Frames.self) { frames = $0 }
+        #if os(iOS)
+        let window = TestWindow(frame: CGRect(origin: .zero, size: size))
+        window.rootViewController = UIHostingController(rootView: view.environment(\.horizontalSizeClass, .compact))
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        try await Task.sleep(nanoseconds: 250_000_000)
+        #else
+        let host = NSHostingView(rootView: view)
+        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+        for _ in 0..<5 {
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        #endif
+        return (frames, cameraPadding)
+    }
+
     private struct Frames: PreferenceKey {
         static var defaultValue: [String: CGRect] = [:]
         static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
@@ -280,8 +421,4 @@ final class KozmosBottomControlsTests: XCTestCase {
                 Color.clear.preference(key: Frames.self, value: [id: p.frame(in: .global)])
             })
     }
-    private final class TestWindow: UIWindow {
-        override var safeAreaInsets: UIEdgeInsets { .zero }
-    }
-    #endif
 }

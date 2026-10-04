@@ -10,12 +10,17 @@ public enum KozmosTooltipSide: Sendable {
 public struct KozmosTooltip: ViewModifier {
     let text: String
     let side: KozmosTooltipSide
+    /// Whether assistive technology hears the text as the view's hint, as it
+    /// does by default. Pass `false` where the text repeats the view's own
+    /// label, or VoiceOver reads it twice; the bubble still shows.
+    let isAccessibilityHint: Bool
 
     @State private var isPresented = false
 
-    public init(text: String, side: KozmosTooltipSide = .top) {
+    public init(text: String, side: KozmosTooltipSide = .top, isAccessibilityHint: Bool = true) {
         self.text = text
         self.side = side
+        self.isAccessibilityHint = isAccessibilityHint
     }
 
     public func body(content: Content) -> some View {
@@ -55,8 +60,7 @@ public struct KozmosTooltip: ViewModifier {
                         }
                     }
             )
-            .accessibilityHint(text)
-            .help(text)
+            .modifier(KozmosTooltipHint(text: text, isActive: isAccessibilityHint))
     }
 
     private var overlayAlignment: Alignment {
@@ -68,6 +72,25 @@ public struct KozmosTooltip: ViewModifier {
         }
     }
 
+}
+
+/// The text as the view's hint. `help` sets that hint as well (measured on
+/// iOS 26.5), so a tooltip that is not the hint leaves out both. On a Mac
+/// that drops the system's help tag too; the bubble still shows.
+private struct KozmosTooltipHint: ViewModifier {
+    let text: String
+    let isActive: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isActive {
+            content
+                .accessibilityHint(text)
+                .help(text)
+        } else {
+            content
+        }
+    }
 }
 
 private struct KozmosTooltipPosition: ViewModifier {
@@ -193,7 +216,9 @@ private struct KozmosTooltipTipShape: Shape {
 }
 
 public extension View {
-    func kozmosTooltip(_ text: String, side: KozmosTooltipSide = .top) -> some View {
-        modifier(KozmosTooltip(text: text, side: side))
+    /// Shows `text` in a bubble on hover or a long press. Pass
+    /// `isAccessibilityHint: false` where the text repeats the view's label.
+    func kozmosTooltip(_ text: String, side: KozmosTooltipSide = .top, isAccessibilityHint: Bool = true) -> some View {
+        modifier(KozmosTooltip(text: text, side: side, isAccessibilityHint: isAccessibilityHint))
     }
 }

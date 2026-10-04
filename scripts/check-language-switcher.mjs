@@ -80,13 +80,48 @@ try {
       /English/,
       "request is not an optimistic commit",
     );
+    // The host marks the request pending at once, then commits it. The
+    // trigger keeps focus throughout, and refuses another request meanwhile.
     await page.evaluate(
-      (dir) => window.renderLanguage({ dir, pending: true }),
+      (dir) => window.renderLanguage({ dir, pendOnRequest: true }),
       dir,
     );
     await settleLayout(page);
-    assert.ok(await trigger.isDisabled(), "pending prevents another request");
+    await trigger.focus();
+    await page.keyboard.press("Space");
+    await menu.waitFor();
+    await page.waitForFunction(
+      () => document.activeElement?.getAttribute("role") === "option",
+    );
+    await page.keyboard.press("d");
+    await page.waitForFunction(
+      () => document.activeElement?.textContent === "Deutsch",
+    );
+    await page.keyboard.press("Enter");
+    await menu.waitFor({ state: "hidden" });
+    await page.waitForFunction(
+      () => document.activeElement?.getAttribute("role") === "combobox",
+    );
+    assert.equal(await trigger.getAttribute("aria-disabled"), "true");
+    assert.equal(
+      await trigger.evaluate((node) => getComputedStyle(node).opacity),
+      "0.5",
+      "pending looks unavailable, as disabled did",
+    );
     assert.match(await trigger.textContent(), /English/);
+    assert.match(
+      await page.getByRole("status").textContent(),
+      /Changing language/,
+    );
+    await page.keyboard.press("Space");
+    await page.keyboard.press("a");
+    await settleLayout(page);
+    assert.equal(await menu.count(), 0, "pending does not open the list");
+    assert.deepEqual(
+      (await page.evaluate(() => window.localeRequests)).slice(-1),
+      ["de"],
+      "pending prevents another request",
+    );
     await page.evaluate(
       (dir) => window.renderLanguage({ dir, locale: "de" }),
       dir,
@@ -96,6 +131,10 @@ try {
       await trigger.textContent(),
       /Deutsch/,
       "host commits accepted choice",
+    );
+    assert.ok(
+      await trigger.evaluate((el) => el === document.activeElement),
+      "focus stays on the trigger through the commit",
     );
     await trigger.click();
     await menu.waitFor();
