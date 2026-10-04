@@ -258,7 +258,7 @@ try {
             // The confirmed origin is kept while it is being changed:
             // cancelling restores it.
             await page
-              .getByRole("button", { name: "Cancel", exact: true })
+              .getByRole("button", { name: "Cancel From", exact: true })
               .click();
             await page
               .getByText("North terminal lobby", { exact: true })
