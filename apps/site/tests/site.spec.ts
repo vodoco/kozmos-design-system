@@ -2566,7 +2566,7 @@ test.describe("design-system gaps, measured", () => {
   }) => {
     test.skip(
       browserName !== "chromium",
-      "the cancel button is a Blink and WebKit pseudo-element; WebKit's field is unstyled anyway (GAP-20)",
+      "the shared stylesheet's clear-button rule is inspected once in Chromium",
     );
     await page.goto("/components");
     await hydrated(page);
@@ -3083,17 +3083,9 @@ test.describe("venue explorer example", () => {
     await expect(mapPins(page)).toHaveCount(1);
   });
 
-  test("the search field is drawn as Kozmos draws it", async ({
-    page,
-    browserName,
-  }) => {
-    // GAP-20: WebKit does not apply Kozmos's @scope-d utilities to <input>, and
-    // SearchBar's field is one. Expected to fail there until Kozmos moves it to
-    // component-owned CSS, as it did Input's; a pass then fails this test.
-    test.fail(
-      browserName === "webkit",
-      "GAP-20: SearchBar's input is unstyled in WebKit",
-    );
+  test("the search field is drawn as Kozmos draws it", async ({ page }) => {
+    // GAP-20: SearchBar now owns its native input recipe. Require the same
+    // styling in every engine, including WebKit's scoped-utility regression.
     await page.goto("/examples/venue-explorer");
     await hydrated(page);
     const field = explorer(page).getByRole("searchbox", {

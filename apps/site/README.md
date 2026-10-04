@@ -634,18 +634,20 @@ component pages' own entries — GAP-17 and GAP-28 on the AdaptiveMapShell
 page, GAP-28 on SearchBar's, GAP-30 on Sidebar's, GAP-45 on ThemeProvider's
 — went with their demos on 2026-09-28. The tests expect exactly those, so a
 new violation fails — and so does a known one that disappears, which is the
-signal to close its gap. The same
-holds for GAP-20: the search-field test is marked `test.fail` in WebKit
-only, so Playwright reports it the day Kozmos fixes the field.
+signal to close its gap. GAP-20's former WebKit expected failure now passes:
+the review candidate gives SearchBar an owned input recipe, and the test
+positively checks its styling in all three engines. Physical Safari/iOS
+acceptance and publication remain separate.
 
 **Design-system gaps, measured.** Twenty-one tests measure what Kozmos draws
-today. Six of them now measure a fix rather than a defect: the sheet
+today. Seven of them now measure a fix rather than a defect: the sheet
 handle's 16px row and 40 × 4 grip (GAP-38), the spinner and the skeleton
 resting under the reduced-motion preference (GAP-50, in the states
 example's loading view), SearchBar hiding the browser's own clear (GAP-37),
 an empty state centring its wrapped words (GAP-66), MapOverlay keeping
 the shadow of what floats in it (GAP-72) and the assistant's voice control
-drawing its own marks (GAP-86); a seventh, the Button's 8px between
+drawing its own marks (GAP-86), and SearchBar's styled field in WebKit
+(GAP-20); an eighth, the Button's 8px between
 icon and label (GAP-56), is held by the test of every button the site
 draws. Beside them, emotion text now reads on every neutral surface
 (GAP-31), whose four known-violation allowances are deleted. The rest still

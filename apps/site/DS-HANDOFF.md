@@ -107,7 +107,7 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 | P1       | GAP-09                         | Button (as a link)                                       | `buttonVariants` on an anchor keeps its underline.                                               |
 | P1       | GAP-03                         | ThemeProvider                                            | A dark-mode visitor sees a white page until the scripts run (1.9 s on fast 3G, 4× CPU).          |
 | P1       | GAP-41                         | Navbar                                                   | No narrow-screen pattern; two rows at 320px whatever the content.                                |
-| P1       | GAP-20, GAP-37 (fixed)         | SearchBar                                                | Unstyled in WebKit; the browser's second clear is hidden now.                                    |
+| P1       | GAP-20, GAP-37 (fixed)         | SearchBar                                                | Owned field styling fixes WebKit in the review candidate; the browser's second clear is hidden.  |
 | P1       | GAP-42                         | CardTitle                                                | Line height 1.0: wrapped titles touch.                                                           |
 | P1       | GAP-43                         | Slider, Tabs, Rating, SearchBar, Chip, ToggleButton      | Targets under 44 px; the slider thumb is 20 × 20.                                                |
 | P1       | GAP-39                         | RouteSummary                                             | Its title is always an `h2`.                                                                     |
@@ -399,11 +399,15 @@ border-primary-foreground/20`.
   `appearance: none` on `.kozmos-input` and `.kozmos-search-input`. The
   site's test now reads that rule out of the stylesheet, because reading the
   pseudo-element answers with the host's values and so could never fail.
-- **GAP-20:** WebKit (Safari, iOS) does not apply the `@scope`d utilities to
-  the input, so the field is drawn unstyled. Move its styling to owned CSS,
-  as `Input` did. **Proof:** the `test.fail` in "the search field is drawn
-  as Kozmos draws it" reports an unexpected pass in WebKit; remove the
-  `test.fail`.
+- **GAP-20 is fixed in the review candidate, not yet released:** the field
+  uses an owned `.kozmos-searchbar-input` recipe (`2e602272`, isolated from
+  Core `Search` in `99a55303`). The old WebKit `test.fail` reported an
+  unexpected pass locally and in CI. "The search field is drawn as Kozmos
+  draws it" now requires 15px text and no border in every engine; the SDK
+  browser checks cover 200% text and Core `Search` recipe isolation. Physical
+  Safari/iOS web-view acceptance remains separate. This fixes rendering, not
+  composition: the reusable decorated Core field is still an open contract
+  in `docs/sdk-core-composition.md` at the repository root.
 
 ### GAP-42 · `CardTitle`'s line height is 1.0
 

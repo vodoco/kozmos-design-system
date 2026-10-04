@@ -59,7 +59,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-17 | `AdaptiveMapShell`'s panel is an `<aside>`                       | Product / SDK          | open         |
 | GAP-18 | `POIDetailPanel` has no presentation for the shell's panel       | Product / SDK          | left visible |
 | GAP-19 | `Navbar` is always sticky                                        | Core                   | composed     |
-| GAP-20 | `SearchBar`'s field is unstyled in WebKit (Safari, iOS)          | Product / SDK          | left visible |
+| GAP-20 | `SearchBar`'s field is unstyled in WebKit (Safari, iOS)          | Product / SDK          | fixed        |
 | GAP-21 | `Heading` cannot reach the tokens' heading scale                 | Core                   | composed     |
 | GAP-22 | Font-weight tokens carry names, not weights                      | Core                   | open         |
 | GAP-23 | Component-layer colours are baked values, not ramp aliases       | Core                   | composed     |
@@ -465,12 +465,16 @@ keep the table's four columns and its statuses as they are.
 - **Why it matters:** Safari and iOS web views are WebKit, and the Pointr
   SDK's iOS hosts are among them. Visible in the examples' search fields and
   in the components page's own.
-- **Now:** left visible. `tests/site.spec.ts` expects the field's style to fail
-  in WebKit only, so the test tells us when it is fixed.
+- **Now:** fixed in the review candidate, not yet released. `SearchBar` owns
+  its native input recipe (`2e602272`), isolated from Core `Search`'s shared
+  clear-button marker (`99a55303`). The former expected-failure test produced
+  an unexpected pass in WebKit; `tests/site.spec.ts` now positively requires
+  15px text and no border in all three engines. The SDK browser checks also
+  cover the computed recipe and 200% text, and protect Core `Search`'s styling.
 - **Lane:** Product / SDK (`SearchBar`).
-- **Fix in Kozmos:** move `SearchBar`'s field to component-owned CSS like
-  `Input`, and add it to the WebKit form-compatibility checks. Confirm in a real
-  Safari too.
+- **Remaining acceptance:** confirm on physical Safari/iOS web views. This
+  browser repair is not a Core migration: a reusable decorated Core field is
+  still needed; see `docs/sdk-core-composition.md` at the repository root.
 
 ## GAP-21 · `Heading` cannot reach the tokens' heading scale
 
