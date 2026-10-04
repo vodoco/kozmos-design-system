@@ -1,7 +1,9 @@
 ---
-"@kozmos-ds/react": patch
+"@kozmos-ds/react": minor
 ---
 
-Keep the canonical outlined navigation pointer on Go/Directions in POI details
-and make the other labelled POI actions text-only. Icon-only header controls and
-loading feedback remain unchanged.
+POIDetailPanel's labelled actions are text-only, apart from Go/Directions, which
+keeps the canonical outlined navigation pointer. **What you'll see:** Share,
+Order and the supplementary actions (Book, Call and the rest) lose their icons;
+Go keeps its arrow. Icon-only header controls (close, favourite, save) and
+loading feedback are unchanged. No props change.
