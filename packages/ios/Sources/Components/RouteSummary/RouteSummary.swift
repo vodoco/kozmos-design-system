@@ -22,8 +22,11 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
     private let endLabel: String
     private let progress: AnyView?
     private let surface: KozmosSurfaceStyle
-    private var presentation: KozmosRoutePresentation = .standalone
+    /// Nil follows where the summary is: hosted in the map shell's panel,
+    /// standalone elsewhere (decision 43).
+    private var presentation: KozmosRoutePresentation? = nil
     private var destinationImage: String? = nil
+    @Environment(\.kozmosPanelSurface) private var panelSurface
 
     public init(
         etaText: String,
@@ -52,7 +55,9 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
     /// The navigation layout: the destination's name with End beside it in
     /// the danger outline; `durationText`, `distanceText` and `arrivalText`
     /// on one row; `progress` — a `KozmosRouteProgressRail` in the products —
-    /// below.
+    /// below. In the map shell's panel it is hosted, with no surface, radius,
+    /// shadow or padding of its own, and standalone elsewhere, unless
+    /// `presentation` says which.
     public init(
         destination: String,
         durationText: String? = nil,
@@ -60,7 +65,7 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
         arrivalText: String? = nil,
         endLabel: String = "End",
         surface: KozmosSurfaceStyle = .solid,
-        presentation: KozmosRoutePresentation = .standalone,
+        presentation: KozmosRoutePresentation? = nil,
         destinationImage: String? = nil,
         onEndRoute: @escaping () -> Void,
         @ViewBuilder progress: () -> some View
@@ -124,7 +129,8 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
                 progress
             }
         }
-        .modifier(KozmosRoutePanelSurface(presentation: presentation, surface: surface))
+        .modifier(KozmosRoutePanelSurface(presentation: presentation ?? (panelSurface == nil ? .standalone : .hosted),
+                                          surface: surface))
     }
 
     @ViewBuilder private var navigationMetrics: some View {

@@ -39,6 +39,7 @@ import com.kozmos.components.button.KozmosButtonSize
 import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
+import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
 import com.kozmos.utils.KozmosRoutePanelSurface
 import com.kozmos.utils.KozmosDestinationImage
 
@@ -151,10 +152,15 @@ fun KozmosRouteSummary(
     endLabel: String = "End",
     surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
     progress: (@Composable () -> Unit)? = null
-) = KozmosRouteSummary(destination, durationText, distanceText, onEndRoute, KozmosRoutePresentation.Standalone,
+) = KozmosRouteSummary(destination, durationText, distanceText, onEndRoute, null,
     modifier, arrivalText, endLabel, surface, null, progress)
 
-/** Hosted navigation, with optional remaining estimates and decorative destination media. */
+/**
+ * The navigation layout with optional remaining estimates and decorative
+ * destination media. [presentation] null follows where it is: hosted in the
+ * map shell's panel, with no surface, radius, shadow or padding of its own
+ * (decision 43), and standalone elsewhere.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun KozmosRouteSummary(
@@ -162,7 +168,7 @@ fun KozmosRouteSummary(
     durationText: String? = null,
     distanceText: String? = null,
     onEndRoute: () -> Unit,
-    presentation: KozmosRoutePresentation,
+    presentation: KozmosRoutePresentation? = null,
     modifier: Modifier = Modifier,
     arrivalText: String? = null,
     endLabel: String = "End",
@@ -170,7 +176,9 @@ fun KozmosRouteSummary(
     destinationImage: String? = null,
     progress: (@Composable () -> Unit)? = null
 ) {
-    KozmosRoutePanelSurface(presentation, surface, modifier) {
+    val placed = presentation
+        ?: if (LocalKozmosPanelSurface.current == null) KozmosRoutePresentation.Standalone else KozmosRoutePresentation.Hosted
+    KozmosRoutePanelSurface(placed, surface, modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(),
