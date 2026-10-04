@@ -61,10 +61,9 @@ describe("Combobox", () => {
       expect(input).toHaveAccessibleDescription("Locations unavailable");
       if (commands)
         expect(screen.getByRole("option", { name: "Map" })).toBeVisible();
-      else
-        expect(
-          container.querySelector("[data-combobox-popup]"),
-        ).not.toHaveClass("shadow-overlay");
+      // With nothing in it the popup is not drawn at all (no empty box, and
+      // no layer to swallow a parent's Escape).
+      else expect(container.querySelector("[data-combobox-popup]")).toBeNull();
       await user.keyboard("{Escape}");
       expect(input).toHaveAttribute("aria-expanded", "false");
     },

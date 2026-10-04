@@ -218,6 +218,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
       typeof error === "string" && error ? error : helperText;
     const showEmptyText = emptyText !== supportingText;
     const hasPopupContent = entries.length > 0 || showEmptyText;
+    // Open with nothing to show is not shown: no layer to swallow a parent's
+    // Escape, and no Escape of its own to claim.
+    const popupVisible = open && hasPopupContent;
     const describedBy =
       error && typeof error === "string"
         ? errorId
@@ -342,7 +345,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
           ref={rootRef}
           className="relative"
           onKeyDown={(event) => {
-            if (event.key !== "Escape" || !open) return;
+            if (event.key !== "Escape" || !popupVisible) return;
             // This field owns the open popup's Escape, including a host veto or
             // IME cancellation. Don't let a bubble-based parent dismiss too.
             event.stopPropagation();
@@ -455,7 +458,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(
               </button>
             </div>
           </div>
-          {open && (
+          {popupVisible && (
             // Join Core overlays' layer ordering without moving focus out of
             // the combobox input. No onDismiss: keyboard dismissal belongs to
             // the field's bubble handler (after host/IME handling), not Radix's

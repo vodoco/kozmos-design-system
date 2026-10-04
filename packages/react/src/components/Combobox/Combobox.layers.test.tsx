@@ -66,6 +66,39 @@ it("unwinds Combobox, Popover and Dialog in order", async () => {
   );
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
+it("lets the first Escape close the dialog when the open popup has nothing in it", async () => {
+  // Loading with no suggestions or commands, and the empty text the same as
+  // the helper text, so it is not repeated: the popup is open but empty. It
+  // must not take a layer and swallow the first Escape.
+  const user = userEvent.setup();
+  render(
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>Start</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogTitle>Journey</DialogTitle>
+        <DialogDescription>Choose origin</DialogDescription>
+        <Combobox
+          label="Origin"
+          options={[]}
+          helperText="Searching…"
+          emptyText="Searching…"
+        />
+      </DialogContent>
+    </Dialog>,
+  );
+  await user.click(screen.getByRole("button", { name: "Start" }));
+  const input = screen.getByRole("combobox");
+  await user.click(input);
+  await user.type(input, "lo");
+  expect(input).toHaveAttribute("aria-expanded", "false");
+  await user.keyboard("{Escape}");
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+});
+
 function Fixture({
   host,
   onClose,
