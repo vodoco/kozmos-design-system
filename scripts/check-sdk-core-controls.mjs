@@ -92,6 +92,27 @@ try {
           }
           await assertActionLabelsFit();
           if (id.includes("searchbar")) {
+            const inputStyle = await page
+              .getByRole("searchbox")
+              .evaluate((input) => {
+                const style = getComputedStyle(input);
+                return {
+                  flexGrow: style.flexGrow,
+                  minWidth: style.minWidth,
+                  border: style.borderTopWidth,
+                  background: style.backgroundColor,
+                };
+              });
+            assert.deepEqual(
+              inputStyle,
+              {
+                flexGrow: "1",
+                minWidth: "0px",
+                border: "0px",
+                background: "rgba(0, 0, 0, 0)",
+              },
+              `${id}: the native input keeps its owned shrinkable, chrome-free recipe`,
+            );
             const target = await control.boundingBox();
             assert.equal(target.width, 44, "Core search clear width stays 44");
             assert.equal(

@@ -96,10 +96,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
         />
         <input
           ref={inputRef}
-          className={cn(
-            "kozmos-search-input min-w-0 flex-1 bg-transparent border-none outline-none text-[15px] placeholder:text-muted-foreground",
-            className,
-          )}
+          className={cn("kozmos-reset kozmos-search-input", className)}
           aria-label={ariaLabel ?? placeholder}
           placeholder={placeholder}
           type={type}

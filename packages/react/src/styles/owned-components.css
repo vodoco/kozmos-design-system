@@ -214,6 +214,14 @@
     -webkit-appearance: textfield;
     outline-offset: -2px;
   }
+  /* Native search fields in WebKit do not reliably receive scoped utilities.
+     Keep the existing SDK input recipe owned, including its shrinkable minimum,
+     so it cannot push the Core clear action out of a narrow enlarged-text row.
+     This compatibility recipe is not a Core decorated-field API. */
+  .kozmos-search-input {
+    @apply min-w-0 flex-1 bg-transparent border-none outline-none text-[15px] placeholder:text-muted-foreground;
+    -webkit-appearance: textfield;
+  }
   /* The browser's own clear, hidden.
      A `type="search"` input draws a second × in Chrome, Edge and Safari
      whenever it holds text and is hovered or focused — unlabelled, beside the

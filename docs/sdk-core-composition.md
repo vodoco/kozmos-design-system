@@ -6,6 +6,11 @@ map, not a statement that the existing implementation already meets that rule.
 
 ## Boundary
 
+SearchBar's existing raw search input has an owned CSS compatibility recipe for
+WebKit native-control styling and enlarged-text shrinkage. This fixes rendering,
+not composition ownership: migration still requires the decorated Core field
+contract below. The clear action already uses Core IconButton.
+
 - Core owns buttons, icon buttons, fields, counters, generic selectable surfaces,
   disclosure mechanics, loading indicators, focus treatment and overlay mechanics.
 - SDK modules own place/route data, domain wording, route/marker geometry,
