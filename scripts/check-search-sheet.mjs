@@ -194,11 +194,19 @@ try {
   await finish(await open("product-sdk-categoryfield--in-the-search-row"), "category-field-in-the-row", async (page) => {
     const field = page.getByRole("group", { name: "Gates, 2 places" });
     await field.waitFor();
+    // Core Counter is decorative here: the group's localized accessible name
+    // already includes the count. Assert that contract before measuring it,
+    // rather than looking for the removed duplicate label on a generic span.
+    const counter = field.locator('[data-slot="counter"]');
+    assert.equal(await counter.count(), 1, "the field composes one Core Counter");
+    assert.equal(await counter.getAttribute("aria-hidden"), "true", "the visual count is decorative");
+    assert.equal(await counter.getAttribute("aria-label"), null, "the visual count does not repeat the group label");
+    assert.equal(await counter.textContent(), "2", "the visual count remains present");
     const box = await field.boundingBox();
     near(box.height, 48, 1, "the category field is not 48 tall");
     const styles = await field.evaluate((node) => {
       const s = getComputedStyle(node);
-      const pill = node.querySelector("[aria-label='2 places']");
+      const pill = node.querySelector('[data-slot="counter"]');
       const clear = node.querySelector("button");
       const clearCircle = clear ? clear.firstElementChild : null;
       const icon = node.querySelector("span[aria-hidden]");
