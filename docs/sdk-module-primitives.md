@@ -5,30 +5,32 @@ the September 5 inventory, which predates the shipped collapsible floor selector
 states, metadata strip, itinerary and map-status component. It does **not** propose removing
 the existing public Product / SDK components.
 
-Baseline: release commit `a3dc6f935b7914dedd17067036ebadcde737bfd9`, reconciled 2026-10-01.
-React 0.7.0, tokens 0.3.0 and product-contracts 0.6.0 are published on `latest`;
+Baseline: release commit `152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02.
+React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0 are published on `latest`;
 icons stays 0.5.0. Matching SwiftUI/Compose source is in the repository, not a native
-registry release. See [release evidence](release-process.md#070).
-Post-release source status below is reconciled to main `7c006e06aa904894217fb4df799d9e6ff1e60c4b`;
-merged maintenance is not an additional npm release.
-P01's three source slices merged in #185 at `13347cf5aea0e319570a7ff5ce95174c03b6c30d`, unreleased:
+registry release. See [release evidence](release-process.md#080).
+P01–P04 below are all in that release.
+P01's three source slices merged in #185 at `13347cf5aea0e319570a7ff5ce95174c03b6c30d`, released in 0.8.0:
 GAP-109 (named manoeuvre containers), GAP-056 (result-action targets), and GAP-101
 (named shell controls). Exact-main CI, selected workflows and deployed docs were verified;
-this is not a claim that the changes are published to npm or adopted in products.
-P02 merged in #186 at `393cdc4430c84e8a3fdbd1383e6a99a987b3ef70`, unreleased:
+publication is not adoption in products.
+P02 merged in #186 at `393cdc4430c84e8a3fdbd1383e6a99a987b3ef70`, released in 0.8.0:
 shell-owned 16-unit header gaps and gripless top insets across React/SwiftUI/Compose,
 with fitted-height and hosted-inset regressions. Exact-main CI and deployment passed;
 live docs and navigation spacing were verified. External Figma/consumer adoption remains separate.
 P03's staff-language slice merged in #187 at `b734587172714391d2046ddddf7d7b2b36da5ee8`,
-unreleased: optional explicit `languageNotListed` evidence and localized card/list
+released in 0.8.0: optional explicit `languageNotListed` evidence and localized card/list
 disclosure across all three platforms. Unknown does not mean unlisted, and UI language
 never implies staff availability. P03's structured-instruction slice merged in
 [#188](https://github.com/vodoco/kozmos-design-system/pull/188) at
-`b94423b6c89c2a1dec2cd059d81ff905885dcf52`, unreleased:
+`b94423b6c89c2a1dec2cd059d81ff905885dcf52`, released in 0.8.0:
 ordered text/secondary/language parts across the three navigation components, with legacy
 String calls preserved. Inline language metadata survives the native accessibility bridge;
 physical speech and external product/Figma acceptance remain separate. Exact-main CI,
 selected workflows, deployment and affected live Storybook content were verified.
+P04's numbered-result presentation (GAP-119) merged in #190 and #191, released in 0.8.0: the
+SDK presentation is the default on all three platforms, with `presentationStyle="legacy"`
+keeping the earlier Featured-first tab. GAP-120's marker appearance remains open.
 For all 121 supplied product gaps (latest source intake 2026-10-01), their criteria and corrected statuses, read the
 [product design gap register](product-design-gap-register.md). The site has a
 [separate gap register](../apps/site/GAPS.md).
@@ -63,7 +65,7 @@ Kozmos already has a substantial component foundation. The missing work is now a
 of reusable presentation components, shared layout support, host-owned data/SDK integration,
 and complete-screen verification. Component coverage alone is not a finished SDK experience.
 
-Next work after the 0.7.0 library release:
+Next work after the 0.8.0 library release:
 
 1. Reuse the shipped level switcher, logical map-corner slots, attribution and Info components;
    use the web-only language switcher where the SDK host supports it.
@@ -492,16 +494,16 @@ The screenshot also exposes Exit Main Mall. A styled button alone is not the fea
 Do not let the new chrome conceal already-recorded behavior gaps:
 
 - **Product contracts:** GAP-021's optional language-not-listed field and localized disclosure
-  are merged in #187, unreleased; real staff-query evidence and host grouping/ranking remain.
+  are released in 0.8.0 (#187); real staff-query evidence and host grouping/ranking remain.
   Still-open contracts include GAP-028 result booking, GAP-044 authored
   name, GAP-046 area, GAP-047 travel breakdown and GAP-065 native/shared grouping. GAP-092's
   result-list footer is optional backlog: the current Search with AI design uses the header.
 - **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks
-  are merged in #188, unreleased; SDK data adoption and physical speech acceptance remain.
+  are released in 0.8.0 (#188); SDK data adoption and physical speech acceptance remain.
   GAP-097 step metrics and GAP-104 endpoint actions remain open. React GAP-094/GAP-100 are already fixed.
-- **Accessibility/layout:** merged P01 raises result actions to a 44px/pt/dp minimum
-  (GAP-056), retaining larger native targets and growth for large text. This is unreleased;
-  actual keyboard/device acceptance remains. Wide shell content fitting and the
+- **Accessibility/layout:** P01, released in 0.8.0, raises result actions to a 44px/pt/dp minimum
+  (GAP-056), retaining larger native targets and growth for large text. Actual
+  keyboard/device acceptance remains. Wide shell content fitting and the
   iOS QA header's equal top/side padding are implemented, not missing components.
   Compact-stepper RTL separators are fixed in 0.7.0. Do not
   equate the 44px product target with every WCAG minimum-target rule.
@@ -526,7 +528,7 @@ coverage; they are not 58 new implementation tasks or proof of all-target comple
 
 ### Scope and invariants
 
-- Build on current main, not the published 0.7.0 source alone. First submit the documentation
+- Build on current main, not the published 0.8.0 source alone. First submit the documentation
   reconciliation through its own PR; preserve the existing local edits. Refresh each subsequent
   branch normally against main and inspect other actors' changes before writing.
 - Preserve public behavior unless a change is explicitly reviewed. Prefer additive contracts
@@ -684,12 +686,12 @@ tests, shared-dependency impact, required PR gates and complete release-candidat
 ## P02/P03 acceptance checklist
 
 Keep source completion, SDK adoption and human acceptance as separate gates. The source
-increments are merged and unreleased; neither a green structural check nor a demo is
+increments are released in 0.8.0; neither a green structural check nor a demo is
 evidence of adoption in every consuming app.
 
 | Gate                          | Verified scope                                                                                                                                                                                                                               | Remaining evidence                                                                                                                                                                                                                             |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shared library behavior       | P02 #186 and P03 #187/#188 implement React, SwiftUI and Compose together; exact-main CI and selected deployments passed. Live structured-instruction stories preserve language markup and interaction behavior.                              | A future release must validate its own final artifacts; these source changes are not in npm 0.7.0.                                                                                                                                             |
+| Shared library behavior       | P02 #186 and P03 #187/#188 implement React, SwiftUI and Compose together; exact-main CI and selected deployments passed. Live structured-instruction stories preserve language markup and interaction behavior.                              | Released in npm 0.8.0 ([release evidence](release-process.md#080)); host, device and design acceptance remain.                                                                                                                                 |
 | Real iOS shell spacing        | The QA app consumes `kozmosPanelInsetTop` and preserves `kozmosPanelClearanceTop`. `PanelTopPaddingTests.testCustomRowsConsumeShellInsetAndKeepHandleClearance` covers four inset cases in LTR and RTL; P02 recorded live phone/iPad checks. | Other hosts and product screens must remove obsolete spacing workarounds and verify their own geometry.                                                                                                                                        |
 | Real iOS instruction data     | `SDKRoute.Step.message` remains a string; `SDKMapScreen` passes it to ManoeuvreCard and Itinerary. Legacy calls remain supported.                                                                                                            | Obtain authoritative ordered parts, secondary roles and name-language metadata from the SDK/content owner, then adapt and test them. Do not guess roles or language by splitting a localized sentence.                                         |
 | Real iOS staff-language data  | The QA result initializers omit `languageNotListed`. This is unknown, not proof that a language is listed or unlisted.                                                                                                                       | A staff-language query and explicit match evidence must drive disclosure and any grouping/ranking. Device/UI locale is not that evidence.                                                                                                      |
@@ -808,7 +810,7 @@ UI pass. Follow [AGENTS.md](../AGENTS.md), [visual review](visual-review.md),
 and [release process](release-process.md).
 
 The initial 0.6.0 baseline reconciliation ran the 49 focused React tests and 10 generated-documentation tests
-listed in the companion register. For 0.7.0, exact main CI, publication and Pages deployment
-are recorded in [release evidence](release-process.md#070). The broader product/device matrix
+listed in the companion register. For 0.7.0 and 0.8.0, exact main CI, publication and Pages deployment
+are recorded in the [release evidence](release-process.md#080). The broader product/device matrix
 above remains implementation acceptance work,
 **not a claim that every screen, SDK integration or adoption check has already passed**.

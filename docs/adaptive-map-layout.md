@@ -1,10 +1,12 @@
 # Adaptive map layout
 
-Current baseline: React 0.7.0, release commit
-`a3dc6f935b7914dedd17067036ebadcde737bfd9`, published 2026-10-01.
+Current baseline: React 0.8.0, release commit
+`152a31349db8832d8b87a9d5ea52e229fca245b5`, published 2026-10-02. 0.8.0 adds the shell-owned
+16-unit gap below a fixed panel header and the top inset of gripless sheets
+([AdaptiveMapShell](../packages/react/src/components/AdaptiveMapShell/AdaptiveMapShell.mdx)).
 
 This describes the React geometry contract, not complete foldable-device support.
-The TypeScript presentation contract is in `@kozmos-ds/product-contracts` 0.6.0. SwiftUI and
+The TypeScript presentation contract is in `@kozmos-ds/product-contracts` 0.7.0. SwiftUI and
 Compose now share logical corner slots, attribution placement and content-fitting panels,
 but report edge insets rather than React's full rectangle snapshots. Their source is in the
 release commit; no native registry package was published. See the
@@ -164,5 +166,5 @@ corner, popup, attribution and information-composition regressions as well.
 4. Verify the shipped theme/portal/CSS boundary against each supported host, browser/WebView
    floor and consumer. Keep publication evidence separate from production compatibility approval.
 
-See [release evidence](release-process.md#070) for publication, package-consumer checks and
+See [release evidence](release-process.md#080) for publication, package-consumer checks and
 deployed documentation. Figma and consuming products require their own adoption evidence.

@@ -66,9 +66,8 @@ follow the host document's root font size.
 
 ## Browsers
 
-**Next-release support correction:** Firefox now requires 146 or newer. The published
-0.7.0 manifest incorrectly declared 128; existing npm packages are not changed by this
-source update. Mozilla documents [`@scope` enabled by default in Firefox 146](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146).
+**Since 0.8.0, Firefox requires 146 or newer.** The 0.7.0 manifest incorrectly declared 128;
+the published 0.7.0 package is unchanged. Mozilla documents [`@scope` enabled by default in Firefox 146](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146).
 This is an explicit breaking support-policy correction, not a new legacy-browser fallback.
 
 |                 |      |

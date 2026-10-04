@@ -225,7 +225,7 @@ setting it to `false` stops every release.
   keeps the exact tarballs it will ship.
 - **`publish`** runs in `npm-release` and waits for Olcay's approval, verifies again, then publishes
   those tarballs, dependencies first. It is the only job that can read `NPM_TOKEN`. npm provenance
-  is on from the next release (#132).
+  has been on since 0.6.0 (#132).
 
 ### The Operator's Steps
 
