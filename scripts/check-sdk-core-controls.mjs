@@ -21,6 +21,33 @@ const cases = [
 const browser = await launchFixtureBrowser();
 let count = 0;
 try {
+  // Core Search shares only the browser-clear suppression marker with SearchBar.
+  // Its bordered Core Input recipe must not inherit the SDK's flex/chrome recipe.
+  for (const theme of ["light", "dark"]) {
+    const page = await browser.newPage();
+    try {
+      await page.goto(
+        `${base}/iframe.html?id=inputs-search--default&viewMode=story&globals=theme:${theme};a11y.manual:!true`,
+      );
+      const input = page.getByRole("searchbox");
+      await input.waitFor();
+      assert.deepEqual(
+        await input.evaluate((node) => {
+          const style = getComputedStyle(node);
+          return {
+            core: node.classList.contains("kozmos-input"),
+            flexGrow: style.flexGrow,
+            border: style.borderTopWidth,
+          };
+        }),
+        { core: true, flexGrow: "0", border: "1px" },
+        `Core Search ${theme} retains its independent bordered field recipe`,
+      );
+      console.log(`PASS Core Search ${theme}: SDK input recipe does not leak`);
+    } finally {
+      await page.close();
+    }
+  }
   for (const [id, name] of cases)
     for (const width of [320, 1280])
       for (const theme of ["light", "dark"]) {
