@@ -110,7 +110,8 @@ export const LanguageSwitcher = React.forwardRef<
         >
           <SelectTrigger
             ref={ref}
-            className="h-12 min-w-32 max-w-full border-0 shadow-map-control"
+            // Pending looks as unavailable as disabled did, though it keeps focus.
+            className="h-12 min-w-32 max-w-full border-0 shadow-map-control aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
             aria-label={`${label}, ${display}`}
             aria-busy={pending || undefined}
             aria-disabled={(pending && !unavailable) || undefined}

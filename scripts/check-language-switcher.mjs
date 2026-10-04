@@ -103,6 +103,11 @@ try {
       () => document.activeElement?.getAttribute("role") === "combobox",
     );
     assert.equal(await trigger.getAttribute("aria-disabled"), "true");
+    assert.equal(
+      await trigger.evaluate((node) => getComputedStyle(node).opacity),
+      "0.5",
+      "pending looks unavailable, as disabled did",
+    );
     assert.match(await trigger.textContent(), /English/);
     assert.match(
       await page.getByRole("status").textContent(),
