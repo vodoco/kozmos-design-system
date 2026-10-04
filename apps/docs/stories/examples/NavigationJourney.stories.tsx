@@ -390,7 +390,6 @@ function NavigationJourney({
             )}
             {navigation && (
               <RouteSummary
-                presentation="hosted"
                 destination={state.destination?.label ?? ""}
                 durationText="6 min"
                 distanceText="220 m"

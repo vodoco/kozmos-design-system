@@ -112,7 +112,6 @@ function NavigationExample() {
             detail={`${step.metres} m · ${step.floor}`}
             expanded={expanded}
             onToggle={() => setExpanded((open) => !open)}
-            surface="glass"
           >
             <Itinerary
               origin={route.origin}
@@ -125,14 +124,12 @@ function NavigationExample() {
           <div className="flex flex-col gap-4 px-4 pb-4">
             <RouteSummary
               data-navigation-summary
-              presentation="hosted"
               destination={route.destination}
               durationText={minutes(
                 remainingSeconds - step.seconds * legFraction,
               )}
               distanceText={`${Math.round(remainingMetres - step.metres * legFraction)} m`}
               arrivalText="Arrive 12:58"
-              surface="glass"
               onEndRoute={() => {
                 setIndex(0);
                 setLegFraction(0);
@@ -454,7 +451,6 @@ function PhoneNavigation({
             expandLabel={labels.showItinerary}
             collapseLabel={labels.hideItinerary}
             itineraryLabel={labels.itinerary}
-            surface="glass"
           >
             <Itinerary
               origin={phone.origin}
@@ -473,13 +469,11 @@ function PhoneNavigation({
           <div className="px-4 pb-4">
             <RouteSummary
               data-navigation-summary
-              presentation="hosted"
               destination={phone.destination}
               durationText={phone.duration}
               distanceText={phone.distance}
               arrivalText={phone.arrival}
               endLabel={labels.end}
-              surface="glass"
               onEndRoute={() => setExpanded(false)}
               progress={
                 <RouteProgressRail
