@@ -49,6 +49,8 @@ Select **Curated Icons** and click **Build** to create the curated Kozmos icon s
 
 Select **Curated Icons** and click **Update** when the curated registry or Pointr source components change. It updates icon source components in place, preserves their node IDs, and keeps each nested `Pointr Source` stretched to the 24px icon bounds so resized Button/IconButton slots do not clip or overflow the source artwork.
 
+The same pass draws the 23 wayfinding glyphs from Pointr Maps - Express (`Icon / elevator-up`, `Icon / shuttle` and the rest) from the SVGs the plugin carries in `KOZMOS_WAYFINDING_ICONS`, a block `pnpm icons:navigation:generate` writes from `packages/icons/src/owned/navigation-glyphs.json`, the source the code draws them from on every platform. Each is a `Wayfinding Source` frame of solid shapes, kept while its artwork is unchanged so the tints laid through it survive. They are offered to no Button, IconButton or Badge slot, which tint a stroke; DirectionStep's lift, escalator and stairs types draw them, tinted through their fills. Run **Curated Icons → Update**, then **Update** DirectionStep.
+
 Select **Button** and click **Build** to create the first code-aligned component set on the `Components` page. The result log includes both the internal Figma node ID and URL-safe node ID for Code Connect.
 
 Select **Button** and click **Update** after token changes or safe Button polish. It updates the existing `Button` component set in place so the Code Connect node ID stays stable.
@@ -105,8 +107,9 @@ convention that avoids variant explosion:
 - **DirectionStep** — `Type` of the fourteen cases: Straight, Left, Right,
   Destination, the lift, escalator and stairs up and down, LevelUp, LevelDown,
   Transition and TurnBack, plus editable instruction, distance, and duration
-  text. Each is a 24 icon from the Icons page; an instance does not mirror, so
-  a left turn stays a physical left turn in RTL. Run Curated Icons first.
+  text. Each is a 24 icon from the Icons page, the lifts, escalators and stairs
+  Pointr Maps - Express's solid wayfinding glyphs; an instance does not mirror,
+  so a left turn stays a physical left turn in RTL. Run Curated Icons first.
 - **FloorSelector** — `Variant` of VerticalList, HorizontalList, CompactStepper.
   Every floor target stays 44px so it satisfies the shared touch-target contract.
   Floor identity and ordering remain product data, not Figma variants.
