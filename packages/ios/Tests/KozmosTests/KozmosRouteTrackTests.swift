@@ -39,6 +39,40 @@ final class KozmosRouteTrackTests: XCTestCase {
         XCTAssertEqual(KozmosRouteProgressRail.visibleRouteWaypoints(coincident, width: 320, activeEnd: 0.4, activeWaypointId: "lift").map(\.id), ["lift"])
     }
     #if os(iOS)
+    /// The dot, the waypoint and the fill share one axis in both reading
+    /// directions. SwiftUI mirrors `.position` itself in right-to-left, so a
+    /// position flipped by hand as well landed back at its left-to-right place,
+    /// away from the fill the track draws. iOS only: on macOS, ImageRenderer
+    /// mirrors drawn paths as well (measured), which iOS does not.
+    @MainActor func testDotAndWaypointFollowTheFillInBothDirections() throws {
+        let blue = try DrawnPixels.resolved(KozmosColors.semanticsDataBlue, in: .light)
+        let ring = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground400, in: .light)
+        let fill = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let view = KozmosRouteProgressRail(progress: 0.2, type: .walking, label: "Journey",
+                waypoints: [KozmosRouteProgressWaypoint(id: "lift", position: 0.4, type: .liftUp, label: "Elevator")],
+                activeLeg: KozmosProgressRange(start: 0, end: 0.4))
+                .frame(width: 300, height: 48)
+                .background(Color.white)
+                .environment(\.layoutDirection, direction)
+                .environment(\.colorScheme, .light)
+            let pixels = try DrawnPixels.draw(view)
+            // The rail's axis runs from 12 to 288; 0.2 and 0.4 along it.
+            let along: (Double) -> CGFloat = { 12 + 276 * (direction == .rightToLeft ? 1 - $0 : $0) }
+            let dot = try XCTUnwrap(pixels.boundingBox(in: CGRect(x: 0, y: 28, width: 300, height: 20),
+                where: DrawnPixels.matches(blue)), "no dot drawn \(direction)")
+            XCTAssertEqual(dot.midX, along(0.2), accuracy: 1.5, "dot \(direction)")
+            let disc = try XCTUnwrap(pixels.boundingBox(in: CGRect(x: 0, y: 0, width: 300, height: 24),
+                where: DrawnPixels.matches(ring, tolerance: 10)), "no waypoint drawn \(direction)")
+            XCTAssertEqual(disc.midX, along(0.4), accuracy: 1.5, "waypoint \(direction)")
+            XCTAssertEqual(disc.width, 24, accuracy: 1.5, "waypoint \(direction)")
+            // The fill runs from the start to the dot, on the dot's side.
+            let start = CGRect(x: along(0.05) - 4, y: 35, width: 8, height: 6)
+            let ahead = CGRect(x: along(0.8) - 4, y: 35, width: 8, height: 6)
+            XCTAssertGreaterThan(pixels.count(in: start, where: DrawnPixels.matches(fill)), 20, "fill \(direction)")
+            XCTAssertEqual(pixels.count(in: ahead, where: DrawnPixels.matches(fill)), 0, "fill \(direction)")
+        }
+    }
     @MainActor func testBackgroundKeepsDirectionalCueStationary() async throws {
         for phase in [ScenePhase.inactive, .background] {
             let view = KozmosProgressTrack(activeRange: .init(start: 0, end: 0.8), value: 0.2,

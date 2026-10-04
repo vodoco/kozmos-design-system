@@ -171,13 +171,14 @@ private struct KozmosRouteTrack: View {
     let activeWaypointId: String?
     let positionMode: KozmosProgressPositionMode
     let motion: KozmosProgressMotion
-    @Environment(\.layoutDirection) private var direction
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
             let inset = min(12, width / 2)
             let travel = max(0, width - inset * 2)
-            let x: (Double) -> CGFloat = { inset + travel * (direction == .rightToLeft ? 1 - $0 : $0) }
+            // Leading-based: SwiftUI mirrors `.position` in right-to-left itself.
+            // Only the track's own path, which nothing mirrors, flips by hand.
+            let x: (Double) -> CGFloat = { inset + travel * $0 }
             ZStack(alignment: .topLeading) {
                 KozmosProgressTrack(activeRange: activeLeg, value: progress, appearance: appearance, positionMode: positionMode, motion: motion)
                     .frame(width: travel).position(x: width / 2, y: 38)
