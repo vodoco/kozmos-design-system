@@ -532,11 +532,10 @@ script finds it.
   `reloadDocument`, which is how the React package's README styles a link
   with `buttonVariants` — Kozmos's `Link` cannot take them, its
   `text-primary` outranking the button's text colour (`src/site/links.tsx`).
-- **Descriptions** are the docs' first paragraph. 36 of 112 docs open with a
-  placeholder, "Displays the X interface topology natively." (GAP-81); the
-  generator counts it as no description, and the page says the docs have
-  none yet. The fix is one sentence in each `.mdx`, in `packages/`, and
-  `pnpm generate` picks it up.
+- **Descriptions** are the docs' first paragraph. Every component's `.mdx`
+  has one since GAP-81 was fixed; a page whose docs had none would say so.
+  The fix is one sentence in the `.mdx`, in `packages/`, and `pnpm generate`
+  picks it up.
 
 ## Add a foundations page
 
@@ -867,16 +866,6 @@ No site gap is closed here without its acceptance test.
   its code there; where it is, the missing snippet is the docs' to add. It
   shows in Storybook, which is where the code is read now: the site no
   longer shows any. CategoryField has no `.mdx` at all.
-- **36 of 112 component docs open with the placeholder "Displays the X
-  interface topology natively."** (Backdrop, BottomNavigation, BottomSheet,
-  Box, Breadcrumb, Container, FileUpload, FloatingActionButton,
-  FloorSelector, Grid, Heading, Icon, Link, List, LocationPin, MapView, Menu,
-  OTPInput, Pagination, POICard, Popover, Rating, Search, SearchBar,
-  Separator, Skeleton, SplitButton, Stack, Stepper, Table, Tabs, Tag, Text,
-  Textarea, ThemeProvider, ToggleButton); DatePicker and TimePicker repeat it
-  as a second paragraph (GAP-81). The site's generator counts it as no
-  description, so those pages say their docs have none yet; the fix is one
-  sentence per `.mdx`, and `pnpm generate` picks it up.
 
 ## Troubleshooting
 

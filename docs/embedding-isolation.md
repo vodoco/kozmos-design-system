@@ -1,10 +1,10 @@
 # Embedded React modules: theme and stylesheet ownership
 
-The foundation was implemented on 2026-09-17 and is included in the published React 0.7.0
-baseline (`a3dc6f935b7914dedd17067036ebadcde737bfd9`). Historical measurements below retain
+The foundation was implemented on 2026-09-17 and is included in the published React 0.8.0
+baseline (`152a31349db8832d8b87a9d5ea52e229fca245b5`). Historical measurements below retain
 their original scope; they are not current whole-library test totals or proof that old defects
 remain. Consult the [current consumer README](../packages/react/README.md) for browser floors
-and [release evidence](release-process.md#070) for delivery verification. Production browser/
+and [release evidence](release-process.md#080) for delivery verification. Production browser/
 WebView compatibility still needs named host/device acceptance, independently of publication.
 
 ## Contract
@@ -74,7 +74,7 @@ the installed WebKit 26.0, including sizing and theme colours. Chromium 145 and
 Firefox 146 pass that fixture, so the earlier evidence is not a readiness claim.
 That was a historical blocker, not evidence that the shipped owned-CSS Input/Textarea still
 have that failure. The current package declares browser floors, but those claims need their
-own verification; the Firefox correction below is approved for the next release, not a
+own verification; the Firefox correction below shipped in React 0.8.0 and is not a
 retroactive change to the published 0.7.0 artifact.
 
 The React build processes the existing generated token CSS and Tailwind output into
@@ -106,7 +106,7 @@ does not certify a production product's browser/WebView matrix. Record the produ
 approved matrix and device evidence before adoption. If older engines are required, review
 the owned-CSS/isolation architecture rather than adding an untested selector/polyfill workaround.
 
-**Firefox support correction (approved 2026-10-01; next release):** the published React 0.7.0
+**Firefox support correction (approved 2026-10-01; released in React 0.8.0):** the published React 0.7.0
 manifest incorrectly declared Firefox 128. Mozilla's [Firefox 146 developer release notes](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/146)
 identify 146 as the release enabling `@scope` by default. A built-package fixture confirmed
 Badge losing its layout/background and Separator collapsing to zero height in Playwright's
