@@ -22,19 +22,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
-import java.net.URI
+import com.kozmos.utils.kozmosSafeLink
 
 enum class KozmosMapAttributionAppearance { Map, Surface }
 
 /** Ordered presentation data, supplied by the host; IDs must be unique. */
 data class KozmosMapAttributionCredit(val id: String, val label: String, val href: String? = null) {
     internal val destination: String?
-        get() = href?.takeIf {
-            runCatching {
-                val uri = URI(it)
-                uri.scheme?.lowercase() in listOf("https", "http") && !uri.host.isNullOrEmpty()
-            }.getOrDefault(false)
-        }
+        get() = kozmosSafeLink(href)
 }
 
 /**

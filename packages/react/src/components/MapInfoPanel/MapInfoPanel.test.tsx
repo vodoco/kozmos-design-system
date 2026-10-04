@@ -7,7 +7,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { MapInfoPanel, safeMapInfoHref } from "./MapInfoPanel";
+import { MapInfoPanel } from "./MapInfoPanel";
+import { safeHref } from "../../utils/safe-href";
 import { MapInfo } from "./MapInfo";
 
 afterEach(cleanup);
@@ -91,7 +92,7 @@ describe("MapInfoPanel", () => {
       "mailto:support@example.com",
       "tel:+4412345678",
     ])
-      expect(safeMapInfoHref(href)).toBe(href);
+      expect(safeHref(href, { contact: true })).toBe(href);
     for (const href of [
       "/relative",
       "javascript:alert(1)",
@@ -100,7 +101,7 @@ describe("MapInfoPanel", () => {
       "mailto:",
       "tel:",
     ])
-      expect(safeMapInfoHref(href)).toBeUndefined();
+      expect(safeHref(href, { contact: true })).toBeUndefined();
   });
   it("is a region named by its heading on its own", () => {
     render(<MapInfoPanel content={content} onClose={() => {}} />);

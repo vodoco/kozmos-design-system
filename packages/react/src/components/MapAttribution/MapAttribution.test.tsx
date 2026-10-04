@@ -82,6 +82,31 @@ describe("MapAttribution", () => {
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(screen.getByText("<b>Credit</b>")).toBeInTheDocument();
   });
+  it("links no credit that hides a host behind credentials or whitespace", () => {
+    // A credit is a provider's link, as an entry in MapInfoPanel is: the
+    // same rule refuses `https://maps.example@evil.example`, which reads as
+    // one host and goes to another (audit H4, 2026-10-04).
+    render(
+      <MapAttribution
+        showBrand={false}
+        credits={[
+          {
+            id: "credentials",
+            label: "Credentials credit",
+            href: "https://maps.example@evil.example",
+          },
+          {
+            id: "space",
+            label: "Spaced credit",
+            href: "https://example.com/credits page",
+          },
+        ]}
+      />,
+    );
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.getByText("Credentials credit")).toBeInTheDocument();
+    expect(screen.getByText("Spaced credit")).toBeInTheDocument();
+  });
   it("does not invent content for an empty input", () => {
     const { container } = render(
       <MapAttribution credits={[]} showBrand={false} />,

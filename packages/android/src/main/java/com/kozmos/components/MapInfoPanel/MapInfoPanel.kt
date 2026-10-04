@@ -29,19 +29,10 @@ import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
-import java.net.URI
+import com.kozmos.utils.kozmosSafeLink
 
 data class KozmosMapInfoEntry(val id: String, val label: String, val href: String? = null) {
-    internal val destination: String? get() = href?.takeIf { text ->
-        text.none { it.code <= 32 } && runCatching {
-            val uri = URI(text)
-            uri.rawUserInfo == null && when (uri.scheme?.lowercase()) {
-                "http", "https" -> !uri.host.isNullOrEmpty()
-                "mailto", "tel" -> !uri.schemeSpecificPart.isNullOrEmpty()
-                else -> false
-            }
-        }.getOrDefault(false)
-    }
+    internal val destination: String? get() = kozmosSafeLink(href, contact = true)
 }
 data class KozmosMapInfoFAQ(val id: String, val question: String, val answer: String)
 data class KozmosMapInfoVersion(val id: String, val label: String, val value: String)

@@ -5,13 +5,7 @@ public struct KozmosMapInfoEntry: Identifiable, Equatable, Sendable {
     public let label: String
     public let href: String?
     public init(id: String, label: String, href: String? = nil) { self.id = id; self.label = label; self.href = href }
-    var destination: URL? {
-        guard let href, !href.unicodeScalars.contains(where: { $0.value <= 32 }), let url = URL(string: href), url.user == nil, url.password == nil else { return nil }
-        let scheme = url.scheme?.lowercased() ?? ""
-        if ["http", "https"].contains(scheme), let host = url.host, !host.isEmpty { return url }
-        if ["mailto", "tel"].contains(scheme), !url.path.isEmpty { return url }
-        return nil
-    }
+    var destination: URL? { KozmosSafeLink.destination(href, contact: true) }
 }
 public struct KozmosMapInfoFAQ: Identifiable, Equatable, Sendable {
     public let id: String
