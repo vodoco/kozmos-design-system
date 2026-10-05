@@ -194,6 +194,8 @@
       "src/components/WayfindingCard/WayfindingCard.tsx",
       "src/components/Itinerary/Itinerary.figma.tsx",
       "src/components/Itinerary/Itinerary.tsx",
+      "src/components/ManoeuvreCard/ManoeuvreCard.figma.tsx",
+      "src/components/ManoeuvreCard/ManoeuvreCard.tsx",
       "src/components/DynamicIsland/DynamicIsland.figma.tsx",
       "src/components/DynamicIsland/DynamicIsland.tsx",
       "src/components/FeedbackCard/FeedbackCard.figma.tsx",
