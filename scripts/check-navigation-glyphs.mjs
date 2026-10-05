@@ -80,16 +80,17 @@ try {
           paths,
           `${name} ${kind}: physical direction must not mirror in RTL`,
         );
-        // The same drawing can still be mirrored by CSS on the svg or a
-        // box around it (a scale or transform of -1 across), which the
-        // markup comparison cannot see: a mirror is a negative determinant
-        // in what the page applies from the svg up to the document.
+        // The same drawing can still be mirrored by CSS — on the svg, a box
+        // around it, or a group or path inside it — which the markup
+        // comparison cannot see: a mirror is a negative determinant in what
+        // the page applies, through transform, scale or rotate (a half turn
+        // about x or y flips the drawing).
         for (const svg of [row.locator("svg"), rtl.locator("svg")]) {
           const mirrored = await svg.evaluateAll((nodes) =>
             nodes.map((node) => {
-              let sign = 1;
-              for (let n = node; n; n = n.parentElement) {
-                const s = getComputedStyle(n);
+              const flips = (element) => {
+                const s = getComputedStyle(element);
+                let sign = 1;
                 if (s.transform && s.transform !== "none") {
                   const m = new DOMMatrixReadOnly(s.transform);
                   if (m.a * m.d - m.b * m.c < 0) sign = -sign;
@@ -98,8 +99,42 @@ try {
                   const [x, y = x] = s.scale.split(" ").map(Number);
                   if (x * y < 0) sign = -sign;
                 }
-              }
-              return sign < 0;
+                if (s.rotate && s.rotate !== "none") {
+                  const parts = s.rotate.trim().split(/\s+/);
+                  if (parts.length > 1) {
+                    const angle = parseFloat(parts[parts.length - 1]);
+                    const turn = parts[parts.length - 1].endsWith("turn")
+                      ? angle * 360
+                      : parts[parts.length - 1].endsWith("rad")
+                        ? (angle * 180) / Math.PI
+                        : angle;
+                    const axis = parts.slice(0, -1);
+                    const [ax, ay, az] =
+                      axis.length === 1
+                        ? [
+                            axis[0] === "x" ? 1 : 0,
+                            axis[0] === "y" ? 1 : 0,
+                            axis[0] === "z" ? 1 : 0,
+                          ]
+                        : axis.map(Number);
+                    // A turn about an axis in the drawing's plane flips it
+                    // when the turn passes a quarter.
+                    if (
+                      (ax || ay) &&
+                      !az &&
+                      Math.cos((turn * Math.PI) / 180) < 0
+                    )
+                      sign = -sign;
+                  }
+                }
+                return sign;
+              };
+              let sign = 1;
+              for (let n = node; n; n = n.parentElement) sign *= flips(n);
+              if (sign < 0) return true;
+              return [...node.querySelectorAll("*")].some(
+                (child) => flips(child) < 0,
+              );
             }),
           );
           assert.deepEqual(

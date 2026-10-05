@@ -90,6 +90,22 @@ function tables() {
   return { react, swift, kotlin, plugin };
 }
 
+/**
+ * Which way a platform's own arrow points, from its name: SF Symbols
+ * (arrow.up.to.line), Material (ArrowUpward, ArrowRightAlt) and the Pointr
+ * icons (arrow-up). Forward is right in a left-to-right layout.
+ */
+function arrowDirection(mark) {
+  const name = String(mark)
+    .replace(/^arrow:/, "")
+    .toLowerCase();
+  if (name.includes("up")) return "up";
+  if (name.includes("down")) return "down";
+  if (name.includes("right") || name.includes("forward")) return "right";
+  if (name.includes("left") || name.includes("back")) return "left";
+  return null;
+}
+
 test("every platform's direction table names the same nineteen types", () => {
   const { react, swift, kotlin, plugin } = tables();
   const types = [...react.keys()].sort();
@@ -117,12 +133,21 @@ test("a type that draws an Express glyph draws the same one on every platform", 
         );
     } else {
       // Straight on, the level changes and the transition keep each
-      // platform's own arrow: none may draw an Express glyph React does not.
-      for (const [name, other] of Object.entries(marks))
+      // platform's own arrow: none may draw an Express glyph React does not,
+      // and each points where React's does.
+      const direction = arrowDirection(mark);
+      assert.ok(direction, `${type}: React's ${mark} points nowhere known`);
+      for (const [name, other] of Object.entries(marks)) {
         assert.ok(
           other?.startsWith("arrow:"),
           `${type}: React draws an arrow, ${name} the Express glyph ${other}`,
         );
+        assert.equal(
+          arrowDirection(other),
+          direction,
+          `${type}: React's arrow points ${direction}, ${name}'s ${other} ${arrowDirection(other)}`,
+        );
+      }
     }
   }
   assert.equal(express, 15, `${express} types draw Express glyphs`);
