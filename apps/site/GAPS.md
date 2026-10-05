@@ -1423,10 +1423,11 @@ Text"])`) and the Get started page shows — touches it.
 ## GAP-69 · Lift, escalator and stairs share one arrow
 
 - **Now:** fixed on main (#193), not yet released: DirectionStep draws distinct
-  lift, escalator and stairs up/down pairs, plus ramp and entry/exit, from original
-  shared Kozmos vectors. The DirectionStep Glyph Atlas shows small/large sizes and
-  RTL. This is not publication or external artwork approval; SDK map sprites and
-  physical-device legibility remain separate. The evidence below records the original defect.
+  lift, escalator and stairs up/down pairs, plus ramp and entry/exit, in Pointr
+  Maps - Express wayfinding artwork (#199; walking since #201), on web, iOS,
+  Android and Figma. The DirectionStep Glyph Atlas shows small/large sizes and
+  RTL. SDK map sprites and physical-device legibility remain separate. The
+  evidence below records the original defect.
 
 - **What:** `DIRECTION_ICONS` (`DirectionStep.tsx:61`) maps fourteen
   manoeuvre types onto eight glyphs: `lift-up`, `escalator-up`, `stairs-up`

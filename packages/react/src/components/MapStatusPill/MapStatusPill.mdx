@@ -148,14 +148,16 @@ Icon Library's outline. `bluetooth-off` is in the icon name list, so
 
 <Canvas of={Stories.NoBluetooth} />
 
-Two of the SDK's marks are not in `@kozmos-ds/icons`: neither Figma file Kozmos
-reads for the SDK draws them, and icons come from Figma rather than being drawn
-here. Until they are, these stories pass `icon={null}` and draw no mark, rather
-than the tone's own triangle standing in for the SDK's:
+Two of the SDK's marks have no agreed Kozmos icon yet, and icons come from
+Figma rather than being drawn here. Until they have one, these stories pass
+`icon={null}` and draw no mark, rather than the tone's own triangle standing in
+for the SDK's:
 
 - **Wayfinding Unavailable**: the SDK's walking figure, struck through, beside
-  a pin;
-- **Turn Back**: the SDK's U-turn arrow.
+  a pin. No Figma file Kozmos reads draws it.
+- **Turn Back**: the SDK's U-turn arrow. `@kozmos-ds/icons` now has `TurnBack`,
+  from Pointr Maps - Express (the mark DirectionStep draws for turning back);
+  whether the pill takes it is a design decision still to make.
 
 The `warning` tone keeps its own mark, the dark triangle, for a warning the
 product has no mark of its own for; it is Turn Back that passes `icon={null}`
