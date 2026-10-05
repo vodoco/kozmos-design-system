@@ -198,8 +198,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaName: "arrow-down",
     figmaNodeId: "1007:9277",
     category: "Arrows",
-    description:
-      "Directional arrow down: a level, lift, escalator or stairs down in a direction step.",
+    description: "Directional arrow down: a level down in a direction step.",
     component: ArrowDown,
   },
   {
@@ -224,7 +223,7 @@ export const kozmosIconDefinitions: readonly KozmosIconDefinition[] = [
     figmaNodeId: "1007:9340",
     category: "Arrows",
     description:
-      "Directional arrow up: straight on, or a level, lift, escalator or stairs up in a direction step.",
+      "Directional arrow up: straight on, or a level up in a direction step.",
     component: ArrowUp,
   },
   {

@@ -409,7 +409,10 @@ export class MockNode {
 
   setExplicitVariableModeForCollection(collection, modeId) {
     const id = typeof collection === "string" ? collection : collection.id;
-    this.explicitVariableModes = { ...this.explicitVariableModes, [id]: modeId };
+    this.explicitVariableModes = {
+      ...this.explicitVariableModes,
+      [id]: modeId,
+    };
   }
 
   resizeWithoutConstraints(width, height) {
@@ -586,6 +589,19 @@ export function mockComponentSet(name, variants) {
 }
 
 /** A curated icon source: a 24 component holding one stroked vector. */
+/** A wayfinding source, as Curated Icons draws it: solid shapes, no stroke. */
+export function mockWayfindingIconComponent(name) {
+  const component = new MockNode("COMPONENT", `Icon / ${name}`);
+  component.resize(24, 24);
+  const vector = new MockNode("VECTOR", "Vector");
+  vector.resize(24, 24);
+  vector.fills = [
+    { type: "SOLID", color: { r: 0, g: 0, b: 0 }, opacity: 1, visible: true },
+  ];
+  component.appendChild(vector);
+  return component;
+}
+
 export function mockIconComponent(name) {
   const component = new MockNode("COMPONENT", `Icon / ${name}`);
   component.resize(24, 24);

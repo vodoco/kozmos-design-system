@@ -12,8 +12,9 @@ import androidx.compose.ui.unit.dp
  * Pointr Icon Library outlines Material has no unmirrored match for, drawn
  * from Pointr's own path data in `packages/icons/src/pointr/icons.generated.ts`
  * on its 24 grid, stroked 2 with round caps and joins: the art React draws.
- * The direction marks' entry, exit and ramps are these (D5). Material's
- * Login and Logout are auto-mirrored, and a physical way in or out is not.
+ * KozmosIcon draws them by name; the direction marks for entry, exit and the
+ * ramps are the Express wayfinding artwork now. Material's Login and Logout
+ * are auto-mirrored, and a physical way in or out is not.
  */
 internal object KozmosPointrGlyphs {
     /** Node 1007:10044. */

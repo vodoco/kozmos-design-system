@@ -124,4 +124,4 @@ type InstructionPartRole = "secondary";
 ## Also exported
 
 - `DIRECTION_TYPES`: `readonly DirectionType[]`.
-- `DIRECTION_ICONS`: `Record<DirectionType, KozmosIconComponent>`. One mapping for step, card, itinerary and rail, drawn only with approved marks: the Pointr icon set and the existing SDK walking mark.
+- `DIRECTION_ICONS`: `Record<DirectionType, KozmosIconComponent>`. One mapping for step, card, itinerary and rail.
