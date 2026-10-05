@@ -65,7 +65,7 @@ const unknown = icons.filter(
 );
 if (unknown.length) {
   throw new Error(
-    `Icons page has ${unknown.length} component(s) the registry does not name: ${unknown.map((i) => i.name).join(", ")}`,
+    `Icons page has ${unknown.length} component(s) neither the registry nor navigation-glyphs.json names: ${unknown.map((i) => i.name).join(", ")}`,
   );
 }
 const undrawn = [...names].filter((n) => !icons.some((i) => i.name === n));
@@ -88,12 +88,23 @@ const example = (icon) =>
   wayfinding.has(icon.name)
     ? `<Icon icon={${wayfinding.get(icon.name)}} />`
     : `<Icon name="${icon.name}" />`;
+// Code Connect writes the imports of the components an example draws, not of a
+// value passed in a prop, so a glyph's snippet names both imports itself:
+// without them a copied snippet does not compile.
+const imports = (icon) =>
+  wayfinding.has(icon.name)
+    ? `
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { ${wayfinding.get(icon.name)} } from '@kozmos-ds/icons';",
+    ],`
+    : "";
 const body = icons
   .map(
     (icon) => `figma.connect(
   Icon,
   "https://figma.com/design/${FILE}?node-id=${icon.id.replace(":", "-")}",
-  {
+  {${imports(icon)}
     example: () => ${example(icon)},
   },
 );`,

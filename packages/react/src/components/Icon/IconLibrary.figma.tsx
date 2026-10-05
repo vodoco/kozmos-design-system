@@ -61,6 +61,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9566",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { Arriving } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={Arriving} />,
   },
 );
@@ -221,6 +225,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9569",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { CustomTransition } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={CustomTransition} />,
   },
 );
@@ -245,6 +253,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9496",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { ElevatorDown } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={ElevatorDown} />,
   },
 );
@@ -253,6 +265,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9492",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { ElevatorUp } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={ElevatorUp} />,
   },
 );
@@ -261,6 +277,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9532",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { ElevatorUpAndDown } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={ElevatorUpAndDown} />,
   },
 );
@@ -269,6 +289,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9512",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { EscalatorDown } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={EscalatorDown} />,
   },
 );
@@ -277,6 +301,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9537",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { EscalatorNoDirection } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={EscalatorNoDirection} />,
   },
 );
@@ -285,6 +313,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9508",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { EscalatorUp } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={EscalatorUp} />,
   },
 );
@@ -317,6 +349,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9560",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { FollowTheLine } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={FollowTheLine} />,
   },
 );
@@ -333,6 +369,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9551",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { HardLeft } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={HardLeft} />,
   },
 );
@@ -341,6 +381,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9554",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { HardRight } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={HardRight} />,
   },
 );
@@ -469,6 +513,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9520",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { RampDown } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={RampDown} />,
   },
 );
@@ -477,6 +525,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9543",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { RampNoDirection } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={RampNoDirection} />,
   },
 );
@@ -485,6 +537,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9516",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { RampUp } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={RampUp} />,
   },
 );
@@ -501,6 +557,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9524",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { RouteEnter } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={RouteEnter} />,
   },
 );
@@ -509,6 +569,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9546",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { RouteEntranceExit } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={RouteEntranceExit} />,
   },
 );
@@ -517,6 +581,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9528",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { RouteExit } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={RouteExit} />,
   },
 );
@@ -541,6 +609,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9574",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { SecurityControl } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={SecurityControl} />,
   },
 );
@@ -573,6 +645,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9583",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { Shuttle } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={Shuttle} />,
   },
 );
@@ -581,6 +657,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9504",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { StairsDown } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={StairsDown} />,
   },
 );
@@ -589,6 +669,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9540",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { StairsNoDirection } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={StairsNoDirection} />,
   },
 );
@@ -597,6 +681,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9500",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { StairsUp } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={StairsUp} />,
   },
 );
@@ -629,6 +717,10 @@ figma.connect(
   Icon,
   "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2151-9557",
   {
+    imports: [
+      "import { Icon } from '@kozmos-ds/react';",
+      "import { TurnBack } from '@kozmos-ds/icons';",
+    ],
     example: () => <Icon icon={TurnBack} />,
   },
 );
