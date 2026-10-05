@@ -192,6 +192,8 @@
       "src/main/java/com/kozmos/components/WayfindingCard/WayfindingCard.kt",
       "src/main/java/com/kozmos/components/Itinerary/Itinerary.figma.kt",
       "src/main/java/com/kozmos/components/Itinerary/Itinerary.kt",
+      "src/main/java/com/kozmos/components/ManoeuvreCard/ManoeuvreCard.figma.kt",
+      "src/main/java/com/kozmos/components/ManoeuvreCard/ManoeuvreCard.kt",
       "src/main/java/com/kozmos/components/DynamicIsland/DynamicIsland.figma.kt",
       "src/main/java/com/kozmos/components/DynamicIsland/DynamicIsland.kt",
       "src/main/java/com/kozmos/components/FeedbackCard/FeedbackCard.figma.kt",

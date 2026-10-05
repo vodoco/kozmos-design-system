@@ -6,7 +6,7 @@ The current manoeuvre, floating over the map during navigation: its direction ma
 
 - **Import:** `import { ManoeuvreCard } from "@kozmos-ds/react";`
 - **Group:** SDK
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-manoeuvrecard--docs>
 
 ## Example
