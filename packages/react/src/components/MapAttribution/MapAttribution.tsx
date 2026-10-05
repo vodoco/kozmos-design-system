@@ -1,6 +1,7 @@
 import React from "react";
 import { cn } from "../../utils";
 import { Link } from "../Link";
+import { safeHref } from "../../utils/safe-href";
 import { pointrLogo } from "./pointr-logo";
 
 /** Presentation data supplied by the host, in display order. IDs must be unique. */
@@ -25,18 +26,6 @@ export interface MapAttributionProps extends React.HTMLAttributes<HTMLElement> {
 
 const useLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
-
-function safeLink(href?: string): string | undefined {
-  if (!href) return undefined;
-  try {
-    const url = new URL(href);
-    return ["https:", "http:"].includes(url.protocol) && url.hostname
-      ? href
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 /**
  * Provider-neutral map credits with independently optional branding.
@@ -117,7 +106,7 @@ export const MapAttribution = React.forwardRef<
           >
             <ul className="m-0 flex w-max min-w-full list-none items-center justify-center gap-x-1 p-0">
               {credits.map((credit) => {
-                const href = safeLink(credit.href);
+                const href = safeHref(credit.href);
                 return (
                   <li key={credit.id} className="shrink-0 whitespace-nowrap">
                     {href ? (

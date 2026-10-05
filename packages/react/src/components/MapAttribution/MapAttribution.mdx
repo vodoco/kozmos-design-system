@@ -28,8 +28,10 @@ The Branded story's text-only "Example venue" demonstrates replacement. On web, 
 or undefined brand uses Pointr; explicit null/false also suppresses the slot. On native,
 nil/null means the default. Prefer showBrand=false for consistent cross-platform hiding.
 
-Labels render as text, not HTML. Unsafe, relative or malformed link destinations remain
-readable plain text. Valid links navigate in the same browsing context on web and through
+Labels render as text, not HTML. A credit links only an absolute HTTP(S) destination with a host,
+and never one carrying credentials (`https://maps.example@evil.example` reads as one host and goes
+to another), whitespace or control characters: the same rule as MapInfoPanel's links, on every
+platform. Unsafe, relative or malformed link destinations remain readable plain text. Valid links navigate in the same browsing context on web and through
 the native URL handler on iOS/Android. No new window is forced. Web keyboard focus stays visible;
 native links/actions remain independently accessible, not merged into one container action.
 Credits stay on one line and are never ellipsized. A horizontal viewport preserves the

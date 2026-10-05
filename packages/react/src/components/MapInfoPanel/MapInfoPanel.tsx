@@ -8,6 +8,7 @@ import {
 } from "../Accordion";
 import { Button } from "../Button";
 import { Link } from "../Link";
+import { safeHref } from "../../utils/safe-href";
 import { cn } from "../../utils";
 import { MapInfoDialogTitle } from "./map-info-title";
 
@@ -34,24 +35,6 @@ export interface MapInfoContent {
   credits?: readonly MapInfoEntry[];
   links?: readonly MapInfoEntry[];
   versions?: readonly MapInfoVersion[];
-}
-
-/** Allow navigation and contact links, never script/data URLs or embedded credentials. */
-export function safeMapInfoHref(href?: string): string | undefined {
-  if (
-    !href ||
-    Array.from(href).some((character) => character.charCodeAt(0) <= 32)
-  )
-    return undefined;
-  try {
-    const url = new URL(href);
-    if (url.username || url.password) return undefined;
-    if (["http:", "https:"].includes(url.protocol) && url.hostname) return href;
-    if (["mailto:", "tel:"].includes(url.protocol) && url.pathname) return href;
-  } catch {
-    /* Unsupported destinations stay readable as text. */
-  }
-  return undefined;
 }
 
 export interface MapInfoPanelProps extends Omit<
@@ -104,7 +87,7 @@ export const MapInfoPanel = React.forwardRef<HTMLElement, MapInfoPanelProps>(
       </h2>
     );
     const entry = (item: MapInfoEntry) => {
-      const href = safeMapInfoHref(item.href);
+      const href = safeHref(item.href, { contact: true });
       return href ? (
         <Link href={href} className="underline">
           {item.label}

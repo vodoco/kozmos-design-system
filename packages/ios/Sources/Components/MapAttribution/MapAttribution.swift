@@ -16,12 +16,7 @@ public struct KozmosMapAttributionCredit: Identifiable, Equatable, Sendable {
         self.href = href
     }
 
-    var destination: URL? {
-        guard let href, let url = URL(string: href),
-              ["https", "http"].contains(url.scheme?.lowercased() ?? ""),
-              let host = url.host, !host.isEmpty else { return nil }
-        return url
-    }
+    var destination: URL? { KozmosSafeLink.destination(href) }
 }
 
 /// Credits never disappear when optional branding is hidden. Host owns approved
