@@ -82,6 +82,9 @@ import { Walking } from "@kozmos-ds/icons";
 <Walking />; // 24px, in the colour of the text around it
 ```
 
+Directions draw Pointr Maps - Express's `FollowTheLine` for walking, the same
+figure in the wayfinding set's weight; `Walking` stays the position status's mark.
+
 ## Category symbols are not here
 
 A venue's quick-access category artwork is the taxonomy's, not the design

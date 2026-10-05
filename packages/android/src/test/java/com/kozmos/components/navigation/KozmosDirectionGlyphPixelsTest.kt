@@ -111,10 +111,14 @@ class KozmosDirectionGlyphPixelsTest {
         GridPoint(DirectionType.Left, KozmosNavigationGlyphs.HardLeft, 3.65f, 11.25f),
         GridPoint(DirectionType.Right, KozmosNavigationGlyphs.HardRight, 20.25f, 11.25f),
         GridPoint(DirectionType.TurnBack, KozmosNavigationGlyphs.TurnBack, 16.05f, 17.25f),
+        GridPoint(DirectionType.Walking, KozmosNavigationGlyphs.FollowTheLine, 8.56f, 3.06f),
         GridPoint(DirectionType.Destination, KozmosNavigationGlyphs.Arriving, 4.65f, 17.45f),
     )
 
     @Test fun theExpressMarksAreFilledNotOutlined() {
+        // Every direction but straight on, a level change and transition is Express artwork: fifteen.
+        val material = setOf(DirectionType.Straight, DirectionType.LevelUp, DirectionType.LevelDown, DirectionType.Transition)
+        assertEquals("an Express mark has no point", DirectionType.entries.toSet() - material, solidPoints.map { it.type }.toSet())
         for ((type, artwork, x, y) in solidPoints) {
             // The control: an outline of the Express artwork leaves the point clear.
             val outline = draw(outlineOf(artwork))

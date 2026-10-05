@@ -12,10 +12,11 @@ enum KozmosDirectionMark: Equatable {
 
 extension KozmosDirectionKind {
     /// The mark React draws for each direction (2026-10-04): lifts,
-    /// escalators, stairs, ramps, entry, exit, the turns, turning back and the
-    /// destination are Pointr's wayfinding artwork from Pointr Maps - Express,
-    /// filled; straight on, a level change, transition and walking keep the
-    /// SF Symbols main drew.
+    /// escalators, stairs, ramps, entry, exit, the turns, turning back,
+    /// walking and the destination are Pointr's wayfinding artwork from
+    /// Pointr Maps - Express, filled; walking is its FollowTheLine (Olcay,
+    /// 2026-10-05). Straight on, a level change and transition keep the SF
+    /// Symbols main drew.
     var mark: KozmosDirectionMark {
         switch self {
         case .straight: return .symbol("arrow.up")
@@ -32,7 +33,7 @@ extension KozmosDirectionKind {
         case .levelDown: return .symbol("arrow.down.to.line")
         case .transition: return .symbol("arrow.forward.to.line")
         case .turnBack: return .wayfinding("wf-turn-back")
-        case .walking: return .symbol("figure.walk")
+        case .walking: return .wayfinding("wf-follow-the-line")
         case .enter: return .wayfinding("enter")
         case .exit: return .wayfinding("exit")
         case .rampUp: return .wayfinding("ramp-up")

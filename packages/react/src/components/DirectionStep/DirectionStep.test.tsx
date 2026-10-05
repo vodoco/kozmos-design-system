@@ -12,7 +12,7 @@ import {
   HardRight,
   TurnBack,
   Arriving,
-  Walking,
+  FollowTheLine,
   ElevatorUp,
   ElevatorDown,
   EscalatorUp,
@@ -27,7 +27,7 @@ import {
 import { describe, it, expect } from "vitest";
 
 describe("DirectionStep", () => {
-  it("draws Pointr's Express wayfinding artwork for turns, turning back, the destination, lifts, escalators, stairs, ramps, entry and exit", () => {
+  it("draws Pointr's Express wayfinding artwork for turns, turning back, the destination, walking, lifts, escalators, stairs, ramps, entry and exit", () => {
     // Olcay, 2026-10-04: the original artwork from Pointr Maps - Express
     // (Figma BwtG2COVRqUWGPrIvP4jxr, 29853:51378) replaces the arrows D5
     // drew while the earlier, unapproved artwork was withheld.
@@ -51,7 +51,8 @@ describe("DirectionStep", () => {
     expect(DIRECTION_ICONS["level-up"]).toBe(ArrowUp);
     expect(DIRECTION_ICONS["level-down"]).toBe(ArrowDown);
     expect(DIRECTION_ICONS.transition).toBe(ArrowRight);
-    expect(DIRECTION_ICONS.walking).toBe(Walking);
+    // Walking is Express's FollowTheLine too (Olcay, 2026-10-05).
+    expect(DIRECTION_ICONS.walking).toBe(FollowTheLine);
     expect(DIRECTION_TYPES).toContain("walking");
     expect(DIRECTION_TYPES).toContain("ramp-up");
     expect(DIRECTION_TYPES).toContain("enter");

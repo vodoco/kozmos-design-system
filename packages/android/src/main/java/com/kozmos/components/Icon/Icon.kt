@@ -148,8 +148,9 @@ internal fun resolveIconVector(rawName: String): ImageVector {
         // Pointr's wayfinding artwork from Pointr Maps - Express, filled, by
         // the kebab case of the names @kozmos-ds/icons exports it under; the
         // SwiftUI KozmosIcon accepts the same names. The directions draw
-        // fourteen: the first ten, and hard-left, hard-right, turn-back and
-        // arriving for the turns, turning back and the destination.
+        // fifteen: the first ten, and hard-left, hard-right, turn-back,
+        // follow-the-line and arriving for the turns, turning back, walking
+        // and the destination.
         "elevator-up" -> KozmosNavigationGlyphs.ElevatorUp
         "elevator-down" -> KozmosNavigationGlyphs.ElevatorDown
         "stairs-up" -> KozmosNavigationGlyphs.StairsUp

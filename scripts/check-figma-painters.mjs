@@ -149,6 +149,11 @@ function pages() {
     "hard-right",
     "turn-back",
     "arriving",
+    "follow-the-line",
+    "route-enter",
+    "route-exit",
+    "ramp-up",
+    "ramp-down",
   ]) {
     icons.appendChild(mockWayfindingIconComponent(name));
   }
@@ -1927,16 +1932,19 @@ section("DirectionStep");
 {
   ok(
     Array.isArray(plugin.DIRECTION_STEP_TYPES) &&
-      plugin.DIRECTION_STEP_TYPES.length === 14 &&
+      plugin.DIRECTION_STEP_TYPES.length === 19 &&
+      ["Walking", "Enter", "Exit", "RampUp", "RampDown"].every((type) =>
+        plugin.DIRECTION_STEP_TYPES.includes(type),
+      ) &&
       plugin.DIRECTION_STEP_TYPES.includes("TurnBack"),
-    "fourteen direction types",
+    "nineteen direction types, walking, entry, exit and the ramps among them",
   );
   ok(
     typeof plugin.expectedVariantAxesForComponentSetName === "function" &&
       JSON.stringify(
         plugin.expectedVariantAxesForComponentSetName("DirectionStep"),
       ) === JSON.stringify({ Type: plugin.DIRECTION_STEP_TYPES }),
-    "the set expects the fourteen",
+    "the set expects the nineteen",
   );
   async function paint(value) {
     const component = figma.createComponent();
@@ -1960,6 +1968,11 @@ section("DirectionStep");
     ["Straight", "arrow-up"],
     ["LevelUp", "arrow-up"],
     ["Transition", "arrow-right"],
+    ["Walking", "follow-the-line"],
+    ["Enter", "route-enter"],
+    ["Exit", "route-exit"],
+    ["RampUp", "ramp-up"],
+    ["RampDown", "ramp-down"],
   ]) {
     const { component, stats } = await paint(type);
     const badge = named(component, "Direction Icon");
@@ -1976,9 +1989,8 @@ section("DirectionStep");
     // A Pointr outline takes the theme through its stroke, a solid
     // wayfinding glyph through its fill.
     const solid =
-      /^(elevator|escalator|stairs|hard)-/.test(iconName) ||
-      iconName === "turn-back" ||
-      iconName === "arriving";
+      /^(elevator|escalator|stairs|hard|route|ramp)-/.test(iconName) ||
+      ["turn-back", "arriving", "follow-the-line"].includes(iconName);
     ok(
       icon &&
         icon.width === 24 &&
