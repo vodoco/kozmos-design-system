@@ -145,9 +145,11 @@ internal fun resolveIconVector(rawName: String): ImageVector {
         "users-01" -> Icons.Default.PersonAddAlt
         "wifi" -> Icons.Default.Wifi
         "x-close" -> Icons.Default.Close
-        // The original navigation artwork, by the names @kozmos-ds/icons
-        // exports it under. Design has not approved it (D5, 2026-10-04): no
-        // direction draws it, and a product opts in by name.
+        // Pointr's wayfinding artwork from Pointr Maps - Express, filled, by
+        // the kebab case of the names @kozmos-ds/icons exports it under; the
+        // SwiftUI KozmosIcon accepts the same names. The directions draw
+        // fourteen: the first ten, and hard-left, hard-right, turn-back and
+        // arriving for the turns, turning back and the destination.
         "elevator-up" -> KozmosNavigationGlyphs.ElevatorUp
         "elevator-down" -> KozmosNavigationGlyphs.ElevatorDown
         "stairs-up" -> KozmosNavigationGlyphs.StairsUp
@@ -158,6 +160,19 @@ internal fun resolveIconVector(rawName: String): ImageVector {
         "ramp-down" -> KozmosNavigationGlyphs.RampDown
         "route-enter" -> KozmosNavigationGlyphs.RouteEnter
         "route-exit" -> KozmosNavigationGlyphs.RouteExit
+        "elevator-up-and-down" -> KozmosNavigationGlyphs.ElevatorUpAndDown
+        "escalator-no-direction" -> KozmosNavigationGlyphs.EscalatorNoDirection
+        "stairs-no-direction" -> KozmosNavigationGlyphs.StairsNoDirection
+        "ramp-no-direction" -> KozmosNavigationGlyphs.RampNoDirection
+        "route-entrance-exit" -> KozmosNavigationGlyphs.RouteEntranceExit
+        "hard-left" -> KozmosNavigationGlyphs.HardLeft
+        "hard-right" -> KozmosNavigationGlyphs.HardRight
+        "turn-back" -> KozmosNavigationGlyphs.TurnBack
+        "follow-the-line" -> KozmosNavigationGlyphs.FollowTheLine
+        "arriving" -> KozmosNavigationGlyphs.Arriving
+        "custom-transition" -> KozmosNavigationGlyphs.CustomTransition
+        "security-control" -> KozmosNavigationGlyphs.SecurityControl
+        "shuttle" -> KozmosNavigationGlyphs.Shuttle
         else -> Icons.Default.Info
     }
 }

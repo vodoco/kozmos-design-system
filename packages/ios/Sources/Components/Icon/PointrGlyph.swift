@@ -5,12 +5,15 @@ import SwiftUI
 ///
 /// Used where an SF Symbol is absent or does not match the canonical outline.
 /// Go uses the same northeast, unfilled pointer as React, not location.north.
-/// The direction marks' entry, exit and ramp arrows are Pointr's too: SF
-/// Symbols has no log-in or log-out outline that matches.
+/// Pointr's wayfinding artwork from Pointr Maps - Express is drawn here too:
+/// solid shapes, which `painted(size:)` fills where it strokes an outline.
 struct KozmosPointrGlyph: Shape {
     /// Lines on the 24 grid: each run starts at its first point.
     let runs: [[CGPoint]]
     var canonicalPath: Path? = nil
+    /// A solid shape, filled with the nonzero rule as React fills it, rather
+    /// than an outline stroked 2 on the grid.
+    var isFilled = false
 
     /// The names this draws, from `packages/icons/src/pointr/icons.generated.ts`.
     static func named(_ name: String) -> KozmosPointrGlyph? {
@@ -41,19 +44,38 @@ struct KozmosPointrGlyph: Shape {
         }
     }
 
-    /// Kozmos's original navigation artwork, by the names `@kozmos-ds/icons`
-    /// exports it under. Design has not approved it (D5, 2026-10-04): no
-    /// direction draws it, and a product that wants it asks for it by name.
+    /// Pointr's wayfinding artwork, by its kind in the generated paths:
+    /// filled when the source draws it solid, as all the Express glyphs are.
+    static func wayfinding(_ kind: String) -> KozmosPointrGlyph? {
+        guard let path = KozmosNavigationGlyphPaths.path(kind) else { return nil }
+        return KozmosPointrGlyph(runs: [], canonicalPath: path, isFilled: KozmosNavigationGlyphPaths.filled.contains(kind))
+    }
+
+    /// The wayfinding artwork's names: the kebab case of the names
+    /// `@kozmos-ds/icons` exports it under, which Compose's `KozmosIcon`
+    /// accepts too. The directions draw fourteen of them: the first ten, and
+    /// hard-left, hard-right, turn-back and arriving for the turns, turning
+    /// back and the destination.
+    static let wayfindingKinds: [String: String] = [
+        "elevator-up": "lift-up", "elevator-down": "lift-down",
+        "stairs-up": "stairs-up", "stairs-down": "stairs-down",
+        "escalator-up": "escalator-up", "escalator-down": "escalator-down",
+        "ramp-up": "ramp-up", "ramp-down": "ramp-down",
+        "route-enter": "enter", "route-exit": "exit",
+        "elevator-up-and-down": "wf-elevator-up-and-down",
+        "escalator-no-direction": "wf-escalator-no-direction",
+        "stairs-no-direction": "wf-stairs-no-direction",
+        "ramp-no-direction": "wf-ramp-no-direction",
+        "route-entrance-exit": "wf-entrance-exit",
+        "hard-left": "wf-hard-left", "hard-right": "wf-hard-right",
+        "turn-back": "wf-turn-back", "follow-the-line": "wf-follow-the-line",
+        "arriving": "wf-arriving", "custom-transition": "wf-custom-transition",
+        "security-control": "wf-security-control", "shuttle": "wf-shuttle",
+    ]
+
+    /// The wayfinding artwork a product draws by name.
     static func navigationArtwork(_ name: String) -> KozmosPointrGlyph? {
-        let kinds = [
-            "elevator-up": "lift-up", "elevator-down": "lift-down",
-            "stairs-up": "stairs-up", "stairs-down": "stairs-down",
-            "escalator-up": "escalator-up", "escalator-down": "escalator-down",
-            "ramp-up": "ramp-up", "ramp-down": "ramp-down",
-            "route-enter": "enter", "route-exit": "exit",
-        ]
-        guard let kind = kinds[name], let path = KozmosNavigationGlyphPaths.path(kind) else { return nil }
-        return KozmosPointrGlyph(runs: [], canonicalPath: path)
+        wayfindingKinds[name].flatMap(wayfinding)
     }
 
     /// An outline from Pointr's path data, copied as `icons.generated.ts`
@@ -144,6 +166,16 @@ struct KozmosPointrGlyph: Shape {
             }
         }
         return path
+    }
+
+    /// The glyph as its artwork is drawn at a size: a solid shape filled, an
+    /// outline stroked 2 on the grid.
+    @ViewBuilder func painted(size: CGFloat) -> some View {
+        if isFilled {
+            fill()
+        } else {
+            stroke(style: Self.style(size: size))
+        }
     }
 
     /// Stroke 2 on the 24 grid, with round caps and joins, as every Pointr

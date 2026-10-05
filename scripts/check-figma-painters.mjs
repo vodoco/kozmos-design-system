@@ -26,6 +26,7 @@ import {
   loadPlugin,
   mockComponentSet,
   mockIconComponent,
+  mockWayfindingIconComponent,
   mockVariables,
   payloadVariables,
   resetSearchStats,
@@ -136,6 +137,20 @@ function pages() {
     "shopping-bag-02",
   ]) {
     icons.appendChild(mockIconComponent(name));
+  }
+  for (const name of [
+    "elevator-up",
+    "elevator-down",
+    "escalator-up",
+    "escalator-down",
+    "stairs-up",
+    "stairs-down",
+    "hard-left",
+    "hard-right",
+    "turn-back",
+    "arriving",
+  ]) {
+    icons.appendChild(mockWayfindingIconComponent(name));
   }
   return [components, icons];
 }
@@ -1723,7 +1738,9 @@ section("POIResultCard actions");
   );
   // The logo and copy must have moved WITH the row, not been left on the card.
   ok(
-    resultRow && named(resultRow, "Logo Slot") && named(resultRow, "Result Copy"),
+    resultRow &&
+      named(resultRow, "Logo Slot") &&
+      named(resultRow, "Result Copy"),
     "the logo and copy live in the result row",
   );
   // named() is findOne, so it reaches descendants: the card must not hold the
@@ -1767,22 +1784,52 @@ section("Curated Icons");
       ]),
     );
 
+  // Pointr Maps - Express's wayfinding glyphs are drawn from the SVGs the
+  // plugin carries (KOZMOS_WAYFINDING_ICONS, generated from the code's
+  // navigation-glyphs.json), as solid shapes that scale.
+  const wayfinding = icons.KOZMOS_WAYFINDING_ICONS || [];
+  const total = definitions.length + wayfinding.length;
   const first = await icons.syncIconSourceLibrary();
   ok(
-    first.created === definitions.length &&
-      first.drawn === 0 &&
+    wayfinding.length === 23 &&
+      first.created === total &&
+      first.imported === definitions.length &&
+      first.drawn === wayfinding.length &&
       first.failed === 0,
-    `a first run makes all ${definitions.length}, importing every one and drawing none (${JSON.stringify({ created: first.created, drawn: first.drawn, failed: first.failed })}; ${first.warnings.slice(0, 2).join(" | ")})`,
+    `a first run makes all ${total}, importing the ${definitions.length} Pointr icons and drawing the ${wayfinding.length} wayfinding glyphs (${JSON.stringify({ created: first.created, imported: first.imported, drawn: first.drawn, failed: first.failed })}; ${first.warnings.slice(0, 2).join(" | ")})`,
+  );
+  const elevator = components().find(
+    (node) => node.name === "Icon / elevator-up",
+  );
+  const drawnSource = elevator && elevator.children[0];
+  ok(
+    drawnSource &&
+      drawnSource.type === "FRAME" &&
+      drawnSource.name === "Wayfinding Source" &&
+      drawnSource.width === 24 &&
+      drawnSource.children.length > 0 &&
+      drawnSource.children.every(
+        (shape) =>
+          shape.type === "VECTOR" &&
+          shape.fills.length === 1 &&
+          shape.strokes.length === 0 &&
+          shape.constraints.horizontal === "SCALE",
+      ) &&
+      elevator.description.includes("Pointr Maps - Express") &&
+      elevator.getSharedPluginData("kozmos_ds_importer", "icon-name") ===
+        "elevator-up",
+    "a wayfinding glyph is a 24 frame of solid shapes that scale, from Pointr Maps - Express",
   );
   const before = sourceIds();
   const second = await icons.syncIconSourceLibrary();
   const after = sourceIds();
   ok(
-    second.sourcesKept === definitions.length &&
+    second.sourcesKept === total &&
       second.sourcesReplaced === 0 &&
-      after.size === definitions.length &&
+      second.drawn === 0 &&
+      after.size === total &&
       [...after].every(([name, ids]) => ids && before.get(name) === ids),
-    `a second run keeps every source layer, id for id (kept ${second.sourcesKept}, drawn again ${second.sourcesReplaced})`,
+    `a second run keeps every source layer, id for id, the drawn ones too (kept ${second.sourcesKept}, drawn again ${second.sourcesReplaced})`,
   );
   ok(
     !second.warnings.some((warning) => /anew/.test(warning)),
@@ -1805,16 +1852,33 @@ section("Curated Icons");
     `a source that is not the icon's is drawn again, and named (${third.warnings.join(" | ")})`,
   );
 
+  // A wayfinding source drawn from other artwork is drawn again, and named.
+  const stairs = components().find((node) => node.name === "Icon / stairs-up");
+  if (stairs)
+    stairs.children[0].setSharedPluginData(
+      "kozmos_ds_importer",
+      "artwork",
+      "x",
+    );
+  const fourth = await icons.syncIconSourceLibrary();
+  ok(
+    fourth.sourcesReplaced === 1 &&
+      fourth.drawn === 1 &&
+      fourth.warnings.some((warning) => /anew \(stairs-up\)/.test(warning)),
+    `a wayfinding source with other artwork is drawn again, and named (${fourth.warnings.join(" | ")})`,
+  );
+
   const pointr = components();
   ok(
-    pointr.every(
-      (component) =>
-        icons.auditIconSourceComponent(
-          component,
-          component.name.replace(/^Icon \/ /, ""),
-        ).issues.length === 0,
-    ),
-    `the ${pointr.length} Pointr icons audit clean`,
+    pointr.length === total &&
+      pointr.every(
+        (component) =>
+          icons.auditIconSourceComponent(
+            component,
+            component.name.replace(/^Icon \/ /, ""),
+          ).issues.length === 0,
+      ),
+    `the ${pointr.length} icons, Pointr and wayfinding, audit clean`,
   );
 
   // Every source is a Pointr outline now, so every slot is offered all of them:
@@ -1823,8 +1887,11 @@ section("Curated Icons");
   const general = await icons.findKozmosIconSourceComponents();
   ok(
     general.length === definitions.length &&
-      !general.some((component) => /taxonomy-/.test(component.name)),
-    `every slot is offered all ${general.length} Pointr icons`,
+      !general.some((component) => /taxonomy-/.test(component.name)) &&
+      !general.some((component) =>
+        wayfinding.some((icon) => component.name === `Icon / ${icon.name}`),
+      ),
+    `every slot is offered all ${general.length} Pointr icons, and no wayfinding glyph, which a stroke tint cannot reach`,
   );
 }
 
@@ -1857,10 +1924,16 @@ section("DirectionStep");
     return { component, stats };
   }
   for (const [type, iconName] of [
-    ["TurnBack", "flip-backward"],
-    ["LiftDown", "arrow-down"],
-    ["Destination", "marker-pin-01"],
+    ["TurnBack", "turn-back"],
+    ["Left", "hard-left"],
+    ["Right", "hard-right"],
+    ["LiftDown", "elevator-down"],
+    ["EscalatorUp", "escalator-up"],
+    ["StairsDown", "stairs-down"],
+    ["Destination", "arriving"],
     ["Straight", "arrow-up"],
+    ["LevelUp", "arrow-up"],
+    ["Transition", "arrow-right"],
   ]) {
     const { component, stats } = await paint(type);
     const badge = named(component, "Direction Icon");
@@ -1874,12 +1947,19 @@ section("DirectionStep");
         named(badge, "Direction Wash").type === "ELLIPSE",
       `${type}: a 40 disc in the theme's colour at 10 %, as a wash layer`,
     );
+    // A Pointr outline takes the theme through its stroke, a solid
+    // wayfinding glyph through its fill.
+    const solid =
+      /^(elevator|escalator|stairs|hard)-/.test(iconName) ||
+      iconName === "turn-back" ||
+      iconName === "arriving";
     ok(
       icon &&
         icon.width === 24 &&
         icon.mainComponent.name === `Icon / ${iconName}` &&
         vector &&
-        boundVariableName(vector.strokes[0]) === "Colors/theme/500",
+        boundVariableName(solid ? vector.fills[0] : vector.strokes[0]) ===
+          "Colors/theme/500",
       `${type}: a 24 ${iconName} icon in the theme's colour`,
     );
     ok(!named(component, "Direction Glyph"), `${type}: no typed glyph`);
@@ -3641,59 +3721,69 @@ section("A navigation row keeps its tint through the icon swap");
   // fix rather than throwing on the first call and taking the rest of the run
   // with it — a control that crashes proves nothing about what it was testing.
   if (!hasRetint) {
-    ok(false, "a Selected row's icon binds the theme tint (not run: no re-tint)");
-    ok(false, "a Default row's icon binds the foreground tint (not run: no re-tint)");
+    ok(
+      false,
+      "a Selected row's icon binds the theme tint (not run: no re-tint)",
+    );
+    ok(
+      false,
+      "a Default row's icon binds the foreground tint (not run: no re-tint)",
+    );
     ok(false, "a row with no icon layer warns (not run: no re-tint)");
   }
 
   if (hasRetint) {
-  const selected = makeRow("Item 1 Text Row");
-  const selectedStats = freshStats();
-  plugin.retintNavigationItemLeadingIcon(
-    selected.row,
-    "Selected",
-    variableByName,
-    selectedStats,
-  );
-  ok(
-    boundVariableName(selected.glyph.fills[0]) === "Colors/theme/500",
-    "a Selected row's icon binds the theme tint, not the source's black",
-  );
+    const selected = makeRow("Item 1 Text Row");
+    const selectedStats = freshStats();
+    plugin.retintNavigationItemLeadingIcon(
+      selected.row,
+      "Selected",
+      variableByName,
+      selectedStats,
+    );
+    ok(
+      boundVariableName(selected.glyph.fills[0]) === "Colors/theme/500",
+      "a Selected row's icon binds the theme tint, not the source's black",
+    );
 
-  const plain = makeRow("Item 2 Text Row");
-  const plainStats = freshStats();
-  plugin.retintNavigationItemLeadingIcon(
-    plain.row,
-    "Default",
-    variableByName,
-    plainStats,
-  );
-  ok(
-    boundVariableName(plain.glyph.fills[0]) === "Colors/foreground/400",
-    "a Default row's icon binds the foreground tint",
-  );
+    const plain = makeRow("Item 2 Text Row");
+    const plainStats = freshStats();
+    plugin.retintNavigationItemLeadingIcon(
+      plain.row,
+      "Default",
+      variableByName,
+      plainStats,
+    );
+    ok(
+      boundVariableName(plain.glyph.fills[0]) === "Colors/foreground/400",
+      "a Default row's icon binds the foreground tint",
+    );
 
-  // The two paths of one function must agree about what Selected looks like:
-  // a live row and the frame drawn when NavigationItem is missing.
-  const source = fs.readFileSync(PLUGIN, "utf8");
-  ok(
-    source.includes('state === "Selected" ? "Colors/theme/500" : "Colors/foreground/400"'),
-    "the fallback row paints the same two tokens the re-tint does",
-  );
+    // The two paths of one function must agree about what Selected looks like:
+    // a live row and the frame drawn when NavigationItem is missing.
+    const source = fs.readFileSync(PLUGIN, "utf8");
+    ok(
+      source.includes(
+        'state === "Selected" ? "Colors/theme/500" : "Colors/foreground/400"',
+      ),
+      "the fallback row paints the same two tokens the re-tint does",
+    );
 
-  // A row whose icon layer is gone must say so, not throw mid-update.
-  const bare = new MockNode("INSTANCE", "Item 3 Text Row");
-  const bareStats = freshStats();
-  plugin.retintNavigationItemLeadingIcon(
-    bare,
-    "Selected",
-    variableByName,
-    bareStats,
-  );
-  ok(
-    bareStats.warnings.some((warning) => /no Leading Icon layer/.test(warning)),
-    "a row with no icon layer warns instead of failing",
-  );
+    // A row whose icon layer is gone must say so, not throw mid-update.
+    const bare = new MockNode("INSTANCE", "Item 3 Text Row");
+    const bareStats = freshStats();
+    plugin.retintNavigationItemLeadingIcon(
+      bare,
+      "Selected",
+      variableByName,
+      bareStats,
+    );
+    ok(
+      bareStats.warnings.some((warning) =>
+        /no Leading Icon layer/.test(warning),
+      ),
+      "a row with no icon layer warns instead of failing",
+    );
   }
 }
 
@@ -3813,8 +3903,9 @@ section("Rating");
   // Code Connect pins.
   ok(
     typeof plugin.parseRatingVariantName === "function" &&
-      JSON.stringify(plugin.parseRatingVariantName("Value=3, State=Default")) ===
-        JSON.stringify({ scale: "Stars", value: "3", state: "Default" }),
+      JSON.stringify(
+        plugin.parseRatingVariantName("Value=3, State=Default"),
+      ) === JSON.stringify({ scale: "Stars", value: "3", state: "Default" }),
     "a variant with no Scale reads as Stars, so Update renames rather than replaces",
   );
   ok(
@@ -3905,7 +3996,8 @@ section("Card");
   // section after it would silently never execute.
   ok(
     typeof plugin.generatedVariantCombinations === "function" &&
-      plugin.generatedVariantCombinations({ values: ["a", "b"] }).length === 2 &&
+      plugin.generatedVariantCombinations({ values: ["a", "b"] }).length ===
+        2 &&
       plugin.generatedVariantCombinations({ values: ["a"] })[0].second === null,
     "and a set with one axis is untouched",
   );
@@ -4004,8 +4096,16 @@ section("The rest of the batch");
       asRow.cornerRadius === plugin.KOZMOS_RADIUS.none,
     "a card is rounded and a row is not",
   );
-  const featuredRow = await paint("updatePOIResultCardVariant", "Featured", "Row");
-  const featuredCard = await paint("updatePOIResultCardVariant", "Featured", "Card");
+  const featuredRow = await paint(
+    "updatePOIResultCardVariant",
+    "Featured",
+    "Row",
+  );
+  const featuredCard = await paint(
+    "updatePOIResultCardVariant",
+    "Featured",
+    "Card",
+  );
   ok(
     featuredCard.findOne((n) => /Featured|Tab/.test(n.name || "")) !== null &&
       featuredRow.findOne((n) => /Featured|Tab/.test(n.name || "")) === null,

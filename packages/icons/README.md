@@ -10,9 +10,12 @@ npm install @kozmos-ds/icons react
 
 `react` is the only peer dependency. Every glyph is drawn here - the set was
 re-drawn from Pointr's own outlines and `lucide-react` was removed in 0.2.0,
-so nothing is pulled in behind it. The navigation glyphs (lift, escalator and
-stairs up and down, ramps, entry and exit; `src/owned/navigation-glyphs.json`)
-are original Kozmos artwork awaiting design approval, not Pointr outlines.
+so nothing is pulled in behind it. The wayfinding glyphs (lifts, escalators,
+stairs and ramps up, down and without direction, entrance and exit, turns,
+security, shuttle and more; `src/owned/navigation-glyphs.json`) are Pointr's
+own artwork from the Pointr Maps - Express design: solid shapes in the current
+colour rather than outlines, which take `color` and `size` and ignore
+`strokeWidth`.
 
 ## Use
 

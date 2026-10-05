@@ -3,8 +3,8 @@ import * as React from "react";
 import type { KozmosIconProps } from "../iconProps";
 
 /**
- * One path of an icon: from the Pointr Icon Library, or, for the navigation
- * glyphs, original Kozmos artwork (src/owned/navigation-glyphs.json).
+ * One path of an icon from the Pointr Icon Library. The solid wayfinding
+ * glyphs (src/owned/navigation-glyphs.json) are drawn by createFilledIcon.
  *
  * The library draws every icon on the same grid as lucide — 24×24, stroke 2,
  * round caps and joins — so only the outline itself is carried here; the

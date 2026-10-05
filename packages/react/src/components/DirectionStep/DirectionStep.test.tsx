@@ -7,10 +7,11 @@ import {
 import {
   ArrowUp,
   ArrowDown,
-  ArrowUpRight,
-  ArrowDownRight,
-  LogIn01,
-  LogOut01,
+  ArrowRight,
+  HardLeft,
+  HardRight,
+  TurnBack,
+  Arriving,
   Walking,
   ElevatorUp,
   ElevatorDown,
@@ -26,46 +27,46 @@ import {
 import { describe, it, expect } from "vitest";
 
 describe("DirectionStep", () => {
-  it("draws only approved marks by default until the navigation artwork is approved", () => {
-    // Olcay, 2026-10-04 (D5): the original lift/escalator/stairs/ramp/entry
-    // artwork awaits design review. It ships as named icons for products to
-    // opt into; no default draws it.
-    for (const type of ["lift-up", "escalator-up", "stairs-up", "level-up"])
-      expect(DIRECTION_ICONS[type as keyof typeof DIRECTION_ICONS]).toBe(
-        ArrowUp,
-      );
-    for (const type of [
-      "lift-down",
-      "escalator-down",
-      "stairs-down",
-      "level-down",
-    ])
-      expect(DIRECTION_ICONS[type as keyof typeof DIRECTION_ICONS]).toBe(
-        ArrowDown,
-      );
-    expect(DIRECTION_ICONS.enter).toBe(LogIn01);
-    expect(DIRECTION_ICONS.exit).toBe(LogOut01);
-    expect(DIRECTION_ICONS["ramp-up"]).toBe(ArrowUpRight);
-    expect(DIRECTION_ICONS["ramp-down"]).toBe(ArrowDownRight);
+  it("draws Pointr's Express wayfinding artwork for turns, turning back, the destination, lifts, escalators, stairs, ramps, entry and exit", () => {
+    // Olcay, 2026-10-04: the original artwork from Pointr Maps - Express
+    // (Figma BwtG2COVRqUWGPrIvP4jxr, 29853:51378) replaces the arrows D5
+    // drew while the earlier, unapproved artwork was withheld.
+    expect(DIRECTION_ICONS["lift-up"]).toBe(ElevatorUp);
+    expect(DIRECTION_ICONS["lift-down"]).toBe(ElevatorDown);
+    expect(DIRECTION_ICONS["escalator-up"]).toBe(EscalatorUp);
+    expect(DIRECTION_ICONS["escalator-down"]).toBe(EscalatorDown);
+    expect(DIRECTION_ICONS["stairs-up"]).toBe(StairsUp);
+    expect(DIRECTION_ICONS["stairs-down"]).toBe(StairsDown);
+    expect(DIRECTION_ICONS["ramp-up"]).toBe(RampUp);
+    expect(DIRECTION_ICONS["ramp-down"]).toBe(RampDown);
+    expect(DIRECTION_ICONS.enter).toBe(RouteEnter);
+    expect(DIRECTION_ICONS.exit).toBe(RouteExit);
+    expect(DIRECTION_ICONS.left).toBe(HardLeft);
+    expect(DIRECTION_ICONS.right).toBe(HardRight);
+    expect(DIRECTION_ICONS["turn-back"]).toBe(TurnBack);
+    expect(DIRECTION_ICONS.destination).toBe(Arriving);
+    // Straight on, level changes and transitions, which Express has no glyph
+    // for, keep the Pointr set's arrows.
+    expect(DIRECTION_ICONS.straight).toBe(ArrowUp);
+    expect(DIRECTION_ICONS["level-up"]).toBe(ArrowUp);
+    expect(DIRECTION_ICONS["level-down"]).toBe(ArrowDown);
+    expect(DIRECTION_ICONS.transition).toBe(ArrowRight);
     expect(DIRECTION_ICONS.walking).toBe(Walking);
-    const proposed = [
-      ElevatorUp,
-      ElevatorDown,
-      EscalatorUp,
-      EscalatorDown,
-      StairsUp,
-      StairsDown,
-      RampUp,
-      RampDown,
-      RouteEnter,
-      RouteExit,
-    ];
-    for (const icon of Object.values(DIRECTION_ICONS))
-      expect(proposed).not.toContain(icon);
     expect(DIRECTION_TYPES).toContain("walking");
     expect(DIRECTION_TYPES).toContain("ramp-up");
     expect(DIRECTION_TYPES).toContain("enter");
   });
+
+  it("draws the wayfinding artwork as solid shapes in the current colour", () => {
+    const { container } = render(
+      <DirectionStep type="escalator-up" instruction="Take the escalator up" />,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("fill")).toBe("currentColor");
+    expect(svg?.getAttribute("stroke")).toBeNull();
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 24 24");
+  });
+
   it.each([
     [undefined, "2 min", "2 min"],
     ["50 m", undefined, "50 m"],
