@@ -145,6 +145,11 @@ Use **Audit Library** after designer edits or component builds. It produces a JS
   From and To captions and the steps between them, each with DirectionStep's mark
   from the Icons page, the current one semibold in the theme's 600. No surface of
   its own. Run Curated Icons first.
+- **ManoeuvreCard** — `State` Closed and Open by `Appearance` Theme and Background:
+  the current manoeuvre (DirectionStep's mark from the Icons page, the
+  instruction and the detail) or, open, the itinerary's rows, over the grab bar.
+  Theme is the theme's 600 with everything on it in foreground/1000; Background
+  the solid surface. Glass is not drawn yet. Run Curated Icons first.
 - Page counts
 - Top-level page node samples and unexpected top-level nodes on the `Components` page
 - Variable collection summaries

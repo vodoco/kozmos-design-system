@@ -1185,6 +1185,7 @@
                 <option value="userLocationMarker">UserLocationMarker</option>
                 <option value="wayfindingCard">WayfindingCard</option>
                 <option value="itinerary">Itinerary</option>
+                <option value="manoeuvreCard">ManoeuvreCard</option>
               </optgroup>
               <optgroup label="Platform / Form-Factor">
                 <option value="dynamicIsland">DynamicIsland</option>
@@ -1725,6 +1726,13 @@
           update: "update-itinerary",
           rebuild: "rebuild-itinerary",
           hint: "Build creates Itinerary with Default, NoCurrentStep and StepMetrics content variants: From and To captions, four steps with DirectionStep\'s marks from the Icons page, the current one semibold in the theme\'s colour. No surface of its own. Run Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        manoeuvreCard: {
+          label: "ManoeuvreCard",
+          build: "build-manoeuvre-card",
+          update: "update-manoeuvre-card",
+          rebuild: "rebuild-manoeuvre-card",
+          hint: "Build creates ManoeuvreCard with State Closed and Open by Appearance Theme and Background: the current manoeuvre with DirectionStep\'s mark from the Icons page, or the itinerary it opens into, over the grab bar. Background is drawn on the solid surface; glass is not drawn yet. Run Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         link: {
           label: "Link",

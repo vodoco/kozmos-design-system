@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "216cb6b08936";
+const PLUGIN_BUILD = "c568e4782046";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -404,6 +404,12 @@ const WAYFINDING_CARD_CONTENT = ["Basic", "Titled"];
 // The React Itinerary's three stories: a current step, none, and steps with
 // their remaining distance and time.
 const ITINERARY_CONTENT = ["Default", "NoCurrentStep", "StepMetrics"];
+// The React ManoeuvreCard's two states and its two appearances: the theme fill
+// (the default) and background, drawn on the solid surface, the default
+// `surface`. Glass waits for a glass material in the library; no painter
+// draws one yet.
+const MANOEUVRE_CARD_STATES = ["Closed", "Open"];
+const MANOEUVRE_CARD_APPEARANCES = ["Theme", "Background"];
 const DIRECTION_STEP_ICON_SIZE = 24;
 const ADAPTIVE_MAP_SHELL_PANEL_PLACEMENTS = ["Start", "End"];
 const MAP_CONTROL_BUTTON_PRESENTATIONS = ["IconOnly", "Labelled"];
@@ -937,6 +943,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   POICard: 620,
   WayfindingCard: 420,
   Itinerary: 380,
+  ManoeuvreCard: 760,
   TreeParentItem: 2500,
   TreeChildItem: 1900,
   TreeItem: 2600,
@@ -1063,6 +1070,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "UserLocationMarker",
       "WayfindingCard",
       "Itinerary",
+      "ManoeuvreCard",
     ],
   },
   {
@@ -1989,6 +1997,34 @@ const COMPONENT_DOCS = [
       "The code renders an ordered list; the current step carries aria-current.",
       "Marks are decorative: assistive technology hears the instruction.",
       "The current step is set apart by weight as well as colour.",
+    ],
+  },
+  {
+    componentName: "ManoeuvreCard",
+    componentSetName: "ManoeuvreCard",
+    category: "Product / SDK",
+    summary:
+      "ManoeuvreCard floats the current manoeuvre over the map and opens into the itinerary.",
+    usage: [
+      "Use it during navigation, over the map; Theme is the default, Background for a quieter card.",
+      "Open it with the grab bar or the instruction row; the product passes the itinerary it opens into.",
+      "Supply an already-localized instruction and detail; the card grows with a long instruction.",
+    ],
+    api: [
+      "State maps to expanded; Appearance to appearance: Theme or Background, drawn on the solid surface.",
+      "Instruction Text maps to instruction and Detail Text to detail.",
+      "The mark is DirectionStep's, from the Icons page; the open card draws Itinerary's rows.",
+      "Glass is not drawn: the library has no glass material yet.",
+    ],
+    properties: [
+      "State: Closed, Open",
+      "Appearance: Theme, Background",
+      "Instruction Text, Detail Text",
+    ],
+    accessibility: [
+      "The code makes the closed instruction row the button that opens the itinerary.",
+      "The grab bar is named by expandLabel and collapseLabel, and focus follows the disclosure.",
+      "On the theme fill every word, mark and the grip is foreground/1000.",
     ],
   },
   {
@@ -10242,6 +10278,7 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["UserLocationMarker", updateUserLocationMarkerComponent],
   ["WayfindingCard", updateWayfindingCardComponent],
   ["Itinerary", updateItineraryComponent],
+  ["ManoeuvreCard", updateManoeuvreCardComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
 ];
@@ -10551,6 +10588,9 @@ function additionalComponentActionHandlers() {
     "build-itinerary": buildItineraryComponent,
     "update-itinerary": updateItineraryComponent,
     "rebuild-itinerary": rebuildItineraryComponent,
+    "build-manoeuvre-card": buildManoeuvreCardComponent,
+    "update-manoeuvre-card": updateManoeuvreCardComponent,
+    "rebuild-manoeuvre-card": rebuildManoeuvreCardComponent,
   };
 }
 
@@ -17261,6 +17301,13 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "ManoeuvreCard") {
+    return {
+      State: MANOEUVRE_CARD_STATES,
+      Appearance: MANOEUVRE_CARD_APPEARANCES,
+    };
+  }
+
   if (canonicalName === "Separator") {
     return {
       Orientation: SEPARATOR_ORIENTATIONS,
@@ -23471,6 +23518,15 @@ function addComponentTextStyleSpecs(specs, fonts) {
     12,
     16,
     "Typography contract for an itinerary's From and To captions: 12/16, drawn uppercase.",
+  );
+  addTextStyleSpec(
+    specs,
+    "manoeuvreInstruction",
+    "ManoeuvreCard / Instruction",
+    fonts.medium,
+    20,
+    25,
+    "Typography contract for the current manoeuvre's instruction: 20/25 semibold.",
   );
   addTextStyleSpec(specs, "cardTitle", "Card / Title", fonts.medium, 24, 24);
   addTextStyleSpec(
@@ -45691,6 +45747,14 @@ const ITINERARY_WIDTH = 340;
 const ITINERARY_MUTED = { name: "Colors/foreground/400", fallback: "#5D626F" };
 const ITINERARY_TEXT = { name: "Colors/foreground/0", fallback: "#000000" };
 const ITINERARY_ACCENT = { name: "Colors/theme/600", fallback: "#1051E8" };
+// The colours of an itinerary on no surface of its own, or on a solid one.
+// ManoeuvreCard's theme fill passes its own: every word and mark on it is
+// foreground/1000, as the React's guidance foreground makes them.
+const ITINERARY_PALETTE = {
+  muted: ITINERARY_MUTED,
+  text: ITINERARY_TEXT,
+  accent: ITINERARY_ACCENT,
+};
 
 async function createItineraryVariant(args) {
   const component = figma.createComponent();
@@ -45711,6 +45775,8 @@ async function createItineraryEndpoint({
   fonts,
   variableByName,
   stats,
+  width = ITINERARY_WIDTH,
+  palette = ITINERARY_PALETTE,
 }) {
   const row = productSdkFrame(`${role} Row`, {
     direction: "horizontal",
@@ -45718,7 +45784,7 @@ async function createItineraryEndpoint({
     counterSizing: "AUTO",
     counterAlign: "BASELINE",
     spacing: 12,
-    width: ITINERARY_WIDTH,
+    width,
     height: 23,
   });
   const label = await productSdkText({
@@ -45729,8 +45795,8 @@ async function createItineraryEndpoint({
     bold: false,
     fontSize: 12,
     lineHeight: 16,
-    colorToken: ITINERARY_MUTED.name,
-    colorFallback: ITINERARY_MUTED.fallback,
+    colorToken: palette.muted.name,
+    colorFallback: palette.muted.fallback,
     variableByName,
     stats,
     width: 40,
@@ -45745,13 +45811,11 @@ async function createItineraryEndpoint({
     bold: emphasised,
     fontSize: 15,
     lineHeight: 22.5,
-    colorToken: emphasised ? ITINERARY_TEXT.name : ITINERARY_MUTED.name,
-    colorFallback: emphasised
-      ? ITINERARY_TEXT.fallback
-      : ITINERARY_MUTED.fallback,
+    colorToken: emphasised ? palette.text.name : palette.muted.name,
+    colorFallback: emphasised ? palette.text.fallback : palette.muted.fallback,
     variableByName,
     stats,
-    width: ITINERARY_WIDTH - 52,
+    width: width - 52,
     wrap: true,
   });
   appendWithSizing(row, value, "FILL", "HUG");
@@ -45765,6 +45829,9 @@ async function createItineraryStep({
   fonts,
   variableByName,
   stats,
+  width = ITINERARY_WIDTH,
+  palette = ITINERARY_PALETTE,
+  owner = "Itinerary",
 }) {
   const current = step.current === true;
   const row = productSdkFrame(`Step ${index + 1}`, {
@@ -45772,7 +45839,7 @@ async function createItineraryStep({
     primarySizing: "FIXED",
     counterSizing: "AUTO",
     spacing: 12,
-    width: ITINERARY_WIDTH,
+    width,
     height: 23,
   });
   const markBox = productSdkFrame("Step Mark", {
@@ -45783,7 +45850,7 @@ async function createItineraryStep({
     width: 40,
     height: 20,
   });
-  const token = current ? ITINERARY_ACCENT : ITINERARY_MUTED;
+  const token = current ? palette.accent : palette.muted;
   const mark = await productSdkIconInstance({
     iconName: DIRECTION_STEP_ICONS[step.type] || DIRECTION_STEP_ICONS.Straight,
     token,
@@ -45791,7 +45858,7 @@ async function createItineraryStep({
     sizeToken: null,
     variableByName,
     stats,
-    owner: "Itinerary",
+    owner,
   });
   if (mark) {
     markBox.appendChild(mark);
@@ -45820,7 +45887,7 @@ async function createItineraryStep({
     primarySizing: "AUTO",
     counterSizing: "FIXED",
     spacing: 2,
-    width: ITINERARY_WIDTH - 52,
+    width: width - 52,
     height: 23,
   });
   const instruction = await productSdkText({
@@ -45831,13 +45898,11 @@ async function createItineraryStep({
     bold: current,
     fontSize: 15,
     lineHeight: 22.5,
-    colorToken: current ? ITINERARY_ACCENT.name : ITINERARY_TEXT.name,
-    colorFallback: current
-      ? ITINERARY_ACCENT.fallback
-      : ITINERARY_TEXT.fallback,
+    colorToken: current ? palette.accent.name : palette.text.name,
+    colorFallback: current ? palette.accent.fallback : palette.text.fallback,
     variableByName,
     stats,
-    width: ITINERARY_WIDTH - 52,
+    width: width - 52,
     wrap: true,
   });
   appendWithSizing(copy, instruction, "FILL", "HUG");
@@ -45850,11 +45915,11 @@ async function createItineraryStep({
       bold: false,
       fontSize: 14,
       lineHeight: 20,
-      colorToken: ITINERARY_MUTED.name,
-      colorFallback: ITINERARY_MUTED.fallback,
+      colorToken: palette.muted.name,
+      colorFallback: palette.muted.fallback,
       variableByName,
       stats,
-      width: ITINERARY_WIDTH - 52,
+      width: width - 52,
       wrap: true,
     });
     appendWithSizing(copy, metrics, "FILL", "HUG");
@@ -45996,6 +46061,396 @@ async function rebuildItineraryComponent() {
     componentName: "Itinerary",
     componentSetName: "Itinerary",
     build: buildItineraryComponent,
+  });
+}
+
+// --- ManoeuvreCard ----------------------------------------------------------
+//
+// The current manoeuvre floating over the map, as Storybook draws the React
+// ManoeuvreCard in its 402 frame: 378 wide, the container radius, 16 16 4 16
+// padding, 12 between its rows, the floating shadow. Closed, the instruction
+// row: a 24 mark in a 32 box, 12 from the instruction (20/25 semibold) and the
+// detail (14/20) 2 under it. Open, the itinerary in the instruction's place.
+// Under both, the grab bar: a 36 by 5 pill centred in a 44 row.
+//
+// Theme, the default, is the theme's 600 with every word, mark and the grip in
+// foreground/1000. Background is the solid surface, the default `surface`:
+// the instruction in foreground/0, the mark in the theme's 600, the detail
+// muted, the grip background/300.
+//
+// The open card draws the itinerary's rows itself, with Itinerary's helpers,
+// rather than nesting an Itinerary instance: on the theme fill every colour in
+// it changes, and those overrides inside a nested instance would be reset by
+// the next Update of Itinerary.
+
+const MANOEUVRE_CARD_WIDTH = 378;
+const MANOEUVRE_CARD_CONTENT_WIDTH = MANOEUVRE_CARD_WIDTH - 32;
+const MANOEUVRE_CARD_ON_THEME = {
+  name: "Colors/foreground/1000",
+  fallback: "#FFFFFF",
+};
+const MANOEUVRE_CARD_GRIP_BACKGROUND = {
+  name: "Colors/background/300",
+  fallback: "#ABAFBA",
+};
+const MANOEUVRE_CARD_STEPS = [
+  {
+    instruction: "Take Elevator down to First Floor",
+    type: "LiftDown",
+    current: true,
+  },
+  { instruction: "Take Corridor to Garage B", type: "Transition" },
+  { instruction: "Take Walkway to Terminal B", type: "Transition" },
+  { instruction: "Destination", type: "Destination" },
+];
+
+async function createManoeuvreCardVariant(args) {
+  const component = figma.createComponent();
+  await updateManoeuvreCardVariant(component, args);
+  return component;
+}
+
+function parseManoeuvreCardVariantName(name) {
+  const base = productSdkVariantValues(name, "State", MANOEUVRE_CARD_STATES);
+  if (!base) return null;
+  const second = variantAxisValue(name, "Appearance");
+  if (MANOEUVRE_CARD_APPEARANCES.indexOf(second) === -1) return null;
+  return { value: base.value, second };
+}
+
+/** Every colour in the card, by appearance. */
+function manoeuvreCardPalette(appearance) {
+  if (appearance === "Theme") {
+    return {
+      muted: MANOEUVRE_CARD_ON_THEME,
+      text: MANOEUVRE_CARD_ON_THEME,
+      accent: MANOEUVRE_CARD_ON_THEME,
+      grip: MANOEUVRE_CARD_ON_THEME,
+    };
+  }
+  return {
+    muted: ITINERARY_MUTED,
+    text: ITINERARY_TEXT,
+    accent: ITINERARY_ACCENT,
+    grip: MANOEUVRE_CARD_GRIP_BACKGROUND,
+  };
+}
+
+/** The closed card's row: the mark, the instruction and the detail. */
+async function createManoeuvreInstructionRow({
+  palette,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const row = productSdkFrame("Instruction Row", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 12,
+    width: MANOEUVRE_CARD_CONTENT_WIDTH,
+    height: 32,
+  });
+  const markBox = productSdkFrame("Manoeuvre Mark", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: 32,
+    height: 32,
+  });
+  const mark = await productSdkIconInstance({
+    iconName: DIRECTION_STEP_ICONS.LiftDown,
+    token: palette.accent,
+    size: DIRECTION_STEP_ICON_SIZE,
+    sizeToken: null,
+    variableByName,
+    stats,
+    owner: "ManoeuvreCard",
+  });
+  if (mark) {
+    markBox.appendChild(mark);
+  } else {
+    const glyph = await productSdkText({
+      name: "Manoeuvre Glyph",
+      characters: DIRECTION_STEP_GLYPHS.LiftDown,
+      styleKey: "manoeuvreInstruction",
+      fonts,
+      bold: true,
+      fontSize: 20,
+      lineHeight: 25,
+      colorToken: palette.accent.name,
+      colorFallback: palette.accent.fallback,
+      variableByName,
+      stats,
+    });
+    glyph.textAutoResize = "WIDTH_AND_HEIGHT";
+    markBox.appendChild(glyph);
+  }
+  appendWithSizing(row, markBox, "FIXED", "FIXED");
+
+  const copyWidth = MANOEUVRE_CARD_CONTENT_WIDTH - 44;
+  const copy = productSdkFrame("Manoeuvre Copy", {
+    direction: "vertical",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 2,
+    width: copyWidth,
+    height: 47,
+  });
+  const instruction = await productSdkText({
+    name: "Manoeuvre Instruction",
+    characters: "Take Elevator down to First Floor",
+    styleKey: "manoeuvreInstruction",
+    fonts,
+    bold: true,
+    fontSize: 20,
+    lineHeight: 25,
+    colorToken: palette.text.name,
+    colorFallback: palette.text.fallback,
+    variableByName,
+    stats,
+    width: copyWidth,
+    wrap: true,
+  });
+  appendWithSizing(copy, instruction, "FILL", "HUG");
+  const detail = await productSdkText({
+    name: "Manoeuvre Detail",
+    characters: "58 m · Second Floor",
+    styleKey: "cardDescription",
+    fonts,
+    bold: false,
+    fontSize: 14,
+    lineHeight: 20,
+    colorToken: palette.muted.name,
+    colorFallback: palette.muted.fallback,
+    variableByName,
+    stats,
+    width: copyWidth,
+    wrap: true,
+  });
+  appendWithSizing(copy, detail, "FILL", "HUG");
+  appendWithSizing(row, copy, "FILL", "HUG");
+  return row;
+}
+
+/** The open card's itinerary: From, the steps, To. */
+async function createManoeuvreItinerary({
+  palette,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const list = productSdkFrame("Itinerary", {
+    direction: "vertical",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 8,
+    width: MANOEUVRE_CARD_CONTENT_WIDTH,
+    height: 200,
+  });
+  const common = {
+    fonts,
+    variableByName,
+    stats,
+    width: MANOEUVRE_CARD_CONTENT_WIDTH,
+    palette,
+  };
+  appendWithSizing(
+    list,
+    await createItineraryEndpoint(
+      Object.assign(
+        { role: "Origin", caption: "From", name: "Dunkin'", emphasised: false },
+        common,
+      ),
+    ),
+    "FILL",
+    "HUG",
+  );
+  for (let index = 0; index < MANOEUVRE_CARD_STEPS.length; index += 1) {
+    appendWithSizing(
+      list,
+      await createItineraryStep(
+        Object.assign(
+          { step: MANOEUVRE_CARD_STEPS[index], index, owner: "ManoeuvreCard" },
+          common,
+        ),
+      ),
+      "FILL",
+      "HUG",
+    );
+  }
+  appendWithSizing(
+    list,
+    await createItineraryEndpoint(
+      Object.assign(
+        {
+          role: "Destination",
+          caption: "To",
+          name: "Airport Shuttles",
+          emphasised: true,
+        },
+        common,
+      ),
+    ),
+    "FILL",
+    "HUG",
+  );
+  return list;
+}
+
+async function updateManoeuvreCardVariant(
+  component,
+  { value, second, variableByName, fonts, stats },
+) {
+  const appearance =
+    MANOEUVRE_CARD_APPEARANCES.indexOf(second) === -1 ? "Theme" : second;
+  const open = value === "Open";
+  const palette = manoeuvreCardPalette(appearance);
+  productSdkVariantRoot(
+    component,
+    "ManoeuvreCard",
+    `State=${value}, Appearance=${appearance}`,
+    {
+      primarySizing: "AUTO",
+      counterSizing: "FIXED",
+      spacing: 12,
+      paddingLeft: 16,
+      paddingRight: 16,
+      paddingTop: 16,
+      paddingBottom: 4,
+      width: MANOEUVRE_CARD_WIDTH,
+      height: open ? 300 : 120,
+    },
+  );
+  if (appearance === "Theme") {
+    component.fills = [
+      paintFromVariable(
+        ITINERARY_ACCENT.name,
+        ITINERARY_ACCENT.fallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    component.strokes = [];
+    component.strokeWeight = 0;
+    component.cornerRadius = KOZMOS_RADIUS.container;
+  } else {
+    productSdkSurface(
+      component,
+      KOZMOS_RADIUS.container,
+      variableByName,
+      stats,
+    );
+  }
+  component.effects = [elevationEffect("floating")];
+
+  const common = { palette, fonts, variableByName, stats };
+  appendWithSizing(
+    component,
+    open
+      ? await createManoeuvreItinerary(common)
+      : await createManoeuvreInstructionRow(common),
+    "FILL",
+    "HUG",
+  );
+
+  const bar = productSdkFrame("Grab Bar", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: MANOEUVRE_CARD_CONTENT_WIDTH,
+    height: 44,
+  });
+  const grip = figma.createRectangle();
+  grip.name = "Grip";
+  grip.resize(36, 5);
+  grip.cornerRadius = KOZMOS_RADIUS.pill;
+  grip.fills = [
+    paintFromVariable(
+      palette.grip.name,
+      palette.grip.fallback,
+      variableByName,
+      stats,
+    ),
+  ];
+  bar.appendChild(grip);
+  appendWithSizing(component, bar, "FILL", "FIXED");
+}
+
+function configureManoeuvreCardProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Manoeuvre Instruction",
+    "Instruction Text",
+    "Take Elevator down to First Floor",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Manoeuvre Detail",
+    "Detail Text",
+    "58 m · Second Floor",
+    stats,
+  );
+}
+
+const MANOEUVRE_CARD_DESCRIPTION = [
+  "Kozmos ManoeuvreCard generated from the React ManoeuvreCard API.",
+  "State maps to expanded: Closed shows the manoeuvre, Open the itinerary the product passes as children.",
+  "Appearance maps to appearance: Theme (the default) or Background, drawn on the solid surface, surface's default. Glass is not drawn yet.",
+  "Instruction Text maps to instruction and Detail Text to detail; the mark is DirectionStep's, from the Icons page.",
+  "The grab bar opens and closes the itinerary; the code names it with expandLabel and collapseLabel.",
+];
+
+async function buildManoeuvreCardComponent() {
+  return buildSingleAxisComponent({
+    componentName: "ManoeuvreCard",
+    componentSetName: "ManoeuvreCard",
+    axisName: "State",
+    values: MANOEUVRE_CARD_STATES,
+    axis2Name: "Appearance",
+    axis2Values: MANOEUVRE_CARD_APPEARANCES,
+    yStep: 360,
+    x: 80,
+    y: 10000,
+    xStep: 420,
+    createVariant: createManoeuvreCardVariant,
+    configureProperties: configureManoeuvreCardProperties,
+    autoReorganize: true,
+    description: MANOEUVRE_CARD_DESCRIPTION,
+  });
+}
+
+async function updateManoeuvreCardComponent() {
+  return updateSingleAxisComponent({
+    componentName: "ManoeuvreCard",
+    componentSetName: "ManoeuvreCard",
+    axisName: "State",
+    values: MANOEUVRE_CARD_STATES,
+    axis2Name: "Appearance",
+    axis2Values: MANOEUVRE_CARD_APPEARANCES,
+    yStep: 360,
+    xStep: 420,
+    createVariant: createManoeuvreCardVariant,
+    updateVariant: updateManoeuvreCardVariant,
+    parseVariantName: parseManoeuvreCardVariantName,
+    configureProperties: configureManoeuvreCardProperties,
+    autoReorganize: true,
+    description: MANOEUVRE_CARD_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildManoeuvreCardComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "ManoeuvreCard",
+    componentSetName: "ManoeuvreCard",
+    build: buildManoeuvreCardComponent,
   });
 }
 
