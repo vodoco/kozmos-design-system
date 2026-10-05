@@ -33,11 +33,11 @@ an implementation backlog item.
 | Variations that are compositional only    | 62     |
 | Components with variant gaps — iOS        | 15/57  |
 | Components with variant gaps — Android    | 15/57  |
-| Components with variant gaps — Figma      | 24/57  |
+| Components with variant gaps — Figma      | 23/57  |
 | Components with variant gaps — Vue        | 12/57  |
 | Components absent entirely — iOS          | 9/119  |
 | Components absent entirely — Android      | 8/119  |
-| Components absent entirely — Figma        | 22/119 |
+| Components absent entirely — Figma        | 21/119 |
 | Components absent entirely — Vue          | 22/119 |
 
 <!-- /generated:headline -->
@@ -109,7 +109,6 @@ List
   - ios missing axes -> density (default, compact)
   - android missing axes -> density (default, compact)
 ManoeuvreCard
-  - figma: component/set absent
   - vue: component absent
 MapAttribution
   - figma: component/set absent
@@ -229,9 +228,9 @@ AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwit
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, UserMessage.
 
-### Figma — 22 of 119
+### Figma — 21 of 119
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, FieldWrapper, Icon, LanguageSwitcher, ManoeuvreCard, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
 
 ### Vue — 22 of 119
 

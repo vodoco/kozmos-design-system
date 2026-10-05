@@ -2102,6 +2102,175 @@ section("Itinerary");
   }
 }
 
+// --- ManoeuvreCard ---------------------------------------------------------------
+
+// The React ManoeuvreCard, as Storybook draws it in its 402 frame: closed, the
+// manoeuvre; open, the itinerary's rows; the grab bar under both. Theme puts
+// every word, mark and the grip in foreground/1000 on the theme's 600;
+// Background is the solid surface. A set the importer had never drawn until 2026-10-05.
+section("ManoeuvreCard");
+{
+  ok(
+    Array.isArray(plugin.MANOEUVRE_CARD_STATES) &&
+      plugin.MANOEUVRE_CARD_STATES.join(",") === "Closed,Open" &&
+      Array.isArray(plugin.MANOEUVRE_CARD_APPEARANCES) &&
+      plugin.MANOEUVRE_CARD_APPEARANCES.join(",") === "Theme,Background" &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("ManoeuvreCard"),
+      ) ===
+        JSON.stringify({
+          State: plugin.MANOEUVRE_CARD_STATES,
+          Appearance: plugin.MANOEUVRE_CARD_APPEARANCES,
+        }),
+    "four variants: State Closed and Open by Appearance Theme and Background",
+  );
+  const variantTokens = payloadVariables([
+    ...variableByName.keys(),
+    "Colors/theme/600",
+    "Colors/foreground/1000",
+    "Colors/background/300",
+  ]);
+  const fill = (node) => node && node.fills && node.fills[0];
+  const token = (node) => boundVariableName(fill(node));
+  const markToken = (box) => {
+    const instance = box && box.findOne((node) => node.type === "INSTANCE");
+    const shape =
+      instance && instance.findOne((node) => node.type === "VECTOR");
+    return shape
+      ? boundVariableName(fill(shape)) ||
+          boundVariableName(shape.strokes && shape.strokes[0])
+      : null;
+  };
+  for (const value of plugin.MANOEUVRE_CARD_STATES || []) {
+    for (const appearance of plugin.MANOEUVRE_CARD_APPEARANCES || []) {
+      const label = `${value}, ${appearance}`;
+      const theme = appearance === "Theme";
+      const component = figma.createComponent();
+      const stats = freshStats();
+      await plugin.updateManoeuvreCardVariant(component, {
+        value,
+        second: appearance,
+        variableByName: variantTokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+      const shadow = component.effects && component.effects[0];
+      ok(
+        component.name === `State=${value}, Appearance=${appearance}` &&
+          component.width === 378 &&
+          component.paddingLeft === 16 &&
+          component.paddingRight === 16 &&
+          component.paddingTop === 16 &&
+          component.paddingBottom === 4 &&
+          component.itemSpacing === 12 &&
+          component.cornerRadius === 20 &&
+          component.effects.length === 1 &&
+          shadow.type === "DROP_SHADOW" &&
+          shadow.offset.y === 4 &&
+          shadow.radius === 8,
+        `${label}: 378 wide, padding 16 16 4 16, 12 apart, radius 20, the floating shadow`,
+      );
+      ok(
+        theme
+          ? token(component) === "Colors/theme/600" &&
+              component.strokes.length === 0
+          : token(component) === "Surface/0" &&
+              boundVariableName(component.strokes[0]) === "Border/Subtle",
+        `${label}: ${theme ? "the theme's 600, no border" : "the solid surface and its subtle border"} (${token(component)})`,
+      );
+      const first = component.children[0];
+      const bar = component.children[1];
+      const grip = bar && named(bar, "Grip");
+      ok(
+        component.children.length === 2 &&
+          bar.name === "Grab Bar" &&
+          bar.height === 44 &&
+          grip &&
+          grip.width === 36 &&
+          grip.height === 5 &&
+          grip.cornerRadius === 9999 &&
+          token(grip) ===
+            (theme ? "Colors/foreground/1000" : "Colors/background/300"),
+        `${label}: the grab bar, 44 high, holds a 36 by 5 pill in ${theme ? "foreground/1000" : "background/300"} (${grip && token(grip)})`,
+      );
+      if (value === "Closed") {
+        const mark = named(first, "Manoeuvre Mark");
+        const instruction = named(first, "Manoeuvre Instruction");
+        const detail = named(first, "Manoeuvre Detail");
+        ok(
+          first.name === "Instruction Row" &&
+            first.itemSpacing === 12 &&
+            mark &&
+            mark.width === 32 &&
+            mark.height === 32 &&
+            instruction &&
+            detail &&
+            named(first, "Manoeuvre Copy").itemSpacing === 2,
+          `${label}: the instruction row, a 32 mark box 12 from the instruction and the detail 2 under it`,
+        );
+        const expected = theme
+          ? {
+              mark: "Colors/foreground/1000",
+              instruction: "Colors/foreground/1000",
+              detail: "Colors/foreground/1000",
+            }
+          : {
+              mark: "Colors/theme/600",
+              instruction: "Colors/foreground/0",
+              detail: "Colors/foreground/400",
+            };
+        const actual = {
+          mark: markToken(mark),
+          instruction: token(instruction),
+          detail: token(detail),
+        };
+        ok(
+          JSON.stringify(actual) === JSON.stringify(expected),
+          `${label}: mark, instruction and detail ${JSON.stringify(actual)}`,
+        );
+      } else {
+        const rows = first.children;
+        const steps = rows.filter((row) => /^Step \d+$/.test(row.name));
+        ok(
+          first.name === "Itinerary" &&
+            first.width === 346 &&
+            first.itemSpacing === 8 &&
+            rows[0].name === "Origin Row" &&
+            rows[rows.length - 1].name === "Destination Row" &&
+            steps.length === 4 &&
+            !component.findOne((node) => node.name === "Manoeuvre Instruction"),
+          `${label}: the itinerary in the instruction's place, 346 wide: From, four steps and To, 8 apart`,
+        );
+        const texts = first.findAll((node) => node.type === "TEXT");
+        const textTokens = [...new Set(texts.map(token))].sort();
+        const marks = steps.map((step) => markToken(named(step, "Step Mark")));
+        const current = steps.filter(
+          (step) =>
+            token(named(step, "Instruction Text")) ===
+            (theme ? "Colors/foreground/1000" : "Colors/theme/600"),
+        );
+        ok(
+          theme
+            ? textTokens.join(",") === "Colors/foreground/1000" &&
+                marks.every((mark) => mark === "Colors/foreground/1000")
+            : textTokens.join(",") ===
+                "Colors/foreground/0,Colors/foreground/400,Colors/theme/600" &&
+                current.length === 1 &&
+                marks.filter((mark) => mark === "Colors/theme/600").length ===
+                  1 &&
+                marks.filter((mark) => mark === "Colors/foreground/400")
+                  .length === 3,
+          `${label}: ${theme ? "every word and mark in foreground/1000" : "Itinerary's own colours, one current step in the theme's 600"} (${textTokens.join(", ")}; marks ${marks.join(", ")})`,
+        );
+      }
+      ok(
+        stats.warnings.length === 0,
+        `${label}: no warnings (${stats.warnings.join(" | ")})`,
+      );
+    }
+  }
+}
+
 // --- AISearchButton --------------------------------------------------------------
 
 section("AISearchButton");
@@ -3193,6 +3362,8 @@ section("The product sets audit clean");
     const tokens = payloadVariables([
       ...variableByName.keys(),
       "Colors/theme/600",
+      "Colors/foreground/1000",
+      "Colors/background/300",
     ]);
     const context = plugin.createVariableContext(
       tokens.collections,
@@ -3238,6 +3409,15 @@ section("The product sets audit clean");
           { value },
         ]),
       ],
+      [
+        "ManoeuvreCard",
+        (plugin.MANOEUVRE_CARD_STATES || []).flatMap((value) =>
+          (plugin.MANOEUVRE_CARD_APPEARANCES || []).map((second) => [
+            "updateManoeuvreCardVariant",
+            { value, second },
+          ]),
+        ),
+      ],
     ];
     for (const [name, variants] of sets) {
       const set = new MockNode("COMPONENT_SET", name);
@@ -3262,8 +3442,10 @@ section("The product sets audit clean");
             `${mode.mode} text ${mode.minTextContrast}, non-text ${mode.minNonTextContrast}`,
         )
         .join("; ");
+      // A set with no variants measures nothing, and would pass.
       ok(
-        contrast.byMode.length === 2 &&
+        variants.length > 0 &&
+          contrast.byMode.length === 2 &&
           contrast.textFailures === 0 &&
           contrast.nonTextFailures === 0,
         `${name}: ${variants.length} variants, no failure in Light or Dark (${modes}; ${contrast.failures
