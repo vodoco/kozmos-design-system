@@ -215,6 +215,71 @@ function defineTextSizing(node) {
   }
 }
 
+// The text styles the mock knows, by id. A text bound to one takes its
+// values, and writing any of them on the text with another value detaches the
+// style, as Figma does: on 2026-10-05 Itinerary's From and To captions, set to
+// upper case after their style was attached, read back over REST with no
+// style, and the audit counted six text nodes missing one. A style the mock
+// does not know (a bare `{ id }`) binds as before and never detaches.
+const mockTextStyles = new Map();
+const TEXT_STYLE_FIELDS = [
+  "fontName",
+  "fontSize",
+  "lineHeight",
+  "letterSpacing",
+  "paragraphSpacing",
+  "textCase",
+  "textDecoration",
+];
+
+/** A text style for `figma.createTextStyle`, as a Figma TextStyle carries it. */
+export function createMockTextStyle() {
+  const style = {
+    id: `S:mock-${mockTextStyles.size + 1}`,
+    type: "TEXT",
+    name: "",
+    description: "",
+    fontName: { family: "Inter", style: "Regular" },
+    fontSize: 12,
+    lineHeight: { unit: "PIXELS", value: 16 },
+    letterSpacing: { unit: "PERCENT", value: 0 },
+    paragraphSpacing: 0,
+    textCase: "ORIGINAL",
+    textDecoration: "NONE",
+  };
+  mockTextStyles.set(style.id, style);
+  return style;
+}
+
+/** Writing a style's field on its text with another value detaches it. */
+function detachOverriddenStyle(node, field, value) {
+  const style = mockTextStyles.get(node.textStyleId);
+  if (style && JSON.stringify(style[field]) !== JSON.stringify(value)) {
+    node.textStyleId = "";
+  }
+}
+
+// fontSize and lineHeight have accessors of their own on MockNode.
+const TEXT_STYLE_OWN_FIELDS = new Set(["fontSize", "lineHeight"]);
+
+function defineTextStyleFields(node) {
+  node._textStyleValues = {};
+  for (const field of TEXT_STYLE_FIELDS) {
+    if (TEXT_STYLE_OWN_FIELDS.has(field)) continue;
+    Object.defineProperty(node, field, {
+      configurable: true,
+      enumerable: false,
+      get() {
+        return this._textStyleValues[field];
+      },
+      set(value) {
+        detachOverriddenStyle(this, field, value);
+        this._textStyleValues[field] = value;
+      },
+    });
+  }
+}
+
 // Every node by id, as the document resolves an id: a painter's component
 // need not sit on a page for an instance swap to find it.
 const nodesById = new Map();
@@ -263,6 +328,8 @@ export class MockNode {
     // Collection id to mode id, as setExplicitVariableModeForCollection sets it.
     this.explicitVariableModes = {};
     if (type === "TEXT") {
+      this.textStyleId = "";
+      defineTextStyleFields(this);
       this.characters = "";
       this.fontName = { family: "Inter", style: "Regular" };
       this.fontSize = 12;
@@ -273,9 +340,10 @@ export class MockNode {
       this.textAlignHorizontal = "LEFT";
       this.textAlignVertical = "TOP";
       this.textDecoration = "NONE";
+      this.textCase = "ORIGINAL";
+      this.paragraphSpacing = 0;
       this.textTruncation = "DISABLED";
       this.maxLines = null;
-      this.textStyleId = "";
     }
     if (type === "COMPONENT_SET" || type === "COMPONENT") {
       this.componentPropertyDefinitions = {};
@@ -334,6 +402,7 @@ export class MockNode {
   }
 
   set fontSize(value) {
+    detachOverriddenStyle(this, "fontSize", value);
     this._fontSize = value;
     if (this.boundVariables) delete this.boundVariables.fontSize;
   }
@@ -343,6 +412,7 @@ export class MockNode {
   }
 
   set lineHeight(value) {
+    detachOverriddenStyle(this, "lineHeight", value);
     this._lineHeight = value;
     if (this.boundVariables) delete this.boundVariables.lineHeight;
   }
@@ -476,6 +546,17 @@ export class MockNode {
   }
 
   async setTextStyleIdAsync(id) {
+    // The style's own values arrive with it: they are no override, and
+    // they leave any variable binding where it was.
+    const style = mockTextStyles.get(id);
+    if (style) {
+      for (const field of TEXT_STYLE_FIELDS) {
+        const value = structuredClone(style[field]);
+        if (field === "fontSize") this._fontSize = value;
+        else if (field === "lineHeight") this._lineHeight = value;
+        else this._textStyleValues[field] = value;
+      }
+    }
     this.textStyleId = id;
   }
 

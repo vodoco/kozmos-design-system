@@ -20,6 +20,7 @@ import {
   boundPaintOpacityDrops,
   boundVariableName,
   createFigmaMock,
+  createMockTextStyle,
   framesLargerThanAsked,
   freshStats,
   hexOf,
@@ -2028,6 +2029,9 @@ section("Itinerary");
     ...variableByName.keys(),
     "Colors/theme/600",
   ]);
+  // A Build or Update loads the text styles first (loadButtonFonts): the
+  // captions' upper case is the style's.
+  await plugin.ensureKozmosTextStyles(FONTS, freshStats());
   async function paint(value) {
     const component = figma.createComponent();
     const stats = freshStats();
@@ -2266,6 +2270,79 @@ section("ManoeuvreCard");
       ok(
         stats.warnings.length === 0,
         `${label}: no warnings (${stats.warnings.join(" | ")})`,
+      );
+    }
+  }
+}
+
+// --- Text styles stay attached ---------------------------------------------------
+
+// Figma detaches a text style from a text when the painter writes one of the
+// style's own fields with another value afterwards. Itinerary set its From and
+// To captions to upper case after attaching Itinerary / Caption, and on
+// 2026-10-05 the live file read back six captions with no style. Here the mock
+// knows the styles the plugin creates, so it detaches as Figma does.
+section("Text styles stay attached");
+{
+  const styleFigma = createFigmaMock({ pages: pages() });
+  styleFigma.createTextStyle = createMockTextStyle;
+  const stylePlugin = loadPlugin({ pluginPath: PLUGIN, figma: styleFigma });
+  const tokens = payloadVariables([
+    ...variableByName.keys(),
+    "Colors/theme/600",
+    "Colors/foreground/1000",
+    "Colors/background/300",
+  ]);
+  const styles = await stylePlugin.ensureKozmosTextStyles(FONTS, freshStats());
+  const caption = styles.itineraryCaption;
+  ok(
+    caption &&
+      caption.name === "Itinerary / Caption" &&
+      caption.textCase === "UPPER",
+    `Itinerary / Caption is upper case in the style itself (${caption && caption.textCase})`,
+  );
+  const painted = [];
+  for (const value of stylePlugin.ITINERARY_CONTENT || []) {
+    painted.push([`Itinerary ${value}`, "updateItineraryVariant", { value }]);
+  }
+  for (const value of stylePlugin.MANOEUVRE_CARD_STATES || []) {
+    for (const second of stylePlugin.MANOEUVRE_CARD_APPEARANCES || []) {
+      painted.push([
+        `ManoeuvreCard ${value}, ${second}`,
+        "updateManoeuvreCardVariant",
+        { value, second },
+      ]);
+    }
+  }
+  for (const [label, painter, args] of painted) {
+    const component = styleFigma.createComponent();
+    await stylePlugin[painter](component, {
+      ...args,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats: freshStats(),
+    });
+    const texts = component.findAll((node) => node.type === "TEXT");
+    const unstyled = texts.filter(
+      (text) => !String(text.textStyleId).startsWith("S:mock-"),
+    );
+    ok(
+      texts.length > 0 && unstyled.length === 0,
+      `${label}: every text keeps its style (${texts.length} texts; without one: ${
+        unstyled.map((text) => text.name).join(", ") || "none"
+      })`,
+    );
+    const captions = texts.filter((text) =>
+      /^(Origin|Destination) Label$/.test(text.name),
+    );
+    if (captions.length > 0) {
+      ok(
+        caption &&
+          captions.every(
+            (text) =>
+              text.textCase === "UPPER" && text.textStyleId === caption.id,
+          ),
+        `${label}: From and To are upper case through Itinerary / Caption`,
       );
     }
   }

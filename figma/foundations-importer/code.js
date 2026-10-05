@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c568e4782046";
+const PLUGIN_BUILD = "a0f5024324e2";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -23360,6 +23360,20 @@ async function ensureKozmosTextStyles(fonts, stats) {
         );
       }
     }
+
+    // The case lives in the style too: a text set to upper case after its
+    // style was attached loses the style (Itinerary's captions, 2026-10-05).
+    if (activeTextStyleByKey[spec.key] && "textCase" in style) {
+      try {
+        style.textCase = spec.textCase || "ORIGINAL";
+      } catch (error) {
+        pushUniqueWarning(
+          stats,
+          `text-style-case:${spec.name}`,
+          `${spec.name}: could not update text case (${messageFor(error)}).`,
+        );
+      }
+    }
   }
 
   activeTextStylesEnsured = true;
@@ -23517,7 +23531,9 @@ function addComponentTextStyleSpecs(specs, fonts) {
     fonts.regular,
     12,
     16,
-    "Typography contract for an itinerary's From and To captions: 12/16, drawn uppercase.",
+    "Typography contract for an itinerary's From and To captions: 12/16, upper case.",
+    undefined,
+    "UPPER",
   );
   addTextStyleSpec(
     specs,
@@ -23807,6 +23823,7 @@ function addTextStyleSpec(
   lineHeight,
   description,
   textDecoration,
+  textCase,
 ) {
   specs.push({
     key,
@@ -23818,6 +23835,7 @@ function addTextStyleSpec(
       description ||
       "Kozmos component typography style. Apply color separately through semantic foreground variables.",
     textDecoration,
+    textCase,
   });
 }
 
@@ -23844,6 +23862,9 @@ async function applyTextStyleToNodeAsync(text, key, stats) {
       text.letterSpacing = { unit: "PERCENT", value: 0 };
       if ("textDecoration" in text) {
         text.textDecoration = spec.textDecoration || "NONE";
+      }
+      if ("textCase" in text) {
+        text.textCase = spec.textCase || "ORIGINAL";
       }
       incrementStat(stats, "textStyleTypographyFieldsApplied");
       applied = true;
@@ -45801,7 +45822,6 @@ async function createItineraryEndpoint({
     stats,
     width: 40,
   });
-  label.textCase = "UPPER";
   appendWithSizing(row, label, "FIXED", "HUG");
   const value = await productSdkText({
     name: `${role} Text`,
