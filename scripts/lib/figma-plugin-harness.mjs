@@ -508,8 +508,15 @@ export class MockNode {
     return this.mainComponent;
   }
 
-  // An instance's own overrides; none are modelled, so nothing to reset.
-  resetOverrides() {}
+  // An instance's own overrides. Only the name is modelled, and Figma resets
+  // it with the rest: an instance renamed "Pointr Source" reads as its main
+  // component's name again ("search-md") after resetOverrides(). Not
+  // modelled until 2026-10-05, the reset passed here while in the file it
+  // made every second Curated Icons run redraw every source it had kept.
+  resetOverrides() {
+    if (this.type === "INSTANCE" && this.mainComponent)
+      this.name = this.mainComponent.name;
+  }
 
   setProperties(properties) {
     if (this.type !== "INSTANCE")
