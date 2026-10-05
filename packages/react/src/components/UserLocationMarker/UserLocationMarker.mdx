@@ -11,6 +11,11 @@ Shows a map position and optional heading. Supply these values from your map
 adapter; the component does not query device location. The example rotates only
 when requested, and the marker rings respect reduced-motion preferences.
 
+The marker looks the same on every platform and in both themes: an 18-unit dot in
+the map marker's blue with a white ring, a 64-unit halo, pulse and heading cone
+tinted from that blue, and no shadow. The blue and the ring are fixed so the dot
+stands apart from its ring, and from any map, in dark as in light.
+
 Use `compact` for the 18-unit location dot without halo, pulse or heading cone. Route rails compose this same marker rather than substituting a manoeuvre icon. The compact mode is available on all three platforms and does not schedule an animation.
 
 ## React Usage

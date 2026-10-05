@@ -30,7 +30,7 @@ public struct KozmosUserLocationMarker: View {
             // a stray ring adrift from the marker. A clock cannot get stranded.
             // The halo: 64 at 14 %, still.
             if !compact { Circle()
-                .fill(KozmosColors.semanticsDataBlue)
+                .fill(KozmosColors.semanticsMapMarkerDot)
                 .opacity(0.14)
                 .frame(width: 64, height: 64)
 
@@ -38,7 +38,7 @@ public struct KozmosUserLocationMarker: View {
             TimelineView(.animation) { context in
                 let phase = Self.pulsePhase(at: context.date)
                 Circle()
-                    .fill(KozmosColors.semanticsDataBlue)
+                    .fill(KozmosColors.semanticsMapMarkerDot)
                     .frame(width: 48, height: 48)
                     .scaleEffect(0.6 + 0.4 * phase)
                     .opacity(0.3 * (1 - phase))
@@ -51,7 +51,7 @@ public struct KozmosUserLocationMarker: View {
                     .fill(
                         RadialGradient(
                             gradient: Gradient(colors: [
-                                KozmosColors.semanticsDataBlue.opacity(0.4),
+                                KozmosColors.semanticsMapMarkerDot.opacity(0.4),
                                 Color.clear
                             ]),
                             center: .center,
@@ -63,14 +63,17 @@ public struct KozmosUserLocationMarker: View {
                     .rotationEffect(.degrees(heading))
             }
 
-            // The dot: 18, with a 3 white border.
+            // The dot: 18, with a 3 ring inside it: the map marker's white, the
+            // same in both themes, or for the compact dot the surface it sits
+            // on. Inside, as Compose's border and React's are: a stroke on the
+            // edge drew the full marker 21 across.
             Circle()
-                .fill(KozmosColors.semanticsDataBlue)
+                .fill(KozmosColors.semanticsMapMarkerDot)
                 .frame(width: 18, height: 18)
                 .overlay(
                     Group {
                         if compact { Circle().strokeBorder(KozmosColors.primitivesColorsBackground0, lineWidth: 3) }
-                        else { Circle().stroke(Color.white, lineWidth: 3) }
+                        else { Circle().strokeBorder(KozmosColors.semanticsMapMarkerRing, lineWidth: 3) }
                     }
                 )
         }

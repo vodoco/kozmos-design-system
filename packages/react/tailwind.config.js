@@ -35,6 +35,14 @@ module.exports = {
           red: "var(--semantics-data-red)",
           yellow: "var(--semantics-data-yellow)",
         },
+        // The user-location marker's blue and its dot's ring, fixed in both
+        // themes: the ring white, as SwiftUI and Compose draw it, and the blue
+        // the light theme's, so the dot clears 3:1 against the ring in dark
+        // too (Olcay, 2026-10-05).
+        "map-marker": {
+          dot: "var(--semantics-map-marker-dot)",
+          ring: "var(--semantics-map-marker-ring)",
+        },
         overlay: {
           scrim: "var(--semantics-overlay-scrim)",
           dim: "var(--semantics-overlay-dim)",

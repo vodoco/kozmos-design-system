@@ -4,6 +4,18 @@
   "description": "AA contrast pairs for public semantic tokens and Core runtime component aliases. Pairs are checked in both light and dark modes from generated CSS token output.",
   "runtimeAliases": [
     {
+      "name": "Tailwind map marker dot",
+      "file": "packages/react/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "map-marker", "dot"],
+      "value": "var(--semantics-map-marker-dot)"
+    },
+    {
+      "name": "Tailwind map marker ring",
+      "file": "packages/react/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "map-marker", "ring"],
+      "value": "var(--semantics-map-marker-ring)"
+    },
+    {
       "name": "Tailwind success fill",
       "file": "packages/react/tailwind.config.js",
       "path": ["theme", "extend", "colors", "success", "DEFAULT"],
@@ -65,6 +77,18 @@
     }
   ],
   "pairs": [
+    {
+      "name": "user-location dot against its ring (non-text)",
+      "background": "semantics-map-marker-ring",
+      "foreground": "semantics-map-marker-dot",
+      "minimum": 3
+    },
+    {
+      "name": "compact user-location dot against the surface it rings in (non-text)",
+      "background": "primitives-colors-background-0",
+      "foreground": "semantics-map-marker-dot",
+      "minimum": 3
+    },
     {
       "name": "map attribution text against its halo",
       "background": "semantics-map-attribution-halo",

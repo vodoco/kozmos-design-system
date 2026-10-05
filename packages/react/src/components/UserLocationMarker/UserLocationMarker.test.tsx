@@ -64,12 +64,9 @@ describe("UserLocationMarker", () => {
     // map page hid it and the visitor lost their position. Hollow, as
     // LocationPin's offFloor is: shape carries the state, not colour alone.
     const { container, rerender } = render(<UserLocationMarker />);
-    const dot = () =>
-      container.querySelector(
-        "[data-off-floor], .rounded-pill.shadow-floating",
-      );
+    const dot = () => container.querySelector(".z-10.rounded-pill");
     expect(container.firstElementChild).not.toHaveAttribute("data-off-floor");
-    expect(container.innerHTML).toContain("bg-data-blue");
+    expect(container.innerHTML).toContain("bg-map-marker-dot");
 
     rerender(
       <UserLocationMarker
@@ -87,6 +84,36 @@ describe("UserLocationMarker", () => {
     // is true of a level you are not looking at.
     expect(container.querySelector(".animate-ping")).toBeNull();
     expect(container.querySelector("svg")).toBeNull();
-    expect(dot()).not.toBeNull();
+    expect(dot()).toHaveClass("border-map-marker-dot", "bg-background");
+  });
+
+  // Olcay, 2026-10-05: the marker is drawn as SwiftUI and Compose draw it.
+  it("rings the dot in the map marker's white and casts no shadow, as native does", () => {
+    const { container, rerender } = render(<UserLocationMarker />);
+    const dot = () => container.querySelector(".z-10.rounded-pill")!;
+    expect(dot()).toHaveClass("border-map-marker-ring", "bg-map-marker-dot");
+    expect(dot().className).not.toMatch(/shadow/);
+    // The compact dot rings in the surface it sits on, as native's does.
+    rerender(<UserLocationMarker compact />);
+    expect(dot()).toHaveClass("border-background", "bg-map-marker-dot");
+    expect(dot().className).not.toMatch(/shadow/);
+  });
+
+  it("draws native's heading cone: 64, from the centre to the top, fading out 32 away", () => {
+    const { container } = render(<UserLocationMarker heading={90} />);
+    const svg = container.querySelector("svg")!;
+    expect(svg.parentElement).toHaveClass("h-16", "w-16");
+    expect(svg.parentElement!.style.transform).toBe("rotate(90deg)");
+    expect(svg).toHaveAttribute("viewBox", "0 0 64 64");
+    expect(svg).toHaveAttribute("overflow", "visible");
+    expect(svg.querySelector("path")).toHaveAttribute(
+      "d",
+      "M32 32 L9.6 0 Q32 -6.4 54.4 0 Z",
+    );
+    const gradient = svg.querySelector("radialGradient")!;
+    expect(gradient).toHaveAttribute("gradientUnits", "userSpaceOnUse");
+    expect(gradient).toHaveAttribute("cx", "32");
+    expect(gradient).toHaveAttribute("cy", "32");
+    expect(gradient).toHaveAttribute("r", "32");
   });
 });

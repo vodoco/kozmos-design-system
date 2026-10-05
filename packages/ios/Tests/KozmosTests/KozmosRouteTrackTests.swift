@@ -45,7 +45,7 @@ final class KozmosRouteTrackTests: XCTestCase {
     /// away from the fill the track draws. iOS only: on macOS, ImageRenderer
     /// mirrors drawn paths as well (measured), which iOS does not.
     @MainActor func testDotAndWaypointFollowTheFillInBothDirections() throws {
-        let blue = try DrawnPixels.resolved(KozmosColors.semanticsDataBlue, in: .light)
+        let blue = try DrawnPixels.resolved(KozmosColors.semanticsMapMarkerDot, in: .light)
         let ring = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground400, in: .light)
         let fill = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
         for direction in [LayoutDirection.leftToRight, .rightToLeft] {

@@ -216,8 +216,10 @@ means the import never ran.
 **Two checkouts, two payloads.** There is a second clone at
 `P/Pointr Cloud/kozmos-design-system-` with an older payload. Figma is
 registered to run the plugin from `K/kozmos-design-system-dev`, and the
-payload must come from the same place. The status line should read **620
-token candidates**; 615 means the wrong file.
+payload must come from the same place. The status line's token-candidate
+count is the payload's `summary.totalTokens` (681 on 2026-10-05, when the map
+marker's tokens were added): a smaller number than this checkout's payload
+says means the wrong file.
 
 **The audit's rules must agree with the painters.** Twice in one day a text
 rule expected a different style from the one the painter applies. The audit

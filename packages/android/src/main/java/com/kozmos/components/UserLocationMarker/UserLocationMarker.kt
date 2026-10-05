@@ -44,7 +44,8 @@ fun KozmosUserLocationMarker(
     label: String = "User location",
     compact: Boolean = false
 ) {
-    val dataBlue = KozmosThemeTokens.semanticsDataBlue
+    // The marker's blue, fixed in both themes (Semantics.Map marker.dot).
+    val markerBlue = KozmosThemeTokens.semanticsMapMarkerDot
     Box(modifier = modifier.size(if (compact) 18.dp else 64.dp).clearAndSetSemantics {
         contentDescription = label
         role = Role.Image
@@ -77,7 +78,7 @@ fun KozmosUserLocationMarker(
             modifier = Modifier
                 .size(64.dp)
                 .alpha(0.14f)
-                .background(KozmosThemeTokens.semanticsDataBlue, CircleShape)
+                .background(KozmosThemeTokens.semanticsMapMarkerDot, CircleShape)
         )
 
         // The ring: 48, pulsing.
@@ -89,7 +90,7 @@ fun KozmosUserLocationMarker(
                     scaleY = pulseScale
                     alpha = pulseAlpha
                 }
-                .background(KozmosThemeTokens.semanticsDataBlue, CircleShape)
+                .background(KozmosThemeTokens.semanticsMapMarkerDot, CircleShape)
         )
 
         // Heading Cone
@@ -116,7 +117,7 @@ fun KozmosUserLocationMarker(
                             path = path,
                             brush = Brush.radialGradient(
                                 colors = listOf(
-                                    dataBlue.copy(alpha = 0.4f),
+                                    markerBlue.copy(alpha = 0.4f),
                                     Color.Transparent
                                 ),
                                 center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f),
@@ -130,10 +131,11 @@ fun KozmosUserLocationMarker(
         // Core Dot
         Box(
             modifier = Modifier
-                // The dot: 18, with a 3 white border.
+                // The dot: 18, with a 3 ring: the map marker's white, the same in
+                // both themes, or for the compact dot the surface it sits on.
                 .size(18.dp)
-                .background(KozmosThemeTokens.semanticsDataBlue, CircleShape)
-                .border(3.dp, if (compact) KozmosThemeTokens.primitivesColorsBackground0 else Color.White, CircleShape)
+                .background(KozmosThemeTokens.semanticsMapMarkerDot, CircleShape)
+                .border(3.dp, if (compact) KozmosThemeTokens.primitivesColorsBackground0 else KozmosThemeTokens.semanticsMapMarkerRing, CircleShape)
         )
     }
 }

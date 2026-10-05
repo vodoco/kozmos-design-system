@@ -824,6 +824,29 @@ object KozmosThemeTokens {
             KozmosColorsDark.semanticsMapAttributionHalo
         )
 
+    /**
+     * Fixed blue of the user-location marker, the same in both themes: the
+     * dot, and the halo, pulse and heading cone that are tints of it. Data
+     * blue lightens in dark, which put the dot at 2.54:1 against its white
+     * ring.
+     */
+    val semanticsMapMarkerDot: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsMapMarkerDot,
+            KozmosColorsDark.semanticsMapMarkerDot
+        )
+
+    /**
+     * Fixed white ring around the user-location dot, the same in both themes,
+     * so the dot stands apart from any map underneath; SwiftUI and Compose
+     * drew it as plain white.
+     */
+    val semanticsMapMarkerRing: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsMapMarkerRing,
+            KozmosColorsDark.semanticsMapMarkerRing
+        )
+
     val semanticsSurface0: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.semanticsSurface0,
