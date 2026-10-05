@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "575960b516a2";
+const PLUGIN_BUILD = "216cb6b08936";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -401,6 +401,9 @@ const LOCATION_PIN_SIZES = ["Sm", "Md", "Lg"];
 const LOCATION_PIN_SIZE_DIAMETERS = { Sm: 24, Md: 32, Lg: 40 };
 const POI_CARD_CONTENT = ["Basic", "Media", "Full"];
 const WAYFINDING_CARD_CONTENT = ["Basic", "Titled"];
+// The React Itinerary's three stories: a current step, none, and steps with
+// their remaining distance and time.
+const ITINERARY_CONTENT = ["Default", "NoCurrentStep", "StepMetrics"];
 const DIRECTION_STEP_ICON_SIZE = 24;
 const ADAPTIVE_MAP_SHELL_PANEL_PLACEMENTS = ["Start", "End"];
 const MAP_CONTROL_BUTTON_PRESENTATIONS = ["IconOnly", "Labelled"];
@@ -933,6 +936,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   MapView: 520,
   POICard: 620,
   WayfindingCard: 420,
+  Itinerary: 380,
   TreeParentItem: 2500,
   TreeChildItem: 1900,
   TreeItem: 2600,
@@ -1058,6 +1062,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "SaveLocationCard",
       "UserLocationMarker",
       "WayfindingCard",
+      "Itinerary",
     ],
   },
   {
@@ -1957,6 +1962,33 @@ const COMPONENT_DOCS = [
       "The close control is a live IconButton, so it keeps its 44px target.",
       "Product code must give the close control a localized accessible name.",
       "Dismissal must return focus to the control that opened the card.",
+    ],
+  },
+  {
+    componentName: "Itinerary",
+    componentSetName: "Itinerary",
+    category: "Product / SDK",
+    summary:
+      "Itinerary lists a route's steps between its origin and destination.",
+    usage: [
+      "Use it in ManoeuvreCard's open state or a sheet: it has no surface of its own.",
+      "Mark the step being followed as current; NoCurrentStep is for a route not started.",
+      "Supply already-localized instructions, captions and metrics.",
+    ],
+    api: [
+      "Content maps to the story the variant draws: a current step, none, or steps with metrics.",
+      "Origin Text and Destination Text map to Itinerary.origin and destination.",
+      "Origin Label and Destination Label map to originLabel and destinationLabel.",
+      "Each step's mark is DirectionStep's, from the Icons page.",
+    ],
+    properties: [
+      "Content: Default, NoCurrentStep, StepMetrics",
+      "Origin Text, Destination Text, Origin Label, Destination Label",
+    ],
+    accessibility: [
+      "The code renders an ordered list; the current step carries aria-current.",
+      "Marks are decorative: assistive technology hears the instruction.",
+      "The current step is set apart by weight as well as colour.",
     ],
   },
   {
@@ -10209,6 +10241,7 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["SaveLocationCard", updateSaveLocationCardComponent],
   ["UserLocationMarker", updateUserLocationMarkerComponent],
   ["WayfindingCard", updateWayfindingCardComponent],
+  ["Itinerary", updateItineraryComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
 ];
@@ -10515,6 +10548,9 @@ function additionalComponentActionHandlers() {
     "build-wayfinding-card": buildWayfindingCardComponent,
     "update-wayfinding-card": updateWayfindingCardComponent,
     "rebuild-wayfinding-card": rebuildWayfindingCardComponent,
+    "build-itinerary": buildItineraryComponent,
+    "update-itinerary": updateItineraryComponent,
+    "rebuild-itinerary": rebuildItineraryComponent,
   };
 }
 
@@ -17219,6 +17255,12 @@ function expectedVariantAxesForComponentSetName(name) {
     };
   }
 
+  if (canonicalName === "Itinerary") {
+    return {
+      Content: ITINERARY_CONTENT,
+    };
+  }
+
   if (canonicalName === "Separator") {
     return {
       Orientation: SEPARATOR_ORIENTATIONS,
@@ -23402,6 +23444,33 @@ function addComponentTextStyleSpecs(specs, fonts) {
     CATEGORY_FIELD_LABEL_FONT_SIZE,
     CATEGORY_FIELD_LABEL_LINE_HEIGHT,
     "Typography contract for the chosen category's name in the search row: 15/20 semibold.",
+  );
+  addTextStyleSpec(
+    specs,
+    "itineraryText",
+    "Itinerary / Text",
+    fonts.regular,
+    15,
+    22.5,
+    "Typography contract for an itinerary's instructions and origin: 15/22.5.",
+  );
+  addTextStyleSpec(
+    specs,
+    "itineraryTextStrong",
+    "Itinerary / Text Strong",
+    fonts.medium,
+    15,
+    22.5,
+    "Typography contract for an itinerary's current step and destination: 15/22.5 semibold.",
+  );
+  addTextStyleSpec(
+    specs,
+    "itineraryCaption",
+    "Itinerary / Caption",
+    fonts.regular,
+    12,
+    16,
+    "Typography contract for an itinerary's From and To captions: 12/16, drawn uppercase.",
   );
   addTextStyleSpec(specs, "cardTitle", "Card / Title", fonts.medium, 24, 24);
   addTextStyleSpec(
@@ -45570,6 +45639,363 @@ async function rebuildPOICardComponent() {
     componentName: "POICard",
     componentSetName: "POICard",
     build: buildPOICardComponent,
+  });
+}
+
+// --- Itinerary --------------------------------------------------------------
+//
+// A route's steps between its endpoints, as the React Itinerary draws them
+// standalone (measured in Storybook): rows 8 apart; From and To captions 12/16,
+// uppercase, muted, in a 40 column 12 from the name; the origin muted, the
+// destination semibold; each step a 16 mark in a 40 by 20 box beside its
+// instruction (15/22.5), the current one semibold in the theme's 600 with its
+// mark, the other marks muted; metrics 14/20, muted, 2 under the instruction.
+// No surface: it sits in whatever holds it (ManoeuvreCard's open state, a
+// sheet). The marks are DirectionStep's, from the Icons page.
+
+const ITINERARY_STEPS = {
+  Default: [
+    { instruction: "Take Elevator down to First Floor", type: "LiftDown" },
+    {
+      instruction: "Take Corridor to Garage B",
+      type: "Transition",
+      current: true,
+    },
+    { instruction: "Turn right onto the Walkway to Terminal B", type: "Right" },
+    { instruction: "Destination", type: "Destination" },
+  ],
+  StepMetrics: [
+    {
+      instruction: "Turn left",
+      type: "Left",
+      current: true,
+      metrics: "8 m \u2022 Less than 1 min",
+    },
+    {
+      instruction: "Take the elevator up to Level 2",
+      type: "LiftUp",
+      metrics: "1 min",
+    },
+    {
+      instruction: "Continue to the destination",
+      type: "Straight",
+      metrics: "24 m",
+    },
+    { instruction: "Destination", type: "Destination" },
+  ],
+};
+ITINERARY_STEPS.NoCurrentStep = ITINERARY_STEPS.Default.map((step) =>
+  Object.assign({}, step, { current: false }),
+);
+const ITINERARY_WIDTH = 340;
+const ITINERARY_MUTED = { name: "Colors/foreground/400", fallback: "#5D626F" };
+const ITINERARY_TEXT = { name: "Colors/foreground/0", fallback: "#000000" };
+const ITINERARY_ACCENT = { name: "Colors/theme/600", fallback: "#1051E8" };
+
+async function createItineraryVariant(args) {
+  const component = figma.createComponent();
+  await updateItineraryVariant(component, args);
+  return component;
+}
+
+function parseItineraryVariantName(name) {
+  return productSdkVariantValues(name, "Content", ITINERARY_CONTENT);
+}
+
+/** A From or To row: its caption, then the endpoint's name. */
+async function createItineraryEndpoint({
+  role,
+  caption,
+  name,
+  emphasised,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const row = productSdkFrame(`${role} Row`, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    counterAlign: "BASELINE",
+    spacing: 12,
+    width: ITINERARY_WIDTH,
+    height: 23,
+  });
+  const label = await productSdkText({
+    name: `${role} Label`,
+    characters: caption,
+    styleKey: "itineraryCaption",
+    fonts,
+    bold: false,
+    fontSize: 12,
+    lineHeight: 16,
+    colorToken: ITINERARY_MUTED.name,
+    colorFallback: ITINERARY_MUTED.fallback,
+    variableByName,
+    stats,
+    width: 40,
+  });
+  label.textCase = "UPPER";
+  appendWithSizing(row, label, "FIXED", "HUG");
+  const value = await productSdkText({
+    name: `${role} Text`,
+    characters: name,
+    styleKey: emphasised ? "itineraryTextStrong" : "itineraryText",
+    fonts,
+    bold: emphasised,
+    fontSize: 15,
+    lineHeight: 22.5,
+    colorToken: emphasised ? ITINERARY_TEXT.name : ITINERARY_MUTED.name,
+    colorFallback: emphasised
+      ? ITINERARY_TEXT.fallback
+      : ITINERARY_MUTED.fallback,
+    variableByName,
+    stats,
+    width: ITINERARY_WIDTH - 52,
+    wrap: true,
+  });
+  appendWithSizing(row, value, "FILL", "HUG");
+  return row;
+}
+
+/** A step: its mark in a 40 by 20 box, its instruction, its metrics. */
+async function createItineraryStep({
+  step,
+  index,
+  fonts,
+  variableByName,
+  stats,
+}) {
+  const current = step.current === true;
+  const row = productSdkFrame(`Step ${index + 1}`, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "AUTO",
+    spacing: 12,
+    width: ITINERARY_WIDTH,
+    height: 23,
+  });
+  const markBox = productSdkFrame("Step Mark", {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    counterAlign: "CENTER",
+    width: 40,
+    height: 20,
+  });
+  const token = current ? ITINERARY_ACCENT : ITINERARY_MUTED;
+  const mark = await productSdkIconInstance({
+    iconName: DIRECTION_STEP_ICONS[step.type] || DIRECTION_STEP_ICONS.Straight,
+    token,
+    size: 16,
+    sizeToken: null,
+    variableByName,
+    stats,
+    owner: "Itinerary",
+  });
+  if (mark) {
+    markBox.appendChild(mark);
+  } else {
+    const glyph = await productSdkText({
+      name: "Step Glyph",
+      characters:
+        DIRECTION_STEP_GLYPHS[step.type] || DIRECTION_STEP_GLYPHS.Straight,
+      styleKey: "itineraryText",
+      fonts,
+      bold: false,
+      fontSize: 15,
+      lineHeight: 20,
+      colorToken: token.name,
+      colorFallback: token.fallback,
+      variableByName,
+      stats,
+    });
+    glyph.textAutoResize = "WIDTH_AND_HEIGHT";
+    markBox.appendChild(glyph);
+  }
+  appendWithSizing(row, markBox, "FIXED", "FIXED");
+
+  const copy = productSdkFrame("Step Copy", {
+    direction: "vertical",
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+    spacing: 2,
+    width: ITINERARY_WIDTH - 52,
+    height: 23,
+  });
+  const instruction = await productSdkText({
+    name: "Instruction Text",
+    characters: step.instruction,
+    styleKey: current ? "itineraryTextStrong" : "itineraryText",
+    fonts,
+    bold: current,
+    fontSize: 15,
+    lineHeight: 22.5,
+    colorToken: current ? ITINERARY_ACCENT.name : ITINERARY_TEXT.name,
+    colorFallback: current
+      ? ITINERARY_ACCENT.fallback
+      : ITINERARY_TEXT.fallback,
+    variableByName,
+    stats,
+    width: ITINERARY_WIDTH - 52,
+    wrap: true,
+  });
+  appendWithSizing(copy, instruction, "FILL", "HUG");
+  if (step.metrics) {
+    const metrics = await productSdkText({
+      name: "Metrics Text",
+      characters: step.metrics,
+      styleKey: "cardDescription",
+      fonts,
+      bold: false,
+      fontSize: 14,
+      lineHeight: 20,
+      colorToken: ITINERARY_MUTED.name,
+      colorFallback: ITINERARY_MUTED.fallback,
+      variableByName,
+      stats,
+      width: ITINERARY_WIDTH - 52,
+      wrap: true,
+    });
+    appendWithSizing(copy, metrics, "FILL", "HUG");
+  }
+  appendWithSizing(row, copy, "FILL", "HUG");
+  return row;
+}
+
+async function updateItineraryVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  productSdkVariantRoot(component, "Itinerary", `Content=${value}`, {
+    spacing: 8,
+    width: ITINERARY_WIDTH,
+    height: 200,
+    primarySizing: "AUTO",
+    counterSizing: "FIXED",
+  });
+  component.fills = [];
+  component.strokes = [];
+  removeDirectChildren(component);
+
+  const common = { fonts, variableByName, stats };
+  appendWithSizing(
+    component,
+    await createItineraryEndpoint(
+      Object.assign(
+        { role: "Origin", caption: "From", name: "Dunkin'", emphasised: false },
+        common,
+      ),
+    ),
+    "FILL",
+    "HUG",
+  );
+  const steps = ITINERARY_STEPS[value] || ITINERARY_STEPS.Default;
+  for (let index = 0; index < steps.length; index += 1) {
+    appendWithSizing(
+      component,
+      await createItineraryStep(
+        Object.assign({ step: steps[index], index }, common),
+      ),
+      "FILL",
+      "HUG",
+    );
+  }
+  appendWithSizing(
+    component,
+    await createItineraryEndpoint(
+      Object.assign(
+        {
+          role: "Destination",
+          caption: "To",
+          name: "Airport Shuttles",
+          emphasised: true,
+        },
+        common,
+      ),
+    ),
+    "FILL",
+    "HUG",
+  );
+}
+
+function configureItineraryProperties(componentSet, stats) {
+  configureNamedTextProperty(
+    componentSet,
+    "Origin Text",
+    "Origin Text",
+    "Dunkin'",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Destination Text",
+    "Destination Text",
+    "Airport Shuttles",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Origin Label",
+    "Origin Label",
+    "From",
+    stats,
+  );
+  configureNamedTextProperty(
+    componentSet,
+    "Destination Label",
+    "Destination Label",
+    "To",
+    stats,
+  );
+}
+
+const ITINERARY_DESCRIPTION = [
+  "Kozmos Itinerary generated from the React Itinerary API.",
+  "Content maps to the story the variant draws: a current step (Default), none (NoCurrentStep), or steps with their metrics (StepMetrics).",
+  "Origin Text and Destination Text map to Itinerary.origin and destination; Origin Label and Destination Label to originLabel and destinationLabel.",
+  "Each step's mark is DirectionStep's, from the Icons page; the current step is semibold in the theme's 600.",
+];
+
+async function buildItineraryComponent() {
+  return buildSingleAxisComponent({
+    componentName: "Itinerary",
+    componentSetName: "Itinerary",
+    axisName: "Content",
+    values: ITINERARY_CONTENT,
+    x: 80,
+    y: 9600,
+    xStep: 380,
+    createVariant: createItineraryVariant,
+    configureProperties: configureItineraryProperties,
+    autoReorganize: true,
+    description: ITINERARY_DESCRIPTION,
+  });
+}
+
+async function updateItineraryComponent() {
+  return updateSingleAxisComponent({
+    componentName: "Itinerary",
+    componentSetName: "Itinerary",
+    axisName: "Content",
+    values: ITINERARY_CONTENT,
+    xStep: 380,
+    createVariant: createItineraryVariant,
+    updateVariant: updateItineraryVariant,
+    parseVariantName: parseItineraryVariantName,
+    configureProperties: configureItineraryProperties,
+    autoReorganize: true,
+    description: ITINERARY_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildItineraryComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "Itinerary",
+    componentSetName: "Itinerary",
+    build: buildItineraryComponent,
   });
 }
 
