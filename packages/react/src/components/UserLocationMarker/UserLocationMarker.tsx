@@ -72,9 +72,10 @@ const UserLocationMarker = React.forwardRef<
 
         {/* The heading cone, as SwiftUI and Compose draw it (Olcay,
             2026-10-05): in the 64 box, from the centre to 15 % and 85 % of
-            the top edge, the top a quadratic curve through 10 % above it,
-            in the marker's blue fading from 40 % at the centre to nothing 32 out.
-            The curve rises past the box, so the svg does not clip. */}
+            the top edge, the top a quadratic curve whose control point is
+            10 % above it, in the marker's blue fading from 40 % at the
+            centre to nothing 32 out. The curve rises 5 % past the box, so
+            the svg does not clip. */}
         {showHeading && !offFloor && !compact && (
           <div
             className="absolute h-16 w-16 pointer-events-none"

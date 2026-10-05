@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-05T22:02:54.947Z",
+  "generatedAt": "2026-10-05T23:05:28.500Z",
   "target": {
-    "fileKey": "Yj4O8p6Y9h2Sa9zJVoAiVY",
+    "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
     "modes": ["Light", "Dark"]
   },
@@ -6577,7 +6577,7 @@
         "ios": "semanticsMapMarkerRing",
         "android": "semanticsMapMarkerRing"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"],
       "values": {
         "light": {
           "kind": "raw",
