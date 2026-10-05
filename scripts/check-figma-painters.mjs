@@ -1835,6 +1835,32 @@ section("Curated Icons");
     !second.warnings.some((warning) => /anew/.test(warning)),
     `and reports nothing drawn anew (${second.warnings.join(" | ")})`,
   );
+  // And every run after it. A kept source is reset to the library's drawing,
+  // and Figma's reset takes the layer's name with it; a run that then looked
+  // for "Pointr Source" by name found none and drew all of them again, so
+  // every second Curated Icons run orphaned every set's tints (2026-10-05).
+  const again = await icons.syncIconSourceLibrary();
+  const afterAgain = sourceIds();
+  ok(
+    again.sourcesKept === total &&
+      again.sourcesReplaced === 0 &&
+      [...afterAgain].every(([name, ids]) => ids && before.get(name) === ids),
+    `a third run keeps every source layer too, id for id (kept ${again.sourcesKept}, drawn again ${again.sourcesReplaced})`,
+  );
+  ok(
+    components()
+      .filter((component) =>
+        definitions.some(
+          (definition) => component.name === `Icon / ${definition.name}`,
+        ),
+      )
+      .every(
+        (component) =>
+          component.children.length === 1 &&
+          component.children[0].name === "Pointr Source",
+      ),
+    "and each Pointr icon's one source is still named Pointr Source",
+  );
 
   // A source that is some other icon's is drawn again, and the run says what
   // that costs.

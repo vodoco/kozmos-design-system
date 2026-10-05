@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "1f964af45aa5";
+const PLUGIN_BUILD = "54e139cf6dbf";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -71985,10 +71985,10 @@ function describeIconSourceComponent(component, definition, index, source) {
  * run does not repaint turns back to the source's black: until 2026-09-22 each
  * Curated Icons → Update did that to every set but the four it repaints.
  */
-async function keepIconSourceLayer(component, name, accepts) {
+async function keepIconSourceLayer(component, name, accepts, anyName) {
   let kept = null;
   for (const child of component.children || []) {
-    if (kept || child.name !== name) continue;
+    if (kept || (child.name !== name && !anyName)) continue;
     if (await accepts(child)) kept = child;
   }
   removeDirectChildrenExcept(component, kept);
@@ -72123,12 +72123,17 @@ async function syncKozmosIconSourceComponent(
     definition.componentKey,
   );
 
+  // Found by what it draws, not by its name: a source an earlier run kept was
+  // reset, and the reset took its name (below), so a file can hold the right
+  // instance as "search-md". Asked for by name alone, every second run found
+  // none, drew all of them again and orphaned every set's tints (2026-10-05).
   let source = await keepIconSourceLayer(
     component,
     "Pointr Source",
     async (node) =>
       node.type === "INSTANCE" &&
       (await mainComponentKey(node)) === sourceComponent.key,
+    true,
   );
   if (source) {
     // As a new instance would be: the library's drawing, no local edits. An
@@ -72138,6 +72143,9 @@ async function syncKozmosIconSourceComponent(
     } catch (_error) {
       // A source with nothing to reset.
     }
+    // Figma's reset takes the layer's name with it ("Pointr Source" reads as
+    // "search-md" again); name it back, which moves no id either.
+    source.name = "Pointr Source";
     stats.sourcesKept += 1;
   } else {
     source = sourceComponent.createInstance();
