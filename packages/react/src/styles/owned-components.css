@@ -100,14 +100,23 @@
     border-radius: 999px;
     background: var(--primitives-colors-background-0);
     color: var(--primitives-colors-foreground-100);
+  }
+  /* The waypoint's edge, as SwiftUI and Compose draw it. Two classes, because
+     the scoped preflight resets every element's border at one class's weight,
+     and a scoped rule wins a tie with an owned one: at one class the edge
+     never drew on the web (found 2026-10-05). */
+  .kozmos-route-track .kozmos-route-track-waypoint {
     border: 1px solid var(--primitives-colors-background-400);
   }
+  /* The stem, from the disc's bottom edge down to the track, 11 tall, as
+     SwiftUI and Compose draw it. It is placed from the disc's padding edge,
+     inside the 1px edge: 23 from there is the disc's bottom, 24. */
   .kozmos-route-track-waypoint::after {
     content: "";
     position: absolute;
-    top: 24px;
+    top: 23px;
     width: 1px;
-    height: 10px;
+    height: 11px;
     background: var(--primitives-colors-background-500);
   }
   /* A single Core footer recipe, not separate SDK button overrides. */
