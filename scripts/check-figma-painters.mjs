@@ -1958,23 +1958,35 @@ section("DirectionStep");
     });
     return { component, stats };
   }
-  for (const [type, iconName] of [
+  // All nineteen types, written out rather than read from the plugin's own
+  // table, so a change to that table alone fails here.
+  const expectedIcons = [
     ["TurnBack", "turn-back"],
     ["Left", "hard-left"],
     ["Right", "hard-right"],
+    ["LiftUp", "elevator-up"],
     ["LiftDown", "elevator-down"],
     ["EscalatorUp", "escalator-up"],
+    ["EscalatorDown", "escalator-down"],
+    ["StairsUp", "stairs-up"],
     ["StairsDown", "stairs-down"],
     ["Destination", "arriving"],
     ["Straight", "arrow-up"],
     ["LevelUp", "arrow-up"],
+    ["LevelDown", "arrow-down"],
     ["Transition", "arrow-right"],
     ["Walking", "follow-the-line"],
     ["Enter", "route-enter"],
     ["Exit", "route-exit"],
     ["RampUp", "ramp-up"],
     ["RampDown", "ramp-down"],
-  ]) {
+  ];
+  ok(
+    JSON.stringify(expectedIcons.map(([type]) => type).sort()) ===
+      JSON.stringify([...(plugin.DIRECTION_STEP_TYPES || [])].sort()),
+    "the check covers every DirectionStep type the plugin draws",
+  );
+  for (const [type, iconName] of expectedIcons) {
     const { component, stats } = await paint(type);
     const badge = named(component, "Direction Icon");
     const icon = badge && badge.findOne((node) => node.type === "INSTANCE");

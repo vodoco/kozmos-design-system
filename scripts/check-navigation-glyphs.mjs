@@ -80,6 +80,34 @@ try {
           paths,
           `${name} ${kind}: physical direction must not mirror in RTL`,
         );
+        // The same drawing can still be mirrored by CSS on the svg or a
+        // box around it (a scale or transform of -1 across), which the
+        // markup comparison cannot see: a mirror is a negative determinant
+        // in what the page applies from the svg up to the document.
+        for (const svg of [row.locator("svg"), rtl.locator("svg")]) {
+          const mirrored = await svg.evaluateAll((nodes) =>
+            nodes.map((node) => {
+              let sign = 1;
+              for (let n = node; n; n = n.parentElement) {
+                const s = getComputedStyle(n);
+                if (s.transform && s.transform !== "none") {
+                  const m = new DOMMatrixReadOnly(s.transform);
+                  if (m.a * m.d - m.b * m.c < 0) sign = -sign;
+                }
+                if (s.scale && s.scale !== "none") {
+                  const [x, y = x] = s.scale.split(" ").map(Number);
+                  if (x * y < 0) sign = -sign;
+                }
+              }
+              return sign < 0;
+            }),
+          );
+          assert.deepEqual(
+            mirrored,
+            mirrored.map(() => false),
+            `${name} ${kind}: physical direction must not be mirrored by CSS`,
+          );
+        }
         for (const [i, size] of [14, 24, 32].entries()) {
           const svg = row.locator("svg").nth(i);
           const box = await svg.boundingBox();

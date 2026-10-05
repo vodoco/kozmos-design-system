@@ -36,6 +36,33 @@ describe("Icon", () => {
 // The map status pill's marks (decision 39): No Bluetooth's outline by its
 // Kozmos name, and Walking improves accuracy's figure, which the icon library
 // does not draw.
+describe("Pointr Maps - Express wayfinding glyphs", () => {
+  // Solid shapes on the 24 grid in the current colour: a stroke width means
+  // nothing to them, so the stroke props every icon takes are accepted and
+  // ignored (createFilledIcon).
+  it("draw filled in the text colour and ignore the stroke props", () => {
+    const { container } = render(
+      <kozmosIcons.ElevatorUp strokeWidth={5} absoluteStrokeWidth />,
+    );
+    const svg = container.querySelector("svg")!;
+    expect(svg.getAttribute("viewBox")).toBe("0 0 24 24");
+    expect(svg.getAttribute("width")).toBe("24");
+    expect(svg.getAttribute("fill")).toBe("currentColor");
+    expect(svg.getAttribute("stroke")).toBeNull();
+    expect(svg.getAttribute("stroke-width")).toBeNull();
+    expect(svg.getAttribute("strokeWidth")).toBeNull();
+    expect(svg.getAttribute("absoluteStrokeWidth")).toBeNull();
+    expect(svg.querySelectorAll("path").length).toBeGreaterThan(0);
+  });
+
+  it("reach Icon through its icon prop, which hides them from assistive technology", () => {
+    const { container } = render(<Icon icon={kozmosIcons.HardLeft} />);
+    const svg = container.querySelector("svg")!;
+    expect(svg).toHaveAttribute("aria-hidden", "true");
+    expect(svg.getAttribute("fill")).toBe("currentColor");
+  });
+});
+
 describe("the map status pill's marks", () => {
   it("names bluetooth-off, and draws it as Pointr's outline", () => {
     expect(kozmosIconNames).toContain("bluetooth-off");
