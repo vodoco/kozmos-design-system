@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.ArrowRightAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -48,9 +47,10 @@ fun KozmosDirectionStep(
 /**
  * The mark for a direction, one table for every part that draws one, as React
  * draws it (2026-10-04). Lifts, escalators, stairs, ramps, entry, exit, the
- * turns, turning back and the destination are Pointr's wayfinding artwork from
- * Pointr Maps - Express, solid shapes filled in the tint; straight on, a level
- * change, transition and walking keep the Material marks main drew. Turn icons
+ * turns, turning back, walking and the destination are Pointr's wayfinding
+ * artwork from Pointr Maps - Express, solid shapes filled in the tint; walking
+ * is its FollowTheLine (Olcay, 2026-10-05). Straight on, a level change and
+ * transition keep the Material marks main drew. Turn icons
  * must NOT auto-mirror: "turn left" stays a physical left turn in RTL locales,
  * and the Express artwork is built with autoMirror = false. Only reading-order
  * affordances (back, forward, chevrons) belong to Icons.AutoMirrored.
@@ -70,7 +70,7 @@ fun DirectionType.icon(): ImageVector = when (this) {
     DirectionType.LevelDown -> Icons.Default.ArrowDownward
     DirectionType.Transition -> Icons.Default.ArrowRightAlt
     DirectionType.TurnBack -> KozmosNavigationGlyphs.TurnBack
-    DirectionType.Walking -> Icons.Default.DirectionsWalk
+    DirectionType.Walking -> KozmosNavigationGlyphs.FollowTheLine
     DirectionType.Enter -> KozmosNavigationGlyphs.RouteEnter
     DirectionType.Exit -> KozmosNavigationGlyphs.RouteExit
     DirectionType.RampUp -> KozmosNavigationGlyphs.RampUp

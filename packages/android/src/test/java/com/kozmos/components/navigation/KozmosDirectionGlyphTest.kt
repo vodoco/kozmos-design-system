@@ -4,7 +4,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowRightAlt
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -21,10 +20,10 @@ import org.junit.Test
 
 /**
  * The direction marks, one table for step, card, itinerary and rail. Lifts,
- * escalators, stairs, ramps, entry, exit, the turns, turning back and the
- * destination draw Pointr's wayfinding artwork from Pointr Maps - Express,
- * filled, as React draws it (2026-10-04). Straight on, a level change,
- * transition and walking keep the marks main drew.
+ * escalators, stairs, ramps, entry, exit, the turns, turning back, walking and
+ * the destination draw Pointr's wayfinding artwork from Pointr Maps - Express,
+ * filled, as React draws it (2026-10-04; walking's FollowTheLine, 2026-10-05).
+ * Straight on, a level change and transition keep the marks main drew.
  * [KozmosDirectionGlyphPixelsTest] reads what they draw.
  */
 class KozmosDirectionGlyphTest {
@@ -44,7 +43,7 @@ class KozmosDirectionGlyphTest {
             DirectionType.LevelDown to Icons.Default.ArrowDownward,
             DirectionType.Transition to Icons.Default.ArrowRightAlt,
             DirectionType.TurnBack to KozmosNavigationGlyphs.TurnBack,
-            DirectionType.Walking to Icons.Default.DirectionsWalk,
+            DirectionType.Walking to KozmosNavigationGlyphs.FollowTheLine,
             DirectionType.Enter to KozmosNavigationGlyphs.RouteEnter,
             DirectionType.Exit to KozmosNavigationGlyphs.RouteExit,
             DirectionType.RampUp to KozmosNavigationGlyphs.RampUp,
@@ -69,8 +68,12 @@ class KozmosDirectionGlyphTest {
             DirectionType.RampUp to "RampUp", DirectionType.RampDown to "RampDown",
             DirectionType.Enter to "RouteEnter", DirectionType.Exit to "RouteExit",
             DirectionType.Left to "HardLeft", DirectionType.Right to "HardRight",
-            DirectionType.TurnBack to "TurnBack", DirectionType.Destination to "Arriving",
+            DirectionType.TurnBack to "TurnBack", DirectionType.Walking to "FollowTheLine",
+            DirectionType.Destination to "Arriving",
         )
+        // Fifteen directions are Express artwork; the other four keep Material's marks.
+        val material = setOf(DirectionType.Straight, DirectionType.LevelUp, DirectionType.LevelDown, DirectionType.Transition)
+        assertEquals("a direction is neither Express nor Material", DirectionType.entries.toSet() - material, express.keys)
         for ((type, name) in express) {
             val vector = type.icon()
             assertEquals("$type is not the Express $name", name, vector.name)

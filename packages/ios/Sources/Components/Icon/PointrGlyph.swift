@@ -53,9 +53,9 @@ struct KozmosPointrGlyph: Shape {
 
     /// The wayfinding artwork's names: the kebab case of the names
     /// `@kozmos-ds/icons` exports it under, which Compose's `KozmosIcon`
-    /// accepts too. The directions draw fourteen of them: the first ten, and
-    /// hard-left, hard-right, turn-back and arriving for the turns, turning
-    /// back and the destination.
+    /// accepts too. The directions draw fifteen of them: the first ten, and
+    /// hard-left, hard-right, turn-back, follow-the-line and arriving for the
+    /// turns, turning back, walking and the destination.
     static let wayfindingKinds: [String: String] = [
         "elevator-up": "lift-up", "elevator-down": "lift-down",
         "stairs-up": "stairs-up", "stairs-down": "stairs-down",
