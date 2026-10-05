@@ -141,6 +141,10 @@ Click **Build Surface QA** after the component audit is green and before closing
 
 Use **Audit Library** after designer edits or component builds. It produces a JSON report in the plugin log with:
 
+- **Itinerary** — `Content` of Default, NoCurrentStep and StepMetrics: a route's
+  From and To captions and the steps between them, each with DirectionStep's mark
+  from the Icons page, the current one semibold in the theme's 600. No surface of
+  its own. Run Curated Icons first.
 - Page counts
 - Top-level page node samples and unexpected top-level nodes on the `Components` page
 - Variable collection summaries

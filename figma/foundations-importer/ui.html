@@ -1184,6 +1184,7 @@
                 <option value="saveLocationCard">SaveLocationCard</option>
                 <option value="userLocationMarker">UserLocationMarker</option>
                 <option value="wayfindingCard">WayfindingCard</option>
+                <option value="itinerary">Itinerary</option>
               </optgroup>
               <optgroup label="Platform / Form-Factor">
                 <option value="dynamicIsland">DynamicIsland</option>
@@ -1717,6 +1718,13 @@
           update: "update-wayfinding-card",
           rebuild: "rebuild-wayfinding-card",
           hint: "Build creates WayfindingCard with Basic and Titled content variants; Titled composes a live IconButton instance for onClose. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        itinerary: {
+          label: "Itinerary",
+          build: "build-itinerary",
+          update: "update-itinerary",
+          rebuild: "rebuild-itinerary",
+          hint: "Build creates Itinerary with Default, NoCurrentStep and StepMetrics content variants: From and To captions, four steps with DirectionStep\'s marks from the Icons page, the current one semibold in the theme\'s colour. No surface of its own. Run Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         link: {
           label: "Link",
