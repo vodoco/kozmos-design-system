@@ -24,17 +24,18 @@ try {
       .getByRole("heading", { name: "RTL", exact: true })
       .locator("..");
     // The defaults every direction draws: turns, turning back, the
-    // destination, lifts, escalators, stairs, ramps, entry and exit in Pointr
-    // Maps - Express's wayfinding artwork (Olcay, 2026-10-04), each its own
+    // destination, walking, lifts, escalators, stairs, ramps, entry and exit
+    // in Pointr Maps - Express's wayfinding artwork (Olcay, 2026-10-04/05), each its own
     // solid shape; the rest of that set below them, by name. Like every
     // physical direction, none mirrors in right to left.
     const set = (column, name) =>
       column.locator(`:scope > [data-glyph-set="${name}"]`);
     assert.equal(await set(ltr, "default").count(), 19);
     assert.equal(await set(rtlColumn, "default").count(), 19);
-    assert.equal(await set(ltr, "by-name").count(), 9);
-    assert.equal(await set(rtlColumn, "by-name").count(), 9);
+    assert.equal(await set(ltr, "by-name").count(), 8);
+    assert.equal(await set(rtlColumn, "by-name").count(), 8);
     const wayfinding = [
+      "walking",
       "left",
       "right",
       "turn-back",
@@ -56,7 +57,6 @@ try {
       "StairsNoDirection",
       "RampNoDirection",
       "RouteEntranceExit",
-      "FollowTheLine",
       "CustomTransition",
       "SecurityControl",
       "Shuttle",
@@ -102,7 +102,7 @@ try {
     await context.close();
   }
   console.log(
-    "Navigation glyph atlas: 19 default directions (14 in Express wayfinding artwork) and 9 more wayfinding icons by name × 3 sizes × LTR/RTL × 2 themes passed",
+    "Navigation glyph atlas: 19 default directions (15 in Express wayfinding artwork) and 8 more wayfinding icons by name × 3 sizes × LTR/RTL × 2 themes passed",
   );
 } finally {
   await browser.close();

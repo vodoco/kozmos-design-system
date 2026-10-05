@@ -104,9 +104,10 @@ convention that avoids variant explosion:
   the search field's form once a category is chosen, 48 tall with a 28 icon, a
   15/20 label, a 22 count pill (`Show Count`) and a 32 clear. Run Curated Icons
   first.
-- **DirectionStep** — `Type` of the fourteen cases: Straight, Left, Right,
+- **DirectionStep** — `Type` of the nineteen cases: Straight, Left, Right,
   Destination, the lift, escalator and stairs up and down, LevelUp, LevelDown,
-  Transition and TurnBack, plus editable instruction, distance, and duration
+  Transition, TurnBack, Walking, Enter, Exit, RampUp and RampDown, plus
+  editable instruction, distance, and duration
   text. Each is a 24 icon from the Icons page: Pointr Maps - Express's solid
   wayfinding glyphs, but for straight on, the level changes and the transition,
   which keep the Pointr arrows; an instance does not mirror, so a left turn
