@@ -178,7 +178,8 @@ Then Update that set in the plugin and verify.
 ### Add a new component
 
 Give it a `build-`, `update-` and `rebuild-` handler, and add its update
-function to `CORE_UPDATE_SEQUENCE`. `pnpm components:contract:check` fails if
+function to `CORE_UPDATE_SEQUENCE` or, for a Product / SDK set,
+`PRODUCT_SDK_UPDATE_SEQUENCE`. `pnpm components:contract:check` fails if
 you forget the sequence entry, because a bulk action that quietly skips a set
 is worse than none: the skipped sets look updated because the run reported
 success.
@@ -237,6 +238,22 @@ occurrences. Scan everything and name only the exceptions; count reach, not
 sites. `tokens:raw:check` exists because every other parity check had this
 shape.
 
+**A text style's own fields belong to the style.** Writing `fontName`,
+`fontSize`, `lineHeight`, `letterSpacing`, `textCase` or `textDecoration` on
+a text after attaching its style, with another value, detaches the style:
+Itinerary set its From and To captions to upper case after attaching
+_Itinerary / Caption_, and the live file read back six captions with no style
+(#206). Put the value in the style spec (`addTextStyleSpec`'s `textDecoration`
+and `textCase`) and never write it on the node afterwards. The harness's
+`createMockTextStyle` detaches as Figma does, so `pnpm figma:painters:check`
+catches it.
+
+**`resetOverrides()` resets an instance's name.** A sync that finds a kept
+layer by name finds nothing on the next run once it has reset that layer's
+overrides, and redraws it. Curated Icons did this to every icon source on
+every second run, which orphaned every set's icon tints (#200). Find a kept
+instance by its main component's key, and name it again after resetting it.
+
 **A quiet file is not a stalled run.** Figma cannot save while the plugin holds
 the thread, so `lastModified` can sit still for forty minutes while a bulk run
 works through the Tree sets. The runner now yields between sets, but the rule
@@ -259,6 +276,7 @@ under a minute apart from the two that call Figma.
 | `pnpm tokens:typography:check`   | Type scale parity                                                        |
 | `pnpm components:contract:check` | Variant axes, props, and the bulk sequences' completeness                |
 | `pnpm figma:plugin:check`        | The plugin's restricted syntax (no spread, `?.` or `??`)                 |
+| `pnpm figma:painters:check`      | What the painters draw, against a Plugin API stand-in, without Figma     |
 | `pnpm native:check`              | Both native packages compile, the way CI's two build jobs do             |
 | `pnpm tokens:radius:nesting`     | **Reads the live Figma file.** Concentric radii; `--strict` in CI        |
 | `pnpm figma:verify`              | **Reads the live Figma file.** Six publishing checks                     |

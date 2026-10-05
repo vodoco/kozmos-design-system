@@ -24,7 +24,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 
 | Lane                   | Components | Web   | Web Tests | Web CCL | iOS   | iOS CCL | Android | Android CCL |
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
-| Core                   | 83         | 83/83 | 83/83     | 72/83   | 75/83 | 72/83   | 76/83   | 72/83       |
+| Core                   | 83         | 83/83 | 83/83     | 73/83   | 75/83 | 73/83   | 76/83   | 73/83       |
 | Code-Only / Utility    | 5          | 5/5   | 5/5       | —       | 5/5   | —       | 5/5     | —           |
 | Product / SDK          | 29         | 29/29 | 29/29     | 22/29   | 28/29 | 22/29   | 28/29   | 22/29       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
@@ -75,7 +75,7 @@ Domain-neutral design-system components expected to reach Figma, Code Connect, a
 | Link                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | List                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Listbox              | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
-| ManoeuvreCard        | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
+| ManoeuvreCard        | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | Menu                 | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | MetaStrip            | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | MultiSelect          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
@@ -189,15 +189,15 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 - Web components: 119/119
 - Web stories: 119/119
 - Web tests: 119/119
-- Web Code Connect files: 96/114
+- Web Code Connect files: 97/114
 - Web Code Connect scaffolds: 0/114
-- Web Code Connect linked: 96/114
+- Web Code Connect linked: 97/114
 - iOS components: 110/119
-- iOS Code Connect files: 96/114
+- iOS Code Connect files: 97/114
 - iOS Code Connect scaffolds: 0/114
-- iOS Code Connect linked: 96/114
+- iOS Code Connect linked: 97/114
 - Android components: 111/119
-- Android Code Connect files: 96/114
+- Android Code Connect files: 97/114
 - Android Code Connect scaffolds: 0/114
-- Android Code Connect linked: 96/114
+- Android Code Connect linked: 97/114
 - Code Connect not applicable: 5/119

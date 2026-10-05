@@ -228,6 +228,13 @@ jobs:
       - name: Verify Documentation Snippets
         run: pnpm docs:snippets:check
 
+      # The icons' Code Connect is generated from the Icons page baseline, the
+      # registry and the wayfinding glyphs. A hand edit on 2026-09-24 cut 58
+      # of its 64 mappings, and no workflow ran this check, so nothing said so
+      # until 2026-10-05.
+      - name: Verify Icon Code Connect Is Generated
+        run: pnpm figma:iconconnect:check
+
       - name: Parse React Code Connect
         run: pnpm figma:parse:linked
 

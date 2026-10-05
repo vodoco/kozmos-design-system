@@ -161,7 +161,10 @@ There is no React Native package: Kozmos is built for React, SwiftUI and Jetpack
 
 ### 5.3 Directional Icons
 
-Icons that point somewhere flip right to left; icons of things (a check, a clock, a phone) do not.
+Icons that point somewhere flip right to left; icons of things (a check, a clock, a phone) do not. A
+physical direction is the exception: a left turn is a left turn in every language, so wayfinding
+marks (DirectionStep's `HardLeft`, `HardRight`, `TurnBack` and the rest) never mirror, on any
+platform.
 With Kozmos's `Icon`, taking the direction the app already knows:
 
 ```tsx
