@@ -14,13 +14,13 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 97 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 98 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 96 Core SwiftUI and 96 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 97 Core SwiftUI and 97 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
@@ -14134,9 +14134,9 @@
       "stories": 119,
       "tests": 119,
       "exported": 119,
-      "codeConnectFiles": 96,
+      "codeConnectFiles": 97,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 96
+      "codeConnectLinked": 97
     },
     "firstBatch": [
       "Accordion",
@@ -14182,6 +14182,7 @@
       "List",
       "Listbox",
       "LocationPin",
+      "ManoeuvreCard",
       "MapControlButton",
       "MapControlsGroup",
       "MapOverlay",
@@ -16251,14 +16252,20 @@
         "test": "packages/react/src/components/ManoeuvreCard/ManoeuvreCard.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/ManoeuvreCard/ManoeuvreCard.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2210-38624",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["ManoeuvreCard"],
+          "mappedProps": [
+            "appearance",
+            "detail",
+            "expanded",
+            "instruction",
+            "type"
+          ],
           "unmappedProps": []
         },
         "props": [
