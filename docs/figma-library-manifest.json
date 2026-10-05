@@ -14,18 +14,18 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 95 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 97 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 95 Core SwiftUI and 95 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 96 Core SwiftUI and 96 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
-      "light": 670,
-      "dark": 670
+      "light": 679,
+      "dark": 679
     },
     "light": [
       {
@@ -2716,6 +2716,61 @@
         "recommendedFigmaScopes": ["CORNER_RADIUS"]
       },
       {
+        "name": "Semantics/Result/selected surface",
+        "type": "color",
+        "value": "#F9FAFB",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Result/hover surface",
+        "type": "color",
+        "value": "#EEEFF0",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Map attribution/text",
+        "type": "color",
+        "value": "#464A53",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Map attribution/halo",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Map attribution/halo width",
+        "type": "dimension",
+        "value": "0.0625rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["WIDTH_HEIGHT"]
+      },
+      {
         "name": "Semantics/Surface/0",
         "type": "color",
         "value": "#FFFFFF",
@@ -2928,7 +2983,7 @@
       {
         "name": "Semantics/Emotion/success/text",
         "type": "color",
-        "value": "{Primitives.Colors.emotional.success.800}",
+        "value": "{Primitives.Colors.emotional.success.900}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -2964,7 +3019,7 @@
       {
         "name": "Semantics/Emotion/danger/text",
         "type": "color",
-        "value": "{Primitives.Colors.emotional.danger.600}",
+        "value": "{Primitives.Colors.emotional.danger.700}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -3000,7 +3055,31 @@
       {
         "name": "Semantics/Emotion/alert/text",
         "type": "color",
-        "value": "{Primitives.Colors.emotional.alert.800}",
+        "value": "{Primitives.Colors.emotional.alert.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Emotion/alert/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.600}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Emotion/alert/onFill",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -3036,7 +3115,7 @@
       {
         "name": "Semantics/Emotion/informative/text",
         "type": "color",
-        "value": "{Primitives.Colors.emotional.info.700}",
+        "value": "{Primitives.Colors.emotional.info.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -3063,6 +3142,13 @@
         "name": "Semantics/Elevation/Overlay",
         "type": "shadow",
         "value": "{shadow.lg}",
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Elevation/Map Control",
+        "type": "shadow",
+        "value": "{shadow.xl}",
         "scopes": [],
         "recommendedFigmaScopes": []
       },
@@ -6982,6 +7068,13 @@
         "value": "0 8px 16px rgba(0,0,0,0.1)",
         "scopes": [],
         "recommendedFigmaScopes": []
+      },
+      {
+        "name": "shadow/xl",
+        "type": "shadow",
+        "value": "0 8px 8px rgba(0,0,0,0.16), 0 24px 24px rgba(0,0,0,0.08), 0 0 32px rgba(0,0,0,0.12)",
+        "scopes": [],
+        "recommendedFigmaScopes": []
       }
     ],
     "dark": [
@@ -9673,6 +9766,61 @@
         "recommendedFigmaScopes": ["CORNER_RADIUS"]
       },
       {
+        "name": "Semantics/Result/selected surface",
+        "type": "color",
+        "value": "#14161A",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Result/hover surface",
+        "type": "color",
+        "value": "#202329",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Map attribution/text",
+        "type": "color",
+        "value": "#464A53",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Map attribution/halo",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Map attribution/halo width",
+        "type": "dimension",
+        "value": "0.0625rem",
+        "scopes": [],
+        "recommendedFigmaScopes": ["WIDTH_HEIGHT"]
+      },
+      {
         "name": "Semantics/Surface/0",
         "type": "color",
         "value": "#000000",
@@ -9885,7 +10033,7 @@
       {
         "name": "Semantics/Emotion/success/text",
         "type": "color",
-        "value": "{Primitives.Colors.emotional.success.800}",
+        "value": "{Primitives.Colors.emotional.success.900}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -9921,7 +10069,7 @@
       {
         "name": "Semantics/Emotion/danger/text",
         "type": "color",
-        "value": "{Primitives.Colors.emotional.danger.600}",
+        "value": "{Primitives.Colors.emotional.danger.700}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -9957,7 +10105,31 @@
       {
         "name": "Semantics/Emotion/alert/text",
         "type": "color",
-        "value": "{Primitives.Colors.emotional.alert.800}",
+        "value": "{Primitives.Colors.emotional.alert.900}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Emotion/alert/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.emotional.alert.600}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Emotion/alert/onFill",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.1000}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -9993,7 +10165,7 @@
       {
         "name": "Semantics/Emotion/informative/text",
         "type": "color",
-        "value": "{Primitives.Colors.emotional.info.700}",
+        "value": "{Primitives.Colors.emotional.info.800}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -10020,6 +10192,13 @@
         "name": "Semantics/Elevation/Overlay",
         "type": "shadow",
         "value": "{shadow.lg}",
+        "scopes": [],
+        "recommendedFigmaScopes": []
+      },
+      {
+        "name": "Semantics/Elevation/Map Control",
+        "type": "shadow",
+        "value": "{shadow.xl}",
         "scopes": [],
         "recommendedFigmaScopes": []
       },
@@ -13939,18 +14118,25 @@
         "value": "0 8px 16px rgba(0,0,0,0.5)",
         "scopes": [],
         "recommendedFigmaScopes": []
+      },
+      {
+        "name": "shadow/xl",
+        "type": "shadow",
+        "value": "0 8px 8px rgba(0,0,0,0.4), 0 24px 24px rgba(0,0,0,0.2), 0 0 32px rgba(0,0,0,0.3)",
+        "scopes": [],
+        "recommendedFigmaScopes": []
       }
     ]
   },
   "components": {
     "summary": {
-      "total": 104,
-      "stories": 104,
-      "tests": 104,
-      "exported": 104,
-      "codeConnectFiles": 95,
+      "total": 119,
+      "stories": 119,
+      "tests": 119,
+      "exported": 119,
+      "codeConnectFiles": 96,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 95
+      "codeConnectLinked": 96
     },
     "firstBatch": [
       "Accordion",
@@ -13991,6 +14177,7 @@
       "Icon",
       "IconButton",
       "Input",
+      "Itinerary",
       "Link",
       "List",
       "Listbox",
@@ -14080,6 +14267,35 @@
         "variants": {}
       },
       {
+        "name": "ActionCard",
+        "source": "packages/react/src/components/ActionCard/ActionCard.tsx",
+        "story": "packages/react/src/components/ActionCard/ActionCard.stories.tsx",
+        "test": "packages/react/src/components/ActionCard/ActionCard.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "role",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
+      },
+      {
         "name": "AdaptiveMapShell",
         "source": "packages/react/src/components/AdaptiveMapShell/AdaptiveMapShell.tsx",
         "story": "packages/react/src/components/AdaptiveMapShell/AdaptiveMapShell.stories.tsx",
@@ -14108,10 +14324,18 @@
           "aria-describedby",
           "aria-invalid",
           "aria-label",
+          "attribution",
+          "bottomControlsLabel",
+          "bottomControlsPadCamera",
           "children",
           "collisionInsets",
           "controls",
+          "controlsBottomEnd",
+          "controlsBottomStart",
+          "controlsLabel",
+          "controlsPadCamera",
           "defaultPanelDetent",
+          "deviceSafeAreaInsets",
           "id",
           "map",
           "mapLabel",
@@ -14121,6 +14345,8 @@
           "panelDetent",
           "panelDetents",
           "panelFraction",
+          "panelHandleLabel",
+          "panelHeader",
           "panelLabel",
           "panelPlacement",
           "panelPresentation",
@@ -14132,6 +14358,145 @@
           "title",
           "topBar",
           "usableRegions"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "AICompanionPanel",
+        "source": "packages/react/src/components/AICompanionPanel/AICompanionPanel.tsx",
+        "story": "packages/react/src/components/AICompanionPanel/AICompanionPanel.stories.tsx",
+        "test": "packages/react/src/components/AICompanionPanel/AICompanionPanel.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "ariaLabel",
+          "ariaLabelledBy",
+          "banner",
+          "children",
+          "closeLabel",
+          "id",
+          "open",
+          "openProp",
+          "role",
+          "tabIndex",
+          "title",
+          "titleLevel"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "AIInputBar",
+        "source": "packages/react/src/components/AIInputBar/AIInputBar.tsx",
+        "story": "packages/react/src/components/AIInputBar/AIInputBar.stories.tsx",
+        "test": "packages/react/src/components/AIInputBar/AIInputBar.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "disabled",
+          "inputLabel",
+          "inputRef",
+          "placeholder",
+          "sendLabel",
+          "trailing",
+          "value",
+          "voiceConnectingLabel",
+          "voiceEndedLabel",
+          "voiceEndLabel",
+          "voiceErrorLabel",
+          "voiceListeningLabel",
+          "voiceSpeakingLabel",
+          "voiceStartLabel",
+          "voiceState",
+          "voiceUnavailableLabel"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "AIMessage",
+        "source": "packages/react/src/components/AIMessage/AIMessage.tsx",
+        "story": "packages/react/src/components/AIMessage/AIMessage.stories.tsx",
+        "test": "packages/react/src/components/AIMessage/AIMessage.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "actionCard",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "role",
+          "speakerLabel",
+          "status",
+          "streamingLabel",
+          "tabIndex",
+          "timedOutLabel",
+          "title",
+          "trailing"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "AIMessageList",
+        "source": "packages/react/src/components/AIMessageList/AIMessageList.tsx",
+        "story": "packages/react/src/components/AIMessageList/AIMessageList.stories.tsx",
+        "test": "packages/react/src/components/AIMessageList/AIMessageList.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "followLatest",
+          "id",
+          "label",
+          "role",
+          "tabIndex",
+          "title"
         ],
         "variants": {}
       },
@@ -14191,6 +14556,7 @@
           "aria-label",
           "children",
           "id",
+          "live",
           "role",
           "tabIndex",
           "title",
@@ -14199,6 +14565,47 @@
         "variants": {
           "variant": ["default", "destructive", "info", "success", "warning"]
         }
+      },
+      {
+        "name": "ArrivalPanel",
+        "source": "packages/react/src/components/ArrivalPanel/ArrivalPanel.tsx",
+        "story": "packages/react/src/components/ArrivalPanel/ArrivalPanel.stories.tsx",
+        "test": "packages/react/src/components/ArrivalPanel/ArrivalPanel.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "actualDistanceText",
+          "actualDurationText",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "destination",
+          "destinationImage",
+          "distanceLabel",
+          "doneLabel",
+          "durationLabel",
+          "id",
+          "locationText",
+          "message",
+          "pending",
+          "presentation",
+          "role",
+          "surface",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
       },
       {
         "name": "Avatar",
@@ -14539,6 +14946,7 @@
           "aria-label",
           "children",
           "id",
+          "padding",
           "role",
           "tabIndex",
           "title"
@@ -14574,9 +14982,11 @@
           "id",
           "label",
           "role",
+          "rowClassName",
           "tabIndex",
           "tint",
-          "title"
+          "title",
+          "trailing"
         ],
         "variants": {}
       },
@@ -14685,6 +15095,7 @@
           "size",
           "tabIndex",
           "title",
+          "value",
           "variant"
         ],
         "variants": {
@@ -14796,6 +15207,8 @@
           "callerInvalid",
           "children",
           "clearable",
+          "clearLabel",
+          "closeLabel",
           "defaultInputValue",
           "defaultValue",
           "disabled",
@@ -14804,11 +15217,15 @@
           "filterOption",
           "helperText",
           "id",
+          "includeValueInAnalytics",
           "inputValue",
           "label",
           "name",
+          "openLabel",
           "options",
           "placeholder",
+          "popupActions",
+          "popupLayout",
           "readOnly",
           "required",
           "role",
@@ -14837,7 +15254,7 @@
           "mappedProps": ["centered"],
           "unmappedProps": []
         },
-        "props": ["asChild", "centered", "children", "id"],
+        "props": ["asChild", "centered", "children", "id", "inset"],
         "variants": {}
       },
       {
@@ -15013,6 +15430,7 @@
           "aria-invalid",
           "aria-label",
           "children",
+          "closeLabel",
           "defaultOpen",
           "forceMount",
           "id",
@@ -15154,6 +15572,7 @@
           "icon",
           "id",
           "role",
+          "size",
           "tabIndex",
           "title"
         ],
@@ -15186,14 +15605,20 @@
           "aria-invalid",
           "aria-label",
           "children",
+          "commentPlaceholder",
+          "count",
           "description",
           "id",
           "isSubmitting",
           "role",
+          "submitLabel",
+          "submittingLabel",
           "successMessage",
           "surface",
           "tabIndex",
-          "title"
+          "title",
+          "titleLevel",
+          "variant"
         ],
         "variants": {}
       },
@@ -15226,6 +15651,8 @@
           "aria-invalid",
           "aria-label",
           "children",
+          "count",
+          "countId",
           "description",
           "descriptionId",
           "error",
@@ -15373,10 +15800,16 @@
           "floors",
           "id",
           "label",
+          "nextFloorLabel",
+          "previousFloorLabel",
+          "resultCountLabel",
           "role",
           "selectedFloor",
+          "showResultCounts",
           "tabIndex",
           "title",
+          "userFloor",
+          "userFloorLabel",
           "variant"
         ],
         "variants": {}
@@ -15544,6 +15977,7 @@
           "callerDescribedBy",
           "callerInvalid",
           "children",
+          "count",
           "defaultValue",
           "disabled",
           "error",
@@ -15571,14 +16005,20 @@
         "test": "packages/react/src/components/Itinerary/Itinerary.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/Itinerary/Itinerary.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2201-9608",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["Itinerary"],
+          "mappedProps": [
+            "destination",
+            "destinationLabel",
+            "origin",
+            "originLabel",
+            "steps"
+          ],
           "unmappedProps": []
         },
         "props": [
@@ -15625,6 +16065,37 @@
           "role",
           "tabIndex",
           "title"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "LanguageSwitcher",
+        "source": "packages/react/src/components/LanguageSwitcher/LanguageSwitcher.tsx",
+        "story": "packages/react/src/components/LanguageSwitcher/LanguageSwitcher.stories.tsx",
+        "test": "packages/react/src/components/LanguageSwitcher/LanguageSwitcher.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "dir",
+          "disabled",
+          "error",
+          "label",
+          "languages",
+          "pending",
+          "pendingLabel",
+          "placeholder",
+          "retryLabel",
+          "selectedLocale"
         ],
         "variants": {}
       },
@@ -15791,6 +16262,8 @@
           "unmappedProps": []
         },
         "props": [
+          "appearance",
+          "appearanceProp",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
@@ -15801,13 +16274,50 @@
           "expandLabel",
           "id",
           "instruction",
+          "instructionLines",
+          "itineraryLabel",
           "manoeuvreLabel",
           "maxItineraryHeight",
           "role",
           "surface",
+          "surfaceProp",
           "tabIndex",
           "title",
           "type"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "MapAttribution",
+        "source": "packages/react/src/components/MapAttribution/MapAttribution.tsx",
+        "story": "packages/react/src/components/MapAttribution/MapAttribution.stories.tsx",
+        "test": "packages/react/src/components/MapAttribution/MapAttribution.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "appearance",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "brand",
+          "children",
+          "credits",
+          "id",
+          "label",
+          "role",
+          "showBrand",
+          "tabIndex",
+          "title"
         ],
         "variants": {}
       },
@@ -15844,6 +16354,8 @@
           "revealDelay",
           "revealDuration",
           "revealOnChange",
+          "showLabel",
+          "stateDescription",
           "stateLabel",
           "type",
           "variant"
@@ -15879,15 +16391,65 @@
           "aria-label",
           "children",
           "compassBearing",
+          "compassResetLabel",
           "id",
           "label",
+          "locationHeadingDescription",
+          "locationHeadingPausedDescription",
+          "locationIcons",
           "locationLabel",
+          "locationLabelPlacement",
           "locationPresentation",
+          "locationRevealOnChange",
           "locationState",
           "locationStateLabel",
           "role",
+          "stepFree",
+          "stepFreeIcon",
+          "stepFreeLabel",
+          "stepFreeOffLabel",
+          "stepFreeOnLabel",
           "tabIndex",
-          "title"
+          "title",
+          "zoomInLabel",
+          "zoomOutLabel"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "MapInfoPanel",
+        "source": "packages/react/src/components/MapInfoPanel/MapInfoPanel.tsx",
+        "story": "packages/react/src/components/MapInfoPanel/MapInfoPanel.stories.tsx",
+        "test": "packages/react/src/components/MapInfoPanel/MapInfoPanel.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "brand",
+          "children",
+          "closeButtonRef",
+          "closeLabel",
+          "content",
+          "copyrightLabel",
+          "expandedFAQ",
+          "faqLabel",
+          "id",
+          "role",
+          "tabIndex",
+          "title",
+          "titleId"
         ],
         "variants": {}
       },
@@ -15924,6 +16486,38 @@
         "variants": {}
       },
       {
+        "name": "MapStatusPill",
+        "source": "packages/react/src/components/MapStatusPill/MapStatusPill.tsx",
+        "story": "packages/react/src/components/MapStatusPill/MapStatusPill.stories.tsx",
+        "test": "packages/react/src/components/MapStatusPill/MapStatusPill.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "icon",
+          "id",
+          "live",
+          "role",
+          "tabIndex",
+          "title",
+          "tone"
+        ],
+        "variants": {}
+      },
+      {
         "name": "MapView",
         "source": "packages/react/src/components/MapView/MapView.tsx",
         "story": "packages/react/src/components/MapView/MapView.stories.tsx",
@@ -15949,7 +16543,8 @@
           "mapLabel",
           "role",
           "tabIndex",
-          "title"
+          "title",
+          "variant"
         ],
         "variants": {}
       },
@@ -16192,6 +16787,44 @@
           "tabIndex",
           "title",
           "trailing"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "Notice",
+        "source": "packages/react/src/components/Notice/Notice.tsx",
+        "story": "packages/react/src/components/Notice/Notice.stories.tsx",
+        "test": "packages/react/src/components/Notice/Notice.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "action",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "collapsible",
+          "defaultExpanded",
+          "expanded",
+          "expandLabel",
+          "icon",
+          "id",
+          "live",
+          "role",
+          "summary",
+          "tabIndex",
+          "title",
+          "tone"
         ],
         "variants": {}
       },
@@ -16533,6 +17166,8 @@
           "unmappedProps": []
         },
         "props": [
+          "actionsLabel",
+          "appearance",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
@@ -16540,12 +17175,61 @@
           "currentFloorId",
           "featuredLabel",
           "id",
+          "idPrefix",
+          "languageNotListedLabel",
+          "numbered",
           "poi",
+          "presentationStyle",
           "result",
           "role",
           "selectionLabel",
           "tabIndex",
-          "title"
+          "title",
+          "travelTimeBandLabels"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "POIResultGroup",
+        "source": "packages/react/src/components/POIResultGroup/POIResultGroup.tsx",
+        "story": "packages/react/src/components/POIResultGroup/POIResultGroup.stories.tsx",
+        "test": "packages/react/src/components/POIResultGroup/POIResultGroup.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "actionsLabel",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "collapsedCount",
+          "currentFloorId",
+          "defaultExpanded",
+          "expanded",
+          "featuredLabel",
+          "hideLabel",
+          "id",
+          "idPrefix",
+          "items",
+          "label",
+          "languageNotListedLabel",
+          "numbered",
+          "presentationStyle",
+          "role",
+          "showMoreLabel",
+          "tabIndex",
+          "title",
+          "travelTimeBandLabels"
         ],
         "variants": {}
       },
@@ -16573,6 +17257,7 @@
           "unmappedProps": []
         },
         "props": [
+          "actionsLabel",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
@@ -16580,14 +17265,23 @@
           "currentFloorId",
           "emptyState",
           "featuredLabel",
+          "header",
+          "hideLabel",
           "id",
+          "idPrefix",
           "items",
           "label",
+          "languageNotListedLabel",
+          "numbered",
+          "presentationStyle",
           "resultCountLabel",
           "role",
+          "scrollSelectedIntoView",
           "selectedPoiId",
+          "showMoreLabel",
           "tabIndex",
-          "title"
+          "title",
+          "travelTimeBandLabels"
         ],
         "variants": {}
       },
@@ -16712,14 +17406,67 @@
           "aria-describedby",
           "aria-invalid",
           "aria-label",
+          "callerMax",
           "children",
           "id",
+          "itemLabel",
+          "label",
           "max",
           "readOnly",
           "role",
           "tabIndex",
           "title",
-          "value"
+          "value",
+          "valueLabel",
+          "variant"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "RouteLocationField",
+        "source": "packages/react/src/components/RouteLocationField/RouteLocationField.tsx",
+        "story": "packages/react/src/components/RouteLocationField/RouteLocationField.stories.tsx",
+        "test": "packages/react/src/components/RouteLocationField/RouteLocationField.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "cancelEditLabel",
+          "changeLabel",
+          "children",
+          "clearLabel",
+          "clearSearchLabel",
+          "closeLabel",
+          "currentPosition",
+          "currentPositionLabel",
+          "disabled",
+          "emptyText",
+          "filterMode",
+          "id",
+          "label",
+          "location",
+          "mapLabel",
+          "openLabel",
+          "options",
+          "placeholder",
+          "query",
+          "role",
+          "status",
+          "statusText",
+          "tabIndex",
+          "title"
         ],
         "variants": {}
       },
@@ -16746,6 +17493,7 @@
           "aria-label",
           "autoFocus",
           "children",
+          "describedBy",
           "disabled",
           "disabledProp",
           "icon",
@@ -16822,17 +17570,61 @@
           "unmappedProps": []
         },
         "props": [
+          "activeLeg",
+          "activeWaypointId",
+          "appearance",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
           "children",
           "id",
           "label",
+          "motion",
+          "positionMode",
           "progress",
           "role",
+          "showCompletedTrack",
           "tabIndex",
           "title",
-          "type"
+          "type",
+          "valueText",
+          "waypoints"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "RouteSetupPanel",
+        "source": "packages/react/src/components/RouteSetupPanel/RouteSetupPanel.tsx",
+        "story": "packages/react/src/components/RouteSetupPanel/RouteSetupPanel.stories.tsx",
+        "test": "packages/react/src/components/RouteSetupPanel/RouteSetupPanel.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "closeLabel",
+          "continueLabel",
+          "description",
+          "id",
+          "pending",
+          "presentation",
+          "ready",
+          "role",
+          "surface",
+          "tabIndex",
+          "title"
         ],
         "variants": {}
       },
@@ -16865,12 +17657,14 @@
           "arrivalText",
           "children",
           "destination",
+          "destinationImage",
           "distanceText",
           "durationText",
           "endLabel",
           "endRouteLabel",
           "etaText",
           "id",
+          "presentation",
           "progress",
           "role",
           "startNavigationLabel",
@@ -16900,14 +17694,17 @@
           "unmappedProps": []
         },
         "props": [
+          "addPointLabel",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
           "children",
           "id",
           "points",
+          "removePointLabel",
           "role",
           "surface",
+          "swapLabel",
           "tabIndex",
           "title"
         ],
@@ -17049,6 +17846,7 @@
           "ariaLabel",
           "autoFocus",
           "children",
+          "clearLabel",
           "containerClassName",
           "defaultValue",
           "disabled",
@@ -17058,8 +17856,10 @@
           "readOnly",
           "required",
           "role",
+          "rowClassName",
           "tabIndex",
           "title",
+          "trailing",
           "type",
           "value",
           "variant"
@@ -17239,10 +18039,13 @@
           "aria-invalid",
           "aria-label",
           "children",
+          "height",
           "id",
           "role",
+          "shape",
           "tabIndex",
-          "title"
+          "title",
+          "width"
         ],
         "variants": {}
       },
@@ -17324,6 +18127,7 @@
           "aria-label",
           "children",
           "id",
+          "label",
           "role",
           "size",
           "tabIndex",
@@ -17621,7 +18425,7 @@
           "weight"
         ],
         "variants": {
-          "align": ["center", "justify", "left", "right"],
+          "align": ["center", "end", "justify", "left", "right", "start"],
           "color": ["default", "destructive", "muted", "primary", "white"],
           "size": ["2xl", "3xl", "4xl", "base", "lg", "sm", "xl", "xs"],
           "truncate": ["true"],
@@ -17660,6 +18464,7 @@
           "callerDescribedBy",
           "callerInvalid",
           "children",
+          "count",
           "defaultValue",
           "disabled",
           "error",
@@ -17953,10 +18758,44 @@
           "aria-invalid",
           "aria-label",
           "children",
+          "compact",
           "heading",
           "id",
+          "label",
+          "offFloor",
+          "offFloorLabel",
           "role",
           "showHeading",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
+      },
+      {
+        "name": "UserMessage",
+        "source": "packages/react/src/components/UserMessage/UserMessage.tsx",
+        "story": "packages/react/src/components/UserMessage/UserMessage.stories.tsx",
+        "test": "packages/react/src/components/UserMessage/UserMessage.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "id",
+          "role",
+          "speakerLabel",
           "tabIndex",
           "title"
         ],
