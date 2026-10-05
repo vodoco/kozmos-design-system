@@ -2348,6 +2348,115 @@ section("Text styles stay attached");
   }
 }
 
+// --- UserLocationMarker ----------------------------------------------------------
+
+// The marker as SwiftUI and Compose draw it, which React follows (Olcay,
+// 2026-10-05): halo 64 at 14 %, pulse 48 at 30 %, native's cone with its
+// radial fade, the 18 dot with a 3 white ring inside, no shadow, in the
+// marker's fixed blue. The painter drew theme/100 and theme/500, a solid
+// wedge and a 20 dot until then.
+section("UserLocationMarker");
+{
+  const tokens = payloadVariables([
+    ...variableByName.keys(),
+    "Map marker/dot",
+    "Map marker/ring",
+  ]);
+  const fill = (node) => node && node.fills && node.fills[0];
+  const token = (node) => boundVariableName(fill(node));
+  const near = (a, b, e = 0.01) => Math.abs(a - b) < e;
+  for (const value of plugin.USER_LOCATION_MARKER_HEADINGS || []) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateUserLocationMarkerVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    const halo = named(component, "Accuracy Halo");
+    const pulse = named(component, "Pulse");
+    const dot = named(component, "Location Dot");
+    ok(
+      component.width === 64 &&
+        component.height === 64 &&
+        halo &&
+        halo.type === "ELLIPSE" &&
+        halo.width === 64 &&
+        token(halo) === "Map marker/dot" &&
+        near(halo.opacity, 0.14) &&
+        pulse &&
+        pulse.width === 48 &&
+        pulse.x === 8 &&
+        pulse.y === 8 &&
+        token(pulse) === "Map marker/dot" &&
+        near(pulse.opacity, 0.3),
+      `${value}: the 64 halo at 14 % and the 48 pulse at 30 %, in the marker's blue (${token(halo)} ${halo && halo.opacity}; ${token(pulse)} ${pulse && pulse.opacity})`,
+    );
+    ok(
+      dot &&
+        dot.width === 18 &&
+        dot.x === 23 &&
+        dot.y === 23 &&
+        token(dot) === "Map marker/dot" &&
+        boundVariableName(dot.strokes[0]) === "Map marker/ring" &&
+        dot.strokeWeight === 3 &&
+        dot.strokeAlign === "INSIDE" &&
+        (dot.effects || []).length === 0,
+      `${value}: the 18 dot in the marker's blue, its 3 white ring inside, no shadow`,
+    );
+    const cone = named(component, "Heading Cone");
+    if (value === "Hidden") {
+      ok(!cone, "Hidden: no cone");
+    } else {
+      const wedge = cone && named(cone, "Cone");
+      const paint = fill(wedge);
+      // Where the gradient's unit space puts a point of the 64 frame.
+      const toGradient = (fx, fy) => {
+        const t = paint.gradientTransform;
+        const nx = (fx - wedge.x) / wedge.width;
+        const ny = (fy - wedge.y) / wedge.height;
+        return [
+          t[0][0] * nx + t[0][1] * ny + t[0][2],
+          t[1][0] * nx + t[1][1] * ny + t[1][2],
+        ];
+      };
+      const centre = paint && toGradient(32, 32);
+      const right = paint && toGradient(64, 32);
+      const up = paint && toGradient(32, 0);
+      ok(
+        cone &&
+          cone.width === 64 &&
+          near(cone.opacity, 0.4) &&
+          cone.clipsContent === false &&
+          wedge &&
+          wedge.path === "M32 32 L9.6 0 Q32 -6.4 54.4 0 Z" &&
+          near(wedge.x, 9.6) &&
+          near(wedge.y, -3.2) &&
+          paint.type === "GRADIENT_RADIAL" &&
+          boundVariableName(paint.gradientStops[0]) === "Map marker/dot" &&
+          paint.gradientStops[1].color.a === 0 &&
+          !paint.gradientStops[1].boundVariables,
+        `Visible: native's cone at 40 %, unclipped, its fade from the marker's blue to transparent (${wedge && [wedge.x, wedge.y, wedge.width, wedge.height]})`,
+      );
+      ok(
+        paint &&
+          near(centre[0], 0.5) &&
+          near(centre[1], 0.5) &&
+          near(right[0], 1) &&
+          near(right[1], 0.5) &&
+          near(up[0], 0.5) &&
+          near(up[1], 0),
+        `Visible: the fade is centred on the marker's centre with radius 32 (centre ${centre}, 32 right ${right}, 32 up ${up})`,
+      );
+    }
+    ok(
+      stats.warnings.length === 0,
+      `${value}: no warnings (${stats.warnings.join(" | ")})`,
+    );
+  }
+}
+
 // --- AISearchButton --------------------------------------------------------------
 
 section("AISearchButton");

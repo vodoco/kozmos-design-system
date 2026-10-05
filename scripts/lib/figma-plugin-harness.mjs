@@ -280,6 +280,119 @@ function defineTextStyleFields(node) {
   }
 }
 
+/**
+ * The bounds of an SVG path written in absolute M, L, H, V, Q, C and Z
+ * commands, with each curve's extremes, or null for anything else (relative
+ * commands, arcs), which the caller then treats as filling its frame.
+ */
+export function svgPathBounds(d) {
+  if (!d || /[a-y]/.test(d.replace(/e[-+]?\d/gi, ""))) return null;
+  const tokens = d.match(/[MLHVQCZ]|-?\d*\.?\d+(?:e[-+]?\d+)?/gi) || [];
+  let i = 0;
+  let command = null;
+  let x = 0;
+  let y = 0;
+  const xs = [];
+  const ys = [];
+  const add = (px, py) => {
+    xs.push(px);
+    ys.push(py);
+  };
+  const num = () => Number(tokens[i++]);
+  // Points along a quadratic or cubic where the derivative is zero, per axis.
+  const quadExtremes = (p0, p1, p2) => {
+    const den = p0 - 2 * p1 + p2;
+    if (den === 0) return [];
+    const t = (p0 - p1) / den;
+    return t > 0 && t < 1 ? [t] : [];
+  };
+  const cubicExtremes = (p0, p1, p2, p3) => {
+    const a = -p0 + 3 * p1 - 3 * p2 + p3;
+    const b = 2 * (p0 - 2 * p1 + p2);
+    const c = p1 - p0;
+    const roots = [];
+    if (Math.abs(a) < 1e-12) {
+      if (Math.abs(b) > 1e-12) roots.push(-c / b);
+    } else {
+      const disc = b * b - 4 * a * c;
+      if (disc >= 0) {
+        roots.push(
+          (-b + Math.sqrt(disc)) / (2 * a),
+          (-b - Math.sqrt(disc)) / (2 * a),
+        );
+      }
+    }
+    return roots.filter((t) => t > 0 && t < 1);
+  };
+  while (i < tokens.length) {
+    if (/^[MLHVQCZ]$/i.test(tokens[i])) command = tokens[i++].toUpperCase();
+    if (command === "Z") continue;
+    if (command === "M" || command === "L") {
+      x = num();
+      y = num();
+      add(x, y);
+      if (command === "M") command = "L";
+    } else if (command === "H") {
+      x = num();
+      add(x, y);
+    } else if (command === "V") {
+      y = num();
+      add(x, y);
+    } else if (command === "Q") {
+      const [x1, y1, x2, y2] = [num(), num(), num(), num()];
+      for (const t of quadExtremes(x, x1, x2)) {
+        add(
+          (1 - t) ** 2 * x + 2 * (1 - t) * t * x1 + t * t * x2,
+          (1 - t) ** 2 * y + 2 * (1 - t) * t * y1 + t * t * y2,
+        );
+      }
+      for (const t of quadExtremes(y, y1, y2)) {
+        add(
+          (1 - t) ** 2 * x + 2 * (1 - t) * t * x1 + t * t * x2,
+          (1 - t) ** 2 * y + 2 * (1 - t) * t * y1 + t * t * y2,
+        );
+      }
+      x = x2;
+      y = y2;
+      add(x, y);
+    } else if (command === "C") {
+      const [x1, y1, x2, y2, x3, y3] = [
+        num(),
+        num(),
+        num(),
+        num(),
+        num(),
+        num(),
+      ];
+      const at = (t, p0, p1, p2, p3) =>
+        (1 - t) ** 3 * p0 +
+        3 * (1 - t) ** 2 * t * p1 +
+        3 * (1 - t) * t * t * p2 +
+        t ** 3 * p3;
+      for (const t of [
+        ...cubicExtremes(x, x1, x2, x3),
+        ...cubicExtremes(y, y1, y2, y3),
+      ]) {
+        add(at(t, x, x1, x2, x3), at(t, y, y1, y2, y3));
+      }
+      x = x3;
+      y = y3;
+      add(x, y);
+    } else {
+      return null;
+    }
+  }
+  if (!xs.length) return null;
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  return {
+    x: minX,
+    y: minY,
+    width: Math.max(...xs) - minX,
+    height: Math.max(...ys) - minY,
+  };
+}
+
 // Every node by id, as the document resolves an id: a painter's component
 // need not sit on a page for an instance swap to find it.
 const nodesById = new Map();
@@ -860,7 +973,17 @@ export function createFigmaMock({ pages, library, collections = [] }) {
           return found ? found[1] : null;
         };
         const vector = new MockNode("VECTOR", "Vector");
-        vector.resize(frame.width, frame.height);
+        // Figma sizes an imported path's vector to the path's own bounds, curve
+        // extremes included, and places it there in the frame; a path this
+        // reader cannot bound fills the frame, as before.
+        const bounds = svgPathBounds(attribute("d"));
+        if (bounds) {
+          vector.resize(bounds.width, bounds.height);
+          vector.x = bounds.x;
+          vector.y = bounds.y;
+        } else {
+          vector.resize(frame.width, frame.height);
+        }
         vector.fills = paint(attribute("fill"));
         vector.strokes = paint(attribute("stroke"));
         vector.path = attribute("d");
