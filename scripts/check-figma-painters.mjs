@@ -2008,6 +2008,100 @@ section("DirectionStep");
   }
 }
 
+// --- Itinerary ------------------------------------------------------------------
+
+// The React Itinerary, as Storybook draws it standalone: From and To captions,
+// the steps between them with DirectionStep's marks, the current one semibold
+// in the theme's 600. A set the importer had never drawn until 2026-10-05.
+section("Itinerary");
+{
+  ok(
+    Array.isArray(plugin.ITINERARY_CONTENT) &&
+      plugin.ITINERARY_CONTENT.join(",") ===
+        "Default,NoCurrentStep,StepMetrics" &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("Itinerary"),
+      ) === JSON.stringify({ Content: plugin.ITINERARY_CONTENT }),
+    "three variants, the stories: Default, NoCurrentStep, StepMetrics",
+  );
+  const variantTokens = payloadVariables([
+    ...variableByName.keys(),
+    "Colors/theme/600",
+  ]);
+  async function paint(value) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateItineraryVariant(component, {
+      value,
+      variableByName: variantTokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    return { component, stats };
+  }
+  const fill = (node) => node && node.fills && node.fills[0];
+  for (const value of plugin.ITINERARY_CONTENT || []) {
+    const { component, stats } = await paint(value);
+    const rows = component.children;
+    const steps = rows.filter((row) => /^Step \d+$/.test(row.name));
+    ok(
+      component.name === `Content=${value}` &&
+        component.width === 340 &&
+        component.fills.length === 0 &&
+        component.itemSpacing === 8 &&
+        rows[0].name === "Origin Row" &&
+        rows[rows.length - 1].name === "Destination Row" &&
+        steps.length === 4,
+      `${value}: 340 wide, no surface, From, four steps and To, 8 apart`,
+    );
+    const originLabel = named(component, "Origin Label");
+    const destination = named(component, "Destination Text");
+    ok(
+      originLabel &&
+        originLabel.textCase === "UPPER" &&
+        originLabel.width === 40 &&
+        boundVariableName(fill(originLabel)) === "Colors/foreground/400" &&
+        boundVariableName(fill(named(component, "Origin Text"))) ===
+          "Colors/foreground/400" &&
+        boundVariableName(fill(destination)) === "Colors/foreground/0",
+      `${value}: the captions uppercase and muted in a 40 column, the origin muted, the destination in the text colour`,
+    );
+    const current = steps.filter((step) => {
+      const text = named(step, "Instruction Text");
+      return boundVariableName(fill(text)) === "Colors/theme/600";
+    });
+    const marks = steps.map((step) => {
+      const icon = named(step, "Step Mark");
+      const instance = icon && icon.findOne((node) => node.type === "INSTANCE");
+      const shape =
+        instance && instance.findOne((node) => node.type === "VECTOR");
+      return shape
+        ? boundVariableName(fill(shape)) ||
+            boundVariableName(shape.strokes && shape.strokes[0])
+        : null;
+    });
+    const expectedCurrent = value === "NoCurrentStep" ? 0 : 1;
+    ok(
+      current.length === expectedCurrent &&
+        marks.filter((token) => token === "Colors/theme/600").length ===
+          expectedCurrent &&
+        marks.every((token) =>
+          ["Colors/theme/600", "Colors/foreground/400"].includes(token),
+        ),
+      `${value}: ${expectedCurrent} current step in the theme's 600, with its mark; the other marks muted (${marks.join(", ")})`,
+    );
+    const metrics = component.findAll((node) => node.name === "Metrics Text");
+    ok(
+      value === "StepMetrics" ? metrics.length === 3 : metrics.length === 0,
+      `${value}: ${value === "StepMetrics" ? "three steps carry" : "no step carries"} metrics`,
+    );
+    ok(
+      stats.warnings.length === 0,
+      `${value}: no warnings (${stats.warnings.join(" | ")})`,
+    );
+  }
+}
+
 // --- AISearchButton --------------------------------------------------------------
 
 section("AISearchButton");
@@ -3096,7 +3190,10 @@ section("The product sets audit clean");
     typeof plugin.auditComponentContrast === "function";
   ok(ready, "the four painters and the contrast audit are reachable");
   if (ready) {
-    const tokens = payloadVariables([...variableByName.keys()]);
+    const tokens = payloadVariables([
+      ...variableByName.keys(),
+      "Colors/theme/600",
+    ]);
     const context = plugin.createVariableContext(
       tokens.collections,
       tokens.variables,
@@ -3133,6 +3230,13 @@ section("The product sets audit clean");
       [
         "CategoryField",
         tints.map((value) => ["updateCategoryFieldVariant", { value }]),
+      ],
+      [
+        "Itinerary",
+        (plugin.ITINERARY_CONTENT || []).map((value) => [
+          "updateItineraryVariant",
+          { value },
+        ]),
       ],
     ];
     for (const [name, variants] of sets) {
