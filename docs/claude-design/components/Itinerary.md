@@ -6,7 +6,7 @@ The whole route as a list: where it starts, every step with the current one emph
 
 - **Import:** `import { Itinerary } from "@kozmos-ds/react";`
 - **Group:** SDK
-- **Platforms:** React, SwiftUI and Compose; not linked to Figma yet.
+- **Platforms:** React, SwiftUI and Compose; linked to its Figma component through Code Connect.
 - **Storybook:** <https://vodoco.github.io/kozmos-design-system/storybook/?path=/docs/map-itinerary--docs>
 
 ## Example
