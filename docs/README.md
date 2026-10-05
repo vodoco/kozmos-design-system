@@ -35,7 +35,7 @@ component's docs, stories and controls, and its code on every platform (decision
 - [`navigation-integration.md`](navigation-integration.md) — navigation configuration, lifecycle
   ownership, migration, editable source map and reproducible web/native checks.
 
-- [`product-design-gap-register.md`](product-design-gap-register.md) — all 121 supplied product
+- [`product-design-gap-register.md`](product-design-gap-register.md) — all 132 supplied product
   gaps reconciled against release and current-main evidence, plus SDK-screen requirements; separates library
   implementation, host integration, platform validation and external artifact adoption.
 - [`sdk-module-primitives.md`](sdk-module-primitives.md) — current SDK coverage and the proposed

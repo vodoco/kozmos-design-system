@@ -62,8 +62,9 @@ After code merges, regenerate the manifest, update the Figma component, then upd
 8. Run `pnpm figma:publish:native:linked:dry` for the SwiftUI and Compose linked mappings.
 9. Use root `pnpm figma:publish:dry` only after non-core scaffold mappings have real node IDs.
 10. A new `.figma.*` file goes into its platform's `figma.linked.config.json` by name, beside its source file. The configs are lists, not globs: a file left off is never validated or published, and `pnpm components:contract:check` fails on it.
-11. Publish only when asked: `pnpm figma:publish:linked` and `pnpm figma:publish:native:linked`, from a clean, pushed branch that holds every mapping `main` has, or from `main` after the merge. Each publish sends its platform's whole linked set.
-12. Then `pnpm figma:connect:readback`, with Figma desktop open on the Core Library and its Dev Mode MCP server on: every linked node must show a snippet on every platform, with imports a consumer can use (`@kozmos-ds/react`, `import Kozmos`, the Compose package).
+11. After adding or changing a `.figma.*` file or a linked config, regenerate `docs/status.md` (`pnpm exec tsx scripts/skills/check-completion.ts --write`), then build React and run `pnpm skills:build`: each component's API card in `docs/claude-design/` says whether it is linked to Figma, read from the linked configs, and CI's `pnpm skills:check` fails until both are committed. A Code Connect PR failed CI for this on 2026-10-05.
+12. Publish only when asked: `pnpm figma:publish:linked` and `pnpm figma:publish:native:linked`, from a clean, pushed branch that holds every mapping `main` has, or from `main` after the merge. Each publish sends its platform's whole linked set.
+13. Then `pnpm figma:connect:readback`, with Figma desktop open on the Core Library and its Dev Mode MCP server on: every linked node must show a snippet on every platform, with imports a consumer can use (`@kozmos-ds/react`, `import Kozmos`, the Compose package).
 
 ## Current Plugin Scope
 
@@ -72,7 +73,7 @@ After code merges, regenerate the manifest, update the Figma component, then upd
 - Import foundations from `docs/figma-foundations-payload.json`
 - Create foundation pages
 - Create local variables and modes
-- Build/update the current 37 canonical Core component sets with unsuffixed names
+- Build/update the canonical Core component sets with unsuffixed names (`CORE_UPDATE_SEQUENCE`, 74 today) and the Product / SDK and platform sets (`PRODUCT_SDK_UPDATE_SEQUENCE`, 28)
 - Update existing component sets in place while preserving Code Connect node IDs
 - Apply shared text styles/token bindings
 - Reorganize the Components page without changing component set IDs
@@ -81,6 +82,6 @@ After code merges, regenerate the manifest, update the Figma component, then upd
 
 Next useful plugin features:
 
-- Keep the 37 Core sets clean as React, SwiftUI, and Compose APIs evolve
+- Keep the Core and Product / SDK sets clean as React, SwiftUI, and Compose APIs evolve
 - Add new platform-specific component sets only after the Core library stays stable
 - Add controlled repair actions for recurring audit findings
