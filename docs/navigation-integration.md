@@ -153,11 +153,10 @@ do not certify native modal focus trapping or restoration.
 The wayfinding glyphs are Pointr's own artwork from the Pointr Maps - Express design (Figma
 `BwtG2COVRqUWGPrIvP4jxr`, section `29853:51378`), each the 48px master scaled to the 24 grid and
 filled; `navigation-glyphs.json` names each one's Figma node, and its Exit departs from the file
-as its note says. Turns, turning back, the destination, lifts, escalators, stairs, ramps, entry
-and exit draw them by default; straight on, level changes and transitions keep the Pointr
+as its note says. Turns, turning back, the destination, walking (FollowTheLine), lifts,
+escalators, stairs, ramps, entry and exit draw them by default; straight on, level changes and transitions keep the Pointr
 arrows. Every glyph is a named `@kozmos-ds/icons` export (`ElevatorUpAndDown`, `Shuttle`, …) and
-a kebab-case `KozmosIcon` name on iOS and Android. Walking reuses the existing SDK web mark and
-platform native marks.
+a kebab-case `KozmosIcon` name on iOS and Android.
 Physical directions never mirror with reading direction. Unknown adapter values should retain
 their instruction without inventing a turn; the host decides whether to continue guidance.
 

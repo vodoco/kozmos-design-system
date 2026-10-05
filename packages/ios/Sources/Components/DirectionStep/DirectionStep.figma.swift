@@ -14,6 +14,9 @@ struct KozmosDirectionStepConnect: FigmaConnect {
     @FigmaString("Duration Text")
     var duration: String = "1 min"
 
+    // The nineteen cases: the four turns, the six level changes by lift,
+    // escalator and stairs, a plain level change, a transition between
+    // buildings, turning back, walking, entry, exit and the two ramps.
     @FigmaEnum(
         "Type",
         mapping: [
@@ -30,7 +33,12 @@ struct KozmosDirectionStepConnect: FigmaConnect {
             "LevelUp": DirectionType.levelUp,
             "LevelDown": DirectionType.levelDown,
             "Transition": DirectionType.transition,
-            "TurnBack": DirectionType.turnBack
+            "TurnBack": DirectionType.turnBack,
+            "Walking": DirectionType.walking,
+            "Enter": DirectionType.enter,
+            "Exit": DirectionType.exit,
+            "RampUp": DirectionType.rampUp,
+            "RampDown": DirectionType.rampDown
         ]
     )
     var type: DirectionType = .straight

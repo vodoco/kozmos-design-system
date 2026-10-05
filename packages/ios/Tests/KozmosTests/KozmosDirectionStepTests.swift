@@ -20,20 +20,20 @@ final class KozmosDirectionStepTests: XCTestCase {
     }
 
 
-    // MARK: The direction marks (Express wayfinding artwork, 2026-10-04)
+    // MARK: The direction marks (Express wayfinding artwork, 2026-10-04 and -05)
 
     /// The marks main drew in SF Symbols, unchanged: straight on, a level
-    /// change by any means, transition and walking.
+    /// change by any means, and transition.
     private static let approvedSymbols: [(DirectionType, String)] = [
         (.straight, "arrow.up"),
         (.levelUp, "arrow.up.to.line"), (.levelDown, "arrow.down.to.line"),
         (.transition, "arrow.forward.to.line"),
-        (.walking, "figure.walk"),
     ]
 
-    /// Lifts, escalators, stairs, ramps, entry, exit, the turns, turning back
-    /// and the destination draw Pointr's wayfinding artwork from Pointr Maps -
-    /// Express, as React draws them: each its kind in the generated paths.
+    /// Lifts, escalators, stairs, ramps, entry, exit, the turns, turning back,
+    /// walking and the destination draw Pointr's wayfinding artwork from
+    /// Pointr Maps - Express, as React draws them: each its kind in the
+    /// generated paths. Walking is Express's FollowTheLine (Olcay, 2026-10-05).
     static let expressKinds: [(DirectionType, String)] = [
         (.liftUp, "lift-up"), (.liftDown, "lift-down"),
         (.escalatorUp, "escalator-up"), (.escalatorDown, "escalator-down"),
@@ -41,7 +41,8 @@ final class KozmosDirectionStepTests: XCTestCase {
         (.rampUp, "ramp-up"), (.rampDown, "ramp-down"),
         (.enter, "enter"), (.exit, "exit"),
         (.left, "wf-hard-left"), (.right, "wf-hard-right"),
-        (.turnBack, "wf-turn-back"), (.destination, "wf-arriving"),
+        (.turnBack, "wf-turn-back"), (.walking, "wf-follow-the-line"),
+        (.destination, "wf-arriving"),
     ]
 
     /// Every direction draws the mark it is given here, pixel for pixel: an
@@ -52,6 +53,7 @@ final class KozmosDirectionStepTests: XCTestCase {
                        "a direction has no approved mark")
         XCTAssertEqual(Self.approvedSymbols.count + Self.expressKinds.count, DirectionType.allCases.count,
                        "a direction has two marks")
+        XCTAssertEqual(Self.expressKinds.count, 15, "fifteen directions draw Express artwork")
         for (type, symbol) in Self.approvedSymbols {
             let drawn = try DrawnPixels.draw(KozmosDirectionGlyph(type: type, size: 24), scale: 3)
             let approved = try DrawnPixels.draw(Image(systemName: symbol).font(.system(size: 24, weight: .semibold)), scale: 3)
@@ -77,6 +79,7 @@ final class KozmosDirectionStepTests: XCTestCase {
         (.enter, 11.25, 12.05), (.exit, 5.25, 11.85),               // the arrowhead
         (.left, 3.65, 11.25), (.right, 20.25, 11.25),               // the arrowhead's tip
         (.turnBack, 16.05, 17.25),                                  // the arrowhead
+        (.walking, 8.56, 3.06),                                     // the walker's head
         (.destination, 4.65, 17.45),                                // the ground under the pin
     ]
 

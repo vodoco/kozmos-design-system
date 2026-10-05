@@ -5,7 +5,7 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowRight,
-  Walking,
+  FollowTheLine,
   HardLeft,
   HardRight,
   TurnBack,
@@ -50,11 +50,11 @@ export const DIRECTION_TYPES: readonly DirectionType[] = [
 ];
 
 /**
- * One mapping for step, card, itinerary and rail. Turns, turning back, the
- * destination, lifts, escalators, stairs, ramps, entry and exit draw Pointr's
- * wayfinding artwork from Pointr Maps - Express (Olcay, 2026-10-04); straight
- * on, level changes and transitions, which the set has no glyph for, keep the
- * Pointr icon set's arrows, and walking the SDK walking mark.
+ * One mapping for step, card, itinerary and rail. Every direction but straight
+ * on, level changes and transitions draws Pointr's wayfinding artwork from
+ * Pointr Maps - Express (Olcay, 2026-10-04; walking its FollowTheLine,
+ * 2026-10-05); those three, which the set has no glyph for, keep the Pointr
+ * icon set's arrows.
  */
 export const DIRECTION_ICONS: Record<DirectionType, KozmosIconComponent> = {
   straight: ArrowUp,
@@ -71,7 +71,7 @@ export const DIRECTION_ICONS: Record<DirectionType, KozmosIconComponent> = {
   "level-down": ArrowDown,
   transition: ArrowRight,
   "turn-back": TurnBack,
-  walking: Walking,
+  walking: FollowTheLine,
   enter: RouteEnter,
   exit: RouteExit,
   "ramp-up": RampUp,

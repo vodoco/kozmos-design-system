@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "54e139cf6dbf";
+const PLUGIN_BUILD = "575960b516a2";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -332,9 +332,10 @@ const LIST_DENSITIES = ["Default", "Compact"];
 const TABLE_DENSITIES = ["Default", "Compact"];
 // Product / SDK lane. These compose Core primitives and stay domain-specific,
 // so they are not promoted into Core, which stays domain-neutral.
-// The fourteen cases of 2026-09-20, the same on every platform: the four
-// turns, the six level changes by lift, escalator and stairs, a plain level
-// change, a transition between buildings, and turning back.
+// The nineteen cases, the same on every platform: the four turns, the six
+// level changes by lift, escalator and stairs, a plain level change, a
+// transition between buildings, turning back (the fourteen of 2026-09-20),
+// and walking, entry, exit and the two ramps the code gained with #193.
 const DIRECTION_STEP_TYPES = [
   "Straight",
   "Left",
@@ -350,12 +351,17 @@ const DIRECTION_STEP_TYPES = [
   "LevelDown",
   "Transition",
   "TurnBack",
+  "Walking",
+  "Enter",
+  "Exit",
+  "RampUp",
+  "RampDown",
 ];
-// Each case's symbol, as the code draws it on every platform: turns, turning
-// back, the destination, lifts, escalators and stairs in Pointr's wayfinding
-// artwork from Pointr Maps - Express (the Icons page's wayfinding sources,
-// KOZMOS_WAYFINDING_ICONS); straight on, level changes and transitions, which
-// that set has no glyph for, the Pointr Icon Library's arrows.
+// Each case's symbol, as the code draws it on every platform: everything but
+// straight on, level changes and transitions in Pointr's wayfinding artwork
+// from Pointr Maps - Express (the Icons page's wayfinding sources,
+// KOZMOS_WAYFINDING_ICONS); those three, which that set has no glyph for, the
+// Pointr Icon Library's arrows.
 const DIRECTION_STEP_ICONS = {
   Straight: "arrow-up",
   Left: "hard-left",
@@ -371,6 +377,11 @@ const DIRECTION_STEP_ICONS = {
   LevelDown: "arrow-down",
   Transition: "arrow-right",
   TurnBack: "turn-back",
+  Walking: "follow-the-line",
+  Enter: "route-enter",
+  Exit: "route-exit",
+  RampUp: "ramp-up",
+  RampDown: "ramp-down",
 };
 const FLOOR_SELECTOR_VARIANTS = [
   "VerticalList",
@@ -44302,6 +44313,11 @@ const DIRECTION_STEP_GLYPHS = {
   LevelDown: "↓",
   Transition: "→",
   TurnBack: "↩",
+  Walking: "↑",
+  Enter: "→",
+  Exit: "←",
+  RampUp: "↗",
+  RampDown: "↘",
 };
 
 async function createDirectionStepVariant(args) {
@@ -44508,7 +44524,7 @@ function configureDirectionStepProperties(componentSet, stats) {
 
 const DIRECTION_STEP_DESCRIPTION = [
   "Kozmos DirectionStep generated from the React DirectionStep API.",
-  "Type maps to type: the four turns, the six level changes by lift, escalator and stairs, a level change, a transition between buildings, and turning back — each a 24 icon from the Icons page in the theme's colour on a 40 disc at 10 %.",
+  "Type maps to type: the four turns, the six level changes by lift, escalator and stairs, a level change, a transition between buildings, turning back, walking, entry, exit and the two ramps — each a 24 icon from the Icons page in the theme's colour on a 40 disc at 10 %.",
   "Type maps to DirectionStep.type (straight, left, right, destination).",
   "Instruction Text maps to DirectionStep.instruction.",
   "Distance Text maps to DirectionStep.distance.",

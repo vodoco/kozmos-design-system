@@ -11,7 +11,11 @@ import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
 import org.junit.Test
 
-/** Every direction, with shared transport artwork and platform turn/walking glyphs. */
+/**
+ * Every direction: Pointr Maps - Express artwork for fifteen of them, walking's
+ * FollowTheLine among them, and Material's marks for straight on, a level
+ * change and transition.
+ */
 class KozmosDirectionStepPaparazziTest {
     @get:Rule
     val paparazzi = Paparazzi(maxPercentDifference = 0.0)

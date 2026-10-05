@@ -17,6 +17,9 @@ class KozmosDirectionStepConnect {
     @FigmaProperty(FigmaType.Text, "Duration Text")
     val duration: String = "1 min"
 
+    // The nineteen cases: the four turns, the six level changes by lift,
+    // escalator and stairs, a plain level change, a transition between
+    // buildings, turning back, walking, entry, exit and the two ramps.
     @FigmaProperty(FigmaType.Enum, "Type")
     val type: DirectionType = Figma.mapping(
         "Straight" to DirectionType.Straight,
@@ -32,7 +35,12 @@ class KozmosDirectionStepConnect {
         "LevelUp" to DirectionType.LevelUp,
         "LevelDown" to DirectionType.LevelDown,
         "Transition" to DirectionType.Transition,
-        "TurnBack" to DirectionType.TurnBack
+        "TurnBack" to DirectionType.TurnBack,
+        "Walking" to DirectionType.Walking,
+        "Enter" to DirectionType.Enter,
+        "Exit" to DirectionType.Exit,
+        "RampUp" to DirectionType.RampUp,
+        "RampDown" to DirectionType.RampDown
     )
 
     @Composable
