@@ -194,6 +194,8 @@
       "Sources/Components/RoutingInputGroup/RoutingInputGroup.swift",
       "Sources/Components/WayfindingCard/WayfindingCard.figma.swift",
       "Sources/Components/WayfindingCard/WayfindingCard.swift",
+      "Sources/Components/Itinerary/Itinerary.figma.swift",
+      "Sources/Components/Itinerary/Itinerary.swift",
       "Sources/Components/DynamicIsland/DynamicIsland.figma.swift",
       "Sources/Components/DynamicIsland/DynamicIsland.swift",
       "Sources/Components/FeedbackCard/FeedbackCard.figma.swift",
