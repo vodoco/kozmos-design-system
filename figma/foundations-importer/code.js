@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "11b287aab850";
+const PLUGIN_BUILD = "16a6a1c12814";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -411,10 +411,11 @@ const ITINERARY_CONTENT = ["Default", "NoCurrentStep", "StepMetrics"];
 const MANOEUVRE_CARD_STATES = ["Closed", "Open"];
 const MANOEUVRE_CARD_APPEARANCES = ["Theme", "Background"];
 // The React RouteProgressRail's stories the library draws: the step disc
-// (Start to Waypoints) and the route mode's active leg. Not drawn: the route
-// mode's AtTransition (the dot over a transition's stem), StaticAfterTransition
-// (a later static leg) and LiveStart (the live start, nothing filled). The
-// right-to-left stories mirror these and are not variants.
+// (Start to Waypoints) and the route mode's active leg, AtTransition among
+// them for the dot over a transition's stem (Olcay, 2026-10-06). Not drawn:
+// StaticAfterTransition (ActiveLeg with the later leg) and LiveStart (the
+// live start, nothing filled). The right-to-left stories mirror these and are
+// not variants.
 const ROUTE_PROGRESS_RAIL_CONTENT = [
   "Start",
   "Midway",
@@ -423,6 +424,7 @@ const ROUTE_PROGRESS_RAIL_CONTENT = [
   "Waypoints",
   "ActiveLeg",
   "WalkingWithinLeg",
+  "AtTransition",
   "AfterTransition",
   "RoutePositionUnknown",
   "ThemeRoute",
@@ -2059,12 +2061,12 @@ const COMPONENT_DOCS = [
       "Pass motion none when guidance pauses or is unreliable; the flow is decoration, never progress.",
     ],
     api: [
-      "Content maps to the story the variant draws: the step disc (Start, Midway, Arriving, Unknown, Waypoints) or the route mode (ActiveLeg static; WalkingWithinLeg, AfterTransition, RoutePositionUnknown, ThemeRoute, GuidancePaused live).",
+      "Content maps to the story the variant draws: the step disc (Start, Midway, Arriving, Unknown, Waypoints) or the route mode (ActiveLeg static; WalkingWithinLeg, AtTransition, AfterTransition, RoutePositionUnknown, ThemeRoute, GuidancePaused live).",
       "The marks are DirectionStep's, from the Icons page; the position is the compact UserLocationMarker's dot.",
       "The directional flow is drawn still: the product animates it and stops it under reduced motion.",
     ],
     properties: [
-      "Content: Start, Midway, Arriving, Unknown, Waypoints, ActiveLeg, WalkingWithinLeg, AfterTransition, RoutePositionUnknown, ThemeRoute, GuidancePaused",
+      "Content: Start, Midway, Arriving, Unknown, Waypoints, ActiveLeg, WalkingWithinLeg, AtTransition, AfterTransition, RoutePositionUnknown, ThemeRoute, GuidancePaused",
     ],
     accessibility: [
       "The code names the rail with label and reports progress as a percentage, or valueText when unknown.",
@@ -46608,6 +46610,16 @@ const ROUTE_PROGRESS_RAIL_STORIES = {
     positionMode: "live",
     leg: [0, 0.4],
     progress: 0.2,
+    appearance: "gradient",
+    flow: true,
+  },
+  // The position on the transition: the leg filled to it, no flow left in
+  // the leg, the dot over the transition's stem.
+  AtTransition: {
+    mode: "route",
+    positionMode: "live",
+    leg: [0, 0.4],
+    progress: 0.4,
     appearance: "gradient",
     flow: true,
   },

@@ -141,8 +141,8 @@ convention that avoids variant explosion:
   licensed venue imagery exists rather than substituting stock photography.
 - **RouteProgressRail** — `Content` of the step disc's Start, Midway, Arriving,
   Unknown and Waypoints, and the route mode's ActiveLeg (static),
-  WalkingWithinLeg, AfterTransition, RoutePositionUnknown, ThemeRoute and
-  GuidancePaused: the track, the active leg (theme or the theme-to-success
+  WalkingWithinLeg, AtTransition, AfterTransition, RoutePositionUnknown,
+  ThemeRoute and GuidancePaused: the track, the active leg (theme or the theme-to-success
   gradient), the still flow, the transitions with DirectionStep's marks from
   the Icons page and the compact location dot in `Map marker/dot`. Run Import
   Foundations (a payload with `Map marker`) and Curated Icons first.

@@ -2572,11 +2572,11 @@ section("RouteProgressRail");
 {
   ok(
     Array.isArray(plugin.ROUTE_PROGRESS_RAIL_CONTENT) &&
-      plugin.ROUTE_PROGRESS_RAIL_CONTENT.length === 11 &&
+      plugin.ROUTE_PROGRESS_RAIL_CONTENT.length === 12 &&
       JSON.stringify(
         plugin.expectedVariantAxesForComponentSetName("RouteProgressRail"),
       ) === JSON.stringify({ Content: plugin.ROUTE_PROGRESS_RAIL_CONTENT }),
-    "eleven variants: the step disc's five stories and the route mode's six",
+    "twelve variants: the step disc's five stories and the route mode's seven",
   );
   // Every token the rail binds comes from the payload, so a token the
   // payload lost fails here rather than being stood in for.
@@ -2623,6 +2623,14 @@ section("RouteProgressRail");
       gradient: true,
       flow: [79.2, 67.2, "Colors/background/600"],
       dot: 70.2,
+    },
+    // Measured 2026-10-06: the position on the transition, the leg filled to
+    // it, no flow left in the leg, and the dot over the transition's stem.
+    AtTransition: {
+      fill: [12, 134.4],
+      gradient: true,
+      flow: null,
+      dot: 137.4,
     },
     AfterTransition: {
       fill: [12, 201.6],
