@@ -1,6 +1,6 @@
 package com.kozmos.components.spinner
 
-import android.provider.Settings
+import com.kozmos.components.motion.rememberKozmosAnimationsOn
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.RepeatMode
@@ -11,14 +11,12 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -86,14 +84,7 @@ fun KozmosSpinner(
         ),
         label = "kozmos-spinner-angle"
     )
-    val context = LocalContext.current
-    val animationsOn = remember(context) {
-        Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f
-        ) > 0f
-    }
+    val animationsOn = rememberKozmosAnimationsOn()
     val strokeWidth = KozmosDimensions.primitivesIconStrokeMd * (size.dimension / 24.dp)
     Canvas(
         modifier = modifier

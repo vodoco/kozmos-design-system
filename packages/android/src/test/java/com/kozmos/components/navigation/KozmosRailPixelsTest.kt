@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toArgb
@@ -21,6 +20,7 @@ import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.motion.LocalKozmosAnimatorScale
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressRail
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressWaypoint
@@ -29,8 +29,6 @@ import com.kozmos.components.progress.KozmosProgressTrackAppearance
 import com.kozmos.components.progress.KozmosProgressPositionMode
 import com.kozmos.components.progress.KozmosProgressTrack
 import com.kozmos.components.progress.KozmosProgressMotion
-import android.provider.Settings
-import androidx.compose.ui.platform.LocalContext
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.*
@@ -42,14 +40,10 @@ class KozmosRailPixelsTest {
     @get:Rule val paparazzi = pixelsPaparazzi(frames)
 
     @Test fun disabledSystemMotionStillDrawsADirectionalCueWithoutChangingFill() {
+        // Animations off through the seam: Paparazzi drops a write to the
+        // setting, so writing it drew with animations on.
         fun pixels(motion: KozmosProgressMotion) = paparazzi.drawn(frames) {
-            val context = LocalContext.current
-            DisposableEffect(context) {
-                val original = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
-                Settings.Global.putFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 0f)
-                onDispose { Settings.Global.putFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, original) }
-            }
-            CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) { MaterialTheme {
+            CompositionLocalProvider(LocalKozmosUseDarkTokens provides false, LocalKozmosAnimatorScale provides 0f) { MaterialTheme {
                 Box(Modifier.fillMaxSize().background(Color.White)) {
                     KozmosProgressTrack(KozmosProgressRange(0f, 0.8f), 0.2f, Modifier.width(300.dp),
                         KozmosProgressTrackAppearance.Gradient, motion = motion)
