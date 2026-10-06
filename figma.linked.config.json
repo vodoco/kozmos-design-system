@@ -196,6 +196,8 @@
       "src/components/Itinerary/Itinerary.tsx",
       "src/components/ManoeuvreCard/ManoeuvreCard.figma.tsx",
       "src/components/ManoeuvreCard/ManoeuvreCard.tsx",
+      "src/components/RouteProgressRail/RouteProgressRail.figma.tsx",
+      "src/components/RouteProgressRail/RouteProgressRail.tsx",
       "src/components/DynamicIsland/DynamicIsland.figma.tsx",
       "src/components/DynamicIsland/DynamicIsland.tsx",
       "src/components/FeedbackCard/FeedbackCard.figma.tsx",
