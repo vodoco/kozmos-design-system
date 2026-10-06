@@ -445,6 +445,13 @@
       var(--primitives-colors-background-0)
     );
   }
+  /* Back points to the start edge: left, left to right, and right, right
+     to left. The route preview's arrow is drawn pointing left, so right to
+     left it is mirrored, as SwiftUI's arrow.backward and Compose's
+     AutoMirrored ArrowBack mirror themselves. */
+  .kozmos-route-preview-back-arrow:dir(rtl) {
+    transform: scaleX(-1);
+  }
   /* Text a part draws muted, straight on the surface it sits on: the route
      preview's "To" and its count of options; the empty states of the
      category browser, the route preview and the result list; the
