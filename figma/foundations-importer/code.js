@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "46e948ccca71";
+const PLUGIN_BUILD = "490fe55ba56f";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -46933,20 +46933,7 @@ async function paintRouteRailRoute(component, story, variableByName, stats) {
       );
       try {
         active.fills = [gradient];
-        // Figma may keep a gradient and quietly drop a stop's binding; read
-        // it back, so plain colours are not taken for the tokens.
-        const kept = active.fills[0] && active.fills[0].gradientStops;
-        const lost = gradient.gradientStops.some(
-          (stop, index) =>
-            stop.boundVariables &&
-            !(
-              kept &&
-              kept[index] &&
-              kept[index].boundVariables &&
-              kept[index].boundVariables.color
-            ),
-        );
-        if (lost) {
+        if (!gradientStopBindingsKept(active, gradient)) {
           stats.warnings.push(
             "RouteProgressRail: Figma kept the active leg's gradient but not its stops' bindings; the colours are plain.",
           );
@@ -49108,6 +49095,25 @@ const AI_SEARCH_BUTTON_RING_STOPS = [
   { name: "Data/Red", fallback: "#DC2626" },
 ];
 
+/**
+ * Whether Figma kept the bound stops of the gradient just written to `node`'s
+ * fills. It may keep the paint and drop a stop's binding without throwing,
+ * which would leave plain colours unremarked, so a painter reads them back.
+ */
+function gradientStopBindingsKept(node, gradient) {
+  const kept = node.fills && node.fills[0] && node.fills[0].gradientStops;
+  return gradient.gradientStops.every(
+    (stop, index) =>
+      !stop.boundVariables ||
+      Boolean(
+        kept &&
+        kept[index] &&
+        kept[index].boundVariables &&
+        kept[index].boundVariables.color,
+      ),
+  );
+}
+
 /** An angular gradient whose stops bind to variables where the file has them. */
 function angularGradientFromVariables(stops, variableByName, stats) {
   const gradientStops = stops.map((stop, index) => {
@@ -49188,6 +49194,11 @@ async function updateAISearchButtonVariant(
   );
   try {
     gradientRing.fills = [gradient];
+    if (!gradientStopBindingsKept(gradientRing, gradient)) {
+      stats.warnings.push(
+        "AISearchButton: Figma kept the ring's gradient but not its stops' bindings; the colours are plain.",
+      );
+    }
   } catch (_error) {
     // A runtime that refuses bound stops takes the plain colours.
     gradientRing.fills = [
@@ -51763,18 +51774,7 @@ function createUserLocationMarkerCone(variableByName, stats) {
   };
   try {
     wedge.fills = [gradient];
-    // Figma may keep a gradient and quietly drop a stop's binding; read it
-    // back, so a plain blue is not taken for the token.
-    const kept = wedge.fills[0] && wedge.fills[0].gradientStops;
-    if (
-      variable &&
-      !(
-        kept &&
-        kept[0] &&
-        kept[0].boundVariables &&
-        kept[0].boundVariables.color
-      )
-    ) {
+    if (!gradientStopBindingsKept(wedge, gradient)) {
       stats.warnings.push(
         "UserLocationMarker: Figma kept the cone's gradient but not its stop's binding to Map marker/dot; the blue is plain.",
       );

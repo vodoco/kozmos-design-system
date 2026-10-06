@@ -20,6 +20,7 @@ import {
   boundPaintOpacityDrops,
   boundVariableName,
   createFigmaMock,
+  dropGradientStopBindings,
   createMockTextStyle,
   framesLargerThanAsked,
   freshStats,
@@ -2527,25 +2528,7 @@ section("UserLocationMarker");
     const original = figma.createNodeFromSvg;
     figma.createNodeFromSvg = (svg) => {
       const frame = original(svg);
-      for (const child of frame.children) {
-        let kept = child.fills;
-        Object.defineProperty(child, "fills", {
-          configurable: true,
-          get: () => kept,
-          set: (paints) => {
-            kept = paints.map((paint) =>
-              paint.gradientStops
-                ? Object.assign({}, paint, {
-                    gradientStops: paint.gradientStops.map((stop) => ({
-                      position: stop.position,
-                      color: stop.color,
-                    })),
-                  })
-                : paint,
-            );
-          },
-        });
-      }
+      for (const child of frame.children) dropGradientStopBindings(child);
       return frame;
     };
     try {
@@ -2824,27 +2807,7 @@ section("RouteProgressRail");
   // the painter says so rather than leaving plain colours unremarked.
   {
     const original = figma.createRectangle;
-    figma.createRectangle = () => {
-      const node = original();
-      let kept = node.fills;
-      Object.defineProperty(node, "fills", {
-        configurable: true,
-        get: () => kept,
-        set: (paints) => {
-          kept = paints.map((paint) =>
-            paint.gradientStops
-              ? Object.assign({}, paint, {
-                  gradientStops: paint.gradientStops.map((stop) => ({
-                    position: stop.position,
-                    color: stop.color,
-                  })),
-                })
-              : paint,
-          );
-        },
-      });
-      return node;
-    };
+    figma.createRectangle = () => dropGradientStopBindings(original());
     try {
       const stats = freshStats();
       await plugin.updateRouteProgressRailVariant(figma.createComponent(), {
@@ -2955,6 +2918,23 @@ section("AISearchButton");
   if (typeof plugin.updateAISearchButtonVariant === "function") {
     const { component: disabled } = await paint("Disabled");
     ok(disabled.opacity === 0.5, "disabled: at 50 %");
+  }
+  // If Figma keeps the ring's gradient but drops its stops' bindings, the
+  // painter says so rather than leaving plain colours unremarked.
+  if (typeof plugin.updateAISearchButtonVariant === "function") {
+    const original = figma.createEllipse;
+    figma.createEllipse = () => dropGradientStopBindings(original());
+    try {
+      const { stats: dropped } = await paint("Default");
+      ok(
+        dropped.warnings.some((warning) =>
+          warning.includes("not its stops' bindings"),
+        ),
+        `a dropped stop binding is reported (${dropped.warnings.join(" | ")})`,
+      );
+    } finally {
+      figma.createEllipse = original;
+    }
   }
 }
 
