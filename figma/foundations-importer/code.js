@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "a0f5024324e2";
+const PLUGIN_BUILD = "76fdb6cd5b04";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -51009,6 +51009,113 @@ function parseUserLocationMarkerVariantName(name) {
   );
 }
 
+// The marker as SwiftUI and Compose draw it, which React follows (Olcay,
+// 2026-10-05): in a 64 frame, the halo 64 at 14 %, the pulse 48 at 30 %
+// (held still, as under reduced motion), the heading cone, and the 18 dot with a 3 ring inside it,
+// no shadow; all in the marker's own blue and white, fixed in both themes
+// (Semantics.Map marker.dot and .ring).
+const USER_LOCATION_MARKER_DOT = {
+  name: "Map marker/dot",
+  fallback: "#2563EB",
+};
+const USER_LOCATION_MARKER_RING = {
+  name: "Map marker/ring",
+  fallback: "#FFFFFF",
+};
+// Native's cone in its 64 box: from the centre to 15 % and 85 % of the top
+// edge, the top a quadratic curve whose control point is 10 % above it (the
+// curve itself rises 5 % past the box).
+const USER_LOCATION_MARKER_CONE = "M32 32 L9.6 0 Q32 -6.4 54.4 0 Z";
+
+/**
+ * The heading cone: the wedge, filled with the marker's blue at the centre
+ * fading to nothing 32 away, at 40 % — native's radial gradient. The first
+ * stop binds to the blue; the second is transparent, since a bound stop takes
+ * its variable's opaque colour; the 40 % is the layer's.
+ */
+function createUserLocationMarkerCone(variableByName, stats) {
+  const frame = figma.createNodeFromSvg(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><path d="${USER_LOCATION_MARKER_CONE}" fill="${USER_LOCATION_MARKER_DOT.fallback}"/></svg>`,
+  );
+  frame.name = "Heading Cone";
+  frame.fills = [];
+  frame.clipsContent = false;
+  frame.opacity = 0.4;
+  const wedge = frame.children && frame.children[0];
+  if (!wedge) {
+    stats.warnings.push(
+      "UserLocationMarker: the heading cone's path did not import.",
+    );
+    return frame;
+  }
+  wedge.name = "Cone";
+  // The gradient's unit circle mapped onto the wedge's own box: centred on
+  // the marker's centre (32, 32), radius 32.
+  const rx = 32 / wedge.width;
+  const ry = 32 / wedge.height;
+  const cx = (32 - wedge.x) / wedge.width;
+  const cy = (32 - wedge.y) / wedge.height;
+  const blue = parseColor(USER_LOCATION_MARKER_DOT.fallback);
+  const first = {
+    position: 0,
+    color: { r: blue.r, g: blue.g, b: blue.b, a: 1 },
+  };
+  const variable = variableByName.get(USER_LOCATION_MARKER_DOT.name);
+  if (variable) {
+    first.boundVariables = {
+      color: { type: "VARIABLE_ALIAS", id: variable.id },
+    };
+  } else {
+    stats.warnings.push(
+      `Missing variable "${USER_LOCATION_MARKER_DOT.name}", used ${USER_LOCATION_MARKER_DOT.fallback}.`,
+    );
+  }
+  const gradient = {
+    type: "GRADIENT_RADIAL",
+    gradientTransform: [
+      [0.5 / rx, 0, 0.5 - (cx * 0.5) / rx],
+      [0, 0.5 / ry, 0.5 - (cy * 0.5) / ry],
+    ],
+    gradientStops: [
+      first,
+      { position: 1, color: { r: blue.r, g: blue.g, b: blue.b, a: 0 } },
+    ],
+  };
+  try {
+    wedge.fills = [gradient];
+    // Figma may keep a gradient and quietly drop a stop's binding; read it
+    // back, so a plain blue is not taken for the token.
+    const kept = wedge.fills[0] && wedge.fills[0].gradientStops;
+    if (
+      variable &&
+      !(
+        kept &&
+        kept[0] &&
+        kept[0].boundVariables &&
+        kept[0].boundVariables.color
+      )
+    ) {
+      stats.warnings.push(
+        "UserLocationMarker: Figma kept the cone's gradient but not its stop's binding to Map marker/dot; the blue is plain.",
+      );
+    }
+  } catch (_error) {
+    wedge.fills = [
+      Object.assign({}, gradient, {
+        gradientStops: gradient.gradientStops.map((stop) => ({
+          position: stop.position,
+          color: stop.color,
+        })),
+      }),
+    ];
+    stats.warnings.push(
+      "UserLocationMarker: the cone's gradient stop could not bind to a variable; plain colours used.",
+    );
+  }
+  wedge.strokes = [];
+  return frame;
+}
+
 async function updateUserLocationMarkerVariant(
   component,
   { value, variableByName, fonts, stats },
@@ -51022,47 +51129,68 @@ async function updateUserLocationMarkerVariant(
   });
   component.fills = [];
   component.strokes = [];
+  // The shapes inside are drawn afresh; the variant itself is not, so a
+  // shadow it once carried would outlive an Update.
+  component.effects = [];
 
-  // The accuracy halo is the outer disc; the dot is the fix itself. Both are
-  // ellipses rather than text so the marker scales cleanly on the canvas.
-  const halo = figma.createEllipse();
-  halo.name = "Accuracy Halo";
-  halo.resizeWithoutConstraints(64, 64);
-  halo.fills = [
-    paintFromVariable("Colors/theme/100", "#CAD9FC", variableByName, stats),
-  ];
-  halo.opacity = 0.5;
-  halo.strokes = [];
-  component.appendChild(halo);
-  placeAbsolute(halo, 0, 0);
+  // The halo, 64 at 14 %, is the accuracy; the pulse, 48 at 30 %, moves in
+  // the product and rests here, as it holds still under reduced motion. Both are layers at that opacity over the
+  // opaque blue, as the code draws them.
+  insertTranslucentTokenLayer(component, {
+    name: "Accuracy Halo",
+    token: USER_LOCATION_MARKER_DOT,
+    opacity: 0.14,
+    shape: "ellipse",
+    variableByName,
+    stats,
+  });
+  const pulse = figma.createEllipse();
+  pulse.name = "Pulse";
+  pulse.resizeWithoutConstraints(48, 48);
+  setTranslucentTokenPaint(
+    pulse,
+    "fills",
+    USER_LOCATION_MARKER_DOT,
+    0.3,
+    variableByName,
+    stats,
+  );
+  pulse.strokes = [];
+  component.appendChild(pulse);
+  placeAbsolute(pulse, 8, 8);
 
   if (showHeading) {
-    // Heading is a distinct wedge on top of the halo, so a marker with a known
-    // bearing is distinguishable from one without at any zoom level.
-    const cone = figma.createPolygon();
-    cone.name = "Heading Cone";
-    cone.pointCount = 3;
-    cone.resizeWithoutConstraints(28, 24);
-    cone.fills = [
-      paintFromVariable("Colors/theme/500", "#135BEC", variableByName, stats),
-    ];
-    cone.strokes = [];
+    // A distinct wedge, so a known bearing is not signalled by colour alone;
+    // drawn pointing up, the bearing the product rotates from.
+    const cone = createUserLocationMarkerCone(variableByName, stats);
     component.appendChild(cone);
-    placeAbsolute(cone, 18, 2);
+    placeAbsolute(cone, 0, 0);
   }
 
   const dot = figma.createEllipse();
   dot.name = "Location Dot";
-  dot.resizeWithoutConstraints(20, 20);
+  dot.resizeWithoutConstraints(18, 18);
   dot.fills = [
-    paintFromVariable("Colors/theme/500", "#135BEC", variableByName, stats),
+    paintFromVariable(
+      USER_LOCATION_MARKER_DOT.name,
+      USER_LOCATION_MARKER_DOT.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   dot.strokes = [
-    paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
+    paintFromVariable(
+      USER_LOCATION_MARKER_RING.name,
+      USER_LOCATION_MARKER_RING.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   dot.strokeWeight = 3;
+  dot.strokeAlign = "INSIDE";
+  dot.effects = [];
   component.appendChild(dot);
-  placeAbsolute(dot, 22, 22);
+  placeAbsolute(dot, 23, 23);
 }
 
 /**
@@ -51099,6 +51227,7 @@ const USER_LOCATION_MARKER_DESCRIPTION = [
   "heading is a bearing in degrees; it rotates the cone rather than adding a variant.",
   "The marker has no text; the map renderer owns its position and accessible name.",
   "Heading adds a distinct wedge, so a known bearing is not signalled by colour alone.",
+  "Drawn as SwiftUI and Compose draw it: the halo 64 at 14 %, the pulse 48 at 30 % (held still, as every platform holds it under reduced motion), native's cone, and the 18 dot with a 3 white ring inside it and no shadow, in the marker's fixed blue (Map marker/dot, Map marker/ring).",
 ];
 
 async function buildUserLocationMarkerComponent() {
