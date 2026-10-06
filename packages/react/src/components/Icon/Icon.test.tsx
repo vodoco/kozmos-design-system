@@ -40,7 +40,9 @@ describe("Pointr Maps - Express wayfinding glyphs", () => {
   it("draw filled in the text colour and ignore the stroke props", () => {
     // A stroke width that reached the svg renders as stroke-width; an
     // absoluteStrokeWidth that reached it makes React warn about a boolean
-    // on a DOM attribute, so any console error fails the test.
+    // on a DOM attribute, so any console error fails the test. React warns
+    // once per attribute in a file: keep this the file's first render that
+    // passes absoluteStrokeWidth to a filled glyph.
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
       const { container } = render(

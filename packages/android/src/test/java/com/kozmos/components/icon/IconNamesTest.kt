@@ -77,9 +77,8 @@ class IconNamesTest {
      * filled, never mirrored: the fifteen the directions draw (the lifts,
      * escalators, stairs and ramps, route-enter, route-exit, hard-left,
      * hard-right, turn-back, follow-the-line and arriving) and the eight only
-     * a name draws. Every glyph in the shared
-     * source has its name, so a glyph added there without one fails here and
-     * in the SwiftUI suite alike.
+     * a name draws. Every glyph in the shared source has its name, so a glyph
+     * added there without one fails here and in the SwiftUI suite alike.
      */
     @Test
     fun theWayfindingArtworkIsDrawnFilledByName() {

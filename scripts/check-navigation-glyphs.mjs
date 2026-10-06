@@ -80,69 +80,84 @@ try {
           paths,
           `${name} ${kind}: physical direction must not mirror in RTL`,
         );
-        // The same drawing can still be mirrored by CSS — on the svg, a box
+        // The same drawing can still be turned by CSS — on the svg, a box
         // around it, or a group or path inside it — which the markup
-        // comparison cannot see: a mirror is a negative determinant in what
-        // the page applies, through transform, scale or rotate (a half turn
-        // about x or y flips the drawing).
-        for (const svg of [row.locator("svg"), rtl.locator("svg")]) {
-          const mirrored = await svg.evaluateAll((nodes) =>
-            nodes.map((node) => {
-              const flips = (element) => {
-                const s = getComputedStyle(element);
-                let sign = 1;
-                if (s.transform && s.transform !== "none") {
-                  const m = new DOMMatrixReadOnly(s.transform);
-                  if (m.a * m.d - m.b * m.c < 0) sign = -sign;
-                }
-                if (s.scale && s.scale !== "none") {
-                  const [x, y = x] = s.scale.split(" ").map(Number);
-                  if (x * y < 0) sign = -sign;
-                }
-                if (s.rotate && s.rotate !== "none") {
-                  const parts = s.rotate.trim().split(/\s+/);
-                  if (parts.length > 1) {
-                    const angle = parseFloat(parts[parts.length - 1]);
-                    const turn = parts[parts.length - 1].endsWith("turn")
-                      ? angle * 360
-                      : parts[parts.length - 1].endsWith("rad")
-                        ? (angle * 180) / Math.PI
-                        : angle;
-                    const axis = parts.slice(0, -1);
-                    const [ax, ay, az] =
-                      axis.length === 1
-                        ? [
-                            axis[0] === "x" ? 1 : 0,
-                            axis[0] === "y" ? 1 : 0,
-                            axis[0] === "z" ? 1 : 0,
-                          ]
-                        : axis.map(Number);
-                    // A turn about an axis in the drawing's plane flips it
-                    // when the turn passes a quarter.
-                    if (
-                      (ax || ay) &&
-                      !az &&
-                      Math.cos((turn * Math.PI) / 180) < 0
-                    )
-                      sign = -sign;
-                  }
-                }
-                return sign;
-              };
-              let sign = 1;
-              for (let n = node; n; n = n.parentElement) sign *= flips(n);
-              if (sign < 0) return true;
-              return [...node.querySelectorAll("*")].some(
-                (child) => flips(child) < 0,
+        // comparison cannot see. Each element's transform from the page down
+        // (rotate, scale and transform, translations aside) must keep the
+        // drawing's handedness, and right to left must equal left to right:
+        // a mirror, a half turn or any turn made only in right to left
+        // changes the direction drawn.
+        const linear = (svgs) =>
+          svgs.evaluateAll((nodes) => {
+            const degrees = (text) => {
+              const value = parseFloat(text);
+              if (text.endsWith("turn")) return value * 360;
+              if (text.endsWith("grad")) return value * 0.9;
+              if (text.endsWith("rad")) return (value * 180) / Math.PI;
+              return value;
+            };
+            const own = (element) => {
+              const style = getComputedStyle(element);
+              let matrix = new DOMMatrix();
+              if (style.rotate && style.rotate !== "none") {
+                const parts = style.rotate.trim().split(/\s+/);
+                const axis = parts.slice(0, -1);
+                const [x, y, z] =
+                  axis.length === 0
+                    ? [0, 0, 1]
+                    : axis.length === 1
+                      ? ["x", "y", "z"].map((name) =>
+                          axis[0] === name ? 1 : 0,
+                        )
+                      : axis.map(Number);
+                matrix = matrix.rotateAxisAngle(
+                  x,
+                  y,
+                  z,
+                  degrees(parts[parts.length - 1]),
+                );
+              }
+              if (style.scale && style.scale !== "none") {
+                const [x, y = x, z = 1] = style.scale
+                  .trim()
+                  .split(/\s+/)
+                  .map(Number);
+                matrix = matrix.scale(x, y, z);
+              }
+              if (style.transform && style.transform !== "none")
+                matrix = matrix.multiply(new DOMMatrix(style.transform));
+              return matrix;
+            };
+            const composite = (element) => {
+              const chain = [];
+              for (let n = element; n; n = n.parentElement) chain.unshift(n);
+              return chain.reduce(
+                (matrix, n) => matrix.multiply(own(n)),
+                new DOMMatrix(),
               );
-            }),
-          );
-          assert.deepEqual(
-            mirrored,
-            mirrored.map(() => false),
-            `${name} ${kind}: physical direction must not be mirrored by CSS`,
-          );
-        }
+            };
+            return nodes.map((node) =>
+              [node, ...node.querySelectorAll("*")].map((element) => {
+                const m = composite(element);
+                return [m.m11, m.m12, m.m21, m.m22].map(
+                  (v) => Math.round(v * 1e6) / 1e6 + 0,
+                );
+              }),
+            );
+          });
+        const ltrLinear = await linear(row.locator("svg"));
+        const rtlLinear = await linear(rtl.locator("svg"));
+        assert.ok(
+          [...ltrLinear, ...rtlLinear]
+            .flat()
+            .every(([a, b, c, d]) => a * d - b * c > 0),
+          `${name} ${kind}: physical direction must not be mirrored by CSS`,
+        );
+        assert.deepEqual(
+          rtlLinear,
+          ltrLinear,
+          `${name} ${kind}: right to left must not turn the drawing`,
+        );
         for (const [i, size] of [14, 24, 32].entries()) {
           const svg = row.locator("svg").nth(i);
           const box = await svg.boundingBox();
@@ -165,7 +180,7 @@ try {
     await context.close();
   }
   console.log(
-    "Navigation glyph atlas: 19 default directions (15 in Express wayfinding artwork) and 8 more wayfinding icons by name × 3 sizes × LTR/RTL × 2 themes passed",
+    "Navigation glyph atlas: 19 default directions (15 in Express wayfinding artwork) and 8 more wayfinding icons by name × 3 sizes × LTR/RTL × 2 themes passed, none mirrored or turned by CSS",
   );
 } finally {
   await browser.close();

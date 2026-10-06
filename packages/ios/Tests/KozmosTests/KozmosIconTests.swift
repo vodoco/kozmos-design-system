@@ -115,8 +115,9 @@ final class KozmosIconTests: XCTestCase {
     /// name, filled in the icon's colour, never mirrored: the fifteen the
     /// directions draw (the lifts, escalators, stairs and ramps, route-enter,
     /// route-exit, hard-left, hard-right, turn-back, follow-the-line and
-    /// arriving) and the eight only a name draws. Every glyph in the shared source has its name, so a glyph
-    /// added there without one fails here and in the Compose suite alike.
+    /// arriving) and the eight only a name draws. Every glyph in the shared
+    /// source has its name, so a glyph added there without one fails here
+    /// and in the Compose suite alike.
     @MainActor func testTheWayfindingArtworkIsDrawnFilledByName() throws {
         let glyphs = try Self.wayfindingGlyphs()
         XCTAssertEqual(glyphs.count, 23, "the Express wayfinding set is 23 glyphs")
