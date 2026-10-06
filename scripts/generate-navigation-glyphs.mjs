@@ -162,7 +162,6 @@ const pluginBlock = await prettier.format(
     glyphs.map((g) => ({
       name: kebab(g.name),
       component: g.name,
-      ...(g.kind.startsWith("wf-") ? {} : { direction: g.kind }),
       figmaNodeId: g.figma,
       svg: svgFor(g),
     })),

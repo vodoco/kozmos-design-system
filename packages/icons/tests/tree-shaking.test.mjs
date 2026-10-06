@@ -163,11 +163,13 @@ function describeLeak(kept, wanted) {
 const kb = (bytes) => (bytes / 1024).toFixed(2);
 
 const CASES = [
-  // An outline the registry names, one it does not, and the package's own two factories.
+  // An outline the registry names, one it does not, the package's own symbol
+  // icons, and a Pointr Maps - Express wayfinding glyph (createFilledIcon).
   { imports: ["Check"], keeps: ["Check"], ceiling: true },
   { imports: ["AlignBottom01"], keeps: ["AlignBottom01"], ceiling: true },
   { imports: ["Accessibility"], keeps: ["Accessibility"], ceiling: true },
   { imports: ["LocationHeading"], keeps: ["LocationHeading"], ceiling: true },
+  { imports: ["ElevatorUp"], keeps: ["ElevatorUp"], ceiling: true },
   { imports: ["SearchMd", "XClose"], keeps: ["SearchMd", "XClose"] },
   // The names and the aliases are data: they reach no icon at all.
   {
