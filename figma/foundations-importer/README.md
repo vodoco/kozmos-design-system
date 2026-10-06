@@ -139,6 +139,13 @@ convention that avoids variant explosion:
   is renderer output and must not be drawn in Figma.
 - **POICard** — `Content` of Basic, Media, Full. Omit the Media variant when no
   licensed venue imagery exists rather than substituting stock photography.
+- **RouteProgressRail** — `Content` of the step disc's Start, Midway, Arriving,
+  Unknown and Waypoints, and the route mode's ActiveLeg (static),
+  WalkingWithinLeg, AfterTransition, RoutePositionUnknown, ThemeRoute and
+  GuidancePaused: the track, the active leg (theme or the theme-to-success
+  gradient), the still flow, the transitions with DirectionStep's marks from
+  the Icons page and the compact location dot in `Map marker/dot`. Run Import
+  Foundations (a payload with `Map marker`) and Curated Icons first.
 - **WayfindingCard** — `Content` of Basic and Titled. Compose route content into
   the slot instead of extending this set.
 

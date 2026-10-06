@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c63e21bad2e6";
+const PLUGIN_BUILD = "11b287aab850";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -410,6 +410,24 @@ const ITINERARY_CONTENT = ["Default", "NoCurrentStep", "StepMetrics"];
 // draws one yet.
 const MANOEUVRE_CARD_STATES = ["Closed", "Open"];
 const MANOEUVRE_CARD_APPEARANCES = ["Theme", "Background"];
+// The React RouteProgressRail's stories the library draws: the step disc
+// (Start to Waypoints) and the route mode's active leg. Not drawn: the route
+// mode's AtTransition (the dot over a transition's stem), StaticAfterTransition
+// (a later static leg) and LiveStart (the live start, nothing filled). The
+// right-to-left stories mirror these and are not variants.
+const ROUTE_PROGRESS_RAIL_CONTENT = [
+  "Start",
+  "Midway",
+  "Arriving",
+  "Unknown",
+  "Waypoints",
+  "ActiveLeg",
+  "WalkingWithinLeg",
+  "AfterTransition",
+  "RoutePositionUnknown",
+  "ThemeRoute",
+  "GuidancePaused",
+];
 const DIRECTION_STEP_ICON_SIZE = 24;
 const ADAPTIVE_MAP_SHELL_PANEL_PLACEMENTS = ["Start", "End"];
 const MAP_CONTROL_BUTTON_PRESENTATIONS = ["IconOnly", "Labelled"];
@@ -944,6 +962,7 @@ const COMPONENT_PAGE_LAYOUT_MIN_HEIGHTS = {
   WayfindingCard: 420,
   Itinerary: 380,
   ManoeuvreCard: 760,
+  RouteProgressRail: 520,
   TreeParentItem: 2500,
   TreeChildItem: 1900,
   TreeItem: 2600,
@@ -1071,6 +1090,7 @@ const COMPONENT_PAGE_LAYOUT_SECTIONS = [
       "WayfindingCard",
       "Itinerary",
       "ManoeuvreCard",
+      "RouteProgressRail",
     ],
   },
   {
@@ -2025,6 +2045,31 @@ const COMPONENT_DOCS = [
       "The code makes the closed instruction row the button that opens the itinerary.",
       "The grab bar is named by expandLabel and collapseLabel, and focus follows the disclosure.",
       "On the theme fill every word, mark and the grip is foreground/1000.",
+    ],
+  },
+  {
+    componentName: "RouteProgressRail",
+    componentSetName: "RouteProgressRail",
+    category: "Product / SDK",
+    summary:
+      "RouteProgressRail shows how far along the route the visitor is: the step disc, or the route's active leg with its transitions and the position.",
+    usage: [
+      "Use the route mode (activeLeg) for distance-based guidance; the step disc is the legacy presentation.",
+      "Static shows a selected leg with no position; live fills to the position; unknown positions never claim progress.",
+      "Pass motion none when guidance pauses or is unreliable; the flow is decoration, never progress.",
+    ],
+    api: [
+      "Content maps to the story the variant draws: the step disc (Start, Midway, Arriving, Unknown, Waypoints) or the route mode (ActiveLeg static; WalkingWithinLeg, AfterTransition, RoutePositionUnknown, ThemeRoute, GuidancePaused live).",
+      "The marks are DirectionStep's, from the Icons page; the position is the compact UserLocationMarker's dot.",
+      "The directional flow is drawn still: the product animates it and stops it under reduced motion.",
+    ],
+    properties: [
+      "Content: Start, Midway, Arriving, Unknown, Waypoints, ActiveLeg, WalkingWithinLeg, AfterTransition, RoutePositionUnknown, ThemeRoute, GuidancePaused",
+    ],
+    accessibility: [
+      "The code names the rail with label and reports progress as a percentage, or valueText when unknown.",
+      "A static leg is an image named by its label and valueText, not a progress bar.",
+      "Waypoint labels reach assistive technology as the rail's description; the marks are decorative.",
     ],
   },
   {
@@ -10269,6 +10314,7 @@ const PRODUCT_SDK_UPDATE_SEQUENCE = [
   ["WayfindingCard", updateWayfindingCardComponent],
   ["Itinerary", updateItineraryComponent],
   ["ManoeuvreCard", updateManoeuvreCardComponent],
+  ["RouteProgressRail", updateRouteProgressRailComponent],
   ["DynamicIsland", updateDynamicIslandComponent],
   ["FeedbackCard", updateFeedbackCardComponent],
 ];
@@ -10581,6 +10627,9 @@ function additionalComponentActionHandlers() {
     "build-manoeuvre-card": buildManoeuvreCardComponent,
     "update-manoeuvre-card": updateManoeuvreCardComponent,
     "rebuild-manoeuvre-card": rebuildManoeuvreCardComponent,
+    "build-route-progress-rail": buildRouteProgressRailComponent,
+    "update-route-progress-rail": updateRouteProgressRailComponent,
+    "rebuild-route-progress-rail": rebuildRouteProgressRailComponent,
   };
 }
 
@@ -17295,6 +17344,12 @@ function expectedVariantAxesForComponentSetName(name) {
     return {
       State: MANOEUVRE_CARD_STATES,
       Appearance: MANOEUVRE_CARD_APPEARANCES,
+    };
+  }
+
+  if (canonicalName === "RouteProgressRail") {
+    return {
+      Content: ROUTE_PROGRESS_RAIL_CONTENT,
     };
   }
 
@@ -46461,6 +46516,618 @@ async function rebuildManoeuvreCardComponent() {
     componentName: "ManoeuvreCard",
     componentSetName: "ManoeuvreCard",
     build: buildManoeuvreCardComponent,
+  });
+}
+
+// --- RouteProgressRail -----------------------------------------------------
+//
+// How far along the route the visitor is, as the React RouteProgressRail
+// draws its stories in a 360 frame (measured 2026-10-05).
+//
+// The step disc, 34 tall: a 6 track in background/100 from 10 to 350; a 10 dot
+// at each end, the start's theme/600 while the position is known; the disc,
+// 34 in theme/600 with the manoeuvre's 16 mark in foreground/1000, its leading
+// edge at 10 + 306 x progress; and, opted into, the completed track to its
+// middle and the waypoints, 24 discs in background/100 with the subtle edge
+// and a 16 mark in foreground/0, at 15 + 306 x position.
+//
+// The route mode, 48 tall, on an axis 12 in from each side: the track,
+// background/300, 6 at 35; the active leg in theme/600 or the theme to
+// success gradient, filled from the start to the position (live) or across
+// the selected leg (static); the directional flow's dots, 8 by 3 every 20,
+// background/600 ahead of the position or white at 65 % across a static leg,
+// still here; a 10 background/500 dot at each end; the transitions, 24 discs
+// in background/0 with a 1 background/400 edge, a 16 mark in foreground/100
+// and an 11 stem down to the track; and the position, the compact location
+// marker's 18 dot in the map marker's blue with a 3 background/0 ring and
+// no shadow, as every platform draws it. The marks are DirectionStep's, from
+// the Icons page.
+
+const ROUTE_PROGRESS_RAIL_WIDTH = 360;
+const ROUTE_RAIL_STEP = {
+  inset: 10,
+  dot: 10,
+  disc: 34,
+  track: 6,
+  travel: ROUTE_PROGRESS_RAIL_WIDTH - 54,
+};
+const ROUTE_RAIL_ROUTE = {
+  height: 48,
+  inset: 12,
+  axisTop: 35,
+  track: 6,
+  axis: ROUTE_PROGRESS_RAIL_WIDTH - 24,
+};
+const ROUTE_RAIL_TOKENS = {
+  muted: { name: "Colors/background/100", fallback: "#E3E4E8" },
+  primary: ITINERARY_ACCENT,
+  onPrimary: MANOEUVRE_CARD_ON_THEME,
+  text: ITINERARY_TEXT,
+  edge: { name: "Border/Subtle", fallback: "#C7CAD1" },
+  track: { name: "Colors/background/300", fallback: "#ABAFBA" },
+  endpoint: { name: "Colors/background/500", fallback: "#747B8B" },
+  flow: { name: "Colors/background/600", fallback: "#5D626F" },
+  disc: { name: "Colors/background/0", fallback: "#FFFFFF" },
+  discEdge: { name: "Colors/background/400", fallback: "#9095A2" },
+  discMark: { name: "Colors/foreground/100", fallback: "#17191C" },
+  success: { name: "Colors/emotional/success/600", fallback: "#23B26B" },
+  location: { name: "Map marker/dot", fallback: "#2563EB" },
+};
+const ROUTE_RAIL_ROUTE_WAYPOINTS = [
+  { position: 0, type: "Walking" },
+  { position: 0.4, type: "LiftUp" },
+  { position: 1, type: "Destination" },
+];
+const ROUTE_PROGRESS_RAIL_STORIES = {
+  Start: { mode: "step", progress: 0, type: "Straight" },
+  Midway: { mode: "step", progress: 0.5, type: "Left" },
+  Arriving: { mode: "step", progress: 0.84, type: "Destination" },
+  Unknown: { mode: "step", progress: null, type: "Left" },
+  // The story's fourth waypoint, 0.51, is thinned away beside 0.5.
+  Waypoints: {
+    mode: "step",
+    progress: 0.2,
+    type: "Left",
+    completed: true,
+    waypoints: [
+      { position: 0, type: "Straight" },
+      { position: 0.5, type: "Left" },
+      { position: 1, type: "Destination" },
+    ],
+  },
+  ActiveLeg: {
+    mode: "route",
+    positionMode: "static",
+    leg: [0, 0.4],
+    progress: null,
+    appearance: "gradient",
+    flow: true,
+  },
+  WalkingWithinLeg: {
+    mode: "route",
+    positionMode: "live",
+    leg: [0, 0.4],
+    progress: 0.2,
+    appearance: "gradient",
+    flow: true,
+  },
+  AfterTransition: {
+    mode: "route",
+    positionMode: "live",
+    leg: [0.4, 1],
+    progress: 0.6,
+    appearance: "gradient",
+    flow: true,
+  },
+  RoutePositionUnknown: {
+    mode: "route",
+    positionMode: "live",
+    leg: [0, 0.4],
+    progress: null,
+    appearance: "gradient",
+    flow: true,
+  },
+  ThemeRoute: {
+    mode: "route",
+    positionMode: "live",
+    leg: [0, 0.4],
+    progress: 0.2,
+    appearance: "theme",
+    flow: true,
+  },
+  GuidancePaused: {
+    mode: "route",
+    positionMode: "live",
+    leg: [0, 0.4],
+    progress: 0.2,
+    appearance: "gradient",
+    flow: false,
+  },
+};
+
+async function createRouteProgressRailVariant(args) {
+  const component = figma.createComponent();
+  await updateRouteProgressRailVariant(component, args);
+  return component;
+}
+
+function parseRouteProgressRailVariantName(name) {
+  return productSdkVariantValues(name, "Content", ROUTE_PROGRESS_RAIL_CONTENT);
+}
+
+/** A filled shape, placed absolutely in the rail. */
+function routeRailShape(parent, kind, name, options) {
+  const shape =
+    kind === "ellipse" ? figma.createEllipse() : figma.createRectangle();
+  shape.name = name;
+  shape.resizeWithoutConstraints(options.width, options.height);
+  if (kind !== "ellipse") {
+    shape.cornerRadius = options.square ? 0 : KOZMOS_RADIUS.pill;
+  }
+  shape.fills = [
+    paintFromVariable(
+      options.token.name,
+      options.token.fallback,
+      options.variableByName,
+      options.stats,
+    ),
+  ];
+  shape.strokes = [];
+  parent.appendChild(shape);
+  placeAbsolute(shape, options.x, options.y);
+  return shape;
+}
+
+/** A left-to-right gradient whose two stops bind to variables. */
+function routeRailGradient(from, to, variableByName, stats) {
+  const stop = (token, position) => {
+    const color = parseColor(token.fallback);
+    const entry = {
+      position,
+      color: { r: color.r, g: color.g, b: color.b, a: 1 },
+    };
+    const variable = variableByName.get(token.name);
+    if (variable) {
+      entry.boundVariables = {
+        color: { type: "VARIABLE_ALIAS", id: variable.id },
+      };
+    } else {
+      stats.warnings.push(
+        `Missing variable "${token.name}", used ${token.fallback}.`,
+      );
+    }
+    return entry;
+  };
+  return {
+    type: "GRADIENT_LINEAR",
+    gradientTransform: [
+      [1, 0, 0],
+      [0, 1, 0],
+    ],
+    gradientStops: [stop(from, 0), stop(to, 1)],
+  };
+}
+
+/**
+ * A disc that holds a DirectionStep mark from the Icons page, 16, centred: a
+ * frame with the fill and the edge, so what the mark sits on is its parent.
+ */
+async function routeRailDisc(parent, name, options) {
+  const disc = productSdkFrame(name, {
+    direction: "horizontal",
+    primarySizing: "FIXED",
+    counterSizing: "FIXED",
+    primaryAlign: "CENTER",
+    counterAlign: "CENTER",
+    width: options.size,
+    height: options.size,
+  });
+  disc.cornerRadius = KOZMOS_RADIUS.pill;
+  disc.fills = [
+    paintFromVariable(
+      options.fill.name,
+      options.fill.fallback,
+      options.variableByName,
+      options.stats,
+    ),
+  ];
+  if (options.edge) {
+    disc.strokes = [
+      paintFromVariable(
+        options.edge.name,
+        options.edge.fallback,
+        options.variableByName,
+        options.stats,
+      ),
+    ];
+    disc.strokeWeight = 1;
+    disc.strokeAlign = "INSIDE";
+  }
+  parent.appendChild(disc);
+  placeAbsolute(disc, options.x, options.y);
+  const icon = await productSdkIconInstance({
+    iconName:
+      DIRECTION_STEP_ICONS[options.type] || DIRECTION_STEP_ICONS.Straight,
+    token: options.mark,
+    size: 16,
+    sizeToken: null,
+    variableByName: options.variableByName,
+    stats: options.stats,
+    owner: "RouteProgressRail",
+  });
+  if (icon) appendWithSizing(disc, icon, "FIXED", "FIXED");
+  return disc;
+}
+
+async function paintRouteRailStep(component, story, variableByName, stats) {
+  const t = ROUTE_RAIL_TOKENS;
+  const g = ROUTE_RAIL_STEP;
+  const known = story.progress !== null;
+  const common = { variableByName, stats };
+  const trackTop = (g.disc - g.track) / 2;
+  routeRailShape(
+    component,
+    "rect",
+    "Track",
+    Object.assign(
+      {
+        x: g.inset,
+        y: trackTop,
+        width: ROUTE_PROGRESS_RAIL_WIDTH - 2 * g.inset,
+        height: g.track,
+        token: t.muted,
+      },
+      common,
+    ),
+  );
+  if (story.completed && known && story.progress > 0) {
+    routeRailShape(
+      component,
+      "rect",
+      "Completed Track",
+      Object.assign(
+        {
+          x: g.inset,
+          y: trackTop,
+          width: 17 + g.travel * story.progress,
+          height: g.track,
+          token: t.primary,
+        },
+        common,
+      ),
+    );
+  }
+  for (const [name, x, token] of [
+    ["Start Dot", 0, known ? t.primary : t.muted],
+    ["End Dot", ROUTE_PROGRESS_RAIL_WIDTH - g.dot, t.muted],
+  ]) {
+    routeRailShape(
+      component,
+      "ellipse",
+      name,
+      Object.assign(
+        { x, y: (g.disc - g.dot) / 2, width: g.dot, height: g.dot, token },
+        common,
+      ),
+    );
+  }
+  const waypoints = story.waypoints || [];
+  for (let index = 0; index < waypoints.length; index += 1) {
+    await routeRailDisc(
+      component,
+      `Waypoint ${index + 1}`,
+      Object.assign(
+        {
+          x: 15 + g.travel * waypoints[index].position,
+          y: (g.disc - 24) / 2,
+          size: 24,
+          type: waypoints[index].type,
+          fill: t.muted,
+          edge: t.edge,
+          mark: t.text,
+        },
+        common,
+      ),
+    );
+  }
+  if (known) {
+    await routeRailDisc(
+      component,
+      "Progress Disc",
+      Object.assign(
+        {
+          x: g.inset + g.travel * story.progress,
+          y: 0,
+          size: g.disc,
+          type: story.type,
+          fill: t.primary,
+          edge: null,
+          mark: t.onPrimary,
+        },
+        common,
+      ),
+    );
+  }
+}
+
+async function paintRouteRailRoute(component, story, variableByName, stats) {
+  const t = ROUTE_RAIL_TOKENS;
+  const g = ROUTE_RAIL_ROUTE;
+  const common = { variableByName, stats };
+  const at = (position) => g.inset + g.axis * position;
+  const legStart = story.leg[0];
+  const legEnd = story.leg[1];
+  const live = story.positionMode === "live";
+  const position =
+    live &&
+    story.progress !== null &&
+    story.progress >= legStart &&
+    story.progress <= legEnd
+      ? story.progress
+      : null;
+  routeRailShape(
+    component,
+    "rect",
+    "Track",
+    Object.assign(
+      {
+        x: g.inset,
+        y: g.axisTop,
+        width: g.axis,
+        height: g.track,
+        token: t.track,
+      },
+      common,
+    ),
+  );
+  // Live, the leg fills from the journey's start to the position; static,
+  // across the selected leg.
+  let fill = null;
+  if (!live) fill = [legStart, legEnd];
+  else if (position !== null && position > 0) fill = [0, position];
+  if (fill) {
+    const active = routeRailShape(
+      component,
+      "rect",
+      "Active Leg",
+      Object.assign(
+        {
+          x: at(fill[0]),
+          y: g.axisTop,
+          width: g.axis * (fill[1] - fill[0]),
+          height: g.track,
+          token: t.primary,
+        },
+        common,
+      ),
+    );
+    if (story.appearance === "gradient") {
+      const gradient = routeRailGradient(
+        t.primary,
+        t.success,
+        variableByName,
+        stats,
+      );
+      try {
+        active.fills = [gradient];
+        // Figma may keep a gradient and quietly drop a stop's binding; read
+        // it back, so plain colours are not taken for the tokens.
+        const kept = active.fills[0] && active.fills[0].gradientStops;
+        const lost = gradient.gradientStops.some(
+          (stop, index) =>
+            stop.boundVariables &&
+            !(
+              kept &&
+              kept[index] &&
+              kept[index].boundVariables &&
+              kept[index].boundVariables.color
+            ),
+        );
+        if (lost) {
+          stats.warnings.push(
+            "RouteProgressRail: Figma kept the active leg's gradient but not its stops' bindings; the colours are plain.",
+          );
+        }
+      } catch (_error) {
+        // A runtime that refuses bound stops takes the plain colours.
+        active.fills = [
+          Object.assign({}, gradient, {
+            gradientStops: gradient.gradientStops.map((stop) => ({
+              position: stop.position,
+              color: stop.color,
+            })),
+          }),
+        ];
+        stats.warnings.push(
+          "RouteProgressRail: the active leg's gradient stops could not bind to variables; plain colours used.",
+        );
+      }
+    }
+  }
+  // The directional flow, still: dots 8 by 3 at the middle of every 20,
+  // from the position (live) or the leg's start (static) to the leg's end,
+  // clipped there as the CSS pattern is.
+  const flowStart = live ? position : legStart;
+  if (story.flow && flowStart !== null && flowStart < legEnd) {
+    const flow = figma.createFrame();
+    flow.name = "Directional Flow";
+    flow.resizeWithoutConstraints(g.axis * (legEnd - flowStart), g.track);
+    flow.fills = [];
+    flow.strokes = [];
+    // Clipped with the track's rounded ends, as the CSS pattern is.
+    flow.cornerRadius = KOZMOS_RADIUS.pill;
+    flow.clipsContent = true;
+    component.appendChild(flow);
+    placeAbsolute(flow, at(flowStart), g.axisTop);
+    for (let centre = 10; centre - 4 < flow.width; centre += 20) {
+      const dot = figma.createEllipse();
+      dot.name = "Flow Dot";
+      dot.resizeWithoutConstraints(8, 3);
+      dot.fills = live
+        ? [
+            paintFromVariable(
+              t.flow.name,
+              t.flow.fallback,
+              variableByName,
+              stats,
+            ),
+          ]
+        : [{ type: "SOLID", color: { r: 1, g: 1, b: 1 }, opacity: 0.65 }];
+      dot.strokes = [];
+      flow.appendChild(dot);
+      dot.x = centre - 4;
+      dot.y = (g.track - 3) / 2;
+    }
+  }
+  for (const [name, position] of [
+    ["Start Endpoint", 0],
+    ["End Endpoint", 1],
+  ]) {
+    routeRailShape(
+      component,
+      "ellipse",
+      name,
+      Object.assign(
+        {
+          x: at(position) - 5,
+          y: g.axisTop - 2,
+          width: 10,
+          height: 10,
+          token: t.endpoint,
+        },
+        common,
+      ),
+    );
+  }
+  for (let index = 0; index < ROUTE_RAIL_ROUTE_WAYPOINTS.length; index += 1) {
+    const point = ROUTE_RAIL_ROUTE_WAYPOINTS[index];
+    // The stem: from the disc's bottom, 24, down to the track, 35.
+    routeRailShape(
+      component,
+      "rect",
+      `Waypoint ${index + 1} Stem`,
+      Object.assign(
+        {
+          x: at(point.position) - 0.5,
+          y: 24,
+          width: 1,
+          height: g.axisTop - 24,
+          token: t.endpoint,
+          square: true,
+        },
+        common,
+      ),
+    );
+    await routeRailDisc(
+      component,
+      `Waypoint ${index + 1}`,
+      Object.assign(
+        {
+          x: at(point.position) - 12,
+          y: 0,
+          size: 24,
+          type: point.type,
+          fill: t.disc,
+          edge: t.discEdge,
+          mark: t.discMark,
+        },
+        common,
+      ),
+    );
+  }
+  if (position !== null) {
+    const dot = routeRailShape(
+      component,
+      "ellipse",
+      "Location Dot",
+      Object.assign(
+        {
+          x: at(position) - 9,
+          y: g.axisTop - 6,
+          width: 18,
+          height: 18,
+          token: t.location,
+        },
+        common,
+      ),
+    );
+    dot.strokes = [
+      paintFromVariable(t.disc.name, t.disc.fallback, variableByName, stats),
+    ];
+    dot.strokeWeight = 3;
+    dot.strokeAlign = "INSIDE";
+    dot.effects = [];
+  }
+}
+
+async function updateRouteProgressRailVariant(
+  component,
+  { value, variableByName, fonts, stats },
+) {
+  const story =
+    ROUTE_PROGRESS_RAIL_STORIES[value] || ROUTE_PROGRESS_RAIL_STORIES.Midway;
+  const route = story.mode === "route";
+  productSdkVariantRoot(component, "RouteProgressRail", `Content=${value}`, {
+    width: ROUTE_PROGRESS_RAIL_WIDTH,
+    height: route ? ROUTE_RAIL_ROUTE.height : ROUTE_RAIL_STEP.disc,
+  });
+  component.fills = [];
+  component.strokes = [];
+  if (route) await paintRouteRailRoute(component, story, variableByName, stats);
+  else await paintRouteRailStep(component, story, variableByName, stats);
+}
+
+function configureRouteProgressRailProperties(_componentSet, _stats) {
+  // No editable text: the label and the progress are what assistive
+  // technology hears, and the rail draws neither.
+}
+
+const ROUTE_PROGRESS_RAIL_DESCRIPTION = [
+  "Kozmos RouteProgressRail generated from the React RouteProgressRail API.",
+  "Content maps to the story the variant draws: the step disc (Start, Midway, Arriving, Unknown, Waypoints) or the route mode with activeLeg (ActiveLeg is static, the rest live; ThemeRoute is appearance theme, GuidancePaused motion none).",
+  "The marks are DirectionStep's, from the Icons page; the position is the compact UserLocationMarker's dot, in the map marker's blue.",
+  "The directional flow is drawn still; the product moves it, and stops it under reduced motion.",
+];
+
+async function buildRouteProgressRailComponent() {
+  return buildSingleAxisComponent({
+    componentName: "RouteProgressRail",
+    componentSetName: "RouteProgressRail",
+    axisName: "Content",
+    values: ROUTE_PROGRESS_RAIL_CONTENT,
+    x: 80,
+    y: 10400,
+    xStep: 400,
+    createVariant: createRouteProgressRailVariant,
+    configureProperties: configureRouteProgressRailProperties,
+    autoReorganize: true,
+    description: ROUTE_PROGRESS_RAIL_DESCRIPTION,
+  });
+}
+
+async function updateRouteProgressRailComponent() {
+  return updateSingleAxisComponent({
+    componentName: "RouteProgressRail",
+    componentSetName: "RouteProgressRail",
+    axisName: "Content",
+    values: ROUTE_PROGRESS_RAIL_CONTENT,
+    xStep: 400,
+    createVariant: createRouteProgressRailVariant,
+    updateVariant: updateRouteProgressRailVariant,
+    parseVariantName: parseRouteProgressRailVariantName,
+    configureProperties: configureRouteProgressRailProperties,
+    autoReorganize: true,
+    description: ROUTE_PROGRESS_RAIL_DESCRIPTION.concat([
+      "Updated in place to preserve the Code Connect node ID.",
+    ]),
+  });
+}
+
+async function rebuildRouteProgressRailComponent() {
+  return rebuildGeneratedComponentSet({
+    componentName: "RouteProgressRail",
+    componentSetName: "RouteProgressRail",
+    build: buildRouteProgressRailComponent,
   });
 }
 
