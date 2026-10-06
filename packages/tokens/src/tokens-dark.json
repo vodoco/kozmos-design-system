@@ -2416,6 +2416,18 @@
         "$description": "One logical unit of outline outside map credit glyphs."
       }
     },
+    "Map marker": {
+      "dot": {
+        "$value": "#2563EB",
+        "$type": "color",
+        "$description": "Fixed blue of the user-location marker, the same in both themes: the dot, and the halo, pulse and heading cone that are tints of it. Not data blue, which lightens in dark to 2.54:1 against the white ring."
+      },
+      "ring": {
+        "$value": "#FFFFFF",
+        "$type": "color",
+        "$description": "Fixed white ring around the user-location dot, the same in both themes, so the dot stands apart from any map underneath."
+      }
+    },
     "Surface": {
       "0": {
         "$value": "#000000",

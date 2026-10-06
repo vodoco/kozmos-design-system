@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-28T22:23:57.468Z",
+  "generatedAt": "2026-10-05T23:05:28.500Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,17 +36,17 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 674,
-    "variableTokens": 623,
+    "totalTokens": 681,
+    "variableTokens": 630,
     "styleOnlyTokens": 51,
     "bySourceType": {
       "borderRadius": 8,
-      "dimension": 18,
+      "dimension": 19,
       "borderWidth": 4,
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 455,
+      "color": 461,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -6418,6 +6418,174 @@
         "dark": {
           "kind": "number",
           "value": 9999
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Result/selected surface",
+      "figmaName": "Result/selected surface",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-result-selected-surface",
+      "syntax": {
+        "web": "var(--semantics-result-selected-surface)",
+        "ios": "semanticsResultSelectedSurface",
+        "android": "semanticsResultSelectedSurface"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#F9FAFB"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#14161A"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Result/hover surface",
+      "figmaName": "Result/hover surface",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-result-hover-surface",
+      "syntax": {
+        "web": "var(--semantics-result-hover-surface)",
+        "ios": "semanticsResultHoverSurface",
+        "android": "semanticsResultHoverSurface"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#EEEFF0"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#202329"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Map attribution/text",
+      "figmaName": "Map attribution/text",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-map-attribution-text",
+      "syntax": {
+        "web": "var(--semantics-map-attribution-text)",
+        "ios": "semanticsMapAttributionText",
+        "android": "semanticsMapAttributionText"
+      },
+      "suggestedScopes": ["TEXT_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#464A53"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#464A53"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Map attribution/halo",
+      "figmaName": "Map attribution/halo",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-map-attribution-halo",
+      "syntax": {
+        "web": "var(--semantics-map-attribution-halo)",
+        "ios": "semanticsMapAttributionHalo",
+        "android": "semanticsMapAttributionHalo"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FFFFFF"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FFFFFF"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Map attribution/halo width",
+      "figmaName": "Map attribution/halo width",
+      "collection": "Kozmos Semantics",
+      "sourceType": "dimension",
+      "figmaType": "FLOAT",
+      "cssVariable": "--semantics-map-attribution-halo-width",
+      "syntax": {
+        "web": "var(--semantics-map-attribution-halo-width)",
+        "ios": "semanticsMapAttributionHaloWidth",
+        "android": "semanticsMapAttributionHaloWidth"
+      },
+      "suggestedScopes": [],
+      "values": {
+        "light": {
+          "kind": "number",
+          "value": 1
+        },
+        "dark": {
+          "kind": "number",
+          "value": 1
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Map marker/dot",
+      "figmaName": "Map marker/dot",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-map-marker-dot",
+      "syntax": {
+        "web": "var(--semantics-map-marker-dot)",
+        "ios": "semanticsMapMarkerDot",
+        "android": "semanticsMapMarkerDot"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#2563EB"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#2563EB"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Map marker/ring",
+      "figmaName": "Map marker/ring",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-map-marker-ring",
+      "syntax": {
+        "web": "var(--semantics-map-marker-ring)",
+        "ios": "semanticsMapMarkerRing",
+        "android": "semanticsMapMarkerRing"
+      },
+      "suggestedScopes": ["STROKE_COLOR", "SHAPE_FILL", "FRAME_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FFFFFF"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FFFFFF"
         }
       }
     },

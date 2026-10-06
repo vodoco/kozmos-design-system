@@ -264,10 +264,10 @@ a route, or fabricate content.
 - Integrate and test the actual app source and supported map renderer.
 - Vue now wraps every React component via `createVueWrapper`; verify the
   adapter's SSR and bundle-size constraints before treating it as a shipped SDK.
-- Create canonical Product / SDK Figma component sets and real Code Connect
-  mappings. The lane is 0/22 linked on every platform, and the iOS/Android
-  `.figma` files for DirectionStep, FloorSelector, LocationPin, MapView,
-  POICard, and WayfindingCard are still `// Placeholder` stubs.
+- Finish canonical Product / SDK Figma component sets and real Code Connect
+  mappings for the components still unlinked: `docs/status.md` lists them (22
+  of 29 linked on every platform on 2026-10-05; none of the native `.figma`
+  files is a placeholder any longer).
 - Run screenshot tests at 320, 375/390, tablet, and desktop widths, plus dark
   theme, RTL, long copy, and 200% text.
 - Run manual VoiceOver/TalkBack and keyboard/switch-control checks.

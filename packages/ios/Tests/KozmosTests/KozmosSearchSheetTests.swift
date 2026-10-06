@@ -301,7 +301,10 @@ final class KozmosSearchSheetTests: XCTestCase {
         let halo = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: RenderedPixels.isInk), "no halo")
         XCTAssertEqual(halo.width, 64, accuracy: 2, "the halo is not 64: \(halo)")
         let dot = try XCTUnwrap(pixels.boundingBox(in: CGRect(origin: .zero, size: size), where: { r, g, b in b > 150 && r < 90 && g < 120 }), "no dot")
-        XCTAssertEqual(dot.width, 18 - 3, accuracy: 2, "the dot's blue is not 18 less its 3 border: \(dot)")
+        // The 3 border sits inside the 18, as Compose's and React's do: until
+        // 2026-10-05 a stroke on the edge drew it 21 across around a 15 blue
+        // (testTheRingSitsInsideTheEighteenDot).
+        XCTAssertEqual(dot.width, 18 - 2 * 3, accuracy: 2, "the dot's blue is not 18 less its 3 border on each side: \(dot)")
     }
 
     /// The AI search, the prototype's: a 48 circle whose gradient ring is a

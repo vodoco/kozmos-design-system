@@ -178,7 +178,8 @@ Then Update that set in the plugin and verify.
 ### Add a new component
 
 Give it a `build-`, `update-` and `rebuild-` handler, and add its update
-function to `CORE_UPDATE_SEQUENCE`. `pnpm components:contract:check` fails if
+function to `CORE_UPDATE_SEQUENCE` or, for a Product / SDK set,
+`PRODUCT_SDK_UPDATE_SEQUENCE`. `pnpm components:contract:check` fails if
 you forget the sequence entry, because a bulk action that quietly skips a set
 is worse than none: the skipped sets look updated because the run reported
 success.
@@ -216,8 +217,10 @@ means the import never ran.
 **Two checkouts, two payloads.** There is a second clone at
 `P/Pointr Cloud/kozmos-design-system-` with an older payload. Figma is
 registered to run the plugin from `K/kozmos-design-system-dev`, and the
-payload must come from the same place. The status line should read **620
-token candidates**; 615 means the wrong file.
+payload must come from the same place. The status line's token-candidate
+count is the payload's `summary.totalTokens` (681 on 2026-10-05, when the map
+marker's tokens were added): a smaller number than this checkout's payload
+says means the wrong file.
 
 **The audit's rules must agree with the painters.** Twice in one day a text
 rule expected a different style from the one the painter applies. The audit
@@ -236,6 +239,22 @@ thirteen painters counted as a single literal because the check counted
 occurrences. Scan everything and name only the exceptions; count reach, not
 sites. `tokens:raw:check` exists because every other parity check had this
 shape.
+
+**A text style's own fields belong to the style.** Writing `fontName`,
+`fontSize`, `lineHeight`, `letterSpacing`, `textCase` or `textDecoration` on
+a text after attaching its style, with another value, detaches the style:
+Itinerary set its From and To captions to upper case after attaching
+_Itinerary / Caption_, and the live file read back six captions with no style
+(#206). Put the value in the style spec (`addTextStyleSpec`'s `textDecoration`
+and `textCase`) and never write it on the node afterwards. The harness's
+`createMockTextStyle` detaches as Figma does, so `pnpm figma:painters:check`
+catches it.
+
+**`resetOverrides()` resets an instance's name.** A sync that finds a kept
+layer by name finds nothing on the next run once it has reset that layer's
+overrides, and redraws it. Curated Icons did this to every icon source on
+every second run, which orphaned every set's icon tints (#200). Find a kept
+instance by its main component's key, and name it again after resetting it.
 
 **A quiet file is not a stalled run.** Figma cannot save while the plugin holds
 the thread, so `lastModified` can sit still for forty minutes while a bulk run
@@ -259,6 +278,7 @@ under a minute apart from the two that call Figma.
 | `pnpm tokens:typography:check`   | Type scale parity                                                        |
 | `pnpm components:contract:check` | Variant axes, props, and the bulk sequences' completeness                |
 | `pnpm figma:plugin:check`        | The plugin's restricted syntax (no spread, `?.` or `??`)                 |
+| `pnpm figma:painters:check`      | What the painters draw, against a Plugin API stand-in, without Figma     |
 | `pnpm native:check`              | Both native packages compile, the way CI's two build jobs do             |
 | `pnpm tokens:radius:nesting`     | **Reads the live Figma file.** Concentric radii; `--strict` in CI        |
 | `pnpm figma:verify`              | **Reads the live Figma file.** Six publishing checks                     |
@@ -351,11 +371,11 @@ Recorded so nobody rediscovers them:
 - **No glass surface role.** FeedbackCard, RoutingInputGroup and
   SaveLocationCard each repeat `bg-white/70 dark:bg-black/70 backdrop-blur-3xl
 ring-1 ring-black/5` — 29 of the 35 raw colours `tokens:raw:check` counts.
-- **19 Figma sets cast no shadow** where at least one implementation does:
+- **18 Figma sets cast no shadow** where at least one implementation does:
   POICard, WayfindingCard, RouteSummary, FeedbackCard, SaveLocationCard,
   RoutingInputGroup, MapControlsGroup, FloorSelector, POIDetailPanel,
-  LocationPin, AdaptiveMapShell, UserLocationMarker, Navbar, DirectionStep,
-  POIResultCard, POIMediaGallery, Listbox, Select and DynamicIsland. Each needs
+  LocationPin, AdaptiveMapShell, Navbar, DirectionStep, POIResultCard,
+  POIMediaGallery, Listbox, Select and DynamicIsland. Each needs
   `elevationEffect(role)` in its painter, then a run.
 - **Card disagrees across platforms**: raised on the web and iOS, flat on
   Android. **The iOS FloatingActionButton** uses a bare SwiftUI default where

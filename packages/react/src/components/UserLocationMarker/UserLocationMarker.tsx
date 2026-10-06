@@ -65,37 +65,51 @@ const UserLocationMarker = React.forwardRef<
         {/* The halo: 64 at 14 %, still. The ring: 48, pulsing. */}
         {!offFloor && !compact && (
           <>
-            <div className="absolute h-16 w-16 rounded-pill bg-data-blue opacity-[0.14] outline-none pointer-events-none" />
-            <div className="absolute h-12 w-12 rounded-pill bg-data-blue opacity-30 animate-ping motion-reduce:animate-none outline-none pointer-events-none" />
+            <div className="absolute h-16 w-16 rounded-pill bg-map-marker-dot opacity-[0.14] outline-none pointer-events-none" />
+            <div className="absolute h-12 w-12 rounded-pill bg-map-marker-dot opacity-30 animate-ping motion-reduce:animate-none outline-none pointer-events-none" />
           </>
         )}
 
-        {/* Heading Cone (if active) */}
+        {/* The heading cone, as SwiftUI and Compose draw it (Olcay,
+            2026-10-05): in the 64 box, from the centre to 15 % and 85 % of
+            the top edge, the top a quadratic curve whose control point is
+            10 % above it, in the marker's blue fading from 40 % at the
+            centre to nothing 32 out. The curve rises 5 % past the box, so
+            the svg does not clip. */}
         {showHeading && !offFloor && !compact && (
           <div
-            className="absolute h-24 w-24 pointer-events-none"
+            className="absolute h-16 w-16 pointer-events-none"
             style={{
               transform: `rotate(${heading}deg)`,
               transformOrigin: "center",
             }}
           >
-            {/* Complex SVG cone representing view direction */}
-            <svg viewBox="0 0 100 100" className="h-full w-full">
+            <svg
+              viewBox="0 0 64 64"
+              overflow="visible"
+              className="h-full w-full"
+            >
               <path
-                d="M50 50 L85 10 A 50 50 0 0 0 15 10 Z"
+                d="M32 32 L9.6 0 Q32 -6.4 54.4 0 Z"
                 fill={`url(#${gradientId})`}
                 opacity="0.4"
               />
               <defs>
-                <radialGradient id={gradientId} cx="50%" cy="50%" r="50%">
+                <radialGradient
+                  id={gradientId}
+                  gradientUnits="userSpaceOnUse"
+                  cx="32"
+                  cy="32"
+                  r="32"
+                >
                   <stop
                     offset="0%"
-                    stopColor="var(--semantics-data-blue)"
+                    stopColor="var(--semantics-map-marker-dot)"
                     stopOpacity="1"
                   />
                   <stop
                     offset="100%"
-                    stopColor="var(--semantics-data-blue)"
+                    stopColor="var(--semantics-map-marker-dot)"
                     stopOpacity="0"
                   />
                 </radialGradient>
@@ -104,15 +118,22 @@ const UserLocationMarker = React.forwardRef<
           </div>
         )}
 
-        {/* Core Dot bordered with white */}
+        {/* The dot: 18, the marker's blue, with a 3 ring and no shadow, as SwiftUI
+            and Compose draw it (Olcay, 2026-10-05). The blue and the full
+            marker's white ring are fixed in both themes, so the dot clears
+            3:1 against its ring in dark as in light; the compact dot's ring
+            is the background, the surface it sits on. */}
         <div
           className={cn(
-            "relative z-10 h-[18px] w-[18px] rounded-pill shadow-floating",
+            "relative z-10 h-[18px] w-[18px] rounded-pill",
             offFloor
               ? // Hollow, as LocationPin's offFloor is: the ring keeps the
                 // marker findable while the empty middle says it is not here.
-                "border-[3px] border-data-blue bg-background"
-              : "border-[3px] border-background bg-data-blue",
+                "border-[3px] border-map-marker-dot bg-background"
+              : cn(
+                  "border-[3px] bg-map-marker-dot",
+                  compact ? "border-background" : "border-map-marker-ring",
+                ),
           )}
         />
       </div>

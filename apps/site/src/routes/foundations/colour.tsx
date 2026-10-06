@@ -3,9 +3,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  Box,
   Stack,
-  Surface,
   Table,
   TableBody,
   TableCell,
@@ -16,6 +14,7 @@ import {
   Text,
 } from "@kozmos-ds/react";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
+import { PairSample, type ContrastPair } from "../../foundations/PairSample";
 import { Ramp, SwatchList, TokenTable } from "../../foundations/parts";
 import { foundationPage } from "../../foundations/nav";
 import contract from "../../generated/contrast-contract.json";
@@ -82,6 +81,16 @@ const semanticGroups = [
     title: "Overlay",
     lead: "The scrim behind a dialog, a drawer and a backdrop, and a lighter dim that no component uses yet.",
   },
+  {
+    prefix: "--semantics-result",
+    title: "Result",
+    lead: "A search result’s surface when it is selected, and when a pointer is over it.",
+  },
+  {
+    prefix: "--semantics-map",
+    title: "Map",
+    lead: "Fixed for what sits on a map, so they are the same in both themes: the credit line’s text and the halo, one unit wide, around it; the user-location marker’s dot and its ring.",
+  },
 ];
 
 /** One contract pair measured in one theme. */
@@ -99,12 +108,7 @@ function measure(
 }
 
 function ContrastContract() {
-  const pairs = contract.pairs as {
-    name: string;
-    background: string;
-    foreground: string;
-    minimum: number;
-  }[];
+  const pairs = contract.pairs as ContrastPair[];
   const results = pairs.map((pair) => ({
     ...pair,
     light: measure(pair.background, pair.foreground, "light"),
@@ -153,24 +157,7 @@ function ContrastContract() {
                 </Stack>
               </TableCell>
               <TableCell>
-                <Surface
-                  className="site-pair-sample"
-                  aria-hidden="true"
-                  style={{
-                    "--pair-bg": `var(--${pair.background})`,
-                    "--pair-fg": `var(--${pair.foreground})`,
-                  }}
-                >
-                  <Box className="site-pair-fill">
-                    <Text
-                      as="span"
-                      weight="semibold"
-                      className="site-pair-text"
-                    >
-                      Aa
-                    </Text>
-                  </Box>
-                </Surface>
+                <PairSample pair={pair} />
               </TableCell>
               <TableCell>
                 <Text as="span" size="sm">
@@ -270,7 +257,9 @@ export default function Colour() {
               lead={group.lead}
             >
               <SwatchList
-                entries={tokensWithPrefix(`${group.prefix}-`)}
+                entries={tokensWithPrefix(`${group.prefix}-`).filter(
+                  (entry) => parseColour(entry.light) !== undefined,
+                )}
                 prefix={group.prefix}
               />
             </Section>
@@ -280,7 +269,7 @@ export default function Colour() {
 
       <Section
         title="The contrast contract"
-        lead={`The ${contract.pairs.length} colour pairs the tokens package holds to WCAG AA: text on the page and its surfaces, the selected and tinted states, the five filled actions and the buttons, measured here from the stylesheet in both themes. CI measures the same pairs on every pull request, with every button emotion and state and the category inks besides, and fails when one drops below its minimum.`}
+        lead={`The ${contract.pairs.length} colour pairs the tokens package holds to WCAG AA: text on the page and its surfaces, the selected and tinted states, the five filled actions and the buttons, the map’s credit line and the user-location marker, measured here from the stylesheet in both themes. A pair held to 3:1 is a shape or an edge, not text, so its sample is a dot. CI measures the same pairs on every pull request, with every button emotion and state and the category inks besides, and fails when one drops below its minimum.`}
       >
         <ContrastContract />
       </Section>

@@ -163,7 +163,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [Itinerary](components/Itinerary.md): The whole route as a list: where it starts, every step with the current one emphasised, where it ends.
 - [LanguageSwitcher](components/LanguageSwitcher.md): A web-only language control built from Kozmos Select. iOS and Android deliberately follow device/app language and do not have this button.
 - [LocationPin](components/LocationPin.md): A map marker with optional result number, custom content, external label and category tint.
-- [ManoeuvreCard](components/ManoeuvreCard.md): The current manoeuvre, floating over the map during navigation: its arrow, the instruction, how far and how long, and a grab bar that opens the full itinerary in its place.
+- [ManoeuvreCard](components/ManoeuvreCard.md): The current manoeuvre, floating over the map during navigation: its direction mark, the instruction, how far and how long, and a grab bar that opens the full itinerary in its place.
 - [MapAttribution](components/MapAttribution.md): Provider-neutral map credits and an independently optional brand slot, available on React, SwiftUI and Compose.
 - [MapControlButton](components/MapControlButton.md): Product/SDK map action with icon-only and labelled presentations.
 - [MapControlsGroup](components/MapControlsGroup.md): The stacked zoom, compass, and locate affordances that sit over a map.

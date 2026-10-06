@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -26,6 +28,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.motion.rememberKozmosAnimationsOn
 import com.kozmos.tokens.KozmosThemeTokens
 
 /**
@@ -44,15 +47,22 @@ fun KozmosUserLocationMarker(
     label: String = "User location",
     compact: Boolean = false
 ) {
-    val dataBlue = KozmosThemeTokens.semanticsDataBlue
+    // The marker's blue, fixed in both themes (Semantics.Map marker.dot).
+    val markerBlue = KozmosThemeTokens.semanticsMapMarkerDot
     Box(modifier = modifier.size(if (compact) 18.dp else 64.dp).clearAndSetSemantics {
         contentDescription = label
         role = Role.Image
     }, contentAlignment = Alignment.Center) {
     if (!compact) {
+    // With system animations off the pulse holds still at 48 and 30 %, as
+    // React's does and as Figma draws it. Read in the layer, so a frame of
+    // the pulse redraws it without recomposing the marker.
+    val pulseScale: State<Float>
+    val pulseAlpha: State<Float>
+    if (rememberKozmosAnimationsOn()) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     
-    val pulseScale by infiniteTransition.animateFloat(
+    pulseScale = infiniteTransition.animateFloat(
         initialValue = 0.6f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -62,7 +72,7 @@ fun KozmosUserLocationMarker(
         label = "pulseScale"
     )
     
-    val pulseAlpha by infiniteTransition.animateFloat(
+    pulseAlpha = infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
@@ -71,13 +81,17 @@ fun KozmosUserLocationMarker(
         ),
         label = "pulseAlpha"
     )
+    } else {
+        pulseScale = remember { mutableStateOf(1f) }
+        pulseAlpha = remember { mutableStateOf(0.3f) }
+    }
 
         // The halo: 64 at 14 %, still.
         Box(
             modifier = Modifier
                 .size(64.dp)
                 .alpha(0.14f)
-                .background(KozmosThemeTokens.semanticsDataBlue, CircleShape)
+                .background(KozmosThemeTokens.semanticsMapMarkerDot, CircleShape)
         )
 
         // The ring: 48, pulsing.
@@ -85,11 +99,11 @@ fun KozmosUserLocationMarker(
             modifier = Modifier
                 .size(48.dp)
                 .graphicsLayer {
-                    scaleX = pulseScale
-                    scaleY = pulseScale
-                    alpha = pulseAlpha
+                    scaleX = pulseScale.value
+                    scaleY = pulseScale.value
+                    alpha = pulseAlpha.value
                 }
-                .background(KozmosThemeTokens.semanticsDataBlue, CircleShape)
+                .background(KozmosThemeTokens.semanticsMapMarkerDot, CircleShape)
         )
 
         // Heading Cone
@@ -116,7 +130,7 @@ fun KozmosUserLocationMarker(
                             path = path,
                             brush = Brush.radialGradient(
                                 colors = listOf(
-                                    dataBlue.copy(alpha = 0.4f),
+                                    markerBlue.copy(alpha = 0.4f),
                                     Color.Transparent
                                 ),
                                 center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f),
@@ -130,10 +144,11 @@ fun KozmosUserLocationMarker(
         // Core Dot
         Box(
             modifier = Modifier
-                // The dot: 18, with a 3 white border.
+                // The dot: 18, with a 3 ring: the map marker's white, the same in
+                // both themes, or for the compact dot the surface it sits on.
                 .size(18.dp)
-                .background(KozmosThemeTokens.semanticsDataBlue, CircleShape)
-                .border(3.dp, if (compact) KozmosThemeTokens.primitivesColorsBackground0 else Color.White, CircleShape)
+                .background(KozmosThemeTokens.semanticsMapMarkerDot, CircleShape)
+                .border(3.dp, if (compact) KozmosThemeTokens.primitivesColorsBackground0 else KozmosThemeTokens.semanticsMapMarkerRing, CircleShape)
         )
     }
 }

@@ -32,6 +32,7 @@ import {
   payloadVariables,
   resetSearchStats,
   searchStats,
+  withNodeDefaults,
 } from "./lib/figma-plugin-harness.mjs";
 
 const ROOT = process.cwd();
@@ -2356,6 +2357,208 @@ section("Text styles stay attached");
           ),
         `${label}: From and To are upper case through Itinerary / Caption`,
       );
+    }
+  }
+}
+
+// --- UserLocationMarker ----------------------------------------------------------
+
+// The marker as SwiftUI and Compose draw it, which React follows (Olcay,
+// 2026-10-05): halo 64 at 14 %, pulse 48 at 30 %, native's cone with its
+// radial fade, the 18 dot with a 3 white ring inside, no shadow, in the
+// marker's fixed blue. The painter drew theme/100 and theme/500, a solid
+// wedge and a 20 dot until then.
+section("UserLocationMarker");
+{
+  // Map marker/dot and /ring come from the payload, so a payload without
+  // them fails here rather than being stood in for.
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const fill = (node) => node && node.fills && node.fills[0];
+  const token = (node) => boundVariableName(fill(node));
+  const near = (a, b, e = 0.01) => Math.abs(a - b) < e;
+  const paintMarker = async (component, value, stats) =>
+    plugin.updateUserLocationMarkerVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+  ok(
+    JSON.stringify(plugin.USER_LOCATION_MARKER_HEADINGS) ===
+      JSON.stringify(["Hidden", "Visible"]),
+    "two variants, Heading Hidden and Visible",
+  );
+  for (const value of plugin.USER_LOCATION_MARKER_HEADINGS || []) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateUserLocationMarkerVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    const halo = named(component, "Accuracy Halo");
+    const pulse = named(component, "Pulse");
+    const dot = named(component, "Location Dot");
+    ok(
+      component.width === 64 &&
+        component.height === 64 &&
+        halo &&
+        halo.type === "ELLIPSE" &&
+        halo.width === 64 &&
+        token(halo) === "Map marker/dot" &&
+        near(halo.opacity, 0.14) &&
+        pulse &&
+        pulse.width === 48 &&
+        pulse.x === 8 &&
+        pulse.y === 8 &&
+        token(pulse) === "Map marker/dot" &&
+        near(pulse.opacity, 0.3),
+      `${value}: the 64 halo at 14 % and the 48 pulse at 30 %, in the marker's blue (${token(halo)} ${halo && halo.opacity}; ${token(pulse)} ${pulse && pulse.opacity})`,
+    );
+    ok(
+      dot &&
+        dot.width === 18 &&
+        dot.x === 23 &&
+        dot.y === 23 &&
+        token(dot) === "Map marker/dot" &&
+        boundVariableName(dot.strokes[0]) === "Map marker/ring" &&
+        dot.strokeWeight === 3 &&
+        dot.strokeAlign === "INSIDE" &&
+        (dot.effects || []).length === 0,
+      `${value}: the 18 dot in the marker's blue, its 3 white ring inside, no shadow`,
+    );
+    const cone = named(component, "Heading Cone");
+    if (value === "Hidden") {
+      ok(!cone, "Hidden: no cone");
+    } else {
+      const wedge = cone && named(cone, "Cone");
+      const paint = fill(wedge);
+      // Where the gradient's unit space puts a point of the 64 frame.
+      const toGradient = (fx, fy) => {
+        const t = paint.gradientTransform;
+        const nx = (fx - wedge.x) / wedge.width;
+        const ny = (fy - wedge.y) / wedge.height;
+        return [
+          t[0][0] * nx + t[0][1] * ny + t[0][2],
+          t[1][0] * nx + t[1][1] * ny + t[1][2],
+        ];
+      };
+      const centre = paint && toGradient(32, 32);
+      const right = paint && toGradient(64, 32);
+      const up = paint && toGradient(32, 0);
+      ok(
+        cone &&
+          cone.width === 64 &&
+          near(cone.opacity, 0.4) &&
+          cone.clipsContent === false &&
+          wedge &&
+          wedge.path === "M32 32 L9.6 0 Q32 -6.4 54.4 0 Z" &&
+          near(wedge.x, 9.6) &&
+          near(wedge.y, -3.2) &&
+          paint.type === "GRADIENT_RADIAL" &&
+          boundVariableName(paint.gradientStops[0]) === "Map marker/dot" &&
+          paint.gradientStops[1].color.a === 0 &&
+          !paint.gradientStops[1].boundVariables,
+        `Visible: native's cone at 40 %, unclipped, its fade from the marker's blue to transparent (${wedge && [wedge.x, wedge.y, wedge.width, wedge.height]})`,
+      );
+      ok(
+        paint &&
+          near(centre[0], 0.5) &&
+          near(centre[1], 0.5) &&
+          near(right[0], 1) &&
+          near(right[1], 0.5) &&
+          near(up[0], 0.5) &&
+          near(up[1], 0),
+        `Visible: the fade is centred on the marker's centre with radius 32 (centre ${centre}, 32 right ${right}, 32 up ${up})`,
+      );
+    }
+    ok(
+      stats.warnings.length === 0,
+      `${value}: no warnings (${stats.warnings.join(" | ")})`,
+    );
+  }
+
+  // Figma documents no default for whether a new frame clips or where a new
+  // shape's stroke sits, so the painter must set both: run it with frames
+  // clipping and strokes centred.
+  await withNodeDefaults(
+    { FRAME: { clipsContent: true }, ELLIPSE: { strokeAlign: "CENTER" } },
+    async () => {
+      const component = figma.createComponent();
+      await paintMarker(component, "Visible", freshStats());
+      const cone = named(component, "Heading Cone");
+      const dot = named(component, "Location Dot");
+      ok(
+        cone &&
+          cone.clipsContent === false &&
+          dot &&
+          dot.strokeAlign === "INSIDE",
+        "whatever Figma's defaults, the cone does not clip and the ring sits inside",
+      );
+    },
+  );
+
+  // An Update redraws the shapes but keeps the variant: a shadow it carried
+  // must go too.
+  {
+    const component = figma.createComponent();
+    component.effects = [
+      {
+        type: "DROP_SHADOW",
+        color: { r: 0, g: 0, b: 0, a: 0.2 },
+        offset: { x: 0, y: 2 },
+        radius: 4,
+        spread: 0,
+        visible: true,
+        blendMode: "NORMAL",
+      },
+    ];
+    await paintMarker(component, "Hidden", freshStats());
+    ok(
+      component.effects.length === 0,
+      "an Update clears a shadow the variant carried",
+    );
+  }
+
+  // If Figma keeps the cone's gradient but drops its stop's binding, the
+  // painter says so rather than leaving a plain blue unremarked.
+  {
+    const original = figma.createNodeFromSvg;
+    figma.createNodeFromSvg = (svg) => {
+      const frame = original(svg);
+      for (const child of frame.children) {
+        let kept = child.fills;
+        Object.defineProperty(child, "fills", {
+          configurable: true,
+          get: () => kept,
+          set: (paints) => {
+            kept = paints.map((paint) =>
+              paint.gradientStops
+                ? Object.assign({}, paint, {
+                    gradientStops: paint.gradientStops.map((stop) => ({
+                      position: stop.position,
+                      color: stop.color,
+                    })),
+                  })
+                : paint,
+            );
+          },
+        });
+      }
+      return frame;
+    };
+    try {
+      const stats = freshStats();
+      await paintMarker(figma.createComponent(), "Visible", stats);
+      ok(
+        stats.warnings.some((warning) =>
+          warning.includes("not its stop's binding"),
+        ),
+        `a dropped stop binding is reported (${stats.warnings.join(" | ")})`,
+      );
+    } finally {
+      figma.createNodeFromSvg = original;
     }
   }
 }
