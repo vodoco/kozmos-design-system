@@ -32,8 +32,8 @@ figma.connect(Pagination, paginationUrl, {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationLink className="gap-1 pl-2.5" href="#" size="default">
-            <ChevronLeft className="h-4 w-4" />
+          <PaginationLink className="gap-1 ps-2.5" href="#" size="default">
+            <ChevronLeft className="kozmos-rtl-mirror h-4 w-4" />
             <span>{previousText}</span>
           </PaginationLink>
         </PaginationItem>
@@ -53,9 +53,9 @@ figma.connect(Pagination, paginationUrl, {
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink className="gap-1 pr-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 pe-2.5" href="#" size="default">
             <span>{nextText}</span>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="kozmos-rtl-mirror h-4 w-4" />
           </PaginationLink>
         </PaginationItem>
       </PaginationContent>
@@ -84,8 +84,8 @@ figma.connect(Pagination, paginationUrl, {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationLink className="gap-1 pl-2.5" href="#" size="default">
-            <ChevronLeft className="h-4 w-4" />
+          <PaginationLink className="gap-1 ps-2.5" href="#" size="default">
+            <ChevronLeft className="kozmos-rtl-mirror h-4 w-4" />
             <span>{previousText}</span>
           </PaginationLink>
         </PaginationItem>
@@ -113,9 +113,9 @@ figma.connect(Pagination, paginationUrl, {
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink className="gap-1 pr-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 pe-2.5" href="#" size="default">
             <span>{nextText}</span>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="kozmos-rtl-mirror h-4 w-4" />
           </PaginationLink>
         </PaginationItem>
       </PaginationContent>
@@ -133,8 +133,8 @@ figma.connect(Pagination, paginationUrl, {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationLink className="gap-1 pl-2.5" href="#" size="default">
-            <ChevronLeft className="h-4 w-4" />
+          <PaginationLink className="gap-1 ps-2.5" href="#" size="default">
+            <ChevronLeft className="kozmos-rtl-mirror h-4 w-4" />
             <span>{previousText}</span>
           </PaginationLink>
         </PaginationItem>
@@ -144,9 +144,9 @@ figma.connect(Pagination, paginationUrl, {
           </span>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink className="gap-1 pr-2.5" href="#" size="default">
+          <PaginationLink className="gap-1 pe-2.5" href="#" size="default">
             <span>{nextText}</span>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="kozmos-rtl-mirror h-4 w-4" />
           </PaginationLink>
         </PaginationItem>
       </PaginationContent>

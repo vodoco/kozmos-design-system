@@ -11177,6 +11177,35 @@ assertContains(
     "rather than inside the route panel",
     "Figma RouteSummary docs sending it outside the route panel",
   );
+
+// Right to left an arrow meaning back or forward points to the start or the
+// end edge. SF Symbols' .backward and .forward mirror by themselves; .left
+// and .right never do (Compose's equivalents are AutoMirrored).
+for (const [file, symbols] of [
+  [
+    "packages/ios/Sources/Components/Pagination/Pagination.swift",
+    ["chevron.backward", "chevron.forward"],
+  ],
+  [
+    "packages/ios/Sources/Components/Breadcrumb/Breadcrumb.swift",
+    ["chevron.forward"],
+  ],
+]) {
+  const content = read(file);
+  for (const physical of ['"chevron.left"', '"chevron.right"'])
+    assertNotContains(
+      file,
+      content,
+      physical,
+      `${file} draws an arrow that never mirrors right to left`,
+    );
+  for (const symbol of symbols)
+    assertContains(
+      file,
+      content,
+      `"${symbol}"`,
+      `${file} draws ${symbol}, which mirrors right to left`,
+    );
 }
 
 // Every Core set the plugin can update must appear in CORE_UPDATE_SEQUENCE.

@@ -1347,6 +1347,15 @@
     margin-block-start: auto;
     padding-block-start: 2rem;
   }
+  /* An arrow drawn pointing right that means forward or inside (Pagination's
+     Next, the breadcrumb's separator, a submenu, a closed tree item), or left
+     meaning back (Pagination's Previous): it points to the inline end, or
+     start, in either reading direction. The icons are physical, so right to
+     left they are mirrored, as SwiftUI's .forward and .backward symbols and
+     Compose's AutoMirrored icons are. */
+  .kozmos-rtl-mirror:dir(rtl) {
+    transform: scaleX(-1);
+  }
   /* Accordion utilities use transition-all. Do not animate text resizing or
      wrapping inside this scrollable panel: it can move keyboard focus away. */
   .kozmos-map-info-panel .kozmos-map-info-faq [data-state] {

@@ -56,7 +56,7 @@ public struct KozmosPaginationPrevious: View {
     public var body: some View {
         Button(action: action) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                Image(systemName: "chevron.left")
+                Image(systemName: "chevron.backward")
                     .font(KozmosTypography.caption)
                 Text("Previous")
                     .font(KozmosTypography.subheadline)
@@ -80,7 +80,7 @@ public struct KozmosPaginationNext: View {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
                 Text("Next")
                     .font(KozmosTypography.subheadline)
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(KozmosTypography.caption)
             }
             .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing100)
