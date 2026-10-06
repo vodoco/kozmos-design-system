@@ -106,14 +106,24 @@ describe("UserLocationMarker", () => {
     expect(svg.parentElement!.style.transform).toBe("rotate(90deg)");
     expect(svg).toHaveAttribute("viewBox", "0 0 64 64");
     expect(svg).toHaveAttribute("overflow", "visible");
-    expect(svg.querySelector("path")).toHaveAttribute(
-      "d",
-      "M32 32 L9.6 0 Q32 -6.4 54.4 0 Z",
-    );
+    const path = svg.querySelector("path")!;
+    expect(path).toHaveAttribute("d", "M32 32 L9.6 0 Q32 -6.4 54.4 0 Z");
+    // 40 % at the centre, in the marker's blue, to the same blue made clear.
+    expect(path).toHaveAttribute("opacity", "0.4");
     const gradient = svg.querySelector("radialGradient")!;
     expect(gradient).toHaveAttribute("gradientUnits", "userSpaceOnUse");
     expect(gradient).toHaveAttribute("cx", "32");
     expect(gradient).toHaveAttribute("cy", "32");
     expect(gradient).toHaveAttribute("r", "32");
+    expect(path.getAttribute("fill")).toBe(`url(#${gradient.id})`);
+    const stops = [...gradient.querySelectorAll("stop")].map((stop) => [
+      stop.getAttribute("offset"),
+      stop.getAttribute("stop-color"),
+      stop.getAttribute("stop-opacity"),
+    ]);
+    expect(stops).toEqual([
+      ["0%", "var(--semantics-map-marker-dot)", "1"],
+      ["100%", "var(--semantics-map-marker-dot)", "0"],
+    ]);
   });
 });

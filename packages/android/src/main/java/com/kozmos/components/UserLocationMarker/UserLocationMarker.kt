@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -26,6 +28,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.motion.rememberKozmosAnimationsOn
 import com.kozmos.tokens.KozmosThemeTokens
 
 /**
@@ -51,9 +54,15 @@ fun KozmosUserLocationMarker(
         role = Role.Image
     }, contentAlignment = Alignment.Center) {
     if (!compact) {
+    // With system animations off the pulse holds still at 48 and 30 %, as
+    // React's does and as Figma draws it. Read in the layer, so a frame of
+    // the pulse redraws it without recomposing the marker.
+    val pulseScale: State<Float>
+    val pulseAlpha: State<Float>
+    if (rememberKozmosAnimationsOn()) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     
-    val pulseScale by infiniteTransition.animateFloat(
+    pulseScale = infiniteTransition.animateFloat(
         initialValue = 0.6f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -63,7 +72,7 @@ fun KozmosUserLocationMarker(
         label = "pulseScale"
     )
     
-    val pulseAlpha by infiniteTransition.animateFloat(
+    pulseAlpha = infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
@@ -72,6 +81,10 @@ fun KozmosUserLocationMarker(
         ),
         label = "pulseAlpha"
     )
+    } else {
+        pulseScale = remember { mutableStateOf(1f) }
+        pulseAlpha = remember { mutableStateOf(0.3f) }
+    }
 
         // The halo: 64 at 14 %, still.
         Box(
@@ -86,9 +99,9 @@ fun KozmosUserLocationMarker(
             modifier = Modifier
                 .size(48.dp)
                 .graphicsLayer {
-                    scaleX = pulseScale
-                    scaleY = pulseScale
-                    alpha = pulseAlpha
+                    scaleX = pulseScale.value
+                    scaleY = pulseScale.value
+                    alpha = pulseAlpha.value
                 }
                 .background(KozmosThemeTokens.semanticsMapMarkerDot, CircleShape)
         )

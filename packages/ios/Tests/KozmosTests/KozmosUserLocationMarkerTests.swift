@@ -36,4 +36,20 @@ final class KozmosUserLocationMarkerTests: XCTestCase {
         let dot = try XCTUnwrap(pixels.boundingBox(where: DrawnPixels.matches(blue)), "no blue dot drawn")
         XCTAssertEqual(dot.width, 12, accuracy: 1.5, "the blue inside the 3 ring")
     }
+
+    /// Under Reduce Motion the pulse holds still at 48 and 30 %, as React's
+    /// does (`motion-reduce:animate-none`) and as Figma draws it. Until
+    /// 2026-10-06 it ran on whatever the setting, while the docs said it
+    /// stopped; Spinner, Skeleton and Progress already stopped.
+    func testThePulseHoldsStillUnderReduceMotion() {
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        for offset in stride(from: 0.0, to: 3.0, by: 0.25) {
+            let pulse = KozmosUserLocationMarker.pulse(at: start.addingTimeInterval(offset), reduceMotion: true)
+            XCTAssertEqual(pulse.scale, 1, accuracy: 0.0001, "still at 48, \(offset)s in")
+            XCTAssertEqual(pulse.opacity, 0.3, accuracy: 0.0001, "still at 30 %, \(offset)s in")
+        }
+        let early = KozmosUserLocationMarker.pulse(at: start, reduceMotion: false)
+        let later = KozmosUserLocationMarker.pulse(at: start.addingTimeInterval(0.75), reduceMotion: false)
+        XCTAssertNotEqual(early.scale, later.scale, "the pulse moves when motion is allowed")
+    }
 }
