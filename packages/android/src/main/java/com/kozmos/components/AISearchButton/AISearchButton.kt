@@ -1,6 +1,6 @@
 package com.kozmos.components.aisearchbutton
 
-import android.provider.Settings
+import com.kozmos.components.motion.rememberKozmosAnimationsOn
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -8,9 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -62,10 +60,7 @@ fun KozmosAISearchButton(
             animationSpec = infiniteRepeatable(animation = tween(durationMillis = 3600, easing = LinearEasing), repeatMode = RepeatMode.Restart),
             label = "kozmos-ai-search-ring-angle"
         )
-        val context = LocalContext.current
-        val animationsOn = remember(context) {
-            Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
-        }
+        val animationsOn = rememberKozmosAnimationsOn()
         Box(
             modifier = Modifier
                 .size(48.dp)

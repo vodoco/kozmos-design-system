@@ -13,16 +13,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.motion.rememberKozmosAnimatorScale
 import com.kozmos.tokens.KozmosThemeTokens
-import android.database.ContentObserver
-import android.os.Handler
-import android.os.Looper
-import android.provider.Settings
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.lifecycle.Lifecycle
@@ -48,18 +44,13 @@ enum class KozmosProgressMotion { None, Directional }
  */
 @Composable
 private fun progressFlowPhase(enabled: Boolean): FloatState {
-    val resolver = LocalContext.current.contentResolver
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var resumed by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
-    var scale by remember(resolver) { mutableStateOf(Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)) }
-    DisposableEffect(lifecycle, resolver) {
+    val scale = rememberKozmosAnimatorScale()
+    DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, _ -> resumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) }
-        val settings = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean) { scale = Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) }
-        }
         lifecycle.addObserver(observer)
-        resolver.registerContentObserver(Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE), false, settings)
-        onDispose { lifecycle.removeObserver(observer); resolver.unregisterContentObserver(settings) }
+        onDispose { lifecycle.removeObserver(observer) }
     }
     val phase = remember { mutableFloatStateOf(0f) }
     LaunchedEffect(enabled, resumed, scale) {
