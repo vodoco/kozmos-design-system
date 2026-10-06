@@ -2563,6 +2563,293 @@ section("UserLocationMarker");
   }
 }
 
+// --- RouteProgressRail -----------------------------------------------------------
+
+// The React RouteProgressRail's stories in a 360 frame, measured in Storybook
+// on 2026-10-05: the step disc, and the route mode's active leg with its
+// transitions and the position. A set the importer had never drawn.
+section("RouteProgressRail");
+{
+  ok(
+    Array.isArray(plugin.ROUTE_PROGRESS_RAIL_CONTENT) &&
+      plugin.ROUTE_PROGRESS_RAIL_CONTENT.length === 11 &&
+      JSON.stringify(
+        plugin.expectedVariantAxesForComponentSetName("RouteProgressRail"),
+      ) === JSON.stringify({ Content: plugin.ROUTE_PROGRESS_RAIL_CONTENT }),
+    "eleven variants: the step disc's five stories and the route mode's six",
+  );
+  // Every token the rail binds comes from the payload, so a token the
+  // payload lost fails here rather than being stood in for.
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const near = (a, b) => Math.abs(a - b) < 0.05;
+  const fill = (node) => node && node.fills && node.fills[0];
+  const token = (node) => boundVariableName(fill(node));
+  const markOf = (disc) => {
+    const icon = disc && disc.findOne((node) => node.type === "INSTANCE");
+    const vector = icon && icon.findOne((node) => node.type === "VECTOR");
+    return {
+      icon: icon && icon.mainComponent && icon.mainComponent.name,
+      tint: vector
+        ? boundVariableName(fill(vector)) ||
+          boundVariableName(vector.strokes && vector.strokes[0])
+        : null,
+      size: icon ? `${icon.width}x${icon.height}` : null,
+    };
+  };
+  const box = (node) => node && [node.x, node.y, node.width, node.height];
+  const at = (node, x, y, w, h) =>
+    node &&
+    near(node.x, x) &&
+    near(node.y, y) &&
+    near(node.width, w) &&
+    near(node.height, h);
+  // Story -> what React draws, from the measurements.
+  const step = {
+    Start: { disc: 10, mark: "Icon / arrow-up" },
+    Midway: { disc: 163, mark: "Icon / hard-left" },
+    Arriving: { disc: 267.04, mark: "Icon / arriving" },
+    Unknown: { disc: null },
+    Waypoints: { disc: 71.2, mark: "Icon / hard-left", completed: 78.2 },
+  };
+  const route = {
+    ActiveLeg: {
+      fill: [12, 134.4],
+      gradient: true,
+      flow: [12, 134.4, "white"],
+      dot: null,
+    },
+    WalkingWithinLeg: {
+      fill: [12, 67.2],
+      gradient: true,
+      flow: [79.2, 67.2, "Colors/background/600"],
+      dot: 70.2,
+    },
+    AfterTransition: {
+      fill: [12, 201.6],
+      gradient: true,
+      flow: [213.6, 134.4, "Colors/background/600"],
+      dot: 204.6,
+    },
+    RoutePositionUnknown: { fill: null, flow: null, dot: null },
+    ThemeRoute: {
+      fill: [12, 67.2],
+      gradient: false,
+      flow: [79.2, 67.2, "Colors/background/600"],
+      dot: 70.2,
+    },
+    GuidancePaused: { fill: [12, 67.2], gradient: true, flow: null, dot: 70.2 },
+  };
+  for (const value of plugin.ROUTE_PROGRESS_RAIL_CONTENT || []) {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin.updateRouteProgressRailVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    const isStep = value in step;
+    ok(
+      component.name === `Content=${value}` &&
+        component.width === 360 &&
+        component.height === (isStep ? 34 : 48) &&
+        component.fills.length === 0,
+      `${value}: 360 by ${isStep ? 34 : 48}, no surface`,
+    );
+    const track = named(component, "Track");
+    if (isStep) {
+      const want = step[value];
+      const disc = named(component, "Progress Disc");
+      const known = want.disc !== null;
+      ok(
+        at(track, 10, 14, 340, 6) &&
+          token(track) === "Colors/background/100" &&
+          at(named(component, "Start Dot"), 0, 12, 10, 10) &&
+          token(named(component, "Start Dot")) ===
+            (known ? "Colors/theme/600" : "Colors/background/100") &&
+          at(named(component, "End Dot"), 350, 12, 10, 10) &&
+          token(named(component, "End Dot")) === "Colors/background/100",
+        `${value}: the 6 track from 10 in background/100, the start dot ${known ? "theme/600" : "muted"}, the end dot muted (${box(track)})`,
+      );
+      const mark = markOf(disc);
+      ok(
+        known
+          ? at(disc, want.disc, 0, 34, 34) &&
+              token(disc) === "Colors/theme/600" &&
+              mark.icon === want.mark &&
+              mark.tint === "Colors/foreground/1000" &&
+              mark.size === "16x16"
+          : !disc,
+        `${value}: ${known ? `the 34 disc at ${want.disc}, ${want.mark} 16 in foreground/1000` : "no disc"} (${box(disc)}; ${JSON.stringify(mark)})`,
+      );
+      if (value === "Waypoints") {
+        const completed = named(component, "Completed Track");
+        const points = [1, 2, 3].map((i) => named(component, `Waypoint ${i}`));
+        const marks = points.map(markOf);
+        ok(
+          at(completed, 10, 14, want.completed, 6) &&
+            token(completed) === "Colors/theme/600" &&
+            [15, 168, 321].every((x, i) => at(points[i], x, 5, 24, 24)) &&
+            !named(component, "Waypoint 4") &&
+            points.every(
+              (p) =>
+                token(p) === "Colors/background/100" &&
+                boundVariableName(p.strokes[0]) === "Border/Subtle" &&
+                p.strokeWeight === 1 &&
+                p.strokeAlign === "INSIDE",
+            ) &&
+            marks.map((m) => m.icon).join() ===
+              "Icon / arrow-up,Icon / hard-left,Icon / arriving" &&
+            marks.every((m) => m.tint === "Colors/foreground/0"),
+          `Waypoints: the completed track to 88.2, three 24 waypoints and no more at 15, 168 and 321, muted with the subtle edge inside, marks in foreground/0 (${points.map(box).join(" | ")})`,
+        );
+      }
+    } else {
+      const want = route[value];
+      ok(
+        at(track, 12, 35, 336, 6) &&
+          token(track) === "Colors/background/300" &&
+          at(named(component, "Start Endpoint"), 7, 33, 10, 10) &&
+          token(named(component, "Start Endpoint")) ===
+            "Colors/background/500" &&
+          at(named(component, "End Endpoint"), 343, 33, 10, 10) &&
+          token(named(component, "End Endpoint")) === "Colors/background/500",
+        `${value}: the 6 track at 35 from 12 in background/300, the 10 endpoints at 7 and 343 in background/500`,
+      );
+      const active = named(component, "Active Leg");
+      const paint = fill(active);
+      const stops =
+        paint && paint.gradientStops
+          ? paint.gradientStops
+              .map((stop) => boundVariableName(stop))
+              .join(" -> ")
+          : null;
+      ok(
+        want.fill
+          ? at(active, want.fill[0], 35, want.fill[1], 6) &&
+              (want.gradient
+                ? paint.type === "GRADIENT_LINEAR" &&
+                  JSON.stringify(paint.gradientTransform) ===
+                    "[[1,0,0],[0,1,0]]" &&
+                  stops === "Colors/theme/600 -> Colors/emotional/success/600"
+                : token(active) === "Colors/theme/600")
+          : !active,
+        `${value}: ${want.fill ? `the active leg ${want.fill[1]} wide from ${want.fill[0]}, ${want.gradient ? "theme to success, left to right" : "theme/600"}` : "no active leg"} (${box(active)}; ${stops || token(active)})`,
+      );
+      const flow = named(component, "Directional Flow");
+      const dots = flow ? flow.children : [];
+      // A dot at the middle of every 20 whose left edge is inside the flow.
+      const expectedDots = want.flow
+        ? [...Array(20).keys()].filter((k) => 10 + 20 * k - 4 < want.flow[1])
+            .length
+        : 0;
+      ok(
+        want.flow
+          ? at(flow, want.flow[0], 35, want.flow[1], 6) &&
+              flow.clipsContent === true &&
+              flow.cornerRadius === 9999 &&
+              dots.length === expectedDots &&
+              dots.every(
+                (dot, k) =>
+                  near(dot.x, 6 + 20 * k) &&
+                  near(dot.y, 1.5) &&
+                  dot.width === 8 &&
+                  dot.height === 3 &&
+                  (want.flow[2] === "white"
+                    ? fill(dot).color.r === 1 && near(fill(dot).opacity, 0.65)
+                    : token(dot) === want.flow[2]),
+              )
+          : !flow,
+        `${value}: ${want.flow ? `the still flow from ${want.flow[0]}, ${dots.length} dots 8 by 3 every 20 in ${want.flow[2]}` : "no flow"} (${box(flow)})`,
+      );
+      const points = [1, 2, 3].map((i) => named(component, `Waypoint ${i}`));
+      const stems = [1, 2, 3].map((i) =>
+        named(component, `Waypoint ${i} Stem`),
+      );
+      const marks = points.map(markOf);
+      ok(
+        [0, 134.4, 336].every((x, i) => at(points[i], x, 0, 24, 24)) &&
+          !named(component, "Waypoint 4") &&
+          points.every(
+            (p) =>
+              token(p) === "Colors/background/0" &&
+              boundVariableName(p.strokes[0]) === "Colors/background/400" &&
+              p.strokeWeight === 1 &&
+              p.strokeAlign === "INSIDE",
+          ) &&
+          [11.5, 145.9, 347.5].every((x, i) => at(stems[i], x, 24, 1, 11)) &&
+          stems.every((stem) => token(stem) === "Colors/background/500") &&
+          marks.map((m) => m.icon).join() ===
+            "Icon / follow-the-line,Icon / elevator-up,Icon / arriving" &&
+          marks.every((m) => m.tint === "Colors/foreground/100"),
+        `${value}: the three transitions and no more at 0, 134.4 and 336 in background/0 with a 1 background/400 edge, 11 stems to the track, marks in foreground/100 (${points.map(box).join(" | ")})`,
+      );
+      const dot = named(component, "Location Dot");
+      const shadow = dot && dot.effects && dot.effects[0];
+      ok(
+        want.dot === null
+          ? !dot
+          : at(dot, want.dot, 29, 18, 18) &&
+              token(dot) === "Map marker/dot" &&
+              boundVariableName(dot.strokes[0]) === "Colors/background/0" &&
+              dot.strokeWeight === 3 &&
+              dot.strokeAlign === "INSIDE" &&
+              !shadow &&
+              component.children[component.children.length - 1] === dot,
+        `${value}: ${want.dot === null ? "no position dot" : `the 18 dot at ${want.dot} in the map marker's blue with a 3 background/0 ring and no shadow, drawn on top`} (${box(dot)})`,
+      );
+    }
+    ok(
+      stats.warnings.length === 0,
+      `${value}: no warnings (${stats.warnings.join(" | ")})`,
+    );
+  }
+
+  // If Figma keeps the active leg's gradient but drops its stops' bindings,
+  // the painter says so rather than leaving plain colours unremarked.
+  {
+    const original = figma.createRectangle;
+    figma.createRectangle = () => {
+      const node = original();
+      let kept = node.fills;
+      Object.defineProperty(node, "fills", {
+        configurable: true,
+        get: () => kept,
+        set: (paints) => {
+          kept = paints.map((paint) =>
+            paint.gradientStops
+              ? Object.assign({}, paint, {
+                  gradientStops: paint.gradientStops.map((stop) => ({
+                    position: stop.position,
+                    color: stop.color,
+                  })),
+                })
+              : paint,
+          );
+        },
+      });
+      return node;
+    };
+    try {
+      const stats = freshStats();
+      await plugin.updateRouteProgressRailVariant(figma.createComponent(), {
+        value: "ActiveLeg",
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats,
+      });
+      ok(
+        stats.warnings.some((warning) =>
+          warning.includes("not its stops' bindings"),
+        ),
+        `ActiveLeg: dropped stop bindings are reported (${stats.warnings.join(" | ")})`,
+      );
+    } finally {
+      figma.createRectangle = original;
+    }
+  }
+}
+
 // --- AISearchButton --------------------------------------------------------------
 
 section("AISearchButton");
@@ -3651,12 +3938,7 @@ section("The product sets audit clean");
     typeof plugin.auditComponentContrast === "function";
   ok(ready, "the four painters and the contrast audit are reachable");
   if (ready) {
-    const tokens = payloadVariables([
-      ...variableByName.keys(),
-      "Colors/theme/600",
-      "Colors/foreground/1000",
-      "Colors/background/300",
-    ]);
+    const tokens = payloadVariables([...variableByName.keys()]);
     const context = plugin.createVariableContext(
       tokens.collections,
       tokens.variables,
@@ -3698,6 +3980,13 @@ section("The product sets audit clean");
         "Itinerary",
         (plugin.ITINERARY_CONTENT || []).map((value) => [
           "updateItineraryVariant",
+          { value },
+        ]),
+      ],
+      [
+        "RouteProgressRail",
+        (plugin.ROUTE_PROGRESS_RAIL_CONTENT || []).map((value) => [
+          "updateRouteProgressRailVariant",
           { value },
         ]),
       ],

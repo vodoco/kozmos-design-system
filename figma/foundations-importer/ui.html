@@ -1186,6 +1186,7 @@
                 <option value="wayfindingCard">WayfindingCard</option>
                 <option value="itinerary">Itinerary</option>
                 <option value="manoeuvreCard">ManoeuvreCard</option>
+                <option value="routeProgressRail">RouteProgressRail</option>
               </optgroup>
               <optgroup label="Platform / Form-Factor">
                 <option value="dynamicIsland">DynamicIsland</option>
@@ -1733,6 +1734,13 @@
           update: "update-manoeuvre-card",
           rebuild: "rebuild-manoeuvre-card",
           hint: "Build creates ManoeuvreCard with State Closed and Open by Appearance Theme and Background: the current manoeuvre with DirectionStep\'s mark from the Icons page, or the itinerary it opens into, over the grab bar. Background is drawn on the solid surface; glass is not drawn yet. Run Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
+        },
+        routeProgressRail: {
+          label: "RouteProgressRail",
+          build: "build-route-progress-rail",
+          update: "update-route-progress-rail",
+          rebuild: "rebuild-route-progress-rail",
+          hint: "Build creates RouteProgressRail with eleven Content variants: the step disc (Start, Midway, Arriving, Unknown, Waypoints) and the route mode\'s active leg (ActiveLeg, WalkingWithinLeg, AfterTransition, RoutePositionUnknown, ThemeRoute, GuidancePaused), with DirectionStep\'s marks from the Icons page and the dot in Map marker/dot. Run Import Foundations (a payload with Map marker) and Curated Icons first. Update preserves its Code Connect node ID; Rebuild removes the current set and creates a fresh node ID.",
         },
         link: {
           label: "Link",

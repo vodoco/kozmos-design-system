@@ -37,7 +37,7 @@ an implementation backlog item.
 | Components with variant gaps — Vue        | 12/57  |
 | Components absent entirely — iOS          | 9/119  |
 | Components absent entirely — Android      | 8/119  |
-| Components absent entirely — Figma        | 21/119 |
+| Components absent entirely — Figma        | 20/119 |
 | Components absent entirely — Vue          | 22/119 |
 
 <!-- /generated:headline -->
@@ -135,7 +135,7 @@ RouteLocationField
   - figma: component/set absent
   - vue: component absent
 RouteProgressRail
-  - figma: component/set absent
+  - figma missing axes -> appearance (theme, gradient); positionMode (static, live); motion (none, directional)
   - vue: component absent
 RouteSetupPanel
   - figma: component/set absent
@@ -228,9 +228,9 @@ AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwit
 
 AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, LanguageSwitcher, Notice, UserMessage.
 
-### Figma — 21 of 119
+### Figma — 20 of 119
 
-AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteProgressRail, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
+AICompanionPanel, AIInputBar, AIMessage, AIMessageList, ActionCard, ArrivalPanel, FieldWrapper, Icon, LanguageSwitcher, MapAttribution, MapInfoPanel, MapStatusPill, NavigationAnnouncer, Notice, POIResultGroup, RouteLocationField, RouteSetupPanel, Surface, ThemeProvider, UserMessage.
 
 ### Vue — 22 of 119
 
