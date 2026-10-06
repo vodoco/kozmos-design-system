@@ -180,7 +180,9 @@ try {
     await page.evaluate(
       () =>
         document
-          .querySelector('[data-standalone] button[aria-label="Close assistant"]')
+          .querySelector(
+            '[data-standalone] button[aria-label="Close assistant"]',
+          )
           .getBoundingClientRect().top -
         document.querySelector("[data-standalone]").getBoundingClientRect().top,
     ),
