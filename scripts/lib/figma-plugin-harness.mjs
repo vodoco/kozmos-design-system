@@ -404,6 +404,31 @@ const nodesById = new Map();
 // its painter under the opposite default, per node type, through this.
 const nodeDefaults = {};
 
+/**
+ * Makes `node` keep a gradient paint but drop its stops' variable bindings, as
+ * Figma may without throwing: what a painter's read-back must notice.
+ */
+export function dropGradientStopBindings(node) {
+  let kept = node.fills;
+  Object.defineProperty(node, "fills", {
+    configurable: true,
+    get: () => kept,
+    set: (paints) => {
+      kept = paints.map((paint) =>
+        paint.gradientStops
+          ? Object.assign({}, paint, {
+              gradientStops: paint.gradientStops.map((stop) => ({
+                position: stop.position,
+                color: stop.color,
+              })),
+            })
+          : paint,
+      );
+    },
+  });
+  return node;
+}
+
 /** Runs `run` with new nodes of each type starting from `defaults`. */
 export async function withNodeDefaults(defaults, run) {
   const saved = Object.assign({}, nodeDefaults);
