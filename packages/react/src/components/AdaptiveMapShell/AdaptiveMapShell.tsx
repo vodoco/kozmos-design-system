@@ -1330,7 +1330,12 @@ const AdaptiveMapShell = React.forwardRef<
                   } as React.CSSProperties
                 }
               >
-                {panelHeader}
+                {/* Hosted, as the content is: a part with a hosted
+                    presentation, a RouteSummary in the header, takes it here
+                    too, as SwiftUI and Compose host either slot. */}
+                <MapShellPanelContext.Provider value={true}>
+                  {panelHeader}
+                </MapShellPanelContext.Provider>
               </div>
             )}
             <div
