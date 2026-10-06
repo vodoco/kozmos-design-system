@@ -38,9 +38,18 @@ import { gzipSync } from "zlib";
 // locally (previous CI measurements were about 0.38 KB higher). The heaviest
 // export was 7.31 KB, Button 1.29 KB and CSS 29.83 KB. Only the total-library
 // allowance changes; the per-export, Button, CSS and module-count guards stay.
+//
+// Olcay approved 88 KB on 2026-10-06. 0.9.0 measured 79.52 KB here and 79.86 KB on CI against 80
+// (CI now reads about 0.33 KB more than a Mac). The growth is features: on CI, 0.7.0 measured
+// 74.33, 0.8.0 74.81, 0.8.1 75.12 and 0.9.0 79.86, the last adding the navigation parts. The only
+// lossless trims found, taken with this raise, came to 0.31 KB: the Pointr logo's data URL is
+// encoded the short way (scripts/build-pointr-brand.mjs), and this measures a production build,
+// as an app's build does. After them, Everything measured 79.21 KB here, leaving room for two to
+// four releases at the recent growth of 1.8 to 3.6 KB each. The per-export, Button, CSS and
+// module-count guards stay.
 const MAX_EXPORT_GZIP_KB = 8;
 const MAX_BUTTON_GZIP_KB = 2;
-const MAX_TOTAL_GZIP_KB = 80;
+const MAX_TOTAL_GZIP_KB = 88;
 // Olcay approved 30.5 KB on 2026-10-02 for the SDK result presentation.
 // The candidate measured 30.12 KB CSS gzip; a lossless selector simplification
 // saved only 14 bytes. JavaScript total/per-export/Button limits stay unchanged.
@@ -168,8 +177,13 @@ async function main() {
     cache = bundle.cache;
     const { output } = await bundle.generate({ format: "es" });
     const code = output.map((chunk) => chunk.code ?? "").join("\n");
+    // An app's production build replaces process.env.NODE_ENV, so development-only code drops.
     const minified = (
-      await esbuild.transform(code, { minify: true, format: "esm" })
+      await esbuild.transform(code, {
+        minify: true,
+        format: "esm",
+        define: { "process.env.NODE_ENV": '"production"' },
+      })
     ).code;
     return { output, raw: minified.length, gzip: gzipSync(minified).length };
   }
