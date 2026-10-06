@@ -14,18 +14,18 @@
     "publishStatus": "ready",
     "linkedPublishCommand": "pnpm figma:publish:linked:dry",
     "linkedPublishConfig": "figma.linked.config.json",
-    "linkedPublishStatus": "ready for the current 98 Core React component-set mappings",
+    "linkedPublishStatus": "ready for the current 99 Core React component-set mappings",
     "nativeLinkedPublishCommand": "pnpm figma:publish:native:linked:dry",
     "nativeLinkedPublishConfigs": [
       "packages/ios/figma.linked.config.json",
       "packages/android/figma.linked.config.json"
     ],
-    "nativeLinkedPublishStatus": "ready for the current 97 Core SwiftUI and 97 Core Compose component-set mappings"
+    "nativeLinkedPublishStatus": "ready for the current 98 Core SwiftUI and 98 Core Compose component-set mappings"
   },
   "tokens": {
     "summary": {
-      "light": 679,
-      "dark": 679
+      "light": 681,
+      "dark": 681
     },
     "light": [
       {
@@ -2769,6 +2769,30 @@
         "value": "0.0625rem",
         "scopes": [],
         "recommendedFigmaScopes": ["WIDTH_HEIGHT"]
+      },
+      {
+        "name": "Semantics/Map marker/dot",
+        "type": "color",
+        "value": "#2563EB",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Map marker/ring",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
       },
       {
         "name": "Semantics/Surface/0",
@@ -9821,6 +9845,30 @@
         "recommendedFigmaScopes": ["WIDTH_HEIGHT"]
       },
       {
+        "name": "Semantics/Map marker/dot",
+        "type": "color",
+        "value": "#2563EB",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Map marker/ring",
+        "type": "color",
+        "value": "#FFFFFF",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
         "name": "Semantics/Surface/0",
         "type": "color",
         "value": "#000000",
@@ -14134,9 +14182,9 @@
       "stories": 119,
       "tests": 119,
       "exported": 119,
-      "codeConnectFiles": 97,
+      "codeConnectFiles": 98,
       "codeConnectScaffolds": 0,
-      "codeConnectLinked": 97
+      "codeConnectLinked": 98
     },
     "firstBatch": [
       "Accordion",
@@ -14207,6 +14255,7 @@
       "Rating",
       "RouteOptionCard",
       "RoutePreviewPanel",
+      "RouteProgressRail",
       "RouteSummary",
       "RoutingInputGroup",
       "SaveLocationCard",
@@ -17566,14 +17615,25 @@
         "test": "packages/react/src/components/RouteProgressRail/RouteProgressRail.test.tsx",
         "exported": true,
         "codeConnect": {
-          "file": null,
-          "linked": false,
-          "figmaUrl": null,
+          "file": "packages/react/src/components/RouteProgressRail/RouteProgressRail.figma.tsx",
+          "linked": true,
+          "figmaUrl": "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2229-9787",
           "needsNodeId": false,
-          "status": "missing",
+          "status": "linked",
           "issues": [],
-          "connectedComponents": [],
-          "mappedProps": [],
+          "connectedComponents": ["RouteProgressRail"],
+          "mappedProps": [
+            "activeLeg",
+            "appearance",
+            "label",
+            "motion",
+            "positionMode",
+            "progress",
+            "showCompletedTrack",
+            "type",
+            "valueText",
+            "waypoints"
+          ],
           "unmappedProps": []
         },
         "props": [

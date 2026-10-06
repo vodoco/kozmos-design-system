@@ -198,6 +198,8 @@
       "Sources/Components/Itinerary/Itinerary.swift",
       "Sources/Components/ManoeuvreCard/ManoeuvreCard.figma.swift",
       "Sources/Components/ManoeuvreCard/ManoeuvreCard.swift",
+      "Sources/Components/RouteProgressRail/RouteProgressRail.figma.swift",
+      "Sources/Components/RouteProgressRail/RouteProgressRail.swift",
       "Sources/Components/DynamicIsland/DynamicIsland.figma.swift",
       "Sources/Components/DynamicIsland/DynamicIsland.swift",
       "Sources/Components/FeedbackCard/FeedbackCard.figma.swift",
