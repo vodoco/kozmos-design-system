@@ -11158,6 +11158,27 @@ assertContains(
   "Code Connect maps the Disabled state to the disabled prop",
 );
 
+// Decision 43: since 0.9.0 a navigation RouteSummary is hosted in the map
+// shell's panel, the journey card there, with no card of its own. The Figma
+// docs told designers to compose it above the map, outside the route panel.
+{
+  const plugin = source.figma;
+  const start = plugin.indexOf('componentName: "RouteSummary",');
+  const doc = plugin.slice(start, plugin.indexOf("\n  },", start));
+  assertContains(
+    files.figma,
+    doc,
+    "the journey card in the map shell's panel",
+    "Figma RouteSummary docs saying the navigation layout is the panel's journey card",
+  );
+  assertNotContains(
+    files.figma,
+    doc,
+    "rather than inside the route panel",
+    "Figma RouteSummary docs sending it outside the route panel",
+  );
+}
+
 // Every Core set the plugin can update must appear in CORE_UPDATE_SEQUENCE.
 // A bulk action that quietly skips a component is worse than no bulk action:
 // the sets it misses look updated because the run reported success.
