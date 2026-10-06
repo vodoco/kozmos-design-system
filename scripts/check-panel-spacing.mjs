@@ -127,6 +127,69 @@ try {
       "mounted fitted panel shrinks when content changes",
     );
   }
+  // GAP-121: the assistant's header tops its own 12 up to what the shell
+  // leaves, rather than adding to it, so its close button sits where a panel
+  // header's search field does: under a grip (the grip's row and its 4px
+  // clearance), in a gripless sheet and in a side panel. Outside a shell it
+  // keeps its 12.
+  const fromPanelTop = (selector) =>
+    page.evaluate((selector) => {
+      const panel = document.querySelector("aside");
+      return (
+        document.querySelector(selector).getBoundingClientRect().top -
+        (panel.getBoundingClientRect().top + panel.clientTop)
+      );
+    }, selector);
+  for (const [side, grip] of [
+    [false, true],
+    [false, false],
+    [true, false],
+  ]) {
+    const base = { side, grip, long: false, rtl: false, details: false };
+    await page.evaluate((config) => window.renderPanelSpacing(config), {
+      ...base,
+      header: true,
+    });
+    await settleLayout(page);
+    const search = await fromPanelTop("[data-spacing-header]");
+    await page.evaluate((config) => window.renderPanelSpacing(config), {
+      ...base,
+      header: false,
+      assistant: true,
+    });
+    await settleLayout(page);
+    near(
+      await fromPanelTop('button[aria-label="Close assistant"]'),
+      search,
+      `the assistant's header sits where the search field does: ${JSON.stringify(base)}`,
+    );
+  }
+  await page.evaluate(() =>
+    window.renderPanelSpacing({
+      standalone: true,
+      side: false,
+      header: false,
+      grip: false,
+      long: false,
+      rtl: false,
+      details: false,
+    }),
+  );
+  await settleLayout(page);
+  near(
+    await page.evaluate(
+      () =>
+        document
+          .querySelector('[data-standalone] button[aria-label="Close assistant"]')
+          .getBoundingClientRect().top -
+        document.querySelector("[data-standalone]").getBoundingClientRect().top,
+    ),
+    12,
+    "outside a shell the assistant's header keeps its 12",
+  );
+  console.log(
+    "PASS GAP-121 assistant header: grip, gripless and side panels; standalone keeps 12",
+  );
   assert.deepEqual(errors, []);
 } finally {
   await browser.close();

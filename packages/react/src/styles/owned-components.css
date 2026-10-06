@@ -421,6 +421,15 @@
       calc(1rem - var(--kozmos-panel-inset-top, 0px))
     );
   }
+  /* The assistant's header does the same with its 12 (GAP-121): under a grip
+     its title and close button sat 8 lower than a panel header's search
+     field. Outside a shell it keeps its 12. */
+  .kozmos-ai-companion-header {
+    padding-top: max(
+      var(--kozmos-panel-clearance-top, 0px),
+      calc(0.75rem - var(--kozmos-panel-inset-top, 0px))
+    );
+  }
   /* The same rule for a part that brings no top padding of its own: a result
      list, whose holder pads it. Hosted at the top of a sheet with a grip, bare
      or in a Container, its first result sat 9 from the grip's centre, inside
