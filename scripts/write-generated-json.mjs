@@ -73,3 +73,22 @@ export async function writeGeneratedJson(filePath, value, options = {}) {
   fs.writeFileSync(filePath, formatted);
   return { written: true, path: filePath };
 }
+
+/**
+ * True when the file on disk holds `value`, apart from `volatileKeys`: what a
+ * `--check` asks, without writing.
+ */
+export function generatedJsonIsCurrent(filePath, value, options = {}) {
+  if (!fs.existsSync(filePath)) return false;
+  let previous;
+  try {
+    previous = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return false;
+  }
+  const volatileKeys = options.volatileKeys || [];
+  return (
+    JSON.stringify(previous) === JSON.stringify(value) ||
+    differsOnlyInVolatileKeys(previous, value, volatileKeys)
+  );
+}

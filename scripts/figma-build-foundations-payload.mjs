@@ -1,11 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { writeGeneratedJson } from "./write-generated-json.mjs";
+import {
+  generatedJsonIsCurrent,
+  writeGeneratedJson,
+} from "./write-generated-json.mjs";
 
 const ROOT = process.cwd();
 const LIGHT_TOKENS = path.join(ROOT, "packages/tokens/src/tokens-light.json");
 const DARK_TOKENS = path.join(ROOT, "packages/tokens/src/tokens-dark.json");
-const ENV_FILE = path.join(ROOT, ".env");
 const OUT_FILE = path.join(ROOT, "docs/figma-foundations-payload.json");
 
 const FIGMA_VARIABLE_TYPES = new Map([
@@ -32,23 +34,6 @@ const STYLE_ONLY_TYPES = new Set([
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
-}
-
-function readEnv(filePath) {
-  if (!fs.existsSync(filePath)) return {};
-
-  return Object.fromEntries(
-    fs
-      .readFileSync(filePath, "utf8")
-      .split(/\r?\n/)
-      .filter(
-        (line) => line && !line.trim().startsWith("#") && line.includes("="),
-      )
-      .map((line) => {
-        const index = line.indexOf("=");
-        return [line.slice(0, index), line.slice(index + 1).trim()];
-      }),
-  );
 }
 
 function flattenTokens(value, segments = []) {
@@ -195,7 +180,6 @@ function scopesFor(token) {
 }
 
 function buildPayload() {
-  const env = readEnv(ENV_FILE);
   const light = flattenTokens(readJson(LIGHT_TOKENS));
   const darkByPath = new Map(
     flattenTokens(readJson(DARK_TOKENS)).map((token) => [
@@ -245,7 +229,10 @@ function buildPayload() {
   const payload = {
     generatedAt: new Date().toISOString(),
     target: {
-      fileKey: env.FIGMA_FILE_KEY ?? null,
+      // Not the library's key: it came from whoever's .env ran this, so the
+      // file changed with the machine. Nothing reads it; the plugin imports
+      // into the file it runs in.
+      fileKey: null,
       fileName: "Kozmos DS - Core Library",
       modes: ["Light", "Dark"],
     },
@@ -282,9 +269,27 @@ function buildPayload() {
 }
 
 const payload = buildPayload();
-await writeGeneratedJson(OUT_FILE, payload, {
-  volatileKeys: ["generatedAt"],
-});
-console.log(`Wrote ${path.relative(ROOT, OUT_FILE)}`);
-console.log(`Variable tokens: ${payload.summary.variableTokens}`);
-console.log(`Style-only tokens: ${payload.summary.styleOnlyTokens}`);
+// CI runs --check: the payload went without seven tokens from 2026-09-28 to
+// 10-05 because nothing compared it with the tokens it is built from.
+if (process.argv.includes("--check")) {
+  if (
+    !generatedJsonIsCurrent(OUT_FILE, payload, {
+      volatileKeys: ["generatedAt"],
+    })
+  ) {
+    console.error(
+      `${path.relative(ROOT, OUT_FILE)} is stale: run \`pnpm figma:foundations\` and commit the result.`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `${path.relative(ROOT, OUT_FILE)} is current (${payload.summary.totalTokens} tokens)`,
+  );
+} else {
+  await writeGeneratedJson(OUT_FILE, payload, {
+    volatileKeys: ["generatedAt"],
+  });
+  console.log(`Wrote ${path.relative(ROOT, OUT_FILE)}`);
+  console.log(`Variable tokens: ${payload.summary.variableTokens}`);
+  console.log(`Style-only tokens: ${payload.summary.styleOnlyTokens}`);
+}
