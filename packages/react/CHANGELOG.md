@@ -1,5 +1,118 @@
 # @kozmos-ds/react
 
+## 0.9.0
+
+### Minor Changes
+
+- fc16560: Add a reusable decorative ProgressTrack and compact UserLocationMarker. RouteProgressRail can now show a host-selected active leg in theme colour or a theme-to-success gradient, fixed transition landmarks and a separate position dot. Invalid or unavailable route positions do not claim zero progress. Existing step-disc consumers retain their presentation until they supply activeLeg.
+
+  Explicit static mode colours only the selected section without a position dot; live mode grows its fill and gradient from journey start to the supplied position, including across transitions. Opt-in directional dash flow is independent of progress, stops at the next transition, honours reduced motion and background lifecycle, and can be disabled by the host without changing position.
+
+  Web respects both OS and application reduced-motion settings, and uses system colours for visible filled distance in forced-colour mode.
+
+- fc16560: Add host-confirmed ArrivalPanel with optional actual journey metrics, localized labels, destination media and a full-width Done action. Extend navigation RouteSummary with hosted presentation, optional estimates and destination media, preserving its estimate layout. Left unset, its presentation is hosted in AdaptiveMapShell's panel (decision 43) and stays standalone anywhere else; pass `presentation="standalone"` to keep its card in the shell. Hosts continue to own routing, arrival confirmation, announcements and dismissal.
+- fc16560: Share the semantic DirectionKind vocabulary across platforms while retaining DirectionType as a source-compatible alias. Add walking, enter, exit and directional ramps. Draw directions with Pointr's own wayfinding artwork from the Pointr Maps - Express design, generated from one source for React, SwiftUI and Compose as solid shapes in the current colour: distinct lift, escalator, stairs and ramp glyphs up and down replace the generic arrows, and turns, turning back, the destination, walking, entrance and exit take Express's HardLeft, HardRight, TurnBack, Arriving, FollowTheLine, Entrance and Exit. Straight on, level changes and transitions keep their arrows. The rest of the Express set (no-direction variants, entrance/exit, custom transition, security, shuttle) is exported by name. Existing lift-up/lift-down spellings remain unchanged; update exhaustive switches for the new cases. Native source consumers should rebuild: type aliases preserve source calls, not binary enum identity. Unknown engine directions must be handled by the adapter rather than guessed as a turn.
+- fc16560: Correct navigation foundations: join optional direction metrics without stray separators, scope route warning descriptions to each rendered instance, disable stale route options outside ready state, use the proper two-way swap symbol, and provide independent localized route field and action labels. **Analytics:** the wayfinding swap event (`wayfinding_route_swapped`) no longer carries the raw origin and destination strings; a product that needs location analytics must make its own explicit privacy decision. Native source mirrors metric, readiness and labeling corrections and normalizes non-finite progress safely; native source delivery is separate from npm publication.
+- fc16560: Add optional per-step distance and duration labels to Itinerary, with matching SwiftUI and Compose source APIs. Missing values remain absent; metrics retain instruction language and current-step semantics. Kotlin copy/destructuring compatibility is preserved. These labels are step estimates, not actual journey totals.
+- fc16560: Add an explicit host-filtered RouteLocationField mode for SDK-ranked, synonym and translated search results while preserving local filtering by default. Prevent arrival and routing actions from submitting host forms, and allow long arrival/summary action labels to wrap at narrow widths and enlarged text sizes. The controlled journey restores focus after resolving or clearing either endpoint. Native location fields support the same opt-in filtering mode; existing Compose Combobox overloads remain source compatible.
+- fc16560: **Analytics: one press, one event.** Where a component reports a press with its
+  own event, the Core Button inside it no longer also sends the generic
+  `Button:button_clicked`. Affected presses: SearchBar's clear (`search_cleared`),
+  POIResultCard's actions (`poi_result_action`), WayfindingCard's close and swap,
+  RoutingInputGroup's add, remove and swap, FeedbackCard's submit, SaveLocationCard's
+  save and route, SplitButton's main action, FloorSelector's levels and stepper
+  (`floor_selected`), FileUpload's remove and Dialog's close (`dialog_closed`).
+  Presses no component reports (a plain Button, SaveLocationCard's note edit,
+  SplitButton's menu, the collapsible floor tile) still send `button_clicked`.
+  Dashboards that counted `button_clicked` for those presses should count the
+  component's own event instead. No props change.
+- fc16560: POIDetailPanel's labelled actions are text-only, apart from Go/Directions, which
+  keeps the canonical outlined navigation pointer. **What you'll see:** Share,
+  Order and the supplementary actions (Book, Call and the rest) lose their icons;
+  Go keeps its arrow. Icon-only header controls (close, favourite, save) and
+  loading feedback are unchanged. No props change.
+- fc16560: Add RouteLocationField for controlled origin/destination search with stable resolved identity, secondary place context, explicit clearing and a separate map-selection action. Loading, empty and error states do not offer stale suggestions. SwiftUI and Compose counterparts are provided from the repository; native Combobox fields retain their accessible labels and SwiftUI selection no longer writes its binding twice.
+
+  Combobox disclosure/clear controls have 44 px/pt web/iOS and 48 dp Android targets and localizable labels. Initial uncontrolled search drafts no longer disappear on mount; subsequent selected-identity changes still update the display. SwiftUI option accessibility includes secondary location context.
+
+  RouteLocationField omits location IDs from automatic selection analytics. Generic web Combobox retains its legacy value event by default and gains an explicit includeValueInAnalytics opt-out.
+
+- fc16560: Add explicit Change and Cancel callbacks for host-controlled location editing. RouteLocationField uses text actions to distinguish clearing a search or changing a place from closing its containing panel; the map action uses a map-pin icon. Hosts without onEdit retain the original clearing callback. The React preview includes cancellable drafts and focus restoration; native parity remains pending design review.
+
+  Move map selection into the dropdown and offer an opt-in host-resolved current position independently of search results. Combobox supports keyboard-accessible popup commands separate from its selectable values; these never write a command label into the query. Current-position validation and lifecycle remain host-owned.
+
+- fc16560: Add optional route transition waypoints and a static completed-track treatment to RouteProgressRail. Markers follow logical reading direction, avoid visual collisions and retain all valid localized descriptions for assistive technology. Invalid positions and ambiguous waypoint IDs are omitted; the host owns route identity and progress basis. Existing rails keep their plain track unless showCompletedTrack is enabled. Matching SwiftUI and Compose source APIs are included separately from native registry delivery.
+- fc16560: Add RouteSetupPanel in React, SwiftUI and Compose for hosted setup and map-point confirmation content. Continue requires explicit host readiness and is disabled during calculation; cancellation remains available. Document resolved point identity, request cancellation, map/list alternatives, recovery and sheet/focus ownership.
+- fc16560: Compose POI result actions, category clear/count, assistant close/send and wayfinding
+  inputs from Core Button, IconButton, Counter and Input. Preserve domain callbacks
+  and explicit form behavior while using shared focus, disabled and theme treatments.
+  Core Button's generic `button_clicked` is not sent for a press the component already reports with its own event (see the analytics changeset). Custom selection,
+  voice/input and native counterparts remain tracked migration work.
+  The category group names its count once; its visual Counter is decorative rather
+  than carrying an unsupported accessible label on a generic span.
+
+  Allow translated POI action labels to wrap within their card at enlarged text
+  sizes. Keep a Combobox's keyboard-highlighted choice by identity across host
+  rerenders, and respect composition/caller-handled Escape when dismissing its popup.
+
+  Native source mirrors also reuse Core for Swift saved-location Save/Remove and
+  Guide actions and legacy route End, and Compose saved-location Remove. Preserve
+  domain callbacks and telemetry while inheriting the Core target sizes and styles.
+  Compose Guide now uses Core success styling and the canonical navigation pointer.
+  Native neutral note-edit icon actions remain tracked work, not completed migration.
+
+- fc16560: Make ManoeuvreCard theme-filled by default with contrast-paired text and itinerary content. A caller that already sets `surface` keeps that surface (the background appearance), so existing `surface="glass"` cards stay glass; `appearance="background"` asks for the neutral solid/glass surfaces explicitly, and `appearance="theme"` stays opaque whatever the surface; enlarge the disclosure target while retaining focus and language behavior. SwiftUI and Compose expose equivalent appearance choices in their source distributions.
+- fc16560: Allow explicit unknown route progress and localized accessible value text. Use logical RTL timeline placement without mirroring turn symbols, and keep rail geometry bounded in narrow containers. Numeric non-finite inputs retain their defensive zero fallback; progress never confirms arrival.
+
+### Patch Changes
+
+- fc16560: Register open Combobox suggestions with Core overlays' dismissable-layer stack.
+  Escape closes suggestions first, returns focus to the field, and leaves enclosing
+  Dialog, Popover or assistant surfaces open until a subsequent Escape. Host-prevented
+  and IME-composing Escape events retain the popup and parent without cancelling the
+  browser's IME behavior. Inline popups follow the same contract; an open popup with
+  nothing to show is not drawn and takes no layer, so it never swallows a parent's Escape.
+
+  The already-used Radix dismissable-layer 1.1.11 is now a direct dependency; no
+  dependency versions are upgraded. Native platform behavior is unchanged.
+
+- fc16560: Refine Dialog typography and spacing and compose its dismiss control from Core IconButton. Add an opt-in `DialogFooter layout="stacked"` for full-width, wrapping actions in DOM order; existing responsive footer ordering remains the default. Navigation recovery examples distinguish the recommended action from returning to the map and restore focus to the actual action destination.
+- 7097e1a: UserLocationMarker draws as SwiftUI and Compose do: the heading cone is native's 64-unit wedge, fading out 32 from the dot; the dot casts no shadow; the full marker's ring is white in both themes (the compact dot's stays the surface's colour); and the dot, halo, pulse and cone use the marker's own fixed blue, `Semantics.Map marker.dot`, so the dot reads against its ring in dark mode too.
+- fc16560: Allow localized itinerary endpoint captions and long place names to wrap without overflowing. Native endpoints adapt to large type; iOS no longer truncates place names after two lines.
+- fc16560: Give routing swap, add, remove and close actions actual 44px targets rather than 32–40px bounds. Reserve enough input space for the enlarged swap control. Native equivalents use 44pt on iOS and 48dp on Android; iOS WayfindingCard also accepts a localized closeLabel.
+- fc16560: Prevent ambiguous navigation snapshots from choosing a route or current step silently. RoutePreviewPanel requires unique non-empty IDs and exactly one selected available option before continuation; Itinerary omits current emphasis when several steps are marked current. The host remains responsible for validating and correcting its snapshot. Matching SwiftUI and Compose protections are included.
+- 33c1c8d: **MapAttribution links no credit that carries credentials, whitespace or control characters.**
+  A credit's destination now passes the same rule as MapInfoPanel's links, shared by both and
+  matched on iOS and Android: an absolute HTTP(S) URL with a host, with no user name or password
+  (`https://maps.example@evil.example` reads as one host and goes to another) and no whitespace or
+  control characters. Such a credit used to be a live link; it now shows as plain text, as any
+  other unsafe destination does. Credits with ordinary HTTP(S) links are unchanged.
+- fc16560: Omit blank and duplicate Combobox popup command IDs rather than allowing ambiguous
+  keyboard activation. Commands remain distinct from selectable values even when
+  their string IDs match. Render matching empty-state/supporting messages once while
+  retaining field descriptions and nested-overlay Escape ownership. The entry made
+  active as the query changes is the first option that can be chosen, never a command,
+  so Enter on text that matches nothing chooses nothing; a command runs only when the
+  visitor moves to it. Enter ignores Safari's composition commit (keyCode 229).
+- fc16560: Make the existing web dialog dismiss control a full touch target, allow its accessible name to be localized, reserve heading clearance and bound overflowing content to the viewport. Text resizing updates the layout immediately without animating geometry independently of the close control; entrance animations are retained. Recovery examples preserve confirmed route points and restore focus through the existing dialog instead of introducing a separate modal implementation.
+- 1b483be: RouteProgressRail's route-mode waypoints draw their 1px edge on the web, as SwiftUI and Compose do. The rule that drew it had one class's weight and lost to the scoped preflight's border reset, so each waypoint was a white disc with no edge.
+- fc16560: Compose SearchBar's clear action from Core IconButton. Disabled and read-only
+  fields now also disable clearing, so the action cannot mutate a locked value.
+  The clear label, 44px target, decorative circle, non-submit behavior and domain
+  callbacks are retained. Enabled clearing also emits Core's normal Button event.
+
+  Clearing returns focus to the input before host callbacks run and preserves
+  forwarded refs. Host keyboard handlers compose with search initiation; prevented
+  or IME-composing Enter events do not initiate search analytics.
+
+- fc16560: Preserve SearchBar input styling in WebKit using component-owned CSS instead of native-control scoped utilities. Its input remains shrinkable and chrome-free, keeping the Core clear action inside narrow layouts at enlarged text sizes. The recipe uses a SearchBar-specific class so Core Search retains its independent bordered field styling. The existing callbacks and public API are unchanged; this does not introduce the separately planned Core decorated-field capability.
+- fc16560: Reduce stylesheet size by sharing identical light/dark token declarations while retaining both selectors and their original specificity. Public token names, values, utility styles and component styles are unchanged. Include PostCSS helpers in the build cache inputs so compiler changes cannot restore stale stylesheets.
+- Updated dependencies [7097e1a]
+- Updated dependencies [fc16560]
+  - @kozmos-ds/tokens@0.5.0
+  - @kozmos-ds/product-contracts@0.8.0
+  - @kozmos-ds/icons@0.6.0
+
 ## 0.8.1
 
 ### Patch Changes
