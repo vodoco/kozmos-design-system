@@ -3,9 +3,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  Box,
   Stack,
-  Surface,
   Table,
   TableBody,
   TableCell,
@@ -16,6 +14,7 @@ import {
   Text,
 } from "@kozmos-ds/react";
 import { DocsPage, foundationMeta } from "../../foundations/DocsPage";
+import { PairSample, type ContrastPair } from "../../foundations/PairSample";
 import { Ramp, SwatchList, TokenTable } from "../../foundations/parts";
 import { foundationPage } from "../../foundations/nav";
 import contract from "../../generated/contrast-contract.json";
@@ -99,12 +98,7 @@ function measure(
 }
 
 function ContrastContract() {
-  const pairs = contract.pairs as {
-    name: string;
-    background: string;
-    foreground: string;
-    minimum: number;
-  }[];
+  const pairs = contract.pairs as ContrastPair[];
   const results = pairs.map((pair) => ({
     ...pair,
     light: measure(pair.background, pair.foreground, "light"),
@@ -153,24 +147,7 @@ function ContrastContract() {
                 </Stack>
               </TableCell>
               <TableCell>
-                <Surface
-                  className="site-pair-sample"
-                  aria-hidden="true"
-                  style={{
-                    "--pair-bg": `var(--${pair.background})`,
-                    "--pair-fg": `var(--${pair.foreground})`,
-                  }}
-                >
-                  <Box className="site-pair-fill">
-                    <Text
-                      as="span"
-                      weight="semibold"
-                      className="site-pair-text"
-                    >
-                      Aa
-                    </Text>
-                  </Box>
-                </Surface>
+                <PairSample pair={pair} />
               </TableCell>
               <TableCell>
                 <Text as="span" size="sm">

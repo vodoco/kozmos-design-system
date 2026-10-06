@@ -1405,7 +1405,7 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
   gap: var(--site-space-50);
 }
 
-/* Contrast samples: the pair's own colours, as text on its surface. */
+/* Contrast samples: the pair's own colours, as letters or a dot on its surface. */
 .site-pair {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1433,6 +1433,14 @@ html[data-theme] .site-reveal:not([data-shown="true"]) {
 /* Text sets its own colour class; the sample's letters take the pair's. */
 .site-pair-sample .site-pair-text {
   color: var(--pair-fg);
+}
+
+/* A non-text pair (held below 4.5:1) is a dot of its foreground. */
+.site-pair-sample .site-pair-dot {
+  inline-size: calc(var(--primitives-layout-sizing-300) * 1px);
+  block-size: calc(var(--primitives-layout-sizing-300) * 1px);
+  border-radius: var(--primitives-radius-full);
+  background: var(--pair-fg);
 }
 
 /* Glass over the category colours. */

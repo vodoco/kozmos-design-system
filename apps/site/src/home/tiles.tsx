@@ -18,6 +18,7 @@ import {
   ThemeProvider,
 } from "@kozmos-ds/react";
 import contract from "../generated/contrast-contract.json";
+import { PairSample, type ContrastPair } from "../foundations/PairSample";
 import { contrastRatio, formatRatio, parseColour } from "../lib/contrast";
 import { ramp, token } from "../lib/tokens";
 import {
@@ -269,14 +270,9 @@ const featuredPairs = [
 ];
 
 export function ContrastTile() {
-  const pairs = (
-    contract.pairs as {
-      name: string;
-      background: string;
-      foreground: string;
-      minimum: number;
-    }[]
-  ).filter((pair) => featuredPairs.includes(pair.name));
+  const pairs = (contract.pairs as ContrastPair[]).filter((pair) =>
+    featuredPairs.includes(pair.name),
+  );
   return (
     <Tile
       span={4}
@@ -297,20 +293,7 @@ export function ContrastTile() {
           );
           return (
             <Box key={pair.name} className="site-pair">
-              <Surface
-                className="site-pair-sample"
-                aria-hidden="true"
-                style={{
-                  "--pair-bg": `var(--${pair.background})`,
-                  "--pair-fg": `var(--${pair.foreground})`,
-                }}
-              >
-                <Box className="site-pair-fill">
-                  <Text as="span" weight="semibold" className="site-pair-text">
-                    Aa
-                  </Text>
-                </Box>
-              </Surface>
+              <PairSample pair={pair} />
               <Stack gap={0}>
                 <Text as="span" size="sm" weight="medium">
                   {pair.name}
