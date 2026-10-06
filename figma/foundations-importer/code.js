@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "9d759c6eace8";
+const PLUGIN_BUILD = "76fdb6cd5b04";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -51011,7 +51011,7 @@ function parseUserLocationMarkerVariantName(name) {
 
 // The marker as SwiftUI and Compose draw it, which React follows (Olcay,
 // 2026-10-05): in a 64 frame, the halo 64 at 14 %, the pulse 48 at 30 %
-// (still here), the heading cone, and the 18 dot with a 3 ring inside it,
+// (held still, as under reduced motion), the heading cone, and the 18 dot with a 3 ring inside it,
 // no shadow; all in the marker's own blue and white, fixed in both themes
 // (Semantics.Map marker.dot and .ring).
 const USER_LOCATION_MARKER_DOT = {
@@ -51083,6 +51083,22 @@ function createUserLocationMarkerCone(variableByName, stats) {
   };
   try {
     wedge.fills = [gradient];
+    // Figma may keep a gradient and quietly drop a stop's binding; read it
+    // back, so a plain blue is not taken for the token.
+    const kept = wedge.fills[0] && wedge.fills[0].gradientStops;
+    if (
+      variable &&
+      !(
+        kept &&
+        kept[0] &&
+        kept[0].boundVariables &&
+        kept[0].boundVariables.color
+      )
+    ) {
+      stats.warnings.push(
+        "UserLocationMarker: Figma kept the cone's gradient but not its stop's binding to Map marker/dot; the blue is plain.",
+      );
+    }
   } catch (_error) {
     wedge.fills = [
       Object.assign({}, gradient, {
@@ -51113,9 +51129,12 @@ async function updateUserLocationMarkerVariant(
   });
   component.fills = [];
   component.strokes = [];
+  // The shapes inside are drawn afresh; the variant itself is not, so a
+  // shadow it once carried would outlive an Update.
+  component.effects = [];
 
   // The halo, 64 at 14 %, is the accuracy; the pulse, 48 at 30 %, moves in
-  // the product and rests here. Both are layers at that opacity over the
+  // the product and rests here, as it holds still under reduced motion. Both are layers at that opacity over the
   // opaque blue, as the code draws them.
   insertTranslucentTokenLayer(component, {
     name: "Accuracy Halo",
@@ -51208,7 +51227,7 @@ const USER_LOCATION_MARKER_DESCRIPTION = [
   "heading is a bearing in degrees; it rotates the cone rather than adding a variant.",
   "The marker has no text; the map renderer owns its position and accessible name.",
   "Heading adds a distinct wedge, so a known bearing is not signalled by colour alone.",
-  "Drawn as SwiftUI and Compose draw it: the halo 64 at 14 %, the pulse 48 at 30 % (still here), native's cone, and the 18 dot with a 3 white ring inside it and no shadow, in the marker's fixed blue (Map marker/dot, Map marker/ring).",
+  "Drawn as SwiftUI and Compose draw it: the halo 64 at 14 %, the pulse 48 at 30 % (held still, as every platform holds it under reduced motion), native's cone, and the 18 dot with a 3 white ring inside it and no shadow, in the marker's fixed blue (Map marker/dot, Map marker/ring).",
 ];
 
 async function buildUserLocationMarkerComponent() {

@@ -32,6 +32,7 @@ import {
   payloadVariables,
   resetSearchStats,
   searchStats,
+  withNodeDefaults,
 } from "./lib/figma-plugin-harness.mjs";
 
 const ROOT = process.cwd();
@@ -2357,14 +2358,24 @@ section("Text styles stay attached");
 // wedge and a 20 dot until then.
 section("UserLocationMarker");
 {
-  const tokens = payloadVariables([
-    ...variableByName.keys(),
-    "Map marker/dot",
-    "Map marker/ring",
-  ]);
+  // Map marker/dot and /ring come from the payload, so a payload without
+  // them fails here rather than being stood in for.
+  const tokens = payloadVariables([...variableByName.keys()]);
   const fill = (node) => node && node.fills && node.fills[0];
   const token = (node) => boundVariableName(fill(node));
   const near = (a, b, e = 0.01) => Math.abs(a - b) < e;
+  const paintMarker = async (component, value, stats) =>
+    plugin.updateUserLocationMarkerVariant(component, {
+      value,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+  ok(
+    JSON.stringify(plugin.USER_LOCATION_MARKER_HEADINGS) ===
+      JSON.stringify(["Hidden", "Visible"]),
+    "two variants, Heading Hidden and Visible",
+  );
   for (const value of plugin.USER_LOCATION_MARKER_HEADINGS || []) {
     const component = figma.createComponent();
     const stats = freshStats();
@@ -2454,6 +2465,89 @@ section("UserLocationMarker");
       stats.warnings.length === 0,
       `${value}: no warnings (${stats.warnings.join(" | ")})`,
     );
+  }
+
+  // Figma documents no default for whether a new frame clips or where a new
+  // shape's stroke sits, so the painter must set both: run it with frames
+  // clipping and strokes centred.
+  await withNodeDefaults(
+    { FRAME: { clipsContent: true }, ELLIPSE: { strokeAlign: "CENTER" } },
+    async () => {
+      const component = figma.createComponent();
+      await paintMarker(component, "Visible", freshStats());
+      const cone = named(component, "Heading Cone");
+      const dot = named(component, "Location Dot");
+      ok(
+        cone &&
+          cone.clipsContent === false &&
+          dot &&
+          dot.strokeAlign === "INSIDE",
+        "whatever Figma's defaults, the cone does not clip and the ring sits inside",
+      );
+    },
+  );
+
+  // An Update redraws the shapes but keeps the variant: a shadow it carried
+  // must go too.
+  {
+    const component = figma.createComponent();
+    component.effects = [
+      {
+        type: "DROP_SHADOW",
+        color: { r: 0, g: 0, b: 0, a: 0.2 },
+        offset: { x: 0, y: 2 },
+        radius: 4,
+        spread: 0,
+        visible: true,
+        blendMode: "NORMAL",
+      },
+    ];
+    await paintMarker(component, "Hidden", freshStats());
+    ok(
+      component.effects.length === 0,
+      "an Update clears a shadow the variant carried",
+    );
+  }
+
+  // If Figma keeps the cone's gradient but drops its stop's binding, the
+  // painter says so rather than leaving a plain blue unremarked.
+  {
+    const original = figma.createNodeFromSvg;
+    figma.createNodeFromSvg = (svg) => {
+      const frame = original(svg);
+      for (const child of frame.children) {
+        let kept = child.fills;
+        Object.defineProperty(child, "fills", {
+          configurable: true,
+          get: () => kept,
+          set: (paints) => {
+            kept = paints.map((paint) =>
+              paint.gradientStops
+                ? Object.assign({}, paint, {
+                    gradientStops: paint.gradientStops.map((stop) => ({
+                      position: stop.position,
+                      color: stop.color,
+                    })),
+                  })
+                : paint,
+            );
+          },
+        });
+      }
+      return frame;
+    };
+    try {
+      const stats = freshStats();
+      await paintMarker(figma.createComponent(), "Visible", stats);
+      ok(
+        stats.warnings.some((warning) =>
+          warning.includes("not its stop's binding"),
+        ),
+        `a dropped stop binding is reported (${stats.warnings.join(" | ")})`,
+      );
+    } finally {
+      figma.createNodeFromSvg = original;
+    }
   }
 }
 

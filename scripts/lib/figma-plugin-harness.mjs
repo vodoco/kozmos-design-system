@@ -283,10 +283,12 @@ function defineTextStyleFields(node) {
 /**
  * The bounds of an SVG path written in absolute M, L, H, V, Q, C and Z
  * commands, with each curve's extremes, or null for anything else (relative
- * commands, arcs), which the caller then treats as filling its frame.
+ * commands, arcs, smooth curves), which the caller then treats as filling its
+ * frame.
  */
 export function svgPathBounds(d) {
-  if (!d || /[a-y]/.test(d.replace(/e[-+]?\d/gi, ""))) return null;
+  if (!d || /[a-y]/.test(d.replace(/e[-+]?\d/gi, "")) || /[AST]/.test(d))
+    return null;
   const tokens = d.match(/[MLHVQCZ]|-?\d*\.?\d+(?:e[-+]?\d+)?/gi) || [];
   let i = 0;
   let command = null;
@@ -397,6 +399,23 @@ export function svgPathBounds(d) {
 // need not sit on a page for an instance swap to find it.
 const nodesById = new Map();
 
+// Figma does not document every default a new node starts with (whether a
+// frame clips, where a stroke sits). A check that must not lean on one runs
+// its painter under the opposite default, per node type, through this.
+const nodeDefaults = {};
+
+/** Runs `run` with new nodes of each type starting from `defaults`. */
+export async function withNodeDefaults(defaults, run) {
+  const saved = Object.assign({}, nodeDefaults);
+  Object.assign(nodeDefaults, defaults);
+  try {
+    return await run();
+  } finally {
+    for (const key of Object.keys(nodeDefaults)) delete nodeDefaults[key];
+    Object.assign(nodeDefaults, saved);
+  }
+}
+
 export class MockNode {
   constructor(type, name) {
     this.id = `${nextId++}:${nextId}`;
@@ -470,6 +489,7 @@ export class MockNode {
       this.mainComponent = null;
       this.isExposedInstance = false;
     }
+    Object.assign(this, nodeDefaults[type]);
   }
 
   get fills() {
