@@ -122,6 +122,23 @@ class KozmosRouteProgressRailWalkingWithinLegConnect {
 }
 
 @FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2229-9787")
+@FigmaVariant("Content", "AtTransition")
+class KozmosRouteProgressRailAtTransitionConnect {
+    @Composable
+    fun ComponentExample() {
+        KozmosRouteProgressRail(
+            progress = 0.4f,
+            type = DirectionType.Left,
+            label = "Journey progress",
+            waypoints = routeTransitions,
+            activeLeg = KozmosProgressRange(0f, 0.4f),
+            appearance = KozmosProgressTrackAppearance.Gradient,
+            motion = KozmosProgressMotion.Directional,
+        )
+    }
+}
+
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2229-9787")
 @FigmaVariant("Content", "AfterTransition")
 class KozmosRouteProgressRailAfterTransitionConnect {
     @Composable
@@ -186,6 +203,23 @@ class KozmosRouteProgressRailGuidancePausedConnect {
             activeLeg = KozmosProgressRange(0f, 0.4f),
             appearance = KozmosProgressTrackAppearance.Gradient,
             motion = KozmosProgressMotion.None,
+        )
+    }
+}
+
+@FigmaConnect("https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2229-9787")
+@FigmaVariant("Content", "LiveStart")
+class KozmosRouteProgressRailLiveStartConnect {
+    @Composable
+    fun ComponentExample() {
+        KozmosRouteProgressRail(
+            progress = 0f,
+            type = DirectionType.Left,
+            label = "Journey progress",
+            waypoints = routeTransitions,
+            activeLeg = KozmosProgressRange(0f, 0.4f),
+            appearance = KozmosProgressTrackAppearance.Gradient,
+            motion = KozmosProgressMotion.Directional,
         )
     }
 }

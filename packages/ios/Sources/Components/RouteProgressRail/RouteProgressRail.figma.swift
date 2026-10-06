@@ -115,6 +115,24 @@ struct KozmosRouteProgressRailWalkingWithinLegConnect: FigmaConnect {
     }
 }
 
+struct KozmosRouteProgressRailAtTransitionConnect: FigmaConnect {
+    let component = KozmosRouteProgressRail.self
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2229-9787"
+    var variant = ["Content": "AtTransition"]
+
+    var body: some View {
+        KozmosRouteProgressRail(
+            progress: 0.4,
+            type: .left,
+            label: "Journey progress",
+            waypoints: routeTransitions,
+            activeLeg: KozmosProgressRange(start: 0, end: 0.4),
+            appearance: .gradient,
+            motion: .directional
+        )
+    }
+}
+
 struct KozmosRouteProgressRailAfterTransitionConnect: FigmaConnect {
     let component = KozmosRouteProgressRail.self
     let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2229-9787"
@@ -184,6 +202,24 @@ struct KozmosRouteProgressRailGuidancePausedConnect: FigmaConnect {
             activeLeg: KozmosProgressRange(start: 0, end: 0.4),
             appearance: .gradient,
             motion: .none
+        )
+    }
+}
+
+struct KozmosRouteProgressRailLiveStartConnect: FigmaConnect {
+    let component = KozmosRouteProgressRail.self
+    let figmaNodeUrl = "https://figma.com/design/Yj4O8p6Y9h2Sa9zJVoAiVY?node-id=2229-9787"
+    var variant = ["Content": "LiveStart"]
+
+    var body: some View {
+        KozmosRouteProgressRail(
+            progress: 0,
+            type: .left,
+            label: "Journey progress",
+            waypoints: routeTransitions,
+            activeLeg: KozmosProgressRange(start: 0, end: 0.4),
+            appearance: .gradient,
+            motion: .directional
         )
     }
 }

@@ -97,6 +97,21 @@ figma.connect(RouteProgressRail, routeProgressRailUrl, {
 });
 
 figma.connect(RouteProgressRail, routeProgressRailUrl, {
+  variant: { Content: "AtTransition" },
+  example: () => (
+    <RouteProgressRail
+      progress={0.4}
+      type="left"
+      label="Journey progress"
+      waypoints={transitions}
+      activeLeg={{ start: 0, end: 0.4 }}
+      appearance="gradient"
+      motion="directional"
+    />
+  ),
+});
+
+figma.connect(RouteProgressRail, routeProgressRailUrl, {
   variant: { Content: "AfterTransition" },
   example: () => (
     <RouteProgressRail
@@ -153,6 +168,21 @@ figma.connect(RouteProgressRail, routeProgressRailUrl, {
       activeLeg={{ start: 0, end: 0.4 }}
       appearance="gradient"
       motion="none"
+    />
+  ),
+});
+
+figma.connect(RouteProgressRail, routeProgressRailUrl, {
+  variant: { Content: "LiveStart" },
+  example: () => (
+    <RouteProgressRail
+      progress={0}
+      type="left"
+      label="Journey progress"
+      waypoints={transitions}
+      activeLeg={{ start: 0, end: 0.4 }}
+      appearance="gradient"
+      motion="directional"
     />
   ),
 });
