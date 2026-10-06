@@ -35,7 +35,7 @@ component's docs, stories and controls, and its code on every platform (decision
 - [`navigation-integration.md`](navigation-integration.md) — navigation configuration, lifecycle
   ownership, migration, editable source map and reproducible web/native checks.
 
-- [`product-design-gap-register.md`](product-design-gap-register.md) — all 121 supplied product
+- [`product-design-gap-register.md`](product-design-gap-register.md) — all 132 supplied product
   gaps reconciled against release and current-main evidence, plus SDK-screen requirements; separates library
   implementation, host integration, platform validation and external artifact adoption.
 - [`sdk-module-primitives.md`](sdk-module-primitives.md) — current SDK coverage and the proposed
@@ -75,12 +75,12 @@ component's docs, stories and controls, and its code on every platform (decision
 
 Written by a script: regenerate rather than edit.
 
-| File                                                                     | Written by                              | Read by                                                                                 |
-| ------------------------------------------------------------------------ | --------------------------------------- | --------------------------------------------------------------------------------------- |
-| `figma-foundations-payload.json`                                         | `pnpm figma:foundations`                | the Figma importer (chosen in its file picker), the parity, contract and painter checks |
-| `figma-library-manifest.json`                                            | `pnpm figma:manifest`                   | `pnpm components:contract:check`                                                        |
-| `figma-pointr-icon-catalog.json`                                         | `pnpm figma:icons`                      | `pnpm icons:pointr:build`, `pnpm components:contract:check`                             |
-| `figma-icons-2026-09-22-0810Z.json`, `figma-icons-2026-09-22-0947Z.json` | `scripts/figma-rest/icons-baseline.mjs` | the icon-source comparison in [`scripts/figma-rest`](../scripts/figma-rest/README.md)   |
+| File                                                                                                          | Written by                              | Read by                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `figma-foundations-payload.json`                                                                              | `pnpm figma:foundations`                | the Figma importer (chosen in its file picker), the parity, contract and painter checks                                                 |
+| `figma-library-manifest.json`                                                                                 | `pnpm figma:manifest`                   | `pnpm components:contract:check`                                                                                                        |
+| `figma-pointr-icon-catalog.json`                                                                              | `pnpm figma:icons`                      | `pnpm icons:pointr:build`, `pnpm components:contract:check`                                                                             |
+| `figma-icons-2026-09-22-0810Z.json`, `figma-icons-2026-09-22-0947Z.json`, `figma-icons-2026-10-05-2002Z.json` | `scripts/figma-rest/icons-baseline.mjs` | the icon-source comparison in [`scripts/figma-rest`](../scripts/figma-rest/README.md); the newest is what `pnpm figma:iconconnect` maps |
 
 Session notes, handoffs and dated reports are not kept here: they stay in the git-ignored `.notes/`
 folder of the checkout that wrote them.

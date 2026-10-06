@@ -276,6 +276,33 @@ try {
           `PASS decision 50, ${theme}, ${mode}: Nearby is the success text colour ${success} on the card, the selected card, the grouped row and the selected grouped row${mode === "full" ? "; 5–10 min is the text colour" : ""}`,
         );
       }
+      // The route rail's waypoint discs draw a 1px edge in background/400 in
+      // route mode, as SwiftUI and Compose do, with or without @scope. The
+      // owned rule had one class's weight, and the scoped preflight's border
+      // reset won the tie, so the web drew none (found 2026-10-05).
+      {
+        const theme = id === "outer" ? "dark" : "light";
+        const rail = page.getByTestId(`${id}-route-rail`);
+        const waypoints = rail.locator(".kozmos-route-track-waypoint");
+        await waypoints.first().waitFor();
+        const edges = await waypoints.evaluateAll((nodes) =>
+          nodes.map((node) => {
+            const s = getComputedStyle(node);
+            return `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`;
+          }),
+        );
+        const edge = await value(
+          `${id}-route-rail`,
+          "--primitives-colors-background-400",
+        );
+        assert.ok(
+          edges.length === 3 && edges.every((e) => e === `1px solid ${edge}`),
+          `${mode}, ${theme}: the route waypoints do not draw a 1px background/400 edge (${edges.join("; ")}; want 1px solid ${edge})`,
+        );
+        console.log(
+          `PASS route waypoints, ${theme}, ${mode}: ${edges.length} draw 1px solid ${edge}`,
+        );
+      }
       // The result card's one tab (GAP-054; Olcay, 2026-09-29): each is
       // painted for what it says, in this root's theme, with or without
       // @scope and under the host's hostile rules, because the paint is

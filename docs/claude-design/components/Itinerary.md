@@ -2,7 +2,7 @@
 
 # Itinerary
 
-The whole route as a list: where it starts, every step with the current one emphasised, where it ends. The steps are the routing engine's own words with the arrow the product gives each; the origin and destination sit under their labels. Assistive technology reads the endpoints with their labels and each step as one item, the current one marked as such.
+The whole route as a list: where it starts, every step with the current one emphasised, where it ends. The steps are the routing engine's own words, each with the mark Kozmos draws for its type; the origin and destination sit under their labels. Assistive technology reads the endpoints with their labels and each step as one item, the current one marked as such.
 
 - **Import:** `import { Itinerary } from "@kozmos-ds/react";`
 - **Group:** SDK

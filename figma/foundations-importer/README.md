@@ -49,7 +49,7 @@ Select **Curated Icons** and click **Build** to create the curated Kozmos icon s
 
 Select **Curated Icons** and click **Update** when the curated registry or Pointr source components change. It updates icon source components in place, preserves their node IDs, and keeps each nested `Pointr Source` stretched to the 24px icon bounds so resized Button/IconButton slots do not clip or overflow the source artwork.
 
-The same pass draws the 23 wayfinding glyphs from Pointr Maps - Express (`Icon / elevator-up`, `Icon / shuttle` and the rest) from the SVGs the plugin carries in `KOZMOS_WAYFINDING_ICONS`, a block `pnpm icons:navigation:generate` writes from `packages/icons/src/owned/navigation-glyphs.json`, the source the code draws them from on every platform. Each is a `Wayfinding Source` frame of solid shapes, kept while its artwork is unchanged so the tints laid through it survive. They are offered to no Button, IconButton or Badge slot, which tint a stroke; DirectionStep's turns, turn-back, destination, lift, escalator and stairs types draw them, tinted through their fills. Run **Curated Icons → Update**, then **Update** DirectionStep.
+The same pass draws the 23 wayfinding glyphs from Pointr Maps - Express (`Icon / elevator-up`, `Icon / shuttle` and the rest) from the SVGs the plugin carries in `KOZMOS_WAYFINDING_ICONS`, a block `pnpm icons:navigation:generate` writes from `packages/icons/src/owned/navigation-glyphs.json`, the source the code draws them from on every platform. Each is a `Wayfinding Source` frame of solid shapes, kept while its artwork is unchanged so the tints laid through it survive. They are offered to no Button, IconButton or Badge slot, which tint a stroke; DirectionStep's turns, turn-back, destination, walking, lift, escalator, stairs, ramp, entry and exit types draw them, tinted through their fills, and Itinerary and ManoeuvreCard reuse DirectionStep's marks. Run **Curated Icons → Update**, then **Update** DirectionStep, Itinerary and ManoeuvreCard.
 
 Select **Button** and click **Build** to create the first code-aligned component set on the `Components` page. The result log includes both the internal Figma node ID and URL-safe node ID for Code Connect.
 
@@ -115,6 +115,10 @@ convention that avoids variant explosion:
 - **FloorSelector** — `Variant` of VerticalList, HorizontalList, CompactStepper.
   Every floor target stays 44px so it satisfies the shared touch-target contract.
   Floor identity and ordering remain product data, not Figma variants.
+- **Itinerary** — `Content` of Default, NoCurrentStep and StepMetrics: a route's
+  From and To captions and the steps between them, each with DirectionStep's mark
+  from the Icons page, the current one semibold in the theme's 600. No surface of
+  its own. Run Curated Icons first.
 - **LocationPin** — `State` of Default, Selected, Featured, OffFloor, Disabled
   crossed with `Size` of Sm, Md, Lg and `Tint` of Theme and the taxonomy's eight
   category colours (135 variants); a tint's fill is the marker and its ink the
@@ -124,6 +128,12 @@ convention that avoids variant explosion:
   variant axes: colour is a token override and label placement is renderer
   layout. This is the one Product / SDK set that uses the two-axis matrix
   builder rather than the single-axis one.
+- **ManoeuvreCard** — `State` Closed and Open by `Appearance` Theme and Background:
+  the current manoeuvre (DirectionStep's mark from the Icons page, the
+  instruction and the detail) or, open, the itinerary's rows, over the grab bar.
+  Theme is the theme's 600 with everything on it in foreground/1000; Background
+  the solid surface. Glass is not drawn yet. Two axes, through the single-axis
+  builder's second axis, as POIResultCard's. Run Curated Icons first.
 - **MapView** — `Content` of Empty and Overlay, plus editable attribution text.
   Figma models only the surface, its insets, and the overlay slot; the map canvas
   is renderer output and must not be drawn in Figma.
@@ -141,15 +151,6 @@ Click **Build Surface QA** after the component audit is green and before closing
 
 Use **Audit Library** after designer edits or component builds. It produces a JSON report in the plugin log with:
 
-- **Itinerary** — `Content` of Default, NoCurrentStep and StepMetrics: a route's
-  From and To captions and the steps between them, each with DirectionStep's mark
-  from the Icons page, the current one semibold in the theme's 600. No surface of
-  its own. Run Curated Icons first.
-- **ManoeuvreCard** — `State` Closed and Open by `Appearance` Theme and Background:
-  the current manoeuvre (DirectionStep's mark from the Icons page, the
-  instruction and the detail) or, open, the itinerary's rows, over the grab bar.
-  Theme is the theme's 600 with everything on it in foreground/1000; Background
-  the solid surface. Glass is not drawn yet. Run Curated Icons first.
 - Page counts
 - Top-level page node samples and unexpected top-level nodes on the `Components` page
 - Variable collection summaries
