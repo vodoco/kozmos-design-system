@@ -424,7 +424,7 @@ extension SDKMapScreen {
     var routeSetupPanel: some View {
         VStack(spacing: 0) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-                KozmosIconButton(iconName: "chevron.left", variant: .ghost, action: session.cancelRouteSetup)
+                KozmosIconButton(iconName: "chevron.backward", variant: .ghost, action: session.cancelRouteSetup)
                     .accessibilityLabel("Back to place details")
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Directions").font(KozmosTypography.headline).accessibilityAddTraits(.isHeader)
@@ -522,7 +522,7 @@ extension SDKMapScreen {
             }
             KozmosSeparator()
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-                KozmosIconButton(iconName: "chevron.left", variant: .outline, isDisabled: session.stepIndex == 0,
+                KozmosIconButton(iconName: "chevron.backward", variant: .outline, isDisabled: session.stepIndex == 0,
                                  action: session.rewindStep)
                     .accessibilityLabel("Previous step")
                 if session.stepIndex >= steps.count - 1 {

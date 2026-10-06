@@ -178,7 +178,10 @@ public struct KozmosRoutePreviewPanel<StatusContent: View, AlertContent: View>: 
             Divider().overlay(KozmosColors.semanticsBorderSubtle)
 
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
-                KozmosIconButton(iconName: "arrow.left", variant: .outline, action: onBack)
+                // Back points to the start edge: `arrow.backward` mirrors
+                // right to left by itself, where `arrow.left` points left in
+                // either direction. No flip of our own: it would mirror twice.
+                KozmosIconButton(iconName: "arrow.backward", variant: .outline, action: onBack)
                     .accessibilityLabel(backLabel)
 
                 KozmosButton(
