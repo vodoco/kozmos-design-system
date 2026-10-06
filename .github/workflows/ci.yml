@@ -153,6 +153,12 @@ jobs:
       - name: Verify Native Token Copies Match the Build
         run: pnpm tokens:copies:check
 
+      # Figma's Import Foundations reads this payload, built from the token
+      # sources. Nothing compared the two: it went without seven tokens from
+      # 2026-09-28 to 10-05.
+      - name: Verify the Figma Foundations Payload Matches the Tokens
+        run: pnpm figma:foundations:check
+
       - name: Verify Elevation Parity
         run: pnpm tokens:elevation:check
 

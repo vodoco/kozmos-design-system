@@ -53,6 +53,7 @@
     "tokens:build": "pnpm --filter @kozmos-ds/tokens build",
     "tokens:sync": "tsx scripts/sync-figma.ts",
     "figma:foundations": "node scripts/figma-build-foundations-payload.mjs",
+    "figma:foundations:check": "node scripts/figma-build-foundations-payload.mjs --check",
     "figma:icons": "node scripts/figma-build-icon-catalog.mjs",
     "figma:iconconnect": "node scripts/build-icon-code-connect.mjs",
     "figma:iconconnect:check": "node scripts/build-icon-code-connect.mjs --check",
