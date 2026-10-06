@@ -217,8 +217,10 @@ means the import never ran.
 **Two checkouts, two payloads.** There is a second clone at
 `P/Pointr Cloud/kozmos-design-system-` with an older payload. Figma is
 registered to run the plugin from `K/kozmos-design-system-dev`, and the
-payload must come from the same place. The status line should read **620
-token candidates**; 615 means the wrong file.
+payload must come from the same place. The status line's token-candidate
+count is the payload's `summary.totalTokens` (681 on 2026-10-05, when the map
+marker's tokens were added): a smaller number than this checkout's payload
+says means the wrong file.
 
 **The audit's rules must agree with the painters.** Twice in one day a text
 rule expected a different style from the one the painter applies. The audit
@@ -369,11 +371,11 @@ Recorded so nobody rediscovers them:
 - **No glass surface role.** FeedbackCard, RoutingInputGroup and
   SaveLocationCard each repeat `bg-white/70 dark:bg-black/70 backdrop-blur-3xl
 ring-1 ring-black/5` — 29 of the 35 raw colours `tokens:raw:check` counts.
-- **19 Figma sets cast no shadow** where at least one implementation does:
+- **18 Figma sets cast no shadow** where at least one implementation does:
   POICard, WayfindingCard, RouteSummary, FeedbackCard, SaveLocationCard,
   RoutingInputGroup, MapControlsGroup, FloorSelector, POIDetailPanel,
-  LocationPin, AdaptiveMapShell, UserLocationMarker, Navbar, DirectionStep,
-  POIResultCard, POIMediaGallery, Listbox, Select and DynamicIsland. Each needs
+  LocationPin, AdaptiveMapShell, Navbar, DirectionStep, POIResultCard,
+  POIMediaGallery, Listbox, Select and DynamicIsland. Each needs
   `elevationEffect(role)` in its painter, then a run.
 - **Card disagrees across platforms**: raised on the web and iOS, flat on
   Android. **The iOS FloatingActionButton** uses a bare SwiftUI default where

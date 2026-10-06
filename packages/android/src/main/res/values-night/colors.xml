@@ -305,6 +305,8 @@
   <color name="semantics_map_attribution_text">#ff464a53</color>
   <color name="semantics_map_attribution_halo">#ffffffff</color>
   <dimen name="semantics_map_attribution_halo_width">1.00dp</dimen>
+  <color name="semantics_map_marker_dot">#ff2563eb</color>
+  <color name="semantics_map_marker_ring">#ffffffff</color>
   <color name="semantics_surface_0">#ff000000</color>
   <color name="semantics_surface_100">#ff17191c</color>
   <color name="semantics_surface_200">#ff2e3138</color>

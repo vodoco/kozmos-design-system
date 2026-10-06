@@ -1707,6 +1707,32 @@ public class KozmosColors {
         return Color.clear
         #endif
     }
+    public static var semanticsMapMarkerDot: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#2563EB") : UIColor(hex: "#2563EB")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#2563EB") : NSColor(hex: "#2563EB")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
+    public static var semanticsMapMarkerRing: Color {
+        #if canImport(UIKit)
+        return Color(UIColor { traitCollection in
+            return traitCollection.userInterfaceStyle == .dark ? UIColor(hex: "#FFFFFF") : UIColor(hex: "#FFFFFF")
+        })
+        #elseif canImport(AppKit)
+        return Color(NSColor(name: nil, dynamicProvider: { appearance in
+            return appearance.name == .darkAqua ? NSColor(hex: "#FFFFFF") : NSColor(hex: "#FFFFFF")
+        }))
+        #else
+        return Color.clear
+        #endif
+    }
     public static var semanticsSurface0: Color {
         #if canImport(UIKit)
         return Color(UIColor { traitCollection in

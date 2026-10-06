@@ -275,7 +275,7 @@ remove the consumer's duplicate behaviour/styles and update its inventory row.
    to the blue dot. Optional theme-to-success gradient grows with live progress
    without resetting at transitions; future legs remain neutral. Core-owned,
    opt-in directional dashes indicate the current section without simulating
-   progress, and honour reduced motion/background state. A compact semantic-blue dot is
+   progress, and honour reduced motion/background state. A compact dot in the map marker's blue is
    distinct from the transition row. Invalid/unknown position is not zero;
    hosts reject stale route revisions, update ranges atomically and confirm
    transitions/arrival explicitly. `activeWaypointId` resolves coincident next

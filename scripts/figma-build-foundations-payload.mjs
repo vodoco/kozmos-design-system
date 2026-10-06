@@ -169,7 +169,9 @@ function scopesFor(token) {
     if (
       joined.includes("border") ||
       joined.includes("stroke") ||
-      joined.includes("outline")
+      joined.includes("outline") ||
+      // A ring is drawn as a stroke: the user-location dot's (Map marker).
+      token.path.some((part) => part.toLowerCase() === "ring")
     ) {
       // Also fills: a divider is a border drawn as a 1px rectangle, and a
       // designer reaching for the divider colour should find the role in the

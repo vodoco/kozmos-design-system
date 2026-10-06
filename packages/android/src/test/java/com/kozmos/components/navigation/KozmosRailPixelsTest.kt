@@ -88,7 +88,7 @@ class KozmosRailPixelsTest {
             var green = 0
             var left = Int.MAX_VALUE
             var right = -1
-            val blue = KozmosColors.semanticsDataBlue.toArgb()
+            val blue = KozmosColors.semanticsMapMarkerDot.toArgb()
             for (y in 0 until pixels.height) for (x in 0 until pixels.width) {
                 val color = pixels.argb(x, y)
                 val r = color shr 16 and 255; val g = color shr 8 and 255; val b = color and 255

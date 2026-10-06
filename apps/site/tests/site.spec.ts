@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { contrastRatio, formatRatio, parseColour } from "../src/lib/contrast";
 import { withoutCode } from "../src/site/inline-code";
 
@@ -2635,6 +2636,38 @@ test.describe("foundations", () => {
     // Each result says pass or fail in words, not only in colour.
     await expect(table.getByText(/· Pass$/)).toHaveCount(pairs * 2);
     await expect(table.getByText(/· Fail$/)).toHaveCount(0);
+    // A pair held below 4.5:1 is non-text, so its sample is a dot, not letters
+    // that the text rule would hold to 4.5:1.
+    const nonText = (contrastContract.pairs as { minimum: number }[]).filter(
+      (pair) => pair.minimum < 4.5,
+    ).length;
+    expect(nonText).toBeGreaterThan(0);
+    await expect(table.locator(".site-pair-dot")).toHaveCount(nonText);
+    await expect(table.locator(".site-pair-text")).toHaveCount(pairs - nonText);
+  });
+
+  test("colour shows every semantic colour role", async ({ page }) => {
+    // Every role whose value is a colour, from the stylesheet the site loads.
+    // Glass is on the elevation page, beside the blur it is drawn with.
+    const css = readFileSync(
+      createRequire(import.meta.url).resolve("@kozmos-ds/tokens/css/light.css"),
+      "utf8",
+    );
+    const roles = [...css.matchAll(/^\s*(--semantics-[\w-]+):\s*([^;]+);/gm)]
+      .filter(([, , value]) => parseColour(value) !== undefined)
+      .map(([, name]) => name)
+      .filter((name) => !name.startsWith("--semantics-effect-glass-"));
+    expect(roles.length).toBeGreaterThan(40);
+    await page.goto("/foundations/colour");
+    await hydrated(page);
+    const shown = await page
+      .locator(".site-swatch-colour")
+      .evaluateAll((swatches) =>
+        swatches.map((swatch) =>
+          (swatch as HTMLElement).style.getPropertyValue("--swatch"),
+        ),
+      );
+    expect(roles.filter((role) => !shown.includes(`var(${role})`))).toEqual([]);
   });
 
   test("swatches, samples and shapes are edged, so white on white shows", async ({

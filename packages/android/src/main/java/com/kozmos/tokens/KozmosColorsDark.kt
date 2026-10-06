@@ -131,6 +131,8 @@ object KozmosColorsDark {
   val semanticsResultHoverSurface = Color(0xff202329)
   val semanticsMapAttributionText = Color(0xff464a53)
   val semanticsMapAttributionHalo = Color(0xffffffff)
+  val semanticsMapMarkerDot = Color(0xff2563eb)
+  val semanticsMapMarkerRing = Color(0xffffffff)
   val semanticsSurface0 = Color(0xff000000)
   val semanticsSurface100 = Color(0xff17191c)
   val semanticsSurface200 = Color(0xff2e3138)
