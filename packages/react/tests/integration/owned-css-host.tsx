@@ -28,6 +28,7 @@ import {
   Spinner,
   AISearchButton,
   SearchBar,
+  RouteProgressRail,
   Skeleton,
   Tag,
   ToggleButton,
@@ -257,6 +258,25 @@ function Controls({ id }: { id: string }) {
       <h1 className="consumer-heading" data-testid={`${id}-host-heading`}>
         Host heading
       </h1>
+      {/* The route rail's waypoints, in route mode, for the edge each draws. */}
+      <RouteProgressRail
+        data-testid={`${id}-route-rail`}
+        label="Journey progress"
+        type="lift-up"
+        progress={0.2}
+        activeLeg={{ start: 0, end: 0.4 }}
+        activeWaypointId="lift"
+        waypoints={[
+          { id: "start", position: 0, type: "walking", label: "Entrance" },
+          {
+            id: "lift",
+            position: 0.4,
+            type: "lift-up",
+            label: "Elevator to Level 2",
+          },
+          { id: "end", position: 1, type: "destination", label: "Gallery" },
+        ]}
+      />
       <Heading level={2} data-testid={`${id}-heading`}>
         Library heading
       </Heading>
