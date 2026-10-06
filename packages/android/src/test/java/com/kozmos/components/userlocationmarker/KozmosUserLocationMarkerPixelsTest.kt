@@ -15,7 +15,7 @@ import androidx.compose.ui.platform.LocalView
 import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
-import com.kozmos.components.motion.LocalKozmosAnimationsOn
+import com.kozmos.components.motion.LocalKozmosAnimatorScale
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
@@ -43,7 +43,7 @@ class KozmosUserLocationMarkerPixelsTest {
         val pixels = paparazzi.drawn(frames) {
             CompositionLocalProvider(
                 LocalKozmosUseDarkTokens provides false,
-                LocalKozmosAnimationsOn provides animationsOn
+                LocalKozmosAnimatorScale provides if (animationsOn) 1f else 0f
             ) {
                 MaterialTheme {
                     val view = LocalView.current

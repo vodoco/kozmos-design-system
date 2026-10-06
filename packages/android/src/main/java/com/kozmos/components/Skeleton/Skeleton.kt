@@ -1,5 +1,6 @@
 package com.kozmos.components.skeleton
 
+import com.kozmos.components.motion.rememberKozmosAnimationsOn
 import com.kozmos.tokens.KozmosDimensions
 
 import androidx.compose.animation.core.LinearEasing
@@ -23,9 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import android.provider.Settings
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -58,14 +56,7 @@ fun Modifier.shimmer(): Modifier = composed {
         ),
         label = "shimmer"
     )
-    val context = LocalContext.current
-    val animationsOn = remember(context) {
-        Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f
-        ) > 0f
-    }
+    val animationsOn = rememberKozmosAnimationsOn()
     sheen(if (animationsOn) passing.value else 0f)
 }
 

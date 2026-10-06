@@ -1,34 +1,60 @@
 package com.kozmos.components.motion
 
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * Whether the system lets things move: false once the visitor removes
- * animations, which sets the animator duration scale to 0. A test says so
- * here; Paparazzi drops a write to the setting itself, so a test that writes
- * it draws with animations on whatever it asked for.
+ * The system's animator duration scale, as a test says it: 0 when the
+ * visitor has removed animations. Paparazzi drops a write to the setting
+ * itself, so a test that writes it draws with animations on whatever it
+ * asked for; it says the scale here instead.
  */
-internal val LocalKozmosAnimationsOn = staticCompositionLocalOf<Boolean?> { null }
+internal val LocalKozmosAnimatorScale = staticCompositionLocalOf<Float?> { null }
 
 /**
- * The system's animator duration scale, read once per context, as Spinner,
- * Skeleton, Progress and AISearchButton each read it, unless a test has said
- * otherwise through [LocalKozmosAnimationsOn].
+ * The system's animator duration scale, followed while the part is shown, so
+ * removing animations stops what is moving without a restart; unless a test
+ * has said otherwise through [LocalKozmosAnimatorScale]. Spinner, Skeleton,
+ * Progress, AISearchButton and UserLocationMarker read it here.
  */
 @Composable
-internal fun rememberKozmosAnimationsOn(): Boolean {
-    val said = LocalKozmosAnimationsOn.current
-    val context = LocalContext.current
-    val system = remember(context) {
-        Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f
-        ) > 0f
+internal fun rememberKozmosAnimatorScale(): Float {
+    val said = LocalKozmosAnimatorScale.current
+    val resolver = LocalContext.current.contentResolver
+    var scale by remember(resolver) {
+        mutableFloatStateOf(
+            Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        )
     }
-    return said ?: system
+    DisposableEffect(resolver) {
+        val settings = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                scale = Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+            }
+        }
+        resolver.registerContentObserver(
+            Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE),
+            false,
+            settings
+        )
+        onDispose { resolver.unregisterContentObserver(settings) }
+    }
+    return said ?: scale
+}
+
+/** Whether the system lets things move: a scale above 0. */
+@Composable
+internal fun rememberKozmosAnimationsOn(): Boolean {
+    val scale = rememberKozmosAnimatorScale()
+    return scale > 0f && scale.isFinite()
 }
