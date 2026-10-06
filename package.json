@@ -62,6 +62,7 @@
     "icons:navigation:check": "node --test scripts/ci/navigation-glyphs.test.mjs",
     "figma:plugin:check": "node scripts/check-figma-plugin-compat.mjs",
     "figma:manifest": "node scripts/figma-build-manifest.mjs",
+    "figma:manifest:check": "node scripts/figma-build-manifest.mjs --check",
     "figma:publish": "node scripts/figma-connect-publish.mjs",
     "figma:publish:dry": "node scripts/figma-connect-publish.mjs --dry-run",
     "figma:parse:linked": "node scripts/figma-connect-parse.mjs --config figma.linked.config.json --skip-update-check",

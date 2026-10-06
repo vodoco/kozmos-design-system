@@ -159,6 +159,11 @@ jobs:
       - name: Verify the Figma Foundations Payload Matches the Tokens
         run: pnpm figma:foundations:check
 
+      # The library manifest is built from the tokens and the Code Connect
+      # files. It went without #211's two tokens until #217 regenerated it.
+      - name: Verify the Figma Library Manifest Matches Its Sources
+        run: pnpm figma:manifest:check
+
       - name: Verify Elevation Parity
         run: pnpm tokens:elevation:check
 
