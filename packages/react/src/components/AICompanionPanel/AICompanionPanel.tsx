@@ -302,7 +302,9 @@ const AICompanionPanel = React.forwardRef<
         tabIndex={-1}
         {...props}
       >
-        <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-3">
+        {/* Its top padding is owned (owned-components.css): in a map
+            shell's panel it tops its 12 up to what the shell leaves. */}
+        <div className="kozmos-ai-companion-header flex shrink-0 items-center gap-2 border-b border-border px-4 pb-3">
           <span
             aria-hidden="true"
             className="inline-flex h-8 w-8 items-center justify-center rounded-pill border border-border text-primary"
