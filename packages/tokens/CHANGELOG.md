@@ -1,5 +1,11 @@
 # @kozmos-ds/tokens
 
+## 0.5.0
+
+### Minor Changes
+
+- 7097e1a: Add `Semantics.Map marker.dot` (#2563EB) and `Semantics.Map marker.ring` (#FFFFFF), fixed in both themes: the user-location marker's blue and its dot's ring. Data blue lightens in dark, which left the dot at 2.54:1 against a white ring; the marker's own blue holds 5.17:1.
+
 ## 0.4.0
 
 ### Minor Changes
