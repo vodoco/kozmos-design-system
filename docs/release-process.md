@@ -1,6 +1,6 @@
 # Controlled npm releases
 
-Status (2026-10-04): in use; React 0.8.1 is published (evidence below).
+Status (2026-10-06): in use; React 0.9.0 is published (evidence below).
 It has published every release since 0.1.0 (2026-09-23);
 0.5.0, on 2026-09-28, was the first through the approval gate below. It replaced the old
 `workflow_run` publisher, and adding `NPM_TOKEN` must never be enough to publish.
@@ -358,3 +358,40 @@ LanguageSwitcher trigger is `aria-disabled="true"` rather than `disabled`, so a 
 expected `disabled` while pending must expect `aria-disabled`. No props change. The iOS fixes in
 #195 (the map shell no longer crashing with one bottom corner, floor levels read once) ship from the
 repository, not a native registry.
+
+### 0.9.0
+
+Published on 2026-10-06 from `c7644af8a773c0d3b1e946cb044e81f4f8ca2632`, the version merge
+[#222](https://github.com/vodoco/kozmos-design-system/pull/222), after the navigation completion
+([#193](https://github.com/vodoco/kozmos-design-system/pull/193)), the Pointr Maps - Express wayfinding
+icons (#199, #201), the native user-location marker and `Map marker` tokens (#211) and the fixes since
+0.8.1. All four packages move. Olcay accepted three open items before the dispatch: the iOS 26.5 Combobox
+picker that doesn't open on tap, the iOS rail transition arrow that may mirror in right to left, and JS
+bundle headroom of 0.14 KB.
+
+| Evidence                | Verified result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Versions                | React 0.9.0, tokens 0.5.0, icons 0.6.0 and product-contracts 0.8.0 on npm `latest`; React pins the other three exactly.                                                                                                                                                                                                                                                                                                                                                                                             |
+| Exact main-push CI      | [37491281142](https://github.com/vodoco/kozmos-design-system/actions/runs/37491281142): all 17 jobs succeeded on the first attempt, including web, iOS and Android. Bundle Size Analysis on the merge: JS 79.86 / 80.00 KB, CSS 28.35 / 30.50 KB.                                                                                                                                                                                                                                                                   |
+| Preflight / publication | `pnpm release:preflight` against that run passed (credential placement, request, evidence and plan; none of the versions on npm). [37496171190](https://github.com/vodoco/kozmos-design-system/actions/runs/37496171190) succeeded (guard, prepare, publish) after Olcay's protected `npm-release` approval.                                                                                                                                                                                                        |
+| Registry readback       | All four versions are on `latest`, each with SLSA v1 provenance. Their SHA-512 integrities equal the tarballs in the run's `npm-candidate-37496171190-1` artifact (compared 2026-10-06).                                                                                                                                                                                                                                                                                                                            |
+| Installed consumer      | A fresh npm installation of React 0.9.0 with React 19 resolved tokens 0.5.0, icons 0.6.0 and contracts 0.8.0, exposed 269 exports (ArrivalPanel, RouteLocationField and RouteSetupPanel among them) and server-rendered ThemeProvider, Button, RouteSummary, RouteProgressRail with an active leg, UserLocationMarker and an Icon; the same with React 18.                                                                                                                                                          |
+| Tags / GitHub releases  | `release:tag` dry-run passed, it created all four tags and releases at `c7644af8`, and a second dry-run found them in place. React 0.9.0 is Latest.                                                                                                                                                                                                                                                                                                                                                                 |
+| Website / Storybook     | [Pages 37491281104](https://github.com/vodoco/kozmos-design-system/actions/runs/37491281104) built and deployed this exact SHA at 17:02Z, once a deploy stuck since 10:46Z ([37451941818](https://github.com/vodoco/kozmos-design-system/actions/runs/37451941818), `038cedc4`, waiting on the reviewer-less `github-pages` environment and holding the `pages` group) was cancelled. The live site, Storybook, its `index.json` and `iframe.html` returned HTTP 200. This is not a fresh all-screen visual review. |
+
+Change details: [React](../packages/react/CHANGELOG.md#090), [tokens](../packages/tokens/CHANGELOG.md#050),
+[icons](../packages/icons/CHANGELOG.md#060), [contracts](../packages/product-contracts/CHANGELOG.md#080)
+and the [generated AI changelog](../.ai-skills/api-changelog.md). Upgrading from 0.8.1:
+
+- **RouteSummary is hosted inside AdaptiveMapShell's panel by default**: no surface, radius, shadow or
+  outer padding of its own (decision 43). Pass `presentation="standalone"` to keep its card in the shell.
+- **ManoeuvreCard is theme-filled by default.** A caller that already sets `surface` keeps it;
+  `appearance="background"` asks for the neutral surfaces.
+- **Analytics:** a press a component reports with its own event no longer also sends the generic
+  `Button:button_clicked`; `wayfinding_route_swapped` no longer carries the raw origin and destination.
+- **POIDetailPanel's labelled actions are text-only**, apart from Go/Directions.
+- `DirectionType` stays a source-compatible alias of product-contracts' `DirectionKind`.
+- UserLocationMarker uses the new fixed `Semantics.Map marker` tokens (tokens 0.5.0).
+
+SwiftUI and Compose changes ship from the repository at this commit, not a native registry. Figma,
+Code Connect, external Claude Design artifacts and product deployments are separate.

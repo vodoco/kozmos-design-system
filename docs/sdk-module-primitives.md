@@ -10,6 +10,9 @@ React 0.8.0, tokens 0.4.0 and product-contracts 0.7.0 are published on `latest`;
 icons stays 0.5.0. Matching SwiftUI/Compose source is in the repository, not a native
 registry release. See [release evidence](release-process.md#080).
 P01–P04 below are all in that release.
+React 0.9.0 (2026-10-06, `c7644af8`; tokens 0.5.0, icons 0.6.0, product-contracts 0.8.0) adds the
+navigation completion (#193): RouteSetupPanel, RouteLocationField, ArrivalPanel, RouteSummary hosted in the
+map shell's panel and RouteProgressRail's active leg. See [release evidence](release-process.md#090).
 P01's three source slices merged in #185 at `13347cf5aea0e319570a7ff5ce95174c03b6c30d`, released in 0.8.0:
 GAP-109 (named manoeuvre containers), GAP-056 (result-action targets), and GAP-101
 (named shell controls). Exact-main CI, selected workflows and deployed docs were verified;

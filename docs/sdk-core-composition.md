@@ -267,7 +267,7 @@ remove the consumer's duplicate behaviour/styles and update its inventory row.
    MapInfo's direct Dialog primitive, notices, POI attributes/tabs, message
    surfaces and loading indicators require semantic review. Not every rounded
    region should become Card, and not every spinner should become Progress.
-5. **Journey presentation (implemented locally; delivery gates remain).** The desktop and phone
+5. **Journey presentation (released in React 0.9.0; delivery gates remain).** The desktop and phone
    Navigation stories now use hosted RouteSummary inside the shell; fixture
    step buttons live outside product chrome. A common horizontal coordinate
    system places start, finish, supplied progress and fixed transition points.
@@ -288,9 +288,8 @@ remove the consumer's duplicate behaviour/styles and update its inventory row.
    measure unchanged bundle budgets, review pinned Linux visual diffs, run the
    exact-head required CI and retain design/device acceptance as separate gates.
 
-The first migration is a local implementation, not a claim that this table is
-closed, native parity is complete, or anything was merged/published. The journey
-rail is implemented locally, not release-approved. Existing React picker and recovery-overlay preview
+The first migration does not close this table or complete native parity. The journey
+rail is released in React 0.9.0; host, device and design acceptance remain. Existing React picker and recovery-overlay preview
 changes also retain their separately documented native acceptance work.
 
 ### Native action API and migration
