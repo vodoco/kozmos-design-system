@@ -2,7 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
-import { writeGeneratedJson } from "./write-generated-json.mjs";
+import {
+  generatedJsonIsCurrent,
+  writeGeneratedJson,
+} from "./write-generated-json.mjs";
 
 const ROOT_DIR = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -1036,5 +1039,18 @@ function buildManifest() {
   };
 }
 
-await writeGeneratedJson(OUTPUT_PATH, buildManifest());
-console.log(`Wrote ${path.relative(ROOT_DIR, OUTPUT_PATH)}`);
+const manifest = buildManifest();
+// CI runs --check: the manifest went without #211's two Map marker tokens
+// until #217 regenerated it, because nothing compared it with its sources.
+if (process.argv.includes("--check")) {
+  if (!generatedJsonIsCurrent(OUTPUT_PATH, manifest)) {
+    console.error(
+      `${path.relative(ROOT_DIR, OUTPUT_PATH)} is stale: run \`pnpm figma:manifest\` and commit the result.`,
+    );
+    process.exit(1);
+  }
+  console.log(`${path.relative(ROOT_DIR, OUTPUT_PATH)} is current`);
+} else {
+  await writeGeneratedJson(OUTPUT_PATH, manifest);
+  console.log(`Wrote ${path.relative(ROOT_DIR, OUTPUT_PATH)}`);
+}
