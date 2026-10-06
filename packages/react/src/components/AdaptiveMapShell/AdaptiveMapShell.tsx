@@ -1,6 +1,7 @@
 import React from "react";
 import { MapPopupRegionContext } from "./map-popup-region";
 import { MapShellPanelContext } from "./map-shell-panel";
+import { MapShellAttributionCompactContext } from "./map-shell-attribution";
 import type {
   AdaptiveMapLayoutSnapshot,
   MapCollisionInsets,
@@ -518,20 +519,27 @@ const AdaptiveMapShell = React.forwardRef<
     };
     const effectivePanelFraction =
       sheetHeight > 0 ? liveHeight / sheetHeight : undefined;
-    // Very long/localized credits scroll inside at most half of the usable
-    // chrome band, rather than consuming all space and removing the panel.
+    // The attribution is never clipped into a scroll region (GAP-135). When
+    // its full height doesn't fit, the brand gives way and the credits keep
+    // theirs. The full height is the one measured with the brand, so the
+    // panel's sizing never moves with the brand. Very long or localized
+    // credits reserve at most half of the usable chrome band, rather than
+    // consuming all space and removing the panel.
+    const [attributionCompact, setAttributionCompact] = React.useState(false);
+    const attributionFullHeight = React.useRef(0);
+    if (!attributionCompact)
+      attributionFullHeight.current = measured.attributionHeight;
+    const attributionCap =
+      Math.max(
+        0,
+        measured.height -
+          chrome.top -
+          chrome.bottom -
+          (topBar ? measured.barHeight + 32 : 0) -
+          32,
+      ) / 2;
     const reservedAttributionHeight = hasAttribution
-      ? Math.min(
-          measured.attributionHeight,
-          Math.max(
-            0,
-            measured.height -
-              chrome.top -
-              chrome.bottom -
-              (topBar ? measured.barHeight + 32 : 0) -
-              32,
-          ) / 2,
-        )
+      ? Math.min(attributionFullHeight.current, attributionCap)
       : 0;
     const layout = resolveAdaptiveMapLayout({
       ...measured,
@@ -637,9 +645,14 @@ const AdaptiveMapShell = React.forwardRef<
       0,
       available.y + available.height - gap - controlsY,
     );
-    const attributionHeight = hasAttribution
-      ? Math.min(reservedAttributionHeight, footerBand)
-      : 0;
+    const attributionCompactNeeded =
+      hasAttribution &&
+      measured.ready &&
+      attributionFullHeight.current > Math.min(attributionCap, footerBand);
+    useLayoutEffect(() => {
+      setAttributionCompact(attributionCompactNeeded);
+    }, [attributionCompactNeeded]);
+    const attributionHeight = hasAttribution ? measured.attributionHeight : 0;
     const attributionReserve =
       attributionHeight > 0 ? attributionHeight + gap : 0;
     const attributionBounds = {
@@ -713,10 +726,7 @@ const AdaptiveMapShell = React.forwardRef<
     attributionBounds.width = attributionAboveCorners
       ? footerWidth
       : Math.max(0, betweenWidth);
-    attributionBounds.height = Math.min(
-      attributionHeight,
-      Math.max(0, footerBand - attributionLift),
-    );
+    attributionBounds.height = attributionHeight;
     attributionBounds.y =
       available.y +
       available.height -
@@ -1219,7 +1229,7 @@ const AdaptiveMapShell = React.forwardRef<
               isSheet && settling && dragHeight === null ? "" : undefined
             }
             hidden={unavailable}
-            className="kozmos-map-footer absolute z-30 overflow-auto"
+            className="kozmos-map-footer absolute z-30"
             style={{
               left: attributionBounds.x,
               bottom:
@@ -1229,14 +1239,17 @@ const AdaptiveMapShell = React.forwardRef<
                 gap +
                 attributionLift,
               width: attributionBounds.width,
-              maxHeight: attributionBounds.height,
             }}
           >
             <div
               ref={attributionContent}
               style={{ display: "flex", justifyContent: "center", minWidth: 0 }}
             >
-              {attribution}
+              <MapShellAttributionCompactContext.Provider
+                value={attributionCompact}
+              >
+                {attribution}
+              </MapShellAttributionCompactContext.Provider>
             </div>
           </div>
         )}
