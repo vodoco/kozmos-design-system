@@ -2572,11 +2572,11 @@ section("RouteProgressRail");
 {
   ok(
     Array.isArray(plugin.ROUTE_PROGRESS_RAIL_CONTENT) &&
-      plugin.ROUTE_PROGRESS_RAIL_CONTENT.length === 12 &&
+      plugin.ROUTE_PROGRESS_RAIL_CONTENT.length === 13 &&
       JSON.stringify(
         plugin.expectedVariantAxesForComponentSetName("RouteProgressRail"),
       ) === JSON.stringify({ Content: plugin.ROUTE_PROGRESS_RAIL_CONTENT }),
-    "twelve variants: the step disc's five stories and the route mode's seven",
+    "thirteen variants: the step disc's five stories and the route mode's eight",
   );
   // Every token the rail binds comes from the payload, so a token the
   // payload lost fails here rather than being stood in for.
@@ -2646,6 +2646,13 @@ section("RouteProgressRail");
       dot: 70.2,
     },
     GuidancePaused: { fill: [12, 67.2], gradient: true, flow: null, dot: 70.2 },
+    // Measured 2026-10-06: the live start, nothing filled, the flow across
+    // the leg, and the dot over the start's endpoint and stem.
+    LiveStart: {
+      fill: null,
+      flow: [12, 134.4, "Colors/background/600"],
+      dot: 3,
+    },
   };
   for (const value of plugin.ROUTE_PROGRESS_RAIL_CONTENT || []) {
     const component = figma.createComponent();
