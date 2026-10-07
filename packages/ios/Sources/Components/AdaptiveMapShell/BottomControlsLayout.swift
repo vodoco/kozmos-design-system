@@ -50,6 +50,13 @@ struct KozmosAttributionHeightKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
+/// The whole attribution's height, brand included, from the unseen copy the
+/// shell lays out while the brand has given way (GAP-135).
+struct KozmosAttributionFullHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
 struct KozmosBottomCornerWidthsKey: PreferenceKey {
     static var defaultValue: [Int: CGFloat] = [:]
     static func reduce(value: inout [Int: CGFloat], nextValue: () -> [Int: CGFloat]) {
