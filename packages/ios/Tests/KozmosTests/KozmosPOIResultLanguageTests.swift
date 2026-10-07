@@ -76,11 +76,36 @@ final class KozmosPOIResultLanguageTests: XCTestCase {
       window.rootViewController = UIHostingController(
         rootView: content.frame(width: 340).offset(x: 20, y: 100))
       window.makeKeyAndVisible()
+      // Suspends rather than spinning the run loop from inside an async
+      // function, which Swift 6 refuses: the main run loop lays the window
+      // out while this waits.
       for _ in 0..<10 {
-        RunLoop.main.run(until: Date().addingTimeInterval(0.03))
-        await Task.yield()
+        try? await Task.sleep(nanoseconds: 30_000_000)
       }
       return window
+    }
+
+    /// [node]'s accessibility identifier. SwiftUI's elements answer to the
+    /// selector without adopting UIAccessibilityIdentification, so a cast to
+    /// it reads nil for them whatever they carry.
+    @MainActor private func identifier(of node: NSObject) -> String? {
+      let selector = NSSelectorFromString("accessibilityIdentifier")
+      guard node.responds(to: selector) else { return nil }
+      return node.perform(selector)?.takeUnretainedValue() as? String
+    }
+
+    /// Every identifier set on [node] or under it, containers included.
+    @MainActor private func identifiers(_ node: NSObject) -> [String] {
+      let own = identifier(of: node).map { [$0] } ?? []
+      let children: [NSObject]
+      if let values = node.accessibilityElements as? [NSObject], !values.isEmpty {
+        children = values
+      } else if case let count = node.accessibilityElementCount(), count != NSNotFound, count > 0 {
+        children = (0..<count).compactMap { node.accessibilityElement(at: $0) as? NSObject }
+      } else {
+        children = (node as? UIView)?.subviews ?? []
+      }
+      return own.filter { !$0.isEmpty } + children.flatMap { identifiers($0) }
     }
 
     @MainActor private func elements(_ node: NSObject) -> [NSObject] {
@@ -174,7 +199,7 @@ final class KozmosPOIResultLanguageTests: XCTestCase {
         ]
         for (name, selected, available) in states {
           @MainActor func read(_ tagged: Bool) async throws -> (
-            String?, UIAccessibilityTraits, String?
+            String?, UIAccessibilityTraits, String?, [String]
           ) {
             let card = KozmosPOIResultCard(
               poi: poi,
@@ -188,8 +213,10 @@ final class KozmosPOIResultLanguageTests: XCTestCase {
               $0.accessibilityLabel == card.accessibilityDescription
             }
             let node = try XCTUnwrap(found, "\(name), tagged: \(tagged)")
-            let identifier = (node as? UIAccessibilityIdentification)?.accessibilityIdentifier
-            return (node.accessibilityLabel, node.accessibilityTraits, identifier)
+            return (
+              node.accessibilityLabel, node.accessibilityTraits, identifier(of: node),
+              identifiers(window)
+            )
           }
           let plain = try await read(false)
           let tagged = try await read(true)
@@ -202,7 +229,12 @@ final class KozmosPOIResultLanguageTests: XCTestCase {
             XCTAssertEqual(
               tagged.1.contains(value), plain.1.contains(value), "\(name): \(trait)")
           }
+          // The row carries the card's identifier, tagged or not, and it is
+          // the only one: a product's UI test finds the row by it.
+          XCTAssertEqual(plain.2, kozmosPOIResultIdentifier("lounge"), "\(name): identifier")
           XCTAssertEqual(tagged.2, plain.2, "\(name): identifier")
+          XCTAssertEqual(plain.3, [kozmosPOIResultIdentifier("lounge")], "\(name): identifiers")
+          XCTAssertEqual(tagged.3, plain.3, "\(name): identifiers")
         }
       }
     }

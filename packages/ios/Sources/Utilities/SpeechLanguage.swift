@@ -50,6 +50,9 @@ func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
     let words: NSAttributedString
     let traits: UIAccessibilityTraits
     let hint: String?
+    /// The identifier a UI test finds the view by: the hidden SwiftUI view's
+    /// own no longer reaches the accessibility tree.
+    let identifier: String?
     let activate: (() -> Void)?
 
     final class Element: UIView {
@@ -78,6 +81,7 @@ func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
     func updateUIView(_ view: Element, context: Context) {
       view.accessibilityAttributedLabel = words
       view.accessibilityHint = hint
+      view.accessibilityIdentifier = identifier
       view.accessibilityTraits = traits
       view.activate = activate
     }
@@ -88,12 +92,13 @@ func kozmosSpokenDescription(_ phrases: [KozmosSpokenPhrase]) -> String {
     /// over it, saying `words` with each range's speech language.
     func kozmosSpeechLanguageElement(
       _ words: NSAttributedString, traits: UIAccessibilityTraits, hint: String? = nil,
-      activate: (() -> Void)? = nil
+      identifier: String? = nil, activate: (() -> Void)? = nil
     ) -> some View {
       self.accessibilityHidden(true)
         .overlay(
           KozmosSpeechLanguageElement(
-            words: words, traits: traits, hint: hint, activate: activate))
+            words: words, traits: traits, hint: hint, identifier: identifier,
+            activate: activate))
     }
   }
 #endif

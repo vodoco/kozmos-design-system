@@ -419,7 +419,8 @@ public struct KozmosPOIResultCard: View {
             // screen and unreachable to VoiceOver.
             .modifier(SelectRowAccessibility(
                 phrases: accessibilityPhrases, traits: accessibilityTraits,
-                available: available, selected: result.selected, select: handleSelect))
+                available: available, selected: result.selected,
+                identifier: kozmosPOIResultIdentifier(poi.id), select: handleSelect))
             // Outside the row's element, so that element is the one heard as
             // dimmed, as the web's disabled button is. Inside it, VoiceOver
             // heard an unavailable result as an enabled button (measured
@@ -581,13 +582,17 @@ public struct KozmosPOIResultCard: View {
 /// result's name or summary is in another language (GAP-004, GAP-125), a
 /// UIKit element lies over the row and says the same words with each
 /// phrase's speech language, as an instruction's parts are said
-/// (SpeechLanguage.swift). Same words, same traits, same action: only the
-/// voice changes.
+/// (SpeechLanguage.swift). Same words, same traits, same action, same
+/// identifier: only the voice changes.
 private struct SelectRowAccessibility: ViewModifier {
     let phrases: [KozmosSpokenPhrase]
     let traits: AccessibilityTraits
     let available: Bool
     let selected: Bool
+    /// The card's identifier, which the row carries untagged. Tagged, the
+    /// SwiftUI row is hidden and takes it out of the tree, so the element
+    /// carries it instead and a UI test finds every row by it.
+    let identifier: String
     let select: () -> Void
 
     @ViewBuilder
@@ -601,6 +606,7 @@ private struct SelectRowAccessibility: ViewModifier {
                     // unavailable, as the web's disabled button is heard.
                     traits: UIAccessibilityTraits.button.union(
                         available ? (selected ? .selected : []) : .notEnabled),
+                    identifier: identifier,
                     activate: available ? select : nil)
             } else {
                 plain(content)
