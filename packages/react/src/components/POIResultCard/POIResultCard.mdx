@@ -77,6 +77,76 @@ texts drawn inside the row are left out, so each phrase is heard once. A `select
 name, so the host words it in one language. Physical VoiceOver and TalkBack review remains
 separate.
 
+Below, a Spanish summary and an Arabic one on an English card, each with its `summaryLanguage`.
+The native snippets pass the tag the same way: nil, or null, when the summary is in the
+interface's language.
+
+<Canvas of={Stories.SummaryLanguages} />
+
+<PlatformSnippets
+    swift={`
+import SwiftUI
+import Kozmos
+
+// A result with the line the model wrote about it, in the language the visitor
+// asked in. summaryLanguage is that language's BCP 47 tag, "es", or nil when
+// it is the interface's.
+struct ResultWithSummary: View {
+    let poi: KozmosPOIPresentation
+    // The result's number, counted from 1: the one its map marker shows.
+    let number: Int
+    let summary: String
+    let summaryLanguage: String?
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        KozmosPOIResultCard(
+            poi: poi,
+            result: KozmosPOIResultPresentation(
+                poiId: poi.id,
+                resultIndex: number,
+                summary: summary,
+                // VoiceOver says the summary in this language's voice.
+                summaryLanguage: summaryLanguage
+            ),
+            onSelect: onSelect
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.poiresultcard.KozmosPOIResultCard
+import com.kozmos.contracts.KozmosPOIPresentation
+import com.kozmos.contracts.KozmosPOIResultPresentation
+
+// A result with the line the model wrote about it, in the language the visitor
+// asked in. summaryLanguage is that language's BCP 47 tag, "es", or null when
+// it is the interface's.
+@Composable
+fun ResultWithSummary(
+    poi: KozmosPOIPresentation,
+    // The result's number, counted from 1: the one its map marker shows.
+    number: Int,
+    summary: String,
+    summaryLanguage: String?,
+    onSelect: (String) -> Unit
+) {
+    KozmosPOIResultCard(
+        poi = poi,
+        result = KozmosPOIResultPresentation(
+            poiId = poi.id,
+            resultIndex = number,
+            summary = summary,
+            // TalkBack says the summary in this language's voice.
+            summaryLanguage = summaryLanguage
+        ),
+        onSelect = onSelect
+    )
+}
+`}
+/>
+
 ## Default SDK presentation and migration
 
 `presentationStyle="sdk"` is now the default on React, SwiftUI and Compose.

@@ -90,6 +90,48 @@ export const LegacyMigration: Story = {
   },
 };
 
+/**
+ * A summary in the language the visitor asked in, on an English card
+ * (GAP-125): a Spanish one and an Arabic one. `summaryLanguage` is the
+ * summary's `lang`, so a screen reader says those words in a Spanish or an
+ * Arabic voice and the card's own labels in the interface's. The Arabic
+ * summary takes its direction from its own words: it runs right to left, its
+ * full stop at its end, and its lines still start at the card's start.
+ */
+export const SummaryLanguages: Story = {
+  render: (args) => (
+    <div className="flex w-full flex-col items-center gap-3">
+      {(
+        [
+          [
+            "es",
+            "La más tranquila de las tres salas, antes del control de seguridad.",
+          ],
+          ["ar", "أهدأ الصالات الثلاث، قبل نقطة التفتيش الأمني."],
+        ] as const
+      ).map(([language, summary], index) => (
+        <POIResultCard
+          {...args}
+          key={language}
+          poi={{
+            ...poi,
+            id: `quiet-lounge-${language}`,
+            name: "Quiet Lounge",
+            categoryLabel: "Lounge",
+          }}
+          result={{
+            ...meta.args.result,
+            poiId: `quiet-lounge-${language}`,
+            resultIndex: index + 1,
+            summary,
+            summaryLanguage: language,
+          }}
+        />
+      ))}
+    </div>
+  ),
+};
+
 /** Staff-language evidence is separate from query match and UI translation. */
 export const StaffLanguageNotListed: Story = {
   args: {
