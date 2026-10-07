@@ -160,9 +160,9 @@ class KozmosThemeFillStatesPixelsTest {
     }
 
     /**
-     * One press a test: a held press makes Material's ripple host, which
-     * draws nothing on a fill now but still takes layoutlib's renderer down
-     * for every later frame of the same session.
+     * One press a test: when the fills were Material's controls, a held press
+     * made Material's ripple host, which took layoutlib's renderer down for
+     * every later frame of the same session. The fills draw no ripple now.
      */
     private fun pressed(dark: Boolean, index: Int) {
         val (name, part) = filled[index]
