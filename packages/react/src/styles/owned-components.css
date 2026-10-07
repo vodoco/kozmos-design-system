@@ -571,6 +571,39 @@
     );
     outline-offset: -2px;
   }
+  /* Itinerary's From and To rows. The caption and the place's name break a
+     long word rather than widen the page at 200% text; with no space between
+     them they would also run together into one word. A Change action
+     (GAP-104) follows the name on its baseline at the row's inline end, and
+     takes the next line, still at the end, when the name would keep under
+     80px beside it; its label wraps, and it keeps its 44px. Owned, so the
+     row holds without @scope. */
+  .kozmos-itinerary-endpoint {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
+  }
+  .kozmos-itinerary-endpoint-caption {
+    min-width: 2.5rem;
+    max-width: 100%;
+    flex-shrink: 0;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-itinerary-endpoint-name {
+    min-width: 0;
+    flex: 1 1 5rem;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-itinerary-endpoint > .kozmos-button {
+    margin-inline-start: auto;
+    height: auto;
+    min-height: 2.75rem;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
   /* A route option is a card of its own: the background colour, and the
      chosen one the theme's 5% tint on it. The tint was bg-primary/5 over
      nothing, so on a glass sheet the map showed through the chosen option
