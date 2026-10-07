@@ -1,7 +1,15 @@
 import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from "vitest";
 import { SegmentedControl } from "./SegmentedControl";
 
 const items = [
@@ -113,7 +121,7 @@ describe("SegmentedControl", () => {
     // product that holds the choice says "nothing chosen" with `null`:
     // `value={choice ?? null}`. Passed back as `undefined`, the control would
     // show the last choice it had seen itself, and the segment stay pressed.
-    let warnings: ReturnType<typeof vi.spyOn>[] = [];
+    let warnings: MockInstance[] = [];
     beforeEach(() => {
       warnings = [
         vi.spyOn(console, "warn").mockImplementation(() => {}),

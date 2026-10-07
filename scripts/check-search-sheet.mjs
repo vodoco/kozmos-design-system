@@ -111,13 +111,20 @@ try {
     // Outside the shell the card is no size container: the story's box
     // shrinks to fit its content, and an inline-size container there
     // collapses to nothing (decision 51 made the card one only in the
-    // shell's panel).
-    const fit = await panel.evaluate((node) => ({
-      container: getComputedStyle(node).containerType,
-      width: Math.round(node.getBoundingClientRect().width),
-    }));
+    // shell's panel). Its width follows its text, so the host's font: 296px
+    // in SF Pro, over 300 in DejaVu Sans. Measure the collapse instead: a
+    // collapsed card keeps its padding and no content box, and its parts
+    // spill out of it. Any card with content is far wider than 100px.
+    const fit = await panel.evaluate((node) => {
+      const style = getComputedStyle(node);
+      return {
+        container: style.containerType,
+        content: Math.round(node.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)),
+        overflow: node.scrollWidth - node.clientWidth,
+      };
+    });
     assert.equal(fit.container, "normal", "the lone sheet card is a size container");
-    assert.ok(fit.width > 300, `the lone sheet card collapsed to ${fit.width}px`);
+    assert.ok(fit.content > 100 && fit.overflow <= 1, `the lone sheet card collapsed: ${JSON.stringify(fit)}`);
   });
   // Eight device pixels to the CSS pixel: a 2.5 band is two or three pixels
   // at 1x, antialiasing is most of it, and rays through it read anywhere

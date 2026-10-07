@@ -30,9 +30,13 @@ describe("IconButton", () => {
 });
 
 it("draws the large size at 48, the prototype's, beside a 44 field", () => {
-  render(<IconButton size="lg" aria-label="Filters" icon={<svg />} />);
-  expect(screen.getByRole("button", { name: "Filters" })).toHaveClass(
-    "h-12",
-    "w-12",
+  render(
+    <IconButton size="lg" aria-label="Filters">
+      <svg />
+    </IconButton>,
   );
+  const button = screen.getByRole("button", { name: "Filters" });
+  expect(button).toHaveClass("h-12", "w-12");
+  // The icon is the button's child, where the large size draws it at 20.
+  expect(button.querySelector(":scope > svg")).not.toBeNull();
 });
