@@ -2,7 +2,13 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import postcss, { type Rule } from "postcss";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
 import { ClientAppBanner, type ClientAppBannerProps } from "./ClientAppBanner";
@@ -226,10 +232,59 @@ describe("ClientAppBanner", () => {
     }
   });
 
-  it("puts the action under the words when they would not fit beside it", () => {
-    // The stack is CSS, with no measuring: the words ask for 10rem before
-    // they share their line, and the action, wrapped onto a line of its own,
-    // grows to fill it. Beside the words it barely grows (9999 to 1).
+  it("puts the icon and the words first, then the action, the layout's owned CSS", () => {
+    // The stack is CSS, with no measuring: the icon and the words ask for
+    // 48 + 12 + 10rem before they share their line, and the action, wrapped
+    // onto a line of its own, grows to fill it, under the icon and the words.
+    // Beside them it barely grows (9999 to 1). What a browser draws from this
+    // — at 320, 390 and 600, text at 100% and 200%, both directions, with and
+    // without @scope — is scripts/check-client-app-banner.mjs, in all three
+    // engines; this only holds the rules it measures in place.
+    const css = readFileSync(
+      resolvePath(here, "../../styles/owned-client-app-banner.css"),
+      "utf8",
+    );
+    const declared = (selector: string) => {
+      const found: Record<string, string> = {};
+      postcss.parse(css).walkRules((rule) => {
+        if (rule.selector === selector)
+          rule.walkDecls((d) => {
+            found[d.prop] = d.value.replace(/\s+/g, " ");
+          });
+      });
+      return found;
+    };
+    expect(declared(".kozmos-client-app-banner-body")).toMatchObject({
+      display: "flex",
+      "flex-wrap": "wrap",
+    });
+    expect(declared(".kozmos-client-app-banner-head")).toMatchObject({
+      display: "flex",
+      flex: "9999 1 calc( ( var(--primitives-layout-sizing-600) + var(--primitives-layout-spacing-150) ) * 1px + 10rem )",
+    });
+    expect(declared(".kozmos-client-app-banner-action")).toMatchObject({
+      flex: "1 0 auto",
+    });
+    // At most two lines of description; the rest is still read.
+    expect(declared(".kozmos-client-app-banner-description")).toMatchObject({
+      "-webkit-line-clamp": "2",
+      overflow: "hidden",
+    });
+
+    const { container } = render(<ClientAppBanner {...EXPRESS} />);
+    const body = container.querySelector(".kozmos-client-app-banner-body");
+    expect(body?.children[0]).toHaveClass("kozmos-client-app-banner-head");
+    expect(body?.children[1]).toHaveClass("kozmos-client-app-banner-action");
+    const head = body?.children[0];
+    expect(head?.children[0]).toHaveClass("kozmos-client-app-banner-icon");
+    expect(head?.children[1]).toHaveClass("kozmos-client-app-banner-text");
+  });
+
+  it("owns the icon's 48 square and dismiss's 44, which hold without @scope", () => {
+    // A host without @scope drops the utility layer, and with it the
+    // Avatar's size, corner and edge: a 1024px icon drew at 1024. The owned
+    // rules say all of it, in pixels, as SwiftUI and Compose do: neither
+    // grows with text. Under @scope the utilities say the same.
     const css = readFileSync(
       resolvePath(here, "../../styles/owned-client-app-banner.css"),
       "utf8",
@@ -244,25 +299,74 @@ describe("ClientAppBanner", () => {
       });
       return found;
     };
-    expect(declared(".kozmos-client-app-banner-body")).toMatchObject({
-      display: "flex",
-      "flex-wrap": "wrap",
-    });
-    expect(declared(".kozmos-client-app-banner-text")).toMatchObject({
-      flex: "9999 1 10rem",
-    });
-    expect(declared(".kozmos-client-app-banner-action")).toMatchObject({
-      flex: "1 0 auto",
-    });
-    // At most two lines of description; the rest is still read.
-    expect(declared(".kozmos-client-app-banner-description")).toMatchObject({
-      "-webkit-line-clamp": "2",
+    expect(declared(".kozmos-client-app-banner-icon")).toMatchObject({
+      "inline-size": "calc(var(--primitives-layout-sizing-600) * 1px)",
+      "block-size": "calc(var(--primitives-layout-sizing-600) * 1px)",
       overflow: "hidden",
+      border: "1px solid var(--semantics-border-subtle)",
+      "border-radius": "calc(var(--semantics-radius-control) * 1px)",
+    });
+    // Cropped to the square, never stretched, on the web as on the natives.
+    expect(declared(".kozmos-client-app-banner-icon > img")).toMatchObject({
+      "inline-size": "100%",
+      "block-size": "100%",
+      "object-fit": "cover",
+    });
+    expect(declared(".kozmos-client-app-banner-dismiss")).toMatchObject({
+      "inline-size": "44px",
+      "block-size": "44px",
     });
 
-    const { container } = render(<ClientAppBanner {...EXPRESS} />);
-    const body = container.querySelector(".kozmos-client-app-banner-body");
-    expect(body?.children[0]).toHaveClass("kozmos-client-app-banner-text");
-    expect(body?.children[1]).toHaveClass("kozmos-client-app-banner-action");
+    const { container } = render(
+      <ClientAppBanner {...EXPRESS} onDismiss={() => {}} />,
+    );
+    // Under @scope, the classes that say the same, in pixels.
+    expect(
+      container.querySelector(".kozmos-client-app-banner-icon"),
+    ).toHaveClass("h-[48px]", "w-[48px]", "rounded-control", "border");
+    expect(screen.getByRole("button", { name: "Dismiss" })).toHaveClass(
+      "h-[44px]",
+      "w-[44px]",
+    );
+  });
+
+  it("draws the app's initial again when its icon is taken away", async () => {
+    // jsdom loads no images: this one loads as soon as it is asked to, as
+    // the browser's would.
+    class LoadingImage extends EventTarget {
+      complete = false;
+      naturalWidth = 0;
+      referrerPolicy = "";
+      crossOrigin: string | null = null;
+      #src = "";
+      get src() {
+        return this.#src;
+      }
+      set src(value: string) {
+        this.#src = value;
+        queueMicrotask(() => {
+          this.complete = true;
+          this.naturalWidth = 96;
+          this.dispatchEvent(new Event("load"));
+        });
+      }
+    }
+    const original = window.Image;
+    window.Image = LoadingImage as unknown as typeof Image;
+    try {
+      const { container, rerender } = render(<ClientAppBanner {...EXPRESS} />);
+      const icon = () =>
+        container.querySelector<HTMLElement>(".kozmos-client-app-banner-icon");
+      await waitFor(() => expect(icon()?.querySelector("img")).not.toBeNull());
+      expect(icon()?.textContent).toBe("");
+      // The customer's settings change while the banner is up: no icon.
+      // Radix keeps the old image's "loaded" when the image goes, so the
+      // square stayed empty; a new icon is a new Avatar.
+      rerender(<ClientAppBanner {...EXPRESS} appIconSrc={undefined} />);
+      expect(icon()?.querySelector("img")).toBeNull();
+      expect(icon()?.textContent).toBe("N");
+    } finally {
+      window.Image = original;
+    }
   });
 });

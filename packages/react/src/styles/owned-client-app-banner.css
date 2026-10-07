@@ -2,9 +2,11 @@
    AdaptiveMapShell's topBar.
 
    Owned rather than utilities: a host without @scope drops the utility layer,
-   and where the action goes is what the banner promises. Every side is
-   logical, so a right-to-left interface mirrors it. Imported after the
-   Button's rules, which the action's own outweigh by order. */
+   and the layout, the icon and the targets are what the banner promises.
+   Under @scope the parts' own utilities say the same (the Avatar's and the
+   IconButton's sizes are overridden by class there). Every side is logical,
+   so a right-to-left interface mirrors it. Imported after the Button's rules,
+   which the action's and dismiss's own outweigh by order. */
 @kozmos-owned {
   /* The topBar hosts what it is given with no surface of its own, so the
      banner wears one, as the manoeuvre card there does: the solid surface's
@@ -24,13 +26,13 @@
     border-radius: calc(var(--semantics-radius-container) * 1px);
     overflow-wrap: anywhere;
   }
-  .kozmos-client-app-banner-icon {
-    flex: none;
-  }
-  /* The words and the action share a line while the words keep 10rem; past
-     that the action wraps under them. Beside the words it barely grows (9999
-     to 1); alone on its line it fills the words' width. No measuring, so a
-     longer language or larger text moves it by itself. */
+  /* The icon and the words, then the action. They share a line while the
+     words keep 10rem beside the icon; past that the action wraps under them
+     both, so it starts under the icon, and the words keep the whole width
+     beside it. Beside them the action barely grows (9999 to 1); alone on its
+     line it fills it. No measuring, so a longer language, larger text or a
+     longer action moves it by itself. Dismiss stays beside all of it, at the
+     top end. */
   .kozmos-client-app-banner-body {
     display: flex;
     flex: 1 1 0%;
@@ -39,9 +41,52 @@
     gap: calc(var(--primitives-layout-spacing-150) * 1px);
     min-inline-size: 0;
   }
+  .kozmos-client-app-banner-head {
+    display: flex;
+    flex: 9999 1
+      calc(
+        (
+            var(--primitives-layout-sizing-600) +
+              var(--primitives-layout-spacing-150)
+          ) *
+          1px + 10rem
+      );
+    align-items: flex-start;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    min-inline-size: 0;
+  }
+  /* The icon: 48 square at every text size, as SwiftUI and Compose draw it,
+     with the Control corner and the subtle edge, so an icon on white still
+     has an outline. Whatever the customer's image measures, it is cropped
+     to the square, never stretched; until it loads, or without one, the
+     app's initial sits centred on the muted fill. */
+  .kozmos-client-app-banner-icon {
+    position: relative;
+    display: flex;
+    flex: none;
+    box-sizing: border-box;
+    inline-size: calc(var(--primitives-layout-sizing-600) * 1px);
+    block-size: calc(var(--primitives-layout-sizing-600) * 1px);
+    overflow: hidden;
+    border: 1px solid var(--semantics-border-subtle);
+    border-radius: calc(var(--semantics-radius-control) * 1px);
+  }
+  .kozmos-client-app-banner-icon > img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+  .kozmos-client-app-banner-initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+    background-color: var(--primitives-colors-background-100);
+  }
   .kozmos-client-app-banner-text {
     display: flex;
-    flex: 9999 1 10rem;
+    flex: 1 1 0%;
     flex-direction: column;
     gap: calc(var(--primitives-layout-spacing-25) * 1px);
     min-inline-size: 0;
@@ -64,11 +109,14 @@
     white-space: normal;
     text-align: center;
   }
-  /* The 44 target at the top end, 4 from the edges: pulled into the padding
-     so its glyph lines up with the words' 16, and its corner (Control, 16)
-     sits concentric with the banner's (Container, 20). */
+  /* The 44 target at the top end, at every text size, as on SwiftUI, 4 from
+     the edges: pulled into the padding so its glyph lines up with the
+     words' 16, and its corner (Control, 16) sits concentric with the
+     banner's (Container, 20). */
   .kozmos-client-app-banner-dismiss {
     flex: none;
+    inline-size: 44px;
+    block-size: 44px;
     margin-block-start: calc(var(--primitives-layout-spacing-150) * 1px * -1);
     margin-inline-end: calc(var(--primitives-layout-spacing-150) * 1px * -1);
   }

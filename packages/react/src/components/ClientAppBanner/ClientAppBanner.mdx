@@ -29,8 +29,11 @@ no dismiss button.
 ## Without an icon
 
 Without an icon, or until it loads, the app's initial stands in for it, as an
-Avatar's fallback does. The icon is 48 square with the Control corner and the
-subtle edge, so an app icon on white still has an outline.
+Avatar's fallback does; once the icon has loaded the initial is gone, so it
+never shows through a transparent icon. The icon is 48 square at every text
+size, as on SwiftUI and Compose, with the Control corner and the subtle edge,
+so an app icon on white still has an outline. An image of any size is cropped
+to the square, never stretched.
 
 <Canvas of={Stories.NoIcon} />
 
@@ -47,11 +50,15 @@ gives it.
 
 ## Narrow widths
 
-The words and the action share a line while the words keep 10rem (160 on
-SwiftUI and Compose). Past that the action goes under the words, as wide as
-they are. Nothing is measured on the web: a longer language, larger text or a
-longer action moves it by itself. The description is drawn on two lines at
-most; a screen reader still reads all of it.
+The words and the action share a line while the words keep 10rem beside the
+icon (160 at the default text size on SwiftUI and Compose, where it grows with
+Dynamic Type and the font scale as 10rem grows with the browser's text). Past
+that the action goes under the icon and the words and spans them both, so the
+words keep the whole width beside the icon and the action's words are not
+squeezed. Dismiss stays at the top end. Nothing is measured on the web: a
+longer language, larger text or a longer action moves it by itself. The
+description is drawn on two lines at most; a screen reader still reads all of
+it.
 
 <Canvas of={Stories.Narrow} />
 
@@ -62,7 +69,8 @@ right, and the action and dismiss end at the left.
 
 - The banner is a **region named by the app** (`aria-label` names it
   otherwise). SwiftUI makes it a container labelled by the app's name, and
-  Compose a pane titled by it that TalkBack reads as one group.
+  Compose a group TalkBack reads together, described by the app's name. It is
+  not a Compose pane: a pane's title is announced when it appears.
 - It reads the **promotion, the name and the description, then the action,
   then dismiss**, on every platform and at every width, though dismiss sits
   above the words at the top end.
@@ -72,18 +80,20 @@ right, and the action and dismiss end at the left.
 - The **icon is decoration** beside the app's name, and is not read. Pass
   `appIconAlt` only when the icon says something the name does not: it is
   then one image, loaded or not.
-- Every target keeps **44** (48dp on Compose). Dismiss sits 4 from the top and
-  end edges, its glyph in line with the words' 16.
+- Every target keeps **44** (48dp on Compose). Dismiss is the 44 square at
+  every text size, 4 from the top and end edges, its glyph in line with the
+  words' 16; the action grows with the text.
 - **Nothing moves focus** and nothing is announced. When the product removes
   the banner after a dismiss, it moves focus somewhere that makes sense, such
-  as the search field: the dismiss button that had it is gone.
+  as the search field, as the React example below does: the dismiss button
+  that had it is gone.
 
 ## All platforms
 
 <PlatformSnippets
   react={`
-import { useState, type ReactNode } from "react";
-import { AdaptiveMapShell, ClientAppBanner } from "@kozmos-ds/react";
+import { useRef, useState, type ReactNode } from "react";
+import { AdaptiveMapShell, ClientAppBanner, SearchBar } from "@kozmos-ds/react";
 
 // The customer's banner, as Pointr Cloud returns it, in the visitor's language.
 interface AppBannerSettings {
@@ -104,9 +114,19 @@ export function MapWithAppBanner({
   map: ReactNode;
 }) {
   const [dismissed, setDismissed] = useState(false);
+  const [query, setQuery] = useState("");
+  const search = useRef<HTMLInputElement>(null);
   return (
     <AdaptiveMapShell
       map={map}
+      panelHeader={
+        <SearchBar
+          ref={search}
+          aria-label="Search the map"
+          value={query}
+          onChange={setQuery}
+        />
+      }
       topBar={
         banner && !dismissed ? (
           <ClientAppBanner
@@ -116,7 +136,11 @@ export function MapWithAppBanner({
             appIconSrc={banner.appIconUrl}
             actionLabel={banner.buttonText}
             onAction={() => window.location.assign(banner.storeUrl)}
-            onDismiss={() => setDismissed(true)}
+            onDismiss={() => {
+              setDismissed(true);
+              // The dismiss button that had focus goes with the banner.
+              search.current?.focus();
+            }}
           />
         ) : undefined
       }

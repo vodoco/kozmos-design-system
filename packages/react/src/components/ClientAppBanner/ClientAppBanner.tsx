@@ -64,8 +64,11 @@ function initialOf(appName: string) {
  * nothing, and never removes itself: `onDismiss` asks the product to.
  *
  * Where the words and the action do not fit side by side, the action goes
- * under the words and fills their width. The layout is owned CSS
- * (`styles/owned-client-app-banner.css`), set out in logical sides only.
+ * under the icon and the words and fills their width, so the words keep the
+ * width beside the icon. The icon is the 48 square and dismiss the 44 target
+ * the natives draw, at every text size. The layout is owned CSS
+ * (`styles/owned-client-app-banner.css`), set out in logical sides only, so
+ * it holds where a host without `@scope` drops the utility layer.
  */
 const ClientAppBanner = React.forwardRef<HTMLElement, ClientAppBannerProps>(
   (
@@ -102,39 +105,47 @@ const ClientAppBanner = React.forwardRef<HTMLElement, ClientAppBannerProps>(
           className,
         )}
       >
-        <Avatar
-          // Named, the icon is one image whether it has loaded or not: the
-          // initial standing in for it is not read as a letter. Unnamed, it
-          // is decoration beside the app's name.
-          aria-hidden={iconNamed ? undefined : true}
-          aria-label={iconNamed ? appIconAlt : undefined}
-          role={iconNamed ? "img" : undefined}
-          className="kozmos-client-app-banner-icon h-12 w-12 rounded-control border border-border"
-        >
-          {appIconSrc && <AvatarImage alt="" src={appIconSrc} />}
-          <AvatarFallback className="rounded-control kozmos-text-lg kozmos-text-semibold">
-            {initialOf(appName)}
-          </AvatarFallback>
-        </Avatar>
         <div className="kozmos-client-app-banner-body">
-          <div className="kozmos-client-app-banner-text">
-            {promotionText && (
-              <Text size="xs" weight="medium" color="muted">
-                {promotionText}
+          <div className="kozmos-client-app-banner-head">
+            <Avatar
+              // A new icon is a new image: without the key, an icon taken
+              // away after it loaded left the square empty, with no initial.
+              key={appIconSrc ?? ""}
+              // Named, the icon is one image whether it has loaded or not:
+              // the initial standing in for it is not read as a letter.
+              // Unnamed, it is decoration beside the app's name.
+              aria-hidden={iconNamed ? undefined : true}
+              aria-label={iconNamed ? appIconAlt : undefined}
+              role={iconNamed ? "img" : undefined}
+              // The utilities say under @scope what the owned rule says
+              // without it, over the Avatar's own 40 circle: 48 at every
+              // text size, as on SwiftUI and Compose.
+              className="kozmos-client-app-banner-icon h-[48px] w-[48px] rounded-control border border-border"
+            >
+              {appIconSrc && <AvatarImage alt="" src={appIconSrc} />}
+              <AvatarFallback className="kozmos-client-app-banner-initial rounded-control kozmos-text-lg kozmos-text-semibold">
+                {initialOf(appName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="kozmos-client-app-banner-text">
+              {promotionText && (
+                <Text size="xs" weight="medium" color="muted">
+                  {promotionText}
+                </Text>
+              )}
+              <Text id={nameId} weight="semibold">
+                {appName}
               </Text>
-            )}
-            <Text id={nameId} weight="semibold">
-              {appName}
-            </Text>
-            {description && (
-              <Text
-                size="sm"
-                color="muted"
-                className="kozmos-client-app-banner-description"
-              >
-                {description}
-              </Text>
-            )}
+              {description && (
+                <Text
+                  size="sm"
+                  color="muted"
+                  className="kozmos-client-app-banner-description"
+                >
+                  {description}
+                </Text>
+              )}
+            </div>
           </div>
           <Button
             className="kozmos-client-app-banner-action"
@@ -147,7 +158,9 @@ const ClientAppBanner = React.forwardRef<HTMLElement, ClientAppBannerProps>(
         {onDismiss && (
           <IconButton
             aria-label={dismissLabel}
-            className="kozmos-client-app-banner-dismiss"
+            // The 44 target at every text size, as on SwiftUI; the owned
+            // rule says the same without @scope.
+            className="kozmos-client-app-banner-dismiss h-[44px] w-[44px]"
             onClick={onDismiss}
             type="button"
           >
