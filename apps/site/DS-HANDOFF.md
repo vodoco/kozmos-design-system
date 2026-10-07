@@ -20,22 +20,22 @@ line that causes it. They are measured but not yet pinned by tests, unlike
 GAP-01 to GAP-61: Olcay parked that work on 2026-09-22. The short ones
 first:
 
-| Gap    | Part                               | Size of the change                                                        |
-| ------ | ---------------------------------- | ------------------------------------------------------------------------- |
-| GAP-55 | `Listbox`                          | One declaration: a column template.                                       |
-| GAP-56 | `Button`                           | One declaration: a gap, and the loader's margin off.                      |
-| GAP-57 | `Button`                           | Two declarations: let a label that cannot fit wrap.                       |
-| GAP-58 | `Toast`                            | One class: the root has no fill.                                          |
-| GAP-73 | `SplitButton`                      | One utility: `border-r-…/20`, so the outline survives.                    |
-| GAP-75 | `ToggleButton`                     | One declaration: a gap, with GAP-56.                                      |
-| GAP-67 | `Menu`                             | One prop default: `align="start"`.                                        |
-| GAP-66 | `EmptyState`                       | Two props: `align="center"` on its title and description.                 |
-| GAP-64 | `ChipGroup`                        | A `wrap` prop and `items-center`.                                         |
-| GAP-71 | `AISearchButton`                   | A hover state.                                                            |
-| GAP-62 | `Combobox`, `MultiSelect`          | Portal the open list, as six other components already do.                 |
-| GAP-59 | `DynamicIsland`                    | Give the capsule an edge, so a dark page does not eat it.                 |
-| GAP-60 | `DynamicIsland`                    | Lay the three presentations out around the camera, at Apple's sizes.      |
-| GAP-61 | Breadcrumb, Menu, Tree, Pagination | Mirror the reading-direction glyphs, as the gallery's arrows already are. |
+| Gap            | Part                               | Size of the change                                                        |
+| -------------- | ---------------------------------- | ------------------------------------------------------------------------- |
+| GAP-55         | `Listbox`                          | One declaration: a column template.                                       |
+| GAP-56         | `Button`                           | One declaration: a gap, and the loader's margin off.                      |
+| GAP-57         | `Button`                           | Two declarations: let a label that cannot fit wrap.                       |
+| GAP-58         | `Toast`                            | One class: the root has no fill.                                          |
+| GAP-73         | `SplitButton`                      | One utility: `border-r-…/20`, so the outline survives.                    |
+| GAP-75         | `ToggleButton`                     | One declaration: a gap, with GAP-56.                                      |
+| GAP-67         | `Menu`                             | One prop default: `align="start"`.                                        |
+| GAP-66         | `EmptyState`                       | Two props: `align="center"` on its title and description.                 |
+| GAP-64         | `ChipGroup`                        | A `wrap` prop and `items-center`.                                         |
+| GAP-71         | `AISearchButton`                   | A hover state.                                                            |
+| GAP-62         | `Combobox`, `MultiSelect`          | Portal the open list, as six other components already do.                 |
+| GAP-59         | `DynamicIsland`                    | Give the capsule an edge, so a dark page does not eat it.                 |
+| GAP-60         | `DynamicIsland`                    | Lay the three presentations out around the camera, at Apple's sizes.      |
+| GAP-61 (fixed) | Breadcrumb, Menu, Tree, Pagination | Mirror the reading-direction glyphs, as the gallery's arrows already are. |
 
 **Since 2026-09-28** (decision 44), Storybook is the component reference and
 the site's component pages carry no demos. A site check below that read a
@@ -114,7 +114,7 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 | P1       | — (fixed)                      | The React package                                        | Tree-shaken since #57: `import { Button }` costs an app 9.3 kB gzipped, not the whole 175 kB.    |
 | P2       | GAP-59                         | DynamicIsland                                            | Pinned to its own dark theme: on the dark page the capsule is black on black, 1:1.               |
 | P2       | GAP-60                         | DynamicIsland                                            | No room kept for the camera: Apple leaves 54% of the island's width, the component 12%.          |
-| P2       | GAP-61                         | Breadcrumb, Menu, Tree, Pagination                       | No glyph mirrors in right to left; one rule in the package does it, for the gallery's arrows.    |
+| P2       | GAP-61 (fixed)                 | Breadcrumb, Menu, Tree, Pagination                       | No glyph mirrors in right to left; one rule in the package does it, for the gallery's arrows.    |
 | P2       | GAP-24, 29, 34, 36             | DynamicIsland, BottomNavigation, Backdrop, ToastViewport | Always fixed to the viewport.                                                                    |
 | P2       | GAP-17, 28, 30, 32             | AdaptiveMapShell, SearchBar, Sidebar, ChipGroup          | Landmarks and groups that cannot be named or placed.                                             |
 | P2       | GAP-53                         | AdaptiveMapShell, MapView                                | No edge-to-edge form: on a phone's rounded screen the sheet's bordered corners are cut.          |
@@ -597,6 +597,10 @@ border-primary-foreground/20`.
   left" measures the glyph and its transform in the theming page's sample;
   flip it once the separators turn, and take the sentence about the
   breadcrumb out of that page's lead.
+- **Done** (2026-10-07): the package's right-to-left rules read the nearest
+  `dir` attribute (`--kozmos-rtl`), not `:dir()`, which Vite 8 lowered into
+  `:lang()` guesses on this site. The test is flipped ("… points along the
+  trail right to left") and the lead rewritten.
 
 ## P3 — additions
 
