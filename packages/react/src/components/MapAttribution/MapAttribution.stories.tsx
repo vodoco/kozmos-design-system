@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { MapAttribution } from "./MapAttribution";
 
-const meta: Meta<typeof MapAttribution> = {
+const meta = {
   id: "product-sdk-mapattribution",
   title: "SDK/Map controls/MapAttribution",
   component: MapAttribution,
@@ -16,7 +16,7 @@ const meta: Meta<typeof MapAttribution> = {
       },
     ],
   },
-};
+} satisfies Meta<typeof MapAttribution>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Default: Story = {};

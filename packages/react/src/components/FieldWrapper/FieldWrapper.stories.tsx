@@ -15,6 +15,7 @@ const meta = {
       options: ["default", "error", "warning", "success"],
     },
   },
+  args: { children: <Input placeholder="Placeholder" /> },
 } satisfies Meta<typeof FieldWrapper>;
 
 export default meta;
@@ -28,11 +29,7 @@ export const Default: Story = {
     required: true,
     status: "default",
   },
-  render: (args) => (
-    <FieldWrapper {...args} className="w-80">
-      <Input placeholder="Placeholder" />
-    </FieldWrapper>
-  ),
+  render: (args) => <FieldWrapper {...args} className="w-80" />,
 };
 
 export const ValidationStates: Story = {

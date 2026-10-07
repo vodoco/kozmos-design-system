@@ -29,6 +29,7 @@ describe("SDK standard controls compose Core", () => {
             poiId: "gallery",
             resultIndex: 1,
             selected: true,
+            featured: false,
             actions: [
               { action: "navigate", label: "Go", primary: true },
               { action: "details", label: "Details", disabled: true },
