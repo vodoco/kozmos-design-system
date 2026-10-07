@@ -388,7 +388,10 @@ default brand. Tall side panels reserve
 the footer band instead of covering attribution.
 Credits use one horizontally scrollable line (10px scalable web; 11pt/sp scalable native),
 and a capped sheet still scrolls. With less room than the whole attribution, the brand gives
-way and the credits keep their full height, never clipped into a scroll region (GAP-135). Web reports attribution occlusions; native reports edge
+way and the credits keep their full height, never clipped into a scroll region (GAP-135,
+decision 58). The room counts the lift above the corners; credits still too tall to sit above
+them send the corners away and return to the bottom row, and the brand comes back once it fits
+again. Web reports attribution occlusions; native reports edge
 insets. Custom overlays/status messages, actual SDK camera application, custom brand assets,
 real SDK wiring and device acceptance remain integration work, not claimed complete here.
 
