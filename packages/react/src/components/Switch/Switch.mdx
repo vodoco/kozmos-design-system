@@ -58,7 +58,7 @@ struct KozmosSwitch: View {
     
     var body: some View {
         Toggle("", isOn: $isOn)
-            .toggleStyle(SwitchToggleStyle(tint: KozmosColors.componentSwitchBackgroundColorChecked))
+            .toggleStyle(SwitchToggleStyle(tint: KozmosColors.primitivesColorsTheme500))
             .labelsHidden()
     }
 }
@@ -70,7 +70,7 @@ struct KozmosSwitchStyle: ToggleStyle {
             configuration.label
             Spacer()
             RoundedRectangle(cornerRadius: 16)
-                .fill(configuration.isOn ? KozmosColors.componentSwitchBackgroundColorChecked : KozmosColors.componentSwitchBackgroundColorUnchecked)
+                .fill(configuration.isOn ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500)
                 .frame(width: 50, height: 30)
                 .overlay(
                     Circle()

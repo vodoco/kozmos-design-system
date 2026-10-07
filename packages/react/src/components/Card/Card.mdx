@@ -104,12 +104,12 @@ struct KozmosCard<Content: View>: View {
                     if let title = title {
                         Text(title)
                             .font(.headline)
-                            .foregroundColor(KozmosColors.semanticColorTextDefault)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground100)
                     }
                     if let description = description {
                         Text(description)
                             .font(.subheadline)
-                            .foregroundColor(KozmosColors.semanticColorTextMuted)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground400)
                     }
                 }
                 .padding([.top, .horizontal])
@@ -125,11 +125,11 @@ struct KozmosCard<Content: View>: View {
                  Spacer().frame(height: 16)
             }
         }
-        .background(KozmosColors.componentCardBackgroundColorDefault)
+        .background(KozmosColors.primitivesColorsBackground0)
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(KozmosColors.componentCardBorderColorDefault, lineWidth: 1)
+                .stroke(KozmosColors.primitivesColorsBackground200, lineWidth: 1)
         )
         // Shadow could be added here if elevation tokens are available
     }

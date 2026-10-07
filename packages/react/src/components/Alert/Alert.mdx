@@ -65,23 +65,23 @@ struct KozmosAlert: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: variant == .destructive ? "exclamationmark.circle" : "info.circle")
-                .foregroundColor(variant == .destructive ? KozmosColors.semanticColorTextDestructive : KozmosColors.semanticColorTextDefault)
+                .foregroundColor(variant == .destructive ? KozmosColors.primitivesColorsEmotionalDanger600 : KozmosColors.primitivesColorsForeground0)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(variant == .destructive ? KozmosColors.semanticColorTextDestructive : KozmosColors.semanticColorTextDefault)
+                    .foregroundColor(variant == .destructive ? KozmosColors.primitivesColorsEmotionalDanger600 : KozmosColors.primitivesColorsForeground0)
                 Text(description)
                     .font(.subheadline)
-                    .foregroundColor(variant == .destructive ? KozmosColors.semanticColorTextDestructive : KozmosColors.semanticColorTextDefault)
+                    .foregroundColor(variant == .destructive ? KozmosColors.primitivesColorsEmotionalDanger600 : KozmosColors.primitivesColorsForeground500)
             }
         }
         .padding()
-        .background(variant == .destructive ? KozmosColors.semanticColorBackgroundDestructive : KozmosColors.semanticColorBackgroundDefault)
+        .background(KozmosColors.semanticsSurface0)
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(variant == .destructive ? KozmosColors.semanticColorBorderDestructive : KozmosColors.semanticColorBorderDefault, lineWidth: 1)
+                .stroke(variant == .destructive ? KozmosColors.primitivesColorsEmotionalDanger600 : KozmosColors.primitivesColorsForeground500, lineWidth: 1)
         )
     }
 }

@@ -79,27 +79,27 @@ struct KozmosAccordionItem: View {
                 HStack {
                     Text(title)
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(KozmosColors.semanticColorTextDefault)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground100)
                     Spacer()
                     Image(systemName: "chevron.down")
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                        .foregroundColor(KozmosColors.semanticColorIconDefault)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
                 }
                 .padding()
-                .background(KozmosColors.semanticColorBackgroundDefault)
+                .background(KozmosColors.primitivesColorsBackground0)
             }
             
             if isExpanded {
                 Text(content)
                     .font(.system(size: 14))
-                    .foregroundColor(KozmosColors.semanticColorTextMuted)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground500)
                     .padding([.leading, .trailing, .bottom])
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(KozmosColors.semanticColorBackgroundDefault)
+                    .background(KozmosColors.primitivesColorsBackground0)
             }
             
             Divider()
-                .background(KozmosColors.semanticColorBorderDefault)
+                .overlay(KozmosColors.semanticsBorderSubtle)
         }
     }
 }
