@@ -106,6 +106,16 @@ try {
               page: document.documentElement.scrollWidth,
               viewport: innerWidth,
               row: node.getBoundingClientRect().width,
+              // The destination and its location line: one long word each,
+              // broken by the owned rule, with or without @scope.
+              destination: Array.from(
+                document.querySelectorAll(".kozmos-route-summary-destination"),
+                (line) => ({
+                  wrap: getComputedStyle(line).overflowWrap,
+                  scrollWidth: line.scrollWidth,
+                  clientWidth: line.clientWidth,
+                }),
+              ),
               actions: Array.from(node.children, (child) => {
                 const box = child.getBoundingClientRect();
                 return {
@@ -122,6 +132,21 @@ try {
             const where = `${label} ${fontSize}: ${JSON.stringify(drawn)}`;
             const [first, second] = drawn.actions;
             assert.ok(drawn.page <= drawn.viewport + 1, `${where}: overflow`);
+            assert.equal(
+              drawn.destination.length,
+              action === "summary-preview" ? 2 : 1,
+              `${where}: the destination lines`,
+            );
+            for (const line of drawn.destination) {
+              assert.ok(
+                line.wrap === "break-word" || line.wrap === "anywhere",
+                `${where}: the destination does not break a long word`,
+              );
+              assert.ok(
+                line.scrollWidth <= line.clientWidth + 1,
+                `${where}: the destination overflows its line`,
+              );
+            }
             for (const one of drawn.actions) {
               assert.ok(one.height >= 44 - 0.5, `${where}: under 44px`);
               assert.ok(

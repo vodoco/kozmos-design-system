@@ -31,7 +31,12 @@ const done = () => {
  * Next in the summary's actions, Buttons that never submit, the end of the
  * route unavailable through aria-disabled and a guarded handler, so the
  * focus stays on Previous when pressing it reaches the first step.
+ *
+ * The destination is one 29-letter word, wider than the 320px panel at 200%
+ * text in any font, so its wrap is tested wherever the check runs, not only
+ * where the host's font happens to be wide (DejaVu Sans on CI).
  */
+const LONG_DESTINATION = "Abflughallenaussichtsterrasse";
 function Steps() {
   const [step, setStep] = React.useState(1);
   const last = 3;
@@ -41,7 +46,7 @@ function Steps() {
   };
   return (
     <RouteSummary
-      destination="International departures gallery"
+      destination={LONG_DESTINATION}
       durationText="4 min"
       distanceText="201 m"
       onEndRoute={done}
@@ -93,8 +98,8 @@ createRoot(document.getElementById("root")!).render(
     ) : window.navigationAction === "summary-preview" ? (
       // The route preview: no End, the place's line, Go and Details.
       <RouteSummary
-        destination="International departures gallery"
-        locationText="Lounge · Level 2 · Terminal 1"
+        destination={LONG_DESTINATION}
+        locationText="Sicherheitskontrollbereich · Level 2 · Terminal 1"
         durationText="3 min"
         distanceText="205 m"
         presentation="hosted"
