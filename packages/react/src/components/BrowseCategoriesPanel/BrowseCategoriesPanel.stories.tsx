@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "@storybook/test";
 import {
@@ -61,7 +62,7 @@ const meta = {
     ],
     className: "h-[34rem] w-full max-w-[25rem]",
     onSelect: fn(),
-    renderIcon: (category) =>
+    renderIcon: (category): ReactNode =>
       iconByName[category.iconName as keyof typeof iconByName] ??
       iconByName.search,
     search: <SearchBar aria-label="Search places" />,

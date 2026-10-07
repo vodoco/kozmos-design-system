@@ -1,5 +1,13 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from "vitest";
 import { AdaptiveMapShell } from "./AdaptiveMapShell";
 
 describe("AdaptiveMapShell", () => {
@@ -7,7 +15,9 @@ describe("AdaptiveMapShell", () => {
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
     vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(600);
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
   it("names both control regions without merging their buttons", () => {
     render(
       <AdaptiveMapShell
@@ -153,7 +163,7 @@ describe("AdaptiveMapShell", () => {
 // is told it is 390 x 600 through the same properties it reads live, and the
 // sheet's height is read from its style.
 describe("AdaptiveMapShell sheet detents", () => {
-  const spies: ReturnType<typeof vi.spyOn>[] = [];
+  const spies: MockInstance[] = [];
   beforeEach(() => {
     spies.push(
       vi

@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import "vitest";
 import type { AxeMatchers } from "vitest-axe";
 
 declare module "vitest" {
-  export type Assertion<_T = any> = AxeMatchers;
-  export type AsymmetricMatchersContaining = AxeMatchers;
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unused-vars
+  interface Assertion<T = any> extends AxeMatchers {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface AsymmetricMatchersContaining extends AxeMatchers {}
 }
