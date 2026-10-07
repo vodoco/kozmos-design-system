@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kozmos.components.counter.CounterTone
 import com.kozmos.components.counter.KozmosCounter
+import com.kozmos.components.counter.KozmosInkedFill
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -84,11 +85,28 @@ fun KozmosBadge(
             if (hasCounter) {
                 KozmosCounter(
                     text = counter.orEmpty(),
-                    tone = badgeCounterTone(variant)
+                    tone = badgeCounterTone(variant),
+                    fill = badgeCounterFill(variant)
                 )
             }
         }
     }
+}
+
+/**
+ * On the default badge, itself the theme fill, the counter inverts, as the
+ * FloorSelector's count does on its selected level (Olcay, 2026-10-07): the
+ * theme foreground, white in both themes, with its number in the fill. The
+ * inverse tone is the page's background and foreground, a dark pill in the
+ * dark. The destructive badge keeps the inverse tone.
+ */
+@Composable
+private fun badgeCounterFill(variant: BadgeVariant): KozmosInkedFill? = when (variant) {
+    BadgeVariant.Default -> KozmosInkedFill(
+        fill = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+        ink = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+    )
+    else -> null
 }
 
 private fun badgeCounterTone(variant: BadgeVariant): CounterTone = when (variant) {
