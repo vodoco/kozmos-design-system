@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ArrivalPanel } from "./ArrivalPanel";
+import { Button } from "../Button";
 import { RouteSummary } from "../RouteSummary";
 import { RoutingInputGroup } from "../RoutingInputGroup";
 import { WayfindingCard, WayfindingInputRow } from "../WayfindingCard";
@@ -10,6 +11,7 @@ describe("navigation actions inside a host form", () => {
   it.each([
     "arrival",
     "summary",
+    "summary-actions",
     "estimate",
     "start",
     "points",
@@ -25,6 +27,24 @@ describe("navigation actions inside a host form", () => {
     const content: Record<string, React.ReactNode> = {
       arrival: <ArrivalPanel destination="Gallery" onDone={action} />,
       summary: <RouteSummary destination="Gallery" onEndRoute={action} />,
+      // The slot's recipe: the host's Buttons say type="button" (Button has
+      // no default type), so Previous and Next never submit the host's form.
+      "summary-actions": (
+        <RouteSummary
+          destination="Gallery"
+          onEndRoute={action}
+          actions={
+            <>
+              <Button type="button" variant="outline" onClick={action}>
+                Previous
+              </Button>
+              <Button type="button" onClick={action}>
+                Next
+              </Button>
+            </>
+          }
+        />
+      ),
       estimate: (
         <RouteSummary etaText="1 min" distanceText="20 m" onEndRoute={action} />
       ),
@@ -69,6 +89,12 @@ describe("navigation actions inside a host form", () => {
       </form>,
     );
     const buttons = screen.getAllByRole("button");
+    if (kind === "summary-actions")
+      expect(buttons.map((button) => button.textContent)).toEqual([
+        "End",
+        "Previous",
+        "Next",
+      ]);
     buttons.forEach((button) => fireEvent.click(button));
     expect(action).toHaveBeenCalledTimes(buttons.length);
     expect(submit).not.toHaveBeenCalled();
