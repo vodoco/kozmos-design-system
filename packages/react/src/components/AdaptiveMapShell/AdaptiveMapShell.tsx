@@ -1,6 +1,9 @@
 import React from "react";
 import { MapPopupRegionContext } from "./map-popup-region";
-import { MapShellPanelContext } from "./map-shell-panel";
+import {
+  MapShellPanelContext,
+  MapShellPanelFillContext,
+} from "./map-shell-panel";
 import { MapShellAttributionCompactContext } from "./map-shell-attribution";
 import type {
   AdaptiveMapLayoutSnapshot,
@@ -277,6 +280,14 @@ const AdaptiveMapShell = React.forwardRef<
     const handleElement = React.useRef<HTMLDivElement>(null);
     const hasPanelHeader = panelHeader !== undefined && panelHeader !== null;
     const panelElement = React.useRef<HTMLElement>(null);
+    // How many mounted parts fill their panel (AICompanionPanel): beside the
+    // map such a panel takes its full height rather than hugging (GAP-124).
+    const [panelFillClaims, setPanelFillClaims] = React.useState(0);
+    const claimPanelFill = React.useCallback(() => {
+      setPanelFillClaims((count) => count + 1);
+      return () => setPanelFillClaims((count) => count - 1);
+    }, []);
+    const panelFills = panelFillClaims > 0;
     const [measured, setMeasured] = React.useState({
       ready: false,
       width: 0,
@@ -561,6 +572,7 @@ const AdaptiveMapShell = React.forwardRef<
     const unavailable =
       measured.ready && (!layout.mapBounds.width || !layout.mapBounds.height);
     // Side panels hug their DOM content, with a bounded scroller for long lists.
+    // Content that fills its panel takes the cap instead (GAP-124).
     // Keep a continuous bottom control row at the map's edges.
     let sidePanelCap =
       layout.presentation === "side" && layout.panelBounds
@@ -578,10 +590,9 @@ const AdaptiveMapShell = React.forwardRef<
         sidePanelCap > 0
           ? {
               ...layout.panelBounds,
-              height: Math.min(
-                measured.panelHeight || sidePanelCap,
-                sidePanelCap,
-              ),
+              height: panelFills
+                ? sidePanelCap
+                : Math.min(measured.panelHeight || sidePanelCap, sidePanelCap),
             }
           : null;
     }
@@ -1262,7 +1273,9 @@ const AdaptiveMapShell = React.forwardRef<
               ...position(layout.panelBounds ?? zero),
               ...(sidePanelCap === undefined
                 ? {}
-                : { height: "auto", maxHeight: sidePanelCap }),
+                : panelFills
+                  ? { height: sidePanelCap }
+                  : { height: "auto", maxHeight: sidePanelCap }),
             }}
             className={cn(
               surfaceClass(panelSurface),
@@ -1405,7 +1418,9 @@ const AdaptiveMapShell = React.forwardRef<
               onScroll={onContentScroll}
             >
               <MapShellPanelContext.Provider value={true}>
-                {panel}
+                <MapShellPanelFillContext.Provider value={claimPanelFill}>
+                  {panel}
+                </MapShellPanelFillContext.Provider>
               </MapShellPanelContext.Provider>
             </div>
           </aside>
