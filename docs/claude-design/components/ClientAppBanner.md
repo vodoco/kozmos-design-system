@@ -56,8 +56,11 @@ description, then the action, then dismiss. It moves no focus, announces
 nothing, and never removes itself: `onDismiss` asks the product to.
 
 Where the words and the action do not fit side by side, the action goes
-under the words and fills their width. The layout is owned CSS
-(`styles/owned-client-app-banner.css`), set out in logical sides only.
+under the icon and the words and fills their width, so the words keep the
+width beside the icon. The icon is the 48 square and dismiss the 44 target
+the natives draw, at every text size. The layout is owned CSS
+(`styles/owned-client-app-banner.css`), set out in logical sides only, so
+it holds where a host without `@scope` drops the utility layer.
 
 It forwards its ref to `HTMLElement`. Its props are `ClientAppBannerProps`, which extends `Omit<React.HTMLAttributes<HTMLElement>, "children">`.
 

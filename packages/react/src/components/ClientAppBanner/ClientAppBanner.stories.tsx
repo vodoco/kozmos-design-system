@@ -31,7 +31,7 @@ const atWidth: Decorator = (Story, context) =>
 
 const meta = {
   id: "product-sdk-clientappbanner",
-  title: "Core/Feedback/ClientAppBanner",
+  title: "SDK/Map controls/ClientAppBanner",
   component: ClientAppBanner,
   parameters: { layout: "centered" },
   decorators: [atWidth],
