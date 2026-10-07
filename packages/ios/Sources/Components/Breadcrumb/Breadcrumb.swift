@@ -23,7 +23,7 @@ public struct KozmosBreadcrumb: View {
                     .disabled(index == items.count - 1)
                     
                     if index < items.count - 1 {
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "chevron.forward")
                             .font(KozmosTypography.caption)
                             .foregroundColor(KozmosColors.primitivesColorsForeground500)
                     }

@@ -206,7 +206,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
    ```
 
 A budget moves only with the measurement that justifies it, on Olcay's decision (decision 53 set
-everything at once to 68 KB).
+everything at once to 68 KB; it has been 88 KB since 2026-10-06).
 
 ---
 

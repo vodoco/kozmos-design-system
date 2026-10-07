@@ -231,6 +231,104 @@ try {
     );
     await settled(page);
   }
+  // GAP-135: an opened direction card and the sheet can leave the credits less room than they need.
+  // They are never clipped into a scroll region: the Pointr logo goes first, and the credits keep
+  // their full height. A logo is whole or absent.
+  const squeezeStates = new Set();
+  for (const brandOnly of [false, true])
+    for (let barHeight = 200; barHeight <= 660; barHeight += 20) {
+      await page.evaluate((config) => window.renderAttributionShell(config), {
+        panel: true,
+        barHeight,
+        brandOnly,
+        width: 390,
+        height: 720,
+      });
+      await settled(page);
+      const state = await page.evaluate(() => {
+        const slot = document.querySelector("[data-kozmos-attribution]");
+        if (!slot || slot.hidden || !slot.getBoundingClientRect().height)
+          return { empty: true };
+        const box = slot.getBoundingClientRect();
+        const style = getComputedStyle(slot);
+        const inside = (node) => {
+          const r = node.getBoundingClientRect();
+          return r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+        };
+        const logo = slot.querySelector("img");
+        const link = slot.querySelector("a");
+        const unreachable = [...slot.querySelectorAll("*"), slot].filter(
+          (node) => {
+            const s = getComputedStyle(node);
+            const scrolls =
+              (/(auto|scroll)/.test(s.overflowY) &&
+                node.scrollHeight > node.clientHeight + 1) ||
+              (/(auto|scroll)/.test(s.overflowX) &&
+                node.scrollWidth > node.clientWidth + 1);
+            return scrolls && node.tabIndex < 0;
+          },
+        );
+        return {
+          empty: false,
+          clipped:
+            /(auto|scroll|hidden|clip)/.test(style.overflowY) &&
+            slot.scrollHeight > slot.clientHeight + 1,
+          logo: logo
+            ? logo.getBoundingClientRect().height > 0 && inside(logo)
+              ? "whole"
+              : "cut"
+            : "absent",
+          link: link ? (inside(link) ? "whole" : "cut") : "none",
+          unreachable: unreachable.length,
+        };
+      });
+      const where = JSON.stringify({ brandOnly, barHeight, state });
+      if (state.empty) {
+        squeezeStates.add(brandOnly ? "brand-only gone" : "empty");
+        assert.ok(brandOnly, `credits never disappear: ${where}`);
+        continue;
+      }
+      assert.equal(state.clipped, false, `credits are never clipped: ${where}`);
+      assert.equal(
+        state.unreachable,
+        0,
+        `no scroll region a keyboard can't reach: ${where}`,
+      );
+      assert.notEqual(state.logo, "cut", `a logo is whole or absent: ${where}`);
+      if (!brandOnly)
+        assert.equal(
+          state.link,
+          "whole",
+          `credits keep their full height: ${where}`,
+        );
+      squeezeStates.add(
+        `${brandOnly ? "brand-only" : "credits"} logo ${state.logo}`,
+      );
+    }
+  for (const expected of [
+    "credits logo whole",
+    "credits logo absent",
+    "brand-only logo whole",
+    "brand-only gone",
+  ])
+    assert.ok(
+      squeezeStates.has(expected),
+      `the squeeze reached "${expected}": ${[...squeezeStates]}`,
+    );
+  await page.evaluate(() =>
+    window.renderAttributionShell({
+      panel: true,
+      barHeight: 200,
+      width: 390,
+      height: 720,
+    }),
+  );
+  await settled(page);
+  assert.equal(
+    await page.locator("[data-kozmos-attribution] img").count(),
+    1,
+    "the logo comes back when there is room again",
+  );
   await page.evaluate(() => window.renderAttributionShell({ credits: false }));
   await settled(page);
   assert.equal(
@@ -246,7 +344,7 @@ try {
     false,
   );
   console.log(
-    "PASS shell attribution: 29 layouts, full-map centering, logo clearance, animated detents, RTL, side panels with/without corners, large/capped sheets, keyboard insets, 200% text, long credits, link hit testing and removal",
+    "PASS shell attribution: 29 layouts, 48 squeezed (never clipped, the logo first), full-map centering, logo clearance, animated detents, RTL, side panels with/without corners, large/capped sheets, keyboard insets, 200% text, long credits, link hit testing and removal",
   );
 } finally {
   await browser.close();

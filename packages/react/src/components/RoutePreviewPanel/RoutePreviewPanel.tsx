@@ -147,7 +147,12 @@ const RoutePreviewPanel = React.forwardRef<HTMLElement, RoutePreviewPanelProps>(
             type="button"
             variant="outline"
           >
-            <ArrowLeft aria-hidden="true" className="h-5 w-5" />
+            {/* Drawn pointing left; mirrored right to left, so Back points
+                to the start edge (kozmos-route-preview-back-arrow). */}
+            <ArrowLeft
+              aria-hidden="true"
+              className="kozmos-route-preview-back-arrow h-5 w-5"
+            />
           </IconButton>
           <Button
             className="flex-1"

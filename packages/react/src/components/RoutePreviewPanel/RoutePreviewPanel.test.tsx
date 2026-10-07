@@ -1,7 +1,41 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve as resolvePath } from "node:path";
+import { fileURLToPath } from "node:url";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { RouteOptionPresentation } from "@kozmos-ds/product-contracts";
+import postcss, { type Rule } from "postcss";
 import { describe, expect, it, vi } from "vitest";
 import { RoutePreviewPanel } from "./RoutePreviewPanel";
+
+// The component-owned rules, as the package ships them. jsdom evaluates a
+// selector, `:dir()` among them, but applies no stylesheet: the transform an
+// element is given is read by matching the owned rules against it.
+const OWNED = readFileSync(
+  resolvePath(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../styles/owned-components.css",
+  ),
+  "utf8",
+);
+function ownedTransform(element: Element): string | undefined {
+  let transform: string | undefined;
+  postcss.parse(OWNED).walkRules((rule: Rule) => {
+    if (rule.parent?.type === "atrule" && /keyframes$/.test(rule.parent.name))
+      return;
+    const applies = rule.selectors.some((selector) => {
+      try {
+        return element.matches(selector);
+      } catch {
+        return false;
+      }
+    });
+    if (applies)
+      rule.walkDecls("transform", (decl) => {
+        transform = decl.value;
+      });
+  });
+  return transform;
+}
 
 const options: RouteOptionPresentation[] = [
   {
@@ -203,6 +237,38 @@ describe("RoutePreviewPanel", () => {
     const status = screen.getByRole("status");
     expect(status.classList.contains(muted)).toBe(true);
     expect(status.className).not.toMatch(/\btext-muted-foreground\b/);
+  });
+
+  it("points its back arrow to the start edge in either direction", () => {
+    // Back leads to where the reader came from: the start edge, left to
+    // right on the left and right to left on the right. The arrow is drawn
+    // pointing left, and the owned stylesheet mirrors it where the reading
+    // direction is right to left, as SwiftUI's arrow.backward and Compose's
+    // AutoMirrored ArrowBack mirror themselves.
+    for (const dir of ["ltr", "rtl"] as const) {
+      const { unmount } = render(
+        <div dir={dir}>
+          <RoutePreviewPanel
+            backLabel="Back"
+            continueLabel="Continue"
+            destinationName="Burger King"
+            onBack={() => undefined}
+            onContinue={() => undefined}
+            onOptionSelect={() => undefined}
+            options={options}
+            status="ready"
+          />
+        </div>,
+      );
+      const arrow = screen
+        .getByRole("button", { name: "Back" })
+        .querySelector("svg")!;
+      expect(arrow, "the back button draws no arrow").toBeTruthy();
+      expect(ownedTransform(arrow), `the arrow, ${dir}`).toBe(
+        dir === "rtl" ? "scaleX(-1)" : undefined,
+      );
+      unmount();
+    }
   });
 
   it("disables continuation while calculating", () => {
