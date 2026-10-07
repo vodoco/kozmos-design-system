@@ -366,8 +366,9 @@ final class InteractionTests: XCTestCase {
     }
 
     /// A filled map control that is off is drawn on the page's surface, and
-    /// a press dims it as the tinted control's plain style does: the same
-    /// colour on its mark, under the same press. It drew no press at all.
+    /// a press dims it as the plain style does, the style every map control
+    /// had until the filled one drew its own press: the same colour on its
+    /// mark as the tinted control's, under the same press.
     func testAFilledMapControlThatIsOffDimsUnderAPressAsAPlainOneDoes() {
         launch("press-feedback")
         for id in ["map-tinted-off", "map-filled-off"] {
