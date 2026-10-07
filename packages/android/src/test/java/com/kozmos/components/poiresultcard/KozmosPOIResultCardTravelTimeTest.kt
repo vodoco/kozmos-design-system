@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -17,6 +16,7 @@ import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 import com.kozmos.components.readSemantics
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import com.kozmos.contracts.KozmosTravelEstimatePresentation
@@ -60,7 +60,7 @@ class KozmosPOIResultCardTravelTimeTest {
         labels: Map<KozmosTravelTimeBand, String> = emptyMap(),
         selected: Boolean = false
     ) {
-        MaterialTheme {
+        KozmosMaterialTheme {
             KozmosPOIResultCard(poi = poi, result = result(band, selected), onSelect = {}, travelTimeBandLabels = labels)
         }
     }
@@ -112,7 +112,7 @@ class KozmosPOIResultCardTravelTimeTest {
         // The card holds the words, so the list must hand them on, or a
         // translated product reads "Nearby" in English in every list.
         val texts = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultList(
                     items = listOf(KozmosPOIResultListItem(poi, result(KozmosTravelTimeBand.Nearby))),
                     resultCountLabel = "1 result",

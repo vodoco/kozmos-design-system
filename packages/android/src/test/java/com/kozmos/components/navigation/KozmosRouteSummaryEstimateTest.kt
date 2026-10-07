@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
@@ -32,6 +31,7 @@ import com.kozmos.components.readSemantics
 import com.kozmos.components.routesummary.KozmosRouteSummary
 import com.kozmos.components.routesummary.KozmosRouteSummaryState
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -49,7 +49,7 @@ class KozmosRouteSummaryEstimateTest {
 
     @Test fun customLabelsNameEndAndStart() {
         val translated = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(Modifier.width(360.dp)) {
                     KozmosRouteSummary(etaText = "4 min", distanceText = "201 m", onEndRoute = {},
                         endRouteLabel = "Route beenden")
@@ -66,7 +66,7 @@ class KozmosRouteSummaryEstimateTest {
 
         // Left out, the words are today's.
         val english = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(Modifier.width(360.dp)) {
                     KozmosRouteSummary(etaText = "4 min", distanceText = "201 m", onEndRoute = {})
                     KozmosRouteSummary(etaText = "4 min", distanceText = "201 m", onEndRoute = {},
@@ -102,7 +102,7 @@ class KozmosRouteSummaryEstimateTest {
             setContent {
                 val host = LocalView.current
                 density = LocalDensity.current.density
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.fillMaxSize().padding(60.dp)) {
                         KozmosRouteSummary(etaText = "4 min", distanceText = "201 m", onEndRoute = { hits.add(pressed) })
                     }
@@ -155,7 +155,7 @@ class KozmosRouteSummaryEstimateTest {
         var density = 1f
         val tree = paparazzi.readSemantics {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(Modifier.width(360.dp).semantics { contentDescription = "Summary" }) {
                     // Positional to the fourth parameter, and the transport mode
                     // as a trailing lambda: both as they were.

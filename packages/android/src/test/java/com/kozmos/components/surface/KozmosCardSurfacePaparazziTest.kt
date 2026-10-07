@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -18,6 +17,7 @@ import com.kozmos.components.feedbackcard.KozmosFeedbackCard
 import com.kozmos.components.routinginputgroup.KozmosRoutePoint
 import com.kozmos.components.routinginputgroup.KozmosRoutingInputGroup
 import com.kozmos.components.savelocationcard.KozmosSaveLocationCard
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertTrue
@@ -41,7 +41,7 @@ class KozmosCardSurfacePaparazziTest {
         var density = 1f
         paparazzi.snapshot {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.background(Color.Red).padding(16.dp)

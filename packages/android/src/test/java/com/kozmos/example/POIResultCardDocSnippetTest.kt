@@ -5,7 +5,6 @@ import android.text.style.LocaleSpan
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
@@ -15,6 +14,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.docsnippets.ResultWithSummary
 import org.junit.Assert.assertEquals
@@ -54,7 +54,7 @@ class POIResultCardDocSnippetTest {
                 read = provider.createAccessibilityNodeInfo(node.id)!!.text to
                     provider.performAction(node.id, AccessibilityNodeInfo.ACTION_CLICK, null)
             }) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.width(340.dp)) {
                         ResultWithSummary(poi, number = 1, summary = summary, summaryLanguage = language, onSelect = onSelect)
                     }

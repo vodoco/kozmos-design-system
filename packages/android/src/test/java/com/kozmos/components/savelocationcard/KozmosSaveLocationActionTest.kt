@@ -2,7 +2,6 @@ package com.kozmos.components.savelocationcard
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -12,6 +11,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.providers.KozmosAnalyticsEvent
 import com.kozmos.providers.LocalKozmosAnalytics
 import org.junit.Assert.*
@@ -36,7 +36,7 @@ class KozmosSaveLocationActionTest {
                             LocalLayoutDirection provides direction,
                             LocalKozmosAnalytics provides { events.add(it); Unit },
                         ) {
-                            MaterialTheme {
+                            KozmosMaterialTheme {
                                 Box(Modifier.width(320.dp)) {
                                     KozmosSaveLocationCard(isSaved = saved,
                                         onSaveToggle = { changes++ },

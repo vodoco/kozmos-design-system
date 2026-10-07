@@ -1,6 +1,5 @@
 package com.kozmos.components.floorselector
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -14,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlSize
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosFloorPresentation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -57,7 +57,7 @@ class KozmosFloorSwitcherSemanticsTest {
     @Test
     fun theSwitcherRestsAsOneMapControlTile() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSelector(
                     floors = levels,
                     selectedFloor = "1",
@@ -82,7 +82,7 @@ class KozmosFloorSwitcherSemanticsTest {
     fun theTileSaysTheVisitorsLevelOnlyWhileItShowsIt() {
         fun tile(selected: String, userFloor: String?, userFloorLabel: String = "your level"): List<String?> =
             paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosFloorSelector(
                         floors = levels,
                         selectedFloor = selected,
@@ -105,7 +105,7 @@ class KozmosFloorSwitcherSemanticsTest {
     fun theTileOpensAndClosesTheColumn() {
         val asked = mutableListOf<Boolean>()
         val closed = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSwitcher(
                     floors = levels,
                     selectedFloor = "1",
@@ -120,7 +120,7 @@ class KozmosFloorSwitcherSemanticsTest {
             closed.named("First floor").click!!.invoke()
         }
         val open = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSwitcher(
                     floors = levels,
                     selectedFloor = "1",
@@ -149,7 +149,7 @@ class KozmosFloorSwitcherSemanticsTest {
             KozmosFloorPresentation(id = "g", label = "Ground floor", shortLabel = "GF", disabled = true)
         )
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSwitcherColumn(
                     floors = floors,
                     selectedFloor = "1",
@@ -226,7 +226,7 @@ class KozmosFloorSwitcherSemanticsTest {
         // is written there: the docs' native snippets are compiled nowhere
         // else.
         val tree = paparazzi.readSemantics {
-            MaterialTheme { LevelSwitcher(selected = "G", visitorLevel = "G", onSelect = {}) }
+            KozmosMaterialTheme { LevelSwitcher(selected = "G", visitorLevel = "G", onSelect = {}) }
         }
         assertEquals(listOf("Ground, your level"), tree.merged.filter { it.click != null }.map { it.description })
     }

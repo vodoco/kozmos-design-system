@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -29,6 +28,7 @@ import com.kozmos.components.progress.KozmosProgressTrackAppearance
 import com.kozmos.components.progress.KozmosProgressPositionMode
 import com.kozmos.components.progress.KozmosProgressTrack
 import com.kozmos.components.progress.KozmosProgressMotion
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.*
@@ -43,7 +43,7 @@ class KozmosRailPixelsTest {
         // Animations off through the seam: Paparazzi drops a write to the
         // setting, so writing it drew with animations on.
         fun pixels(motion: KozmosProgressMotion) = paparazzi.drawn(frames) {
-            CompositionLocalProvider(LocalKozmosUseDarkTokens provides false, LocalKozmosAnimatorScale provides 0f) { MaterialTheme {
+            CompositionLocalProvider(LocalKozmosUseDarkTokens provides false, LocalKozmosAnimatorScale provides 0f) { KozmosMaterialTheme {
                 Box(Modifier.fillMaxSize().background(Color.White)) {
                     KozmosProgressTrack(KozmosProgressRange(0f, 0.8f), 0.2f, Modifier.width(300.dp),
                         KozmosProgressTrackAppearance.Gradient, motion = motion)
@@ -65,7 +65,7 @@ class KozmosRailPixelsTest {
             var rootWidth = 0
             val pixels = paparazzi.drawn(frames) {
                 CompositionLocalProvider(LocalLayoutDirection provides direction, LocalKozmosUseDarkTokens provides false) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         val view = LocalView.current
                         Box(Modifier.fillMaxSize().background(Color.White)) {
                             KozmosRouteProgressRail(progress, DirectionType.Walking, "Journey",
@@ -102,7 +102,7 @@ class KozmosRailPixelsTest {
     @Test fun waypointsAndCompletedTrackAreActuallyDrawn() {
         fun count(progress: Float?, completed: Boolean, points: List<KozmosRouteProgressWaypoint>, color: Int): Int {
             val pixels = paparazzi.drawn(frames) {
-                CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) { MaterialTheme {
+                CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) { KozmosMaterialTheme {
                     Box(Modifier.fillMaxSize().background(Color.White)) {
                         KozmosRouteProgressRail(progress, DirectionType.Left, "Journey", Modifier.width(300.dp),
                             waypoints = points, showCompletedTrack = completed)
@@ -133,7 +133,7 @@ class KozmosRailPixelsTest {
                 var rootWidth = 0
                 val pixels = paparazzi.drawn(frames) {
                     CompositionLocalProvider(LocalLayoutDirection provides direction, LocalKozmosUseDarkTokens provides false) {
-                        MaterialTheme {
+                        KozmosMaterialTheme {
                             val view = LocalView.current
                             Box(Modifier.fillMaxSize()) {
                               KozmosRouteProgressRail(progress, DirectionType.Left, "Journey",

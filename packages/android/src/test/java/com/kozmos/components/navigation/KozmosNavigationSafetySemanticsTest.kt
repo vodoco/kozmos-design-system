@@ -1,6 +1,5 @@
 package com.kozmos.components.navigation
 
-import androidx.compose.material3.MaterialTheme
 import com.kozmos.components.directionstep.DirectionType
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressRail
@@ -13,6 +12,7 @@ import com.kozmos.components.routinginputgroup.KozmosRoutePoint
 import com.kozmos.components.routinginputgroup.KozmosRoutingInputGroup
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosRouteOptionPresentation
 import com.kozmos.contracts.KozmosRoutePreference
 import com.kozmos.contracts.KozmosRouteReadiness
@@ -30,7 +30,7 @@ class KozmosNavigationSafetySemanticsTest {
 
     @Test fun populatedComboboxHasAFieldName() {
         var density = 1f
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             density = LocalDensity.current.density
             KozmosCombobox("", { _, _ -> }, "Lobby", {}, emptyList(), label = "From")
         } }
@@ -43,7 +43,7 @@ class KozmosNavigationSafetySemanticsTest {
 
     @Test fun endpointCaptionGrowsForLargeTextInsteadOfBreakingFrom() {
         var density = 1f
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             density = LocalDensity.current.density
             CompositionLocalProvider(LocalDensity provides Density(density, 2f)) {
                 KozmosItinerary("Lobby", emptyList(), "Gallery")
@@ -57,7 +57,7 @@ class KozmosNavigationSafetySemanticsTest {
     @Test fun routingActionsHaveReal48DpTargets() {
         var density = 1f
         val points = listOf(KozmosRoutePoint("a", "Lobby"), KozmosRoutePoint("b", "Gallery"))
-        val group = paparazzi.readSemantics { MaterialTheme {
+        val group = paparazzi.readSemantics { KozmosMaterialTheme {
             density = LocalDensity.current.density
             KozmosRoutingInputGroup(points, { _, _ -> }, onSwap = {}, onAddPoint = {})
         } }
@@ -66,13 +66,13 @@ class KozmosNavigationSafetySemanticsTest {
             assertTrue("$name width ${button.bounds.width / density}", button.bounds.width / density >= 48f)
             assertTrue("$name height ${button.bounds.height / density}", button.bounds.height / density >= 48f)
         }
-        val row = paparazzi.readSemantics { MaterialTheme {
+        val row = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosWayfindingInputRow("Lobby", {}, "Gallery", {}, {})
         } }
         val swap = row.named("Swap origin and destination")
         assertTrue(swap.bounds.width / density >= 48f)
         assertTrue(swap.bounds.height / density >= 48f)
-        val stops = paparazzi.readSemantics { MaterialTheme {
+        val stops = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosRoutingInputGroup(listOf(points[0], KozmosRoutePoint("stop", "Cafe", label = "Stop"), points[1]), { _, _ -> }, onRemovePoint = {})
         } }
         val remove = stops.named("Remove Stop")
@@ -81,7 +81,7 @@ class KozmosNavigationSafetySemanticsTest {
     }
 
     @Test fun unknownRailDoesNotAnnounceZeroAndAcceptsLocalizedDescription() {
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosRouteProgressRail(null, DirectionType.Left, "Journey", valueText = "Position unbekannt")
         } }
         val rail = tree.named("Journey")
@@ -90,7 +90,7 @@ class KozmosNavigationSafetySemanticsTest {
     }
 
     @Test fun coincidentWaypointsKeepEveryLocalizedDescription() {
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosRouteProgressRail(null, DirectionType.Left, "Journey", waypoints = listOf(
                 KozmosRouteProgressWaypoint("a", 0.5f, DirectionType.Left, "Gallery entrance"),
                 KozmosRouteProgressWaypoint("b", 0.5f, DirectionType.Right, "Turn right into gallery")
@@ -103,14 +103,14 @@ class KozmosNavigationSafetySemanticsTest {
         val step = KozmosItineraryStep("a", "Turn left", DirectionType.Left, duration = "0 min")
         assertEquals("0 min", step.copy(isCurrent = true).duration)
         assertNotEquals(step, step.copy(duration = "1 min"))
-        val tree = paparazzi.readSemantics { MaterialTheme { KozmosItinerary("A", listOf(step), "B") } }
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme { KozmosItinerary("A", listOf(step), "B") } }
         assertTrue(tree.unmerged.flatMap { it.texts }.contains("0 min"))
         assertNotNull(tree.named("Turn left, 0 min"))
     }
 
     @Test fun durationOnlyHasNoOrphanSeparator() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme { KozmosDirectionStep(DirectionType.Left, "Turn left", duration = "0 min") }
+            KozmosMaterialTheme { KozmosDirectionStep(DirectionType.Left, "Turn left", duration = "0 min") }
         }
         assertTrue(tree.unmerged.flatMap { it.texts }.contains("0 min"))
         assertFalse(tree.unmerged.flatMap { it.texts }.any { it.trim().startsWith("•") })
@@ -118,7 +118,7 @@ class KozmosNavigationSafetySemanticsTest {
 
     @Test fun populatedRouteFieldsHaveIndependentNames() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosRoutingInputGroup(listOf(KozmosRoutePoint("a", "Lobby"), KozmosRoutePoint("b", "Gate")), { _, _ -> })
             }
         }
@@ -130,7 +130,7 @@ class KozmosNavigationSafetySemanticsTest {
         val option = KozmosRouteOptionPresentation("quickest", "Quickest", 240.0, "4 min", 150.0, "150 m", KozmosRoutePreference.Quickest, selected = true)
         for (status in listOf(KozmosRouteReadiness.Calculating, KozmosRouteReadiness.Error, KozmosRouteReadiness.NoRoute)) {
             val tree = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosRoutePreviewPanel("Gate", listOf(option), status, "Back", "Continue", {}, {}, {})
                 }
             }
@@ -142,7 +142,7 @@ class KozmosNavigationSafetySemanticsTest {
     @Test fun ambiguousRouteSnapshotsCannotContinue() {
         val first = KozmosRouteOptionPresentation("a", "Quickest", 240.0, "4 min", 150.0, "150 m", KozmosRoutePreference.Quickest, selected = true)
         for (options in listOf(listOf(first, first.copy(id = "b")), listOf(first, first.copy(selected = false)))) {
-            val tree = paparazzi.readSemantics { MaterialTheme {
+            val tree = paparazzi.readSemantics { KozmosMaterialTheme {
                 KozmosRoutePreviewPanel("Gallery", options, KozmosRouteReadiness.Ready, "Back", "Continue", {}, {}, {})
             } }
             assertFalse(tree.merged.single { "Continue" in it.texts && it.click != null }.enabled)
@@ -150,7 +150,7 @@ class KozmosNavigationSafetySemanticsTest {
     }
 
     @Test fun multipleCurrentStepsAreNotChosen() {
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosItinerary("A", listOf(
                 KozmosItineraryStep("a", "Left", DirectionType.Left, isCurrent = true),
                 KozmosItineraryStep("b", "Right", DirectionType.Right, isCurrent = true)

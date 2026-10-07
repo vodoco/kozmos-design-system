@@ -1,12 +1,12 @@
 package com.kozmos.components.spinner
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import com.kozmos.components.live
 import com.kozmos.components.motion.LocalKozmosAnimatorScale
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -27,7 +27,7 @@ class KozmosSpinnerMotionTest {
         var draws = 0
         var counted = -1
         paparazzi.live(content = {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 CompositionLocalProvider(LocalKozmosAnimatorScale provides scale) {
                     KozmosSpinner(modifier = Modifier.drawWithContent { draws++; drawContent() })
                 }

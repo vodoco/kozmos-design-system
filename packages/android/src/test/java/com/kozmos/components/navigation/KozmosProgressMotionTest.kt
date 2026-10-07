@@ -1,7 +1,6 @@
 package com.kozmos.components.navigation
 
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -18,6 +17,7 @@ import com.kozmos.components.progress.KozmosProgressMotion
 import com.kozmos.components.progress.KozmosProgressRange
 import com.kozmos.components.progress.KozmosProgressTrack
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
@@ -44,7 +44,7 @@ class KozmosProgressMotionTest {
 
     @Test fun directionalMotionLetsAComposeUiTestGoIdle() {
         val policy = TestPolicy()
-        paparazzi.live(effectContext = policy, content = { MaterialTheme { Track() } }) {
+        paparazzi.live(effectContext = policy, content = { KozmosMaterialTheme { Track() } }) {
             frames(5)
             // Let every coroutine resumed by the last frame run before looking.
             repeat(3) { yield() }
@@ -60,7 +60,7 @@ class KozmosProgressMotionTest {
      */
     @Test fun withAnimationsOffTheCueRunsNoClock() {
         for (scale in listOf(1f, 0f)) {
-            paparazzi.live(content = { MaterialTheme {
+            paparazzi.live(content = { KozmosMaterialTheme {
                 CompositionLocalProvider(LocalKozmosAnimatorScale provides scale) { Track() }
             } }) {
                 frames(5)
@@ -77,7 +77,7 @@ class KozmosProgressMotionTest {
                 val registry = LifecycleRegistry.createUnsafe(this).apply { currentState = state }
                 override val lifecycle: Lifecycle get() = registry
             }
-            paparazzi.live(content = { MaterialTheme {
+            paparazzi.live(content = { KozmosMaterialTheme {
                 CompositionLocalProvider(LocalLifecycleOwner provides owner) { Track() }
             } }) {
                 frames(5)
@@ -89,7 +89,7 @@ class KozmosProgressMotionTest {
 
     @Test fun directionalMotionRedrawsWithoutRecomposing() {
         var draws = 0
-        paparazzi.live(content = { MaterialTheme { Track(Modifier.drawWithContent { draws++; drawContent() }) } }) {
+        paparazzi.live(content = { KozmosMaterialTheme { Track(Modifier.drawWithContent { draws++; drawContent() }) } }) {
             frames(5)
             val composed = recompositions
             val drawn = draws

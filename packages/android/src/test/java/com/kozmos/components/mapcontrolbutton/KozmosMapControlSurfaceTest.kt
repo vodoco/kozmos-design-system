@@ -26,6 +26,7 @@ import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
@@ -102,7 +103,7 @@ class KozmosMapControlSurfaceTest {
                                 )
                             }
                         }
-                ) { content() }
+                ) { KozmosMaterialTheme { content() } }
             }
         }
         return Board(pixels, parts, pixels.width / root.width, density)

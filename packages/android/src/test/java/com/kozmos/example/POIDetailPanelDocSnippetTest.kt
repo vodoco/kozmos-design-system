@@ -2,11 +2,11 @@ package com.kozmos.example
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosTravelEstimatePresentation
@@ -30,7 +30,7 @@ class POIDetailPanelDocSnippetTest {
     fun theDocsExampleShowsTheWalkAndBooks() {
         val booked = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(Modifier.width(360.dp)) {
                     PlaceDetails(
                         poi = KozmosPOIPresentation(

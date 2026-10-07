@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -41,7 +42,9 @@ class KozmosSkeletonTest {
             val device = LocalDensity.current
             density = device.density
             CompositionLocalProvider(LocalDensity provides Density(device.density, fontScale)) {
-                Box(Modifier.width(300.dp)) { content(Modifier.onGloballyPositioned { size = it.size }) }
+                KozmosMaterialTheme {
+                    Box(Modifier.width(300.dp)) { content(Modifier.onGloballyPositioned { size = it.size }) }
+                }
             }
         }
         return size.width / density to size.height / density

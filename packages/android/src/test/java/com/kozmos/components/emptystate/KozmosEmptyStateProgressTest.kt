@@ -1,8 +1,8 @@
 package com.kozmos.components.emptystate
 
-import androidx.compose.material3.MaterialTheme
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -14,7 +14,7 @@ class KozmosEmptyStateProgressTest {
 
     @Test fun theBarIsOneNodeNamedByItsLabelWithItsValue() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosEmptyState(
                     title = "The assistant isn't downloaded yet",
                     description = "It works offline once it's on this device.",
@@ -30,7 +30,7 @@ class KozmosEmptyStateProgressTest {
 
     @Test fun thePercentageIsSaidWithoutWords() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosEmptyState(title = "Downloading", progress = KozmosEmptyStateProgress(0.4f, "Downloading the assistant"))
             }
         }
@@ -41,7 +41,7 @@ class KozmosEmptyStateProgressTest {
     @Test fun thePercentageIsRoundedToTheNearest() {
         for ((value, said) in listOf(0.999f to "100%", 0.994f to "99%", 0.006f to "1%")) {
             val tree = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosEmptyState(title = "Downloading", progress = KozmosEmptyStateProgress(value, "Downloading the assistant"))
                 }
             }
@@ -52,7 +52,7 @@ class KozmosEmptyStateProgressTest {
     // As on React: NaN is none done, never a crash. roundToInt throws on NaN.
     @Test fun aValueThatIsNotANumberIsNoneDone() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosEmptyState(title = "Downloading", progress = KozmosEmptyStateProgress(Float.NaN, "Downloading the assistant"))
             }
         }
@@ -62,7 +62,7 @@ class KozmosEmptyStateProgressTest {
     }
 
     @Test fun noProgressDrawsNoBar() {
-        val tree = paparazzi.readSemantics { MaterialTheme { KozmosEmptyState(title = "No results") } }
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme { KozmosEmptyState(title = "No results") } }
         assertTrue(tree.merged.none { it.progressRange != null })
     }
 }

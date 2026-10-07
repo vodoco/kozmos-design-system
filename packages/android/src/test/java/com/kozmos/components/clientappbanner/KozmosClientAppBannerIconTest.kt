@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,6 +15,7 @@ import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
@@ -61,7 +61,7 @@ class KozmosClientAppBannerIconTest {
             width = LocalConfiguration.current.screenWidthDp
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
                 fill(KozmosThemeTokens.primitivesColorsBackground100.argb())
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.fillMaxSize().background(Color.Magenta)) {
                         Box(Modifier.offset(20.dp, 20.dp)) {
                             ClientAppBannerIconFace(initial = "N", loaded = loaded) {

@@ -5,7 +5,6 @@ import android.text.style.LocaleSpan
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
@@ -17,6 +16,7 @@ import androidx.compose.ui.text.AnnotatedString
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.KozmosDirectionStep
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosInstructionPart
 import com.kozmos.contracts.KozmosInstructionPartRole
 import com.kozmos.components.itinerary.KozmosItinerary
@@ -47,7 +47,7 @@ class KozmosInstructionPartsTest {
                     .flatMap { it.config.getOrNull(SemanticsProperties.Text).orEmpty() }
                     .firstOrNull { it.text == sentence }
             }) {
-                MaterialTheme { KozmosDirectionStep(DirectionType.Right, parts) }
+                KozmosMaterialTheme { KozmosDirectionStep(DirectionType.Right, parts) }
             }
         }
         assertNotNull(actual)
@@ -95,7 +95,7 @@ class KozmosInstructionPartsTest {
                         activation = view.accessibilityNodeProvider.performAction(node.id, AccessibilityNodeInfo.ACTION_CLICK, null)
                     }
                 }) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         when (kind) {
                             0 -> KozmosDirectionStep(DirectionType.Right, parts)
                             1 -> KozmosItinerary("Start", listOf(KozmosItineraryStep("one", parts, DirectionType.Right, true)), "End")
@@ -133,7 +133,7 @@ class KozmosInstructionPartsTest {
                     // The card's explicit surface wins over its ancestor's contrary value.
                     CompositionLocalProvider(LocalKozmosSurfaceStyle provides
                         if (surface == KozmosSurfaceStyle.Glass) KozmosSurfaceStyle.Solid else KozmosSurfaceStyle.Glass) {
-                        MaterialTheme { KozmosManoeuvreCard(DirectionType.Right, parts, false, {}, appearance = com.kozmos.components.manoeuvrecard.KozmosManoeuvreAppearance.Background, surface = surface) {} }
+                        KozmosMaterialTheme { KozmosManoeuvreCard(DirectionType.Right, parts, false, {}, appearance = com.kozmos.components.manoeuvrecard.KozmosManoeuvreAppearance.Background, surface = surface) {} }
                     }
                 }
             }

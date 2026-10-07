@@ -2,7 +2,6 @@ package com.kozmos.components.poiresultcard
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -19,6 +18,7 @@ import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import org.junit.Assert.assertEquals
@@ -57,7 +57,7 @@ class KozmosPOIResultDirectionTest {
                     }.toMap()
             }) {
                 CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                    MaterialTheme { Box(Modifier.width(320.dp)) { content() } }
+                    KozmosMaterialTheme { Box(Modifier.width(320.dp)) { content() } }
                 }
             }
         }

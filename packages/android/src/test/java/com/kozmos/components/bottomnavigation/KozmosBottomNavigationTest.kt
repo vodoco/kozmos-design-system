@@ -5,7 +5,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +20,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosTypography
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -44,7 +44,7 @@ class KozmosBottomNavigationTest {
         val sizes = mutableMapOf<String, Float>()
         paparazzi.snapshot {
             val view = LocalView.current
-            MaterialTheme(typography = KozmosTypography.typography()) {
+            KozmosMaterialTheme(typography = KozmosTypography.typography()) {
                 Box(
                     Modifier.onGloballyPositioned {
                         val nodes = (view as ViewRootForTest).semanticsOwner.unmergedRootSemanticsNode.flatten()

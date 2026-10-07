@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -58,11 +59,13 @@ class KozmosContainerInsetTest {
         var density = 1f
         val tree = paparazzi.readSemantics {
             density = LocalDensity.current.density
-            Row(Modifier.requiredWidth(808.dp).height(IntrinsicSize.Min).semantics { contentDescription = "row" }) {
-                KozmosContainer(KozmosContainerInset.Window, Modifier.weight(1f).semantics { contentDescription = "container" }) {
-                    Box(Modifier.fillMaxWidth().height(40.dp).semantics { contentDescription = "probe" })
+            KozmosMaterialTheme {
+                Row(Modifier.requiredWidth(808.dp).height(IntrinsicSize.Min).semantics { contentDescription = "row" }) {
+                    KozmosContainer(KozmosContainerInset.Window, Modifier.weight(1f).semantics { contentDescription = "container" }) {
+                        Box(Modifier.fillMaxWidth().height(40.dp).semantics { contentDescription = "probe" })
+                    }
+                    Box(Modifier.width(8.dp).fillMaxHeight().semantics { contentDescription = "rule" })
                 }
-                Box(Modifier.width(8.dp).fillMaxHeight().semantics { contentDescription = "rule" })
             }
         }
         val container = tree.named("container").frame
@@ -84,9 +87,11 @@ class KozmosContainerInsetTest {
             var density = 1f
             val tree = paparazzi.readSemantics {
                 density = LocalDensity.current.density
-                Column(Modifier.requiredWidth(IntrinsicSize.Max).semantics { contentDescription = "column" }) {
-                    KozmosContainer(KozmosContainerInset.Window) {
-                        Box(Modifier.width(content).height(40.dp).semantics { contentDescription = "probe" })
+                KozmosMaterialTheme {
+                    Column(Modifier.requiredWidth(IntrinsicSize.Max).semantics { contentDescription = "column" }) {
+                        KozmosContainer(KozmosContainerInset.Window) {
+                            Box(Modifier.width(content).height(40.dp).semantics { contentDescription = "probe" })
+                        }
                     }
                 }
             }
@@ -108,7 +113,9 @@ class KozmosContainerInsetTest {
             val probe = @Composable {
                 Box(Modifier.fillMaxWidth().height(40.dp).semantics { contentDescription = "probe" })
             }
-            if (inset == null) KozmosContainer(modifier) { probe() } else KozmosContainer(inset, modifier) { probe() }
+            KozmosMaterialTheme {
+                if (inset == null) KozmosContainer(modifier) { probe() } else KozmosContainer(inset, modifier) { probe() }
+            }
         }
         val container = tree.named("container").frame
         val probe = tree.named("probe").frame

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +28,7 @@ import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.icon
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import com.kozmos.utils.KozmosNavigationGlyphs
@@ -68,7 +68,7 @@ class KozmosDirectionGlyphPixelsTest {
         var rootWidth = 0
         val pixels = paparazzi.drawn(frames) {
             CompositionLocalProvider(LocalLayoutDirection provides direction, LocalKozmosUseDarkTokens provides false) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     val view = LocalView.current
                     Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
                         Icon(vector, contentDescription = null, tint = Color(tint), modifier = modifier.size(size)

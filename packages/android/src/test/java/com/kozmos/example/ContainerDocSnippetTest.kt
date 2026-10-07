@@ -9,6 +9,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.docsnippets.VenueOverview
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -28,7 +29,9 @@ class ContainerDocSnippetTest {
         var density = 1f
         val tree = paparazzi.readSemantics {
             density = LocalDensity.current.density
-            Box(Modifier.requiredWidth(1100.dp).semantics { contentDescription = "host" }) { VenueOverview() }
+            KozmosMaterialTheme {
+                Box(Modifier.requiredWidth(1100.dp).semantics { contentDescription = "host" }) { VenueOverview() }
+            }
         }
         val host = tree.named("host").frame
         val text = tree.merged.single { "Venue overview" in it.texts }.frame

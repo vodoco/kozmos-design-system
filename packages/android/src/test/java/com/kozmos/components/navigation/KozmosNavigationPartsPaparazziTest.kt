@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -94,7 +93,7 @@ class KozmosNavigationPartsPaparazziTest {
     @Test
     fun theClosedCard() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.padding(24.dp).width(360.dp)) {
                     KozmosManoeuvreCard(
                         type = DirectionType.Straight,
@@ -112,7 +111,7 @@ class KozmosNavigationPartsPaparazziTest {
     @Test
     fun theOpenCardHugsItsItinerary() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.padding(24.dp).width(360.dp)) {
                     KozmosManoeuvreCard(
                         type = DirectionType.Straight,
@@ -131,7 +130,7 @@ class KozmosNavigationPartsPaparazziTest {
     @Test
     fun theRailAndTheNavigationSummary() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(modifier = Modifier.padding(24.dp).width(360.dp)) {
                     KozmosRouteProgressRail(progress = 0.5f, type = DirectionType.Left, label = "Step 2 of 4")
                     KozmosRouteProgressRail(progress = 0.84f, type = DirectionType.Destination, label = "Step 4 of 4", modifier = Modifier.padding(top = 16.dp))

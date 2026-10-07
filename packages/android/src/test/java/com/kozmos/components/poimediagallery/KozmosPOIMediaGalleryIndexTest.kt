@@ -4,7 +4,6 @@ import android.view.MotionEvent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -17,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.LiveSemantics
 import com.kozmos.components.live
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIMediaPresentation
 import kotlin.math.abs
 import org.junit.Assert.assertEquals
@@ -74,7 +74,7 @@ class KozmosPOIMediaGalleryIndexTest {
         direction: LayoutDirection = LayoutDirection.Ltr,
         onActiveIndexChange: ((Int) -> Unit)? = null
     ) {
-        MaterialTheme {
+        KozmosMaterialTheme {
             CompositionLocalProvider(LocalLayoutDirection provides direction) {
                 Box(Modifier.padding(16.dp).width(328.dp)) {
                     KozmosPOIMediaGallery(

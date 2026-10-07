@@ -2,7 +2,6 @@ package com.kozmos.components.poidetailpanel
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -15,6 +14,7 @@ import com.kozmos.components.ReadNode
 import com.kozmos.components.ReadSemantics
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIPresentation
 import org.junit.Assert.assertEquals
@@ -70,7 +70,7 @@ class KozmosPOIDetailPanelHeaderTest {
     ): ReadSemantics = paparazzi.readSemantics {
         density = LocalDensity.current.density
         CompositionLocalProvider(LocalLayoutDirection provides direction) {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.width(width)) {
                     KozmosPOIDetailPanel(
                         poi = place,

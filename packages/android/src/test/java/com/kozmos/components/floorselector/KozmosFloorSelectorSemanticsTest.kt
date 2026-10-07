@@ -1,9 +1,9 @@
 package com.kozmos.components.floorselector
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosFloorPresentation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,7 +26,7 @@ class KozmosFloorSelectorSemanticsTest {
     @Test
     fun existingPositionalCountFormatterCallStillCompilesWithCountsOff() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 // The 0.6.0 positional signature, including its last lambda.
                 KozmosFloorSelector(
                     resultLevels, "1", {}, Modifier,
@@ -43,7 +43,7 @@ class KozmosFloorSelectorSemanticsTest {
     fun unknownSelectionCannotEmitAFabricatedFloorChoice() {
         val selected = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSelector(
                     floors = listOf("2", "1", "G"),
                     selectedFloor = "missing",
@@ -66,7 +66,7 @@ class KozmosFloorSelectorSemanticsTest {
     fun theStepperTakesTheProductsNames() {
         val selected = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSelector(
                     floors = listOf("2", "1", "G"),
                     selectedFloor = "1",
@@ -91,7 +91,7 @@ class KozmosFloorSelectorSemanticsTest {
         // The words these buttons always said, which React and SwiftUI say
         // too; a product that passes none here hears nothing new.
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSelector(
                     floors = listOf("2", "1", "G"),
                     selectedFloor = "1",
@@ -119,7 +119,7 @@ class KozmosFloorSelectorSemanticsTest {
     fun suppliedResultCountsAreOffByDefault() {
         for (variant in listOf(KozmosFloorSelectorVariant.VerticalList, KozmosFloorSelectorVariant.HorizontalList)) {
             val tree = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosFloorSelector(floors = resultLevels, selectedFloor = "1", onFloorSelect = {}, variant = variant)
                 }
             }
@@ -132,7 +132,7 @@ class KozmosFloorSelectorSemanticsTest {
     fun theListsSayWhereTheResultsAre() {
         for (variant in listOf(KozmosFloorSelectorVariant.VerticalList, KozmosFloorSelectorVariant.HorizontalList)) {
             val tree = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosFloorSelector(
                         floors = resultLevels,
                         selectedFloor = "1",
@@ -163,7 +163,7 @@ class KozmosFloorSelectorSemanticsTest {
         // It shows one level at a time, so a marker on the level already in
         // view says nothing — and what is not drawn is not said.
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSelector(
                     floors = resultLevels,
                     selectedFloor = "2",
@@ -180,7 +180,7 @@ class KozmosFloorSelectorSemanticsTest {
     @Test
     fun theCountIsSaidInEnglishUntilTheProductSaysOtherwise() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSelector(
                     showResultCounts = true,
                     floors = resultLevels + KozmosFloorPresentation(id = "4", label = "Level 4", shortLabel = "4", resultCount = 1),
@@ -199,7 +199,7 @@ class KozmosFloorSelectorSemanticsTest {
         // had to double as what the buttons show and what TalkBack says.
         val selected = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSelector(
                     floors = listOf(
                         KozmosFloorPresentation(id = "b:2", label = "Second Floor", shortLabel = "L2"),
@@ -227,12 +227,12 @@ class KozmosFloorSelectorSemanticsTest {
             KozmosFloorPresentation(id = "1", label = "Level 1", shortLabel = "1")
         )
         val list = paparazzi.readSemantics {
-            MaterialTheme { KozmosFloorSelector(floors = floors, selectedFloor = "3", onFloorSelect = { selected += it }) }
+            KozmosMaterialTheme { KozmosFloorSelector(floors = floors, selectedFloor = "3", onFloorSelect = { selected += it }) }
         }
         assertFalse(list.named("Level 2").enabled)
 
         val stepper = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSelector(
                     floors = floors,
                     selectedFloor = "3",

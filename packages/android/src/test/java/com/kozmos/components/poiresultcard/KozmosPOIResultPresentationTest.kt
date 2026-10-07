@@ -2,7 +2,6 @@ package com.kozmos.components.poiresultcard
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -14,6 +13,7 @@ import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.*
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.*
@@ -38,7 +38,7 @@ class KozmosPOIResultPresentationTest {
                 CompositionLocalProvider(LocalDensity provides Density(density, scale),
                     LocalLayoutDirection provides if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
                     LocalKozmosUseDarkTokens provides dark) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         Box(Modifier.width(320.dp)) {
                             KozmosPOIResultList(items = listOf(KozmosPOIResultListItem(poi, result)),
                                 resultCountLabel = "1 result", numbered = true, onSelect = { selected++ },

@@ -3,6 +3,7 @@ package com.kozmos.components.userlocationmarker
 import androidx.compose.ui.semantics.Role
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -21,13 +22,13 @@ class KozmosUserLocationMarkerSemanticsTest {
 
     @Test
     fun theMarkerIsAnImageNamedInEnglishByDefault() {
-        val tree = paparazzi.readSemantics { KozmosUserLocationMarker() }
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme { KozmosUserLocationMarker() } }
         assertEquals(Role.Image, tree.named("User location").role)
     }
 
     @Test
     fun theProductNamesTheMarker() {
-        val tree = paparazzi.readSemantics { KozmosUserLocationMarker(label = "Ihr Standort") }
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme { KozmosUserLocationMarker(label = "Ihr Standort") } }
 
         assertEquals(Role.Image, tree.named("Ihr Standort").role)
         assertTrue(tree.names().none { it == "User location" })

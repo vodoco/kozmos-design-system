@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import com.kozmos.components.ReadSemantics
 import com.kozmos.components.floorselector.KozmosFloorSelector
@@ -22,6 +21,7 @@ import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosFloorPresentation
 import com.kozmos.contracts.KozmosPOIAccessRestrictions
 import com.kozmos.contracts.KozmosPOIAction
@@ -65,7 +65,7 @@ class ReleasedParameterOrderTest {
     @Test
     fun theMapControlsTakeTheirReleasedOrder() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosMapControlsGroup(
                     Modifier,
                     45f,
@@ -102,7 +102,7 @@ class ReleasedParameterOrderTest {
     @Test
     fun theZoomLabelsStayTheZoomLabels() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosMapControlsGroup(
                     Modifier, 0f, {}, {}, null, null,
                     KozmosMapControlButtonPresentation.IconOnly, "Mich finden", null, "Hineinzoomen"
@@ -115,7 +115,7 @@ class ReleasedParameterOrderTest {
     @Test
     fun theMapControlTakesItsReleasedOrder() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosMapControlButton(
                     "Stufenlos",
                     {},
@@ -149,7 +149,7 @@ class ReleasedParameterOrderTest {
     fun theResultCardTakesItsReleasedOrderAndItsTrailingLambda() {
         val pressed = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column {
                     KozmosPOIResultCard(
                         cafe,
@@ -183,7 +183,7 @@ class ReleasedParameterOrderTest {
     @Test
     fun theFloorSelectorTakesItsReleasedOrderAndItsTrailingLambda() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column {
                     KozmosFloorSelector(
                         levels,
@@ -220,7 +220,7 @@ class ReleasedParameterOrderTest {
     @Test
     fun theResultListTakesItsReleasedOrder() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultList(
                     listOf(KozmosPOIResultListItem(cafe, selected)),
                     "1 Ergebnis",
@@ -250,7 +250,7 @@ class ReleasedParameterOrderTest {
         val pressed = mutableListOf<String>()
         var closed = 0
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIDetailPanel(
                     KozmosPOIPresentation(
                         id = "cafe",

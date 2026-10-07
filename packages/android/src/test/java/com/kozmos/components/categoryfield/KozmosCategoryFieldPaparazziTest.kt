@@ -10,12 +10,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -35,14 +35,14 @@ class KozmosCategoryFieldPaparazziTest {
 
     @Test
     fun theFieldTakesTheCategorysColour() {
-        paparazzi.snapshot { MaterialTheme { TwoFields() } }
+        paparazzi.snapshot { KozmosMaterialTheme { TwoFields() } }
     }
 
     @Test
     fun theFieldReadsInDarkMode() {
         paparazzi.snapshot {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides true) {
-                MaterialTheme { TwoFields() }
+                KozmosMaterialTheme { TwoFields() }
             }
         }
     }

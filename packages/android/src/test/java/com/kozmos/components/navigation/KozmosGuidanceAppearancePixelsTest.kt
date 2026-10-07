@@ -1,7 +1,6 @@
 package com.kozmos.components.navigation
 
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
@@ -17,6 +16,7 @@ import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
 import com.kozmos.components.manoeuvrecard.KozmosManoeuvreAppearance
 import com.kozmos.components.surface.LocalKozmosSurfaceStyle
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.KozmosColorsDark
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -41,7 +41,7 @@ class KozmosGuidanceAppearancePixelsTest {
             var effectiveSurface: KozmosSurfaceStyle? = null
             paparazzi.drawn(frames) {
                 CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         KozmosManoeuvreCard(DirectionType.Left, "Left", true, {}, appearance,
                             modifier = Modifier.width(320.dp), surface = KozmosSurfaceStyle.Glass) {
                             contentColor = LocalContentColor.current.toArgb()
@@ -79,7 +79,7 @@ class KozmosGuidanceAppearancePixelsTest {
         for (dark in listOf(false, true)) {
             val pixels = paparazzi.drawn(frames) {
                 CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         KozmosManoeuvreCard(DirectionType.Straight, "Continue", false, {},
                             modifier = Modifier.width(320.dp)) {}
                     }
@@ -101,7 +101,7 @@ class KozmosGuidanceAppearancePixelsTest {
             var contentColor: Int? = null
             val pixels = paparazzi.drawn(frames) {
                 CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         KozmosManoeuvreCard(DirectionType.Straight, "Continue", true, {},
                             modifier = Modifier.width(320.dp), surface = surface) {
                             effectiveSurface = LocalKozmosSurfaceStyle.current
@@ -122,7 +122,7 @@ class KozmosGuidanceAppearancePixelsTest {
     @Test fun anExplicitAppearanceWinsOverTheSurface() {
         val pixels = paparazzi.drawn(frames) {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosManoeuvreCard(DirectionType.Straight, "Continue", false, {}, KozmosManoeuvreAppearance.Theme,
                         modifier = Modifier.width(320.dp), surface = KozmosSurfaceStyle.Glass) {}
                 }

@@ -3,7 +3,6 @@ package com.kozmos.components.floorselector
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,6 +14,7 @@ import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlSize
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosFloorPresentation
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.KozmosThemeTokens
@@ -56,7 +56,7 @@ class KozmosFloorSwitcherPixelsTest {
 
     private fun drawn(content: @Composable () -> Unit): DrawnPixels = paparazzi.drawn(frames) {
         CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(Modifier.background(KozmosThemeTokens.semanticsSurface0).padding(16.dp)) { content() }
             }
         }
@@ -148,7 +148,7 @@ class KozmosFloorSwitcherPixelsTest {
         val edge = KozmosColors.semanticsBorderSubtle.toArgb()
         val pixels = paparazzi.drawn(frames) {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.background(Color.Black).padding(16.dp)) {
                         KozmosFloorSwitcherColumn(
                             floors = levels,

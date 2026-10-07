@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -22,6 +21,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosMapCollisionInsets
 import com.kozmos.contracts.KozmosMapReadiness
 import com.kozmos.components.live
@@ -51,7 +51,7 @@ class BottomControlsTest {
     @Test fun bothControlRegionsHaveNamesAndKeepTheirChildren() {
         var presses = 0
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 600.dp),
                     controls = { Box(Modifier.size(44.dp).clickable { presses++ }.semantics { contentDescription = "Locate" }) },
                     controlsBottomStart = { Box(Modifier.size(44.dp).clickable { presses++ }.semantics { contentDescription = "Language" }) },
@@ -67,7 +67,7 @@ class BottomControlsTest {
 
     @Test fun controlNamesCanBeLocalized() {
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 600.dp),
                     controlsLabel = "Kartensteuerung", bottomControlsLabel = "Weitere Kartensteuerung",
                     controls = { Box(Modifier.size(44.dp).semantics { contentDescription = "Locate" }) },
@@ -80,7 +80,7 @@ class BottomControlsTest {
 
     @Test fun absentControlsDoNotCreateEmptyContainers() {
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme { KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 600.dp)) }
+            KozmosMaterialTheme { KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 600.dp)) }
         }
         assertFalse(tree.names().contains("Map controls"))
         assertFalse(tree.names().contains("Map corner controls"))
@@ -88,7 +88,7 @@ class BottomControlsTest {
 
     @Test fun cornerPositionalSignatureAndTrailingCallbackStillCompile() {
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell({}, Modifier.size(360.dp, 300.dp), "Positional map", KozmosMapReadiness.Ready,
                     null, null, null, null, null, "Details", KozmosMapPanelPlacement.End,
                     KozmosMapCollisionInsets.Zero, null, com.kozmos.components.surface.KozmosSurfaceStyle.Solid,
@@ -101,7 +101,7 @@ class BottomControlsTest {
     @Test fun existingPositionalSignatureStillCompilesAndMounts() {
         val onDetent: (KozmosMapPanelDetent) -> Unit = {}
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     {}, Modifier.size(360.dp, 300.dp), "Legacy map", KozmosMapReadiness.Ready,
                     null, null, null, null, null, "Details", KozmosMapPanelPlacement.End,
@@ -122,7 +122,7 @@ class BottomControlsTest {
 
     @Test fun outOfRoomControlsAreNotExposedToAccessibility() {
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     modifier = Modifier.size(360.dp, 120.dp), map = {},
                     controlsBottomStart = { Box(Modifier.size(220.dp, 44.dp).semantics { contentDescription = "start" }) },
@@ -137,7 +137,7 @@ class BottomControlsTest {
 
     @Test fun hiddenLegacyControlsDoNotLeaveANamedContainer() {
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(map = {}, modifier = Modifier.size(360.dp, 40.dp),
                     controls = { Box(Modifier.size(44.dp).semantics { contentDescription = "Locate" }) },
                     attribution = { Box(Modifier.size(100.dp, 20.dp)) })
@@ -158,7 +158,7 @@ class BottomControlsTest {
             val tree = paparazzi.readSettledSemantics {
                 density = LocalDensity.current.density
                 CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         KozmosAdaptiveMapShell(
                             modifier = Modifier.size(1000.dp, 600.dp), map = {},
                             panelPlacement = KozmosMapPanelPlacement.Start,
@@ -184,7 +184,7 @@ class BottomControlsTest {
     @Test fun attributionClearsLargePanelRTL() = attributionLayout(LayoutDirection.Rtl, KozmosMapPanelDetent.Large)
     @Test fun fullSheetDoesNotExposeControlsOverAttribution() {
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     modifier = Modifier.size(360.dp, 720.dp), map = {},
                     attribution = { Box(Modifier.size(280.dp, 64.dp)) },
@@ -202,7 +202,7 @@ class BottomControlsTest {
         paparazzi.unsafeUpdateConfig(deviceConfig = app.cash.paparazzi.DeviceConfig.PIXEL_C)
         val tree = paparazzi.readSettledSemantics {
             CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosAdaptiveMapShell(
                         modifier = Modifier.size(1000.dp, 600.dp), map = {},
                         attribution = { Box(Modifier.size(280.dp, 64.dp).semantics { contentDescription = "credits" }) },
@@ -220,7 +220,7 @@ class BottomControlsTest {
     @Test fun attributionCappedLargeSheetHandleCyclesFromItsActualDetent() {
         var requested: KozmosMapPanelDetent? = null
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     modifier = Modifier.size(360.dp, 720.dp), map = {},
                     attribution = { Box(Modifier.size(280.dp, 64.dp)) },
@@ -244,7 +244,7 @@ class BottomControlsTest {
     @Test fun squeezedLogoAloneLeavesWithNoRoom() = squeezedAttribution(660, hasCredits = false, logoShown = false)
     private fun squeezedAttribution(barHeight: Int, hasCredits: Boolean, logoShown: Boolean) {
         val tree = paparazzi.readSettledSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     modifier = Modifier.size(390.dp, 720.dp), map = {},
                     topBar = { Box(Modifier.fillMaxWidth().height(barHeight.dp)) },
@@ -280,7 +280,7 @@ class BottomControlsTest {
         var barHeight by mutableStateOf(300)
         // In a box, so the shell takes its own size rather than the window's.
         paparazzi.live(durationMillis = 15000, content = { Box {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     modifier = Modifier.size(390.dp, 720.dp), map = {},
                     topBar = { Box(Modifier.fillMaxWidth().height(barHeight.dp).semantics { contentDescription = "bar" }) },
@@ -337,7 +337,7 @@ class BottomControlsTest {
         paparazzi.live(content = { Box {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosAdaptiveMapShell(
                         modifier = Modifier.size(width, 720.dp), map = {},
                         // Half the band under the card is what the panel leaves the attribution:
@@ -387,7 +387,7 @@ class BottomControlsTest {
                 val tree = paparazzi.readSettledSemantics {
                     density = LocalDensity.current.density
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                        MaterialTheme {
+                        KozmosMaterialTheme {
                             KozmosAdaptiveMapShell(
                                 modifier = Modifier.size(360.dp, 720.dp), map = {},
                                 attribution = { Box(Modifier.size(280.dp, 64.dp).semantics { contentDescription = "credits" }) },
@@ -420,7 +420,7 @@ class BottomControlsTest {
     private fun cameraPadding(pad: Boolean) {
             var bottom = -1.0
             paparazzi.readSettledSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosAdaptiveMapShell(
                         modifier = Modifier.size(360.dp, 300.dp), map = {},
                         controlsBottomStart = { Box(Modifier.size(220.dp, 44.dp)) },
@@ -440,7 +440,7 @@ class BottomControlsTest {
             val tree = paparazzi.readSettledSemantics {
                 density = LocalDensity.current.density
                 CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         KozmosAdaptiveMapShell(
                             modifier = Modifier.size(360.dp, 300.dp),
                             map = {},

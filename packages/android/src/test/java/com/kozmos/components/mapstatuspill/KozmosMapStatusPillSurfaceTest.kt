@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import kotlin.math.max
@@ -113,7 +113,7 @@ class KozmosMapStatusPillSurfaceTest {
                                 }
                                 .boundsInRoot
                         }
-                ) { MaterialTheme { content() } }
+                ) { KozmosMaterialTheme { content() } }
             }
         }
         return Board(pixels, pill, pixels.width / root.width, density)
