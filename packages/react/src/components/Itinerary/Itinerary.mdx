@@ -46,6 +46,86 @@ destructuring calls remain source-compatible: copying only current state retains
 whereas `copy(instruction = "new words")` resets to plain text. Recompile native callers
 after upgrading; native binary compatibility is not promised by this source change.
 
+## Changing an endpoint
+
+The Web SDK's route card has an action beside From and To (GAP-104). Pass `onEditOrigin`, `onEditDestination` or both, and that endpoint's row ends in a small text button after the place's name. A row whose callback is left out draws no button: ManoeuvreCard's list passes neither and is unchanged.
+
+- **The words:** the button shows `changeLabel`, "Change", the verb RouteLocationField's `onEdit` shows for the same act. Assistive technology hears `editOriginLabel` or `editDestinationLabel`, "Change start point" and "Change destination" by default. Start each with the visible verb, so a speech user can say what they see (WCAG 2.5.3). Left out, they are built from `changeLabel`: `changeLabel="Edit"` alone gives "Edit start point" and "Edit destination". Localize the three together.
+- **The host owns what follows:** it opens that endpoint for editing, a RouteLocationField with `onEdit` for example, and moves focus there. Itinerary keeps no state.
+- **Where it sits:** a ghost button, 44 tall with a 48dp target on Android, on the name's first line at the row's inline end, which is the left in a right-to-left layout. A long name wraps beside it. On the web, when the name would keep less than 80px beside it, the button takes the next line, still at the row's end. On iOS and Android it takes at most half the row, and a long verb wraps within that half.
+
+<Canvas>
+  <Story of={ItineraryStories.WithEndpointEdit} />
+</Canvas>
+
+<PlatformSnippets
+    react={`
+import { Itinerary, type ItineraryStep } from "@kozmos-ds/react";
+
+// The route card's list, with Change on From and To. The host opens the
+// endpoint for editing and moves focus to it.
+export function EditableRouteList({
+  steps,
+  editOrigin,
+  editDestination,
+}: {
+  steps: ItineraryStep[];
+  editOrigin: () => void;
+  editDestination: () => void;
+}) {
+  return (
+    <Itinerary
+      origin="Dunkin'"
+      steps={steps}
+      destination="Airport Shuttles"
+      onEditOrigin={editOrigin}
+      onEditDestination={editDestination}
+    />
+  );
+}
+`}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// The route card's list, with Change on From and To. The host opens the
+// endpoint for editing and moves focus to it.
+struct EditableRouteList: View {
+    let steps: [KozmosItineraryStep]
+    let editOrigin: () -> Void
+    let editDestination: () -> Void
+
+    var body: some View {
+        KozmosItinerary(
+            origin: "Dunkin'",
+            steps: steps,
+            destination: "Airport Shuttles",
+            onEditOrigin: editOrigin,
+            onEditDestination: editDestination
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.itinerary.KozmosItinerary
+import com.kozmos.components.itinerary.KozmosItineraryStep
+
+// The route card's list, with Change on From and To. The host opens the
+// endpoint for editing and moves focus to it.
+@Composable
+fun EditableRouteList(steps: List<KozmosItineraryStep>, editOrigin: () -> Unit, editDestination: () -> Unit) {
+    KozmosItinerary(
+        origin = "Dunkin'",
+        steps = steps,
+        destination = "Airport Shuttles",
+        onEditOrigin = editOrigin,
+        onEditDestination = editDestination
+    )
+}
+`}
+/>
+
 ## Implementation
 
 <div className="subheading">Code</div>

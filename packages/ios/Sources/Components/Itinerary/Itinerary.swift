@@ -41,14 +41,30 @@ public struct KozmosItinerary: View {
     let originLabel: String
     let destinationLabel: String
     let label: String
+    let onEditOrigin: (() -> Void)?
+    let onEditDestination: (() -> Void)?
+    let changeLabel: String
+    let editOriginLabel: String
+    let editDestinationLabel: String
 
+    /// `onEditOrigin` and `onEditDestination` each end their endpoint's row in
+    /// a Change button, drawn only when passed; the host opens that endpoint
+    /// for editing and moves focus there. `changeLabel` is the visible verb,
+    /// RouteLocationField's. Each button is named for its endpoint, starting
+    /// with that verb so a speech user can say what they see (WCAG 2.5.3): by
+    /// default "Change start point" and "Change destination".
     public init(
         origin: String,
         steps: [KozmosItineraryStep],
         destination: String,
         originLabel: String = "From",
         destinationLabel: String = "To",
-        label: String = "Itinerary"
+        label: String = "Itinerary",
+        onEditOrigin: (() -> Void)? = nil,
+        onEditDestination: (() -> Void)? = nil,
+        changeLabel: String = "Change",
+        editOriginLabel: String? = nil,
+        editDestinationLabel: String? = nil
     ) {
         self.origin = origin
         self.steps = steps
@@ -56,24 +72,47 @@ public struct KozmosItinerary: View {
         self.originLabel = originLabel
         self.destinationLabel = destinationLabel
         self.label = label
+        self.onEditOrigin = onEditOrigin
+        self.onEditDestination = onEditDestination
+        self.changeLabel = changeLabel
+        self.editOriginLabel = editOriginLabel ?? "\(changeLabel) start point"
+        self.editDestinationLabel = editDestinationLabel ?? "\(changeLabel) destination"
     }
 
     public var body: some View {
         let uniqueCurrent = steps.filter(\.isCurrent).count == 1
         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-            endpoint(originLabel, name: origin, emphasised: false)
+            endpoint(originLabel, name: origin, emphasised: false, onEdit: onEditOrigin, editLabel: editOriginLabel)
             ForEach(steps) { step in
                 row(step, isCurrent: uniqueCurrent && step.isCurrent)
             }
-            endpoint(destinationLabel, name: destination, emphasised: true)
+            endpoint(destinationLabel, name: destination, emphasised: true, onEdit: onEditDestination, editLabel: editDestinationLabel)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(label)
     }
 
+    /// An endpoint's action follows its name, on the name's first baseline,
+    /// at the row's end: beside the name's first line even when a long name
+    /// sits under its caption. The stack offers the button no more than half
+    /// the row, so a long verb wraps instead of squeezing the name.
+    @ViewBuilder
+    private func endpoint(_ label: String, name: String, emphasised: Bool, onEdit: (() -> Void)?, editLabel: String) -> some View {
+        if let onEdit {
+            HStack(alignment: .kozmosItineraryName, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
+                endpointText(label, name: name, emphasised: emphasised)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                KozmosButton(changeLabel, variant: .ghost, size: .sm, action: onEdit)
+                    .accessibilityLabel(editLabel)
+            }
+        } else {
+            endpointText(label, name: name, emphasised: emphasised)
+        }
+    }
+
     /// The captions and the origin are muted, and on glass, in a glass
     /// manoeuvre card, the foreground colour (decision 48).
-    private func endpoint(_ label: String, name: String, emphasised: Bool) -> some View {
+    private func endpointText(_ label: String, name: String, emphasised: Bool) -> some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .firstTextBaseline, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                 endpointCaption(label).fixedSize(horizontal: true, vertical: false)
@@ -100,6 +139,7 @@ public struct KozmosItinerary: View {
             .font(emphasised ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
             .kozmosMutedText(emphasised ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
             .fixedSize(horizontal: false, vertical: true)
+            .alignmentGuide(.kozmosItineraryName) { $0[.firstTextBaseline] }
     }
 
     private func row(_ step: KozmosItineraryStep, isCurrent: Bool) -> some View {
@@ -120,4 +160,13 @@ public struct KozmosItinerary: View {
         }
         .kozmosInstructionAccessibility(step.instructionParts, suffix: [step.distance, step.duration].compactMap { $0 }, selected: isCurrent)
     }
+}
+
+private extension VerticalAlignment {
+    /// An itinerary endpoint's place name's first baseline, which its action
+    /// sits on. Elsewhere, the button's included, a view's first baseline.
+    enum KozmosItineraryName: AlignmentID {
+        static func defaultValue(in dimensions: ViewDimensions) -> CGFloat { dimensions[.firstTextBaseline] }
+    }
+    static let kozmosItineraryName = VerticalAlignment(KozmosItineraryName.self)
 }

@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { Itinerary, type ItineraryStep } from "./Itinerary";
 
 const steps: ItineraryStep[] = [
@@ -156,5 +156,129 @@ describe("Itinerary", () => {
     expect(screen.getByText("Gate 12").className).toMatch(
       /\bkozmos-guidance-text\b/,
     );
+  });
+
+  // GAP-104. The Web SDK's route card has an action beside From and To; the
+  // host passes a callback per endpoint, and only a passed one draws, so
+  // ManoeuvreCard's list, which passes none, is unchanged.
+  describe("endpoint actions", () => {
+    it("draws an endpoint's action only when its callback is passed", () => {
+      const { rerender } = render(
+        <Itinerary origin="Dunkin'" steps={steps} destination="Gate 12" />,
+      );
+      expect(screen.queryAllByRole("button")).toEqual([]);
+
+      rerender(
+        <Itinerary
+          origin="Dunkin'"
+          steps={steps}
+          destination="Gate 12"
+          onEditDestination={() => {}}
+        />,
+      );
+      const items = screen.getAllByRole("listitem");
+      expect(screen.getAllByRole("button")).toHaveLength(1);
+      expect(items[0].querySelector("button")).toBeNull();
+      expect(items[items.length - 1].querySelector("button")).not.toBeNull();
+    });
+
+    it("names each action for its endpoint, its visible verb first, and calls that endpoint's callback", () => {
+      const onEditOrigin = vi.fn();
+      const onEditDestination = vi.fn();
+      render(
+        <Itinerary
+          origin="Dunkin'"
+          steps={steps}
+          destination="Gate 12"
+          onEditOrigin={onEditOrigin}
+          onEditDestination={onEditDestination}
+        />,
+      );
+      const origin = screen.getByRole("button", { name: "Change start point" });
+      const destination = screen.getByRole("button", {
+        name: "Change destination",
+      });
+      for (const button of [origin, destination]) {
+        // Not a form's submit button where a host puts the list in a form.
+        expect(button).toHaveAttribute("type", "button");
+        expect(button).toHaveTextContent(/^Change$/);
+        // WCAG 2.5.3: the name a speech user says is the one they see.
+        expect(button.getAttribute("aria-label")).toMatch(/^Change\b/);
+      }
+
+      fireEvent.click(origin);
+      expect(onEditOrigin).toHaveBeenCalledTimes(1);
+      expect(onEditDestination).not.toHaveBeenCalled();
+      fireEvent.click(destination);
+      expect(onEditDestination).toHaveBeenCalledTimes(1);
+      expect(onEditOrigin).toHaveBeenCalledTimes(1);
+    });
+
+    it("puts each action in its endpoint's row, after the place's name", () => {
+      render(
+        <Itinerary
+          origin="Dunkin'"
+          steps={steps}
+          destination="Gate 12"
+          onEditOrigin={() => {}}
+          onEditDestination={() => {}}
+        />,
+      );
+      const items = screen.getAllByRole("listitem");
+      for (const [item, name, action] of [
+        [items[0], "Dunkin'", "Change start point"],
+        [items[items.length - 1], "Gate 12", "Change destination"],
+      ] as const) {
+        const button = screen.getByRole("button", { name: action });
+        expect(item).toContainElement(button);
+        expect(
+          screen.getByText(name).compareDocumentPosition(button) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+        expect(item.lastElementChild).toBe(button);
+      }
+      // The steps between carry no action.
+      for (const item of items.slice(1, -1))
+        expect(item.querySelector("button")).toBeNull();
+    });
+
+    it("takes the host's words, and builds the names from a changed verb", () => {
+      const { rerender } = render(
+        <Itinerary
+          origin="A"
+          steps={[]}
+          destination="B"
+          onEditOrigin={() => {}}
+          onEditDestination={() => {}}
+          changeLabel="Bearbeiten"
+          editOriginLabel="Bearbeiten: Startpunkt"
+          editDestinationLabel="Bearbeiten: Ziel"
+        />,
+      );
+      expect(
+        screen.getByRole("button", { name: "Bearbeiten: Startpunkt" }),
+      ).toHaveTextContent(/^Bearbeiten$/);
+      expect(
+        screen.getByRole("button", { name: "Bearbeiten: Ziel" }),
+      ).toHaveTextContent(/^Bearbeiten$/);
+
+      // The SDK's own verb, with no names given: they follow the verb.
+      rerender(
+        <Itinerary
+          origin="A"
+          steps={[]}
+          destination="B"
+          onEditOrigin={() => {}}
+          onEditDestination={() => {}}
+          changeLabel="Edit"
+        />,
+      );
+      expect(
+        screen.getByRole("button", { name: "Edit start point" }),
+      ).toHaveTextContent(/^Edit$/);
+      expect(
+        screen.getByRole("button", { name: "Edit destination" }),
+      ).toHaveTextContent(/^Edit$/);
+    });
   });
 });

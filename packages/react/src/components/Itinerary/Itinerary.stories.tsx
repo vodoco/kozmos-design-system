@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { fn } from "@storybook/test";
 import { Itinerary } from "./Itinerary";
 
 const meta = {
@@ -78,4 +79,16 @@ export const StepMetrics: Story = {
 
 export const NoCurrentStep: Story = {
   args: { steps: meta.args.steps.map((step) => ({ ...step, current: false })) },
+};
+
+/**
+ * GAP-104: the route card's Change beside From and To (the Web SDK's Edit).
+ * Each is drawn only when the host passes its callback, and is named for its
+ * endpoint: "Change start point", "Change destination".
+ */
+export const WithEndpointEdit: Story = {
+  args: {
+    onEditOrigin: fn(),
+    onEditDestination: fn(),
+  },
 };

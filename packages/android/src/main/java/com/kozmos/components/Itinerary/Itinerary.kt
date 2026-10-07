@@ -22,9 +22,16 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.HorizontalAlignmentLine
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonSize
+import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.icon
 import com.kozmos.components.surface.kozmosMutedForeground
@@ -76,6 +83,13 @@ class KozmosItineraryStep(
  * The whole route as a list: where it starts, every step with the current
  * one emphasised, where it ends. TalkBack hears the endpoints as "From,
  * name" and "To, name", each step as one element, the current one selected.
+ *
+ * [onEditOrigin] and [onEditDestination] each end their endpoint's row in a
+ * Change button, drawn only when passed; the host opens that endpoint for
+ * editing and moves focus there. [changeLabel] is the visible verb,
+ * RouteLocationField's. Each button is named for its endpoint, starting with
+ * that verb so a speech user can say what they see (WCAG 2.5.3). The new
+ * parameters follow the released seven, so positional calls still bind.
  */
 @Composable
 fun KozmosItinerary(
@@ -85,7 +99,12 @@ fun KozmosItinerary(
     modifier: Modifier = Modifier,
     originLabel: String = "From",
     destinationLabel: String = "To",
-    label: String = "Itinerary"
+    label: String = "Itinerary",
+    onEditOrigin: (() -> Unit)? = null,
+    onEditDestination: (() -> Unit)? = null,
+    changeLabel: String = "Change",
+    editOriginLabel: String = "$changeLabel start point",
+    editDestinationLabel: String = "$changeLabel destination"
 ) {
     val uniqueCurrent = steps.count { it.isCurrent } == 1
     Column(
@@ -94,18 +113,58 @@ fun KozmosItinerary(
             .semantics { contentDescription = label },
         verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
     ) {
-        Endpoint(originLabel, origin, emphasised = false)
+        Endpoint(originLabel, origin, emphasised = false, onEditOrigin, changeLabel, editOriginLabel)
         steps.forEach { step -> StepRow(step, uniqueCurrent && step.isCurrent) }
-        Endpoint(destinationLabel, destination, emphasised = true)
+        Endpoint(destinationLabel, destination, emphasised = true, onEditDestination, changeLabel, editDestinationLabel)
+    }
+}
+
+/**
+ * The place name's first baseline, which an endpoint's action sits on. The
+ * row's own first baseline is the caption's, which sits a little higher.
+ */
+private val NameBaseline = HorizontalAlignmentLine { a, b -> minOf(a, b) }
+
+/**
+ * An endpoint's action follows its name, on the name's first baseline, at the
+ * row's end. It is offered at most half the row, so a long verb wraps instead
+ * of squeezing the name.
+ */
+@Composable
+private fun Endpoint(label: String, name: String, emphasised: Boolean, onEdit: (() -> Unit)?, changeLabel: String, editLabel: String) {
+    if (onEdit == null) {
+        EndpointText(label, name, emphasised, Modifier.fillMaxWidth())
+        return
+    }
+    val gap = KozmosDimensions.primitivesLayoutSpacing150
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(gap)
+    ) {
+        EndpointText(label, name, emphasised, Modifier.weight(1f).alignBy(NameBaseline))
+        KozmosButton(
+            onClick = onEdit,
+            modifier = Modifier
+                .alignByBaseline()
+                .layout { measurable, constraints ->
+                    val half = if (constraints.hasBoundedWidth) ((constraints.maxWidth - gap.roundToPx()) / 2).coerceAtLeast(0) else constraints.maxWidth
+                    val placeable = measurable.measure(constraints.copy(minWidth = 0, maxWidth = half))
+                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                }
+                .semantics { contentDescription = editLabel },
+            variant = KozmosButtonVariant.Ghost,
+            size = KozmosButtonSize.Sm
+        ) {
+            Text(changeLabel)
+        }
     }
 }
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun Endpoint(label: String, name: String, emphasised: Boolean) {
+private fun EndpointText(label: String, name: String, emphasised: Boolean, modifier: Modifier) {
     FlowRow(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .semantics(mergeDescendants = true) { contentDescription = "$label, $name" },
         horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150),
         verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
@@ -122,7 +181,12 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
             text = name,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = if (emphasised) FontWeight.SemiBold else FontWeight.Normal),
             color = LocalKozmosGuidanceForeground.current ?: if (emphasised) KozmosThemeTokens.primitivesColorsForeground100 else kozmosMutedForeground(),
-            modifier = Modifier.widthIn(min = 80.dp).weight(1f)
+            modifier = Modifier.widthIn(min = 80.dp).weight(1f).layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                val baseline = placeable[FirstBaseline]
+                val lines: Map<AlignmentLine, Int> = if (baseline == AlignmentLine.Unspecified) emptyMap() else mapOf(NameBaseline to baseline)
+                layout(placeable.width, placeable.height, lines) { placeable.place(0, 0) }
+            }
         )
     }
 }
