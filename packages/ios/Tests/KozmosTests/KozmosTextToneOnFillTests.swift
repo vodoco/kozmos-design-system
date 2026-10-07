@@ -10,21 +10,37 @@ import SwiftUI
 final class KozmosTextToneOnFillTests: XCTestCase {
     private typealias Pixel = (r: UInt8, g: UInt8, b: UInt8, a: UInt8)
 
+    private static func hex(_ p: Pixel) -> String { String(format: "#%02X%02X%02X", p.r, p.g, p.b) }
+
+    /// White in both appearances, written out: a comparison with the token
+    /// alone passed while the token itself was black in the dark.
     @MainActor func testOnEmphasisIsTheThemeForegroundAndReadsOnTheThemeFill() throws {
         for scheme in [ColorScheme.light, .dark] {
             let words = try DrawnPixels.resolved(KozmosTextTone.onEmphasis.color, in: scheme)
             let ink = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle, in: scheme)
             let fill = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: scheme)
             XCTAssertTrue(words == ink, "\(scheme): onEmphasis is \(words), not the theme foreground \(ink)")
+            XCTAssertTrue(words == (0xFF, 0xFF, 0xFF, 0xFF), "\(scheme): onEmphasis is \(Self.hex(words)), not #FFFFFF")
             XCTAssertGreaterThanOrEqual(Self.contrast(words, fill), 4.5, "\(scheme): onEmphasis on the theme fill")
         }
     }
 
-    @MainActor func testOnDangerReadsOnTheDangerFill() throws {
+    /// The danger fills the parts draw: the Primary Buttons danger fill under
+    /// a destructive Button, IconButton, Badge and Counter — #B01736 in light,
+    /// #EE7E95 in the dark — and danger 600 under a checked Switch in error,
+    /// #D41C42 and #E95A77. `onDanger` reads at 4.5:1 or more on each.
+    @MainActor func testOnDangerReadsOnTheDangerFillsThePartsDraw() throws {
+        let fills: [(String, Color)] = [
+            ("the Primary Buttons danger fill", KozmosColors.componentsPrimaryButtonsDangerButtonBackgroundIdle),
+            ("danger 600", KozmosColors.primitivesColorsEmotionalDanger600),
+        ]
         for scheme in [ColorScheme.light, .dark] {
             let words = try DrawnPixels.resolved(KozmosTextTone.onDanger.color, in: scheme)
-            let fill = try DrawnPixels.resolved(KozmosColors.primitivesColorsEmotionalDanger600, in: scheme)
-            XCTAssertGreaterThanOrEqual(Self.contrast(words, fill), 4.5, "\(scheme): onDanger on the danger fill")
+            for (name, colour) in fills {
+                let fill = try DrawnPixels.resolved(colour, in: scheme)
+                XCTAssertGreaterThanOrEqual(Self.contrast(words, fill), 4.5,
+                                            "\(scheme): onDanger \(Self.hex(words)) on \(name) \(Self.hex(fill))")
+            }
         }
     }
 

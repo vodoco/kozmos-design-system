@@ -67,18 +67,27 @@ final class KozmosThemeFillTests: XCTestCase {
         _ name: String, _ view: V, markInset: CGFloat = 0.2,
         file: StaticString = #filePath, line: UInt = #line
     ) throws {
+        try assertFill(Self.themeFill, withMark: Self.white, name, view, markInset: markInset, file: file, line: line)
+    }
+
+    /// The part is filled with `fillColour`, and what it draws on that fill
+    /// is `markColour`, in light and dark.
+    @MainActor private func assertFill<V: View>(
+        _ fillColour: Pixel, withMark markColour: Pixel, _ name: String, _ view: V, markInset: CGFloat = 0.2,
+        file: StaticString = #filePath, line: UInt = #line
+    ) throws {
         for scheme in [ColorScheme.light, .dark] {
             let pixels = try draw(view, in: scheme)
-            let isFill = DrawnPixels.matches(Self.themeFill, tolerance: 4)
+            let isFill = DrawnPixels.matches(fillColour, tolerance: 4)
             guard let fill = pixels.boundingBox(where: isFill) else {
-                XCTFail("\(name), \(scheme): no #135BEC fill drawn", file: file, line: line)
+                XCTFail("\(name), \(scheme): no \(Self.describe(fillColour)) fill drawn", file: file, line: line)
                 continue
             }
             let inside = fill.insetBy(dx: fill.width * markInset, dy: fill.height * markInset)
-            let marks = pixels.count(in: inside, where: DrawnPixels.matches(Self.white, tolerance: 4))
+            let marks = pixels.count(in: inside, where: DrawnPixels.matches(markColour, tolerance: 4))
             XCTAssertGreaterThan(
                 marks, 8,
-                "\(name), \(scheme): the mark on the #135BEC fill is not white; its lightest pixel is \(Self.describe(Self.lightest(pixels, in: inside)))",
+                "\(name), \(scheme): the mark on the \(Self.describe(fillColour)) fill is not \(Self.describe(markColour)); its lightest pixel is \(Self.describe(Self.lightest(pixels, in: inside))), its darkest \(Self.describe(pixels.darkest(in: inside)))",
                 file: file, line: line
             )
         }
@@ -107,6 +116,29 @@ final class KozmosThemeFillTests: XCTestCase {
         )
     }
 
+    /// The accent pin's fill is theme variant 1's 500, #4134F1 in both
+    /// themes, and its number the theme foreground, white, 7.03:1 on it, as
+    /// Compose draws it. Foreground/1000 was black on it in the dark, 2.99:1.
+    @MainActor func testAFilledAccentPinsNumberIsWhiteInLightAndDark() throws {
+        try assertFill((0x41, 0x34, 0xF1, 255), withMark: Self.white, "filled accent pin",
+                       KozmosLocationPin(variant: .accent, number: 7, selected: true), markInset: 0.25)
+    }
+
+    /// A featured pin is the alert amber, #FAB735 in both themes, whatever
+    /// its variant or tint, and its number the alert's on-fill, black, 11.89:1
+    /// on it, as Compose draws it. Foreground/1000 was white on it in light,
+    /// 1.77:1, and a tint's ink was drawn on the amber.
+    @MainActor func testAFeaturedPinsNumberIsTheAlertsOnFillInLightAndDark() throws {
+        let amber: Pixel = (0xFA, 0xB7, 0x35, 255)
+        let black: Pixel = (0, 0, 0, 255)
+        try assertFill(amber, withMark: black, "featured pin",
+                       KozmosLocationPin(variant: .primary, number: 7, featured: true), markInset: 0.25)
+        let navy = KozmosCategoryTint(accent: KozmosColors.semanticsCategoryAccentNavy,
+                                      fill: KozmosInkedFill(fill: KozmosColors.semanticsCategoryFillNavy, ink: KozmosColors.semanticsCategoryOnfillNavy))
+        try assertFill(amber, withMark: black, "featured pin with a navy tint",
+                       KozmosLocationPin(variant: .primary, number: 7, featured: true, tint: navy), markInset: 0.25)
+    }
+
     /// The manoeuvre card's theme appearance is the brand card, a prominent
     /// fill: the theme fill, with its words, arrow and grab bar in the theme
     /// foreground. It was theme 600 under foreground/1000, black in the dark.
@@ -129,6 +161,110 @@ final class KozmosThemeFillTests: XCTestCase {
             XCTAssertGreaterThan(fill.width, 280, "\(scheme): the card's fill is \(fill)")
             let marks = drawing.count(fill.insetBy(dx: 8, dy: 8), Drawing.near(Self.white))
             XCTAssertGreaterThan(marks, 40, "\(scheme): the words on the #135BEC card are not white")
+        }
+    }
+
+    /// A toggle button that is on is a prominent fill. Its words were
+    /// background/0 on theme 500: black in the dark.
+    @MainActor func testAToggleButtonThatIsOnIsTheThemeFillWithWhiteWordsInLightAndDark() throws {
+        try assertThemeFillWithWhiteMark("toggle button on", KozmosToggleButton(isOn: .constant(true), label: "Step-free"), markInset: 0.1)
+    }
+
+    /// Its mark was background/0 on theme 500: black in the dark.
+    @MainActor func testTheFloatingActionButtonIsTheThemeFillWithAWhiteMarkInLightAndDark() throws {
+        try assertThemeFillWithWhiteMark("floating action button", KozmosFloatingActionButton(action: {}), markInset: 0.25)
+    }
+
+    /// Its words and chevron were background/0 on theme 500: black in the dark.
+    @MainActor func testTheSplitButtonIsTheThemeFillWithWhiteWordsInLightAndDark() throws {
+        try assertThemeFillWithWhiteMark("split button", KozmosSplitButton(label: "Directions", mainAction: {}), markInset: 0.1)
+    }
+
+    /// Radio's dot is a fill, the theme fill; its ring is an edge on the
+    /// surface, theme 600, as React's. Both were theme 500, so the ring read
+    /// 3.13:1 on the dark background.
+    @MainActor func testARadiosDotIsTheThemeFillAndItsRingTheme600InLightAndDark() throws {
+        for scheme in [ColorScheme.light, .dark] {
+            let ringColour = try XCTUnwrap(Self.theme600[scheme])
+            let pixels = try draw(KozmosRadioGroupItem(value: "a", selection: .constant("a")), in: scheme)
+            guard let dot = pixels.boundingBox(where: DrawnPixels.matches(Self.themeFill, tolerance: 4)) else {
+                XCTFail("\(scheme): no #135BEC dot drawn")
+                continue
+            }
+            XCTAssertEqual(dot.width, 10, accuracy: 1, "\(scheme): the #135BEC drawn is \(dot), not the 10pt dot")
+            guard let ring = pixels.boundingBox(where: DrawnPixels.matches(ringColour, tolerance: 4)) else {
+                XCTFail("\(scheme): no ring in theme 600, \(Self.describe(ringColour))")
+                continue
+            }
+            XCTAssertEqual(ring.width, 20, accuracy: 1.5, "\(scheme): the theme 600 drawn is \(ring), not the 20pt ring")
+            XCTAssertEqual(ring.midX, dot.midX, accuracy: 1, "\(scheme): the dot is not inside the ring")
+            XCTAssertEqual(ring.midY, dot.midY, accuracy: 1, "\(scheme): the dot is not inside the ring")
+        }
+    }
+
+    /// Outline, ghost and link Button and IconButton draw their words and
+    /// marks in the Secondary Buttons token, as React and Compose do — #0D44C2
+    /// in light, #7EA2F6 in dark — where they drew theme 500.
+    @MainActor func testOutlineGhostAndLinkButtonsDrawTheSecondaryButtonsTokenInLightAndDark() throws {
+        for scheme in [ColorScheme.light, .dark] {
+            let ink = try DrawnPixels.resolved(KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle, in: scheme)
+            XCTAssertFalse(DrawnPixels.matches(Self.themeFill, tolerance: 4)(ink.r, ink.g, ink.b, ink.a),
+                           "\(scheme): the Secondary Buttons token is theme 500, so this reads nothing")
+            let parts: [(String, AnyView)] = [
+                ("outline Button", AnyView(KozmosButton("Directions", variant: .outline, action: {}))),
+                ("ghost Button", AnyView(KozmosButton("Directions", variant: .ghost, action: {}))),
+                ("link Button", AnyView(KozmosButton("Directions", variant: .link, action: {}))),
+                ("outline IconButton", AnyView(KozmosIconButton(iconName: "plus", variant: .outline, action: {}))),
+                ("ghost IconButton", AnyView(KozmosIconButton(iconName: "plus", variant: .ghost, action: {}))),
+                ("link IconButton", AnyView(KozmosIconButton(iconName: "plus", variant: .link, action: {}))),
+            ]
+            for (name, part) in parts {
+                let pixels = try draw(part, in: scheme)
+                let whole = CGRect(origin: .zero, size: pixels.size)
+                let inked = pixels.count(in: whole, where: DrawnPixels.matches(ink, tolerance: 4))
+                let old = pixels.count(in: whole, where: DrawnPixels.matches(Self.themeFill, tolerance: 4))
+                XCTAssertGreaterThan(inked, 20, "\(name), \(scheme): not drawn in the Secondary Buttons token \(Self.describe(ink)); \(old) pixels are theme 500")
+                XCTAssertEqual(old, 0, "\(name), \(scheme): theme 500 drawn")
+            }
+        }
+    }
+
+    /// The counter on a default Badge inverts (Olcay, 2026-10-07), as
+    /// FloorSelector's count does on its selected level: the theme
+    /// foreground, white, with its number in the theme fill, in light and
+    /// dark. It was background/0 with foreground/100 on it — a black pill on
+    /// the fill in the dark, and a near-black number in light. A destructive
+    /// Badge keeps its counter: background/0.
+    @MainActor func testADefaultBadgesCounterIsWhiteWithItsNumberInTheThemeFillInLightAndDark() throws {
+        /// The counter's 20pt pill: the badge's last part, inside its 16pt
+        /// trailing padding, on its middle line.
+        func counter(in badge: CGRect) -> CGRect {
+            CGRect(x: badge.maxX - KozmosDimensions.primitivesLayoutSpacing200 - 20, y: badge.midY - 10, width: 20, height: 20)
+        }
+        for scheme in [ColorScheme.light, .dark] {
+            let pixels = try draw(KozmosBadge("Results", counter: "3", showCounter: true), in: scheme)
+            guard let badge = pixels.boundingBox(where: DrawnPixels.matches(Self.themeFill, tolerance: 4)) else {
+                XCTFail("\(scheme): no #135BEC badge drawn")
+                continue
+            }
+            let pill = counter(in: badge)
+            let area = Int(pill.width * pixels.scale) * Int(pill.height * pixels.scale)
+            let white = pixels.count(in: pill, where: DrawnPixels.matches(Self.white, tolerance: 4))
+            XCTAssertGreaterThan(white, area / 2,
+                                 "\(scheme): the counter is not white; its lightest pixel is \(Self.describe(Self.lightest(pixels, in: pill)))")
+            // Inside the pill's circle, clear of the badge's fill round it.
+            let number = pixels.count(in: pill.insetBy(dx: 5, dy: 4), where: DrawnPixels.matches(Self.themeFill, tolerance: 4))
+            XCTAssertGreaterThan(number, 4, "\(scheme): the counter's number is not the theme fill")
+
+            let surface = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground0, in: scheme)
+            let dangerFill = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsDangerButtonBackgroundIdle, in: scheme)
+            let destructive = try draw(KozmosBadge("Closed", variant: .destructive, counter: "3", showCounter: true), in: scheme)
+            guard let danger = destructive.boundingBox(where: DrawnPixels.matches(dangerFill, tolerance: 4)) else {
+                XCTFail("\(scheme): no destructive badge drawn")
+                continue
+            }
+            XCTAssertGreaterThan(destructive.count(in: counter(in: danger), where: DrawnPixels.matches(surface, tolerance: 4)), area / 2,
+                                 "\(scheme): the destructive badge's counter is no longer background/0")
         }
     }
 

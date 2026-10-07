@@ -71,50 +71,66 @@ public struct KozmosButton: View {
     
     public var body: some View {
         Button(action: action) {
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                if isLoading {
-                    // The system's arc at the small size, not `ProgressView`:
-                    // one drawing on all four platforms (2026-09-22). Hidden
-                    // from assistive technology — the button is already
-                    // disabled and named, and a second live region for one
-                    // wait is a defect.
-                    KozmosSpinner(size: .sm, color: foregroundColor)
-                        .accessibilityHidden(true)
-                } else if let leadingIconName {
-                    KozmosIcon(leadingIconName)
-                        .environment(\.kozmosIconHostInk, foregroundColor)
-                        .fixedSize()
-                        .accessibilityHidden(true)
+            KozmosButtonInteractionReader { isPressed, isFocused in
+                let foregroundColor = self.foregroundColor(isPressed: isPressed, isFocused: isFocused)
+                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                    if isLoading {
+                        // The system's arc at the small size, not `ProgressView`:
+                        // one drawing on all four platforms (2026-09-22). Hidden
+                        // from assistive technology — the button is already
+                        // disabled and named, and a second live region for one
+                        // wait is a defect.
+                        KozmosSpinner(size: .sm, color: foregroundColor)
+                            .accessibilityHidden(true)
+                    } else if let leadingIconName {
+                        KozmosIcon(leadingIconName)
+                            .environment(\.kozmosIconHostInk, foregroundColor)
+                            .fixedSize()
+                            .accessibilityHidden(true)
+                    }
+                    Text(label)
+                        .font(KozmosTypography.subheadline)
+                        .fontWeight(.medium)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(label)
-                    .font(KozmosTypography.subheadline)
-                    .fontWeight(.medium)
-                    .fixedSize(horizontal: false, vertical: true)
+                .padding(padding)
+                .padding(.vertical, size == .icon ? 0 : KozmosDimensions.primitivesLayoutSpacing100)
+                .foregroundColor(foregroundColor)
+                .frame(
+                    minWidth: size == .icon ? 44 : nil,
+                    maxWidth: fillsWidth || fillsCell && size != .icon ? .infinity : nil,
+                    minHeight: 44,
+                    maxHeight: fillsCell && size != .icon ? .infinity : nil
+                )
+                .kozmosButtonSurface(
+                    variant == .glass ? .glass : nil,
+                    fill: backgroundColor(isPressed: isPressed, isFocused: isFocused),
+                    stroke: borderColor,
+                    strokeWidth: variant == .outline ? 1 : 0,
+                    // The corner the button always had; a continuous one would move every baseline.
+                    shape: RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
+                )
             }
-            .padding(padding)
-            .padding(.vertical, size == .icon ? 0 : KozmosDimensions.primitivesLayoutSpacing100)
-            .foregroundColor(foregroundColor)
-            .frame(
-                minWidth: size == .icon ? 44 : nil,
-                maxWidth: fillsWidth || fillsCell && size != .icon ? .infinity : nil,
-                minHeight: 44,
-                maxHeight: fillsCell && size != .icon ? .infinity : nil
-            )
-            .kozmosButtonSurface(
-                variant == .glass ? .glass : nil,
-                fill: backgroundColor,
-                stroke: borderColor,
-                strokeWidth: variant == .outline ? 1 : 0,
-                // The corner the button always had; a continuous one would move every baseline.
-                shape: RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-            )
         }
         .disabled(isDisabled || isLoading)
-        .opacity(isDisabled ? 0.5 : 1)
+        // Loading, it is disabled, and drawn at half as a disabled part is.
+        .opacity(isDisabled || isLoading ? 0.5 : 1)
+        .kozmosFillButtonStyle(fillEmotion, hoverShape: RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
     }
-    
 
-    
+    /// The emotion whose Primary Buttons tokens fill the button at rest,
+    /// pressed and focused, or nil when it is not a fill. A filled variant
+    /// takes its emotion; unset, the default variant is the theme fill, the
+    /// destructive the danger and the secondary the neutral, as React and
+    /// Compose read them. Outline, ghost, link and glass keep SwiftUI's press.
+    var fillEmotion: KozmosButtonEmotion? {
+        switch variant {
+        case .default: return emotion ?? .themed
+        case .destructive: return emotion ?? .danger
+        case .secondary: return emotion ?? .neutral
+        case .outline, .ghost, .link, .glass: return nil
+        }
+    }
 
     /// The tier this variant reads, or nil when the variant is an effect.
     private var tier: KozmosButtonTier? {
@@ -168,6 +184,19 @@ public struct KozmosButton: View {
         }
     }
     
+    private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        guard let fillEmotion else { return backgroundColor }
+        return KozmosFillStates.background(fillEmotion, isPressed: isPressed, isFocused: isFocused)
+    }
+
+    /// The fill's own ink in each state; the secondary variant with no
+    /// emotion keeps the foreground/100 words it has always drawn, which read
+    /// on every neutral step.
+    private func foregroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        guard let fillEmotion, variant != .secondary || emotion != nil else { return foregroundColor }
+        return KozmosFillStates.foreground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
+    }
+
     private var backgroundColor: Color {
         if let emotion, let tier {
             // A bordered or text button keeps its transparent ground; only a

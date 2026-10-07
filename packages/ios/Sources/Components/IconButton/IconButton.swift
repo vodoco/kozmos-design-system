@@ -42,32 +42,62 @@ public struct KozmosIconButton: View {
     
     public var body: some View {
         Button(action: action) {
-            Group {
-                if isLoading {
-                    // The system's arc at the small size, taking the control's
-                    // own foreground — one drawing on all four platforms
-                    // (2026-09-22). Hidden from assistive technology: the
-                    // control is disabled and already named.
-                    KozmosSpinner(size: .sm, color: foregroundColor)
-                        .accessibilityHidden(true)
-                } else {
-                    Image(systemName: iconName)
-                        .font(iconFont)
+            KozmosButtonInteractionReader { isPressed, isFocused in
+                let foregroundColor = self.foregroundColor(isPressed: isPressed, isFocused: isFocused)
+                Group {
+                    if isLoading {
+                        // The system's arc at the small size, taking the control's
+                        // own foreground — one drawing on all four platforms
+                        // (2026-09-22). Hidden from assistive technology: the
+                        // control is disabled and already named.
+                        KozmosSpinner(size: .sm, color: foregroundColor)
+                            .accessibilityHidden(true)
+                    } else {
+                        Image(systemName: iconName)
+                            .font(iconFont)
+                    }
                 }
+                .foregroundColor(foregroundColor)
+                // The large size is the prototype's 48: Filters and the AI search beside a 44 field.
+                .frame(width: size == .lg ? 48 : 44, height: size == .lg ? 48 : 44)
+                .kozmosButtonSurface(
+                    variant == .glass ? .glass : nil,
+                    fill: backgroundColor(isPressed: isPressed, isFocused: isFocused),
+                    stroke: borderColor,
+                    strokeWidth: variant == .outline ? 1 : 0,
+                    shape: Circle()
+                )
             }
-            .foregroundColor(foregroundColor)
-            // The large size is the prototype's 48: Filters and the AI search beside a 44 field.
-            .frame(width: size == .lg ? 48 : 44, height: size == .lg ? 48 : 44)
-            .kozmosButtonSurface(
-                variant == .glass ? .glass : nil,
-                fill: backgroundColor,
-                stroke: borderColor,
-                strokeWidth: variant == .outline ? 1 : 0,
-                shape: Circle()
-            )
         }
         .disabled(isDisabled || isLoading)
-        .opacity(isDisabled ? 0.5 : 1)
+        // Loading, it is disabled, and drawn at half as a disabled part is.
+        .opacity(isDisabled || isLoading ? 0.5 : 1)
+        .kozmosFillButtonStyle(fillEmotion, hoverShape: Circle())
+    }
+
+    /// The emotion whose Primary Buttons tokens fill the button at rest,
+    /// pressed and focused: the default variant is the theme fill, the
+    /// destructive the danger and the secondary the neutral, as in Compose.
+    /// The others keep SwiftUI's own press.
+    var fillEmotion: KozmosButtonEmotion? {
+        switch variant {
+        case .default: return .themed
+        case .destructive: return .danger
+        case .secondary: return .neutral
+        case .outline, .ghost, .link, .glass: return nil
+        }
+    }
+
+    private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        guard let fillEmotion else { return backgroundColor }
+        return KozmosFillStates.background(fillEmotion, isPressed: isPressed, isFocused: isFocused)
+    }
+
+    /// The fill's own ink in each state; the secondary variant keeps the
+    /// foreground/100 mark it has always drawn, which reads on every neutral step.
+    private func foregroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        guard let fillEmotion, variant != .secondary else { return foregroundColor }
+        return KozmosFillStates.foreground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
 
     private var iconFont: Font {
