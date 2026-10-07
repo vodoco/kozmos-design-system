@@ -217,7 +217,7 @@ describe("POIResultCard", () => {
     // The card recolours as selection changes, so the rule that times that
     // change has to reach every browser — including one without @scope, which
     // the utility layer does not reach. A class the component owns does.
-    const { container, rerender } = render(
+    const { container } = render(
       <POIResultCard
         poi={poi}
         result={{ ...result, selected: false }}
@@ -375,7 +375,7 @@ describe("POIResultCard", () => {
     // Three tones, not two: "closing soon" is a reason to hurry, and drawing
     // it as plain open is the difference between arriving and arriving late.
     const tone = (availability: "open" | "closingSoon" | "closed") => {
-      const { container, unmount } = render(
+      const { unmount } = render(
         <POIResultCard
           poi={{ ...poi, availability, availabilityLabel: "label" }}
           result={{ ...result, selected: false }}
@@ -398,7 +398,6 @@ describe("POIResultCard", () => {
   it("draws a venue with no levels without inventing one", () => {
     // Story 15 edge case: a single-storey venue, where every result reading
     // "Ground Floor" is noise.
-    const { poi: _drop, ...rest } = { poi };
     render(
       <POIResultCard
         poi={{ ...poi, floorId: undefined, floorLabel: undefined }}

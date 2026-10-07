@@ -88,6 +88,12 @@ jobs:
       - name: Build Web
         run: pnpm build
 
+      # Every package's typecheck, after the build it reads. The library's
+      # build type-checks only what it publishes: this step is what checks its
+      # stories and tests, and the stories in apps/docs.
+      - name: Type-Check Packages, Stories And Tests
+        run: pnpm typecheck
+
       - name: Test Web (Unit & A11y)
         run: pnpm test
 

@@ -17,7 +17,9 @@ const base = {
 };
 
 describe("RouteProgressRail route presentation", () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
   it("prioritizes the host's next waypoint when transitions share one position", () => {
     const width = vi
       .spyOn(HTMLElement.prototype, "clientWidth", "get")
