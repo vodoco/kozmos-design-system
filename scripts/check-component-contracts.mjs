@@ -4258,8 +4258,20 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'background: "Colors/theme/600"',
-  "Figma filled brand surfaces use accessible brand token",
+  'const THEME_FILL = {\n  name: "Primary Buttons/themed/button/background/idle",\n  fallback: "#135BEC",\n};',
+  "Figma prominent fills use the theme fill (decision 59)",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  'const THEME_FILL_FOREGROUND = {\n  name: "Primary Buttons/themed/button/foreground/content/idle",\n  fallback: "#FFFFFF",\n};',
+  "Figma marks on the theme fill use the theme foreground (decision 59)",
+);
+assertNotContains(
+  files.figma,
+  source.figma,
+  'variableName: "Colors/theme/500"',
+  "a Figma focus ring at theme 500 (decision 59: rings are theme 600)",
 );
 assertContains(
   files.figma,

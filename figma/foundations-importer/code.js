@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "6287d52a52b0";
+const PLUGIN_BUILD = "8cd916ec7d51";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -158,6 +158,20 @@ const META_STRIP_ICONS = ["None", "Leading"];
 const ACCORDION_STATES = ["Closed", "Open"];
 const TAG_VARIANTS = ["Default", "Secondary", "Destructive", "Outline"];
 const TAG_REMOVABLE = ["False", "True"];
+// Decision 59 (Olcay, 2026-10-07): a prominent fill is the theme fill, the
+// themed Primary Button's background, which aliases theme 500 (the client's
+// base colour, #135BEC) in both themes, and every word or mark on it is the
+// theme foreground, white in both. Never foreground/1000 or background/0 on
+// it: both turn black in the dark, and black on 500 reads 3.74:1. A word, mark,
+// edge or focus ring on the surface is the theme's 600, as React's primary is.
+const THEME_FILL = {
+  name: "Primary Buttons/themed/button/background/idle",
+  fallback: "#135BEC",
+};
+const THEME_FILL_FOREGROUND = {
+  name: "Primary Buttons/themed/button/foreground/content/idle",
+  fallback: "#FFFFFF",
+};
 const BUTTON_VARIANTS = [
   "Default",
   "Destructive",
@@ -39476,8 +39490,8 @@ async function syncTreeRowNode(
     width: metrics.width,
     height: metrics.rowHeight,
     radius: KOZMOS_RADIUS.control,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -40109,8 +40123,8 @@ async function updateNavigationItemVariant(
     width: metrics.width,
     height: metrics.height,
     radius: KOZMOS_RADIUS.control,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -40294,11 +40308,11 @@ async function createNavigationItemLeadingIconFrame({
   const icon = await createFixedIconInstance(
     "home-line",
     active
-      ? "Colors/theme/500"
+      ? "Colors/theme/600"
       : disabled
         ? "Colors/foreground/400"
         : "Colors/foreground/400",
-    active ? "#135BEC" : "#5E6575",
+    active ? "#1051E8" : "#5E6575",
     variableByName,
     stats,
     rail ? 20 : 18,
@@ -40771,8 +40785,15 @@ async function createNavbarPrimaryActionSlot({
   action.resizeWithoutConstraints(92, 40);
   action.cornerRadius = KOZMOS_RADIUS.control;
   action.clipsContent = false;
+  // A default Button: the theme fill, its label the theme foreground
+  // (decision 59).
   action.fills = [
-    paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
+    paintFromVariable(
+      THEME_FILL.name,
+      THEME_FILL.fallback,
+      variableByName,
+      stats,
+    ),
   ];
   action.strokes = [];
 
@@ -40782,8 +40803,8 @@ async function createNavbarPrimaryActionSlot({
   label.characters = "Create";
   label.fills = [
     paintFromVariable(
-      "Colors/foreground/1000",
-      "#FFFFFF",
+      THEME_FILL_FOREGROUND.name,
+      THEME_FILL_FOREGROUND.fallback,
       variableByName,
       stats,
     ),
@@ -40859,8 +40880,8 @@ function retintNavigationItemLeadingIcon(
   // one cannot disagree about what Selected looks like.
   applyIconColorOverrides(
     icon,
-    state === "Selected" ? "Colors/theme/500" : "Colors/foreground/400",
-    state === "Selected" ? "#135BEC" : "#5E6575",
+    state === "Selected" ? "Colors/theme/600" : "Colors/foreground/400",
+    state === "Selected" ? "#1051E8" : "#5E6575",
     variableByName,
     stats,
   );
@@ -40952,8 +40973,8 @@ async function createNavigationItemNestedInstance({
   if (content !== "Label") {
     const icon = await createFixedIconInstance(
       iconName || "home-line",
-      state === "Selected" ? "Colors/theme/500" : "Colors/foreground/400",
-      state === "Selected" ? "#135BEC" : "#5E6575",
+      state === "Selected" ? "Colors/theme/600" : "Colors/foreground/400",
+      state === "Selected" ? "#1051E8" : "#5E6575",
       variableByName,
       stats,
       placement === "Rail" ? 20 : 18,
@@ -41875,8 +41896,8 @@ async function updateSearchBarVariant(
     width: config.width,
     height: config.height,
     radius: config.radius,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -42828,11 +42849,12 @@ function tagConfig(variant) {
     };
   }
 
+  // The theme fill and the theme foreground (decision 59).
   return {
-    background: "Colors/theme/600",
-    foreground: "Colors/foreground/1000",
-    backgroundFallback: "#1051E8",
-    foregroundFallback: "#FFFFFF",
+    background: THEME_FILL.name,
+    foreground: THEME_FILL_FOREGROUND.name,
+    backgroundFallback: THEME_FILL.fallback,
+    foregroundFallback: THEME_FILL_FOREGROUND.fallback,
   };
 }
 
@@ -43122,8 +43144,8 @@ function createTimelineRail({
     connector.cornerRadius = KOZMOS_RADIUS.pill;
     connector.fills = [
       paintFromVariable(
-        active ? "Colors/theme/500" : "Border/Subtle",
-        active ? "#135BEC" : "#C7CAD1",
+        active ? "Colors/theme/600" : "Border/Subtle",
+        active ? "#1051E8" : "#C7CAD1",
         variableByName,
         stats,
       ),
@@ -43139,16 +43161,16 @@ function createTimelineRail({
   marker.y = 6;
   marker.fills = [
     paintFromVariable(
-      active ? "Colors/theme/500" : "Surface/0",
-      active ? "#135BEC" : "#FFFFFF",
+      active ? "Colors/theme/600" : "Surface/0",
+      active ? "#1051E8" : "#FFFFFF",
       variableByName,
       stats,
     ),
   ];
   marker.strokes = [
     paintFromVariable(
-      active ? "Colors/theme/500" : "Border/Subtle",
-      active ? "#135BEC" : "#C7CAD1",
+      active ? "Colors/theme/600" : "Border/Subtle",
+      active ? "#1051E8" : "#C7CAD1",
       variableByName,
       stats,
     ),
@@ -43233,12 +43255,12 @@ function searchBarConfig(variant, state) {
     height: floating ? 56 : 52,
     radius: floating ? 18 : 16,
     background: disabled ? "Colors/background/100" : "Colors/background/0",
-    stroke: focused ? "Colors/theme/500" : "Border/Input",
+    stroke: focused ? "Colors/theme/600" : "Border/Input",
     icon: disabled ? "Colors/foreground/500" : "Colors/foreground/400",
     placeholder: disabled ? "Colors/foreground/500" : "Colors/foreground/400",
     value: disabled ? "Colors/foreground/500" : "Colors/foreground/0",
     backgroundFallback: disabled ? "#E3E4E8" : "#FFFFFF",
-    strokeFallback: focused ? "#135BEC" : "#747B8B",
+    strokeFallback: focused ? "#1051E8" : "#747B8B",
     iconFallback: disabled ? "#747B8B" : "#5D626F",
     placeholderFallback: disabled ? "#747B8B" : "#5D626F",
     valueFallback: disabled ? "#747B8B" : "#000000",
@@ -44563,7 +44585,7 @@ async function updateDirectionStepVariant(
   badge.strokes = [];
   insertTranslucentTokenLayer(badge, {
     name: "Direction Wash",
-    token: { name: "Colors/theme/500", fallback: "#135BEC" },
+    token: { name: "Colors/theme/600", fallback: "#1051E8" },
     opacity: 0.1,
     shape: "ellipse",
     variableByName,
@@ -44574,7 +44596,7 @@ async function updateDirectionStepVariant(
   // colour, as the React draws Lucide's; an instance does not mirror, so a
   // left turn stays a physical left turn in RTL locales. A file without the
   // curated icons gets the typed glyph.
-  const symbolToken = { name: "Colors/theme/500", fallback: "#135BEC" };
+  const symbolToken = { name: "Colors/theme/600", fallback: "#1051E8" };
   const symbol = await productSdkIconInstance({
     iconName: DIRECTION_STEP_ICONS[value] || DIRECTION_STEP_ICONS.Straight,
     token: symbolToken,
@@ -44841,14 +44863,14 @@ async function updateFloorSelectorVariant(
     item.resizeWithoutConstraints(44, 44);
     item.cornerRadius = FLOOR_SELECTOR_ITEM_RADIUS;
     item.strokes = [];
-    // theme/700 rather than theme/500: the label on this chip is
-    // foreground/1000, which flips per theme, while theme/500 is #135BEC in
-    // both. Pairing two flipping tokens keeps the label readable either way.
+    // The selected floor is a prominent fill (decision 59): the theme fill,
+    // theme 500 in both themes, under the theme foreground, white in both. It
+    // was theme/700 under foreground/1000, a pair that flipped together.
     item.fills = selected
       ? [
           paintFromVariable(
-            "Colors/theme/700",
-            "#0D44C2",
+            THEME_FILL.name,
+            THEME_FILL.fallback,
             variableByName,
             stats,
           ),
@@ -44863,8 +44885,8 @@ async function updateFloorSelectorVariant(
       bold: true,
       fontSize: 14,
       lineHeight: 20,
-      colorToken: selected ? "Colors/foreground/1000" : "Colors/foreground/0",
-      colorFallback: selected ? "#FFFFFF" : "#000000",
+      colorToken: selected ? THEME_FILL_FOREGROUND.name : "Colors/foreground/0",
+      colorFallback: selected ? THEME_FILL_FOREGROUND.fallback : "#000000",
       variableByName,
       stats,
     });
@@ -45031,14 +45053,27 @@ async function rebuildFloorSelectorComponent() {
 
 // --- LocationPin -----------------------------------------------------------
 
+// A marker's fill and the ink on it. The theme's pin is a prominent fill
+// (decision 59): the theme fill, its number the theme foreground, white in
+// both themes. It was theme/700 under foreground/1000, which turns black in
+// the dark.
 function locationPinPalette(state) {
+  const onFill = { name: "Colors/foreground/1000", fallback: "#FFFFFF" };
   if (state === "Featured") {
-    return { fill: "Colors/emotional/alert/900", fallback: "#744D03" };
+    return {
+      fill: "Colors/emotional/alert/900",
+      fallback: "#744D03",
+      ink: onFill,
+    };
   }
   if (state === "Disabled" || state === "OffFloor") {
-    return { fill: "Colors/foreground/400", fallback: "#5D626F" };
+    return { fill: "Colors/foreground/400", fallback: "#5D626F", ink: onFill };
   }
-  return { fill: "Colors/theme/700", fallback: "#0D44C2" };
+  return {
+    fill: THEME_FILL.name,
+    fallback: THEME_FILL.fallback,
+    ink: THEME_FILL_FOREGROUND,
+  };
 }
 
 function locationPinVariantCombinations() {
@@ -45114,9 +45149,7 @@ async function updateLocationPinVariant(
   const markerFill = marked
     ? { fill: tint.fill.name, fallback: tint.fill.fallback }
     : palette;
-  const ink = marked
-    ? tint.onFill
-    : { name: "Colors/foreground/1000", fallback: "#FFFFFF" };
+  const ink = marked ? tint.onFill : palette.ink;
 
   component.name = `State=${props.state}, Size=${props.size}, Tint=${props.tint}`;
   component.layoutMode = "VERTICAL";
@@ -46142,10 +46175,12 @@ async function rebuildItineraryComponent() {
 // detail (14/20) 2 under it. Open, the itinerary in the instruction's place.
 // Under both, the grab bar: a 36 by 5 pill centred in a 44 row.
 //
-// Theme, the default, is the theme's 600 with every word, mark and the grip in
-// foreground/1000. Background is the solid surface, the default `surface`:
-// the instruction in foreground/0, the mark in the theme's 600, the detail
-// muted, the grip background/300.
+// Theme, the default, is the brand card, a prominent fill (decision 59): the
+// theme fill, theme 500 in both themes, with every word, mark and the grip in
+// the theme foreground, white in both. It was the theme's 600 under
+// foreground/1000, black in the dark. Background is the solid surface, the
+// default `surface`: the instruction in foreground/0, the mark in the theme's
+// 600, the detail muted, the grip background/300.
 //
 // The open card draws the itinerary's rows itself, with Itinerary's helpers,
 // rather than nesting an Itinerary instance: on the theme fill every colour in
@@ -46154,10 +46189,7 @@ async function rebuildItineraryComponent() {
 
 const MANOEUVRE_CARD_WIDTH = 378;
 const MANOEUVRE_CARD_CONTENT_WIDTH = MANOEUVRE_CARD_WIDTH - 32;
-const MANOEUVRE_CARD_ON_THEME = {
-  name: "Colors/foreground/1000",
-  fallback: "#FFFFFF",
-};
+const MANOEUVRE_CARD_ON_THEME = THEME_FILL_FOREGROUND;
 const MANOEUVRE_CARD_GRIP_BACKGROUND = {
   name: "Colors/background/300",
   fallback: "#ABAFBA",
@@ -46396,8 +46428,8 @@ async function updateManoeuvreCardVariant(
   if (appearance === "Theme") {
     component.fills = [
       paintFromVariable(
-        ITINERARY_ACCENT.name,
-        ITINERARY_ACCENT.fallback,
+        THEME_FILL.name,
+        THEME_FILL.fallback,
         variableByName,
         stats,
       ),
@@ -46564,8 +46596,10 @@ const ROUTE_RAIL_ROUTE = {
 };
 const ROUTE_RAIL_TOKENS = {
   muted: { name: "Colors/background/100", fallback: "#E3E4E8" },
+  // The travelled line and the disc on it stay the theme's 600, as Progress
+  // does (decision 59), with React's primary-foreground on the disc.
   primary: ITINERARY_ACCENT,
-  onPrimary: MANOEUVRE_CARD_ON_THEME,
+  onPrimary: { name: "Colors/foreground/1000", fallback: "#FFFFFF" },
   text: ITINERARY_TEXT,
   edge: { name: "Border/Subtle", fallback: "#C7CAD1" },
   track: { name: "Colors/background/300", fallback: "#ABAFBA" },
@@ -47601,6 +47635,11 @@ async function fitProductSdkSlotLabel(slot, text, width, height, stats) {
  * The glyph is text rather than an icon instance on purpose, matching
  * DirectionStep: these are compass and zoom affordances that must not
  * auto-mirror in RTL.
+ *
+ * Filled is a CTA React draws as a default Button, drawn as one (decision
+ * 59): the theme fill, no edge, every word and mark on it the theme
+ * foreground, white in both themes. Pressed is a mode that stays on: a tint
+ * with the theme's 600 for its edge.
  */
 async function productSdkControlButton({
   name,
@@ -47608,6 +47647,7 @@ async function productSdkControlButton({
   iconName,
   label,
   pressed,
+  filled,
   fonts,
   variableByName,
   stats,
@@ -47627,31 +47667,46 @@ async function productSdkControlButton({
   });
   markControlSurface(button);
   button.cornerRadius = KOZMOS_RADIUS.control;
-  button.fills = [
-    paintFromVariable(
-      pressed ? "Colors/theme/100" : "Surface/0",
-      pressed ? "#CAD9FC" : "#FFFFFF",
-      variableByName,
-      stats,
-    ),
-  ];
-  button.strokes = [
-    paintFromVariable(
-      pressed ? "Colors/theme/500" : "Border/Subtle",
-      pressed ? "#135BEC" : "#C7CAD1",
-      variableByName,
-      stats,
-    ),
-  ];
-  button.strokeWeight = 1;
+  if (filled) {
+    button.fills = [
+      paintFromVariable(
+        THEME_FILL.name,
+        THEME_FILL.fallback,
+        variableByName,
+        stats,
+      ),
+    ];
+    button.strokes = [];
+    button.strokeWeight = 0;
+  } else {
+    button.fills = [
+      paintFromVariable(
+        pressed ? "Colors/theme/100" : "Surface/0",
+        pressed ? "#CAD9FC" : "#FFFFFF",
+        variableByName,
+        stats,
+      ),
+    ];
+    button.strokes = [
+      paintFromVariable(
+        pressed ? "Colors/theme/600" : "Border/Subtle",
+        pressed ? "#1051E8" : "#C7CAD1",
+        variableByName,
+        stats,
+      ),
+    ];
+    button.strokeWeight = 1;
+  }
 
   // A real symbol from the Pointr Icon Library when the caller names one and
   // the file has it — the typed glyph otherwise, so a file without the
   // curated set still shows a mark. Every glyph the library once typed
   // (×, ‹, ›, →, ☆, ✎, ◎, ⇅, +, −, ◈, ◌) has a curated icon now.
-  const symbolToken = pressed
-    ? { name: "Colors/theme/700", fallback: "#0D44C2" }
-    : { name: "Colors/foreground/0", fallback: "#000000" };
+  const symbolToken = filled
+    ? THEME_FILL_FOREGROUND
+    : pressed
+      ? { name: "Colors/theme/700", fallback: "#0D44C2" }
+      : { name: "Colors/foreground/0", fallback: "#000000" };
   const symbol = iconName
     ? await productSdkIconInstance({
         iconName,
@@ -47695,8 +47750,8 @@ async function productSdkControlButton({
       bold: false,
       fontSize: 14,
       lineHeight: 20,
-      colorToken: "Colors/foreground/0",
-      colorFallback: "#000000",
+      colorToken: filled ? THEME_FILL_FOREGROUND.name : "Colors/foreground/0",
+      colorFallback: filled ? THEME_FILL_FOREGROUND.fallback : "#000000",
       variableByName,
       stats,
       width: 96,
@@ -48091,14 +48146,16 @@ function mapControlButtonNestedVariant(presentation, state) {
 }
 
 function mapControlButtonStateConfig(state) {
+  // Pressed is the nested default Button: the theme fill and the theme
+  // foreground (decision 59).
   if (state === "Pressed") {
     return {
-      fill: "Colors/theme/600",
-      fillFallback: "#1051E8",
-      stroke: "Colors/theme/600",
-      strokeFallback: "#1051E8",
-      foreground: "Colors/foreground/1000",
-      foregroundFallback: "#FFFFFF",
+      fill: THEME_FILL.name,
+      fillFallback: THEME_FILL.fallback,
+      stroke: THEME_FILL.name,
+      strokeFallback: THEME_FILL.fallback,
+      foreground: THEME_FILL_FOREGROUND.name,
+      foregroundFallback: THEME_FILL_FOREGROUND.fallback,
     };
   }
   if (state === "Disabled") {
@@ -48621,6 +48678,8 @@ async function updatePOIDetailPanelVariant(
       glyph: POI_DETAIL_PANEL_ACTION_GLYPHS[actionLabel],
       iconName: POI_DETAIL_PANEL_ACTION_ICONS[actionLabel],
       label: actionLabel,
+      // Navigate is React's default Button; Save and Share are outline ones.
+      filled: actionLabel === "Navigate",
       fonts,
       variableByName,
       stats,
@@ -49236,7 +49295,7 @@ async function updateAISearchButtonVariant(
 
   const icon = await productSdkIconInstance({
     iconName: AI_SEARCH_BUTTON_ICON,
-    token: { name: "Colors/theme/500", fallback: "#135BEC" },
+    token: { name: "Colors/theme/600", fallback: "#1051E8" },
     size: AI_SEARCH_BUTTON_ICON_SIZE,
     sizeToken: "AISearchButton/icon/size",
     variableByName,
@@ -49323,22 +49382,17 @@ async function rebuildAISearchButtonComponent() {
 // --- CategoryField ---------------------------------------------------------
 
 /**
- * The field's tint. Theme is the field with no category: the theme's 500 for
- * the accent and the themed button's fill and ink for the count pill — the
- * React, SwiftUI and Compose defaults.
+ * The field's tint. Theme is the field with no category: the theme's 600 for
+ * the accent, the icon and the edge on the surface, and the theme fill and
+ * its foreground for the count pill (decision 59) — the React, SwiftUI and
+ * Compose defaults.
  */
 function categoryFieldTintTokens(tint) {
   if (CATEGORY_TINT_FALLBACKS[tint]) return categoryTintTokens(tint);
   return {
-    accent: { name: "Colors/theme/500", fallback: "#135BEC" },
-    fill: {
-      name: "Primary Buttons/themed/button/background/idle",
-      fallback: "#0D44C2",
-    },
-    onFill: {
-      name: "Primary Buttons/themed/button/foreground/content/idle",
-      fallback: "#FFFFFF",
-    },
+    accent: { name: "Colors/theme/600", fallback: "#1051E8" },
+    fill: THEME_FILL,
+    onFill: THEME_FILL_FOREGROUND,
   };
 }
 
@@ -49675,14 +49729,15 @@ function layoutCategoryTileVariants(componentSet) {
 
 /**
  * The three tokens of a tint. Theme is a part with no category — the
- * theme's 500 where the accent goes, and no fill, so a nested Counter keeps
- * its own tone — which leaves a tile without a tint looking as it did.
+ * theme's 600 where the accent goes, an icon and an edge on the surface
+ * (decision 59), and no fill, so a nested Counter keeps its own tone — which
+ * leaves a tile without a tint looking as it did.
  */
 function categoryTintTokens(tint) {
   const fallback = CATEGORY_TINT_FALLBACKS[tint];
   if (!fallback) {
     return {
-      accent: { name: "Colors/theme/500", fallback: "#135BEC" },
+      accent: { name: "Colors/theme/600", fallback: "#1051E8" },
       fill: null,
       onFill: null,
     };
@@ -50345,8 +50400,8 @@ async function updatePOIResultCardVariant(
     ? []
     : [
         paintFromVariable(
-          selected ? "Colors/theme/500" : "Border/Subtle",
-          selected ? "#135BEC" : "#C7CAD1",
+          selected ? "Colors/theme/600" : "Border/Subtle",
+          selected ? "#1051E8" : "#C7CAD1",
           variableByName,
           stats,
         ),
@@ -50511,8 +50566,8 @@ async function updatePOIResultCardVariant(
     button.cornerRadius = KOZMOS_RADIUS.control;
     button.fills = [
       paintFromVariable(
-        action.primary ? "Colors/theme/500" : "Surface/0",
-        action.primary ? "#135BEC" : "#FFFFFF",
+        action.primary ? THEME_FILL.name : "Surface/0",
+        action.primary ? THEME_FILL.fallback : "#FFFFFF",
         variableByName,
         stats,
       ),
@@ -50532,8 +50587,12 @@ async function updatePOIResultCardVariant(
       bold: true,
       fontSize: 14,
       lineHeight: 20,
-      colorToken: action.primary ? "Surface/0" : "Colors/foreground/0",
-      colorFallback: action.primary ? "#FFFFFF" : "#000000",
+      colorToken: action.primary
+        ? THEME_FILL_FOREGROUND.name
+        : "Colors/foreground/0",
+      colorFallback: action.primary
+        ? THEME_FILL_FOREGROUND.fallback
+        : "#000000",
       variableByName,
       stats,
       width: 48,
@@ -50707,7 +50766,7 @@ async function updatePOIResultListVariant(
     });
     if (isSelected) {
       row.strokes = [
-        paintFromVariable("Colors/theme/500", "#135BEC", variableByName, stats),
+        paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
       ];
       row.strokeWeight = 2;
     }
@@ -50817,8 +50876,8 @@ async function updateRouteOptionCardVariant(
   ];
   component.strokes = [
     paintFromVariable(
-      selected ? "Colors/theme/500" : "Border/Subtle",
-      selected ? "#135BEC" : "#C7CAD1",
+      selected ? "Colors/theme/600" : "Border/Subtle",
+      selected ? "#1051E8" : "#C7CAD1",
       variableByName,
       stats,
     ),
@@ -51052,8 +51111,8 @@ async function updateRoutePreviewPanelVariant(
       if (index === 0) {
         option.strokes = [
           paintFromVariable(
-            "Colors/theme/500",
-            "#135BEC",
+            "Colors/theme/600",
+            "#1051E8",
             variableByName,
             stats,
           ),
@@ -51099,11 +51158,14 @@ async function updateRoutePreviewPanelVariant(
     glyph: "→",
     iconName: "arrow-right",
     label: "Continue",
-    pressed: ready,
+    // React's default Button, disabled until a route is ready: a disabled
+    // default Button is the default at 50 %, as the Button set draws it.
+    filled: true,
     fonts,
     variableByName,
     stats,
   });
+  proceed.opacity = ready ? 1 : 0.5;
   appendWithSizing(actions, proceed, "FILL", "FIXED");
   appendWithSizing(component, actions, "FILL", "FIXED");
 }
@@ -51270,7 +51332,8 @@ async function updateRouteSummaryVariant(
     glyph: active ? "×" : "→",
     iconName: active ? "x-close" : "arrow-right",
     label: active ? "End" : "Start",
-    pressed: !active,
+    // Start is React's default Button; End stays on the surface.
+    filled: !active,
     fonts,
     variableByName,
     stats,
@@ -51581,14 +51644,16 @@ async function updateSaveLocationCardVariant(
     height: 44,
   });
 
-  // Saved is a filled glyph plus a changed label, not just a tint: a saved
-  // state that reads only as a colour swap fails at a glance.
+  // Saved is a filled glyph plus a changed label, not just a colour swap: a
+  // saved state that reads only as a colour swap fails at a glance. As React
+  // draws it, Save is the card's default Button and, once saved, the toggle
+  // is an outline one on the surface (decision 59).
   const save = await productSdkControlButton({
     name: "Save Toggle Button",
     glyph: saved ? "★" : "☆",
     iconName: "bookmark",
     label: saved ? "Saved" : "Save",
-    pressed: saved,
+    filled: !saved,
     fonts,
     variableByName,
     stats,
@@ -52241,7 +52306,8 @@ async function updateFeedbackCardVariant(
     glyph: submitting ? "◌" : "→",
     iconName: submitting ? "loading-01" : "arrow-right",
     label: submitting ? "Sending" : "Send feedback",
-    pressed: !submitting,
+    // React's default Button, dimmed while it sends.
+    filled: true,
     fonts,
     variableByName,
     stats,
@@ -53976,8 +54042,8 @@ async function createButtonVariant({
     width: metrics.width,
     height: metrics.height,
     radius: KOZMOS_RADIUS.control,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -54088,8 +54154,8 @@ async function updateButtonVariant(
     width: metrics.width,
     height: metrics.height,
     radius: KOZMOS_RADIUS.control,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -54218,8 +54284,8 @@ async function updateIconButtonVariant(
     width: metrics.size,
     height: metrics.size,
     radius: metrics.size / 2,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -54368,8 +54434,8 @@ async function updateToggleButtonVariant(
     width: metrics.width,
     height: metrics.height,
     radius: 12,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -54617,8 +54683,8 @@ async function updateSplitButtonVariant(
     width: metrics.width,
     height: metrics.height,
     radius: KOZMOS_RADIUS.control,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -54772,8 +54838,8 @@ async function updateFloatingActionButtonVariant(
     width: metrics.size,
     height: metrics.size,
     radius: metrics.size / 2,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -56998,8 +57064,8 @@ async function updateChipVariant(
     width: Math.max(metrics.minWidth, component.width),
     height: metrics.height,
     radius: KOZMOS_RADIUS.pill,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -60349,21 +60415,26 @@ async function createStepperStepItem({
   indicator.cornerRadius = KOZMOS_RADIUS.pill;
   indicator.clipsContent = false;
   // The accent is React's primary, theme/600, on every platform; it was
-  // theme/500 here and on the natives until 2026-09-22. A completed step's
-  // ring is its fill's colour, as React and the natives draw it — it was
-  // foreground/500 here, a grey ring around the blue.
+  // theme/500 here and on the natives until 2026-09-22. A completed step is a
+  // prominent fill (decision 59): the theme fill, its ring the fill's colour,
+  // as React and the natives draw it, and its check the theme foreground. The
+  // current step's ring stays a border on the surface, the theme's 600.
   indicator.fills = [
     paintFromVariable(
-      completed ? "Colors/theme/600" : "Surface/0",
-      completed ? "#1051E8" : "#FFFFFF",
+      completed ? THEME_FILL.name : "Surface/0",
+      completed ? THEME_FILL.fallback : "#FFFFFF",
       variableByName,
       stats,
     ),
   ];
   indicator.strokes = [
     paintFromVariable(
-      current || completed ? "Colors/theme/600" : "Colors/foreground/500",
-      current || completed ? "#1051E8" : "#747B8B",
+      completed
+        ? THEME_FILL.name
+        : current
+          ? "Colors/theme/600"
+          : "Colors/foreground/500",
+      completed ? THEME_FILL.fallback : current ? "#1051E8" : "#747B8B",
       variableByName,
       stats,
     ),
@@ -60375,8 +60446,8 @@ async function createStepperStepItem({
   if (completed) {
     const check = await createFixedIconInstance(
       "check",
-      "Surface/0",
-      "#FFFFFF",
+      THEME_FILL_FOREGROUND.name,
+      THEME_FILL_FOREGROUND.fallback,
       variableByName,
       stats,
       16,
@@ -62022,8 +62093,8 @@ async function syncTabsVariantChildren({
       width: triggerWidth,
       height: 36,
       radius: 12,
-      variableName: "Colors/theme/500",
-      fallback: "#135BEC",
+      variableName: "Colors/theme/600",
+      fallback: "#1051E8",
       variableByName,
       stats,
     });
@@ -64676,7 +64747,7 @@ async function syncMenuItemRow({
     dot.name = "Radio Dot";
     dot.resizeWithoutConstraints(8, 8);
     dot.fills = [
-      paintFromVariable("Colors/theme/500", "#135BEC", variableByName, stats),
+      paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
     ];
     dot.strokes = [];
     row.appendChild(dot);
@@ -67313,8 +67384,8 @@ async function createComboboxOption({
   if (selected) {
     const icon = await createFixedIconInstance(
       "check",
-      disabled ? "Colors/foreground/500" : "Colors/theme/500",
-      disabled ? "#747B8B" : "#135BEC",
+      disabled ? "Colors/foreground/500" : "Colors/theme/600",
+      disabled ? "#747B8B" : "#1051E8",
       variableByName,
       stats,
       16,
@@ -67800,8 +67871,8 @@ async function createMultiSelectOption({
   if (selected) {
     const icon = await createFixedIconInstance(
       "check",
-      disabled ? "Colors/foreground/500" : "Colors/theme/500",
-      disabled ? "#747B8B" : "#135BEC",
+      disabled ? "Colors/foreground/500" : "Colors/theme/600",
+      disabled ? "#747B8B" : "#1051E8",
       variableByName,
       stats,
       16,
@@ -67874,8 +67945,8 @@ async function syncListboxVariantChildren({
     width: 320,
     height: 176,
     radius: KOZMOS_RADIUS.control,
-    variableName: "Colors/theme/500",
-    fallback: "#135BEC",
+    variableName: "Colors/theme/600",
+    fallback: "#1051E8",
     variableByName,
     stats,
   });
@@ -68008,8 +68079,8 @@ async function createListboxOption({
   if (selected) {
     const icon = await createFixedIconInstance(
       "check",
-      disabled ? "Colors/foreground/500" : "Colors/theme/500",
-      disabled ? "#747B8B" : "#135BEC",
+      disabled ? "Colors/foreground/500" : "Colors/theme/600",
+      disabled ? "#747B8B" : "#1051E8",
       variableByName,
       stats,
       16,
@@ -68605,7 +68676,14 @@ async function createDatePickerCalendarDay({
     selected ? "selected" : today ? "today" : "default",
   );
   day.fills = selected
-    ? [paintFromVariable("Colors/theme/500", "#135BEC", variableByName, stats)]
+    ? [
+        paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
     : today
       ? [
           paintFromVariable(
@@ -68633,7 +68711,7 @@ async function createDatePickerCalendarDay({
   label.fills = [
     paintFromVariable(
       selected
-        ? "Colors/foreground/inverse"
+        ? THEME_FILL_FOREGROUND.name
         : disabled || outsideMonth
           ? disabled
             ? "Colors/foreground/500"
@@ -69260,7 +69338,14 @@ async function createDateRangePickerCalendarDay({
     selected ? "selected" : inRange ? "in-range" : "default",
   );
   day.fills = selected
-    ? [paintFromVariable("Colors/theme/500", "#135BEC", variableByName, stats)]
+    ? [
+        paintFromVariable(
+          THEME_FILL.name,
+          THEME_FILL.fallback,
+          variableByName,
+          stats,
+        ),
+      ]
     : inRange
       ? [
           paintFromVariable(
@@ -69288,7 +69373,7 @@ async function createDateRangePickerCalendarDay({
   label.fills = [
     paintFromVariable(
       selected
-        ? "Colors/foreground/inverse"
+        ? THEME_FILL_FOREGROUND.name
         : disabled || outsideMonth
           ? disabled
             ? "Colors/foreground/500"
@@ -69627,8 +69712,8 @@ async function createTimePickerOption({
   if (selected) {
     const icon = await createFixedIconInstance(
       "check",
-      disabled ? "Colors/foreground/500" : "Colors/theme/500",
-      disabled ? "#747B8B" : "#135BEC",
+      disabled ? "Colors/foreground/500" : "Colors/theme/600",
+      disabled ? "#747B8B" : "#1051E8",
       variableByName,
       stats,
       16,
@@ -69667,9 +69752,9 @@ async function syncFileUploadVariantChildren({
   const disabled = state === "Disabled";
   const isDragging = state === "Dragging";
   const hasFiles = content === "Files";
-  const dropzoneStroke = isDragging ? "Colors/theme/500" : config.fieldStroke;
+  const dropzoneStroke = isDragging ? "Colors/theme/600" : config.fieldStroke;
   const dropzoneStrokeFallback = isDragging
-    ? "#135BEC"
+    ? "#1051E8"
     : config.fieldStrokeFallback;
   const dropzoneFill = isDragging ? "Colors/background/100" : config.fieldFill;
   const dropzoneFillFallback = isDragging
@@ -69980,8 +70065,8 @@ async function createFileUploadFileRow({
 
   const fileIcon = await createFixedIconInstance(
     "upload-01",
-    disabled ? "Colors/foreground/500" : "Colors/theme/500",
-    disabled ? "#747B8B" : "#135BEC",
+    disabled ? "Colors/foreground/500" : "Colors/theme/600",
+    disabled ? "#747B8B" : "#1051E8",
     variableByName,
     stats,
     20,
@@ -70336,8 +70421,8 @@ function createColorPickerSwatch({
   swatch.fills = [paintFromHex(colorPickerSafeHex(value))];
   swatch.strokes = [
     paintFromVariable(
-      selected ? "Colors/theme/500" : "Border/Input",
-      selected ? "#135BEC" : "#747B8B",
+      selected ? "Colors/theme/600" : "Border/Input",
+      selected ? "#1051E8" : "#747B8B",
       variableByName,
       stats,
     ),
@@ -71156,8 +71241,8 @@ async function createColorPickerSlider({
   ];
   thumb.strokes = [
     paintFromVariable(
-      disabled ? "Border/Input" : "Colors/theme/500",
-      disabled ? "#747B8B" : "#135BEC",
+      disabled ? "Border/Input" : "Colors/theme/600",
+      disabled ? "#747B8B" : "#1051E8",
       variableByName,
       stats,
     ),
@@ -71969,7 +72054,7 @@ async function syncSpinnerVariantChildren({
   glyph.y = 0;
   glyph.fills = [];
   glyph.strokes = [
-    paintFromVariable("Colors/theme/500", "#135BEC", variableByName, stats),
+    paintFromVariable("Colors/theme/600", "#1051E8", variableByName, stats),
   ];
   glyph.strokeWeight = 2;
   glyph.dashPattern = [8, 4];
@@ -72530,26 +72615,28 @@ function helperTextForInputStatus(status) {
   return "Helper text";
 }
 
+// A focus ring is a ring on the surface: the theme's 600, as React's ring is
+// (decision 59). 500 read 3.13:1 on a dark sheet.
 function focusRingVariableForState(state) {
-  return state === "Error" ? "Colors/emotional/danger/600" : "Colors/theme/500";
+  return state === "Error" ? "Colors/emotional/danger/600" : "Colors/theme/600";
 }
 
 function focusRingFallbackForState(state) {
-  return state === "Error" ? "#D41C42" : "#135BEC";
+  return state === "Error" ? "#D41C42" : "#1051E8";
 }
 
 function focusRingVariableForInputStatus(status) {
   if (status === "Error") return "Colors/emotional/danger/600";
   if (status === "Warning") return "Colors/emotional/alert/900";
   if (status === "Success") return "Colors/emotional/success/900";
-  return "Colors/theme/500";
+  return "Colors/theme/600";
 }
 
 function focusRingFallbackForInputStatus(status) {
   if (status === "Error") return "#D41C42";
   if (status === "Warning") return "#744D03";
   if (status === "Success") return "#14653D";
-  return "#135BEC";
+  return "#1051E8";
 }
 
 function syncFocusRing(
@@ -75830,7 +75917,7 @@ function buttonConfig(variant, state) {
     Default: {
       background: `Primary Buttons/themed/button/background/${tokenState}`,
       foreground: `Primary Buttons/themed/button/foreground/content/${tokenState}`,
-      backgroundFallback: state === "Disabled" ? "#2E3138" : "#0D44C2",
+      backgroundFallback: state === "Disabled" ? "#2E3138" : "#135BEC",
       foregroundFallback: state === "Disabled" ? "#464A53" : "#FFFFFF",
     },
     Destructive: {
@@ -75886,14 +75973,16 @@ function toggleButtonConfig(variant, state) {
     };
   }
 
+  // On, a toggle is a prominent fill: the theme fill and the theme
+  // foreground, the same in both themes (decision 59).
   if (state === "Pressed") {
     return {
-      background: "Colors/theme/600",
-      foreground: "Colors/foreground/1000",
-      stroke: variant === "Outline" ? "Colors/theme/600" : null,
-      backgroundFallback: "#1051E8",
-      foregroundFallback: "#FFFFFF",
-      strokeFallback: "#1051E8",
+      background: THEME_FILL.name,
+      foreground: THEME_FILL_FOREGROUND.name,
+      stroke: variant === "Outline" ? THEME_FILL.name : null,
+      backgroundFallback: THEME_FILL.fallback,
+      foregroundFallback: THEME_FILL_FOREGROUND.fallback,
+      strokeFallback: THEME_FILL.fallback,
     };
   }
 
@@ -75926,11 +76015,12 @@ function floatingActionButtonConfig(variant, state) {
 
 function badgeConfig(variant) {
   const configs = {
+    // The theme fill and the theme foreground (decision 59).
     Default: {
-      background: "Colors/theme/600",
-      foreground: "Colors/foreground/1000",
-      backgroundFallback: "#1051E8",
-      foregroundFallback: "#FFFFFF",
+      background: THEME_FILL.name,
+      foreground: THEME_FILL_FOREGROUND.name,
+      backgroundFallback: THEME_FILL.fallback,
+      foregroundFallback: THEME_FILL_FOREGROUND.fallback,
     },
     Destructive: {
       background: "Colors/emotional/danger/600",
@@ -75989,13 +76079,15 @@ function chipConfig(variant, state) {
       };
     }
 
+    // A selected chip is a prominent fill: the theme fill, its edge the
+    // fill's colour, and the theme foreground on it (decision 59).
     return {
-      background: "Colors/theme/600",
-      foreground: "Colors/foreground/1000",
-      stroke: "Colors/theme/600",
-      backgroundFallback: "#1051E8",
-      foregroundFallback: "#FFFFFF",
-      strokeFallback: "#1051E8",
+      background: THEME_FILL.name,
+      foreground: THEME_FILL_FOREGROUND.name,
+      stroke: THEME_FILL.name,
+      backgroundFallback: THEME_FILL.fallback,
+      foregroundFallback: THEME_FILL_FOREGROUND.fallback,
+      strokeFallback: THEME_FILL.fallback,
     };
   }
 
@@ -76162,11 +76254,12 @@ function counterConfig(tone) {
       backgroundFallback: "#C7CAD1",
       foregroundFallback: "#000000",
     },
+    // The theme fill and the theme foreground (decision 59).
     Brand: {
-      background: "Colors/theme/600",
-      foreground: "Colors/foreground/1000",
-      backgroundFallback: "#1051E8",
-      foregroundFallback: "#FFFFFF",
+      background: THEME_FILL.name,
+      foreground: THEME_FILL_FOREGROUND.name,
+      backgroundFallback: THEME_FILL.fallback,
+      foregroundFallback: THEME_FILL_FOREGROUND.fallback,
     },
     Destructive: {
       background: "Colors/emotional/danger/600",
@@ -76203,22 +76296,25 @@ function checkboxConfig(checked, state) {
     };
   }
 
+  // Checked, the box is a prominent fill: the theme fill, its edge the fill's
+  // colour, and the mark on it the theme foreground, white in both themes
+  // (decision 59). foreground/1000 turned the mark black in the dark.
   return {
-    controlFill: isChecked ? "Colors/theme/500" : null,
+    controlFill: isChecked ? THEME_FILL.name : null,
     controlStroke: isError
       ? "Colors/emotional/danger/600"
       : isChecked
-        ? "Colors/theme/500"
+        ? THEME_FILL.name
         : "Border/Input",
-    mark: "Colors/foreground/1000",
+    mark: THEME_FILL_FOREGROUND.name,
     label: isError ? "Colors/emotional/danger/600" : "Colors/foreground/0",
-    controlFillFallback: "#135BEC",
+    controlFillFallback: THEME_FILL.fallback,
     controlStrokeFallback: isError
       ? "#D41C42"
       : isChecked
-        ? "#135BEC"
+        ? THEME_FILL.fallback
         : "#747B8B",
-    markFallback: "#FFFFFF",
+    markFallback: THEME_FILL_FOREGROUND.fallback,
     labelFallback: isError ? "#D41C42" : "#000000",
   };
 }
@@ -76239,20 +76335,22 @@ function radioConfig(checked, state) {
     };
   }
 
+  // Checked, the ring is a border on the surface, the theme's 600, and the
+  // dot a fill, the theme fill, theme 500 in both themes (decision 59).
   return {
     controlStroke: isError
       ? "Colors/emotional/danger/600"
       : isChecked
-        ? "Colors/theme/500"
+        ? "Colors/theme/600"
         : "Border/Input",
-    dot: isError ? "Colors/emotional/danger/600" : "Colors/theme/500",
+    dot: isError ? "Colors/emotional/danger/600" : THEME_FILL.name,
     label: isError ? "Colors/emotional/danger/600" : "Colors/foreground/0",
     controlStrokeFallback: isError
       ? "#D41C42"
       : isChecked
-        ? "#135BEC"
+        ? "#1051E8"
         : "#747B8B",
-    dotFallback: isError ? "#D41C42" : "#135BEC",
+    dotFallback: isError ? "#D41C42" : THEME_FILL.fallback,
     labelFallback: isError ? "#D41C42" : "#000000",
   };
 }
@@ -76290,13 +76388,16 @@ function switchConfig(checked, state) {
     };
   }
 
+  // Checked, the track is a prominent fill, the theme fill, and the thumb on
+  // it a mark, the theme foreground, white in both themes (decision 59).
+  // background/0 turned the thumb black on the blue in the dark.
   return {
-    trackFill: isChecked ? "Colors/theme/500" : "Colors/foreground/500",
-    trackStroke: isChecked ? "Colors/theme/500" : "Border/Input",
-    thumbFill: "Colors/background/0",
+    trackFill: isChecked ? THEME_FILL.name : "Colors/foreground/500",
+    trackStroke: isChecked ? THEME_FILL.name : "Border/Input",
+    thumbFill: isChecked ? THEME_FILL_FOREGROUND.name : "Colors/background/0",
     label: "Colors/foreground/0",
-    trackFillFallback: isChecked ? "#135BEC" : "#747B8B",
-    trackStrokeFallback: isChecked ? "#135BEC" : "#747B8B",
+    trackFillFallback: isChecked ? THEME_FILL.fallback : "#747B8B",
+    trackStrokeFallback: isChecked ? THEME_FILL.fallback : "#747B8B",
     thumbFillFallback: "#FFFFFF",
     labelFallback: "#000000",
   };
@@ -76357,12 +76458,12 @@ function inputConfig(state, status) {
 
   return {
     fieldFill: isReadonly ? "Colors/background/100" : "Colors/background/0",
-    fieldStroke: isFocus ? "Colors/theme/500" : "Border/Input",
+    fieldStroke: isFocus ? "Colors/theme/600" : "Border/Input",
     label: "Colors/foreground/0",
     placeholder: "Colors/foreground/400",
     helper: "Colors/foreground/400",
     fieldFillFallback: isReadonly ? "#E3E4E8" : "#FFFFFF",
-    fieldStrokeFallback: isFocus ? "#135BEC" : "#747B8B",
+    fieldStrokeFallback: isFocus ? "#1051E8" : "#747B8B",
     labelFallback: "#000000",
     placeholderFallback: "#5D626F",
     helperFallback: "#5D626F",
