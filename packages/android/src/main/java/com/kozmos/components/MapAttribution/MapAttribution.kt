@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.kozmos.components.adaptivemapshell.LocalKozmosMapAttributionCompact
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -48,7 +49,10 @@ fun KozmosMapAttribution(
     label: String = "Map attribution",
     appearance: KozmosMapAttributionAppearance = KozmosMapAttributionAppearance.Map
 ) {
-    if (credits.isEmpty() && !showBrand) return
+    // In a map shell with no room for the whole attribution, the brand goes
+    // first: the credits are what a map provider's licence asks for.
+    val brandShown = showBrand && !LocalKozmosMapAttributionCompact.current
+    if (credits.isEmpty() && !brandShown) return
     val uriHandler = LocalUriHandler.current
     Column(
         modifier = modifier
@@ -65,7 +69,7 @@ fun KozmosMapAttribution(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
     ) {
-        if (showBrand) {
+        if (brandShown) {
             if (brand != null) brand() else Image(
                 painter = painterResource(R.drawable.kozmos_pointr_logo),
                 contentDescription = "Pointr",

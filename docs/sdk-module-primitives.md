@@ -387,7 +387,8 @@ slot is narrower than 128 units, only credits move above corners, preserving roo
 default brand. Tall side panels reserve
 the footer band instead of covering attribution.
 Credits use one horizontally scrollable line (10px scalable web; 11pt/sp scalable native),
-and a capped sheet still scrolls. Web reports attribution occlusions; native reports edge
+and a capped sheet still scrolls. With less room than the whole attribution, the brand gives
+way and the credits keep their full height, never clipped into a scroll region (GAP-135). Web reports attribution occlusions; native reports edge
 insets. Custom overlays/status messages, actual SDK camera application, custom brand assets,
 real SDK wiring and device acceptance remain integration work, not claimed complete here.
 

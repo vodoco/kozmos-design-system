@@ -193,7 +193,14 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private let hasBottomControls: Bool
     private let bottomControlsPadCamera: Bool
     private let attribution: AnyView?
+    /// The attribution's height as drawn: without its brand when compact.
     @State private var attributionHeight: CGFloat = 0
+    /// Its height with the brand, measured while not compact: what the
+    /// panel's sizing reserves, so the brand giving way never moves it.
+    @State private var attributionFullHeight: CGFloat = 0
+    /// True when the credits slot has less room than the full height: the
+    /// brand gives way, and the credits are never clipped (GAP-135).
+    @State private var attributionCompact = false
     @State private var bottomControlsHeight: CGFloat = 0
     @State private var cornerWidths: [Int: CGFloat] = [:]
     @State private var sidePanelHeight: CGFloat = 0
@@ -518,8 +525,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
         let innerWidth = max(0, size.width - safeArea.leading - safeArea.trailing - edgePadding * 2)
         let cornerReserve = cornerHeight > 0 ? ((cornerWidths.values.max() ?? 0) + edgePadding) * 2 : 0
         let attributionLift = cornerHeight > 0 && innerWidth - cornerReserve < 128 ? cornerHeight + edgePadding : 0
-        let footerBand = max(0, size.height - dockedPanel - topBarInset - safeArea.top - edgePadding * 2 - (dockedPanel > 0 ? 0 : safeArea.bottom))
-        let creditHeight = min(visibleAttributionHeight(in: size, safeArea: safeArea), max(0, footerBand - attributionLift))
+        let creditHeight = visibleAttributionHeight(in: size, safeArea: safeArea)
         let attributionPadding = creditHeight > 0 && attribution != nil
             ? Double(dockedPanel + creditHeight + attributionLift + edgePadding + (dockedPanel > 0 ? 0 : safeArea.bottom)) : 0
         let bottom = max(
@@ -551,9 +557,21 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
 
     /// How much of the shell the docked panel is covering, at its settled
     /// detent — zero when the panel floats beside the map instead.
-    private func visibleAttributionHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+    /// What the panel's sizing leaves the attribution: its full height, but
+    /// at most half the band between the top bar and the bottom edge, so very
+    /// long or localized credits never take the panel's place.
+    private func reservedAttributionHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
         guard attribution != nil else { return 0 }
-        return min(attributionHeight, max(0, size.height - topBarInset - safeArea.top - safeArea.bottom - KozmosDimensions.primitivesLayoutSpacing200 * 3) / 2)
+        return min(attributionFullHeight, attributionCap(in: size, safeArea: safeArea))
+    }
+
+    private func attributionCap(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        max(0, size.height - topBarInset - safeArea.top - safeArea.bottom - KozmosDimensions.primitivesLayoutSpacing200 * 3) / 2
+    }
+
+    /// The attribution as drawn: never clipped into a scroll region (GAP-135).
+    private func visibleAttributionHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        attribution == nil ? 0 : attributionHeight
     }
 
     private func attributionReserve(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
@@ -562,8 +580,8 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     }
 
     private func maximumPanelHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
-        guard attribution != nil, attributionHeight > 0 else { return size.height }
-        return max(0, size.height - topBarInset - safeArea.top - visibleAttributionHeight(in: size, safeArea: safeArea) - KozmosDimensions.primitivesLayoutSpacing200 * 3)
+        guard attribution != nil, attributionFullHeight > 0 else { return size.height }
+        return max(0, size.height - topBarInset - safeArea.top - reservedAttributionHeight(in: size, safeArea: safeArea) - KozmosDimensions.primitivesLayoutSpacing200 * 3)
     }
 
     private func dockedPanelHeight(in size: CGSize, isRegularWidth: Bool, safeArea: EdgeInsets = EdgeInsets()) -> CGFloat {
@@ -806,15 +824,19 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     let symmetricReserve = max(start, end)
                     let above = corners > 0 && innerWidth - symmetricReserve * 2 < 128
                     let lift = above ? corners + gap : 0
-                    ScrollView(.vertical) {
-                        attribution
-                            .frame(maxWidth: .infinity)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .background(GeometryReader { proxy in
-                                Color.clear.preference(key: KozmosAttributionHeightKey.self, value: proxy.size.height)
-                            })
-                    }
-                    .frame(width: max(0, innerWidth - (above ? 0 : symmetricReserve * 2)), height: min(visibleAttributionHeight(in: geometry.size, safeArea: safeArea), max(0, footerBand - lift)))
+                    // With less room than its full height, the brand gives way;
+                    // the credits keep their height and are never clipped.
+                    let compact = attributionFullHeight > min(attributionCap(in: geometry.size, safeArea: safeArea), max(0, footerBand - lift))
+                    attribution
+                        .environment(\.kozmosMapAttributionCompact, attributionCompact)
+                        .frame(maxWidth: .infinity)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .background(GeometryReader { proxy in
+                            Color.clear.preference(key: KozmosAttributionHeightKey.self, value: proxy.size.height)
+                        })
+                        .onAppear { attributionCompact = compact }
+                        .onChange(of: compact) { attributionCompact = $0 }
+                    .frame(width: max(0, innerWidth - (above ? 0 : symmetricReserve * 2)))
                     .padding(.horizontal, above ? 0 : symmetricReserve)
                     .padding(.horizontal, gap)
                     .padding(.leading, safeArea.leading)
@@ -837,7 +859,10 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             .onPreferenceChange(KozmosBottomControlsHeightKey.self) { bottomControlsHeight = $0 }
             .onPreferenceChange(KozmosBottomCornerWidthsKey.self) { cornerWidths = $0 }
             .onPreferenceChange(KozmosSidePanelHeightKey.self) { sidePanelHeight = $0 }
-            .onPreferenceChange(KozmosAttributionHeightKey.self) { attributionHeight = $0 }
+            .onPreferenceChange(KozmosAttributionHeightKey.self) {
+                attributionHeight = $0
+                if !attributionCompact { attributionFullHeight = $0 }
+            }
             .onPreferenceChange(KozmosMapShellContentPanelHeightKey.self) { contentPanelHeight = $0 }
             .onPreferenceChange(KozmosMapShellPeekBottomKey.self) { peekAnchorBottom = $0 }
             .onPreferenceChange(KozmosMapShellPanelHeaderBottomKey.self) { panelHeaderBottom = $0 }
