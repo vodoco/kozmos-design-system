@@ -786,6 +786,23 @@
   .kozmos-poi-result-number-name {
     @apply sr-only;
   }
+  /* The name and the summary take their direction from their own words
+     (dir="auto"), so an Arabic summary's full stop and its clamp's ellipsis
+     fall at its end. Their lines still start where the card's do: a
+     start-aligned line would follow the words' direction, sending a Latin
+     brand in an Arabic card to the left, away from its category. Chromium
+     knows only the prefixed value; the unprefixed one is a rule of its own,
+     so no minifier folds the two into one declaration. */
+  .kozmos-poi-result-name,
+  .kozmos-poi-result-summary {
+    text-align: -webkit-match-parent;
+  }
+  @supports (text-align: match-parent) {
+    .kozmos-poi-result-name,
+    .kozmos-poi-result-summary {
+      text-align: match-parent;
+    }
+  }
   /* SDK is the default presentation. Tabs participate in layout so translated
      labels and enlarged type never cover the name. Group interiors are
      square; only the first row shares the container's outer top corner. */

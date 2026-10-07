@@ -245,6 +245,11 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
         // the two differ (GAP-004). An empty tag is no tag, as on iOS and
         // Android: lang="" would say the language is unknown.
         lang={result.nameLanguage || undefined}
+        // The name's own words decide its direction, tagged or not: an
+        // Arabic name in an English card runs right to left, its full stop
+        // and its ellipsis at its end, and a Latin brand in an Arabic card
+        // left to right. Owned CSS keeps it aligned with the card's start.
+        dir="auto"
       >
         {poi.name}
       </span>
@@ -411,8 +416,11 @@ const POIResultCard = React.forwardRef<HTMLElement, POIResultCardProps>(
                 // makes a screen reader change voice for these words alone,
                 // and is set only when the two differ (GAP-125).
                 <span
-                  className="mt-1 line-clamp-2 block text-sm text-muted-foreground"
+                  className="kozmos-poi-result-summary mt-1 line-clamp-2 block text-sm text-muted-foreground"
                   lang={result.summaryLanguage || undefined}
+                  // Its own direction too, as the name's: a Hebrew summary's
+                  // full stop, and the clamp's ellipsis, at its end.
+                  dir="auto"
                 >
                   {result.summary}
                 </span>

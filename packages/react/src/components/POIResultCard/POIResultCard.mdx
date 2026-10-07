@@ -62,6 +62,12 @@ GAP-004, GAP-125). With no tag, or an empty one, there is no `lang` attribute.
 `POIResultList` and `POIResultGroup` draw their results through the card, so listed and
 grouped rows keep both tags.
 
+The name and the summary also take their direction from their own words, tagged or not
+(`dir="auto"`): an Arabic or Hebrew summary in an English card runs right to left, with its
+full stop and a clamped summary's ellipsis at its end, and a Latin brand in an Arabic card
+runs left to right. Their lines still start at the card's start, as its other lines do.
+Compose does the same, and SwiftUI's text already did.
+
 SwiftUI and Compose draw the summary as the web does, muted and two lines at most, and read
 it after the location. When either tag is set, VoiceOver hears the select row through a UIKit
 element whose label carries each tagged range's speech language: the same words, state and

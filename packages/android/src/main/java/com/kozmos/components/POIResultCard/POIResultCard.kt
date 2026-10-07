@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -50,6 +51,8 @@ import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -220,6 +223,14 @@ fun KozmosPOIResultCard(
     // and selection. Each is cleared around its text, not on it, so the
     // unmerged tree still holds every word the card draws.
     val saidByTheRow = Modifier.clearAndSetSemantics { }
+    // The name and the summary take their direction from their own words, as
+    // the web's dir="auto" does: an Arabic summary in an English card runs
+    // right to left, its full stop and its ellipsis at its end, and a Latin
+    // brand in an Arabic card left to right. Their lines still start at the
+    // card's start, as every other line does; a start alignment would follow
+    // the words' direction instead.
+    val ownDirection = TextDirection.Content
+    val cardStart = if (LocalLayoutDirection.current == LayoutDirection.Rtl) TextAlign.Right else TextAlign.Left
 
     Surface(
         onClick = {
@@ -288,7 +299,8 @@ fun KozmosPOIResultCard(
                             // Drawn in its language too, so its glyphs are
                             // that language's, as the web's lang does.
                             text = kozmosLocalizedText(poi.name, result.nameLanguage),
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.bodyLarge.copy(textDirection = ownDirection),
+                            textAlign = cardStart,
                             fontWeight = FontWeight.Normal,
                             color = KozmosThemeTokens.primitivesColorsForeground100,
                             maxLines = if (sdk) Int.MAX_VALUE else 1,
@@ -335,7 +347,8 @@ fun KozmosPOIResultCard(
                             // grows moves the results below it (GAP-029).
                             Text(
                                 text = kozmosLocalizedText(line, result.summaryLanguage),
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodyMedium.copy(textDirection = ownDirection),
+                                textAlign = cardStart,
                                 color = secondaryText,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,

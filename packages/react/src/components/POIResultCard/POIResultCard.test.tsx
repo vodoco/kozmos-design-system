@@ -526,6 +526,43 @@ describe("POIResultCard", () => {
     }
   });
 
+  it("gives an Arabic or Hebrew name and summary their own direction", () => {
+    // A right-to-left language's words in a left-to-right card took the
+    // card's direction: the full stop sat after the words' left-hand end and
+    // a clamped summary's ellipsis on its right. Each text takes its
+    // direction from its own first strong letter, so a Latin name in a
+    // right-to-left card keeps a left-to-right one too.
+    const name = "صيدلية المطار";
+    const summary = "הכי שקטה מבין שלוש הטרקלינים, לפני הבידוק.";
+    const { rerender } = render(
+      <POIResultCard
+        poi={{ ...poi, name }}
+        result={{
+          ...result,
+          nameLanguage: "ar",
+          summary,
+          summaryLanguage: "he",
+        }}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(name)).toHaveAttribute("dir", "auto");
+    expect(screen.getByText(summary)).toHaveAttribute("dir", "auto");
+    // Only those two: the card's own labels keep the card's direction.
+    expect(screen.getByText("Dining")).not.toHaveAttribute("dir");
+
+    // Untagged too: the words decide, not the tag.
+    rerender(
+      <POIResultCard
+        poi={{ ...poi, name }}
+        result={{ ...result, summary }}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(name)).toHaveAttribute("dir", "auto");
+    expect(screen.getByText(summary)).toHaveAttribute("dir", "auto");
+  });
+
   describe("a walk shown as a band (decision 50, GAP-088)", () => {
     // The product passes the walking time it has, with the band Kozmos's rule
     // gives it; the card draws the band. The exact minutes stay in the
