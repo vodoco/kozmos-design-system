@@ -330,10 +330,11 @@ data class KozmosPOIResultPresentation(
      */
     val nameLanguage: String? = null,
     /**
-     * A short generated line about this result, already in the device's
-     * language: why it answers the query, or what marks it out from the
-     * results around it. One sentence, not a description — POIDetailPanel
-     * owns the long form.
+     * A short generated line about this result: why it answers the query, or
+     * what marks it out from the results around it. One sentence, not a
+     * description — POIDetailPanel owns the long form. Written by the model in
+     * the query's language, which may not be the interface language: say which
+     * in [summaryLanguage].
      *
      * Optional because most results do not have one. A card that is given
      * nothing draws nothing.
@@ -349,7 +350,15 @@ data class KozmosPOIResultPresentation(
      * null is unknown; false hides the note, not a guarantee of staff availability.
      * Independent of query match, authored-name language and device/UI locale.
      */
-    val languageNotListed: Boolean? = null
+    val languageNotListed: Boolean? = null,
+    /**
+     * BCP 47 tag for the language [summary] is written in, when it differs
+     * from the interface language: a visitor who asks in Spanish on an English
+     * device reads a Spanish summary among English labels (MAP-474 US2-EC1).
+     * TalkBack needs the tag to say it in a Spanish voice (WCAG 3.1.2). Leave
+     * it out when the summary is in the interface language.
+     */
+    val summaryLanguage: String? = null
 ) {
     /** Mirrors the web rule: only an explicit `false` marks a result unavailable. */
     val isAvailable: Boolean
