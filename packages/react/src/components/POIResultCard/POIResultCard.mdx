@@ -50,6 +50,26 @@ or physical VoiceOver/TalkBack acceptance.
 
 <Canvas of={Stories.StaffLanguageNotListed} />
 
+## The name's language and the summary's
+
+A result's name is shown exactly as authored, and its `summary` is written by the model in
+the query's language: a visitor who asks in Spanish on an English device reads a Spanish
+summary among English labels (MAP-474 US2-EC1). `result.nameLanguage` and
+`result.summaryLanguage` say which language each is in, as BCP 47 tags, set only when it
+differs from the interface language. The card sets each as the `lang` of that text's own
+span, never the card's, so a screen reader changes voice for those words alone (WCAG 3.1.2;
+GAP-004, GAP-125). With no tag, or an empty one, there is no `lang` attribute.
+`POIResultList` and `POIResultGroup` draw their results through the card, so listed and
+grouped rows keep both tags.
+
+SwiftUI and Compose draw the summary as the web does, muted and two lines at most, and read
+it after the location. When either tag is set, VoiceOver hears the select row through a UIKit
+element whose label carries each tagged range's speech language, and TalkBack is given the
+row's words as text with a `LocaleSpan` over each tagged range: the same words, state and
+action as without tags, each phrase in its own voice. A `selectionLabel` replaces the whole
+name, so the host words it in one language. Physical VoiceOver and TalkBack review remains
+separate.
+
 ## Default SDK presentation and migration
 
 `presentationStyle="sdk"` is now the default on React, SwiftUI and Compose.
