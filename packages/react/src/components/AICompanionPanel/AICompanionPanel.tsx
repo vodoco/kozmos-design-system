@@ -4,6 +4,10 @@ import { Stars01, XClose } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { inertOutside } from "../../utils/modal-inert";
 import { Text } from "../Text";
+import { MapShellPanelFillContext } from "../AdaptiveMapShell/map-shell-panel";
+
+const useLayoutEffect =
+  typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
 export interface AICompanionPanelProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
@@ -162,6 +166,14 @@ const AICompanionPanel = React.forwardRef<
     // The close comes renders after the open, so it calls the handler the
     // panel has by then, not the one it opened with.
     const closeAutoFocus = React.useRef(onCloseAutoFocus);
+    // It fills its panel. Beside the map, where a shell's panel hugs its
+    // content, it asks the shell for the panel's whole height, so its header
+    // and input stay put and only the thread scrolls (GAP-124).
+    const claimPanelFill = React.useContext(MapShellPanelFillContext);
+    useLayoutEffect(
+      () => (open && claimPanelFill ? claimPanelFill() : undefined),
+      [open, claimPanelFill],
+    );
     React.useEffect(() => {
       closeAutoFocus.current = onCloseAutoFocus;
     }, [onCloseAutoFocus]);
