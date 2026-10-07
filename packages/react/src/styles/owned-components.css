@@ -135,6 +135,37 @@
     width: 100%;
     white-space: normal;
   }
+  /* RouteSummary's actions (GAP-110, GAP-111): Previous and Next, or Go and
+     Details, in equal columns in reading order, so they mirror in RTL. A
+     Kozmos Button here grows to two lines rather than overflow and keeps its
+     44px; aria-disabled reads unavailable without dropping focus, as a
+     disabled button would. Owned, so it holds without @scope. Grid columns,
+     not flex: a flex basis of 0 still adds an outline button's border. */
+  .kozmos-route-summary-actions {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 0.5rem;
+  }
+  .kozmos-route-summary-actions > * {
+    min-width: 0;
+  }
+  .kozmos-route-summary-actions > .kozmos-button {
+    height: auto;
+    min-height: 2.75rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-route-summary-actions > .kozmos-button[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: default;
+  }
+  /* RouteSummary's destination and its location line break a long word
+     rather than widen the page at 200% text. Owned, so it holds without
+     @scope, where the actions below it already hold. */
+  .kozmos-route-summary-destination {
+    overflow-wrap: break-word;
+  }
   .kozmos-map-attribution {
     font-size: calc(var(--primitives-typography-font-size-50) * 1rem / 16);
     line-height: 1.2;

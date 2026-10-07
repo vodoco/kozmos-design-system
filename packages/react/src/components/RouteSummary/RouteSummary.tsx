@@ -8,7 +8,6 @@ import { X, NavigationPointer01 as Navigation } from "@kozmos-ds/icons";
 
 interface RouteSummaryBaseProps extends React.HTMLAttributes<HTMLDivElement> {
   distanceText?: string;
-  onEndRoute: () => void;
   /** What the summary sits on: solid by default, glass where the product asks for it. */
   surface?: SurfaceVariant;
 }
@@ -18,6 +17,8 @@ export interface RouteSummaryEstimateProps extends RouteSummaryBaseProps {
   distanceText: string;
   destination?: undefined;
   etaText: string;
+  /** Ends the route: required in the estimate layout, optional in the navigation layout. */
+  onEndRoute: () => void;
   onStartNavigation?: () => void;
   transportModeIcon?: React.ReactNode;
   state?: "preview" | "active";
@@ -28,10 +29,14 @@ export interface RouteSummaryEstimateProps extends RouteSummaryBaseProps {
 /**
  * The navigation layout: the destination's name with End beside it in the
  * danger outline; the time, distance and arrival on one row; the caller's
- * progress — a `RouteProgressRail`, in the products — below.
+ * progress — a `RouteProgressRail`, in the products — below, and the
+ * journey's actions after it. Without `onEndRoute` it is the route preview:
+ * no End, and Go and Details in `actions`.
  */
 export interface RouteSummaryNavigationProps extends RouteSummaryBaseProps {
   destination: string;
+  /** The place's line under the destination, muted: "Store · Level 1 · Harbour Point Mall". */
+  locationText?: string;
   /** Localized remaining estimate; omitted when the host cannot provide one. */
   durationText?: string;
   /** Decorative destination image; failures retain a same-size map-pin fallback. */
@@ -44,7 +49,18 @@ export interface RouteSummaryNavigationProps extends RouteSummaryBaseProps {
   presentation?: "standalone" | "hosted";
   arrivalText?: string;
   endLabel?: string;
+  /** Ends the route. End is drawn only when it is passed; the route preview leaves it out. */
+  onEndRoute?: () => void;
   progress?: React.ReactNode;
+  /**
+   * After the progress: the journey's actions — Previous and Next in static
+   * wayfinding, Go and Details in the route preview. Drawn in equal columns in
+   * reading order; a Kozmos Button here grows to two lines rather than
+   * overflow, keeps its 44px, and reads unavailable through
+   * `aria-disabled="true"`. The host owns what they do, when they are
+   * unavailable, and announcing the new step.
+   */
+  actions?: React.ReactNode;
 }
 
 export type RouteSummaryProps =
@@ -62,6 +78,7 @@ const RouteSummaryNavigation = React.forwardRef<
     {
       className,
       destination,
+      locationText,
       destinationImage,
       presentation: presentationProp,
       durationText,
@@ -69,6 +86,7 @@ const RouteSummaryNavigation = React.forwardRef<
       arrivalText,
       endLabel = "End",
       progress,
+      actions,
       surface = "solid",
       onEndRoute,
       ...props
@@ -78,6 +96,16 @@ const RouteSummaryNavigation = React.forwardRef<
     const inShellPanel = React.useContext(MapShellPanelContext);
     const presentation =
       presentationProp ?? (inShellPanel ? "hosted" : "standalone");
+    const heading = (
+      <h2
+        className={cn(
+          "kozmos-route-summary-destination m-0 text-xl font-semibold leading-tight text-foreground",
+          !locationText && "min-w-0 flex-1 basis-40",
+        )}
+      >
+        {destination}
+      </h2>
+    );
     return (
       <div
         ref={ref}
@@ -95,19 +123,29 @@ const RouteSummaryNavigation = React.forwardRef<
           {destinationImage && (
             <DestinationImage key={destinationImage} src={destinationImage} />
           )}
-          <h2 className="m-0 min-w-0 flex-1 basis-40 break-words text-xl font-semibold leading-tight text-foreground">
-            {destination}
-          </h2>
-          <Button
-            type="button"
-            variant="outline"
-            emotion="danger"
-            size="sm"
-            className="h-auto min-h-11 max-w-full shrink-0 whitespace-normal rounded-pill [overflow-wrap:anywhere]"
-            onClick={onEndRoute}
-          >
-            {endLabel}
-          </Button>
+          {locationText ? (
+            <div className="min-w-0 flex-1 basis-40">
+              {heading}
+              {/* Muted, and on glass the foreground colour (decision 48). */}
+              <p className="kozmos-route-summary-destination kozmos-muted-text m-0 text-sm">
+                {locationText}
+              </p>
+            </div>
+          ) : (
+            heading
+          )}
+          {onEndRoute && (
+            <Button
+              type="button"
+              variant="outline"
+              emotion="danger"
+              size="sm"
+              className="h-auto min-h-11 max-w-full shrink-0 whitespace-normal rounded-pill [overflow-wrap:anywhere]"
+              onClick={onEndRoute}
+            >
+              {endLabel}
+            </Button>
+          )}
         </div>
         {(durationText || distanceText || arrivalText) && (
           <p className="m-0 flex flex-wrap items-baseline gap-3 text-[15px] text-foreground">
@@ -121,6 +159,9 @@ const RouteSummaryNavigation = React.forwardRef<
           </p>
         )}
         {progress}
+        {actions != null && actions !== false && (
+          <div className="kozmos-route-summary-actions">{actions}</div>
+        )}
       </div>
     );
   },

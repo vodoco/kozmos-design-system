@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { RouteSummary } from "./RouteSummary";
 import { AdaptiveMapShell } from "../AdaptiveMapShell";
+import { Button } from "../Button";
 
 describe("RouteSummary", () => {
   it("hosts navigation without another surface and omits unavailable metrics", () => {
@@ -292,6 +293,183 @@ describe("RouteSummary", () => {
         />,
       );
       expect(presentationOf(container)).toBe("standalone");
+    });
+  });
+  describe("actions (GAP-110)", () => {
+    // Previous and Next in static wayfinding, as the host draws them: Kozmos
+    // Buttons that never submit a form, unavailable through aria-disabled.
+    const steps = (
+      <>
+        <Button
+          type="button"
+          variant="outline"
+          aria-disabled="true"
+          onClick={() => {}}
+        >
+          Previous
+        </Button>
+        <Button type="button" onClick={() => {}}>
+          Next
+        </Button>
+      </>
+    );
+
+    it("draws nothing after the progress without actions", () => {
+      for (const actions of [undefined, null, false]) {
+        const { container, unmount } = render(
+          <RouteSummary
+            destination="Gate 3"
+            onEndRoute={() => {}}
+            progress={<div data-testid="rail" />}
+            actions={actions}
+          />,
+        );
+        const root = container.firstElementChild!;
+        expect(root.lastElementChild).toBe(screen.getByTestId("rail"));
+        expect(
+          container.querySelector(".kozmos-route-summary-actions"),
+        ).toBeNull();
+        expect(root).not.toHaveAttribute("actions");
+        unmount();
+      }
+    });
+
+    it("puts the actions after the progress, in reading order", () => {
+      const { container } = render(
+        <RouteSummary
+          destination="Gate 3"
+          onEndRoute={() => {}}
+          progress={<div data-testid="rail" />}
+          actions={steps}
+        />,
+      );
+      const rail = screen.getByTestId("rail");
+      const previous = screen.getByRole("button", { name: "Previous" });
+      const next = screen.getByRole("button", { name: "Next" });
+      const follows = (a: Node, b: Node) =>
+        Boolean(
+          a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING,
+        );
+      expect(follows(rail, previous)).toBe(true);
+      expect(follows(previous, next)).toBe(true);
+      // The row is the summary's last part, holding the host's two buttons.
+      const row = container.firstElementChild!.lastElementChild!;
+      expect(Array.from(row.children)).toEqual([previous, next]);
+      expect(container.firstElementChild).not.toHaveAttribute("actions");
+    });
+
+    it("wraps the actions in the owned recipe, hosted and standalone", () => {
+      const summary = (presentation?: "hosted" | "standalone") => (
+        <RouteSummary
+          destination="Gate 3"
+          presentation={presentation}
+          onEndRoute={() => {}}
+          actions={steps}
+        />
+      );
+      for (const [where, ui] of [
+        ["hosted", summary("hosted")],
+        ["standalone", summary("standalone")],
+        [
+          "in the shell's panel",
+          <AdaptiveMapShell key="shell" map={<div />} panel={summary()} />,
+        ],
+      ] as const) {
+        const { unmount } = render(ui);
+        // The shell keeps its panel from assistive technology until it has
+        // measured it, which jsdom never does.
+        const button = (name: string) =>
+          screen.getByRole("button", { name, hidden: true });
+        const row = button("Next").parentElement!;
+        // Owned, and only owned: a utility here would vanish in a host
+        // without @scope, and the layout is the slot's promise.
+        expect(row.className, where).toBe("kozmos-route-summary-actions");
+        expect(
+          row.closest("[data-presentation]")!.getAttribute("data-presentation"),
+          where,
+        ).toBe(where === "standalone" ? "standalone" : "hosted");
+        // The host's buttons, as the host wrote them.
+        expect(button("Previous"), where).toHaveAttribute(
+          "aria-disabled",
+          "true",
+        );
+        unmount();
+      }
+    });
+  });
+
+  describe("route preview (GAP-111)", () => {
+    it("omits End when the navigation layout has no onEndRoute", () => {
+      render(
+        <RouteSummary
+          destination="Tessel Shoes"
+          durationText="3 min"
+          distanceText="205 m"
+          actions={
+            <>
+              <Button type="button">Go</Button>
+              <Button type="button" variant="outline">
+                Details
+              </Button>
+            </>
+          }
+        />,
+      );
+      expect(screen.queryByRole("button", { name: "End" })).toBeNull();
+      expect(
+        screen.getAllByRole("button").map((button) => button.textContent),
+      ).toEqual(["Go", "Details"]);
+    });
+
+    it("keeps End for every existing navigation caller", () => {
+      for (const presentation of [undefined, "hosted", "standalone"] as const)
+        for (const progress of [undefined, <div key="rail" />]) {
+          const onEndRoute = vi.fn();
+          const { unmount } = render(
+            <RouteSummary
+              destination="Gate 3"
+              presentation={presentation}
+              onEndRoute={onEndRoute}
+              progress={progress}
+            />,
+          );
+          const end = screen.getByRole("button", { name: "End" });
+          // Beside the destination, as before: the heading's row ends with it.
+          expect(end.parentElement!.lastElementChild).toBe(end);
+          expect(end.parentElement).toContainElement(
+            screen.getByRole("heading"),
+          );
+          fireEvent.click(end);
+          expect(onEndRoute).toHaveBeenCalledTimes(1);
+          unmount();
+        }
+    });
+
+    it("draws the location line under the destination", () => {
+      const { container, rerender } = render(
+        <RouteSummary
+          destination="Tessel Shoes"
+          locationText="Store · Level 1 · Harbour Point Mall"
+          surface="glass"
+        />,
+      );
+      const heading = screen.getByRole("heading", { name: "Tessel Shoes" });
+      const location = screen.getByText("Store · Level 1 · Harbour Point Mall");
+      // Its own line after the heading, not part of the heading's name.
+      expect(location.tagName).toBe("P");
+      expect(heading.nextElementSibling).toBe(location);
+      // Muted, and on glass the foreground colour (decision 48).
+      expect(location).toHaveClass("kozmos-muted-text");
+      expect(location.className).not.toMatch(/\btext-muted-foreground\b/);
+      expect(container.firstElementChild).not.toHaveAttribute("locationtext");
+      // Without it the heading's row is as it was.
+      rerender(
+        <RouteSummary destination="Tessel Shoes" onEndRoute={vi.fn()} />,
+      );
+      expect(
+        screen.getByRole("heading", { name: "Tessel Shoes" })
+          .nextElementSibling,
+      ).toBe(screen.getByRole("button", { name: "End" }));
     });
   });
 });
