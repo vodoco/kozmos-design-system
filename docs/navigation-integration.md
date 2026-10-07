@@ -220,7 +220,7 @@ package-registry delivery. Host acceptance still needs offline/reconnect, changi
 floors and locales, background/resume, location permission changes, long real venue names,
 screen readers and hardware keyboards. Retain existing map provider attribution.
 
-The broader backlog still includes inline itinerary endpoint Edit actions (GAP-104), a dedicated
+Itinerary's endpoint Change actions (GAP-104) are fixed on main, not yet released. The broader backlog still includes a dedicated
 Previous/Next actions slot for RouteSummary (the remaining part of GAP-110), the full
 POIDetailPanel route-preview/details slot (GAP-111), and renderer styling ownership. Current
 examples use the existing preview and setup components instead; they are not claimed to close
