@@ -242,12 +242,15 @@ fun KozmosAdaptiveMapShell(
     var controlsHeight by remember { mutableStateOf(0.dp) }
     var panelHeight by remember { mutableStateOf(0.dp) }
     var sidePanelHeight by remember { mutableStateOf(0.dp) }
+    // The corners' own height, whether or not they fit.
     var bottomControlsHeight by remember { mutableStateOf(0.dp) }
     var bottomStartWidth by remember { mutableStateOf(0.dp) }
     var bottomEndWidth by remember { mutableStateOf(0.dp) }
     // The attribution as drawn (without its brand when compact), and its full
-    // height with the brand, measured while not compact: what the panel's
-    // sizing reserves, so the brand giving way never moves the panel.
+    // height with the brand: what the panel's sizing reserves, so the brand
+    // giving way never moves the panel. Measured as drawn while the brand
+    // shows, and from an unplaced copy while it has given way, so it follows a
+    // change of size or text either way (GAP-135).
     var attributionHeight by remember { mutableStateOf(0.dp) }
     var attributionFullHeight by remember { mutableStateOf(0.dp) }
     var attributionCompact by remember { mutableStateOf(false) }
@@ -283,19 +286,28 @@ fun KozmosAdaptiveMapShell(
         val footerHeight = if (attribution != null) attributionHeight else 0.dp
         val attributionReserve = if (footerHeight > 0.dp) footerHeight + gap else 0.dp
         val bottomBand = (band - (if (controls != null) controlsHeight + gap else 0.dp)).coerceAtLeast(0.dp)
-        val cornersVisible = bottomControlsHeight > 0.dp && bottomControlsHeight <= bottomBand
-        val startReserve = if (cornersVisible && bottomStartWidth > 0.dp) bottomStartWidth + gap else 0.dp
-        val endReserve = if (cornersVisible && bottomEndWidth > 0.dp) bottomEndWidth + gap else 0.dp
-        val attributionCornerReserve = maxOf(startReserve, endReserve)
-        val attributionAboveCorners = cornersVisible && footerWidth - gap * 2 - attributionCornerReserve * 2 < 128.dp
-        val attributionLift = if (attributionAboveCorners) bottomControlsHeight + gap else 0.dp
+        val cornersFit = bottomControlsHeight > 0.dp && bottomControlsHeight <= bottomBand
+        val cornerReserve = maxOf(if (bottomStartWidth > 0.dp) bottomStartWidth + gap else 0.dp,
+            if (bottomEndWidth > 0.dp) bottomEndWidth + gap else 0.dp)
+        // Corners that fit lift the attribution above them when they leave no
+        // middle slot 128 wide.
+        val liftOverCorners = if (cornersFit && footerWidth - gap * 2 - cornerReserve * 2 < 128.dp)
+            bottomControlsHeight + gap else 0.dp
         val maximumPanelHeight = if (reservedFooterHeight > 0.dp)
             (availableHeight - topInset - safeTop - reservedFooterHeight - gap * 3).coerceAtLeast(0.dp) else availableHeight
-        // With less room than its full height, the brand gives way; the
-        // credits keep their height.
+        // With less room than its full height, lifted above the corners when
+        // they fit, the brand gives way (decision 58); the credits keep their
+        // height.
         val compactAttribution = attribution != null &&
-            attributionFullHeight > minOf(attributionCap, (band - attributionLift).coerceAtLeast(0.dp))
+            attributionFullHeight > minOf(attributionCap, (band - liftOverCorners).coerceAtLeast(0.dp))
         SideEffect { if (attributionCompact != compactAttribution) attributionCompact = compactAttribution }
+        // Then the corners: credits still too tall to sit above them send them
+        // away and return to the bottom row. The credits never clip.
+        val cornersGiveWay = attributionCompact && liftOverCorners > 0.dp && footerHeight + liftOverCorners > band
+        val cornersVisible = cornersFit && !cornersGiveWay
+        val attributionCornerReserve = if (cornersVisible) cornerReserve else 0.dp
+        val attributionAboveCorners = cornersVisible && liftOverCorners > 0.dp
+        val attributionLift = if (attributionAboveCorners) liftOverCorners else 0.dp
         val chromeAlignment = if (panelPlacement == KozmosMapPanelPlacement.End) Alignment.BottomStart else Alignment.BottomEnd
         val panelRight = (panelPlacement == KozmosMapPanelPlacement.End) == (direction == LayoutDirection.Ltr)
         fun cleanInset(value: Double) = if (value.isFinite()) maxOf(0.0, value) else 0.0
@@ -403,7 +415,7 @@ fun KozmosAdaptiveMapShell(
                         maxOf(y, shellOrigin.y + (availableHeight - safeBottom - gap).roundToPx()))
                 }
                 val popupFitsBelowPanel = with(density) { belowPanelBounds.height >= (bottomControlsHeight + gap * 10).roundToPx() }
-                CompositionLocalProvider(LocalMapPopupRegion provides MapPopupRegion(popupBounds, bottomBand > 0.dp)) {
+                CompositionLocalProvider(LocalMapPopupRegion provides MapPopupRegion(popupBounds, bottomBand > 0.dp && !cornersGiveWay)) {
                 BottomControlsLayout(
                     label = bottomControlsLabel,
                     start = controlsBottomStart?.let { content -> {
@@ -418,10 +430,11 @@ fun KozmosAdaptiveMapShell(
                             Box(Modifier.onSizeChanged { bottomEndWidth = with(density) { it.width.toDp() } }) { content() }
                         }
                     } },
-                    availableHeight = bottomBand,
+                    // Given way to the credits, they are not placed.
+                    availableHeight = if (cornersGiveWay) 0.dp else bottomBand,
                     modifier = Modifier.fillMaxWidth()
-                        .onSizeChanged { bottomControlsHeight = with(density) { it.height.toDp() } }
-                        .then(if (bottomBand <= 0.dp) Modifier.clearAndSetSemantics {} else Modifier)
+                        .then(if (bottomBand <= 0.dp || cornersGiveWay) Modifier.clearAndSetSemantics {} else Modifier),
+                    onHeight = { bottomControlsHeight = with(density) { it.toDp() } }
                 )
                 }
             }
@@ -444,6 +457,21 @@ fun KozmosAdaptiveMapShell(
                     if (!attributionCompact) attributionFullHeight = height
                 }, contentAlignment = Alignment.Center) {
                     CompositionLocalProvider(LocalKozmosMapAttributionCompact provides attributionCompact) { attribution() }
+                }
+                if (attributionCompact) {
+                    // Given way, the brand is still measured: the whole
+                    // attribution, at the width it would be drawn, never
+                    // placed and without semantics, so the shell knows when it
+                    // fits again.
+                    Layout(
+                        content = { CompositionLocalProvider(LocalKozmosMapAttributionCompact provides false) { attribution() } },
+                        modifier = Modifier.fillMaxWidth().clearAndSetSemantics {}
+                    ) { measurables, constraints ->
+                        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+                        val whole = measurables.maxOfOrNull { it.measure(loose).height } ?: 0
+                        if (whole > 0) attributionFullHeight = whole.toDp()
+                        layout(0, 0) {}
+                    }
                 }
             }
         }
