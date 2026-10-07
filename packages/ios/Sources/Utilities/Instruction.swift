@@ -44,46 +44,6 @@ func kozmosInstructionDescription(_ parts: [KozmosInstructionPart], suffix: [Str
     }
     return words
   }
-
-  /// SwiftUI's Text accessibility label loses per-range speech language on iOS.
-  /// This supported UIKit element replaces only that label, not the visual/touch view.
-  private struct KozmosInstructionElement: UIViewRepresentable {
-    let words: NSAttributedString
-    let selected: Bool
-    let hint: String?
-    let activate: (() -> Void)?
-
-    final class Element: UIView {
-      var activate: (() -> Void)?
-      override var accessibilityFrame: CGRect {
-        get {
-          guard let window else { return .zero }
-          return window.convert(convert(bounds, to: window), to: window.screen.coordinateSpace)
-        }
-        set { super.accessibilityFrame = newValue }
-      }
-      override func accessibilityActivate() -> Bool {
-        guard let activate else { return false }
-        activate()
-        return true
-      }
-    }
-
-    func makeUIView(context: Context) -> Element {
-      let view = Element()
-      view.backgroundColor = .clear
-      view.isUserInteractionEnabled = false
-      view.isAccessibilityElement = true
-      return view
-    }
-    func updateUIView(_ view: Element, context: Context) {
-      view.accessibilityAttributedLabel = words
-      view.accessibilityHint = hint
-      view.accessibilityTraits = activate == nil ? .staticText : .button
-      if selected { view.accessibilityTraits.insert(.selected) }
-      view.activate = activate
-    }
-  }
 #endif
 
 extension View {
@@ -95,11 +55,13 @@ extension View {
   ) -> some View {
     #if os(iOS)
       if parts.contains(where: { !($0.lang ?? "").isEmpty }) {
-        self.accessibilityHidden(true)
-          .overlay(
-            KozmosInstructionElement(
-              words: kozmosInstructionSpokenText(parts, suffix: suffix),
-              selected: selected, hint: hint, activate: activate))
+        // SwiftUI's label would lose each part's speech language: a UIKit
+        // element says the instruction instead (SpeechLanguage.swift).
+        self.kozmosSpeechLanguageElement(
+          kozmosInstructionSpokenText(parts, suffix: suffix),
+          traits: (activate == nil ? UIAccessibilityTraits.staticText : .button)
+            .union(selected ? .selected : []),
+          hint: hint, activate: activate)
       } else {
         self.accessibilityElement(children: .ignore)
           .accessibilityLabel(kozmosInstructionDescription(parts, suffix: suffix))
