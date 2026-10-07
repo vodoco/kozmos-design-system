@@ -69,12 +69,14 @@ module.exports = {
         // pin; a filled Button reads the same colour through its own token)
         // is the theme fill, theme 500, the client's base colour, in both
         // themes; what sits on it is the theme foreground, white in both.
-        // The fill reads the ramp, as the 600 it replaces did, so a product
-        // that re-points the ramp through ThemeProvider's `tokens` still
-        // re-brands it; tokens:contrast:check holds the Button's token to the
-        // same step. `primary` stays theme 600, which turns over with the
-        // theme, for text, icons, borders and rings on a surface; its
-        // foreground turns black in the dark, so it is never ink on a fill.
+        // The fill reads the ramp, and the Button's token is a reference to
+        // the same step in the token stylesheets (GAP-23), so one override of
+        // theme 500 through ThemeProvider's `tokens` re-brands every fill,
+        // the Button's with them; tokens:contrast:check holds the Button's
+        // token to that step. `primary` stays theme 600, which turns over
+        // with the theme, for text, icons, borders and rings on a surface;
+        // its foreground turns black in the dark, so it is never ink on a
+        // fill.
         "theme-fill": {
           DEFAULT: "var(--primitives-colors-theme-500)",
           foreground:

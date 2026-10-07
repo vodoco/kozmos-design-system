@@ -62,7 +62,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-20 | `SearchBar`'s field is unstyled in WebKit (Safari, iOS)          | Product / SDK          | fixed        |
 | GAP-21 | `Heading` cannot reach the tokens' heading scale                 | Core                   | composed     |
 | GAP-22 | Font-weight tokens carry names, not weights                      | Core                   | open         |
-| GAP-23 | Component-layer colours are baked values, not ramp aliases       | Core                   | composed     |
+| GAP-23 | Component-layer colours are baked values, not ramp aliases       | Core                   | fixed        |
 | GAP-24 | `DynamicIsland` pins itself to the viewport                      | Platform / form factor | open         |
 | GAP-25 | `MapView` insists on 400px of height                             | Product / SDK          | composed     |
 | GAP-26 | `Text` cannot inherit its colour                                 | Core                   | open         |
@@ -514,25 +514,52 @@ keep the table's four columns and its statuses as they are.
 
 ## GAP-23 · Component-layer colours are baked values, not ramp aliases
 
-- **What:** the 283 `--components-*` variables are generated with the theme's
-  hex values written in (`--components-primary-buttons-themed-button-background-idle: #0d44c2`)
-  rather than as aliases of the ramp (`var(--primitives-colors-theme-700)`).
-  A product that re-points the theme ramp through `ThemeProvider`'s `tokens`
-  — the documented way to brand a module — changes the utilities and leaves
-  every migrated component (Button, Input, the fields) in the old blue.
+- **What:** the token build wrote every token with its resolved value: the
+  themed Button's fill, an alias of theme 500 in the token sources since
+  decision 59, reached the web as
+  `--components-primary-buttons-themed-button-background-idle: #135bec`, not
+  `var(--primitives-colors-theme-500)`. A product that re-points the theme
+  ramp through `ThemeProvider`'s `tokens` — the documented way to brand a
+  module — changed the parts that read the ramp (the checked Checkbox, the
+  Chip, the Tag) and left the filled Button, and every part drawn as one
+  (`IconButton`, `FloatingActionButton`, `SplitButton`, a filled
+  `MapControlButton`, `FloorSelector`'s selected level, `CategoryField`'s
+  count), in Pointr's blue.
 - **Evidence:** the home page's "Make it yours" section re-points the ramp
-  and, for the component layer, matches each themed token to the ramp step
-  whose values it carries in both themes. On `f30c0f9` there are 45 themed
-  component tokens: 32 re-point, every blue among them. The other 13 are the
-  ink on filled buttons (white, or black in the dark theme) and the disabled
-  greys, which are not on the theme ramp and rightly keep their values. The
-  page prints the counts; the `brandOverrides` unit test covers the matching.
-- **Now:** composed: matching by value reaches every brand colour today. It
-  is fragile — a ramp step retuned without regenerating the component layer
-  would stop matching, silently — which is the gap.
+  and, for the component layer, matched each themed token to the ramp step
+  whose values it carries, in the theme shown: 32 of the 45 themed component
+  tokens. The other 13 are the ink on filled buttons (white in both themes
+  since decision 59) and the disabled greys, which are not on the theme ramp
+  and rightly keep their values.
+- **Fixed** in the design system on 2026-10-07: the token build writes every
+  token whose source value is an alias as a reference to the token it names,
+  66 in the light stylesheet and 40 in the dark, in Style Dictionary's safe
+  mode (a value a transform changed stays literal; none did). The four
+  elevation roles keep their values: they alias the shadow ramp, whose
+  `--shadow-sm`, `-md` and `-lg` `DesignConfigProvider` sets as legacy
+  aliases. React's stylesheet declares the tokens on the provider's root,
+  where an override in `tokens` resolves them.
+  `scripts/check-token-references.mjs` (`pnpm test:token-references`, in CI in
+  Chromium, Firefox and WebKit) reads every token in a light and a dark
+  `ThemeProvider` and `DesignConfigProvider` root of the built package, 2,716
+  reads, and finds each equal to the value written before; under one override of
+  theme 500 to `#AA1155` the ten fills above compute `#AA1155` in both themes
+  (14 of the 20 reads kept `#135BEC` before the fix); and overrides of 600
+  and 700, or 400 and 300 in the dark, move the filled Button's hover, focus
+  and pressed tokens. The JavaScript, Swift and Kotlin outputs, the Android
+  resources and the Figma payload are unchanged. "Make it yours" now reports
+  the filled Button's four tokens as following the ramp, with no override of
+  their own, and re-points 28 by value (the e2e test reads the module's fill
+  as the variant's 500).
+- **Still copied:** the 28 it re-points by value hold values copied from the
+  ramp in the token sources, as the Figma file has them, not aliases: the
+  secondary and tertiary buttons' themed colours and the primary buttons'
+  dimmed content. Of those, the outline, ghost and link Buttons draw
+  `--components-secondary-buttons-themed-button-foreground-content-idle` and
+  `-hover` (theme 700 and 600), so a product that draws them sets those two
+  too. Writing them as aliases changes the token sources and the Figma
+  payload, and the Figma file's variables with the next Update.
 - **Lane:** Core (tokens build).
-- **Fix in Kozmos:** generate the component layer as aliases of the semantic
-  or primitive tokens it was derived from, so one override reaches everything.
 
 ## GAP-24 · `DynamicIsland` pins itself to the viewport
 
