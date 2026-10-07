@@ -84,6 +84,11 @@ holding `FIGMA_ACCESS_TOKEN` is read by the Code Connect scripts, the icon and f
 that need it; `pnpm tokens:sync` takes `FIGMA_ACCESS_TOKEN` and `FIGMA_FILE_KEY` from the
 environment instead. Turborepo treats `.env` as a global dependency.
 
+`pnpm tokens:sync` is not a routine step: it overwrites the token sources with the live Figma
+variables, which still hold the values from before decision 59 until the owner runs the importer
+plugin's Update. Read [token-implementation.md](./token-implementation.md) section 1 before you
+run it.
+
 The npm credential never goes in a local file. Releases publish from `release.yml` alone, whose
 publish job is the only place `NPM_TOKEN` exists ([publishing-guide.md](./publishing-guide.md)).
 CI uses no Turborepo remote cache.
@@ -296,7 +301,7 @@ pnpm clean
 ```bash
 # Tokens
 pnpm tokens:build          # Build token outputs
-pnpm tokens:sync           # Sync from Figma (FIGMA_ACCESS_TOKEN and FIGMA_FILE_KEY in the environment)
+pnpm tokens:sync           # Overwrites src/ from live Figma, which can be behind the code: not routine (see above)
 
 # React
 pnpm --filter @kozmos-ds/react dev           # Vite dev server
