@@ -136,8 +136,9 @@ them. On a solid panel they look as they did, since its fill is that same colour
 and `POIDetailPanel`'s `sheet` presentation paint no fill anywhere, and neither, in the panel, does
 the details card's summary strip, which was an opaque band across a glass sheet. Cards keep their
 fill: each result, each route option, and a `panel` or `inline` details card.
-A navigation `RouteSummary` whose product leaves `presentation` unset is hosted in the panel: no
-card, padding, radius or shadow of its own. Outside the shell it stays a standalone card.
+A navigation `RouteSummary` whose product leaves `presentation` unset is hosted in the panel, in
+its header as in its content: no card, padding, radius or shadow of its own. Outside the shell it
+stays a standalone card.
 
 On glass, text that is muted elsewhere takes the foreground colour, so it reads at 4.5:1 over any
 map (decision 48); the glass itself is unchanged. The glass surface says so: `.kozmos-surface-glass`

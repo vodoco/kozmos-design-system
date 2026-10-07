@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "490fe55ba56f";
+const PLUGIN_BUILD = "6287d52a52b0";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -1692,11 +1692,12 @@ const COMPONENT_DOCS = [
     componentSetName: "RouteSummary",
     category: "Product / SDK",
     summary:
-      "RouteSummary is the persistent ETA bar shown while previewing or following a route.",
+      "RouteSummary shows a route's estimates while previewing or following a route.",
     usage: [
       "Use Preview before navigation starts, while the user can still change their mind.",
       "Use Active once turn-by-turn guidance is running.",
-      "Compose it above the map rather than inside the route panel.",
+      "Given a destination, it is the journey card in the map shell's panel: destination, End, estimates and a progress slot.",
+      "In that panel it is hosted, with no card of its own: the panel is the one surface. This set draws only the estimate bar.",
     ],
     api: [
       "State maps to RouteSummary.state (preview, active).",

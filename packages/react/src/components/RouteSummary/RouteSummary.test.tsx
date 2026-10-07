@@ -252,6 +252,46 @@ describe("RouteSummary", () => {
       );
       expect(presentationOf(container)).toBe("standalone");
     });
+
+    // The panel header sits on the panel's surface as its content does: a
+    // summary there is hosted too, in a bottom sheet and in a side panel,
+    // as SwiftUI and Compose host what either slot holds.
+    it.each(["bottom", "side"] as const)(
+      "is hosted in the %s panel's header without the product asking",
+      (panelPresentation) => {
+        const { container } = render(
+          <AdaptiveMapShell
+            map={<div />}
+            panel={<div />}
+            panelHeader={summary()}
+            panelPresentation={panelPresentation}
+          />,
+        );
+        expect(
+          container.querySelector("[data-panel-presentation]"),
+        ).toHaveAttribute("data-panel-presentation", panelPresentation);
+        expect(
+          container.querySelector(
+            "[data-kozmos-panel-header] [data-presentation]",
+          ),
+        ).not.toBeNull();
+        expect(presentationOf(container)).toBe("hosted");
+        expect(container.querySelector("[data-presentation]")).not.toHaveClass(
+          "shadow-overlay",
+        );
+      },
+    );
+
+    it("keeps an explicit presentation in the panel header", () => {
+      const { container } = render(
+        <AdaptiveMapShell
+          map={<div />}
+          panel={<div />}
+          panelHeader={summary("standalone")}
+        />,
+      );
+      expect(presentationOf(container)).toBe("standalone");
+    });
   });
   describe("actions (GAP-110)", () => {
     // Previous and Next in static wayfinding, as the host draws them: Kozmos
