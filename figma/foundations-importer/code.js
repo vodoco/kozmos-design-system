@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "169cd1f19cff";
+const PLUGIN_BUILD = "c2182f864fd4";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -2062,7 +2062,7 @@ const COMPONENT_DOCS = [
     accessibility: [
       "The code makes the closed instruction row the button that opens the itinerary.",
       "The grab bar is named by expandLabel and collapseLabel, and focus follows the disclosure.",
-      "On the theme fill every word, mark and the grip is foreground/1000.",
+      "On the theme fill every word, mark and the grip is the theme foreground, white in both themes (decision 59).",
     ],
   },
   {
@@ -47640,15 +47640,15 @@ async function fitProductSdkSlotLabel(slot, text, width, height, stats) {
  *
  * Filled is a CTA React draws as a default Button, drawn as one (decision
  * 59): the theme fill, no edge, every word and mark on it the theme
- * foreground, white in both themes. Pressed is a mode that stays on: a tint
- * with the theme's 600 for its edge.
+ * foreground, white in both themes. Otherwise it is the surface with the
+ * subtle edge and its mark in foreground/0. A map control that stays on, such
+ * as following, is MapControlButton's Pressed state, not this.
  */
 async function productSdkControlButton({
   name,
   glyph,
   iconName,
   label,
-  pressed,
   filled,
   fonts,
   variableByName,
@@ -47682,20 +47682,10 @@ async function productSdkControlButton({
     button.strokeWeight = 0;
   } else {
     button.fills = [
-      paintFromVariable(
-        pressed ? "Colors/theme/100" : "Surface/0",
-        pressed ? "#CAD9FC" : "#FFFFFF",
-        variableByName,
-        stats,
-      ),
+      paintFromVariable("Surface/0", "#FFFFFF", variableByName, stats),
     ];
     button.strokes = [
-      paintFromVariable(
-        pressed ? "Colors/theme/600" : "Border/Subtle",
-        pressed ? "#1051E8" : "#C7CAD1",
-        variableByName,
-        stats,
-      ),
+      paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
     ];
     button.strokeWeight = 1;
   }
@@ -47706,9 +47696,7 @@ async function productSdkControlButton({
   // (×, ‹, ›, →, ☆, ✎, ◎, ⇅, +, −, ◈, ◌) has a curated icon now.
   const symbolToken = filled
     ? THEME_FILL_FOREGROUND
-    : pressed
-      ? { name: "Colors/theme/700", fallback: "#0D44C2" }
-      : { name: "Colors/foreground/0", fallback: "#000000" };
+    : { name: "Colors/foreground/0", fallback: "#000000" };
   const symbol = iconName
     ? await productSdkIconInstance({
         iconName,
@@ -51334,7 +51322,11 @@ async function updateRouteSummaryVariant(
     glyph: active ? "×" : "→",
     iconName: active ? "x-close" : "arrow-right",
     label: active ? "End" : "Start",
-    // Start is React's default Button; End stays on the surface.
+    // Start is React's default Button, drawn as one: the theme fill. End is
+    // drawn here as an outline control on the surface, labelled, but React
+    // draws a destructive icon Button (RouteSummary.tsx: variant
+    // "destructive", size "icon", a 44 danger-filled pill with no visible
+    // label): a parity gap this set has not closed.
     filled: !active,
     fonts,
     variableByName,
@@ -72093,8 +72085,8 @@ async function syncAvatarVariantChildren({
   if (value === "Image") {
     const icon = await createFixedIconInstance(
       "user-01",
-      "Colors/foreground/1000",
-      "#FFFFFF",
+      config.foreground,
+      config.foregroundFallback,
       variableByName,
       stats,
       20,
@@ -76565,13 +76557,17 @@ function spinnerMetrics(size) {
   };
 }
 
+// The image placeholder is neutral (Olcay's ruling, 2026-10-07): React's
+// muted pair, the one AvatarFallback sits on (bg-muted), background/100 under
+// a person mark in the muted foreground, foreground/400. It was theme/600
+// under foreground/1000, which turns black in the dark.
 function avatarConfig(content) {
   if (content === "Image") {
     return {
-      background: "Colors/theme/600",
-      foreground: "Colors/foreground/1000",
-      backgroundFallback: "#1051E8",
-      foregroundFallback: "#FFFFFF",
+      background: "Colors/background/100",
+      foreground: "Colors/foreground/400",
+      backgroundFallback: "#E3E4E8",
+      foregroundFallback: "#5D626F",
     };
   }
 

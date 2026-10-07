@@ -138,6 +138,7 @@ function pages() {
     "bus",
     "heart",
     "shopping-bag-02",
+    "user-01",
   ]) {
     icons.appendChild(mockIconComponent(name));
   }
@@ -1853,8 +1854,11 @@ section("Decision 59: the theme fill and what sits on it");
       `RoutePreviewPanel ${value}: Continue is the theme fill at ${value === "Ready" ? "full strength" : "50 %"} (${proceed && reads(proceed.fills[0])} at ${proceed && proceed.opacity})`,
     );
   }
-  // Their siblings stay what React draws them: an outline control on the
-  // surface. A saved location offers Remove as an outline Button.
+  // Their siblings stay off the theme fill: an outline control on the
+  // surface, as React draws the first two. A saved location offers Remove as
+  // an outline Button. React draws RouteSummary's End as a destructive icon
+  // Button, a danger-filled pill; the set still draws it on the surface, a
+  // parity gap, but never on the theme fill.
   for (const [painter, value, name] of [
     ["updateSaveLocationCardVariant", "Saved", "Save Toggle Button"],
     ["updatePOIDetailPanelVariant", "Panel", "Save Action"],
@@ -1954,6 +1958,71 @@ section("Decision 59: the theme fill and what sits on it");
       reads(railMarker.fills[0]) === accent &&
       reads(railLine.fills[0]) === accent,
     `Timeline: the active marker and line are the theme's 600 (${railMarker && reads(railMarker.fills[0])}; ${railLine && reads(railLine.fills[0])})`,
+  );
+
+  // MapControlButton's Pressed state is a mode that stays on (following, a
+  // layer shown): the nested default Button, so the theme fill, edge and all,
+  // with the theme foreground on it. Its state config was theme/600 under
+  // foreground/1000, black on it in the dark.
+  const mapPressed =
+    typeof plugin.mapControlButtonStateConfig === "function"
+      ? plugin.mapControlButtonStateConfig("Pressed")
+      : {};
+  const mapNested =
+    typeof plugin.mapControlButtonNestedVariant === "function"
+      ? plugin.mapControlButtonNestedVariant("Icon", "Pressed")
+      : {};
+  ok(
+    mapNested.Variant === "Default" &&
+      mapPressed.fill === FILL &&
+      mapPressed.fillFallback === "#135BEC" &&
+      mapPressed.stroke === FILL &&
+      mapPressed.foreground === INK &&
+      mapPressed.foregroundFallback === "#FFFFFF",
+    `MapControlButton, Pressed: the nested default Button, the theme fill with the theme foreground (Button ${mapNested.Variant}; ${mapPressed.fill}, edge ${mapPressed.stroke}, ${mapPressed.foreground})`,
+  );
+
+  // Avatar's image placeholder is neutral (Olcay, 2026-10-07): React's muted
+  // pair, the one AvatarFallback sits on, background/100 under a person mark
+  // in the muted foreground, foreground/400. It was theme/600 under
+  // foreground/1000, which turns black in the dark.
+  const avatar = await painted("updateAvatarVariant", { value: "Image" });
+  const person = named(avatar, "Icon");
+  ok(
+    reads(avatar.fills[0]) === "Colors/background/100 #E3E4E8/#17191C" &&
+      person &&
+      boundVariableName(markPaint(person)) === "Colors/foreground/400",
+    `Avatar, Image: a neutral placeholder, background/100 under a foreground/400 mark (${reads(avatar.fills[0])}; ${reads(markPaint(person))})`,
+  );
+
+  // No part binds the theme's 500 itself: a prominent fill reaches it through
+  // the theme fill, so a client's base colour moves every one at once, and a
+  // word, mark or edge on the surface is the theme's 600. Only the example
+  // map stage's route illustration paints it. Read from the source, so a part
+  // no check paints is held too; a name built from a template would escape
+  // it, so none may be.
+  const declarations = [
+    ...source.matchAll(
+      /^(?:async function|function|const|let|var|class) ([A-Za-z0-9_$]+)/gm,
+    ),
+  ];
+  const ownerOf = (index) => {
+    let owner = null;
+    for (const declaration of declarations) {
+      if (declaration.index > index) break;
+      owner = declaration[1];
+    }
+    return owner;
+  };
+  const theme500 = [...source.matchAll(/["'`]Colors\/theme\/500["'`]/g)].map(
+    (match) => ownerOf(match.index),
+  );
+  const onStage = theme500.filter((owner) => owner === "createExampleMapStage");
+  const stray = theme500.filter((owner) => owner !== "createExampleMapStage");
+  const built = /`Colors\/theme\/\$\{/.test(source);
+  ok(
+    onStage.length > 0 && stray.length === 0 && !built,
+    `no part binds Colors/theme/500 outside the example map stage (${onStage.length} on the stage; ${stray.length} elsewhere${stray.length > 0 ? `: ${[...new Set(stray)].join(", ")}` : ""}${built ? "; a name built from a template" : ""})`,
   );
 }
 
