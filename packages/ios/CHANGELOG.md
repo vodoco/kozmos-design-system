@@ -2,6 +2,18 @@
 
 Kozmos is consumed from this repository's `packages/ios` source as the `Kozmos` Swift package. It is not a published native registry release. Pin a reviewed repository commit when adopting these changes; the version headings below follow the web release plan, not a separate native package publication.
 
+## Unreleased
+
+Recorded as changes land on `main`, ahead of the next release entry. This is not a complete list of the native changes since 0.6.0.
+
+### Added and changed
+
+- **Result summaries and their language:** `KozmosPOIResultPresentation.summaryLanguage` names the language of `summary` when it differs from the interface's (GAP-125). `KozmosPOIResultCard` now draws `summary`, muted and two lines at most, after the location, as the web card does, and VoiceOver hears it after the location. When `nameLanguage` or `summaryLanguage` is set, the select row is spoken through a UIKit element whose label carries each tagged phrase's speech language, with the same words, traits, action and `kozmosPOIResultIdentifier` as the untagged row.
+
+### Migration notes
+
+- A result that already passes `summary` now draws it: its card is taller. Review screenshot baselines and any layout that assumes a fixed row height, or leave `summary` unset to keep the old card.
+
 ## 0.6.0 — repository snapshot
 
 Native source changes since the repository snapshot tagged `@kozmos-ds/react@0.5.0`. This entry does not announce a 0.6.0 tag or completed release validation. The web package has its own [changelog](../react/CHANGELOG.md).
