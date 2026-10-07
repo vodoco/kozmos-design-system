@@ -10116,8 +10116,8 @@ assertContains(
 assertContains(
   files.iosBadge,
   source.iosBadge,
-  "KozmosCounter(counter, tone: counterTone)",
-  "iOS Badge composes Counter",
+  "KozmosCounter(counter, tone: counterTone, fill: counterFill)",
+  "iOS Badge composes Counter, inverted on the default Badge's theme fill",
 );
 assertContains(
   files.iosBadge,

@@ -309,9 +309,15 @@ final class KozmosFloorSelectorTests: XCTestCase {
             )
             let square = secondSquare(.verticalList)
             let corner = CGRect(x: square.maxX - 16, y: square.minY, width: 16, height: 16)
-            XCTAssertGreaterThan(drawn.count(in: corner, where: DrawnPixels.matches(ink, tolerance: 40)), 16 * 16 * 2 / 5,
+            // The corner is 16pt square, so (16 × scale)² pixels: two fifths
+            // of them is most of the marker's disc, not a stray few.
+            let cornerPixels = Int(corner.width * drawn.scale) * Int(corner.height * drawn.scale)
+            XCTAssertGreaterThan(drawn.count(in: corner, where: DrawnPixels.matches(ink, tolerance: 40)), cornerPixels * 2 / 5,
                                  "\(scheme): the marker on the selected level is not the theme foreground")
-            XCTAssertGreaterThan(drawn.count(in: corner.insetBy(dx: 4, dy: 4), where: DrawnPixels.matches(fill, tolerance: 40)), 0,
+            // The fill itself, closely: theme 600 (#1051E8, #5887F3) is not
+            // it. Within 3 a level, since at 6 the edge of a #1051E8 number,
+            // blended with the white under it, reads as the fill.
+            XCTAssertGreaterThan(drawn.count(in: corner.insetBy(dx: 4, dy: 4), where: DrawnPixels.matches(fill, tolerance: 3)), 0,
                                  "\(scheme): the count on the selected level is not in the theme fill")
         }
     }

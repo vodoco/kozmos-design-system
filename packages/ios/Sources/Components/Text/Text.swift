@@ -42,8 +42,12 @@ public enum KozmosTextTone: String, CaseIterable, Sendable {
     /// For text sitting on a filled brand surface, the theme fill: the theme
     /// foreground, white in both appearances (decision 59).
     case onEmphasis
-    /// For text sitting on a filled danger surface: white in light, black in
-    /// the dark, where the danger fill is light (#E95A77; black reads 6.19:1,
+    /// For text sitting on a filled danger surface: background/0, white in
+    /// light and black in the dark, where the danger fill is light. The
+    /// Primary Buttons danger fill, under a destructive Button, IconButton,
+    /// Badge or Counter, is #B01736 in light (white reads 6.95:1) and #EE7E95
+    /// in the dark (black 8.05:1, white 2.61:1); danger 600, under a checked
+    /// Switch in error, is #D41C42 (white 5.19:1) and #E95A77 (black 6.19:1,
     /// white 3.39:1).
     case onDanger
 
