@@ -81,7 +81,9 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
     // The captions and the origin are muted, and on glass, in a glass
     // manoeuvre card, the foreground colour (decision 48).
     // An action follows the name, on its baseline, and takes the next line,
-    // at the row's end, when the name would keep under 80px beside it.
+    // at the row's end, when the name would keep under 80px beside it: the
+    // row's layout is owned CSS (.kozmos-itinerary-endpoint), so it holds
+    // without @scope.
     const endpoint = (
       caption: string,
       name: string,
@@ -89,13 +91,13 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
       onEdit?: () => void,
       editLabel?: string,
     ) => (
-      <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[15px]">
-        <span className="kozmos-muted-text min-w-10 max-w-full shrink-0 text-xs uppercase [overflow-wrap:anywhere]">
+      <li className="kozmos-itinerary-endpoint text-[15px]">
+        <span className="kozmos-itinerary-endpoint-caption kozmos-muted-text text-xs uppercase">
           {caption}
         </span>
         <span
           className={cn(
-            "min-w-0 flex-1 basis-20 [overflow-wrap:anywhere]",
+            "kozmos-itinerary-endpoint-name",
             emphasised
               ? "font-semibold kozmos-guidance-text"
               : "kozmos-muted-text",
@@ -108,7 +110,6 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
             type="button"
             variant="ghost"
             size="sm"
-            className="ms-auto h-auto min-h-11 max-w-full whitespace-normal [overflow-wrap:anywhere]"
             aria-label={editLabel}
             onClick={onEdit}
           >

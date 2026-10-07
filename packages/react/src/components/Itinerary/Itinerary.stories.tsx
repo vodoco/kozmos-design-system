@@ -90,5 +90,6 @@ export const WithEndpointEdit: Story = {
   args: {
     onEditOrigin: fn(),
     onEditDestination: fn(),
+    changeLabel: "Change",
   },
 };
