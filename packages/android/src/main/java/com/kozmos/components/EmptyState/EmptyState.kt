@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kozmos.components.progress.KozmosProgress
 import com.kozmos.tokens.KozmosThemeTokens
+import kotlin.math.roundToInt
 
 /**
  * How much room an empty state takes.
@@ -44,9 +45,9 @@ enum class KozmosEmptyStateSize {
 
 /**
  * A long wait the empty state is explaining, such as a download, and how far
- * it has got (GAP-115). [value] runs from 0 to 1; [label] says what is in
- * progress and names the bar; [valueText] says how far in words ("40%",
- * "12 of 30 MB") and is read as its state.
+ * it has got (GAP-115). [value] runs from 0 to 1 (clamped, and NaN is 0);
+ * [label] says what is in progress and names the bar; [valueText] says how
+ * far in words ("40%", "12 of 30 MB") and is read as its state.
  */
 data class KozmosEmptyStateProgress(
     val value: Float,
@@ -95,13 +96,16 @@ fun KozmosEmptyState(
         }
         
         if (progress != null) {
-            val value = progress.value.coerceIn(0f, 1f)
+            // NaN is none done, as on React: coerceIn keeps a NaN, which the
+            // range info refuses and roundToInt throws on.
+            val value = if (progress.value.isNaN()) 0f else progress.value.coerceIn(0f, 1f)
             Spacer(modifier = Modifier.height(size.gap))
             // One node: what is in progress, and how far it has got.
             Column(
                 modifier = Modifier.widthIn(max = 280.dp).fillMaxWidth().clearAndSetSemantics {
                     contentDescription = progress.label
-                    stateDescription = progress.valueText ?: "${(value * 100).toInt()}%"
+                    // Rounded, as React and SwiftUI do: cut down, 0.999 said "99%".
+                    stateDescription = progress.valueText ?: "${(value * 100).roundToInt()}%"
                     progressBarRangeInfo = ProgressBarRangeInfo(value, 0f..1f)
                 }
             ) {

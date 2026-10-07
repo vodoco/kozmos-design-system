@@ -18,7 +18,7 @@ public enum KozmosEmptyStateSize: Sendable, Hashable, CaseIterable {
 /// A long wait the empty state is explaining, such as a download, and how
 /// far it has got (GAP-115).
 public struct KozmosEmptyStateProgress: Hashable, Sendable {
-    /// How far it has got, from 0 to 1.
+    /// How far it has got, from 0 to 1. Outside that it is clamped, and NaN is 0.
     public let value: Double
     /// What is in progress, shown above the bar and naming it: "Downloading the assistant".
     public let label: String
@@ -31,9 +31,15 @@ public struct KozmosEmptyStateProgress: Hashable, Sendable {
         self.valueText = valueText
     }
 
+    /// The value drawn and said. NaN is none done, as on React: `min` and
+    /// `max` keep a NaN, and turning it into an Int for the percentage trapped.
+    var clampedValue: Double {
+        value.isNaN ? 0 : min(max(value, 0), 1)
+    }
+
     /// What VoiceOver says for the value: the words, or the percentage.
     var spokenValue: String {
-        valueText ?? "\(Int((min(max(value, 0), 1) * 100).rounded()))%"
+        valueText ?? "\(Int((clampedValue * 100).rounded()))%"
     }
 }
 
@@ -95,7 +101,7 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
                         }
                     }
                     .font(KozmosTypography.subheadline)
-                    KozmosProgress(value: min(max(progress.value, 0), 1))
+                    KozmosProgress(value: progress.clampedValue)
                 }
                 .frame(maxWidth: 280)
                 // One element: what is in progress, and how far it has got.

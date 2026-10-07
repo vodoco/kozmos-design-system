@@ -37,6 +37,30 @@ class KozmosEmptyStateProgressTest {
         assertEquals("40%", tree.named("Downloading the assistant").stateDescription)
     }
 
+    // React and SwiftUI round; cutting 0.999 down said "99%" for a bar drawn full.
+    @Test fun thePercentageIsRoundedToTheNearest() {
+        for ((value, said) in listOf(0.999f to "100%", 0.994f to "99%", 0.006f to "1%")) {
+            val tree = paparazzi.readSemantics {
+                MaterialTheme {
+                    KozmosEmptyState(title = "Downloading", progress = KozmosEmptyStateProgress(value, "Downloading the assistant"))
+                }
+            }
+            assertEquals("$value", said, tree.named("Downloading the assistant").stateDescription)
+        }
+    }
+
+    // As on React: NaN is none done, never a crash. roundToInt throws on NaN.
+    @Test fun aValueThatIsNotANumberIsNoneDone() {
+        val tree = paparazzi.readSemantics {
+            MaterialTheme {
+                KozmosEmptyState(title = "Downloading", progress = KozmosEmptyStateProgress(Float.NaN, "Downloading the assistant"))
+            }
+        }
+        val bar = tree.named("Downloading the assistant")
+        assertEquals("0%", bar.stateDescription)
+        assertEquals(0f, bar.progressRange!!.current, 0f)
+    }
+
     @Test fun noProgressDrawsNoBar() {
         val tree = paparazzi.readSemantics { MaterialTheme { KozmosEmptyState(title = "No results") } }
         assertTrue(tree.merged.none { it.progressRange != null })

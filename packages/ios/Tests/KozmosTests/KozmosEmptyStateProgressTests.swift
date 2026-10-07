@@ -8,6 +8,15 @@ final class KozmosEmptyStateProgressTests: XCTestCase {
         XCTAssertEqual(KozmosEmptyStateProgress(value: 0.4, label: "Downloading", valueText: "12 of 30 MB").spokenValue, "12 of 30 MB")
         XCTAssertEqual(KozmosEmptyStateProgress(value: 0.4, label: "Downloading").spokenValue, "40%")
         XCTAssertEqual(KozmosEmptyStateProgress(value: 1.7, label: "Downloading").spokenValue, "100%")
+        XCTAssertEqual(KozmosEmptyStateProgress(value: 0.999, label: "Downloading").spokenValue, "100%")
+    }
+
+    // As on React: NaN is none done. Clamped with min and max it stayed NaN,
+    // and turning it into an Int for the percentage trapped.
+    func testAValueThatIsNotANumberIsNoneDone() {
+        XCTAssertEqual(KozmosEmptyStateProgress(value: .nan, label: "Downloading").spokenValue, "0%")
+        XCTAssertEqual(KozmosEmptyStateProgress(value: -.infinity, label: "Downloading").spokenValue, "0%")
+        XCTAssertEqual(KozmosEmptyStateProgress(value: .infinity, label: "Downloading").spokenValue, "100%")
     }
 
     #if os(iOS)
