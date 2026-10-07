@@ -53,6 +53,48 @@ describe("POIResultList", () => {
     }
   });
 
+  it("gives every result's summary its language, grouped or not (GAP-125)", () => {
+    // The list draws its results through POIResultCard, by itself and inside
+    // a group: both paths must keep the tag the product set.
+    const spanish = (id: string, summary: string) => {
+      const item = createItem(id, 1);
+      return {
+        ...item,
+        result: { ...item.result, summary, summaryLanguage: "es" },
+      };
+    };
+    const english = createItem("three", 3);
+    render(
+      <POIResultList
+        items={[
+          spanish("one", "Helado artesanal cerca de la puerta B."),
+          {
+            id: "group",
+            label: "Branches",
+            items: [spanish("two", "Abierto hasta medianoche.")],
+          },
+          {
+            ...english,
+            result: { ...english.result, summary: "Open until midnight." },
+          },
+        ]}
+        selectedPoiId="two"
+        onSelect={vi.fn()}
+        resultCountLabel="3 results"
+      />,
+    );
+    expect(
+      screen.getByText("Helado artesanal cerca de la puerta B."),
+    ).toHaveAttribute("lang", "es");
+    expect(screen.getByText("Abierto hasta medianoche.")).toHaveAttribute(
+      "lang",
+      "es",
+    );
+    expect(screen.getByText("Open until midnight.")).not.toHaveAttribute(
+      "lang",
+    );
+  });
+
   it("controls one selected result and emits its stable ID", () => {
     const onSelect = vi.fn();
     render(

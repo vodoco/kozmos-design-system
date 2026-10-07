@@ -106,7 +106,15 @@ data class ReadNode(
     val requestFocus: (() -> Boolean)? = null,
     /** How a text field is typed into. */
     val setText: ((String) -> Boolean)? = null
-)
+) {
+    /**
+     * The node's own words as TalkBack takes them: its description, or else
+     * its first text, which for a merged node is its own. A result row gives
+     * TalkBack its words as text, so that a phrase's language survives
+     * (GAP-125).
+     */
+    val words: String? get() = description ?: texts.firstOrNull()
+}
 
 /**
  * A composition's semantics, copied out while it was alive: [merged] is what
@@ -120,6 +128,13 @@ class ReadSemantics(val merged: List<ReadNode>, val unmerged: List<ReadNode>) {
     fun named(description: String): ReadNode {
         val found = merged.filter { it.description == description }
         check(found.size == 1) { "expected one node named \"$description\", found ${found.size} among ${names()}" }
+        return found.single()
+    }
+
+    /** The one control whose own [words][ReadNode.words] are [words]; fails, listing them, if not exactly one. */
+    fun saying(words: String): ReadNode {
+        val found = merged.filter { it.words == words }
+        check(found.size == 1) { "expected one node saying \"$words\", found ${found.size} among ${merged.mapNotNull { it.words }}" }
         return found.single()
     }
 }

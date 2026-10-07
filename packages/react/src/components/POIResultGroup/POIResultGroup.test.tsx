@@ -48,6 +48,37 @@ describe("POIResultGroup", () => {
     expect(screen.getAllByRole("article")).toHaveLength(1);
   });
 
+  it("keeps each branch's summary in its own language, shown or unfolded (GAP-125)", () => {
+    const [first, second] = nine;
+    render(
+      <POIResultGroup
+        items={[
+          {
+            ...first,
+            result: {
+              ...first.result,
+              summary: "La sucursal más cercana.",
+              summaryLanguage: "es",
+            },
+          },
+          {
+            ...second,
+            result: { ...second.result, summary: "The quietest branch." },
+          },
+        ]}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("La sucursal más cercana.")).toHaveAttribute(
+      "lang",
+      "es",
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Show 1 more/ }));
+    expect(screen.getByText("The quietest branch.")).not.toHaveAttribute(
+      "lang",
+    );
+  });
+
   it("offers no control when there is nothing folded away", () => {
     render(
       <POIResultGroup

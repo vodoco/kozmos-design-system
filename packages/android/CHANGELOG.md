@@ -2,6 +2,24 @@
 
 Kozmos is consumed from this repository's `packages/android` source as an Android library module in the `com.kozmos` namespace. It is not a published Maven/registry release. Pin a reviewed repository commit when adopting these changes; the version headings below follow the web release plan, not a separate native package publication.
 
+## Unreleased — repository source
+
+Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is tagged.
+
+### Fixed
+
+- **Result rows are heard once:** TalkBack read a `KozmosPOIResultCard` row's whole description and then every text drawn inside it again (name, category, level, availability, walk, the language disclosure and the unavailable reason), and with a `selectionLabel` it read the drawn texts after the product's label. The drawn texts are now left out of semantics, so the row says its words, or the product's label, once. The row keeps its click, enabled state and selection, and a logo keeps its alt text.
+
+### Added and changed
+
+- **Result summaries and their language:** `KozmosPOIResultPresentation.summaryLanguage` names the language of `summary` when it differs from the interface's (GAP-125). `KozmosPOIResultCard` now draws `summary`, muted and two lines at most, after the location, as the web card does, and TalkBack hears it after the location, with a `LocaleSpan` when `summaryLanguage` is set, as `nameLanguage` gives the name one. The name and the summary take their direction from their own words (`TextDirection.Content`), so an Arabic summary in an English card runs right to left; their lines still start at the card's start.
+- **A result row's words are its text:** `KozmosPOIResultCard` gives TalkBack the row's words as its semantics text, never as a content description, whether or not a phrase carries a language (GAP-125). The words are the same; a tagged phrase keeps its `LocaleSpan`.
+
+### Migration notes
+
+- A result that already passes `summary` now draws it: its card is taller. Review screenshot baselines and any layout that assumes a fixed row height, or leave `summary` unset to keep the old card.
+- A product UI test that finds a result row with `onNodeWithContentDescription(...)` no longer matches: use `onNodeWithText(...)` with the same words, `substring = true` for one phrase. One that finds the row by a single drawn word in the merged tree, `onNodeWithText("Pharmacy")`, needs `substring = true`, or `useUnmergedTree = true` to find the drawn text itself.
+
 ## 0.6.0 — repository snapshot
 
 Native source changes since the repository snapshot tagged `@kozmos-ds/react@0.5.0`. This entry does not announce a 0.6.0 tag or completed release validation. The web package has its own [changelog](../react/CHANGELOG.md).

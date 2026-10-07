@@ -28,7 +28,7 @@ class KozmosStaffLanguageTest {
             }
         }
         assertTrue("Türkçe listelenmemiş" in semantics.unmerged.flatMap { it.texts })
-        assertTrue(semantics.merged.any { it.description?.contains("Türkçe listelenmemiş") == true })
+        assertTrue(semantics.merged.any { it.words?.contains("Türkçe listelenmemiş") == true })
         assertEquals("A pharmacy", result.selecting("p").summary)
     }
 
@@ -44,7 +44,7 @@ class KozmosStaffLanguageTest {
             val texts = semantics.unmerged.flatMap { it.texts }
             assertEquals(flag == true, "Language not listed" in texts)
             assertTrue(semantics.merged.any {
-                it.description == if (flag == true) "Choose, Language not listed" else "Choose"
+                it.words == if (flag == true) "Choose, Language not listed" else "Choose"
             })
             assertEquals(flag, result.selecting("p").languageNotListed)
         }
