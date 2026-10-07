@@ -75,10 +75,11 @@ alpha added or a unit converted, is written as the value on the web too, and so 
 roles: they alias the shadow ramp, whose `--shadow-sm` to `-lg` `DesignConfigProvider` sets as
 legacy aliases of its own.
 
-Only an alias is a reference. Many component tokens hold a value copied from the ramp in the token
-sources, as the Figma file has them: the outline, ghost and link Buttons' blue
-(`--components-secondary-buttons-themed-button-foreground-content-*`) is `#0d44c2`, not theme 700,
-and keeps that value under any override of the ramp (§4.1).
+Every themed component colour on the theme ramp is an alias of its step, in each theme: the
+outline, ghost and link Buttons' ink
+(`--components-secondary-buttons-themed-button-foreground-content-idle`) is theme 700 in both,
+`var(--primitives-colors-theme-700)`. What stays a value is not on the ramp: the ink on a filled
+Button, white in both themes, and the disabled greys.
 
 ### Theme File Structure
 
@@ -164,7 +165,8 @@ const brand = {
     // The filled Button's hover and focus, and the theme as text, borders and
     // rings: 6.94:1 under white, and on the white page.
     "--primitives-colors-theme-600": "#096650",
-    // The filled Button's pressed token: 9.30:1 under white.
+    // The filled Button's pressed token: 9.30:1 under white. And the
+    // outline, ghost and link Buttons' ink: 9.30:1 on the white page.
     "--primitives-colors-theme-700": "#07513f",
   },
   dark: {
@@ -176,6 +178,9 @@ const brand = {
     // The theme as text on the dark page: 7.52:1 on background 0 (#000000),
     // 6.31:1 on background 100 (#17191c).
     "--primitives-colors-theme-600": "#2fae86",
+    // The outline, ghost and link Buttons' ink, 700 in the dark too: 11.06:1
+    // on the dark page, 9.27:1 on background 100.
+    "--primitives-colors-theme-700": "#5cd0aa",
   },
 } as const;
 
@@ -188,13 +193,10 @@ export function BrandedApp({ theme }: { theme: "light" | "dark" }) {
 }
 ```
 
-- **What one override does not reach:** a token that holds a copied value (§2). The outline,
-  ghost and link Buttons draw `--components-secondary-buttons-themed-button-foreground-content-idle`
-  and `-hover`, `#0d44c2` and `#1051e8` in the light theme, `#7ea2f6` and `#5887f3` in the dark;
-  a product that draws them sets those two as well, per theme.
-- **The steps your parts read:** the example sets the ones a filled Button reads. A part that
-  reads another step, a tint from theme 0 to 200 for one, keeps Pointr's until that step is set
-  too, or the whole ramp.
+- **The steps your parts read:** the example sets the ones the Buttons read: 500 for the fill,
+  600 and 700 for the filled Button's states (400 and 300 in the dark), 700 for the outline, ghost
+  and link Buttons' ink and 600 for it hovered. A part that reads another step, a tint from theme
+  0 to 200 for one, keeps Pointr's until that step is set too, or the whole ramp.
 - **Override on the provider:** a reference resolves on the element that declares it, the
   provider's. Set on a descendant, `--primitives-colors-theme-500` changes the parts that read the
   ramp below it but not the tokens that name it.
