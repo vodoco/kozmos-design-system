@@ -2,6 +2,8 @@ package com.kozmos.components.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -11,6 +13,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import app.cash.paparazzi.DeviceConfig
 import com.kozmos.components.ReadSemantics
 import com.kozmos.components.adaptivemapshell.KozmosAdaptiveMapShell
 import com.kozmos.components.adaptivemapshell.KozmosMapPanelDetent
@@ -90,5 +93,40 @@ class KozmosRouteSummaryPresentationTest {
         val automatic = heading(null)
         assertEquals("the shell's panel does not host the summary", heading(KozmosRoutePresentation.Hosted), automatic)
         assertNotEquals("the hosted and standalone summaries sit alike", heading(KozmosRoutePresentation.Standalone), automatic)
+    }
+
+    /**
+     * The panel header sits on the panel's surface as its content does: a
+     * summary there is hosted too, docked and beside the map, as SwiftUI and
+     * the web host it.
+     */
+    private fun assertTheHeaderHostsTheSummary(side: Boolean) {
+        fun read(presentation: KozmosRoutePresentation?) = paparazzi.readSemantics {
+            density = LocalDensity.current.density
+            MaterialTheme {
+                KozmosAdaptiveMapShell(
+                    map = { Box(Modifier.fillMaxSize()) },
+                    panel = { Box(Modifier.fillMaxWidth().height(44.dp)) },
+                    panelHeader = { Summary(presentation) },
+                    panelDetent = KozmosMapPanelDetent.Medium
+                )
+            }
+        }
+        fun heading(presentation: KozmosRoutePresentation?) = read(presentation).heading().bounds
+        // Docked, the panel runs the screen's width; beside the map it is 416dp.
+        val tree = read(null)
+        val panelWidth = tree.named("Map details").bounds.width
+        if (side) assertEquals("not the side panel", 416f, panelWidth / density, 0.5f)
+        else assertEquals("not the docked sheet", tree.merged.first().bounds.width, panelWidth, 0.5f)
+        val automatic = heading(null)
+        assertEquals("the shell's panel header does not host the summary", heading(KozmosRoutePresentation.Hosted), automatic)
+        assertNotEquals("the hosted and standalone summaries sit alike", heading(KozmosRoutePresentation.Standalone), automatic)
+    }
+
+    @Test fun theMapShellsSheetHeaderHostsTheSummary() = assertTheHeaderHostsTheSummary(side = false)
+
+    @Test fun theMapShellsSidePanelHeaderHostsTheSummary() {
+        paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_C)
+        assertTheHeaderHostsTheSummary(side = true)
     }
 }

@@ -504,7 +504,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
         data-focus-visible={focusVisible || undefined}
         data-disabled={disabled || undefined}
         className={cn(
-          "group/treeitem flex w-full cursor-pointer items-center gap-2 rounded-control px-2 text-left outline-none transition-colors",
+          "group/treeitem flex w-full cursor-pointer items-center gap-2 rounded-control px-2 text-start outline-none transition-colors",
           density === "compact" ? "min-h-8 py-1" : "min-h-10 py-1.5",
           "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           selected && "bg-muted text-foreground",
@@ -525,7 +525,10 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
             expanded ? (
               <ChevronDown aria-hidden="true" className="h-4 w-4" />
             ) : (
-              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+              <ChevronRight
+                aria-hidden="true"
+                className="kozmos-rtl-mirror h-4 w-4"
+              />
             )
           ) : null}
         </span>
@@ -548,7 +551,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
         {actions !== undefined && actions !== null && (
           <span
             className={cn(
-              "ml-auto flex shrink-0 items-center gap-1 transition-opacity",
+              "ms-auto flex shrink-0 items-center gap-1 transition-opacity",
               actionsVisibility === "auto" &&
                 "opacity-0 group-hover/treeitem:opacity-100 group-focus-within/treeitem:opacity-100 group-data-[focus-visible=true]/treeitem:opacity-100 group-data-[selected=true]/treeitem:opacity-100 motion-reduce:transition-none",
               actionsVisibility === "always" && "opacity-100",

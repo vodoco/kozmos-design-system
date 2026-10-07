@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.kozmos.components.live
+import com.kozmos.components.motion.LocalKozmosAnimatorScale
 import com.kozmos.components.progress.KozmosProgressMotion
 import com.kozmos.components.progress.KozmosProgressRange
 import com.kozmos.components.progress.KozmosProgressTrack
@@ -53,9 +54,23 @@ class KozmosProgressMotionTest {
     }
 
     /**
-     * The clock still stops while the host is not resumed. Reduced motion
-     * cannot be shown here: Paparazzi keeps no Settings.Global write.
+     * With the system's animations off the cue holds still: no clock waits on
+     * a frame. Said through LocalKozmosAnimatorScale, because Paparazzi keeps
+     * no Settings.Global write; at scale 1 the same reading sees the clock.
      */
+    @Test fun withAnimationsOffTheCueRunsNoClock() {
+        for (scale in listOf(1f, 0f)) {
+            paparazzi.live(content = { MaterialTheme {
+                CompositionLocalProvider(LocalKozmosAnimatorScale provides scale) { Track() }
+            } }) {
+                frames(5)
+                repeat(3) { yield() }
+                assertEquals("a clock waits on frames at animator scale $scale", scale > 0f, hasPendingWork)
+            }
+        }
+    }
+
+    /** The clock stops while the host is not resumed, too. */
     @Test fun aHostThatIsNotResumedRunsNoClock() {
         for (state in listOf(Lifecycle.State.RESUMED, Lifecycle.State.STARTED)) {
             val owner = object : LifecycleOwner {
