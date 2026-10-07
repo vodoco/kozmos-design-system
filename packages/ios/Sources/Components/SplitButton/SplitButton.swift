@@ -14,11 +14,16 @@ public struct KozmosSplitButton: View {
     public var body: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing25) {
             Button(action: mainAction) {
-                Text(label)
-                    .padding()
-                    .background(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
-                    .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
+                // Pressed and focused, the themed button's tokens. The menu
+                // half is a `Menu`, whose press SwiftUI draws.
+                KozmosButtonInteractionReader { isPressed, isFocused in
+                    Text(label)
+                        .padding()
+                        .background(KozmosThemeFill.background(isPressed: isPressed, isFocused: isFocused))
+                        .foregroundColor(KozmosThemeFill.foreground(isPressed: isPressed, isFocused: isFocused))
+                }
             }
+            .buttonStyle(KozmosThemeFillButtonStyle())
             .clipShape(UnevenRoundedRectangle(topLeadingRadius: KozmosDimensions.semanticsRadiusControl, bottomLeadingRadius: KozmosDimensions.semanticsRadiusControl, bottomTrailingRadius: KozmosDimensions.semanticsRadiusNone, topTrailingRadius: KozmosDimensions.semanticsRadiusNone))
             
             Menu {

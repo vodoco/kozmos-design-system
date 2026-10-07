@@ -247,10 +247,11 @@ public struct KozmosMapControlButton<Icon: View>: View {
     }
 
     /// The page's own surface, opaque, as the SDK's is; the Button's primary
-    /// fill when filled. It was 90% of the surface.
-    private var surfaceColor: Color {
+    /// fill when filled, pressed and focused from the themed button's tokens.
+    /// It was 90% of the surface.
+    private func surfaceColor(isPressed: Bool, isFocused: Bool) -> Color {
         appearance.surface == .filled
-            ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
+            ? KozmosThemeFill.background(isPressed: isPressed, isFocused: isFocused)
             : KozmosColors.primitivesColorsBackground0
     }
 
@@ -293,39 +294,46 @@ public struct KozmosMapControlButton<Icon: View>: View {
         let shape = surfaceShape
 
         Button(action: action) {
-            HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
-                icon
-                    // Kept in place, unseen, under the spinner, so a labelled
-                    // control's text does not move while it waits.
-                    .opacity(isLoading ? 0 : 1)
-                    .overlay {
-                        if isLoading {
-                            // The system's arc, as a loading Button draws it:
-                            // one drawing on all four platforms.
-                            KozmosSpinner(size: .sm, color: color(appearance.icon))
+            KozmosButtonInteractionReader { isPressed, isFocused in
+                let surface = surfaceColor(isPressed: isPressed, isFocused: isFocused)
+                HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
+                    icon
+                        // Kept in place, unseen, under the spinner, so a labelled
+                        // control's text does not move while it waits.
+                        .opacity(isLoading ? 0 : 1)
+                        .overlay {
+                            if isLoading {
+                                // The system's arc, as a loading Button draws it:
+                                // one drawing on all four platforms.
+                                KozmosSpinner(size: .sm, color: color(appearance.icon))
+                            }
                         }
-                    }
-                    .foregroundColor(color(appearance.icon))
-                    .accessibilityHidden(true)
+                        .foregroundColor(color(appearance.icon))
+                        .accessibilityHidden(true)
 
-                labelContent
+                    labelContent
+                }
+                .foregroundColor(color(appearance.label))
+                // The SDK's padding: 12 at the sides once labelled, 8 above and
+                // below, round a 48 square that grows with its words.
+                .padding(.horizontal, shown == .labelled ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
+                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
+                .frame(minWidth: Self.size, minHeight: Self.size)
+                .frame(width: shown == .iconOnly ? Self.size : nil)
+                .frame(maxWidth: shown == .labelled ? 256 : nil)
+                .background(surface)
+                .clipShape(shape)
+                .contentShape(shape)
+                // No edge in any state, and one lift: the words and the mark carry
+                // the state.
+                .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: shape, fill: surface)
             }
-            .foregroundColor(color(appearance.label))
-            // The SDK's padding: 12 at the sides once labelled, 8 above and
-            // below, round a 48 square that grows with its words.
-            .padding(.horizontal, shown == .labelled ? KozmosDimensions.primitivesLayoutSpacing150 : 0)
-            .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
-            .frame(minWidth: Self.size, minHeight: Self.size)
-            .frame(width: shown == .iconOnly ? Self.size : nil)
-            .frame(maxWidth: shown == .labelled ? 256 : nil)
-            .background(surfaceColor)
-            .clipShape(shape)
-            .contentShape(shape)
-            // No edge in any state, and one lift: the words and the mark carry
-            // the state.
-            .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: shape, fill: surfaceColor)
         }
-        .buttonStyle(.plain)
+        // A filled control takes the theme fill's style on and off alike, so
+        // a toggle never swaps its button under the finger or VoiceOver's
+        // cursor: on, it draws the themed button's pressed token; off, on the
+        // page's surface, it draws no press. A tinted one keeps the plain press.
+        .kozmosThemeFillButtonStyle(emphasis == .filled, otherwise: .plain)
         .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.5 : 1)
         // Reduce Motion stops the control growing, not the reveal: the new

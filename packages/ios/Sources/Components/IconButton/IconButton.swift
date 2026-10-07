@@ -42,32 +42,49 @@ public struct KozmosIconButton: View {
     
     public var body: some View {
         Button(action: action) {
-            Group {
-                if isLoading {
-                    // The system's arc at the small size, taking the control's
-                    // own foreground — one drawing on all four platforms
-                    // (2026-09-22). Hidden from assistive technology: the
-                    // control is disabled and already named.
-                    KozmosSpinner(size: .sm, color: foregroundColor)
-                        .accessibilityHidden(true)
-                } else {
-                    Image(systemName: iconName)
-                        .font(iconFont)
+            KozmosButtonInteractionReader { isPressed, isFocused in
+                let foregroundColor = self.foregroundColor(isPressed: isPressed, isFocused: isFocused)
+                Group {
+                    if isLoading {
+                        // The system's arc at the small size, taking the control's
+                        // own foreground — one drawing on all four platforms
+                        // (2026-09-22). Hidden from assistive technology: the
+                        // control is disabled and already named.
+                        KozmosSpinner(size: .sm, color: foregroundColor)
+                            .accessibilityHidden(true)
+                    } else {
+                        Image(systemName: iconName)
+                            .font(iconFont)
+                    }
                 }
+                .foregroundColor(foregroundColor)
+                // The large size is the prototype's 48: Filters and the AI search beside a 44 field.
+                .frame(width: size == .lg ? 48 : 44, height: size == .lg ? 48 : 44)
+                .kozmosButtonSurface(
+                    variant == .glass ? .glass : nil,
+                    fill: backgroundColor(isPressed: isPressed, isFocused: isFocused),
+                    stroke: borderColor,
+                    strokeWidth: variant == .outline ? 1 : 0,
+                    shape: Circle()
+                )
             }
-            .foregroundColor(foregroundColor)
-            // The large size is the prototype's 48: Filters and the AI search beside a 44 field.
-            .frame(width: size == .lg ? 48 : 44, height: size == .lg ? 48 : 44)
-            .kozmosButtonSurface(
-                variant == .glass ? .glass : nil,
-                fill: backgroundColor,
-                stroke: borderColor,
-                strokeWidth: variant == .outline ? 1 : 0,
-                shape: Circle()
-            )
         }
         .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.5 : 1)
+        .kozmosThemeFillButtonStyle(fillsWithTheme)
+    }
+
+    /// The default variant is a prominent fill in the theme fill, and draws
+    /// its press and focus from the themed button's tokens; every other
+    /// variant keeps SwiftUI's own press.
+    var fillsWithTheme: Bool { variant == .default }
+
+    private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        fillsWithTheme ? KozmosThemeFill.background(isPressed: isPressed, isFocused: isFocused) : backgroundColor
+    }
+
+    private func foregroundColor(isPressed: Bool, isFocused: Bool) -> Color {
+        fillsWithTheme ? KozmosThemeFill.foreground(isPressed: isPressed, isFocused: isFocused) : foregroundColor
     }
 
     private var iconFont: Font {
