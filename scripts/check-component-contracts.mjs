@@ -408,6 +408,8 @@ const files = {
     "packages/android/src/main/java/com/kozmos/components/Icon/Icon.figma.kt",
   androidIconButton:
     "packages/android/src/main/java/com/kozmos/components/IconButton/IconButton.kt",
+  androidFillStates:
+    "packages/android/src/main/java/com/kozmos/components/FillStates.kt",
   androidCounter:
     "packages/android/src/main/java/com/kozmos/components/Counter/Counter.kt",
   androidCategoryTile:
@@ -10344,11 +10346,28 @@ assertContains(
   "size = KozmosSpinnerSize.Sm",
   "Android Button draws the system's arc while loading",
 );
+// Decision 59: the filled Button and IconButton draw the theme fill through
+// KozmosFillStates, which reads the runtime (light and dark) tokens for every
+// state: idle, pressed, focus and hover, never Material's ripple over it.
 assertContains(
   files.androidButton,
   source.androidButton,
-  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
-  "Android Button themed runtime token",
+  "KozmosFillStates.themed",
+  "Android Button themed runtime token (through KozmosFillStates.themed)",
+);
+for (const state of ["Idle", "Pressed", "Focus", "Hover"]) {
+  assertContains(
+    files.androidFillStates,
+    source.androidFillStates,
+    `KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackground${state}`,
+    `Android theme fill ${state.toLowerCase()} runtime token`,
+  );
+}
+assertNotContains(
+  files.androidFillStates,
+  source.androidFillStates,
+  "KozmosColors.",
+  "light-only KozmosColors in the Android fill states",
 );
 
 assertContains(
@@ -10416,8 +10435,8 @@ assertContains(
 assertContains(
   files.androidIconButton,
   source.androidIconButton,
-  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
-  "Android IconButton themed runtime token",
+  "KozmosFillStates.themed",
+  "Android IconButton themed runtime token (through KozmosFillStates.themed)",
 );
 
 assertAllVariants(

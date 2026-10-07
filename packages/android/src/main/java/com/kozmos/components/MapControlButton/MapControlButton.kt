@@ -7,6 +7,7 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ripple.LocalRippleTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -40,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.kozmos.components.KozmosFillStates
+import com.kozmos.components.KozmosNoRipple
 import com.kozmos.components.motion.KozmosTransitions
 import com.kozmos.components.spinner.KozmosSpinner
 import com.kozmos.components.spinner.KozmosSpinnerSize
@@ -204,6 +208,10 @@ internal fun accessibleLabel(label: String, stateLabel: String?, stateDescriptio
  * [isLoading] turns the system's arc in the icon's place, and the control
  * waits: React's Button disables itself while it loads, and so does this. The
  * name still says what is happening.
+ *
+ * [interactionSource] is the presses, focus and hover the control answers, as
+ * Material's own parameter. [KozmosMapControlButtonEmphasis.Filled] answers
+ * them with the theme fill's pressed, focus and hover tokens (decision 59).
  */
 @Composable
 fun KozmosMapControlButton(
@@ -224,8 +232,11 @@ fun KozmosMapControlButton(
     // After every parameter 0.5.0 had, so a 0.5.0 call that passed them by
     // position still compiles.
     stateDescription: String? = null,
-    showLabel: Boolean = true
+    showLabel: Boolean = true,
+    // Last, after every parameter it had, so a call by position still compiles.
+    interactionSource: MutableInteractionSource? = null
 ) {
+    val source = interactionSource ?: remember { MutableInteractionSource() }
     val accessibleLabel = accessibleLabel(label, stateLabel, stateDescription)
     val appearance = KozmosMapControlButtonAppearance.resolve(pressed, emphasis)
     // Either half of the state can be what changed: a toggle flips `pressed`,
@@ -264,93 +275,99 @@ fun KozmosMapControlButton(
     val lineStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
     val lineHeight = with(LocalDensity.current) { lineStyle.fontSize.toDp() }
 
-    Surface(
-        onClick = onClick,
-        modifier = modifier
-            .then(
-                if (widthFollowsContent) {
-                    Modifier
-                        .widthIn(min = KozmosMapControlSize, max = 256.dp)
-                        .heightIn(min = KozmosMapControlSize)
-                } else {
-                    Modifier.size(KozmosMapControlSize)
-                }
-            )
-            .semantics {
-                contentDescription = accessibleLabel
-                selected = pressed == true
-            },
-        enabled = enabled && !isLoading,
-        shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
-        // The page's own surface, opaque, as the SDK's is. It was 90% of it.
-        color = if (appearance.surface == KozmosMapControlButtonAppearance.Surface.Filled) {
-            KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
-        } else {
-            KozmosThemeTokens.primitivesColorsBackground0
-        },
-        contentColor = appearance.label.color(),
-        // No edge in any state, and one lift: the words and the mark carry the
-        // state.
-        shadowElevation = KozmosShadows.semanticsElevationMapControl
-    ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = horizontalPadding,
-                vertical = KozmosDimensions.primitivesLayoutSpacing100
-            ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+    // Filled, the control is the theme fill, and pressed, focused or hovered
+    // the tokens' own step, with no ripple over it: Material's white ripple
+    // lightened the fill (decision 59). On the page's surface it keeps the
+    // ripple.
+    val filled = appearance.surface == KozmosMapControlButtonAppearance.Surface.Filled
+    val fillColors = if (filled) KozmosFillStates.themed.colorsFor(source) else null
+
+    CompositionLocalProvider(LocalRippleTheme provides if (filled) KozmosNoRipple else LocalRippleTheme.current) {
+        Surface(
+            onClick = onClick,
+            modifier = modifier
+                .then(
+                    if (widthFollowsContent) {
+                        Modifier
+                            .widthIn(min = KozmosMapControlSize, max = 256.dp)
+                            .heightIn(min = KozmosMapControlSize)
+                    } else {
+                        Modifier.size(KozmosMapControlSize)
+                    }
+                )
+                .semantics {
+                    contentDescription = accessibleLabel
+                    selected = pressed == true
+                },
+            enabled = enabled && !isLoading,
+            shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl),
+            // The page's own surface, opaque, as the SDK's is. It was 90% of it.
+            color = fillColors?.first ?: KozmosThemeTokens.primitivesColorsBackground0,
+            contentColor = fillColors?.second ?: appearance.label.color(),
+            // No edge in any state, and one lift: the words and the mark carry the
+            // state.
+            shadowElevation = KozmosShadows.semanticsElevationMapControl,
+            interactionSource = source
         ) {
-            if (icon != null || isLoading) {
-                CompositionLocalProvider(LocalContentColor provides appearance.icon.color()) {
-                    Box(contentAlignment = Alignment.Center) {
-                        // Kept in place, unseen, under the spinner, so a
-                        // labelled control's text does not move while it waits.
-                        if (icon != null) {
-                            Box(Modifier.alpha(if (isLoading) 0f else 1f)) { icon() }
-                        }
-                        if (isLoading) {
-                            // The system's arc, as a loading Button draws it:
-                            // one drawing on all four platforms. Cleared from
-                            // semantics — the control is already named and
-                            // waiting.
-                            KozmosSpinner(
-                                modifier = Modifier.clearAndSetSemantics {},
-                                size = KozmosSpinnerSize.Sm,
-                                color = appearance.icon.color()
-                            )
+            Row(
+                modifier = Modifier.padding(
+                    horizontal = horizontalPadding,
+                    vertical = KozmosDimensions.primitivesLayoutSpacing100
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                if (icon != null || isLoading) {
+                    CompositionLocalProvider(LocalContentColor provides appearance.icon.color()) {
+                        Box(contentAlignment = Alignment.Center) {
+                            // Kept in place, unseen, under the spinner, so a
+                            // labelled control's text does not move while it waits.
+                            if (icon != null) {
+                                Box(Modifier.alpha(if (isLoading) 0f else 1f)) { icon() }
+                            }
+                            if (isLoading) {
+                                // The system's arc, as a loading Button draws it:
+                                // one drawing on all four platforms. Cleared from
+                                // semantics — the control is already named and
+                                // waiting.
+                                KozmosSpinner(
+                                    modifier = Modifier.clearAndSetSemantics {},
+                                    size = KozmosSpinnerSize.Sm,
+                                    color = appearance.icon.color()
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            AnimatedVisibility(
-                visibleState = labelState,
-                // Uncovered from its start, as React's max-width reveals it: the
-                // name is read first, not the tail of the state.
-                enter = expandHorizontally(KozmosTransitions.standard(), expandFrom = Alignment.Start) +
-                    fadeIn(KozmosTransitions.standard()),
-                exit = shrinkHorizontally(KozmosTransitions.standard(), shrinkTowards = Alignment.Start) +
-                    fadeOut(KozmosTransitions.standard())
-            ) {
-                // The gap from the icon travels with the label, so nothing
-                // jumps when it arrives or leaves.
-                Box(
-                    Modifier.padding(
-                        start = if (icon != null || isLoading) KozmosDimensions.primitivesLayoutSpacing100 else 0.dp
-                    )
+                AnimatedVisibility(
+                    visibleState = labelState,
+                    // Uncovered from its start, as React's max-width reveals it: the
+                    // name is read first, not the tail of the state.
+                    enter = expandHorizontally(KozmosTransitions.standard(), expandFrom = Alignment.Start) +
+                        fadeIn(KozmosTransitions.standard()),
+                    exit = shrinkHorizontally(KozmosTransitions.standard(), shrinkTowards = Alignment.Start) +
+                        fadeOut(KozmosTransitions.standard())
                 ) {
-                    if (labelPlacement == KozmosMapControlButtonLabelPlacement.Stacked) {
-                        // Two equal lines.
-                        Column(horizontalAlignment = Alignment.Start) {
-                            lines.forEach { line -> MapControlLine(line, lineStyle, lineHeight) }
-                        }
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
-                        ) {
-                            lines.forEach { line -> MapControlLine(line, lineStyle, lineHeight) }
+                    // The gap from the icon travels with the label, so nothing
+                    // jumps when it arrives or leaves.
+                    Box(
+                        Modifier.padding(
+                            start = if (icon != null || isLoading) KozmosDimensions.primitivesLayoutSpacing100 else 0.dp
+                        )
+                    ) {
+                        if (labelPlacement == KozmosMapControlButtonLabelPlacement.Stacked) {
+                            // Two equal lines.
+                            Column(horizontalAlignment = Alignment.Start) {
+                                lines.forEach { line -> MapControlLine(line, lineStyle, lineHeight) }
+                            }
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing50)
+                            ) {
+                                lines.forEach { line -> MapControlLine(line, lineStyle, lineHeight) }
+                            }
                         }
                     }
                 }

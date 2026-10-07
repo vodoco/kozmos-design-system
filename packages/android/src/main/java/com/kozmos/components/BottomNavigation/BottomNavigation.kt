@@ -25,9 +25,11 @@ fun KozmosBottomNavigation(
     modifier: Modifier = Modifier
 ) {
     // Kozmos's colours, not Material's purple: the selected item's icon and
-    // label are theme-coloured text on a surface, theme/600, on the muted
-    // fill (background/100), and the others the foreground, foreground/100,
-    // as iOS and React draw their bars (decision 59).
+    // label are theme-coloured text on a surface, theme/600 (decision 59), and
+    // the others the foreground, foreground/100. The muted fill
+    // (background/100) is Material's indicator, a 64×32 pill behind the icon
+    // alone; iOS and React fill the item's whole 64×64 tile, so the bars
+    // share their colours, not that shape.
     val colors = NavigationBarItemDefaults.colors(
         selectedIconColor = KozmosThemeTokens.primitivesColorsTheme600,
         selectedTextColor = KozmosThemeTokens.primitivesColorsTheme600,

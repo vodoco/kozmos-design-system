@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -21,10 +25,15 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.aisearchbutton.KozmosAISearchButton
+import com.kozmos.components.badge.KozmosBadge
 import com.kozmos.components.bottomnavigation.BottomNavigationItem
 import com.kozmos.components.bottomnavigation.KozmosBottomNavigation
 import com.kozmos.components.categoryfield.KozmosCategoryField
+import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.categorytile.KozmosCategoryTile
+import com.kozmos.components.chip.KozmosChip
+import com.kozmos.components.counter.CounterTone
+import com.kozmos.components.counter.KozmosCounter
 import com.kozmos.components.checkbox.KozmosCheckbox
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.directionstep.KozmosDirectionStep
@@ -34,6 +43,8 @@ import com.kozmos.components.floorselector.KozmosFloorSelector
 import com.kozmos.components.icon.KozmosIcon
 import com.kozmos.components.icon.KozmosIconColor
 import com.kozmos.components.icon.KozmosIconSize
+import com.kozmos.components.iconbutton.KozmosIconButton
+import com.kozmos.components.iconbutton.KozmosIconButtonVariant
 import com.kozmos.components.itinerary.KozmosItinerary
 import com.kozmos.components.itinerary.KozmosItineraryStep
 import com.kozmos.components.link.KozmosLink
@@ -41,13 +52,17 @@ import com.kozmos.components.listbox.KozmosListbox
 import com.kozmos.components.listbox.KozmosListboxOption
 import com.kozmos.components.locationpin.KozmosLocationPin
 import com.kozmos.components.locationpin.KozmosLocationPinSize
+import com.kozmos.components.locationpin.KozmosLocationPinVariant
 import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
+import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonEmphasis
 import com.kozmos.components.navigationitem.KozmosNavigationItem
 import com.kozmos.components.otpinput.KozmosOTPInput
 import com.kozmos.components.pagination.KozmosPaginationLink
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.radio.KozmosRadioGroupItem
 import com.kozmos.components.routeoptioncard.KozmosRouteOptionCard
+import com.kozmos.components.savelocationcard.KozmosSaveLocationCard
 import com.kozmos.components.slider.KozmosSlider
 import com.kozmos.components.splitbutton.KozmosSplitButton
 import com.kozmos.components.stepper.KozmosStepper
@@ -128,13 +143,17 @@ class KozmosThemeFillPixelsTest {
         return found
     }
 
-    /** The box round every pixel drawn in [colour], as x and y ranges; null if there is none. */
-    private fun DrawnPixels.boundsOf(colour: Int): Pair<IntRange, IntRange>? {
+    /** The box round every pixel drawn in [colour] in the region, as x and y ranges; null if there is none. */
+    private fun DrawnPixels.boundsOf(
+        colour: Int,
+        xs: IntRange = 0 until width,
+        ys: IntRange = 0 until height
+    ): Pair<IntRange, IntRange>? {
         var left = Int.MAX_VALUE
         var top = Int.MAX_VALUE
         var right = -1
         var bottom = -1
-        for (y in 0 until height) for (x in 0 until width) {
+        for (y in ys) for (x in xs) {
             if (DrawnPixels.matches(argb(x, y), colour)) {
                 left = minOf(left, x); right = maxOf(right, x)
                 top = minOf(top, y); bottom = maxOf(bottom, y)
@@ -175,6 +194,28 @@ class KozmosThemeFillPixelsTest {
         "a SplitButton and its label" to { KozmosSplitButton(label = "Share", onMainClick = {}, menuItems = emptyList()) },
         "a theme ManoeuvreCard and its words" to {
             KozmosManoeuvreCard(DirectionType.Straight, "Continue ahead", false, {}, modifier = Modifier.width(180.dp)) {}
+        },
+        "a filled Button and its label" to { KozmosButton(onClick = {}) { Text("Go") } },
+        "a default IconButton and its icon" to {
+            KozmosIconButton(icon = Icons.Default.Add, onClick = {}, contentDescription = "Add", variant = KozmosIconButtonVariant.Default)
+        },
+        "a selected Chip and its words" to { KozmosChip(text = "Gates", selected = true) },
+        "a default Badge and its words" to { KozmosBadge(text = "Open") },
+        "a brand Counter and its number" to { KozmosCounter(text = "8", tone = CounterTone.Brand) },
+        "the CategoryField's count pill and its number" to {
+            KozmosCategoryField(label = "Gates", onClear = {}, count = 8, modifier = Modifier.width(180.dp))
+        },
+        "SaveLocationCard's saved disc and its car" to {
+            KozmosSaveLocationCard(modifier = Modifier.width(180.dp), isSaved = true)
+        },
+        "a filled MapControlButton on and its mark" to {
+            KozmosMapControlButton(
+                label = "Focus",
+                onClick = {},
+                icon = { Icon(Icons.Default.NearMe, contentDescription = null) },
+                emphasis = KozmosMapControlButtonEmphasis.Filled,
+                pressed = true
+            )
         },
     )
 
@@ -248,7 +289,140 @@ class KozmosThemeFillPixelsTest {
             println("Decision 59 Android, ${mode(dark)}: the selected level's count corner is $marker of $area pixels white")
             if (marker * 2 < area) {
                 wrong += "${mode(dark)}: the count on the selected level is not white ($marker of $area pixels in its corner)"
+                continue
             }
+            // And its number is the fill: a white number on the white marker
+            // would leave the corner as white as this, and say nothing.
+            val disc = drawn.boundsOf(white, cornerXs, cornerYs)
+            val number = disc?.let { (dx, dy) -> drawn.count(themeFill, 24, dx.middleHalf(), dy.middleHalf()) } ?: 0
+            println("Decision 59 Android, ${mode(dark)}: the selected level's count has $number pixels of #135BEC in its middle")
+            if (number < 3) {
+                wrong += "${mode(dark)}: the count's number on the selected level is not #135BEC ($number pixels in the marker's middle)"
+            }
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
+     * The largest run of touching pixels in [colour], as its box and its size:
+     * a counter's pill is one solid piece, where a word beside it is several
+     * small ones.
+     */
+    private fun DrawnPixels.largestPiece(colour: Int, tolerance: Int, xs: IntRange, ys: IntRange): Pair<Pair<IntRange, IntRange>, Int>? {
+        val seen = HashSet<Long>()
+        var best: Pair<Pair<IntRange, IntRange>, Int>? = null
+        for (y0 in ys) for (x0 in xs) {
+            val key = x0.toLong() shl 32 or y0.toLong()
+            if (key in seen || !DrawnPixels.matches(argb(x0, y0), colour, tolerance)) continue
+            seen += key
+            val queue = ArrayDeque(listOf(x0 to y0))
+            var size = 0
+            var left = x0; var right = x0; var top = y0; var bottom = y0
+            while (queue.isNotEmpty()) {
+                val (x, y) = queue.removeFirst()
+                size++
+                left = minOf(left, x); right = maxOf(right, x); top = minOf(top, y); bottom = maxOf(bottom, y)
+                for ((nx, ny) in listOf(x + 1 to y, x - 1 to y, x to y + 1, x to y - 1)) {
+                    if (nx !in xs || ny !in ys) continue
+                    val next = nx.toLong() shl 32 or ny.toLong()
+                    if (next in seen || !DrawnPixels.matches(argb(nx, ny), colour, tolerance)) continue
+                    seen += next
+                    queue.addLast(nx to ny)
+                }
+            }
+            if (best == null || size > best.second) best = ((left..right) to (top..bottom)) to size
+        }
+        return best
+    }
+
+    /**
+     * A default Badge's counter inverts on the theme fill, as the FloorSelector's
+     * count does on its selected level (Olcay, 2026-10-07): the theme
+     * foreground, white, with its number in the fill, in both themes. It was
+     * the page's own background and foreground, a dark pill in the dark.
+     */
+    @Test
+    fun aDefaultBadgesCounterInverts() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val drawn = draw(dark, Color(0xFF808080)) { KozmosBadge(text = "Gates", counter = "8", showCounter = true) }
+            val badge = drawn.boundsOf(themeFill)
+            if (badge == null) {
+                wrong += "${mode(dark)}: the badge draws no #135BEC"
+                continue
+            }
+            // The pill: a solid piece, filling most of its box, and nearly half
+            // as tall as the badge (20 of 44). A letter of the words is
+            // neither: under half its box, and a quarter of the badge tall.
+            val pill = drawn.largestPiece(white, 12, badge.first, badge.second)
+            val (px, py) = pill?.first ?: (IntRange.EMPTY to IntRange.EMPTY)
+            val boxArea = (px.last - px.first + 1) * (py.last - py.first + 1)
+            val tall = (py.last - py.first + 1).toFloat() / (badge.second.last - badge.second.first + 1)
+            println(
+                "Decision 59 Android, ${mode(dark)}: the badge's largest white piece is ${pill?.second} pixels " +
+                    "in a $boxArea-pixel box ${"%.2f".format(tall)} of the badge tall"
+            )
+            if (pill == null || pill.second * 2 < boxArea || tall < 0.38f) {
+                wrong += "${mode(dark)}: the badge's counter is no white pill (largest white piece ${pill?.second ?: 0} pixels)"
+                continue
+            }
+            val number = drawn.count(themeFill, 24, px.middleHalf(), py.middleHalf())
+            println("Decision 59 Android, ${mode(dark)}: the counter has $number pixels of #135BEC in its middle")
+            if (number < 3) wrong += "${mode(dark)}: the counter's number is not #135BEC ($number pixels in its middle)"
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
+     * The accent pin is theme variant 1's 500, #4134F1 in both themes, and its
+     * number the theme foreground, white, on it in both: foreground/1000 is
+     * black in the dark, 2.99:1, where white reads 7.03:1.
+     */
+    @Test
+    fun anAccentPinsNumberIsWhiteInBothThemes() {
+        val accent = 0xFF4134F1.toInt()
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val drawn = draw(dark, Color(0xFF808080)) {
+                KozmosLocationPin(variant = KozmosLocationPinVariant.Accent, size = KozmosLocationPinSize.Lg, number = 8, selected = true)
+            }
+            val bounds = drawn.boundsOf(accent)
+            if (bounds == null) {
+                wrong += "${mode(dark)}: the accent pin draws no #4134F1"
+                continue
+            }
+            val marks = drawn.count(white, 12, bounds.first.middleHalf(), bounds.second.middleHalf())
+            println("Decision 59 Android, ${mode(dark)}: the accent pin has $marks white pixels in its middle")
+            if (marks < 6) wrong += "${mode(dark)}: the accent pin's number is not white ($marks pixels)"
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
+    /**
+     * A featured pin is the alert's amber, #FAB735 in both themes, and its
+     * number the alert's onFill, the dark words decision 55 gives Featured:
+     * white on it read 1.76:1 in the light.
+     */
+    @Test
+    fun aFeaturedPinsNumberIsDarkOnItsAmberInBothThemes() {
+        val amber = 0xFFFAB735.toInt()
+        val black = 0xFF000000.toInt()
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val drawn = draw(dark, Color(0xFF808080)) {
+                KozmosLocationPin(size = KozmosLocationPinSize.Lg, number = 8, featured = true)
+            }
+            val bounds = drawn.boundsOf(amber)
+            if (bounds == null) {
+                wrong += "${mode(dark)}: the featured pin draws no #FAB735"
+                continue
+            }
+            val (mx, my) = bounds.first.middleHalf() to bounds.second.middleHalf()
+            val inked = drawn.count(black, 24, mx, my)
+            val pale = drawn.count(white, 24, mx, my)
+            println("Decision 59 Android, ${mode(dark)}: the featured pin has $inked black and $pale white pixels in its middle")
+            if (inked < 6) wrong += "${mode(dark)}: the featured pin's number is not dark ($inked black pixels)"
+            if (pale > 0) wrong += "${mode(dark)}: the featured pin draws $pale white pixels in its middle"
         }
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
     }
