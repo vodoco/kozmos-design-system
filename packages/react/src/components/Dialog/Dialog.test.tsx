@@ -78,9 +78,7 @@ describe("Dialog", () => {
       </Dialog>,
     );
     await user.click(screen.getByRole("button", { name: "Open recovery" }));
-    await user.click(
-      screen.getByRole("button", { name: "Close", exact: true }),
-    );
+    await user.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open recovery" })).toHaveFocus();
   });
