@@ -208,11 +208,19 @@ fun KozmosPOIResultCard(
     val accessibilityDescription = phrases.joinToString(", ") { it.text }
     // A description is a plain string, and TalkBack would say all of it in
     // the interface's voice. With a language in it, the row gives TalkBack
-    // the same words as text instead, which keeps each phrase's LocaleSpan,
-    // and the texts drawn inside it are hidden so they are not said again:
+    // the same words as text instead, which keeps each phrase's LocaleSpan:
     // what Itinerary's steps and ManoeuvreCard do for an instruction.
     val spokenText = if (phrases.speaksAnotherLanguage()) kozmosSpokenText(phrases) else null
-    val saidByTheRow = if (spokenText != null) Modifier.clearAndSetSemantics { } else Modifier
+    // The row says the whole result in its own words, so the texts drawn
+    // inside it are left out of semantics. Compose hands a merging row's
+    // description to TalkBack on a helper child ahead of the row's other
+    // children, and TalkBack reads every one of them: a drawn text left in
+    // would be heard a second time, after the description or after the
+    // product's selection label. The logo keeps its alt text, as the web's
+    // button names itself from the logo too; the row keeps its click, state
+    // and selection. Each is cleared around its text, not on it, so the
+    // unmerged tree still holds every word the card draws.
+    val saidByTheRow = Modifier.clearAndSetSemantics { }
 
     Surface(
         onClick = {
@@ -365,35 +373,35 @@ fun KozmosPOIResultCard(
                         POILogo(poi = poi)
 
                         travelTimeText?.let { text ->
-                            Text(
-                                text = text,
-                                modifier = saidByTheRow,
-                                style = MaterialTheme.typography.bodyMedium,
-                                // Nearby in the success emotion's Text role, which
-                                // reads at 4.5:1 or more on the card in both
-                                // themes; every other band, and the exact minutes,
-                                // in the card's text colour. The word is Nearby,
-                                // so the colour is never the only signal.
-                                color = when (result.travelEstimate?.band?.tone) {
-                                    KozmosTravelTimeTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
-                                    KozmosTravelTimeTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
-                                }
-                            )
+                            Box(saidByTheRow) {
+                                Text(
+                                    text = text,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    // Nearby in the success emotion's Text role, which
+                                    // reads at 4.5:1 or more on the card in both
+                                    // themes; every other band, and the exact minutes,
+                                    // in the card's text colour. The word is Nearby,
+                                    // so the colour is never the only signal.
+                                    color = when (result.travelEstimate?.band?.tone) {
+                                        KozmosTravelTimeTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
+                                        KozmosTravelTimeTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
+                                    }
+                                )
+                            }
                         }
                     }
                 }
 
                 languageDisclosure?.let { label ->
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = secondaryText,
-                        modifier = saidByTheRow.padding(
+                    Box(
+                        saidByTheRow.padding(
                             start = KozmosDimensions.primitivesLayoutSpacing200,
                             end = KozmosDimensions.primitivesLayoutSpacing200,
                             bottom = KozmosDimensions.primitivesLayoutSpacing150
                         )
-                    )
+                    ) {
+                        Text(text = label, style = MaterialTheme.typography.bodySmall, color = secondaryText)
+                    }
                 }
 
                 if (visibleActions.isNotEmpty()) {
@@ -443,19 +451,18 @@ fun KozmosPOIResultCard(
                 if (!available && result.unavailableReason != null) {
                     Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
-                    Text(
-                        text = result.unavailableReason,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = secondaryText,
-                        modifier = saidByTheRow.padding(
+                    Box(
+                        saidByTheRow.padding(
                             horizontal = KozmosDimensions.primitivesLayoutSpacing200,
                             vertical = KozmosDimensions.primitivesLayoutSpacing100
                         )
-                    )
+                    ) {
+                        Text(text = result.unavailableReason, style = MaterialTheme.typography.bodySmall, color = secondaryText)
+                    }
                 }
             }
             if (tab != null && !sdk) {
-                KozmosPOIResultTabView(tab = tab, selected = result.selected, modifier = Modifier.align(Alignment.TopStart).then(saidByTheRow))
+                KozmosPOIResultTabView(tab = tab, selected = result.selected, modifier = Modifier.align(Alignment.TopStart))
             }
         }
     }
