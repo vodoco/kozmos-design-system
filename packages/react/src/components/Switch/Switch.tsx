@@ -45,7 +45,11 @@ const Switch = React.forwardRef<
         >
           <SwitchPrimitive.Thumb
             className={cn(
-              "pointer-events-none block h-5 w-5 rounded-pill bg-background shadow-raised ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
+              // On, the thumb slides 20 toward the inline end: right, or left
+              // in a right-to-left box, read from --kozmos-rtl as every
+              // direction rule is (never :dir()). A bare translate-x-5 slid
+              // it right in both, out of a right-to-left track.
+              "pointer-events-none block h-5 w-5 rounded-pill bg-background shadow-raised ring-0 transition-transform data-[state=checked]:translate-x-[calc(1.25rem_*_(1_-_2_*_var(--kozmos-rtl,0)))] data-[state=unchecked]:translate-x-0",
               // The thumb on the checked track is a mark on the theme fill: the
               // theme foreground, white in both themes (decision 59). On an
               // error's track it stays the surface, as SwiftUI and Compose
