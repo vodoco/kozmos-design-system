@@ -86,7 +86,7 @@ From `@kozmos-ds/react`.
  * it has got (GAP-115).
  */
 interface EmptyStateProgress {
-  /** How far it has got, from 0 to 100. */
+  /** How far it has got, from 0 to 100. Outside that it is clamped, and NaN is 0. */
   value: number;
   /** What is in progress, shown above the bar and naming it: "Downloading the assistant". */
   label: string;

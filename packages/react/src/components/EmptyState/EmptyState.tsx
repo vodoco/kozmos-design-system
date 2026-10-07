@@ -23,7 +23,7 @@ export const EmptyStateDensity = EmptyStateDensityContext.Provider;
  * it has got (GAP-115).
  */
 export interface EmptyStateProgress {
-  /** How far it has got, from 0 to 100. */
+  /** How far it has got, from 0 to 100. Outside that it is clamped, and NaN is 0. */
   value: number;
   /** What is in progress, shown above the bar and naming it: "Downloading the assistant". */
   label: string;
@@ -51,6 +51,15 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
    * content to about 150 (GAP-009).
    */
   size?: "default" | "compact";
+}
+
+/**
+ * The natives clamp the value; Radix does not. Past either end, even by
+ * 0.0000001, it logs an error, marks the bar indeterminate, draws it empty
+ * and drops aria-valuenow and aria-valuetext.
+ */
+function clampPercent(value: number): number {
+  return Number.isNaN(value) ? 0 : Math.min(100, Math.max(0, value));
 }
 
 const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
@@ -112,26 +121,37 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
             {description}
           </Text>
         )}
+        {/* The natives leave their stack's gap above the bar, 16 or 8
+          compact, from the description or, without one, from the title,
+          whose own margin is 4 (2 compact): the bar tops it up. The label
+          starts at the leading edge, as on the natives, not centred. */}
         {progress && (
           <div
             data-empty-state-progress=""
-            className={cn("mb-4 w-full max-w-[280px]", compact && "mb-0 mt-3")}
+            className={cn(
+              "mb-4 w-full max-w-[280px] text-start",
+              !description && "mt-3",
+              compact && (description ? "mb-0 mt-2" : "mb-0 mt-1.5"),
+            )}
           >
-            <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
+            {/* Hidden, and still the bar's name: aria-labelledby reads a
+              hidden element. Read as text as well, the label was said twice
+              in browse mode; the natives expose one element. */}
+            <div
+              aria-hidden="true"
+              className="mb-1 flex items-baseline justify-between gap-2 text-sm"
+            >
               <span id={progressLabelId} className="min-w-0 text-foreground">
                 {progress.label}
               </span>
               {progress.valueText && (
-                <span
-                  aria-hidden="true"
-                  className="shrink-0 text-muted-foreground"
-                >
+                <span className="shrink-0 text-muted-foreground">
                   {progress.valueText}
                 </span>
               )}
             </div>
             <Progress
-              value={progress.value}
+              value={clampPercent(progress.value)}
               aria-labelledby={progressLabelId}
               getValueLabel={
                 progress.valueText ? () => progress.valueText! : undefined
