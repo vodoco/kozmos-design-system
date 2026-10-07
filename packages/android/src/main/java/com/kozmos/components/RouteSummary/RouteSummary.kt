@@ -276,11 +276,12 @@ private fun RouteSummaryTitle(destination: String, modifier: Modifier = Modifier
  * order (placed relative, so they mirror in right-to-left): the route
  * summary's actions, as the web's `.kozmos-route-summary-actions` grid draws
  * them. Not a weighted Row: a weight that does not fill leaves space at the
- * row's end. Each child is measured to its column's width; one shorter than
- * the tallest is stretched to it, and one as tall keeps its own measure, so
- * a KozmosButton still draws 44dp inside its 48dp touch target. Children
- * are measured by their intrinsic height, so they are Buttons, not lazy
- * lists.
+ * row's end. The columns fill the row exactly: what an even split leaves
+ * over, a pixel each, goes to the first columns. Each child is measured to
+ * its column's width; one shorter than the tallest is stretched to it, and
+ * one as tall keeps its own measure, so a KozmosButton still draws 44dp
+ * inside its 48dp touch target. Children are measured by their intrinsic
+ * height, so they are Buttons, not lazy lists.
  */
 @Composable
 internal fun KozmosEqualColumns(spacing: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
@@ -290,15 +291,18 @@ internal fun KozmosEqualColumns(spacing: Dp, modifier: Modifier = Modifier, cont
         val gap = spacing.roundToPx()
         val width = if (constraints.hasBoundedWidth) constraints.maxWidth
             else measurables.maxOf { it.maxIntrinsicWidth(Constraints.Infinity) } * count + gap * (count - 1)
-        val column = ((width - gap * (count - 1)) / count).coerceAtLeast(0)
-        val heights = measurables.map { it.maxIntrinsicHeight(column) }
+        val shared = (width - gap * (count - 1)).coerceAtLeast(0)
+        val columns = List(count) { shared / count + if (it < shared % count) 1 else 0 }
+        val heights = measurables.mapIndexed { index, child -> child.maxIntrinsicHeight(columns[index]) }
         val row = heights.max().coerceIn(constraints.minHeight, constraints.maxHeight)
         val placeables = measurables.mapIndexed { index, child ->
-            child.measure(Constraints(column, column, if (heights[index] < row) row else 0, row))
+            child.measure(Constraints(columns[index], columns[index], if (heights[index] < row) row else 0, row))
         }
         layout(width, row) {
+            var x = 0
             placeables.forEachIndexed { index, placeable ->
-                placeable.placeRelative(index * (column + gap), (row - placeable.height) / 2)
+                placeable.placeRelative(x, (row - placeable.height) / 2)
+                x += columns[index] + gap
             }
         }
     }

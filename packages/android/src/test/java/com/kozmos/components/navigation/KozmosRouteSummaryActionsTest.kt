@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.ReadNode
@@ -61,10 +62,11 @@ class KozmosRouteSummaryActionsTest {
             modifier = Modifier.onGloballyPositioned { targets[label] = it.boundsInRoot() }) { Text(label) }
     }
 
-    /** The summary, hosted, in 320dp, in [direction], at [fontScale]. */
+    /** The summary, hosted, [width] wide, in [direction], at [fontScale]. */
     private fun read(
         direction: LayoutDirection = LayoutDirection.Ltr,
         fontScale: Float = 1f,
+        width: Dp = 320.dp,
         summary: @Composable () -> Unit
     ): ReadSemantics = paparazzi.readSemantics {
         density = LocalDensity.current.density
@@ -73,7 +75,7 @@ class KozmosRouteSummaryActionsTest {
             LocalLayoutDirection provides direction
         ) {
             MaterialTheme {
-                Box(Modifier.width(320.dp).semantics { contentDescription = "Summary" }) { summary() }
+                Box(Modifier.width(width).semantics { contentDescription = "Summary" }) { summary() }
             }
         }
     }
@@ -135,10 +137,36 @@ class KozmosRouteSummaryActionsTest {
         assertEquals("widths $previous $next", previous.width, next.width, 1f)
         assertEquals(8f, dp(next.left - previous.right), 0.5f)
         assertEquals(summary.left, previous.left, 0.5f)
-        assertEquals(summary.right, next.right, 2f)
+        assertEquals(summary.right, next.right, 0.5f)
         // The drawn buttons fill their columns too.
         assertEquals(previous.width, tree.button("Back").frame.width, 1f)
         assertEquals(next.width, tree.button("Continue to the next step").frame.width, 1f)
+    }
+
+    @Test fun theColumnsFillTheRowExactly() {
+        // Paparazzi draws at a density of 3: 320dp is 960px, which two columns
+        // 24px apart share evenly. 321dp is 963px: two leave 1px over an even
+        // split, and four leave 3px.
+        for ((width, labels) in listOf(
+            320 to listOf("Previous", "Next"),
+            321 to listOf("Previous", "Next"),
+            321 to listOf("First", "Previous", "Next", "Last")
+        )) {
+            targets.clear()
+            val tree = read(width = width.dp) {
+                KozmosRouteSummary(destination = "Airport Shuttles", onEndRoute = {},
+                    presentation = KozmosRoutePresentation.Hosted,
+                    actions = { labels.forEach { Action(it) } }) { Rail() }
+            }
+            val summary = tree.named("Summary").bounds
+            val cells = labels.map { targets.getValue(it) }
+            val widths = cells.map { it.width }
+            assertEquals("$width: the first column", summary.left, cells.first().left, 0.5f)
+            assertEquals("$width: the columns stop short of the row: $widths", summary.right, cells.last().right, 0.5f)
+            cells.zipWithNext { a, b -> assertEquals("$width: the gap", 8f, dp(b.left - a.right), 0.5f) }
+            assertTrue("$width: unequal columns $widths", widths.max() - widths.min() <= 1f)
+            assertTrue("$width: the wider columns are not first: $widths", widths.zipWithNext().all { (a, b) -> a >= b })
+        }
     }
 
     @Test fun everyActionKeepsA48dpTouchTarget() {
@@ -185,7 +213,7 @@ class KozmosRouteSummaryActionsTest {
         val next = targets.getValue("التالي")
         assertTrue("Previous $previous is not at the inline start of Next $next", previous.left > next.left)
         assertEquals(summary.right, previous.right, 0.5f)
-        assertEquals(summary.left, next.left, 2f)
+        assertEquals(summary.left, next.left, 0.5f)
         assertEquals(previous.width, next.width, 1f)
     }
 
