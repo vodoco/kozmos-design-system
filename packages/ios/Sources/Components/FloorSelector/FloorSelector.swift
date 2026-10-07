@@ -333,7 +333,7 @@ public struct KozmosFloorSelector: View {
                         : KozmosColors.primitivesColorsForeground100
                 )
                 .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
-                .overlay(alignment: .topTrailing) { resultMarker(for: floor) }
+                .overlay(alignment: .topTrailing) { resultMarker(for: floor, onFill: isSelected) }
                 // An unselected button is transparent, so without an explicit
                 // hit shape only the glyph itself would accept a tap.
                 .contentShape(
@@ -644,18 +644,22 @@ public struct KozmosFloorSelector: View {
     /// the end levels' squares. Flush with the corner rather than React's 2px
     /// in: that inset is on a 44px button, and on a 40pt square it lays the
     /// marker over the top of the level's label. A plain number, as the
-    /// category tile's counter is.
+    /// category tile's counter is. On the selected square, itself the theme
+    /// fill, the marker inverts — the theme foreground with the fill's number
+    /// (Olcay, 2026-10-07) — or it would have no edge.
     @ViewBuilder
-    private func resultMarker(for floor: KozmosFloorPresentation) -> some View {
+    private func resultMarker(for floor: KozmosFloorPresentation, onFill: Bool = false) -> some View {
         if let count = markedResultCount(floor) {
+            let fill = KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
+            let ink = KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
             Text(verbatim: String(count))
                 .font(.system(size: markerTextSize, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .padding(.horizontal, markerPadding)
                 .frame(minWidth: markerSize, minHeight: markerSize)
-                .background(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: Capsule())
-                .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
+                .background(onFill ? ink : fill, in: Capsule())
+                .foregroundColor(onFill ? fill : ink)
                 .accessibilityHidden(true)
         }
     }

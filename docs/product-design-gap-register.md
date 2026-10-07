@@ -345,15 +345,21 @@ camera control, branding/provider policy and product ranking in their host adapt
   base colour set in the Pointr Cloud Dashboard (`#135BEC` in both themes), under the theme
   foreground, white in both: the filled primary Button, IconButton, FAB, SplitButton and every
   CTA drawn as one; a checked Checkbox and Switch, Radio's dot, a selected Chip, the default Tag
-  and Badge, the brand Counter, FloorSelector's selected tile and result count, a filled
+  and Badge, the brand Counter, FloorSelector's selected tile and result count (on the selected
+  tile, itself the fill, the count inverts: the theme foreground with a 500 number), a filled
   LocationPin, SaveLocationCard's saved disc, CategoryField's count pill, the Stepper's completed
   step, ToggleButton on, ManoeuvreCard's theme appearance, the UserMessage bubble, POIResultCard's
   selected number tab and the date pickers' selected day. The button's hover and focus are
   `#1051E8` and pressed `#0D44C2` in both themes. Theme text, icons, borders and focus rings on a
   surface use theme 600 (`#1051E8` light, `#5887F3` dark), and the natives moved theirs from
   500 to 600. Slider, Progress and RouteProgressRail stay 600; Menu, Select and Listbox rows and
-  FloorSelector's user-level dot are unchanged. Still open: the selected tab indicator's design,
-  LocationPin `accent` parity, and 500 on a raised dark sheet (2.32:1 on background/200).
+  FloorSelector's user-level dot are unchanged. The owner's rulings on the PR (7 Oct): 500 on a
+  raised dark sheet (2.32:1 on background/200) is accepted, since each state is told by its mark
+  at 5.62:1; danger and alert fills keep black ink in the dark (the dark danger fill reads 6.19:1
+  with black, 3.39:1 with white); Figma's selected NavigationItem label moves from 700 to 600; the
+  filled pin's ring stays foreground/1000; SwiftUI's `onEmphasis` tone becomes the theme
+  foreground and a new `onDanger` keeps the danger fill's ink. Still open: the selected tab
+  indicator's design and LocationPin `accent` parity.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;

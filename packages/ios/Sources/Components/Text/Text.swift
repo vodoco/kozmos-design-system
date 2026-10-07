@@ -39,8 +39,13 @@ public enum KozmosTextTone: String, CaseIterable, Sendable {
     case success
     case warning
     case danger
-    /// For text sitting on a filled brand or danger surface.
+    /// For text sitting on a filled brand surface, the theme fill: the theme
+    /// foreground, white in both appearances (decision 59).
     case onEmphasis
+    /// For text sitting on a filled danger surface: white in light, black in
+    /// the dark, where the danger fill is light (#E95A77; black reads 6.19:1,
+    /// white 3.39:1).
+    case onDanger
 
     var color: Color {
         switch self {
@@ -51,7 +56,10 @@ public enum KozmosTextTone: String, CaseIterable, Sendable {
         case .success: return KozmosColors.primitivesColorsEmotionalSuccess600
         case .warning: return KozmosColors.primitivesColorsEmotionalAlert600
         case .danger: return KozmosColors.primitivesColorsEmotionalDanger600
-        case .onEmphasis: return KozmosColors.primitivesColorsBackground0
+        // Split on 2026-10-07 (Olcay): background/0 turned black on the theme
+        // fill in the dark (3.74:1), and no one colour reads on both fills there.
+        case .onEmphasis: return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+        case .onDanger: return KozmosColors.primitivesColorsBackground0
         }
     }
 }

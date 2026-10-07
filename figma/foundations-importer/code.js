@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "8cd916ec7d51";
+const PLUGIN_BUILD = "169cd1f19cff";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -40170,15 +40170,17 @@ function navigationItemDefaultLabel(props) {
   return "Overview";
 }
 
+// The selected label is the theme as text, 600, as React, SwiftUI and Compose
+// draw it (decision 59; Olcay, 2026-10-07). It was theme/700.
 function navigationItemTextColorToken(props) {
   if (props.state === "Disabled") return "Colors/foreground/400";
-  if (props.state === "Selected") return "Colors/theme/700";
+  if (props.state === "Selected") return "Colors/theme/600";
   return "Colors/foreground/0";
 }
 
 function navigationItemTextColorFallback(props) {
   if (props.state === "Disabled") return "#5E6575";
-  if (props.state === "Selected") return "#0B3E9D";
+  if (props.state === "Selected") return "#1051E8";
   return "#000000";
 }
 
@@ -40997,8 +40999,8 @@ async function createNavigationItemNestedInstance({
     text.characters = label;
     text.fills = [
       paintFromVariable(
-        state === "Selected" ? "Colors/theme/700" : "Colors/foreground/0",
-        state === "Selected" ? "#0B3E9D" : "#000000",
+        state === "Selected" ? "Colors/theme/600" : "Colors/foreground/0",
+        state === "Selected" ? "#1051E8" : "#000000",
         variableByName,
         stats,
       ),

@@ -334,7 +334,7 @@ fun KozmosFloorSelector(
                 )
             }
             if (count != null) {
-                ResultMarker(count, growth, Modifier.align(Alignment.TopEnd))
+                ResultMarker(count, growth, Modifier.align(Alignment.TopEnd), onFill = isSelected)
             }
         }
     }
@@ -803,24 +803,28 @@ internal fun switcherSpokenLabel(
  * the label's [growth] so it keeps its share of the square. Cleared from the
  * semantics: the button's own description carries the count, and hearing "3"
  * after "Level 2, 3 results" is noise. A plain number, as the category tile's
- * counter is.
+ * counter is. On the selected square, itself the theme fill, the marker
+ * inverts ([onFill]): the theme foreground with the fill's number (Olcay,
+ * 2026-10-07), or it would have no edge.
  */
 @Composable
-private fun ResultMarker(count: Int, growth: Float, modifier: Modifier = Modifier) {
+private fun ResultMarker(count: Int, growth: Float, modifier: Modifier = Modifier, onFill: Boolean = false) {
     val side = KozmosDimensions.primitivesLayoutSizing200 * growth
     val textSize = with(LocalDensity.current) { (10.dp * growth).toSp() }
+    val fill = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+    val ink = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
     Box(
         modifier = modifier
             .clearAndSetSemantics {}
             .heightIn(min = side)
             .widthIn(min = side)
-            .background(KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle, CircleShape)
+            .background(if (onFill) ink else fill, CircleShape)
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50 * growth),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = count.toString(),
-            color = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+            color = if (onFill) fill else ink,
             fontSize = textSize,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1

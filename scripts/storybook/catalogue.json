@@ -401,6 +401,7 @@
       "exports": [
         "VerticalList",
         "HorizontalList",
+        "ListWithResultCounts",
         "CompactStepper",
         "Collapsible",
         "CollapsibleCountsOffByDefault",

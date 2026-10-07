@@ -34,6 +34,22 @@ export const HorizontalList: Story = {
   args: { variant: "horizontal-list" },
 };
 
+/**
+ * A search's counts on the list. A count is the theme fill with white on it;
+ * on the selected level, itself the theme fill, it inverts, white with the
+ * number in the fill, so it keeps an edge (Olcay, 2026-10-07).
+ */
+export const ListWithResultCounts: Story = {
+  args: {
+    floors: [
+      { id: "2", label: "Second floor", shortLabel: "2F", resultCount: 12 },
+      { id: "1", label: "First floor", shortLabel: "1F", resultCount: 3 },
+      { id: "g", label: "Ground floor", shortLabel: "GF" },
+    ],
+    showResultCounts: true,
+  },
+};
+
 export const CompactStepper: Story = {
   args: { variant: "compact-stepper" },
 };

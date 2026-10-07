@@ -5102,6 +5102,25 @@ section("A navigation row keeps its tint through the icon swap");
       "a row with no icon layer warns instead of failing",
     );
   }
+
+  // The label is the theme as text too (Olcay, 2026-10-07): a Selected
+  // NavigationItem's label is theme 600, as React, SwiftUI and Compose draw
+  // it, in the set and in the frame drawn when the set is missing. It was 700.
+  ok(
+    plugin.navigationItemTextColorToken({ state: "Selected" }) ===
+      "Colors/theme/600" &&
+      plugin.navigationItemTextColorFallback({ state: "Selected" }) ===
+        "#1051E8",
+    "a Selected NavigationItem's label binds the theme's 600, not 700",
+  );
+  ok(
+    fs
+      .readFileSync(PLUGIN, "utf8")
+      .includes(
+        'state === "Selected" ? "Colors/theme/600" : "Colors/foreground/0"',
+      ),
+    "the fallback row's label paints the theme's 600 too",
+  );
 }
 
 // --- Rating's two scales -------------------------------------------------------------

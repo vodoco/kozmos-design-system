@@ -296,6 +296,26 @@ final class KozmosFloorSelectorTests: XCTestCase {
                              "the count is not drawn in the theme foreground")
     }
 
+    /// On the selected level, itself the theme fill, the marker inverts (Olcay,
+    /// 2026-10-07): the theme foreground with its count in the fill, in light
+    /// and dark. In the fill it had no edge on its own square.
+    @MainActor func testOnTheSelectedLevelTheMarkerInverts() throws {
+        for scheme in [ColorScheme.light, .dark] {
+            let fill = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: scheme)
+            let ink = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle, in: scheme)
+            let drawn = try DrawnPixels.draw(
+                KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .verticalList, showResultCounts: true)
+                    .environment(\.colorScheme, scheme)
+            )
+            let square = secondSquare(.verticalList)
+            let corner = CGRect(x: square.maxX - 16, y: square.minY, width: 16, height: 16)
+            XCTAssertGreaterThan(drawn.count(in: corner, where: DrawnPixels.matches(ink, tolerance: 40)), 16 * 16 * 2 / 5,
+                                 "\(scheme): the marker on the selected level is not the theme foreground")
+            XCTAssertGreaterThan(drawn.count(in: corner.insetBy(dx: 4, dy: 4), where: DrawnPixels.matches(fill, tolerance: 40)), 0,
+                                 "\(scheme): the count on the selected level is not in the theme fill")
+        }
+    }
+
     /// The marker is laid over its button: the levels do not move for it.
     @MainActor func testTheMarkerMovesNothing() throws {
         let plain = resultLevels.map { KozmosFloorPresentation(id: $0.id, label: $0.label, shortLabel: $0.shortLabel) }

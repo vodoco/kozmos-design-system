@@ -144,9 +144,12 @@ function spokenLabel(
 function ResultMarker({
   count,
   corner = "top",
+  onFill = false,
 }: {
   count: number;
   corner?: "top" | "bottom";
+  /** The tile under it is the theme fill: the selected level of a list. */
+  onFill?: boolean;
 }) {
   return (
     <span
@@ -156,9 +159,15 @@ function ResultMarker({
       // `overflow-x: auto` computes `overflow-y` to `auto` too, so a badge two
       // pixels proud of the button would be clipped there, or would raise a
       // scrollbar. A prominent fill: the theme fill, with the theme
-      // foreground on it, the same in both themes (decision 59).
+      // foreground on it, the same in both themes (decision 59). On the
+      // selected tile, itself the theme fill, the badge inverts, the theme
+      // foreground with the fill's number (Olcay, 2026-10-07), or it would
+      // have no edge.
       className={cn(
-        "absolute end-0.5 min-w-4 rounded-pill bg-theme-fill px-1 text-[10px] font-semibold leading-4 text-theme-fill-foreground",
+        "absolute end-0.5 min-w-4 rounded-pill px-1 text-[10px] font-semibold leading-4",
+        onFill
+          ? "bg-theme-fill-foreground text-theme-fill"
+          : "bg-theme-fill text-theme-fill-foreground",
         corner === "top" ? "top-0.5" : "bottom-0.5",
       )}
       data-floor-selector-result-count=""
@@ -683,7 +692,12 @@ const FloorSelector = React.forwardRef<HTMLDivElement, FloorSelectorProps>(
                 {floor.shortLabel}
                 {/* Only where the product gave a count above zero — absent is
                 unknown, which is not the same as none. */}
-                {count !== undefined ? <ResultMarker count={count} /> : null}
+                {count !== undefined ? (
+                  <ResultMarker
+                    count={count}
+                    onFill={selectedFloor === floor.id}
+                  />
+                ) : null}
               </Button>
             );
           })}

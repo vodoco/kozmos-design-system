@@ -216,6 +216,43 @@ class KozmosThemeFillPixelsTest {
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
     }
 
+    /**
+     * On the selected level, itself the theme fill, the FloorSelector's result
+     * count inverts (Olcay, 2026-10-07): the theme foreground, white, with its
+     * number in the fill. In the fill it had no edge on its own square.
+     */
+    @Test
+    fun onTheSelectedLevelTheResultCountInverts() {
+        val wrong = mutableListOf<String>()
+        for (dark in listOf(false, true)) {
+            val drawn = draw(dark, Color(0xFF808080)) {
+                KozmosFloorSelector(
+                    floors = listOf(KozmosFloorPresentation(id = "1", label = "Level 1", shortLabel = "1", resultCount = 8)),
+                    selectedFloor = "1",
+                    onFloorSelect = {},
+                    showResultCounts = true
+                )
+            }
+            val square = drawn.boundsOf(themeFill)
+            if (square == null) {
+                wrong += "${mode(dark)}: the selected level draws no #135BEC"
+                continue
+            }
+            // The marker sits flush in the square's top trailing corner: its
+            // two fifths each way, React's 16 of 40.
+            val (xs, ys) = square
+            val cornerXs = (xs.last - (xs.last - xs.first) * 2 / 5)..xs.last
+            val cornerYs = ys.first..(ys.first + (ys.last - ys.first) * 2 / 5)
+            val area = (cornerXs.last - cornerXs.first + 1) * (cornerYs.last - cornerYs.first + 1)
+            val marker = drawn.count(white, 12, cornerXs, cornerYs)
+            println("Decision 59 Android, ${mode(dark)}: the selected level's count corner is $marker of $area pixels white")
+            if (marker * 2 < area) {
+                wrong += "${mode(dark)}: the count on the selected level is not white ($marker of $area pixels in its corner)"
+            }
+        }
+        assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
+    }
+
     private val onTheSurface: List<Pair<String, @Composable () -> Unit>> = listOf(
         "a Link" to { KozmosLink(text = "Open in maps", onClick = {}) },
         "the primary Icon" to { KozmosIcon(name = "home-line", size = KozmosIconSize.Xl, color = KozmosIconColor.Primary) },
