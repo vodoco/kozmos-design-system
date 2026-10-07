@@ -2,9 +2,13 @@
 
 Kozmos is consumed from this repository's `packages/ios` source as the `Kozmos` Swift package. It is not a published native registry release. Pin a reviewed repository commit when adopting these changes; the version headings below follow the web release plan, not a separate native package publication.
 
-## Unreleased
+## Unreleased — repository source
 
-Recorded as changes land on `main`, ahead of the next release entry. This is not a complete list of the native changes since 0.6.0.
+Native source changes on `main` after the 0.6.0 snapshot above. Nothing here is tagged.
+
+### Fixed
+
+- **POI details summary tones:** a fact's value and icon use the emotion's text role for success, warning and danger (`semanticsEmotionSuccessText`, `semanticsEmotionAlertText`, `semanticsEmotionDangerText`) and `primitivesColorsTheme600` for brand, as the web's summary names them. Each now reads at 4.5:1 or more on the card's white and the sheet's grey in both appearances. The fill colours they used read as low as 1.57:1 (warning on the sheet), and brand read at 3.74:1 on black.
 
 ### Added and changed
 
@@ -12,6 +16,7 @@ Recorded as changes land on `main`, ahead of the next release entry. This is not
 
 ### Migration notes
 
+- Toned summary values are darker in light and lighter in dark. Review screenshot baselines for details cards that set `tone`.
 - A result that already passes `summary` now draws it: its card is taller. Review screenshot baselines and any layout that assumes a fixed row height, or leave `summary` unset to keep the old card.
 
 ## 0.6.0 — repository snapshot
