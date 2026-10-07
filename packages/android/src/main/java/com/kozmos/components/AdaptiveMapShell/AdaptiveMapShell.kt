@@ -2,8 +2,6 @@ package com.kozmos.components.adaptivemapshell
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.offset
@@ -40,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -148,6 +147,14 @@ val LocalKozmosPanelClearanceTop = compositionLocalOf { 0.dp }
  */
 val LocalKozmosPanelSurface = compositionLocalOf<KozmosSurfaceStyle?> { null }
 
+/**
+ * True when the map shell's credits slot has less room than the
+ * attribution's full height: `KozmosMapAttribution` then leaves out its
+ * brand, so the credits keep their full height and are never clipped into a
+ * scroll region (GAP-135). Provided by the shell; never a product's.
+ */
+internal val LocalKozmosMapAttributionCompact = compositionLocalOf { false }
+
 /** The handle's row: deliberately shallow, an affordance at the sheet's top edge. */
 private val SheetHandleRowHeight = KozmosDimensions.primitivesLayoutSpacing200
 private val PanelContentSpacing = KozmosDimensions.primitivesLayoutSpacing200
@@ -238,7 +245,12 @@ fun KozmosAdaptiveMapShell(
     var bottomControlsHeight by remember { mutableStateOf(0.dp) }
     var bottomStartWidth by remember { mutableStateOf(0.dp) }
     var bottomEndWidth by remember { mutableStateOf(0.dp) }
+    // The attribution as drawn (without its brand when compact), and its full
+    // height with the brand, measured while not compact: what the panel's
+    // sizing reserves, so the brand giving way never moves the panel.
     var attributionHeight by remember { mutableStateOf(0.dp) }
+    var attributionFullHeight by remember { mutableStateOf(0.dp) }
+    var attributionCompact by remember { mutableStateOf(false) }
     var shellOrigin by remember { mutableStateOf(IntOffset.Zero) }
 
     BoxWithConstraints(
@@ -263,8 +275,12 @@ fun KozmosAdaptiveMapShell(
         val footerWidth = (availableWidth - safeLeft - safeRight).coerceAtLeast(0.dp)
         val topInset = if (topBar != null) topHeight + gap else 0.dp
         val band = (availableHeight - bottomPanel - safeTop - (if (bottomPanel > 0.dp) 0.dp else safeBottom) - topInset - gap * 2).coerceAtLeast(0.dp)
-        val footerHeight = if (attribution != null) minOf(attributionHeight,
-            (availableHeight - safeTop - safeBottom - topInset - gap * 3).coerceAtLeast(0.dp) / 2) else 0.dp
+        // Very long or localized credits reserve at most half of the band
+        // between the top bar and the bottom edge, so they never take the
+        // panel's place. Drawn, the attribution is never clipped (GAP-135).
+        val attributionCap = (availableHeight - safeTop - safeBottom - topInset - gap * 3).coerceAtLeast(0.dp) / 2
+        val reservedFooterHeight = if (attribution != null) minOf(attributionFullHeight, attributionCap) else 0.dp
+        val footerHeight = if (attribution != null) attributionHeight else 0.dp
         val attributionReserve = if (footerHeight > 0.dp) footerHeight + gap else 0.dp
         val bottomBand = (band - (if (controls != null) controlsHeight + gap else 0.dp)).coerceAtLeast(0.dp)
         val cornersVisible = bottomControlsHeight > 0.dp && bottomControlsHeight <= bottomBand
@@ -273,13 +289,18 @@ fun KozmosAdaptiveMapShell(
         val attributionCornerReserve = maxOf(startReserve, endReserve)
         val attributionAboveCorners = cornersVisible && footerWidth - gap * 2 - attributionCornerReserve * 2 < 128.dp
         val attributionLift = if (attributionAboveCorners) bottomControlsHeight + gap else 0.dp
-        val maximumPanelHeight = if (footerHeight > 0.dp)
-            (availableHeight - topInset - safeTop - footerHeight - gap * 3).coerceAtLeast(0.dp) else availableHeight
+        val maximumPanelHeight = if (reservedFooterHeight > 0.dp)
+            (availableHeight - topInset - safeTop - reservedFooterHeight - gap * 3).coerceAtLeast(0.dp) else availableHeight
+        // With less room than its full height, the brand gives way; the
+        // credits keep their height.
+        val compactAttribution = attribution != null &&
+            attributionFullHeight > minOf(attributionCap, (band - attributionLift).coerceAtLeast(0.dp))
+        SideEffect { if (attributionCompact != compactAttribution) attributionCompact = compactAttribution }
         val chromeAlignment = if (panelPlacement == KozmosMapPanelPlacement.End) Alignment.BottomStart else Alignment.BottomEnd
         val panelRight = (panelPlacement == KozmosMapPanelPlacement.End) == (direction == LayoutDirection.Ltr)
         fun cleanInset(value: Double) = if (value.isFinite()) maxOf(0.0, value) else 0.0
         val cornerPadding = if ((controlsBottomStart != null || controlsBottomEnd != null) && bottomControlsPadCamera && cornersVisible) bottomPanel + minOf(bottomControlsHeight, bottomBand) + gap + (if (bottomPanel > 0.dp) 0.dp else safeBottom) else 0.dp
-        val attributionPadding = if (footerHeight > 0.dp) bottomPanel + minOf(footerHeight, (band - attributionLift).coerceAtLeast(0.dp)) + attributionLift + gap + (if (bottomPanel > 0.dp) 0.dp else safeBottom) else 0.dp
+        val attributionPadding = if (footerHeight > 0.dp) bottomPanel + footerHeight + attributionLift + gap + (if (bottomPanel > 0.dp) 0.dp else safeBottom) else 0.dp
         val left = maxOf(cleanInset(collisionInsets.left), (safeLeft + if (!panelRight) sidePanel else 0.dp).value.toDouble()).coerceIn(0.0, availableWidth.value.toDouble())
         val top = maxOf(cleanInset(collisionInsets.top), (safeTop + topInset).value.toDouble()).coerceIn(0.0, availableHeight.value.toDouble())
         val resolvedInsets = KozmosMapCollisionInsets(
@@ -414,13 +435,16 @@ fun KozmosAdaptiveMapShell(
                     .width(footerWidth)
                     .offset(y = -(bottomPanel + gap + attributionLift + if (bottomPanel > 0.dp) 0.dp else safeBottom))
                     .padding(horizontal = gap)
-                    .padding(horizontal = if (attributionAboveCorners) 0.dp else attributionCornerReserve)
-                    .heightIn(max = minOf(footerHeight, (band - attributionLift).coerceAtLeast(0.dp)))
-                    .verticalScroll(rememberScrollState()),
+                    .padding(horizontal = if (attributionAboveCorners) 0.dp else attributionCornerReserve),
                 contentAlignment = Alignment.Center
             ) {
-                Box(Modifier.fillMaxWidth().onSizeChanged { attributionHeight = with(density) { it.height.toDp() } },
-                    contentAlignment = Alignment.Center) { attribution() }
+                Box(Modifier.fillMaxWidth().onSizeChanged {
+                    val height = with(density) { it.height.toDp() }
+                    attributionHeight = height
+                    if (!attributionCompact) attributionFullHeight = height
+                }, contentAlignment = Alignment.Center) {
+                    CompositionLocalProvider(LocalKozmosMapAttributionCompact provides attributionCompact) { attribution() }
+                }
             }
         }
         if (panel != null) {

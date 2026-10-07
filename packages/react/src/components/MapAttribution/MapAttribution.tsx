@@ -3,6 +3,7 @@ import { cn } from "../../utils";
 import { Link } from "../Link";
 import { safeHref } from "../../utils/safe-href";
 import { pointrLogo } from "./pointr-logo";
+import { MapShellAttributionCompactContext } from "../AdaptiveMapShell/map-shell-attribution";
 
 /** Presentation data supplied by the host, in display order. IDs must be unique. */
 export interface MapAttributionCredit {
@@ -55,7 +56,11 @@ export const MapAttribution = React.forwardRef<
     },
     ref,
   ) => {
-    const visibleBrand = showBrand && brand != null && brand !== false;
+    // In a map shell with no room for the whole attribution, the brand goes
+    // first: the credits are what a map provider's licence asks for.
+    const compact = React.useContext(MapShellAttributionCompactContext);
+    const visibleBrand =
+      showBrand && !compact && brand != null && brand !== false;
     const hasCredits = credits.length > 0;
     // The credits are one line that scrolls sideways when it is longer than
     // the space. Only then is it a tab stop, so that a keyboard can scroll it;
