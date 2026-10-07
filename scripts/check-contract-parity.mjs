@@ -32,7 +32,8 @@
  *
  * Types that are legitimately one platform's own are listed in WEB_ONLY with
  * the reason. Adding a name there is a decision, not a silence: it has to be
- * written down and it shows up in review.
+ * written down and it shows up in review. IOS_ELSEWHERE is the same for a
+ * shared type iOS declares outside its contracts file, in a shape of its own.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -55,16 +56,34 @@ const WEB_ONLY = new Map([
   ["MapLayoutRect", "as AdaptiveMapLayout"],
   ["MapOcclusion", "as AdaptiveMapLayout"],
   ["MapPanelPresentation", "as AdaptiveMapLayout"],
-  ["POIDetailsPresentation", "the web detail panel's view model; the native panels take a POIPresentation directly"],
-  ["POIDetailSummary", "as POIDetailsPresentation"],
-  ["POIDetailAttributeGroup", "as POIDetailsPresentation"],
-  ["POIOpeningHoursPresentation", "as POIDetailsPresentation"],
-  ["POISupplementaryAction", "as POIDetailsPresentation"],
 ]);
 
 /** Native types with no web counterpart, each for a stated reason. */
 const NATIVE_ONLY = new Map([
   ["POILogoPresentation", "the web declares the logo inline on POIPresentation; Swift and Kotlin need a named type for it"],
+  ["POIDetailSummaryKind", "the web declares the kinds inline on POIDetailSummary.kind; Kotlin needs a named enumeration for them"],
+  ["POIDetailTone", "the web declares the tones inline on POIDetailSummary.tone; Kotlin needs a named enumeration for them"],
+  ["POIOpeningHoursRow", "the web declares a row inline on POIOpeningHoursPresentation.rows; Kotlin needs a named type for it"],
+  ["POIDetailDescription", "the web declares the description inline on POIDetailsPresentation; Kotlin needs a named type for it"],
+  ["POISupplementaryActionPresentation", "the web declares an item inline on POIDetailsPresentation.supplementaryActions; Kotlin needs a named type for it"],
+]);
+
+/**
+ * Web types iOS declares outside ProductContracts.swift, in a shape of its
+ * own: SwiftUI's details model sits beside its panel. Android mirrors these
+ * in ProductContracts.kt and is compared field by field like any shared type;
+ * iOS is not compared, so how it differs is written here rather than hidden.
+ * The check still holds each entry to what it says: the web has the type,
+ * iOS's contracts file does not, and the Swift type named is declared where
+ * it says. An entry goes when iOS takes the web's shape in its contracts.
+ */
+const IOS_DETAILS = "packages/ios/Sources/Components/POIDetailPanel/POIDetailsPresentation.swift";
+const IOS_ELSEWHERE = new Map([
+  ["POIDetailsPresentation", { swift: "KozmosPOIDetailsPresentation", why: "the same seven fields, declared beside the SwiftUI panel" }],
+  ["POIDetailSummary", { swift: "KozmosPOIDetailSummary", why: "no kind: SwiftUI takes an SF Symbol name, systemImage, for the icon" }],
+  ["POIDetailAttributeGroup", { swift: "KozmosPOIDetailAttributeGroup", why: "its items are KozmosPOIDetailTag, with an SF Symbol name, not the service shape" }],
+  ["POIOpeningHoursPresentation", { swift: "KozmosPOIOpeningHours", why: "named KozmosPOIOpeningHours, its rows a nested Row" }],
+  ["POISupplementaryAction", { swift: null, why: "a String on SwiftUI's KozmosPOIDetailAction, not an enumeration, so its values go unchecked there" }],
 ]);
 
 const problems = [];
@@ -218,7 +237,7 @@ const droidNames = new Set([...d.structs.keys(), ...d.enums.keys()]);
 
 for (const name of webNames) {
   if (WEB_ONLY.has(name)) continue;
-  if (!iosNames.has(name)) fail(name, "on the web, missing on iOS");
+  if (!iosNames.has(name) && !IOS_ELSEWHERE.has(name)) fail(name, "on the web, missing on iOS");
   if (!droidNames.has(name)) fail(name, "on the web, missing on Android");
 }
 for (const name of new Set([...iosNames, ...droidNames])) {
@@ -230,6 +249,14 @@ for (const [name, why] of WEB_ONLY) {
   if (!webNames.has(name)) fail(name, `listed in WEB_ONLY ("${why}") but no longer a web type`);
   if (iosNames.has(name) || droidNames.has(name))
     fail(name, "listed in WEB_ONLY but a native platform now has it - remove the entry");
+}
+const iosDetails = read(IOS_DETAILS);
+for (const [name, { swift, why }] of IOS_ELSEWHERE) {
+  if (!webNames.has(name)) fail(name, `listed in IOS_ELSEWHERE ("${why}") but no longer a web type`);
+  if (iosNames.has(name))
+    fail(name, `listed in IOS_ELSEWHERE but ${IOS} now has it - remove the entry`);
+  if (swift && !new RegExp(`^public (?:struct|enum) ${swift}\\b`, "m").test(iosDetails))
+    fail(name, `listed in IOS_ELSEWHERE as ${swift}, which ${IOS_DETAILS} no longer declares`);
 }
 
 for (const [name, fields] of w.structs) {
