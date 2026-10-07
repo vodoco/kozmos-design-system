@@ -191,7 +191,13 @@
       "id": "components-badge",
       "title": "Core/Data display/Badge",
       "component": "Badge",
-      "exports": ["Default", "Outline", "WithCounter", "Icon"]
+      "exports": [
+        "Default",
+        "Outline",
+        "WithCounter",
+        "DefaultWithCounter",
+        "Icon"
+      ]
     },
     {
       "file": "packages/react/src/components/BottomNavigation/BottomNavigation.stories.tsx",

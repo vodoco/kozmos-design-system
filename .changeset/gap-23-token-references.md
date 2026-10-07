@@ -1,0 +1,7 @@
+---
+"@kozmos-ds/tokens": minor
+---
+
+GAP-23: `css/light.css` and `css/dark.css` write a token whose source value is an alias as a reference to the token it names: `--components-primary-buttons-themed-button-background-idle` is `var(--primitives-colors-theme-500)`, `--semantics-border-subtle` is `var(--primitives-colors-background-200)`. Every token still computes the value it had. A value a transform changed stays literal, and so do the four elevation roles (`DesignConfigProvider` sets the shadow ramp they alias as legacy aliases). Declarations keep their order. The 28 themed button colours the sources held as hex copied from the theme ramp (primary dimmed content; secondary and tertiary themed) are now aliases of their steps; their values are unchanged, and Android's `colors.xml` names them as `@color` references. The JavaScript, Swift and Kotlin outputs are unchanged.
+
+**What you'll see:** nothing, unless you override a token. Override `--primitives-colors-theme-500` and every token that names it follows, the themed primary Button's fill among them; override the ramp's other steps and the button's hover, focus and pressed (600 and 700 light, 400 and 300 dark) and the outline, ghost and link ink (700) follow. A tool that reads these files as text now meets `var(--…)` where it read a colour: resolve it in the same file. The other emotions' button colours (success, danger, alert, informative, neutral) are still values.

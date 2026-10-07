@@ -34,6 +34,20 @@ export const WithCounter: Story = {
   },
 };
 
+/**
+ * On the default Badge, itself the theme fill, the counter inverts: white with
+ * its number in the fill, in both themes (Olcay, 2026-10-07), as FloorSelector's
+ * count does on its selected level.
+ */
+export const DefaultWithCounter: Story = {
+  args: {
+    children: "Messages",
+    counter: 3,
+    showCounter: true,
+    variant: "default",
+  },
+};
+
 export const Icon: Story = {
   args: {
     "aria-label": "Verified",
