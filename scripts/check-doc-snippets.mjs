@@ -12,10 +12,24 @@
  * The check is deliberately per-platform. A global search would have passed
  * `KozmosOverlayPosition` in a Kotlin snippet, because that type does exist —
  * in Swift. Each block is resolved only against its own platform's sources.
+ *
+ * A type that exists says nothing about the token read from it. Six SwiftUI
+ * pages drew with `KozmosColors.semanticColorTextDefault`,
+ * `KozmosColors.componentCardBackgroundColorDefault` and the like, names the
+ * token build has never written, and passed. So every read of a member of a
+ * native token type — `KozmosColors.x`, `KozmosThemeTokens.x`,
+ * `KozmosDimensions.x` and the rest (scripts/lib/native-token-members.mjs) —
+ * is held to the members that platform's token sources declare, by file and
+ * line.
  */
 import fs from "node:fs";
 import path from "node:path";
 import { extractSnippets } from "./lib/doc-snippets.mjs";
+import {
+  nativeTokenMembers,
+  tokenMemberReads,
+  tokenTypeNames,
+} from "./lib/native-token-members.mjs";
 
 const ROOT = process.cwd();
 const COMPONENTS_DIR = path.join(ROOT, "packages/react/src/components");
@@ -85,10 +99,23 @@ function declaredIn(code) {
   return declared;
 }
 
+const TOKEN_TYPES = tokenTypeNames(ROOT);
+const TOKEN_MEMBERS = nativeTokenMembers(ROOT, TOKEN_TYPES);
+if (!TOKEN_MEMBERS.swift.size || !TOKEN_MEMBERS.kotlin.size) {
+  console.error(
+    "Documentation snippet check failed: no native token types were found to check token reads against",
+  );
+  process.exit(1);
+}
+
 const problems = [];
 const mdxFiles = walk(COMPONENTS_DIR, [".mdx"]);
 let snippetCount = 0;
 let identifierCount = 0;
+let unknownIdentifiers = 0;
+let unknownMembers = 0;
+const tokenReads = { swift: 0, kotlin: 0 };
+const typesRead = new Set();
 
 for (const file of mdxFiles) {
   const relative = path.relative(ROOT, file);
@@ -104,7 +131,10 @@ for (const file of mdxFiles) {
     );
   }
 
-  for (const { platform, code } of extractSnippets(source, relative)) {
+  for (const { platform, code, codeLine } of extractSnippets(
+    source,
+    relative,
+  )) {
     snippetCount += 1;
     const known = knownSymbols(platform);
     const declared = declaredIn(code);
@@ -116,8 +146,30 @@ for (const file of mdxFiles) {
       seen.add(identifier);
       identifierCount += 1;
       if (!known.has(identifier)) {
+        unknownIdentifiers += 1;
         problems.push(
           `${relative}: ${PLATFORMS[platform].label} snippet names "${identifier}", which does not exist in ${PLATFORMS[platform].roots.join(", ")}`,
+        );
+      }
+    }
+
+    const tokens = TOKEN_MEMBERS[platform];
+    if (!tokens) continue;
+    for (const read of tokenMemberReads(code, TOKEN_TYPES)) {
+      tokenReads[platform] += 1;
+      typesRead.add(read.type);
+      const at = `${relative}:${codeLine + read.line}`;
+      const label = PLATFORMS[platform].label;
+      const type = tokens.get(read.type);
+      if (!type) {
+        unknownMembers += 1;
+        problems.push(
+          `${at}: ${label} snippet reads ${read.type}.${read.member}, but ${label} has no token type ${read.type}`,
+        );
+      } else if (!type.members.has(read.member)) {
+        unknownMembers += 1;
+        problems.push(
+          `${at}: ${label} snippet reads ${read.type}.${read.member}, which ${[...type.files].join(", ")} does not declare`,
         );
       }
     }
@@ -128,11 +180,18 @@ if (problems.length > 0) {
   console.error("Documentation snippet check failed:\n");
   for (const problem of problems) console.error(`- ${problem}`);
   console.error(
-    `\n${problems.length} unknown identifier(s). This identifier check is not compiler validation; run docs:snippets:compile for React recipes.`,
+    `\n${problems.length} problem(s): ${unknownIdentifiers} unknown identifier(s), ${unknownMembers} unknown token member(s). This identifier check is not compiler validation; run docs:snippets:compile for React recipes.`,
   );
   process.exit(1);
 }
 
+const declared = (platform) =>
+  [...TOKEN_MEMBERS[platform].values()].reduce(
+    (sum, type) => sum + type.members.size,
+    0,
+  );
 console.log(
-  `Documentation snippets ok (${identifierCount} identifier(s) across ${snippetCount} snippet(s) in ${mdxFiles.length} MDX file(s))`,
+  `Documentation snippets ok (${identifierCount} identifier(s) across ${snippetCount} snippet(s) in ${mdxFiles.length} MDX file(s); ` +
+    `${tokenReads.swift} SwiftUI and ${tokenReads.kotlin} Compose token member read(s) on ${[...typesRead].sort().join(", ")}, ` +
+    `held to the ${declared("swift")} SwiftUI and ${declared("kotlin")} Compose members their token sources declare)`,
 );

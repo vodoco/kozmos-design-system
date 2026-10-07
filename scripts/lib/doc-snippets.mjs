@@ -68,12 +68,18 @@ export function extractSnippets(source, file = "example.mdx") {
         throw new Error(`${file}: ${platform} example must be a static string`);
       if (!literal.text.trim())
         throw new Error(`${file}: empty ${platform} example`);
+      // Where the example's own text starts in the page: the tag sits in the
+      // parsed wrapper after `const example = (`, and its text after the
+      // opening quote. A line of `code` is this many lines further down.
+      const textStart =
+        match.index + literal.getStart(ast) - "const example = (".length + 1;
       snippets.push({
         file,
         section,
         platform,
         code: literal.text,
         line: source.slice(0, match.index).split("\n").length,
+        codeLine: source.slice(0, textStart).split("\n").length,
       });
     }
     if (!seen.size) throw new Error(`${file}: empty PlatformSnippets section`);

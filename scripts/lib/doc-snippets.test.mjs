@@ -18,6 +18,17 @@ test("extracts all platforms and sections, decoding strings as Storybook does", 
   assert.equal(snippets[2].line, 2);
 });
 
+test("codeLine is the page line an example's first line is on", () => {
+  const source =
+    '# Title\n\n<PlatformSnippets\n  react={`<Button />`}\n  swift={`\nimport SwiftUI\nText("Hi")`}\n/>';
+  const [react, swift] = extractSnippets(source, "Button.mdx");
+  assert.equal(react.line, 3);
+  assert.equal(react.codeLine, 4);
+  assert.equal(swift.codeLine, 5);
+  // The example's third line, `Text("Hi")`, is page line 5 + 2.
+  assert.equal(source.split("\n")[swift.codeLine + 2 - 1], 'Text("Hi")`}');
+});
+
 test("rejects dynamic, malformed, duplicate, empty and spread attributes", () => {
   for (const source of [
     "<PlatformSnippets react={`${hidden}`} />",
