@@ -2,6 +2,24 @@
 
 Kozmos is consumed from this repository's `packages/android` source as an Android library module in the `com.kozmos` namespace. It is not a published Maven/registry release. Pin a reviewed repository commit when adopting these changes; the version headings below follow the web release plan, not a separate native package publication.
 
+## Unreleased — repository source
+
+Native source changes on `main` after the 0.6.0 snapshot above. Nothing here is tagged.
+
+### Added and changed
+
+- **POI details model:** `KozmosPOIDetailPanel` takes `details: KozmosPOIDetailsPresentation`, as SwiftUI and React do. It adds the travel estimate on Go and the supplementary actions (book, call) after the POI's own. Under the strip come the summary row (at most three facts), then the attribute groups, the opening hours, the description with Read more, and the tags. The new parameters follow the released ones.
+- **Summary tones:** a fact's value and icon use the emotion's text role for success, warning and danger (`semanticsEmotionSuccessText`, `semanticsEmotionAlertText`, `semanticsEmotionDangerText`) and `primitivesColorsTheme600` for brand, as the web's summary names them. Each reads at 4.5:1 or more on the card's white and the sheet's grey in both themes; the fill colours first copied from SwiftUI read as low as 1.57:1.
+- **Summary marks:** rating, accessibility, dietary and crowd facts draw Pointr's Star01, the accessibility mark, Feather and ClockPlus, as React does. None mirrors in right to left.
+- **Icons:** `KozmosIcon` and the details chips draw every name the web registry knows. The 18 Compose lacked draw Pointr's own outlines, generated from `packages/icons` by `pnpm icons:compose:generate`: arrow-down, arrow-up, bookmark, calendar-check-01, clock-plus, eye, feather, flip-backward, globe-02, heart, layout-alt-02, loading-01, mail-01, phone, share-01, shopping-bag-02, stars-01 and switch-vertical-01.
+
+### Migration notes
+
+- **Service chips are restyled.** `poi.services` draw as the details card's information chips: control-radius corners in place of pills, under a regular muted heading. A service with a known `iconName` now draws its icon, and TalkBack hears each chip as one stop in a list.
+- **Strip actions honour `pressed` and `loading`.** A pressed action is filled and selected. A loading one cannot be pressed and says `loadingLabel` ("Loading" by default), so pass a translated one.
+- **Icon names that drew the stand-in now draw their icon.** `KozmosIcon(name = "phone")` and the other 17 names above drew the Info glyph; a details chip with one of them drew nothing.
+- **Summary colours and marks change.** Toned summary values are darker in light and lighter in dark, and the Material star, wheelchair, leaf and clock give way to Pointr's artwork. Review screenshot baselines for details cards and for screens that use these icon names.
+
 ## 0.6.0 — repository snapshot
 
 Native source changes since the repository snapshot tagged `@kozmos-ds/react@0.5.0`. This entry does not announce a 0.6.0 tag or completed release validation. The web package has its own [changelog](../react/CHANGELOG.md).
