@@ -1090,14 +1090,19 @@
     -webkit-appearance: button;
     background-image: none;
   }
+  /* A filled Button reads its tier's four backgrounds: idle, hover, focus
+     from the keyboard, and pressed while the pointer holds it, which wins
+     over the other two (Olcay, 2026-10-07). Until then pressed and focus
+     were in the tokens and read by no rule. Owned, so the states hold in a
+     host without @scope; the press still scales and the focus ring stays. */
   .kozmos-button-default {
-    @apply bg-[var(--components-primary-buttons-themed-button-background-idle)] text-[var(--components-primary-buttons-themed-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-themed-button-background-hover)];
+    @apply bg-[var(--components-primary-buttons-themed-button-background-idle)] text-[var(--components-primary-buttons-themed-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-themed-button-background-hover)] focus-visible:bg-[var(--components-primary-buttons-themed-button-background-focus)] active:bg-[var(--components-primary-buttons-themed-button-background-pressed)];
   }
   .kozmos-button:disabled {
     cursor: default;
   }
   .kozmos-button-destructive {
-    @apply bg-[var(--components-primary-buttons-danger-button-background-idle)] text-[var(--components-primary-buttons-danger-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-danger-button-background-hover)];
+    @apply bg-[var(--components-primary-buttons-danger-button-background-idle)] text-[var(--components-primary-buttons-danger-button-foreground-content-idle)] hover:bg-[var(--components-primary-buttons-danger-button-background-hover)] focus-visible:bg-[var(--components-primary-buttons-danger-button-background-focus)] active:bg-[var(--components-primary-buttons-danger-button-background-pressed)];
   }
   .kozmos-button-outline {
     @apply border border-[var(--components-secondary-buttons-themed-button-foreground-content-idle)] bg-background text-[var(--components-secondary-buttons-themed-button-foreground-content-idle)] hover:border-[var(--components-secondary-buttons-themed-button-foreground-content-hover)] hover:text-[var(--components-secondary-buttons-themed-button-foreground-content-hover)];
@@ -1173,8 +1178,10 @@
   .kozmos-button-size-icon {
     @apply h-11 w-11;
   }
+  /* An emotion's filled Button takes the same four states, from its own
+     tokens, and outweighs the default's by order in each of them. */
   .kozmos-button-emotion-filled {
-    @apply bg-[var(--kz-button-bg)] text-[var(--kz-button-fg)] hover:bg-[var(--kz-button-bg-hover)];
+    @apply bg-[var(--kz-button-bg)] text-[var(--kz-button-fg)] hover:bg-[var(--kz-button-bg-hover)] focus-visible:bg-[var(--kz-button-bg-focus)] active:bg-[var(--kz-button-bg-pressed)];
   }
   .kozmos-button-emotion-outline {
     @apply border-[var(--kz-button-fg)] text-[var(--kz-button-fg)] hover:bg-muted hover:border-[var(--kz-button-fg-hover)] hover:text-[var(--kz-button-fg-hover)];

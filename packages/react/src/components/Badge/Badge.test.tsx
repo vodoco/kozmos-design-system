@@ -29,6 +29,32 @@ describe("Badge", () => {
     expect(screen.getByText("2")).toHaveAttribute("data-slot", "badge-counter");
   });
 
+  // On the default Badge, itself the theme fill, the counter inverts: the
+  // theme foreground with the fill's number (Olcay, 2026-10-07). `inverse`
+  // was the surface, black in the dark. The destructive Badge keeps it.
+  it("inverts the default badge's counter onto the theme foreground", () => {
+    render(
+      <Badge counter={2} showCounter>
+        New
+      </Badge>,
+    );
+    const counter = screen.getByText("2");
+    expect(counter).toHaveClass("bg-theme-fill-foreground", "text-theme-fill");
+    expect(counter).not.toHaveClass("bg-background");
+    expect(counter).not.toHaveClass("text-foreground");
+  });
+
+  it("keeps the destructive badge's counter on the surface", () => {
+    render(
+      <Badge counter={2} showCounter variant="destructive">
+        Closed
+      </Badge>,
+    );
+    const counter = screen.getByText("2");
+    expect(counter).toHaveClass("bg-background", "text-foreground");
+    expect(counter).not.toHaveClass("bg-theme-fill-foreground");
+  });
+
   it("normalizes legacy parenthesized counters", () => {
     render(
       <Badge counter="(2)" showCounter>
