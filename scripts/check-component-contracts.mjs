@@ -11208,6 +11208,25 @@ for (const [file, symbols] of [
     );
 }
 
+// SwiftUI's Progress takes the theme's colour, as React's bg-primary and
+// Compose's theme 500 do: it drew SwiftUI's .blue, whatever the theme.
+{
+  const file = "packages/ios/Sources/Components/Progress/Progress.swift";
+  const content = read(file);
+  assertNotContains(
+    file,
+    content,
+    "tint: .blue",
+    "SwiftUI Progress drawing SwiftUI's blue instead of the theme's",
+  );
+  assertContains(
+    file,
+    content,
+    "LinearProgressViewStyle(tint: KozmosColors.primitivesColorsTheme500)",
+    "SwiftUI Progress drawing the theme's colour, as React and Compose do",
+  );
+}
+
 // Every Core set the plugin can update must appear in CORE_UPDATE_SEQUENCE.
 // A bulk action that quietly skips a component is worse than no bulk action:
 // the sets it misses look updated because the run reported success.
