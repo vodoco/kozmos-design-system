@@ -1968,24 +1968,26 @@ section("Decision 59: the theme fill and what sits on it");
 
   // MapControlButton's Pressed state is a mode that stays on (following, a
   // layer shown): the nested default Button, so the theme fill, edge and all,
-  // with the theme foreground on it. Its state config was theme/600 under
-  // foreground/1000, black on it in the dark.
-  const mapPressed =
-    typeof plugin.mapControlButtonStateConfig === "function"
-      ? plugin.mapControlButtonStateConfig("Pressed")
-      : {};
+  // with the theme foreground on it. The set paints nothing of its own: what
+  // it draws is the Button it nests, so that Button's config is read here. (A
+  // state config the painter never called, theme/600 under foreground/1000,
+  // was removed on 2026-10-08.)
   const mapNested =
     typeof plugin.mapControlButtonNestedVariant === "function"
       ? plugin.mapControlButtonNestedVariant("Icon", "Pressed")
       : {};
+  const mapPressed = mapNested.Variant
+    ? plugin.buttonConfig(mapNested.Variant, mapNested.State)
+    : {};
   ok(
     mapNested.Variant === "Default" &&
-      mapPressed.fill === FILL &&
-      mapPressed.fillFallback === "#135BEC" &&
-      mapPressed.stroke === FILL &&
+      mapNested.State === "Default" &&
+      mapPressed.background === FILL &&
+      mapPressed.backgroundFallback === "#135BEC" &&
+      (!mapPressed.stroke || mapPressed.stroke === FILL) &&
       mapPressed.foreground === INK &&
       mapPressed.foregroundFallback === "#FFFFFF",
-    `MapControlButton, Pressed: the nested default Button, the theme fill with the theme foreground (Button ${mapNested.Variant}; ${mapPressed.fill}, edge ${mapPressed.stroke}, ${mapPressed.foreground})`,
+    `MapControlButton, Pressed: the nested default Button, the theme fill with the theme foreground (Button ${mapNested.Variant} ${mapNested.State}; ${mapPressed.background}, ${mapPressed.foreground})`,
   );
 
   // Avatar's image placeholder is neutral (Olcay, 2026-10-07): React's muted

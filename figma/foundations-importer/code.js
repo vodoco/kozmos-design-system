@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "2fe335b76ebe";
+const PLUGIN_BUILD = "d3f94e4a8414";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -48144,39 +48144,6 @@ function mapControlButtonNestedVariant(presentation, state) {
     Variant: state === "Pressed" ? "Default" : "Outline",
     Size: presentation === "Labelled" ? "Default" : "Icon",
     State: state === "Disabled" ? "Disabled" : "Default",
-  };
-}
-
-function mapControlButtonStateConfig(state) {
-  // Pressed is the nested default Button: the theme fill and the theme
-  // foreground (decision 59).
-  if (state === "Pressed") {
-    return {
-      fill: THEME_FILL.name,
-      fillFallback: THEME_FILL.fallback,
-      stroke: THEME_FILL.name,
-      strokeFallback: THEME_FILL.fallback,
-      foreground: THEME_FILL_FOREGROUND.name,
-      foregroundFallback: THEME_FILL_FOREGROUND.fallback,
-    };
-  }
-  if (state === "Disabled") {
-    return {
-      fill: "Colors/background/100",
-      fillFallback: "#E3E4E8",
-      stroke: "Border/Subtle",
-      strokeFallback: "#C7CAD1",
-      foreground: "Colors/foreground/500",
-      foregroundFallback: "#747B8B",
-    };
-  }
-  return {
-    fill: "Surface/0",
-    fillFallback: "#FFFFFF",
-    stroke: "Border/Subtle",
-    strokeFallback: "#C7CAD1",
-    foreground: "Colors/foreground/0",
-    foregroundFallback: "#000000",
   };
 }
 
