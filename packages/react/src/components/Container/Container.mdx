@@ -10,6 +10,10 @@ import { PlatformSnippets } from "../PlatformSnippets";
 Constrains content width and applies consistent horizontal insets.
 Use `inset="window"` for viewport-responsive page padding and `inset="panel"` for fixed padding inside a narrow panel.
 
+SwiftUI and Compose take the same `inset` (`.window`, `.panel`): it pads the sides only, `panel` 16 and `window`
+16, 24 or 32 with the width the container is given. Left out, the native container pads every side by 16, as
+it always has.
+
 <Canvas>
   <Story of={ContainerStories.Default} />
 </Canvas>
@@ -44,35 +48,30 @@ import { KozmosContainer } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosContainer {
-Text("Content")
+// In a map shell's sheet or side panel: 16 a side, whatever the window.
+struct VenueOverview: View {
+    var body: some View {
+        KozmosContainer(inset: .panel) {
+            Text("Venue overview")
+        }
+    }
 }
 `}
     kotlin={`
-package com.kozmos.components.container
-
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosDimensions
-
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.kozmos.components.container.KozmosContainer
+import com.kozmos.components.container.KozmosContainerInset
 
+// In a map shell's sheet or side panel: 16 a side, whatever the window.
 @Composable
-fun KozmosContainer(
-modifier: Modifier = Modifier,
-content: @Composable () -> Unit
-) {
-Box(
-modifier = modifier.padding(KozmosDimensions.primitivesLayoutSpacing200)
-) {
-content()
+fun VenueOverview() {
+    KozmosContainer(KozmosContainerInset.Panel) {
+        Text("Venue overview")
+    }
 }
-}
-
-    `}
+`}
 
 />

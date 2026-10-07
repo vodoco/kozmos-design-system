@@ -11209,23 +11209,27 @@ for (const [file, symbols] of [
     );
 }
 
-// SwiftUI's Progress takes the theme's colour, as React's bg-primary and
-// Compose's theme 500 do: it drew SwiftUI's .blue, whatever the theme.
+// Progress draws React's colours on every platform: bg-primary, theme 600,
+// on bg-secondary, background 200. SwiftUI drew SwiftUI's .blue, then theme
+// 500; Compose theme 500 on background 300, under 3:1 against its track.
 {
-  const file = "packages/ios/Sources/Components/Progress/Progress.swift";
-  const content = read(file);
-  assertNotContains(
-    file,
-    content,
-    "tint: .blue",
-    "SwiftUI Progress drawing SwiftUI's blue instead of the theme's",
-  );
+  const tailwind = read("packages/react/tailwind.config.js");
   assertContains(
-    file,
-    content,
-    "LinearProgressViewStyle(tint: KozmosColors.primitivesColorsTheme500)",
-    "SwiftUI Progress drawing the theme's colour, as React and Compose do",
+    "packages/react/tailwind.config.js",
+    tailwind,
+    'primary: {\n          DEFAULT: "var(--primitives-colors-theme-600)"',
+    "React's primary is theme 600, the colour the native bars follow",
   );
+  const swift = "packages/ios/Sources/Components/Progress/Progress.swift";
+  const swiftContent = read(swift);
+  assertNotContains(swift, swiftContent, "tint: .blue", "SwiftUI Progress drawing SwiftUI's blue");
+  assertNotContains(swift, swiftContent, "primitivesColorsTheme500", "SwiftUI Progress drawing theme 500, not React's 600");
+  assertContains(swift, swiftContent, ".tint(KozmosColors.primitivesColorsTheme600)", "SwiftUI Progress drawing React's primary");
+  const kotlin = "packages/android/src/main/java/com/kozmos/components/Progress/Progress.kt";
+  const kotlinContent = read(kotlin);
+  const bar = kotlinContent.slice(kotlinContent.indexOf("fun KozmosProgress("));
+  assertContains(kotlin, bar, "color = KozmosThemeTokens.primitivesColorsTheme600", "Compose Progress drawing React's primary");
+  assertContains(kotlin, bar, "trackColor = KozmosThemeTokens.primitivesColorsBackground200", "Compose Progress drawing React's track");
 }
 
 // Every Core set the plugin can update must appear in CORE_UPDATE_SEQUENCE.

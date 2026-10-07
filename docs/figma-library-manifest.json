@@ -15621,6 +15621,7 @@
           "description",
           "icon",
           "id",
+          "progress",
           "role",
           "size",
           "tabIndex",

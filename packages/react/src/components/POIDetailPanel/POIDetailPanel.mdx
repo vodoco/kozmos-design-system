@@ -1,5 +1,6 @@
 import { Meta, Canvas } from "@storybook/blocks";
 import { Controls } from "../DocumentationControls";
+import { PlatformSnippets } from "../PlatformSnippets";
 import * as Stories from "./POIDetailPanel.stories";
 
 <Meta of={Stories} />
@@ -88,6 +89,76 @@ Run `pnpm test:poi-details` against a running Storybook. Set
 `ADAPTIVE_BROWSER=firefox` or `ADAPTIVE_BROWSER=webkit` to check another engine.
 Screenshots, failures and incomplete accessibility checks are saved under
 `test-results/poi-detail-examples/`. This is UI acceptance, not SDK certification.
+
+## Details in Compose
+
+`KozmosPOIDetailPanel` takes the same model as `details`: `KozmosPOIDetailsPresentation` in
+`com.kozmos.contracts`, with `supplementaryActionStates`, `onSupplementaryAction`, `readMoreLabel`,
+`readLessLabel`, `tagsLabel` and `loadingLabel`, all after its released parameters, so a call written
+against 0.5.0 compiles and binds as it did. It draws the same parts in the same order as the web and
+SwiftUI: the walk on Go, book and call after the place's own actions, at most three summary facts,
+then the groups, the opening hours, the description and the tags. As on the web, a summary fact's
+icon comes from its `kind`, and the opening hours' label is a visible heading over the disclosure.
+Read more and the hours tell TalkBack whether they are expanded, and each section reads as one group
+under its heading.
+
+<PlatformSnippets
+  kotlin={`
+import androidx.compose.runtime.Composable
+import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanel
+import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanelPresentation
+import com.kozmos.contracts.KozmosPOIAction
+import com.kozmos.contracts.KozmosPOIDetailDescription
+import com.kozmos.contracts.KozmosPOIDetailSummary
+import com.kozmos.contracts.KozmosPOIDetailSummaryKind
+import com.kozmos.contracts.KozmosPOIDetailsPresentation
+import com.kozmos.contracts.KozmosPOIPresentation
+import com.kozmos.contracts.KozmosPOISupplementaryAction
+import com.kozmos.contracts.KozmosPOISupplementaryActionPresentation
+import com.kozmos.contracts.KozmosTravelEstimatePresentation
+
+// The product's adapter has already put the venue's facts into its own words.
+@Composable
+fun PlaceDetails(
+    poi: KozmosPOIPresentation,
+    actionLabels: Map<KozmosPOIAction, String>,
+    walk: KozmosTravelEstimatePresentation,
+    onAction: (KozmosPOIAction, String) -> Unit,
+    onBook: (String) -> Unit
+) {
+    KozmosPOIDetailPanel(
+        poi = poi,
+        actionLabels = actionLabels,
+        onAction = onAction,
+        presentation = KozmosPOIDetailPanelPresentation.Sheet,
+        details = KozmosPOIDetailsPresentation(
+            // Drawn on Go, under its label: "2 min · 120 m".
+            travelEstimate = walk,
+            summary = listOf(
+                KozmosPOIDetailSummary(
+                    id = "rating",
+                    kind = KozmosPOIDetailSummaryKind.Rating,
+                    label = "Rating",
+                    value = "4.7 / 5",
+                    detail = "32 reviews"
+                )
+            ),
+            description = KozmosPOIDetailDescription(
+                preview = "Family-run since 1998.",
+                full = "Family-run since 1998. The terrace overlooks the atrium."
+            ),
+            supplementaryActions = listOf(
+                KozmosPOISupplementaryActionPresentation(KozmosPOISupplementaryAction.Book, "Book")
+            )
+        ),
+        // Without a callback, Book is drawn disabled.
+        onSupplementaryAction = { action, poiId ->
+            if (action == KozmosPOISupplementaryAction.Book) onBook(poiId)
+        }
+    )
+}
+`}
+/>
 
 ## In a sheet
 

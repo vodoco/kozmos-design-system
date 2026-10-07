@@ -43,8 +43,20 @@ test("the compact web data URL decodes to the unchanged official artwork", async
     encoded,
     "web logo must use a percent-encoded SVG, without base64 overhead",
   );
+  // Read as a browser reads it: the URL parser drops tabs and newlines and
+  // strips a trailing space, which decodeURIComponent alone would keep.
   assert.equal(
-    decodeURIComponent(encoded[1]),
+    await (await fetch("data:image/svg+xml," + encoded[1])).text(),
     await readFile(root + "assets/brand/pointr-logo.svg", "utf8"),
   );
+});
+
+test("the data URL keeps what a URL parser drops", async () => {
+  const { svgDataUri } = await import(root + "scripts/lib/svg-data-uri.mjs");
+  for (const svg of [
+    '<svg>\t<g/>\r\n<path d="M0 0"/> </svg> ',
+    '<svg viewBox="0 0 1 1"><text>100% #1 {a|b} ^`[]</text></svg>\n',
+    "<svg>\u0000\u001f\u007f</svg>",
+  ])
+    assert.equal(await (await fetch(svgDataUri(svg))).text(), svg);
 });

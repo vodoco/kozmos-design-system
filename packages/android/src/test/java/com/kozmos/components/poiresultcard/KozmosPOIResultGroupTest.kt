@@ -32,19 +32,19 @@ class KozmosPOIResultGroupTest {
                     onAction = { action, id -> actions += "${action.value}:$id" })
             }
         }) {
-            fun shown() = read().merged.filter { it.description?.contains("Bakery") == true }
+            fun shown() = read().merged.filter { it.words?.contains("Bakery") == true }
             fun footer(text: String) = read().merged.single { text in it.texts }
             assertEquals(1, shown().size)
             footer("Show 2 more").expand!!.invoke(); frames(3)
             assertEquals(3, shown().size)
-            shown().single { it.description!!.contains("Bakery 2") }.click!!.invoke(); frames(3)
-            assertEquals("1235, Alternative, Bakery 2", shown().single { it.selected == true }.description)
+            shown().single { it.words!!.contains("Bakery 2") }.click!!.invoke(); frames(3)
+            assertEquals("1235, Alternative, Bakery 2", shown().single { it.selected == true }.words)
             read().merged.single { "Go" in it.texts }.click!!.invoke(); frames(3)
             assertEquals(listOf("navigate:2"), actions)
             footer("Hide").collapse!!.invoke(); frames(3)
             assertEquals(1, shown().size)
             footer("Show 2 more").click!!.invoke(); frames(3)
-            assertEquals("1235, Alternative, Bakery 2", shown().single { it.selected == true }.description)
+            assertEquals("1235, Alternative, Bakery 2", shown().single { it.selected == true }.words)
             assertEquals(listOf(true, false, true), changes)
         }
     }
@@ -56,7 +56,7 @@ class KozmosPOIResultGroupTest {
         } }
         tree.merged.single { "Show 2 more" in it.texts }.click!!.invoke()
         assertEquals(true, requested)
-        assertEquals(1, tree.merged.count { it.description?.contains("Bakery") == true })
+        assertEquals(1, tree.merged.count { it.words?.contains("Bakery") == true })
         val single = paparazzi.readSemantics { MaterialTheme { KozmosPOIResultGroup(items = items().take(1), onSelect = {}) } }
         assertTrue(single.merged.none { it.expand != null || it.collapse != null })
     }

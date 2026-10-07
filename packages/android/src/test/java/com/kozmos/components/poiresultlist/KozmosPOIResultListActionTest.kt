@@ -215,8 +215,8 @@ class KozmosPOIResultListActionTest {
         val los = tree.showing("Los")
         val einzelheiten = tree.showing("Einzelheiten")
         assertTrue("the row's name does not hold its actions", row.bounds.contains(los.bounds.center) && row.bounds.contains(einzelheiten.bounds.center))
-        val gateRow = tree.merged.single { it.description?.startsWith("Gate 12") == true }
-        assertFalse("the row's name was added to the result's: ${gateRow.description}", "Aktionen" in gateRow.description!!)
+        val gateRow = tree.merged.single { it.words?.startsWith("Gate 12") == true }
+        assertFalse("the row's name was added to the result's: ${gateRow.words}", "Aktionen" in gateRow.words!!)
         einzelheiten.click!!.invoke()
         assertEquals(listOf("details gate/12"), received.actions)
     }
@@ -259,7 +259,7 @@ class KozmosPOIResultListActionTest {
             }
         }
         assertTrue("an unavailable result offers actions", closed.merged.none { "Go" in it.texts })
-        val gateRow = closed.merged.single { it.description?.startsWith("Gate 12") == true }
+        val gateRow = closed.merged.single { it.words?.startsWith("Gate 12") == true }
         assertFalse("an unavailable result is not read as disabled", gateRow.enabled)
         gateRow.click?.invoke()
         assertEquals(listOf("navigate cafe"), received.actions)

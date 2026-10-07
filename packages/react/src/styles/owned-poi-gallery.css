@@ -65,7 +65,8 @@
     text-align: center;
     overflow-wrap: anywhere;
   }
-  .kozmos-poi-gallery:dir(rtl) .kozmos-poi-gallery-arrow {
-    transform: rotate(180deg);
+  /* Right to left the arrows turn round (--kozmos-rtl, owned-components.css). */
+  .kozmos-poi-gallery .kozmos-poi-gallery-arrow {
+    transform: rotate(calc(180deg * var(--kozmos-rtl, 0)));
   }
 }
