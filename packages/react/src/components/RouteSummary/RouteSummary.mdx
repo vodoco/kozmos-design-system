@@ -80,3 +80,242 @@ KozmosRouteSummary(
 )
     `}
 />
+
+## Actions
+
+The navigation layout takes `actions` after its progress: the journey's own actions, Previous and Next in static wayfinding (Step-by-Step, and the web fallback, which has no live position). Live guidance draws none. Kozmos owns the row's layout: equal columns in reading order, so in a right-to-left language Previous sits on the right, each as tall as the tallest. A Kozmos Button there fills its column, grows to two lines rather than overflow, and keeps its 44px (Android's 48dp touch target included). The words are text only, as on the boards; an arrow, if a product adds one, must be logical, so that it mirrors.
+
+The host draws the buttons and owns what they do:
+
+- Each Button says `type="button"`. Button has no default type, so inside a form one would submit it.
+- At the ends of the route, a step control is unavailable through `aria-disabled="true"` and a handler that does nothing, not `disabled`. A button disabled under the pointer drops the focus to the page; Previous on the first step keeps it. The row draws `aria-disabled` at the disabled button's 50%. SwiftUI and Compose disable the button, which keeps VoiceOver's and TalkBack's focus where it was.
+- The new step is said by the host's `NavigationAnnouncer`, the one announcement owner. The summary says nothing itself.
+- Whether the last step disables Next or turns it into Finish, leading to arrival, is the product's choice; the row takes either.
+
+<Canvas of={RouteSummaryStories.NavigationSteps} />
+
+Hosted in the map shell's sheet, the panel's surface is the one surface (decision 43) and a sheet fitted to its content grows to take the row.
+
+<Canvas of={RouteSummaryStories.HostedSteps} />
+
+## Route preview
+
+Without `onEndRoute` the navigation layout draws no End: it is the route preview, the destination's card before the journey starts. `locationText` adds the place's line under the destination, muted, and on glass the foreground colour (decision 48). Go and Details sit in `actions`, Go first. Details shows the route's directions in the same panel, which the host composes: a Back button, a heading, the `Itinerary` and Go. The estimate layout keeps `onEndRoute` required.
+
+On SwiftUI the preview passes `progress: { EmptyView() }`, because the progress stays the initializer's trailing closure. On Compose `actions` comes before `progress`, so a trailing lambda is still the progress, and the original overload keeps its positional parameters.
+
+<Canvas of={RouteSummaryStories.RoutePreview} />
+
+<PlatformSnippets
+    react={`
+import { useState } from "react";
+import {
+  Button,
+  NavigationAnnouncer,
+  RouteProgressRail,
+  RouteSummary,
+} from "@kozmos-ds/react";
+
+// Static wayfinding: Previous and Next in the summary's actions. The host
+// owns the step, makes the ends unavailable without losing focus, and says
+// the new step through its announcer, the one announcement owner.
+export function StepByStepSummary({
+  steps,
+  onEnd,
+}: {
+  steps: string[];
+  onEnd: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  const first = step === 0;
+  const last = step === steps.length - 1;
+  return (
+    <>
+      <RouteSummary
+        destination="Airport Shuttles"
+        durationText="4 min"
+        distanceText="201 m"
+        onEndRoute={onEnd}
+        progress={
+          <RouteProgressRail
+            progress={step / Math.max(steps.length - 1, 1)}
+            type="straight"
+            label={steps[step]}
+          />
+        }
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              aria-disabled={first || undefined}
+              onClick={() => {
+                if (!first) setStep(step - 1);
+              }}
+            >
+              Previous
+            </Button>
+            <Button
+              type="button"
+              aria-disabled={last || undefined}
+              onClick={() => {
+                if (!last) setStep(step + 1);
+              }}
+            >
+              Next
+            </Button>
+          </>
+        }
+      />
+      <NavigationAnnouncer message={steps[step]} />
+    </>
+  );
+}
+
+// The route preview: no End, the place's line under the destination, and
+// Go and Details.
+export function RoutePreviewSummary({
+  onGo,
+  onDetails,
+}: {
+  onGo: () => void;
+  onDetails: () => void;
+}) {
+  return (
+    <RouteSummary
+      destination="Tessel Shoes"
+      locationText="Store · Level 1 · Harbour Point Mall"
+      durationText="3 min"
+      distanceText="205 m"
+      actions={
+        <>
+          <Button type="button" onClick={onGo}>
+            Go
+          </Button>
+          <Button type="button" variant="outline" onClick={onDetails}>
+            Details
+          </Button>
+        </>
+      }
+    />
+  );
+}
+    `}
+    swift={`
+import SwiftUI
+import Kozmos
+
+// Static wayfinding: Previous and Next in the summary's actions. The host
+// owns the step, disables the ends, and says the new step through its
+// announcer, the one announcement owner.
+struct StepByStepSummary: View {
+    let steps: [String]
+    let onEnd: () -> Void
+    @State private var step = 0
+
+    var body: some View {
+        VStack(spacing: 0) {
+            KozmosRouteSummary(
+                destination: "Airport Shuttles",
+                durationText: "4 min",
+                distanceText: "201 m",
+                onEndRoute: onEnd
+            ) {
+                KozmosRouteProgressRail(
+                    progress: Double(step) / Double(max(steps.count - 1, 1)),
+                    type: .straight,
+                    label: steps[step]
+                )
+            } actions: {
+                KozmosButton("Previous", variant: .outline, isDisabled: step == 0) { step -= 1 }
+                KozmosButton("Next", isDisabled: step == steps.count - 1) { step += 1 }
+            }
+            KozmosNavigationAnnouncer(message: steps[step])
+        }
+    }
+}
+
+// The route preview: no End, the place's line under the destination, and
+// Go and Details. The preview has no progress.
+struct RoutePreviewSummary: View {
+    let onGo: () -> Void
+    let onDetails: () -> Void
+
+    var body: some View {
+        KozmosRouteSummary(
+            destination: "Tessel Shoes",
+            locationText: "Store · Level 1 · Harbour Point Mall",
+            durationText: "3 min",
+            distanceText: "205 m",
+            progress: { EmptyView() },
+            actions: {
+                KozmosButton("Go", action: onGo)
+                KozmosButton("Details", variant: .outline, action: onDetails)
+            }
+        )
+    }
+}
+`}
+    kotlin={`
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonVariant
+import com.kozmos.components.directionstep.DirectionType
+import com.kozmos.components.navigationannouncer.KozmosNavigationAnnouncer
+import com.kozmos.components.routeprogressrail.KozmosRouteProgressRail
+import com.kozmos.components.routesummary.KozmosRouteSummary
+
+// Static wayfinding: Previous and Next in the summary's actions. The host
+// owns the step, disables the ends, and says the new step through its
+// announcer, the one announcement owner.
+@Composable
+fun StepByStepSummary(steps: List<String>, onEnd: () -> Unit) {
+    var step by remember { mutableIntStateOf(0) }
+    Column {
+        KozmosRouteSummary(
+            destination = "Airport Shuttles",
+            durationText = "4 min",
+            distanceText = "201 m",
+            onEndRoute = onEnd,
+            actions = {
+                KozmosButton(onClick = { step -= 1 }, variant = KozmosButtonVariant.Outline, enabled = step > 0) {
+                    Text("Previous")
+                }
+                KozmosButton(onClick = { step += 1 }, enabled = step < steps.lastIndex) {
+                    Text("Next")
+                }
+            }
+        ) {
+            KozmosRouteProgressRail(
+                progress = step / steps.lastIndex.coerceAtLeast(1).toFloat(),
+                type = DirectionType.Straight,
+                label = steps[step]
+            )
+        }
+        KozmosNavigationAnnouncer(message = steps[step])
+    }
+}
+
+// The route preview: no End, the place's line under the destination, and
+// Go and Details.
+@Composable
+fun RoutePreviewSummary(onGo: () -> Unit, onDetails: () -> Unit) {
+    KozmosRouteSummary(
+        destination = "Tessel Shoes",
+        locationText = "Store · Level 1 · Harbour Point Mall",
+        durationText = "3 min",
+        distanceText = "205 m",
+        actions = {
+            KozmosButton(onClick = onGo) { Text("Go") }
+            KozmosButton(onClick = onDetails, variant = KozmosButtonVariant.Outline) { Text("Details") }
+        }
+    )
+}
+    `}
+/>
