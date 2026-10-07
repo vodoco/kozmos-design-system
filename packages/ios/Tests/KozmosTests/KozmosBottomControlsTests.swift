@@ -89,6 +89,52 @@ final class KozmosBottomControlsTests: XCTestCase {
       }
     }
 
+    // GAP-135: an opened direction card and the sheet can leave the credits less room than they
+    // need. They are never clipped into a scroll region: the Pointr logo goes first and the
+    // credits keep their full height. A logo is whole or absent: the sheet gives way to a logo
+    // alone that fits half the band (560), and with less room than that it leaves (660).
+    @MainActor func testSqueezedAttributionDropsTheLogoAndIsNeverClipped() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        for (barHeight, hasCredits, logoShown) in [
+            (CGFloat(200), true, true), (CGFloat(560), true, false),
+            (CGFloat(560), false, true), (CGFloat(660), false, false),
+        ] {
+            let view = KozmosAdaptiveMapShell(
+                panelDetent: .constant(.collapsed),
+                attribution: AnyView(KozmosMapAttribution(
+                    credits: hasCredits ? [.init(id: "a", label: "Indoor contributors")] : []
+                )),
+                map: { Color.clear }, mapStatusContent: { EmptyView() },
+                controls: { EmptyView() },
+                topBar: { Color.clear.frame(height: barHeight) },
+                panel: { Text("Details").frame(height: 120) }
+            ).frame(width: 390, height: 720).environment(\.horizontalSizeClass, .compact)
+            let window = TestWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 720))
+            window.rootViewController = UIHostingController(rootView: view)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+            try await Task.sleep(nanoseconds: 600_000_000)
+            let state = "bar \(barHeight), credits \(hasCredits)"
+            let labels = elements(in: window).compactMap(\.accessibilityLabel)
+            XCTAssertEqual(labels.contains("Pointr"), logoShown, "\(state): \(labels)")
+            // An in-process AX walk can't see SwiftUI ScrollView children on iOS 26.5
+            // (KozmosMapAttributionTests): the credits are their native one-line viewport.
+            let scrolls = scrollViews(in: window)
+            let creditRow = scrolls.first {
+                $0.bounds.height > 10 && $0.bounds.height < 60 && $0.contentSize.width > 0
+                    && $0.contentSize.height <= $0.bounds.height + 1
+            }
+            XCTAssertEqual(creditRow != nil, hasCredits, "\(state): \(scrolls.map(\.frame))")
+            let clipped = scrolls.filter { $0.bounds.height > 0 && $0.contentSize.height > $0.bounds.height + 1 }
+            XCTAssertTrue(clipped.isEmpty, "\(state): clipped into \(clipped.map(\.frame))")
+        }
+    }
+
+    @MainActor private func scrollViews(in view: UIView) -> [UIScrollView] {
+        ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap { scrollViews(in: $0) }
+    }
+
     @MainActor private func elements(in node: NSObject) -> [NSObject] {
         if node.accessibilityElementsHidden { return [] }
         if let view = node as? UIView, view.isHidden || view.alpha == 0 { return [] }

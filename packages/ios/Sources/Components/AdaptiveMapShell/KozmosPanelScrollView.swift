@@ -99,6 +99,21 @@ public extension EnvironmentValues {
     }
 }
 
+struct KozmosMapAttributionCompactKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True when the map shell's credits slot has less room than the
+    /// attribution's full height: `KozmosMapAttribution` then leaves out its
+    /// brand, so the credits keep their full height and are never clipped
+    /// into a scroll region (GAP-135). Set by the shell; never a product's.
+    var kozmosMapAttributionCompact: Bool {
+        get { self[KozmosMapAttributionCompactKey.self] }
+        set { self[KozmosMapAttributionCompactKey.self] = newValue }
+    }
+}
+
 /// How far the sheet's content has scrolled from its top, in points; zero at
 /// the top. The shell reads it to decide whether a downward drag scrolls the
 /// content back or moves the sheet.
