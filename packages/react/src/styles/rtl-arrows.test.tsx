@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import postcss, { type Rule } from "postcss";
-import React from "react";
 import { describe, expect, it } from "vitest";
 import {
   Breadcrumb,

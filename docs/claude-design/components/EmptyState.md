@@ -22,8 +22,8 @@ export function EmptyStateExample() {
     <ThemeProvider defaultTheme="light">
       <div className="w-[360px] h-[400px] border rounded-container bg-card flex">
         <EmptyState
-          icon={<Search className="h-8 w-8 text-muted-foreground" />}
           title="No results found"
+          icon={<Search className="h-8 w-8 text-muted-foreground" />}
           description={
             "We couldn't find any places matching your search. Please check your spelling or try another term."
           }

@@ -78,11 +78,9 @@ describe("Chip", () => {
     // minimum. The mark is now 24; the target the owned rule adds is taller
     // still, and deliberately no wider — see the rule for why.
     render(
-      <Chip
-        label="Open now"
-        onRemove={() => undefined}
-        removeLabel="Remove open now"
-      />,
+      <Chip onRemove={() => undefined} removeLabel="Remove open now">
+        Open now
+      </Chip>,
     );
     const remove = screen.getByRole("button", { name: /remove open now/i });
     expect(remove).toHaveClass("kozmos-chip-remove");

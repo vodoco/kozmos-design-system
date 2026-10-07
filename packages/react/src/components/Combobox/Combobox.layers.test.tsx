@@ -165,10 +165,7 @@ describe.each<Host>(["dialog", "popover", "assistant"])(
         const user = userEvent.setup();
         const close = vi.fn();
         render(<Fixture host={host} onClose={close} empty={empty} />);
-        const trigger = screen.getByRole("button", {
-          name: "Open",
-          exact: true,
-        });
+        const trigger = screen.getByRole("button", { name: "Open" });
         await user.click(trigger);
         const input = screen.getByRole("combobox");
         await user.click(input);
@@ -195,9 +192,7 @@ describe.each<Host>(["dialog", "popover", "assistant"])(
         render(
           <Fixture host={host} onClose={close} prevent={mode === "host"} />,
         );
-        await user.click(
-          screen.getByRole("button", { name: "Open", exact: true }),
-        );
+        await user.click(screen.getByRole("button", { name: "Open" }));
         const input = screen.getByRole("combobox");
         await user.click(input);
         const browserDefaultAllowed = fireEvent.keyDown(input, {
@@ -214,9 +209,7 @@ describe.each<Host>(["dialog", "popover", "assistant"])(
       const user = userEvent.setup();
       const close = vi.fn();
       render(<Fixture host={host} onClose={close} />);
-      await user.click(
-        screen.getByRole("button", { name: "Open", exact: true }),
-      );
+      await user.click(screen.getByRole("button", { name: "Open" }));
       const input = screen.getByRole("combobox");
       await user.click(input);
       await user.tab();

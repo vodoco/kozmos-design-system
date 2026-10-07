@@ -14,6 +14,7 @@ Scrollable Product/SDK category composition. Search and actions remain ahead of 
 From its `Default` story.
 
 ```tsx
+import type { ReactNode } from "react";
 import {
   Accessibility,
   Heart,
@@ -75,7 +76,7 @@ export function BrowseCategoriesPanelExample() {
         ]}
         className="h-[34rem] w-full max-w-[25rem]"
         onSelect={() => {}}
-        renderIcon={(category) =>
+        renderIcon={(category): ReactNode =>
           iconByName[category.iconName as keyof typeof iconByName] ??
           iconByName.search
         }

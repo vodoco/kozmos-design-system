@@ -8,6 +8,7 @@ const meta = {
   title: "Core/Feedback/EmptyState",
   component: EmptyState,
   parameters: { layout: "centered" },
+  args: { title: "No results found" },
 } satisfies Meta<typeof EmptyState>;
 export default meta;
 type Story = StoryObj<typeof meta>;
