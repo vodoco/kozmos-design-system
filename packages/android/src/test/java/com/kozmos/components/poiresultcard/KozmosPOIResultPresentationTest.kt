@@ -47,7 +47,7 @@ class KozmosPOIResultPresentationTest {
                     }
                 }
             }
-            val card = tree.merged.single { it.description?.startsWith("1234, Featured, $name") == true }
+            val card = tree.merged.single { it.words?.startsWith("1234, Featured, $name") == true }
             assertEquals(true, card.selected)
             val tab = tree.unmerged.single { it.texts == listOf("Featured") }
             val number = tree.unmerged.single { it.texts == listOf("1234") }

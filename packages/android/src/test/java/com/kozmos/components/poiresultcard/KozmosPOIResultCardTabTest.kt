@@ -63,16 +63,16 @@ class KozmosPOIResultCardTabTest {
     /** What TalkBack is told the result is called. */
     private fun name(content: @Composable () -> Unit): String =
         paparazzi.readSemantics { MaterialTheme { content() } }
-            .merged.mapNotNull { it.description }.first { "Burger King" in it }
+            .merged.mapNotNull { it.words }.first { "Burger King" in it }
 
     /** Every word laid out, read or not. */
     private fun texts(content: @Composable () -> Unit): List<String> =
         paparazzi.readSemantics { MaterialTheme { content() } }.unmerged.flatMap { it.texts }
 
-    /** The words TalkBack reads as the result: its merged node's. */
+    /** The words TalkBack reads as the result: its merged node's, the row's own first. */
     private fun heard(content: @Composable () -> Unit): List<String> =
         paparazzi.readSemantics { MaterialTheme { content() } }
-            .merged.first { it.description?.contains("Burger King") == true }.texts
+            .merged.first { it.words?.contains("Burger King") == true }.texts
 
     // region which tab, and what is heard
 
@@ -185,7 +185,7 @@ class KozmosPOIResultCardTabTest {
                         }
                     }
                 }
-                val card = read.merged.first { it.description?.contains("Burger King") == true }.bounds
+                val card = read.merged.first { it.words?.contains("Burger King") == true }.bounds
                 val words = read.unmerged.single { it.texts == listOf(label) }.bounds
                 val title = read.unmerged.single { it.texts == listOf("Burger King") }.bounds
                 val top = (words.top - card.top) / density
@@ -236,7 +236,7 @@ class KozmosPOIResultCardTabTest {
                     }
                 }
                 val drawn = DrawnPixels(checkNotNull(frames.last))
-                val card = read.merged.first { it.description?.contains("Burger King") == true }.bounds
+                val card = read.merged.first { it.words?.contains("Burger King") == true }.bounds
                 val words = read.unmerged.single { it.texts == listOf(label) }.bounds
                 val end = if (direction == LayoutDirection.Ltr) words.right + 6 * density else words.left - 6 * density
                 // Paparazzi's image may be downscaled from the layout's physical pixels.

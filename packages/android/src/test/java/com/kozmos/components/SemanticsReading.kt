@@ -108,11 +108,23 @@ data class ReadNode(
     val setText: ((String) -> Boolean)? = null,
     /** Set, the node is a pane TalkBack names by it: Compose's nearest to a named region. */
     val paneTitle: String? = null,
-    /** True for a node whose children TalkBack reads together, before what follows it. */
+    /** TalkBack says "heading" after it, and its headings navigation stops on it. */
+    val heading: Boolean = false,
+    /** TalkBack walks the node's children together, before moving past it. */
     val traversalGroup: Boolean = false,
     /** Where TalkBack reads the node among its group: lower first, then by place; 0 unless set. */
-    val traversalIndex: Float = 0f
-)
+    val traversalIndex: Float = 0f,
+    /** Set on a list: how many items TalkBack says it holds on the way in. */
+    val collectionRows: Int? = null
+) {
+    /**
+     * The node's own words as TalkBack takes them: its description, or else
+     * its first text, which for a merged node is its own. A result row gives
+     * TalkBack its words as text, so that a phrase's language survives
+     * (GAP-125).
+     */
+    val words: String? get() = description ?: texts.firstOrNull()
+}
 
 /**
  * A composition's semantics, copied out while it was alive: [merged] is what
@@ -126,6 +138,13 @@ class ReadSemantics(val merged: List<ReadNode>, val unmerged: List<ReadNode>) {
     fun named(description: String): ReadNode {
         val found = merged.filter { it.description == description }
         check(found.size == 1) { "expected one node named \"$description\", found ${found.size} among ${names()}" }
+        return found.single()
+    }
+
+    /** The one control whose own [words][ReadNode.words] are [words]; fails, listing them, if not exactly one. */
+    fun saying(words: String): ReadNode {
+        val found = merged.filter { it.words == words }
+        check(found.size == 1) { "expected one node saying \"$words\", found ${found.size} among ${merged.mapNotNull { it.words }}" }
         return found.single()
     }
 }
@@ -316,6 +335,8 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     requestFocus = node.config.getOrNull(SemanticsActions.RequestFocus)?.action,
     setText = node.config.getOrNull(SemanticsActions.SetText)?.action?.let { set -> { text: String -> set(AnnotatedString(text)) } },
     paneTitle = node.config.getOrNull(SemanticsProperties.PaneTitle),
+    heading = node.config.contains(SemanticsProperties.Heading),
     traversalGroup = node.config.getOrNull(SemanticsProperties.IsTraversalGroup) == true,
-    traversalIndex = node.config.getOrNull(SemanticsProperties.TraversalIndex) ?: 0f
+    traversalIndex = node.config.getOrNull(SemanticsProperties.TraversalIndex) ?: 0f,
+    collectionRows = node.config.getOrNull(SemanticsProperties.CollectionInfo)?.rowCount
 )

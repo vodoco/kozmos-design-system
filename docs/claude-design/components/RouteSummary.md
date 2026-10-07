@@ -40,7 +40,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `RouteSummaryProps`, whic
 
 - `distanceText`: `string`, optional.
 - `destination`: `undefined`, optional.
-- `onEndRoute`: `() => void`, **required**.
+- `onEndRoute`: `() => void`, optional.
+
+  Ends the route: required in the estimate layout, optional in the navigation layout.
+  Ends the route. End is drawn only when it is passed; the route preview leaves it out.
+
 - `surface`: `SurfaceVariant`, optional, default `"solid"`.
 
   What the summary sits on: solid by default, glass where the product asks for it.
@@ -74,6 +78,8 @@ type SurfaceVariant = "solid" | "glass";
     distanceText: string;
     destination?: undefined;
     etaText: string;
+    /** Ends the route: required in the estimate layout, optional in the navigation layout. */
+    onEndRoute: () => void;
     onStartNavigation?: () => void;
     transportModeIcon?: React.ReactNode;
     state?: "preview" | "active";
@@ -82,16 +88,20 @@ type SurfaceVariant = "solid" | "glass";
   }
   ```
 
-- `RouteSummaryNavigationProps` (interface). The navigation layout: the destination's name with End beside it in the danger outline; the time, distance and arrival on one row; the caller's progress — a `RouteProgressRail`, in the products — below.
+- `RouteSummaryNavigationProps` (interface). The navigation layout: the destination's name with End beside it in the danger outline; the time, distance and arrival on one row; the caller's progress — a `RouteProgressRail`, in the products — below, and the journey's actions after it.
 
   ```ts
   /**
    * The navigation layout: the destination's name with End beside it in the
    * danger outline; the time, distance and arrival on one row; the caller's
-   * progress — a `RouteProgressRail`, in the products — below.
+   * progress — a `RouteProgressRail`, in the products — below, and the
+   * journey's actions after it. Without `onEndRoute` it is the route preview:
+   * no End, and Go and Details in `actions`.
    */
   interface RouteSummaryNavigationProps extends RouteSummaryBaseProps {
     destination: string;
+    /** The place's line under the destination, muted: "Store · Level 1 · Harbour Point Mall". */
+    locationText?: string;
     /** Localized remaining estimate; omitted when the host cannot provide one. */
     durationText?: string;
     /** Decorative destination image; failures retain a same-size map-pin fallback. */
@@ -104,6 +114,17 @@ type SurfaceVariant = "solid" | "glass";
     presentation?: "standalone" | "hosted";
     arrivalText?: string;
     endLabel?: string;
+    /** Ends the route. End is drawn only when it is passed; the route preview leaves it out. */
+    onEndRoute?: () => void;
     progress?: React.ReactNode;
+    /**
+     * After the progress: the journey's actions — Previous and Next in static
+     * wayfinding, Go and Details in the route preview. Drawn in equal columns in
+     * reading order; a Kozmos Button here grows to two lines rather than
+     * overflow, keeps its 44px, and reads unavailable through
+     * `aria-disabled="true"`. The host owns what they do, when they are
+     * unavailable, and announcing the new step.
+     */
+    actions?: React.ReactNode;
   }
   ```

@@ -31,8 +31,8 @@ an implementation backlog item.
 | Components scanned                        | 120    |
 | Declaring at least one React variant axis | 57     |
 | Variations that are compositional only    | 63     |
-| Components with variant gaps — iOS        | 15/57  |
-| Components with variant gaps — Android    | 15/57  |
+| Components with variant gaps — iOS        | 14/57  |
+| Components with variant gaps — Android    | 14/57  |
 | Components with variant gaps — Figma      | 23/57  |
 | Components with variant gaps — Vue        | 12/57  |
 | Components absent entirely — iOS          | 9/120  |
@@ -85,9 +85,6 @@ Combobox
   - ios missing axes -> popupLayout (overlay, inline)
   - android missing axes -> popupLayout (overlay, inline)
   - figma missing axes -> popupLayout (overlay, inline)
-Container
-  - ios missing axes -> inset (window, panel)
-  - android missing axes -> inset (window, panel)
 DynamicIsland
   - android missing axes -> islandState (compact, expanded, minimal)
   - figma missing axes -> islandState (compact, expanded, minimal)

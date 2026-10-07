@@ -252,6 +252,13 @@ jobs:
       - name: Verify Icon Code Connect Is Generated
         run: pnpm figma:iconconnect:check
 
+      # Compose draws Pointr's artwork for the web registry's names its hand
+      # mapping has no glyph for: generated from packages/icons, so a redrawn
+      # outline there reaches Android. IconNamesTest, in the Android job,
+      # fails when a web registry name has no Compose vector at all.
+      - name: Verify Compose Icons Are Generated From Pointr's Artwork
+        run: pnpm icons:compose:check
+
       - name: Parse React Code Connect
         run: pnpm figma:parse:linked
 
@@ -329,6 +336,7 @@ jobs:
           for browser in chromium firefox webkit; do
             ADAPTIVE_BROWSER="$browser" pnpm test:browser-compatibility || result=1
             ADAPTIVE_BROWSER="$browser" pnpm test:owned-css || result=1
+            ADAPTIVE_BROWSER="$browser" pnpm test:direction-css || result=1
             ADAPTIVE_BROWSER="$browser" pnpm test:temporal-css || result=1
           done
           exit "$result"
