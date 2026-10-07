@@ -1,0 +1,75 @@
+/* ClientAppBanner (GAP-127): Express's Client App Banner, for
+   AdaptiveMapShell's topBar.
+
+   Owned rather than utilities: a host without @scope drops the utility layer,
+   and where the action goes is what the banner promises. Every side is
+   logical, so a right-to-left interface mirrors it. Imported after the
+   Button's rules, which the action's own outweigh by order. */
+@kozmos-owned {
+  /* The topBar hosts what it is given with no surface of its own, so the
+     banner wears one, as the manoeuvre card there does: the solid surface's
+     fill and subtle edge (kozmos-surface-solid, on the same element), the
+     Container corner, and map chrome's floating elevation. 16 inside, the
+     icon 12 from the words. */
+  .kozmos-client-app-banner {
+    @apply shadow-floating text-foreground;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding: calc(var(--primitives-layout-spacing-200) * 1px);
+    border-radius: calc(var(--semantics-radius-container) * 1px);
+    overflow-wrap: anywhere;
+  }
+  .kozmos-client-app-banner-icon {
+    flex: none;
+  }
+  /* The words and the action share a line while the words keep 10rem; past
+     that the action wraps under them. Beside the words it barely grows (9999
+     to 1); alone on its line it fills the words' width. No measuring, so a
+     longer language or larger text moves it by itself. */
+  .kozmos-client-app-banner-body {
+    display: flex;
+    flex: 1 1 0%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(var(--primitives-layout-spacing-150) * 1px);
+    min-inline-size: 0;
+  }
+  .kozmos-client-app-banner-text {
+    display: flex;
+    flex: 9999 1 10rem;
+    flex-direction: column;
+    gap: calc(var(--primitives-layout-spacing-25) * 1px);
+    min-inline-size: 0;
+  }
+  /* Two lines at most; a screen reader still reads all of it. */
+  .kozmos-client-app-banner-description {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+  }
+  /* A customer's words can be long: the action wraps them rather than
+     overflowing, and stays at least the 44 every target keeps. */
+  .kozmos-client-app-banner-action {
+    flex: 1 0 auto;
+    max-inline-size: 100%;
+    height: auto;
+    min-block-size: 2.75rem;
+    white-space: normal;
+    text-align: center;
+  }
+  /* The 44 target at the top end, 4 from the edges: pulled into the padding
+     so its glyph lines up with the words' 16, and its corner (Control, 16)
+     sits concentric with the banner's (Container, 20). */
+  .kozmos-client-app-banner-dismiss {
+    flex: none;
+    margin-block-start: calc(var(--primitives-layout-spacing-150) * 1px * -1);
+    margin-inline-end: calc(var(--primitives-layout-spacing-150) * 1px * -1);
+  }
+}
