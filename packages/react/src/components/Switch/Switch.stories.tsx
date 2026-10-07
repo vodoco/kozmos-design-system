@@ -14,6 +14,14 @@ export const Default: Story = {
   render: () => <Switch id="airplane-mode" label="Airplane Mode" />,
 };
 
+// On: the track is the theme fill and the thumb the theme foreground, white
+// in both themes (decision 59).
+export const Checked: Story = {
+  render: () => (
+    <Switch id="airplane-mode-checked" label="Airplane Mode" defaultChecked />
+  ),
+};
+
 export const Disabled: Story = {
   render: () => (
     <Switch id="airplane-mode-disabled" label="Airplane Mode" disabled />

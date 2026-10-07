@@ -1051,7 +1051,7 @@
       "id": "components-switch",
       "title": "Core/Inputs/Switch",
       "component": "Switch",
-      "exports": ["Default", "Disabled", "Error"]
+      "exports": ["Default", "Checked", "Disabled", "Error"]
     },
     {
       "file": "packages/react/src/components/Table/Table.stories.tsx",
@@ -1121,7 +1121,7 @@
       "id": "action-togglebutton",
       "title": "Core/Actions/ToggleButton",
       "component": "ToggleButton",
-      "exports": ["Default"]
+      "exports": ["Default", "On"]
     },
     {
       "file": "packages/react/src/components/Tooltip/Tooltip.stories.tsx",

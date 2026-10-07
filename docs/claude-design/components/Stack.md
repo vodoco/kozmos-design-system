@@ -17,14 +17,14 @@ From its `Default` story.
 import { Box, Stack, ThemeProvider } from "@kozmos-ds/react";
 
 const foregrounds = {
-  "bg-primary": "text-primary-foreground",
+  "bg-theme-fill": "text-theme-fill-foreground",
   "bg-secondary": "text-secondary-foreground",
   "bg-accent": "text-accent-foreground",
 };
 
 const BoxItem = ({
   children,
-  color = "bg-primary",
+  color = "bg-theme-fill",
 }: {
   children: React.ReactNode;
   color?: keyof typeof foregrounds;

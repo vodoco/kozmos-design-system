@@ -9,9 +9,9 @@ const badgeVariants = cva(
     variants: {
       variant: {
         // The theme fill and the theme foreground, the same in both themes
-        // (decision 59).
+        // (decision 59). Hovered, the themed Button's hover token, opaque.
         default:
-          "bg-theme-fill text-theme-fill-foreground hover:bg-theme-fill/90",
+          "bg-theme-fill text-theme-fill-foreground hover:bg-[var(--components-primary-buttons-themed-button-background-hover)]",
         destructive:
           "bg-destructive text-[var(--primitives-colors-foreground-1000)] hover:bg-destructive/90",
         outline:
@@ -98,7 +98,19 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
         ) : null}
         {!isIconOnly ? children : null}
         {hasCounter ? (
-          <Counter tone={badgeCounterTone(variant)} data-slot="badge-counter">
+          <Counter
+            tone={badgeCounterTone(variant)}
+            // On the default Badge, itself the theme fill, the counter
+            // inverts: the theme foreground with the fill's number, in both
+            // themes, as the selected level's count does (Olcay, 2026-10-07).
+            // `inverse` was the surface, black in the dark.
+            className={
+              (variant ?? "default") === "default"
+                ? "bg-theme-fill-foreground text-theme-fill"
+                : undefined
+            }
+            data-slot="badge-counter"
+          >
             {counter}
           </Counter>
         ) : null}

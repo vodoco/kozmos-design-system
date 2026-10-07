@@ -180,10 +180,78 @@ try {
     );
     checked += 1;
   }
+  // Switch: the thumb sits at the inline start when off and slides to the
+  // inline end when on, inside the track, in both directions.
+  for (const dir of ["ltr", "rtl"])
+    for (const on of [true, false]) {
+      const name = `Switch ${on ? "on" : "off"} ${dir}`;
+      const thumb = await page
+        .getByRole("switch", { name })
+        .evaluate((track) => {
+          const outer = track.getBoundingClientRect();
+          const box = track.firstElementChild.getBoundingClientRect();
+          return {
+            left: box.left - outer.left,
+            right: outer.right - box.right,
+          };
+        });
+      const where = `${name}: ${JSON.stringify(thumb)}`;
+      assert.ok(
+        thumb.left >= -0.5 && thumb.right >= -0.5,
+        `${where}: the thumb leaves the track`,
+      );
+      const atEnd = (on ? dir === "rtl" : dir === "ltr") ? "left" : "right";
+      assert.ok(
+        thumb[atEnd] < 3,
+        `${where}: the thumb is not at the inline ${on ? "end" : "start"} (${atEnd})`,
+      );
+      checked += 1;
+    }
+  // SplitButton: the halves meet square at the inline end of the main one
+  // and the inline start of the menu one, its divider on the meeting edge.
+  for (const dir of ["ltr", "rtl"]) {
+    const halves = await page
+      .getByTestId(`split-${dir}`)
+      .locator("button")
+      .evaluateAll((buttons) =>
+        buttons.map((button) => {
+          const style = getComputedStyle(button);
+          return {
+            left:
+              parseFloat(style.borderTopLeftRadius) +
+              parseFloat(style.borderBottomLeftRadius),
+            right:
+              parseFloat(style.borderTopRightRadius) +
+              parseFloat(style.borderBottomRightRadius),
+            borderLeft: parseFloat(style.borderLeftWidth),
+            borderRight: parseFloat(style.borderRightWidth),
+          };
+        }),
+      );
+    const [main, menu] = halves;
+    const where = `SplitButton ${dir}: ${JSON.stringify(halves)}`;
+    const [meet, outside] =
+      dir === "rtl" ? ["left", "right"] : ["right", "left"];
+    assert.ok(
+      main[meet] === 0 && main[outside] > 0,
+      `${where}: the main half is not square at its inline end only`,
+    );
+    assert.ok(
+      menu[outside] === 0 && menu[meet] > 0,
+      `${where}: the menu half is not square at its inline start only`,
+    );
+    const divider = meet === "right" ? "borderRight" : "borderLeft";
+    const other = meet === "right" ? "borderLeft" : "borderRight";
+    assert.ok(
+      main[divider] >= main[other],
+      `${where}: the divider is not on the main half's inline end`,
+    );
+    checked += 1;
+  }
   await page.close();
 } finally {
   await browser.close();
 }
 console.log(
-  `${checked} direction cases passed on ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: mirror, back arrow, gallery arrow, gradient, flow and overlay corners, as built and lowered; Progress's fill`,
+  `${checked} direction cases passed on ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: mirror, back arrow, gallery arrow, gradient, flow and overlay corners, as built and lowered; Progress's fill; Switch's thumb; SplitButton's corners`,
 );

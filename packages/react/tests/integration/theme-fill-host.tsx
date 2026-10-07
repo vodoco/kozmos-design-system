@@ -12,6 +12,7 @@ import {
   Link,
   LocationPin,
   ManoeuvreCard,
+  MapControlButton,
   POIResultCard,
   RadioGroup,
   RadioGroupItem,
@@ -31,12 +32,23 @@ import { Bookmark, Plus } from "@kozmos-ds/icons";
 /* Decision 59 (Olcay, 2026-10-07): every prominent fill is theme 500 with
    the theme foreground, white, on it in both themes; text, borders and rings
    on a surface stay theme 600. scripts/check-theme-fill.mjs reads what each
-   part below computes, in a light and a dark root. */
+   part below computes, in a light and a dark root, at rest and hovered,
+   pressed and focused from the keyboard. */
 function Parts({ theme }: { theme: "light" | "dark" }) {
   const id = (part: string) => `${theme}-${part}`;
   return (
     <div style={{ display: "grid", gap: 16, padding: 16 }}>
       <Button data-testid={id("button")}>Go</Button>
+      <Button
+        data-testid={id("button-themed")}
+        emotion="themed"
+        variant="secondary"
+      >
+        Go
+      </Button>
+      <Button data-testid={id("button-danger")} emotion="danger">
+        Stop
+      </Button>
       <IconButton
         aria-label="Add"
         data-testid={id("icon-button")}
@@ -62,14 +74,40 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       <RadioGroup value="lift">
         <RadioGroupItem data-testid={id("radio")} label="Lift" value="lift" />
       </RadioGroup>
+      <MapControlButton
+        data-testid={id("map-control")}
+        emphasis="filled"
+        icon={<Plus />}
+        label="Follow"
+        pressed
+      />
       <div data-testid={id("chip")}>
         <Chip selected>Open now</Chip>
       </div>
+      <div data-testid={id("chip-remove")}>
+        <Chip onRemove={() => undefined} selected>
+          Open now
+        </Chip>
+      </div>
       <Tag data-testid={id("tag")}>New</Tag>
+      <Tag data-testid={id("tag-remove")} onRemove={() => undefined}>
+        New
+      </Tag>
       <Counter data-testid={id("counter")} tone="brand">
         4
       </Counter>
       <Badge data-testid={id("badge")}>Live</Badge>
+      <Badge counter={3} data-testid={id("badge-counter")} showCounter>
+        Live
+      </Badge>
+      <Badge
+        counter={3}
+        data-testid={id("badge-destructive-counter")}
+        showCounter
+        variant="destructive"
+      >
+        Closed
+      </Badge>
       <div data-testid={id("floors")}>
         <FloorSelector
           floors={[

@@ -19,7 +19,7 @@ import { Box, ThemeProvider } from "@kozmos-ds/react";
 export function BoxExample() {
   return (
     <ThemeProvider defaultTheme="light">
-      <Box className="p-4 bg-primary text-primary-foreground rounded-control">
+      <Box className="p-4 bg-theme-fill text-theme-fill-foreground rounded-control">
         This is a Box
       </Box>
     </ThemeProvider>

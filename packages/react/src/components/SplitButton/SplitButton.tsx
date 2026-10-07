@@ -43,7 +43,7 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
       >
         <WithoutGenericClick>
           <Button
-            className="rounded-r-none border-r border-theme-fill-foreground/20 focus:z-10"
+            className="rounded-e-none border-e border-theme-fill-foreground/20 focus:z-10"
             onClick={(e) => {
               trackEvent("SplitButton", "split_button_main_clicked");
               onMainClick?.(e);
@@ -58,7 +58,7 @@ const SplitButton = React.forwardRef<HTMLDivElement, SplitButtonProps>(
         <Menu>
           <MenuTrigger asChild>
             <Button
-              className="rounded-l-none px-2 focus:z-10"
+              className="rounded-s-none px-2 focus:z-10"
               variant={variant}
               size={size}
               disabled={disabled}
