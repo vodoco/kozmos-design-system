@@ -765,6 +765,7 @@
         "SDKNumberedFeatured",
         "SDKAlternative",
         "LegacyMigration",
+        "SummaryLanguages",
         "StaffLanguageNotListed",
         "FeaturedSelected",
         "SelectedWithActions",

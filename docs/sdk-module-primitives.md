@@ -164,7 +164,7 @@ same radius.
 | Exit building                 | Button primitives and host building state.                                                                                                                        | Product-owned exit behavior, label, visibility and state reset/retention policy.                                                                                         |
 | POI details                   | POIDetailPanel/Content, taxonomy-driven property handling, media, tags and MetaStrip.                                                                             | Real-data/empty-state and whole-screen validation. Internal attribute sections are not proof of a public generic AttributeSection.                                       |
 | Opening hours / handles       | OpeningHours Storybook composition; handles inside existing sheet/shell components.                                                                               | Decide if a public reusable part is actually needed before extracting another component.                                                                                 |
-| Wayfinding                    | RouteProgressRail, Itinerary, DirectionStep and ManoeuvreCard.                                                                                                    | Structured instruction parts/languages, step metrics and endpoint actions remain product gaps.                                                                           |
+| Wayfinding                    | RouteProgressRail, Itinerary, DirectionStep, ManoeuvreCard; instruction parts and languages (GAP-093/096, 0.8.0); step distance and duration (GAP-097, 0.9.0).    | Endpoint Change actions (GAP-104) are fixed on main, not yet released. SDK data adoption and physical speech acceptance remain.                                          |
 | Search / browse               | SearchBar, CategoryTile, BrowseCategoriesPanel and POI result components.                                                                                         | Result footer, scope/original-language/area contracts and active product gaps remain; existing components do not close every filter/carousel need.                       |
 | Design/agent consumption      | Generated component API cards, examples, Code Connect and checks exist.                                                                                           | External artifact freshness, public documentation accuracy and actual native/Figma parity must be proven separately.                                                     |
 
@@ -399,7 +399,9 @@ real SDK wiring and device acceptance remain integration work, not claimed compl
 Acceptance:
 
 - Non-white-label mode shows the approved Pointr logo, with credits legible beneath or beside
-  it as the layout allows. Do not stretch, redraw or generate a substitute logo.
+  it as the layout allows. Where the shell has no room for the whole attribution, the logo gives
+  way first and comes back once it fits, and the credits keep their full height (decision 58,
+  approved by the owner on 2026-10-07). Do not stretch, redraw, clip or generate a substitute logo.
 - White-label mode can suppress/replace branding only according to approved configuration.
   It must **not automatically suppress provider/data credits**. Obtain the owner's approved
   policy rather than interpreting screenshot text as licensing advice.

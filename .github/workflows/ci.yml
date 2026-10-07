@@ -173,6 +173,11 @@ jobs:
       - name: Verify Elevation Parity
         run: pnpm tokens:elevation:check
 
+      # Never in CI until 2026-10-07, so it failed unseen from #193 on: the
+      # ManoeuvreCard reaches the role through the shared guidance surface.
+      - name: Verify Glass Parity
+        run: pnpm tokens:glass:check
+
       # A ratchet over a known backlog rather than a pass mark. Every other
       # parity check verifies a named list of consumers, which can only confirm
       # what someone already looked at — elevation passed for two days while 44
