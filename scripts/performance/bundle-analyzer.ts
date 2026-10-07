@@ -39,7 +39,7 @@ import { gzipSync } from "zlib";
 // export was 7.31 KB, Button 1.29 KB and CSS 29.83 KB. Only the total-library
 // allowance changes; the per-export, Button, CSS and module-count guards stay.
 //
-// Olcay approved 88 KB on 2026-10-06. 0.9.0 measured 79.52 KB here and 79.86 KB on CI against 80
+// Olcay approved 88 KB on 2026-10-06 (decision 56). 0.9.0 measured 79.52 KB here and 79.86 KB on CI against 80
 // (CI now reads about 0.33 KB more than a Mac). The growth is features: on CI, 0.7.0 measured
 // 74.33, 0.8.0 74.81, 0.8.1 75.12 and 0.9.0 79.86, the last adding the navigation parts. The only
 // lossless trims found, taken with this raise, came to 0.31 KB: the Pointr logo's data URL is
