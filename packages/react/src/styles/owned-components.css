@@ -151,6 +151,12 @@
     opacity: 0.5;
     cursor: default;
   }
+  /* RouteSummary's destination and its location line break a long word
+     rather than widen the page at 200% text. Owned, so it holds without
+     @scope, where the actions below it already hold. */
+  .kozmos-route-summary-destination {
+    overflow-wrap: break-word;
+  }
   .kozmos-map-attribution {
     font-size: calc(var(--primitives-typography-font-size-50) * 1rem / 16);
     line-height: 1.2;

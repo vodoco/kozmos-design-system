@@ -99,7 +99,7 @@ const RouteSummaryNavigation = React.forwardRef<
     const heading = (
       <h2
         className={cn(
-          "m-0 break-words text-xl font-semibold leading-tight text-foreground",
+          "kozmos-route-summary-destination m-0 text-xl font-semibold leading-tight text-foreground",
           !locationText && "min-w-0 flex-1 basis-40",
         )}
       >
@@ -127,7 +127,7 @@ const RouteSummaryNavigation = React.forwardRef<
             <div className="min-w-0 flex-1 basis-40">
               {heading}
               {/* Muted, and on glass the foreground colour (decision 48). */}
-              <p className="kozmos-muted-text m-0 break-words text-sm">
+              <p className="kozmos-route-summary-destination kozmos-muted-text m-0 text-sm">
                 {locationText}
               </p>
             </div>
