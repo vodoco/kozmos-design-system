@@ -61,6 +61,8 @@
     "icons:pointr:build": "node scripts/build-pointr-icons.mjs",
     "icons:navigation:generate": "node scripts/generate-navigation-glyphs.mjs",
     "icons:navigation:check": "node --test scripts/ci/navigation-glyphs.test.mjs",
+    "icons:compose:generate": "node scripts/generate-compose-icons.mjs",
+    "icons:compose:check": "node scripts/generate-compose-icons.mjs --check",
     "figma:plugin:check": "node scripts/check-figma-plugin-compat.mjs",
     "figma:manifest": "node scripts/figma-build-manifest.mjs",
     "figma:manifest:check": "node scripts/figma-build-manifest.mjs --check",
