@@ -2,9 +2,9 @@
 
 Kozmos is consumed from this repository's `packages/android` source as an Android library module in the `com.kozmos` namespace. It is not a published Maven/registry release. Pin a reviewed repository commit when adopting these changes; the version headings below follow the web release plan, not a separate native package publication.
 
-## Unreleased
+## Unreleased — repository source
 
-Recorded as changes land on `main`, ahead of the next release entry. This is not a complete list of the native changes since 0.6.0.
+Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is tagged.
 
 ### Fixed
 
