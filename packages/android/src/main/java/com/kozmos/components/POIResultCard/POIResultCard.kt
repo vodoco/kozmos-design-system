@@ -72,7 +72,6 @@ import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.utils.KozmosSpokenPhrase
 import com.kozmos.utils.kozmosLocalizedText
 import com.kozmos.utils.kozmosSpokenText
-import com.kozmos.utils.speaksAnotherLanguage
 
 /** Neutral SDK result presentation is the default; Legacy supports staged migration. */
 enum class KozmosPOIResultPresentationStyle { Legacy, Sdk }
@@ -205,18 +204,18 @@ fun KozmosPOIResultCard(
     ).filter { it.text.isNotEmpty() }
     val languageDisclosure = languageNotListedLabel.takeIf { result.languageNotListed == true }
     val phrases = basePhrases + listOfNotNull(languageDisclosure?.let(::KozmosSpokenPhrase))
-    val accessibilityDescription = phrases.joinToString(", ") { it.text }
-    // A description is a plain string, and TalkBack would say all of it in
-    // the interface's voice. With a language in it, the row gives TalkBack
-    // the same words as text instead, which keeps each phrase's LocaleSpan:
-    // what Itinerary's steps and ManoeuvreCard do for an instruction.
-    val spokenText = if (phrases.speaksAnotherLanguage()) kozmosSpokenText(phrases) else null
+    // The row's words, given to TalkBack as its text in every row: a
+    // description is a plain string, said all in the interface's voice, while
+    // text keeps each tagged phrase's LocaleSpan (what Itinerary's steps and
+    // ManoeuvreCard do for an instruction). One property whether or not a
+    // phrase is tagged, so a product finds a row the same way for every
+    // result; untagged, it is plain text.
+    val spokenText = kozmosSpokenText(phrases)
     // The row says the whole result in its own words, so the texts drawn
-    // inside it are left out of semantics. Compose hands a merging row's
-    // description to TalkBack on a helper child ahead of the row's other
-    // children, and TalkBack reads every one of them: a drawn text left in
-    // would be heard a second time, after the description or after the
-    // product's selection label. The logo keeps its alt text, as the web's
+    // inside it are left out of semantics. TalkBack reads a row's children
+    // after the row's own words, every one of them: a drawn text left in
+    // would be heard a second time, after the result or after the product's
+    // selection label. The logo keeps its alt text, as the web's
     // button names itself from the logo too; the row keeps its click, state
     // and selection. Each is cleared around its text, not on it, so the
     // unmerged tree still holds every word the card draws.
@@ -243,7 +242,7 @@ fun KozmosPOIResultCard(
             .fillMaxWidth()
             .hoverable(interaction, enabled = sdk && available)
             .semantics {
-                if (spokenText != null) text = spokenText else contentDescription = accessibilityDescription
+                text = spokenText
                 selected = result.selected
             },
         enabled = available,

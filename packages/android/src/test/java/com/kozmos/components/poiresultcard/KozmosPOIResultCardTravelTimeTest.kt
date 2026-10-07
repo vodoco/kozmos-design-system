@@ -68,8 +68,9 @@ class KozmosPOIResultCardTravelTimeTest {
     /** The texts the card lays out, and the name TalkBack is given for it. */
     private fun read(content: @Composable () -> Unit): Pair<List<String>, String> {
         val semantics = paparazzi.readSemantics(content)
-        val texts = semantics.unmerged.flatMap { it.texts }
-        val name = semantics.merged.mapNotNull { it.description }.first { "Gate 12" in it }
+        // The row's own text is what it says, not what it draws.
+        val texts = semantics.unmerged.filter { it.click == null }.flatMap { it.texts }
+        val name = semantics.merged.mapNotNull { it.words }.first { "Gate 12" in it }
         return texts to name
     }
 

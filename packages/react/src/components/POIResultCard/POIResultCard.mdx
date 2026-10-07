@@ -64,9 +64,10 @@ grouped rows keep both tags.
 
 SwiftUI and Compose draw the summary as the web does, muted and two lines at most, and read
 it after the location. When either tag is set, VoiceOver hears the select row through a UIKit
-element whose label carries each tagged range's speech language, and TalkBack is given the
-row's words as text with a `LocaleSpan` over each tagged range: the same words, state and
-action as without tags, each phrase in its own voice. A `selectionLabel` replaces the whole
+element whose label carries each tagged range's speech language: the same words, state and
+action as without tags, each phrase in its own voice. TalkBack is given the row's words as its
+text, tagged or not, never as a description, with a `LocaleSpan` over each tagged range; the
+texts drawn inside the row are left out, so each phrase is heard once. A `selectionLabel` replaces the whole
 name, so the host words it in one language. Physical VoiceOver and TalkBack review remains
 separate.
 

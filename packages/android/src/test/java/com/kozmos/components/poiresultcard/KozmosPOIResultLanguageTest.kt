@@ -65,21 +65,21 @@ class KozmosPOIResultLanguageTest {
                 KozmosPOIResultCard(poi, result(nameLanguage = null, summaryLanguage = null), onSelect = {})
             }
         }
-        plain.named(sentence)
+        plain.saying(sentence)
         // A selection label still replaces the whole name, summary and all.
         val named = paparazzi.readSemantics {
             MaterialTheme {
                 KozmosPOIResultCard(poi, result(), onSelect = {}, selectionLabel = "Choose the lounge")
             }
         }
-        named.named("Choose the lounge")
+        named.saying("Choose the lounge")
         // An empty summary is no summary: no empty phrase, no stray comma.
         val empty = paparazzi.readSemantics {
             MaterialTheme {
                 KozmosPOIResultCard(poi, result(summary = "", nameLanguage = null, summaryLanguage = null), onSelect = {})
             }
         }
-        empty.named("空港ラウンジ, Lounge, Level 2, Open")
+        empty.saying("空港ラウンジ, Lounge, Level 2, Open")
     }
 
     /** What TalkBack is handed for the node that says [sentence]: its text, description and click. */
@@ -161,9 +161,10 @@ class KozmosPOIResultLanguageTest {
     }
 
     @Test fun theLanguageNodeIsTheRowTalkBackAlreadyKnew() {
-        // With a tag, the row hands TalkBack its words as text in place of a
-        // description. Same words, same state (selected, enabled, clickable),
-        // so nothing but the voice changes.
+        // Tagged or not, the row hands TalkBack its words as text, never as a
+        // description: one property, so a product's test finds every result
+        // the same way. Same words, same state (selected, enabled,
+        // clickable), so nothing but the voice changes.
         for ((name, selected, available) in listOf(
             Triple("at rest", false, null), Triple("selected", true, null), Triple("unavailable", false, false)
         )) {
@@ -171,10 +172,12 @@ class KozmosPOIResultLanguageTest {
                 MaterialTheme {
                     KozmosPOIResultCard(poi, result(selected, available, nameLanguage = null, summaryLanguage = null), onSelect = {})
                 }
-            }.named(sentence)
+            }.merged.single { sentence in it.texts }
             val tagged = paparazzi.readSemantics {
                 MaterialTheme { KozmosPOIResultCard(poi, result(selected, available), onSelect = {}) }
             }.merged.single { sentence in it.texts }
+            assertEquals(name, listOf(sentence), plain.texts)
+            assertNull(name, plain.description)
             assertEquals(name, listOf(sentence), tagged.texts)
             assertNull(name, tagged.description)
             assertEquals(name, plain.selected, tagged.selected)
@@ -201,7 +204,7 @@ class KozmosPOIResultLanguageTest {
                     }
                 }
             }
-            return tree.merged.single { it.description?.startsWith("Pharmacy") == true }.bounds.height
+            return tree.merged.single { it.words?.startsWith("Pharmacy") == true }.bounds.height
         }
         val none = height(null)
         assertEquals("An empty summary draws nothing", none, height(""), 0.5f)

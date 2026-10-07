@@ -63,6 +63,9 @@ class KozmosPOIResultCardTalkBackTest {
         val row: List<String>,
         /** What the platform hands TalkBack for every other node in the unmerged tree. */
         val others: List<String>,
+        /** The row's own text and description, as the platform hands them. */
+        val text: String?,
+        val description: String?,
         /** The row's state, as the platform hands it to TalkBack. */
         val focusable: Boolean,
         /** What TalkBack says of the row's selection: "Selected" or "Not selected". */
@@ -106,6 +109,8 @@ class KozmosPOIResultCardTalkBackTest {
                     others = nodes.filter { it.id != rowId }
                         .mapNotNull { provider.createAccessibilityNodeInfo(it.id) }
                         .flatMap { listOfNotNull(it.text?.toString(), it.contentDescription?.toString()) },
+                    text = info.text?.toString(),
+                    description = info.contentDescription?.toString(),
                     focusable = info.isScreenReaderFocusable,
                     selection = info.stateDescription?.toString(),
                     enabled = info.isEnabled,
@@ -118,7 +123,7 @@ class KozmosPOIResultCardTalkBackTest {
         return checkNotNull(read) { "the card was never laid out" }
     }
 
-    private fun assertSaidOnce(case: String, sentence: String, heard: Heard) {
+    private fun assertSaidOnce(case: String, sentence: String, heard: Heard, drawn: List<String> = this.drawn) {
         assertEquals(case, listOf(sentence), heard.row)
         assertEquals(case, emptyList<String>(), heard.others.filter { said -> drawn.any { it in said } })
     }
@@ -181,5 +186,26 @@ class KozmosPOIResultCardTalkBackTest {
             )
         }
         assertSaidOnce("legacy", "Pharmacy, Health, Level 2 · Terminal B, Open, 3 min, Language not listed", legacy)
+    }
+
+    @Test fun aRowWithALanguageIsHeardOnceTooAndEveryRowSaysItAsText() {
+        // GAP-125: the name or the summary in a language other than the
+        // interface's. The row says the same words with each phrase's
+        // language, the drawn summary included, and no drawn text repeats a
+        // phrase, tagged or not. Both give TalkBack the words as text and no
+        // description, so a product finds every row the same way.
+        val summary = "La más tranquila de las tres salas."
+        val sentence = "Pharmacy, Health, Level 2 · Terminal B, $summary, Open, 3 min, Language not listed"
+        for ((case, nameLanguage, summaryLanguage) in listOf(
+            Triple("untagged", null, null), Triple("tagged", "en-GB", "es")
+        )) {
+            val tagged = result().copy(summary = summary, nameLanguage = nameLanguage, summaryLanguage = summaryLanguage)
+            val heard = heard { KozmosPOIResultCard(poi, tagged, onSelect = {}) }
+            assertSaidOnce(case, sentence, heard, drawn + summary)
+            assertEquals(case, sentence, heard.text)
+            assertEquals(case, null, heard.description)
+            val labelled = heard { KozmosPOIResultCard(poi, tagged, onSelect = {}, selectionLabel = "Choose the pharmacy") }
+            assertSaidOnce("$case, labelled", "Choose the pharmacy, Language not listed", labelled, drawn + summary)
+        }
     }
 }

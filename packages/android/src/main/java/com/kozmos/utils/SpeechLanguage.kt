@@ -31,6 +31,3 @@ internal fun kozmosSpokenText(phrases: List<KozmosSpokenPhrase>): AnnotatedStrin
         append(kozmosLocalizedText(phrase.text, phrase.lang))
     }
 }
-
-/** Whether any phrase is in a language other than the interface's. */
-internal fun List<KozmosSpokenPhrase>.speaksAnotherLanguage(): Boolean = any { !it.lang.isNullOrEmpty() }

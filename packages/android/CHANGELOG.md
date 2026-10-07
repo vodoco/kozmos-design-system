@@ -8,11 +8,15 @@ Recorded as changes land on `main`, ahead of the next release entry. This is not
 
 ### Fixed
 
-- **Result rows are heard once:** TalkBack read a `KozmosPOIResultCard` row's whole description and then every text drawn inside it again (name, category, level, availability, walk, the language disclosure and the unavailable reason), and with a `selectionLabel` it read the drawn texts after the product's label. The drawn texts are now left out of semantics, so the row says its description, or the product's label, once. The row keeps its click, enabled state and selection, and a logo keeps its alt text.
+- **Result rows are heard once:** TalkBack read a `KozmosPOIResultCard` row's whole description and then every text drawn inside it again (name, category, level, availability, walk, the language disclosure and the unavailable reason), and with a `selectionLabel` it read the drawn texts after the product's label. The drawn texts are now left out of semantics, so the row says its words, or the product's label, once. The row keeps its click, enabled state and selection, and a logo keeps its alt text.
+
+### Changed
+
+- **A result row's words are its text:** `KozmosPOIResultCard` gives TalkBack the row's words as its semantics text, never as a content description, whether or not a phrase carries a language (GAP-125). The words are the same; a tagged phrase keeps its `LocaleSpan`.
 
 ### Migration notes
 
-- A product UI test that finds a result row by one of its drawn words in the merged tree (`onNodeWithText("Pharmacy")`) no longer matches: find the row by its description (`onNodeWithContentDescription`, `substring = true` for one phrase), or pass `useUnmergedTree = true` to find the drawn text itself.
+- A product UI test that finds a result row with `onNodeWithContentDescription(...)` no longer matches: use `onNodeWithText(...)` with the same words, `substring = true` for one phrase. One that finds the row by a single drawn word in the merged tree, `onNodeWithText("Pharmacy")`, needs `substring = true`, or `useUnmergedTree = true` to find the drawn text itself.
 
 ## 0.6.0 — repository snapshot
 
