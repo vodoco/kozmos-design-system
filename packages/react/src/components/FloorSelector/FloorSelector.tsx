@@ -155,9 +155,10 @@ function ResultMarker({
       // on one axis, and CSS will not let the other stay visible beside it —
       // `overflow-x: auto` computes `overflow-y` to `auto` too, so a badge two
       // pixels proud of the button would be clipped there, or would raise a
-      // scrollbar.
+      // scrollbar. A prominent fill: the theme fill, with the theme
+      // foreground on it, the same in both themes (decision 59).
       className={cn(
-        "absolute end-0.5 min-w-4 rounded-pill bg-primary px-1 text-[10px] font-semibold leading-4 text-primary-foreground",
+        "absolute end-0.5 min-w-4 rounded-pill bg-theme-fill px-1 text-[10px] font-semibold leading-4 text-theme-fill-foreground",
         corner === "top" ? "top-0.5" : "bottom-0.5",
       )}
       data-floor-selector-result-count=""

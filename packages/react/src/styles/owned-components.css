@@ -396,8 +396,10 @@
     cursor: grab;
     outline: none;
   }
+  /* A focus ring on a surface is theme 600, as every other ring (decision
+     59); 500 read 3.13:1 on a dark sheet. */
   .kozmos-map-sheet-handle:focus-visible .kozmos-map-sheet-grip {
-    box-shadow: 0 0 0 2px var(--primitives-colors-theme-500);
+    box-shadow: 0 0 0 2px var(--primitives-colors-theme-600);
   }
   .kozmos-map-sheet-grip {
     display: block;
@@ -491,10 +493,16 @@
      than the line breaks rather than running out of the card. Only a
      product that asks for a limit, `instructionLines`, gets one: the
      ellipsis at that many lines. */
+  /* The theme appearance is the brand card, a prominent fill: the theme
+     fill, theme 500 in both themes, and on it the theme foreground, white in
+     both (decision 59). It was theme 600 under foreground/1000, black in the
+     dark. */
   .kozmos-manoeuvre-card[data-appearance="theme"] {
-    --kozmos-guidance-foreground: var(--primitives-colors-foreground-1000);
+    --kozmos-guidance-foreground: var(
+      --components-primary-buttons-themed-button-foreground-content-idle
+    );
     --kozmos-surface-muted-foreground: var(--kozmos-guidance-foreground);
-    background-color: var(--primitives-colors-theme-600);
+    background-color: var(--primitives-colors-theme-500);
     color: var(--kozmos-guidance-foreground);
   }
   .kozmos-guidance-text {
@@ -766,10 +774,15 @@
     border-color: var(--semantics-border-subtle);
     color: var(--primitives-colors-foreground-400);
   }
+  /* Selected, the number tab follows its pin (decision 55), a prominent
+     fill: the theme fill and the theme foreground, the same in both themes
+     (decision 59). */
   .kozmos-poi-result-tab[data-tab="number"][data-selected] {
-    background-color: var(--primitives-colors-theme-600);
-    border-color: var(--primitives-colors-theme-600);
-    color: var(--primitives-colors-foreground-1000);
+    background-color: var(--primitives-colors-theme-500);
+    border-color: var(--primitives-colors-theme-500);
+    color: var(
+      --components-primary-buttons-themed-button-foreground-content-idle
+    );
   }
   .kozmos-poi-result-tab[data-tab="badge"] {
     background-color: var(--primitives-colors-background-100);

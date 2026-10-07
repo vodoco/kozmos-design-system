@@ -402,8 +402,12 @@ for (const theme of ["light", "dark"]) {
           assert.equal(await card.getAttribute("data-appearance"), "theme");
           const palette = await card.evaluate((node) => {
             const probe = document.createElement("span");
-            probe.style.backgroundColor = "var(--primitives-colors-theme-600)";
-            probe.style.color = "var(--primitives-colors-foreground-1000)";
+            // Decision 59: the brand card is the theme fill, theme 500 in
+            // both themes, under the theme foreground, white in both.
+            probe.style.backgroundColor =
+              "var(--components-primary-buttons-themed-button-background-idle)";
+            probe.style.color =
+              "var(--components-primary-buttons-themed-button-foreground-content-idle)";
             node.append(probe);
             const expected = getComputedStyle(probe);
             const actual = getComputedStyle(node);

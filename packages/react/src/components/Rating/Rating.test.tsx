@@ -99,7 +99,14 @@ describe("Rating", () => {
       expect(options).toHaveLength(2);
       expect(options[0]).toHaveAttribute("aria-checked", "false");
       expect(options[1]).toHaveAttribute("aria-checked", "true");
-      expect(container.querySelectorAll(".border-ring")).toHaveLength(1);
+      // The chosen thumb is the theme's tint ringed in theme 600, as the
+      // natives draw it, not a fill (decision 59).
+      const chosen = container.querySelectorAll(".border-primary");
+      expect(chosen).toHaveLength(1);
+      expect(chosen[0]).toHaveClass(
+        "bg-[var(--primitives-colors-theme-0)]",
+        "text-primary",
+      );
     });
 
     it("ignores max, and names the two without saying stars", () => {
@@ -118,7 +125,7 @@ describe("Rating", () => {
           .getAllByRole("radio")
           .every((o) => o.getAttribute("aria-checked") === "false"),
       ).toBe(true);
-      expect(container.querySelectorAll(".border-ring")).toHaveLength(0);
+      expect(container.querySelectorAll(".border-primary")).toHaveLength(0);
     });
 
     it("does not preview on hover, because there is no scale to preview", () => {
@@ -126,7 +133,7 @@ describe("Rating", () => {
         <Rating onChange={vi.fn()} value={0} variant="thumbs" />,
       );
       fireEvent.mouseEnter(screen.getAllByRole("radio")[1]);
-      expect(container.querySelectorAll(".border-ring")).toHaveLength(0);
+      expect(container.querySelectorAll(".border-primary")).toHaveLength(0);
     });
 
     it("reads as a rating, not a scale, when read-only", () => {

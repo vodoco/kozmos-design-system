@@ -72,7 +72,7 @@ export const Bookmarks: Story = {
     label: "Bookmarks",
     count: 1,
     tint: {
-      accent: "var(--primitives-colors-theme-700)",
+      accent: "var(--primitives-colors-theme-600)",
       fill: "var(--components-primary-buttons-themed-button-background-idle)",
       onFill:
         "var(--components-primary-buttons-themed-button-foreground-content-idle)",

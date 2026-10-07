@@ -61,7 +61,9 @@ function selectedChipClasses(variant: ChipProps["variant"]) {
     return "border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90";
   }
 
-  return "border-primary bg-primary text-primary-foreground hover:bg-primary/90";
+  // A selected chip is a prominent fill: the theme fill and the theme
+  // foreground, the same in both themes (decision 59).
+  return "border-theme-fill bg-theme-fill text-theme-fill-foreground hover:bg-theme-fill/90";
 }
 
 function chipLabel(children: React.ReactNode) {

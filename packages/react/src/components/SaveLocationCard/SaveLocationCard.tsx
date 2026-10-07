@@ -56,8 +56,10 @@ const SaveLocationCard = React.forwardRef<
           <div
             className={cn(
               "w-12 h-12 rounded-pill flex items-center justify-center shrink-0 shadow-raised ring-1 ring-black/5 dark:ring-white/10",
+              // Saved, the disc is a prominent fill: the theme fill and the
+              // theme foreground, the same in both themes (decision 59).
               isSaved
-                ? "bg-primary text-primary-foreground"
+                ? "bg-theme-fill text-theme-fill-foreground"
                 : "bg-white dark:bg-black/50 text-foreground",
             )}
           >

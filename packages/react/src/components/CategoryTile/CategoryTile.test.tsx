@@ -55,10 +55,11 @@ describe("CategoryTile", () => {
     );
     const counter = screen.getByText("12");
     expect(counter).toHaveAttribute("data-slot", "counter");
-    // The counter: brand tone, the default 20 size, four beyond the square's
-    // visible top and right edges (five from inside its 1px border).
+    // The counter: brand tone (the theme fill, decision 59), the default 20
+    // size, four beyond the square's visible top and right edges (five from
+    // inside its 1px border).
     expect(counter).toHaveClass(
-      "bg-primary",
+      "bg-theme-fill",
       "h-5",
       "absolute",
       "-right-[5px]",

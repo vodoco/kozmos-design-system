@@ -33,8 +33,10 @@ const ToggleButton = React.forwardRef<
           // 100 — as SwiftUI's `HStack(spacing: spacing100)` and Compose's
           // spacer between the icon and the text already draw it, and as
           // `Button` does since GAP-56. This is a Radix Toggle styled on its
-          // own, so fixing `.kozmos-button` left it at zero.
-          "inline-flex items-center justify-center gap-2 rounded-control text-sm font-medium transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
+          // own, so fixing `.kozmos-button` left it at zero. On, it is a
+          // prominent fill: the theme fill and the theme foreground, the same
+          // in both themes (decision 59).
+          "inline-flex items-center justify-center gap-2 rounded-control text-sm font-medium transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-theme-fill data-[state=on]:text-theme-fill-foreground",
           variant === "outline" &&
             "border border-input bg-transparent shadow-raised hover:bg-accent hover:text-accent-foreground",
           size === "default" && "h-9 px-3",

@@ -20,8 +20,11 @@ const tagVariants = cva(
   {
     variants: {
       variant: {
+        // The theme fill and the theme foreground, the same in both themes
+        // (decision 59). Hovered, /90 of the fill: /80 over white read 3.92:1
+        // under its white text, /90 reads 4.71:1.
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "border-transparent bg-theme-fill text-theme-fill-foreground hover:bg-theme-fill/90",
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:

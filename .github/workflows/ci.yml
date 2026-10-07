@@ -321,6 +321,15 @@ jobs:
           ADAPTIVE_BROWSER=webkit pnpm test:config
           ADAPTIVE_BROWSER=firefox pnpm test:config
 
+      # Decision 59: every prominent fill computes theme 500 under the theme
+      # foreground, white, in a light and a dark root, and the theme on a
+      # surface stays 600 (scripts/check-theme-fill.mjs).
+      - name: Verify Theme Fills
+        run: |
+          pnpm test:theme-fill
+          ADAPTIVE_BROWSER=webkit pnpm test:theme-fill
+          ADAPTIVE_BROWSER=firefox pnpm test:theme-fill
+
       # Keep the original WebKit form regression and independently test the
       # migrated slice with every native @scope rule removed.
       - name: Verify Built Form Control Compatibility

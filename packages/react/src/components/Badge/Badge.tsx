@@ -8,8 +8,10 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
+        // The theme fill and the theme foreground, the same in both themes
+        // (decision 59).
         default:
-          "bg-primary text-[var(--primitives-colors-foreground-1000)] hover:bg-primary/90",
+          "bg-theme-fill text-theme-fill-foreground hover:bg-theme-fill/90",
         destructive:
           "bg-destructive text-[var(--primitives-colors-foreground-1000)] hover:bg-destructive/90",
         outline:
