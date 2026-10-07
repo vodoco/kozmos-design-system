@@ -76,6 +76,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 
 @Composable
 fun KozmosStepper(
@@ -100,10 +101,14 @@ val isCurrent = index == currentStep
                     modifier = Modifier
                         .size(KozmosDimensions.primitivesLayoutSizing400)
                         .clip(CircleShape)
-                        .background(if (isCompleted) KozmosColors.primitivesColorsTheme500 else Color.Transparent)
+                        .background(if (isCompleted) KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle else Color.Transparent)
                         .border(
                             width = KozmosDimensions.primitivesLayoutSpacing25,
-                            color = if (isCompleted || isCurrent) KozmosColors.primitivesColorsTheme500 else KozmosColors.primitivesColorsForeground300,
+                            color = when {
+                                isCompleted -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+                                isCurrent -> KozmosThemeTokens.primitivesColorsTheme600
+                                else -> KozmosColors.primitivesColorsForeground300
+                            },
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -112,14 +117,14 @@ val isCurrent = index == currentStep
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = KozmosColors.primitivesColorsBackground0,
+                            tint = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
                             modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing200)
                         )
                     } else {
                         Text(
                             text = (index + 1).toString(),
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (isCurrent) KozmosColors.primitivesColorsTheme500 else KozmosColors.primitivesColorsForeground500
+                            color = if (isCurrent) KozmosThemeTokens.primitivesColorsForeground0 else KozmosColors.primitivesColorsForeground500
                         )
                     }
                 }
@@ -136,7 +141,7 @@ val isCurrent = index == currentStep
                     modifier = Modifier
                         .weight(1f)
                         .height(KozmosDimensions.primitivesLayoutSpacing25)
-                        .background(if (index < currentStep) KozmosColors.primitivesColorsTheme500 else KozmosColors.primitivesColorsBackground300)
+                        .background(if (index < currentStep) KozmosThemeTokens.primitivesColorsTheme600 else KozmosColors.primitivesColorsBackground300)
                 )
             }
         }
