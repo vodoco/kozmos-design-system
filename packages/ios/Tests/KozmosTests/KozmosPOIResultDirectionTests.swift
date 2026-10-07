@@ -10,17 +10,19 @@ import XCTest
 /// lines start at the card's start. This proves SwiftUI's Text already does
 /// both, with no layout-direction override.
 ///
-/// The proof draws the card three ways. Unicode's isolates set a run's
-/// direction whatever the paragraph's is: inside a right-to-left isolate
-/// the words are drawn right to left, and the paragraph around it keeps the
-/// card's direction, so the lines start at the card's start. A card drawn
-/// with the plain words must match the isolate whose direction the words
-/// have, and not the other one: the second check shows the comparison can
-/// tell the two apart.
+/// The proof draws the card three ways. Each reference starts with the
+/// card's own direction mark (LRM or RLM), which fixes the paragraph's
+/// direction to the card's, so its lines start at the card's start, and
+/// then wraps the words in a Unicode isolate, which fixes the words' own
+/// direction inside it. A card drawn with the plain words must match the
+/// reference whose isolate has the words' direction, and not the other
+/// one: the second check shows the comparison can tell the two apart.
 final class KozmosPOIResultDirectionTests: XCTestCase {
   private let leftToRightIsolate = "\u{2066}"
   private let rightToLeftIsolate = "\u{2067}"
   private let popIsolate = "\u{2069}"
+  private let leftToRightMark = "\u{200E}"
+  private let rightToLeftMark = "\u{200F}"
 
   @MainActor private func pixels(
     name: String, summary: String, category: String, direction: LayoutDirection
@@ -37,14 +39,16 @@ final class KozmosPOIResultDirectionTests: XCTestCase {
     return try XCTUnwrap(image.dataProvider?.data) as Data
   }
 
-  /// The card drawn with [name] and [summary] as given, then each wrapped in
-  /// an isolate of each direction.
+  /// The card drawn with [name] and [summary] as given, then each in a
+  /// paragraph of the card's direction, wrapped in an isolate of each
+  /// direction.
   @MainActor private func drawn(
     name: String, summary: String, category: String, direction: LayoutDirection
   ) throws -> (plain: Data, leftToRight: Data, rightToLeft: Data) {
+    let mark = direction == .rightToLeft ? rightToLeftMark : leftToRightMark
     func wrapped(_ isolate: String) throws -> Data {
       try pixels(
-        name: isolate + name + popIsolate, summary: isolate + summary + popIsolate,
+        name: mark + isolate + name + popIsolate, summary: mark + isolate + summary + popIsolate,
         category: category, direction: direction)
     }
     return (
