@@ -26,27 +26,19 @@ const meta = {
   parameters: {
     layout: "centered",
   },
+  args: { label: "View", options },
+  render: (args) => (
+    <div className="w-80">
+      <Combobox {...args} />
+    </div>
+  ),
 } satisfies Meta<typeof Combobox>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  render: (args) => (
-    <div className="w-80">
-      <Combobox label="View" options={options} {...args} />
-    </div>
-  ),
-};
+export const Default: Story = {};
 
 export const WithValidation: Story = {
-  render: () => (
-    <div className="w-80">
-      <Combobox
-        label="Project"
-        options={options}
-        error="Choose a project before continuing."
-      />
-    </div>
-  ),
+  args: { label: "Project", error: "Choose a project before continuing." },
 };
