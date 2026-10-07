@@ -45,9 +45,12 @@ const Switch = React.forwardRef<
         >
           <SwitchPrimitive.Thumb
             className={cn(
+              "pointer-events-none block h-5 w-5 rounded-pill bg-background shadow-raised ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
               // The thumb on the checked track is a mark on the theme fill: the
-              // theme foreground, white in both themes (decision 59).
-              "pointer-events-none block h-5 w-5 rounded-pill bg-background shadow-raised ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=checked]:bg-theme-fill-foreground data-[state=unchecked]:translate-x-0",
+              // theme foreground, white in both themes (decision 59). On an
+              // error's track it stays the surface, as SwiftUI and Compose
+              // draw it.
+              !hasError && "data-[state=checked]:bg-theme-fill-foreground",
             )}
           />
         </SwitchPrimitive.Root>
