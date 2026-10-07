@@ -80,8 +80,11 @@ stays centered across the full map, independent of side panels. Equal reservatio
 the larger corner keep unequal controls from shifting it. If the centered slot is narrower
 than 128 units, only attribution moves above the controls, preserving the default logo's
 size. Tall side panels leave the footer band clear. Credits contribute camera padding independently of
-bottomControlsPadCamera. Oversized custom branding is vertically bounded to preserve the
-panel; a sheet reaching its attribution-imposed limit permits content scrolling.
+bottomControlsPadCamera. When the slot has less room than the whole attribution, as under an
+opened direction card above a sheet, the brand gives way first and the credits keep their full
+height: they are never clipped into a scroll region. The panel's sizing reserves the full
+height, but at most half of the band below the top bar, so oversized custom branding never
+takes the panel's place; a sheet reaching that limit permits content scrolling.
 Omitting the slot preserves existing shell behavior.
 
 This component remains usable standalone: MapOverlay does not register arbitrary children

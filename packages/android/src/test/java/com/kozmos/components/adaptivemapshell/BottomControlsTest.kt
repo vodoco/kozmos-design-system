@@ -3,6 +3,8 @@ package com.kozmos.components.adaptivemapshell
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -17,6 +19,8 @@ import com.kozmos.contracts.KozmosMapCollisionInsets
 import com.kozmos.contracts.KozmosMapReadiness
 import com.kozmos.components.readSettledSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.mapattribution.KozmosMapAttribution
+import com.kozmos.components.mapattribution.KozmosMapAttributionCredit
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -221,6 +225,43 @@ class BottomControlsTest {
         tree.named("Panel height").click!!.invoke()
         assertEquals(KozmosMapPanelDetent.Collapsed, requested)
     }
+    // GAP-135: an opened direction card and the sheet can leave the credits less room than
+    // they need. They are never clipped into a scroll region: the Pointr logo goes first and the
+    // credits keep their full height. A logo is whole or absent: the sheet gives way to a logo
+    // alone that fits half the band (420: the test device gives the shell 640 of its 720), and
+    // with less room than that it leaves (660).
+    @Test fun roomyAttributionKeepsItsLogo() = squeezedAttribution(200, hasCredits = true, logoShown = true)
+    @Test fun squeezedAttributionDropsTheLogoAndKeepsTheCredits() = squeezedAttribution(560, hasCredits = true, logoShown = false)
+    @Test fun squeezedLogoAloneStaysWholeWhenTheSheetGivesWay() = squeezedAttribution(420, hasCredits = false, logoShown = true)
+    @Test fun squeezedLogoAloneLeavesWithNoRoom() = squeezedAttribution(660, hasCredits = false, logoShown = false)
+    private fun squeezedAttribution(barHeight: Int, hasCredits: Boolean, logoShown: Boolean) {
+        val tree = paparazzi.readSettledSemantics {
+            MaterialTheme {
+                KozmosAdaptiveMapShell(
+                    modifier = Modifier.size(390.dp, 720.dp), map = {},
+                    topBar = { Box(Modifier.fillMaxWidth().height(barHeight.dp)) },
+                    attribution = {
+                        KozmosMapAttribution(credits = if (hasCredits)
+                            listOf(KozmosMapAttributionCredit("a", "Indoor contributors")) else emptyList())
+                    },
+                    panel = { Box(Modifier.size(300.dp, 120.dp)) },
+                    panelDetent = KozmosMapPanelDetent.Collapsed
+                )
+            }
+        }
+        val failures = mutableListOf<String>()
+        fun expect(ok: Boolean, message: String) { if (!ok) failures += message }
+        val logo = tree.merged.filter { it.description == "Pointr" }
+        expect(logo.isNotEmpty() == logoShown, "logo shown ${logo.isNotEmpty()}, expected $logoShown: ${tree.names()}")
+        for (node in logo) expect(node.frame.height - node.bounds.height < 1f, "the logo is cut, ${node.bounds} of ${node.frame}")
+        val credit = tree.unmerged.filter { "Indoor contributors" in it.texts }
+        expect(credit.isNotEmpty() == hasCredits, "credits shown ${credit.isNotEmpty()}, expected $hasCredits")
+        for (node in credit) expect(node.frame.height - node.bounds.height < 1f, "the credits are cut, ${node.bounds} of ${node.frame}")
+        val scrolls = tree.unmerged.filter { it.scrollBy != null && it.horizontalScroll == null }
+        expect(scrolls.isEmpty(), "a vertical scroll region at ${scrolls.map { it.frame }}")
+        assertTrue("bar $barHeight, credits $hasCredits:\n" + failures.joinToString("\n"), failures.isEmpty())
+    }
+
     private fun attributionLayout(direction: LayoutDirection, detent: KozmosMapPanelDetent) {
                 var density = 1f
                 var bottom = 0.0

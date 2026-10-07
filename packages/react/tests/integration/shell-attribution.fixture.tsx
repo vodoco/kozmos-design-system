@@ -19,6 +19,10 @@ interface Config {
   tallBrand?: boolean;
   corners?: boolean;
   panelPlacement?: "start" | "end";
+  /** A top bar this tall, as an opened direction card is. */
+  barHeight?: number;
+  /** The Pointr logo alone, with no third-party credits. */
+  brandOnly?: boolean;
 }
 const root = createRoot(document.getElementById("root")!);
 declare global {
@@ -40,6 +44,8 @@ window.renderAttributionShell = ({
   tallBrand = false,
   corners = true,
   panelPlacement = "end",
+  barHeight,
+  brandOnly = false,
 }) =>
   root.render(
     <ThemeProvider dir={dir}>
@@ -48,7 +54,15 @@ window.renderAttributionShell = ({
         data-testid="shell"
         panelPlacement={panelPlacement}
         map={<div />}
-        topBar={<Button>Search</Button>}
+        topBar={
+          barHeight ? (
+            <div data-testid="bar" style={{ height: barHeight }}>
+              Opened card
+            </div>
+          ) : (
+            <Button>Search</Button>
+          )
+        }
         controls={<Button>Info</Button>}
         controlsBottomStart={
           corners ? <Button data-testid="start">Language</Button> : undefined
@@ -68,15 +82,19 @@ window.renderAttributionShell = ({
                   <div style={{ height: 180 }}>Custom brand</div>
                 ) : undefined
               }
-              credits={[
-                {
-                  id: "a",
-                  label: long
-                    ? "Outdoor map contributors ".repeat(8)
-                    : "© Indoor and outdoor contributors",
-                  href: "https://example.com",
-                },
-              ]}
+              credits={
+                brandOnly
+                  ? []
+                  : [
+                      {
+                        id: "a",
+                        label: long
+                          ? "Outdoor map contributors ".repeat(8)
+                          : "© Indoor and outdoor contributors",
+                        href: "https://example.com",
+                      },
+                    ]
+              }
             />
           ) : undefined
         }
