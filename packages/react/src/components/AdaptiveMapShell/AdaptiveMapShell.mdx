@@ -334,7 +334,9 @@ Compose. Native locale remains device/app-owned; there is no native language but
 ## Browse and details in one panel
 
 Wide side panels hug short content and scroll long content within their available
-height. They reserve the bottom control row plus one 16-unit gap. Registered
+height. The assistant is the exception: `AICompanionPanel` fills the side panel's
+height, so its input stays at the bottom and only its thread scrolls (GAP-124).
+They reserve the bottom control row plus one 16-unit gap. Registered
 bottom-start/end controls stay at the map's outer edges, not beside the panel;
 placement mirrors in RTL. A corner popup uses the space below a short panel,
 or the clear map beside a long panel when the lower band cannot hold a usable menu.

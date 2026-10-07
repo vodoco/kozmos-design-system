@@ -176,6 +176,125 @@ data class KozmosPOIPresentation(
         get() = name.take(1).uppercase()
 }
 
+/**
+ * Optional, already-localized detail content for `KozmosPOIDetailPanel`: a
+ * section of chips under a heading. Its items take the service shape, so
+ * an optional `iconName` follows the same registry, and the label stays
+ * the authority when a platform cannot draw the icon.
+ */
+data class KozmosPOIDetailAttributeGroup(
+    val id: String,
+    val heading: String,
+    val items: List<KozmosPOIServicePresentation>
+)
+
+/** What a summary fact is about: it picks the fact's icon, not its words. */
+enum class KozmosPOIDetailSummaryKind(val value: String) {
+    Rating("rating"),
+    Price("price"),
+    Accessibility("accessibility"),
+    Dietary("dietary"),
+    Crowd("crowd"),
+    Property("property")
+}
+
+/** The colour a summary fact's value and icon take. */
+enum class KozmosPOIDetailTone(val value: String) {
+    Neutral("neutral"),
+    Success("success"),
+    Warning("warning"),
+    Danger("danger"),
+    Brand("brand")
+}
+
+/** One fact in the details card's summary row: "Rating", "4.7 / 5", "32 reviews". */
+data class KozmosPOIDetailSummary(
+    val id: String,
+    val kind: KozmosPOIDetailSummaryKind,
+    /** Spoken before the value; not drawn. */
+    val label: String,
+    val value: String,
+    val detail: String? = null,
+    /** Optional decorative asset, HTTPS only; it never replaces the value. */
+    val iconUrl: String? = null,
+    /** Use the asset alpha as a current-colour mask (monochrome assets only). */
+    val iconMonochrome: Boolean = false,
+    val tone: KozmosPOIDetailTone? = null,
+    /** 1 to 4, drawn as that many of four "$". The localized value stays what TalkBack says. */
+    val priceLevel: Int? = null
+)
+
+/** One row of the opening hours: "Monday–Friday", "8:00 am–12:30 pm". */
+data class KozmosPOIOpeningHoursRow(
+    val id: String,
+    val day: String,
+    val hours: String
+)
+
+/**
+ * Venue-local opening hours, already localized. The product works out
+ * whether the place is open, in the venue's time zone; the card only draws
+ * what it is given.
+ */
+data class KozmosPOIOpeningHoursPresentation(
+    /** The section's heading: "Opening hours". */
+    val label: String,
+    /** The disclosure's own line: "Open · Closes 12:30 pm". */
+    val summary: String,
+    /** With none, the summary and the note are drawn as one line, and nothing opens. */
+    val rows: List<KozmosPOIOpeningHoursRow>,
+    val note: String? = null
+)
+
+/** Plain text only: products adapt and sanitise rich API content first. */
+data class KozmosPOIDetailDescription(
+    val preview: String,
+    /** Longer than [preview], it adds Read more; null or the same, nothing opens. */
+    val full: String? = null
+)
+
+/**
+ * A product capability beyond [KozmosPOIAction]: booking or calling. Kept
+ * apart from it, as on the web, so offering one does not widen the core
+ * actions every caller labels.
+ */
+enum class KozmosPOISupplementaryAction(val value: String) {
+    Book("book"),
+    Call("call")
+}
+
+data class KozmosPOISupplementaryActionPresentation(
+    val action: KozmosPOISupplementaryAction,
+    /** Already localized. */
+    val label: String
+)
+
+/**
+ * Optional, already-localized detail content for `KozmosPOIDetailPanel`'s
+ * `details`, mirroring `POIDetailsPresentation` on the web and
+ * `KozmosPOIDetailsPresentation` on SwiftUI. Category-specific API fields
+ * stay in the product adapter, which decides the order, the icons, the tone
+ * and which facts to highlight. Every part may be left out; the default
+ * draws nothing.
+ */
+data class KozmosPOIDetailsPresentation(
+    /** Drawn on Go, the navigate action: the exact minutes, whatever its band. */
+    val travelEstimate: KozmosTravelEstimatePresentation? = null,
+    /** Highest priority first: the card shows the first three ([visibleSummary]). Never sort by label. */
+    val summary: List<KozmosPOIDetailSummary> = emptyList(),
+    /** In order; a group with no items is left out. */
+    val groups: List<KozmosPOIDetailAttributeGroup> = emptyList(),
+    val openingHours: KozmosPOIOpeningHoursPresentation? = null,
+    val description: KozmosPOIDetailDescription? = null,
+    val tags: List<KozmosPOIServicePresentation> = emptyList(),
+    /** Drawn after the POI's own actions, in the same strip. */
+    val supplementaryActions: List<KozmosPOISupplementaryActionPresentation> = emptyList()
+) {
+    /** The summary facts the card shows: one row of at most three, in the order given. */
+    val visibleSummary: List<KozmosPOIDetailSummary>
+        get() = summary.take(3)
+}
+
 data class KozmosTravelEstimatePresentation(
     val durationSeconds: Double,
     /** The exact time, already localized: "3 min". The details card shows it. */
@@ -330,10 +449,11 @@ data class KozmosPOIResultPresentation(
      */
     val nameLanguage: String? = null,
     /**
-     * A short generated line about this result, already in the device's
-     * language: why it answers the query, or what marks it out from the
-     * results around it. One sentence, not a description — POIDetailPanel
-     * owns the long form.
+     * A short generated line about this result: why it answers the query, or
+     * what marks it out from the results around it. One sentence, not a
+     * description — POIDetailPanel owns the long form. Written by the model in
+     * the query's language, which may not be the interface language: say which
+     * in [summaryLanguage].
      *
      * Optional because most results do not have one. A card that is given
      * nothing draws nothing.
@@ -349,7 +469,15 @@ data class KozmosPOIResultPresentation(
      * null is unknown; false hides the note, not a guarantee of staff availability.
      * Independent of query match, authored-name language and device/UI locale.
      */
-    val languageNotListed: Boolean? = null
+    val languageNotListed: Boolean? = null,
+    /**
+     * BCP 47 tag for the language [summary] is written in, when it differs
+     * from the interface language: a visitor who asks in Spanish on an English
+     * device reads a Spanish summary among English labels (MAP-474 US2-EC1).
+     * TalkBack needs the tag to say it in a Spanish voice (WCAG 3.1.2). Leave
+     * it out when the summary is in the interface language.
+     */
+    val summaryLanguage: String? = null
 ) {
     /** Mirrors the web rule: only an explicit `false` marks a result unavailable. */
     val isAvailable: Boolean

@@ -494,6 +494,36 @@ try {
           `${mode}: ${selector} radius`,
         );
       }
+      // A toned summary item draws its value and its mark in the tone's text
+      // colour, as SwiftUI and Compose do; the value's own foreground used to
+      // win, so the web drew every tone as plain foreground.
+      const tones = await poi
+        .locator(".kozmos-poi-summary-item")
+        .evaluateAll((items) =>
+          items.map((item) => {
+            const value = item.querySelector(".kozmos-meta-value");
+            const icon = item.querySelector(".kozmos-meta-icon");
+            return {
+              tone: item.getAttribute("data-tone"),
+              item: getComputedStyle(item).color,
+              value: getComputedStyle(value).color,
+              icon: icon ? getComputedStyle(icon).color : null,
+              foreground: getComputedStyle(item.closest("[data-kozmos-root]"))
+                .color,
+            };
+          }),
+        );
+      assert.deepEqual(
+        tones.map(({ tone }) => tone),
+        [null, "success", "danger"],
+        `${mode}: the summary's tones`,
+      );
+      for (const drawn of tones.filter(({ tone }) => tone)) {
+        const where = `${mode} ${drawn.tone}: ${JSON.stringify(drawn)}`;
+        assert.notEqual(drawn.item, drawn.foreground, `${where}: no tone colour`);
+        assert.equal(drawn.value, drawn.item, `${where}: the value is not toned`);
+        assert.equal(drawn.icon, drawn.item, `${where}: the mark is not toned`);
+      }
       for (const selector of [
         ".kozmos-poi-summary",
         ".kozmos-poi-hours",

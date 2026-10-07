@@ -11209,23 +11209,27 @@ for (const [file, symbols] of [
     );
 }
 
-// SwiftUI's Progress takes the theme's colour, as React's bg-primary and
-// Compose's theme 500 do: it drew SwiftUI's .blue, whatever the theme.
+// Progress draws React's colours on every platform: bg-primary, theme 600,
+// on bg-secondary, background 200. SwiftUI drew SwiftUI's .blue, then theme
+// 500; Compose theme 500 on background 300, under 3:1 against its track.
 {
-  const file = "packages/ios/Sources/Components/Progress/Progress.swift";
-  const content = read(file);
-  assertNotContains(
-    file,
-    content,
-    "tint: .blue",
-    "SwiftUI Progress drawing SwiftUI's blue instead of the theme's",
-  );
+  const tailwind = read("packages/react/tailwind.config.js");
   assertContains(
-    file,
-    content,
-    "LinearProgressViewStyle(tint: KozmosColors.primitivesColorsTheme500)",
-    "SwiftUI Progress drawing the theme's colour, as React and Compose do",
+    "packages/react/tailwind.config.js",
+    tailwind,
+    'primary: {\n          DEFAULT: "var(--primitives-colors-theme-600)"',
+    "React's primary is theme 600, the colour the native bars follow",
   );
+  const swift = "packages/ios/Sources/Components/Progress/Progress.swift";
+  const swiftContent = read(swift);
+  assertNotContains(swift, swiftContent, "tint: .blue", "SwiftUI Progress drawing SwiftUI's blue");
+  assertNotContains(swift, swiftContent, "primitivesColorsTheme500", "SwiftUI Progress drawing theme 500, not React's 600");
+  assertContains(swift, swiftContent, ".tint(KozmosColors.primitivesColorsTheme600)", "SwiftUI Progress drawing React's primary");
+  const kotlin = "packages/android/src/main/java/com/kozmos/components/Progress/Progress.kt";
+  const kotlinContent = read(kotlin);
+  const bar = kotlinContent.slice(kotlinContent.indexOf("fun KozmosProgress("));
+  assertContains(kotlin, bar, "color = KozmosThemeTokens.primitivesColorsTheme600", "Compose Progress drawing React's primary");
+  assertContains(kotlin, bar, "trackColor = KozmosThemeTokens.primitivesColorsBackground200", "Compose Progress drawing React's track");
 }
 
 // Every Core set the plugin can update must appear in CORE_UPDATE_SEQUENCE.
@@ -11327,6 +11331,174 @@ for (const [file, symbols] of [
       "figma/foundations-importer/code.js: the completion stamp is no longer a key distinct from build",
     );
   }
+}
+
+// RouteSummary's actions (GAP-110) and its route preview (GAP-111): the slot
+// on all three platforms, after the progress, in the owned equal-columns
+// recipe; End optional in the navigation layout only; the place's line.
+{
+  const reactPath =
+    "packages/react/src/components/RouteSummary/RouteSummary.tsx";
+  const iosPath =
+    "packages/ios/Sources/Components/RouteSummary/RouteSummary.swift";
+  const androidPath =
+    "packages/android/src/main/java/com/kozmos/components/RouteSummary/RouteSummary.kt";
+  const cssPath = "packages/react/src/styles/owned-components.css";
+  const mdxPath = "packages/react/src/components/RouteSummary/RouteSummary.mdx";
+  const [react, ios, android, css, mdx] = [
+    reactPath,
+    iosPath,
+    androidPath,
+    cssPath,
+    mdxPath,
+  ].map(read);
+  assertContains(
+    reactPath,
+    react,
+    "actions?: React.ReactNode;",
+    "React RouteSummary navigation actions slot",
+  );
+  assertContains(
+    reactPath,
+    react,
+    '<div className="kozmos-route-summary-actions">{actions}</div>',
+    "React RouteSummary actions in the owned recipe, with no utilities",
+  );
+  assertOrder(
+    reactPath,
+    react,
+    "{progress}",
+    'className="kozmos-route-summary-actions"',
+    "React RouteSummary actions after the progress",
+  );
+  assertContains(
+    reactPath,
+    react,
+    /export interface RouteSummaryEstimateProps[\s\S]*?onEndRoute: \(\) => void;[\s\S]*?export interface RouteSummaryNavigationProps[\s\S]*?locationText\?: string;[\s\S]*?onEndRoute\?: \(\) => void;/,
+    "React RouteSummary End required for the estimate, optional for navigation, with locationText",
+  );
+  assertContains(
+    reactPath,
+    react,
+    "{onEndRoute && (",
+    "React RouteSummary draws End only when onEndRoute is passed",
+  );
+  for (const rule of [
+    ".kozmos-route-summary-actions {",
+    "grid-auto-columns: minmax(0, 1fr);",
+    "grid-auto-flow: column;",
+    ".kozmos-route-summary-actions > .kozmos-button {",
+    "min-height: 2.75rem;",
+    '.kozmos-route-summary-actions > .kozmos-button[aria-disabled="true"] {',
+  ])
+    assertContains(
+      cssPath,
+      css,
+      rule,
+      `owned RouteSummary actions recipe: ${rule}`,
+    );
+  assertContains(
+    iosPath,
+    ios,
+    "@ViewBuilder actions: () -> Actions = { EmptyView() }",
+    "iOS RouteSummary actions builder, nothing by default",
+  );
+  assertOrder(
+    iosPath,
+    ios,
+    "@ViewBuilder progress:",
+    "@ViewBuilder actions:",
+    "iOS RouteSummary actions after the trailing progress",
+  );
+  assertContains(
+    iosPath,
+    ios,
+    "onEndRoute: (() -> Void)? = nil,",
+    "iOS RouteSummary navigation End is optional",
+  );
+  assertContains(
+    iosPath,
+    ios,
+    "locationText: String? = nil,",
+    "iOS RouteSummary locationText",
+  );
+  assertContains(
+    iosPath,
+    ios,
+    "KozmosEqualColumnsLayout(spacing:",
+    "iOS RouteSummary actions in the equal-columns layout",
+  );
+  assertContains(
+    androidPath,
+    android,
+    "actions: (@Composable () -> Unit)? = null,\n    progress: (@Composable () -> Unit)? = null\n) {",
+    "Android RouteSummary actions just before the trailing progress",
+  );
+  assertContains(
+    androidPath,
+    android,
+    "onEndRoute: (() -> Unit)? = null,",
+    "Android RouteSummary navigation End is optional",
+  );
+  assertContains(
+    androidPath,
+    android,
+    "locationText: String? = null,",
+    "Android RouteSummary locationText",
+  );
+  assertContains(
+    androidPath,
+    android,
+    "KozmosEqualColumns(KozmosDimensions.primitivesLayoutSpacing100",
+    "Android RouteSummary actions in the equal-columns layout",
+  );
+  assertContains(
+    androidPath,
+    android,
+    "progress = progress)",
+    "Android RouteSummary original overload names the progress it delegates",
+  );
+  // The estimate layout's words, as React names them, on SwiftUI and
+  // Compose; and Compose's End in Material's own 48dp target.
+  for (const [filePath, content, patterns] of [
+    [
+      iosPath,
+      ios,
+      [
+        'endRouteLabel: String = "End route",',
+        'startNavigationLabel: String = "Start Navigation",',
+        ".accessibilityLabel(endRouteLabel)",
+        "KozmosButton(startNavigationLabel,",
+      ],
+    ],
+    [
+      androidPath,
+      android,
+      [
+        'endRouteLabel: String = "End route",',
+        'startNavigationLabel: String = "Start Navigation",',
+        "modifier = Modifier.semantics { contentDescription = endRouteLabel }",
+        "Text(startNavigationLabel)",
+      ],
+    ],
+  ])
+    for (const pattern of patterns)
+      assertContains(
+        filePath,
+        content,
+        pattern,
+        `RouteSummary estimate labels: ${pattern}`,
+      );
+  for (const [pattern, label] of [
+    ['type="button"', "the actions are type=button"],
+    ["aria-disabled={first || undefined}", "the ends are aria-disabled"],
+    ["<NavigationAnnouncer", "the host announces the new step"],
+    ["} actions: {", "the SwiftUI actions builder"],
+    ["progress: { EmptyView() },", "the SwiftUI preview's empty progress"],
+    ["actions = {", "the Compose actions slot"],
+    ["locationText", "the preview's location line"],
+  ])
+    assertContains(mdxPath, mdx, pattern, `RouteSummary docs: ${label}`);
 }
 
 console.log("Component contract parity ok");

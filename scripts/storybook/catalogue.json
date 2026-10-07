@@ -355,7 +355,7 @@
       "id": "components-emptystate",
       "title": "Core/Feedback/EmptyState",
       "component": "EmptyState",
-      "exports": ["Default", "Compact"]
+      "exports": ["Default", "Compact", "DownloadProgress"]
     },
     {
       "file": "packages/react/src/components/FeedbackCard/FeedbackCard.stories.tsx",
@@ -444,7 +444,13 @@
       "id": "map-itinerary",
       "title": "SDK/Navigation/Itinerary",
       "component": "Itinerary",
-      "exports": ["Default", "LongEndpoints", "StepMetrics", "NoCurrentStep"]
+      "exports": [
+        "Default",
+        "LongEndpoints",
+        "StepMetrics",
+        "NoCurrentStep",
+        "WithEndpointEdit"
+      ]
     },
     {
       "file": "packages/react/src/components/Label/Label.stories.tsx",
@@ -913,7 +919,10 @@
         "Preview",
         "Navigation_",
         "Hosted",
-        "HostedWithImage"
+        "HostedWithImage",
+        "NavigationSteps",
+        "HostedSteps",
+        "RoutePreview"
       ]
     },
     {

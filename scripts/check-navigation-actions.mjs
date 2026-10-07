@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import {
   buildReactFixture,
   launchFixtureBrowser,
@@ -57,6 +58,268 @@ try {
         );
         await page.close();
       }
+
+  // RouteSummary's actions (GAP-110, GAP-111): the host's two Buttons in the
+  // slot's owned recipe. Run with the stylesheet as built and with its @scope
+  // rules stripped, as a browser without @scope reads it: the recipe is the
+  // slot's promise, so it must hold with the utility layer gone.
+  const postcss = createRequire(`${process.cwd()}/packages/react/package.json`)(
+    "postcss",
+  );
+  const unscoped = postcss.parse(fixture.css);
+  unscoped.walkAtRules("scope", (rule) => rule.remove());
+  for (const [mode, css] of [
+    ["full", fixture.css],
+    ["without-scope", unscoped.toString()],
+  ])
+    for (const action of ["summary-steps", "summary-preview"])
+      for (const direction of ["ltr", "rtl"])
+        for (const theme of ["light", "dark"]) {
+          const label = `${action} ${mode} ${direction} ${theme}`;
+          const page = await browser.newPage({
+            viewport: { width: 320, height: 900 },
+          });
+          await page.setContent(
+            `<!doctype html><html dir="${direction}"><head></head><body style="margin:16px"><div id="root" data-kozmos-root class="${theme}"></div></body></html>`,
+          );
+          await page.addStyleTag({ content: css });
+          await page.evaluate((value) => {
+            window.navigationAction = value;
+          }, action);
+          await page.addScriptTag({ content: fixture.code });
+          const row = page.locator(".kozmos-route-summary-actions");
+          await row.waitFor();
+          const actions = row.getByRole("button");
+          assert.equal(await actions.count(), 2, `${label}: two actions`);
+          if (action === "summary-preview")
+            assert.equal(
+              await page.getByRole("button").count(),
+              2,
+              `${label}: the preview draws no End`,
+            );
+          for (const fontSize of ["100%", "200%"]) {
+            await page.evaluate((value) => {
+              document.documentElement.style.fontSize = value;
+            }, fontSize);
+            await settleLayout(page);
+            const drawn = await row.evaluate((node) => ({
+              page: document.documentElement.scrollWidth,
+              viewport: innerWidth,
+              row: node.getBoundingClientRect().width,
+              // The destination and its location line: one long word each,
+              // broken by the owned rule, with or without @scope.
+              destination: Array.from(
+                document.querySelectorAll(".kozmos-route-summary-destination"),
+                (line) => ({
+                  wrap: getComputedStyle(line).overflowWrap,
+                  scrollWidth: line.scrollWidth,
+                  clientWidth: line.clientWidth,
+                }),
+              ),
+              actions: Array.from(node.children, (child) => {
+                const box = child.getBoundingClientRect();
+                return {
+                  left: box.left,
+                  width: box.width,
+                  height: box.height,
+                  scrollWidth: child.scrollWidth,
+                  clientWidth: child.clientWidth,
+                  opacity: getComputedStyle(child).opacity,
+                  disabled: child.getAttribute("aria-disabled"),
+                };
+              }),
+            }));
+            const where = `${label} ${fontSize}: ${JSON.stringify(drawn)}`;
+            const [first, second] = drawn.actions;
+            assert.ok(drawn.page <= drawn.viewport + 1, `${where}: overflow`);
+            assert.equal(
+              drawn.destination.length,
+              action === "summary-preview" ? 2 : 1,
+              `${where}: the destination lines`,
+            );
+            for (const line of drawn.destination) {
+              assert.ok(
+                line.wrap === "break-word" || line.wrap === "anywhere",
+                `${where}: the destination does not break a long word`,
+              );
+              assert.ok(
+                line.scrollWidth <= line.clientWidth + 1,
+                `${where}: the destination overflows its line`,
+              );
+            }
+            for (const one of drawn.actions) {
+              assert.ok(one.height >= 44 - 0.5, `${where}: under 44px`);
+              assert.ok(
+                one.scrollWidth <= one.clientWidth + 1,
+                `${where}: a label overflows its button`,
+              );
+              // aria-disabled reads unavailable, at the disabled button's 50%.
+              assert.equal(
+                one.opacity,
+                one.disabled === "true" ? "0.5" : "1",
+                `${where}: opacity`,
+              );
+            }
+            assert.ok(
+              Math.abs(first.width - second.width) <= 1,
+              `${where}: unequal columns`,
+            );
+            // A label that wraps grows its button, and the row with it.
+            assert.ok(
+              Math.abs(first.height - second.height) <= 1,
+              `${where}: the actions differ in height`,
+            );
+            assert.ok(
+              first.width + second.width > drawn.row * 0.9,
+              `${where}: the actions do not fill the row`,
+            );
+            // Reading order: the first action at the inline start.
+            assert.ok(
+              direction === "rtl"
+                ? first.left > second.left
+                : first.left < second.left,
+              `${where}: reading order`,
+            );
+          }
+          if (action === "summary-steps") {
+            // Previous from step 2 reaches step 1 and becomes unavailable:
+            // the host's guarded aria-disabled keeps focus where it was.
+            const previous = actions.first();
+            await previous.focus();
+            await page.keyboard.press("Enter");
+            await settleLayout(page);
+            assert.equal(
+              await previous.getAttribute("aria-disabled"),
+              "true",
+              `${label}: Previous at the first step`,
+            );
+            assert.ok(
+              await previous.evaluate(
+                (node) => document.activeElement === node,
+              ),
+              `${label}: Previous lost focus at the first step`,
+            );
+            assert.deepEqual(
+              await previous.evaluate((node) => {
+                const style = getComputedStyle(node);
+                return [style.opacity, style.cursor];
+              }),
+              ["0.5", "default"],
+              `${label}: an aria-disabled action does not read unavailable`,
+            );
+            await page.keyboard.press("Enter");
+            // Playwright waits for an aria-disabled control to be enabled; a
+            // pointer press still reaches it, and the guard must refuse it.
+            await previous.click({ force: true });
+            assert.equal(
+              await page.evaluate(() => window.navigationStep),
+              0,
+              `${label}: an unavailable Previous still moved`,
+            );
+            await actions.last().click();
+            assert.equal(
+              await page.evaluate(() => window.navigationStep),
+              1,
+              `${label}: Next did not move`,
+            );
+          } else {
+            await actions.first().click();
+            await actions.last().click();
+            assert.equal(
+              await page.evaluate(() => window.navigationDone),
+              2,
+              `${label}: Go and Details`,
+            );
+          }
+          assert.equal(
+            await page.evaluate(() => window.navigationSubmits),
+            0,
+            `${label}: an action submitted the host form`,
+          );
+          console.log(
+            `ok ${label}: 320px, text 100/200%, 44px, equal columns, reading order, host form`,
+          );
+          await page.close();
+        }
+
+  // A child that is not a Button: one that can grow fills its cell, as the
+  // grid stretches it; one with a size of its own sits at its cell's top and
+  // inline start, as SwiftUI and Compose place one, never centred.
+  for (const [mode, css] of [
+    ["full", fixture.css],
+    ["without-scope", unscoped.toString()],
+  ])
+    for (const direction of ["ltr", "rtl"]) {
+      const label = `summary-mixed ${mode} ${direction}`;
+      const page = await browser.newPage({
+        viewport: { width: 320, height: 900 },
+      });
+      await page.setContent(
+        `<!doctype html><html dir="${direction}"><head></head><body style="margin:16px"><div id="root" data-kozmos-root class="light"></div></body></html>`,
+      );
+      await page.addStyleTag({ content: css });
+      await page.evaluate(() => {
+        window.navigationAction = "summary-mixed";
+      });
+      await page.addScriptTag({ content: fixture.code });
+      const row = page.locator(".kozmos-route-summary-actions");
+      await row.waitFor();
+      for (const fontSize of ["100%", "200%"]) {
+        await page.evaluate((value) => {
+          document.documentElement.style.fontSize = value;
+        }, fontSize);
+        await settleLayout(page);
+        const drawn = await row.evaluate((node) => {
+          const box = (element) => {
+            const { left, right, top, width, height } =
+              element.getBoundingClientRect();
+            return { left, right, top, width, height };
+          };
+          return {
+            button: box(node.querySelector(".kozmos-button")),
+            grows: box(node.querySelector('[data-probe="grows"]')),
+            fixed: box(node.querySelector('[data-probe="fixed"]')),
+          };
+        });
+        const where = `${label} ${fontSize}: ${JSON.stringify(drawn)}`;
+        const { button, grows, fixed } = drawn;
+        assert.ok(
+          button.height > 44 + 0.5,
+          `${where}: the label does not wrap`,
+        );
+        assert.ok(
+          Math.abs(grows.height - button.height) <= 0.5 &&
+            Math.abs(grows.top - button.top) <= 0.5,
+          `${where}: grows does not fill its cell's height`,
+        );
+        assert.ok(
+          Math.abs(grows.width - button.width) <= 1,
+          `${where}: grows is not its column's width`,
+        );
+        assert.ok(
+          Math.abs(fixed.width - 24) <= 0.5 &&
+            Math.abs(fixed.height - 24) <= 0.5,
+          `${where}: fixed changed size`,
+        );
+        assert.ok(
+          Math.abs(fixed.top - button.top) <= 0.5,
+          `${where}: fixed is not at its cell's top`,
+        );
+        // Its cell starts a gap after grows's, in reading order.
+        const start =
+          direction === "rtl"
+            ? [fixed.right, grows.left - (button.left - grows.right)]
+            : [fixed.left, grows.right + (grows.left - button.right)];
+        assert.ok(
+          Math.abs(start[0] - start[1]) <= 0.5,
+          `${where}: fixed is not at its cell's start`,
+        );
+      }
+      console.log(
+        `ok ${label}: text 100/200%, a child that grows fills its cell, one that keeps its size sits at its top and start`,
+      );
+      await page.close();
+    }
 } finally {
   await browser.close();
 }

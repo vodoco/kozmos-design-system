@@ -14,13 +14,20 @@ import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonEmphasis
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlacement
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonPresentation
 import com.kozmos.components.mapcontrolsgroup.KozmosMapControlsGroup
+import com.kozmos.components.poidetailpanel.KozmosPOIActionState
+import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanel
+import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanelPresentation
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
 import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.contracts.KozmosFloorPresentation
+import com.kozmos.contracts.KozmosPOIAccessRestrictions
+import com.kozmos.contracts.KozmosPOIAction
+import com.kozmos.contracts.KozmosPOIMediaPresentation
 import com.kozmos.contracts.KozmosPOIPresentation
+import com.kozmos.contracts.KozmosPOIServicePresentation
 import com.kozmos.contracts.KozmosPOIResultAction
 import com.kozmos.contracts.KozmosPOIResultActionPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
@@ -229,5 +236,56 @@ class ReleasedParameterOrderTest {
         }
         tree.has("Orte")
         tree.has("1 Ergebnis")
+    }
+
+    /**
+     * The details card: 0.5.0's twelve parameters, by position, every one
+     * reaching where it went. Its details model (`details`, the
+     * supplementary actions' states and callback, and the labels that come
+     * with them) follows `presentation`, the last of them, so a positional
+     * call neither fails to compile nor sends a value to a new parameter.
+     */
+    @Test
+    fun theDetailPanelTakesItsReleasedOrder() {
+        val pressed = mutableListOf<String>()
+        var closed = 0
+        val tree = paparazzi.readSemantics {
+            MaterialTheme {
+                KozmosPOIDetailPanel(
+                    KozmosPOIPresentation(
+                        id = "cafe",
+                        name = "Harbour Coffee",
+                        floorLabel = "Level 2",
+                        media = listOf(KozmosPOIMediaPresentation("front", "https://example.com/front.jpg", "The counter")),
+                        accessRestrictions = KozmosPOIAccessRestrictions.Present,
+                        accessRestrictionsLabel = "Nur für Gäste",
+                        services = listOf(KozmosPOIServicePresentation("wifi", "WLAN")),
+                        actions = listOf(KozmosPOIAction.Navigate, KozmosPOIAction.Share)
+                    ),
+                    mapOf(KozmosPOIAction.Navigate to "Los", KozmosPOIAction.Share to "Teilen"),
+                    { action, id -> pressed += "${action.value} $id" },
+                    Modifier,
+                    mapOf(KozmosPOIAction.Share to KozmosPOIActionState(disabled = true)),
+                    { closed++ },
+                    "Details schließen",
+                    "Fotos vom Café",
+                    { current, total -> "Bild $current von $total" },
+                    "Zugangsbeschränkungen",
+                    "Serviceoptionen",
+                    KozmosPOIDetailPanelPresentation.Panel
+                )
+            }
+        }
+        tree.has("Details schließen")
+        tree.has("Fotos vom Café")
+        tree.has("Zugangsbeschränkungen, Nur für Gäste")
+        tree.has("Serviceoptionen")
+        assertTrue("the position label is not the one passed", tree.merged.any { "Bild 1 von 1" in it.texts })
+        val share = tree.merged.single { "Teilen" in it.texts }
+        assertFalse("the action states did not reach the strip", share.enabled)
+        tree.merged.single { "Los" in it.texts }.click!!.invoke()
+        tree.named("Details schließen").click!!.invoke()
+        assertEquals(listOf("navigate cafe"), pressed)
+        assertEquals(1, closed)
     }
 }
