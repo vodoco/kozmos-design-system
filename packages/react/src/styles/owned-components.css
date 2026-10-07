@@ -421,6 +421,15 @@
       calc(1rem - var(--kozmos-panel-inset-top, 0px))
     );
   }
+  /* The assistant's header does the same with its 12 (GAP-121): under a grip
+     its title and close button sat 8 lower than a panel header's search
+     field. Outside a shell it keeps its 12. */
+  .kozmos-ai-companion-header {
+    padding-top: max(
+      var(--kozmos-panel-clearance-top, 0px),
+      calc(0.75rem - var(--kozmos-panel-inset-top, 0px))
+    );
+  }
   /* The same rule for a part that brings no top padding of its own: a result
      list, whose holder pads it. Hosted at the top of a sheet with a grip, bare
      or in a Container, its first result sat 9 from the grip's centre, inside
@@ -444,6 +453,13 @@
       --kozmos-panel-part-fill,
       var(--primitives-colors-background-0)
     );
+  }
+  /* Back points to the start edge: left, left to right, and right, right
+     to left. The route preview's arrow is drawn pointing left, so right to
+     left it is mirrored, as SwiftUI's arrow.backward and Compose's
+     AutoMirrored ArrowBack mirror themselves. */
+  .kozmos-route-preview-back-arrow:dir(rtl) {
+    transform: scaleX(-1);
   }
   /* Text a part draws muted, straight on the surface it sits on: the route
      preview's "To" and its count of options; the empty states of the
@@ -1330,6 +1346,15 @@
     gap: 0.75rem;
     margin-block-start: auto;
     padding-block-start: 2rem;
+  }
+  /* An arrow drawn pointing right that means forward or inside (Pagination's
+     Next, the breadcrumb's separator, a submenu, a closed tree item), or left
+     meaning back (Pagination's Previous): it points to the inline end, or
+     start, in either reading direction. The icons are physical, so right to
+     left they are mirrored, as SwiftUI's .forward and .backward symbols and
+     Compose's AutoMirrored icons are. */
+  .kozmos-rtl-mirror:dir(rtl) {
+    transform: scaleX(-1);
   }
   /* Accordion utilities use transition-all. Do not animate text resizing or
      wrapping inside this scrollable panel: it can move keyboard focus away. */
