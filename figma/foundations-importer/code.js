@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "c2182f864fd4";
+const PLUGIN_BUILD = "2fe335b76ebe";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -4848,10 +4848,11 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["STROKE_FLOAT"],
   },
   {
+    // The divider is a 1 px rectangle: this is its width.
     name: "SplitButton/divider/width",
     value: 1,
     alias: "Border Width/sm",
-    scopes: ["STROKE_FLOAT"],
+    scopes: ["STROKE_FLOAT", "WIDTH_HEIGHT"],
   },
   {
     name: "SplitButton/icon/size",
@@ -4915,7 +4916,12 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "MetaStrip/value/line-height", value: 24, scopes: ["LINE_HEIGHT"] },
   { name: "MetaStrip/label/font-size", value: 12, scopes: ["FONT_SIZE"] },
   { name: "MetaStrip/label/line-height", value: 16, scopes: ["LINE_HEIGHT"] },
-  { name: "MetaStrip/divider/width", value: 1, scopes: ["STROKE_FLOAT"] },
+  // The divider is a 1 px rectangle: this is its width.
+  {
+    name: "MetaStrip/divider/width",
+    value: 1,
+    scopes: ["STROKE_FLOAT", "WIDTH_HEIGHT"],
+  },
   { name: "Counter/height/small", value: 18, scopes: ["WIDTH_HEIGHT"] },
   { name: "Counter/height/default", value: 20, scopes: ["WIDTH_HEIGHT"] },
   { name: "Counter/min-width/small", value: 18, scopes: ["WIDTH_HEIGHT"] },
@@ -6390,10 +6396,11 @@ const COMPONENT_FLOAT_TOKENS = [
     scopes: ["WIDTH_HEIGHT"],
   },
   {
+    // The divider is a 1 px rectangle: this is its width.
     name: "NumberInput/divider/width",
     value: 1,
     alias: "Border Width/sm",
-    scopes: ["STROKE_FLOAT"],
+    scopes: ["STROKE_FLOAT", "WIDTH_HEIGHT"],
   },
   {
     name: "NumberInput/label/font-size",
@@ -8790,7 +8797,12 @@ const COMPONENT_FLOAT_TOKENS = [
   { name: "Accordion/height/open", value: 128, scopes: ["WIDTH_HEIGHT"] },
   { name: "Accordion/trigger/height", value: 52, scopes: ["WIDTH_HEIGHT"] },
   { name: "Accordion/content/height", value: 75, scopes: ["WIDTH_HEIGHT"] },
-  { name: "Accordion/divider/height", value: 1, scopes: ["WIDTH_HEIGHT"] },
+  // The divider is the item's bottom stroke: this is its weight.
+  {
+    name: "Accordion/divider/height",
+    value: 1,
+    scopes: ["WIDTH_HEIGHT", "STROKE_FLOAT"],
+  },
   {
     name: "Accordion/trigger/font-size",
     value: 14,

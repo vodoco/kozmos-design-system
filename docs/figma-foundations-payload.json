@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T20:25:11.927Z",
+  "generatedAt": "2026-10-07T23:37:49.968Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -1225,7 +1225,12 @@
         "ios": "primitivesColorsTheme600",
         "android": "primitivesColorsTheme600"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -2089,7 +2094,12 @@
         "ios": "primitivesColorsEmotionalSuccess900",
         "android": "primitivesColorsEmotionalSuccess900"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -2281,7 +2291,12 @@
         "ios": "primitivesColorsEmotionalDanger600",
         "android": "primitivesColorsEmotionalDanger600"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -2617,7 +2632,12 @@
         "ios": "primitivesColorsEmotionalAlert900",
         "android": "primitivesColorsEmotionalAlert900"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": [
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "TEXT_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -3409,7 +3429,7 @@
         "ios": "primitivesColorsBackground0",
         "android": "primitivesColorsBackground0"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -3553,7 +3573,7 @@
         "ios": "primitivesColorsBackground400",
         "android": "primitivesColorsBackground400"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -3721,7 +3741,12 @@
         "ios": "primitivesColorsForeground0",
         "android": "primitivesColorsForeground0"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -3817,7 +3842,12 @@
         "ios": "primitivesColorsForeground400",
         "android": "primitivesColorsForeground400"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -3841,7 +3871,12 @@
         "ios": "primitivesColorsForeground500",
         "android": "primitivesColorsForeground500"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": [
+        "TEXT_FILL",
+        "FRAME_FILL",
+        "SHAPE_FILL",
+        "STROKE_COLOR"
+      ],
       "values": {
         "light": {
           "kind": "raw",
@@ -3961,7 +3996,7 @@
         "ios": "primitivesColorsForeground1000",
         "android": "primitivesColorsForeground1000"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -6601,7 +6636,7 @@
         "ios": "semanticsSurface0",
         "android": "semanticsSurface0"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -7585,7 +7620,7 @@
         "ios": "semanticsDataYellow",
         "android": "semanticsDataYellow"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -7921,7 +7956,7 @@
         "ios": "semanticsCategoryAccentYellow",
         "android": "semanticsCategoryAccentYellow"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -7945,7 +7980,7 @@
         "ios": "semanticsCategoryAccentOrange",
         "android": "semanticsCategoryAccentOrange"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -7969,7 +8004,7 @@
         "ios": "semanticsCategoryAccentTurquoise",
         "android": "semanticsCategoryAccentTurquoise"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -7993,7 +8028,7 @@
         "ios": "semanticsCategoryAccentRed",
         "android": "semanticsCategoryAccentRed"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8017,7 +8052,7 @@
         "ios": "semanticsCategoryAccentBlue",
         "android": "semanticsCategoryAccentBlue"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8041,7 +8076,7 @@
         "ios": "semanticsCategoryAccentNavy",
         "android": "semanticsCategoryAccentNavy"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8065,7 +8100,7 @@
         "ios": "semanticsCategoryAccentGreen",
         "android": "semanticsCategoryAccentGreen"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8089,7 +8124,7 @@
         "ios": "semanticsCategoryAccentPink",
         "android": "semanticsCategoryAccentPink"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8113,7 +8148,7 @@
         "ios": "semanticsCategoryFillYellow",
         "android": "semanticsCategoryFillYellow"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8137,7 +8172,7 @@
         "ios": "semanticsCategoryFillOrange",
         "android": "semanticsCategoryFillOrange"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8161,7 +8196,7 @@
         "ios": "semanticsCategoryFillTurquoise",
         "android": "semanticsCategoryFillTurquoise"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8185,7 +8220,7 @@
         "ios": "semanticsCategoryFillRed",
         "android": "semanticsCategoryFillRed"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8209,7 +8244,7 @@
         "ios": "semanticsCategoryFillBlue",
         "android": "semanticsCategoryFillBlue"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8233,7 +8268,7 @@
         "ios": "semanticsCategoryFillNavy",
         "android": "semanticsCategoryFillNavy"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8257,7 +8292,7 @@
         "ios": "semanticsCategoryFillGreen",
         "android": "semanticsCategoryFillGreen"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8281,7 +8316,7 @@
         "ios": "semanticsCategoryFillPink",
         "android": "semanticsCategoryFillPink"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8305,7 +8340,7 @@
         "ios": "semanticsCategoryOnfillYellow",
         "android": "semanticsCategoryOnfillYellow"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8329,7 +8364,7 @@
         "ios": "semanticsCategoryOnfillOrange",
         "android": "semanticsCategoryOnfillOrange"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8353,7 +8388,7 @@
         "ios": "semanticsCategoryOnfillTurquoise",
         "android": "semanticsCategoryOnfillTurquoise"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8377,7 +8412,7 @@
         "ios": "semanticsCategoryOnfillRed",
         "android": "semanticsCategoryOnfillRed"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8401,7 +8436,7 @@
         "ios": "semanticsCategoryOnfillBlue",
         "android": "semanticsCategoryOnfillBlue"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8425,7 +8460,7 @@
         "ios": "semanticsCategoryOnfillNavy",
         "android": "semanticsCategoryOnfillNavy"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8449,7 +8484,7 @@
         "ios": "semanticsCategoryOnfillGreen",
         "android": "semanticsCategoryOnfillGreen"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8473,7 +8508,7 @@
         "ios": "semanticsCategoryOnfillPink",
         "android": "semanticsCategoryOnfillPink"
       },
-      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL", "TEXT_FILL"],
       "values": {
         "light": {
           "kind": "raw",
@@ -8521,7 +8556,7 @@
         "ios": "componentsPrimaryButtonsThemedButtonForegroundContentDisabled",
         "android": "componentsPrimaryButtonsThemedButtonForegroundContentDisabled"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -9697,7 +9732,7 @@
         "ios": "componentsPrimaryButtonsDangerButtonForegroundContentIdle",
         "android": "componentsPrimaryButtonsDangerButtonForegroundContentIdle"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -9721,7 +9756,7 @@
         "ios": "componentsPrimaryButtonsDangerButtonForegroundContentDisabled",
         "android": "componentsPrimaryButtonsDangerButtonForegroundContentDisabled"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
@@ -10777,7 +10812,7 @@
         "ios": "componentsSecondaryButtonsThemedButtonForegroundContentIdle",
         "android": "componentsSecondaryButtonsThemedButtonForegroundContentIdle"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "alias",
@@ -10801,7 +10836,7 @@
         "ios": "componentsSecondaryButtonsThemedButtonForegroundContentDisabled",
         "android": "componentsSecondaryButtonsThemedButtonForegroundContentDisabled"
       },
-      "suggestedScopes": ["TEXT_FILL"],
+      "suggestedScopes": ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
       "values": {
         "light": {
           "kind": "raw",
