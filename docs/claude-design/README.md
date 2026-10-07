@@ -153,7 +153,7 @@ These notes are about the artifact Claude Design builds from this repository, no
 - [AIInputBar](components/AIInputBar.md): Text in, question out.
 - [AIMessage](components/AIMessage.md): An assistant turn.
 - [AIMessageList](components/AIMessageList.md): The thread: `role="log"` with `aria-live="polite"`, because turns arrive over time and must be heard without taking the visitor's place.
-- [AISearchButton](components/AISearchButton.md): The AI search, beside the search field: a 48 disc inside a 66 ring whose gradient runs through the theme's own ramp — from the 300 step to the 600 and back — with a 16 icon.
+- [AISearchButton](components/AISearchButton.md): The AI search, beside the search field: a 48 circle whose ring, a band two and a half wide around a 43 disc of the surface, is a rainbow of the system's data colours — red, yellow, the success green, teal, blue, purple and back to red — with a 16 icon in the theme's 600.
 - [ArrivalPanel](components/ArrivalPanel.md): Host-confirmed arrival content for an existing bottom sheet or panel.
 - [BrowseCategoriesPanel](components/BrowseCategoriesPanel.md): Scrollable Product/SDK category composition.
 - [CategoryField](components/CategoryField.md): The search field's form once a quick-access category is chosen — the prototype's, measured: 48 tall, the control radius, the category's colour at 12 % with a 1-pixel border of it, the icon at 28 in the colour, the name at 15 semibold in the foreground, a 22-tall count pill filled with the colour, a 32 clear at the trailing edge with its cross in the foreground, in a 44 hit area as the search bar's clear is.

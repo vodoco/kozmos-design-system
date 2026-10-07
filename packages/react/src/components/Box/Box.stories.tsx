@@ -16,7 +16,10 @@ type Story = StoryObj<typeof Box>;
 export const Default: Story = {
   args: {
     children: "This is a Box",
-    className: "p-4 bg-primary text-primary-foreground rounded-control",
+    // A prominent fill: the theme fill under the theme foreground, white in
+    // both themes (decision 59). `bg-primary` is theme 600, for text and
+    // edges, and its foreground turns black in the dark.
+    className: "p-4 bg-theme-fill text-theme-fill-foreground rounded-control",
   },
 };
 

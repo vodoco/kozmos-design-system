@@ -17,3 +17,13 @@ export const Default: Story = {
     children: <Bold className="h-4 w-4" />,
   },
 };
+
+// On: the theme fill under the theme foreground, white in both themes
+// (decision 59).
+export const On: Story = {
+  args: {
+    "aria-label": "Toggle bold",
+    children: <Bold className="h-4 w-4" />,
+    defaultPressed: true,
+  },
+};

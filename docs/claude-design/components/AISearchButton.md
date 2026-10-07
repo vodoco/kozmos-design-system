@@ -2,7 +2,7 @@
 
 # AISearchButton
 
-The AI search, beside the search field: a 48 disc inside a 66 ring whose gradient runs through the theme's own ramp — from the 300 step to the 600 and back — with a 16 icon. The first gradient the system draws is made of tokens, so it follows the theme like everything else. The button shows the icon alone and is named by its label to assistive technology.
+The AI search, beside the search field: a 48 circle whose ring, a band two and a half wide around a 43 disc of the surface, is a rainbow of the system's data colours — red, yellow, the success green, teal, blue, purple and back to red — with a 16 icon in the theme's 600. The ring is a conic gradient made of tokens, not the theme's ramp, so it reads the same whatever the brand; it turns once every 3.6 seconds, and stands still when motion is reduced. The button shows the icon alone and is named by its label to assistive technology.
 
 - **Import:** `import { AISearchButton } from "@kozmos-ds/react";`
 - **Group:** SDK
