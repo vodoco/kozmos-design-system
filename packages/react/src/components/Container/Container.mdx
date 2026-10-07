@@ -50,18 +50,28 @@ import { KozmosContainer } from "@kozmos-ds/vue"
 import SwiftUI
 import Kozmos
 
-KozmosContainer(inset: .panel) {
-    Text("Content")
+// In a map shell's sheet or side panel: 16 a side, whatever the window.
+struct VenueOverview: View {
+    var body: some View {
+        KozmosContainer(inset: .panel) {
+            Text("Venue overview")
+        }
+    }
 }
 `}
     kotlin={`
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import com.kozmos.components.container.KozmosContainer
 import com.kozmos.components.container.KozmosContainerInset
 
-KozmosContainer(KozmosContainerInset.Panel) {
-    Text("Content")
+// In a map shell's sheet or side panel: 16 a side, whatever the window.
+@Composable
+fun VenueOverview() {
+    KozmosContainer(KozmosContainerInset.Panel) {
+        Text("Venue overview")
+    }
 }
-    `}
+`}
 
 />

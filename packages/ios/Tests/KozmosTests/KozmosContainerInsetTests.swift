@@ -77,6 +77,16 @@ final class KozmosContainerInsetTests: XCTestCase {
         XCTAssertEqual(box.height, 40, accuracy: 0.5)
     }
 
+    /// Container.mdx's SwiftUI example (DocSnippets/VenueOverview.swift),
+    /// drawn as well as compiled: 1100 wide, where `.window` takes 32, the
+    /// panel inset keeps its text 16 from the side.
+    @MainActor func testTheDocsSnippetKeepsSixteenASide() throws {
+        let drawn = try DrawnPixels.draw(VenueOverview().frame(width: 1100), scale: 2)
+        let text = try XCTUnwrap(drawn.boundingBox { _, _, _, a in a > 100 }, "no text drawn")
+        // The first glyph's side bearing puts its ink a little inside the box.
+        XCTAssertEqual(text.minX, 16, accuracy: 1.5)
+    }
+
     @MainActor private func laidOut<V: View>(_ view: V, width: CGFloat) -> CGSize {
         let offered = CGSize(width: width, height: 10_000)
         #if canImport(UIKit)
