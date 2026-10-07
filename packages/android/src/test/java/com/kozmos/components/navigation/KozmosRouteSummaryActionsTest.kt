@@ -3,6 +3,7 @@ package com.kozmos.components.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -60,6 +61,11 @@ class KozmosRouteSummaryActionsTest {
     @Composable private fun Action(label: String, variant: KozmosButtonVariant = KozmosButtonVariant.Default) {
         KozmosButton(onClick = {}, variant = variant,
             modifier = Modifier.onGloballyPositioned { targets[label] = it.boundsInRoot() }) { Text(label) }
+    }
+
+    /** A child of the actions that is not a Button, its box kept by [name]. */
+    @Composable private fun Probe(name: String, modifier: Modifier = Modifier) {
+        Box(modifier.onGloballyPositioned { targets[name] = it.boundsInRoot() })
     }
 
     /** The summary, hosted, [width] wide, in [direction], at [fontScale]. */
@@ -166,6 +172,40 @@ class KozmosRouteSummaryActionsTest {
             cells.zipWithNext { a, b -> assertEquals("$width: the gap", 8f, dp(b.left - a.right), 0.5f) }
             assertTrue("$width: unequal columns $widths", widths.max() - widths.min() <= 1f)
             assertTrue("$width: the wider columns are not first: $widths", widths.zipWithNext().all { (a, b) -> a >= b })
+        }
+    }
+
+    @Test fun aChildThatKeepsItsSizeSitsAtItsCellsTopAndStart() {
+        // Not a Button: one that can grow fills its cell, as the web's grid
+        // stretches it; one with a size of its own sits at the cell's top
+        // and inline start, as on the web and in SwiftUI, never centred.
+        for (direction in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            targets.clear()
+            read(direction = direction) {
+                KozmosRouteSummary(destination = "Airport Shuttles", onEndRoute = {},
+                    presentation = KozmosRoutePresentation.Hosted,
+                    actions = {
+                        Action("Continue to the next step")
+                        Probe("grows")
+                        Probe("fixed", Modifier.requiredSize(24.dp))
+                    }) { Rail() }
+            }
+            val button = targets.getValue("Continue to the next step")
+            val grows = targets.getValue("grows")
+            val fixed = targets.getValue("fixed")
+            val case = "$direction: button $button, grows $grows, fixed $fixed"
+            assertTrue("$case: the label does not wrap", dp(button.height) > 48f)
+            assertEquals("$case: grows is not as tall as the row", button.height, grows.height, 0.5f)
+            assertEquals("$case: grows is not at the row's top", button.top, grows.top, 0.5f)
+            assertEquals("$case: grows is not its column's width", button.width, grows.width, 1f)
+            assertEquals("$case: fixed changed size", 24f, dp(fixed.width), 0.5f)
+            assertEquals("$case: fixed is not at its cell's top", button.top, fixed.top, 0.5f)
+            // Its cell starts a gap after grows's, in reading order.
+            if (direction == LayoutDirection.Ltr) {
+                assertEquals("$case: fixed is not at its cell's start", grows.right + 8 * density, fixed.left, 0.5f)
+            } else {
+                assertEquals("$case: fixed is not at its cell's start", grows.left - 8 * density, fixed.right, 0.5f)
+            }
         }
     }
 

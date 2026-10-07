@@ -164,6 +164,11 @@ try {
               Math.abs(first.width - second.width) <= 1,
               `${where}: unequal columns`,
             );
+            // A label that wraps grows its button, and the row with it.
+            assert.ok(
+              Math.abs(first.height - second.height) <= 1,
+              `${where}: the actions differ in height`,
+            );
             assert.ok(
               first.width + second.width > drawn.row * 0.9,
               `${where}: the actions do not fill the row`,
@@ -236,6 +241,85 @@ try {
           );
           await page.close();
         }
+
+  // A child that is not a Button: one that can grow fills its cell, as the
+  // grid stretches it; one with a size of its own sits at its cell's top and
+  // inline start, as SwiftUI and Compose place one, never centred.
+  for (const [mode, css] of [
+    ["full", fixture.css],
+    ["without-scope", unscoped.toString()],
+  ])
+    for (const direction of ["ltr", "rtl"]) {
+      const label = `summary-mixed ${mode} ${direction}`;
+      const page = await browser.newPage({
+        viewport: { width: 320, height: 900 },
+      });
+      await page.setContent(
+        `<!doctype html><html dir="${direction}"><head></head><body style="margin:16px"><div id="root" data-kozmos-root class="light"></div></body></html>`,
+      );
+      await page.addStyleTag({ content: css });
+      await page.evaluate(() => {
+        window.navigationAction = "summary-mixed";
+      });
+      await page.addScriptTag({ content: fixture.code });
+      const row = page.locator(".kozmos-route-summary-actions");
+      await row.waitFor();
+      for (const fontSize of ["100%", "200%"]) {
+        await page.evaluate((value) => {
+          document.documentElement.style.fontSize = value;
+        }, fontSize);
+        await settleLayout(page);
+        const drawn = await row.evaluate((node) => {
+          const box = (element) => {
+            const { left, right, top, width, height } =
+              element.getBoundingClientRect();
+            return { left, right, top, width, height };
+          };
+          return {
+            button: box(node.querySelector(".kozmos-button")),
+            grows: box(node.querySelector('[data-probe="grows"]')),
+            fixed: box(node.querySelector('[data-probe="fixed"]')),
+          };
+        });
+        const where = `${label} ${fontSize}: ${JSON.stringify(drawn)}`;
+        const { button, grows, fixed } = drawn;
+        assert.ok(
+          button.height > 44 + 0.5,
+          `${where}: the label does not wrap`,
+        );
+        assert.ok(
+          Math.abs(grows.height - button.height) <= 0.5 &&
+            Math.abs(grows.top - button.top) <= 0.5,
+          `${where}: grows does not fill its cell's height`,
+        );
+        assert.ok(
+          Math.abs(grows.width - button.width) <= 1,
+          `${where}: grows is not its column's width`,
+        );
+        assert.ok(
+          Math.abs(fixed.width - 24) <= 0.5 &&
+            Math.abs(fixed.height - 24) <= 0.5,
+          `${where}: fixed changed size`,
+        );
+        assert.ok(
+          Math.abs(fixed.top - button.top) <= 0.5,
+          `${where}: fixed is not at its cell's top`,
+        );
+        // Its cell starts a gap after grows's, in reading order.
+        const start =
+          direction === "rtl"
+            ? [fixed.right, grows.left - (button.left - grows.right)]
+            : [fixed.left, grows.right + (grows.left - button.right)];
+        assert.ok(
+          Math.abs(start[0] - start[1]) <= 0.5,
+          `${where}: fixed is not at its cell's start`,
+        );
+      }
+      console.log(
+        `ok ${label}: text 100/200%, a child that grows fills its cell, one that keeps its size sits at its top and start`,
+      );
+      await page.close();
+    }
 } finally {
   await browser.close();
 }

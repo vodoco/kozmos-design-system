@@ -158,6 +158,39 @@ final class KozmosRouteSummaryActionsTests: XCTestCase {
         XCTAssertEqual(previous.width, next.width, accuracy: 0.5)
     }
 
+    /// Not a Button: one that can grow fills its cell, as the web's grid
+    /// stretches it; one with a size of its own sits at the cell's top and
+    /// inline start, as on the web and in Compose, never centred.
+    @MainActor func testAChildThatKeepsItsSizeSitsAtItsCellsTopAndStart() async throws {
+        for direction in [LayoutDirection.leftToRight, .rightToLeft] {
+            let frames = try await self.frames(direction: direction) {
+                KozmosRouteSummary(destination: "Airport Shuttles", presentation: .hosted, onEndRoute: {}) {
+                    Self.rail
+                } actions: {
+                    KozmosButton("Continue to the next step") {}.probe("button")
+                    Color.blue.probe("grows")
+                    Color.blue.frame(width: 24, height: 24).probe("fixed")
+                }
+            }
+            let button = try XCTUnwrap(frames["button"]), grows = try XCTUnwrap(frames["grows"])
+            let fixed = try XCTUnwrap(frames["fixed"])
+            let label = "\(direction): button \(button), grows \(grows), fixed \(fixed)"
+            XCTAssertGreaterThan(button.height, 44 + 0.5, "\(label): the label does not wrap")
+            XCTAssertEqual(grows.height, button.height, accuracy: 0.5, "\(label): grows is not as tall as the row")
+            XCTAssertEqual(grows.minY, button.minY, accuracy: 0.5, "\(label): grows is not at the row's top")
+            XCTAssertEqual(grows.width, button.width, accuracy: 0.5, "\(label): grows is not its column's width")
+            XCTAssertEqual(fixed.size, CGSize(width: 24, height: 24), "\(label): fixed changed size")
+            XCTAssertEqual(fixed.minY, button.minY, accuracy: 0.5, "\(label): fixed is not at its cell's top")
+            // Its cell starts a gap after grows's, in reading order.
+            let gap = KozmosDimensions.primitivesLayoutSpacing100
+            if direction == .leftToRight {
+                XCTAssertEqual(fixed.minX, grows.maxX + gap, accuracy: 0.5, "\(label): fixed is not at its cell's start")
+            } else {
+                XCTAssertEqual(fixed.maxX, grows.minX - gap, accuracy: 0.5, "\(label): fixed is not at its cell's start")
+            }
+        }
+    }
+
     /// An `if` that is false is no subview of the layout, and a layout that
     /// read a fixed number of subviews crashed with one (the bottom controls,
     /// 2026-10-04). The row takes whatever is there.

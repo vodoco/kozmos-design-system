@@ -13,7 +13,8 @@ declare global {
       | "arrival"
       | "summary"
       | "summary-steps"
-      | "summary-preview";
+      | "summary-preview"
+      | "summary-mixed";
     navigationDone: number;
     navigationSubmits: number;
     navigationStep: number;
@@ -95,6 +96,22 @@ createRoot(document.getElementById("root")!).render(
       />
     ) : window.navigationAction === "summary-steps" ? (
       <Steps />
+    ) : window.navigationAction === "summary-mixed" ? (
+      // Not only Buttons: one child that can grow and one with a size of its
+      // own, beside a Button whose label wraps.
+      <RouteSummary
+        destination="Gate 12"
+        presentation="hosted"
+        actions={
+          <>
+            <Button type="button" onClick={done}>
+              Continue to the next step
+            </Button>
+            <div data-probe="grows" />
+            <div data-probe="fixed" style={{ width: 24, height: 24 }} />
+          </>
+        }
+      />
     ) : window.navigationAction === "summary-preview" ? (
       // The route preview: no End, the place's line, Go and Details.
       <RouteSummary

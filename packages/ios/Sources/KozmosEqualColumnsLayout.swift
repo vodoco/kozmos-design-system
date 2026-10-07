@@ -3,8 +3,11 @@ import SwiftUI
 /// One column per subview, all the same width, `spacing` apart, in reading
 /// order: RouteSummary's actions (GAP-110, GAP-111), as the web's
 /// `.kozmos-route-summary-actions` grid draws them. The row is as tall as its
-/// tallest subview, and each is offered the whole of it, so a KozmosButton
-/// told to fill its cell (`kozmosButtonFillsCell`) matches the others.
+/// tallest subview, and each is offered the whole of its cell, as the web's
+/// grid stretches its items: one that can grow fills it, as a KozmosButton
+/// told to (`kozmosButtonFillsCell`) does, so it matches the others. One that
+/// keeps a size of its own sits at the cell's top and inline start, where the
+/// web and Compose put one; a layout cannot make it grow.
 ///
 /// Any number of subviews, none included: an `if` that is false, or an
 /// `EmptyView`, is no subview at all, so nothing here reads a subview by

@@ -277,11 +277,16 @@ private fun RouteSummaryTitle(destination: String, modifier: Modifier = Modifier
  * summary's actions, as the web's `.kozmos-route-summary-actions` grid draws
  * them. Not a weighted Row: a weight that does not fill leaves space at the
  * row's end. The columns fill the row exactly: what an even split leaves
- * over, a pixel each, goes to the first columns. Each child is measured to
- * its column's width; one shorter than the tallest is stretched to it, and
- * one as tall keeps its own measure, so a KozmosButton still draws 44dp
- * inside its 48dp touch target. Children are measured by their intrinsic
- * height, so they are Buttons, not lazy lists.
+ * over, a pixel each, goes to the first columns.
+ *
+ * Each child is offered its whole cell, as the web's grid stretches its
+ * items: it is measured to its column's width, and one shorter than the
+ * tallest is stretched to the row's height. One as tall keeps its own
+ * measure, so a KozmosButton still draws 44dp inside its 48dp touch target.
+ * A child that keeps a smaller size of its own (a required size) sits at its
+ * cell's top and inline start, where the web's grid and SwiftUI put one,
+ * rather than centred. Children are measured by their intrinsic height, so
+ * they are Buttons, not lazy lists.
  */
 @Composable
 internal fun KozmosEqualColumns(spacing: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
@@ -301,7 +306,12 @@ internal fun KozmosEqualColumns(spacing: Dp, modifier: Modifier = Modifier, cont
         layout(width, row) {
             var x = 0
             placeables.forEachIndexed { index, placeable ->
-                placeable.placeRelative(x, (row - placeable.height) / 2)
+                // Compose centres a child measured outside its constraints in
+                // the box it was given; take that back, to the top and start.
+                placeable.placeRelative(
+                    x - (placeable.width - placeable.measuredWidth) / 2,
+                    -(placeable.height - placeable.measuredHeight) / 2
+                )
                 x += columns[index] + gap
             }
         }
