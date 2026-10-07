@@ -307,8 +307,11 @@ fun KozmosFloorSelector(
                 modifier = Modifier
                     .size(side)
                     .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusPanel))
+                    // Selected, the level is the theme fill with its label in
+                    // the theme foreground, the same in both themes (decision
+                    // 59): background/0 turned the label black on it in the dark.
                     .background(
-                        if (isSelected) KozmosThemeTokens.primitivesColorsTheme500 else Color.Transparent
+                        if (isSelected) KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle else Color.Transparent
                     )
                     .clickable(enabled = !floor.disabled) { select(floor) }
                     .semantics {
@@ -323,7 +326,7 @@ fun KozmosFloorSelector(
                 Text(
                     text = floor.shortLabel,
                     color = if (isSelected) {
-                        KozmosThemeTokens.primitivesColorsBackground0
+                        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
                     } else {
                         KozmosThemeTokens.primitivesColorsForeground100
                     },
@@ -791,7 +794,8 @@ internal fun switcherSpokenLabel(
 }
 
 /**
- * The count, drawn once and said once: a pill in the theme's primary, flush
+ * The count, drawn once and said once: a pill in the theme fill with its
+ * number in the theme foreground, the same in both themes (decision 59), flush
  * in the square's trailing top corner, which mirrors right to left. Inside the
  * button, not proud of it, as React's is since c36a970d; flush rather than
  * React's 2px in, because that inset is on a 44px button and on a 40 square it
@@ -810,13 +814,13 @@ private fun ResultMarker(count: Int, growth: Float, modifier: Modifier = Modifie
             .clearAndSetSemantics {}
             .heightIn(min = side)
             .widthIn(min = side)
-            .background(KozmosThemeTokens.primitivesColorsTheme600, CircleShape)
+            .background(KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle, CircleShape)
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50 * growth),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = count.toString(),
-            color = KozmosThemeTokens.primitivesColorsForeground1000,
+            color = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
             fontSize = textSize,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1

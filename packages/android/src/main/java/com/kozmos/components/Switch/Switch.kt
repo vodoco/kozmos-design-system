@@ -33,10 +33,14 @@ fun KozmosSwitch(
     error: Boolean = false
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
+    // Checked, the track is the theme fill and the thumb on it a mark in the
+    // theme foreground, the same in both themes (decision 59): background/0
+    // turned the thumb black on it in the dark.
+    val themed = checked && enabled && !error
     val checkedTrackColor = if (error) {
         KozmosThemeTokens.primitivesColorsEmotionalDanger600
     } else {
-        KozmosThemeTokens.primitivesColorsTheme500
+        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
     }
     val uncheckedTrackColor = KozmosThemeTokens.primitivesColorsForeground500
     val disabledTrackColor = KozmosThemeTokens.primitivesColorsForeground500
@@ -50,7 +54,11 @@ fun KozmosSwitch(
     } else {
         trackColor
     }
-    val thumbColor = KozmosThemeTokens.primitivesColorsBackground0
+    val thumbColor = if (themed) {
+        KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+    } else {
+        KozmosThemeTokens.primitivesColorsBackground0
+    }
     val labelColor = when {
         error -> KozmosThemeTokens.primitivesColorsEmotionalDanger600
         !enabled -> KozmosThemeTokens.primitivesColorsForeground500

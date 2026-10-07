@@ -100,13 +100,14 @@ fun KozmosDirectionStep(
             modifier = Modifier
                 .size(KozmosDimensions.primitivesLayoutSizing500)
                 .clip(CircleShape)
-                .background(KozmosThemeTokens.primitivesColorsTheme500.copy(alpha = 0.1f)),
+                // A mark on a surface on a quiet tint of it: theme/600 (decision 59).
+                .background(KozmosThemeTokens.primitivesColorsTheme600.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = KozmosThemeTokens.primitivesColorsTheme500,
+                tint = KozmosThemeTokens.primitivesColorsTheme600,
                 modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300)
             )
         }

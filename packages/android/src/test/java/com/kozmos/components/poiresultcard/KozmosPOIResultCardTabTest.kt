@@ -217,7 +217,7 @@ class KozmosPOIResultCardTabTest {
                 val value = result(featured = featured, selected = !featured)
                 val label = if (featured) "Featured" else "2"
                 val fill = swatch(false) {
-                    if (featured) KozmosThemeTokens.semanticsEmotionAlertFill else KozmosThemeTokens.primitivesColorsTheme600
+                    if (featured) KozmosThemeTokens.semanticsEmotionAlertFill else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
                 }
                 val background = swatch(false) { KozmosThemeTokens.primitivesColorsBackground0 }
                 val read = paparazzi.readSemantics {
@@ -343,7 +343,8 @@ class KozmosPOIResultCardTabTest {
     /**
      * Featured is the SDK's bright amber (Olcay, 2026-09-29): its tab and, at
      * rest, the card's edge. Selected, the edge is the theme's, as every
-     * selected card's is: a native card has no ring to say it with.
+     * selected card's is: a native card has no ring to say it with. An edge
+     * is theme 600, as React's border is (decision 59); it was theme 500.
      */
     @Test
     fun featuredIsTheAmberTabAndEdgeAndSelectionKeepsTheThemesEdge() {
@@ -351,7 +352,7 @@ class KozmosPOIResultCardTabTest {
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
             val amber = swatch(dark) { KozmosThemeTokens.semanticsEmotionAlertFill }
-            val themed = swatch(dark) { KozmosThemeTokens.primitivesColorsTheme500 }
+            val themed = swatch(dark) { KozmosThemeTokens.primitivesColorsTheme600 }
             val rest = scene(dark) { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true), onSelect = {}) }
             val selected = scene(dark) {
                 KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true, selected = true), onSelect = {})
@@ -376,13 +377,17 @@ class KozmosPOIResultCardTabTest {
         assertTrue(wrong.joinToString("; "), wrong.isEmpty())
     }
 
-    /** A selected number fills with the primary colour; at rest it does not. */
+    /**
+     * A selected number fills with the theme fill, as the selected pin it
+     * pairs with does (decision 55): theme 500 in both themes, with the theme
+     * foreground on it (decision 59). It was theme 600. At rest it does not.
+     */
     @Test
     fun onlyASelectedNumberFillsWithThePrimaryColour() {
         val wrong = mutableListOf<String>()
         for (dark in listOf(false, true)) {
             val theme = if (dark) "dark" else "light"
-            val primary = swatch(dark) { KozmosThemeTokens.primitivesColorsTheme600 }
+            val primary = swatch(dark) { KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle }
             val rest = scene(dark) { KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(), onSelect = {}, numbered = true) }
             val selected = scene(dark) {
                 KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(selected = true), onSelect = {}, numbered = true)

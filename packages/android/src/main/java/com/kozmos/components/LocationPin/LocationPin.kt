@@ -73,11 +73,16 @@ fun KozmosLocationPin(
      *  number — over the variant's; a featured pin keeps the alert colour. */
     tint: KozmosCategoryTint? = null
 ) {
+    // Filled, the primary pin is the theme fill, theme 500 in both themes,
+    // with its number in the theme foreground, white in both (decision 59):
+    // foreground/1000 turned the number black on it in the dark. Accent is an
+    // open parity question and stays.
+    val themeFilled = !featured && tint == null && variant == KozmosLocationPinVariant.Primary
     val markerColor: Color = when {
         featured -> KozmosThemeTokens.primitivesColorsEmotionalAlert500
         tint != null -> tint.fill.fill
         variant == KozmosLocationPinVariant.Default -> KozmosThemeTokens.primitivesColorsForeground100
-        variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.primitivesColorsTheme500
+        variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
         variant == KozmosLocationPinVariant.Secondary -> KozmosThemeTokens.primitivesColorsForeground400
         else -> KozmosThemeTokens.primitivesColorsThemeVariant1500
     }
@@ -115,6 +120,7 @@ fun KozmosLocationPin(
     val numberColor: Color = when {
         offFloor || (quiet && tint != null) -> KozmosThemeTokens.primitivesColorsForeground0
         quiet -> outlineColor
+        themeFilled -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
         else -> tint?.fill?.ink ?: KozmosThemeTokens.primitivesColorsForeground1000
     }
 

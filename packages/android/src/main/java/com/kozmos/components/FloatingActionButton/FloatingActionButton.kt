@@ -18,8 +18,10 @@ fun KozmosFloatingActionButton(
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
-        containerColor = KozmosThemeTokens.primitivesColorsTheme500,
-        contentColor = KozmosThemeTokens.primitivesColorsBackground0
+        // The theme fill with the theme foreground on it, the same in both
+        // themes (decision 59): background/0 turned black on it in the dark.
+        containerColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+        contentColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
     ) {
         Icon(icon, contentDescription = "Action")
     }

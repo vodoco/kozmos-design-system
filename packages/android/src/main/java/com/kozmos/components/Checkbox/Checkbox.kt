@@ -28,7 +28,10 @@ fun KozmosCheckbox(
     error: Boolean = false
 ) {
     val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-    val checkedColor = KozmosThemeTokens.primitivesColorsTheme500
+    // Checked, the box is the theme fill and its check the theme foreground,
+    // the same in both themes (decision 59): background/0 turned the check
+    // black on it in the dark.
+    val checkedColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
     val uncheckedColor = if (error) {
         KozmosThemeTokens.primitivesColorsEmotionalDanger600
     } else {
@@ -57,7 +60,7 @@ fun KozmosCheckbox(
             colors = CheckboxDefaults.colors(
                 checkedColor = checkedColor,
                 uncheckedColor = uncheckedColor,
-                checkmarkColor = KozmosThemeTokens.primitivesColorsBackground0
+                checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
             )
         )
         

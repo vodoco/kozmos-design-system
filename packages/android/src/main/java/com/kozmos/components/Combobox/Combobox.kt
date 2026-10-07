@@ -201,7 +201,7 @@ fun KozmosCombobox(
                 readOnly = readOnly,
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = colors.text),
-                cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
+                cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
                 modifier = Modifier
                     .focusRequester(inputFocus)
                     .onFocusChanged {

@@ -129,7 +129,9 @@ private fun Endpoint(label: String, name: String, emphasised: Boolean) {
 
 @Composable
 private fun StepRow(step: KozmosItineraryStep, isCurrent: Boolean) {
-    val colour = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100
+    // The current step's words and mark are theme-coloured text on a
+    // surface: theme/600 (decision 59).
+    val colour = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme600 else KozmosThemeTokens.primitivesColorsForeground100
     val instruction = instructionAnnotatedText(step.instructionParts)
     val hasLanguage = step.instructionParts.hasSpeechLanguage()
     val metrics = listOfNotNull(step.distance, step.duration).filter { it.isNotEmpty() }
@@ -147,7 +149,7 @@ private fun StepRow(step: KozmosItineraryStep, isCurrent: Boolean) {
         Icon(
             imageVector = step.type.icon(),
             contentDescription = null,
-            tint = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground500,
+            tint = LocalKozmosGuidanceForeground.current ?: if (isCurrent) KozmosThemeTokens.primitivesColorsTheme600 else KozmosThemeTokens.primitivesColorsForeground500,
             modifier = Modifier
                 .width(KozmosDimensions.primitivesLayoutSizing500)
                 .height(20.dp)

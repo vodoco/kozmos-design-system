@@ -16,7 +16,9 @@ fun KozmosLink(
 ) {
     Text(
         text = text,
-        color = KozmosThemeTokens.primitivesColorsTheme500,
+        // Theme-coloured text on a surface is theme/600, as React's is
+        // (decision 59): theme/500 read 3.13:1 on the dark greys.
+        color = KozmosThemeTokens.primitivesColorsTheme600,
         textDecoration = TextDecoration.Underline,
         modifier = modifier.clickable { onClick() }
     )

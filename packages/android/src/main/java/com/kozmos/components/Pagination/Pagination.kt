@@ -54,20 +54,22 @@ fun KozmosPaginationLink(
             .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50)
             .defaultMinSize(minWidth = 36.dp, minHeight = 36.dp)
             .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-            .background(if (isActive) KozmosThemeTokens.primitivesColorsTheme500.copy(alpha = 0.1f) else Color.Transparent)
+            // Active, the page is theme/600 text and edge on a 10% tint of it,
+            // as React's is (decision 59); it was theme/500.
+            .background(if (isActive) KozmosThemeTokens.primitivesColorsTheme600.copy(alpha = 0.1f) else Color.Transparent)
             .clickable { 
                 trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Pagination", eventName = "page_changed"))
                 onClick() 
             }
             .then(
-                if (isActive) Modifier.border(1.dp, KozmosThemeTokens.primitivesColorsTheme500, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+                if (isActive) Modifier.border(1.dp, KozmosThemeTokens.primitivesColorsTheme600, RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
                 else Modifier
             ),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = if (isActive) KozmosThemeTokens.primitivesColorsTheme500 else KozmosThemeTokens.primitivesColorsForeground100,
+            color = if (isActive) KozmosThemeTokens.primitivesColorsTheme600 else KozmosThemeTokens.primitivesColorsForeground100,
             style = MaterialTheme.typography.bodyMedium
         )
     }

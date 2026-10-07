@@ -33,12 +33,19 @@ fun KozmosSplitButton(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    // Both halves are a filled Button: the theme fill with the theme
+    // foreground on it, the same in both themes (decision 59).
+    // background/0 turned black on it in the dark.
+    val colors = ButtonDefaults.buttonColors(
+        containerColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+        contentColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+    )
 
     Row(modifier = modifier) {
         Button(
             onClick = onMainClick,
             shape = RoundedCornerShape(topStart = KozmosDimensions.semanticsRadiusPanel, bottomStart = KozmosDimensions.semanticsRadiusPanel, topEnd = KozmosDimensions.semanticsRadiusNone, bottomEnd = KozmosDimensions.semanticsRadiusNone),
-            colors = ButtonDefaults.buttonColors(containerColor = KozmosThemeTokens.primitivesColorsTheme500, contentColor = KozmosThemeTokens.primitivesColorsBackground0)
+            colors = colors
         ) {
             Text(label)
         }
@@ -46,7 +53,7 @@ fun KozmosSplitButton(
         Button(
             onClick = { expanded = true },
             shape = RoundedCornerShape(topStart = KozmosDimensions.semanticsRadiusNone, bottomStart = KozmosDimensions.semanticsRadiusNone, topEnd = KozmosDimensions.semanticsRadiusPanel, bottomEnd = KozmosDimensions.semanticsRadiusPanel),
-            colors = ButtonDefaults.buttonColors(containerColor = KozmosThemeTokens.primitivesColorsTheme500, contentColor = KozmosThemeTokens.primitivesColorsBackground0)
+            colors = colors
         ) {
             Icon(Icons.Default.ArrowDropDown, contentDescription = "More actions")
             DropdownMenu(

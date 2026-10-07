@@ -162,7 +162,11 @@ fun KozmosManoeuvreCard(
     itinerary: @Composable () -> Unit
 ) {
     val themed = appearance == KozmosManoeuvreAppearance.Theme
-    val guidanceForeground = if (themed) KozmosThemeTokens.primitivesColorsForeground1000 else null
+    // The theme appearance is the theme fill, and everything on it — the
+    // words, the mark, the grab bar, an itinerary — the theme foreground,
+    // white in both themes (decision 59). It was theme/600 with
+    // foreground/1000, which turned black on it in the dark.
+    val guidanceForeground = if (themed) KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle else null
     val hasLanguage = instruction.hasSpeechLanguage()
     val instructionFocus = remember { FocusRequester() }
     val barFocus = remember { FocusRequester() }
@@ -195,7 +199,7 @@ fun KozmosManoeuvreCard(
         // named thing, and two nodes called the same would be read twice.
         modifier = modifier.semantics { contentDescription = manoeuvreLabel },
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer),
-        color = if (themed) KozmosThemeTokens.primitivesColorsTheme600 else KozmosSurfaceDefaults.tint(surface),
+        color = if (themed) KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle else KozmosSurfaceDefaults.tint(surface),
         contentColor = guidanceForeground ?: contentColorFor(KozmosSurfaceDefaults.tint(surface)),
         border = if (themed) null else KozmosSurfaceDefaults.border(surface),
         shadowElevation = 8.dp
@@ -267,7 +271,8 @@ fun KozmosManoeuvreCard(
                         Icon(
                             imageVector = type.icon(),
                             contentDescription = null,
-                            tint = guidanceForeground ?: KozmosThemeTokens.primitivesColorsTheme500,
+                            // On the background appearance, a mark on a surface: theme/600 (decision 59).
+                            tint = guidanceForeground ?: KozmosThemeTokens.primitivesColorsTheme600,
                             modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing300)
                         )
                     }

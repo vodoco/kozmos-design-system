@@ -9799,8 +9799,8 @@ assertContains(
     assertContains(
       files.androidCategoryTile,
       source.androidCategoryTile,
-      "LocalContentColor provides (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme500)",
-      "Android CategoryTile icon in the tint",
+      "LocalContentColor provides (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme600)",
+      "Android CategoryTile icon in the tint, theme 600 by default (decision 59)",
     );
     assertContains(
       files.androidCategoryTile,
@@ -10604,8 +10604,14 @@ assertContains(
 assertContains(
   files.androidCheckbox,
   source.androidCheckbox,
-  "KozmosThemeTokens.primitivesColorsTheme500",
-  "Android Checkbox themed runtime checked token",
+  "val checkedColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
+  "Android Checkbox checked box is the theme fill (decision 59)",
+);
+assertContains(
+  files.androidCheckbox,
+  source.androidCheckbox,
+  "checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle",
+  "Android Checkbox check mark is the theme foreground (decision 59)",
 );
 assertContains(
   files.androidCheckbox,
@@ -10634,8 +10640,14 @@ assertContains(
 assertContains(
   files.androidRadio,
   source.androidRadio,
-  "KozmosThemeTokens.primitivesColorsTheme500",
-  "Android Radio themed runtime checked token",
+  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
+  "Android Radio dot is the theme fill (decision 59)",
+);
+assertContains(
+  files.androidRadio,
+  source.androidRadio,
+  "KozmosThemeTokens.primitivesColorsTheme600",
+  "Android Radio ring is a border, theme 600 (decision 59)",
 );
 assertContains(
   files.androidRadio,
@@ -10682,8 +10694,14 @@ assertContains(
 assertContains(
   files.androidSwitch,
   source.androidSwitch,
-  "KozmosThemeTokens.primitivesColorsTheme500",
-  "Android Switch themed runtime checked token",
+  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
+  "Android Switch checked track is the theme fill (decision 59)",
+);
+assertContains(
+  files.androidSwitch,
+  source.androidSwitch,
+  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle",
+  "Android Switch thumb on the checked track is the theme foreground (decision 59)",
 );
 assertContains(
   files.androidSwitch,
