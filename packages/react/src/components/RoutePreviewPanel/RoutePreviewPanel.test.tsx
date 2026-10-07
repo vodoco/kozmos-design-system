@@ -7,9 +7,10 @@ import postcss, { type Rule } from "postcss";
 import { describe, expect, it, vi } from "vitest";
 import { RoutePreviewPanel } from "./RoutePreviewPanel";
 
-// The component-owned rules, as the package ships them. jsdom evaluates a
-// selector, `:dir()` among them, but applies no stylesheet: the transform an
-// element is given is read by matching the owned rules against it.
+// The component-owned rules, as the package ships them. jsdom matches
+// selectors but applies no stylesheet and cascades no custom property: the
+// rule an element is given is read by matching the owned rules against it,
+// and what each engine draws from it is scripts/check-direction-rules.mjs's.
 const OWNED = readFileSync(
   resolvePath(
     dirname(fileURLToPath(import.meta.url)),
@@ -242,9 +243,9 @@ describe("RoutePreviewPanel", () => {
   it("points its back arrow to the start edge in either direction", () => {
     // Back leads to where the reader came from: the start edge, left to
     // right on the left and right to left on the right. The arrow is drawn
-    // pointing left, and the owned stylesheet mirrors it where the reading
-    // direction is right to left, as SwiftUI's arrow.backward and Compose's
-    // AutoMirrored ArrowBack mirror themselves.
+    // pointing left, and the owned stylesheet mirrors it where the nearest
+    // dir attribute is rtl (--kozmos-rtl), as SwiftUI's arrow.backward and
+    // Compose's AutoMirrored ArrowBack mirror themselves.
     for (const dir of ["ltr", "rtl"] as const) {
       const { unmount } = render(
         <div dir={dir}>
@@ -265,7 +266,7 @@ describe("RoutePreviewPanel", () => {
         .querySelector("svg")!;
       expect(arrow, "the back button draws no arrow").toBeTruthy();
       expect(ownedTransform(arrow), `the arrow, ${dir}`).toBe(
-        dir === "rtl" ? "scaleX(-1)" : undefined,
+        "scaleX(calc(1 - 2 * var(--kozmos-rtl, 0)))",
       );
       unmount();
     }

@@ -603,6 +603,7 @@ function Controls({ id }: { id: string }) {
               kind: "accessibility",
               label: "Accessibility",
               value: "Step-free",
+              tone: "success",
             },
             {
               id: "crowd",
@@ -610,6 +611,7 @@ function Controls({ id }: { id: string }) {
               label: "Crowd",
               value: "Packed",
               detail: "25 min wait",
+              tone: "danger",
             },
           ],
           groups: [

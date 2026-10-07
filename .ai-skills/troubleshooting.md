@@ -177,7 +177,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
 **Symptoms:**
 
 ```
-❌ ERROR: everything costs 68.20 KB, over 68 KB
+❌ ERROR: everything costs 88.20 KB, over 88 KB
 ```
 
 **Solutions:**
@@ -206,7 +206,7 @@ Error: useState only works in Client Components. Add the "use client" directive.
    ```
 
 A budget moves only with the measurement that justifies it, on Olcay's decision (decision 53 set
-everything at once to 68 KB; it has been 88 KB since 2026-10-06).
+everything at once to 68 KB; it has been 88 KB since 2026-10-06, decision 56).
 
 ---
 
@@ -1074,7 +1074,7 @@ tween(
 **Solutions:**
 
 1. **Load the stylesheet with the page:** Kozmos's CSS is one file, `@kozmos-ds/react/style.css`,
-   held to 30 KB gzipped. Import it from your entry, so your bundler links it in the document's
+   held to 30.5 KB gzipped. Import it from your entry, so your bundler links it in the document's
    head rather than after the first render.
 
 2. **Lazy-load a screen of your own, not a Kozmos part:** `@kozmos-ds/react` has no per-component
@@ -1255,7 +1255,7 @@ tween(
 | ----------------------------------------------- | ------------------------------------------------- | ------------------ |
 | `Some token references (1) could not be found`  | A reference to a token that does not exist        | Section 1.1        |
 | `Add the "use client" directive`                | A hook in a file of your own without it           | Section 2.1        |
-| `everything costs … KB, over 68 KB`             | A bundle budget exceeded                          | Section 2.2        |
+| `everything costs … KB, over 88 KB`             | A bundle budget exceeded                          | Section 2.2        |
 | `require() of ES Module`                        | CJS/ESM conflict                                  | Section 2.3        |
 | `Cannot find module '@kozmos-ds/…'`             | The package is not built                          | Section 2.4        |
 | `Hydration mismatch`, or a flash of light theme | The first render uses `defaultSystemTheme`        | Section 3.2        |

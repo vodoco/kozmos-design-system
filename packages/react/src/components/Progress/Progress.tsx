@@ -23,9 +23,11 @@ const Progress = React.forwardRef<
       )}
       {...props}
     >
+      {/* As wide as the value, from the inline start: right to left it fills
+          from the right, as SwiftUI's and Compose's bars do. */}
       <ProgressPrimitive.Indicator
-        className="h-full w-full flex-1 bg-primary transition-all"
-        style={{ transform: `translateX(-${100 - percentage}%)` }}
+        className="h-full bg-primary transition-all"
+        style={{ width: `${percentage}%` }}
       />
     </ProgressPrimitive.Root>
   );
