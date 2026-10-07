@@ -43,6 +43,7 @@ public struct KozmosButton: View {
     let fillsWidth: Bool
     let leadingIconName: String?
     let action: () -> Void
+    @Environment(\.kozmosButtonFillsCell) private var fillsCell
     
     /// A labelled action. `leadingIconName` is a decorative KozmosIcon name; loading
     /// replaces it with the spinner. Existing label-only calls are unchanged.
@@ -95,8 +96,9 @@ public struct KozmosButton: View {
             .foregroundColor(foregroundColor)
             .frame(
                 minWidth: size == .icon ? 44 : nil,
-                maxWidth: fillsWidth ? .infinity : nil,
-                minHeight: 44
+                maxWidth: fillsWidth || fillsCell && size != .icon ? .infinity : nil,
+                minHeight: 44,
+                maxHeight: fillsCell && size != .icon ? .infinity : nil
             )
             .kozmosButtonSurface(
                 variant == .glass ? .glass : nil,
@@ -208,6 +210,21 @@ public struct KozmosButton: View {
         case .outline: return KozmosColors.primitivesColorsForeground300
         default: return Color.clear
         }
+    }
+}
+
+private struct KozmosButtonFillsCellKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Set by a Kozmos layout that owns its buttons' cells — RouteSummary's
+    /// actions, in `KozmosEqualColumnsLayout` — so a labelled KozmosButton
+    /// fills the cell it is offered, across and down, as the web's grid
+    /// stretches it. An icon button keeps its 44 square.
+    var kozmosButtonFillsCell: Bool {
+        get { self[KozmosButtonFillsCellKey.self] }
+        set { self[KozmosButtonFillsCellKey.self] = newValue }
     }
 }
 

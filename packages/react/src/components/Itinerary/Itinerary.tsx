@@ -2,6 +2,7 @@ import React from "react";
 import type { Instruction } from "@kozmos-ds/product-contracts";
 import { InstructionText } from "../../utils/instruction";
 import { cn } from "../../utils";
+import { Button } from "../Button";
 import {
   DirectionIcon,
   type DirectionType,
@@ -29,13 +30,33 @@ export interface ItineraryProps extends React.HTMLAttributes<HTMLElement> {
   destinationLabel?: string;
   /** What the list is called to assistive technology. */
   label?: string;
+  /**
+   * Draws an action at the end of the From row, after the place's name. The
+   * host owns what follows: it opens the start point for editing and moves
+   * focus there. Left out, the row has no action.
+   */
+  onEditOrigin?: () => void;
+  /** As `onEditOrigin`, for the To row. */
+  onEditDestination?: () => void;
+  /** The actions' visible verb: RouteLocationField's `changeLabel`, "Change". */
+  changeLabel?: string;
+  /**
+   * The From action's accessible name. Start it with `changeLabel`, the words
+   * on the button, so a speech user can say what they see (WCAG 2.5.3). By
+   * default it is `changeLabel` and `originLabel`, the row's caption: both
+   * words the product translates, so the name is in one language.
+   */
+  editOriginLabel?: string;
+  /** The To action's accessible name; by default `changeLabel` and `destinationLabel`. */
+  editDestinationLabel?: string;
 }
 
 /**
  * The whole route as a list: where it starts, every step with the current
  * one emphasised, where it ends. Assistive technology reads the endpoints
  * with their labels and each step as one item, the current one marked
- * `aria-current="step"`.
+ * `aria-current="step"`. With `onEditOrigin` or `onEditDestination`, that
+ * endpoint's row ends in a Change button.
  */
 const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
   (
@@ -47,6 +68,11 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
       originLabel = "From",
       destinationLabel = "To",
       label = "Itinerary",
+      onEditOrigin,
+      onEditDestination,
+      changeLabel = "Change",
+      editOriginLabel = `${changeLabel} ${originLabel}`,
+      editDestinationLabel = `${changeLabel} ${destinationLabel}`,
       ...props
     },
     ref,
@@ -54,14 +80,24 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
     const currentCount = steps.filter((step) => step.current).length;
     // The captions and the origin are muted, and on glass, in a glass
     // manoeuvre card, the foreground colour (decision 48).
-    const endpoint = (caption: string, name: string, emphasised: boolean) => (
-      <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[15px]">
-        <span className="kozmos-muted-text min-w-10 max-w-full shrink-0 text-xs uppercase [overflow-wrap:anywhere]">
+    // An action follows the name, on its baseline, and takes the next line,
+    // at the row's end, when the name would keep under 80px beside it: the
+    // row's layout is owned CSS (.kozmos-itinerary-endpoint), so it holds
+    // without @scope.
+    const endpoint = (
+      caption: string,
+      name: string,
+      emphasised: boolean,
+      onEdit?: () => void,
+      editLabel?: string,
+    ) => (
+      <li className="kozmos-itinerary-endpoint text-[15px]">
+        <span className="kozmos-itinerary-endpoint-caption kozmos-muted-text text-xs uppercase">
           {caption}
         </span>
         <span
           className={cn(
-            "min-w-0 flex-1 basis-20 [overflow-wrap:anywhere]",
+            "kozmos-itinerary-endpoint-name",
             emphasised
               ? "font-semibold kozmos-guidance-text"
               : "kozmos-muted-text",
@@ -69,6 +105,17 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
         >
           {name}
         </span>
+        {onEdit && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label={editLabel}
+            onClick={onEdit}
+          >
+            {changeLabel}
+          </Button>
+        )}
       </li>
     );
     return (
@@ -79,7 +126,7 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
         {...props}
       >
         <ol className="m-0 flex list-none flex-col gap-2 p-0">
-          {endpoint(originLabel, origin, false)}
+          {endpoint(originLabel, origin, false, onEditOrigin, editOriginLabel)}
           {steps.map((step) => (
             <li
               key={step.id}
@@ -115,7 +162,13 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
               </span>
             </li>
           ))}
-          {endpoint(destinationLabel, destination, true)}
+          {endpoint(
+            destinationLabel,
+            destination,
+            true,
+            onEditDestination,
+            editDestinationLabel,
+          )}
         </ol>
       </section>
     );

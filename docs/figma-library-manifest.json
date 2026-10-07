@@ -14178,10 +14178,10 @@
   },
   "components": {
     "summary": {
-      "total": 119,
-      "stories": 119,
-      "tests": 119,
-      "exported": 119,
+      "total": 120,
+      "stories": 120,
+      "tests": 120,
+      "exported": 120,
       "codeConnectFiles": 98,
       "codeConnectScaffolds": 0,
       "codeConnectLinked": 98
@@ -15154,6 +15154,42 @@
         }
       },
       {
+        "name": "ClientAppBanner",
+        "source": "packages/react/src/components/ClientAppBanner/ClientAppBanner.tsx",
+        "story": "packages/react/src/components/ClientAppBanner/ClientAppBanner.stories.tsx",
+        "test": "packages/react/src/components/ClientAppBanner/ClientAppBanner.test.tsx",
+        "exported": true,
+        "codeConnect": {
+          "file": null,
+          "linked": false,
+          "figmaUrl": null,
+          "needsNodeId": false,
+          "status": "missing",
+          "issues": [],
+          "connectedComponents": [],
+          "mappedProps": [],
+          "unmappedProps": []
+        },
+        "props": [
+          "actionLabel",
+          "appIconAlt",
+          "appIconSrc",
+          "appName",
+          "aria-describedby",
+          "aria-invalid",
+          "aria-label",
+          "children",
+          "description",
+          "dismissLabel",
+          "id",
+          "promotionText",
+          "role",
+          "tabIndex",
+          "title"
+        ],
+        "variants": {}
+      },
+      {
         "name": "ColorPicker",
         "source": "packages/react/src/components/ColorPicker/ColorPicker.tsx",
         "story": "packages/react/src/components/ColorPicker/ColorPicker.stories.tsx",
@@ -16076,9 +16112,12 @@
           "aria-describedby",
           "aria-invalid",
           "aria-label",
+          "changeLabel",
           "children",
           "destination",
           "destinationLabel",
+          "editDestinationLabel",
+          "editOriginLabel",
           "id",
           "label",
           "origin",
@@ -17719,6 +17758,7 @@
           "unmappedProps": []
         },
         "props": [
+          "actions",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
@@ -17732,6 +17772,7 @@
           "endRouteLabel",
           "etaText",
           "id",
+          "locationText",
           "presentation",
           "progress",
           "role",

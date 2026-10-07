@@ -27,6 +27,17 @@ export interface MapAttributionProps extends React.HTMLAttributes<HTMLElement> {
 
 const useLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
+// React 19 reads `inert` as a boolean; React 18 passes it on as a string.
+const inert = (
+  parseInt(React.version) > 18 ? { inert: true } : { inert: "" }
+) as object;
+/** Laid out where it would be drawn, but unseen and out of reach. */
+const measuredOnly: React.CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  visibility: "hidden",
+};
 
 /**
  * Provider-neutral map credits with independently optional branding.
@@ -52,16 +63,25 @@ export const MapAttribution = React.forwardRef<
       appearance = "map",
       label = "Map attribution",
       className,
+      style,
       ...props
     },
     ref,
   ) => {
     // In a map shell with no room for the whole attribution, the brand goes
-    // first: the credits are what a map provider's licence asks for.
+    // first: the credits are what a map provider's licence asks for
+    // (decision 58).
     const compact = React.useContext(MapShellAttributionCompactContext);
-    const visibleBrand =
-      showBrand && !compact && brand != null && brand !== false;
+    const hasBrand = showBrand && brand != null && brand !== false;
     const hasCredits = credits.length > 0;
+    // The brand's box, which the shell measures to know whether the whole
+    // attribution fits. Given way, it stays laid out at the width it would
+    // have, out of flow, unseen and out of reach, so the shell can tell when
+    // it fits again (GAP-135). With no credits it is the whole attribution.
+    const brandBox = {
+      "data-kozmos-attribution-brand": "",
+      ...(compact && { "aria-hidden": true, ...inert }),
+    };
     // The credits are one line that scrolls sideways when it is longer than
     // the space. Only then is it a tab stop, so that a keyboard can scroll it;
     // a line that fits would be an unnamed stop that does nothing. It is taken
@@ -81,7 +101,7 @@ export const MapAttribution = React.forwardRef<
       if (node.firstElementChild) sizes.observe(node.firstElementChild);
       return () => sizes.disconnect();
     }, [hasCredits]);
-    if (!visibleBrand && !hasCredits) return null;
+    if (!hasBrand && !hasCredits) return null;
     return (
       <section
         ref={ref}
@@ -93,10 +113,22 @@ export const MapAttribution = React.forwardRef<
           className,
         )}
         {...props}
+        {...(!hasCredits && brandBox)}
+        style={!hasCredits && compact ? { ...style, ...measuredOnly } : style}
       >
-        {visibleBrand && (
+        {hasBrand && (
           <div
             className={cn("flex min-w-0 justify-center", hasCredits && "mb-1")}
+            {...(hasCredits && brandBox)}
+            style={
+              hasCredits && compact
+                ? {
+                    ...measuredOnly,
+                    paddingLeft: "inherit",
+                    paddingRight: "inherit",
+                  }
+                : undefined
+            }
           >
             {brand}
           </div>

@@ -1,0 +1,228 @@
+import { Meta, Canvas } from "@storybook/blocks";
+import { Controls } from "../DocumentationControls";
+import { PlatformSnippets } from "../PlatformSnippets";
+import * as Stories from "./ClientAppBanner.stories";
+
+<Meta of={Stories} />
+
+# ClientAppBanner
+
+Express's Client App Banner (GAP-127): a short promotion for the customer's
+own app at the top of the map, with one action and a way to dismiss it.
+
+Every field is set by the customer in Pointr Cloud, in the visitor's language,
+and Kozmos draws them:
+
+- **`promotionText`**, the line above the name: "Get the app";
+- **`appIconSrc`**, the app's icon;
+- **`appName`**, the app's name;
+- **`description`**, what the app is for;
+- **`actionLabel`** and **`onAction`**, the button: the product opens the
+  store, or the app.
+
+`onDismiss` adds a dismiss button. The banner never removes itself: the
+product removes it, and decides for how long it stays away. Left out, there is
+no dismiss button.
+
+<Canvas of={Stories.Default} />
+
+## Without an icon
+
+Without an icon, or until it loads, the app's initial stands in for it, as an
+Avatar's fallback does; once the icon has loaded the initial is gone, so it
+never shows through a transparent icon. The icon is 48 square at every text
+size, as on SwiftUI and Compose, with the Control corner and the subtle edge,
+so an app icon on white still has an outline. An image of any size is cropped
+to the square, never stretched.
+
+<Canvas of={Stories.NoIcon} />
+
+## In the map shell's top bar
+
+It is made for `AdaptiveMapShell`'s `topBar`. The top bar hosts what it is
+given and draws no surface of its own, so the banner brings its own, as the
+manoeuvre card there does: the solid surface (the page's fill and its subtle
+edge), the Container corner (20) and map chrome's floating elevation. It is
+16 inside, with the icon 12 from the words, and it fills the width the top bar
+gives it.
+
+<Canvas of={Stories.InShellTopBar} />
+
+## Narrow widths
+
+The words and the action share a line while the words keep 10rem beside the
+icon (160 at the default text size on SwiftUI and Compose, where it grows with
+Dynamic Type and the font scale as 10rem grows with the browser's text). Past
+that the action goes under the icon and the words and spans them both, so the
+words keep the whole width beside the icon and the action's words are not
+squeezed. Dismiss stays at the top end. Nothing is measured on the web: a
+longer language, larger text or a longer action moves it by itself. The
+description is drawn on two lines at most; a screen reader still reads all of
+it.
+
+<Canvas of={Stories.Narrow} />
+
+Every side is logical: right to left, the icon and the words start at the
+right, and the action and dismiss end at the left.
+
+## Accessibility
+
+- The banner is a **region named by the app** (`aria-label` names it
+  otherwise). SwiftUI makes it a container labelled by the app's name, and
+  Compose a group TalkBack reads together, described by the app's name. It is
+  not a Compose pane: a pane's title is announced when it appears.
+- It reads the **promotion, the name and the description, then the action,
+  then dismiss**, on every platform and at every width, though dismiss sits
+  above the words at the top end.
+- The **action is named by its words** and nothing else, so what is seen is
+  what is said (WCAG 2.5.3). The **dismiss button is named** by
+  `dismissLabel`, "Dismiss" unless the product supplies its own words.
+- The **icon is decoration** beside the app's name, and is not read. Pass
+  `appIconAlt` only when the icon says something the name does not: it is
+  then one image, loaded or not.
+- Every target keeps **44** (48dp on Compose). Dismiss is the 44 square at
+  every text size, 4 from the top and end edges, its glyph in line with the
+  words' 16; the action grows with the text.
+- **Nothing moves focus** and nothing is announced. When the product removes
+  the banner after a dismiss, it moves focus somewhere that makes sense, such
+  as the search field, as the React example below does: the dismiss button
+  that had it is gone.
+
+## All platforms
+
+<PlatformSnippets
+  react={`
+import { useRef, useState, type ReactNode } from "react";
+import { AdaptiveMapShell, ClientAppBanner, SearchBar } from "@kozmos-ds/react";
+
+// The customer's banner, as Pointr Cloud returns it, in the visitor's language.
+interface AppBannerSettings {
+  promotionText?: string;
+  appName: string;
+  description?: string;
+  appIconUrl?: string;
+  buttonText: string;
+  storeUrl: string;
+}
+
+// Shown in the map shell's top bar until the visitor dismisses it.
+export function MapWithAppBanner({
+  banner,
+  map,
+}: {
+  banner?: AppBannerSettings;
+  map: ReactNode;
+}) {
+  const [dismissed, setDismissed] = useState(false);
+  const [query, setQuery] = useState("");
+  const search = useRef<HTMLInputElement>(null);
+  return (
+    <AdaptiveMapShell
+      map={map}
+      panelHeader={
+        <SearchBar
+          ref={search}
+          aria-label="Search the map"
+          value={query}
+          onChange={setQuery}
+        />
+      }
+      topBar={
+        banner && !dismissed ? (
+          <ClientAppBanner
+            promotionText={banner.promotionText}
+            appName={banner.appName}
+            description={banner.description}
+            appIconSrc={banner.appIconUrl}
+            actionLabel={banner.buttonText}
+            onAction={() => window.location.assign(banner.storeUrl)}
+            onDismiss={() => {
+              setDismissed(true);
+              // The dismiss button that had focus goes with the banner.
+              search.current?.focus();
+            }}
+          />
+        ) : undefined
+      }
+    />
+  );
+}
+  `}
+  swift={`
+import SwiftUI
+import Kozmos
+
+// The customer's banner, as Pointr Cloud returns it, in the visitor's language.
+struct AppBannerSettings {
+    var promotionText: String?
+    var appName: String
+    var description: String?
+    var appIconURL: URL?
+    var buttonText: String
+    var storeURL: URL
+}
+
+// Shown in the map shell's top bar until the visitor dismisses it.
+struct AppBanner: View {
+    let settings: AppBannerSettings
+    @Binding var isDismissed: Bool
+    @Environment(\\.openURL) private var openURL
+
+    var body: some View {
+        if !isDismissed {
+            KozmosClientAppBanner(
+                appName: settings.appName,
+                actionLabel: settings.buttonText,
+                promotionText: settings.promotionText,
+                description: settings.description,
+                appIconURL: settings.appIconURL,
+                dismissLabel: String(localized: "Dismiss"),
+                onAction: { openURL(settings.storeURL) },
+                onDismiss: { isDismissed = true }
+            )
+        }
+    }
+}
+  `}
+  kotlin={`
+package com.kozmos.example
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalUriHandler
+import com.kozmos.components.clientappbanner.KozmosClientAppBanner
+
+// The customer's banner, as Pointr Cloud returns it, in the visitor's language.
+data class AppBannerSettings(
+    val promotionText: String?,
+    val appName: String,
+    val description: String?,
+    val appIconUrl: String?,
+    val buttonText: String,
+    val storeUrl: String
+)
+
+// Shown in the map shell's top bar until the visitor dismisses it.
+@Composable
+fun AppBanner(settings: AppBannerSettings) {
+    var dismissed by rememberSaveable { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
+    if (!dismissed) {
+        KozmosClientAppBanner(
+            appName = settings.appName,
+            actionLabel = settings.buttonText,
+            onAction = { uriHandler.openUri(settings.storeUrl) },
+            promotionText = settings.promotionText,
+            description = settings.description,
+            appIconUrl = settings.appIconUrl,
+            onDismiss = { dismissed = true }
+        )
+    }
+}
+  `}
+/>
+
+<Controls />

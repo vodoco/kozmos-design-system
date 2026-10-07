@@ -195,8 +195,10 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     private let attribution: AnyView?
     /// The attribution's height as drawn: without its brand when compact.
     @State private var attributionHeight: CGFloat = 0
-    /// Its height with the brand, measured while not compact: what the
-    /// panel's sizing reserves, so the brand giving way never moves it.
+    /// Its height with the brand: what the panel's sizing reserves, so the
+    /// brand giving way never moves it. Measured as drawn while the brand
+    /// shows, and from an unseen copy while it has given way, so it follows
+    /// a change of size or text either way (GAP-135).
     @State private var attributionFullHeight: CGFloat = 0
     /// True when the credits slot has less room than the full height: the
     /// brand gives way, and the credits are never clipped (GAP-135).
@@ -622,7 +624,40 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
     }
 
     private func visibleBottomControlsHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        cornersGiveWay(in: size, safeArea: safeArea) ? 0 : cornersFitHeight(in: size, safeArea: safeArea)
+    }
+
+    /// The corners' height when their band holds them, whatever the attribution does.
+    private func cornersFitHeight(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
         hasBottomControls && bottomControlsHeight <= bottomBand(in: size, safeArea: safeArea) ? bottomControlsHeight : 0
+    }
+
+    /// How far corners that fit lift the attribution: above them when they
+    /// leave no middle slot 128 points wide.
+    private func attributionLiftOverCorners(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        let gap = KozmosDimensions.primitivesLayoutSpacing200
+        let corners = cornersFitHeight(in: size, safeArea: safeArea)
+        let start = (cornerWidths[0] ?? 0) > 0 ? (cornerWidths[0] ?? 0) + gap : 0
+        let end = (cornerWidths[1] ?? 0) > 0 ? (cornerWidths[1] ?? 0) + gap : 0
+        let innerWidth = max(0, size.width - safeArea.leading - safeArea.trailing - gap * 2)
+        return corners > 0 && innerWidth - max(start, end) * 2 < 128 ? corners + gap : 0
+    }
+
+    /// The band between the top bar and the docked panel, or the bottom edge,
+    /// that the attribution has.
+    private func attributionBand(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
+        let gap = KozmosDimensions.primitivesLayoutSpacing200
+        let bottom = dockedPanelHeight(in: size, isRegularWidth: isRegularWidth, safeArea: safeArea)
+        return max(0, size.height - bottom - topBarInset - safeArea.top - gap * 2 - (bottom > 0 ? 0 : safeArea.bottom))
+    }
+
+    /// Decision 58 gives way in order: the logo first, then the corners. With
+    /// the logo gone, credits still too tall to sit above the corners send
+    /// them away and return to the bottom row; the credits never clip.
+    private func cornersGiveWay(in size: CGSize, safeArea: EdgeInsets) -> Bool {
+        guard attribution != nil, attributionCompact else { return false }
+        let lift = attributionLiftOverCorners(in: size, safeArea: safeArea)
+        return lift > 0 && attributionHeight + lift > attributionBand(in: size, safeArea: safeArea)
     }
 
     private func bottomBand(in size: CGSize, safeArea: EdgeInsets) -> CGFloat {
@@ -771,7 +806,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         x: shellFrame.minX + safeLeft + gap, y: belowPanelTop,
                         width: max(0, geometry.size.width - safeArea.leading - safeArea.trailing - gap * 2),
                         height: max(0, shellFrame.maxY - safeArea.bottom - gap - belowPanelTop))
-                    let cornersAvailable = bottomControlsHeight <= band && band > 0
+                    let cornersShown = bottomControlsHeight <= band && band > 0 && !cornersGiveWay(in: geometry.size, safeArea: safeArea)
                     let popupFitsBelowPanel = belowPanelBounds.height >= bottomControlsHeight + gap * 10
                     KozmosBottomControlsLayout {
                         // A stack per corner, as Compose has a Box: the layout
@@ -783,14 +818,14 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                             controlsBottomStart
                                 .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
                                     bounds: hasPanel && isRegularWidth && panelPlacement == .start && popupFitsBelowPanel ? belowPanelBounds : popupBounds,
-                                    available: cornersAvailable))
+                                    available: cornersShown))
                                 .background(GeometryReader { p in Color.clear.preference(key: KozmosBottomCornerWidthsKey.self, value: [0: p.size.width]) })
                         }
                         ZStack {
                             controlsBottomEnd
                                 .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(
                                     bounds: hasPanel && isRegularWidth && panelPlacement == .end && popupFitsBelowPanel ? belowPanelBounds : popupBounds,
-                                    available: cornersAvailable))
+                                    available: cornersShown))
                                 .background(GeometryReader { p in Color.clear.preference(key: KozmosBottomCornerWidthsKey.self, value: [1: p.size.width]) })
                         }
                     }
@@ -798,13 +833,13 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityElement(children: .contain)
                     .accessibilityLabel(bottomControlsLabel)
-                    .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(bounds: popupBounds, available: bottomControlsHeight <= band && band > 0))
+                    .environment(\.kozmosMapPopupRegion, KozmosMapPopupRegion(bounds: popupBounds, available: cornersShown))
                     .background(GeometryReader { proxy in
                         Color.clear.preference(key: KozmosBottomControlsHeightKey.self, value: proxy.size.height)
                     })
-                    .opacity(bottomControlsHeight <= band && band > 0 ? 1 : 0)
-                    .allowsHitTesting(bottomControlsHeight <= band && band > 0)
-                    .accessibilityHidden(bottomControlsHeight > band || band <= 0)
+                    .opacity(cornersShown ? 1 : 0)
+                    .allowsHitTesting(cornersShown)
+                    .accessibilityHidden(!cornersShown)
                     .padding(.horizontal, gap)
                     .padding(.leading, safeArea.leading)
                     .padding(.trailing, safeArea.trailing)
@@ -816,7 +851,7 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                 if let attribution {
                     let gap = KozmosDimensions.primitivesLayoutSpacing200
                     let bottom = dockedPanelHeight(in: geometry.size, isRegularWidth: isRegularWidth, safeArea: safeArea)
-                    let footerBand = max(0, geometry.size.height - bottom - topBarInset - safeArea.top - gap * 2 - (bottom > 0 ? 0 : safeArea.bottom))
+                    let footerBand = attributionBand(in: geometry.size, safeArea: safeArea)
                     let corners = visibleBottomControlsHeight(in: geometry.size, safeArea: safeArea)
                     let start = corners > 0 && (cornerWidths[0] ?? 0) > 0 ? (cornerWidths[0] ?? 0) + gap : 0
                     let end = corners > 0 && (cornerWidths[1] ?? 0) > 0 ? (cornerWidths[1] ?? 0) + gap : 0
@@ -824,9 +859,12 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                     let symmetricReserve = max(start, end)
                     let above = corners > 0 && innerWidth - symmetricReserve * 2 < 128
                     let lift = above ? corners + gap : 0
-                    // With less room than its full height, the brand gives way;
+                    // With less room than its full height, lifted above the
+                    // corners when they fit, the brand gives way (decision 58);
                     // the credits keep their height and are never clipped.
-                    let compact = attributionFullHeight > min(attributionCap(in: geometry.size, safeArea: safeArea), max(0, footerBand - lift))
+                    let compact = attributionFullHeight > min(
+                        attributionCap(in: geometry.size, safeArea: safeArea),
+                        max(0, footerBand - attributionLiftOverCorners(in: geometry.size, safeArea: safeArea)))
                     attribution
                         .environment(\.kozmosMapAttributionCompact, attributionCompact)
                         .frame(maxWidth: .infinity)
@@ -834,6 +872,23 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
                         .background(GeometryReader { proxy in
                             Color.clear.preference(key: KozmosAttributionHeightKey.self, value: proxy.size.height)
                         })
+                        // Given way, the brand is still measured: an unseen,
+                        // unreachable copy of the whole attribution, laid out
+                        // at the width it would be drawn, so the shell knows
+                        // when it fits again.
+                        .background(alignment: .bottom) {
+                            if attributionCompact {
+                                attribution
+                                    .environment(\.kozmosMapAttributionCompact, false)
+                                    .frame(maxWidth: .infinity)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .background(GeometryReader { proxy in
+                                        Color.clear.preference(key: KozmosAttributionFullHeightKey.self, value: proxy.size.height)
+                                    })
+                                    .hidden()
+                                    .accessibilityHidden(true)
+                            }
+                        }
                         .onAppear { attributionCompact = compact }
                         .onChange(of: compact) { attributionCompact = $0 }
                     .frame(width: max(0, innerWidth - (above ? 0 : symmetricReserve * 2)))
@@ -862,6 +917,9 @@ public struct KozmosAdaptiveMapShell<Map: View, Controls: View, TopBar: View, Pa
             .onPreferenceChange(KozmosAttributionHeightKey.self) {
                 attributionHeight = $0
                 if !attributionCompact { attributionFullHeight = $0 }
+            }
+            .onPreferenceChange(KozmosAttributionFullHeightKey.self) {
+                if attributionCompact, $0 > 0 { attributionFullHeight = $0 }
             }
             .onPreferenceChange(KozmosMapShellContentPanelHeightKey.self) { contentPanelHeight = $0 }
             .onPreferenceChange(KozmosMapShellPeekBottomKey.self) { peekAnchorBottom = $0 }

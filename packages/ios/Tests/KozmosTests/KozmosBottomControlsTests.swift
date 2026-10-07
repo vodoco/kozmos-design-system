@@ -131,6 +131,122 @@ final class KozmosBottomControlsTests: XCTestCase {
         }
     }
 
+    // GAP-135's follow-up (decision 58, extended): two 44-point corners on a phone leave no middle
+    // slot, so the attribution sits above them. However tall an opened direction card grows, the
+    // attribution never reaches into it: the logo gives way first, then the corners, and the
+    // credits keep their full height.
+    @MainActor func testLiftedCreditsSendTheCornersAwayRatherThanReachTheTopBar() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        var reached = Set<String>()
+        for barHeight in stride(from: CGFloat(300), through: 600, by: 20) {
+            var frames: [String: CGRect] = [:]
+            let view = KozmosAdaptiveMapShell(
+                panelDetent: .constant(.collapsed),
+                attribution: AnyView(KozmosMapAttribution(
+                    credits: [.init(id: "a", label: "Indoor contributors")]
+                ).background(AttributionProbe())),
+                controlsBottomStart: { Self.corner("Language") },
+                controlsBottomEnd: { Self.corner("Floor") },
+                map: { Color.clear }, mapStatusContent: { EmptyView() },
+                controls: { EmptyView() },
+                topBar: { Self.probe("bar", width: 358, height: barHeight) },
+                panel: { Text("Details").frame(height: 120) }
+            ).frame(width: 390, height: 720).environment(\.horizontalSizeClass, .compact)
+                .onPreferenceChange(Frames.self) { frames = $0 }
+            let window = TestWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 720))
+            window.rootViewController = UIHostingController(rootView: view)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+            try await Task.sleep(nanoseconds: 600_000_000)
+            let labels = elements(in: window).compactMap(\.accessibilityLabel)
+            let attribution = try XCTUnwrap(AttributionProbe.drawn(in: frames), "bar \(barHeight): \(frames)")
+            let bar = try XCTUnwrap(frames["bar"])
+            let logo = labels.contains("Pointr")
+            let corners = labels.contains("Language") && labels.contains("Floor")
+            let state = "bar \(barHeight): attribution \(attribution), top bar \(bar), \(labels)"
+            XCTAssertFalse(attribution.intersects(bar), "the attribution reaches into the top bar, \(state)")
+            XCTAssertTrue(labels.contains("Indoor contributors") || scrollViews(in: window).contains {
+                $0.bounds.height > 10 && $0.contentSize.width > 0 }, "the credits never go, \(state)")
+            if corners {
+                for id in ["Language", "Floor"] {
+                    XCTAssertFalse(attribution.intersects(try XCTUnwrap(frames[id])), "\(id) overlaps, \(state)")
+                }
+            }
+            let lifted = corners && attribution.maxY < (frames["Floor"]?.minY ?? 0)
+            reached.insert("\(logo ? "logo" : "credits") \(corners ? (lifted ? "above corners" : "beside corners") : "without corners")")
+        }
+        for expected in ["logo above corners", "credits above corners", "credits without corners"] {
+            XCTAssertTrue(reached.contains(expected), "the sweep reached \"\(expected)\": \(reached)")
+        }
+    }
+
+    // And the logo comes back once it fits again: after the text grows and shrinks back, and
+    // after the shell narrows and widens back with a brand of words that wraps in between. The
+    // full height used to be measured only while the brand showed, so it stayed at its largest.
+    @MainActor func testTheLogoComesBackAfterATextAndAWidthRoundTrip() async throws {
+        let old = try XCTUnwrap(setAutomation(1))
+        defer { _ = setAutomation(old) }
+        for trip in ["text", "width"] {
+            func shell(_ size: DynamicTypeSize, width: CGFloat) -> some View {
+                KozmosAdaptiveMapShell(
+                    panelDetent: .constant(.collapsed),
+                    attribution: AnyView(KozmosMapAttribution(
+                        credits: [.init(id: "a", label: "Indoor contributors")],
+                        brand: trip == "width" ? AnyView(Text(verbatim: "Pointr indoor maps partner")
+                            .font(.system(size: 16)).accessibilityLabel(Text(verbatim: "Pointr"))) : nil
+                    ).background(AttributionProbe())),
+                    map: { Color.clear }, mapStatusContent: { EmptyView() },
+                    controls: { EmptyView() },
+                    // Half the band under the card is what the panel leaves the attribution:
+                    // 78 points with a 500-point card, 58 with a 540-point one.
+                    topBar: { Color.clear.frame(height: trip == "text" ? 500 : 540) },
+                    panel: { Text("Details").frame(height: 120) }
+                ).frame(width: width, height: 720)
+                    .environment(\.horizontalSizeClass, .compact)
+                    .environment(\.dynamicTypeSize, size)
+            }
+            let window = TestWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 720))
+            let host = UIHostingController(rootView: shell(.large, width: 390))
+            window.rootViewController = host
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+            func logoShown() async throws -> Bool {
+                try await Task.sleep(nanoseconds: 600_000_000)
+                return elements(in: window).compactMap(\.accessibilityLabel).contains("Pointr")
+            }
+            let first = try await logoShown()
+            XCTAssertTrue(first, "\(trip): the logo shows at first")
+            host.rootView = trip == "text" ? shell(.accessibility5, width: 390) : shell(.large, width: 200)
+            let away = try await logoShown()
+            XCTAssertFalse(away, "\(trip): the logo gives way")
+            host.rootView = shell(.large, width: 390)
+            let back = try await logoShown()
+            XCTAssertTrue(back, "\(trip): the logo comes back when it fits again")
+        }
+    }
+
+    /// Two 120 × 44 corner controls, as a phone's language and floor buttons.
+    private static func corner(_ label: String) -> some View {
+        probe(label, width: 120, height: 44)
+            .accessibilityElement()
+            .accessibilityLabel(Text(verbatim: label))
+    }
+
+    /// Reports the attribution's frame, telling the one drawn from the unseen
+    /// copy the shell measures while the brand has given way.
+    private struct AttributionProbe: View {
+        @Environment(\.kozmosMapAttributionCompact) private var compact
+        var body: some View {
+            GeometryReader { p in
+                Color.clear.preference(key: Frames.self, value: [compact ? "drawn" : "whole": p.frame(in: .global)])
+            }
+        }
+        /// While the brand has given way the copy reports the whole attribution, and the one
+        /// drawn reports itself; otherwise the one drawn is the whole.
+        static func drawn(in frames: [String: CGRect]) -> CGRect? { frames["drawn"] ?? frames["whole"] }
+    }
+
     @MainActor private func scrollViews(in view: UIView) -> [UIScrollView] {
         ((view as? UIScrollView).map { [$0] } ?? []) + view.subviews.flatMap { scrollViews(in: $0) }
     }

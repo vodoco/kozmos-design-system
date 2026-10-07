@@ -204,6 +204,27 @@ function measureHeaderBottom(header: HTMLElement | null): number {
     sheet.getBoundingClientRect().top;
   return Number.isFinite(bottom) && bottom > 0 ? bottom : 0;
 }
+/**
+ * The attribution's height with its brand, and with its credits alone. A
+ * brand that MapAttribution has given way is still laid out, out of flow,
+ * and is added to the first (GAP-135); one that shows is already in it.
+ */
+function measureAttribution(content: HTMLElement | null) {
+  let full = content?.offsetHeight ?? 0;
+  let brand = 0;
+  content
+    ?.querySelectorAll<HTMLElement>("[data-kozmos-attribution-brand]")
+    .forEach((node) => {
+      const style = getComputedStyle(node);
+      const height =
+        node.offsetHeight +
+        (parseFloat(style.marginTop) || 0) +
+        (parseFloat(style.marginBottom) || 0);
+      brand += height;
+      if (style.position === "absolute") full += height;
+    });
+  return [full, Math.max(0, full - brand)];
+}
 const position = (rect: MapLayoutRect): React.CSSProperties => ({
   position: "absolute",
   left: rect.x,
@@ -299,7 +320,9 @@ const AdaptiveMapShell = React.forwardRef<
       bottomControlsHeight: 0,
       bottomStartWidth: 0,
       bottomEndWidth: 0,
-      attributionHeight: 0,
+      /** The attribution with its brand, and with its credits alone. */
+      attributionFullHeight: 0,
+      attributionCreditsHeight: 0,
       panelContentHeight: 0,
       panelHeaderHeight: 0,
       panelBorderHeight: 0,
@@ -340,8 +363,15 @@ const AdaptiveMapShell = React.forwardRef<
 
     useLayoutEffect(() => {
       const element = root.current!;
+      const observer = new ResizeObserver(() => measure());
       const measure = () => {
         const safeStyle = getComputedStyle(safeArea.current!);
+        const [attributionFullHeight, attributionCreditsHeight] =
+          measureAttribution(attributionContent.current);
+        // A brand out of flow resizes without its slot doing so.
+        attributionContent.current
+          ?.querySelectorAll("[data-kozmos-attribution-brand]")
+          .forEach((node) => observer.observe(node));
         const panelStyle = panelElement.current
           ? getComputedStyle(panelElement.current)
           : null;
@@ -361,7 +391,8 @@ const AdaptiveMapShell = React.forwardRef<
           bottomControlsHeight: bottomControls.current?.offsetHeight ?? 0,
           bottomStartWidth: bottomStart.current?.offsetWidth ?? 0,
           bottomEndWidth: bottomEnd.current?.offsetWidth ?? 0,
-          attributionHeight: attributionContent.current?.offsetHeight ?? 0,
+          attributionFullHeight,
+          attributionCreditsHeight,
           controlsHeight: Math.max(
             buttons.current?.offsetHeight ?? 0,
             buttons.current?.scrollHeight ?? 0,
@@ -392,7 +423,6 @@ const AdaptiveMapShell = React.forwardRef<
         );
       };
       measure();
-      const observer = new ResizeObserver(measure);
       [
         element,
         bar.current,
@@ -530,16 +560,13 @@ const AdaptiveMapShell = React.forwardRef<
     };
     const effectivePanelFraction =
       sheetHeight > 0 ? liveHeight / sheetHeight : undefined;
-    // The attribution is never clipped into a scroll region (GAP-135). When
-    // its full height doesn't fit, the brand gives way and the credits keep
-    // theirs. The full height is the one measured with the brand, so the
-    // panel's sizing never moves with the brand. Very long or localized
-    // credits reserve at most half of the usable chrome band, rather than
-    // consuming all space and removing the panel.
-    const [attributionCompact, setAttributionCompact] = React.useState(false);
-    const attributionFullHeight = React.useRef(0);
-    if (!attributionCompact)
-      attributionFullHeight.current = measured.attributionHeight;
+    // The attribution is never clipped into a scroll region (GAP-135,
+    // decision 58). The panel's sizing reserves its height with the brand,
+    // so it never moves with the brand. Very long or localized credits
+    // reserve at most half of the usable chrome band, rather than consuming
+    // all space and removing the panel.
+    const attributionFull = hasAttribution ? measured.attributionFullHeight : 0;
+    const attributionWasCompact = React.useRef(false);
     const attributionCap =
       Math.max(
         0,
@@ -549,9 +576,7 @@ const AdaptiveMapShell = React.forwardRef<
           (topBar ? measured.barHeight + 32 : 0) -
           32,
       ) / 2;
-    const reservedAttributionHeight = hasAttribution
-      ? Math.min(attributionFullHeight.current, attributionCap)
-      : 0;
+    const reservedAttributionHeight = Math.min(attributionFull, attributionCap);
     const layout = resolveAdaptiveMapLayout({
       ...measured,
       hasPanel: Boolean(panel),
@@ -656,23 +681,69 @@ const AdaptiveMapShell = React.forwardRef<
       0,
       available.y + available.height - gap - controlsY,
     );
-    const attributionCompactNeeded =
-      hasAttribution &&
-      measured.ready &&
-      attributionFullHeight.current > Math.min(attributionCap, footerBand);
-    useLayoutEffect(() => {
-      setAttributionCompact(attributionCompactNeeded);
-    }, [attributionCompactNeeded]);
-    const attributionHeight = hasAttribution ? measured.attributionHeight : 0;
-    const attributionReserve =
-      attributionHeight > 0 ? attributionHeight + gap : 0;
+    // Preserve the legacy top controls: they take what an attribution this
+    // tall leaves them, and the independent bottom corners the rest. The
+    // corners need no more than their own height; with less, they keep their
+    // state mounted but leave the region and interaction.
+    const hasBottomControls = hasBottomStart || hasBottomEnd;
+    const controlsBandFor = (attribution: number) =>
+      Math.max(0, footerBand - (attribution > 0 ? attribution + gap : 0));
+    const cornersFitFor = (attribution: number) =>
+      measured.bottomControlsHeight <=
+        Math.max(
+          0,
+          footerBand -
+            (controls
+              ? Math.min(
+                  measured.controlsHeight,
+                  controlsBandFor(attribution),
+                ) + gap
+              : 0),
+        ) && footerAvailable.width > 2 * gap;
+    // Reserve the larger corner equally on both sides: attribution is centered
+    // on the whole map, never on the remainder beside a panel or wider button.
+    const cornerReserve = Math.max(
+      hasBottomStart ? measured.bottomStartWidth + gap : 0,
+      hasBottomEnd ? measured.bottomEndWidth + gap : 0,
+    );
+    const footerWidth = Math.max(0, footerAvailable.width - 2 * gap);
+    // Only the credits move when the two corners leave no readable middle
+    // slot. Corner controls always retain their bottom and side edge insets.
+    const liftFor = (attribution: number) =>
+      measured.bottomControlsHeight > 0 &&
+      footerWidth - 2 * cornerReserve < 128 &&
+      cornersFitFor(attribution)
+        ? measured.bottomControlsHeight + gap
+        : 0;
+    // Decision 58: the logo gives way first. It shows only when the whole
+    // attribution fits the band, lifted above the corners when they leave no
+    // middle slot. Each height is measured whatever is drawn, so this settles
+    // in one pass; leaving takes a pixel to spare, so a rounding never flips
+    // it back and forth.
+    const attributionCompact =
+      attributionFull >
+      Math.min(
+        attributionCap,
+        Math.max(0, footerBand - liftFor(attributionFull)),
+      ) -
+        (attributionWasCompact.current ? 1 : 0);
+    attributionWasCompact.current = attributionCompact;
+    const attributionHeight = attributionCompact
+      ? measured.attributionCreditsHeight
+      : attributionFull;
+    // Then the corners: credits lifted into the top bar send them away, and
+    // return to the bottom row. The credits are never clipped.
+    const lift = liftFor(attributionHeight);
+    const bottomControlsFit =
+      cornersFitFor(attributionHeight) &&
+      (!lift || attributionHeight + lift <= footerBand);
     const attributionBounds = {
       x: available.x + gap,
       y: available.y + available.height - gap - attributionHeight,
       width: chromeWidth,
       height: attributionHeight,
     };
-    const controlsBand = Math.max(0, footerBand - attributionReserve);
+    const controlsBand = controlsBandFor(attributionHeight);
     const controlsOutOfRoom = measured.ready && controlsBand === 0;
     const controlsBounds = {
       x: controlsOnLeft
@@ -682,17 +753,10 @@ const AdaptiveMapShell = React.forwardRef<
       width: measured.controlsWidth,
       height: Math.min(measured.controlsHeight, controlsBand),
     };
-    // Preserve the legacy top controls. The independent bottom corners own
-    // the remaining band. If neither wrapping nor full-size controls fit,
-    // keep their state mounted but remove the region from interaction.
-    const hasBottomControls = hasBottomStart || hasBottomEnd;
     const bottomControlsBand = Math.max(
       0,
       footerBand - (controls ? controlsBounds.height + gap : 0),
     );
-    const bottomControlsFit =
-      measured.bottomControlsHeight <= bottomControlsBand &&
-      footerAvailable.width > 2 * gap;
     const bottomControlsHeight = bottomControlsFit
       ? measured.bottomControlsHeight
       : 0;
@@ -712,31 +776,11 @@ const AdaptiveMapShell = React.forwardRef<
         gap -
         (layout.panelBounds.y + layout.panelBounds.height + gap) >=
         bottomControlsHeight + 160;
-    const startReserve =
-      bottomControlsHeight > 0 && hasBottomStart
-        ? measured.bottomStartWidth + gap
-        : 0;
-    const endReserve =
-      bottomControlsHeight > 0 && hasBottomEnd
-        ? measured.bottomEndWidth + gap
-        : 0;
-    // Reserve the larger corner equally on both sides: attribution is centered
-    // on the whole map, never on the remainder beside a panel or wider button.
-    const cornerReserve = Math.max(startReserve, endReserve);
-    const footerWidth = Math.max(0, footerAvailable.width - 2 * gap);
-    const betweenWidth = footerWidth - 2 * cornerReserve;
-    // Only the credits move when the two corners leave no readable middle
-    // slot. Corner controls always retain their bottom and side edge insets.
-    const attributionAboveCorners =
-      bottomControlsHeight > 0 && betweenWidth < 128;
-    const attributionLift = attributionAboveCorners
-      ? bottomControlsHeight + gap
-      : 0;
-    attributionBounds.x =
-      footerAvailable.x + gap + (attributionAboveCorners ? 0 : cornerReserve);
-    attributionBounds.width = attributionAboveCorners
-      ? footerWidth
-      : Math.max(0, betweenWidth);
+    const attributionLift = bottomControlsFit ? lift : 0;
+    const besideCorners =
+      bottomControlsHeight > 0 && !attributionLift ? cornerReserve : 0;
+    attributionBounds.x = footerAvailable.x + gap + besideCorners;
+    attributionBounds.width = Math.max(0, footerWidth - 2 * besideCorners);
     attributionBounds.height = attributionHeight;
     attributionBounds.y =
       available.y +
