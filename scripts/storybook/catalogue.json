@@ -913,7 +913,10 @@
         "Preview",
         "Navigation_",
         "Hosted",
-        "HostedWithImage"
+        "HostedWithImage",
+        "NavigationSteps",
+        "HostedSteps",
+        "RoutePreview"
       ]
     },
     {
