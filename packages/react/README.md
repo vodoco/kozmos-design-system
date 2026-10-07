@@ -148,6 +148,30 @@ CSS-variable overrides through `tokens={{ "--your-variable": "value" }}` so they
 follow overlays too. Unrelated ancestor inline styles/fonts are not copied into
 portals.
 
+## Brand colour
+
+Every prominent fill — a filled Button, IconButton, FloatingActionButton or
+SplitButton, a checked Checkbox or Switch, a selected Chip, a Tag — is theme
+500, the client's base colour. The stylesheet writes a token that aliases
+another as a reference (`var(--primitives-colors-theme-500)`), so one override
+on the provider re-brands them all:
+
+```tsx
+<ThemeProvider tokens={{ "--primitives-colors-theme-500": "#0b7a5c" }}>
+  {app}
+</ThemeProvider>
+```
+
+The filled Button's hover and focus follow theme 600 and its pressed token
+700 (400 and 300 in the dark theme) when you set those steps; theme 600 is also
+the theme as text, borders and rings, so set it at 4.5:1 on the page in each
+theme. The outline, ghost and link Buttons' ink follows theme 700, and 600
+hovered, in both themes. Overrides apply in both themes: control `theme` and
+pass a set per theme to differ. Override on the provider, not a descendant: a
+reference resolves where it is declared. SwiftUI and Compose take no overrides;
+their fill is Pointr's `#135BEC`. The theming guide in the repository's
+`.ai-skills/theming-guide.md` has a worked set for both themes.
+
 ## Runtime design configuration
 
 For the experimental glass controls, use `DesignConfigProvider`. It includes the

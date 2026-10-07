@@ -43,9 +43,61 @@ const list: TokenEntry[] = [
 test("the theme itself needs no override", () => {
   assert.deepEqual(brandOverrides(list, "theme"), {
     tokens: {},
+    followed: [],
     repointed: [],
     unmatched: [],
   });
+});
+
+test("a component token written as a reference to the ramp follows it, with no override of its own", () => {
+  // GAP-23: the build writes an alias as a reference. The filled button's
+  // fill names theme 500 in both themes, its hover 600 light and 400 dark.
+  const fill = "--components-primary-buttons-themed-button-background-idle";
+  const hover = "--components-primary-buttons-themed-button-background-hover";
+  const outline =
+    "--components-secondary-buttons-themed-button-foreground-content-idle";
+  const steps: TokenEntry[] = [
+    entry("--primitives-colors-theme-400", "#5887f3", "#1051e8"),
+    entry("--primitives-colors-theme-500", "#135bec", "#135bec"),
+    entry("--primitives-colors-theme-600", "#1051e8", "#5887f3"),
+    entry("--primitives-colors-theme-700", "#0d44c2", "#7ea2f6"),
+    {
+      ...entry(fill, "#135bec"),
+      references: {
+        light: "--primitives-colors-theme-500",
+        dark: "--primitives-colors-theme-500",
+      },
+    },
+    {
+      ...entry(hover, "#1051e8"),
+      references: {
+        light: "--primitives-colors-theme-600",
+        dark: "--primitives-colors-theme-400",
+      },
+    },
+    // A value copied from the ramp is still matched, and re-pointed.
+    entry(outline, "#0d44c2", "#7ea2f6"),
+  ];
+  for (const theme of [undefined, "light", "dark"] as const) {
+    const result = brandOverrides(steps, "variant-1", theme);
+    assert.deepEqual(result.followed, [fill, hover]);
+    assert.equal(fill in result.tokens, false);
+    assert.equal(hover in result.tokens, false);
+    assert.deepEqual(result.repointed, [outline]);
+    assert.equal(
+      result.tokens[outline],
+      "var(--primitives-colors-theme-variant-1-700)",
+    );
+  }
+  // A reference to something else is matched by value as before.
+  const other: TokenEntry = {
+    ...entry(fill, "#135bec"),
+    references: { light: "--brand", dark: "--brand" },
+  };
+  assert.deepEqual(
+    brandOverrides([...steps.slice(0, 4), other], "variant-1").repointed,
+    [fill],
+  );
 });
 
 test("a variant re-points the ramp and the component tokens it can match", () => {

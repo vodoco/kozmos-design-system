@@ -13,6 +13,7 @@
  * file decides, so `scripts/lib/unitless-tokens.test.mjs` can put known-bad
  * input in front of it without a stylesheet on disk.
  */
+import { resolvedTokens } from "./token-css.mjs";
 
 /** Properties whose value is, or contains, a `<length>`. */
 export const LENGTH_PROPERTIES = new Set([
@@ -80,12 +81,17 @@ const CONVERTED =
 /** The same, for a Tailwind arbitrary value, which carries no spaces. */
 const CONVERTED_ARBITRARY = /\*\s*1(px|rem|em|vh|vw|vmin|vmax|ch|ex)\b/;
 
-/** Every custom property in the token stylesheets whose value is a bare number. */
+/**
+ * Every custom property in the token stylesheets whose value is a bare number,
+ * a reference followed to the value it ends at in its own stylesheet: the
+ * build writes an alias as `var(--…)` (GAP-23), and the semantic radii are
+ * references to bare numbers.
+ */
 export function unitlessTokensFrom(cssTexts) {
   const unitless = new Set();
   for (const css of cssTexts) {
-    for (const match of css.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;}]+)[;}]/g)) {
-      if (/^-?\d+(\.\d+)?$/.test(match[2].trim())) unitless.add(match[1]);
+    for (const [name, value] of resolvedTokens(css)) {
+      if (/^-?\d+(\.\d+)?$/.test(value.trim())) unitless.add(name);
     }
   }
   return unitless;

@@ -79,7 +79,10 @@ export function MakeItYours() {
     [brand, dark],
   );
   const entries = Object.entries(overrides.tokens);
-  const themedCount = overrides.repointed.length + overrides.unmatched.length;
+  const themedCount =
+    overrides.followed.length +
+    overrides.repointed.length +
+    overrides.unmatched.length;
 
   return (
     <Box className="site-brand">
@@ -115,14 +118,15 @@ export function MakeItYours() {
         ) : (
           <Text size="sm" color="muted">
             {entries.length} variables re-pointed: the theme ramp’s{" "}
-            {entries.length - overrides.repointed.length} steps and{" "}
-            {overrides.repointed.length} of the {themedCount} themed component
-            tokens. The other {overrides.unmatched.length}, the ink on filled
-            buttons and the disabled greys, are not on the theme ramp, so they
-            keep their values. The component tokens hold copied values, not
-            references to the ramp, which is why each one is matched by value,
-            in the theme shown: a filled button hovers on theme 600 in the light
-            and 400 in the dark (GAP-23).
+            {entries.length - overrides.repointed.length} steps
+            {overrides.repointed.length > 0
+              ? `, and ${overrides.repointed.length} themed component tokens that hold values copied from the ramp, matched by value`
+              : ""}
+            . {overrides.followed.length} of the {themedCount} themed component
+            tokens are references to the ramp and follow it with no override of
+            their own (GAP-23). The other {overrides.unmatched.length}, the ink
+            on filled buttons and the disabled greys, are not on the theme ramp,
+            so they keep their values.
           </Text>
         )}
         <CodeBlock label="The override" code={overrideSnippet(entries)} />

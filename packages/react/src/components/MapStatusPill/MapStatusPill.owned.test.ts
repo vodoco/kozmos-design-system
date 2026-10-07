@@ -24,11 +24,21 @@ const variables = (mode: "light" | "dark") => {
     resolvePath(here, `../../../../tokens/dist/css/variables-${mode}.css`),
     "utf8",
   );
-  return Object.fromEntries(
+  const declared: Record<string, string> = Object.fromEntries(
     [...css.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [
       m[1],
       m[2].trim(),
     ]),
+  );
+  // An alias is written as a reference (GAP-23): follow it in this theme.
+  const resolve = (value: string, depth = 0): string => {
+    const named = value.match(/^var\(--([\w-]+)\)$/);
+    return named && depth < 10 && named[1] in declared
+      ? resolve(declared[named[1]], depth + 1)
+      : value;
+  };
+  return Object.fromEntries(
+    Object.entries(declared).map(([name, value]) => [name, resolve(value)]),
   );
 };
 const TOKENS = { light: variables("light"), dark: variables("dark") };
