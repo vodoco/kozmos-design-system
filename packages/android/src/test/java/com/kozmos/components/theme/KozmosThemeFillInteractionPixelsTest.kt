@@ -291,7 +291,10 @@ class KozmosThemeFillInteractionPixelsTest {
             val focus = drawn.count(focusFill)
             val idle = drawn.count(themeFill)
             println("Decision 59 Android, ${mode(dark)}: turned on while focused: $focus pixels of #1051E8, $idle of #135BEC")
-            if (focus < 100 || idle > 0) {
+            // A stray edge pixel or two of the rest colour is anti-aliasing (one
+            // drew on CI's Linux renderer and none on a Mac); the unfixed control
+            // drew thousands of it and none of the state's.
+            if (focus < 100 || idle * 100 > focus) {
                 wrong += "${mode(dark)}: turned on while focused, the MapControlButton draws $focus pixels of #1051E8 and $idle of #135BEC"
             }
         }
@@ -348,7 +351,10 @@ class KozmosThemeFillInteractionPixelsTest {
                 val at = drawn.count(pressed)
                 val rest = drawn.count(idle)
                 println("Decision 59 Android, ${mode(dark)}: pressed $emotion: $at pixels of ${DrawnPixels.hex(pressed)}, $rest of ${DrawnPixels.hex(idle)}")
-                if (at < 100 || rest > 0) {
+                // A stray edge pixel of the rest colour is anti-aliasing: CI's Linux
+                // renderer drew 1 beside 21,800 pressed; the unfixed Button drew
+                // ~21,800 of the rest colour and none pressed.
+                if (at < 100 || rest * 100 > at) {
                     wrong += "${mode(dark)}: pressed, the $emotion Button draws $at pixels of ${DrawnPixels.hex(pressed)} and $rest of ${DrawnPixels.hex(idle)}"
                 }
             }

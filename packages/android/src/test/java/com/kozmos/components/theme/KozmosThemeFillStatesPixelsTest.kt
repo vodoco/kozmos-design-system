@@ -146,7 +146,9 @@ class KozmosThemeFillStatesPixelsTest {
         val idle = drawn.count(themeFill, 2)
         println("Decision 59 Android, ${mode(dark)}: $what $name: $at pixels of ${DrawnPixels.hex(expected)}, $idle of #135BEC")
         if (at < 100) wrong += "${mode(dark)}: $what $name draws only $at pixels of ${DrawnPixels.hex(expected)}"
-        if (idle > 0) wrong += "${mode(dark)}: $what $name still draws $idle pixels of #135BEC"
+        // More than 1% of the state's pixels in the rest colour is the rest fill
+        // still drawn; fewer is anti-aliasing at an edge, which differs by renderer.
+        if (idle * 100 > at) wrong += "${mode(dark)}: $what $name still draws $idle pixels of #135BEC"
         return wrong
     }
 
