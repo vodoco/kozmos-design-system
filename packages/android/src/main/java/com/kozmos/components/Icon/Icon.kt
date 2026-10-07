@@ -107,9 +107,16 @@ internal fun resolveIconVector(rawName: String): ImageVector = knownIconVector(r
  * not know. [KozmosIcon] stands an info glyph in for an unknown name; a part
  * whose icons are decorative extras beside a label, as the details card's
  * chips are, draws none instead, as the web does.
+ *
+ * Every name the web registry knows draws here: a name this mapping has no
+ * Material or wayfinding glyph for draws Pointr's own outline from
+ * [KozmosPointrIcons], generated from packages/icons by
+ * scripts/generate-compose-icons.mjs. IconNamesTest holds Compose to the web
+ * registry's names.
  */
 internal fun knownIconVector(rawName: String): ImageVector? {
-    return when (resolveIconName(rawName)) {
+    val name = resolveIconName(rawName)
+    return when (name) {
         "activity" -> Icons.AutoMirrored.Filled.ShowChart
         "alert-circle" -> Icons.Default.Info
         "alert-triangle" -> Icons.Default.Warning
@@ -182,7 +189,7 @@ internal fun knownIconVector(rawName: String): ImageVector? {
         "custom-transition" -> KozmosNavigationGlyphs.CustomTransition
         "security-control" -> KozmosNavigationGlyphs.SecurityControl
         "shuttle" -> KozmosNavigationGlyphs.Shuttle
-        else -> null
+        else -> KozmosPointrIcons.named(name)
     }
 }
 
