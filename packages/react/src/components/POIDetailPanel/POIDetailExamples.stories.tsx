@@ -1,5 +1,6 @@
 import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
+import { fn } from "@storybook/test";
 import type { POIAction } from "@kozmos-ds/product-contracts";
 import {
   POIDetailPanel,
@@ -28,8 +29,9 @@ import {
 
 function Example({
   map = false,
+  onAction: reportAction,
   ...props
-}: Omit<POIDetailPanelProps, "onAction"> & { map?: boolean }) {
+}: POIDetailPanelProps & { map?: boolean }) {
   const [favourite, setFavourite] = React.useState(false);
   const [bookmark, setBookmark] = React.useState(false);
   const [message, setMessage] = React.useState("");
@@ -39,7 +41,7 @@ function Example({
   const opener = React.useRef<HTMLButtonElement>(null);
   const panel = React.useRef<HTMLElement>(null);
   const panelId = React.useId();
-  const onAction = (action: POIAction) => {
+  const onAction = (action: POIAction, poiId: string) => {
     if (action === "favourite") setFavourite(!favourite);
     else if (action === "bookmark") setBookmark(!bookmark);
     else
@@ -48,6 +50,7 @@ function Example({
           ? "Demo route requested. No route has been calculated."
           : `Demo ${action} requested. No external action was performed.`,
       );
+    reportAction(action, poiId);
   };
   const reopen = () => {
     setOpen(true);
@@ -186,6 +189,7 @@ const meta = {
     poi: restaurantPOI,
     details: restaurantDetails,
     actionLabels: poiActionLabels,
+    onAction: fn(),
   },
   render: (args) => <Example key={args.poi.id} {...args} />,
 } satisfies Meta<typeof POIDetailPanel>;
