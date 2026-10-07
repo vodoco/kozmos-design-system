@@ -1639,6 +1639,8 @@ section("Decision 59: the theme fill and what sits on it");
   const fill = `${FILL} #135BEC/#135BEC`;
   const ink = `${INK} #FFFFFF/#FFFFFF`;
   const accent = `${ACCENT} #1051E8/#5887F3`;
+  // Every part painted here, so the scopes can be read against what it binds.
+  const paintedHere = [];
   const painted = async (painter, args) => {
     const component = figma.createComponent();
     const stats = freshStats();
@@ -1648,6 +1650,7 @@ section("Decision 59: the theme fill and what sits on it");
       fonts: FONTS,
       stats,
     });
+    paintedHere.push(component);
     return component;
   };
   // A mark is a vector's stroke (an outline icon) or its fill (a solid glyph).
@@ -1805,6 +1808,7 @@ section("Decision 59: the theme fill and what sits on it");
       }),
     ],
   ]) {
+    paintedHere.push(day);
     const text = named(day, "Day Text");
     ok(
       reads(day.fills[0]) === fill && text && reads(text.fills[0]) === ink,
@@ -1879,6 +1883,7 @@ section("Decision 59: the theme fill and what sits on it");
     fonts: FONTS,
     stats: freshStats(),
   });
+  if (navbarAction) paintedHere.push(navbarAction);
   const create = navbarAction && named(navbarAction, "Primary Action");
   const createText = navbarAction && named(navbarAction, "Primary Action Text");
   ok(
@@ -1911,6 +1916,7 @@ section("Decision 59: the theme fill and what sits on it");
     textStyle: null,
     stats: freshStats(),
   });
+  paintedHere.push(button);
   const buttonRing = named(button, "Focus Ring");
   ok(
     reads(button.fills[0]) === fill &&
@@ -2023,6 +2029,73 @@ section("Decision 59: the theme fill and what sits on it");
   ok(
     onStage.length > 0 && stray.length === 0 && !built,
     `no part binds Colors/theme/500 outside the example map stage (${onStage.length} on the stage; ${stray.length} elsewhere${stray.length > 0 ? `: ${[...new Set(stray)].join(", ")}` : ""}${built ? "; a name built from a template" : ""})`,
+  );
+
+  // Figma offers a variable only where its scopes say, and the payload's
+  // suggested scopes are what Update writes. Decision 59 binds the theme fill
+  // to the edge of a control it fills, and the theme foreground to every mark
+  // on the fill (an icon's stroke, the Switch thumb, ManoeuvreCard's grip), so
+  // each binding painted here must be one its variable's scopes allow.
+  const manoeuvre = await painted("updateManoeuvreCardVariant", {
+    value: "Closed",
+    second: "Theme",
+  });
+  const scopesOf = new Map(
+    JSON.parse(
+      fs.readFileSync(
+        path.join(ROOT, "docs/figma-foundations-payload.json"),
+        "utf8",
+      ),
+    ).variables.map((variable) => [
+      variable.figmaName,
+      variable.suggestedScopes || [],
+    ]),
+  );
+  const SHAPES = new Set([
+    "RECTANGLE",
+    "ELLIPSE",
+    "VECTOR",
+    "POLYGON",
+    "STAR",
+    "LINE",
+    "BOOLEAN_OPERATION",
+  ]);
+  const scopeFor = (node, property) => {
+    if (property === "strokes") return "STROKE_COLOR";
+    if (node.type === "TEXT") return "TEXT_FILL";
+    return SHAPES.has(node.type) ? "SHAPE_FILL" : "FRAME_FILL";
+  };
+  const bound = new Set();
+  const outOfScope = new Set();
+  const visit = (node) => {
+    for (const property of ["fills", "strokes"]) {
+      for (const paint of Array.isArray(node[property]) ? node[property] : []) {
+        const variable = boundVariableName(paint);
+        if (variable !== FILL && variable !== INK) continue;
+        const scope = scopeFor(node, property);
+        const scopes = scopesOf.get(variable) || [];
+        const short =
+          variable === FILL ? "the theme fill" : "the theme foreground";
+        bound.add(`${short} as ${scope}`);
+        if (!scopes.includes(scope) && !scopes.includes("ALL_SCOPES")) {
+          outOfScope.add(
+            `${short} as ${scope} (${node.name}; scoped ${scopes.join(", ")})`,
+          );
+        }
+      }
+    }
+    for (const child of node.children || []) visit(child);
+  };
+  for (const root of paintedHere) visit(root);
+  ok(
+    manoeuvre &&
+      outOfScope.size === 0 &&
+      [
+        "the theme fill as STROKE_COLOR",
+        "the theme foreground as SHAPE_FILL",
+        "the theme foreground as STROKE_COLOR",
+      ].every((use) => bound.has(use)),
+    `the theme fill and the theme foreground are scoped for every property painted here (${[...bound].sort().join(", ")}${outOfScope.size > 0 ? `; out of scope: ${[...outOfScope].join(" | ")}` : ""})`,
   );
 }
 
