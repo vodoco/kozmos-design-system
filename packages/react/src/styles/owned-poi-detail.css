@@ -279,6 +279,10 @@
       text-align: center;
     }
   }
+  /* A tone colours the value and its mark, as SwiftUI and Compose do; the
+     detail keeps its muted colour. The value's own foreground used to win,
+     and the mark inherited that, so every tone drew as plain foreground. */
+  .kozmos-poi-summary-item[data-tone] .kozmos-meta-value,
   .kozmos-poi-summary-item[data-tone] .kozmos-meta-icon {
     color: inherit;
   }

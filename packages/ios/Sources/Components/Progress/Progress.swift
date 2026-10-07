@@ -93,8 +93,11 @@ public struct KozmosProgress: View {
     
     public var body: some View {
         ProgressView(value: value, total: total)
-            // The theme's colour, as React's bg-primary and Compose's theme 500
-            // are: SwiftUI's .blue ignored the theme a Kozmos surface draws in.
-            .progressViewStyle(LinearProgressViewStyle(tint: KozmosColors.primitivesColorsTheme500))
+            // The theme's primary, as React's bg-primary (theme 600, light and
+            // dark) and Compose's bar are: SwiftUI's .blue ignored the theme a
+            // Kozmos surface draws in. .tint, as LinearProgressViewStyle(tint:)
+            // is deprecated.
+            .progressViewStyle(.linear)
+            .tint(KozmosColors.primitivesColorsTheme600)
     }
 }

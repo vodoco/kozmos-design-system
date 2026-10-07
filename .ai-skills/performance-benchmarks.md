@@ -63,7 +63,7 @@ budgets, gzipped:
 | The stylesheet                       | 30.5 KB |
 
 The whole library's budget went from 64 to 68 KB on 2026-09-28 (decision 53), to 80 KB on 2026-09-30
-and to 88 KB on 2026-10-06; the stylesheet's from 30 to 30.5 KB on 2026-10-02, each on Olcay's
+and to 88 KB on 2026-10-06 (decision 56); the stylesheet's from 30 to 30.5 KB on 2026-10-02, each on Olcay's
 decision. The per-export and `Button` budgets are unchanged.
 
 ### Package-Level Budgets
@@ -318,15 +318,15 @@ The published versions are what `npm view @kozmos-ds/react versions` lists: 0.1.
 2026-10-06, and 0.1.0 to 0.5.0 of `@kozmos-ds/tokens`. The bundle is the one measure with a history, which
 `scripts/performance/bundle-analyzer.ts` records in its opening comment:
 
-| Date       | What changed                                                                                                     |
-| ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| to 09-22   | The ES build was one file, held to 300 KB raw and 70 KB gzipped; importing `Button` cost an app 48.7 KB          |
-| 2026-09-22 | One file per module: everything 54.6 KB, the stylesheet 26.4 KB, the heaviest export 6.15 KB                     |
-| 2026-09-27 | Everything's budget went from 60 to 64 KB, with Olcay's agreement; main measured 59.63 KB                        |
-| 2026-09-28 | Everything's budget went from 64 to 68 KB (decision 53); main measured 63.61 KB                                  |
-| 2026-09-30 | Everything's budget went from 68 to 80 KB for the SDK controls (#175); the candidate measured 74.01 KB           |
-| 2026-10-02 | The stylesheet's budget went from 30 to 30.5 KB for the SDK result look (#190); it measured 30.12 KB             |
-| 2026-10-06 | Everything's budget went from 80 to 88 KB; 0.9.0 measured 79.86 KB on CI, 79.21 KB here after two lossless trims |
+| Date       | What changed                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| to 09-22   | The ES build was one file, held to 300 KB raw and 70 KB gzipped; importing `Button` cost an app 48.7 KB                        |
+| 2026-09-22 | One file per module: everything 54.6 KB, the stylesheet 26.4 KB, the heaviest export 6.15 KB                                   |
+| 2026-09-27 | Everything's budget went from 60 to 64 KB, with Olcay's agreement; main measured 59.63 KB                                      |
+| 2026-09-28 | Everything's budget went from 64 to 68 KB (decision 53); main measured 63.61 KB                                                |
+| 2026-09-30 | Everything's budget went from 68 to 80 KB for the SDK controls (#175); the candidate measured 74.01 KB                         |
+| 2026-10-02 | The stylesheet's budget went from 30 to 30.5 KB for the SDK result look (#190); it measured 30.12 KB                           |
+| 2026-10-06 | Everything's budget went from 80 to 88 KB (decision 56); 0.9.0 measured 79.86 KB on CI, 79.21 KB here after two lossless trims |
 
 No render or Core Web Vitals history is recorded.
 

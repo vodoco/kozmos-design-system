@@ -22,6 +22,47 @@ import { SearchMd } from "@kozmos-ds/icons";
 />;
 ```
 
+## A wait it explains
+
+When the empty state is explaining a long wait, such as the assistant's download before it can run on
+the device, `progress` draws how far it has got under the description and above the action: a label
+that names the bar, an optional value in words, and the bar. React takes `value` from 0 to 100,
+SwiftUI and Compose from 0 to 1, as each platform's Progress does; a value outside that is drawn at
+the nearer end, and NaN as none done. Screen readers read the label as the bar's name and the words,
+or the percentage, as its value: the bar is one element, so the label is not read again as text.
+
+The bar does not announce itself as it moves. A screen reader says its new value only while its focus
+is on the bar, so someone who has moved on hears nothing until they come back to it. Saying that the
+wait is over is the product's job: announce it once, when it finishes, from a live region or with a
+toast (`ToastProvider`), and then show what the wait was for.
+
+<Canvas of={EmptyStateStories.DownloadProgress} />
+
+```tsx
+<EmptyState
+  title="The assistant isn't downloaded yet"
+  description="It works offline once it's on this device."
+  progress={{ value: 40, label: "Downloading the assistant", valueText: "12 of 30 MB" }}
+  action={<Button variant="outline">Back to search</Button>}
+/>
+```
+
+```kotlin
+KozmosEmptyState(
+    title = "The assistant isn't downloaded yet",
+    description = "It works offline once it's on this device.",
+    progress = KozmosEmptyStateProgress(0.4f, "Downloading the assistant", "12 of 30 MB")
+)
+```
+
+```swift
+KozmosEmptyState(
+    title: "The assistant isn't downloaded yet",
+    description: "It works offline once it's on this device.",
+    progress: .init(value: 0.4, label: "Downloading the assistant", valueText: "12 of 30 MB")
+)
+```
+
 ## Android Jetpack Compose
 
 ```kotlin

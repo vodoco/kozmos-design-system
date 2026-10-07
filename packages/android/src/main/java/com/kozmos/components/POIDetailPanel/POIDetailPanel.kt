@@ -6,13 +6,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -49,6 +48,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -67,9 +67,11 @@ import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.contracts.KozmosPOIAccessRestrictions
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIAvailability
+import com.kozmos.contracts.KozmosPOIDetailsPresentation
 import com.kozmos.contracts.KozmosPOILogoPresentation
 import com.kozmos.contracts.KozmosPOIPresentation
-import com.kozmos.contracts.KozmosPOIServicePresentation
+import com.kozmos.contracts.KozmosPOISupplementaryAction
+import com.kozmos.contracts.KozmosTravelEstimatePresentation
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosThemeTokens
 import kotlin.math.ceil
@@ -128,6 +130,22 @@ enum class KozmosPOIDetailPanelPresentation {
  * semantics expose `heading()` as a boolean with no rank, so TalkBack cannot
  * distinguish an h2 from an h3. SwiftUI does support ranks and mirrors the prop
  * as `KozmosPOIDetailPanel.TitleLevel`.
+ *
+ * [details] adds what the web's `details` and SwiftUI's `details:` add, in
+ * their order: the travel estimate on Go; the supplementary actions, book and
+ * call, after the POI's own in the strip, and their messages after its own;
+ * the summary row under the strip, at most three facts; then, after the
+ * services, the attribute groups, the opening hours, the description with
+ * Read more, and the tags. Every heading is a heading to TalkBack, each
+ * section is read as one group, Read more and the opening hours say whether
+ * they are expanded, and a different place starts with both closed. A
+ * supplementary action reaches [onSupplementaryAction] with its action and
+ * the POI's ID; with no callback it is drawn disabled, as on iOS and the web.
+ * Its state in [supplementaryActionStates] works as [actionStates] does: a
+ * disabled or loading action cannot be pressed, a loading one says
+ * [loadingLabel], and a pressed one is filled and selected. The new
+ * parameters follow the released ones, so a call written against 0.5.0
+ * compiles and binds as it did.
  */
 @Composable
 fun KozmosPOIDetailPanel(
@@ -142,7 +160,14 @@ fun KozmosPOIDetailPanel(
     mediaPositionLabel: (Int, Int) -> String = { current, total -> "Image $current of $total" },
     accessRestrictionsHeading: String = "Access restrictions",
     servicesHeading: String = "Service options",
-    presentation: KozmosPOIDetailPanelPresentation = KozmosPOIDetailPanelPresentation.Inline
+    presentation: KozmosPOIDetailPanelPresentation = KozmosPOIDetailPanelPresentation.Inline,
+    details: KozmosPOIDetailsPresentation = KozmosPOIDetailsPresentation(),
+    supplementaryActionStates: Map<KozmosPOISupplementaryAction, KozmosPOIActionState> = emptyMap(),
+    onSupplementaryAction: ((KozmosPOISupplementaryAction, String) -> Unit)? = null,
+    readMoreLabel: String = "Read more",
+    readLessLabel: String = "Read less",
+    tagsLabel: String = "Tags",
+    loadingLabel: String = "Loading"
 ) {
     val radius = KozmosDimensions.semanticsRadiusPanel
     // An inset block's surface: the muted grey on the panel's own white, and
@@ -173,6 +198,7 @@ fun KozmosPOIDetailPanel(
     // keeps the rest, each in the order the POI lists them.
     val headerToggles = poi.actions.filter { it in HeaderToggleActions }
     val rowActions = poi.actions.filterNot { it in HeaderToggleActions }
+    val supplementaryActions = details.supplementaryActions
 
     Surface(
         modifier = modifier
@@ -258,7 +284,7 @@ fun KozmosPOIDetailPanel(
                     )
                 }
 
-                if (rowActions.isNotEmpty()) {
+                if (rowActions.isNotEmpty() || supplementaryActions.isNotEmpty()) {
                     // One strip that scrolls sideways, as on iOS and the web,
                     // however many actions and however long their words: a
                     // FlowRow wrapped them onto a second row and grew the
@@ -280,51 +306,49 @@ fun KozmosPOIDetailPanel(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         rowActions.forEach { action ->
-                            val state = actionStates[action]
-
-                            KozmosButton(
+                            val navigate = action == KozmosPOIAction.Navigate
+                            StripButton(
+                                label = actionLabels[action] ?: action.value,
                                 onClick = { onAction(action, poi.id) },
-                                variant = if (action == KozmosPOIAction.Navigate) {
-                                    KozmosButtonVariant.Default
-                                } else {
-                                    KozmosButtonVariant.Outline
-                                },
-                                enabled = !(state?.disabled ?: false),
-                                isLoading = state?.loading ?: false
-                            ) {
-                                if (action == KozmosPOIAction.Navigate) {
-                                    KozmosIcon("navigation-pointer-01", size = KozmosIconSize.Lg)
-                                }
-                                Text(actionLabels[action] ?: action.value)
-                            }
+                                state = actionStates[action],
+                                loadingLabel = loadingLabel,
+                                primary = navigate,
+                                estimate = if (navigate) details.travelEstimate else null
+                            )
+                        }
+                        // After the POI's own, as on iOS and the web; with no
+                        // callback there is nothing to do, so they are drawn
+                        // disabled rather than pretend to book.
+                        supplementaryActions.forEach { item ->
+                            StripButton(
+                                label = item.label,
+                                onClick = { onSupplementaryAction?.invoke(item.action, poi.id) },
+                                state = supplementaryActionStates[item.action],
+                                loadingLabel = loadingLabel,
+                                available = onSupplementaryAction != null
+                            )
                         }
                     }
                 }
 
+                // The POI's own actions' messages, then the supplementary
+                // ones', as on iOS and the web.
                 poi.actions.forEach { action ->
-                    val state = actionStates[action]
-                    val message = state?.message
-                    if (message != null) {
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (state.messageTone == KozmosPOIActionState.MessageTone.Error) {
-                                KozmosThemeTokens.primitivesColorsEmotionalDanger600
-                            } else {
-                                KozmosThemeTokens.primitivesColorsForeground100
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
-                                .background(insetSurface)
-                                .padding(
-                                    horizontal = KozmosDimensions.primitivesLayoutSpacing150,
-                                    vertical = KozmosDimensions.primitivesLayoutSpacing100
-                                )
-                                .semantics { liveRegion = LiveRegionMode.Polite }
-                        )
-                    }
+                    actionStates[action]?.let { ActionMessage(state = it, surface = insetSurface) }
                 }
+                supplementaryActions.forEach { item ->
+                    supplementaryActionStates[item.action]?.let { ActionMessage(state = it, surface = insetSurface) }
+                }
+
+                // Under the strip, the card's whole width, as iOS's and the
+                // web's are: it reaches into the body's padding to the card's
+                // edges.
+                POIDetailSummaryRow(
+                    items = details.visibleSummary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .bleedHorizontally(KozmosDimensions.primitivesLayoutSpacing200)
+                )
 
                 if (showsAccessRestrictions) {
                     val accessRestrictionsLabel = poi.accessRestrictionsLabel.orEmpty()
@@ -356,8 +380,16 @@ fun KozmosPOIDetailPanel(
 
                 val services = poi.services
                 if (!services.isNullOrEmpty()) {
-                    Services(heading = servicesHeading, services = services)
+                    POIDetailSection(heading = servicesHeading, items = services)
                 }
+
+                POIDetailSections(
+                    details = details,
+                    poiId = poi.id,
+                    readMoreLabel = readMoreLabel,
+                    readLessLabel = readLessLabel,
+                    tagsLabel = tagsLabel
+                )
             }
         }
         }
@@ -588,54 +620,93 @@ private fun HeaderButton(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * One button in the strip under the header: the POI's own actions and the
+ * supplementary ones alike, in the states iOS's `POIDetailActionButton` has.
+ * Go ([primary]) is filled, with the navigation pointer, and carries the
+ * travel [estimate] under its label, the exact minutes and the distance;
+ * TalkBack hears the estimate as the button's state, as VoiceOver hears it
+ * as its value. A disabled or loading button cannot be pressed, and a
+ * loading one says [loadingLabel] instead; a pressed one is filled and
+ * selected. Every button keeps Android's 48dp target ([KozmosButton]).
+ */
 @Composable
-private fun Services(
-    heading: String,
-    services: List<KozmosPOIServicePresentation>
+private fun StripButton(
+    label: String,
+    onClick: () -> Unit,
+    state: KozmosPOIActionState?,
+    loadingLabel: String,
+    primary: Boolean = false,
+    estimate: KozmosTravelEstimatePresentation? = null,
+    available: Boolean = true
 ) {
-    Column(
+    val pressed = state?.pressed == true
+    val loading = state?.loading == true
+    val estimateParts = estimate
+        ?.let { listOfNotNull(it.durationLabel, it.distanceLabel).filter { part -> part.isNotEmpty() } }
+        ?.takeIf { it.isNotEmpty() }
+    KozmosButton(
+        onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()
-            .semantics { contentDescription = heading },
-        verticalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing100)
-    ) {
-        Text(
-            text = heading,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = KozmosThemeTokens.primitivesColorsForeground100,
-            modifier = Modifier.semantics { heading() }
-        )
-
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(
-                KozmosDimensions.primitivesLayoutSpacing100
-            ),
-            verticalArrangement = Arrangement.spacedBy(
-                KozmosDimensions.primitivesLayoutSpacing100
-            )
-        ) {
-            services.forEach { service ->
-                Surface(
-                    shape = RoundedCornerShape(percent = 50),
-                    color = KozmosThemeTokens.primitivesColorsBackground0,
-                    border = BorderStroke(1.dp, KozmosThemeTokens.semanticsBorderSubtle)
-                ) {
-                    Text(
-                        text = service.label,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = KozmosThemeTokens.primitivesColorsForeground100,
-                        modifier = Modifier.padding(
-                            horizontal = KozmosDimensions.primitivesLayoutSpacing150,
-                            vertical = KozmosDimensions.primitivesLayoutSpacing100
-                        )
-                    )
+            // Two lines want 56, as on iOS and the web.
+            .then(if (estimateParts != null) Modifier.heightIn(min = KozmosDimensions.primitivesLayoutSizing700) else Modifier)
+            .semantics {
+                if (pressed) selected = true
+                if (loading) {
+                    stateDescription = loadingLabel
+                } else if (estimateParts != null) {
+                    stateDescription = estimateParts.joinToString(", ")
                 }
+            },
+        variant = if (primary || pressed) KozmosButtonVariant.Default else KozmosButtonVariant.Outline,
+        enabled = available && !(state?.disabled ?: false),
+        isLoading = loading
+    ) {
+        if (primary) {
+            KozmosIcon("navigation-pointer-01", size = KozmosIconSize.Lg)
+        }
+        if (estimateParts == null) {
+            Text(label)
+        } else {
+            Column {
+                Text(label)
+                Text(
+                    text = estimateParts.joinToString(" · "),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Normal,
+                    // Said as the button's state, without the dot.
+                    modifier = Modifier.clearAndSetSemantics {}
+                )
             }
         }
     }
+}
+
+/**
+ * An action's message, under the strip on the inset surface, said politely
+ * when it changes: a status in ink, an error in the danger colour.
+ */
+@Composable
+private fun ActionMessage(state: KozmosPOIActionState, surface: Color) {
+    val message = state.message ?: return
+    Text(
+        text = message,
+        style = MaterialTheme.typography.bodyMedium,
+        color = if (state.messageTone == KozmosPOIActionState.MessageTone.Error) {
+            KozmosThemeTokens.primitivesColorsEmotionalDanger600
+        } else {
+            KozmosThemeTokens.primitivesColorsForeground100
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(KozmosDimensions.semanticsRadiusControl))
+            .background(surface)
+            .padding(
+                horizontal = KozmosDimensions.primitivesLayoutSpacing150,
+                vertical = KozmosDimensions.primitivesLayoutSpacing100
+            )
+            .semantics { liveRegion = LiveRegionMode.Polite }
+    )
 }
 
 /**
