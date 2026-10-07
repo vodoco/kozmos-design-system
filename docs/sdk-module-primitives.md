@@ -505,7 +505,7 @@ Do not let the new chrome conceal already-recorded behavior gaps:
   result-list footer is optional backlog: the current Search with AI design uses the header.
 - **Wayfinding:** GAP-093/GAP-096 structured instruction parts and foreign-language landmarks
   are released in 0.8.0 (#188); SDK data adoption and physical speech acceptance remain.
-  GAP-097 step metrics are released in 0.9.0 (#193); GAP-104 endpoint actions remain open. React GAP-094/GAP-100 are already fixed.
+  GAP-097 step metrics are released in 0.9.0 (#193); GAP-104's endpoint Change actions are fixed on main, not yet released. React GAP-094/GAP-100 are already fixed.
 - **Accessibility/layout:** P01, released in 0.8.0, raises result actions to a 44px/pt/dp minimum
   (GAP-056), retaining larger native targets and growth for large text. Actual
   keyboard/device acceptance remains. Wide shell content fitting and the

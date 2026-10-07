@@ -52,7 +52,8 @@ export function ItineraryExample() {
 The whole route as a list: where it starts, every step with the current
 one emphasised, where it ends. Assistive technology reads the endpoints
 with their labels and each step as one item, the current one marked
-`aria-current="step"`.
+`aria-current="step"`. With `onEditOrigin` or `onEditDestination`, that
+endpoint's row ends in a Change button.
 
 It forwards its ref to `HTMLElement`. Its props are `ItineraryProps`, which extends `React.HTMLAttributes<HTMLElement>`.
 
@@ -64,6 +65,31 @@ It forwards its ref to `HTMLElement`. Its props are `ItineraryProps`, which exte
 - `label`: `string`, optional, default `"Itinerary"`.
 
   What the list is called to assistive technology.
+
+- `onEditOrigin`: `() => void`, optional.
+
+  Draws an action at the end of the From row, after the place's name. The
+  host owns what follows: it opens the start point for editing and moves
+  focus there. Left out, the row has no action.
+
+- `onEditDestination`: `() => void`, optional.
+
+  As `onEditOrigin`, for the To row.
+
+- `changeLabel`: `string`, optional, default `"Change"`.
+
+  The actions' visible verb: RouteLocationField's `changeLabel`, "Change".
+
+- `editOriginLabel`: `string`, optional, default `` `${changeLabel} ${originLabel}` ``.
+
+  The From action's accessible name. Start it with `changeLabel`, the words
+  on the button, so a speech user can say what they see (WCAG 2.5.3). By
+  default it is `changeLabel` and `originLabel`, the row's caption: both
+  words the product translates, so the name is in one language.
+
+- `editDestinationLabel`: `string`, optional, default `` `${changeLabel} ${destinationLabel}` ``.
+
+  The To action's accessible name; by default `changeLabel` and `destinationLabel`.
 
 - `children`: `ReactNode`, optional.
 

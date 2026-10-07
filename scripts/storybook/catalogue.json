@@ -452,7 +452,13 @@
       "id": "map-itinerary",
       "title": "SDK/Navigation/Itinerary",
       "component": "Itinerary",
-      "exports": ["Default", "LongEndpoints", "StepMetrics", "NoCurrentStep"]
+      "exports": [
+        "Default",
+        "LongEndpoints",
+        "StepMetrics",
+        "NoCurrentStep",
+        "WithEndpointEdit"
+      ]
     },
     {
       "file": "packages/react/src/components/Label/Label.stories.tsx",
