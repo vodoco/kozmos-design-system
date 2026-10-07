@@ -59,7 +59,13 @@ describe("one press, one event (D9)", () => {
       "POIResultCard action",
       () => (
         <POIResultCard
-          poi={{ id: "p", name: "Cafe", floorLabel: "Level 2" }}
+          poi={{
+            id: "p",
+            name: "Cafe",
+            floorLabel: "Level 2",
+            media: [],
+            actions: ["navigate"],
+          }}
           result={{
             poiId: "p",
             resultIndex: 0,
@@ -100,7 +106,7 @@ describe("one press, one event (D9)", () => {
     ],
     [
       "SaveLocationCard save",
-      () => <SaveLocationCard onToggleSave={() => {}} />,
+      () => <SaveLocationCard onSaveToggle={() => {}} />,
       press("Save Location"),
       "SaveLocationCard:save_toggled",
     ],

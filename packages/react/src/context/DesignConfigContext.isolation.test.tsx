@@ -29,7 +29,9 @@ const read = () => JSON.parse(screen.getByRole("status").textContent!);
 
 describe("scoped design configuration", () => {
   beforeEach(() => localStorage.clear());
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("deeply merges initial values and partial accessibility updates", () => {
     render(

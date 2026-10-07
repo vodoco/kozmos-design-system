@@ -13,9 +13,9 @@ describe("horizontal viewport keys", () => {
     Object.defineProperties(viewport, {
       clientWidth: { value: 200 },
       scrollWidth: { value: 600 },
+      scrollBy: { value: vi.fn() },
+      scrollTo: { value: vi.fn() },
     });
-    viewport.scrollBy = vi.fn();
-    viewport.scrollTo = vi.fn();
     fireEvent.keyDown(viewport, { key: "ArrowRight" });
     expect(viewport.scrollBy).toHaveBeenCalledWith({
       left: 40,
