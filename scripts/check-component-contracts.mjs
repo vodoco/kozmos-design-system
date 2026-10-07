@@ -528,6 +528,7 @@ const files = {
     "packages/android/src/main/java/com/kozmos/tokens/KozmosThemeTokens.kt",
   androidThemeProvider:
     "packages/android/src/main/java/com/kozmos/components/ThemeProvider/ThemeProvider.kt",
+  tokensLight: "packages/tokens/src/tokens-light.json",
   tokensDark: "packages/tokens/src/tokens-dark.json",
   figmaFoundationsPayload: "docs/figma-foundations-payload.json",
   iosColors: "packages/ios/Sources/KozmosColors.swift",
@@ -538,6 +539,7 @@ const files = {
 const source = Object.fromEntries(
   Object.entries(files).map(([key, filePath]) => [key, read(filePath)]),
 );
+const tokensLight = JSON.parse(source.tokensLight);
 const tokensDark = JSON.parse(source.tokensDark);
 const figmaFoundationsPayload = JSON.parse(source.figmaFoundationsPayload);
 
@@ -10862,21 +10864,47 @@ assertNotContains(
   "documented MapView placeholder text",
 );
 
-assertJsonPathEquals(
-  files.tokensDark,
-  tokensDark,
-  [
-    "Components",
-    "Primary Buttons",
-    "themed",
-    "button",
-    "background",
-    "idle",
-    "$value",
-  ],
-  "#7EA2F6",
-  "dark themed primary button background",
-);
+// Decision 59 (Olcay, 2026-10-07): the theme fill is theme 500, the client's
+// base colour, in both themes, and the theme foreground on it white in both.
+// Until then the dark fill was theme 700 (#7EA2F6) under black.
+for (const [file, json, mode] of [
+  [files.tokensLight, tokensLight, "light"],
+  [files.tokensDark, tokensDark, "dark"],
+]) {
+  assertJsonPathEquals(
+    file,
+    json,
+    [
+      "Components",
+      "Primary Buttons",
+      "themed",
+      "button",
+      "background",
+      "idle",
+      "$value",
+    ],
+    "{Primitives.Colors.theme.500}",
+    `${mode} themed primary button background is the theme fill, theme 500`,
+  );
+  for (const state of ["idle", "hover", "pressed", "focus"]) {
+    assertJsonPathEquals(
+      file,
+      json,
+      [
+        "Components",
+        "Primary Buttons",
+        "themed",
+        "button",
+        "foreground",
+        "content",
+        state,
+        "$value",
+      ],
+      "#FFFFFF",
+      `${mode} themed primary button foreground (${state}) is the theme foreground, white`,
+    );
+  }
+}
 assertJsonPathEquals(
   files.tokensDark,
   tokensDark,
@@ -10929,12 +10957,20 @@ assertJsonPathEquals(
   "#FBBF24",
   "dark semantic data yellow",
 );
-assertFigmaPayloadDarkValue(
-  files.figmaFoundationsPayload,
-  figmaFoundationsPayload,
-  "Components/Primary Buttons/themed/button/background/idle",
-  "#7EA2F6",
-);
+// Decision 59: Figma's theme fill aliases theme 500 in both modes.
+for (const mode of ["light", "dark"]) {
+  const variable = figmaFoundationsPayload.variables.find(
+    (entry) =>
+      entry.canonicalName ===
+      "Components/Primary Buttons/themed/button/background/idle",
+  );
+  const value = variable?.values?.[mode];
+  if (value?.kind !== "alias" || value.path !== "Primitives/Colors/theme/500") {
+    fail(
+      `${files.figmaFoundationsPayload}: expected the ${mode} themed button background to alias Primitives/Colors/theme/500, received ${JSON.stringify(value)}`,
+    );
+  }
+}
 assertFigmaPayloadDarkValue(
   files.figmaFoundationsPayload,
   figmaFoundationsPayload,
@@ -10968,8 +11004,14 @@ assertFigmaPayloadDarkValue(
 assertContains(
   files.iosColors,
   source.iosColors,
-  'UIColor(hex: "#7EA2F6") : UIColor(hex: "#0D44C2")',
-  "iOS dark themed primary button background stays blue",
+  /componentsPrimaryButtonsThemedButtonBackgroundIdle: Color \{\n[^}]*UIColor\(hex: "#135BEC"\) : UIColor\(hex: "#135BEC"\)/,
+  "iOS themed primary button background is the theme fill, #135BEC in both themes (decision 59)",
+);
+assertContains(
+  files.iosColors,
+  source.iosColors,
+  /componentsPrimaryButtonsThemedButtonForegroundContentIdle: Color \{\n[^}]*UIColor\(hex: "#FFFFFF"\) : UIColor\(hex: "#FFFFFF"\)/,
+  "iOS themed primary button foreground is the theme foreground, white in both themes (decision 59)",
 );
 assertContains(
   files.iosColors,
@@ -10980,8 +11022,14 @@ assertContains(
 assertContains(
   files.androidColorsDark,
   source.androidColorsDark,
-  "val componentsPrimaryButtonsThemedButtonBackgroundIdle = Color(0xff7ea2f6)",
-  "Android dark themed primary button background stays blue",
+  "val componentsPrimaryButtonsThemedButtonBackgroundIdle = Color(0xff135bec)",
+  "Android dark themed primary button background is the theme fill, #135BEC (decision 59)",
+);
+assertContains(
+  files.androidColorsDark,
+  source.androidColorsDark,
+  "val componentsPrimaryButtonsThemedButtonForegroundContentIdle = Color(0xffffffff)",
+  "Android dark themed primary button foreground is the theme foreground, white (decision 59)",
 );
 assertContains(
   files.androidColorsDark,

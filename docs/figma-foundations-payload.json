@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-05T23:05:28.500Z",
+  "generatedAt": "2026-10-07T12:59:16.138Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -8505,7 +8505,7 @@
         },
         "dark": {
           "kind": "raw",
-          "value": "#000000"
+          "value": "#FFFFFF"
         }
       }
     },
@@ -8553,7 +8553,7 @@
         },
         "dark": {
           "kind": "raw",
-          "value": "#000000"
+          "value": "#FFFFFF"
         }
       }
     },
@@ -8577,7 +8577,7 @@
         },
         "dark": {
           "kind": "raw",
-          "value": "#000000"
+          "value": "#FFFFFF"
         }
       }
     },
@@ -8601,7 +8601,7 @@
         },
         "dark": {
           "kind": "raw",
-          "value": "#000000"
+          "value": "#FFFFFF"
         }
       }
     },
@@ -8620,12 +8620,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#0D44C2"
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/500"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#7EA2F6"
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/500"
         }
       }
     },
@@ -8668,12 +8668,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1051E8"
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#5887F3"
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/400"
         }
       }
     },
@@ -8692,12 +8692,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#0B369C"
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/700"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#A4BEF9"
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/300"
         }
       }
     },
@@ -8716,12 +8716,12 @@
       "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
       "values": {
         "light": {
-          "kind": "raw",
-          "value": "#1051E8"
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/600"
         },
         "dark": {
-          "kind": "raw",
-          "value": "#5887F3"
+          "kind": "alias",
+          "path": "Primitives/Colors/theme/400"
         }
       }
     },

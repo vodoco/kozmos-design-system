@@ -52,6 +52,18 @@
       "value": "var(--primitives-colors-foreground-1000)"
     },
     {
+      "name": "Tailwind theme fill (decision 59)",
+      "file": "packages/react/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "theme-fill", "DEFAULT"],
+      "value": "var(--primitives-colors-theme-500)"
+    },
+    {
+      "name": "Tailwind theme foreground (decision 59)",
+      "file": "packages/react/tailwind.config.js",
+      "path": ["theme", "extend", "colors", "theme-fill", "foreground"],
+      "value": "var(--components-primary-buttons-themed-button-foreground-content-idle)"
+    },
+    {
       "name": "Tailwind destructive text",
       "file": "packages/react/tailwind.config.js",
       "path": ["theme", "extend", "colors", "destructive", "text"],
@@ -74,6 +86,48 @@
       "file": "packages/react/tailwind.config.js",
       "path": ["theme", "extend", "colors", "info", "text"],
       "value": "var(--semantics-emotion-informative-text)"
+    }
+  ],
+  "pins": [
+    {
+      "name": "the theme fill is theme 500, the client's base colour, in both themes (decision 59)",
+      "token": "components-primary-buttons-themed-button-background-idle",
+      "sameAs": "primitives-colors-theme-500"
+    },
+    {
+      "name": "the theme fill's hover is #1051E8 in both themes (decision 59)",
+      "token": "components-primary-buttons-themed-button-background-hover",
+      "value": "#1051e8"
+    },
+    {
+      "name": "the theme fill's focus is #1051E8 in both themes (decision 59)",
+      "token": "components-primary-buttons-themed-button-background-focus",
+      "value": "#1051e8"
+    },
+    {
+      "name": "the theme fill pressed is #0D44C2 in both themes (decision 59)",
+      "token": "components-primary-buttons-themed-button-background-pressed",
+      "value": "#0d44c2"
+    },
+    {
+      "name": "the theme foreground is white in both themes (decision 59)",
+      "token": "components-primary-buttons-themed-button-foreground-content-idle",
+      "value": "#ffffff"
+    },
+    {
+      "name": "the theme foreground is white on hover in both themes (decision 59)",
+      "token": "components-primary-buttons-themed-button-foreground-content-hover",
+      "value": "#ffffff"
+    },
+    {
+      "name": "the theme foreground is white when pressed in both themes (decision 59)",
+      "token": "components-primary-buttons-themed-button-foreground-content-pressed",
+      "value": "#ffffff"
+    },
+    {
+      "name": "the theme foreground is white on focus in both themes (decision 59)",
+      "token": "components-primary-buttons-themed-button-foreground-content-focus",
+      "value": "#ffffff"
     }
   ],
   "pairs": [
@@ -184,6 +238,36 @@
       "background": "components-primary-buttons-themed-button-background-hover",
       "foreground": "components-primary-buttons-themed-button-foreground-content-hover",
       "minimum": 4.5
+    },
+    {
+      "name": "button default pressed",
+      "background": "components-primary-buttons-themed-button-background-pressed",
+      "foreground": "components-primary-buttons-themed-button-foreground-content-pressed",
+      "minimum": 4.5
+    },
+    {
+      "name": "button default focus",
+      "background": "components-primary-buttons-themed-button-background-focus",
+      "foreground": "components-primary-buttons-themed-button-foreground-content-focus",
+      "minimum": 4.5
+    },
+    {
+      "name": "theme fill / theme foreground (decision 59: every prominent fill, from a filled Button to a checked Checkbox, a selected Chip, a default Tag, Badge or Counter, a filled pin and the UserMessage bubble)",
+      "background": "components-primary-buttons-themed-button-background-idle",
+      "foreground": "components-primary-buttons-themed-button-foreground-content-idle",
+      "minimum": 4.5
+    },
+    {
+      "name": "theme fill on the page (non-text, decision 59: a checked Checkbox, Switch or Radio dot)",
+      "background": "primitives-colors-background-0",
+      "foreground": "components-primary-buttons-themed-button-background-idle",
+      "minimum": 3
+    },
+    {
+      "name": "theme fill on the sheet (non-text, decision 59)",
+      "background": "primitives-colors-background-100",
+      "foreground": "components-primary-buttons-themed-button-background-idle",
+      "minimum": 3
     },
     {
       "name": "button destructive idle",

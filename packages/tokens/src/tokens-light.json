@@ -3093,6 +3093,7 @@
               "idle": {
                 "$type": "color",
                 "$value": "#FFFFFF",
+                "$description": "Decision 59: the theme foreground, white in both themes, for text and marks on the theme fill: 5.62:1 on #135BEC, where black reads 3.74:1.",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1437:4302",
                   "com.figma.isOverride": true
@@ -3135,7 +3136,8 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#0D44C2",
+              "$value": "{Primitives.Colors.theme.500}",
+              "$description": "Decision 59: the theme fill. Theme 500, the client's base colour set in the Pointr Cloud Dashboard, in both themes. Every prominent filled item draws it: a filled primary Button, a checked Checkbox or Switch, a selected Chip, a default Tag or Badge, a filled LocationPin. Text, icons, borders and focus rings stay on theme 600.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4307",
                 "com.figma.isOverride": true
@@ -3151,7 +3153,7 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#1051E8",
+              "$value": "{Primitives.Colors.theme.600}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4308",
                 "com.figma.isOverride": true
@@ -3159,7 +3161,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#0B369C",
+              "$value": "{Primitives.Colors.theme.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4309",
                 "com.figma.isOverride": true
@@ -3167,7 +3169,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#1051E8",
+              "$value": "{Primitives.Colors.theme.600}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4310",
                 "com.figma.isOverride": true

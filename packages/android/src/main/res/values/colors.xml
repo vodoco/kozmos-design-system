@@ -403,11 +403,11 @@
   <color name="components_primary_buttons_themed_button_foreground_content_hover">#ffffffff</color>
   <color name="components_primary_buttons_themed_button_foreground_content_pressed">#ffffffff</color>
   <color name="components_primary_buttons_themed_button_foreground_content_focus">#ffffffff</color>
-  <color name="components_primary_buttons_themed_button_background_idle">#ff0d44c2</color>
+  <color name="components_primary_buttons_themed_button_background_idle">@color/primitives_colors_theme_500</color>
   <color name="components_primary_buttons_themed_button_background_disabled">#ff2e3138</color>
-  <color name="components_primary_buttons_themed_button_background_hover">#ff1051e8</color>
-  <color name="components_primary_buttons_themed_button_background_pressed">#ff0b369c</color>
-  <color name="components_primary_buttons_themed_button_background_focus">#ff1051e8</color>
+  <color name="components_primary_buttons_themed_button_background_hover">@color/primitives_colors_theme_600</color>
+  <color name="components_primary_buttons_themed_button_background_pressed">@color/primitives_colors_theme_700</color>
+  <color name="components_primary_buttons_themed_button_background_focus">@color/primitives_colors_theme_600</color>
   <color name="components_primary_buttons_themed_foreground_dimmed_content_idle">#ffcad9fc</color>
   <color name="components_primary_buttons_themed_foreground_dimmed_content_disabled">#ff464a53</color>
   <color name="components_primary_buttons_themed_foreground_dimmed_content_hover">#ffcad9fc</color>
