@@ -100,7 +100,15 @@ private fun resolveIconName(name: String): String = when (name) {
     else -> name
 }
 
-internal fun resolveIconVector(rawName: String): ImageVector {
+internal fun resolveIconVector(rawName: String): ImageVector = knownIconVector(rawName) ?: Icons.Default.Info
+
+/**
+ * The glyph a Kozmos icon name draws, or null for a name the registry does
+ * not know. [KozmosIcon] stands an info glyph in for an unknown name; a part
+ * whose icons are decorative extras beside a label, as the details card's
+ * chips are, draws none instead, as the web does.
+ */
+internal fun knownIconVector(rawName: String): ImageVector? {
     return when (resolveIconName(rawName)) {
         "activity" -> Icons.AutoMirrored.Filled.ShowChart
         "alert-circle" -> Icons.Default.Info
@@ -174,7 +182,7 @@ internal fun resolveIconVector(rawName: String): ImageVector {
         "custom-transition" -> KozmosNavigationGlyphs.CustomTransition
         "security-control" -> KozmosNavigationGlyphs.SecurityControl
         "shuttle" -> KozmosNavigationGlyphs.Shuttle
-        else -> Icons.Default.Info
+        else -> null
     }
 }
 
