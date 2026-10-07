@@ -21,7 +21,9 @@ import { Bookmark, Plus } from "@kozmos-ds/icons";
    prominent fill, and overrides of the steps the Button's hover, focus and
    pressed tokens name move those too. scripts/check-token-references.mjs
    reads every token on the plain and the DesignConfigProvider roots below,
-   and the fills and the Button's state tokens on the branded ones. */
+   the fills and the Button's state tokens on the branded ones, and, with the
+   whole ramp re-pointed, every token on it and the outline, ghost and link
+   Buttons' ink. */
 
 /** The re-brand: theme 500, the client's base colour (decision 59). */
 const BRAND_FILL = "#AA1155";
@@ -83,16 +85,47 @@ function Fills({ id }: { id: (part: string) => string }) {
   );
 }
 
+/** The Buttons whose ink is the theme on a surface, not a fill. */
+function Inks({ id }: { id: (part: string) => string }) {
+  return (
+    <div style={{ display: "grid", gap: 16, padding: 16 }}>
+      <Button data-testid={id("outline")} variant="outline">
+        Details
+      </Button>
+      <Button data-testid={id("ghost")} variant="ghost">
+        Later
+      </Button>
+      <Button data-testid={id("link")} variant="link">
+        Terms
+      </Button>
+    </div>
+  );
+}
+
+/** Every step of the theme ramp, each a colour of its own. */
+const STEPS = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
+const WHOLE_RAMP = Object.fromEntries(
+  STEPS.map((step, index) => {
+    const digit = index.toString(16);
+    return [
+      `--primitives-colors-theme-${step}`,
+      `#9${digit}0${digit}f${digit}`,
+    ];
+  }),
+) as ThemeTokens;
+
 function Root({
   name,
   theme,
   tokens,
   fills = false,
+  inks = false,
 }: {
   name: string;
   theme: "light" | "dark";
   tokens?: ThemeTokens;
   fills?: boolean;
+  inks?: boolean;
 }) {
   const id = (part: string) => `${name}-${part}`;
   return (
@@ -100,6 +133,7 @@ function Root({
       {/* The provider's root is this probe's parent: tokens are read there. */}
       <span data-testid={id("probe")} />
       {fills && <Fills id={id} />}
+      {inks && <Inks id={id} />}
     </ThemeProvider>
   );
 }
@@ -148,6 +182,9 @@ function Fixture() {
           "--primitives-colors-theme-300": BRAND_PRESSED,
         }}
       />
+      {/* The whole ramp re-pointed: every token on it follows its step. */}
+      <Root inks name="light-ramp" theme="light" tokens={WHOLE_RAMP} />
+      <Root inks name="dark-ramp" theme="dark" tokens={WHOLE_RAMP} />
     </div>
   );
 }

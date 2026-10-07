@@ -22,7 +22,11 @@
  * steps the filled Button's states name overridden (600 and 700 light, 400
  * and 300 dark, where the ramp turns over), its hover, focus and pressed
  * tokens follow. Until GAP-23 was fixed the Button and every part drawn as
- * one kept #135BEC, because its token was the hex.
+ * one kept #135BEC, because its token was the hex. And with every step of
+ * the ramp re-pointed, every component or semantic colour whose value is a
+ * step of the ramp in that theme computes that step's override — the 28
+ * themed button tokens the sources once held as copied hex among them — and
+ * the outline, ghost and link Buttons draw it.
  *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-token-references.mjs
@@ -114,7 +118,15 @@ const expected = await resolvedTokens();
 const { code, css } = await buildReactFixture("token-references-host.tsx");
 const browser = await launchFixtureBrowser();
 const failures = [];
-const counts = { tokens: 0, aliases: 0, skipped: 0, fills: 0, states: 0 };
+const counts = {
+  tokens: 0,
+  aliases: 0,
+  skipped: 0,
+  fills: 0,
+  states: 0,
+  ramp: 0,
+  inks: 0,
+};
 try {
   const page = await browser.newPage({
     viewport: { width: 1600, height: 1200 },
@@ -227,6 +239,76 @@ try {
         `${root} ${name}: "${read.actual}"; expected ${value}, the step it names, overridden`,
       );
   }
+
+  // Re-brand: the whole ramp re-pointed, each step a colour of its own. Every
+  // component or semantic colour whose value, in that theme, is a step of
+  // the theme ramp must compute that step's override: one override reaches
+  // everything on the ramp, a value copied from it included. And the
+  // outline, ghost and link Buttons, whose ink is such a token, draw it.
+  const RAMP = /^--primitives-colors-theme-\d+$/;
+  for (const theme of ["light", "dark"]) {
+    const root = `${theme}-ramp`;
+    const steps = new Map(
+      expected[theme]
+        .filter((token) => RAMP.test(token.name))
+        .map((token) => [token.value.toLowerCase(), token.name]),
+    );
+    const onRamp = expected[theme].filter(
+      (token) =>
+        token.colour &&
+        /^--(components|semantics)-/.test(token.name) &&
+        steps.has(token.value.toLowerCase()),
+    );
+    const reads = await page.getByTestId(`${root}-probe`).evaluate(
+      (probe, { onRamp, steps }) => {
+        const element = probe.closest("[data-kozmos-root]");
+        const style = getComputedStyle(element);
+        return onRamp.map(({ name, value }) => {
+          const step = steps[value.toLowerCase()];
+          const actual = style.getPropertyValue(name).trim();
+          const override = element.style.getPropertyValue(step).trim();
+          return {
+            name,
+            step,
+            actual,
+            got: window.kozmosColourOf(actual),
+            want: window.kozmosColourOf(override),
+          };
+        });
+      },
+      { onRamp, steps: Object.fromEntries(steps) },
+    );
+    for (const read of reads) {
+      counts.ramp += 1;
+      if (read.want === null || read.got !== read.want)
+        failures.push(
+          `${root} ${read.name}: "${read.actual}"; expected ${read.step}'s override, the step its value is on`,
+        );
+    }
+    const ink = reads.find(
+      (read) =>
+        read.name ===
+        "--components-secondary-buttons-themed-button-foreground-content-idle",
+    );
+    for (const [part, property] of [
+      ["outline", "color"],
+      ["outline", "borderTopColor"],
+      ["ghost", "color"],
+      ["link", "color"],
+    ]) {
+      const read = await page
+        .getByTestId(`${root}-${part}`)
+        .evaluate((node, property) => {
+          const value = getComputedStyle(node)[property];
+          return { value, colour: window.kozmosColourOf(value) };
+        }, property);
+      counts.inks += 1;
+      if (!ink || read.colour !== ink.want)
+        failures.push(
+          `${root} ${part} ${property}: ${read.value}; expected ${ink?.step ?? "its step"}'s override`,
+        );
+    }
+  }
 } finally {
   await browser.close();
 }
@@ -238,5 +320,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS token references (GAP-23): ${counts.tokens} token reads (${counts.aliases} of them aliases in the sources) compute what the build wrote before references, in a light and a dark ThemeProvider and DesignConfigProvider root (${counts.skipped} the DesignConfigProvider sets itself, skipped); ${counts.fills} fills compute ${BRAND_FILL} under one override of theme 500; ${counts.states} reads of the filled Button's idle, hover, focus and pressed tokens follow the steps they name`,
+  `PASS token references (GAP-23): ${counts.tokens} token reads (${counts.aliases} of them aliases in the sources) compute what the build wrote before references, in a light and a dark ThemeProvider and DesignConfigProvider root (${counts.skipped} the DesignConfigProvider sets itself, skipped); ${counts.fills} fills compute ${BRAND_FILL} under one override of theme 500; ${counts.states} reads of the filled Button's idle, hover, focus and pressed tokens follow the steps they name; with the whole ramp re-pointed, ${counts.ramp} reads of component and semantic colours on it follow their steps, and ${counts.inks} reads of the outline, ghost and link Buttons' ink`,
 );
