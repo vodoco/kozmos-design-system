@@ -82,7 +82,12 @@ than 128 units, only attribution moves above the controls, preserving the defaul
 size. Tall side panels leave the footer band clear. Credits contribute camera padding independently of
 bottomControlsPadCamera. When the slot has less room than the whole attribution, as under an
 opened direction card above a sheet, the brand gives way first and the credits keep their full
-height: they are never clipped into a scroll region. The panel's sizing reserves the full
+height: they are never clipped into a scroll region (decision 58). The room counts the lift
+above the corners when they leave no middle slot. If the credits alone still reach the top bar
+above the corners, the corners give way next, hidden and out of reach as when they don't fit,
+and the credits return to the bottom row. A brand that has given way stays laid out, unseen and
+out of reach, so the shell brings it back as soon as it fits again, after the text or the
+width grows and shrinks back. The panel's sizing reserves the full
 height, but at most half of the band below the top bar, so oversized custom branding never
 takes the panel's place; a sheet reaching that limit permits content scrolling.
 Omitting the slot preserves existing shell behavior.

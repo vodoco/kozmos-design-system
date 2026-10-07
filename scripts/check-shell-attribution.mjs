@@ -273,11 +273,13 @@ try {
           clipped:
             /(auto|scroll|hidden|clip)/.test(style.overflowY) &&
             slot.scrollHeight > slot.clientHeight + 1,
-          logo: logo
-            ? logo.getBoundingClientRect().height > 0 && inside(logo)
-              ? "whole"
-              : "cut"
-            : "absent",
+          // A logo that has given way stays laid out, unseen, for the shell to measure.
+          logo:
+            logo && getComputedStyle(logo).visibility === "visible"
+              ? logo.getBoundingClientRect().height > 0 && inside(logo)
+                ? "whole"
+                : "cut"
+              : "absent",
           link: link ? (inside(link) ? "whole" : "cut") : "none",
           unreachable: unreachable.length,
         };
@@ -329,6 +331,209 @@ try {
     1,
     "the logo comes back when there is room again",
   );
+  // GAP-135's follow-up (decision 58, extended): two 44-tall corners on a phone leave no middle
+  // slot, so the attribution sits above them. However tall an opened card grows, the attribution
+  // never reaches into it: the logo gives way first, then the corners, and the credits never clip.
+  // A layout that has settled stays settled: nothing in the shell changes over the next frames.
+  const liftStates = new Set();
+  let swept = 0;
+  for (const dir of ["ltr", "rtl"])
+    for (const panel of [false, true])
+      for (const info of [true, false])
+        for (let barHeight = 100; barHeight <= 640; barHeight += 8) {
+          await page.evaluate(
+            (config) => window.renderAttributionShell(config),
+            {
+              dir,
+              panel,
+              info,
+              barHeight,
+              corners: "small",
+              width: 390,
+              height: 720,
+            },
+          );
+          await settled(page);
+          const state = await page.evaluate(async () => {
+            const shell = document.querySelector('[data-testid="shell"]');
+            let changes = 0;
+            const watch = new MutationObserver((list) => {
+              changes += list.length;
+            });
+            watch.observe(shell, {
+              attributes: true,
+              childList: true,
+              subtree: true,
+            });
+            for (let frame = 0; frame < 6; frame++)
+              await new Promise(requestAnimationFrame);
+            watch.disconnect();
+            const rect = (node) => node.getBoundingClientRect();
+            const meets = (a, b) =>
+              a.left < b.right &&
+              b.left < a.right &&
+              a.top < b.bottom &&
+              b.top < a.bottom;
+            const hits = (node, x, y) => {
+              const hit = document.elementFromPoint(x, y);
+              return node === hit || node.contains(hit);
+            };
+            const section = document.querySelector(
+              "[data-kozmos-attribution] section",
+            );
+            const bar = document.querySelector(
+              '[data-testid="bar"]',
+            ).parentElement;
+            const credits = section.querySelector("a");
+            const logo = section.querySelector("img");
+            const logoShown =
+              !!logo && getComputedStyle(logo).visibility === "visible";
+            const corners = document.querySelector(
+              "[data-kozmos-bottom-controls]",
+            );
+            const cornersShown =
+              getComputedStyle(corners).visibility !== "hidden";
+            const box = rect(section);
+            const barBox = rect(bar);
+            const link = rect(credits);
+            const scroller = rect(
+              section.querySelector(".kozmos-map-attribution-scroll"),
+            );
+            return {
+              changes,
+              logo: logoShown,
+              corners: cornersShown,
+              lifted: cornersShown && box.bottom < rect(corners).top,
+              box: box.toJSON(),
+              bar: barBox.toJSON(),
+              intoBar: meets(box, barBox),
+              intoCorners:
+                cornersShown &&
+                ["start", "end"].some((id) =>
+                  meets(
+                    box,
+                    rect(document.querySelector(`[data-testid="${id}"]`)),
+                  ),
+                ),
+              // What a finger finds just above the bar's bottom edge, and on the credits.
+              barOnTop: hits(
+                bar,
+                barBox.left + barBox.width / 2,
+                barBox.bottom - 1,
+              ),
+              creditsReachable: hits(
+                credits,
+                (Math.max(link.left, scroller.left) +
+                  Math.min(link.right, scroller.right)) /
+                  2,
+                link.top + link.height / 2,
+              ),
+              logoReachable:
+                !logoShown ||
+                hits(
+                  logo,
+                  rect(logo).left + rect(logo).width / 2,
+                  rect(logo).top + rect(logo).height / 2,
+                ),
+              clipped: box.height < section.scrollHeight - 1,
+            };
+          });
+          const where = JSON.stringify({ dir, panel, info, barHeight, state });
+          assert.equal(state.changes, 0, `the layout settles: ${where}`);
+          assert.equal(
+            state.intoBar,
+            false,
+            `the attribution never reaches into the top bar: ${where}`,
+          );
+          assert.ok(
+            state.barOnTop,
+            `the top bar is what a finger finds: ${where}`,
+          );
+          assert.equal(state.intoCorners, false, `nor into a corner: ${where}`);
+          assert.ok(
+            state.creditsReachable,
+            `the credits stay reachable: ${where}`,
+          );
+          assert.ok(state.logoReachable, `a shown logo is reachable: ${where}`);
+          assert.equal(state.clipped, false, `nothing is clipped: ${where}`);
+          liftStates.add(
+            `${state.logo ? "logo" : "credits"} ${state.corners ? (state.lifted ? "above corners" : "beside corners") : "without corners"}`,
+          );
+          swept++;
+        }
+  for (const expected of [
+    "logo above corners",
+    "credits above corners",
+    "credits without corners",
+  ])
+    assert.ok(
+      liftStates.has(expected),
+      `the sweep reached "${expected}": ${[...liftStates]}`,
+    );
+  // The logo comes back when it fits again, after the text grows and shrinks back, and after the
+  // shell narrows and widens back (a brand of words wraps onto a second line in between), and the
+  // sheet takes back the height it gave the brand.
+  const logoShown = () =>
+    page.evaluate(() => {
+      const brand = [
+        ...document.querySelectorAll(
+          "[data-kozmos-attribution] img, [data-kozmos-attribution] div",
+        ),
+      ].find(
+        (node) =>
+          node.alt === "Pointr" ||
+          node.textContent === "Pointr indoor maps partner",
+      );
+      return (
+        !!brand &&
+        getComputedStyle(brand).visibility === "visible" &&
+        brand.getBoundingClientRect().height > 0
+      );
+    });
+  const sheetHeight = () =>
+    page.evaluate(
+      () =>
+        document
+          .querySelector('[data-slot="map-shell-panel"]')
+          ?.getBoundingClientRect().height ?? 0,
+    );
+  for (const trip of ["text", "width"]) {
+    const config =
+      trip === "text"
+        ? { panel: true, barHeight: 480, height: 720 }
+        : { barHeight: 540, wordBrand: true, corners: false, height: 720 };
+    // The text by the root's font size, as a browser's zoom of text alone does; the width by
+    // the shell's own size, as a rotated or resized host gives it.
+    const go = (scale, width) =>
+      page.evaluate(
+        ({ config, scale, width }) => {
+          document.documentElement.style.fontSize = scale
+            ? `${16 * scale}px`
+            : "";
+          window.renderAttributionShell({ ...config, width });
+        },
+        { config, scale, width },
+      );
+    await go(0, 390);
+    await settled(page);
+    assert.ok(await logoShown(), `${trip}: the logo shows at first`);
+    const sheet = await sheetHeight();
+    await go(trip === "text" ? 2.5 : 0, trip === "text" ? 390 : 200);
+    await settled(page);
+    await settled(page);
+    assert.equal(await logoShown(), false, `${trip}: the logo gives way`);
+    await go(0, 390);
+    await settled(page);
+    await settled(page);
+    assert.ok(
+      await logoShown(),
+      `${trip}: the logo comes back when it fits again`,
+    );
+    assert.ok(
+      Math.abs((await sheetHeight()) - sheet) < 1,
+      `${trip}: the sheet takes back its height: ${sheet} → ${await sheetHeight()}`,
+    );
+  }
   await page.evaluate(() => window.renderAttributionShell({ credits: false }));
   await settled(page);
   assert.equal(
@@ -344,7 +549,7 @@ try {
     false,
   );
   console.log(
-    "PASS shell attribution: 29 layouts, 48 squeezed (never clipped, the logo first), full-map centering, logo clearance, animated detents, RTL, side panels with/without corners, large/capped sheets, keyboard insets, 200% text, long credits, link hit testing and removal",
+    `PASS shell attribution: 29 layouts, 48 squeezed (never clipped, the logo first), ${swept} with the attribution above two phone corners (never into the top bar: the logo, then the corners give way; settled), the logo back after a text and a width round trip, full-map centering, logo clearance, animated detents, RTL, side panels with/without corners, large/capped sheets, keyboard insets, 200% text, long credits, link hit testing and removal`,
   );
 } finally {
   await browser.close();
