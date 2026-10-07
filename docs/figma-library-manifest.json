@@ -17718,6 +17718,7 @@
           "unmappedProps": []
         },
         "props": [
+          "actions",
           "aria-describedby",
           "aria-invalid",
           "aria-label",
@@ -17731,6 +17732,7 @@
           "endRouteLabel",
           "etaText",
           "id",
+          "locationText",
           "presentation",
           "progress",
           "role",
