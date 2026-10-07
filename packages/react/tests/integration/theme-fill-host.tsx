@@ -49,6 +49,11 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       <Button data-testid={id("button-danger")} emotion="danger">
         Stop
       </Button>
+      {/* Unavailable, as RouteSummary's Previous and Next: it keeps focus
+          but must not look as if it acts under the pointer or a press. */}
+      <Button aria-disabled="true" data-testid={id("button-unavailable")}>
+        Next
+      </Button>
       <IconButton
         aria-label="Add"
         data-testid={id("icon-button")}
@@ -87,6 +92,11 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       <div data-testid={id("chip-remove")}>
         <Chip onRemove={() => undefined} selected>
           Open now
+        </Chip>
+      </div>
+      <div data-testid={id("chip-danger-remove")}>
+        <Chip onRemove={() => undefined} selected variant="destructive">
+          Closed
         </Chip>
       </div>
       <Tag data-testid={id("tag")}>New</Tag>

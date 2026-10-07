@@ -127,7 +127,8 @@ Counter, a filled pin, the UserMessage bubble. What sits on it is the theme fore
 3.74:1 there. The theme as text, an icon, a border or a focus ring on a surface is theme 600
 (`primary`, `ring`), `#1051E8` in the light and `#5887F3` in the dark, which reads 4.5:1 on the page
 and the sheet in both. Slider, Progress and RouteProgressRail stay on 600 too: a 500 bar fails
-against its track. SwiftUI and Compose follow the same rule through the same tokens.
+against its track. SwiftUI and Compose follow the same rule through the same tokens, but take no
+override at run time: their fill is Pointr's `#135BEC` (§10).
 
 The unitless ones are shared with iOS and Android, so a web rule multiplies them:
 `calc(var(--semantics-radius-container) * 1px)`. [component-inventory.md](./component-inventory.md)
@@ -151,9 +152,11 @@ The filled Button's hover and focus are references to theme 600 and its pressed 
 the light theme; in the dark, where the ramp turns over, to 400 and 300. Set those steps and they
 follow; leave them and they stay Pointr's blue. Theme 600 is also the theme as text, icons,
 borders and focus rings on a surface (`primary`, `ring`), so a brand that changes 500 sets 600
-too, at 4.5:1 on the page in each theme. An inline property outranks the stylesheet's dark theme,
-so one set applies in both themes: to set the steps each theme names, control `theme` and pass
-the set that matches.
+too, at 4.5:1 on the page in each theme. The hover of a selected Chip, a default Tag, a default
+Badge and an on ToggleButton is the Button's hover token, so it follows 600 (400) as well. An inline
+property outranks the stylesheet's dark theme, so a flat set applies in both themes; pass
+`{ light, dark }` instead, and every provider applies the set for its own resolved theme, a nested
+one that forces the other theme included (DynamicIsland's island is always dark).
 
 ```tsx
 import { Button, ThemeProvider } from "@kozmos-ds/react";
@@ -184,9 +187,9 @@ const brand = {
   },
 } as const;
 
-export function BrandedApp({ theme }: { theme: "light" | "dark" }) {
+export function BrandedApp() {
   return (
-    <ThemeProvider theme={theme} tokens={brand[theme]}>
+    <ThemeProvider defaultTheme="system" tokens={brand}>
       <Button>Book a visit</Button>
     </ThemeProvider>
   );

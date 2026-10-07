@@ -10,6 +10,15 @@ import {
 export type Theme = "dark" | "light" | "system";
 export type ResolvedTheme = Exclude<Theme, "system">;
 export type ThemeTokens = Record<`--${string}`, string | number>;
+/**
+ * Overrides per theme. Each provider applies the set for its own resolved
+ * theme, so a provider that forces the other theme inside yours (DynamicIsland's
+ * island is always dark) takes the matching set rather than yours.
+ */
+export interface ThemeTokenSets {
+  light?: ThemeTokens;
+  dark?: ThemeTokens;
+}
 
 export interface ThemeProviderProps {
   children: React.ReactNode;
@@ -22,8 +31,18 @@ export interface ThemeProviderProps {
   /** Deterministic system fallback for SSR and the first hydration render. */
   defaultSystemTheme?: ResolvedTheme;
   dir?: "ltr" | "rtl";
-  /** Explicit overrides are inherited by nested providers and owned portals. */
-  tokens?: ThemeTokens;
+  /**
+   * Explicit overrides, inherited by nested providers and owned portals: one
+   * set for both themes, or `{ light, dark }`, of which every provider applies
+   * the set for its own resolved theme.
+   */
+  tokens?: ThemeTokens | ThemeTokenSets;
+}
+
+function isTokenSets(
+  tokens: ThemeTokens | ThemeTokenSets,
+): tokens is ThemeTokenSets {
+  return Object.keys(tokens).every((key) => key === "light" || key === "dark");
 }
 
 function isTheme(value: unknown): value is Theme {
@@ -53,10 +72,20 @@ export function ThemeProvider({
   const theme = controlledTheme ?? preference;
   const resolvedTheme = theme === "system" ? systemTheme : theme;
   const direction = dir ?? parent?.dir ?? "ltr";
-  const inheritedTokens = useMemo(
-    () => ({ ...parent?.tokens, ...tokens }),
-    [parent?.tokens, tokens],
-  );
+  // Both themes' sets are inherited, so a nested provider that resolves to
+  // the other theme applies that theme's set, not this one's.
+  const tokenSets = useMemo(() => {
+    const own: ThemeTokenSets = !tokens
+      ? {}
+      : isTokenSets(tokens)
+        ? tokens
+        : { light: tokens, dark: tokens };
+    return {
+      light: { ...parent?.tokenSets.light, ...own.light },
+      dark: { ...parent?.tokenSets.dark, ...own.dark },
+    };
+  }, [parent?.tokenSets, tokens]);
+  const inheritedTokens = tokenSets[resolvedTheme];
 
   useEffect(() => {
     setPortalHost(root.current?.ownerDocument.body ?? null);
@@ -91,6 +120,7 @@ export function ThemeProvider({
     resolvedTheme,
     dir: direction,
     tokens: inheritedTokens,
+    tokenSets,
     portalContainer,
     setTheme(next) {
       if (!isTheme(next)) return;

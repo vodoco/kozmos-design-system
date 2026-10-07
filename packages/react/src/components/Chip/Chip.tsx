@@ -199,7 +199,14 @@ export const Chip = React.forwardRef<HTMLSpanElement, ChipProps>(
             aria-label={removeLabel ?? `Remove ${label}`}
             className={cn(
               "kozmos-chip-remove ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-pill transition-colors hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              isSelected && "hover:bg-theme-fill-foreground/20",
+              // A selected destructive chip is the danger fill, not the
+              // theme's: its own foreground at a quarter, 1.40:1 on the light
+              // theme's red and 1.63:1 on the dark's (white at a fifth read
+              // 1.28:1 and 1.27:1).
+              isSelected &&
+                (variant === "destructive"
+                  ? "hover:bg-destructive-foreground/25"
+                  : "hover:bg-theme-fill-foreground/20"),
             )}
             disabled={disabled}
             onClick={(event) => {

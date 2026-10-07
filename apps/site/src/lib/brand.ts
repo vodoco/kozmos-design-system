@@ -6,11 +6,12 @@
  * The primitive ramp (`--primitives-colors-theme-n`) is re-pointed, step for
  * step; the utilities read it. In the component layer
  * (`--components-…-themed-…`), a token the stylesheet writes as a reference
- * to the ramp — the filled button's fill, hover, focus and pressed, since
- * GAP-23 was fixed — follows the ramp on its own and is reported as followed,
- * with no override. The rest of that layer holds values copied from the ramp
- * in the token sources, so each is matched to the ramp step whose value it
- * carries, in both themes, and re-pointed to the same step of the variant.
+ * to the ramp follows it on its own and is reported as followed, with no
+ * override: since GAP-23 was fixed, all 32 themed colours on the ramp are
+ * references. Any that a token source still held as a value copied from the
+ * ramp would be matched to the ramp step whose value it carries, in both
+ * themes, and re-pointed to the same step of the variant; the shipped tokens
+ * have none left, so that path is a guard.
  * A component token whose value is not on the ramp is left alone and
  * reported. One that sits on different steps in light and dark is matched in
  * the theme being shown when `theme` is given, since an override applies to

@@ -33,6 +33,8 @@ const THEME_0 = { light: [241, 245, 254], dark: [5, 28, 79] };
 // The themed Button's state tokens, the same in both themes (decision 59).
 const THEME_HOVER = [16, 81, 232]; // #1051E8, hover and focus
 const THEME_PRESSED = [13, 68, 194]; // #0D44C2
+/** A selected destructive chip's fill: danger 600 in each theme. */
+const DANGER_FILL = { light: [212, 28, 66], dark: [233, 90, 119] };
 // The page, background/0, under the parts.
 const PAGE = { light: [255, 255, 255], dark: [0, 0, 0] };
 // The danger emotion's, which turn over with the theme: a default-variant
@@ -201,6 +203,18 @@ const STATE_READS = [
   ["tag-remove", "button", "focus", "boxShadow", "ring"],
   ["chip-remove", CHIP_REMOVE, "hover", "backgroundColor", "lift"],
   ["tag-remove", "button", "hover", "backgroundColor", "lift"],
+  // A selected destructive chip is the danger fill: its remove hover shows
+  // on that fill, not the theme's.
+  [
+    "chip-danger-remove",
+    CHIP_REMOVE,
+    "hover",
+    "backgroundColor",
+    "lift-danger",
+  ],
+  // An unavailable filled Button keeps its rest colour.
+  ["button-unavailable", "", "hover", "backgroundColor", "fill"],
+  ["button-unavailable", "", "pressed", "backgroundColor", "fill"],
 ];
 
 // Radix's menu trigger opens its menu on pointerdown and prevents that
@@ -407,6 +421,24 @@ try {
         );
     }
   }
+  // A press shows at once: the filled Button's colour transition is off
+  // while it is held, so a quick tap still darkens it. Read before the
+  // transitions are turned off below.
+  for (const part of ["button", "map-control"]) {
+    const target = page.getByTestId(`light-${part}`);
+    await target.hover();
+    await page.mouse.down();
+    const duration = await target.evaluate(
+      (node) => getComputedStyle(node).transitionDuration,
+    );
+    await page.mouse.up();
+    await page.mouse.move(0, 0);
+    read += 1;
+    if (!duration.split(",").every((value) => parseFloat(value) === 0))
+      failures.push(
+        `light ${part} pressed transitionDuration: ${duration}; expected 0s, so a quick tap shows the pressed colour`,
+      );
+  }
   // The states. Transitions off, so a read is the state's colour and not a
   // frame on the way to it.
   await page.addStyleTag({
@@ -425,7 +457,9 @@ try {
       await enter(page, target, state);
       const actual = await target.evaluate(readInPage, {
         property,
-        fill: THEME_FILL,
+        // What a hover inside a fill is laid over: the danger fill for a
+        // selected destructive chip, the theme fill for every other.
+        fill: kind === "lift-danger" ? DANGER_FILL[theme] : THEME_FILL,
       });
       await leave(page, state);
       const inState =
@@ -469,8 +503,9 @@ try {
           );
         continue;
       }
-      if (kind === "lift") {
-        const lift = contrast(actual.over.slice(0, 3), THEME_FILL);
+      if (kind === "lift" || kind === "lift-danger") {
+        const base = kind === "lift" ? THEME_FILL : DANGER_FILL[theme];
+        const lift = contrast(actual.over.slice(0, 3), base);
         if (lift < LIFT_MIN)
           failures.push(
             `${where}: ${actual.css}; over the fill rgb(${actual.over

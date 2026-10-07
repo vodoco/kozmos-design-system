@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import {
+  Badge,
   Button,
   CategoryField,
   Checkbox,
@@ -12,6 +13,7 @@ import {
   SplitButton,
   Tag,
   ThemeProvider,
+  ToggleButton,
   type ThemeTokens,
 } from "@kozmos-ds/react";
 import { Bookmark, Plus } from "@kozmos-ds/icons";
@@ -30,6 +32,9 @@ const BRAND_FILL = "#AA1155";
 /** Distinct stand-ins for the steps the Button's states name. */
 const BRAND_HOVER = "#118855";
 const BRAND_PRESSED = "#553311";
+/** A set per theme's two 700s, for the nested provider below. */
+const NESTED_LIGHT_700 = "#225511";
+const NESTED_DARK_700 = "#55BB99";
 
 function Fills({ id }: { id: (part: string) => string }) {
   return (
@@ -102,6 +107,22 @@ function Inks({ id }: { id: (part: string) => string }) {
   );
 }
 
+/** The fills whose hover is the filled Button's hover token. */
+function Hovers({ id }: { id: (part: string) => string }) {
+  return (
+    <div style={{ display: "grid", gap: 16, padding: 16 }}>
+      <div data-testid={id("hover-chip")}>
+        <Chip selected>Open now</Chip>
+      </div>
+      <Tag data-testid={id("hover-tag")}>New</Tag>
+      <Badge data-testid={id("hover-badge")}>Live</Badge>
+      <ToggleButton data-testid={id("hover-toggle")} pressed>
+        Step-free
+      </ToggleButton>
+    </div>
+  );
+}
+
 /** Every step of the theme ramp, each a colour of its own. */
 const STEPS = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 const WHOLE_RAMP = Object.fromEntries(
@@ -120,12 +141,14 @@ function Root({
   tokens,
   fills = false,
   inks = false,
+  hovers = false,
 }: {
   name: string;
   theme: "light" | "dark";
   tokens?: ThemeTokens;
   fills?: boolean;
   inks?: boolean;
+  hovers?: boolean;
 }) {
   const id = (part: string) => `${name}-${part}`;
   return (
@@ -134,6 +157,7 @@ function Root({
       <span data-testid={id("probe")} />
       {fills && <Fills id={id} />}
       {inks && <Inks id={id} />}
+      {hovers && <Hovers id={id} />}
     </ThemeProvider>
   );
 }
@@ -167,6 +191,7 @@ function Fixture() {
       {/* The filled Button's states name 600 and 700 in the light theme and
           400 and 300 in the dark, where the ramp turns over. */}
       <Root
+        hovers
         name="light-states"
         theme="light"
         tokens={{
@@ -175,6 +200,7 @@ function Fixture() {
         }}
       />
       <Root
+        hovers
         name="dark-states"
         theme="dark"
         tokens={{
@@ -185,6 +211,25 @@ function Fixture() {
       {/* The whole ramp re-pointed: every token on it follows its step. */}
       <Root inks name="light-ramp" theme="light" tokens={WHOLE_RAMP} />
       <Root inks name="dark-ramp" theme="dark" tokens={WHOLE_RAMP} />
+      {/* A set per theme, and a provider inside that forces dark, as
+          DynamicIsland's island does: it applies the dark set, so its outline
+          ink is the dark set's 700, not the light set's. */}
+      <ThemeProvider
+        theme="light"
+        tokens={{
+          light: { "--primitives-colors-theme-700": NESTED_LIGHT_700 },
+          dark: { "--primitives-colors-theme-700": NESTED_DARK_700 },
+        }}
+      >
+        <Button data-testid="nested-light-outline" variant="outline">
+          Details
+        </Button>
+        <ThemeProvider theme="dark">
+          <Button data-testid="nested-dark-outline" variant="outline">
+            Details
+          </Button>
+        </ThemeProvider>
+      </ThemeProvider>
     </div>
   );
 }

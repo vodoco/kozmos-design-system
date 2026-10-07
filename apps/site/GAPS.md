@@ -561,12 +561,14 @@ keep the table's four columns and its statuses as they are.
   following it; the e2e test reads the module's fill and outline ink as the
   variant's 500 and 700.
 - **What remains a value:** the 13 themed colours that are not on the theme
-  ramp (white ink on a filled button, the disabled greys), and the other
-  emotions' button colours (success, danger, alert, informative, neutral),
-  which hold values copied from their own ramps. No brand override touches
-  those ramps; writing them as aliases needs each one's intended step, as
-  several values sit on two ramps (white is background 0 and foreground
-  1000).
+  ramp (white ink on a filled button, the disabled greys), and part of the
+  other emotions' button colours: in the light file 30 of them already are
+  references (the success and alert fills and their states, informative's
+  hover and focus, every emotion's secondary ink), in the dark file only
+  neutral's four inks; the rest hold values copied from their own ramps. No
+  brand override touches those ramps; writing them as aliases needs each
+  one's intended step, as several values sit on two ramps (white is
+  background 0 and foreground 1000).
 - **Lane:** Core (tokens build).
 
 ## GAP-24 · `DynamicIsland` pins itself to the viewport

@@ -61,9 +61,11 @@ Its props are `ThemeProviderProps`.
   Deterministic system fallback for SSR and the first hydration render.
 
 - `dir`: `"ltr" | "rtl"`, optional.
-- `tokens`: `ThemeTokens`, optional.
+- `tokens`: `ThemeTokens | ThemeTokenSets`, optional.
 
-  Explicit overrides are inherited by nested providers and owned portals.
+  Explicit overrides, inherited by nested providers and owned portals: one
+  set for both themes, or `{ light, dark }`, of which every provider applies
+  the set for its own resolved theme.
 
 ## Types these props take
 
@@ -89,6 +91,22 @@ From `@kozmos-ds/react`.
 
 ```ts
 type ThemeTokens = Record<`--${string}`, string | number>;
+```
+
+### ThemeTokenSets
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * Overrides per theme. Each provider applies the set for its own resolved
+ * theme, so a provider that forces the other theme inside yours (DynamicIsland's
+ * island is always dark) takes the matching set rather than yours.
+ */
+interface ThemeTokenSets {
+  light?: ThemeTokens;
+  dark?: ThemeTokens;
+}
 ```
 
 ## Also exported

@@ -22,7 +22,9 @@ const { browserslist } = JSON.parse(
   fs.readFileSync(path.join(reactDir, "package.json"), "utf8"),
 );
 // lightningcss is Vite 8's, so it is found from the site that builds with it.
-const siteRequire = createRequire(path.join(process.cwd(), "apps/site/package.json"));
+const siteRequire = createRequire(
+  path.join(process.cwd(), "apps/site/package.json"),
+);
 const viteRequire = createRequire(siteRequire.resolve("vite"));
 const lightningcss = viteRequire("lightningcss");
 const targets = lightningcss.browserslistToTargets(
@@ -39,12 +41,42 @@ assert.ok(
 
 // Where the parts sit: each case says which way they should read.
 const cases = [
-  { name: "an html dir=ltr page", html: 'dir="ltr" lang="en"', wrap: "", rtl: false },
-  { name: "an html dir=rtl page in English", html: 'dir="rtl" lang="en"', wrap: "", rtl: true },
-  { name: "a dir=rtl box on an English page", html: 'lang="en"', wrap: 'dir="rtl"', rtl: true },
-  { name: "a dir=ltr box in a right-to-left page", html: 'dir="rtl" lang="ar"', wrap: 'dir="ltr"', rtl: false },
-  { name: "an Arabic page laid out left to right", html: 'dir="ltr" lang="ar"', wrap: "", rtl: false },
-  { name: "an English dir=rtl box on an Arabic page", html: 'lang="ar"', wrap: 'dir="rtl" lang="en"', rtl: true },
+  {
+    name: "an html dir=ltr page",
+    html: 'dir="ltr" lang="en"',
+    wrap: "",
+    rtl: false,
+  },
+  {
+    name: "an html dir=rtl page in English",
+    html: 'dir="rtl" lang="en"',
+    wrap: "",
+    rtl: true,
+  },
+  {
+    name: "a dir=rtl box on an English page",
+    html: 'lang="en"',
+    wrap: 'dir="rtl"',
+    rtl: true,
+  },
+  {
+    name: "a dir=ltr box in a right-to-left page",
+    html: 'dir="rtl" lang="ar"',
+    wrap: 'dir="ltr"',
+    rtl: false,
+  },
+  {
+    name: "an Arabic page laid out left to right",
+    html: 'dir="ltr" lang="ar"',
+    wrap: "",
+    rtl: false,
+  },
+  {
+    name: "an English dir=rtl box on an Arabic page",
+    html: 'lang="ar"',
+    wrap: 'dir="rtl" lang="en"',
+    rtl: true,
+  },
 ];
 
 const parts = `
@@ -119,9 +151,15 @@ try {
         scenario.rtl ? turned(drawn.gallery) : !turned(drawn.gallery),
         `${where}: the gallery arrow ${scenario.rtl ? "is not turned" : "is turned"}`,
       );
-      const run = drawn.gradient.match(/linear-gradient\((to (?:left|right)|-?[\d.]+deg)/)?.[1];
+      const run = drawn.gradient.match(
+        /linear-gradient\((to (?:left|right)|-?[\d.]+deg)/,
+      )?.[1];
       const angle =
-        run === "to right" ? 90 : run === "to left" ? 270 : Number(run?.slice(0, -3));
+        run === "to right"
+          ? 90
+          : run === "to left"
+            ? 270
+            : Number(run?.slice(0, -3));
       assert.ok(Number.isFinite(angle), `${where}: the gradient has no angle`);
       assert.equal(
         ((angle % 360) + 360) % 360,
@@ -138,7 +176,11 @@ try {
       const near = (actual, expected, message) =>
         assert.ok(Math.abs(actual - expected) < 0.5, `${where}: ${message}`);
       if (scenario.rtl) {
-        near(drawn.start.right, 30, "the start corner is not 30 from the right");
+        near(
+          drawn.start.right,
+          30,
+          "the start corner is not 30 from the right",
+        );
         near(drawn.end.left, 10, "the end corner is not 10 from the left");
       } else {
         near(drawn.start.left, 10, "the start corner is not 10 from the left");
@@ -151,7 +193,9 @@ try {
   // rather than a rule: Progress fills from the inline start.
   const fixture = await buildReactFixture("direction-host.tsx");
   const page = await browser.newPage();
-  await page.setContent('<!doctype html><html lang="en"><body><div id="root"></div></body></html>');
+  await page.setContent(
+    '<!doctype html><html lang="en"><body><div id="root"></div></body></html>',
+  );
   await page.addStyleTag({ content: fixture.css });
   await page.addScriptTag({ content: fixture.code });
   await page.getByRole("progressbar", { name: "Progress rtl" }).waitFor();
@@ -243,7 +287,7 @@ try {
     const divider = meet === "right" ? "borderRight" : "borderLeft";
     const other = meet === "right" ? "borderLeft" : "borderRight";
     assert.ok(
-      main[divider] >= main[other],
+      main[divider] > main[other],
       `${where}: the divider is not on the main half's inline end`,
     );
     checked += 1;

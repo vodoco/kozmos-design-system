@@ -43,6 +43,15 @@ import {
 const BRAND_FILL = "#AA1155";
 const BRAND_HOVER = "#118855";
 const BRAND_PRESSED = "#553311";
+const NESTED_LIGHT_700 = "#225511";
+const NESTED_DARK_700 = "#55BB99";
+/** Fills whose hover is the Button's hover token, so it follows 600 (400). */
+const HOVERS = [
+  ["hover-chip", '[data-slot="chip"]'],
+  ["hover-tag", ""],
+  ["hover-badge", ""],
+  ["hover-toggle", ""],
+];
 
 /** The prominent fills (decision 59): a part, what draws it inside its test id. */
 const FILLS = [
@@ -126,6 +135,8 @@ const counts = {
   states: 0,
   ramp: 0,
   inks: 0,
+  hovers: 0,
+  nested: 0,
 };
 try {
   const page = await browser.newPage({
@@ -133,6 +144,10 @@ try {
   });
   await page.setContent('<!doctype html><div id="fixture"></div>');
   await page.addStyleTag({ content: css });
+  // Hovered colours are read at once, not mid-transition.
+  await page.addStyleTag({
+    content: "*, *::before, *::after { transition: none !important; }",
+  });
   await page.addScriptTag({ content: code });
   await page.getByTestId("dark-brand-chip").waitFor();
   await settleLayout(page);
@@ -203,6 +218,8 @@ try {
     [BRAND_FILL]: await colourOf(BRAND_FILL),
     [BRAND_HOVER]: await colourOf(BRAND_HOVER),
     [BRAND_PRESSED]: await colourOf(BRAND_PRESSED),
+    [NESTED_LIGHT_700]: await colourOf(NESTED_LIGHT_700),
+    [NESTED_DARK_700]: await colourOf(NESTED_DARK_700),
   };
   for (const theme of ["light", "dark"]) {
     for (const [part, selector] of FILLS) {
@@ -309,6 +326,43 @@ try {
         );
     }
   }
+
+  // The hover of a selected Chip, a default Tag, a default Badge and an on
+  // ToggleButton is the Button's hover token: it follows the step it names.
+  for (const root of ["light-states", "dark-states"]) {
+    for (const [part, selector] of HOVERS) {
+      const target = page.getByTestId(`${root}-${part}`);
+      const node = selector ? target.locator(selector).first() : target;
+      await node.hover();
+      const read = await node.evaluate((element) => {
+        const value = getComputedStyle(element).backgroundColor;
+        return { value, colour: window.kozmosColourOf(value) };
+      });
+      counts.hovers += 1;
+      if (read.colour !== want[BRAND_HOVER])
+        failures.push(
+          `${root} ${part} hovered: ${read.value}; expected ${BRAND_HOVER}, the step the hover token names, overridden`,
+        );
+    }
+  }
+  await page.mouse.move(0, 0);
+
+  // A set per theme: the light root and the forced-dark root inside it each
+  // apply their own theme's set.
+  for (const [testId, value] of [
+    ["nested-light-outline", NESTED_LIGHT_700],
+    ["nested-dark-outline", NESTED_DARK_700],
+  ]) {
+    const read = await page.getByTestId(testId).evaluate((node) => {
+      const value = getComputedStyle(node).color;
+      return { value, colour: window.kozmosColourOf(value) };
+    });
+    counts.nested += 1;
+    if (read.colour !== want[value])
+      failures.push(
+        `${testId}: ink ${read.value}; expected ${value}, its own theme's set`,
+      );
+  }
 } finally {
   await browser.close();
 }
@@ -320,5 +374,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS token references (GAP-23): ${counts.tokens} token reads (${counts.aliases} of them aliases in the sources) compute what the build wrote before references, in a light and a dark ThemeProvider and DesignConfigProvider root (${counts.skipped} the DesignConfigProvider sets itself, skipped); ${counts.fills} fills compute ${BRAND_FILL} under one override of theme 500; ${counts.states} reads of the filled Button's idle, hover, focus and pressed tokens follow the steps they name; with the whole ramp re-pointed, ${counts.ramp} reads of component and semantic colours on it follow their steps, and ${counts.inks} reads of the outline, ghost and link Buttons' ink`,
+  `PASS token references (GAP-23): ${counts.tokens} token reads (${counts.aliases} of them aliases in the sources) compute what the build wrote before references, in a light and a dark ThemeProvider and DesignConfigProvider root (${counts.skipped} the DesignConfigProvider sets itself, skipped); ${counts.fills} fills compute ${BRAND_FILL} under one override of theme 500; ${counts.states} reads of the filled Button's idle, hover, focus and pressed tokens follow the steps they name; with the whole ramp re-pointed, ${counts.ramp} reads of component and semantic colours on it follow their steps, and ${counts.inks} reads of the outline, ghost and link Buttons' ink; ${counts.hovers} hovered fills follow the hover token's step; ${counts.nested} nested providers apply their own theme's set`,
 );

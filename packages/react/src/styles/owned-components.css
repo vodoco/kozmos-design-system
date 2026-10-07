@@ -1183,6 +1183,30 @@
   .kozmos-button-emotion-filled {
     @apply bg-[var(--kz-button-bg)] text-[var(--kz-button-fg)] hover:bg-[var(--kz-button-bg-hover)] focus-visible:bg-[var(--kz-button-bg-focus)] active:bg-[var(--kz-button-bg-pressed)];
   }
+  /* A press shows at once instead of fading in over the colour transition,
+     so a quick tap still darkens the fill (a map control's 300ms included);
+     the release still eases back. */
+  .kozmos-button-default:active,
+  .kozmos-button-destructive:active,
+  .kozmos-button-emotion-filled:active {
+    transition-duration: 0s;
+  }
+  /* An unavailable filled Button (aria-disabled, as RouteSummary's Previous
+     and Next) keeps its rest colour under the pointer and a press, or it
+     would look as if it acted. It keeps focus, and its ring. */
+  .kozmos-button-default[aria-disabled="true"]:is(:hover, :active) {
+    background-color: var(
+      --components-primary-buttons-themed-button-background-idle
+    );
+  }
+  .kozmos-button-destructive[aria-disabled="true"]:is(:hover, :active) {
+    background-color: var(
+      --components-primary-buttons-danger-button-background-idle
+    );
+  }
+  .kozmos-button-emotion-filled[aria-disabled="true"]:is(:hover, :active) {
+    background-color: var(--kz-button-bg);
+  }
   .kozmos-button-emotion-outline {
     @apply border-[var(--kz-button-fg)] text-[var(--kz-button-fg)] hover:bg-muted hover:border-[var(--kz-button-fg-hover)] hover:text-[var(--kz-button-fg-hover)];
   }
