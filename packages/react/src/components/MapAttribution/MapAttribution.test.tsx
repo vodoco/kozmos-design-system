@@ -114,7 +114,9 @@ describe("MapAttribution", () => {
     expect(container).toBeEmptyDOMElement();
   });
   describe("the credit line", () => {
-    afterEach(() => vi.restoreAllMocks());
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
     const scroller = (container: HTMLElement) =>
       container.querySelector<HTMLElement>(".kozmos-map-attribution-scroll")!;
 

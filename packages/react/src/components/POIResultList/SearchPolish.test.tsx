@@ -23,7 +23,9 @@ describe("search polish", () => {
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
     vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(600);
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it("pads a string in the empty slot and never pads a component", () => {
     // The reported bug: the slot added p-6 and EmptyState added p-8, so a

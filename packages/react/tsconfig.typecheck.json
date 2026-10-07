@@ -1,0 +1,14 @@
+{
+  // tsconfig.json is also the dts plugin's publish list, so it leaves out the
+  // stories and tests. This config type-checks all of src, them included.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Declarations are the publish build's concern, not a story's.
+    "declaration": false,
+    "declarationDir": null,
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
+  },
+  "include": ["src"],
+  "exclude": []
+}

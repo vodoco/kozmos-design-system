@@ -11,13 +11,13 @@ const languages = [
   { id: "fr", label: "Français" },
   { id: "ar", label: "العربية", direction: "rtl" as const },
 ];
-const meta: Meta<typeof LanguageSwitcher> = {
+const meta = {
   id: "product-sdk-languageswitcher",
   title: "SDK/Map controls/LanguageSwitcher",
   component: LanguageSwitcher,
   args: { languages, selectedLocale: "en", onLocaleRequest: fn() },
   parameters: { layout: "centered" },
-};
+} satisfies Meta<typeof LanguageSwitcher>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
