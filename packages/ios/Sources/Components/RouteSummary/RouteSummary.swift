@@ -25,6 +25,10 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
     /// The journey's actions, laid out in equal columns; nil without any.
     private var actions: AnyView? = nil
     private var locationText: String? = nil
+    /// The estimate layout's words, as React's `endRouteLabel` and
+    /// `startNavigationLabel`: End's accessible name and Start's label.
+    private var endRouteLabel = "End route"
+    private var startNavigationLabel = "Start Navigation"
     private let surface: KozmosSurfaceStyle
     /// Nil follows where the summary is: hosted in the map shell's panel,
     /// standalone elsewhere (decision 43).
@@ -32,6 +36,11 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
     private var destinationImage: String? = nil
     @Environment(\.kozmosPanelSurface) private var panelSurface
 
+    /// The estimate layout: the time over the distance, End as an icon while
+    /// the route is active, Start while it is previewed. `endRouteLabel` names
+    /// the End icon button and `startNavigationLabel` is Start's label, as
+    /// React's props of the same names; both come before the trailing
+    /// `transportModeIcon`.
     public init(
         etaText: String,
         distanceText: String,
@@ -39,6 +48,8 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
         onEndRoute: @escaping () -> Void,
         onStartNavigation: (() -> Void)? = nil,
         surface: KozmosSurfaceStyle = .solid,
+        endRouteLabel: String = "End route",
+        startNavigationLabel: String = "Start Navigation",
         @ViewBuilder transportModeIcon: () -> TransportModeIcon
     ) {
         self.etaText = etaText
@@ -48,6 +59,8 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
         self.onStartNavigation = onStartNavigation
         self.transportModeIcon = transportModeIcon()
         self.showsTransportModeIcon = true
+        self.endRouteLabel = endRouteLabel
+        self.startNavigationLabel = startNavigationLabel
         self.destination = nil
         self.durationText = nil
         self.arrivalText = nil
@@ -216,12 +229,12 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
 
                 if state == .active, let onEndRoute {
                     KozmosIconButton(iconName: "xmark", variant: .destructive, action: onEndRoute)
-                    .accessibilityLabel("End route")
+                    .accessibilityLabel(endRouteLabel)
                 }
             }
 
             if state == .preview, let onStartNavigation {
-                KozmosButton("Start Navigation", size: .lg, action: onStartNavigation)
+                KozmosButton(startNavigationLabel, size: .lg, action: onStartNavigation)
                     .frame(maxWidth: .infinity)
             }
         }
@@ -232,13 +245,17 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
 }
 
 public extension KozmosRouteSummary where TransportModeIcon == EmptyView {
+    /// The estimate layout with no transport mode; `endRouteLabel` and
+    /// `startNavigationLabel` as in the init that takes one.
     init(
         etaText: String,
         distanceText: String,
         state: KozmosRouteSummaryState = .active,
         onEndRoute: @escaping () -> Void,
         onStartNavigation: (() -> Void)? = nil,
-        surface: KozmosSurfaceStyle = .solid
+        surface: KozmosSurfaceStyle = .solid,
+        endRouteLabel: String = "End route",
+        startNavigationLabel: String = "Start Navigation"
     ) {
         self.etaText = etaText
         self.distanceText = distanceText
@@ -247,6 +264,8 @@ public extension KozmosRouteSummary where TransportModeIcon == EmptyView {
         self.onStartNavigation = onStartNavigation
         self.transportModeIcon = EmptyView()
         self.showsTransportModeIcon = false
+        self.endRouteLabel = endRouteLabel
+        self.startNavigationLabel = startNavigationLabel
         self.destination = nil
         self.durationText = nil
         self.arrivalText = nil

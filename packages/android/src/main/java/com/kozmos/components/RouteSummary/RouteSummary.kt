@@ -53,6 +53,13 @@ enum class KozmosRouteSummaryState {
     Preview
 }
 
+/**
+ * The estimate layout: the time over the distance, End as an icon while the
+ * route is active, Start while it is previewed. [endRouteLabel] names the End
+ * icon button and [startNavigationLabel] is Start's label, as React's
+ * `endRouteLabel` and `startNavigationLabel`; both come before
+ * [transportModeIcon], so a trailing lambda is still the transport mode.
+ */
 @Composable
 fun KozmosRouteSummary(
     etaText: String,
@@ -62,6 +69,8 @@ fun KozmosRouteSummary(
     state: KozmosRouteSummaryState = KozmosRouteSummaryState.Active,
     onStartNavigation: (() -> Unit)? = null,
     surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
+    endRouteLabel: String = "End route",
+    startNavigationLabel: String = "Start Navigation",
     transportModeIcon: (@Composable () -> Unit)? = null
 ) {
     Surface(
@@ -110,11 +119,12 @@ fun KozmosRouteSummary(
                 }
 
                 if (state == KozmosRouteSummaryState.Active) {
+                    // Material's own size: its 40dp state layer in a 48dp
+                    // target the row reserves. A size(40.dp) here made the
+                    // box 40, the rest left to Compose's touch-only widening.
                     IconButton(
                         onClick = onEndRoute,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .semantics { contentDescription = "End route" }
+                        modifier = Modifier.semantics { contentDescription = endRouteLabel }
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -131,7 +141,7 @@ fun KozmosRouteSummary(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Default.Navigation, contentDescription = null)
-                    Text("Start Navigation")
+                    Text(startNavigationLabel)
                 }
             }
         }

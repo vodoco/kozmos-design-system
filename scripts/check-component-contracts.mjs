@@ -11384,6 +11384,37 @@ assertContains(
     "progress = progress)",
     "Android RouteSummary original overload names the progress it delegates",
   );
+  // The estimate layout's words, as React names them, on SwiftUI and
+  // Compose; and Compose's End in Material's own 48dp target.
+  for (const [filePath, content, patterns] of [
+    [
+      iosPath,
+      ios,
+      [
+        'endRouteLabel: String = "End route",',
+        'startNavigationLabel: String = "Start Navigation",',
+        ".accessibilityLabel(endRouteLabel)",
+        "KozmosButton(startNavigationLabel,",
+      ],
+    ],
+    [
+      androidPath,
+      android,
+      [
+        'endRouteLabel: String = "End route",',
+        'startNavigationLabel: String = "Start Navigation",',
+        "modifier = Modifier.semantics { contentDescription = endRouteLabel }",
+        "Text(startNavigationLabel)",
+      ],
+    ],
+  ])
+    for (const pattern of patterns)
+      assertContains(
+        filePath,
+        content,
+        pattern,
+        `RouteSummary estimate labels: ${pattern}`,
+      );
   for (const [pattern, label] of [
     ['type="button"', "the actions are type=button"],
     ["aria-disabled={first || undefined}", "the ends are aria-disabled"],

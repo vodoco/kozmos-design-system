@@ -27,6 +27,8 @@ import { NavigationPointer01 } from '@kozmos-ds/icons';
 />
 ```
 
+The estimate layout's words are the product's to translate, on every platform: `endRouteLabel` names the End icon button and `startNavigationLabel` is Start's label. SwiftUI and Compose take them under the same names, before the transport mode's trailing closure or lambda, and keep "End route" and "Start Navigation" when they are left out. On Compose, End keeps Material's 48dp touch target.
+
 ## Navigation
 
 Given a `destination`, the summary takes the navigation layout: the destination's name with End beside it in the danger outline, the time, distance and arrival on one row, and the caller's progress — a `RouteProgressRail` in the products — below. The estimate layout above is unchanged.
