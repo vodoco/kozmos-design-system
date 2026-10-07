@@ -1,8 +1,8 @@
 package com.kozmos.components.iconbutton
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.ripple.LocalRippleTheme
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -10,14 +10,14 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.kozmos.components.KozmosFillStates
 import com.kozmos.components.KozmosInertAlpha
-import com.kozmos.components.KozmosNoRipple
+import com.kozmos.components.KozmosFillSurface
 import com.kozmos.components.spinner.KozmosSpinner
 import com.kozmos.components.spinner.KozmosSpinnerSize
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -130,27 +130,35 @@ fun KozmosIconButton(
                 KozmosIconButtonVariant.Glass -> null
                 else -> KozmosFillStates.themed
             }
-            // The glass variant is the glass surface, composed from the token.
-            val (containerColor, contentColor) = fill?.colorsFor(source)
-                ?: (KozmosSurfaceDefaults.tint(KozmosSurfaceStyle.Glass) to KozmosThemeTokens.primitivesColorsForeground100)
-
-            // No ripple on a fill: the darker pressed token is the press, where
-            // Material's white ripple lightened the fill.
-            CompositionLocalProvider(LocalRippleTheme provides if (fill != null) KozmosNoRipple else LocalRippleTheme.current) {
+            if (fill != null) {
+                // Material's FilledIconButton, drawn on Kozmos's own surface:
+                // no ripple over the fill on any Material version, React's
+                // ring for focus, and a quick tap still drawn pressed.
+                KozmosFillSurface(
+                    onClick = onClick,
+                    modifier = rootModifier,
+                    enabled = enabled && !isLoading,
+                    shape = CircleShape,
+                    fill = fill,
+                    interactionSource = source
+                ) {
+                    Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) { content() }
+                }
+            } else {
+                // The glass variant is the glass surface, composed from the
+                // token, and keeps Material's ripple.
+                val glass = KozmosSurfaceDefaults.tint(KozmosSurfaceStyle.Glass)
+                val ink = KozmosThemeTokens.primitivesColorsForeground100
                 FilledIconButton(
                     onClick = onClick,
-                    modifier = if (variant == KozmosIconButtonVariant.Glass) {
-                        rootModifier.border(KozmosSurfaceDefaults.border(KozmosSurfaceStyle.Glass), CircleShape)
-                    } else {
-                        rootModifier
-                    },
+                    modifier = rootModifier.border(KozmosSurfaceDefaults.border(KozmosSurfaceStyle.Glass), CircleShape),
                     enabled = enabled && !isLoading,
                     interactionSource = source,
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = containerColor,
-                        contentColor = contentColor,
-                        disabledContainerColor = containerColor,
-                        disabledContentColor = contentColor
+                        containerColor = glass,
+                        contentColor = ink,
+                        disabledContainerColor = glass,
+                        disabledContentColor = ink
                     ),
                     content = content
                 )

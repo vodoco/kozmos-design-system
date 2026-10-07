@@ -410,6 +410,12 @@ const files = {
     "packages/android/src/main/java/com/kozmos/components/IconButton/IconButton.kt",
   androidFillStates:
     "packages/android/src/main/java/com/kozmos/components/FillStates.kt",
+  androidFloatingActionButton:
+    "packages/android/src/main/java/com/kozmos/components/FloatingActionButton/FloatingActionButton.kt",
+  androidSplitButton:
+    "packages/android/src/main/java/com/kozmos/components/SplitButton/SplitButton.kt",
+  androidMapControlButton:
+    "packages/android/src/main/java/com/kozmos/components/MapControlButton/MapControlButton.kt",
   androidCounter:
     "packages/android/src/main/java/com/kozmos/components/Counter/Counter.kt",
   androidCategoryTile:
@@ -10368,6 +10374,61 @@ assertNotContains(
   source.androidFillStates,
   "KozmosColors.",
   "light-only KozmosColors in the Android fill states",
+);
+// The fills draw on Kozmos's own clickable surface with no indication, never
+// on Material's Button, FilledIconButton, FloatingActionButton or Surface:
+// those draw their ripple themselves, which LocalRippleTheme quiets only up to
+// Material3 1.2 and LocalRippleConfiguration only from 1.3. A Compose BOM
+// bump would bring the white ripple back over the pressed token.
+assertContains(
+  files.androidFillStates,
+  source.androidFillStates,
+  "indication = null,",
+  "Android fill surface with no ripple",
+);
+for (const [key, call] of [
+  ["androidButton", "KozmosFillButton("],
+  ["androidIconButton", "KozmosFillSurface("],
+  ["androidFloatingActionButton", "KozmosFillSurface("],
+  ["androidSplitButton", "KozmosFillButton("],
+  ["androidMapControlButton", "KozmosClickableSurface("],
+]) {
+  assertContains(
+    files[key],
+    source[key],
+    call,
+    `Android fill drawn on Kozmos's own surface (${call})`,
+  );
+  assertNotContains(
+    files[key],
+    source[key],
+    "LocalRippleTheme",
+    "Android fill quieting Material's ripple through LocalRippleTheme",
+  );
+}
+for (const [key, material] of [
+  [
+    "androidFloatingActionButton",
+    /^import androidx\.compose\.material3\.FloatingActionButton$/m,
+  ],
+  ["androidSplitButton", /^import androidx\.compose\.material3\.Button$/m],
+  [
+    "androidMapControlButton",
+    /^import androidx\.compose\.material3\.Surface$/m,
+  ],
+]) {
+  assertNotContains(
+    files[key],
+    source[key],
+    material,
+    "Android fill drawn on a Material control that draws its own ripple",
+  );
+}
+assertContains(
+  files.androidMapControlButton,
+  source.androidMapControlButton,
+  "indication = if (filled) null else rememberRipple()",
+  "Android MapControlButton fill with no ripple",
 );
 
 assertContains(

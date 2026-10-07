@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ripple.LocalRippleTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalContentColor
@@ -18,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -29,7 +27,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.kozmos.components.KozmosFillStates
 import com.kozmos.components.KozmosInertAlpha
-import com.kozmos.components.KozmosNoRipple
+import com.kozmos.components.KozmosFillButton
 import com.kozmos.components.spinner.KozmosSpinner
 import com.kozmos.components.spinner.KozmosSpinnerSize
 import androidx.compose.ui.unit.dp
@@ -179,15 +177,27 @@ fun KozmosButton(
                 variant == KozmosButtonVariant.Secondary -> KozmosFillStates.neutral
                 else -> KozmosFillStates.themed
             }
-            // The glass variant is the glass surface, composed from the token.
-            val (containerColor, contentColor) = fill?.colorsFor(source)
-                ?: (KozmosSurfaceDefaults.tint(KozmosSurfaceStyle.Glass) to KozmosThemeTokens.primitivesColorsForeground100)
-
-            // No ripple on a fill: the darker pressed token is the press, where
-            // Material's white ripple lightened #135BEC to about #2F6FEE. The
-            // caller's content keeps the ripple it had.
-            val outerRipple = LocalRippleTheme.current
-            CompositionLocalProvider(LocalRippleTheme provides if (fill != null) KozmosNoRipple else outerRipple) {
+            if (fill != null) {
+                // Drawn on Kozmos's own surface, not Material's Button: no
+                // ripple over the fill on any Material version (the pressed
+                // token is the press), React's ring for focus, and a quick
+                // tap still drawn pressed.
+                KozmosFillButton(
+                    onClick = onClick,
+                    modifier = rootModifier,
+                    enabled = enabled && !isLoading,
+                    shape = shape,
+                    fill = fill,
+                    interactionSource = source,
+                    contentPadding = contentPadding
+                ) {
+                    ButtonContent(isLoading, content)
+                }
+            } else {
+                // The glass variant is the glass surface, composed from the
+                // token, and keeps Material's ripple.
+                val glass = KozmosSurfaceDefaults.tint(KozmosSurfaceStyle.Glass)
+                val ink = KozmosThemeTokens.primitivesColorsForeground100
                 Button(
                     onClick = onClick,
                     modifier = rootModifier,
@@ -196,16 +206,14 @@ fun KozmosButton(
                     interactionSource = source,
                     contentPadding = contentPadding,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = containerColor,
-                        contentColor = contentColor,
-                        disabledContainerColor = containerColor,
-                        disabledContentColor = contentColor
+                        containerColor = glass,
+                        contentColor = ink,
+                        disabledContainerColor = glass,
+                        disabledContentColor = ink
                     ),
-                    border = if (variant == KozmosButtonVariant.Glass) KozmosSurfaceDefaults.border(KozmosSurfaceStyle.Glass) else null
+                    border = KozmosSurfaceDefaults.border(KozmosSurfaceStyle.Glass)
                 ) {
-                    CompositionLocalProvider(LocalRippleTheme provides outerRipple) {
-                        ButtonContent(isLoading, content)
-                    }
+                    ButtonContent(isLoading, content)
                 }
             }
         }
