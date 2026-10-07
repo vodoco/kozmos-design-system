@@ -19,11 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.Eco
-import androidx.compose.material.icons.outlined.MoreTime
-import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +57,7 @@ import com.kozmos.components.adaptivemapshell.LocalKozmosPanelSurface
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.components.icon.KozmosIconSize
+import com.kozmos.components.icon.KozmosPointrIcons
 import com.kozmos.components.icon.knownIconVector
 import com.kozmos.components.surface.kozmosMutedForeground
 import com.kozmos.contracts.KozmosPOIDetailAttributeGroup
@@ -96,26 +93,36 @@ internal fun poiDetailIconUrl(raw: String?): String? {
 }
 
 /**
- * The glyph a summary fact's kind draws, as the web's `summaryIcons` picks
- * one: a price and a property draw none. Compose has no Pointr artwork for
- * these, so each is the nearest Material outline: the web's star, wheelchair,
- * feather (here a leaf) and clock with a plus.
+ * The glyph a summary fact's kind draws: the Pointr artwork the web's
+ * `summaryIcons` draws (POIDetailContent.tsx), Star01 for a rating, the
+ * accessibility mark, Feather for dietary and ClockPlus for the crowd. A
+ * price and a property draw none. None is mirrored: a right-to-left layout
+ * turns no wheelchair round.
  */
-private fun summaryIcon(kind: KozmosPOIDetailSummaryKind): ImageVector? = when (kind) {
-    KozmosPOIDetailSummaryKind.Rating -> Icons.Outlined.StarOutline
-    KozmosPOIDetailSummaryKind.Accessibility -> Icons.AutoMirrored.Filled.Accessible
-    KozmosPOIDetailSummaryKind.Dietary -> Icons.Outlined.Eco
-    KozmosPOIDetailSummaryKind.Crowd -> Icons.Outlined.MoreTime
+internal fun summaryIcon(kind: KozmosPOIDetailSummaryKind): ImageVector? = when (kind) {
+    KozmosPOIDetailSummaryKind.Rating -> KozmosPointrIcons.Star01
+    KozmosPOIDetailSummaryKind.Accessibility -> KozmosPointrIcons.Accessibility
+    KozmosPOIDetailSummaryKind.Dietary -> KozmosPointrIcons.Feather
+    KozmosPOIDetailSummaryKind.Crowd -> KozmosPointrIcons.ClockPlus
     KozmosPOIDetailSummaryKind.Price, KozmosPOIDetailSummaryKind.Property -> null
 }
 
-/** A fact's colour by its tone, as iOS's `POIDetailSummary.color(_:)` gives it. */
+/**
+ * A fact's colour by its tone, as text on the card's white or the sheet's
+ * grey in either theme: the emotion's text role, which reads at 4.5:1 on
+ * every neutral surface, and the theme's 600 for brand — the roles the web's
+ * summary names (`text-success-text`, `text-warning-text`,
+ * `text-destructive-text`, `text-primary`), and iOS's
+ * `POIDetailSummary.color(_:)` gives. A fill colour is one step too light:
+ * the alert fill read at 1.6:1 on the sheet, and the theme's 500 at 3.7:1 on
+ * black.
+ */
 @Composable
 private fun toneColor(tone: KozmosPOIDetailTone?): Color = when (tone) {
-    KozmosPOIDetailTone.Success -> KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle
-    KozmosPOIDetailTone.Warning -> KozmosThemeTokens.primitivesColorsEmotionalAlert600
-    KozmosPOIDetailTone.Danger -> KozmosThemeTokens.primitivesColorsEmotionalDanger600
-    KozmosPOIDetailTone.Brand -> KozmosThemeTokens.primitivesColorsTheme500
+    KozmosPOIDetailTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
+    KozmosPOIDetailTone.Warning -> KozmosThemeTokens.semanticsEmotionAlertText
+    KozmosPOIDetailTone.Danger -> KozmosThemeTokens.semanticsEmotionDangerText
+    KozmosPOIDetailTone.Brand -> KozmosThemeTokens.primitivesColorsTheme600
     KozmosPOIDetailTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
 }
 
