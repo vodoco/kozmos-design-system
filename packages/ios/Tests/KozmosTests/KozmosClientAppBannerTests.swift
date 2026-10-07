@@ -10,7 +10,7 @@ import Darwin
 /// it. A container named by the app, which VoiceOver reads as the promotion,
 /// the name and the description, then the action, then dismiss; its icon is
 /// decoration beside the name. Where the words and the action do not fit
-/// side by side, the action goes under the words.
+/// side by side, the action goes under the icon and the words.
 ///
 /// The accessibility tree is read in process, on the simulator, with
 /// accessibility automation switched on for the test, as
@@ -23,6 +23,35 @@ final class KozmosClientAppBannerTests: XCTestCase {
         XCTAssertEqual(KozmosClientAppBanner.initial(of: "  île de Nantes"), "Î")
         XCTAssertEqual(KozmosClientAppBanner.initial(of: "🛫 Departures"), "🛫")
         XCTAssertEqual(KozmosClientAppBanner.initial(of: ""), "")
+    }
+
+    /// The initial stands in for the icon only until it has loaded: under a
+    /// loaded icon nothing is drawn, so a transparent one shows the banner's
+    /// surface, as on the web, where the fallback goes once the image loads.
+    /// Before, the muted fill and the initial were drawn under every icon.
+    @MainActor func testTheInitialIsDrawnOnlyUntilTheIconHasLoaded() throws {
+        let clear = try XCTUnwrap(CGContext(
+            data: nil, width: 96, height: 96, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )?.makeImage())
+        let inside = CGRect(x: 6, y: 6, width: 36, height: 36)
+        let loading = try DrawnPixels.draw(
+            KozmosClientAppBannerIconFace(image: nil, initial: "N", size: 48).environment(\.colorScheme, .light))
+        XCTAssertEqual(loading.size, CGSize(width: 48, height: 48))
+        XCTAssertEqual(loading.count(in: inside) { _, _, _, a in a > 200 }, Int(inside.width * inside.height * 4),
+                       "until it loads, the initial's fill does not cover the square")
+        let fill = try DrawnPixels.resolved(KozmosColors.primitivesColorsBackground100, in: .light)
+        XCTAssertNotNil(loading.boundingBox(in: inside) { r, g, b, a in
+            a > 200 && Int(r) + Int(g) + Int(b) < Int(fill.r) + Int(fill.g) + Int(fill.b) - 150
+        }, "until it loads, no initial is drawn on the fill")
+
+        let loaded = try DrawnPixels.draw(
+            KozmosClientAppBannerIconFace(image: Image(decorative: clear, scale: 2), initial: "N", size: 48)
+                .environment(\.colorScheme, .light))
+        XCTAssertEqual(loaded.count(in: inside) { _, _, _, a in a > 8 }, 0,
+                       "under a loaded, transparent icon the initial or its fill shows through")
+        // The edge is the icon's own, loaded or not.
+        XCTAssertTrue(loaded.isDrawn(at: CGPoint(x: 24, y: 0.25)), "a loaded icon loses its edge")
     }
 
     #if os(iOS)
@@ -60,13 +89,15 @@ final class KozmosClientAppBannerTests: XCTestCase {
     /// Hosts `view` at `width` in a window, as a top bar would, and returns
     /// the window once SwiftUI has built its accessibility tree.
     @MainActor private func host<V: View>(
-        _ view: V, width: CGFloat = 358, direction: LayoutDirection = .leftToRight
+        _ view: V, width: CGFloat = 358, direction: LayoutDirection = .leftToRight,
+        textSize: DynamicTypeSize = .large
     ) async throws -> UIWindow {
         let content = view
             .frame(width: width)
             .environment(\.layoutDirection, direction)
             .environment(\.colorScheme, .light)
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 430, height: 844))
+            .environment(\.dynamicTypeSize, textSize)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: max(430, width + 40), height: 844))
         window.rootViewController = UIHostingController(rootView: content)
         window.makeKeyAndVisible()
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -84,7 +115,11 @@ final class KozmosClientAppBannerTests: XCTestCase {
             XCTAssertFalse(labels.contains("N"))
             let region = try XCTUnwrap(containers(window).first { $0.accessibilityLabel == "Northfield Airport" },
                                        "no container is named by the app")
-            XCTAssertFalse(region.isAccessibilityElement, "the banner is read as one element, not a region of five")
+            // A container holding the five, each read on its own, rather
+            // than one element that reads them all at once.
+            XCTAssertEqual(elements(region).compactMap(\.accessibilityLabel),
+                           ["Get the app", "Northfield Airport", Self.words, "Open", "Dismiss"],
+                           "the container named by the app does not hold the banner's five elements")
         }
     }
 
@@ -123,25 +158,50 @@ final class KozmosClientAppBannerTests: XCTestCase {
         }
     }
 
-    /// At 320 the words keep their width and the action goes under them, as
-    /// wide as the words; at a top bar's widest it stays beside them.
-    @MainActor func testTheActionGoesUnderTheWordsOnlyWhereTheyWouldNotFitBesideIt() async throws {
+    /// At 320 the action goes under the icon and the words and spans them
+    /// both, so the words keep the width beside the icon; at a top bar's
+    /// widest it stays beside them.
+    @MainActor func testTheActionGoesUnderTheIconAndTheWordsOnlyWhereTheyWouldNotFitBesideIt() async throws {
         try await withAutomation {
             for (width, stacked) in [(CGFloat(320), true), (CGFloat(560), false)] {
                 let window = try await host(banner(), width: width)
                 defer { window.isHidden = true }
                 let tree = elements(window)
+                let banner = try XCTUnwrap(containers(window).first { $0.accessibilityLabel == "Northfield Airport" })
+                    .accessibilityFrame
                 let name = try XCTUnwrap(tree.first { $0.accessibilityLabel == "Northfield Airport" }).accessibilityFrame
                 let words = try XCTUnwrap(tree.first { $0.accessibilityLabel == Self.words }).accessibilityFrame
                 let action = try XCTUnwrap(tree.first { $0.accessibilityLabel == "Open" }).accessibilityFrame
+                // The words start after the 16 inside, the 48 icon and the 12 beside it.
+                XCTAssertEqual(name.minX - banner.minX, 76, accuracy: 1, "at \(width) the words do not follow the icon")
                 if stacked {
                     XCTAssertGreaterThanOrEqual(action.minY, words.maxY, "at \(width) the action is not under the words")
-                    XCTAssertEqual(action.minX, name.minX, accuracy: 1, "at \(width) the action does not start with the words")
-                    XCTAssertGreaterThan(action.width, 150, "at \(width) the action does not fill the words' width")
+                    XCTAssertGreaterThanOrEqual(action.minY, banner.minY + 16 + 48, "at \(width) the action is not under the icon")
+                    XCTAssertEqual(action.minX - banner.minX, 16, accuracy: 1, "at \(width) the action does not start under the icon")
+                    // Dismiss's 44, the 4 beside it and the 12 before the words.
+                    XCTAssertEqual(banner.maxX - action.maxX, 60, accuracy: 1, "at \(width) the action does not end with the words")
                 } else {
                     XCTAssertLessThan(action.minY, words.maxY, "at \(width) the action is not beside the words")
                     XCTAssertGreaterThan(action.minX, name.maxX, "at \(width) the action is not after the words")
                 }
+            }
+        }
+    }
+
+    /// The words keep 160 beside the icon at the default text size, and
+    /// more as Dynamic Type grows, as the web's 10rem grows with the
+    /// browser's text. At 460 and accessibility text, a fixed 160 left the
+    /// action beside words of about 200; scaled, it goes under them.
+    @MainActor func testTheWordsWidthTheActionWaitsForGrowsWithDynamicType() async throws {
+        try await withAutomation {
+            for (textSize, stacked) in [(DynamicTypeSize.large, false), (.accessibility1, true)] {
+                let window = try await host(banner(), width: 460, textSize: textSize)
+                defer { window.isHidden = true }
+                let tree = elements(window)
+                let words = try XCTUnwrap(tree.first { $0.accessibilityLabel == Self.words }).accessibilityFrame
+                let action = try XCTUnwrap(tree.first { $0.accessibilityLabel == "Open" }).accessibilityFrame
+                XCTAssertEqual(action.minY >= words.maxY, stacked,
+                               "at 460 and \(textSize) the action is \(action.minY >= words.maxY ? "under" : "beside") words \(words.width) wide")
             }
         }
     }
