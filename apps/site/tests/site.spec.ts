@@ -2034,7 +2034,7 @@ test.describe("design-system gaps, measured", () => {
     expect(wrapping).toBe("nowrap");
   });
 
-  test("GAP-61: the breadcrumb's separator does not mirror in right to left", async ({
+  test("GAP-61: the breadcrumb's separator points along the trail right to left", async ({
     page,
   }) => {
     await page.goto("/foundations/theming");
@@ -2070,11 +2070,15 @@ test.describe("design-system gaps, measured", () => {
       };
     });
     expect(trail.rootIsRightmost).toBe(true);
-    // And the separator still points the way it was drawn: the Pointr set's
-    // chevron-right path, with nothing mirroring it. (The built package
-    // stopped emitting the glyph's class name, so the path is the anchor.)
+    // And the separator points along it: the Pointr set's chevron-right path,
+    // mirrored by the package's rule, which reads the provider's dir
+    // attribute. Until #237 it pointed right, against the trail; #237's
+    // `:dir(rtl)` rule then reached this site as `:lang()` guesses after
+    // Vite 8's lightningcss lowered it, which an English page never matches.
+    // (The built package stopped emitting the glyph's class name, so the
+    // path is the anchor.)
     expect(trail.separatorPath).toBe("m9 18l15 12l9 6");
-    expect(trail.separatorTransform).toBe("none");
+    expect(trail.separatorTransform).toBe("matrix(-1, 0, 0, 1, 0, 0)");
   });
 
   test("GAP-55: a Listbox's column is as wide as its widest option", async ({

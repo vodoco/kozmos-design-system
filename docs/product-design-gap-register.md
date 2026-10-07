@@ -176,6 +176,9 @@ host adoption, Figma mapping or physical-device acceptance by itself.
 
 - **React fixed/shipped**: supported by current source, exports and/or release notes.
   Focused tests are identified below. It does not certify every native target or product board.
+- **Fixed on main, not yet released**: merged to main with its tests; the row names the
+  changeset the next release carries. SwiftUI and Compose are not published to a registry, so a
+  native-only fix reaches a product from a checkout of main.
 - **Repository work complete; external adoption unverified**: a generator/documentation output
   is present, but the external Claude Design artifact or consuming product has not been retested.
 - **Partial**: useful support exists but does not satisfy the entire requirement or integration.
@@ -330,6 +333,14 @@ camera control, branding/provider policy and product ranking in their host adapt
   hard-code a provider's selected green into the component contract.
 - **GAP-092:** no longer blocks the current Search with AI design, which uses Notice in the
   list header. Footer capability can remain optional backlog.
+- **GAP-110 / GAP-111 (decision 57, 2026-10-06):** option A, a generic `actions` slot under
+  RouteSummary's rail, and 111-C, the navigation layout as the route preview (End optional,
+  `locationText`, Go and Details in `actions`). 111-C reinterprets GAP-111's done-when: the
+  preview is RouteSummary's, not POIDetailPanel's. Built in #236, for review.
+- **GAP-135 (decision 58, 2026-10-06):** the attribution is never clipped into a scroll region;
+  with too little room the Pointr logo gives way first and the credits keep their full height.
+  Still the owner's: whether hiding the logo on its own needs Pointr's sign-off, since
+  `docs/sdk-module-primitives.md` suppresses it "only according to approved configuration".
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;
