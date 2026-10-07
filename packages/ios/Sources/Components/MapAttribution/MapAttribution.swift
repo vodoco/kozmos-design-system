@@ -29,6 +29,9 @@ public struct KozmosMapAttribution: View {
     let label: String
     let appearance: KozmosMapAttributionAppearance
     @Environment(\.displayScale) private var displayScale
+    /// In a map shell with no room for the whole attribution, the brand goes
+    /// first: the credits are what a map provider's licence asks for.
+    @Environment(\.kozmosMapAttributionCompact) private var compact
     @State private var creditViewportWidth: CGFloat = 0
     @State private var creditRowHeight: CGFloat = 18
 
@@ -47,9 +50,9 @@ public struct KozmosMapAttribution: View {
     }
 
     public var body: some View {
-        if !credits.isEmpty || showBrand {
+        if !credits.isEmpty || showBrand && !compact {
             VStack(spacing: KozmosDimensions.primitivesLayoutSpacing50) {
-                if showBrand {
+                if showBrand && !compact {
                     if let brand { brand } else {
                         Image("PointrLogo", bundle: .module)
                             .resizable()

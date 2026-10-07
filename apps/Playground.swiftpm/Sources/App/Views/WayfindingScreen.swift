@@ -381,7 +381,7 @@ struct WayfindingScreen: View {
         VStack(spacing: 0) {
             HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                 KozmosIconButton(
-                    iconName: "chevron.left",
+                    iconName: "chevron.backward",
                     variant: .outline,
                     isDisabled: store.stepIndex == 0,
                     action: { store.rewindStep() }
@@ -412,7 +412,7 @@ private struct PanelHeader: View {
     var body: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             if let onBack {
-                KozmosIconButton(iconName: "chevron.left", variant: .ghost, action: onBack)
+                KozmosIconButton(iconName: "chevron.backward", variant: .ghost, action: onBack)
                     .accessibilityLabel(backLabel)
             }
 

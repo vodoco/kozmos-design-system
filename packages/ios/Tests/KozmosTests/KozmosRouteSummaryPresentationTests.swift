@@ -88,5 +88,41 @@ final class KozmosRouteSummaryPresentationTests: XCTestCase {
         XCTAssertEqual(differing(automatic, hosted), 0, "the shell's panel does not host the summary")
         XCTAssertGreaterThan(differing(automatic, standalone), 100, "the hosted and standalone summaries draw alike")
     }
+
+    /// The panel header sits on the panel's surface as its content does: a
+    /// summary there is hosted too, on a phone's sheet and beside the map,
+    /// as Compose and the web host it.
+    @MainActor func testTheMapShellsPanelHeaderHostsTheSummary() async throws {
+        for regular in [false, true] {
+            let size = regular ? CGSize(width: 1024, height: 700) : CGSize(width: 390, height: 800)
+            func shell(_ presentation: KozmosRoutePresentation?) async throws -> RenderedPixels {
+                let view = KozmosAdaptiveMapShell(
+                    panelDetent: .constant(.medium), panelDetents: [.collapsed, .medium, .large],
+                    map: { Color.red }, panel: { Color.clear.frame(height: 44) },
+                    panelHeader: { self.summary(presentation) }
+                )
+                .environment(\.horizontalSizeClass, regular ? .regular : .compact)
+                .environment(\.layoutDirection, .leftToRight)
+                return try await RenderedPixels.render(view, size: size)
+            }
+            /// Points, two apart, where two drawings differ by more than a shadow's level or two.
+            func differing(_ a: RenderedPixels, _ b: RenderedPixels) -> Int {
+                var count = 0
+                for y in stride(from: 0, to: size.height, by: 2) {
+                    for x in stride(from: 0, to: size.width, by: 2) {
+                        let p = a.color(at: CGPoint(x: x, y: y)), q = b.color(at: CGPoint(x: x, y: y))
+                        if max(abs(Int(p.r) - Int(q.r)), abs(Int(p.g) - Int(q.g)), abs(Int(p.b) - Int(q.b))) > 2 { count += 1 }
+                    }
+                }
+                return count
+            }
+            let place = regular ? "beside the map" : "on a phone"
+            let automatic = try await shell(nil)
+            let hosted = try await shell(.hosted)
+            let standalone = try await shell(.standalone)
+            XCTAssertEqual(differing(automatic, hosted), 0, "\(place), the shell's panel header does not host the summary")
+            XCTAssertGreaterThan(differing(automatic, standalone), 100, "\(place), the hosted and standalone summaries draw alike")
+        }
+    }
     #endif
 }
