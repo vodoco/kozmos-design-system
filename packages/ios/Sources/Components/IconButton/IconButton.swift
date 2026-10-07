@@ -71,20 +71,32 @@ public struct KozmosIconButton: View {
         }
         .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.5 : 1)
-        .kozmosThemeFillButtonStyle(fillsWithTheme)
+        .kozmosFillButtonStyle(fillEmotion, hoverShape: Circle())
     }
 
-    /// The default variant is a prominent fill in the theme fill, and draws
-    /// its press and focus from the themed button's tokens; every other
-    /// variant keeps SwiftUI's own press.
-    var fillsWithTheme: Bool { variant == .default }
+    /// The emotion whose Primary Buttons tokens fill the button at rest,
+    /// pressed and focused: the default variant is the theme fill, the
+    /// destructive the danger and the secondary the neutral, as in Compose.
+    /// The others keep SwiftUI's own press.
+    var fillEmotion: KozmosButtonEmotion? {
+        switch variant {
+        case .default: return .themed
+        case .destructive: return .danger
+        case .secondary: return .neutral
+        case .outline, .ghost, .link, .glass: return nil
+        }
+    }
 
     private func backgroundColor(isPressed: Bool, isFocused: Bool) -> Color {
-        fillsWithTheme ? KozmosThemeFill.background(isPressed: isPressed, isFocused: isFocused) : backgroundColor
+        guard let fillEmotion else { return backgroundColor }
+        return KozmosFillStates.background(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
 
+    /// The fill's own ink in each state; the secondary variant keeps the
+    /// foreground/100 mark it has always drawn, which reads on every neutral step.
     private func foregroundColor(isPressed: Bool, isFocused: Bool) -> Color {
-        fillsWithTheme ? KozmosThemeFill.foreground(isPressed: isPressed, isFocused: isFocused) : foregroundColor
+        guard let fillEmotion, variant != .secondary else { return foregroundColor }
+        return KozmosFillStates.foreground(fillEmotion, isPressed: isPressed, isFocused: isFocused)
     }
 
     private var iconFont: Font {

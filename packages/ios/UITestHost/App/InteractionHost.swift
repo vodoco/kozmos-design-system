@@ -120,6 +120,8 @@ private struct InteractionFixture: View {
                 onStartNavigation: { events.append("start") })
         case "navigation-journey":
             NavigationJourneyFixture()
+        case "press-feedback":
+            PressFeedbackFixture()
         case "route-setup-ready", "route-setup-pending", "route-setup-unresolved":
             KozmosRouteSetupPanel(ready: scenario != "route-setup-unresolved", pending: scenario == "route-setup-pending",
                 title: "Route planen", continueLabel: "Weiter", closeLabel: "Schließen",
@@ -309,6 +311,156 @@ private struct InteractionFixture: View {
         default:
             Text("Unknown fixture: \(scenario)")
         }
+    }
+}
+
+/// Real presses, read off the screen. Each part's colour at one point — inside
+/// its fill, clear of its words, or on a map control's mark — is read from the
+/// window twenty times a second, so what a press draws is told without a hook
+/// into the component: the colour at rest, and the one furthest from it while
+/// a finger was down. The map controls sit on black, and draw a solid square
+/// for a mark, so a part that dims under a press shows it.
+private struct PressFeedbackFixture: View {
+    private struct Part {
+        let id: String
+        let view: AnyView
+        /// Where to read, from the part's frame.
+        let probe: (CGRect) -> CGPoint
+    }
+
+    private struct FramesKey: PreferenceKey {
+        static var defaultValue: [String: CGRect] = [:]
+        static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+            value.merge(nextValue()) { $1 }
+        }
+    }
+
+    @StateObject private var sampler = PressSampler()
+
+    /// Inside a fill, clear of the words: just in from the leading edge.
+    private static let leading: (CGRect) -> CGPoint = { CGPoint(x: $0.minX + 5, y: $0.midY) }
+    /// Inside a round fill, clear of its mark: just below the top.
+    private static let top: (CGRect) -> CGPoint = { CGPoint(x: $0.midX, y: $0.minY + 5) }
+    /// A map control's mark, a solid square at its middle.
+    private static let mark: (CGRect) -> CGPoint = { CGPoint(x: $0.midX, y: $0.midY) }
+
+    private var buttons: [[Part]] {
+        [
+            [Part(id: "themed", view: AnyView(KozmosButton("Themed") {}), probe: Self.leading),
+             Part(id: "danger", view: AnyView(KozmosButton("Danger", variant: .destructive) {}), probe: Self.leading)],
+            [Part(id: "success", view: AnyView(KozmosButton("Success", emotion: .success) {}), probe: Self.leading),
+             Part(id: "neutral", view: AnyView(KozmosButton("Neutral", variant: .secondary) {}), probe: Self.leading)],
+            [Part(id: "informative", view: AnyView(KozmosButton("Informative", emotion: .informative) {}), probe: Self.leading),
+             Part(id: "alert", view: AnyView(KozmosButton("Alert", emotion: .alert) {}), probe: Self.leading)],
+            [Part(id: "icon", view: AnyView(KozmosIconButton(iconName: "plus", variant: .default) {}), probe: Self.top),
+             Part(id: "icon-danger", view: AnyView(KozmosIconButton(iconName: "trash", variant: .destructive) {}), probe: Self.top),
+             Part(id: "fab", view: AnyView(KozmosFloatingActionButton {}), probe: Self.top)],
+        ]
+    }
+
+    private var mapControls: [Part] {
+        [Part(id: "map-tinted-off", view: AnyView(KozmosMapControlButton(label: "Tinted", systemImage: "square.fill", pressed: false) {}),
+              probe: Self.mark),
+         Part(id: "map-filled-off", view: AnyView(KozmosMapControlButton(label: "Filled off", systemImage: "square.fill",
+                                                                          emphasis: .filled, pressed: false) {}),
+              probe: Self.mark),
+         Part(id: "map-filled-on", view: AnyView(KozmosMapControlButton(label: "Filled on", systemImage: "square.fill",
+                                                                         emphasis: .filled, pressed: true) {}),
+              probe: Self.leading)]
+    }
+
+    private func placed(_ part: Part) -> some View {
+        part.view
+            .accessibilityIdentifier("part-\(part.id)")
+            .background(GeometryReader { proxy in
+                Color.clear.preference(key: FramesKey.self, value: [part.id: proxy.frame(in: .global)])
+            })
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(buttons.indices, id: \.self) { row in
+                HStack(spacing: 8) { ForEach(buttons[row], id: \.id) { placed($0) } }
+            }
+            HStack(spacing: 24) { ForEach(mapControls, id: \.id) { placed($0) } }
+                .padding(16)
+                .background(Color.black)
+            ForEach(sampler.reports.keys.sorted(), id: \.self) { id in
+                Text(sampler.reports[id] ?? "")
+                    .font(.system(size: 7))
+                    .accessibilityIdentifier("sample-\(id)")
+            }
+        }
+        // Pinned to the leading edge, so the reports' widths never move a part.
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .preferredColorScheme(.light)
+        .onPreferenceChange(FramesKey.self) { frames in
+            let probes = (buttons.flatMap { $0 } + mapControls).reduce(into: [String: (CGRect) -> CGPoint]()) { $0[$1.id] = $1.probe }
+            sampler.points = frames.reduce(into: [:]) { result, entry in
+                if let probe = probes[entry.key] { result[entry.key] = probe(entry.value) }
+            }
+        }
+        .onAppear { sampler.start() }
+    }
+}
+
+/// Reads one pixel per part from the key window on a timer that runs while a
+/// touch is tracked, and reports each part's colour at rest and the one
+/// furthest from it, as hex.
+@MainActor
+private final class PressSampler: ObservableObject {
+    typealias RGB = (r: Int, g: Int, b: Int)
+    var points: [String: CGPoint] = [:]
+    @Published private(set) var reports: [String: String] = [:]
+    private var rest: [String: RGB] = [:]
+    private var extreme: [String: RGB] = [:]
+    private var timer: Timer?
+
+    func start() {
+        guard timer == nil else { return }
+        let timer = Timer(timeInterval: 0.05, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.sample() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    private static func hex(_ c: RGB) -> String { String(format: "#%02X%02X%02X", c.r, c.g, c.b) }
+    private static func distance(_ a: RGB, _ b: RGB) -> Int { abs(a.r - b.r) + abs(a.g - b.g) + abs(a.b - b.b) }
+
+    private func sample() {
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first else { return }
+        for (id, point) in points {
+            guard let colour = Self.colour(at: point, in: window) else { continue }
+            guard let base = rest[id] else {
+                rest[id] = colour
+                extreme[id] = colour
+                reports[id] = "\(id) rest=\(Self.hex(colour)) press=\(Self.hex(colour))"
+                continue
+            }
+            if Self.distance(colour, base) > Self.distance(extreme[id] ?? base, base) {
+                extreme[id] = colour
+                reports[id] = "\(id) rest=\(Self.hex(base)) press=\(Self.hex(colour))"
+            }
+        }
+    }
+
+    private static func colour(at point: CGPoint, in window: UIWindow) -> RGB? {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.preferredRange = .standard
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1), format: format).image { context in
+            context.cgContext.translateBy(x: -point.x, y: -point.y)
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: false)
+        }
+        guard let cgImage = image.cgImage else { return nil }
+        var pixel = [UInt8](repeating: 0, count: 4)
+        guard let context = CGContext(data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        return (Int(pixel[0]), Int(pixel[1]), Int(pixel[2]))
     }
 }
 

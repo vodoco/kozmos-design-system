@@ -14,16 +14,16 @@ public struct KozmosFloatingActionButton: View {
             KozmosButtonInteractionReader { isPressed, isFocused in
                 Image(systemName: iconName)
                     .font(KozmosTypography.title2)
-                    .foregroundColor(KozmosThemeFill.foreground(isPressed: isPressed, isFocused: isFocused))
+                    .foregroundColor(KozmosFillStates.foreground(.themed, isPressed: isPressed, isFocused: isFocused))
                     .frame(width: KozmosDimensions.primitivesLayoutSizing700, height: KozmosDimensions.primitivesLayoutSizing700)
                     // Decision 59: a prominent fill is the theme fill, and its mark the
                     // theme foreground; pressed and focused, the themed button's tokens.
-                    .background(KozmosThemeFill.background(isPressed: isPressed, isFocused: isFocused))
+                    .background(KozmosFillStates.background(.themed, isPressed: isPressed, isFocused: isFocused))
                     .clipShape(Circle())
                     .shadow(radius: 4, x: 0, y: 4)
             }
         }
-        .buttonStyle(KozmosThemeFillButtonStyle())
+        .buttonStyle(KozmosFillButtonStyle(hoverShape: Circle()))
     }
 }
 // Usage usually involves overlaying this on a ZStack

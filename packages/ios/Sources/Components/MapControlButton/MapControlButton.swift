@@ -251,7 +251,7 @@ public struct KozmosMapControlButton<Icon: View>: View {
     /// It was 90% of the surface.
     private func surfaceColor(isPressed: Bool, isFocused: Bool) -> Color {
         appearance.surface == .filled
-            ? KozmosThemeFill.background(isPressed: isPressed, isFocused: isFocused)
+            ? KozmosFillStates.background(.themed, isPressed: isPressed, isFocused: isFocused)
             : KozmosColors.primitivesColorsBackground0
     }
 
@@ -329,11 +329,12 @@ public struct KozmosMapControlButton<Icon: View>: View {
                 .kozmosElevation(KozmosShadows.semanticsElevationMapControl, in: shape, fill: surface)
             }
         }
-        // A filled control takes the theme fill's style on and off alike, so
-        // a toggle never swaps its button under the finger or VoiceOver's
+        // A filled control takes the fill's style on and off alike, so a
+        // toggle never swaps its button under the finger or VoiceOver's
         // cursor: on, it draws the themed button's pressed token; off, on the
-        // page's surface, it draws no press. A tinted one keeps the plain press.
-        .kozmosThemeFillButtonStyle(emphasis == .filled, otherwise: .plain)
+        // page's surface, it dims as the plain style does. A tinted one keeps
+        // the plain style itself.
+        .modifier(KozmosMapControlButtonStyle(filled: emphasis == .filled, drawsFill: appearance.surface == .filled, shape: shape))
         .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.5 : 1)
         // Reduce Motion stops the control growing, not the reveal: the new
@@ -345,6 +346,24 @@ public struct KozmosMapControlButton<Icon: View>: View {
         .onAppear { observeReveal(revealValue, enabled: revealOnChange) }
         .onChange(of: revealValue) { observeReveal($0, enabled: revealOnChange) }
         .onChange(of: revealOnChange) { observeReveal(revealValue, enabled: $0) }
+    }
+}
+
+/// The map control's button style: the fill's for a filled control, which
+/// draws the fill only while it is on, and the plain style for a tinted one.
+/// Chosen from the emphasis, which does not change on screen.
+private struct KozmosMapControlButtonStyle: ViewModifier {
+    let filled: Bool
+    let drawsFill: Bool
+    let shape: RoundedRectangle
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if filled {
+            content.buttonStyle(KozmosFillButtonStyle(drawsFill: drawsFill, hoverShape: shape))
+        } else {
+            content.buttonStyle(.plain)
+        }
     }
 }
 
