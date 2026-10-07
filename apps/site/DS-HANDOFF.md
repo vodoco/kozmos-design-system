@@ -101,7 +101,7 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 | P1       | GAP-57                         | Button                                                   | Its label cannot wrap: the longest icon name scrolls the icons page sideways at 320px.           |
 | P1       | GAP-58                         | Toast                                                    | It draws no fill: over anything but a white page the words read through the toast.               |
 | P1       | GAP-55                         | Listbox                                                  | Its column grows to the widest option: the site search scrolls sideways, and nothing truncates.  |
-| P1       | GAP-45                         | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page, as text and as a fill.                          |
+| P1       | GAP-45                         | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page as text; fills are its 500 (decision 59).        |
 | P1       | GAP-82                         | Tokens (category fills)                                  | A category pill's fill is 2.52:1 on its own field: the count's shape is below WCAG 1.4.11's 3:1. |
 | P1       | GAP-31                         | Tokens (alert, success)                                  | Emotion text passes on white only: 4.29:1 on background-25, 3.59:1 on muted.                     |
 | P1       | GAP-09                         | Button (as a link)                                       | `buttonVariants` on an anchor keeps its underline.                                               |
@@ -301,20 +301,21 @@ border-primary-foreground/20`.
 
 - **Where:** `packages/tokens/src/tokens-dark.json:519`, the theme variant 1
   ramp's `600`: `#6258F3` (Figma variable `VariableID:1440:2442`).
-- **Why it breaks:** 4.20:1 on the dark page's `background-0`, both as text
-  (`text-primary`) and as a fill under black ink (a selected Chip, a default
-  Button), once a product re-points the theme to variant 1 — which is what
-  the variants are for. The default ramp's dark 600 is 6.17:1, variant 2's
-  4.99:1; the light theme passes everywhere.
+- **Why it breaks:** 4.20:1 on the dark page's `background-0` as text
+  (`text-primary`), once a product re-points the theme to variant 1 — which
+  is what the variants are for. The default ramp's dark 600 is 6.17:1,
+  variant 2's 4.99:1; the light theme passes everywhere. A fill (a selected
+  Chip, a default Button) is no longer the 600 under black ink: since
+  decision 59 it is the ramp's 500 under white, and variant 1's reads 7.03:1.
 - **Change:** a lighter dark 600 for variant 1 (the variant's own dark 700,
   `#867EF6`, reads 6.33:1), in the tokens and in Figma. Then add each
-  variant's "primary action" and "brand tint surface / primary text" pairs
-  to `packages/tokens/src/contrast-contract.json`, so every ramp a product
-  may choose is measured.
+  variant's "brand tint surface / primary text" pair, and its theme-fill
+  pairs (the 500 under the theme foreground, and on the page as a shape), to
+  `packages/tokens/src/contrast-contract.json`, so every ramp a product may
+  choose is measured. The shape pair fails for variant 1 as it stands: its
+  500 reads 2.99:1 on the dark page, under 3:1.
 - **Proof:** "GAP-45: the first brand variant's 600 reads 4.20:1 on the dark
-  page" fails; flip it to the new ratio. The `knownViolations` entry for
-  `/components/theme-provider` (`theme: "dark"`) reports "no longer occurs";
-  delete it.
+  page" fails; flip it to the new ratio.
 
 ### GAP-31 · Emotion text passes on white only
 

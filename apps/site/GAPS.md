@@ -886,22 +886,27 @@ isolate` on the example canvases, as on the component pages' demo stages and
 - **What:** the tokens carry two variant brand ramps for a product to
   re-point the theme to. In the dark theme, variant 1's 600 (`#6258F3`,
   `packages/tokens/src/tokens-dark.json`, Figma variable 1440:2442) measures
-  4.20:1 on the dark page (`background-0`): under 4.5:1 as primary text, and
-  as the fill under black ink (a selected `Chip`, a default `Button`). The
+  4.20:1 on the dark page (`background-0`): under 4.5:1 as primary text. The
   default ramp's dark 600 reads 6.17:1 and variant 2's 4.99:1; all three
-  pass in the light theme. The contrast contract measures the default ramp
-  only.
+  pass in the light theme. A prominent fill (a selected `Chip`, a default
+  `Button`) no longer draws the 600 under black ink: since decision 59 it is
+  the ramp's 500 under white in both themes, and variant 1's 500 reads
+  7.03:1 under it. The contrast contract measures the default ramp only.
 - **Evidence:** axe on the ThemeProvider page in the dark theme (its token
   override re-pointed the theme's 600 to variant 1), until the demos moved to
   Storybook on 2026-09-28, and on the home page's "Make it yours" with variant
-  1 and the module dark (the selected chip). Found once the tests walked every
-  component page in the dark theme too.
+  1 and the module dark (the selected chip, until decision 59 drew it as the
+  500 under white). Found once the tests walked every component page in the
+  dark theme too.
 - **Now:** left visible in "Make it yours", with variant 1 and the module
   dark; a test measures the ratio.
 - **Lane:** Core (tokens).
 - **Fix in Kozmos:** lighten variant 1's dark 600 until it passes, and add
-  both variants' primary-action and primary-text pairs to the contract, so
-  every ramp a product may choose is measured.
+  both variants' primary-text pairs and theme-fill pairs (the 500 under the
+  theme foreground) to the contract, so every ramp a product may choose is
+  measured. One of them would fail as the ramp stands: the contract holds
+  the default fill to 3:1 as a shape on the page, and on the dark page
+  variant 1's 500 reads 2.99:1 (2.50:1 on the sheet).
 
 ## GAP-46 · `Stepper` has no narrow form
 
