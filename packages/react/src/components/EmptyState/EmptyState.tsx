@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "../../utils";
 import { Text } from "../Text";
+import { Progress } from "../Progress/Progress";
 
 /**
  * The density a surrounding slot asks for.
@@ -17,11 +18,26 @@ const EmptyStateDensityContext = React.createContext<
 /** Used by slots that draw their own box — see `POIResultList`. */
 export const EmptyStateDensity = EmptyStateDensityContext.Provider;
 
+/**
+ * A long wait the empty state is explaining, such as a download, and how far
+ * it has got (GAP-115).
+ */
+export interface EmptyStateProgress {
+  /** How far it has got, from 0 to 100. Outside that it is clamped, and NaN is 0. */
+  value: number;
+  /** What is in progress, shown above the bar and naming it: "Downloading the assistant". */
+  label: string;
+  /** How far, in words, shown beside the label and said as the bar's value: "40%", "12 of 30 MB". */
+  valueText?: string;
+}
+
 export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   icon?: React.ReactNode;
   title: string;
   description?: string;
   action?: React.ReactNode;
+  /** A wait it explains, drawn under the description and above the action. */
+  progress?: EmptyStateProgress;
   /**
    * How much room it takes.
    *
@@ -37,8 +53,20 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: "default" | "compact";
 }
 
+/**
+ * The natives clamp the value; Radix does not. Past either end, even by
+ * 0.0000001, it logs an error, marks the bar indeterminate, draws it empty
+ * and drops aria-valuenow and aria-valuetext.
+ */
+function clampPercent(value: number): number {
+  return Number.isNaN(value) ? 0 : Math.min(100, Math.max(0, value));
+}
+
 const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
-  ({ className, icon, title, description, action, size, ...props }, ref) => {
+  (
+    { className, icon, title, description, action, progress, size, ...props },
+    ref,
+  ) => {
     const fromSlot = React.useContext(EmptyStateDensityContext);
     const resolved = size ?? fromSlot ?? "default";
     // Every compact class is layered AFTER the default one and resolved by
@@ -47,6 +75,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
     // `pnpm components:contract:check`, and splitting it into a conditional
     // broke that check the first time this prop was written.
     const compact = resolved === "compact";
+    const progressLabelId = React.useId();
     return (
       <div
         ref={ref}
@@ -91,6 +120,44 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           >
             {description}
           </Text>
+        )}
+        {/* The natives leave their stack's gap above the bar, 16 or 8
+          compact, from the description or, without one, from the title,
+          whose own margin is 4 (2 compact): the bar tops it up. The label
+          starts at the leading edge, as on the natives, not centred. */}
+        {progress && (
+          <div
+            data-empty-state-progress=""
+            className={cn(
+              "mb-4 w-full max-w-[280px] text-start",
+              !description && "mt-3",
+              compact && (description ? "mb-0 mt-2" : "mb-0 mt-1.5"),
+            )}
+          >
+            {/* Hidden, and still the bar's name: aria-labelledby reads a
+              hidden element. Read as text as well, the label was said twice
+              in browse mode; the natives expose one element. */}
+            <div
+              aria-hidden="true"
+              className="mb-1 flex items-baseline justify-between gap-2 text-sm"
+            >
+              <span id={progressLabelId} className="min-w-0 text-foreground">
+                {progress.label}
+              </span>
+              {progress.valueText && (
+                <span className="shrink-0 text-muted-foreground">
+                  {progress.valueText}
+                </span>
+              )}
+            </div>
+            <Progress
+              value={clampPercent(progress.value)}
+              aria-labelledby={progressLabelId}
+              getValueLabel={
+                progress.valueText ? () => progress.valueText! : undefined
+              }
+            />
+          </div>
         )}
         {action && <div className={cn(compact && "mt-3")}>{action}</div>}
       </div>

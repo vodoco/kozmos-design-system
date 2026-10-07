@@ -267,27 +267,41 @@ public struct KozmosPOIResultCard: View {
         }
     }
 
-    var accessibilityDescription: String {
+    /// One generated line about this result, or nil: an empty one is none.
+    var summaryText: String? {
+        guard let summary = result.summary, !summary.isEmpty else { return nil }
+        return summary
+    }
+
+    /// What VoiceOver says for the select row, phrase by phrase, in the web's
+    /// order. The name is in the language it is authored in and the summary
+    /// in the query's, which may not be the interface's (GAP-004, GAP-125).
+    var accessibilityPhrases: [KozmosSpokenPhrase] {
         if let selectionLabel {
-            return [selectionLabel, languageDisclosure].compactMap { $0 }.joined(separator: ", ")
+            return [selectionLabel, languageDisclosure].compactMap { $0 }.map { KozmosSpokenPhrase($0) }
         }
+        let plain: (String?) -> KozmosSpokenPhrase? = { $0.map { KozmosSpokenPhrase($0) } }
         return [
-            !sdk && result.featured ? featuredLabel : nil,
+            plain(!sdk && result.featured ? featuredLabel : nil),
             // The number leads the name, "2, Burger King": the tab that draws
             // it is hidden from VoiceOver, so it is heard once.
-            numberText,
-            sdk && result.featured ? featuredLabel : nil,
-            sdk && !result.featured ? result.badge?.label : nil,
-            poi.name,
-            poi.categoryLabel,
-            poi.locationLabel,
-            poi.availabilityLabel,
-            travelTimeText,
-            available ? nil : result.unavailableReason,
-            languageDisclosure
+            plain(numberText),
+            plain(sdk && result.featured ? featuredLabel : nil),
+            plain(sdk && !result.featured ? result.badge?.label : nil),
+            KozmosSpokenPhrase(poi.name, lang: result.nameLanguage),
+            plain(poi.categoryLabel),
+            plain(poi.locationLabel),
+            summaryText.map { KozmosSpokenPhrase($0, lang: result.summaryLanguage) },
+            plain(poi.availabilityLabel),
+            plain(travelTimeText),
+            plain(available ? nil : result.unavailableReason),
+            plain(languageDisclosure)
         ]
-        .compactMap { $0 }.filter { !$0.isEmpty }
-        .joined(separator: ", ")
+        .compactMap { $0 }.filter { !$0.text.isEmpty }
+    }
+
+    var accessibilityDescription: String {
+        kozmosSpokenDescription(accessibilityPhrases)
     }
 
     var languageDisclosure: String? {
@@ -353,6 +367,18 @@ public struct KozmosPOIResultCard: View {
                         }
                         .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
 
+                        if let summaryText {
+                            // One generated line about this result, as on the
+                            // web: two lines at most, since a summary that
+                            // grows moves the results below it (GAP-029).
+                            Text(summaryText)
+                                .font(KozmosTypography.subheadline)
+                                .foregroundColor(sdk ? KozmosColors.primitivesColorsForeground400 : KozmosColors.primitivesColorsForeground500)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, KozmosDimensions.primitivesLayoutSpacing25)
+                        }
+
                         if let availabilityLabel = poi.availabilityLabel {
                             Text(availabilityLabel)
                                 .font(.caption.weight(.semibold))
@@ -391,14 +417,10 @@ public struct KozmosPOIResultCard: View {
             // and the exact SwiftUI counterpart of the nested <button> the web
             // card had: any action button added below would have been drawn on
             // screen and unreachable to VoiceOver.
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(accessibilityDescription)
-            .accessibilityAddTraits(accessibilityTraits)
-            .accessibilityAction {
-                // No-ops when unavailable; the traits above already withhold
-                // the button affordance so VoiceOver does not offer the action.
-                handleSelect()
-            }
+            .modifier(SelectRowAccessibility(
+                phrases: accessibilityPhrases, traits: accessibilityTraits,
+                available: available, selected: result.selected,
+                identifier: kozmosPOIResultIdentifier(poi.id), select: handleSelect))
             // Outside the row's element, so that element is the one heard as
             // dimmed, as the web's disabled button is. Inside it, VoiceOver
             // heard an unavailable result as an enabled button (measured
@@ -551,6 +573,59 @@ public struct KozmosPOIResultCard: View {
             )
             .accessibilityLabel(logo.alt)
         }
+    }
+}
+
+/// The select row as VoiceOver's one element for the result.
+///
+/// SwiftUI's label is one string, said in the interface's voice. When the
+/// result's name or summary is in another language (GAP-004, GAP-125), a
+/// UIKit element lies over the row and says the same words with each
+/// phrase's speech language, as an instruction's parts are said
+/// (SpeechLanguage.swift). Same words, same traits, same action, same
+/// identifier: only the voice changes.
+private struct SelectRowAccessibility: ViewModifier {
+    let phrases: [KozmosSpokenPhrase]
+    let traits: AccessibilityTraits
+    let available: Bool
+    let selected: Bool
+    /// The card's identifier, which the row carries untagged. Tagged, the
+    /// SwiftUI row is hidden and takes it out of the tree, so the element
+    /// carries it instead and a UI test finds every row by it.
+    let identifier: String
+    let select: () -> Void
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        #if os(iOS)
+            if phrases.contains(where: \.hasLanguage) {
+                content.kozmosSpeechLanguageElement(
+                    kozmosSpokenText(phrases),
+                    // What SwiftUI gives the row, measured: a button, selected
+                    // when it is, and a dimmed button when the result is
+                    // unavailable, as the web's disabled button is heard.
+                    traits: UIAccessibilityTraits.button.union(
+                        available ? (selected ? .selected : []) : .notEnabled),
+                    identifier: identifier,
+                    activate: available ? select : nil)
+            } else {
+                plain(content)
+            }
+        #else
+            plain(content)
+        #endif
+    }
+
+    private func plain(_ content: Content) -> some View {
+        content
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(kozmosSpokenDescription(phrases))
+            .accessibilityAddTraits(traits)
+            .accessibilityAction {
+                // No-ops when unavailable; the traits above already withhold
+                // the button affordance so VoiceOver does not offer the action.
+                select()
+            }
     }
 }
 

@@ -1,6 +1,21 @@
 /* Build-time component CSS. Tailwind expands @apply; consumers need neither
    Tailwind nor native @scope. Every target is explicitly component-owned. */
 @kozmos-owned {
+  /* The reading direction, without :dir(). Chrome and Edge match :dir()
+     only from 120, and a consumer's build may rewrite it into a list of
+     :lang() guesses (Vite 8's lightningcss does, for older targets), which
+     then follow the page's language instead of its direction. So the rules
+     below read the nearest dir attribute: custom properties inherit, so a
+     dir="ltr" box inside a right-to-left page is left to right again, as
+     :dir() would have it. 0 is left to right, 1 right to left; dir="auto"
+     takes its parent's. Only this namespaced property is set on the host's
+     elements. */
+  [dir="ltr" i] {
+    --kozmos-rtl: 0;
+  }
+  [dir="rtl" i] {
+    --kozmos-rtl: 1;
+  }
   /* Core owns the track; SDK rails place landmarks on its shared axis. */
   .kozmos-progress-track {
     position: relative;
@@ -18,14 +33,7 @@
   }
   .kozmos-progress-track-active[data-appearance="gradient"] {
     background: linear-gradient(
-      to right,
-      var(--primitives-colors-theme-600),
-      var(--primitives-colors-emotional-success-600)
-    );
-  }
-  .kozmos-progress-track-active[data-appearance="gradient"]:dir(rtl) {
-    background: linear-gradient(
-      to left,
+      calc(90deg - 180deg * var(--kozmos-rtl, 0)),
       var(--primitives-colors-theme-600),
       var(--primitives-colors-emotional-success-600)
     );
@@ -36,8 +44,9 @@
     animation: track-flow 1s linear infinite;
   }
   .kozmos-progress-track-flow[data-mode="static"] { color: rgb(255 255 255 / 65%); }
-  .kozmos-progress-track-flow:dir(rtl) { animation-direction: reverse; }
-  @keyframes track-flow { to { background-position-x: 20px; } }
+  @keyframes track-flow {
+    to { background-position-x: calc(20px - 40px * var(--kozmos-rtl, 0)); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .kozmos-progress-track-flow { animation: none; }
   }
@@ -125,6 +134,37 @@
     min-height: 2.75rem;
     width: 100%;
     white-space: normal;
+  }
+  /* RouteSummary's actions (GAP-110, GAP-111): Previous and Next, or Go and
+     Details, in equal columns in reading order, so they mirror in RTL. A
+     Kozmos Button here grows to two lines rather than overflow and keeps its
+     44px; aria-disabled reads unavailable without dropping focus, as a
+     disabled button would. Owned, so it holds without @scope. Grid columns,
+     not flex: a flex basis of 0 still adds an outline button's border. */
+  .kozmos-route-summary-actions {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 0.5rem;
+  }
+  .kozmos-route-summary-actions > * {
+    min-width: 0;
+  }
+  .kozmos-route-summary-actions > .kozmos-button {
+    height: auto;
+    min-height: 2.75rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .kozmos-route-summary-actions > .kozmos-button[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: default;
+  }
+  /* RouteSummary's destination and its location line break a long word
+     rather than widen the page at 200% text. Owned, so it holds without
+     @scope, where the actions below it already hold. */
+  .kozmos-route-summary-destination {
+    overflow-wrap: break-word;
   }
   .kozmos-map-attribution {
     font-size: calc(var(--primitives-typography-font-size-50) * 1rem / 16);
@@ -458,8 +498,8 @@
      to left. The route preview's arrow is drawn pointing left, so right to
      left it is mirrored, as SwiftUI's arrow.backward and Compose's
      AutoMirrored ArrowBack mirror themselves. */
-  .kozmos-route-preview-back-arrow:dir(rtl) {
-    transform: scaleX(-1);
+  .kozmos-route-preview-back-arrow {
+    transform: scaleX(calc(1 - 2 * var(--kozmos-rtl, 0)));
   }
   /* Text a part draws muted, straight on the surface it sits on: the route
      preview's "To" and its count of options; the empty states of the
@@ -819,6 +859,23 @@
   .kozmos-poi-result-number-name {
     @apply sr-only;
   }
+  /* The name and the summary take their direction from their own words
+     (dir="auto"), so an Arabic summary's full stop and its clamp's ellipsis
+     fall at its end. Their lines still start where the card's do: a
+     start-aligned line would follow the words' direction, sending a Latin
+     brand in an Arabic card to the left, away from its category. Chromium
+     knows only the prefixed value; the unprefixed one is a rule of its own,
+     so no minifier folds the two into one declaration. */
+  .kozmos-poi-result-name,
+  .kozmos-poi-result-summary {
+    text-align: -webkit-match-parent;
+  }
+  @supports (text-align: match-parent) {
+    .kozmos-poi-result-name,
+    .kozmos-poi-result-summary {
+      text-align: match-parent;
+    }
+  }
   /* SDK is the default presentation. Tabs participate in layout so translated
      labels and enlarged type never cover the name. Group interiors are
      square; only the first row shares the container's outer top corner. */
@@ -1133,17 +1190,19 @@
   }
   /* Logical map corners follow the owning interface direction. Insets remain
      physical renderer clearances: RTL start uses the right-hand clearance. */
+  /* Each corner takes the inset of the physical side it is on: the start
+     corner the left inset left to right, and the right one right to left. */
   .kozmos-map-overlay-start {
-    inset-inline-start: var(--map-overlay-left);
+    inset-inline-start: calc(
+      var(--map-overlay-left) * (1 - var(--kozmos-rtl, 0)) +
+        var(--map-overlay-right) * var(--kozmos-rtl, 0)
+    );
   }
   .kozmos-map-overlay-end {
-    inset-inline-end: var(--map-overlay-right);
-  }
-  .kozmos-map-overlay-start:where(:dir(rtl)) {
-    inset-inline-start: var(--map-overlay-right);
-  }
-  .kozmos-map-overlay-end:where(:dir(rtl)) {
-    inset-inline-end: var(--map-overlay-left);
+    inset-inline-end: calc(
+      var(--map-overlay-right) * (1 - var(--kozmos-rtl, 0)) +
+        var(--map-overlay-left) * var(--kozmos-rtl, 0)
+    );
   }
   /* Availability cues occupy equal space even at the ends, keeping the level
      label centered. Decorative: the tile remains one disclosure target. */
@@ -1307,11 +1366,11 @@
   .kozmos-map-info-trigger {
     position: absolute;
     inset-block-start: calc(env(safe-area-inset-top, 0px) + 1rem);
-    inset-inline-end: calc(env(safe-area-inset-right, 0px) + 1rem);
+    inset-inline-end: calc(
+      env(safe-area-inset-right, 0px) * (1 - var(--kozmos-rtl, 0)) +
+        env(safe-area-inset-left, 0px) * var(--kozmos-rtl, 0) + 1rem
+    );
     z-index: 45;
-  }
-  .kozmos-map-info-trigger:dir(rtl) {
-    inset-inline-end: calc(env(safe-area-inset-left, 0px) + 1rem);
   }
   .kozmos-map-info-dialog {
     @apply bg-background text-foreground;
@@ -1334,10 +1393,10 @@
     border-inline-start: 1px solid var(--semantics-border-subtle);
     padding-block: env(safe-area-inset-top, 0px)
       env(safe-area-inset-bottom, 0px);
-    padding-inline-end: env(safe-area-inset-right, 0px);
-  }
-  .kozmos-map-info-dialog[data-presentation="side"]:dir(rtl) {
-    padding-inline-end: env(safe-area-inset-left, 0px);
+    padding-inline-end: calc(
+      env(safe-area-inset-right, 0px) * (1 - var(--kozmos-rtl, 0)) +
+        env(safe-area-inset-left, 0px) * var(--kozmos-rtl, 0)
+    );
   }
   .kozmos-map-info-dialog[data-presentation="full-screen"] {
     position: fixed;
@@ -1386,8 +1445,8 @@
      start, in either reading direction. The icons are physical, so right to
      left they are mirrored, as SwiftUI's .forward and .backward symbols and
      Compose's AutoMirrored icons are. */
-  .kozmos-rtl-mirror:dir(rtl) {
-    transform: scaleX(-1);
+  .kozmos-rtl-mirror {
+    transform: scaleX(calc(1 - 2 * var(--kozmos-rtl, 0)));
   }
   /* Accordion utilities use transition-all. Do not animate text resizing or
      wrapping inside this scrollable panel: it can move keyboard focus away. */

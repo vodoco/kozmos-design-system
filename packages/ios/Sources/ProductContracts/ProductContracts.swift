@@ -403,10 +403,11 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
     /// to be shown exactly as authored, and VoiceOver needs the tag to say it
     /// correctly.
     public let nameLanguage: String?
-    /// A short generated line about this result, already in the device's
-    /// language: why it answers the query, or what marks it out from the
-    /// results around it. One sentence, not a description — POIDetailPanel
-    /// owns the long form.
+    /// A short generated line about this result: why it answers the query, or
+    /// what marks it out from the results around it. One sentence, not a
+    /// description — POIDetailPanel owns the long form. Written by the model
+    /// in the query's language, which may not be the interface language: say
+    /// which in `summaryLanguage`.
     ///
     /// Optional because most results do not have one. A card that is given
     /// nothing draws nothing.
@@ -419,6 +420,12 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
     /// nil is unknown; false hides the note, not a guarantee of staff availability.
     /// Independent of query match, authored-name language and device/UI locale.
     public let languageNotListed: Bool?
+    /// BCP 47 tag for the language `summary` is written in, when it differs
+    /// from the interface language: a visitor who asks in Spanish on an
+    /// English device reads a Spanish summary among English labels (MAP-474
+    /// US2-EC1). VoiceOver needs the tag to say it in a Spanish voice (WCAG
+    /// 3.1.2). Leave it out when the summary is in the interface language.
+    public let summaryLanguage: String?
 
     public init(
         poiId: String,
@@ -435,7 +442,8 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         nameLanguage: String? = nil,
         summary: String? = nil,
         actions: [KozmosPOIResultActionPresentation] = [],
-        languageNotListed: Bool? = nil
+        languageNotListed: Bool? = nil,
+        summaryLanguage: String? = nil
     ) {
         self.poiId = poiId
         self.resultIndex = resultIndex
@@ -452,6 +460,7 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
         self.summary = summary
         self.actions = actions
         self.languageNotListed = languageNotListed
+        self.summaryLanguage = summaryLanguage
     }
 
     /// Mirrors the web rule: only an explicit `false` marks a result unavailable.
@@ -481,7 +490,8 @@ public struct KozmosPOIResultPresentation: Sendable, Hashable {
             nameLanguage: nameLanguage,
             summary: summary,
             actions: actions,
-            languageNotListed: languageNotListed
+            languageNotListed: languageNotListed,
+            summaryLanguage: summaryLanguage
         )
     }
 }

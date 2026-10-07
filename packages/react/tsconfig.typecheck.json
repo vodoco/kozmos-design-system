@@ -10,5 +10,9 @@
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["src"],
-  "exclude": []
+  // Storybook Docs infrastructure stays out, as tsconfig.json keeps it out:
+  // it pulls in @storybook/blocks and whichever @types/react that copy
+  // resolves to, 18 in one install and 19 in another (TS2786). Storybook
+  // compiles it with its own config.
+  "exclude": ["src/components/DocumentationControls.tsx"]
 }

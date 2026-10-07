@@ -1,13 +1,20 @@
 package com.kozmos.components.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
+import com.kozmos.components.button.KozmosButton
+import com.kozmos.components.button.KozmosButtonVariant
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.itinerary.KozmosItinerary
 import com.kozmos.components.itinerary.KozmosItineraryStep
@@ -16,7 +23,10 @@ import com.kozmos.components.manoeuvrecard.manoeuvreDescription
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressRail
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressRailGeometry
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressWaypoint
+import com.kozmos.components.routesummary.KozmosRoutePresentation
 import com.kozmos.components.routesummary.KozmosRouteSummary
+import com.kozmos.tokens.KozmosThemeTokens
+import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -135,6 +145,43 @@ class KozmosNavigationPartsPaparazziTest {
                         modifier = Modifier.padding(top = 24.dp),
                         progress = { KozmosRouteProgressRail(progress = 0.16f, type = DirectionType.Straight, label = "Step 1 of 4") }
                     )
+                }
+            }
+        }
+    }
+
+    /**
+     * Static wayfinding (GAP-110): Previous, unavailable on the first step,
+     * and Next under the rail in equal columns, hosted on the sheet's
+     * surface, in Light and then Dark: the window Paparazzi draws on is dark,
+     * so each theme brings its own host, and Material's colours follow the
+     * theme as KozmosThemeProvider sets them.
+     */
+    @Test
+    fun theNavigationSummaryWithStepActions() {
+        paparazzi.snapshot {
+            Column {
+                for (dark in listOf(false, true)) {
+                    CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
+                        MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+                            Box(modifier = Modifier.background(KozmosThemeTokens.semanticsSurface0).padding(24.dp).width(360.dp)) {
+                                KozmosRouteSummary(
+                                    destination = "Airport Shuttles",
+                                    durationText = "4 min",
+                                    distanceText = "201 m",
+                                    onEndRoute = {},
+                                    presentation = KozmosRoutePresentation.Hosted,
+                                    arrivalText = "Arrive 12:58",
+                                    actions = {
+                                        KozmosButton(onClick = {}, variant = KozmosButtonVariant.Outline, enabled = false) { Text("Previous") }
+                                        KozmosButton(onClick = {}) { Text("Next") }
+                                    }
+                                ) {
+                                    KozmosRouteProgressRail(progress = 0f, type = DirectionType.Straight, label = "Step 1 of 4")
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

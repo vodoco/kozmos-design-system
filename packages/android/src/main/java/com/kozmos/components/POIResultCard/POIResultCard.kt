@@ -42,13 +42,17 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -68,6 +72,9 @@ import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.button.KozmosButtonEmotion
 import com.kozmos.components.button.KozmosButtonVariant
+import com.kozmos.utils.KozmosSpokenPhrase
+import com.kozmos.utils.kozmosLocalizedText
+import com.kozmos.utils.kozmosSpokenText
 
 /** Neutral SDK result presentation is the default; Legacy supports staged migration. */
 enum class KozmosPOIResultPresentationStyle { Legacy, Sdk }
@@ -179,20 +186,51 @@ fun KozmosPOIResultCard(
             ?: estimate.durationLabel
     }
 
-    val baseDescription = selectionLabel ?: listOfNotNull(
+    // One generated line about this result, or nothing: an empty one is none.
+    val summary = result.summary?.takeIf { it.isNotEmpty() }
+
+    // What TalkBack says for the row, phrase by phrase, in the web's order.
+    // The name is in the language it is authored in and the summary in the
+    // query's, which may not be the interface's (GAP-004, GAP-125).
+    val basePhrases = if (selectionLabel != null) listOf(KozmosSpokenPhrase(selectionLabel)) else listOfNotNull(
         // The number leads the name, "2, Burger King": the tab that draws it
         // is left out of what TalkBack reads, so it is heard once.
-        numberText,
-        if (sdk && tab !is KozmosPOIResultTab.Number) tab?.words else null,
-        poi.name,
-        poi.categoryLabel,
-        poi.locationLabel,
-        poi.availabilityLabel,
-        travelTimeText,
-        if (available) null else result.unavailableReason
-    ).filter { it.isNotEmpty() }.joinToString(", ")
+        numberText?.let(::KozmosSpokenPhrase),
+        (if (sdk && tab !is KozmosPOIResultTab.Number) tab?.words else null)?.let(::KozmosSpokenPhrase),
+        KozmosSpokenPhrase(poi.name, result.nameLanguage),
+        poi.categoryLabel?.let(::KozmosSpokenPhrase),
+        KozmosSpokenPhrase(poi.locationLabel),
+        summary?.let { KozmosSpokenPhrase(it, result.summaryLanguage) },
+        poi.availabilityLabel?.let(::KozmosSpokenPhrase),
+        travelTimeText?.let(::KozmosSpokenPhrase),
+        (if (available) null else result.unavailableReason)?.let(::KozmosSpokenPhrase)
+    ).filter { it.text.isNotEmpty() }
     val languageDisclosure = languageNotListedLabel.takeIf { result.languageNotListed == true }
-    val accessibilityDescription = listOfNotNull(baseDescription, languageDisclosure).joinToString(", ")
+    val phrases = basePhrases + listOfNotNull(languageDisclosure?.let(::KozmosSpokenPhrase))
+    // The row's words, given to TalkBack as its text in every row: a
+    // description is a plain string, said all in the interface's voice, while
+    // text keeps each tagged phrase's LocaleSpan (what Itinerary's steps and
+    // ManoeuvreCard do for an instruction). One property whether or not a
+    // phrase is tagged, so a product finds a row the same way for every
+    // result; untagged, it is plain text.
+    val spokenText = kozmosSpokenText(phrases)
+    // The row says the whole result in its own words, so the texts drawn
+    // inside it are left out of semantics. TalkBack reads a row's children
+    // after the row's own words, every one of them: a drawn text left in
+    // would be heard a second time, after the result or after the product's
+    // selection label. The logo keeps its alt text, as the web's
+    // button names itself from the logo too; the row keeps its click, state
+    // and selection. Each is cleared around its text, not on it, so the
+    // unmerged tree still holds every word the card draws.
+    val saidByTheRow = Modifier.clearAndSetSemantics { }
+    // The name and the summary take their direction from their own words, as
+    // the web's dir="auto" does: an Arabic summary in an English card runs
+    // right to left, its full stop and its ellipsis at its end, and a Latin
+    // brand in an Arabic card left to right. Their lines still start at the
+    // card's start, as every other line does; a start alignment would follow
+    // the words' direction instead.
+    val ownDirection = TextDirection.Content
+    val cardStart = if (LocalLayoutDirection.current == LayoutDirection.Rtl) TextAlign.Right else TextAlign.Left
 
     Surface(
         onClick = {
@@ -215,7 +253,7 @@ fun KozmosPOIResultCard(
             .fillMaxWidth()
             .hoverable(interaction, enabled = sdk && available)
             .semantics {
-                contentDescription = accessibilityDescription
+                text = spokenText
                 selected = result.selected
             },
         enabled = available,
@@ -252,14 +290,17 @@ fun KozmosPOIResultCard(
                     )
                 ) {
                     Column(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).then(saidByTheRow),
                         verticalArrangement = Arrangement.spacedBy(
                             KozmosDimensions.primitivesLayoutSpacing25
                         )
                     ) {
                         Text(
-                            text = poi.name,
-                            style = MaterialTheme.typography.bodyLarge,
+                            // Drawn in its language too, so its glyphs are
+                            // that language's, as the web's lang does.
+                            text = kozmosLocalizedText(poi.name, result.nameLanguage),
+                            style = MaterialTheme.typography.bodyLarge.copy(textDirection = ownDirection),
+                            textAlign = cardStart,
                             fontWeight = FontWeight.Normal,
                             color = KozmosThemeTokens.primitivesColorsForeground100,
                             maxLines = if (sdk) Int.MAX_VALUE else 1,
@@ -300,6 +341,21 @@ fun KozmosPOIResultCard(
                             )
                         }
 
+                        summary?.let { line ->
+                            // One generated line about this result, as on the
+                            // web: two lines at most, since a summary that
+                            // grows moves the results below it (GAP-029).
+                            Text(
+                                text = kozmosLocalizedText(line, result.summaryLanguage),
+                                style = MaterialTheme.typography.bodyMedium.copy(textDirection = ownDirection),
+                                textAlign = cardStart,
+                                color = secondaryText,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = KozmosDimensions.primitivesLayoutSpacing25)
+                            )
+                        }
+
                         poi.availabilityLabel?.let { availabilityLabel ->
                             Text(
                                 text = availabilityLabel,
@@ -329,34 +385,35 @@ fun KozmosPOIResultCard(
                         POILogo(poi = poi)
 
                         travelTimeText?.let { text ->
-                            Text(
-                                text = text,
-                                style = MaterialTheme.typography.bodyMedium,
-                                // Nearby in the success emotion's Text role, which
-                                // reads at 4.5:1 or more on the card in both
-                                // themes; every other band, and the exact minutes,
-                                // in the card's text colour. The word is Nearby,
-                                // so the colour is never the only signal.
-                                color = when (result.travelEstimate?.band?.tone) {
-                                    KozmosTravelTimeTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
-                                    KozmosTravelTimeTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
-                                }
-                            )
+                            Box(saidByTheRow) {
+                                Text(
+                                    text = text,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    // Nearby in the success emotion's Text role, which
+                                    // reads at 4.5:1 or more on the card in both
+                                    // themes; every other band, and the exact minutes,
+                                    // in the card's text colour. The word is Nearby,
+                                    // so the colour is never the only signal.
+                                    color = when (result.travelEstimate?.band?.tone) {
+                                        KozmosTravelTimeTone.Success -> KozmosThemeTokens.semanticsEmotionSuccessText
+                                        KozmosTravelTimeTone.Neutral, null -> KozmosThemeTokens.primitivesColorsForeground100
+                                    }
+                                )
+                            }
                         }
                     }
                 }
 
                 languageDisclosure?.let { label ->
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = secondaryText,
-                        modifier = Modifier.padding(
+                    Box(
+                        saidByTheRow.padding(
                             start = KozmosDimensions.primitivesLayoutSpacing200,
                             end = KozmosDimensions.primitivesLayoutSpacing200,
                             bottom = KozmosDimensions.primitivesLayoutSpacing150
                         )
-                    )
+                    ) {
+                        Text(text = label, style = MaterialTheme.typography.bodySmall, color = secondaryText)
+                    }
                 }
 
                 if (visibleActions.isNotEmpty()) {
@@ -406,15 +463,14 @@ fun KozmosPOIResultCard(
                 if (!available && result.unavailableReason != null) {
                     Divider(color = KozmosThemeTokens.semanticsBorderSubtle)
 
-                    Text(
-                        text = result.unavailableReason,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = secondaryText,
-                        modifier = Modifier.padding(
+                    Box(
+                        saidByTheRow.padding(
                             horizontal = KozmosDimensions.primitivesLayoutSpacing200,
                             vertical = KozmosDimensions.primitivesLayoutSpacing100
                         )
-                    )
+                    ) {
+                        Text(text = result.unavailableReason, style = MaterialTheme.typography.bodySmall, color = secondaryText)
+                    }
                 }
             }
             if (tab != null && !sdk) {

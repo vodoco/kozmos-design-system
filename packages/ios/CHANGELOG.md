@@ -10,9 +10,14 @@ Native source changes on `main` after the 0.6.0 snapshot above. Nothing here is 
 
 - **POI details summary tones:** a fact's value and icon use the emotion's text role for success, warning and danger (`semanticsEmotionSuccessText`, `semanticsEmotionAlertText`, `semanticsEmotionDangerText`) and `primitivesColorsTheme600` for brand, as the web's summary names them. Each now reads at 4.5:1 or more on the card's white and the sheet's grey in both appearances. The fill colours they used read as low as 1.57:1 (warning on the sheet), and brand read at 3.74:1 on black.
 
+### Added and changed
+
+- **Result summaries and their language:** `KozmosPOIResultPresentation.summaryLanguage` names the language of `summary` when it differs from the interface's (GAP-125). `KozmosPOIResultCard` now draws `summary`, muted and two lines at most, after the location, as the web card does, and VoiceOver hears it after the location. When `nameLanguage` or `summaryLanguage` is set, the select row is spoken through a UIKit element whose label carries each tagged phrase's speech language, with the same words, traits, action and `kozmosPOIResultIdentifier` as the untagged row.
+
 ### Migration notes
 
 - Toned summary values are darker in light and lighter in dark. Review screenshot baselines for details cards that set `tone`.
+- A result that already passes `summary` now draws it: its card is taller. Review screenshot baselines and any layout that assumes a fixed row height, or leave `summary` unset to keep the old card.
 
 ## 0.6.0 — repository snapshot
 

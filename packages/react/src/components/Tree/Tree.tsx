@@ -513,7 +513,7 @@ const TreeItemRow = React.forwardRef<HTMLDivElement, TreeItemRowProps>(
           disabled && "cursor-not-allowed opacity-50",
           className,
         )}
-        style={{ paddingLeft: depth * indent + 8, ...style }}
+        style={{ paddingInlineStart: depth * indent + 8, ...style }}
         {...props}
       >
         <span

@@ -52,9 +52,10 @@ export function DirectionSample() {
             <Chip size="sm">Step-free</Chip>
           </ChipGroup>
           <Stack direction="row" gap={2}>
-            {/* The provider does not mirror a glyph that points along the
-                reading direction (GAP-61), so the page picks it: back points
-                the way the reader came from, next the way they are going. */}
+            {/* An Icon is the glyph it names in either direction; the
+                components mirror only their own (GAP-61). So the page picks
+                it: back points the way the reader came from, next the way
+                they are going. */}
             <Button>
               <Icon name={rtl ? "arrow-right" : "arrow-left"} size="sm" />
               Back

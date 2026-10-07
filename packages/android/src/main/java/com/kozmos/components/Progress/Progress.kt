@@ -104,10 +104,13 @@ fun KozmosProgress(
     progress: Float,
     modifier: Modifier = Modifier
 ) {
+    // React's colours: bg-primary (theme 600) on bg-secondary (background
+    // 200), in light and dark. Theme 500 on background 300 read 2.56:1, and
+    // 1.58:1 dark, under the 3:1 a bar needs against its track.
     LinearProgressIndicator(
         progress = progress,
         modifier = modifier,
-        color = KozmosThemeTokens.primitivesColorsTheme500,
-        trackColor = KozmosThemeTokens.primitivesColorsBackground300,
+        color = KozmosThemeTokens.primitivesColorsTheme600,
+        trackColor = KozmosThemeTokens.primitivesColorsBackground200,
     )
 }
