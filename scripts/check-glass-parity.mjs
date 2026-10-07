@@ -140,12 +140,17 @@ const values = {};
     else if (/bg-white\/70|backdrop-blur-3xl|bg-background\/90|kozmos-surface-glass/.test(src)) fail(`consumer: ${file} still hand-rolls glass`);
     else ok(`consumer: ${path.basename(file)} takes its surface from Surface`);
   }
-  const ios = ["packages/ios/Sources/Components/ManoeuvreCard/ManoeuvreCard.swift", "packages/ios/Sources/Components/RouteSummary/RouteSummary.swift"];
+  // ManoeuvreCard reaches the role through the guidance surface it shares with
+  // the other guidance parts (Utilities/GuidanceAppearance.swift, since #193),
+  // so that modifier is held to the role and the card to the modifier.
+  const guidance = "packages/ios/Sources/Utilities/GuidanceAppearance.swift";
+  const ios = ["packages/ios/Sources/Components/ManoeuvreCard/ManoeuvreCard.swift", "packages/ios/Sources/Components/RouteSummary/RouteSummary.swift", guidance];
   for (const file of ios) {
     const src = read(file);
-    if (!src.includes(".kozmosSurface(")) fail(`consumer: ${file} is not on the role`);
+    const viaGuidance = file !== guidance && src.includes("KozmosGuidanceSurface(");
+    if (!src.includes(".kozmosSurface(") && !viaGuidance) fail(`consumer: ${file} is not on the role`);
     else if (src.includes("Background0.opacity(0.9)")) fail(`consumer: ${file} still hand-rolls glass`);
-    else ok(`consumer: ${path.basename(file)} on the role`);
+    else ok(`consumer: ${path.basename(file)} on the role${viaGuidance ? " (through KozmosGuidanceSurface)" : ""}`);
   }
   const android = ["packages/android/src/main/java/com/kozmos/components/ManoeuvreCard/ManoeuvreCard.kt", "packages/android/src/main/java/com/kozmos/components/RouteSummary/RouteSummary.kt"];
   for (const file of android) {
