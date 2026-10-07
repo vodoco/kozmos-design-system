@@ -255,10 +255,14 @@ class KozmosMaterialSchemeTest {
         }
         val purple = drawn.count(materialPrimary(dark), tolerance = 12)
         val ring = drawn.count(theme600(dark), tolerance = 3)
-        assertEquals("pixels in Material's primary ${DrawnPixels.hex(materialPrimary(dark))} on a focused date field in ${mode(dark)}", 0, purple)
+        // A stray anti-aliased pixel is not the colour drawn: renderers differ
+        // at edges (CI's Linux drew one where a Mac drew none), so Material's
+        // colour may be up to 1% of Kozmos's. The stock scheme drew thousands
+        // of it and none of Kozmos's.
         assertTrue(
-            "a focused date field's border and label are theme 600 ${DrawnPixels.hex(theme600(dark))} in ${mode(dark)}: $ring pixels",
-            ring > 200
+            "a focused date field's border and label in ${mode(dark)}: $ring pixels of theme 600 ${DrawnPixels.hex(theme600(dark))}, " +
+                "$purple of Material's primary ${DrawnPixels.hex(materialPrimary(dark))}",
+            ring > 200 && purple * 100 <= ring
         )
     }
 
@@ -276,10 +280,17 @@ class KozmosMaterialSchemeTest {
         val materialMuted = drawn.count(materialOnSurfaceVariant(dark), tolerance = 2)
         val edge = drawn.count(borderInput(dark), tolerance = 2)
         val muted = drawn.count(foreground400(dark), tolerance = 2)
-        assertEquals("pixels in Material's outline ${DrawnPixels.hex(materialOutline(dark))} in ${mode(dark)}", 0, materialEdge)
-        assertEquals("pixels in Material's onSurfaceVariant ${DrawnPixels.hex(materialOnSurfaceVariant(dark))} in ${mode(dark)}", 0, materialMuted)
-        assertTrue("the edge is the input border ${DrawnPixels.hex(borderInput(dark))} in ${mode(dark)}: $edge pixels", edge > 200)
-        assertTrue("the label and icon are muted foreground/400 ${DrawnPixels.hex(foreground400(dark))} in ${mode(dark)}: $muted pixels", muted > 20)
+        // Material's colours may be up to 1% of Kozmos's: edge anti-aliasing.
+        assertTrue(
+            "a resting date field's edge in ${mode(dark)}: $edge pixels of the input border ${DrawnPixels.hex(borderInput(dark))}, " +
+                "$materialEdge of Material's outline ${DrawnPixels.hex(materialOutline(dark))}",
+            edge > 200 && materialEdge * 100 <= edge
+        )
+        assertTrue(
+            "a resting date field's label and icon in ${mode(dark)}: $muted pixels of foreground/400 ${DrawnPixels.hex(foreground400(dark))}, " +
+                "$materialMuted of Material's onSurfaceVariant ${DrawnPixels.hex(materialOnSurfaceVariant(dark))}",
+            muted > 20 && materialMuted * 100 <= muted
+        )
     }
 
     // A checkbox's label is Material's onSurface.
@@ -296,8 +307,12 @@ class KozmosMaterialSchemeTest {
         }
         val material = drawn.count(materialOnSurface(dark), tolerance = 1)
         val ink = drawn.count(foreground100(dark), tolerance = 1)
-        assertEquals("label pixels in Material's onSurface ${DrawnPixels.hex(materialOnSurface(dark))} in ${mode(dark)}", 0, material)
-        assertTrue("the label is foreground/100 ${DrawnPixels.hex(foreground100(dark))} in ${mode(dark)}: $ink pixels", ink > 20)
+        // Material's ink may be up to 1% of Kozmos's: edge anti-aliasing.
+        assertTrue(
+            "a checkbox label in ${mode(dark)}: $ink pixels of foreground/100 ${DrawnPixels.hex(foreground100(dark))}, " +
+                "$material of Material's onSurface ${DrawnPixels.hex(materialOnSurface(dark))}",
+            ink > 20 && material * 100 <= ink
+        )
     }
 
     // An open drawer's sheet is the page, not Material's tinted surface.
