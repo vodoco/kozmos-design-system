@@ -15,29 +15,24 @@ const meta = {
   parameters: {
     layout: "centered",
   },
+  args: { label: "Tools", options },
+  render: (args) => (
+    <div className="w-96">
+      <MultiSelect {...args} />
+    </div>
+  ),
 } satisfies Meta<typeof MultiSelect>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  render: (args) => (
-    <div className="w-96">
-      <MultiSelect label="Tools" options={options} {...args} />
-    </div>
-  ),
-};
+export const Default: Story = {};
 
 export const WithSelectedValues: Story = {
-  render: () => (
-    <div className="w-96">
-      <MultiSelect
-        label="Visible layers"
-        options={options}
-        defaultValue={["filters", "routes"]}
-        helperText="Choose up to three layers."
-        maxSelected={3}
-      />
-    </div>
-  ),
+  args: {
+    label: "Visible layers",
+    defaultValue: ["filters", "routes"],
+    helperText: "Choose up to three layers.",
+    maxSelected: 3,
+  },
 };

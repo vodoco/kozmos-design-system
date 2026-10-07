@@ -102,7 +102,7 @@ describe("SDK result presentation", () => {
         presentationStyle="sdk"
       />,
     );
-    const go = screen.getByRole("button", { name: "Go", exact: true });
+    const go = screen.getByRole("button", { name: "Go" });
     expect(go.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     fireEvent.click(go);
     expect(onAction).toHaveBeenCalledWith("navigate", poi.id);

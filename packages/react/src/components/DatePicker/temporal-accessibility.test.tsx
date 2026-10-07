@@ -4,8 +4,11 @@ import { describe, it, expect } from "vitest";
 import { DatePicker, DateRangePicker } from "./DatePicker";
 import { TimePicker } from "../TimePicker/TimePicker";
 
-for (const Control of [DatePicker, TimePicker]) {
-  describe(Control.displayName, () => {
+for (const [name, Control] of [
+  ["DatePicker", DatePicker],
+  ["TimePicker", TimePicker],
+] as const) {
+  describe(name, () => {
     it("merges consumer guidance with owned error and cannot hide invalid state", () => {
       render(
         <Control

@@ -68,7 +68,7 @@
     "test:contracts": "tsx tests/contracts/provider.ts",
     "figma:publish": "node ../../scripts/figma-connect-publish.mjs",
     "figma:publish:dry": "node ../../scripts/figma-connect-publish.mjs --dry-run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.typecheck.json"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0",
