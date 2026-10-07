@@ -10963,8 +10963,15 @@ assertJsonPathEquals(
     "idle",
     "$value",
   ],
+  "{Primitives.Colors.theme.700}",
+  "dark secondary button themed foreground (an alias of theme 700, GAP-23)",
+);
+assertJsonPathEquals(
+  files.tokensDark,
+  tokensDark,
+  ["Primitives", "Colors", "theme", "700", "$value"],
   "#7EA2F6",
-  "dark secondary button themed foreground",
+  "dark theme 700, the secondary button themed foreground",
 );
 assertJsonPathEquals(
   files.tokensDark,
@@ -11007,12 +11014,27 @@ assertFigmaPayloadDarkValue(
   "Components/Primary Buttons/danger/button/background/idle",
   "#EE7E95",
 );
-assertFigmaPayloadDarkValue(
-  files.figmaFoundationsPayload,
-  figmaFoundationsPayload,
-  "Components/Secondary Buttons/themed/button/foreground/content/idle",
-  "#7EA2F6",
-);
+// GAP-23: the secondary button's themed ink aliases theme 700 in Figma too,
+// #7EA2F6 in the dark.
+{
+  const variable = figmaFoundationsPayload.variables.find(
+    (entry) =>
+      entry.canonicalName ===
+      "Components/Secondary Buttons/themed/button/foreground/content/idle",
+  );
+  const value = variable?.values?.dark;
+  if (value?.kind !== "alias" || value.path !== "Primitives/Colors/theme/700") {
+    fail(
+      `${files.figmaFoundationsPayload}: expected the dark secondary button themed foreground to alias Primitives/Colors/theme/700, received ${JSON.stringify(value)}`,
+    );
+  }
+  assertFigmaPayloadDarkValue(
+    files.figmaFoundationsPayload,
+    figmaFoundationsPayload,
+    "Primitives/Colors/theme/700",
+    "#7EA2F6",
+  );
+}
 assertFigmaPayloadDarkValue(
   files.figmaFoundationsPayload,
   figmaFoundationsPayload,

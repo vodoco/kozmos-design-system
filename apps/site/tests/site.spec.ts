@@ -1317,11 +1317,17 @@ test.describe("home", () => {
       await read("--primitives-colors-theme-variant-1-600"),
     );
     expect(await read("--primitives-colors-theme-600")).not.toBe(pageTheme);
-    // GAP-23: the filled button's fill is a reference to theme 500, so it
-    // follows the ramp with no override of its own.
+    // GAP-23: the filled button's fill is a reference to theme 500, and the
+    // outline, ghost and link buttons' ink to theme 700, so they follow the
+    // ramp with no override of their own.
     expect(
       await read("--components-primary-buttons-themed-button-background-idle"),
     ).toBe(await read("--primitives-colors-theme-variant-1-500"));
+    expect(
+      await read(
+        "--components-secondary-buttons-themed-button-foreground-content-idle",
+      ),
+    ).toBe(await read("--primitives-colors-theme-variant-1-700"));
     await section.getByRole("switch", { name: "Dark theme" }).click();
     await expect(app).toHaveAttribute("data-theme", "dark");
   });

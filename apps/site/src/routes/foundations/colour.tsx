@@ -203,14 +203,12 @@ function ComponentLayer() {
         {entries.length} variables: for each kind of button, each of the six
         emotions’ idle, hover, pressed and focus colours, and thirteen for the
         HTML headings. {references} are references to a ramp in one theme or
-        both, the filled themed button’s among them, so they follow an override
-        of the ramp; the rest hold values copied from the ramps in the token
-        sources (GAP-23). Today the Button’s themed and danger variants and the
-        category field read a few of them, and every part with a prominent fill
-        reads the themed button’s foreground, white on the theme fill in both
-        themes (decision 59); no component reads the rest. A brand override
-        re-points the copied ones as well as the ramp, so that what does read
-        them follows.
+        both, every themed button colour on the theme ramp among them, so an
+        override of the ramp reaches them (GAP-23); the rest are values. Today
+        the Button’s themed and danger variants and the category field read a
+        few of them, and every part with a prominent fill reads the themed
+        button’s foreground, white on the theme fill in both themes (decision
+        59); no component reads the rest.
       </Text>
       <Accordion type="multiple">
         {[...groups].map(([group, list]) => (

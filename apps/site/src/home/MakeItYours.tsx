@@ -118,14 +118,15 @@ export function MakeItYours() {
         ) : (
           <Text size="sm" color="muted">
             {entries.length} variables re-pointed: the theme ramp’s{" "}
-            {entries.length - overrides.repointed.length} steps and{" "}
-            {overrides.repointed.length} of the {themedCount} themed component
-            tokens, which hold values copied from the ramp, so each is matched
-            by value. {overrides.followed.length} more, the filled button’s, are
-            references to the ramp and follow it with no override of their own
-            (GAP-23). The other {overrides.unmatched.length}, the ink on filled
-            buttons and the disabled greys, are not on the theme ramp, so they
-            keep their values.
+            {entries.length - overrides.repointed.length} steps
+            {overrides.repointed.length > 0
+              ? `, and ${overrides.repointed.length} themed component tokens that hold values copied from the ramp, matched by value`
+              : ""}
+            . {overrides.followed.length} of the {themedCount} themed component
+            tokens are references to the ramp and follow it with no override of
+            their own (GAP-23). The other {overrides.unmatched.length}, the ink
+            on filled buttons and the disabled greys, are not on the theme ramp,
+            so they keep their values.
           </Text>
         )}
         <CodeBlock label="The override" code={overrideSnippet(entries)} />
