@@ -478,6 +478,55 @@ describe("POIResultCard", () => {
     expect(screen.queryByText(/·\s*$/)).toBeNull();
   });
 
+  it("says a summary in the query's language in that language's voice (GAP-125)", () => {
+    // MAP-474 US2-EC1: a visitor asks in Spanish on an English device. The
+    // model writes the summary in Spanish; the card's own words stay English.
+    const summary = "La más tranquila de las tres salas, antes del control.";
+    const { container, rerender } = render(
+      <POIResultCard
+        poi={{ ...poi, name: "空港ラウンジ" }}
+        result={{
+          ...result,
+          nameLanguage: "ja",
+          summary,
+          summaryLanguage: "es",
+        }}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    // A span of its own carries the tag, so a screen reader changes voice for
+    // the summary's words and no others: not the card, not the name.
+    const spoken = screen.getByText(summary);
+    expect(spoken.tagName).toBe("SPAN");
+    expect(spoken).toHaveAttribute("lang", "es");
+    expect(screen.getByText("空港ラウンジ")).toHaveAttribute("lang", "ja");
+    expect(container.firstElementChild).not.toHaveAttribute("lang");
+    expect(screen.getByText("Dining")).not.toHaveAttribute("lang");
+
+    // Inside the select button, so its accessible name carries both.
+    expect(screen.getByRole("button")).toContainElement(spoken);
+
+    // A summary in the interface language carries no tag, and an empty tag is
+    // no tag: lang="" would tell a screen reader the language is unknown.
+    for (const summaryLanguage of [undefined, ""]) {
+      rerender(
+        <POIResultCard
+          poi={poi}
+          result={{
+            ...result,
+            nameLanguage: summaryLanguage,
+            summary,
+            summaryLanguage,
+          }}
+          onSelect={vi.fn()}
+        />,
+      );
+      expect(screen.getByText(summary)).not.toHaveAttribute("lang");
+      expect(screen.getByText(poi.name)).not.toHaveAttribute("lang");
+    }
+  });
+
   describe("a walk shown as a band (decision 50, GAP-088)", () => {
     // The product passes the walking time it has, with the band Kozmos's rule
     // gives it; the card draws the band. The exact minutes stay in the
