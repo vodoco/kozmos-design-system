@@ -229,6 +229,7 @@ export const SheetWithPlaceDetails: Story = {
           bookmark: "Save",
           navigate: "Go",
           share: "Share",
+          order: "Order",
         }}
         onAction={() => undefined}
         onClose={() => undefined}
@@ -471,6 +472,7 @@ export const RegisteredBottomCorners: Story = {
           floors={["2", "1", "G"]}
           selectedFloor="1"
           variant="compact-stepper"
+          onFloorSelect={() => undefined}
         />
         <MapControlsGroup
           onZoomIn={() => undefined}

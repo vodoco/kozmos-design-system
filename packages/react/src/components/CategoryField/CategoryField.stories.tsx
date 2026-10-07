@@ -42,12 +42,9 @@ export const InTheSearchRow: Story = {
         {...args}
         trailing={
           <>
-            <IconButton
-              variant="outline"
-              size="lg"
-              aria-label="Filters"
-              icon={<SlidersHorizontal />}
-            />
+            <IconButton variant="outline" size="lg" aria-label="Filters">
+              <SlidersHorizontal />
+            </IconButton>
             <AISearchButton />
           </>
         }

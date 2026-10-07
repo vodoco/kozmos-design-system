@@ -220,7 +220,12 @@ describe("AICompanionPanel", () => {
         <>
           <button type="button">Toolbar</button>
           <div data-testid="frame" style={{ position: "relative" }}>
-            <div data-testid="search" inert={coverItself && open}>
+            <div
+              data-testid="search"
+              ref={(node) => {
+                if (node) node.inert = Boolean(coverItself && open);
+              }}
+            >
               <button type="button">Shops</button>
               <button type="button">Ask the assistant</button>
               <p aria-live="polite">3 places</p>
@@ -358,7 +363,9 @@ describe("AICompanionPanel", () => {
           },
         );
       });
-      afterEach(() => vi.unstubAllGlobals());
+      afterEach(() => {
+        vi.unstubAllGlobals();
+      });
       const resized = () =>
         observers.forEach((observer) =>
           observer.callback([], observer as unknown as ResizeObserver),

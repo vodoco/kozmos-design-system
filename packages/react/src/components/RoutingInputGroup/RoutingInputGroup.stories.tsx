@@ -1,16 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { fn } from "@storybook/test";
 import { useState } from "react";
 import { RoutingInputGroup, type RoutePoint } from "./RoutingInputGroup";
-
-const meta = {
-  id: "map-routinginputgroup",
-  title: "SDK/Navigation/RoutingInputGroup",
-  component: RoutingInputGroup,
-  parameters: { layout: "centered" },
-} satisfies Meta<typeof RoutingInputGroup>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
 
 const initialPoints: RoutePoint[] = [
   {
@@ -20,6 +11,17 @@ const initialPoints: RoutePoint[] = [
   },
   { id: "destination", value: "Gate A12", placeholder: "Choose destination" },
 ];
+
+const meta = {
+  id: "map-routinginputgroup",
+  title: "SDK/Navigation/RoutingInputGroup",
+  component: RoutingInputGroup,
+  parameters: { layout: "centered" },
+  args: { points: initialPoints, onPointChange: fn() },
+} satisfies Meta<typeof RoutingInputGroup>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: () => {

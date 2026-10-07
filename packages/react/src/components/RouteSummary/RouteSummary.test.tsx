@@ -40,7 +40,9 @@ describe("RouteSummary", () => {
     ).not.toBeNull();
   });
   describe("destination media", () => {
-    afterEach(() => vi.restoreAllMocks());
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
     const media = (container: HTMLElement) =>
       container
         .querySelector("[data-destination-media]")

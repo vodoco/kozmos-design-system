@@ -344,9 +344,7 @@ describe("ManoeuvreCard: the itinerary the keyboard can scroll (GAP-100)", () =>
     expect(screen.getAllByRole("region")).toHaveLength(2);
     expect(
       screen.getByRole("region", { name: "Current manoeuvre" }),
-    ).toContainElement(
-      screen.getByRole("region", { name: "Itinerary", exact: true }),
-    );
+    ).toContainElement(screen.getByRole("region", { name: "Itinerary" }));
   });
 
   it("takes the product's name for the itinerary it scrolls", () => {
