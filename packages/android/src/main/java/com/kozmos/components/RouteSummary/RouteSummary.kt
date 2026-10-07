@@ -30,6 +30,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.surface.KozmosSurfaceDefaults
 import com.kozmos.components.surface.KozmosSurfaceStyle
@@ -153,13 +156,24 @@ fun KozmosRouteSummary(
     surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
     progress: (@Composable () -> Unit)? = null
 ) = KozmosRouteSummary(destination, durationText, distanceText, onEndRoute, null,
-    modifier, arrivalText, endLabel, surface, null, progress)
+    modifier, arrivalText, endLabel, surface, null, progress = progress)
 
 /**
  * The navigation layout with optional remaining estimates and decorative
  * destination media. [presentation] null follows where it is: hosted in the
  * map shell's panel, with no surface, radius, shadow or padding of its own
  * (decision 43), and standalone elsewhere.
+ *
+ * [actions] follow the [progress]: the journey's actions, Previous and Next
+ * in static wayfinding, Go and Details in the route preview. They are laid
+ * out in equal columns in reading order, each as tall as the tallest, and a
+ * KozmosButton there fills its column, its label wrapping, its 48dp touch
+ * target kept. The host owns what they do, when they are disabled, and
+ * announcing the new step. [actions] comes before [progress], so a trailing
+ * lambda is still the progress.
+ *
+ * Without [onEndRoute] there is no End: the route preview, where
+ * [locationText] is the place's line under the destination, muted.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -167,13 +181,15 @@ fun KozmosRouteSummary(
     destination: String,
     durationText: String? = null,
     distanceText: String? = null,
-    onEndRoute: () -> Unit,
+    onEndRoute: (() -> Unit)? = null,
     presentation: KozmosRoutePresentation? = null,
     modifier: Modifier = Modifier,
     arrivalText: String? = null,
     endLabel: String = "End",
     surface: KozmosSurfaceStyle = KozmosSurfaceStyle.Solid,
     destinationImage: String? = null,
+    locationText: String? = null,
+    actions: (@Composable () -> Unit)? = null,
     progress: (@Composable () -> Unit)? = null
 ) {
     val placed = presentation
@@ -189,20 +205,25 @@ fun KozmosRouteSummary(
                     KozmosDestinationImage(destinationImage)
                     Spacer(Modifier.size(KozmosDimensions.primitivesLayoutSpacing150))
                 }
-                Text(
-                    text = destination,
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = KozmosThemeTokens.primitivesColorsForeground100,
-                    modifier = Modifier.weight(1f).semantics { heading() }
-                )
-                Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSpacing150))
-                KozmosButton(
-                    onClick = onEndRoute,
-                    variant = KozmosButtonVariant.Outline,
-                    emotion = KozmosButtonEmotion.Danger,
-                    size = KozmosButtonSize.Sm
-                ) {
-                    Text(endLabel)
+                if (locationText.isNullOrEmpty()) {
+                    RouteSummaryTitle(destination, Modifier.weight(1f))
+                } else {
+                    Column(Modifier.weight(1f)) {
+                        RouteSummaryTitle(destination)
+                        // Muted, and on glass the foreground colour (decision 48).
+                        Text(text = locationText, style = MaterialTheme.typography.bodyMedium, color = kozmosMutedForeground())
+                    }
+                }
+                if (onEndRoute != null) {
+                    Spacer(modifier = Modifier.size(KozmosDimensions.primitivesLayoutSpacing150))
+                    KozmosButton(
+                        onClick = onEndRoute,
+                        variant = KozmosButtonVariant.Outline,
+                        emotion = KozmosButtonEmotion.Danger,
+                        size = KozmosButtonSize.Sm
+                    ) {
+                        Text(endLabel)
+                    }
                 }
             }
             if (!durationText.isNullOrEmpty() || !distanceText.isNullOrEmpty() || !arrivalText.isNullOrEmpty()) FlowRow(
@@ -225,6 +246,50 @@ fun KozmosRouteSummary(
                 }
             }
             progress?.invoke()
+            if (actions != null) KozmosEqualColumns(KozmosDimensions.primitivesLayoutSpacing100, Modifier.fillMaxWidth(), actions)
+        }
+    }
+}
+
+@Composable
+private fun RouteSummaryTitle(destination: String, modifier: Modifier = Modifier) {
+    Text(
+        text = destination,
+        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+        color = KozmosThemeTokens.primitivesColorsForeground100,
+        modifier = modifier.semantics { heading() }
+    )
+}
+
+/**
+ * One column per child, all the same width, [spacing] apart, in reading
+ * order (placed relative, so they mirror in right-to-left): the route
+ * summary's actions, as the web's `.kozmos-route-summary-actions` grid draws
+ * them. Not a weighted Row: a weight that does not fill leaves space at the
+ * row's end. Each child is measured to its column's width; one shorter than
+ * the tallest is stretched to it, and one as tall keeps its own measure, so
+ * a KozmosButton still draws 44dp inside its 48dp touch target. Children
+ * are measured by their intrinsic height, so they are Buttons, not lazy
+ * lists.
+ */
+@Composable
+internal fun KozmosEqualColumns(spacing: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Layout(content, modifier) { measurables, constraints ->
+        if (measurables.isEmpty()) return@Layout layout(constraints.minWidth, constraints.minHeight) {}
+        val count = measurables.size
+        val gap = spacing.roundToPx()
+        val width = if (constraints.hasBoundedWidth) constraints.maxWidth
+            else measurables.maxOf { it.maxIntrinsicWidth(Constraints.Infinity) } * count + gap * (count - 1)
+        val column = ((width - gap * (count - 1)) / count).coerceAtLeast(0)
+        val heights = measurables.map { it.maxIntrinsicHeight(column) }
+        val row = heights.max().coerceIn(constraints.minHeight, constraints.maxHeight)
+        val placeables = measurables.mapIndexed { index, child ->
+            child.measure(Constraints(column, column, if (heights[index] < row) row else 0, row))
+        }
+        layout(width, row) {
+            placeables.forEachIndexed { index, placeable ->
+                placeable.placeRelative(index * (column + gap), (row - placeable.height) / 2)
+            }
         }
     }
 }
