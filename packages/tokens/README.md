@@ -20,6 +20,13 @@ The light file defines every variable on `:root`; the dark file redefines them
 under `[data-theme="dark"]`, so setting that attribute on `<html>` switches the
 theme.
 
+A token that is an alias of another is written as a reference to it:
+`--components-primary-buttons-themed-button-background-idle` is
+`var(--primitives-colors-theme-500)`. Override the token it names on the same
+element and both change. The elevation roles, and any value a transform
+changed, are written as their values; the JavaScript, Swift and Kotlin outputs
+hold every value resolved.
+
 ```css
 .panel {
   background: var(--primitives-colors-background-0);
