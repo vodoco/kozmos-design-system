@@ -100,7 +100,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-58 | `Toast` draws no background of its own                           | Core                   | open         |
 | GAP-59 | `DynamicIsland` is its own dark theme, so a dark page hides it   | Platform / form factor | open         |
 | GAP-60 | `DynamicIsland` keeps no room for the camera it wraps            | Platform / form factor | open         |
-| GAP-61 | No glyph mirrors for right to left                               | Core                   | left visible |
+| GAP-61 | No glyph mirrors for right to left                               | Core                   | fixed        |
 | GAP-62 | `Combobox` and `MultiSelect` draw their list in the page         | Core                   | open         |
 | GAP-63 | `ColorPicker`'s swatch is a circle around a rectangle            | Core                   | open         |
 | GAP-64 | `ChipGroup` always wraps, and never centres its chips            | Core                   | open         |
@@ -1267,16 +1267,27 @@ Text"])`) and the Get started page shows — touches it.
   equivalents; `Menu.tsx` alone has `pl-8`, `ml-auto` and `left-2`/`right-2`.
   Each needs a look under `dir="rtl"`: some flip correctly through flexbox,
   some will not.
-- **Evidence:** "GAP-61: the breadcrumb's separator does not mirror in right
-  to left" measures the separator's path and transform in the direction
-  sample: the Pointr set's right-pointing `ChevronRight` (`M9 18L15 12L9 6`;
-  lucide's until icons 0.2.0), `transform: none`. The built package stopped
-  emitting the glyph's class name on 2026-09-27, so the path is the anchor.
-- **Now:** left visible on the theming page, whose sample says which arrow is
-  the page's choice and which is the component's. The site picks its own
-  glyphs there — back and next follow the direction it sets — because a page
-  can, and because the sample's point is what the provider does and does not
-  do. The site has no other right-to-left surface.
+- **Evidence:** "GAP-61: the breadcrumb's separator points along the trail
+  right to left" measures the separator's path and transform in the
+  direction sample: the Pointr set's right-pointing `ChevronRight`
+  (`M9 18L15 12L9 6`; lucide's until icons 0.2.0), now
+  `matrix(-1, 0, 0, 1, 0, 0)`. The built package stopped emitting the glyph's
+  class name on 2026-09-27, so the path is the anchor.
+- **Fixed** in the design system on 2026-10-07, in two steps. #237 mirrored
+  the separator, the submenu chevron, the tree's closed row, pagination's
+  pair and the route preview's back arrow with `:dir(rtl)` rules, and moved
+  Menu, Tree, Pagination and Breadcrumb to logical sides. Those rules never
+  reached this site: Vite 8's lightningcss lowers `:dir(rtl)` for older
+  targets into a list of `:lang()` guesses, which an English page never
+  matches, and Chrome and Edge before 120 do not match `:dir()` at all. Every
+  right-to-left rule in the package now reads the nearest `dir` attribute
+  through `--kozmos-rtl` instead, and `scripts/check-direction-rules.mjs`
+  measures them as built and as lowered, in Chromium, Firefox and WebKit.
+  The tree's depth indent became logical at the same time.
+- **Was:** left visible on the theming page, whose sample said which arrow
+  was the page's choice and which the component's. The site still picks its
+  own glyphs for the sample's buttons — an `Icon` is the glyph it names — and
+  has no other right-to-left surface.
 - **Lane:** Core.
 - **Fix in Kozmos:** mirror the reading-direction glyphs the way the gallery's
   arrows already are — `:dir(rtl)` (or an `rtl:` variant) with a 180° rotation

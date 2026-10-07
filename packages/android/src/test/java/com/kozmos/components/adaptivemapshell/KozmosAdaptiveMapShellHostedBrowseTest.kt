@@ -317,7 +317,7 @@ class KozmosAdaptiveMapShellHostedBrowseTest {
         }
         val tree = read(panel = { KozmosPOIResultList(items = items, resultCountLabel = "4 results", onSelect = {}) })
         tree.assertSheet()
-        val first = tree.merged.first { it.description?.startsWith("Result 1") == true }
+        val first = tree.merged.first { it.words?.startsWith("Result 1") == true }
         val at = tree.placed(first.bounds)
         println("Decision 14 Android, result list under a handle: the first result ${at.down} from the top")
         assertTrue("the first result is ${at.down} from the sheet's top, inside the handle's circle", at.down >= 20f - 0.5f)
