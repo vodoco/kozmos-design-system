@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { resolvedTokens } from "./lib/token-css.mjs";
 
 const root = process.cwd();
 const require = createRequire(import.meta.url);
@@ -66,8 +67,10 @@ function readCssVariables(mode) {
   const css = fs.readFileSync(filePath, "utf8");
   const variables = {};
 
-  for (const match of css.matchAll(/--([\w-]+):\s*([^;]+);/g)) {
-    variables[match[1]] = match[2].trim();
+  // An alias is written as a reference (GAP-23); a pair is held to the colour
+  // it resolves to in this theme.
+  for (const [name, value] of resolvedTokens(css)) {
+    variables[name.slice(2)] = value;
   }
 
   return variables;

@@ -49,6 +49,34 @@ test("every custom property that is a bare number is collected, and no other", (
   );
 });
 
+test("a token that is a reference to a bare number is one too, in its own theme", () => {
+  // The build writes an alias as a reference (GAP-23): the semantic radii are
+  // `var(--primitives-layout-radius-200)`, a bare 16, and must stay caught.
+  const light = `:root {
+  --primitives-layout-radius-200: 16;
+  --primitives-radius-md: 1rem;
+  --semantics-radius-control: var(--primitives-layout-radius-200);
+  --primitives-radius-button: var(--primitives-radius-md);
+}`;
+  const dark = `[data-theme='dark'] {
+  --primitives-layout-radius-200: 16;
+  --semantics-radius-control: var( --primitives-layout-radius-200 );
+}`;
+  const found = unitlessTokensFrom([light, dark]);
+  assert.ok(found.has("--semantics-radius-control"));
+  assert.ok(!found.has("--primitives-radius-button"), "a reference to 1rem is a length");
+  assert.deepEqual(
+    css(`.a { border-radius: var(--semantics-radius-control); }`).length,
+    0,
+    "the probe's own token list does not have it",
+  );
+  const control = findInStylesheet(
+    { path: "probe.css", text: `.a { border-radius: var(--semantics-radius-control); }` },
+    found,
+  );
+  assert.deepEqual(control.map((f) => f.token), ["--semantics-radius-control"]);
+});
+
 test("GAP-38's own three declarations are found", () => {
   const found = css(`.handle {
     height: var(--primitives-layout-spacing-200);

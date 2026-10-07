@@ -1,4 +1,9 @@
 import StyleDictionary from "style-dictionary";
+import {
+  createPropertyFormatter,
+  fileHeader,
+  outputReferencesTransformed,
+} from "style-dictionary/utils";
 import { register } from "@tokens-studio/sd-transforms";
 import fs from "fs";
 import path from "path";
@@ -1180,6 +1185,56 @@ StyleDictionary.registerFormat({
   },
 });
 
+// The web's token stylesheets write a token whose source value is an alias as
+// a reference to the token it names: the themed Button's fill is
+// `var(--primitives-colors-theme-500)`, not #135bec. A product brands Kozmos
+// by overriding the ramp on ThemeProvider's root (its `tokens` prop), and a
+// reference resolves there, so one override of theme 500 reaches the Button
+// and every part drawn as one, as it already reached the parts that read the
+// ramp (GAP-23). Until 2026-10-07 every value was written resolved, and the
+// component layer kept Pointr's blue under any brand.
+//
+// Safe mode: a reference is written only where the token's value is exactly
+// the value of the token it names. A value a transform changed on the way —
+// a colour given an alpha, a unit converted — stays the literal, because a
+// reference would undo the transform. Values are unchanged: every token
+// computes what it did, which scripts/check-token-references.mjs proves in a
+// browser on the built React stylesheet. Only the two CSS files change; the
+// JS, Swift, Kotlin and Android outputs and the Figma payload do not.
+//
+// A shadow stays its value too. The elevation roles alias the shadow ramp
+// (`--semantics-elevation-floating` is `{shadow.md}`), and
+// DesignConfigProvider sets `--shadow-sm`, `-md` and `-lg` on its root as
+// legacy aliases its `shadow` option drives, which the roles must not follow
+// (the React README: "not semantic radius/elevation roles"). Written as
+// references, every elevation under a DesignConfigProvider took its default
+// Tailwind shadows; the check reads a DesignConfigProvider's root for that.
+const CSS_REFERENCES = (token, options) =>
+  (token.$type ?? token.type) !== "shadow" &&
+  outputReferencesTransformed(token, options);
+
+// Style Dictionary's own css/variables, line for line, in the sources' order.
+// Given outputReferences, the built-in format moves every reference after
+// the token it names — define-before-use, which Sass needs and custom
+// properties do not: they resolve on the element, whatever the file order.
+// That moved 70 declarations out of their groups; this keeps each in place,
+// so the stylesheet changes only where a value became a reference.
+StyleDictionary.registerFormat({
+  name: "css/variables-in-source-order",
+  format: async ({ dictionary, options, file }) => {
+    const header = await fileHeader({ file, formatting: {}, options });
+    const declaration = createPropertyFormatter({
+      outputReferences: options.outputReferences,
+      dictionary,
+      format: "css",
+      formatting: { indentation: "  " },
+      usesDtcg: options.usesDtcg,
+    });
+    const body = dictionary.allTokens.map(declaration).filter(Boolean);
+    return `${header}${options.selector} {\n${body.join("\n")}\n}\n`;
+  },
+});
+
 async function build() {
   try {
     // 1. Light Mode (CSS)
@@ -1194,8 +1249,8 @@ async function build() {
           files: [
             {
               destination: "variables-light.css",
-              format: "css/variables",
-              options: { selector: ":root" },
+              format: "css/variables-in-source-order",
+              options: { selector: ":root", outputReferences: CSS_REFERENCES },
             },
           ],
         },
@@ -1215,8 +1270,11 @@ async function build() {
           files: [
             {
               destination: "variables-dark.css",
-              format: "css/variables",
-              options: { selector: "[data-theme='dark']" },
+              format: "css/variables-in-source-order",
+              options: {
+                selector: "[data-theme='dark']",
+                outputReferences: CSS_REFERENCES,
+              },
             },
           ],
         },

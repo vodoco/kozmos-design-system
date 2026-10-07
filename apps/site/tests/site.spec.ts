@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { contrastRatio, formatRatio, parseColour } from "../src/lib/contrast";
 import { withoutCode } from "../src/site/inline-code";
+import { mergeThemes } from "../src/lib/tokens-core";
 
 type PlatformState = "implemented" | "linked" | "not-yet" | "not-expected";
 
@@ -1316,6 +1317,11 @@ test.describe("home", () => {
       await read("--primitives-colors-theme-variant-1-600"),
     );
     expect(await read("--primitives-colors-theme-600")).not.toBe(pageTheme);
+    // GAP-23: the filled button's fill is a reference to theme 500, so it
+    // follows the ramp with no override of its own.
+    expect(
+      await read("--components-primary-buttons-themed-button-background-idle"),
+    ).toBe(await read("--primitives-colors-theme-variant-1-500"));
     await section.getByRole("switch", { name: "Dark theme" }).click();
     await expect(app).toHaveAttribute("data-theme", "dark");
   });
@@ -2657,9 +2663,12 @@ test.describe("foundations", () => {
       createRequire(import.meta.url).resolve("@kozmos-ds/tokens/css/light.css"),
       "utf8",
     );
-    const roles = [...css.matchAll(/^\s*(--semantics-[\w-]+):\s*([^;]+);/gm)]
-      .filter(([, , value]) => parseColour(value) !== undefined)
-      .map(([, name]) => name)
+    // An alias is written as a reference (GAP-23): read it as the colour it
+    // names, so the emotion roles and the borders are counted too.
+    const roles = mergeThemes(css, css)
+      .filter(({ name }) => name.startsWith("--semantics-"))
+      .filter(({ light }) => parseColour(light) !== undefined)
+      .map(({ name }) => name)
       .filter((name) => !name.startsWith("--semantics-effect-glass-"));
     expect(roles.length).toBeGreaterThan(40);
     await page.goto("/foundations/colour");

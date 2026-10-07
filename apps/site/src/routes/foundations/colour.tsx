@@ -196,17 +196,21 @@ function ComponentLayer() {
     const group = `${kind.charAt(0).toUpperCase()}${kind.slice(1)} ${part}`;
     groups.set(group, [...(groups.get(group) ?? []), entry]);
   }
+  const references = entries.filter((entry) => entry.references).length;
   return (
     <Stack gap={3}>
       <Text color="muted">
-        {entries.length} variables with the theme’s values baked in: for each
-        kind of button, each of the six emotions’ idle, hover, pressed and focus
-        colours, and thirteen for the HTML headings. Today the Button’s themed
-        and danger variants and the category field read a few of them, and every
-        part with a prominent fill reads the themed button’s foreground, white
-        on the theme fill in both themes (decision 59); no component reads the
-        rest. A brand override re-points them as well as the ramp, so that what
-        does read them follows (GAP-23).
+        {entries.length} variables: for each kind of button, each of the six
+        emotions’ idle, hover, pressed and focus colours, and thirteen for the
+        HTML headings. {references} are references to a ramp in one theme or
+        both, the filled themed button’s among them, so they follow an override
+        of the ramp; the rest hold values copied from the ramps in the token
+        sources (GAP-23). Today the Button’s themed and danger variants and the
+        category field read a few of them, and every part with a prominent fill
+        reads the themed button’s foreground, white on the theme fill in both
+        themes (decision 59); no component reads the rest. A brand override
+        re-points the copied ones as well as the ramp, so that what does read
+        them follows.
       </Text>
       <Accordion type="multiple">
         {[...groups].map(([group, list]) => (

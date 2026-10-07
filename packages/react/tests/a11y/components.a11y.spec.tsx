@@ -166,7 +166,17 @@ function readCssVariables(relativePath: string) {
     variables[match[1]] = match[2].trim();
   }
 
-  return variables;
+  // An alias is written as a reference (GAP-23): a pair is held to the colour
+  // it resolves to in this theme.
+  const resolve = (value: string, depth = 0): string => {
+    const named = value.match(/^var\(--([\w-]+)\)$/);
+    return named && depth < 10 && named[1] in variables
+      ? resolve(variables[named[1]], depth + 1)
+      : value;
+  };
+  return Object.fromEntries(
+    Object.entries(variables).map(([name, value]) => [name, resolve(value)]),
+  );
 }
 
 function tokenColor(mode: ColorMode, tokenName: string) {

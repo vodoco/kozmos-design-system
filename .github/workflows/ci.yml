@@ -186,7 +186,7 @@ jobs:
       # word. The map sheet's handle was 4px tall from the day it shipped.
       # Reads the token values the build step above emits.
       - name: Verify Owned Lengths Convert Their Tokens
-        run: node --test scripts/lib/unitless-tokens.test.mjs && pnpm tokens:unitless:check
+        run: node --test scripts/lib/token-css.test.mjs scripts/lib/unitless-tokens.test.mjs && pnpm tokens:unitless:check
 
       # A Tailwind class the build cannot generate is dropped without a word, and
       # a toHaveClass assertion still passes. bg-background/90 left
@@ -336,6 +336,18 @@ jobs:
           pnpm test:theme-fill
           ADAPTIVE_BROWSER=webkit pnpm test:theme-fill
           ADAPTIVE_BROWSER=firefox pnpm test:theme-fill
+
+      # GAP-23: the token stylesheets write an alias as a reference. Every
+      # token computes the value it was written as before, in a light and a
+      # dark root, and one override of theme 500 through ThemeProvider's
+      # `tokens` re-brands every prominent fill; the filled Button's hover,
+      # focus and pressed follow the steps they name
+      # (scripts/check-token-references.mjs).
+      - name: Verify Token References
+        run: |
+          pnpm test:token-references
+          ADAPTIVE_BROWSER=webkit pnpm test:token-references
+          ADAPTIVE_BROWSER=firefox pnpm test:token-references
 
       # Keep the original WebKit form regression and independently test the
       # migrated slice with every native @scope rule removed.
