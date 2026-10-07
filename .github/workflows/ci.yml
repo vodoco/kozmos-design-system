@@ -323,6 +323,7 @@ jobs:
           for browser in chromium firefox webkit; do
             ADAPTIVE_BROWSER="$browser" pnpm test:browser-compatibility || result=1
             ADAPTIVE_BROWSER="$browser" pnpm test:owned-css || result=1
+            ADAPTIVE_BROWSER="$browser" pnpm test:direction-css || result=1
             ADAPTIVE_BROWSER="$browser" pnpm test:temporal-css || result=1
           done
           exit "$result"
