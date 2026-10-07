@@ -67,18 +67,27 @@ final class KozmosThemeFillTests: XCTestCase {
         _ name: String, _ view: V, markInset: CGFloat = 0.2,
         file: StaticString = #filePath, line: UInt = #line
     ) throws {
+        try assertFill(Self.themeFill, withMark: Self.white, name, view, markInset: markInset, file: file, line: line)
+    }
+
+    /// The part is filled with `fillColour`, and what it draws on that fill
+    /// is `markColour`, in light and dark.
+    @MainActor private func assertFill<V: View>(
+        _ fillColour: Pixel, withMark markColour: Pixel, _ name: String, _ view: V, markInset: CGFloat = 0.2,
+        file: StaticString = #filePath, line: UInt = #line
+    ) throws {
         for scheme in [ColorScheme.light, .dark] {
             let pixels = try draw(view, in: scheme)
-            let isFill = DrawnPixels.matches(Self.themeFill, tolerance: 4)
+            let isFill = DrawnPixels.matches(fillColour, tolerance: 4)
             guard let fill = pixels.boundingBox(where: isFill) else {
-                XCTFail("\(name), \(scheme): no #135BEC fill drawn", file: file, line: line)
+                XCTFail("\(name), \(scheme): no \(Self.describe(fillColour)) fill drawn", file: file, line: line)
                 continue
             }
             let inside = fill.insetBy(dx: fill.width * markInset, dy: fill.height * markInset)
-            let marks = pixels.count(in: inside, where: DrawnPixels.matches(Self.white, tolerance: 4))
+            let marks = pixels.count(in: inside, where: DrawnPixels.matches(markColour, tolerance: 4))
             XCTAssertGreaterThan(
                 marks, 8,
-                "\(name), \(scheme): the mark on the #135BEC fill is not white; its lightest pixel is \(Self.describe(Self.lightest(pixels, in: inside)))",
+                "\(name), \(scheme): the mark on the \(Self.describe(fillColour)) fill is not \(Self.describe(markColour)); its lightest pixel is \(Self.describe(Self.lightest(pixels, in: inside))), its darkest \(Self.describe(pixels.darkest(in: inside)))",
                 file: file, line: line
             )
         }
@@ -105,6 +114,29 @@ final class KozmosThemeFillTests: XCTestCase {
             KozmosLocationPin(variant: .primary, number: 7, selected: true),
             markInset: 0.25
         )
+    }
+
+    /// The accent pin's fill is theme variant 1's 500, #4134F1 in both
+    /// themes, and its number the theme foreground, white, 7.03:1 on it, as
+    /// Compose draws it. Foreground/1000 was black on it in the dark, 2.99:1.
+    @MainActor func testAFilledAccentPinsNumberIsWhiteInLightAndDark() throws {
+        try assertFill((0x41, 0x34, 0xF1, 255), withMark: Self.white, "filled accent pin",
+                       KozmosLocationPin(variant: .accent, number: 7, selected: true), markInset: 0.25)
+    }
+
+    /// A featured pin is the alert amber, #FAB735 in both themes, whatever
+    /// its variant or tint, and its number the alert's on-fill, black, 11.89:1
+    /// on it, as Compose draws it. Foreground/1000 was white on it in light,
+    /// 1.77:1, and a tint's ink was drawn on the amber.
+    @MainActor func testAFeaturedPinsNumberIsTheAlertsOnFillInLightAndDark() throws {
+        let amber: Pixel = (0xFA, 0xB7, 0x35, 255)
+        let black: Pixel = (0, 0, 0, 255)
+        try assertFill(amber, withMark: black, "featured pin",
+                       KozmosLocationPin(variant: .primary, number: 7, featured: true), markInset: 0.25)
+        let navy = KozmosCategoryTint(accent: KozmosColors.semanticsCategoryAccentNavy,
+                                      fill: KozmosInkedFill(fill: KozmosColors.semanticsCategoryFillNavy, ink: KozmosColors.semanticsCategoryOnfillNavy))
+        try assertFill(amber, withMark: black, "featured pin with a navy tint",
+                       KozmosLocationPin(variant: .primary, number: 7, featured: true, tint: navy), markInset: 0.25)
     }
 
     /// The manoeuvre card's theme appearance is the brand card, a prominent
