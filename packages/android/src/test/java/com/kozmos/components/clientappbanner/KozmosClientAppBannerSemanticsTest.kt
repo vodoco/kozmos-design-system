@@ -6,8 +6,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -24,11 +26,12 @@ import org.junit.Test
 
 /**
  * What TalkBack is told about Express's Client App Banner (GAP-127). These
- * mirror ClientAppBanner.test.tsx and the SwiftUI tests: a pane named by the
- * app that reads the promotion, the name and the description, then the
- * action, then dismiss; an icon that says nothing over the name; and, where
- * the words and the action do not fit side by side, the action under the
- * words. One read of the tree per test.
+ * mirror ClientAppBanner.test.tsx and the SwiftUI tests: one group that reads
+ * the promotion, the name and the description, then the action, then
+ * dismiss, and announces nothing as it appears; an icon that says nothing
+ * over the name; and, where the words and the action do not fit side by
+ * side, the action under the icon and the words. One read of the tree per
+ * test.
  */
 class KozmosClientAppBannerSemanticsTest {
     @get:Rule
@@ -59,9 +62,18 @@ class KozmosClientAppBannerSemanticsTest {
         }
     }
 
-    private fun read(direction: LayoutDirection = LayoutDirection.Ltr, content: @Composable () -> Unit): ReadSemantics =
+    private fun read(
+        direction: LayoutDirection = LayoutDirection.Ltr,
+        fontScale: Float = 1f,
+        content: @Composable () -> Unit
+    ): ReadSemantics =
         paparazzi.readSemantics {
-            MaterialTheme { CompositionLocalProvider(LocalLayoutDirection provides direction) { content() } }
+            MaterialTheme {
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides direction,
+                    LocalDensity provides Density(LocalDensity.current.density, fontScale)
+                ) { content() }
+            }
         }
 
     private val density get() = paparazzi.context.resources.displayMetrics.density
@@ -82,12 +94,29 @@ class KozmosClientAppBannerSemanticsTest {
 
     private fun ReadSemantics.saying(words: String): ReadNode = merged.single { it.says() == words }
 
+    /**
+     * One group TalkBack reads together, and no pane: a node that gains a
+     * pane title sends "pane appeared" with it, and TalkBack speaks it, so a
+     * banner titled by the app announced itself as it showed. React's region
+     * and SwiftUI's container announce nothing.
+     */
     @Test
-    fun itIsAPaneNamedByTheAppThatTalkBackReadsAsOneGroup() {
+    fun itIsOneGroupTalkBackReadsTogetherAndNoPaneThatAnnouncesItself() {
         val tree = read { Banner() }
-        val panes = tree.merged.filter { it.paneTitle != null }
-        assertEquals(listOf("Northfield Airport"), panes.map { it.paneTitle })
-        assertTrue("the banner's pane is not a traversal group", panes.single().traversalGroup)
+        assertEquals(
+            "a pane title is announced as the banner appears",
+            emptyList<String>(),
+            (tree.merged + tree.unmerged).mapNotNull { it.paneTitle }
+        )
+        val action = tree.saying("Open").bounds
+        val dismiss = tree.named("Dismiss").bounds
+        val name = tree.saying("Northfield Airport").bounds
+        assertTrue(
+            "no traversal group holds the banner's words, action and dismiss",
+            tree.unmerged.any { group ->
+                group.traversalGroup && listOf(action, dismiss, name).all { group.bounds.contains(it.center) }
+            }
+        )
     }
 
     @Test
@@ -142,15 +171,47 @@ class KozmosClientAppBannerSemanticsTest {
         assertTrue("the action is drawn ${action.height / density}dp tall", action.height / density >= 44f - 0.5f)
     }
 
+    /**
+     * At 320dp the action goes under the icon and the words and spans them
+     * both, from the 16 inside to dismiss's column, so the words keep the
+     * width beside the icon: 16 in, the 48 icon and the 12 beside it.
+     */
     @Test
-    fun atNarrowWidthsTheActionGoesUnderTheWordsAsWideAsThey() {
+    fun atNarrowWidthsTheActionGoesUnderTheIconAndTheWordsAndSpansThem() {
         val tree = read { Banner(width = 320.dp) }
         val name = tree.saying("Northfield Airport").bounds
         val description = tree.saying(words).bounds
         val action = tree.saying("Open").bounds
+        val dismiss = tree.named("Dismiss").bounds
+        val left = dismiss.right + 4 * density - 320 * density
         assertTrue("at 320dp the action is not under the words", action.top >= description.bottom)
-        assertEquals("at 320dp the action does not start with the words", name.left, action.left, 1f)
-        assertTrue("at 320dp the action is ${action.width / density}dp wide", action.width / density > 150f)
+        assertTrue("at 320dp the action is not under the icon", action.top >= dismiss.top - 4 * density + (16 + 48) * density)
+        assertEquals("at 320dp the words do not follow the icon", 76f, (name.left - left) / density, 1f)
+        assertEquals("at 320dp the action does not start under the icon", 16f, (action.left - left) / density, 1f)
+        // Dismiss's 48, the 4 beside it and the 12 before the words.
+        assertEquals("at 320dp the action does not end at dismiss's column", 64f, (dismiss.right + 4 * density - action.right) / density, 1f)
+    }
+
+    /**
+     * The words keep ten of the body text's 16sp, not 160dp: at twice the
+     * font size the action waits for about 280dp of words (Android scales
+     * 16sp to 28dp there), as the web's 10rem grows with the browser's text.
+     * At 480dp a fixed 160dp left the action beside words of about 234dp;
+     * counted in the text's size, it goes under them.
+     */
+    @Test
+    fun theWordsWidthTheActionWaitsForGrowsWithTheFontScale() {
+        for ((fontScale, stacked) in listOf(1f to false, 2f to true)) {
+            val tree = read(fontScale = fontScale) { Banner(width = 480.dp) }
+            val description = tree.saying(words).bounds
+            val action = tree.saying("Open").bounds
+            assertEquals(
+                "at 480dp and a font scale of $fontScale the action is ${if (action.top >= description.bottom) "under" else "beside"} " +
+                    "words ${description.width / density}dp wide",
+                stacked,
+                action.top >= description.bottom
+            )
+        }
     }
 
     @Test

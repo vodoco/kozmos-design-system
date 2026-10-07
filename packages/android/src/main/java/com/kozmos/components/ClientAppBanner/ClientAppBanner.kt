@@ -4,8 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +17,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,14 +28,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.isTraversalGroup
-import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import kotlin.math.roundToInt
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.components.iconbutton.KozmosIconButtonSize
@@ -43,8 +49,16 @@ import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosShadows
 import com.kozmos.tokens.KozmosThemeTokens
 
-/** What the words keep before the action shares their line: the web's 10rem. */
-internal val ClientAppBannerMinimumWordsWidth = 160.dp
+/**
+ * What the words keep beside the icon before the action shares their line:
+ * the web's 10rem, ten of the body text's 16sp. Counted in the body text's
+ * size, so it grows with the font scale as the words do, and as 10rem grows
+ * with the browser's text: larger text puts the action under the words
+ * sooner. Not 160.sp: Android scales large sizes less than small ones, and
+ * 160sp barely grows at twice the font size, where 16sp nearly doubles.
+ */
+internal val ClientAppBannerWordsEm = 16.sp
+internal const val ClientAppBannerMinimumWordsEms = 10
 
 /** Dismiss: Compose's 48 target, 4 from the top and end edges. */
 private val DismissSize = KozmosDimensions.primitivesLayoutSizing600
@@ -70,12 +84,15 @@ internal fun clientAppBannerInitial(appName: String): String {
  * elevation. 16 inside; the 48 icon 12 from the words.
  *
  * Where the words and the action do not fit side by side — the words keep
- * 160dp, the web's 10rem — the action goes under the words, as wide as they
- * are. Dismiss is Compose's 48 target at the top end, 4 from the edges.
+ * ten of the body text's 16sp beside the icon, the web's 10rem — the action goes under the icon and
+ * the words and spans them both, so the words keep the width beside the icon.
+ * The icon stays 48, and dismiss Compose's 48 target at the top end, 4 from
+ * the edges, at every font scale.
  *
- * TalkBack reads a pane named by the app, as one group: the promotion, the
- * name and the description, then the action, then dismiss. The icon says
- * nothing over the name. The banner moves no focus and never removes itself:
+ * TalkBack reads it as one group: the promotion, the name and the
+ * description, then the action, then dismiss. The icon says nothing over the
+ * name. It is not a pane: a pane's title is announced as it appears, and the
+ * banner announces nothing. It moves no focus and never removes itself:
  * [onDismiss] asks the product to; null, there is no dismiss button.
  *
  * @param appIconUrl The app's icon. Without one, or until it loads, the app's
@@ -100,10 +117,10 @@ fun KozmosClientAppBanner(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .semantics {
-                paneTitle = appName
-                isTraversalGroup = true
-            },
+            // One group TalkBack reads together, before what follows it. No
+            // paneTitle: a node that gains one sends "pane appeared" with it,
+            // and TalkBack would announce the banner as it shows.
+            .semantics { isTraversalGroup = true },
         shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer),
         color = KozmosSurfaceDefaults.tint(style),
         contentColor = KozmosThemeTokens.primitivesColorsForeground100,
@@ -113,7 +130,7 @@ fun KozmosClientAppBanner(
         // What the banner holds is drawn on its surface: its muted text reads it.
         CompositionLocalProvider(LocalKozmosSurfaceStyle provides style) {
             Box(Modifier.fillMaxWidth()) {
-                Row(
+                ClientAppBannerBody(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(
@@ -126,21 +143,15 @@ fun KozmosClientAppBanner(
                             end = if (onDismiss == null) KozmosDimensions.primitivesLayoutSpacing200
                             else DismissInset + DismissSize + KozmosDimensions.primitivesLayoutSpacing150
                         ),
-                    horizontalArrangement = Arrangement.spacedBy(KozmosDimensions.primitivesLayoutSpacing150),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    ClientAppBannerIcon(appIconUrl, clientAppBannerInitial(appName))
-                    ClientAppBannerBody(
-                        modifier = Modifier.weight(1f),
-                        words = { ClientAppBannerWords(promotionText, appName, description) },
-                        action = {
-                            // Read after the words, wherever it is placed.
-                            KozmosButton(onClick = onAction, modifier = Modifier.semantics { traversalIndex = 1f }) {
-                                Text(actionLabel)
-                            }
+                    icon = { ClientAppBannerIcon(appIconUrl, clientAppBannerInitial(appName)) },
+                    words = { ClientAppBannerWords(promotionText, appName, description) },
+                    action = {
+                        // Read after the words, wherever it is placed.
+                        KozmosButton(onClick = onAction, modifier = Modifier.semantics { traversalIndex = 1f }) {
+                            Text(actionLabel)
                         }
-                    )
-                }
+                    }
+                )
                 if (onDismiss != null) {
                     KozmosIconButton(
                         icon = Icons.Outlined.Close,
@@ -160,34 +171,52 @@ fun KozmosClientAppBanner(
     }
 }
 
-/** The app's icon, or its initial on the muted fill until there is one: 48, the Control corner, the subtle edge. */
+/** The app's icon once it has loaded; until then, or without one, its initial on the muted fill. */
 @Composable
 private fun ClientAppBannerIcon(url: String?, initial: String) {
-    val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
-    Box(
-        modifier = Modifier
-            .size(KozmosDimensions.primitivesLayoutSizing600)
-            .clip(shape)
-            .background(KozmosThemeTokens.primitivesColorsBackground100, shape)
-            .border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, shape)
-            // Decoration beside the app's name: nothing of it is read.
-            .clearAndSetSemantics {},
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            initial,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = KozmosThemeTokens.primitivesColorsForeground100
-        )
+    var loaded by remember(url) { mutableStateOf(false) }
+    ClientAppBannerIconFace(initial = initial, loaded = loaded) {
         if (!url.isNullOrEmpty()) {
             AsyncImage(
                 model = url,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                onState = { state -> loaded = state is AsyncImagePainter.State.Success },
                 modifier = Modifier.matchParentSize()
             )
         }
+    }
+}
+
+/**
+ * What the icon draws: 48, the Control corner, the subtle edge, and in it the
+ * image, cropped to the square. Until it has [loaded], the initial on the
+ * muted fill stands in for it; once it has, nothing is drawn under it, so a
+ * transparent icon shows the banner's surface, as on the web, where the
+ * fallback goes once the image loads. Nothing of it is read: it is
+ * decoration beside the app's name.
+ */
+@Composable
+internal fun ClientAppBannerIconFace(initial: String, loaded: Boolean, image: @Composable BoxScope.() -> Unit) {
+    val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
+    Box(
+        modifier = Modifier
+            .size(KozmosDimensions.primitivesLayoutSizing600)
+            .clip(shape)
+            .then(if (loaded) Modifier else Modifier.background(KozmosThemeTokens.primitivesColorsBackground100, shape))
+            .border(1.dp, KozmosThemeTokens.semanticsBorderSubtle, shape)
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center
+    ) {
+        if (!loaded) {
+            Text(
+                initial,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = KozmosThemeTokens.primitivesColorsForeground100
+            )
+        }
+        image()
     }
 }
 
@@ -221,38 +250,51 @@ private fun ClientAppBannerWords(promotionText: String?, appName: String, descri
 }
 
 /**
- * The words and the action: side by side while the words keep
- * [ClientAppBannerMinimumWordsWidth], the action at its own width; past that,
- * the action under the words, as wide as they are. Placed relative to the
- * layout direction, so right to left mirrors it.
+ * The icon, the words and the action: side by side while the words keep
+ * [ClientAppBannerMinimumWordsEms] of [ClientAppBannerWordsEm] beside the icon, the action at its own
+ * width, the icon and the words centred on the line as one and the action on
+ * its own; past that, the icon and the words on the first line and the action
+ * under them both, as wide as the line, as the web wraps it. Placed relative
+ * to the layout direction, so right to left mirrors it.
  */
 @Composable
 private fun ClientAppBannerBody(
     modifier: Modifier,
+    icon: @Composable () -> Unit,
     words: @Composable () -> Unit,
     action: @Composable () -> Unit
 ) {
-    Layout(contents = listOf(words, action), modifier = modifier) { (wordsMeasurables, actionMeasurables), constraints ->
+    Layout(contents = listOf(icon, words, action), modifier = modifier) { (iconMeasurables, wordsMeasurables, actionMeasurables), constraints ->
         val wordsMeasurable = wordsMeasurables.single()
         val actionMeasurable = actionMeasurables.single()
         val gap = KozmosDimensions.primitivesLayoutSpacing150.roundToPx()
+        val iconPlaceable = iconMeasurables.single().measure(Constraints())
+        // Where the words start: after the icon and the 12 beside it.
+        val lead = iconPlaceable.width + gap
         val actionWidth = actionMeasurable.maxIntrinsicWidth(Constraints.Infinity)
         val width = if (constraints.hasBoundedWidth) constraints.maxWidth
-        else wordsMeasurable.maxIntrinsicWidth(Constraints.Infinity) + gap + actionWidth
-        val stacked = width < ClientAppBannerMinimumWordsWidth.roundToPx() + gap + actionWidth
+        else lead + wordsMeasurable.maxIntrinsicWidth(Constraints.Infinity) + gap + actionWidth
+        val minimumWords = (ClientAppBannerWordsEm.toPx() * ClientAppBannerMinimumWordsEms).roundToInt()
+        val stacked = width < lead + minimumWords + gap + actionWidth
         if (stacked) {
-            val wordsPlaceable = wordsMeasurable.measure(Constraints.fixedWidth(width))
+            val wordsPlaceable = wordsMeasurable.measure(Constraints.fixedWidth((width - lead).coerceAtLeast(0)))
             val actionPlaceable = actionMeasurable.measure(Constraints.fixedWidth(width))
-            layout(width, wordsPlaceable.height + gap + actionPlaceable.height) {
-                wordsPlaceable.placeRelative(0, 0)
-                actionPlaceable.placeRelative(0, wordsPlaceable.height + gap)
+            val top = maxOf(iconPlaceable.height, wordsPlaceable.height)
+            layout(width, top + gap + actionPlaceable.height) {
+                iconPlaceable.placeRelative(0, 0)
+                wordsPlaceable.placeRelative(lead, 0)
+                actionPlaceable.placeRelative(0, top + gap)
             }
         } else {
             val actionPlaceable = actionMeasurable.measure(Constraints(maxWidth = actionWidth))
-            val wordsPlaceable = wordsMeasurable.measure(Constraints.fixedWidth((width - gap - actionPlaceable.width).coerceAtLeast(0)))
-            val height = maxOf(wordsPlaceable.height, actionPlaceable.height)
+            val wordsPlaceable = wordsMeasurable.measure(
+                Constraints.fixedWidth((width - lead - gap - actionPlaceable.width).coerceAtLeast(0))
+            )
+            val head = maxOf(iconPlaceable.height, wordsPlaceable.height)
+            val height = maxOf(head, actionPlaceable.height)
             layout(width, height) {
-                wordsPlaceable.placeRelative(0, (height - wordsPlaceable.height) / 2)
+                iconPlaceable.placeRelative(0, (height - head) / 2)
+                wordsPlaceable.placeRelative(lead, (height - head) / 2)
                 actionPlaceable.placeRelative(width - actionPlaceable.width, (height - actionPlaceable.height) / 2)
             }
         }

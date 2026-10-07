@@ -50,7 +50,7 @@ class ClientAppBannerDocSnippetsTest {
     @get:Rule
     val paparazzi = semanticsPaparazzi()
 
-    /** Compiling is most of the point; composing it shows a banner TalkBack reads as the app's pane. */
+    /** Compiling is most of the point; composing it shows the app's banner, which TalkBack reads, with no pane announcing it. */
     @Test
     fun theDocsSnippetComposes() {
         val settings = AppBannerSettings(
@@ -62,7 +62,8 @@ class ClientAppBannerDocSnippetsTest {
             storeUrl = "https://play.google.com/store/apps/details?id=com.example"
         )
         val tree = paparazzi.readSemantics { MaterialTheme { AppBanner(settings) } }
-        assertEquals(listOf("Northfield Airport"), tree.merged.mapNotNull { it.paneTitle })
+        assertEquals(1, tree.merged.count { it.texts == listOf("Northfield Airport") })
+        assertEquals(emptyList<String>(), tree.merged.mapNotNull { it.paneTitle })
         assertEquals("Dismiss", tree.named("Dismiss").description)
     }
 }
