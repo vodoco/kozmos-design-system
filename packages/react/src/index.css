@@ -12,6 +12,7 @@
 @import "./styles/owned-meta-strip.css";
 @import "./styles/owned-poi-detail.css";
 @import "./styles/owned-poi-gallery.css";
+@import "./styles/owned-client-app-banner.css";
 
 @tailwind base;
 @tailwind components;

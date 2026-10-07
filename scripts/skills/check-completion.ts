@@ -31,6 +31,7 @@ const PRODUCT_SDK_COMPONENT_NAMES = new Set([
   "RouteSetupPanel",
   "BrowseCategoriesPanel",
   "CategoryTile",
+  "ClientAppBanner",
   "DirectionStep",
   "FloorSelector",
   "LanguageSwitcher",

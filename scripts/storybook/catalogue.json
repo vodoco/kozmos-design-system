@@ -12,6 +12,7 @@
     "BrowseCategoriesPanel",
     "CategoryField",
     "CategoryTile",
+    "ClientAppBanner",
     "DirectionStep",
     "FloorSelector",
     "Itinerary",
@@ -279,6 +280,13 @@
       "title": "Core/Data display/Chip",
       "component": "Chip",
       "exports": ["Default", "Sizes", "Variants", "OneChoice"]
+    },
+    {
+      "file": "packages/react/src/components/ClientAppBanner/ClientAppBanner.stories.tsx",
+      "id": "product-sdk-clientappbanner",
+      "title": "SDK/Map controls/ClientAppBanner",
+      "component": "ClientAppBanner",
+      "exports": ["Default", "NoIcon", "InShellTopBar", "Narrow"]
     },
     {
       "file": "packages/react/src/components/ColorPicker/ColorPicker.stories.tsx",
