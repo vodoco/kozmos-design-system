@@ -121,6 +121,7 @@ export * from "./components/MapControlButton";
 export * from "./components/LanguageSwitcher";
 export * from "./components/MapAttribution";
 export * from "./components/MapStatusPill";
+export * from "./components/ClientAppBanner";
 export * from "./components/SaveLocationCard";
 export * from "./components/FeedbackCard";
 export * from "./components/NavigationAnnouncer/NavigationAnnouncer";

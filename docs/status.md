@@ -26,7 +26,7 @@ This report does **not** prove visual fidelity, accessibility conformance, behav
 | ---------------------- | ---------- | ----- | --------- | ------- | ----- | ------- | ------- | ----------- |
 | Core                   | 83         | 83/83 | 83/83     | 74/83   | 75/83 | 74/83   | 76/83   | 74/83       |
 | Code-Only / Utility    | 5          | 5/5   | 5/5       | —       | 5/5   | —       | 5/5     | —           |
-| Product / SDK          | 29         | 29/29 | 29/29     | 22/29   | 28/29 | 22/29   | 28/29   | 22/29       |
+| Product / SDK          | 30         | 30/30 | 30/30     | 22/30   | 29/30 | 22/30   | 29/30   | 22/30       |
 | Platform / Form-Factor | 2          | 2/2   | 2/2       | 2/2     | 2/2   | 2/2     | 2/2     | 2/2         |
 
 ## Core
@@ -141,6 +141,7 @@ Map, wayfinding, CMS, dashboard, or product-specific compositions that should co
 | ArrivalPanel          | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | BrowseCategoriesPanel | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | CategoryTile          | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
+| ClientAppBanner       | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ✅         | ❌                      | ❌                        | ✅             | ❌                          | ❌                            |
 | DirectionStep         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | FloorSelector         | ✅         | ✅          | ✅         | ✅                      | ✅                        | ✅           | ✅           | ✅         | ✅                      | ✅                        | ✅             | ✅                          | ✅                            |
 | LanguageSwitcher      | ✅         | ✅          | ✅         | ❌                      | ❌                        | ✅           | ✅           | ❌         | ❌                      | ❌                        | ❌             | ❌                          | ❌                            |
@@ -186,18 +187,18 @@ Dynamic Island, watch, kiosk, spatial, landscape, and other device-specific surf
 
 ## Summary
 
-- Web components: 119/119
-- Web stories: 119/119
-- Web tests: 119/119
-- Web Code Connect files: 98/114
-- Web Code Connect scaffolds: 0/114
-- Web Code Connect linked: 98/114
-- iOS components: 110/119
-- iOS Code Connect files: 98/114
-- iOS Code Connect scaffolds: 0/114
-- iOS Code Connect linked: 98/114
-- Android components: 111/119
-- Android Code Connect files: 98/114
-- Android Code Connect scaffolds: 0/114
-- Android Code Connect linked: 98/114
-- Code Connect not applicable: 5/119
+- Web components: 120/120
+- Web stories: 120/120
+- Web tests: 120/120
+- Web Code Connect files: 98/115
+- Web Code Connect scaffolds: 0/115
+- Web Code Connect linked: 98/115
+- iOS components: 111/120
+- iOS Code Connect files: 98/115
+- iOS Code Connect scaffolds: 0/115
+- iOS Code Connect linked: 98/115
+- Android components: 112/120
+- Android Code Connect files: 98/115
+- Android Code Connect scaffolds: 0/115
+- Android Code Connect linked: 98/115
+- Code Connect not applicable: 5/120
