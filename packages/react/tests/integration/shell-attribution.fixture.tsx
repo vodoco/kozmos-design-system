@@ -17,12 +17,17 @@ interface Config {
   long?: boolean;
   detent?: PanelDetent;
   tallBrand?: boolean;
-  corners?: boolean;
+  /** "small": both corners one 44-tall, 120-wide control, as a phone's language and floor buttons. */
+  corners?: boolean | "small";
   panelPlacement?: "start" | "end";
   /** A top bar this tall, as an opened direction card is. */
   barHeight?: number;
   /** The Pointr logo alone, with no third-party credits. */
   brandOnly?: boolean;
+  /** A brand of words, which wrap onto a second line in a narrow shell. */
+  wordBrand?: boolean;
+  /** The legacy top controls; on unless false. */
+  info?: boolean;
 }
 const root = createRoot(document.getElementById("root")!);
 declare global {
@@ -46,6 +51,8 @@ window.renderAttributionShell = ({
   panelPlacement = "end",
   barHeight,
   brandOnly = false,
+  wordBrand = false,
+  info = true,
 }) =>
   root.render(
     <ThemeProvider dir={dir}>
@@ -63,13 +70,29 @@ window.renderAttributionShell = ({
             <Button>Search</Button>
           )
         }
-        controls={<Button>Info</Button>}
+        controls={info ? <Button>Info</Button> : undefined}
         controlsBottomStart={
-          corners ? <Button data-testid="start">Language</Button> : undefined
+          corners ? (
+            <Button
+              data-testid="start"
+              style={
+                corners === "small" ? { height: 44, width: 120 } : undefined
+              }
+            >
+              Language
+            </Button>
+          ) : undefined
         }
         controlsBottomEnd={
           corners ? (
-            <Button data-testid="end" style={{ height: 140 }}>
+            <Button
+              data-testid="end"
+              style={
+                corners === "small"
+                  ? { height: 44, width: 120 }
+                  : { height: 140 }
+              }
+            >
               Floor and zoom
             </Button>
           ) : undefined
@@ -80,6 +103,10 @@ window.renderAttributionShell = ({
               brand={
                 tallBrand ? (
                   <div style={{ height: 180 }}>Custom brand</div>
+                ) : wordBrand ? (
+                  <div style={{ fontSize: 16, lineHeight: "20px" }}>
+                    Pointr indoor maps partner
+                  </div>
                 ) : undefined
               }
               credits={

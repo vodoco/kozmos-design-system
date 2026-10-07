@@ -38,7 +38,9 @@ internal fun BottomControlsLayout(
     end: (@Composable () -> Unit)?,
     availableHeight: Dp,
     modifier: Modifier = Modifier,
-    label: String? = null
+    label: String? = null,
+    /** The corners' own height, in pixels, whether or not they fit. */
+    onHeight: (Int) -> Unit = {}
 ) {
     var fits by remember { mutableStateOf(false) }
     val region = LocalMapPopupRegion.current
@@ -58,6 +60,7 @@ internal fun BottomControlsLayout(
             constraints.maxWidth, IntSize(start.width, start.height), IntSize(end.width, end.height),
             KozmosDimensions.primitivesLayoutSpacing200.roundToPx()
         )
+        onHeight(geometry.height)
         fits = geometry.height <= availableHeight.roundToPx() && constraints.maxWidth > 0
         layout(constraints.maxWidth, if (fits) geometry.height else 0) {
             // Unplaced children keep composition state but cannot receive

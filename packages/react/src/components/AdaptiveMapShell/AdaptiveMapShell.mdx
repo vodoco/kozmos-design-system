@@ -312,6 +312,11 @@ independent of a desktop search/POI panel. The larger measured corner is reserve
 on both sides so unequal controls cannot shift the credits. In RTL the logical corners
 mirror. If this centered slot has less than 128 units (room for the default brand), only attribution moves above the
 corners. Tall side panels leave a clear footer band instead of covering the credits.
+With too little room under an opened top bar, MapAttribution's brand gives way first, then the
+corners, and the credits never clip (decision 58): the brand shows only when the whole
+attribution fits, lifted above the corners when it sits there, and credits still too tall to
+sit above the corners send the corners away and return to the bottom row. The brand comes back
+once it fits again.
 MapAttribution's transparent appearance aligns the credit text's bottom, rather than an
 internally padded frame, with the corner frames at this inset.
 

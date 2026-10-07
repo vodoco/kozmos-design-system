@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MapAttribution } from "./MapAttribution";
+import { MapShellAttributionCompactContext } from "../AdaptiveMapShell/map-shell-attribution";
 
 const credits = [
   { id: "owner", label: "© Example indoor data" },
@@ -112,6 +114,65 @@ describe("MapAttribution", () => {
       <MapAttribution credits={[]} showBrand={false} />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+  // GAP-135 (decision 58): in a map shell with too little room the brand gives way. It stays laid
+  // out, unseen and out of reach, so the shell can measure it and bring it back once it fits.
+  describe("with its brand given way", () => {
+    const compact = (children: ReactNode) => (
+      <MapShellAttributionCompactContext.Provider value={true}>
+        {children}
+      </MapShellAttributionCompactContext.Provider>
+    );
+    it("keeps the brand measurable but unseen, out of flow and out of reach", () => {
+      const { container } = render(
+        compact(<MapAttribution credits={credits} />),
+      );
+      expect(
+        screen.queryByRole("img", { name: "Pointr" }),
+      ).not.toBeInTheDocument();
+      const brand = container.querySelector<HTMLElement>(
+        "[data-kozmos-attribution-brand]",
+      )!;
+      expect(brand).toContainElement(container.querySelector("img"));
+      expect(brand).toHaveAttribute("aria-hidden", "true");
+      expect(brand).toHaveAttribute("inert");
+      expect(brand.style.position).toBe("absolute");
+      expect(brand.style.visibility).toBe("hidden");
+      // The credits keep their place and their link.
+      expect(screen.getByRole("region")).not.toBe(brand);
+      expect(
+        screen.getByRole("link", { name: "Outdoor contributors" }),
+      ).toBeInTheDocument();
+    });
+    it("gives way whole when it has no credits, leaving no empty region", () => {
+      const { container } = render(compact(<MapAttribution credits={[]} />));
+      expect(screen.queryByRole("region")).not.toBeInTheDocument();
+      const section = container.querySelector("section")!;
+      expect(section).toHaveAttribute("data-kozmos-attribution-brand");
+      expect(section).toHaveAttribute("inert");
+      expect(section.style.position).toBe("absolute");
+    });
+    it("draws the brand in flow again once it fits", () => {
+      const { container, rerender } = render(
+        compact(<MapAttribution credits={credits} />),
+      );
+      rerender(<MapAttribution credits={credits} />);
+      const brand = container.querySelector<HTMLElement>(
+        "[data-kozmos-attribution-brand]",
+      )!;
+      expect(screen.getByRole("img", { name: "Pointr" })).toBeInTheDocument();
+      expect(brand).not.toHaveAttribute("inert");
+      expect(brand).not.toHaveAttribute("aria-hidden");
+      expect(brand.style.position).toBe("");
+    });
+    it("marks no brand it does not draw", () => {
+      const { container } = render(
+        compact(<MapAttribution credits={credits} showBrand={false} />),
+      );
+      expect(
+        container.querySelector("[data-kozmos-attribution-brand]"),
+      ).toBeNull();
+    });
   });
   describe("the credit line", () => {
     afterEach(() => {
