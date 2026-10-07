@@ -195,25 +195,20 @@ final class KozmosThemeFillPressTests: XCTestCase {
 
     /// Each part, drawn as its style draws it under a press, is the pressed
     /// token where it was the idle fill, in light and dark; at rest it is the
-    /// idle fill and no pixel is the pressed token. SplitButton's menu half is
-    /// a `Menu`, whose press SwiftUI keeps, so only its action is read there.
+    /// idle fill and no pixel is the pressed token. SplitButton's menu half
+    /// is a `Menu`, which keeps SwiftUI's press and which `ImageRenderer`
+    /// draws as a placeholder, so the action half is what is read there.
     @MainActor func testEveryThemeFilledPartDrawsThePressedTokenUnderAPress() throws {
         for scheme in [ColorScheme.light, .dark] {
             for part in Self.parts {
                 let atRest = try draw(part.view, pressed: false, in: scheme)
                 let underAPress = try draw(part.view, pressed: true, in: scheme)
-                let restIdle = Self.count(atRest, Self.idle)
-                XCTAssertGreaterThan(restIdle, 200, "\(part.name), \(scheme): no #135BEC fill at rest")
+                XCTAssertGreaterThan(Self.count(atRest, Self.idle), 200, "\(part.name), \(scheme): no #135BEC fill at rest")
                 XCTAssertEqual(Self.count(atRest, Self.pressed), 0, "\(part.name), \(scheme): #0D44C2 drawn at rest")
                 XCTAssertGreaterThan(Self.count(underAPress, Self.pressed), 200,
                                      "\(part.name), \(scheme): a press does not draw the pressed token #0D44C2")
-                if part.name == "SplitButton" {
-                    XCTAssertLessThan(Self.count(underAPress, Self.idle), restIdle / 2,
-                                      "\(part.name), \(scheme): the action still draws #135BEC under a press")
-                } else {
-                    XCTAssertEqual(Self.count(underAPress, Self.idle), 0,
-                                   "\(part.name), \(scheme): #135BEC still drawn under a press")
-                }
+                XCTAssertEqual(Self.count(underAPress, Self.idle), 0,
+                               "\(part.name), \(scheme): #135BEC still drawn under a press")
             }
         }
     }
@@ -236,6 +231,46 @@ final class KozmosThemeFillPressTests: XCTestCase {
                 XCTAssertEqual(atRest.size, underAPress.size, "\(name), \(scheme)")
                 XCTAssertLessThanOrEqual(try XCTUnwrap(atRest.largestDifference(from: underAPress)), 2,
                                          "\(name), \(scheme): the drawing changed under the theme's press")
+            }
+        }
+    }
+
+    /// Loading, a part is disabled, and drawn at half as a disabled one is:
+    /// React's disabled:opacity-50, and Compose since decision 59. Button,
+    /// IconButton and MapControlButton drew a loading part at full strength.
+    /// Each is drawn on mid grey, so half of anything shows: a loading part
+    /// draws as the same part disabled and loading, and its fill (a Button's
+    /// leading padding, an IconButton's top, a map control's leading edge)
+    /// is not the fill at rest.
+    @MainActor func testALoadingPartIsDrawnAtHalfAsADisabledOneIs() throws {
+        let leading: (CGRect) -> CGPoint = { CGPoint(x: $0.minX + 6, y: $0.midY) }
+        let top: (CGRect) -> CGPoint = { CGPoint(x: $0.midX, y: $0.minY + 6) }
+        let parts: [(name: String, rest: AnyView, loading: AnyView, disabledLoading: AnyView, probe: (CGRect) -> CGPoint)] = [
+            ("Button", AnyView(KozmosButton("Go", action: {})), AnyView(KozmosButton("Go", isLoading: true, action: {})),
+             AnyView(KozmosButton("Go", isDisabled: true, isLoading: true, action: {})), leading),
+            ("IconButton", AnyView(KozmosIconButton(iconName: "plus", variant: .default, action: {})),
+             AnyView(KozmosIconButton(iconName: "plus", variant: .default, isLoading: true, action: {})),
+             AnyView(KozmosIconButton(iconName: "plus", variant: .default, isDisabled: true, isLoading: true, action: {})), top),
+            ("map control", AnyView(KozmosMapControlButton(label: "Follow", systemImage: "location", action: {})),
+             AnyView(KozmosMapControlButton(label: "Follow", systemImage: "location", isLoading: true, action: {})),
+             AnyView(KozmosMapControlButton(label: "Follow", systemImage: "location", isDisabled: true, isLoading: true, action: {})), leading),
+        ]
+        func onGrey(_ view: AnyView, _ scheme: ColorScheme) throws -> DrawnPixels {
+            try DrawnPixels.draw(view.padding(12).background(Color(red: 0.5, green: 0.5, blue: 0.5)).environment(\.colorScheme, scheme), scale: 3)
+        }
+        /// The part itself, inside the 12pt padding round it.
+        func part(_ drawn: DrawnPixels) -> CGRect { CGRect(origin: .zero, size: drawn.size).insetBy(dx: 12, dy: 12) }
+        for scheme in [ColorScheme.light, .dark] {
+            for item in parts {
+                let rest = try onGrey(item.rest, scheme)
+                let loading = try onGrey(item.loading, scheme)
+                let disabledLoading = try onGrey(item.disabledLoading, scheme)
+                XCTAssertLessThanOrEqual(try XCTUnwrap(loading.largestDifference(from: disabledLoading)), 2,
+                                         "\(item.name), \(scheme): loading is not drawn as the part disabled and loading is")
+                let atRest = rest.pixel(at: item.probe(part(rest)))
+                let whileLoading = loading.pixel(at: item.probe(part(loading)))
+                let moved = abs(Int(atRest.r) - Int(whileLoading.r)) + abs(Int(atRest.g) - Int(whileLoading.g)) + abs(Int(atRest.b) - Int(whileLoading.b))
+                XCTAssertGreaterThan(moved, 6, "\(item.name), \(scheme): loading draws its fill \(Self.hex(whileLoading)) as at rest, \(Self.hex(atRest))")
             }
         }
     }

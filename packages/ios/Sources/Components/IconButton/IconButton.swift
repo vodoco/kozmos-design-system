@@ -70,7 +70,8 @@ public struct KozmosIconButton: View {
             }
         }
         .disabled(isDisabled || isLoading)
-        .opacity(isDisabled ? 0.5 : 1)
+        // Loading, it is disabled, and drawn at half as a disabled part is.
+        .opacity(isDisabled || isLoading ? 0.5 : 1)
         .kozmosFillButtonStyle(fillEmotion, hoverShape: Circle())
     }
 

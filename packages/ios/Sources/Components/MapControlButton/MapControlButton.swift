@@ -336,7 +336,8 @@ public struct KozmosMapControlButton<Icon: View>: View {
         // the plain style itself.
         .modifier(KozmosMapControlButtonStyle(filled: emphasis == .filled, drawsFill: appearance.surface == .filled, shape: shape))
         .disabled(isDisabled || isLoading)
-        .opacity(isDisabled ? 0.5 : 1)
+        // Loading, it is disabled, and drawn at half as a disabled part is.
+        .opacity(isDisabled || isLoading ? 0.5 : 1)
         // Reduce Motion stops the control growing, not the reveal: the new
         // state is still said, and still said for as long.
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: shown == .labelled)
