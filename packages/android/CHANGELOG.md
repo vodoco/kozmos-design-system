@@ -2,6 +2,18 @@
 
 Kozmos is consumed from this repository's `packages/android` source as an Android library module in the `com.kozmos` namespace. It is not a published Maven/registry release. Pin a reviewed repository commit when adopting these changes; the version headings below follow the web release plan, not a separate native package publication.
 
+## Unreleased
+
+Recorded as changes land on `main`, ahead of the next release entry. This is not a complete list of the native changes since 0.6.0.
+
+### Fixed
+
+- **Result rows are heard once:** TalkBack read a `KozmosPOIResultCard` row's whole description and then every text drawn inside it again (name, category, level, availability, walk, the language disclosure and the unavailable reason), and with a `selectionLabel` it read the drawn texts after the product's label. The drawn texts are now left out of semantics, so the row says its description, or the product's label, once. The row keeps its click, enabled state and selection, and a logo keeps its alt text.
+
+### Migration notes
+
+- A product UI test that finds a result row by one of its drawn words in the merged tree (`onNodeWithText("Pharmacy")`) no longer matches: find the row by its description (`onNodeWithContentDescription`, `substring = true` for one phrase), or pass `useUnmergedTree = true` to find the drawn text itself.
+
 ## 0.6.0 — repository snapshot
 
 Native source changes since the repository snapshot tagged `@kozmos-ds/react@0.5.0`. This entry does not announce a 0.6.0 tag or completed release validation. The web package has its own [changelog](../react/CHANGELOG.md).
