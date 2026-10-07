@@ -9,7 +9,8 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
     private let etaText: String
     private let distanceText: String?
     private let state: KozmosRouteSummaryState
-    private let onEndRoute: () -> Void
+    /// Nil in the route preview: the navigation layout draws no End.
+    private let onEndRoute: (() -> Void)?
     private let onStartNavigation: (() -> Void)?
     private let transportModeIcon: TransportModeIcon
     private let showsTransportModeIcon: Bool
@@ -21,6 +22,9 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
     private let arrivalText: String?
     private let endLabel: String
     private let progress: AnyView?
+    /// The journey's actions, laid out in equal columns; nil without any.
+    private var actions: AnyView? = nil
+    private var locationText: String? = nil
     private let surface: KozmosSurfaceStyle
     /// Nil follows where the summary is: hosted in the map shell's panel,
     /// standalone elsewhere (decision 43).
@@ -55,11 +59,22 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
     /// The navigation layout: the destination's name with End beside it in
     /// the danger outline; `durationText`, `distanceText` and `arrivalText`
     /// on one row; `progress` — a `KozmosRouteProgressRail` in the products —
-    /// below. In the map shell's panel it is hosted, with no surface, radius,
-    /// shadow or padding of its own, and standalone elsewhere, unless
-    /// `presentation` says which.
-    public init(
+    /// below, and `actions` after it. In the map shell's panel it is hosted,
+    /// with no surface, radius, shadow or padding of its own, and standalone
+    /// elsewhere, unless `presentation` says which.
+    ///
+    /// `actions` are the journey's: Previous and Next in static wayfinding,
+    /// Go and Details in the route preview. They are laid out in equal
+    /// columns in reading order, as tall as the tallest, and a KozmosButton
+    /// there fills its column, its label wrapping. The host owns what they
+    /// do, when they are disabled, and announcing the new step.
+    ///
+    /// Without `onEndRoute` there is no End: the route preview, where
+    /// `locationText` is the place's line under the destination, muted. The
+    /// preview has no progress: pass `progress: { EmptyView() }`.
+    public init<Actions: View>(
         destination: String,
+        locationText: String? = nil,
         durationText: String? = nil,
         distanceText: String? = nil,
         arrivalText: String? = nil,
@@ -67,8 +82,9 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
         surface: KozmosSurfaceStyle = .solid,
         presentation: KozmosRoutePresentation? = nil,
         destinationImage: String? = nil,
-        onEndRoute: @escaping () -> Void,
-        @ViewBuilder progress: () -> some View
+        onEndRoute: (() -> Void)? = nil,
+        @ViewBuilder progress: () -> some View,
+        @ViewBuilder actions: () -> Actions = { EmptyView() }
     ) where TransportModeIcon == EmptyView {
         self.etaText = durationText ?? ""
         self.distanceText = distanceText
@@ -82,6 +98,13 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
         self.arrivalText = arrivalText
         self.endLabel = endLabel
         self.progress = AnyView(progress())
+        // Laid out here, where the actions' own type is known: an AnyView
+        // between them and the layout would hide how many there are.
+        self.actions = Actions.self == EmptyView.self ? nil : AnyView(
+            KozmosEqualColumnsLayout(spacing: KozmosDimensions.primitivesLayoutSpacing100) { actions() }
+                .environment(\.kozmosButtonFillsCell, true)
+        )
+        self.locationText = locationText
         self.surface = surface
         self.presentation = presentation
         self.destinationImage = destinationImage
@@ -99,13 +122,22 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
         VStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             HStack(alignment: .center, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                 if let destinationImage, !destinationImage.isEmpty { KozmosDestinationImage(source: destinationImage) }
-                Text(destination)
-                    .font(KozmosTypography.title3.weight(.semibold))
-                    .foregroundColor(KozmosColors.primitivesColorsForeground100)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityAddTraits(.isHeader)
-                KozmosButton(endLabel, variant: .outline, emotion: .danger, size: .sm, action: onEndRoute)
+                if let locationText, !locationText.isEmpty {
+                    VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
+                        title(destination)
+                        // Muted, and on glass the foreground colour (decision 48).
+                        Text(locationText)
+                            .font(KozmosTypography.subheadline)
+                            .kozmosMutedText()
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                } else {
+                    title(destination)
+                }
+                if let onEndRoute {
+                    KozmosButton(endLabel, variant: .outline, emotion: .danger, size: .sm, action: onEndRoute)
+                }
             }
             if [durationText, distanceText, arrivalText].contains(where: { !($0 ?? "").isEmpty }) {
                 ViewThatFits(in: .horizontal) {
@@ -128,9 +160,21 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
             if let progress {
                 progress
             }
+            if let actions {
+                actions
+            }
         }
         .modifier(KozmosRoutePanelSurface(presentation: presentation ?? (panelSurface == nil ? .standalone : .hosted),
                                           surface: surface))
+    }
+
+    private func title(_ destination: String) -> some View {
+        Text(destination)
+            .font(KozmosTypography.title3.weight(.semibold))
+            .foregroundColor(KozmosColors.primitivesColorsForeground100)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
     }
 
     @ViewBuilder private var navigationMetrics: some View {
@@ -170,7 +214,7 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
 
                 Spacer()
 
-                if state == .active {
+                if state == .active, let onEndRoute {
                     KozmosIconButton(iconName: "xmark", variant: .destructive, action: onEndRoute)
                     .accessibilityLabel("End route")
                 }
