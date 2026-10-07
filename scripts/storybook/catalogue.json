@@ -284,7 +284,7 @@
     {
       "file": "packages/react/src/components/ClientAppBanner/ClientAppBanner.stories.tsx",
       "id": "product-sdk-clientappbanner",
-      "title": "SDK/Map controls/ClientAppBanner",
+      "title": "Core/Feedback/ClientAppBanner",
       "component": "ClientAppBanner",
       "exports": ["Default", "NoIcon", "InShellTopBar", "Narrow"]
     },

@@ -31,7 +31,7 @@ const atWidth: Decorator = (Story, context) =>
 
 const meta = {
   id: "product-sdk-clientappbanner",
-  title: "SDK/Map controls/ClientAppBanner",
+  title: "Core/Feedback/ClientAppBanner",
   component: ClientAppBanner,
   parameters: { layout: "centered" },
   decorators: [atWidth],
@@ -82,8 +82,8 @@ export const InShellTopBar: Story = {
 };
 
 /**
- * At 320, the words keep their width and the action goes under them, the
- * width of the words.
+ * At 320, the action goes under the icon and the words and spans them both,
+ * so the words keep the width beside the icon.
  */
 export const Narrow: Story = {
   parameters: { width: 320 },
