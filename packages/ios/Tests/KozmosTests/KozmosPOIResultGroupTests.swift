@@ -37,7 +37,8 @@ final class KozmosPOIResultGroupTests: XCTestCase {
             attachment.name = "sdk-group-\(direction)"
             attachment.lifetime = .keepAlways
             add(attachment)
-            let swatch = try await RenderedPixels.render(KozmosColors.primitivesColorsTheme600.environment(\.colorScheme, .light), size: CGSize(width: 10, height: 10)).color(at: CGPoint(x: 5, y: 5))
+            // The selected number tab is the theme fill (decisions 55 and 59).
+            let swatch = try await RenderedPixels.render(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle.environment(\.colorScheme, .light), size: CGSize(width: 10, height: 10)).color(at: CGPoint(x: 5, y: 5))
             func isFill(_ r: UInt8, _ g: UInt8, _ b: UInt8) -> Bool {
                 abs(Int(r) - Int(swatch.0)) + abs(Int(g) - Int(swatch.1)) + abs(Int(b) - Int(swatch.2)) < 6
             }

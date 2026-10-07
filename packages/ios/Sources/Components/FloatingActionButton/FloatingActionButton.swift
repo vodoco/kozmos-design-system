@@ -13,9 +13,10 @@ public struct KozmosFloatingActionButton: View {
         Button(action: action) {
             Image(systemName: iconName)
                 .font(KozmosTypography.title2)
-                .foregroundColor(KozmosColors.primitivesColorsBackground0)
+                .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
                 .frame(width: KozmosDimensions.primitivesLayoutSizing700, height: KozmosDimensions.primitivesLayoutSizing700)
-                .background(KozmosColors.primitivesColorsTheme500)
+                // Decision 59: a prominent fill is the theme fill, and its mark the theme foreground.
+                .background(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
                 .clipShape(Circle())
                 .shadow(radius: 4, x: 0, y: 4)
         }

@@ -30,7 +30,9 @@ final class KozmosRoutePreviewPanelTests: XCTestCase {
     /// other end.
     @MainActor private func backArrowPointsLeft(_ direction: LayoutDirection) throws -> Bool {
         let drawn = try DrawnPixels.draw(panel(direction))
-        let ink = DrawnPixels.matches(try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme500, in: .light))
+        // The outline button's ink: the secondary tier's themed words, as
+        // React's (decision 59; it was theme 500 on iOS alone).
+        let ink = DrawnPixels.matches(try DrawnPixels.resolved(KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle, in: .light))
         // The footer's start: the back button, 44 wide, 16 in from the edge,
         // and short of the continue button 12 beyond it.
         let start = CGRect(x: direction == .leftToRight ? 0 : size.width - 66, y: size.height - 90, width: 66, height: 90)

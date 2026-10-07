@@ -350,13 +350,15 @@ public struct KozmosNavigationItem: View {
         if placement == .rail {
             return isSelected ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground400
         }
+        // Theme-coloured text and rings on a surface are theme 600, as
+        // React's (decision 59); 500 read 3.13:1 on a dark sheet.
         if isSelected {
-            return KozmosColors.primitivesColorsTheme500
+            return KozmosColors.primitivesColorsTheme600
         }
         return KozmosColors.primitivesColorsForeground100
     }
 
     private var focusRingColor: Color {
-        isFocusVisible ? KozmosColors.primitivesColorsTheme500 : Color.clear
+        isFocusVisible ? KozmosColors.primitivesColorsTheme600 : Color.clear
     }
 }

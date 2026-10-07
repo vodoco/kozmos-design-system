@@ -52,18 +52,21 @@ public struct KozmosCheckbox: View {
         .disabled(disabled)
     }
 
+    // Decision 59: checked, the box is a prominent fill — the theme fill,
+    // edge and all, with the theme foreground for the check, white in both
+    // themes. Background/0 turned the check black on it in the dark (3.74:1).
     private var borderColor: Color {
         if error { return KozmosColors.primitivesColorsEmotionalDanger600 }
-        if checked { return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsTheme500 }
+        if checked { return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle }
         return KozmosColors.primitivesColorsForeground500
     }
 
     private var fillColor: Color {
-        disabled ? KozmosColors.primitivesColorsBackground200 : KozmosColors.primitivesColorsTheme500
+        disabled ? KozmosColors.primitivesColorsBackground200 : KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
     }
 
     private var markColor: Color {
-        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsBackground0
+        disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
     }
 
     private var labelColor: Color {

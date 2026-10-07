@@ -9781,8 +9781,8 @@ assertContains(
     assertContains(
       files.iosCategoryTile,
       source.iosCategoryTile,
-      ".foregroundColor(tint?.accent ?? KozmosColors.primitivesColorsTheme500)",
-      "iOS CategoryTile icon in the tint",
+      ".foregroundColor(tint?.accent ?? KozmosColors.primitivesColorsTheme600)",
+      "iOS CategoryTile icon in the tint, theme 600 by default (decision 59)",
     );
     assertContains(
       files.reactCategoryTile,

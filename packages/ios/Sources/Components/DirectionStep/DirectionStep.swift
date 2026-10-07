@@ -70,12 +70,14 @@ public struct KozmosDirectionStep: View {
     
     public var body: some View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing150) {
+            // The glyph is a theme-coloured icon on a surface, theme 600, and
+            // its quiet tint takes the same base, as React's (decision 59).
             Circle()
-                .fill(KozmosColors.primitivesColorsTheme500.opacity(0.1))
+                .fill(KozmosColors.primitivesColorsTheme600.opacity(0.1))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: KozmosDimensions.primitivesLayoutSizing500)
                 .overlay(
                     KozmosDirectionGlyph(type: type, size: 24)
-                        .foregroundColor(KozmosColors.primitivesColorsTheme500)
+                        .foregroundColor(KozmosColors.primitivesColorsTheme600)
                 )
                 .accessibilityHidden(true)
             

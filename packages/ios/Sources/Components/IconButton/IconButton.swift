@@ -94,7 +94,8 @@ public struct KozmosIconButton: View {
         case .default: return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
         case .destructive: return KozmosColors.componentsPrimaryButtonsDangerButtonForegroundContentIdle
         case .secondary: return KozmosColors.primitivesColorsForeground100
-        case .outline, .ghost, .link: return KozmosColors.primitivesColorsTheme500
+        // Decision 59: the secondary tier's words, as React and Compose draw them.
+        case .outline, .ghost, .link: return KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle
         case .glass: return KozmosColors.primitivesColorsForeground100
         }
     }

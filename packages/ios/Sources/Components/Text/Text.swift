@@ -46,7 +46,8 @@ public enum KozmosTextTone: String, CaseIterable, Sendable {
         switch self {
         case .default: return KozmosColors.primitivesColorsForeground100
         case .muted: return KozmosColors.primitivesColorsForeground500
-        case .brand: return KozmosColors.primitivesColorsTheme500
+        // Theme-coloured text on a surface: theme 600 (decision 59).
+        case .brand: return KozmosColors.primitivesColorsTheme600
         case .success: return KozmosColors.primitivesColorsEmotionalSuccess600
         case .warning: return KozmosColors.primitivesColorsEmotionalAlert600
         case .danger: return KozmosColors.primitivesColorsEmotionalDanger600

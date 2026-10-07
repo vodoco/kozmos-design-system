@@ -9,7 +9,9 @@ import SwiftUI
 /// its width is the row's to give. The name and the cross are in the
 /// foreground because the category colour on its own wash fails 4.5:1 for
 /// seven of the eight tints (Olcay, 2026-09-21); the icon is decorative, the
-/// name says what it shows.
+/// name says what it shows. With no category it wears the theme: its accent
+/// — the icon, the border and the wash's base — is theme 600, as React's, and
+/// its count pill the theme fill with the theme foreground (decision 59).
 ///
 /// Mirrors the React `CategoryField`.
 public struct KozmosCategoryField<Icon: View>: View {
@@ -26,7 +28,7 @@ public struct KozmosCategoryField<Icon: View>: View {
         label: String,
         count: Int? = nil,
         countLabel: @escaping (Int) -> String = { "\($0) places" },
-        tint: KozmosCategoryTint = KozmosCategoryTint(accent: KozmosColors.primitivesColorsTheme500, fill: KozmosInkedFill(fill: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, ink: KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)),
+        tint: KozmosCategoryTint = KozmosCategoryTint(accent: KozmosColors.primitivesColorsTheme600, fill: KozmosInkedFill(fill: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, ink: KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)),
         clearLabel: String = "Clear category",
         onClear: @escaping () -> Void,
         @ViewBuilder icon: () -> Icon

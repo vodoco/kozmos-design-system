@@ -33,7 +33,8 @@ final class KozmosManoeuvreAppearanceTests: XCTestCase {
     @MainActor private func draw(_ card: (Seen) -> some View) async throws -> (seen: Seen, themeFill: Int) {
         let seen = Seen()
         let view = card(seen).frame(width: 320).environment(\.colorScheme, .light)
-        let theme = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
+        // The theme appearance is the theme fill (decision 59).
+        let theme = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: .light)
         #if os(iOS)
         let size = CGSize(width: 320, height: 240)
         let pixels = try await RenderedPixels.render(view.background(Color.white), size: size)

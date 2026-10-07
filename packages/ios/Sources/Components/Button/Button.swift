@@ -193,7 +193,8 @@ public struct KozmosButton: View {
         switch variant {
         case .default: return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle // Semantic Token
         case .destructive: return KozmosColors.componentsPrimaryButtonsDangerButtonForegroundContentIdle
-        case .outline, .ghost, .link: return KozmosColors.primitivesColorsTheme500
+        // Decision 59: the secondary tier's words, as React and Compose draw them.
+        case .outline, .ghost, .link: return KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle
         case .secondary: return KozmosColors.primitivesColorsForeground100
         case .glass: return KozmosColors.primitivesColorsForeground100
         }

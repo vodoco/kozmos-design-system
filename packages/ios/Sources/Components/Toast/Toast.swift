@@ -69,7 +69,8 @@ public struct KozmosToast: View {
                     Text(actionTitle)
                         .font(KozmosTypography.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(KozmosColors.primitivesColorsTheme500)
+                        // Theme-coloured words on a surface: 600 (decision 59).
+                        .foregroundColor(KozmosColors.primitivesColorsTheme600)
                         .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
                         .frame(minHeight: 44)
                 }

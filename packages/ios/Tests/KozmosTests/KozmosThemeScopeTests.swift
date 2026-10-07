@@ -36,14 +36,15 @@ final class KozmosThemeScopeTests: XCTestCase {
     }
 
     /// What sits in the island reads from the dark scheme: a swatch of the
-    /// themed button's fill draws its dark value, #7EA2F6, not its light one,
-    /// #0D44C2.
+    /// theme's 600 draws its dark value, #5887F3, not its light one, #1051E8.
+    /// (It was the themed button's fill until decision 59 made that one blue,
+    /// #135BEC, in both themes.)
     @MainActor func testTheIslandsContentReadsTheDarkScheme() async throws {
         let island = KozmosDynamicIsland(
             state: .compact,
             expandedContent: { Color.clear },
             compactLeading: {
-                KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle.frame(width: 24, height: 24)
+                KozmosColors.primitivesColorsTheme600.frame(width: 24, height: 24)
             },
             compactTrailing: { Color.clear },
             minimalContent: { Color.clear }
@@ -57,8 +58,8 @@ final class KozmosThemeScopeTests: XCTestCase {
             abs(Int(r) - to.0) <= 12 && abs(Int(g) - to.1) <= 12 && abs(Int(b) - to.2) <= 12
         }
         let region = CGRect(origin: .zero, size: size)
-        let dark = pixels.boundingBox(in: region) { near($0, $1, $2, (0x7E, 0xA2, 0xF6)) }
-        let light = pixels.boundingBox(in: region) { near($0, $1, $2, (0x0D, 0x44, 0xC2)) }
+        let dark = pixels.boundingBox(in: region) { near($0, $1, $2, (0x58, 0x87, 0xF3)) }
+        let light = pixels.boundingBox(in: region) { near($0, $1, $2, (0x10, 0x51, 0xE8)) }
         XCTAssertNil(light, "the island's content drew the light scheme's fill at \(String(describing: light))")
         let swatch = try XCTUnwrap(dark, "the island's content did not draw the dark scheme's fill")
         XCTAssertEqual(swatch.width, 24, accuracy: 2, "the swatch is \(swatch)")

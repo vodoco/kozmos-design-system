@@ -147,10 +147,11 @@ public struct KozmosPOIResultCard: View {
     /// The tab's fill, words and edge (GAP-054). Featured is the SDK's bright
     /// amber under dark words, the alert fill pair, for its words and its star
     /// (Olcay, 2026-09-29). A number is quiet at rest, the card's own fill
-    /// outlined in the container edge with muted words, and filled with the
-    /// primary colour when the result is selected, as the selected card's edge
-    /// is. A badge is quiet: the muted fill and muted words, with no star. Each
-    /// pair reads at 4.5:1 or more in both themes, as on the web.
+    /// outlined in the container edge with muted words, and when the result
+    /// is selected filled as its pin is (decision 55): the theme fill, with
+    /// the theme foreground, white in both themes (decision 59). A badge is
+    /// quiet: the muted fill and muted words, with no star. Each pair reads
+    /// at 4.5:1 or more in both themes, as on the web.
     struct TabPaint {
         let fill: Color
         let ink: Color
@@ -168,8 +169,8 @@ public struct KozmosPOIResultCard: View {
         case .number:
             return result.selected
                 ? TabPaint(
-                    fill: KozmosColors.primitivesColorsTheme600,
-                    ink: KozmosColors.primitivesColorsForeground1000,
+                    fill: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+                    ink: KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
                     edge: nil
                 )
                 : TabPaint(
@@ -354,10 +355,11 @@ public struct KozmosPOIResultCard: View {
                         }
 
                         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing75) {
-                            // A dot before the floor when it is the one the map shows.
+                            // A dot before the floor when it is the one the map
+                            // shows: a mark on the card, theme 600, as React's.
                             if onCurrentFloor {
                                 Circle()
-                                    .fill(KozmosColors.primitivesColorsTheme500)
+                                    .fill(KozmosColors.primitivesColorsTheme600)
                                     .frame(width: KozmosDimensions.primitivesLayoutSpacing75, height: KozmosDimensions.primitivesLayoutSpacing75)
                                     .accessibilityHidden(true)
                             }
@@ -483,13 +485,14 @@ public struct KozmosPOIResultCard: View {
         .accessibilityIdentifier(kozmosPOIResultIdentifier(poi.id))
     }
 
-    /// The card's edge. Selected, the theme colour at 2pt, whatever else the
-    /// card is: the web says selection with a ring beside the edge, and a
-    /// native card has only its edge to say it with. Otherwise a featured card
+    /// The card's edge. Selected, the theme's 600 at 2pt — an edge on a
+    /// surface (decision 59) — whatever else the card is: the web says
+    /// selection with a ring beside the edge, and a native card has only its
+    /// edge to say it with. Otherwise a featured card
     /// takes its tab's amber (Olcay, 2026-09-29), and every other card the
     /// container edge: a number and a badge never recolour it.
     var edgeColor: Color {
-        if result.selected && !sdk { return KozmosColors.primitivesColorsTheme500 }
+        if result.selected && !sdk { return KozmosColors.primitivesColorsTheme600 }
         if tab == .featured { return KozmosColors.semanticsEmotionAlertFill }
         return KozmosColors.semanticsBorderSubtle
     }

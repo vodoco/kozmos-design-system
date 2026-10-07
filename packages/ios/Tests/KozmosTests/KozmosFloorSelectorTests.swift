@@ -258,7 +258,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// button, flush in its trailing top corner: inside rather than proud of
     /// it, as React's is since c36a970d.
     @MainActor func testTheMarkerSitsInsideItsLevelsButtonAtTheTrailingTop() throws {
-        let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
+        let primary = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: .light)
         for variant in [KozmosFloorSelectorVariant.verticalList, .horizontalList] {
             let drawn = try drawList(variant)
             let square = secondSquare(variant)
@@ -272,7 +272,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
 
     /// Trailing is the left in Arabic: the marker mirrors with the layout.
     @MainActor func testTheMarkerMirrorsRightToLeft() throws {
-        let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
+        let primary = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: .light)
         let drawn = try drawList(.verticalList, direction: .rightToLeft)
         let square = secondSquare(.verticalList)
         let marker = try XCTUnwrap(drawn.boundingBox(where: DrawnPixels.matches(primary)), "no marker drawn")
@@ -281,17 +281,19 @@ final class KozmosFloorSelectorTests: XCTestCase {
         XCTAssertEqual(marker.minY, square.minY, accuracy: 1, "the marker is not at the top")
     }
 
-    /// Dark takes the dark theme's primary for the fill and its ink for the
-    /// count, from the tokens rather than a colour of the component's own.
-    @MainActor func testTheMarkerTakesTheDarkThemesColours() throws {
-        let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .dark)
-        let ink = try DrawnPixels.resolved(KozmosColors.primitivesColorsForeground1000, in: .dark)
+    /// The marker is a prominent fill (decision 59): in the dark too, the
+    /// theme fill, #135BEC, with its count in the theme foreground, white —
+    /// from the tokens rather than a colour of the component's own. It was
+    /// the dark theme's 600 with foreground/1000, black, on it.
+    @MainActor func testTheMarkerIsTheThemeFillWithItsForegroundInTheDark() throws {
+        let fill = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: .dark)
+        let ink = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle, in: .dark)
         let drawn = try drawList(.verticalList, scheme: .dark)
-        let marker = try XCTUnwrap(drawn.boundingBox(where: DrawnPixels.matches(primary)), "no marker in the dark theme's primary")
+        let marker = try XCTUnwrap(drawn.boundingBox(where: DrawnPixels.matches(fill)), "no marker in the theme fill in the dark")
         XCTAssertTrue(secondSquare(.verticalList).contains(marker))
         let middle = marker.insetBy(dx: marker.width / 4, dy: marker.height / 4)
         XCTAssertGreaterThan(drawn.count(in: middle, where: DrawnPixels.matches(ink, tolerance: 40)), 0,
-                             "the count is not drawn in the dark theme's ink")
+                             "the count is not drawn in the theme foreground")
     }
 
     /// The marker is laid over its button: the levels do not move for it.
@@ -305,13 +307,13 @@ final class KozmosFloorSelectorTests: XCTestCase {
     }
 
     /// The stepper draws what it drew before there were counts, even on the
-    /// level that holds them.
+    /// level that holds them. Its selected level is the theme fill, as a
+    /// marker is (decision 59), so colour cannot tell a marker from it: the
+    /// drawing itself must be the one with no counts.
     @MainActor func testTheStepperDrawsNoMarker() throws {
-        let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
         let plain = resultLevels.map { KozmosFloorPresentation(id: $0.id, label: $0.label, shortLabel: $0.shortLabel) }
         let marked = try DrawnPixels.draw(KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("2"), variant: .compactStepper, showResultCounts: true))
         let unmarked = try DrawnPixels.draw(KozmosFloorSelector(floors: plain, selectedFloor: .constant("2"), variant: .compactStepper, showResultCounts: true))
-        XCTAssertNil(marked.boundingBox(where: DrawnPixels.matches(primary)), "the stepper drew a marker")
         let difference = try XCTUnwrap(marked.largestDifference(from: unmarked), "the stepper changed size")
         XCTAssertLessThanOrEqual(difference, 2, "the stepper draws something new")
     }
@@ -322,9 +324,9 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// 38). Its closed tile is the level in view and marks nothing, as the
     /// stepper does not.
     @MainActor func testTheOpenCollapsibleListMarksItsLevels() async throws {
-        let primary = try near(KozmosColors.primitivesColorsTheme600)
-        // No level is current, so the only primary drawn is the marker's; the
-        // level with three results is the column's middle one.
+        let primary = try near(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
+        // No level is current, so the only theme fill drawn is the marker's;
+        // the level with three results is the column's middle one.
         let drawn = try await drawSwitcher(
             KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), variant: .collapsible, showResultCounts: true, expanded: true)
         )
@@ -463,8 +465,8 @@ final class KozmosFloorSelectorTests: XCTestCase {
     }
 
     /// Close to a token as the light theme draws it: within 6 a level, so the
-    /// old list's theme-500 fill, up to 10 levels from the theme's primary, is
-    /// not taken for it, and a snapshot's colour conversion still is.
+    /// theme fill (theme 500), up to 10 levels from the theme's 600, is not
+    /// taken for it, and a snapshot's colour conversion still is.
     @MainActor private func near(_ color: Color, tolerance: Int = 6) throws -> (UInt8, UInt8, UInt8) -> Bool {
         let token = try DrawnPixels.resolved(color, in: .light)
         return { r, g, b in
@@ -504,7 +506,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
                 }
             }
             XCTAssertLessThanOrEqual(largest, 2, "on \(backdrop) the switcher is not drawn as a map control is: \(largest) at \(at)")
-            XCTAssertNil(tile.boundingBox(whole, try near(KozmosColors.primitivesColorsTheme500)),
+            XCTAssertNil(tile.boundingBox(whole, try near(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)),
                          "the closed switcher is filled with the theme")
         }
     }
@@ -618,7 +620,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
         // Not filled: inside each level, between its edge and its label, where
         // the old list's fill was — not anywhere, since an outline's softened
         // edge comes within a few levels of the theme's lighter step.
-        let fill = try near(KozmosColors.primitivesColorsTheme500)
+        let fill = try near(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
         for index in 0..<3 {
             let level = slot(index, of: 3)
             let inside = CGRect(x: level.minX + 3, y: level.midY - 3, width: 6, height: 6)
@@ -684,7 +686,11 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// A result count and the dot on one level keep apart: the dot at the top
     /// trailing corner, the count at the bottom, a clear band between them.
     @MainActor func testTheDotAndTheCountKeepApart() async throws {
+        // The dot is theme 600; the count a prominent fill, the theme fill
+        // (decision 59).
         let primary = try near(KozmosColors.primitivesColorsTheme600)
+        let count = try near(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle)
+        let either: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in primary(r, g, b) || count(r, g, b) }
         let levels = [KozmosFloorPresentation(id: "2", label: "Second floor", shortLabel: "2F", resultCount: 3)]
             + switcherLevels.dropFirst()
         let drawn = try await drawSwitcher(
@@ -695,9 +701,9 @@ final class KozmosFloorSelectorTests: XCTestCase {
         let trailing = level.maxX - 16
         XCTAssertGreaterThan(drawn.count(CGRect(x: trailing, y: level.minY, width: 16, height: 15), primary), 0,
                              "no dot at the top")
-        XCTAssertGreaterThan(drawn.count(CGRect(x: trailing, y: level.maxY - 16, width: 16, height: 16), primary), 0,
+        XCTAssertGreaterThan(drawn.count(CGRect(x: trailing, y: level.maxY - 16, width: 16, height: 16), count), 0,
                              "no count at the bottom")
-        XCTAssertEqual(drawn.count(CGRect(x: trailing, y: level.minY + 15, width: 16, height: 12), primary), 0,
+        XCTAssertEqual(drawn.count(CGRect(x: trailing, y: level.minY + 15, width: 16, height: 12), either), 0,
                        "the dot and the count run into each other")
     }
 
@@ -1085,7 +1091,7 @@ final class KozmosFloorSelectorTests: XCTestCase {
     /// than twice as big. iOS only: Dynamic Type does not reach
     /// `@ScaledMetric` on a Mac.
     @MainActor func testTheMarkerGrowsWithTheText() throws {
-        let primary = try DrawnPixels.resolved(KozmosColors.primitivesColorsTheme600, in: .light)
+        let primary = try DrawnPixels.resolved(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: .light)
         let drawn = try DrawnPixels.draw(
             KozmosFloorSelector(floors: resultLevels, selectedFloor: .constant("none"), showResultCounts: true)
                 .environment(\.dynamicTypeSize, .accessibility3)

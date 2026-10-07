@@ -323,10 +323,13 @@ public struct KozmosFloorSelector: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .frame(width: controlSize, height: controlSize)
-                .background(isSelected ? KozmosColors.primitivesColorsTheme500 : Color.clear)
+                // Decision 59: the selected level is a prominent fill — the
+                // theme fill, with the theme foreground on it, white in both
+                // themes (background/0 turned black on it in the dark).
+                .background(isSelected ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : Color.clear)
                 .foregroundColor(
                     isSelected
-                        ? KozmosColors.primitivesColorsBackground0
+                        ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
                         : KozmosColors.primitivesColorsForeground100
                 )
                 .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
@@ -633,8 +636,9 @@ public struct KozmosFloorSelector: View {
         return parts.joined(separator: ", ")
     }
 
-    /// The count, drawn once and said once: a pill in the theme's primary in
-    /// the square's trailing top corner, which mirrors in Arabic. Inside the
+    /// The count, drawn once and said once: a pill in the theme fill, with
+    /// the theme foreground on it (decision 59), in the square's trailing
+    /// top corner, which mirrors in Arabic. Inside the
     /// square, not proud of it, as React's is since c36a970d — here the
     /// control's rounded clip would take the corner off a marker hanging over
     /// the end levels' squares. Flush with the corner rather than React's 2px
@@ -650,8 +654,8 @@ public struct KozmosFloorSelector: View {
                 .lineLimit(1)
                 .padding(.horizontal, markerPadding)
                 .frame(minWidth: markerSize, minHeight: markerSize)
-                .background(KozmosColors.primitivesColorsTheme600, in: Capsule())
-                .foregroundColor(KozmosColors.primitivesColorsForeground1000)
+                .background(KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, in: Capsule())
+                .foregroundColor(KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
                 .accessibilityHidden(true)
         }
     }

@@ -57,7 +57,8 @@ public struct KozmosTag: View {
         
         var backgroundColor: Color {
             switch self {
-            case .default: return KozmosColors.primitivesColorsTheme500
+            // Decision 59: a prominent fill, the theme fill.
+            case .default: return KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
             case .secondary: return KozmosColors.primitivesColorsBackground100
             case .destructive: return KozmosColors.semanticsDataRed
             case .outline: return Color.clear
@@ -67,7 +68,10 @@ public struct KozmosTag: View {
         
         var foregroundColor: Color {
             switch self {
-            case .default, .destructive, .success: return KozmosColors.primitivesColorsBackground0
+            // The theme foreground on the theme fill, white in both themes:
+            // background/0 turned black on it in the dark (3.74:1).
+            case .default: return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+            case .destructive, .success: return KozmosColors.primitivesColorsBackground0
             case .secondary, .outline: return KozmosColors.primitivesColorsForeground900
             }
         }
