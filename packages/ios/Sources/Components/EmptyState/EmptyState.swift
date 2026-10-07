@@ -15,23 +15,49 @@ public enum KozmosEmptyStateSize: Sendable, Hashable, CaseIterable {
     var stackSpacing: CGFloat { self == .compact ? 8 : 16 }
 }
 
+/// A long wait the empty state is explaining, such as a download, and how
+/// far it has got (GAP-115).
+public struct KozmosEmptyStateProgress: Hashable, Sendable {
+    /// How far it has got, from 0 to 1.
+    public let value: Double
+    /// What is in progress, shown above the bar and naming it: "Downloading the assistant".
+    public let label: String
+    /// How far, in words, shown beside the label and said as the bar's value: "40%", "12 of 30 MB".
+    public let valueText: String?
+
+    public init(value: Double, label: String, valueText: String? = nil) {
+        self.value = value
+        self.label = label
+        self.valueText = valueText
+    }
+
+    /// What VoiceOver says for the value: the words, or the percentage.
+    var spokenValue: String {
+        valueText ?? "\(Int((min(max(value, 0), 1) * 100).rounded()))%"
+    }
+}
+
 public struct KozmosEmptyState<Icon: View, Action: View>: View {
     public let title: String
     public let description: String?
     public let icon: Icon?
     public let action: Action?
     public let size: KozmosEmptyStateSize
+    /// A wait it explains, drawn under the description and above the action.
+    public let progress: KozmosEmptyStateProgress?
 
     public init(
         title: String,
         description: String? = nil,
         size: KozmosEmptyStateSize = .default,
+        progress: KozmosEmptyStateProgress? = nil,
         @ViewBuilder icon: () -> Icon,
         @ViewBuilder action: () -> Action
     ) {
         self.title = title
         self.description = description
         self.size = size
+        self.progress = progress
         self.icon = icon()
         self.action = action()
     }
@@ -57,6 +83,28 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
                 }
             }
             
+            if let progress {
+                VStack(spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(progress.label)
+                            .foregroundColor(KozmosColors.primitivesColorsForeground100)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if let valueText = progress.valueText {
+                            Text(valueText)
+                                .foregroundColor(KozmosColors.primitivesColorsForeground300)
+                        }
+                    }
+                    .font(KozmosTypography.subheadline)
+                    KozmosProgress(value: min(max(progress.value, 0), 1))
+                }
+                .frame(maxWidth: 280)
+                // One element: what is in progress, and how far it has got.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(progress.label)
+                .accessibilityValue(progress.spokenValue)
+                .accessibilityAddTraits(.updatesFrequently)
+            }
+
             if let action = action {
                 action
             }
@@ -68,10 +116,14 @@ public struct KozmosEmptyState<Icon: View, Action: View>: View {
 
 // Convenience init for no views
 public extension KozmosEmptyState where Icon == EmptyView, Action == EmptyView {
-    init(title: String, description: String? = nil, size: KozmosEmptyStateSize = .default) {
+    init(
+        title: String, description: String? = nil, size: KozmosEmptyStateSize = .default,
+        progress: KozmosEmptyStateProgress? = nil
+    ) {
         self.title = title
         self.description = description
         self.size = size
+        self.progress = progress
         self.icon = nil
         self.action = nil
     }

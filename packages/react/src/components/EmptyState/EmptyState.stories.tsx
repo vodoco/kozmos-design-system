@@ -55,3 +55,24 @@ export const Compact: Story = {
     </div>
   ),
 };
+
+/**
+ * GAP-115: a long wait it explains, such as the assistant's download before
+ * it can run on the device, says how far it has got under the description.
+ */
+export const DownloadProgress: Story = {
+  render: () => (
+    <div className="w-[360px] h-[400px] border rounded-container bg-card flex">
+      <EmptyState
+        title="The assistant isn't downloaded yet"
+        description="It works offline once it's on this device."
+        progress={{
+          value: 40,
+          label: "Downloading the assistant",
+          valueText: "12 of 30 MB",
+        }}
+        action={<Button variant="outline">Back to search</Button>}
+      />
+    </div>
+  ),
+};

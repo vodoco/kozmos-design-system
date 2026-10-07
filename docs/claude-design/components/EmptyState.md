@@ -43,6 +43,10 @@ It forwards its ref to `HTMLDivElement`. Its props are `EmptyStateProps`, which 
 - `title`: `string`, **required**.
 - `description`: `string`, optional.
 - `action`: `React.ReactNode`, optional.
+- `progress`: `EmptyStateProgress`, optional.
+
+  A wait it explains, drawn under the description and above the action.
+
 - `size`: `"default" | "compact"`, optional.
 
   How much room it takes.
@@ -69,3 +73,24 @@ Its props are `"default" | "compact" | undefined`.
 - `children`: `ReactNode`, optional.
 
 It also takes the attributes React's DOM types give it.
+
+## Types these props take
+
+### EmptyStateProgress
+
+From `@kozmos-ds/react`.
+
+```ts
+/**
+ * A long wait the empty state is explaining, such as a download, and how far
+ * it has got (GAP-115).
+ */
+interface EmptyStateProgress {
+  /** How far it has got, from 0 to 100. */
+  value: number;
+  /** What is in progress, shown above the bar and naming it: "Downloading the assistant". */
+  label: string;
+  /** How far, in words, shown beside the label and said as the bar's value: "40%", "12 of 30 MB". */
+  valueText?: string;
+}
+```

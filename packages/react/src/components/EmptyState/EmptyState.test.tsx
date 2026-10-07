@@ -47,3 +47,45 @@ describe("EmptyState", () => {
     );
   });
 });
+
+// GAP-115: the assistant before its model is downloaded says how far the
+// download has got where it says why. The bar is the empty state's own,
+// between the description and the action, named by its label.
+describe("EmptyState progress", () => {
+  it("draws a named bar with its value, between the description and the action", () => {
+    render(
+      <EmptyState
+        title="The assistant isn't downloaded yet"
+        description="It works offline once it's on this device."
+        progress={{
+          value: 40,
+          label: "Downloading the assistant",
+          valueText: "12 of 30 MB",
+        }}
+        action={<button type="button">Back to search</button>}
+      />,
+    );
+    const bar = screen.getByRole("progressbar", {
+      name: "Downloading the assistant",
+    });
+    expect(bar).toHaveAttribute("aria-valuenow", "40");
+    expect(bar).toHaveAttribute("aria-valuetext", "12 of 30 MB");
+    expect(screen.getByText("12 of 30 MB")).toBeVisible();
+    const description = screen.getByText(
+      "It works offline once it's on this device.",
+    );
+    const action = screen.getByRole("button", { name: "Back to search" });
+    expect(
+      description.compareDocumentPosition(bar) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      bar.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("draws no bar without progress", () => {
+    render(<EmptyState title="No results" />);
+    expect(screen.queryByRole("progressbar")).toBeNull();
+  });
+});
