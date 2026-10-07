@@ -102,7 +102,7 @@ struct POIDetailSummary: View {
     private func icon(_ item: KozmosPOIDetailSummary) -> some View {
         POIDetailIcon(systemImage: item.systemImage, url: item.iconUrl,
                       monochrome: item.iconMonochrome == true, size: 20)
-            .foregroundColor(color(item.tone))
+            .foregroundColor(Self.color(item.tone))
     }
 
     private func text(_ item: KozmosPOIDetailSummary) -> some View {
@@ -133,16 +133,23 @@ struct POIDetailSummary: View {
                 .foregroundColor(kozmosMutedForeground(on: surfaceStyle)))
                 .font(KozmosTypography.body.weight(.semibold))
         } else {
-            Text(item.value).foregroundColor(color(item.tone))
+            Text(item.value).foregroundColor(Self.color(item.tone))
         }
     }
 
-    private func color(_ tone: KozmosPOIDetailTone?) -> Color {
+    /// A tone as text on the card's white or the sheet's grey, in either
+    /// scheme: the emotion's text role, which reads at 4.5:1 on every neutral
+    /// surface, and the theme's 600 for brand — the roles the web's summary
+    /// names (`text-success-text`, `text-warning-text`,
+    /// `text-destructive-text`, `text-primary`). A fill colour is one step
+    /// too light: the alert fill read at 1.6:1 on the sheet, and the theme's
+    /// 500 at 3.7:1 on black.
+    static func color(_ tone: KozmosPOIDetailTone?) -> Color {
         switch tone {
-        case .success: return KozmosColors.componentsPrimaryButtonsSuccessButtonBackgroundIdle
-        case .warning: return KozmosColors.primitivesColorsEmotionalAlert600
-        case .danger: return KozmosColors.primitivesColorsEmotionalDanger600
-        case .brand: return KozmosColors.primitivesColorsTheme500
+        case .success: return KozmosColors.semanticsEmotionSuccessText
+        case .warning: return KozmosColors.semanticsEmotionAlertText
+        case .danger: return KozmosColors.semanticsEmotionDangerText
+        case .brand: return KozmosColors.primitivesColorsTheme600
         default: return KozmosColors.primitivesColorsForeground100
         }
     }
