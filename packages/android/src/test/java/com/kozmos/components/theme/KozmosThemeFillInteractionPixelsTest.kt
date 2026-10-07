@@ -12,10 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +38,7 @@ import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonEmphasis
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.splitbutton.KozmosSplitButton
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
@@ -110,7 +108,7 @@ class KozmosThemeFillInteractionPixelsTest {
                 LocalKozmosUseDarkTokens provides dark,
                 LocalDensity provides Density(density.density * 2f, density.fontScale)
             ) {
-                MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+                KozmosMaterialTheme {
                     Box(
                         Modifier
                             .fillMaxSize()

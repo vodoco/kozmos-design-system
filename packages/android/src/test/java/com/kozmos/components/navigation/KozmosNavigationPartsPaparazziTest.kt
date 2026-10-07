@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -25,6 +23,7 @@ import com.kozmos.components.routeprogressrail.KozmosRouteProgressRailGeometry
 import com.kozmos.components.routeprogressrail.KozmosRouteProgressWaypoint
 import com.kozmos.components.routesummary.KozmosRoutePresentation
 import com.kozmos.components.routesummary.KozmosRouteSummary
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
@@ -163,7 +162,7 @@ class KozmosNavigationPartsPaparazziTest {
             Column {
                 for (dark in listOf(false, true)) {
                     CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
-                        MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+                        KozmosMaterialTheme {
                             Box(modifier = Modifier.background(KozmosThemeTokens.semanticsSurface0).padding(24.dp).width(360.dp)) {
                                 KozmosRouteSummary(
                                     destination = "Airport Shuttles",

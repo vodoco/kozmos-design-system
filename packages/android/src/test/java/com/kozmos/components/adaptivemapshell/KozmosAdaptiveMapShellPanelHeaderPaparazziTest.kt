@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -32,6 +31,7 @@ import app.cash.paparazzi.Paparazzi
 import com.kozmos.components.CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE
 import com.kozmos.components.chip.KozmosChip
 import com.kozmos.components.searchbar.KozmosSearchBar
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
@@ -239,7 +239,7 @@ class KozmosAdaptiveMapShellPanelHeaderPaparazziTest {
     fun theHeaderOnTheSheetInTheDarkTheme() {
         paparazzi.snapshot {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides true) {
-                MaterialTheme(colorScheme = darkColorScheme()) {
+                KozmosMaterialTheme {
                     KozmosAdaptiveMapShell(
                         map = { Box(modifier = Modifier.fillMaxSize().background(KozmosThemeTokens.primitivesColorsBackground200)) },
                         panelDetent = KozmosMapPanelDetent.Medium,

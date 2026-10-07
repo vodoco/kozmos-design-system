@@ -11,10 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -45,6 +42,7 @@ import com.kozmos.components.skeleton.KozmosSkeleton
 import com.kozmos.components.slider.KozmosSlider
 import com.kozmos.components.stepper.KozmosStepper
 import com.kozmos.components.tag.KozmosTag
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.components.userlocationmarker.KozmosUserLocationMarker
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -78,7 +76,7 @@ class KozmosDarkModePaparazziTest {
     private fun snapshotIn(dark: Boolean, content: @Composable () -> Unit) {
         paparazzi.snapshot {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
-                MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+                KozmosMaterialTheme {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier
