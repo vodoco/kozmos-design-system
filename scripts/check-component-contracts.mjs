@@ -11177,6 +11177,7 @@ assertContains(
     "rather than inside the route panel",
     "Figma RouteSummary docs sending it outside the route panel",
   );
+}
 
 // Right to left an arrow meaning back or forward points to the start or the
 // end edge. SF Symbols' .backward and .forward mirror by themselves; .left
