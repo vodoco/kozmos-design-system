@@ -92,6 +92,7 @@ Each category, with a variable of it as the web reads it:
 | Category           | Example                                                                                |
 | ------------------ | -------------------------------------------------------------------------------------- |
 | Brand              | `--primitives-colors-theme-600`, the `primary` and `ring` role                         |
+| Theme fill         | `--primitives-colors-theme-500`, the `theme-fill` role                                 |
 | Page and text      | `--primitives-colors-background-0`, `--primitives-colors-foreground-0`                 |
 | Surfaces           | `--semantics-surface-0` to `--semantics-surface-300`                                   |
 | Emotions           | `--semantics-emotion-danger-surface`, `--primitives-colors-emotional-success-600`      |
@@ -103,6 +104,18 @@ Each category, with a variable of it as the web reads it:
 | Typography         | `--primitives-typography-font-family-primary`, `--primitives-typography-font-size-100` |
 | Data visualisation | `--semantics-data-blue`                                                                |
 | Components         | `--components-primary-buttons-themed-button-background-idle`                           |
+
+**The theme fill and the theme as text (decision 59).** A prominent fill is theme 500, the
+client's base colour from the Pointr Cloud Dashboard, `#135BEC` in both themes: a filled primary
+Button (through `--components-primary-buttons-themed-button-background-idle`, which aliases it), a
+checked Checkbox or Switch, Radio's dot, a selected Chip, the default Tag and Badge, the brand
+Counter, a filled pin, the UserMessage bubble. What sits on it is the theme foreground,
+`--components-primary-buttons-themed-button-foreground-content-idle`, white in both themes; never
+`primary-foreground` (`--primitives-colors-foreground-1000`), which is black in the dark and reads
+3.74:1 there. The theme as text, an icon, a border or a focus ring on a surface is theme 600
+(`primary`, `ring`), `#1051E8` in the light and `#5887F3` in the dark, which reads 4.5:1 on the page
+and the sheet in both. Slider, Progress and RouteProgressRail stay on 600 too: a 500 bar fails
+against its track. SwiftUI and Compose follow the same rule through the same tokens.
 
 The unitless ones are shared with iOS and Android, so a web rule multiplies them:
 `calc(var(--semantics-radius-container) * 1px)`. [component-inventory.md](./component-inventory.md)
@@ -118,15 +131,19 @@ read.
 `ThemeProvider` takes `tokens`, custom properties it sets on its element and on its portal
 container, and that nested providers inherit. Because each variable holds its own resolved value
 (§2), an override names every variable it changes: a new brand colour on the default Button's fill
-is its two button variables, not the theme primitive alone.
+is its button variables, not the theme primitive alone. The other prominent fills read theme 500
+from the ramp, and the theme as text reads 600 (§3), so a brand sets both steps.
 
 ```tsx
 import { Button, ThemeProvider } from "@kozmos-ds/react";
 
 const brand = {
-  "--primitives-colors-theme-600": "#0b7a5c",
+  // The base colour: every prominent fill, the Button's through its token.
+  "--primitives-colors-theme-500": "#0b7a5c",
   "--components-primary-buttons-themed-button-background-idle": "#0b7a5c",
   "--components-primary-buttons-themed-button-background-hover": "#096650",
+  // The theme as text, borders and rings: a step that reads 4.5:1 on the page.
+  "--primitives-colors-theme-600": "#096650",
 } as const;
 
 export function BrandedApp() {

@@ -74,7 +74,10 @@ export function MakeItYours() {
   const [rtl, setRtl] = useState(false);
   const [floor, setFloor] = useState("1");
   const [stepFree, setStepFree] = useState(true);
-  const overrides = useMemo(() => brandOverrides(tokens, brand), [brand]);
+  const overrides = useMemo(
+    () => brandOverrides(tokens, brand, dark ? "dark" : "light"),
+    [brand, dark],
+  );
   const entries = Object.entries(overrides.tokens);
   const themedCount = overrides.repointed.length + overrides.unmatched.length;
 
@@ -117,8 +120,9 @@ export function MakeItYours() {
             tokens. The other {overrides.unmatched.length}, the ink on filled
             buttons and the disabled greys, are not on the theme ramp, so they
             keep their values. The component tokens hold copied values, not
-            references to the ramp, which is why each one is matched by value
-            (GAP-23).
+            references to the ramp, which is why each one is matched by value,
+            in the theme shown: a filled button hovers on theme 600 in the light
+            and 400 in the dark (GAP-23).
           </Text>
         )}
         <CodeBlock label="The override" code={overrideSnippet(entries)} />

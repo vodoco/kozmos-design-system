@@ -8,8 +8,12 @@
  * is generated with the theme's values baked in rather than as aliases of the
  * ramp (GAPS.md, GAP-23), so each of those is matched to the ramp step whose
  * value it carries, in both themes, and re-pointed to the same step of the
- * variant. A component token whose value is not on the ramp, or sits on
- * different steps in light and dark, is left alone and reported.
+ * variant. A component token whose value is not on the ramp is left alone
+ * and reported. One that sits on different steps in light and dark (the
+ * filled button's hover, focus and pressed, since decision 59: 600 and 400,
+ * 700 and 300) is matched in the theme being shown when `theme` is given,
+ * since an override applies to one provider in one theme; without it, it is
+ * reported too.
  */
 import { rampOf, type TokenEntry } from "./tokens-core";
 
@@ -34,6 +38,7 @@ const RAMP = "--primitives-colors-theme";
 export function brandOverrides(
   list: readonly TokenEntry[],
   brand: Brand,
+  theme?: "light" | "dark",
 ): BrandOverrides {
   if (brand === "theme") return { tokens: {}, repointed: [], unmatched: [] };
   const ramp = rampOf(list, RAMP);
@@ -52,9 +57,10 @@ export function brandOverrides(
       !entry.name.includes("-themed-")
     )
       continue;
-    const step = ramp.find(
-      (s) => same(s.light, entry.light) && same(s.dark, entry.dark),
-    );
+    const step =
+      ramp.find(
+        (s) => same(s.light, entry.light) && same(s.dark, entry.dark),
+      ) ?? (theme ? ramp.find((s) => same(s[theme], entry[theme])) : undefined);
     if (step) {
       tokens[entry.name as `--${string}`] =
         `var(${RAMP}-${brand}${step.name.slice(RAMP.length)})`;

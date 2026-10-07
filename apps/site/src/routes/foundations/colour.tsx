@@ -202,9 +202,11 @@ function ComponentLayer() {
         {entries.length} variables with the theme’s values baked in: for each
         kind of button, each of the six emotions’ idle, hover, pressed and focus
         colours, and thirteen for the HTML headings. Today the Button’s themed
-        and danger variants and the category field read a few of them, and no
-        component reads the rest. A brand override re-points them as well as the
-        ramp, so that what does read them follows (GAP-23).
+        and danger variants and the category field read a few of them, and every
+        part with a prominent fill reads the themed button’s foreground, white
+        on the theme fill in both themes (decision 59); no component reads the
+        rest. A brand override re-points them as well as the ramp, so that what
+        does read them follows (GAP-23).
       </Text>
       <Accordion type="multiple">
         {[...groups].map(([group, list]) => (

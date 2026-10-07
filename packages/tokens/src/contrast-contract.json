@@ -252,13 +252,13 @@
       "minimum": 4.5
     },
     {
-      "name": "theme fill / theme foreground (decision 59: every prominent fill, from a filled Button to a checked Checkbox, a selected Chip, a default Tag, Badge or Counter, a filled pin and the UserMessage bubble)",
+      "name": "theme fill / theme foreground (decision 59)",
       "background": "components-primary-buttons-themed-button-background-idle",
       "foreground": "components-primary-buttons-themed-button-foreground-content-idle",
       "minimum": 4.5
     },
     {
-      "name": "theme fill on the page (non-text, decision 59: a checked Checkbox, Switch or Radio dot)",
+      "name": "theme fill on the page (non-text, decision 59)",
       "background": "primitives-colors-background-0",
       "foreground": "components-primary-buttons-themed-button-background-idle",
       "minimum": 3

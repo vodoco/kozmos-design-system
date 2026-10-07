@@ -80,3 +80,39 @@ test("a variant re-points the ramp and the component tokens it can match", () =>
     false,
   );
 });
+
+test("in one theme, a token on different steps in light and dark is matched in that theme", () => {
+  // Decision 59: the filled button's hover is theme 600 in the light and
+  // theme 400 in the dark, #1051E8 in both.
+  const steps: TokenEntry[] = [
+    entry("--primitives-colors-theme-400", "#5887f3", "#1051e8"),
+    entry("--primitives-colors-theme-600", "#1051e8", "#5887f3"),
+    entry(
+      "--components-primary-buttons-themed-button-background-hover",
+      "#1051E8",
+      "#1051E8",
+    ),
+    entry(
+      "--components-primary-buttons-themed-button-foreground-content-idle",
+      "#ffffff",
+      "#ffffff",
+    ),
+  ];
+  const hover = "--components-primary-buttons-themed-button-background-hover";
+  assert.deepEqual(brandOverrides(steps, "variant-1").unmatched, [
+    hover,
+    "--components-primary-buttons-themed-button-foreground-content-idle",
+  ]);
+  assert.equal(
+    brandOverrides(steps, "variant-1", "light").tokens[hover],
+    "var(--primitives-colors-theme-variant-1-600)",
+  );
+  assert.equal(
+    brandOverrides(steps, "variant-1", "dark").tokens[hover],
+    "var(--primitives-colors-theme-variant-1-400)",
+  );
+  // Ink that is not on the ramp is still left alone.
+  assert.deepEqual(brandOverrides(steps, "variant-1", "dark").unmatched, [
+    "--components-primary-buttons-themed-button-foreground-content-idle",
+  ]);
+});
