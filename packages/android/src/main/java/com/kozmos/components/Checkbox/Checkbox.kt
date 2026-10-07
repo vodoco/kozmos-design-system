@@ -1,5 +1,6 @@
 package com.kozmos.components.checkbox
 
+import com.kozmos.components.KozmosInertAlpha
 import com.kozmos.tokens.KozmosDimensions
 
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosThemeTokens
 
@@ -43,9 +45,14 @@ fun KozmosCheckbox(
         MaterialTheme.colorScheme.onSurface
     }
 
+    // Disabled, the checkbox keeps its own colours, checked the theme fill
+    // and its check, and the whole of it, label too, is drawn at half, as
+    // React's `disabled:opacity-50` draws it, not in Material's grey
+    // (decision 59).
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
+            .alpha(if (enabled) 1f else KozmosInertAlpha)
             .heightIn(min = 44.dp)
             .clickable(enabled = enabled) { 
                 trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Checkbox", eventName = "checkbox_toggled", properties = mapOf("checked" to (!checked).toString())))
@@ -60,7 +67,10 @@ fun KozmosCheckbox(
             colors = CheckboxDefaults.colors(
                 checkedColor = checkedColor,
                 uncheckedColor = uncheckedColor,
-                checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+                checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+                disabledCheckedColor = checkedColor,
+                disabledUncheckedColor = uncheckedColor,
+                disabledIndeterminateColor = checkedColor
             )
         )
         
