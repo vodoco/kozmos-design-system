@@ -22,6 +22,20 @@ const results = [];
 const browser = await launchFixtureBrowser();
 const near = (actual, expected, tolerance, message) =>
   assert.ok(Math.abs(actual - expected) <= tolerance, `${message}: ${actual} is not within ${tolerance} of ${expected}`);
+// A part that animates in is measured once its entrance has finished: its box
+// includes the transform, and a slow runner starts the animation late, past
+// any fixed wait. CategoryField pops in from scale(0.9) (owned-components.css),
+// and twice on 7 Oct CI measured it mid-pop at 45.45 of 48. Infinite
+// animations (the AI search ring) never finish, so they are left out.
+const settledIn = (locator) =>
+  locator.evaluate((node) =>
+    Promise.all(
+      node
+        .getAnimations({ subtree: true })
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished),
+    ),
+  );
 
 try {
   const open = async (id, options = {}) => {
@@ -201,6 +215,7 @@ try {
   await finish(await open("product-sdk-categoryfield--in-the-search-row"), "category-field-in-the-row", async (page) => {
     const field = page.getByRole("group", { name: "Gates, 2 places" });
     await field.waitFor();
+    await settledIn(field);
     // Core Counter is decorative here: the group's localized accessible name
     // already includes the count. Assert that contract before measuring it,
     // rather than looking for the removed duplicate label on a generic span.
