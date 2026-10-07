@@ -35,7 +35,7 @@ final class KozmosItineraryEndpointEditTests: XCTestCase {
         }
         try await inspect(KozmosItinerary(origin: "Dunkin'", steps: steps, destination: "Gate 12", onEditDestination: {})) { tree in
             let buttons = tree.filter { $0.accessibilityTraits.contains(.button) }
-            XCTAssertEqual(buttons.map(\.accessibilityLabel), ["Change destination"])
+            XCTAssertEqual(buttons.map(\.accessibilityLabel), ["Change To"])
         }
     }
 
@@ -46,19 +46,32 @@ final class KozmosItineraryEndpointEditTests: XCTestCase {
         try await inspect(view) { tree in
             let labels = tree.compactMap(\.accessibilityLabel)
             // The order VoiceOver reads: each action straight after its endpoint.
-            XCTAssertEqual(labels, ["From, Dunkin'", "Change start point", "Take Elevator down to First Floor",
-                "Take Corridor to Garage B", "To, Gate 12", "Change destination"])
-            for name in ["Change start point", "Change destination"] {
+            XCTAssertEqual(labels, ["From, Dunkin'", "Change From", "Take Elevator down to First Floor",
+                "Take Corridor to Garage B", "To, Gate 12", "Change To"])
+            for name in ["Change From", "Change To"] {
                 let button = try XCTUnwrap(tree.first { $0.accessibilityLabel == name })
                 XCTAssertTrue(button.accessibilityTraits.contains(.button), name)
                 XCTAssertFalse(button.accessibilityTraits.contains(.notEnabled), name)
                 XCTAssertGreaterThanOrEqual(button.accessibilityFrame.height, 44, name)
                 XCTAssertGreaterThanOrEqual(button.accessibilityFrame.width, 44, name)
             }
-            XCTAssertTrue(try XCTUnwrap(tree.first { $0.accessibilityLabel == "Change start point" }).accessibilityActivate())
+            XCTAssertTrue(try XCTUnwrap(tree.first { $0.accessibilityLabel == "Change From" }).accessibilityActivate())
             XCTAssertEqual(calls, ["origin"])
-            XCTAssertTrue(try XCTUnwrap(tree.first { $0.accessibilityLabel == "Change destination" }).accessibilityActivate())
+            XCTAssertTrue(try XCTUnwrap(tree.first { $0.accessibilityLabel == "Change To" }).accessibilityActivate())
             XCTAssertEqual(calls, ["origin", "destination"])
+        }
+    }
+
+    /// A translated verb and captions, and no names: each name is the visible
+    /// verb and the row's own caption, words the product translates, never a
+    /// built-in English word beside a translated one.
+    @MainActor func testTheDefaultNamesAreTheVerbAndTheCaptionInOneLanguage() async throws {
+        let view = KozmosItinerary(origin: "Dunkin'", steps: steps, destination: "Gate 12",
+            originLabel: "Von", destinationLabel: "Nach",
+            onEditOrigin: {}, onEditDestination: {}, changeLabel: "Bearbeiten")
+        try await inspect(view) { tree in
+            let buttons = tree.filter { $0.accessibilityTraits.contains(.button) }
+            XCTAssertEqual(buttons.map(\.accessibilityLabel), ["Bearbeiten Von", "Bearbeiten Nach"])
         }
     }
 
@@ -75,7 +88,7 @@ final class KozmosItineraryEndpointEditTests: XCTestCase {
             onEditOrigin: {}, onEditDestination: {}, changeLabel: "Edit")
         try await inspect(edit) { tree in
             let buttons = tree.filter { $0.accessibilityTraits.contains(.button) }
-            XCTAssertEqual(buttons.map(\.accessibilityLabel), ["Edit start point", "Edit destination"])
+            XCTAssertEqual(buttons.map(\.accessibilityLabel), ["Edit From", "Edit To"])
         }
     }
 

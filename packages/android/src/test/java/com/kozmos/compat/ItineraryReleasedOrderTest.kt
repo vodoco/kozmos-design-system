@@ -86,7 +86,7 @@ class ItineraryReleasedOrderTest {
             }
         }
         assertEquals(
-            listOf("Ändern: Startpunkt", "Ändern: Ziel", "Change destination"),
+            listOf("Ändern: Startpunkt", "Ändern: Ziel", "Change To"),
             tree.merged.filter { it.role == Role.Button }.map { it.description }
         )
     }

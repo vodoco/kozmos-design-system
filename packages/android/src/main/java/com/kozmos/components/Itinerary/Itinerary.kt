@@ -88,8 +88,11 @@ class KozmosItineraryStep(
  * Change button, drawn only when passed; the host opens that endpoint for
  * editing and moves focus there. [changeLabel] is the visible verb,
  * RouteLocationField's. Each button is named for its endpoint, starting with
- * that verb so a speech user can say what they see (WCAG 2.5.3). The new
- * parameters follow the released seven, so positional calls still bind.
+ * that verb so a speech user can say what they see (WCAG 2.5.3). By default
+ * the name is [changeLabel] and the row's caption, [originLabel] or
+ * [destinationLabel], "Change From" and "Change To": words the product
+ * translates, so the name is in one language. The new parameters follow the
+ * released seven, so positional calls still bind.
  */
 @Composable
 fun KozmosItinerary(
@@ -103,8 +106,8 @@ fun KozmosItinerary(
     onEditOrigin: (() -> Unit)? = null,
     onEditDestination: (() -> Unit)? = null,
     changeLabel: String = "Change",
-    editOriginLabel: String = "$changeLabel start point",
-    editDestinationLabel: String = "$changeLabel destination"
+    editOriginLabel: String = "$changeLabel $originLabel",
+    editDestinationLabel: String = "$changeLabel $destinationLabel"
 ) {
     val uniqueCurrent = steps.count { it.isCurrent } == 1
     Column(

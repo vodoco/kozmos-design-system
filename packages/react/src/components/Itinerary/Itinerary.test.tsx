@@ -194,9 +194,9 @@ describe("Itinerary", () => {
           onEditDestination={onEditDestination}
         />,
       );
-      const origin = screen.getByRole("button", { name: "Change start point" });
+      const origin = screen.getByRole("button", { name: "Change From" });
       const destination = screen.getByRole("button", {
-        name: "Change destination",
+        name: "Change To",
       });
       for (const button of [origin, destination]) {
         // Not a form's submit button where a host puts the list in a form.
@@ -226,8 +226,8 @@ describe("Itinerary", () => {
       );
       const items = screen.getAllByRole("listitem");
       for (const [item, name, action] of [
-        [items[0], "Dunkin'", "Change start point"],
-        [items[items.length - 1], "Gate 12", "Change destination"],
+        [items[0], "Dunkin'", "Change From"],
+        [items[items.length - 1], "Gate 12", "Change To"],
       ] as const) {
         const button = screen.getByRole("button", { name: action });
         expect(item).toContainElement(button);
@@ -240,6 +240,28 @@ describe("Itinerary", () => {
       // The steps between carry no action.
       for (const item of items.slice(1, -1))
         expect(item.querySelector("button")).toBeNull();
+    });
+
+    it("builds its default names from the words the product translates, in one language", () => {
+      // A translated verb and captions, and no names: the names are the
+      // visible verb and the row's own caption, never a built-in English word.
+      render(
+        <Itinerary
+          origin="Dunkin'"
+          steps={steps}
+          destination="Gate 12"
+          originLabel="Von"
+          destinationLabel="Nach"
+          onEditOrigin={() => {}}
+          onEditDestination={() => {}}
+          changeLabel="Bearbeiten"
+        />,
+      );
+      expect(
+        screen
+          .getAllByRole("button")
+          .map((button) => button.getAttribute("aria-label")),
+      ).toEqual(["Bearbeiten Von", "Bearbeiten Nach"]);
     });
 
     it("takes the host's words, and builds the names from a changed verb", () => {
@@ -274,11 +296,11 @@ describe("Itinerary", () => {
         />,
       );
       expect(
-        screen.getByRole("button", { name: "Edit start point" }),
+        screen.getByRole("button", { name: "Edit From" }),
       ).toHaveTextContent(/^Edit$/);
-      expect(
-        screen.getByRole("button", { name: "Edit destination" }),
-      ).toHaveTextContent(/^Edit$/);
+      expect(screen.getByRole("button", { name: "Edit To" })).toHaveTextContent(
+        /^Edit$/,
+      );
     });
   });
 });

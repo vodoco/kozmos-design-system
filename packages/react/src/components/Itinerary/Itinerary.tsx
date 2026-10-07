@@ -42,11 +42,12 @@ export interface ItineraryProps extends React.HTMLAttributes<HTMLElement> {
   changeLabel?: string;
   /**
    * The From action's accessible name. Start it with `changeLabel`, the words
-   * on the button, so a speech user can say what they see (WCAG 2.5.3); by
-   * default it is `changeLabel` and "start point".
+   * on the button, so a speech user can say what they see (WCAG 2.5.3). By
+   * default it is `changeLabel` and `originLabel`, the row's caption: both
+   * words the product translates, so the name is in one language.
    */
   editOriginLabel?: string;
-  /** The To action's accessible name; by default `changeLabel` and "destination". */
+  /** The To action's accessible name; by default `changeLabel` and `destinationLabel`. */
   editDestinationLabel?: string;
 }
 
@@ -70,8 +71,8 @@ const Itinerary = React.forwardRef<HTMLElement, ItineraryProps>(
       onEditOrigin,
       onEditDestination,
       changeLabel = "Change",
-      editOriginLabel = `${changeLabel} start point`,
-      editDestinationLabel = `${changeLabel} destination`,
+      editOriginLabel = `${changeLabel} ${originLabel}`,
+      editDestinationLabel = `${changeLabel} ${destinationLabel}`,
       ...props
     },
     ref,

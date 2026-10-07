@@ -64,10 +64,10 @@ class KozmosItineraryEndpointEditTest {
             }
         }
         assertNotNull("must read a real itinerary", tree.named("From, Dunkin'"))
-        assertEquals(listOf("Change destination"), tree.buttons().map { it.description })
+        assertEquals(listOf("Change To"), tree.buttons().map { it.description })
         // The one action is the second itinerary's, straight after its To.
         val names = tree.names()
-        assertEquals(names.indexOf("To, Gate 14") + 1, names.indexOf("Change destination"))
+        assertEquals(names.indexOf("To, Gate 14") + 1, names.indexOf("Change To"))
     }
 
     @Test
@@ -81,11 +81,11 @@ class KozmosItineraryEndpointEditTest {
         }
         // The order TalkBack reads: each action straight after its endpoint.
         assertEquals(
-            listOf("From, Dunkin'", "Change start point", "Take Elevator down to First Floor",
-                "Take Corridor to Garage B", "To, Gate 12", "Change destination"),
+            listOf("From, Dunkin'", "Change From", "Take Elevator down to First Floor",
+                "Take Corridor to Garage B", "To, Gate 12", "Change To"),
             tree.names().filter { it != "Itinerary" }
         )
-        for (name in listOf("Change start point", "Change destination")) {
+        for (name in listOf("Change From", "Change To")) {
             val button = tree.named(name)
             assertEquals(name, Role.Button, button.role)
             assertTrue(name, button.enabled)
@@ -108,10 +108,27 @@ class KozmosItineraryEndpointEditTest {
         val verb = tree.unmerged.first { it.texts == listOf("Change") && it.role == null }.bounds
         assertEquals("the verb's line against the name's", 0f, (verb.bottom - name.bottom) / density, 1.5f)
         // Plain lists, not Compose state: a click outside a frame writes no snapshot.
-        checkNotNull(tree.named("Change start point").click).invoke()
+        checkNotNull(tree.named("Change From").click).invoke()
         assertEquals(listOf("origin"), calls)
-        checkNotNull(tree.named("Change destination").click).invoke()
+        checkNotNull(tree.named("Change To").click).invoke()
         assertEquals(listOf("origin", "destination"), calls)
+    }
+
+    /**
+     * A translated verb and captions, and no names: each name is the visible
+     * verb and the row's own caption, words the product translates, never a
+     * built-in English word beside a translated one.
+     */
+    @Test
+    fun theDefaultNamesAreTheVerbAndTheCaptionInOneLanguage() {
+        val (tree, _) = read {
+            KozmosItinerary(
+                origin = "Dunkin'", steps = emptyList(), destination = "Gate 12",
+                originLabel = "Von", destinationLabel = "Nach",
+                onEditOrigin = {}, onEditDestination = {}, changeLabel = "Bearbeiten"
+            )
+        }
+        assertEquals(listOf("Bearbeiten Von", "Bearbeiten Nach"), tree.buttons().map { it.description })
     }
 
     @Test
@@ -131,11 +148,11 @@ class KozmosItineraryEndpointEditTest {
             }
         }
         assertEquals(
-            listOf("Ändern: Startpunkt", "Ändern: Ziel", "Edit start point", "Edit destination"),
+            listOf("Ändern: Startpunkt", "Ändern: Ziel", "Edit From", "Edit To"),
             tree.buttons().map { it.description }
         )
         assertEquals(listOf("Ändern"), tree.named("Ändern: Ziel").texts)
-        assertEquals(listOf("Edit"), tree.named("Edit destination").texts)
+        assertEquals(listOf("Edit"), tree.named("Edit To").texts)
     }
 
     /** A long name wraps beside the action and keeps at least half the row; the action sits at the row's end. */
@@ -145,7 +162,7 @@ class KozmosItineraryEndpointEditTest {
             KozmosItinerary(origin = "Dunkin'", steps = emptyList(), destination = longName, onEditDestination = {})
         }
         val text = tree.named("To, $longName").bounds
-        val button = tree.named("Change destination").bounds
+        val button = tree.named("Change To").bounds
         assertEquals("the action ends the row", 320f, button.right / density, 1f)
         assertTrue("the name before it", text.right <= button.left)
         assertTrue("the name keeps half the row: ${text.width / density}", text.width / density >= 154f)
@@ -160,7 +177,7 @@ class KozmosItineraryEndpointEditTest {
             KozmosItinerary(origin = "Dunkin'", steps = emptyList(), destination = longName, onEditDestination = {})
         }
         val text = tree.named("To, $longName").bounds
-        val button = tree.named("Change destination").bounds
+        val button = tree.named("Change To").bounds
         assertEquals("the action ends the row", 0f, button.left / density, 1f)
         assertTrue("the name before it", text.left >= button.right)
         assertEquals("the name starts the row", 320f, text.right / density, 1f)

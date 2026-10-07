@@ -80,15 +80,16 @@ It forwards its ref to `HTMLElement`. Its props are `ItineraryProps`, which exte
 
   The actions' visible verb: RouteLocationField's `changeLabel`, "Change".
 
-- `editOriginLabel`: `string`, optional, default `` `${changeLabel} start point` ``.
+- `editOriginLabel`: `string`, optional, default `` `${changeLabel} ${originLabel}` ``.
 
   The From action's accessible name. Start it with `changeLabel`, the words
-  on the button, so a speech user can say what they see (WCAG 2.5.3); by
-  default it is `changeLabel` and "start point".
+  on the button, so a speech user can say what they see (WCAG 2.5.3). By
+  default it is `changeLabel` and `originLabel`, the row's caption: both
+  words the product translates, so the name is in one language.
 
-- `editDestinationLabel`: `string`, optional, default `` `${changeLabel} destination` ``.
+- `editDestinationLabel`: `string`, optional, default `` `${changeLabel} ${destinationLabel}` ``.
 
-  The To action's accessible name; by default `changeLabel` and "destination".
+  The To action's accessible name; by default `changeLabel` and `destinationLabel`.
 
 - `children`: `ReactNode`, optional.
 

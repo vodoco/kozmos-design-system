@@ -84,7 +84,7 @@ export const NoCurrentStep: Story = {
 /**
  * GAP-104: the route card's Change beside From and To (the Web SDK's Edit).
  * Each is drawn only when the host passes its callback, and is named for its
- * endpoint: "Change start point", "Change destination".
+ * endpoint, with its caption: "Change From", "Change To".
  */
 export const WithEndpointEdit: Story = {
   args: {

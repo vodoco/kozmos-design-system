@@ -51,8 +51,10 @@ public struct KozmosItinerary: View {
     /// a Change button, drawn only when passed; the host opens that endpoint
     /// for editing and moves focus there. `changeLabel` is the visible verb,
     /// RouteLocationField's. Each button is named for its endpoint, starting
-    /// with that verb so a speech user can say what they see (WCAG 2.5.3): by
-    /// default "Change start point" and "Change destination".
+    /// with that verb so a speech user can say what they see (WCAG 2.5.3). By
+    /// default the name is `changeLabel` and the row's caption, `originLabel`
+    /// or `destinationLabel`, "Change From" and "Change To": words the product
+    /// translates, so the name is in one language.
     public init(
         origin: String,
         steps: [KozmosItineraryStep],
@@ -75,8 +77,8 @@ public struct KozmosItinerary: View {
         self.onEditOrigin = onEditOrigin
         self.onEditDestination = onEditDestination
         self.changeLabel = changeLabel
-        self.editOriginLabel = editOriginLabel ?? "\(changeLabel) start point"
-        self.editDestinationLabel = editDestinationLabel ?? "\(changeLabel) destination"
+        self.editOriginLabel = editOriginLabel ?? "\(changeLabel) \(originLabel)"
+        self.editDestinationLabel = editDestinationLabel ?? "\(changeLabel) \(destinationLabel)"
     }
 
     public var body: some View {
