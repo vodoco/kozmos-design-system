@@ -105,7 +105,13 @@ data class ReadNode(
     /** How a node takes focus, as tapping a field or a keyboard moving to it does. */
     val requestFocus: (() -> Boolean)? = null,
     /** How a text field is typed into. */
-    val setText: ((String) -> Boolean)? = null
+    val setText: ((String) -> Boolean)? = null,
+    /** Set, the node is a pane TalkBack names by it: Compose's nearest to a named region. */
+    val paneTitle: String? = null,
+    /** True for a node whose children TalkBack reads together, before what follows it. */
+    val traversalGroup: Boolean = false,
+    /** Where TalkBack reads the node among its group: lower first, then by place; 0 unless set. */
+    val traversalIndex: Float = 0f
 )
 
 /**
@@ -308,5 +314,8 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     progressRange = node.config.getOrNull(SemanticsProperties.ProgressBarRangeInfo),
     focused = node.config.getOrNull(SemanticsProperties.Focused),
     requestFocus = node.config.getOrNull(SemanticsActions.RequestFocus)?.action,
-    setText = node.config.getOrNull(SemanticsActions.SetText)?.action?.let { set -> { text: String -> set(AnnotatedString(text)) } }
+    setText = node.config.getOrNull(SemanticsActions.SetText)?.action?.let { set -> { text: String -> set(AnnotatedString(text)) } },
+    paneTitle = node.config.getOrNull(SemanticsProperties.PaneTitle),
+    traversalGroup = node.config.getOrNull(SemanticsProperties.IsTraversalGroup) == true,
+    traversalIndex = node.config.getOrNull(SemanticsProperties.TraversalIndex) ?: 0f
 )
