@@ -20,7 +20,10 @@ public struct KozmosSplitButton: View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing25) {
             Button(action: mainAction) {
                 // Pressed and focused, the themed button's tokens. The menu
-                // half is a `Menu`, whose press SwiftUI draws.
+                // half is a `Menu`, whose press SwiftUI draws: a `Menu` does
+                // not run a custom button style's pressed state, and keeping
+                // the system's press there is a deliberate platform
+                // difference (decision 64; Olcay, 2026-10-08).
                 KozmosButtonInteractionReader { isPressed, isFocused in
                     Text(label)
                         .padding()

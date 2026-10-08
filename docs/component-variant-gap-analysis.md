@@ -22,6 +22,12 @@ device/app language and deliberately have no dedicated language button. The gene
 absence lists count files, so they include this component; its native absence is not
 an implementation backlog item.
 
+Platform difference, by decision: **iOS SplitButton's menu half keeps SwiftUI's system
+press** (decision 64, 2026-10-08). It is a `Menu`, which does not run a custom button
+style's pressed state, so it draws the system's press instead of the `#0D44C2` pressed
+token that the action half, React and Compose draw. Replacing the `Menu` to draw the
+token was declined, so this is not a gap to close.
+
 ## Headline Numbers
 
 <!-- generated:headline -->
