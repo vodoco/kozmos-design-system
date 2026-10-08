@@ -135,13 +135,15 @@ export const NumberedOneSelected: Story = {
 /**
  * A featured pin, a pin with a logo in `markerContent` and a pin with no
  * number keep their fill at rest. A featured result's pin shows its logo on
- * the map, so a product numbers only the others.
+ * the map, so a product numbers only the others. Featured is the SDK's amber
+ * with a black number on every platform (decision 62), and its name says
+ * "Featured" after the label.
  */
 export const FeaturedLogoAndPlain: Story = {
   render: (args) => (
     <OnTheMap
       pins={[
-        { ...args, label: "Burger King, featured", featured: true },
+        { ...args, label: "Burger King", featured: true },
         {
           ...args,
           label: "Harbour Coffee Co.",
@@ -186,7 +188,9 @@ export const OtherFloor: Story = {
 /**
  * Other variants keep their colours in the ring and number at rest, as ink
  * that reads on the surface. Secondary's own colour is a surface grey, so
- * its ring and number take the muted foreground.
+ * its ring and number take the muted foreground; the accent's 500 reads 3:1
+ * on the dark page, so they take its ramp's 700. Filled, the accent is brand
+ * variant 1's 500 with a white number, as on iOS and Compose (decision 62).
  */
 export const VariantsAtRest: Story = {
   render: (args) => (
@@ -200,6 +204,13 @@ export const VariantsAtRest: Story = {
           label: "Result 4",
           number: 4,
           variant: "secondary",
+          selected: true,
+        },
+        {
+          ...args,
+          label: "Result 5",
+          number: 5,
+          variant: "accent",
           selected: true,
         },
       ]}
