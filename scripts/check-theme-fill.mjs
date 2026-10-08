@@ -297,9 +297,26 @@ async function enter(page, target, state) {
 
 async function leave(page, state) {
   if (state === "pressed") await page.mouse.up();
-  // The SplitButton's menu opens on the press; close it.
+  // The SplitButton's menu opens on the press, and can mount a frame or two
+  // after the release (CI's Linux WebKit). While a Radix menu is open or
+  // closing, the body takes no pointer events, so the next read could not
+  // hover or press anything. Let it mount, close it, and wait until it has
+  // gone and the page takes the pointer again.
+  await page.evaluate(
+    () =>
+      new Promise((done) =>
+        requestAnimationFrame(() => requestAnimationFrame(done)),
+      ),
+  );
   if ((await page.locator('[role="menu"]').count()) > 0)
     await page.keyboard.press("Escape");
+  await page.waitForFunction(
+    () =>
+      !document.querySelector('[role="menu"]') &&
+      getComputedStyle(document.body).pointerEvents !== "none",
+    null,
+    { timeout: 5000 },
+  );
   await page.evaluate(() => document.activeElement?.blur?.());
   await page.mouse.move(1, 1);
 }
