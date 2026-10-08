@@ -33,6 +33,20 @@ function toGlobalName(packageName: string) {
   );
 }
 
+/**
+ * Tailwind's preflight names theme values — `theme('fontFamily.sans', <its
+ * default>)` — which only Tailwind resolves; a browser drops each such
+ * declaration, so a page with the reset kept its serif. The host reset is not
+ * built by Tailwind, so each value takes the default it names.
+ */
+function resolvePreflightTheme(css: string) {
+  const resolved = css.replace(/theme\('[^']*',\s*([^;]*?)\)(?=;)/g, "$1");
+  if (resolved.includes("theme(")) {
+    throw new Error("reset.css: a theme() call has no default to resolve to");
+  }
+  return resolved;
+}
+
 export default defineConfig(async () => {
   let visualizerPlugin = null;
   if (process.env.ANALYZE) {
@@ -50,9 +64,11 @@ export default defineConfig(async () => {
           this.emitFile({
             type: "asset",
             fileName: "reset.css",
-            source: await readFile(
-              require.resolve("tailwindcss/lib/css/preflight.css"),
-              "utf8",
+            source: resolvePreflightTheme(
+              await readFile(
+                require.resolve("tailwindcss/lib/css/preflight.css"),
+                "utf8",
+              ),
             ),
           });
         },
