@@ -131,7 +131,7 @@ struct KozmosCard<Content: View>: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(KozmosColors.primitivesColorsBackground200, lineWidth: 1)
         )
-        // Shadow could be added here if elevation tokens are available
+        .kozmosElevation(KozmosShadows.semanticsElevationRaised)
     }
 }
     `}
