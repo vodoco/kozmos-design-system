@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "d3f94e4a8414";
+const PLUGIN_BUILD = "6150c9ad6332";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -14850,16 +14850,6 @@ function setInstanceSwapProperty(
   }
 }
 
-function componentPropertyNameByBaseName(componentSet, baseName, type) {
-  return componentPropertyLookupByBaseName(
-    componentSet,
-    baseName,
-    type,
-    null,
-    "preview",
-  ).propertyName;
-}
-
 function componentPropertyLookupByBaseName(
   componentSet,
   baseName,
@@ -20794,27 +20784,6 @@ function auditExpectedNestedInstance(
 
     issues.push({
       kind: "cloned-subcomponent-frame",
-      node: node.name,
-      nodeType: node.type,
-      nodeId: node.id,
-      urlNodeId: nodeIdForUrl(node.id),
-      expectedSource: sourceComponentSet,
-    });
-  }
-}
-
-function auditLegacyFrameClone(
-  componentSet,
-  issues,
-  nodeName,
-  sourceComponentSet,
-) {
-  const nodes = componentSet.findAll(
-    (node) => node.name === nodeName && node.type !== "INSTANCE",
-  );
-  for (const node of nodes) {
-    issues.push({
-      kind: "legacy-composition-frame",
       node: node.name,
       nodeType: node.type,
       nodeId: node.id,
@@ -39239,107 +39208,6 @@ function treeMetrics(props) {
     actionSize: 28,
     actionIconSize: 14,
   };
-}
-
-function treeRows(props) {
-  const expanded = props.expanded === "True";
-  const content = props.content || "Basic";
-  const withCounts = content === "Count" || content === "Actions";
-  const withActions = content === "Actions";
-  const state = normalizeTreeState(props.state);
-  const selectedKey = expanded ? "leaf" : "root";
-  const interactiveKey = expanded ? "child" : "root";
-  const activeKey =
-    state === "Selected"
-      ? selectedKey
-      : state === "Focus" || state === "Hover"
-        ? interactiveKey
-        : null;
-  const rows = [
-    {
-      key: "root",
-      textName: "Root Text",
-      text: "Map content",
-      countName: "Root Count Text",
-      count: withCounts ? "23" : null,
-      actions: withActions ? TREE_PARENT_ACTIONS : [],
-      depth: 0,
-      expandable: true,
-      expanded,
-    },
-  ];
-
-  if (expanded) {
-    rows.push(
-      {
-        key: "child",
-        textName: "Child Text",
-        text: "Content group",
-        countName: "Child Count Text",
-        count: withCounts ? "164" : null,
-        actions: withActions
-          ? [{ name: "Lock Action", iconName: "lock-01" }]
-          : [],
-        depth: 1,
-        expandable: true,
-        expanded: true,
-      },
-      {
-        key: "leaf",
-        textName: "Leaf Text",
-        text: "Place item",
-        countName: "Leaf Count Text",
-        count: withCounts ? "4" : null,
-        actions: withActions ? TREE_ITEM_ACTIONS : [],
-        depth: 2,
-        expandable: false,
-        expanded: false,
-      },
-    );
-  }
-
-  rows.push({
-    key: "sibling",
-    textName: "Sibling Text",
-    text: "Settings",
-    countName: "Sibling Count Text",
-    count: withCounts ? "12" : null,
-    actions: withActions ? TREE_ITEM_ACTIONS : [],
-    iconName: "settings-01",
-    depth: 0,
-    expandable: false,
-    expanded: false,
-  });
-
-  for (const row of rows) {
-    row.selected = state === "Selected" && row.key === activeKey;
-    row.focused = state === "Focus" && row.key === activeKey;
-    row.hovered = state === "Hover" && row.key === activeKey;
-    row.state = state;
-  }
-
-  return rows;
-}
-
-async function createTreeRow({
-  row,
-  props,
-  metrics,
-  variableByName,
-  fonts,
-  stats,
-}) {
-  const rowNode = figma.createFrame();
-  const result = await syncTreeRowNode(rowNode, {
-    row,
-    props,
-    metrics,
-    variableByName,
-    fonts,
-    stats,
-    componentName: "Tree",
-  });
-  return { rowNode, iconNodes: result.iconNodes };
 }
 
 async function syncTreeRowNode(
@@ -61933,34 +61801,6 @@ async function syncTableRow({
   return { row, cells: rowCells };
 }
 
-function syncRowSeparator({ parent, name, width, y, variableByName, stats }) {
-  const separator = figma.createRectangle();
-  separator.name = name;
-  separator.resizeWithoutConstraints(width, 1);
-  separator.x = 0;
-  separator.y = y;
-  separator.fills = [
-    paintFromVariable("Border/Subtle", "#C7CAD1", variableByName, stats),
-  ];
-  separator.strokes = [];
-  separator.strokeWeight = 0;
-  separator.setSharedPluginData(RUN_NAMESPACE, "kind", "row-separator");
-
-  try {
-    separator.layoutPositioning = "ABSOLUTE";
-  } catch (_error) {
-    // Older Figma runtimes may not expose absolute positioning on rectangles.
-  }
-
-  try {
-    separator.constraints = { horizontal: "STRETCH", vertical: "MAX" };
-  } catch (_error) {
-    // Constraints can be rejected on some shape contexts in older runtimes.
-  }
-
-  parent.appendChild(separator);
-}
-
 async function syncTabsVariantChildren({
   component,
   count,
@@ -64983,61 +64823,6 @@ async function syncToastVariantChildren({
     variableByName,
     stats,
   );
-}
-
-async function syncOverlayCloseButton({
-  parent,
-  name,
-  kind,
-  size,
-  iconSize,
-  iconSizeToken,
-  x,
-  y,
-  variableByName,
-  stats,
-}) {
-  let close = directChildNamed(parent, name);
-  if (close && close.type !== "FRAME") {
-    close.remove();
-    close = null;
-  }
-  if (!close || close.type !== "FRAME") {
-    close = figma.createFrame();
-    close.name = name;
-  }
-  close.layoutMode = "NONE";
-  close.resizeWithoutConstraints(size, size);
-  close.x = x;
-  close.y = y;
-  close.cornerRadius = Math.min(8, size / 2);
-  close.fills = [];
-  close.strokes = [];
-  close.clipsContent = false;
-  close.setSharedPluginData(RUN_NAMESPACE, "kind", kind);
-  parent.appendChild(close);
-
-  try {
-    close.layoutPositioning = "ABSOLUTE";
-  } catch (_error) {
-    // Older Figma runtimes may not expose absolute positioning on every node.
-  }
-
-  removeDirectChildren(close);
-  const icon = await createFixedIconInstance(
-    "x-close",
-    "Colors/foreground/400",
-    "#5D626F",
-    variableByName,
-    stats,
-    iconSize,
-    iconSizeToken,
-  );
-  icon.name = "Close Icon";
-  icon.x = (size - iconSize) / 2;
-  icon.y = (size - iconSize) / 2;
-  close.appendChild(icon);
-  return close;
 }
 
 async function syncInlineCloseButton({
