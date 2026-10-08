@@ -2,7 +2,6 @@ package com.kozmos.components.tabs
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -13,6 +12,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +56,9 @@ fun KozmosTabs(
  * The tabs' track: background/100 with the control radius, React's
  * `TabsList` (`bg-muted p-1 rounded-control`). Each trigger draws its own
  * segment 4dp inside it, so the track pads only its ends here.
+ *
+ * TalkBack reads it as React's `tablist`: a selectable group, so TalkBack
+ * is given the tabs as one collection, and each tab's place in it.
  */
 @Composable
 fun KozmosTabsList(
@@ -63,6 +68,7 @@ fun KozmosTabsList(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .selectableGroup()
             .background(
                 KozmosThemeTokens.primitivesColorsBackground100,
                 RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)
@@ -86,6 +92,9 @@ fun KozmosTabsList(
  * focus; Kozmos names no tab token for either, so here the platform's ripple
  * is the press and the focus indication, drawn in the segment's shape rather
  * than across the track.
+ *
+ * TalkBack reads it as React's `tab` with `aria-selected`: a tab, selected
+ * or not selected.
  */
 @Composable
 fun RowScope.KozmosTabsTrigger(
@@ -103,7 +112,12 @@ fun RowScope.KozmosTabsTrigger(
     Box(
         modifier = modifier
             .weight(1f)
-            .clickable(interactionSource = interactionSource, indication = null) {
+            .selectable(
+                selected = isSelected,
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Tab
+            ) {
                 trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Tabs", eventName = "tab_switched", properties = mapOf("value" to value.toString())))
                 onValueChange(value)
             }
