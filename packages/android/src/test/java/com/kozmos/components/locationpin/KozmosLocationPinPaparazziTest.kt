@@ -4,13 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
 import com.kozmos.components.categorytile.KozmosCategoryTint
 import com.kozmos.components.counter.KozmosInkedFill
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosColors
 import org.junit.Rule
 import org.junit.Test
@@ -38,7 +38,7 @@ class KozmosLocationPinPaparazziTest {
     @Test
     fun anOffFloorPinsNumberIsInTheForeground() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Row(
                     modifier = Modifier.background(Color.White).padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -60,7 +60,7 @@ class KozmosLocationPinPaparazziTest {
     @Test
     fun numberedPinsAreQuietAtRestAndFilledWhenSelected() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Row(
                     modifier = Modifier.background(Color.White).padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)

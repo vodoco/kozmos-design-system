@@ -4,7 +4,6 @@
 // the other.
 package com.kozmos.example
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,6 +13,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import com.kozmos.components.clientappbanner.KozmosClientAppBanner
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -61,7 +61,7 @@ class ClientAppBannerDocSnippetsTest {
             buttonText = "Open",
             storeUrl = "https://play.google.com/store/apps/details?id=com.example"
         )
-        val tree = paparazzi.readSemantics { MaterialTheme { AppBanner(settings) } }
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme { AppBanner(settings) } }
         assertEquals(1, tree.merged.count { it.texts == listOf("Northfield Airport") })
         assertEquals(emptyList<String>(), tree.merged.mapNotNull { it.paneTitle })
         assertEquals("Dismiss", tree.named("Dismiss").description)

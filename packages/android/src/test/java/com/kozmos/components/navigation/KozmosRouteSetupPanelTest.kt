@@ -1,10 +1,10 @@
 package com.kozmos.components.navigation
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import com.kozmos.components.routesetuppanel.KozmosRouteSetupPanel
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -16,7 +16,7 @@ class KozmosRouteSetupPanelTest {
         for ((ready, pending) in listOf(false to false, true to true)) {
             var continues = 0
             var closes = 0
-            val tree = paparazzi.readSemantics { MaterialTheme {
+            val tree = paparazzi.readSemantics { KozmosMaterialTheme {
                 KozmosRouteSetupPanel(ready, { continues++ }, { closes++ }, pending = pending,
                     continueLabel = "Weiter", closeLabel = "Schließen") { Text("Lobby → Gallery") }
             } }
@@ -31,7 +31,7 @@ class KozmosRouteSetupPanelTest {
 
     @Test fun validContinuationDelegatesOnceWithoutDroppingContent() {
         var calls = 0
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosRouteSetupPanel(true, { calls++ }, {}) { Text("Lobby → Gallery") }
         } }
         assertTrue(tree.unmerged.flatMap { it.texts }.contains("Lobby → Gallery"))

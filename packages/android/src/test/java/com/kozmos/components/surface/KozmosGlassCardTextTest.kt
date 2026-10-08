@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -30,6 +29,7 @@ import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.routesummary.KozmosRouteSummary
 import com.kozmos.components.savelocationcard.KozmosSaveLocationCard
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import kotlin.math.abs
@@ -142,7 +142,7 @@ class KozmosGlassCardTextTest {
                         Box(Modifier.weight(1f).fillMaxHeight().background(if (amberFirst) blue else amber))
                     }
                     Box(Modifier.padding(16.dp)) {
-                        MaterialTheme { content() }
+                        KozmosMaterialTheme { content() }
                     }
                 }
             }

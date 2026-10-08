@@ -1,8 +1,8 @@
 package com.kozmos.components.categorytile
 
-import androidx.compose.material3.MaterialTheme
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosCategoryPresentation
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -23,7 +23,7 @@ class KozmosCategoryTileSemanticsTest {
     val paparazzi = semanticsPaparazzi()
 
     private fun tile(selected: Boolean, resultCountLabel: String?) = paparazzi.readSemantics {
-        MaterialTheme {
+        KozmosMaterialTheme {
             KozmosCategoryTile(
                 category = KozmosCategoryPresentation(
                     id = "cafes",

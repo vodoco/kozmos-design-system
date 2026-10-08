@@ -1,6 +1,5 @@
 package com.kozmos.components.combobox
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,6 +9,7 @@ import com.kozmos.components.listbox.KozmosPickerAction
 import com.kozmos.components.live
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -29,7 +29,7 @@ class KozmosComboboxFocusTest {
 
     @Test fun commandFromAPickerOpenedByTheChevronFocusesNoField() {
         var maps = 0
-        paparazzi.live(content = { MaterialTheme { Picker { maps++ } } }) {
+        paparazzi.live(content = { KozmosMaterialTheme { Picker { maps++ } } }) {
             assertEquals(false, read().named("From").focused)
             read().named("Open options").click!!.invoke(); frames(3)
             read().merged.single { "Map" in it.texts && it.click != null }.click!!.invoke(); frames(3)
@@ -42,7 +42,7 @@ class KozmosComboboxFocusTest {
 
     @Test fun commandHandsFocusBackToAFieldTheVisitorWasTypingIn() {
         var maps = 0
-        paparazzi.live(content = { MaterialTheme { Picker { maps++ } } }) {
+        paparazzi.live(content = { KozmosMaterialTheme { Picker { maps++ } } }) {
             assertTrue(read().named("From").requestFocus!!.invoke()); frames(2)
             assertTrue(read().named("From").setText!!.invoke("Lobbyx")); frames(3)
             assertEquals(true, read().named("From").focused)
@@ -57,7 +57,7 @@ class KozmosComboboxFocusTest {
     }
 
     @Test fun theCaptionIsTheFieldsNameAndIsNotHeardBeforeIt() {
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosCombobox("", { _, _ -> }, "Lobby", {}, emptyList(), label = "From")
         } }
         assertNotNull("the field is named From", tree.named("From").setText)

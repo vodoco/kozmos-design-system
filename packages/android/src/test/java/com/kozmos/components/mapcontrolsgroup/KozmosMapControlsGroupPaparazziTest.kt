@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -17,6 +14,7 @@ import app.cash.paparazzi.Paparazzi
 import com.kozmos.components.CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlacement
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonPresentation
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosUserLocationState
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -48,7 +46,7 @@ class KozmosMapControlsGroupPaparazziTest {
     private fun snapshotIn(dark: Boolean) {
         paparazzi.snapshot {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
-                MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+                KozmosMaterialTheme {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -19,6 +18,7 @@ import com.kozmos.components.categorytile.KozmosCategoryTile
 import com.kozmos.components.counter.KozmosInkedFill
 import com.kozmos.components.categorytile.KozmosCategoryTint
 import com.kozmos.components.locationpin.KozmosLocationPin
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
 import com.kozmos.components.searchbar.KozmosSearchBar
@@ -37,7 +37,7 @@ class KozmosSearchSheetPaparazziTest {
     @Test
     fun theSearchSheetsParts() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(modifier = Modifier.padding(16.dp).width(360.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Through the field's own trailing slot, not a row composed
                     // here: the golden is unchanged by the move, which is the

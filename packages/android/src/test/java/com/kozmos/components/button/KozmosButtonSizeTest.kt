@@ -3,7 +3,6 @@ package com.kozmos.components.button
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -16,6 +15,7 @@ import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -41,7 +41,7 @@ class KozmosButtonSizeTest {
             val pixels = paparazzi.drawn(frames) {
                 density = LocalDensity.current.density
                 fill = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle.toArgb()
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.fillMaxSize().onGloballyPositioned { root = it.boundsInRoot() }.padding(40.dp)) {
                         KozmosButton(onClick = {}, size = size, modifier = Modifier.onGloballyPositioned { box = it.boundsInRoot() }) {
                             Text(if (size == KozmosButtonSize.Icon) "+" else "Go")

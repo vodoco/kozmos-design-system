@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -65,7 +65,7 @@ class KozmosAdaptiveMapShellPanelHeaderDragTest {
             setContent {
                 val host = LocalView.current
                 val density = host.resources.displayMetrics.density
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosAdaptiveMapShell(
                         map = { Box(modifier = Modifier.fillMaxSize().background(Color.Red)) },
                         panelHeader = header,
@@ -144,7 +144,7 @@ class KozmosAdaptiveMapShellPanelHeaderDragTest {
     @Test
     fun theHeaderIsReadBeforeTheContent() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     map = { Box(modifier = Modifier.fillMaxSize()) },
                     panelHeader = { Text("Search places") },

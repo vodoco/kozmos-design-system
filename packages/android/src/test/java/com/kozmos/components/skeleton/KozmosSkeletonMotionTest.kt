@@ -1,13 +1,13 @@
 package com.kozmos.components.skeleton
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.live
 import com.kozmos.components.motion.LocalKozmosAnimatorScale
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -28,7 +28,7 @@ class KozmosSkeletonMotionTest {
     private fun recompositionsIn20Frames(scale: Float): Long {
         var counted = -1L
         paparazzi.live(content = {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 CompositionLocalProvider(LocalKozmosAnimatorScale provides scale) {
                     KozmosSkeleton(modifier = Modifier.size(120.dp, 16.dp))
                 }

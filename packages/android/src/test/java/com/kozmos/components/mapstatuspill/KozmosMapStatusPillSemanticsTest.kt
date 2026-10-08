@@ -1,12 +1,12 @@
 package com.kozmos.components.mapstatuspill
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.LiveRegionMode
 import com.kozmos.components.ReadNode
 import com.kozmos.components.ReadSemantics
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -25,7 +25,7 @@ class KozmosMapStatusPillSemanticsTest {
     val paparazzi = semanticsPaparazzi()
 
     private fun read(content: @Composable () -> Unit): ReadSemantics =
-        paparazzi.readSemantics { MaterialTheme { content() } }
+        paparazzi.readSemantics { KozmosMaterialTheme { content() } }
 
     /** The one merged node that carries a live region. */
     private fun ReadSemantics.region(): ReadNode {

@@ -11,10 +11,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -68,6 +65,7 @@ import com.kozmos.components.splitbutton.KozmosSplitButton
 import com.kozmos.components.stepper.KozmosStepper
 import com.kozmos.components.switch.KozmosSwitch
 import com.kozmos.components.tag.KozmosTag
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.components.timeline.KozmosTimeline
 import com.kozmos.components.timeline.KozmosTimelineItem
 import com.kozmos.components.timeline.KozmosTimelineTitle
@@ -125,7 +123,7 @@ class KozmosThemeFillPixelsTest {
                 LocalKozmosUseDarkTokens provides dark,
                 LocalDensity provides Density(density.density * 2f, density.fontScale)
             ) {
-                MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+                KozmosMaterialTheme {
                     Box(
                         Modifier
                             .fillMaxSize()

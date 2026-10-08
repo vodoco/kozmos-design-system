@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -23,6 +20,7 @@ import com.kozmos.components.itinerary.KozmosItinerary
 import com.kozmos.components.itinerary.KozmosItineraryStep
 import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosInstructionPart
 import com.kozmos.contracts.KozmosInstructionPartRole
 import com.kozmos.tokens.KozmosThemeTokens
@@ -53,7 +51,7 @@ class KozmosInstructionPartsPaparazziTest {
                     LocalLayoutDirection provides if (lang == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr,
                     LocalDensity provides Density(LocalDensity.current.density, 1.5f)
                 ) {
-                    MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+                    KozmosMaterialTheme {
                         Column(Modifier.width(320.dp).background(KozmosThemeTokens.primitivesColorsBackground0).padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             KozmosDirectionStep(DirectionType.Right, parts)

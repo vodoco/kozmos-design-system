@@ -3,7 +3,6 @@ package com.kozmos.components.poidetailpanel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -19,6 +18,7 @@ import com.kozmos.components.ReadSemantics
 import com.kozmos.components.live
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIPresentation
 import kotlin.math.abs
@@ -73,7 +73,7 @@ class KozmosPOIDetailPanelActionStripTest {
     ) {
         val density = LocalDensity.current
         CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(Modifier.padding(20.dp).width(320.dp)) {
                     KozmosPOIDetailPanel(
                         poi = place,

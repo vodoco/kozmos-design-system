@@ -1,8 +1,8 @@
 package com.kozmos.components.mapinfopanel
 
-import androidx.compose.material3.MaterialTheme
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -27,7 +27,7 @@ class KozmosMapInfoPanelTest {
         for (expanded in listOf(false, true)) {
             var next: String? = "unchanged"
             val tree = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosMapInfoPanel(
                         content = KozmosMapInfoContent(title = "About", faqs = listOf(KozmosMapInfoFAQ("floors", "Change floor?", "Choose a level."))),
                         onClose = {}, expandedFAQ = if (expanded) "floors" else null, onExpandedFAQChange = { next = it }
@@ -51,7 +51,7 @@ class KozmosMapInfoPanelTest {
     @Test fun hostContentAndLocalizedCloseRemainAccessible() {
         var closed = false
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosMapInfoPanel(
                     content = KozmosMapInfoContent(title = "About this map", credits = listOf(KozmosMapInfoEntry("owner", "Indoor data")), versions = listOf(KozmosMapInfoVersion("sdk", "SDK version", "10.11.0"))),
                     onClose = { closed = true }, closeLabel = "Fermer"

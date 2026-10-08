@@ -2,7 +2,6 @@ package com.kozmos.components.clientappbanner
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -17,6 +16,7 @@ import com.kozmos.components.ReadNode
 import com.kozmos.components.ReadSemantics
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -68,7 +68,7 @@ class KozmosClientAppBannerSemanticsTest {
         content: @Composable () -> Unit
     ): ReadSemantics =
         paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 CompositionLocalProvider(
                     LocalLayoutDirection provides direction,
                     LocalDensity provides Density(LocalDensity.current.density, fontScale)

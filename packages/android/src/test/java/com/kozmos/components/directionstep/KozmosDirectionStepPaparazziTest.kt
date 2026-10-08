@@ -4,10 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Rule
 import org.junit.Test
 
@@ -21,7 +21,7 @@ class KozmosDirectionStepPaparazziTest {
     val paparazzi = Paparazzi(maxPercentDifference = 0.0)
 
     private fun column(types: List<DirectionType>) = @androidx.compose.runtime.Composable {
-        MaterialTheme {
+        KozmosMaterialTheme {
             Column(modifier = Modifier.padding(16.dp).width(360.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 types.forEach { type -> KozmosDirectionStep(type = type, instruction = type.name) }
             }

@@ -5,7 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toArgb
@@ -24,6 +23,7 @@ import com.kozmos.components.KeptFrames
 import com.kozmos.components.ReadSemantics
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.readSemantics
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOILogoPresentation
 import com.kozmos.contracts.KozmosPOIPresentation
@@ -146,7 +146,7 @@ class KozmosPOIDetailPanelLogoTest {
     private fun draw(): Drawn {
         frames.last = null
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.width(360.dp)) {
                     KozmosPOIDetailPanel(
                         poi = poi,

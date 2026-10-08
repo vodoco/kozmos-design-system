@@ -1,7 +1,6 @@
 package com.kozmos.components.navigation
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.kozmos.components.arrivalpanel.KozmosArrivalPanel
@@ -12,6 +11,7 @@ import com.kozmos.components.routeprogressrail.KozmosRouteProgressRail
 import com.kozmos.components.routesetuppanel.KozmosRouteSetupPanel
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosRouteOptionPresentation
 import com.kozmos.contracts.KozmosRoutePreference
 import com.kozmos.contracts.KozmosRouteReadiness
@@ -27,7 +27,7 @@ class KozmosJourneyCompositionTest {
     private var doneCount = 0
 
     @Composable private fun Fixture() {
-        MaterialTheme { Column {
+        KozmosMaterialTheme { Column {
             when (phase) {
                 "setup", "calculating" -> {
                     KozmosRouteSetupPanel(true, { phase = "calculating" }, { phase = "setup" }, pending = phase == "calculating") { Text("Lobby → Gallery") }

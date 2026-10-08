@@ -2,7 +2,6 @@ package com.kozmos.components.floorselector
 
 import android.os.Handler
 import android.os.Looper
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -14,6 +13,7 @@ import com.kozmos.components.adaptivemapshell.LocalMapPopupRegion
 import com.kozmos.components.adaptivemapshell.MapPopupRegion
 import com.kozmos.components.readSettledSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosFloorPresentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,7 +37,7 @@ class FloorPopupHostTest {
         var density = 1f
         val tree = paparazzi.readSettledSemantics {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosFloorSwitcherColumn(
                     floors = floors, selectedFloor = "20", levelSize = DpSize(48.dp, 48.dp),
                     userFloor = null, userFloorLabel = "your level", resultCountLabel = { "$it results" },
@@ -55,7 +55,7 @@ class FloorPopupHostTest {
         var dismissed = false
         paparazzi.readSettledSemantics {
             CompositionLocalProvider(LocalMapPopupRegion provides MapPopupRegion(IntRect.Zero, false)) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosFloorSwitcher(
                         floors = floors, selectedFloor = "20", expanded = true,
                         onExpandedChange = { dismissed = !it }, onChoose = {}

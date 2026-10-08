@@ -4,7 +4,6 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityNodeProvider
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -17,6 +16,7 @@ import com.kozmos.components.poiresultgroup.KozmosPOIResultGroup
 import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import com.kozmos.contracts.KozmosTravelEstimatePresentation
@@ -117,7 +117,7 @@ class KozmosPOIResultCardTalkBackTest {
                     clicked = provider.performAction(rowId, AccessibilityNodeInfo.ACTION_CLICK, null)
                 )
             }) {
-                MaterialTheme { Box(Modifier.width(340.dp)) { content() } }
+                KozmosMaterialTheme { Box(Modifier.width(340.dp)) { content() } }
             }
         }
         return checkNotNull(read) { "the card was never laid out" }

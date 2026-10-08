@@ -4,13 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIAvailability
 import com.kozmos.contracts.KozmosPOIDetailAttributeGroup
@@ -51,14 +51,14 @@ class KozmosPOIDetailPanelDetailsPaparazziTest {
 
     @Test
     fun theDetailsInLightMode() {
-        paparazzi.snapshot { MaterialTheme { Card() } }
+        paparazzi.snapshot { KozmosMaterialTheme { Card() } }
     }
 
     @Test
     fun theDetailsInDarkMode() {
         paparazzi.snapshot {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides true) {
-                MaterialTheme { Card() }
+                KozmosMaterialTheme { Card() }
             }
         }
     }

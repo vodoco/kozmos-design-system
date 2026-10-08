@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import com.kozmos.components.routesummary.KozmosRoutePresentation
 import com.kozmos.components.routesummary.KozmosRouteSummary
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Rule
@@ -57,7 +57,7 @@ class KozmosRouteSummaryPresentationTest {
     private fun inset(panel: KozmosSurfaceStyle?, presentation: KozmosRoutePresentation?): Float {
         val read = paparazzi.readSemantics {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 CompositionLocalProvider(LocalKozmosPanelSurface provides panel) {
                     Box(Modifier.width(320.dp).semantics { contentDescription = "Summary" }) { Summary(presentation) }
                 }
@@ -82,7 +82,7 @@ class KozmosRouteSummaryPresentationTest {
     /** The real shell: the summary as its panel sits where the hosted one does, not where the card would. */
     @Test fun theMapShellsPanelHostsTheSummary() {
         fun heading(presentation: KozmosRoutePresentation?) = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     map = { Box(Modifier.fillMaxSize()) },
                     panel = { Summary(presentation) },
@@ -103,7 +103,7 @@ class KozmosRouteSummaryPresentationTest {
     private fun assertTheHeaderHostsTheSummary(side: Boolean) {
         fun read(presentation: KozmosRoutePresentation?) = paparazzi.readSemantics {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     map = { Box(Modifier.fillMaxSize()) },
                     panel = { Box(Modifier.fillMaxWidth().height(44.dp)) },

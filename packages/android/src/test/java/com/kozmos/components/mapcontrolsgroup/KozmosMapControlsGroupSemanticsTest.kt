@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,6 +14,7 @@ import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlaceme
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonPresentation
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosUserLocationState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -35,7 +35,7 @@ class KozmosMapControlsGroupSemanticsTest {
     val paparazzi = semanticsPaparazzi()
 
     private fun read(content: @Composable () -> Unit) =
-        paparazzi.readSemantics { MaterialTheme { content() } }
+        paparazzi.readSemantics { KozmosMaterialTheme { content() } }
 
     @Test
     fun everyControlTakesTheProductsName() {

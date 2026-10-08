@@ -7,7 +7,6 @@ import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.withFrameNanos
@@ -21,6 +20,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -55,7 +55,7 @@ class KozmosButtonTouchTest {
                     val host = LocalView.current
                     density = LocalDensity.current.density
                     target = LocalViewConfiguration.current.minimumTouchTargetSize.toString()
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         Box(Modifier.fillMaxSize().padding(60.dp)) {
                             KozmosButton(onClick = { received++ }, enabled = enabled, isLoading = loading,
                                 modifier = Modifier.onGloballyPositioned { frame = it.boundsInRoot() }) {

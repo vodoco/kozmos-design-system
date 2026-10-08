@@ -3,7 +3,6 @@ package com.kozmos.components.itinerary
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -17,6 +16,7 @@ import com.kozmos.components.ReadSemantics
 import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -46,7 +46,7 @@ class KozmosItineraryEndpointEditTest {
         var density = 1f
         val tree = paparazzi.readSemantics {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 CompositionLocalProvider(LocalLayoutDirection provides direction) {
                     Box(Modifier.width(320.dp)) { content() }
                 }

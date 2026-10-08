@@ -1,7 +1,6 @@
 package com.kozmos.compat
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -10,6 +9,7 @@ import com.kozmos.components.itinerary.KozmosItinerary
 import com.kozmos.components.itinerary.KozmosItineraryStep
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -32,7 +32,7 @@ class ItineraryReleasedOrderTest {
     @Test
     fun theReleasedPositionalCallsStillCompileAndPutEachValueWhereItWent() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column {
                     KozmosItinerary(
                         "Haupteingang",
@@ -60,7 +60,7 @@ class ItineraryReleasedOrderTest {
     @Test
     fun theNewParametersAreReachedByPositionAndByName() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column {
                     KozmosItinerary(
                         "Haupteingang",

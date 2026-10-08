@@ -10,6 +10,7 @@ import com.kozmos.components.DrawnPixels
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertTrue
@@ -38,7 +39,7 @@ class KozmosSkeletonColourTest {
      */
     private fun middleOf(dark: Boolean, content: @Composable () -> Unit): Int {
         val drawn = paparazzi.drawn(frames) {
-            CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) { content() }
+            CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) { KozmosMaterialTheme { content() } }
         }
         return drawn.argb(drawn.width / 2, drawn.height / 2)
     }
