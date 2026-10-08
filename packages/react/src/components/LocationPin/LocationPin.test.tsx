@@ -186,15 +186,19 @@ describe("LocationPin", () => {
       expect(marker, variant).toHaveClass("fill-background", colour);
       expect(number, variant).toHaveClass(colour);
     }
-    // Filled, secondary keeps its own grey and the ink made for it.
+    // Filled, secondary is foreground/400 under foreground/1000, as SwiftUI
+    // and Compose fill it (decision 66); it was background/200, 1.6:1 on the
+    // page.
     rerender(
       <LocationPin label="Result 1" number={1} selected variant="secondary" />,
     );
     expect(screen.getByRole("img").querySelector("svg")).toHaveClass(
-      "text-secondary",
+      "text-[var(--primitives-colors-foreground-400)]",
       "fill-current",
     );
-    expect(screen.getByText("1")).toHaveClass("text-secondary-foreground");
+    expect(screen.getByText("1")).toHaveClass(
+      "text-[var(--primitives-colors-foreground-1000)]",
+    );
   });
 
   it("rings a tinted pin at rest in the category's fill, with the number in the foreground", () => {
@@ -227,7 +231,7 @@ describe("LocationPin", () => {
     expect(screen.getByText("4")).toHaveClass("text-theme-fill-foreground");
   });
 
-  it("draws a featured pin in the Featured amber with a black number, and says so (decision 62)", () => {
+  it("draws a featured pin in the accent with a star, never its number, and says so (decisions 62, 68)", () => {
     const { container, rerender } = render(
       <LocationPin featured label="Burger King" number={2} variant="accent" />,
     );
@@ -235,17 +239,32 @@ describe("LocationPin", () => {
     const marker = pin.querySelector("svg") as SVGElement;
     // Whatever the variant, as SwiftUI, Compose and Figma draw it.
     expect(marker).toHaveClass(
-      "text-[var(--primitives-colors-emotional-alert-500)]",
+      "text-[var(--semantics-accent-fill)]",
       "fill-current",
     );
     expect(marker).not.toHaveClass(
       "text-[var(--primitives-colors-theme-variant-1-500)]",
     );
-    expect(screen.getByText("2")).toHaveClass(
-      "text-[var(--semantics-emotion-alert-on-fill)]",
+    // With no logo, a star in the accent's ink where the number would be;
+    // the number is not drawn.
+    expect(screen.queryByText("2")).not.toBeInTheDocument();
+    const star = container.querySelector("[data-featured-star]");
+    expect(star).not.toBeNull();
+    expect(star?.parentElement).toHaveClass(
+      "text-[var(--semantics-accent-on-fill)]",
     );
-    // The star badge is gone: the marker is the pin's only drawing.
-    expect(container.querySelectorAll("svg")).toHaveLength(1);
+    expect(container.querySelectorAll("svg")).toHaveLength(2);
+    // With a logo, the logo, and no star.
+    rerender(
+      <LocationPin
+        featured
+        label="Burger King"
+        markerContent={<span data-testid="logo">BK</span>}
+        number={2}
+      />,
+    );
+    expect(screen.getByTestId("logo")).toBeInTheDocument();
+    expect(container.querySelector("[data-featured-star]")).toBeNull();
     rerender(
       <LocationPin
         featured

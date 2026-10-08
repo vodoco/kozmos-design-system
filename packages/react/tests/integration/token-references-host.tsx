@@ -9,7 +9,9 @@ import {
   FloatingActionButton,
   FloorSelector,
   IconButton,
+  LocationPin,
   MapControlButton,
+  POIResultCard,
   SplitButton,
   Tag,
   ThemeProvider,
@@ -29,6 +31,8 @@ import { Bookmark, Plus } from "@kozmos-ds/icons";
 
 /** The re-brand: theme 500, the client's base colour (decision 59). */
 const BRAND_FILL = "#AA1155";
+/** Decision 68: a product's own accent, in place of the default amber. */
+const ACCENT_FILL = "#2266AA";
 /** Distinct stand-ins for the steps the Button's states name. */
 const BRAND_HOVER = "#118855";
 const BRAND_PRESSED = "#553311";
@@ -123,6 +127,38 @@ function Hovers({ id }: { id: (part: string) => string }) {
   );
 }
 
+/* Decision 68: the Featured tag, its card's edge and a featured pin draw the
+   accent fill, a reference to accent 500, so one override of accent 500
+   re-colours them all. */
+function Accents({ id }: { id: (part: string) => string }) {
+  return (
+    <div>
+      <div data-testid={id("featured-pin")}>
+        <LocationPin featured label="Burger King" number={2} />
+      </div>
+      <POIResultCard
+        data-testid={id("featured-card")}
+        numbered
+        onSelect={() => undefined}
+        poi={{
+          id: id("poi"),
+          name: "Burger King",
+          floorLabel: "Level 1",
+          media: [],
+          actions: [],
+        }}
+        presentationStyle="legacy"
+        result={{
+          poiId: id("poi"),
+          resultIndex: 2,
+          selected: false,
+          featured: true,
+        }}
+      />
+    </div>
+  );
+}
+
 /** Every step of the theme ramp, each a colour of its own. */
 const STEPS = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
 const WHOLE_RAMP = Object.fromEntries(
@@ -142,6 +178,7 @@ function Root({
   fills = false,
   inks = false,
   hovers = false,
+  accents = false,
 }: {
   name: string;
   theme: "light" | "dark";
@@ -149,6 +186,7 @@ function Root({
   fills?: boolean;
   inks?: boolean;
   hovers?: boolean;
+  accents?: boolean;
 }) {
   const id = (part: string) => `${name}-${part}`;
   return (
@@ -158,6 +196,7 @@ function Root({
       {fills && <Fills id={id} />}
       {inks && <Inks id={id} />}
       {hovers && <Hovers id={id} />}
+      {accents && <Accents id={id} />}
     </ThemeProvider>
   );
 }
@@ -187,6 +226,18 @@ function Fixture() {
         name="dark-brand"
         theme="dark"
         tokens={{ "--primitives-colors-theme-500": BRAND_FILL }}
+      />
+      <Root
+        accents
+        name="light-accent"
+        theme="light"
+        tokens={{ "--primitives-colors-accent-500": ACCENT_FILL }}
+      />
+      <Root
+        accents
+        name="dark-accent"
+        theme="dark"
+        tokens={{ "--primitives-colors-accent-500": ACCENT_FILL }}
       />
       {/* The filled Button's states name 600 and 700 in the light theme and
           400 and 300 in the dark, where the ramp turns over. */}

@@ -306,9 +306,10 @@ try {
       // The result card's one tab (GAP-054; Olcay, 2026-09-29): each is
       // painted for what it says, in this root's theme, with or without
       // @scope and under the host's hostile rules, because the paint is
-      // owned. Featured is the SDK's bright amber under dark words, the alert
-      // fill pair, for its words and its star, and the card's edge takes the
-      // same amber; a number is quiet and outlined at rest and primary when
+      // owned. Featured is the accent fill under the accent's ink (decision
+      // 68: amber #FAB735 under black unless the product sets its accent;
+      // it was the alert fill pair), for its words and its star, and the
+      // card's edge takes the same accent; a number is quiet and outlined at rest and primary when
       // selected, and never recolours the card's edge; a badge is quiet, with
       // no star and the grey edge. Each card's tab is a corner of the card
       // (Olcay, 2026-09-29; Figma 9273:45990): the card's edge is its top
@@ -335,9 +336,9 @@ try {
         const expected = {
           featured: {
             kind: "featured",
-            background: await token("--semantics-emotion-alert-fill"),
-            color: await token("--semantics-emotion-alert-on-fill"),
-            borderBottomColor: await token("--semantics-emotion-alert-fill"),
+            background: await token("--semantics-accent-fill"),
+            color: await token("--semantics-accent-on-fill"),
+            borderBottomColor: await token("--semantics-accent-fill"),
             ...corner,
             star: true,
             hidden: false,
@@ -399,8 +400,8 @@ try {
             hidden: true,
           },
         };
-        const amber = await token("--semantics-emotion-alert-fill");
-        const onAmber = await token("--semantics-emotion-alert-on-fill");
+        const amber = await token("--semantics-accent-fill");
+        const onAmber = await token("--semantics-accent-on-fill");
         for (const direction of ["rtl", "ltr"]) {
           await page
             .getByTestId(`${id}-tabs`)
@@ -532,8 +533,16 @@ try {
       );
       for (const drawn of tones.filter(({ tone }) => tone)) {
         const where = `${mode} ${drawn.tone}: ${JSON.stringify(drawn)}`;
-        assert.notEqual(drawn.item, drawn.foreground, `${where}: no tone colour`);
-        assert.equal(drawn.value, drawn.item, `${where}: the value is not toned`);
+        assert.notEqual(
+          drawn.item,
+          drawn.foreground,
+          `${where}: no tone colour`,
+        );
+        assert.equal(
+          drawn.value,
+          drawn.item,
+          `${where}: the value is not toned`,
+        );
         assert.equal(drawn.icon, drawn.item, `${where}: the mark is not toned`);
       }
       for (const selector of [

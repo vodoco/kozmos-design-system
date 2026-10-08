@@ -41,6 +41,7 @@ import {
 } from "./lib/built-react-fixture.mjs";
 
 const BRAND_FILL = "#AA1155";
+const ACCENT_FILL = "#2266AA";
 const BRAND_HOVER = "#118855";
 const BRAND_PRESSED = "#553311";
 const NESTED_LIGHT_700 = "#225511";
@@ -237,6 +238,35 @@ try {
       else if (read.colour !== want[BRAND_FILL])
         failures.push(
           `${where}: ${read.value} under theme 500 = ${BRAND_FILL}; expected ${BRAND_FILL}`,
+        );
+    }
+  }
+
+  // Decision 68: under an override of accent 500 alone, the featured pin's
+  // marker and the Featured tab and its card's edge draw the product's
+  // accent. Until then they were alert colours, which an accent never moved.
+  const accent = await colourOf(ACCENT_FILL);
+  for (const theme of ["light", "dark"]) {
+    for (const [part, selector, property] of [
+      ["featured-pin", '[role="img"] svg', "color"],
+      ["featured-card", '[data-tab="featured"]', "backgroundColor"],
+      ["featured-card", "", "borderTopColor"],
+    ]) {
+      const read = await page.getByTestId(`${theme}-accent-${part}`).evaluate(
+        (root, [selector, property]) => {
+          const node = selector ? root.querySelector(selector) : root;
+          if (!node) return { missing: true };
+          const value = getComputedStyle(node)[property];
+          return { value, colour: window.kozmosColourOf(value) };
+        },
+        [selector, property],
+      );
+      counts.fills += 1;
+      const where = `${theme} ${part}${selector ? ` ${selector}` : ""} ${property}`;
+      if (read.missing) failures.push(`${where}: nothing matched`);
+      else if (read.colour !== accent)
+        failures.push(
+          `${where}: ${read.value} under accent 500 = ${ACCENT_FILL}; expected ${ACCENT_FILL}`,
         );
     }
   }
