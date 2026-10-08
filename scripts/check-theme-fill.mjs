@@ -44,10 +44,14 @@ const THEME_PRESSED = [13, 68, 194]; // #0D44C2
 const DANGER_FILL = { light: [212, 28, 66], dark: [233, 90, 119] };
 // Decision 62: the accent pin is brand variant 1's 500, #4135F1 in both
 // themes (decision 63), its ring at rest the ramp's 700, which turns over;
-// a featured pin is alert 500, the SDK's Featured amber, under black.
+// a featured pin is the accent fill (decision 68), amber #FAB735 by default,
+// under the accent's ink, black by default.
 const ACCENT = [65, 53, 241];
 const ACCENT_700 = { light: [25, 13, 194], dark: [134, 126, 246] };
 const FEATURED = [250, 183, 53];
+// Decision 66: the secondary pin's fill and its number's ink.
+const FG_400 = { light: [93, 98, 111], dark: [162, 157, 144] };
+const FG_1000 = { light: [255, 255, 255], dark: [0, 0, 0] };
 const BLACK = [0, 0, 0];
 // The page, background/0, under the parts.
 const PAGE = { light: [255, 255, 255], dark: [0, 0, 0] };
@@ -154,7 +158,7 @@ const READS = [
   ["pin", '[role="img"] span[aria-hidden="true"]', "color", "ink"],
   // Decision 62 (Olcay, 2026-10-08): the web's pins as the natives draw
   // them. The accent pin is brand variant 1's 500 under white, its ring at
-  // rest the ramp's 700; a featured pin is the SDK's amber under black.
+  // rest the ramp's 700; a featured pin is the accent (decision 68).
   ["pin-accent", '[role="img"] svg', "color", "accent"],
   ["pin-accent", '[role="img"] span[aria-hidden="true"]', "color", "ink"],
   ["pin-accent-quiet", '[role="img"] svg', "color", "accent-700"],
@@ -164,8 +168,20 @@ const READS = [
     "color",
     "accent-700",
   ],
+  // A featured pin is the accent (decision 68), amber by default, and with
+  // no logo it shows a star, in the accent's ink, black by default.
   ["pin-featured", '[role="img"] svg', "color", "featured"],
   ["pin-featured", '[role="img"] span[aria-hidden="true"]', "color", "black"],
+  ["pin-featured", "[data-featured-star]", "color", "black"],
+  // Decision 66: a filled secondary pin is foreground/400 under
+  // foreground/1000, as SwiftUI and Compose draw it.
+  ["pin-secondary", '[role="img"] svg', "color", "fg-400"],
+  [
+    "pin-secondary",
+    '[role="img"] span[aria-hidden="true"]',
+    "color",
+    "fg-1000",
+  ],
   ["save", ".h-12.w-12", "backgroundColor", "fill"],
   ["save", ".h-12.w-12", "color", "ink"],
   ["category", '[data-slot="counter"]', "backgroundColor", "fill"],
@@ -311,6 +327,8 @@ function expected(kind, theme) {
   if (kind === "accent-700") return ACCENT_700[theme];
   if (kind === "featured") return FEATURED;
   if (kind === "black") return BLACK;
+  if (kind === "fg-400") return FG_400[theme];
+  if (kind === "fg-1000") return FG_1000[theme];
   if (kind === "hover" || kind === "focus") return THEME_HOVER;
   if (kind === "pressed") return THEME_PRESSED;
   if (kind === "danger-hover" || kind === "danger-focus")
@@ -332,8 +350,10 @@ const NAMES = {
   page: "page, background/0",
   accent: "brand variant 1's 500 (#4135F1)",
   "accent-700": "brand variant 1's 700",
-  featured: "Featured amber, alert 500 (#FAB735)",
-  black: "alert's on-fill, black",
+  featured: "accent fill, amber #FAB735 by default",
+  "fg-400": "secondary pin's fill, foreground/400",
+  "fg-1000": "secondary pin's ink, foreground/1000",
+  black: "accent's ink, black by default",
   hover: "hover token (#1051E8)",
   focus: "focus token (#1051E8)",
   pressed: "pressed token (#0D44C2)",

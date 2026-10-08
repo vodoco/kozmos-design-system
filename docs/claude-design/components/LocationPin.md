@@ -50,10 +50,11 @@ It forwards its ref to `HTMLDivElement`. Its props are `LocationPinProps`, which
 
 - `featured`: `boolean`, optional, default `false`.
 
-  A featured place: the SDK's Featured amber, `#FAB735` in both themes,
-  with its number in the alert's on-fill colour, black (decision 55), as
-  SwiftUI and Compose draw it, whatever the variant or tint. A featured pin
-  is never quiet.
+  A featured place: the accent colour (amber, `#FAB735`, unless the product
+  sets its own), with the accent's ink, whatever the variant or tint
+  (decision 68). It shows the place's logo, passed as `markerContent`, and
+  without one a star where the number would be: a featured pin never shows
+  its number. It is never quiet.
 
 - `featuredLabel`: `string`, optional, default `"Featured"`.
 
@@ -74,7 +75,7 @@ It forwards its ref to `HTMLDivElement`. Its props are `LocationPinProps`, which
 - `tint`: `CategoryTint`, optional.
 
   A category's colours for the marker — its fill, solid, with its ink for
-  the number — over the variant's; a featured pin keeps the alert colour.
+  the number — over the variant's; a featured pin keeps the accent.
   A numbered pin at rest and a pin off the floor are outlined in the fill,
   with the number in the foreground.
 

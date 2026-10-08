@@ -47,8 +47,8 @@ class KozmosLocationPinConnect {
 
     // The Tint axis: Theme is a pin with no tint; the eight are the
     // taxonomy's quick-access colours as the Semantics.Category tokens — the
-    // fill is the marker, its ink the number; a featured pin keeps the alert
-    // colour.
+    // fill is the marker, its ink the number; a featured pin keeps the
+    // accent.
     @FigmaProperty(FigmaType.Enum, "Tint")
     val tint: KozmosCategoryTint? = Figma.mapping(
         "Theme" to null,

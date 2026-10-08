@@ -125,7 +125,7 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
     func testSDKResultSurfaceTextContrastAndFeaturedEdge() {
         let value = KozmosPOIResultCard(poi: poi, result: result(featured: true, selected: true), numbered: true, onSelect: { _ in })
         for style in [UIUserInterfaceStyle.light, .dark] {
-            XCTAssertTrue(same(value.edgeColor, KozmosColors.semanticsEmotionAlertFill, style))
+            XCTAssertTrue(same(value.edgeColor, KozmosColors.semanticsAccentFill, style))
             for fill in [KozmosColors.semanticsResultSelectedSurface, KozmosColors.semanticsResultHoverSurface] {
                 XCTAssertGreaterThanOrEqual(contrast(KozmosColors.primitivesColorsForeground400, fill, style), 4.5)
             }
@@ -163,10 +163,12 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
 
     func testEachTabIsPaintedForWhatItSaysAndReadsAtFourAndAHalfToOne() {
         let cases: [(String, KozmosPOIResultCard, Color, Color, Color?)] = [
-            // The SDK's bright amber under dark words (Olcay, 2026-09-29).
+            // The accent under its ink (decision 68): the SDK's bright amber
+            // under dark words, as decided on 2026-09-29, unless the client
+            // sets its accent. It was the alert fill pair.
             ("featured", card(numbered: true, featured: true),
-             KozmosColors.semanticsEmotionAlertFill,
-             KozmosColors.semanticsEmotionAlertOnfill, nil),
+             KozmosColors.semanticsAccentFill,
+             KozmosColors.semanticsAccentOnfill, nil),
             ("number at rest", card(numbered: true),
              KozmosColors.primitivesColorsBackground0, KozmosColors.primitivesColorsForeground400,
              KozmosColors.semanticsBorderSubtle),
@@ -175,7 +177,7 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
             ("number selected", card(numbered: true, selected: true),
              KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle,
              KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle, nil),
-            // Quiet: not the alert pair Featured is painted in.
+            // Quiet: not the accent Featured is painted in.
             ("badge", card(numbered: false, badge: "Alternative"),
              KozmosColors.primitivesColorsBackground100, KozmosColors.primitivesColorsForeground400, nil),
         ]
@@ -195,7 +197,8 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
             }
             // The badge is never painted as Featured is, now or as it was.
             if let badge = card(numbered: false, badge: "Alternative").tabPaint,
-               same(badge.fill, KozmosColors.semanticsEmotionAlertFill, style)
+               same(badge.fill, KozmosColors.semanticsAccentFill, style)
+                || same(badge.fill, KozmosColors.semanticsEmotionAlertFill, style)
                 || same(badge.fill, KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle, style) {
                 wrong.append("badge, \(style.rawValue): drawn in Featured's colour")
             }
@@ -203,15 +206,15 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
         XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
     }
 
-    /// A featured card's edge takes its tab's amber; a number and a badge keep
+    /// A featured card's edge takes its tab's accent; a number and a badge keep
     /// the container edge; a selected card, featured or not, has the theme's
     /// edge, since a native card has no ring to say it with: an edge on a
     /// surface, theme 600 (decision 59).
-    func testOnlyAFeaturedCardsEdgeIsItsAmberAndSelectionKeepsTheThemesEdge() {
+    func testOnlyAFeaturedCardsEdgeIsItsAccentAndSelectionKeepsTheThemesEdge() {
         var wrong: [String] = []
         for style in [UIUserInterfaceStyle.light, .dark] {
             let cases: [(String, KozmosPOIResultCard, Color)] = [
-                ("featured", card(numbered: true, featured: true), KozmosColors.semanticsEmotionAlertFill),
+                ("featured", card(numbered: true, featured: true), KozmosColors.semanticsAccentFill),
                 ("featured and selected", card(numbered: true, featured: true, selected: true),
                  KozmosColors.primitivesColorsTheme600),
                 ("number", card(numbered: true), KozmosColors.semanticsBorderSubtle),
@@ -226,8 +229,9 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
     }
 
     /// GAP-054, as drawn, through the card's released API only: a badge's tab
-    /// fills with the muted colour, not Featured's alert colour, light and
-    /// dark. The card that painted a badge as Featured fails it.
+    /// fills with the muted colour, not any colour Featured has had (the
+    /// alert button's, the alert fill, and the accent since decision 68),
+    /// light and dark. The card that painted a badge as Featured fails it.
     @MainActor func testABadgesTabIsDrawnInTheMutedFillNotFeaturedsColour() async throws {
         let size = CGSize(width: 390, height: 140)
         func distance(_ a: (UInt8, UInt8, UInt8), _ b: (UInt8, UInt8, UInt8)) -> Int {
@@ -249,19 +253,23 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
             let muted = try await RenderedPixels.render(
                 KozmosColors.primitivesColorsBackground100.environment(\.colorScheme, scheme), size: size
             ).color(at: centre)
-            // Featured's colour as the released card drew it, and as it is now.
+            // Featured's colour as the released card drew it, as it was until
+            // decision 68, and as it is now.
             let alert = try await RenderedPixels.render(
                 KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundIdle.environment(\.colorScheme, scheme), size: size
             ).color(at: centre)
             let amber = try await RenderedPixels.render(
                 KozmosColors.semanticsEmotionAlertFill.environment(\.colorScheme, scheme), size: size
             ).color(at: centre)
+            let accent = try await RenderedPixels.render(
+                KozmosColors.semanticsAccentFill.environment(\.colorScheme, scheme), size: size
+            ).color(at: centre)
             // Inside the shared card corner, clear of the tab's words.
             let fill = drawn.color(at: CGPoint(x: 4, y: 12))
-            let line = "\(scheme): the badge's tab is (\(fill.0), \(fill.1), \(fill.2)); muted (\(muted.0), \(muted.1), \(muted.2)), Featured's (\(alert.0), \(alert.1), \(alert.2)), now (\(amber.0), \(amber.1), \(amber.2))"
+            let line = "\(scheme): the badge's tab is (\(fill.0), \(fill.1), \(fill.2)); muted (\(muted.0), \(muted.1), \(muted.2)), Featured's (\(alert.0), \(alert.1), \(alert.2)), then (\(amber.0), \(amber.1), \(amber.2)), now (\(accent.0), \(accent.1), \(accent.2))"
             print("GAP-054 iOS: \(line)")
             if distance(fill, muted) > 12 || distance(fill, muted) >= distance(fill, alert)
-                || distance(fill, muted) >= distance(fill, amber) {
+                || distance(fill, muted) >= distance(fill, amber) || distance(fill, muted) >= distance(fill, accent) {
                 wrong.append(line)
             }
         }
@@ -280,7 +288,7 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
         for scheme in [ColorScheme.light, .dark] {
             for direction in [LayoutDirection.leftToRight, .rightToLeft] {
                 for (name, value, fill) in [
-                    ("featured", card(numbered: false, featured: true), KozmosColors.semanticsEmotionAlertFill),
+                    ("featured", card(numbered: false, featured: true), KozmosColors.semanticsAccentFill),
                     ("number-selected", card(numbered: true, selected: true), KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle),
                     ("badge", card(numbered: false, badge: "Alternative"), KozmosColors.primitivesColorsBackground100)
                 ] {
@@ -314,6 +322,61 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
                 }
             }
         }
+    }
+
+    /// Decision 68 (Olcay, 2026-10-08), as drawn: Featured is the accent,
+    /// #FAB735 in both themes by default, written out here. Its tab and, at
+    /// rest, the card's edge, in the SDK presentation, the default, and the
+    /// legacy one. Selected, the legacy card's edge is the theme's, which a
+    /// native card says selection with; the SDK card says it with its surface
+    /// and keeps the accent edge. The card before decision 68 drew both in the
+    /// alert fill, #F9A707 in light and #FBC459 in dark, and fails here.
+    @MainActor func testAFeaturedCardsTabAndEdgeAreTheAccentInBothThemesAndPresentations() async throws {
+        let size = CGSize(width: 390, height: 140)
+        let isAccent: (UInt8, UInt8, UInt8) -> Bool = { r, g, b in
+            abs(Int(r) - 0xFA) <= 4 && abs(Int(g) - 0xB7) <= 4 && abs(Int(b) - 0x35) <= 4
+        }
+        let whole = CGRect(origin: .zero, size: size)
+        var wrong: [String] = []
+        for scheme in [ColorScheme.light, .dark] {
+            let page = try await RenderedPixels.render(
+                KozmosColors.primitivesColorsBackground0.environment(\.colorScheme, scheme), size: size
+            ).color(at: CGPoint(x: 100, y: 100))
+            for style in [KozmosPOIResultPresentationStyle.sdk, .legacy] {
+                for selected in [false, true] {
+                    let label = "\(scheme), \(style)\(selected ? ", selected" : "")"
+                    let view = KozmosPOIResultCard(poi: poi, result: result(featured: true, selected: selected), onSelect: { _ in },
+                                                   presentationStyle: style)
+                        .frame(width: size.width, height: size.height, alignment: .top)
+                        .background(KozmosColors.primitivesColorsBackground0)
+                        .environment(\.layoutDirection, .leftToRight)
+                        .environment(\.colorScheme, scheme)
+                    let drawn = try await RenderedPixels.render(view, size: size)
+                    let attachment = XCTAttachment(image: drawn.image)
+                    attachment.name = "decision-68-featured-\(style)-\(selected ? "selected" : "rest")-\(scheme)"
+                    attachment.lifetime = .keepAlways
+                    add(attachment)
+                    // Inside the shared corner, clear of the tab's words.
+                    let tab = drawn.color(at: CGPoint(x: 4, y: 12))
+                    // The card is everything that is not the page; the accent
+                    // edge spans it top to bottom, and the tab alone does not.
+                    let card = drawn.boundingBox(in: whole) { r, g, b in
+                        abs(Int(r) - Int(page.0)) + abs(Int(g) - Int(page.1)) + abs(Int(b) - Int(page.2)) > 6
+                    }
+                    let accent = drawn.boundingBox(in: whole, where: isAccent)
+                    let cardTall = card?.height ?? 0
+                    let accentTall = accent?.height ?? 0
+                    print("Decision 68 iOS, \(label): the tab is (\(tab.0), \(tab.1), \(tab.2)); #FAB735 spans \(accentTall) of the card's \(cardTall)")
+                    if !isAccent(tab.0, tab.1, tab.2) { wrong.append("\(label): the tab is (\(tab.0), \(tab.1), \(tab.2)), not #FAB735") }
+                    let accentEdge = style == .sdk || !selected
+                    if accentEdge, accentTall < cardTall * 0.95 {
+                        wrong.append("\(label): the edge is not the accent (#FAB735 spans \(accentTall) of \(cardTall))")
+                    }
+                    if !accentEdge, accentTall > cardTall / 2 { wrong.append("\(label): a selected legacy card's edge is still the accent") }
+                }
+            }
+        }
+        XCTAssertTrue(wrong.isEmpty, wrong.joined(separator: "; "))
     }
 
     func testTheListsOneSelectionFillsThatResultsNumber() {

@@ -137,19 +137,58 @@ final class KozmosThemeFillTests: XCTestCase {
                        KozmosLocationPin(variant: .accent, number: 7, selected: true), markInset: 0.25)
     }
 
-    /// A featured pin is the alert amber, #FAB735 in both themes, whatever
-    /// its variant or tint, and its number the alert's on-fill, black, 11.89:1
-    /// on it, as Compose draws it. Foreground/1000 was white on it in light,
-    /// 1.77:1, and a tint's ink was drawn on the amber.
-    @MainActor func testAFeaturedPinsNumberIsTheAlertsOnFillInLightAndDark() throws {
-        let amber: Pixel = (0xFA, 0xB7, 0x35, 255)
+    /// Decision 68 (Olcay, 2026-10-08): a featured pin is the accent, #FAB735
+    /// in both themes by default, whatever its variant, tint or selection, and
+    /// it never shows its number (decision 55: a featured result's pin shows
+    /// its logo). Without a logo it shows a star where the number would be,
+    /// in the accent's ink, black, 11.89:1 on it, as Compose draws it.
+    ///
+    /// The intent changed with decision 68. This test said a featured pin's
+    /// number was the alert's on-fill on alert 500, which is the same #FAB735
+    /// the accent defaults to, so the fill alone cannot tell the two apart;
+    /// the star and the missing number do. Against the code before it, it
+    /// fails in both themes: the numbered pin's mark is the 7, narrower than
+    /// it is tall, not a star, and the pin with no number draws no mark.
+    @MainActor func testAFeaturedPinIsTheAccentWithABlackStarAndNoNumberInLightAndDark() throws {
+        let accent: Pixel = (0xFA, 0xB7, 0x35, 255)
         let black: Pixel = (0, 0, 0, 255)
-        try assertFill(amber, withMark: black, "featured pin",
-                       KozmosLocationPin(variant: .primary, number: 7, featured: true), markInset: 0.25)
         let navy = KozmosCategoryTint(accent: KozmosColors.semanticsCategoryAccentNavy,
                                       fill: KozmosInkedFill(fill: KozmosColors.semanticsCategoryFillNavy, ink: KozmosColors.semanticsCategoryOnfillNavy))
-        try assertFill(amber, withMark: black, "featured pin with a navy tint",
-                       KozmosLocationPin(variant: .primary, number: 7, featured: true, tint: navy), markInset: 0.25)
+        let pins: [(String, KozmosLocationPin)] = [
+            ("featured pin numbered 7", KozmosLocationPin(variant: .primary, size: .lg, number: 7, featured: true)),
+            ("featured pin with no number", KozmosLocationPin(size: .lg, featured: true)),
+            ("featured pin with a navy tint", KozmosLocationPin(size: .lg, number: 7, featured: true, tint: navy)),
+            ("selected featured pin", KozmosLocationPin(size: .lg, number: 7, selected: true, featured: true)),
+        ]
+        for scheme in [ColorScheme.light, .dark] {
+            for (name, pin) in pins {
+                let pixels = try draw(pin, in: scheme)
+                guard let fill = pixels.boundingBox(where: DrawnPixels.matches(accent, tolerance: 4)) else {
+                    XCTFail("\(name), \(scheme): no #FAB735 fill drawn")
+                    continue
+                }
+                // Inside the fill, clear of its ring: where the number was.
+                let inside = fill.insetBy(dx: fill.width * 0.15, dy: fill.height * 0.15)
+                let inked = pixels.count(in: inside, where: DrawnPixels.matches(black, tolerance: 24))
+                let pale = pixels.count(in: inside, where: DrawnPixels.matches(Self.white, tolerance: 24))
+                let mark = pixels.boundingBox(in: inside, where: DrawnPixels.matches(black, tolerance: 4))
+                print("Decision 68 iOS, \(scheme): \(name) has a \(mark.map { "\($0.width) x \($0.height)" } ?? "no") black mark (\(inked) pixels) and \(pale) white pixels in its middle")
+                XCTAssertGreaterThan(inked, 8, "\(name), \(scheme): no black mark on the accent; its darkest pixel is \(Self.describe(pixels.darkest(in: inside)))")
+                // A star is about as wide as it is tall; a bold 7 is about
+                // two-thirds as wide.
+                if let mark {
+                    XCTAssertGreaterThanOrEqual(mark.width, mark.height * 0.85,
+                                                "\(name), \(scheme): the mark is \(mark.width) x \(mark.height), a number's shape, not a star's")
+                }
+                XCTAssertLessThanOrEqual(pale * 100, inked, "\(name), \(scheme): \(pale) white pixels in the middle")
+            }
+            // The numbered pin draws exactly what the unnumbered one does.
+            let numbered = try draw(KozmosLocationPin(size: .lg, number: 7, featured: true), in: scheme)
+            let plain = try draw(KozmosLocationPin(size: .lg, featured: true), in: scheme)
+            let difference = try XCTUnwrap(numbered.largestDifference(from: plain), "\(scheme): the two pins differ in size")
+            print("Decision 68 iOS, \(scheme): a featured pin numbered 7 differs from one with no number by \(difference) at most")
+            XCTAssertLessThanOrEqual(difference, 8, "\(scheme): a featured pin shows its number")
+        }
     }
 
     /// The manoeuvre card's theme appearance is the brand card, a prominent

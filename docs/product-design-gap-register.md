@@ -426,6 +426,32 @@ camera control, branding/provider policy and product ranking in their host adapt
   - Figma's active tab gained the raised effect it lacked.
   - The native track is 44 tall, the touch target; React's list is 40.
   - Pixel tests on both natives fail on the old underline and pass now.
+- **Secondary pin (decision 66, 2026-10-08):** React's filled secondary LocationPin is
+  foreground/400 under foreground/1000 (6.10:1 light, 7.76:1 dark), as SwiftUI and Compose draw
+  it. It was background/200, 1.6:1 against the page.
+- **`featuredLabel` on the natives (decision 67, 2026-10-08):** SwiftUI's and Compose's
+  `KozmosLocationPin` take `featuredLabel` (default "Featured") for the accessible description, as
+  React's `featuredLabel` does. They hard-coded English.
+- **The accent colour (decision 68, 2026-10-08):** Pointr's API has a configurable accent beside
+  the theme, background, foreground and emotional colours, and Kozmos now has one.
+  - `Primitives.Colors.accent` is a 0–1000 ramp like theme's, with 500 as the base: `#FAB735` in
+    both themes by default, the other steps the alert ramp's.
+  - `Semantics.Accent.fill` (accent 500) and `Semantics.Accent.onFill` (its ink, black by default)
+    are what parts draw. A product that sets its accent sets both, as the theme fill comes with the
+    theme foreground.
+  - **The Featured tag consumes the accent everywhere in the UI:** POIResultCard's Featured tab
+    and the featured card's edge, on the web, SwiftUI, Compose and Figma. They were the alert fill
+    pair (`#F9A707` / `#FBC459`), and Figma's was a grey badge.
+  - **A featured pin** is the accent fill. It shows the place's logo, and without one a star where
+    the number would be; it never shows its number. This brings back the star for the no-logo
+    case: the owner had already added that fallback. The natives gain a marker-content slot for
+    the logo.
+  - `variant="accent"` on LocationPin stays brand variant 1, and Tailwind's internal `accent` role
+    stays theme 600. The names are documented, not renamed (owner, 8 Oct).
+  - `check-token-references.mjs` re-brands accent 500 and reads the pin, the tab and the edge.
+- **GAP-45 fixed (decision 69, 2026-10-08):** brand variant 1's dark 600 is `#716EFF`, with the
+  same hue: 5.38:1 on the dark page and 4.51:1 on the dark sheet, where `#6258F3` read 4.21:1 and
+  3.53:1. The contract holds variant 1's 600 as text on both.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;

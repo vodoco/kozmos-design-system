@@ -84,7 +84,7 @@ keep the table's four columns and its statuses as they are.
 | GAP-42 | `CardTitle`'s line height is 1.0                                 | Core                   | left visible |
 | GAP-43 | Controls with touch targets under 44px                           | Core                   | left visible |
 | GAP-44 | `Switch` is always as wide as its container                      | Core                   | left visible |
-| GAP-45 | The first brand variant's 600 fails in the dark theme            | Core                   | left visible |
+| GAP-45 | The first brand variant's 600 fails in the dark theme            | Core                   | fixed        |
 | GAP-46 | `Stepper` has no narrow form                                     | Core                   | composed     |
 | GAP-47 | `Sidebar` has no narrow-screen form                              | Core                   | composed     |
 | GAP-48 | A `Tree` row's meta never shrinks                                | Core                   | composed     |
@@ -939,15 +939,15 @@ isolate` on the example canvases, as on the component pages' demo stages and
   1 and the module dark (the selected chip, until decision 59 drew it as the
   500 under white). Found once the tests walked every component page in the
   dark theme too.
-- **Now:** left visible in "Make it yours", with variant 1 and the module
-  dark; a test measures the ratio.
+- **Fixed** in the design system on 2026-10-08:
+  - **Decision 69:** variant 1's dark 600 is `#716EFF`, with the same hue. It reads 5.38:1 on the
+    dark page and 4.51:1 on the dark sheet, where `#6258F3` read 4.20:1 and 3.53:1.
+  - **Decision 63:** its 500 is `#4135F1`, 3.00:1 as a shape on the dark page.
+  - The contrast contract holds variant 1's 600 as text on the page and the sheet, and its 500 as a
+    shape and under white. Variant 2's 600 isn't in the contract yet.
+- **Was:** left visible in "Make it yours", with variant 1 and the module dark. The test now
+  measures the fixed ratio.
 - **Lane:** Core (tokens).
-- **Fix in Kozmos:** lighten variant 1's dark 600 until it passes, and add
-  both variants' primary-text pairs to the contract, so every ramp a product
-  may choose is measured. The 500's half is done (decision 63, 2026-10-08):
-  `#4135F1` reads 3.00:1 as a shape on the dark page, where `#4134F1` read
-  2.99:1, and 2.52:1 on the dark sheet, accepted as the theme fill's 2.32:1
-  is. The contract holds it to 3:1 on the page and white on it to 4.5:1.
 
 ## GAP-46 · `Stepper` has no narrow form
 
