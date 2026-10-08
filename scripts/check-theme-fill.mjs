@@ -218,12 +218,15 @@ const STATE_READS = [
 ];
 
 // Radix's menu trigger opens its menu on pointerdown and prevents that
-// event's default; Gecko then never sets :active on it (Blink and WebKit
-// do), so in Firefox the SplitButton's menu half cannot be read pressed.
-// Skipped only while the state really cannot be entered, and said so.
+// event's default; Gecko then never sets :active on it, and Linux WebKit
+// often loses it at once, the menu taking the pointer as it opens (CI on
+// 2026-10-08 entered it in one run and not the next; WebKit on a Mac
+// always does). So in those engines the SplitButton's menu half may not be
+// readable pressed. Skipped only while the state really cannot be entered,
+// and said so; Chromium enters it every time and must pass it.
 const UNREACHABLE = [
   {
-    engine: "firefox",
+    engines: ["firefox", "webkit"],
     part: "split-button",
     selector: SPLIT_MENU,
     state: "pressed",
@@ -489,7 +492,7 @@ try {
         !inState &&
         UNREACHABLE.some(
           (entry) =>
-            entry.engine === ENGINE &&
+            entry.engines.includes(ENGINE) &&
             entry.part === part &&
             entry.selector === selector &&
             entry.state === state,
