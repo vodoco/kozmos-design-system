@@ -508,7 +508,8 @@
             },
             "500": {
               "$type": "color",
-              "$value": "#4134F1",
+              "$value": "#4135F1",
+              "$description": "Decision 63: lightened from #4134F1 just enough to read 3:1 as a shape on the dark page (3.00:1 on #000000; it read 2.99:1). White on it reads 6.99:1, and its hue is unchanged.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4069",
                 "com.figma.isOverride": true
@@ -3246,6 +3247,7 @@
             "hover": {
               "$type": "color",
               "$value": "{Primitives.Colors.emotional.success.900}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4318",
                 "com.figma.isOverride": true
@@ -3382,6 +3384,7 @@
             "hover": {
               "$type": "color",
               "$value": "{Primitives.Colors.emotional.alert.900}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4333",
                 "com.figma.isOverride": true
@@ -3501,7 +3504,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#B01736",
+              "$value": "{Primitives.Colors.emotional.danger.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4347",
                 "com.figma.isOverride": true
@@ -3517,7 +3520,8 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#D41C42",
+              "$value": "{Primitives.Colors.emotional.danger.800}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4348",
                 "com.figma.isOverride": true
@@ -3525,7 +3529,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#8C132B",
+              "$value": "{Primitives.Colors.emotional.danger.900}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4349",
                 "com.figma.isOverride": true
@@ -3533,7 +3537,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#D41C42",
+              "$value": "{Primitives.Colors.emotional.danger.800}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4350",
                 "com.figma.isOverride": true
@@ -3637,7 +3641,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#2379A4",
+              "$value": "{Primitives.Colors.emotional.info.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4362",
                 "com.figma.isOverride": true
@@ -3654,6 +3658,7 @@
             "hover": {
               "$type": "color",
               "$value": "{Primitives.Colors.emotional.info.800}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4363",
                 "com.figma.isOverride": true
@@ -3661,7 +3666,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#1C6082",
+              "$value": "{Primitives.Colors.emotional.info.900}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4364",
                 "com.figma.isOverride": true
@@ -3773,7 +3778,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#C7CAD1",
+              "$value": "{Primitives.Colors.background.200}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4377",
                 "com.figma.isOverride": true
@@ -3789,7 +3794,8 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#ABAFBA",
+              "$value": "{Primitives.Colors.background.300}",
+              "$description": "Decision 60: hover is one step and pressed two steps further along the emotion's own ramp, away from the page (darker in light, lighter in dark), and focus is hover.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4378",
                 "com.figma.isOverride": true
@@ -3797,7 +3803,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#E3E4E8",
+              "$value": "{Primitives.Colors.background.400}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4379",
                 "com.figma.isOverride": true
@@ -3805,7 +3811,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#ABAFBA",
+              "$value": "{Primitives.Colors.background.300}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1437:4380",
                 "com.figma.isOverride": true

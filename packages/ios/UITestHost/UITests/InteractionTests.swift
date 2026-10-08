@@ -346,12 +346,14 @@ final class InteractionTests: XCTestCase {
     /// What a press draws, read off the screen while the finger is down: a
     /// filled part draws its own emotion's pressed token (decision 59), not
     /// SwiftUI's highlight over the idle fill, which lightened a danger
-    /// button's #B01736 to #EFD1D7. The light theme's values.
+    /// button's #B01736 to #EFD1D7. The light theme's values: since decision
+    /// 60 each emotion presses two steps along its own ramp, away from the
+    /// page (danger 900, informative 900, the neutral's background 400).
     func testAPressDrawsEachFillsOwnPressedToken() {
         launch("press-feedback")
         let pressed = [
-            "themed": "#0D44C2", "danger": "#8C132B", "success": "#0F4C2D", "neutral": "#E3E4E8",
-            "informative": "#1C6082", "alert": "#472F02", "icon": "#0D44C2", "icon-danger": "#8C132B",
+            "themed": "#0D44C2", "danger": "#670E20", "success": "#0F4C2D", "neutral": "#9095A2",
+            "informative": "#154761", "alert": "#472F02", "icon": "#0D44C2", "icon-danger": "#670E20",
             "fab": "#0D44C2", "map-filled-on": "#0D44C2",
         ]
         for id in pressed.keys.sorted() {

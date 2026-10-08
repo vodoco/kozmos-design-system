@@ -1,7 +1,11 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { resolvedTokens } from "./lib/token-css.mjs";
+import {
+  referenceOf,
+  resolvedTokens,
+  tokenDeclarations,
+} from "./lib/token-css.mjs";
 
 const root = process.cwd();
 const require = createRequire(import.meta.url);
@@ -59,12 +63,15 @@ for (const emotion of [
     });
 }
 
-function readCssVariables(mode) {
-  const filePath = path.join(
-    root,
-    `packages/tokens/dist/css/variables-${mode}.css`,
+function readCss(mode) {
+  return fs.readFileSync(
+    path.join(root, `packages/tokens/dist/css/variables-${mode}.css`),
+    "utf8",
   );
-  const css = fs.readFileSync(filePath, "utf8");
+}
+
+function readCssVariables(mode) {
+  const css = readCss(mode);
   const variables = {};
 
   // An alias is written as a reference (GAP-23); a pair is held to the colour
@@ -122,6 +129,95 @@ function hexToRgb(value) {
 const failures = [];
 let checked = 0;
 
+/**
+ * Decision 60: a filled emotion Button's states step along the emotion's own
+ * ramp, away from the page, one step on hover and two pressed, and its focus
+ * is its hover. Read from the stylesheet as written, where each state is a
+ * reference to a ramp step (GAP-23), and from the colours: hover sits
+ * further from the page than idle, and pressed further than hover, unless
+ * the contract names the theme an exception that steps toward it.
+ */
+function checkStateSteps(mode, variables) {
+  const rules = contract.stateSteps;
+  if (!rules) return;
+  const declarations = tokenDeclarations(readCss(mode));
+  const page = relativeLuminance(
+    hexToRgb(colorFor(variables, "primitives-colors-background-0", mode, "page")),
+  );
+  for (const emotion of rules.emotions) {
+    const exception = (rules.exceptions ?? []).find(
+      (entry) => entry.emotion === emotion && entry.theme === mode,
+    );
+    const direction = exception?.direction ?? "awayFromPage";
+    const where = `${mode} ${emotion} Button states (decision 60${
+      exception ? `, ${direction}: ${exception.why}` : ""
+    })`;
+    const token = (state) =>
+      `--components-primary-buttons-${emotion}-button-background-${state}`;
+    const steps = {};
+    for (const state of ["idle", "hover", "pressed", "focus"]) {
+      const target = referenceOf(declarations.get(token(state)) ?? "");
+      const step = target?.match(/^--primitives-colors-(.+)-(\d+)$/);
+      checked += 1;
+      if (!step) {
+        failures.push(
+          `${where}: ${token(state)} is ${
+            declarations.get(token(state)) ?? "missing"
+          }; expected a reference to a ramp step`,
+        );
+        continue;
+      }
+      steps[state] = { ramp: step[1], step: Number(step[2]), target };
+    }
+    if (Object.keys(steps).length < 4) continue;
+    const { idle, hover, pressed, focus } = steps;
+    checked += 1;
+    if (focus.target !== hover.target) {
+      failures.push(
+        `${where}: focus is ${focus.target}; expected the hover's, ${hover.target}`,
+      );
+    }
+    checked += 1;
+    if (hover.ramp !== idle.ramp || pressed.ramp !== idle.ramp) {
+      failures.push(
+        `${where}: idle, hover and pressed are ${idle.target}, ${hover.target} and ${pressed.target}; expected one ramp`,
+      );
+      continue;
+    }
+    // The ramp's own steps, in order: one step is the next one along it.
+    const prefix = `--primitives-colors-${idle.ramp}-`;
+    const ladder = [...declarations.keys()]
+      .filter((name) => name.startsWith(prefix) && /^\d+$/.test(name.slice(prefix.length)))
+      .map((name) => Number(name.slice(prefix.length)))
+      .sort((a, b) => a - b);
+    const at = (entry) => ladder.indexOf(entry.step);
+    const distance = (entry) =>
+      Math.abs(
+        relativeLuminance(
+          hexToRgb(colorFor(variables, entry.target.slice(2), mode, where)),
+        ) - page,
+      );
+    const away = direction === "awayFromPage";
+    const stride = at(hover) - at(idle);
+    checked += 1;
+    if (Math.abs(stride) !== 1 || at(pressed) - at(hover) !== stride) {
+      failures.push(
+        `${where}: idle, hover and pressed are steps ${idle.step}, ${hover.step} and ${pressed.step} of ${idle.ramp}; expected one step and then one more, the same way`,
+      );
+      continue;
+    }
+    checked += 1;
+    const further = (a, b) => (away ? distance(b) > distance(a) : distance(b) < distance(a));
+    if (!further(idle, hover) || !further(hover, pressed)) {
+      failures.push(
+        `${where}: ${idle.ramp} ${idle.step} → ${hover.step} → ${pressed.step} steps ${
+          away ? "toward" : "away from"
+        } the page; expected each state ${away ? "further from" : "closer to"} it than the last`,
+      );
+    }
+  }
+}
+
 function getPath(value, segments) {
   return segments.reduce((current, segment) => current?.[segment], value);
 }
@@ -175,6 +271,7 @@ for (const mode of modes) {
       );
     }
   }
+  checkStateSteps(mode, variables);
   for (const pair of contract.pairs) {
     const background = colorFor(variables, pair.background, mode, pair.name);
     const foreground = colorFor(variables, pair.foreground, mode, pair.name);

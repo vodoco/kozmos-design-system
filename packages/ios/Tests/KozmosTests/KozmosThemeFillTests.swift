@@ -116,11 +116,12 @@ final class KozmosThemeFillTests: XCTestCase {
         )
     }
 
-    /// The accent pin's fill is theme variant 1's 500, #4134F1 in both
-    /// themes, and its number the theme foreground, white, 7.03:1 on it, as
-    /// Compose draws it. Foreground/1000 was black on it in the dark, 2.99:1.
+    /// The accent pin's fill is theme variant 1's 500, #4135F1 in both
+    /// themes since decision 63 (it was #4134F1, 2.99:1 on the dark page),
+    /// and its number the theme foreground, white, 6.99:1 on it, as Compose
+    /// draws it. Foreground/1000 was black on it in the dark, 3.00:1.
     @MainActor func testAFilledAccentPinsNumberIsWhiteInLightAndDark() throws {
-        try assertFill((0x41, 0x34, 0xF1, 255), withMark: Self.white, "filled accent pin",
+        try assertFill((0x41, 0x35, 0xF1, 255), withMark: Self.white, "filled accent pin",
                        KozmosLocationPin(variant: .accent, number: 7, selected: true), markInset: 0.25)
     }
 

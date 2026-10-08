@@ -11008,6 +11008,9 @@ for (const [file, json, mode] of [
     );
   }
 }
+// Decision 60 (Olcay, 2026-10-08): a filled emotion Button's states are
+// steps of the emotion's own ramp, written as references (GAP-23); the
+// destructive fill is danger 700, #EE7E95 in the dark.
 assertJsonPathEquals(
   files.tokensDark,
   tokensDark,
@@ -11020,8 +11023,15 @@ assertJsonPathEquals(
     "idle",
     "$value",
   ],
+  "{Primitives.Colors.emotional.danger.700}",
+  "dark destructive primary button background (an alias of danger 700, decision 60)",
+);
+assertJsonPathEquals(
+  files.tokensDark,
+  tokensDark,
+  ["Primitives", "Colors", "emotional", "danger", "700", "$value"],
   "#EE7E95",
-  "dark destructive primary button background",
+  "dark danger 700, the destructive primary button background",
 );
 assertJsonPathEquals(
   files.tokensDark,
@@ -11081,12 +11091,30 @@ for (const mode of ["light", "dark"]) {
     );
   }
 }
-assertFigmaPayloadDarkValue(
-  files.figmaFoundationsPayload,
-  figmaFoundationsPayload,
-  "Components/Primary Buttons/danger/button/background/idle",
-  "#EE7E95",
-);
+// Decision 60: in Figma too the destructive fill aliases danger 700, #EE7E95
+// in the dark.
+{
+  const variable = figmaFoundationsPayload.variables.find(
+    (entry) =>
+      entry.canonicalName ===
+      "Components/Primary Buttons/danger/button/background/idle",
+  );
+  const value = variable?.values?.dark;
+  if (
+    value?.kind !== "alias" ||
+    value.path !== "Primitives/Colors/emotional/danger/700"
+  ) {
+    fail(
+      `${files.figmaFoundationsPayload}: expected the dark destructive button background to alias Primitives/Colors/emotional/danger/700, received ${JSON.stringify(value)}`,
+    );
+  }
+  assertFigmaPayloadDarkValue(
+    files.figmaFoundationsPayload,
+    figmaFoundationsPayload,
+    "Primitives/Colors/emotional/danger/700",
+    "#EE7E95",
+  );
+}
 // GAP-23: the secondary button's themed ink aliases theme 700 in Figma too,
 // #7EA2F6 in the dark.
 {

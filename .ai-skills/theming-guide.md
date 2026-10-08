@@ -130,6 +130,15 @@ and the sheet in both. Slider, Progress and RouteProgressRail stay on 600 too: a
 against its track. SwiftUI and Compose follow the same rule through the same tokens, but take no
 override at run time: their fill is Pointr's `#135BEC` (§10).
 
+**An emotion's states (decision 60).** A filled success, alert, danger, informative or neutral
+Button hovers one step and presses two steps further along its own ramp, away from the page:
+darker in the light theme, lighter in the dark one. Focus is the hover. The states are references
+to those steps (`--components-primary-buttons-danger-button-background-hover` is
+`var(--primitives-colors-emotional-danger-800)` in both themes), so override a ramp step and the
+state follows it. The dark neutral is the one exception: it keeps darkening, because white reads
+3.72:1 on its lighter step. The themed Button keeps decision 59's fixed hover `#1051E8` and pressed
+`#0D44C2`. Read a state from its token; never lighten or darken a fill yourself.
+
 The unitless ones are shared with iOS and Android, so a web rule multiplies them:
 `calc(var(--semantics-radius-container) * 1px)`. [component-inventory.md](./component-inventory.md)
 and the Tailwind configuration in `packages/react/tailwind.config.js` show which roles the parts

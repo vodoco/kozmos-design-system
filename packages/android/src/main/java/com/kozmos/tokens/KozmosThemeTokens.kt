@@ -133,6 +133,11 @@ object KozmosThemeTokens {
             KozmosColorsDark.primitivesColorsThemeVariant1400
         )
 
+    /**
+     * Decision 63: lightened from #4134F1 just enough to read 3:1 as a shape
+     * on the dark page (3.00:1 on #000000; it read 2.99:1). White on it reads
+     * 6.99:1, and its hue is unchanged.
+     */
     val primitivesColorsThemeVariant1500: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.primitivesColorsThemeVariant1500,
@@ -1541,6 +1546,11 @@ object KozmosThemeTokens {
             KozmosColorsDark.componentsPrimaryButtonsSuccessButtonBackgroundDisabled
         )
 
+    /**
+     * Decision 60: hover is one step and pressed two steps further along the
+     * emotion's own ramp, away from the page (darker in light, lighter in
+     * dark), and focus is hover.
+     */
     val componentsPrimaryButtonsSuccessButtonBackgroundHover: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.componentsPrimaryButtonsSuccessButtonBackgroundHover,
@@ -1631,6 +1641,11 @@ object KozmosThemeTokens {
             KozmosColorsDark.componentsPrimaryButtonsAlertButtonBackgroundDisabled
         )
 
+    /**
+     * Decision 60: hover is one step and pressed two steps further along the
+     * emotion's own ramp, away from the page (darker in light, lighter in
+     * dark), and focus is hover.
+     */
     val componentsPrimaryButtonsAlertButtonBackgroundHover: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.componentsPrimaryButtonsAlertButtonBackgroundHover,
@@ -1721,6 +1736,11 @@ object KozmosThemeTokens {
             KozmosColorsDark.componentsPrimaryButtonsDangerButtonBackgroundDisabled
         )
 
+    /**
+     * Decision 60: hover is one step and pressed two steps further along the
+     * emotion's own ramp, away from the page (darker in light, lighter in
+     * dark), and focus is hover.
+     */
     val componentsPrimaryButtonsDangerButtonBackgroundHover: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.componentsPrimaryButtonsDangerButtonBackgroundHover,
@@ -1811,6 +1831,11 @@ object KozmosThemeTokens {
             KozmosColorsDark.componentsPrimaryButtonsInformativeButtonBackgroundDisabled
         )
 
+    /**
+     * Decision 60: hover is one step and pressed two steps further along the
+     * emotion's own ramp, away from the page (darker in light, lighter in
+     * dark), and focus is hover.
+     */
     val componentsPrimaryButtonsInformativeButtonBackgroundHover: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.componentsPrimaryButtonsInformativeButtonBackgroundHover,
@@ -1901,6 +1926,11 @@ object KozmosThemeTokens {
             KozmosColorsDark.componentsPrimaryButtonsNeutralButtonBackgroundDisabled
         )
 
+    /**
+     * Decision 60: hover is one step and pressed two steps further along the
+     * emotion's own ramp, away from the page (darker in light, lighter in
+     * dark), and focus is hover.
+     */
     val componentsPrimaryButtonsNeutralButtonBackgroundHover: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.componentsPrimaryButtonsNeutralButtonBackgroundHover,
