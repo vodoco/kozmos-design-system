@@ -723,8 +723,15 @@ export class MockNode {
     for (const key of Object.keys(this)) {
       if (key === "children" || key === "parent" || key === "id") continue;
       const value = this[key];
+      // A cloned instance is an instance of the same main component, as in
+      // Figma. Copied, the main component dragged its parent, and through it
+      // the whole document, into every clone of a nested instance.
       copy[key] =
-        value && typeof value === "object" ? structuredClone(value) : value;
+        key === "mainComponent"
+          ? value
+          : value && typeof value === "object"
+            ? structuredClone(value)
+            : value;
     }
     for (const child of this.children) copy.appendChild(child.clone());
     return copy;
