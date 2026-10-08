@@ -25,6 +25,13 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
   - Dark neutral keeps darkening, `#464A53` → `#2E3138` → `#17191C`, because white reads 3.72:1 on its lighter step.
   - The colours come from `KozmosThemeTokens`, which `pnpm tokens:native:copy` regenerated.
 - **Brand variant 1's 500 is `#4135F1` (decision 63):** `primitivesColorsThemeVariant1500`, the accent `KozmosLocationPin`'s fill, is lightened from `#4134F1` just enough to read 3:1 on the dark page (3.00:1). White on it reads 6.99:1.
+- **Tabs draw React's raised segment (decision 65):**
+  - `KozmosTabsList` is a background/100 track with the control radius.
+  - The selected `KozmosTabsTrigger` is a background/0 segment 4dp inside it, its corner concentric, raised by `KozmosShadows.semanticsElevationRaised`, with foreground/0 words.
+  - The other tabs' words are foreground/400. All tabs use `labelLarge` (14sp medium) on one line, ellipsised.
+  - Before, the list was background/0 with a 2dp theme-500 bar under the selected tab's foreground/100 words; the other tabs were foreground/500. Nothing on tabs is the theme's colour now.
+  - Each tab's target is the track's whole 44dp height, and the press and focus ripple is drawn in the segment's shape. The signatures are unchanged.
+  - Migration: review screenshot baselines for screens with tabs. A long label now truncates on one line.
 - **Result summaries and their language:** `KozmosPOIResultPresentation.summaryLanguage` names the language of `summary` when it differs from the interface's (GAP-125). `KozmosPOIResultCard` now draws `summary`, muted and two lines at most, after the location, as the web card does, and TalkBack hears it after the location, with a `LocaleSpan` when `summaryLanguage` is set, as `nameLanguage` gives the name one. The name and the summary take their direction from their own words (`TextDirection.Content`), so an Arabic summary in an English card runs right to left; their lines still start at the card's start.
 - **A result row's words are its text:** `KozmosPOIResultCard` gives TalkBack the row's words as its semantics text, never as a content description, whether or not a phrase carries a language (GAP-125). The words are the same; a tagged phrase keeps its `LocaleSpan`.
 - **POI details model:** `KozmosPOIDetailPanel` takes `details: KozmosPOIDetailsPresentation`, as SwiftUI and React do. It adds the travel estimate on Go and the supplementary actions (book, call) after the POI's own. Under the strip come the summary row (at most three facts), then the attribute groups, the opening hours, the description with Read more, and the tags. The new parameters follow the released ones.

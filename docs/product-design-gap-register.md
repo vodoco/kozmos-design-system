@@ -371,8 +371,8 @@ camera control, branding/provider policy and product ranking in their host adapt
   reads 6.19:1 with black, 3.39:1 with white); Figma's selected NavigationItem label moves from
   700 to 600 and its Avatar image placeholder is neutral; the filled pin's ring stays
   foreground/1000; SwiftUI's `onEmphasis` tone becomes the theme foreground and a new `onDanger`
-  keeps the danger fill's ink. Still open: the selected tab indicator's design. LocationPin
-  `accent` parity was settled by decision 62.
+  keeps the danger fill's ink. Nothing is open any more: LocationPin `accent` parity was settled
+  by decision 62, and the selected tab indicator by decision 65.
 - **Emotion button states (decision 60, 2026-10-08):** a filled emotion Button's hover is one
   step and its pressed two steps further along the emotion's own ramp, away from the page:
   darker in light, lighter in dark. Its focus is its hover. Each state is a reference to its
@@ -419,6 +419,13 @@ camera control, branding/provider policy and product ranking in their host adapt
   style's pressed state. The action half draws the themed pressed token (`#0D44C2`) on every
   platform, and the menu half does so on the web and in Compose. `KozmosThemeFillPressTests` reads
   the action half for that reason.
+- **Tabs (decision 65, 2026-10-08):** React's raised segment on every platform. The active tab
+  is background/0, raised, with foreground/0 words, in a background/100 track, and nothing on
+  tabs is the theme's colour.
+  - SwiftUI and Compose dropped their theme-500 underline and bar.
+  - Figma's active tab gained the raised effect it lacked.
+  - The native track is 44 tall, the touch target; React's list is 40.
+  - Pixel tests on both natives fail on the old underline and pass now.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;

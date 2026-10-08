@@ -10,6 +10,8 @@ import { PlatformSnippets } from "../PlatformSnippets";
 Switches between related content panels within the same interface.
 Compose TabsList, TabsTrigger and TabsContent with matching values; the Radix-backed root supports controlled and uncontrolled selection.
 
+Every platform draws the same tabs: a muted track (background/100), and the selected tab as a raised segment inside it, on background/0 with foreground/0 words, while the other tabs' words are foreground/400. Tabs carry no theme colour (decision 65).
+
 <Canvas>
   <Story of={TabsStories.Default} />
 </Canvas>
@@ -51,124 +53,64 @@ import { KozmosTabs } from "@kozmos-ds/vue"
     `}
     swift={`
 import SwiftUI
+import Kozmos
 
-KozmosTabs(selection: .constant("overview")) {
-KozmosTabsList {
-KozmosTabsTrigger(
-value: "overview",
-title: "Overview",
-selection: .constant("overview")
-)
-}
+// The list is a background/100 track. The selected tab is a background/0
+// segment 4pt inside it, raised by KozmosShadows.semanticsElevationRaised,
+// with foreground/0 words; the other tabs' words are foreground/400. No theme
+// colour, as on the web and in Compose (decision 65).
+struct PlaceDetailsTabs: View {
+    @State private var selection = "overview"
 
-    KozmosTabsContent(
-        value: "overview",
-        selection: .constant("overview")
-    ) {
-        Text("Overview content")
-    }
-
-}
-`}
-    kotlin={`
-package com.kozmos.components.tabs
-
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.kozmos.tokens.KozmosColors
-import com.kozmos.tokens.KozmosDimensions
-
-@Composable
-fun KozmosTabs(
-modifier: Modifier = Modifier,
-content: @Composable ColumnScope.() -> Unit
-) {
-Column(modifier = modifier.fillMaxWidth()) {
-content()
-}
-}
-
-@Composable
-fun KozmosTabsList(
-modifier: Modifier = Modifier,
-content: @Composable RowScope.() -> Unit
-) {
-Row(
-modifier = modifier
-.fillMaxWidth()
-.background(KozmosColors.primitivesColorsBackground0),
-verticalAlignment = Alignment.CenterVertically
-) {
-content()
-}
-}
-
-@Composable
-fun RowScope.KozmosTabsTrigger(
-value: String,
-title: String,
-selectedValue: String,
-onValueChange: (String) -> Unit,
-modifier: Modifier = Modifier
-) {
-val trackEvent = com.kozmos.providers.LocalKozmosAnalytics.current
-val isSelected = value == selectedValue
-
-    Box(
-        modifier = modifier
-            .weight(1f)
-            .clickable {
-                trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Tabs", eventName = "tab_switched", properties = mapOf("value" to value.toString())))
-                onValueChange(value)
+    var body: some View {
+        KozmosTabs(selection: $selection) {
+            KozmosTabsList {
+                KozmosTabsTrigger(value: "overview", title: "Overview", selection: $selection)
+                KozmosTabsTrigger(value: "access", title: "Access", selection: $selection)
             }
-            .padding(vertical = KozmosDimensions.primitivesLayoutSpacing100),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = title,
-                color = if (isSelected) KozmosColors.primitivesColorsForeground100 else KozmosColors.primitivesColorsForeground500,
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = KozmosDimensions.primitivesLayoutSpacing100)
-                    .height(2.dp)
-                    .background(if (isSelected) KozmosColors.primitivesColorsTheme500 else Color.Transparent)
-            )
+            KozmosTabsContent(value: "overview", selection: $selection) {
+                Text("Reception is on the ground floor.")
+            }
+            KozmosTabsContent(value: "access", selection: $selection) {
+                Text("Step-free access through the main entrance.")
+            }
         }
     }
-
 }
-
-@Composable
-fun KozmosTabsContent(
-value: String,
-selectedValue: String,
-modifier: Modifier = Modifier,
-content: @Composable () -> Unit
-) {
-if (value == selectedValue) {
-Box(modifier = modifier.padding(top = KozmosDimensions.primitivesLayoutSpacing100)) {
-content()
-}
-}
-}
-
     `}
+    kotlin={`
+package com.kozmos.example
 
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.kozmos.components.tabs.KozmosTabs
+import com.kozmos.components.tabs.KozmosTabsContent
+import com.kozmos.components.tabs.KozmosTabsList
+import com.kozmos.components.tabs.KozmosTabsTrigger
+
+// The list is a background/100 track. The selected tab is a background/0
+// segment 4dp inside it, raised by KozmosShadows.semanticsElevationRaised,
+// with foreground/0 words; the other tabs' words are foreground/400. No theme
+// colour, as on the web and in SwiftUI (decision 65).
+@Composable
+fun PlaceDetailsTabs() {
+    var selected by remember { mutableStateOf("overview") }
+    KozmosTabs {
+        KozmosTabsList {
+            KozmosTabsTrigger(value = "overview", title = "Overview", selectedValue = selected, onValueChange = { selected = it })
+            KozmosTabsTrigger(value = "access", title = "Access", selectedValue = selected, onValueChange = { selected = it })
+        }
+        KozmosTabsContent(value = "overview", selectedValue = selected) {
+            Text("Reception is on the ground floor.")
+        }
+        KozmosTabsContent(value = "access", selectedValue = selected) {
+            Text("Step-free access through the main entrance.")
+        }
+    }
+}
+    `}
 />

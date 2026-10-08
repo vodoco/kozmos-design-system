@@ -16,6 +16,22 @@ public struct KozmosTabs<Content: View>: View {
     }
 }
 
+/// How far a tab's segment sits inside the list's track, on every side: the
+/// track's 4pt padding, React's `p-1`. The segment's corner is the track's
+/// less this, so the two curves stay the same distance apart all the way
+/// round (decision 65).
+enum KozmosTabsMetrics {
+    static let inset = KozmosDimensions.primitivesLayoutSpacing50
+    static let trackRadius = KozmosDimensions.semanticsRadiusControl
+    static let segmentRadius = trackRadius - inset
+    /// The segment's least height: 36, in a 44pt track, the minimum touch
+    /// target. React's list is 40; Figma's is 44, as here.
+    static let segmentMinHeight: CGFloat = 36
+}
+
+/// The tabs' track: background/100 with the control radius, React's
+/// `TabsList` (`bg-muted p-1 rounded-control`). Each trigger draws its own
+/// segment 4pt inside it, so the track pads only its ends here.
 public struct KozmosTabsList<Content: View>: View {
     let content: Content
     
@@ -27,10 +43,23 @@ public struct KozmosTabsList<Content: View>: View {
         HStack(spacing: KozmosDimensions.primitivesLayoutSpacing0) {
             content
         }
-        .background(KozmosColors.primitivesColorsBackground0)
+        .padding(.horizontal, KozmosTabsMetrics.inset)
+        .background(
+            RoundedRectangle(cornerRadius: KozmosTabsMetrics.trackRadius)
+                .fill(KozmosColors.primitivesColorsBackground100)
+        )
     }
 }
 
+/// One tab. Selected, it is React's raised segment (decision 65): a
+/// background/0 segment 4pt inside the track, its corner concentric with the
+/// track's, lifted by the raised elevation, with foreground/0 words. The
+/// other tabs' words are foreground/400 on the track. Nothing on tabs is the
+/// theme's colour. Disabled, the plain style draws the tab at half, as
+/// React's `disabled:opacity-50`.
+///
+/// The whole 44pt height of the track is the tab's target, the segment's 4pt
+/// inset included.
 public struct KozmosTabsTrigger: View {
     let value: String
     let title: String
@@ -43,6 +72,8 @@ public struct KozmosTabsTrigger: View {
         self._selection = selection
     }
     
+    private var isSelected: Bool { selection == value }
+
     public var body: some View {
         Button(action: {
             trackEvent(KozmosAnalyticsEvent(eventName: "tab_switched", component: "Tabs", properties: ["value": value]))
@@ -50,18 +81,26 @@ public struct KozmosTabsTrigger: View {
         }) {
             Text(title)
                 .font(KozmosTypography.subheadline)
-                .fontWeight(selection == value ? .semibold : .regular)
-                .foregroundColor(selection == value ? KozmosColors.primitivesColorsForeground100 : KozmosColors.primitivesColorsForeground500)
-                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing100)
-                .frame(maxWidth: .infinity)
-                .overlay(
-                    Rectangle()
-                        .fill(selection == value ? KozmosColors.primitivesColorsTheme500 : Color.clear)
-                        .frame(height: 2)
-                        .offset(y: 14) // Align to bottom
-                    , alignment: .bottom
-                )
+                .fontWeight(.medium)
+                // One line, as React's `whitespace-nowrap`.
+                .lineLimit(1)
+                .foregroundColor(isSelected ? KozmosColors.primitivesColorsForeground0 : KozmosColors.primitivesColorsForeground400)
+                .padding(.horizontal, KozmosDimensions.primitivesLayoutSpacing150)
+                .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing75)
+                .frame(maxWidth: .infinity, minHeight: KozmosTabsMetrics.segmentMinHeight)
+                .background {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: KozmosTabsMetrics.segmentRadius)
+                            .fill(KozmosColors.primitivesColorsBackground0)
+                            .kozmosElevation(KozmosShadows.semanticsElevationRaised)
+                    }
+                }
+                .padding(.vertical, KozmosTabsMetrics.inset)
+                .contentShape(Rectangle())
         }
+        // The plain style draws a disabled tab at half, as React's
+        // `disabled:opacity-50`; a second opacity here would dim it twice.
+        .buttonStyle(.plain)
     }
 }
 
