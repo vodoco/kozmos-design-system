@@ -519,31 +519,32 @@ internal data class KozmosPOIResultTabPaint(val fill: Color, val ink: Color, val
  * web says selection with a ring beside the edge, and a native card has only
  * its edge to say it with. An edge is theme/600, as React's border-primary is
  * (decision 59); it was theme/500. Otherwise a featured card takes its tab's
- * amber (Olcay, 2026-09-29), and every other card the container edge: a
- * number and a badge never recolour it.
+ * accent (Olcay, 2026-09-29; the accent since decision 68), and every other
+ * card the container edge: a number and a badge never recolour it.
  */
 @Composable
 internal fun kozmosPOIResultCardEdge(selected: Boolean, featured: Boolean): Color = when {
     selected -> KozmosThemeTokens.primitivesColorsTheme600
-    featured -> KozmosThemeTokens.semanticsEmotionAlertFill
+    featured -> KozmosThemeTokens.semanticsAccentFill
     else -> KozmosThemeTokens.semanticsBorderSubtle
 }
 
 /**
- * GAP-054. Featured is the SDK's bright amber under dark words, the alert fill
- * pair, for its words and its star (Olcay, 2026-09-29). A number is quiet at
- * rest, the card's own fill outlined in the container edge with muted words,
- * and, when the result is selected, the theme fill with the theme foreground
- * on it, the same in both themes, as the selected pin it pairs with is
- * (decisions 55 and 59). A badge is quiet: the muted fill and muted words,
+ * GAP-054. Featured is the accent under its own ink, for its words and its
+ * star: the SDK's bright amber, #FAB735, under black unless the client sets
+ * its accent (decision 68; it was the alert fill pair, decided 2026-09-29).
+ * A number is quiet at rest, the card's own fill outlined in the container
+ * edge with muted words, and, when the result is selected, the theme fill with
+ * the theme foreground on it, the same in both themes, as the selected pin it
+ * pairs with is (decisions 55 and 59). A badge is quiet: the muted fill and muted words,
  * with no star. Each pair reads at 4.5:1 or more in both themes, as on the web.
  */
 @Composable
 internal fun kozmosPOIResultTabPaint(tab: KozmosPOIResultTab, selected: Boolean): KozmosPOIResultTabPaint =
     when (tab) {
         is KozmosPOIResultTab.Featured -> KozmosPOIResultTabPaint(
-            fill = KozmosThemeTokens.semanticsEmotionAlertFill,
-            ink = KozmosThemeTokens.semanticsEmotionAlertOnfill,
+            fill = KozmosThemeTokens.semanticsAccentFill,
+            ink = KozmosThemeTokens.semanticsAccentOnfill,
             edge = null
         )
         is KozmosPOIResultTab.Number -> if (selected) {

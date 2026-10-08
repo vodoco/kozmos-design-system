@@ -144,14 +144,15 @@ public struct KozmosPOIResultCard: View {
         return nil
     }
 
-    /// The tab's fill, words and edge (GAP-054). Featured is the SDK's bright
-    /// amber under dark words, the alert fill pair, for its words and its star
-    /// (Olcay, 2026-09-29). A number is quiet at rest, the card's own fill
-    /// outlined in the container edge with muted words, and when the result
-    /// is selected filled as its pin is (decision 55): the theme fill, with
-    /// the theme foreground, white in both themes (decision 59). A badge is
-    /// quiet: the muted fill and muted words, with no star. Each pair reads
-    /// at 4.5:1 or more in both themes, as on the web.
+    /// The tab's fill, words and edge (GAP-054). Featured is the accent under
+    /// its own ink, for its words and its star: the SDK's bright amber,
+    /// #FAB735, under black unless the client sets its accent (decision 68;
+    /// it was the alert fill pair, decided 2026-09-29). A number is quiet at
+    /// rest, the card's own fill outlined in the container edge with muted
+    /// words, and when the result is selected filled as its pin is (decision
+    /// 55): the theme fill, with the theme foreground, white in both themes
+    /// (decision 59). A badge is quiet: the muted fill and muted words, with
+    /// no star. Each pair reads at 4.5:1 or more in both themes, as on the web.
     struct TabPaint {
         let fill: Color
         let ink: Color
@@ -162,8 +163,8 @@ public struct KozmosPOIResultCard: View {
         switch tab {
         case .featured:
             return TabPaint(
-                fill: KozmosColors.semanticsEmotionAlertFill,
-                ink: KozmosColors.semanticsEmotionAlertOnfill,
+                fill: KozmosColors.semanticsAccentFill,
+                ink: KozmosColors.semanticsAccentOnfill,
                 edge: nil
             )
         case .number:
@@ -489,11 +490,12 @@ public struct KozmosPOIResultCard: View {
     /// surface (decision 59) — whatever else the card is: the web says
     /// selection with a ring beside the edge, and a native card has only its
     /// edge to say it with. Otherwise a featured card
-    /// takes its tab's amber (Olcay, 2026-09-29), and every other card the
-    /// container edge: a number and a badge never recolour it.
+    /// takes its tab's accent (Olcay, 2026-09-29; the accent since decision
+    /// 68), and every other card the container edge: a number and a badge
+    /// never recolour it.
     var edgeColor: Color {
         if result.selected && !sdk { return KozmosColors.primitivesColorsTheme600 }
-        if tab == .featured { return KozmosColors.semanticsEmotionAlertFill }
+        if tab == .featured { return KozmosColors.semanticsAccentFill }
         return KozmosColors.semanticsBorderSubtle
     }
 

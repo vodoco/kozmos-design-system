@@ -9840,12 +9840,13 @@ if (counter.fill) {
   );
 }
 
-// LocationPin: a tint for the marker, over the variant's colour; featured still wins.
+// LocationPin: a tint for the marker, over the variant's colour; featured still
+// wins, in the accent (decision 68).
 if (locationPin.content.tint) {
   assertContains(
     files.iosLocationPin,
     source.iosLocationPin,
-    /if featured \{ return KozmosColors\.primitivesColorsEmotionalAlert500 \}\s+if let tint \{ return tint\.fill\.fill \}/,
+    /if featured \{ return KozmosColors\.semanticsAccentFill \}\s+if let tint \{ return tint\.fill\.fill \}/,
     "iOS LocationPin tint after featured",
   );
   assertContains(
@@ -9857,7 +9858,7 @@ if (locationPin.content.tint) {
   assertContains(
     files.androidLocationPin,
     source.androidLocationPin,
-    /featured -> KozmosThemeTokens\.primitivesColorsEmotionalAlert500\s+tint != null -> tint\.fill\.fill/,
+    /featured -> KozmosThemeTokens\.semanticsAccentFill\s+tint != null -> tint\.fill\.fill/,
     "Android LocationPin tint after featured",
   );
 }
@@ -9911,10 +9912,11 @@ if (locationPin.content.offFloorNumberColor === "foreground/0") {
 
 // LocationPin numbered at rest (decision 55, 2026-09-29): quiet — the
 // outlined marker, its ring and number in its colour — and filled only when
-// selected; a featured pin and a pin with no number keep their fill. Off the
-// floor the outlined marker's ring is dashed, so the two never read alike,
-// and on iOS and Compose the primary's ring and number take the theme's text
-// role (theme/500 reads 3.74:1 on the dark surface).
+// selected; a featured pin, a pin showing markerContent (on every platform
+// since decision 68) and a pin with no number keep their fill. Off the floor
+// the outlined marker's ring is dashed, so the two never read alike, and on
+// iOS and Compose the primary's ring and number take the theme's text role
+// (theme/500 reads 3.74:1 on the dark surface).
 assertContains(
   files.reactLocationPin,
   source.reactLocationPin,
@@ -9930,7 +9932,7 @@ assertContains(
 assertContains(
   files.iosLocationPin,
   source.iosLocationPin,
-  "number != nil && !selected && !featured && !offFloor",
+  "number != nil && markerContent == nil && !selected && !featured && !offFloor",
   "iOS LocationPin quiet only for a numbered pin at rest on the floor",
 );
 assertContains(
@@ -9948,7 +9950,7 @@ assertContains(
 assertContains(
   files.androidLocationPin,
   source.androidLocationPin,
-  "val quiet = number != null && !selected && !featured && !offFloor",
+  "val quiet = number != null && markerContent == null && !selected && !featured && !offFloor",
   "Android LocationPin quiet only for a numbered pin at rest on the floor",
 );
 assertContains(
