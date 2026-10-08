@@ -28,6 +28,8 @@ import com.kozmos.components.bottomnavigation.KozmosBottomNavigation
 import com.kozmos.components.categoryfield.KozmosCategoryField
 import com.kozmos.components.button.KozmosButton
 import com.kozmos.components.categorytile.KozmosCategoryTile
+import com.kozmos.components.categorytile.KozmosCategoryTint
+import com.kozmos.components.counter.KozmosInkedFill
 import com.kozmos.components.chip.KozmosChip
 import com.kozmos.components.counter.CounterTone
 import com.kozmos.components.counter.KozmosCounter
@@ -76,6 +78,7 @@ import com.kozmos.contracts.KozmosFloorPresentation
 import com.kozmos.contracts.KozmosInstructionPart
 import com.kozmos.contracts.KozmosRouteOptionPresentation
 import com.kozmos.contracts.KozmosRoutePreference
+import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertTrue
@@ -398,30 +401,67 @@ class KozmosThemeFillPixelsTest {
     }
 
     /**
-     * A featured pin is the alert's amber, #FAB735 in both themes, and its
-     * number the alert's onFill, the dark words decision 55 gives Featured:
-     * white on it read 1.76:1 in the light.
+     * Decision 68 (Olcay, 2026-10-08): a featured pin is the accent, #FAB735
+     * in both themes by default, whatever its variant, tint or selection, and
+     * it never shows its number (decision 55: a featured result's pin shows
+     * its logo). Without a logo it shows a star where the number would be, in
+     * the accent's ink, black, 11.89:1 on it.
+     *
+     * The intent changed with decision 68. This test said a featured pin's
+     * number was dark on the alert's amber: the fill was alert 500, the same
+     * #FAB735 the accent defaults to, so the fill alone cannot tell the two
+     * apart, and the star and the missing number do. Against the code before
+     * it, it fails in both themes: the numbered pin's mark is the 8, narrower
+     * than it is tall, not a star, and the pins with no number draw no mark.
      */
     @Test
-    fun aFeaturedPinsNumberIsDarkOnItsAmberInBothThemes() {
-        val amber = 0xFFFAB735.toInt()
+    fun aFeaturedPinIsTheAccentWithABlackStarAndNoNumberInBothThemes() {
+        val accent = 0xFFFAB735.toInt()
         val black = 0xFF000000.toInt()
+        val navy = KozmosCategoryTint(
+            KozmosColors.semanticsCategoryAccentNavy,
+            KozmosInkedFill(KozmosColors.semanticsCategoryFillNavy, KozmosColors.semanticsCategoryOnfillNavy)
+        )
+        val pins: List<Pair<String, @Composable () -> Unit>> = listOf(
+            "a featured pin numbered 8" to { KozmosLocationPin(size = KozmosLocationPinSize.Lg, number = 8, featured = true) },
+            "a featured pin with no number" to { KozmosLocationPin(size = KozmosLocationPinSize.Lg, featured = true) },
+            "a featured pin with a navy tint" to {
+                KozmosLocationPin(size = KozmosLocationPinSize.Lg, number = 8, featured = true, tint = navy)
+            },
+            "a selected featured pin" to {
+                KozmosLocationPin(size = KozmosLocationPinSize.Lg, number = 8, selected = true, featured = true)
+            },
+        )
         val wrong = mutableListOf<String>()
         for (dark in listOf(false, true)) {
-            val drawn = draw(dark, Color(0xFF808080)) {
-                KozmosLocationPin(size = KozmosLocationPinSize.Lg, number = 8, featured = true)
+            for ((name, pin) in pins) {
+                val drawn = draw(dark, Color(0xFF808080), pin)
+                val bounds = drawn.boundsOf(accent)
+                if (bounds == null) {
+                    wrong += "${mode(dark)}: $name draws no #FAB735"
+                    continue
+                }
+                val (mx, my) = bounds.first.middleHalf() to bounds.second.middleHalf()
+                val inked = drawn.count(black, 24, mx, my)
+                val pale = drawn.count(white, 24, mx, my)
+                val mark = drawn.boundsOf(black, mx, my)
+                val (wide, tall) = (mark?.first?.count() ?: 0) to (mark?.second?.count() ?: 0)
+                println("Decision 68 Android, ${mode(dark)}: $name has a $wide x $tall black mark ($inked pixels) and $pale white pixels in its middle")
+                if (inked < 6) wrong += "${mode(dark)}: $name has no black mark ($inked pixels)"
+                // A star is about as wide as it is tall (20 by 19 in its
+                // 24 box); a bold 8 is about two-thirds as wide.
+                else if (wide < tall * 0.85f) wrong += "${mode(dark)}: $name's mark is $wide x $tall, a number's shape, not a star's"
+                if (pale * 100 > inked) wrong += "${mode(dark)}: $name draws $pale white pixels in its middle"
             }
-            val bounds = drawn.boundsOf(amber)
-            if (bounds == null) {
-                wrong += "${mode(dark)}: the featured pin draws no #FAB735"
-                continue
+            // The numbered pin draws exactly what the unnumbered one does.
+            val numbered = draw(dark, Color(0xFF808080)) { KozmosLocationPin(size = KozmosLocationPinSize.Lg, number = 8, featured = true) }
+            val plain = draw(dark, Color(0xFF808080)) { KozmosLocationPin(size = KozmosLocationPinSize.Lg, featured = true) }
+            var differ = 0
+            for (y in 0 until minOf(numbered.height, plain.height)) for (x in 0 until minOf(numbered.width, plain.width)) {
+                if (!DrawnPixels.matches(numbered.argb(x, y), plain.argb(x, y), 8)) differ++
             }
-            val (mx, my) = bounds.first.middleHalf() to bounds.second.middleHalf()
-            val inked = drawn.count(black, 24, mx, my)
-            val pale = drawn.count(white, 24, mx, my)
-            println("Decision 59 Android, ${mode(dark)}: the featured pin has $inked black and $pale white pixels in its middle")
-            if (inked < 6) wrong += "${mode(dark)}: the featured pin's number is not dark ($inked black pixels)"
-            if (pale > 0) wrong += "${mode(dark)}: the featured pin draws $pale white pixels in its middle"
+            println("Decision 68 Android, ${mode(dark)}: a featured pin numbered 8 differs from one with no number in $differ pixels")
+            if (differ > 6) wrong += "${mode(dark)}: a featured pin shows its number ($differ pixels differ from the pin with none)"
         }
         assertTrue(wrong.joinToString("\n"), wrong.isEmpty())
     }

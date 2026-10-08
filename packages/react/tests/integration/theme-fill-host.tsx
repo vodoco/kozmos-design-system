@@ -167,6 +167,10 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       <div data-testid={id("pin-featured")}>
         <LocationPin featured label="Burger King" number={2} />
       </div>
+      {/* Decision 66: a filled secondary pin, as the natives draw it. */}
+      <div data-testid={id("pin-secondary")}>
+        <LocationPin label="Gate 6" number={6} selected variant="secondary" />
+      </div>
       <div data-testid={id("save")}>
         <SaveLocationCard isSaved title="Gate 12" />
       </div>

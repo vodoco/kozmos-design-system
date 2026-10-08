@@ -181,6 +181,11 @@ const ADDED_SCOPES_BY_PATH = new Map([
   // The alert's on-fill is the number on the featured pin's amber
   // (decision 62), as it is the words on Turn Back's.
   ["Semantics/Emotion/alert/onFill", ["TEXT_FILL"]],
+  // The accent (decision 68): its fill is the Featured badge, a featured
+  // pin, and a featured card's edge; its ink the badge's words and the pin's
+  // star.
+  ["Semantics/Accent/fill", ["STROKE_COLOR"]],
+  ["Semantics/Accent/onFill", ["TEXT_FILL"]],
   // A halo or an edge in a surface colour: RouteProgressRail's location dot
   // and waypoints, the example map's markers.
   ["Primitives/Colors/background/0", ["STROKE_COLOR"]],

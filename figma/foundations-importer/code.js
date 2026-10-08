@@ -19,7 +19,7 @@ const RUN_NAMESPACE = "kozmos_ds_importer";
  * Derived from a hash of this file by `pnpm figma:stamp`, and held current by
  * `pnpm figma:stamp --check`. Never edit it by hand.
  */
-const PLUGIN_BUILD = "8ba3d3e10a98";
+const PLUGIN_BUILD = "1c784e8b0297";
 const EXAMPLE_CHILD_SIZING_DATA_KEY = "exampleChildSizing";
 // Inter, because Figma takes one real family and the System role is a stack.
 // `ui-sans-serif, system-ui, -apple-system, ... Roboto ...` resolves to SF Pro
@@ -44938,17 +44938,17 @@ async function rebuildFloorSelectorComponent() {
 // A marker's fill and the ink on it. The theme's pin is a prominent fill
 // (decision 59): the theme fill, its number the theme foreground, white in
 // both themes. It was theme/700 under foreground/1000, which turns black in
-// the dark. Featured is the SDK's amber, alert 500 (#FAB735) in both themes,
-// with the alert's on-fill, black in both, for its number (decision 55; Olcay
-// set the pins on every platform to the natives' on 2026-10-08, decision 62).
-// It was alert 900 under white.
+// the dark. Featured is the accent (decision 68, Olcay, 2026-10-08): the
+// accent fill, amber #FAB735 unless the product sets its accent, with the
+// accent's ink, black, on its star. It was alert 500 under the alert's
+// on-fill (decision 62), and alert 900 under white before that.
 function locationPinPalette(state) {
   const onFill = { name: "Colors/foreground/1000", fallback: "#FFFFFF" };
   if (state === "Featured") {
     return {
-      fill: "Colors/emotional/alert/500",
+      fill: "Accent/fill",
       fallback: "#FAB735",
-      ink: { name: "Emotion/alert/onFill", fallback: "#000000" },
+      ink: { name: "Accent/onFill", fallback: "#000000" },
     };
   }
   if (state === "Disabled" || state === "OffFloor") {
@@ -45123,7 +45123,25 @@ async function updateLocationPinVariant(
   });
   number.textAlignHorizontal = "CENTER";
   number.textAutoResize = "WIDTH_AND_HEIGHT";
+  // A featured pin never shows its number (decision 68): it shows the place's
+  // logo, and without one a star, which is what the library draws. The
+  // number stays, hidden, so the Number Text property reaches every variant.
+  const featured = props.state === "Featured";
+  number.visible = !featured;
   marker.appendChild(number);
+  if (featured && typeof figma.createStar === "function") {
+    const star = figma.createStar();
+    star.name = "Featured Star";
+    star.pointCount = 5;
+    star.innerRadius = 0.45;
+    const starSize = Math.round(diameter * 0.44);
+    star.resizeWithoutConstraints(starSize, starSize);
+    star.fills = [
+      paintFromVariable(ink.name, ink.fallback, variableByName, stats),
+    ];
+    star.strokes = [];
+    marker.appendChild(star);
+  }
   appendWithSizing(component, marker, "FIXED", "FIXED");
 
   const label = await productSdkText({
@@ -50236,12 +50254,18 @@ async function updatePOIResultCardVariant(
       stats,
     ),
   ];
+  // A featured card's edge is the accent, as its Featured badge is (decision
+  // 68), as the code draws it.
   component.strokes = isRow
     ? []
     : [
         paintFromVariable(
-          selected ? "Colors/theme/600" : "Border/Subtle",
-          selected ? "#1051E8" : "#C7CAD1",
+          selected
+            ? "Colors/theme/600"
+            : featured
+              ? "Accent/fill"
+              : "Border/Subtle",
+          selected ? "#1051E8" : featured ? "#FAB735" : "#C7CAD1",
           variableByName,
           stats,
         ),
@@ -50322,13 +50346,10 @@ async function updatePOIResultCardVariant(
       height: 20,
     });
     badge.cornerRadius = 10;
+    // The Featured tag is the accent under its ink (decision 68), as the code
+    // draws the card's Featured tab. It was background/100 under alert 900.
     badge.fills = [
-      paintFromVariable(
-        "Colors/background/100",
-        "#E3E4E8",
-        variableByName,
-        stats,
-      ),
+      paintFromVariable("Accent/fill", "#FAB735", variableByName, stats),
     ];
     const badgeText = await productSdkText({
       name: "Featured Text",
@@ -50338,8 +50359,8 @@ async function updatePOIResultCardVariant(
       bold: true,
       fontSize: 11,
       lineHeight: 16,
-      colorToken: "Colors/emotional/alert/900",
-      colorFallback: "#744D03",
+      colorToken: "Accent/onFill",
+      colorFallback: "#000000",
       variableByName,
       stats,
       width: 56,

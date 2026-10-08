@@ -128,6 +128,16 @@
       "name": "the theme foreground is white on focus in both themes (decision 59)",
       "token": "components-primary-buttons-themed-button-foreground-content-focus",
       "value": "#ffffff"
+    },
+    {
+      "name": "the accent fill is accent 500, the client's accent, in both themes (decision 68)",
+      "token": "semantics-accent-fill",
+      "sameAs": "primitives-colors-accent-500"
+    },
+    {
+      "name": "the accent's default is #FAB735, the SDK's Featured amber, in both themes (decision 68)",
+      "token": "primitives-colors-accent-500",
+      "value": "#fab735"
     }
   ],
   "stateSteps": {
@@ -286,6 +296,24 @@
       "background": "primitives-colors-background-0",
       "foreground": "primitives-colors-theme-variant-1-500",
       "minimum": 3
+    },
+    {
+      "name": "the accent fill / its ink: the Featured tag and a featured pin (decision 68)",
+      "background": "semantics-accent-fill",
+      "foreground": "semantics-accent-on-fill",
+      "minimum": 4.5
+    },
+    {
+      "name": "brand variant 1's 600 as text on the page (GAP-45)",
+      "background": "primitives-colors-background-0",
+      "foreground": "primitives-colors-theme-variant-1-600",
+      "minimum": 4.5
+    },
+    {
+      "name": "brand variant 1's 600 as text on the sheet (GAP-45)",
+      "background": "primitives-colors-background-100",
+      "foreground": "primitives-colors-theme-variant-1-600",
+      "minimum": 4.5
     },
     {
       "name": "the theme foreground on brand variant 1's 500, the accent pin's number (decision 63)",

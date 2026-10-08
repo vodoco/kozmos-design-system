@@ -1,6 +1,6 @@
 import type { CategoryTint } from "../CategoryTile/CategoryTint";
 import React from "react";
-import { MarkerPin01 as MapPin } from "@kozmos-ds/icons";
+import { MarkerPin01 as MapPin, Star01 as Star } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
@@ -15,10 +15,11 @@ export interface LocationPinProps extends React.HTMLAttributes<HTMLDivElement> {
   markerContent?: React.ReactNode;
   /** Grows the pin, and fills a numbered one. */
   selected?: boolean;
-  /** A featured place: the SDK's Featured amber, `#FAB735` in both themes,
-   *  with its number in the alert's on-fill colour, black (decision 55), as
-   *  SwiftUI and Compose draw it, whatever the variant or tint. A featured pin
-   *  is never quiet. */
+  /** A featured place: the accent colour (amber, `#FAB735`, unless the product
+   *  sets its own), with the accent's ink, whatever the variant or tint
+   *  (decision 68). It shows the place's logo, passed as `markerContent`, and
+   *  without one a star where the number would be: a featured pin never shows
+   *  its number. It is never quiet. */
   featured?: boolean;
   /** Added to `label` for a featured pin, so assistive technology hears what
    *  the amber shows. Default "Featured"; pass it translated. */
@@ -33,7 +34,7 @@ export interface LocationPinProps extends React.HTMLAttributes<HTMLDivElement> {
   labelPlacement?: "top" | "right" | "bottom" | "left";
   resultId?: string;
   /** A category's colours for the marker — its fill, solid, with its ink for
-   *  the number — over the variant's; a featured pin keeps the alert colour.
+   *  the number — over the variant's; a featured pin keeps the accent.
    *  A numbered pin at rest and a pin off the floor are outlined in the fill,
    *  with the number in the foreground. */
   tint?: CategoryTint;
@@ -76,10 +77,14 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
     // (decision 59). The accent pin is brand variant 1's 500, #4135F1 in both
     // themes, with its number white too (decision 62, as SwiftUI and Compose
     // draw it): it was theme 600 under foreground/1000, black in the dark.
+    // The secondary pin is foreground/400, as SwiftUI and Compose fill it
+    // (decision 66): it was background/200, 1.6:1 against the page. Note that
+    // `accent` names brand variant 1 here, not the accent colour a featured
+    // pin is drawn in (decision 68 kept the name).
     const variantClasses = {
       default: "text-foreground",
       primary: "text-theme-fill",
-      secondary: "text-secondary",
+      secondary: "text-[var(--primitives-colors-foreground-400)]",
       accent: "text-[var(--primitives-colors-theme-variant-1-500)]",
     };
 
@@ -90,14 +95,14 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
     const inkClasses = {
       default: "text-background",
       primary: "text-theme-fill-foreground",
-      secondary: "text-secondary-foreground",
+      // foreground/1000 on foreground/400: 6.10:1 in light, 7.76:1 in dark.
+      secondary: "text-[var(--primitives-colors-foreground-1000)]",
       accent: "text-theme-fill-foreground",
     };
 
     // Each variant's colour where it is a ring and a number on the surface —
-    // a quiet pin, or one off the floor. Secondary's own colour is a surface
-    // grey (background/200, 1.6:1 on the surface), so it takes the muted
-    // foreground there, the grey native's secondary pin is drawn in. The
+    // a quiet pin, or one off the floor. Secondary is its own colour,
+    // foreground/400, the muted foreground, filled or as a ring. The
     // accent's 500 reads 3:1 on the dark page, under the 4.5:1 a number needs,
     // so it takes its ramp's 700, as the natives do (6.33:1 in the dark).
     const outlineClasses = {
@@ -107,12 +112,11 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       accent: "text-[var(--primitives-colors-theme-variant-1-700)]",
     };
 
-    // Featured is the SDK's amber, alert 500, in both themes, filled or as an
-    // off-floor ring, with the alert's on-fill, black, for its number
-    // (decision 55; decision 62 drew it on the web as the natives and Figma
-    // do, where the variant's colour and a star badge had stood).
-    const featuredFill = "text-[var(--primitives-colors-emotional-alert-500)]";
-    const featuredInk = "text-[var(--semantics-emotion-alert-on-fill)]";
+    // Featured is the accent (decision 68): the accent fill, amber #FAB735 by
+    // default, filled or as an off-floor ring, with the accent's ink, black by
+    // default, on what it shows. A product that sets its accent sets both.
+    const featuredFill = "text-[var(--semantics-accent-fill)]";
+    const featuredInk = "text-[var(--semantics-accent-on-fill)]";
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
       if (disabled) return;
@@ -138,7 +142,20 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
     };
 
     const isInteractive = Boolean(onClick);
-    const visibleContent = markerContent ?? number;
+    // A featured pin shows its logo, and without one a star, never its
+    // number (decision 68; decision 55: its result shows Featured, not a
+    // number). Any other pin shows a logo or icon in place of its number.
+    const visibleContent =
+      markerContent ??
+      (featured ? (
+        <Star
+          aria-hidden="true"
+          className="inline-block h-2.5 w-2.5 fill-current align-top"
+          data-featured-star=""
+        />
+      ) : (
+        number
+      ));
     const hasContent = visibleContent !== undefined && visibleContent !== null;
     // Decision 55 (Olcay, 2026-09-29): a numbered pin on this floor is quiet
     // at rest — the surface, a ring and the number in its colour — and filled
