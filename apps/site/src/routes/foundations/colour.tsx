@@ -34,6 +34,7 @@ const ramps = [
   { prefix: "--primitives-colors-theme", title: "Theme" },
   { prefix: "--primitives-colors-theme-variant-1", title: "Theme variant 1" },
   { prefix: "--primitives-colors-theme-variant-2", title: "Theme variant 2" },
+  { prefix: "--primitives-colors-accent", title: "Accent" },
   { prefix: "--primitives-colors-emotional-success", title: "Success" },
   { prefix: "--primitives-colors-emotional-info", title: "Information" },
   { prefix: "--primitives-colors-emotional-danger", title: "Danger" },
@@ -60,6 +61,11 @@ const semanticGroups = [
     prefix: "--semantics-emotion",
     title: "Emotion",
     lead: "Six meanings — themed, neutral, success, danger, informative, alert — each as a surface, the ink on it, and text on the page.",
+  },
+  {
+    prefix: "--semantics-accent",
+    title: "Accent",
+    lead: "What is featured: the accent’s fill and the ink on it. A featured pin and POIResultCard’s Featured tab and edge wear it. Amber unless a product sets its own (decision 68).",
   },
   {
     prefix: "--semantics-category",
