@@ -156,7 +156,75 @@ const SCOPES_BY_PATH = new Map([
   ],
 ]);
 
+// What the painters bind beyond the picker a token's name suggests, added to
+// the name's own scopes (2026-10-08). check-figma-painters builds and updates
+// every set and the example pages, and fails on any binding outside its
+// variable's scopes, so a new use is added here when a painter makes it.
+const MARK = ["SHAPE_FILL", "STROKE_COLOR"];
+const ADDED_SCOPES_BY_PATH = new Map([
+  // The neutral ink is a mark as well as a word: icon strokes, the loading
+  // ring, Radio's dot, a scroll thumb, the sheet's drag handle, an empty
+  // Rating star; and a frame drawn in it: the brand mark, an off-floor or
+  // disabled pin, an unchecked Switch's track.
+  ["Primitives/Colors/foreground/0", ["FRAME_FILL", ...MARK]],
+  ["Primitives/Colors/foreground/400", ["FRAME_FILL", ...MARK]],
+  ["Primitives/Colors/foreground/500", ["FRAME_FILL", ...MARK]],
+  ["Primitives/Colors/foreground/1000", ["STROKE_COLOR"]],
+  // The theme's 600 is a word, a mark, an edge or a focus ring on the
+  // surface (decision 59).
+  ["Primitives/Colors/theme/600", ["TEXT_FILL", "STROKE_COLOR"]],
+  // A status's words, its icon, and the edge and focus ring of a field,
+  // control or alert in it.
+  ["Primitives/Colors/emotional/danger/600", ["TEXT_FILL", "STROKE_COLOR"]],
+  ["Primitives/Colors/emotional/alert/900", ["TEXT_FILL", "STROKE_COLOR"]],
+  ["Primitives/Colors/emotional/success/900", ["TEXT_FILL", "STROKE_COLOR"]],
+  // A halo or an edge in a surface colour: RouteProgressRail's location dot
+  // and waypoints, the example map's markers.
+  ["Primitives/Colors/background/0", ["STROKE_COLOR"]],
+  ["Primitives/Colors/background/400", ["STROKE_COLOR"]],
+  ["Semantics/Surface/0", ["STROKE_COLOR"]],
+  // Rating's filled star is outlined in its own fill.
+  ["Semantics/Data/Yellow", ["STROKE_COLOR"]],
+  // A button's content is its label and its icon, and the Outline button's
+  // edge and the SplitButton's divider are drawn in it.
+  [
+    "Components/Primary Buttons/themed/button/foreground/content/disabled",
+    MARK,
+  ],
+  ["Components/Primary Buttons/danger/button/foreground/content/idle", MARK],
+  [
+    "Components/Primary Buttons/danger/button/foreground/content/disabled",
+    MARK,
+  ],
+  ["Components/Secondary Buttons/themed/button/foreground/content/idle", MARK],
+  [
+    "Components/Secondary Buttons/themed/button/foreground/content/disabled",
+    MARK,
+  ],
+]);
+
+// The category tokens, all eight categories alike: an accent is the icon's
+// stroke and the selected tile's edge and ring, a fill the pin's edge, and an
+// on-fill the count's digits.
+const ADDED_SCOPES_BY_PREFIX = [
+  ["Semantics/Category/Accent/", ["STROKE_COLOR"]],
+  ["Semantics/Category/Fill/", ["STROKE_COLOR"]],
+  ["Semantics/Category/OnFill/", ["TEXT_FILL"]],
+];
+
 function scopesFor(token) {
+  const scopes = scopesForName(token);
+  const canonical = token.path.join("/");
+  const added = [
+    ...(ADDED_SCOPES_BY_PATH.get(canonical) || []),
+    ...ADDED_SCOPES_BY_PREFIX.filter(([prefix]) =>
+      canonical.startsWith(prefix),
+    ).flatMap(([, extra]) => extra),
+  ];
+  return [...scopes, ...added.filter((scope) => !scopes.includes(scope))];
+}
+
+function scopesForName(token) {
   const joined = token.path.join("/").toLowerCase();
   const type = token.type;
 

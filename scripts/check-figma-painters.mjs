@@ -1968,24 +1968,26 @@ section("Decision 59: the theme fill and what sits on it");
 
   // MapControlButton's Pressed state is a mode that stays on (following, a
   // layer shown): the nested default Button, so the theme fill, edge and all,
-  // with the theme foreground on it. Its state config was theme/600 under
-  // foreground/1000, black on it in the dark.
-  const mapPressed =
-    typeof plugin.mapControlButtonStateConfig === "function"
-      ? plugin.mapControlButtonStateConfig("Pressed")
-      : {};
+  // with the theme foreground on it. The set paints nothing of its own: what
+  // it draws is the Button it nests, so that Button's config is read here. (A
+  // state config the painter never called, theme/600 under foreground/1000,
+  // was removed on 2026-10-08.)
   const mapNested =
     typeof plugin.mapControlButtonNestedVariant === "function"
       ? plugin.mapControlButtonNestedVariant("Icon", "Pressed")
       : {};
+  const mapPressed = mapNested.Variant
+    ? plugin.buttonConfig(mapNested.Variant, mapNested.State)
+    : {};
   ok(
     mapNested.Variant === "Default" &&
-      mapPressed.fill === FILL &&
-      mapPressed.fillFallback === "#135BEC" &&
-      mapPressed.stroke === FILL &&
+      mapNested.State === "Default" &&
+      mapPressed.background === FILL &&
+      mapPressed.backgroundFallback === "#135BEC" &&
+      (!mapPressed.stroke || mapPressed.stroke === FILL) &&
       mapPressed.foreground === INK &&
       mapPressed.foregroundFallback === "#FFFFFF",
-    `MapControlButton, Pressed: the nested default Button, the theme fill with the theme foreground (Button ${mapNested.Variant}; ${mapPressed.fill}, edge ${mapPressed.stroke}, ${mapPressed.foreground})`,
+    `MapControlButton, Pressed: the nested default Button, the theme fill with the theme foreground (Button ${mapNested.Variant} ${mapNested.State}; ${mapPressed.background}, ${mapPressed.foreground})`,
   );
 
   // Avatar's image placeholder is neutral (Olcay, 2026-10-07): React's muted
@@ -2220,6 +2222,267 @@ section("Every frame keeps the size it was drawn at");
     core.grown.length === 0,
     `no Core frame painted here is larger than it was drawn (${core.grown.length}: ${core.grown.slice(0, 4).join(" | ")})`,
   );
+}
+
+// --- Every binding is in its variable's scope -------------------------------------
+
+// Figma offers a variable only in the pickers its scopes name, and Update
+// writes the payload's suggested scopes, and the plugin's own for its
+// component tokens. A paint bound outside them still draws, but a designer who
+// detaches it cannot pick the token back, and the file says the token is not
+// for that use. On 2026-10-08 the painters bound 45 variables outside their
+// scopes: theme/600 on words and edges, the foreground ramp on icon strokes,
+// the category tokens on edges and digits, a divider width on a width. So
+// every set is built and then updated in place, the way Build and Update draw
+// it, with the Core sets the frame check above cannot reach; the example pages
+// after them; and every binding on every node is held to its variable's
+// scopes, read the way Figma reads them.
+section("Every binding is in its variable's scope");
+{
+  const scopePages = ["Components", "Icons", "Utilities"].map(
+    (name) => new MockNode("PAGE", name),
+  );
+  const scopeFigma = createFigmaMock({ pages: scopePages });
+  scopeFigma.createTextStyle = createMockTextStyle;
+  scopeFigma.createStar = () => new MockNode("STAR", "Star");
+  scopeFigma.createSection = () => new MockNode("SECTION", "Section");
+  // Build and Update read the file's variables through this one helper, and
+  // the harness creates none: it hands them the payload's and the tokens'.
+  const scoped = loadPlugin({
+    pluginPath: PLUGIN,
+    figma: scopeFigma,
+    append:
+      "\n;ensureComponentRuntimeVariables = async function () { return figma.__scopeVariables; };\n",
+  });
+  for (const definition of scoped.KOSMOS_ICON_DEFINITIONS) {
+    scopePages[1].appendChild(mockIconComponent(definition.name));
+  }
+  const componentTokens = scoped.COMPONENT_FLOAT_TOKENS || [];
+  scopeFigma.__scopeVariables = payloadVariables(
+    componentTokens.map((token) => token.name),
+  ).variableByName;
+
+  // Where each variable may be picked: the payload's suggested scopes, or a
+  // component token's own. Update writes no scope from an empty list, so a
+  // variable it creates keeps Figma's default, every scope.
+  const scopesOf = new Map();
+  for (const variable of JSON.parse(
+    fs.readFileSync(
+      path.join(ROOT, "docs/figma-foundations-payload.json"),
+      "utf8",
+    ),
+  ).variables) {
+    scopesOf.set(variable.figmaName, variable.suggestedScopes || []);
+  }
+  for (const token of componentTokens) {
+    scopesOf.set(token.name, token.scopes || []);
+  }
+  const allows = (scopes, scope) =>
+    scopes.length === 0 ||
+    scopes.includes("ALL_SCOPES") ||
+    scopes.includes(scope) ||
+    (/_FILL$/.test(scope) && scopes.includes("ALL_FILLS"));
+
+  // Figma's scopes by what is bound: a fill by the node it fills, a stroke's
+  // colour wherever it is, a gradient stop as its paint, and the number
+  // fields by the property they set (padding is a gap).
+  const SHAPE_NODES = new Set([
+    "RECTANGLE",
+    "ELLIPSE",
+    "POLYGON",
+    "STAR",
+    "VECTOR",
+    "LINE",
+    "BOOLEAN_OPERATION",
+  ]);
+  const fillScope = (node) =>
+    node.type === "TEXT"
+      ? "TEXT_FILL"
+      : SHAPE_NODES.has(node.type)
+        ? "SHAPE_FILL"
+        : "FRAME_FILL";
+  const FIELD_SCOPES = {
+    width: "WIDTH_HEIGHT",
+    height: "WIDTH_HEIGHT",
+    minWidth: "WIDTH_HEIGHT",
+    maxWidth: "WIDTH_HEIGHT",
+    minHeight: "WIDTH_HEIGHT",
+    maxHeight: "WIDTH_HEIGHT",
+    itemSpacing: "GAP",
+    counterAxisSpacing: "GAP",
+    paddingLeft: "GAP",
+    paddingRight: "GAP",
+    paddingTop: "GAP",
+    paddingBottom: "GAP",
+    cornerRadius: "CORNER_RADIUS",
+    topLeftRadius: "CORNER_RADIUS",
+    topRightRadius: "CORNER_RADIUS",
+    bottomLeftRadius: "CORNER_RADIUS",
+    bottomRightRadius: "CORNER_RADIUS",
+    strokeWeight: "STROKE_FLOAT",
+    strokeTopWeight: "STROKE_FLOAT",
+    strokeRightWeight: "STROKE_FLOAT",
+    strokeBottomWeight: "STROKE_FLOAT",
+    strokeLeftWeight: "STROKE_FLOAT",
+    opacity: "OPACITY",
+    fontFamily: "FONT_FAMILY",
+    fontStyle: "FONT_STYLE",
+    fontWeight: "FONT_WEIGHT",
+    fontSize: "FONT_SIZE",
+    lineHeight: "LINE_HEIGHT",
+    letterSpacing: "LETTER_SPACING",
+    paragraphSpacing: "PARAGRAPH_SPACING",
+    paragraphIndent: "PARAGRAPH_INDENT",
+    characters: "TEXT_CONTENT",
+  };
+  const EFFECT_SCOPES = {
+    color: "EFFECT_COLOR",
+    radius: "EFFECT_FLOAT",
+    spread: "EFFECT_FLOAT",
+    offsetX: "EFFECT_FLOAT",
+    offsetY: "EFFECT_FLOAT",
+  };
+
+  // Every use, once: "<variable> as <scope>", with where it was seen.
+  const uses = new Map();
+  const unmapped = new Set();
+  const record = (alias, scope, node, owner) => {
+    if (!alias || !alias.id) return;
+    const variable = String(alias.id).replace(/^VariableID:/, "");
+    if (!scope) {
+      unmapped.add(`${variable} on ${owner} > ${node.name}`);
+      return;
+    }
+    const key = `${variable} as ${scope}`;
+    if (!uses.has(key)) uses.set(key, { variable, scope, where: new Set() });
+    uses.get(key).where.add(`${owner} > ${node.name}`);
+  };
+  const visit = (node, owner) => {
+    for (const [property, scope] of [
+      ["fills", fillScope(node)],
+      ["strokes", "STROKE_COLOR"],
+    ]) {
+      for (const paint of Array.isArray(node[property]) ? node[property] : []) {
+        if (!paint) continue;
+        if (paint.boundVariables) {
+          record(paint.boundVariables.color, scope, node, owner);
+        }
+        for (const stop of paint.gradientStops || []) {
+          if (stop.boundVariables) {
+            record(stop.boundVariables.color, scope, node, owner);
+          }
+        }
+      }
+    }
+    for (const effect of Array.isArray(node.effects) ? node.effects : []) {
+      for (const [field, alias] of Object.entries(
+        (effect && effect.boundVariables) || {},
+      )) {
+        record(alias, EFFECT_SCOPES[field], node, owner);
+      }
+    }
+    for (const [field, alias] of Object.entries(node.boundVariables || {})) {
+      // Figma mirrors bound paints here too; they are read from the paints.
+      if (field === "fills" || field === "strokes" || field === "effects") {
+        continue;
+      }
+      for (const each of Array.isArray(alias) ? alias : [alias]) {
+        record(each, FIELD_SCOPES[field], node, owner);
+      }
+    }
+    for (const child of node.children || []) visit(child, owner);
+  };
+
+  const sequence = [
+    ...scoped.CORE_UPDATE_SEQUENCE,
+    ...scoped.PRODUCT_SDK_UPDATE_SEQUENCE,
+  ];
+  const failed = [];
+  let variants = 0;
+  for (const [name, update] of sequence) {
+    const build = scoped[`build${name}Component`];
+    try {
+      const built = typeof build === "function" ? await build() : null;
+      const updated = await update();
+      const set = scopeFigma.root.findOne(
+        (node) => node.type === "COMPONENT_SET" && node.name === name,
+      );
+      const count = set
+        ? set.children.filter((child) => child.type === "COMPONENT").length
+        : 0;
+      if (!built || !built.created || !updated.updated || count === 0) {
+        failed.push(
+          `${name}: ${(built && built.message) || updated.message || `${count} variants`}`,
+        );
+        continue;
+      }
+      variants += count;
+      visit(set, name);
+    } catch (error) {
+      failed.push(`${name}: ${error.message}`);
+    }
+  }
+  ok(
+    failed.length === 0,
+    `every set builds and updates in place, ${sequence.length} sets, ${variants} variants (${failed.slice(0, 3).join(" | ")})`,
+  );
+  let examples = [];
+  try {
+    const result = await scoped.buildAllExamplePages();
+    examples = scopeFigma.root.findAll(
+      (node) =>
+        node.type === "FRAME" &&
+        node.parent &&
+        node.parent.type === "PAGE" &&
+        /^Example \/ /.test(node.name),
+    );
+    for (const frame of examples) visit(frame, frame.name);
+    ok(
+      examples.length > 0 && examples.length === result.templateCount,
+      `the example pages build, ${examples.length} of ${result.templateCount}`,
+    );
+  } catch (error) {
+    ok(false, `the example pages build (${error.message})`);
+  }
+
+  // One line per variable bound outside its scopes, with every use it needs.
+  const unknown = new Set();
+  const outside = new Map();
+  for (const use of uses.values()) {
+    if (!scopesOf.has(use.variable)) {
+      unknown.add(use.variable);
+      continue;
+    }
+    if (allows(scopesOf.get(use.variable), use.scope)) continue;
+    if (!outside.has(use.variable)) outside.set(use.variable, []);
+    outside.get(use.variable).push(use);
+  }
+  for (const [variable, needs] of [...outside].sort()) {
+    ok(
+      false,
+      `${variable} is bound as ${needs.map((use) => use.scope).join(", ")}, outside its scopes ${scopesOf.get(variable).join(", ")} (${needs
+        .map((use) => [...use.where].slice(0, 2).join(", "))
+        .join("; ")})`,
+    );
+  }
+  ok(
+    unknown.size === 0,
+    `every bound variable is the payload's or a component token (${[...unknown].join(", ")})`,
+  );
+  ok(
+    unmapped.size === 0,
+    `every bound field has a scope here (${[...unmapped].slice(0, 4).join(", ")})`,
+  );
+  const variables = new Set([...uses.values()].map((use) => use.variable));
+  ok(
+    uses.size > 500 && outside.size === 0,
+    `${uses.size} uses of ${variables.size} variables, each in its scopes (${outside.size} variables outside)`,
+  );
+  if (uses.size > 500 && outside.size === 0) {
+    console.log(
+      `  ${uses.size} uses of ${variables.size} variables, across ${sequence.length} sets (${variants} variants) and ${examples.length} example pages, each in its variable's scopes`,
+    );
+  }
 }
 
 // --- POIResultCard's action row ------------------------------------------------------
