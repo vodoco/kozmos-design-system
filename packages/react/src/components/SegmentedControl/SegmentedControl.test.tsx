@@ -32,6 +32,28 @@ describe("SegmentedControl", () => {
     rerender(<SegmentedControl items={items} disabled />);
     expect(screen.getByRole("group")).toHaveAttribute("tabindex", "0");
   });
+  it("dims a disabled control once: the group at half, its segments not again", () => {
+    // The group draws itself at 50% when disabled, and a segment dims
+    // itself only when it alone is disabled; both together drew the
+    // segments at 25%, where SwiftUI and Compose draw a disabled control at
+    // 50%.
+    const { rerender } = render(<SegmentedControl items={items} disabled />);
+    expect(screen.getByRole("group")).toHaveClass(
+      "data-[disabled=true]:opacity-50",
+    );
+    for (const segment of screen.getAllByRole("radio")) {
+      expect(segment).toBeDisabled();
+      expect(segment.className).not.toMatch(/(^|\s)disabled:opacity-50(\s|$)/);
+    }
+    rerender(
+      <SegmentedControl
+        items={[items[0], { ...items[1], disabled: true }, items[2]]}
+      />,
+    );
+    expect(screen.getByRole("radio", { name: "Two" })).toHaveClass(
+      "disabled:opacity-50",
+    );
+  });
   it("renders items as a single-choice segmented group", () => {
     render(<SegmentedControl defaultValue="one" items={items} />);
 

@@ -207,6 +207,10 @@ export const SegmentedControl = React.forwardRef<
               className={cn(
                 segmentedControlItemVariants({ fullWidth, size }),
                 hasError && "data-[state=on]:text-destructive-text",
+                // A disabled control is drawn at half by its group; its
+                // segments must not halve themselves again (they drew at
+                // 25%). A segment disabled on its own still dims itself.
+                disabled && "disabled:opacity-100",
               )}
               disabled={disabled || item.disabled}
               value={item.value}
