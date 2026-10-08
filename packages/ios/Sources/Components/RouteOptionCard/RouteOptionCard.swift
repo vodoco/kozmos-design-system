@@ -91,9 +91,11 @@ public struct KozmosRouteOptionCard<Icon: View>: View {
                     )
             )
         }
+        // The plain style draws a disabled option at half, as React's
+        // `disabled:opacity-50`; a second opacity here dimmed it twice, to a
+        // quarter.
         .buttonStyle(.plain)
         .disabled(disabled)
-        .opacity(disabled ? 0.5 : 1)
         .accessibilityLabel(accessibilityDescription)
         .accessibilityAddTraits(option.selected ? [.isButton, .isSelected] : .isButton)
     }

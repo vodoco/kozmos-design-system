@@ -74,7 +74,9 @@ public struct KozmosChip<Icon: View>: View {
                         .frame(width: 20, height: 20)
                         .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
+                // Disabled, it is drawn at half with the chip, below, as
+                // React's is; the plain style dimmed it again, to a quarter.
+                .buttonStyle(KozmosPlainPressButtonStyle(hoverShape: Circle()))
                 .accessibilityLabel(removeLabel)
             }
         }

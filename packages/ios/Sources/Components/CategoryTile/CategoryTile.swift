@@ -91,9 +91,11 @@ public struct KozmosCategoryTile<Icon: View>: View {
             .padding(KozmosDimensions.primitivesLayoutSpacing50)
             .contentShape(Rectangle())
         }
+        // The plain style draws a disabled tile at half, as React's
+        // `disabled:opacity-50`; a second opacity here dimmed it twice, to a
+        // quarter.
         .buttonStyle(.plain)
         .disabled(disabled)
-        .opacity(disabled ? 0.5 : 1)
         .accessibilityLabel(category.label)
         .accessibilityValue(category.resultCountLabel ?? "")
         .accessibilityAddTraits(category.selected ? [.isButton, .isSelected] : .isButton)
