@@ -49,6 +49,17 @@ It forwards its ref to `HTMLDivElement`. Its props are `LocationPinProps`, which
   Grows the pin, and fills a numbered one.
 
 - `featured`: `boolean`, optional, default `false`.
+
+  A featured place: the SDK's Featured amber, `#FAB735` in both themes,
+  with its number in the alert's on-fill colour, black (decision 55), as
+  SwiftUI and Compose draw it, whatever the variant or tint. A featured pin
+  is never quiet.
+
+- `featuredLabel`: `string`, optional, default `"Featured"`.
+
+  Added to `label` for a featured pin, so assistive technology hears what
+  the amber shows. Default "Featured"; pass it translated.
+
 - `disabled`: `boolean`, optional, default `false`.
 - `offFloor`: `boolean`, optional, default `false`.
 

@@ -371,8 +371,8 @@ camera control, branding/provider policy and product ranking in their host adapt
   reads 6.19:1 with black, 3.39:1 with white); Figma's selected NavigationItem label moves from
   700 to 600 and its Avatar image placeholder is neutral; the filled pin's ring stays
   foreground/1000; SwiftUI's `onEmphasis` tone becomes the theme foreground and a new `onDanger`
-  keeps the danger fill's ink. Still open: the selected tab indicator's design and LocationPin
-  `accent` parity.
+  keeps the danger fill's ink. Still open: the selected tab indicator's design. LocationPin
+  `accent` parity was settled by decision 62.
 - **Emotion button states (decision 60, 2026-10-08):** a filled emotion Button's hover is one
   step and its pressed two steps further along the emotion's own ramp, away from the page:
   darker in light, lighter in dark. Its focus is its hover. Each state is a reference to its
@@ -394,6 +394,18 @@ camera control, branding/provider policy and product ranking in their host adapt
   kept, and white on it reads 6.99:1. On the dark sheet it reads 2.52:1, which is accepted as
   the theme fill's 2.32:1 is; `#4947FB` would have reached 3:1 there too and was declined. The
   contrast contract now holds variant 1's 500 to 3:1 on the page and white on it to 4.5:1.
+- **Pins follow the natives (decision 62, 2026-10-08):** a featured LocationPin is the SDK's
+  Featured amber, alert 500 (`#FAB735` in both themes), with its number in the alert's on-fill
+  colour, black (11.89:1), whatever its variant or tint, on the web, SwiftUI, Compose and Figma.
+  - React drew its variant's colour with a star badge. The star is gone (owner, 8 Oct), and
+    React's accessible name adds the new `featuredLabel` ("Featured") to `label`, as the natives
+    add "Featured".
+  - Figma drew alert 900 under white.
+  - The accent pin is brand variant 1's 500 (`#4135F1`) with a white number, and at rest its
+    ring and number are the variant's 700. React drew theme 600 under foreground/1000, black in
+    the dark.
+  - `check-theme-fill.mjs` reads both pins in three engines, and `figma:painters:check` reads
+    Figma's featured pin.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;

@@ -1,6 +1,6 @@
 import type { CategoryTint } from "../CategoryTile/CategoryTint";
 import React from "react";
-import { MarkerPin01 as MapPin, Star01 as Star } from "@kozmos-ds/icons";
+import { MarkerPin01 as MapPin } from "@kozmos-ds/icons";
 import { cn } from "../../utils";
 import { useKozmosAnalytics } from "../../utils/analytics";
 
@@ -15,7 +15,14 @@ export interface LocationPinProps extends React.HTMLAttributes<HTMLDivElement> {
   markerContent?: React.ReactNode;
   /** Grows the pin, and fills a numbered one. */
   selected?: boolean;
+  /** A featured place: the SDK's Featured amber, `#FAB735` in both themes,
+   *  with its number in the alert's on-fill colour, black (decision 55), as
+   *  SwiftUI and Compose draw it, whatever the variant or tint. A featured pin
+   *  is never quiet. */
   featured?: boolean;
+  /** Added to `label` for a featured pin, so assistive technology hears what
+   *  the amber shows. Default "Featured"; pass it translated. */
+  featuredLabel?: string;
   disabled?: boolean;
   /** On another floor: the outlined marker with a dashed ring, on the
    *  background, and the number in the foreground, so shape carries the
@@ -43,6 +50,7 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       markerContent,
       selected = false,
       featured = false,
+      featuredLabel = "Featured",
       disabled = false,
       offFloor = false,
       externalLabel,
@@ -65,12 +73,14 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
 
     // A filled primary pin is a prominent fill: the theme fill, theme 500 in
     // both themes, with its number in the theme foreground, white in both
-    // (decision 59). `accent` is an open parity question and stays.
+    // (decision 59). The accent pin is brand variant 1's 500, #4135F1 in both
+    // themes, with its number white too (decision 62, as SwiftUI and Compose
+    // draw it): it was theme 600 under foreground/1000, black in the dark.
     const variantClasses = {
       default: "text-foreground",
       primary: "text-theme-fill",
       secondary: "text-secondary",
-      accent: "text-accent",
+      accent: "text-[var(--primitives-colors-theme-variant-1-500)]",
     };
 
     // The ink that reads on each variant's solid marker. The number used to
@@ -81,19 +91,28 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
       default: "text-background",
       primary: "text-theme-fill-foreground",
       secondary: "text-secondary-foreground",
-      accent: "text-accent-foreground",
+      accent: "text-theme-fill-foreground",
     };
 
     // Each variant's colour where it is a ring and a number on the surface —
     // a quiet pin, or one off the floor. Secondary's own colour is a surface
     // grey (background/200, 1.6:1 on the surface), so it takes the muted
-    // foreground there, the grey native's secondary pin is drawn in.
+    // foreground there, the grey native's secondary pin is drawn in. The
+    // accent's 500 reads 3:1 on the dark page, under the 4.5:1 a number needs,
+    // so it takes its ramp's 700, as the natives do (6.33:1 in the dark).
     const outlineClasses = {
       default: "text-foreground",
       primary: "text-primary",
       secondary: "text-muted-foreground",
-      accent: "text-accent",
+      accent: "text-[var(--primitives-colors-theme-variant-1-700)]",
     };
+
+    // Featured is the SDK's amber, alert 500, in both themes, filled or as an
+    // off-floor ring, with the alert's on-fill, black, for its number
+    // (decision 55; decision 62 drew it on the web as the natives and Figma
+    // do, where the variant's colour and a star badge had stood).
+    const featuredFill = "text-[var(--primitives-colors-emotional-alert-500)]";
+    const featuredInk = "text-[var(--semantics-emotion-alert-on-fill)]";
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
       if (disabled) return;
@@ -149,7 +168,7 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
         aria-controls={resultId}
         aria-current={selected ? "location" : undefined}
         aria-disabled={isInteractive && disabled ? true : undefined}
-        aria-label={label}
+        aria-label={featured ? `${label}, ${featuredLabel}` : label}
         className={cn(
           // `left-0 top-0` physical, not `start-0`, and not omitted.
           //
@@ -192,7 +211,11 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
             aria-hidden="true"
             className={cn(
               sizeClasses[size],
-              outlined ? outlineClasses[variant] : variantClasses[variant],
+              featured
+                ? featuredFill
+                : outlined
+                  ? outlineClasses[variant]
+                  : variantClasses[variant],
               outlined ? "fill-background" : "fill-current",
               offFloor && "[&>path:last-child]:[stroke-dasharray:2_4.5]",
               hasContent && "[&_circle]:hidden",
@@ -211,16 +234,13 @@ const LocationPin = React.forwardRef<HTMLDivElement, LocationPinProps>(
                   ? "text-foreground"
                   : quiet
                     ? outlineClasses[variant]
-                    : inkClasses[variant],
+                    : featured
+                      ? featuredInk
+                      : inkClasses[variant],
               )}
               style={tinted && !outlined ? { color: tint?.onFill } : undefined}
             >
               {visibleContent}
-            </span>
-          )}
-          {featured && (
-            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-pill bg-background text-primary shadow-raised ring-1 ring-border">
-              <Star aria-hidden="true" className="h-2.5 w-2.5 fill-current" />
             </span>
           )}
         </span>
