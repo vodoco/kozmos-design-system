@@ -18,6 +18,13 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
 
 ### Added and changed
 
+- **Featured is the accent (decisions 67, 68):**
+  - `KozmosPOIResultCard`'s Featured tab and a featured card's edge draw `semanticsAccentFill` / `semanticsAccentOnfill`. That is `#FAB735` under black by default, in both appearances and both presentations. They drew the alert fill pair (`#F9A707` light, `#FBC459` dark).
+  - A featured `KozmosLocationPin` is filled with `semanticsAccentFill` (it was `primitivesColorsEmotionalAlert500`) and never shows its number. It shows the new `markerContent`, the place's logo, or without one a filled star as tall as the number's digits, in `semanticsAccentOnfill`. Off the floor, its dashed ring is the accent and its star is the foreground.
+  - `markerContent: (@Composable () -> Unit)? = null`, a trailing lambda, shows in place of the number on any pin, as React's does. It takes the number's colour and font, is clipped to the disc inside the ring, is not read by TalkBack, and keeps the pin filled.
+  - `featuredLabel: String = "Featured"` replaces the hard-coded "Featured" in what TalkBack says. A pin showing a logo or a star no longer says its number.
+  - Both parameters come last, with defaults, so existing calls compile.
+  - Migration: review screenshots with featured pins (now a star) and featured cards. MapStatusPill's Turn Back stays on the alert colours.
 - **Secondary button (decision 61):** no change. `KozmosButton` and `KozmosIconButton` `Secondary` already draw `KozmosFillStates.neutral`, fill and ink, in every state, and React and SwiftUI now match them.
 - **Emotion states step away from the page (decision 60):** a filled emotion part's hover and focus are one step, and its pressed two steps, further along the emotion's own ramp: darker in light, lighter in dark. This covers `KozmosButton`, `KozmosIconButton` and every part drawn through `FillStates.kt`.
   - Danger in light is `#B01736`, then `#8C132B`, then `#670E20` (the hover was `#D41C42`, lighter than the fill).
