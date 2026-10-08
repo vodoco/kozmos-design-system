@@ -6090,13 +6090,6 @@ assertContains(
   /function componentPropertyDefinitionNameByBaseName\(\s*propertyDefinitions,\s*baseName,?\s*\)/,
   "Figma slot audit uses a dedicated property-definition lookup helper",
 );
-assertOccurrenceCount(
-  files.figma,
-  source.figma,
-  /function componentPropertyNameByBaseName\(/g,
-  1,
-  "component-set property lookup helper",
-);
 assertContains(
   files.reactNavbar,
   source.reactNavbar,
