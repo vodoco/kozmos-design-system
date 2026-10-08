@@ -42,6 +42,13 @@ const THEME_HOVER = [16, 81, 232]; // #1051E8, hover and focus
 const THEME_PRESSED = [13, 68, 194]; // #0D44C2
 /** A selected destructive chip's fill: danger 600 in each theme. */
 const DANGER_FILL = { light: [212, 28, 66], dark: [233, 90, 119] };
+// Decision 62: the accent pin is brand variant 1's 500, #4135F1 in both
+// themes (decision 63), its ring at rest the ramp's 700, which turns over;
+// a featured pin is alert 500, the SDK's Featured amber, under black.
+const ACCENT = [65, 53, 241];
+const ACCENT_700 = { light: [25, 13, 194], dark: [134, 126, 246] };
+const FEATURED = [250, 183, 53];
+const BLACK = [0, 0, 0];
 // The page, background/0, under the parts.
 const PAGE = { light: [255, 255, 255], dark: [0, 0, 0] };
 // The danger emotion's, which turn over with the theme: a default-variant
@@ -145,6 +152,20 @@ const READS = [
   ],
   ["pin", '[role="img"] svg', "color", "fill"],
   ["pin", '[role="img"] span[aria-hidden="true"]', "color", "ink"],
+  // Decision 62 (Olcay, 2026-10-08): the web's pins as the natives draw
+  // them. The accent pin is brand variant 1's 500 under white, its ring at
+  // rest the ramp's 700; a featured pin is the SDK's amber under black.
+  ["pin-accent", '[role="img"] svg', "color", "accent"],
+  ["pin-accent", '[role="img"] span[aria-hidden="true"]', "color", "ink"],
+  ["pin-accent-quiet", '[role="img"] svg', "color", "accent-700"],
+  [
+    "pin-accent-quiet",
+    '[role="img"] span[aria-hidden="true"]',
+    "color",
+    "accent-700",
+  ],
+  ["pin-featured", '[role="img"] svg', "color", "featured"],
+  ["pin-featured", '[role="img"] span[aria-hidden="true"]', "color", "black"],
   ["save", ".h-12.w-12", "backgroundColor", "fill"],
   ["save", ".h-12.w-12", "color", "ink"],
   ["category", '[data-slot="counter"]', "backgroundColor", "fill"],
@@ -286,6 +307,10 @@ function expected(kind, theme) {
   if (kind === "600") return THEME_600[theme];
   if (kind === "tint") return THEME_0[theme];
   if (kind === "page") return PAGE[theme];
+  if (kind === "accent") return ACCENT;
+  if (kind === "accent-700") return ACCENT_700[theme];
+  if (kind === "featured") return FEATURED;
+  if (kind === "black") return BLACK;
   if (kind === "hover" || kind === "focus") return THEME_HOVER;
   if (kind === "pressed") return THEME_PRESSED;
   if (kind === "danger-hover" || kind === "danger-focus")
@@ -305,6 +330,10 @@ const NAMES = {
   600: "theme 600",
   tint: "theme 0 tint",
   page: "page, background/0",
+  accent: "brand variant 1's 500 (#4135F1)",
+  "accent-700": "brand variant 1's 700",
+  featured: "Featured amber, alert 500 (#FAB735)",
+  black: "alert's on-fill, black",
   hover: "hover token (#1051E8)",
   focus: "focus token (#1051E8)",
   pressed: "pressed token (#0D44C2)",

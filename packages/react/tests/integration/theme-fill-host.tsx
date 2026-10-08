@@ -156,6 +156,17 @@ function Parts({ theme }: { theme: "light" | "dark" }) {
       <div data-testid={id("pin")}>
         <LocationPin label="Result 1" number={1} selected variant="primary" />
       </div>
+      {/* Decision 62: the accent pin and a featured pin, as the natives
+          draw them. */}
+      <div data-testid={id("pin-accent")}>
+        <LocationPin label="Gate 4" number={4} selected variant="accent" />
+      </div>
+      <div data-testid={id("pin-accent-quiet")}>
+        <LocationPin label="Gate 5" number={5} variant="accent" />
+      </div>
+      <div data-testid={id("pin-featured")}>
+        <LocationPin featured label="Burger King" number={2} />
+      </div>
       <div data-testid={id("save")}>
         <SaveLocationCard isSaved title="Gate 12" />
       </div>
