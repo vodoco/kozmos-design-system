@@ -82,7 +82,10 @@ in the Pointr Cloud Dashboard (`#135BEC`), in both themes, with white text on it
 focus ring; and pressed, while the pointer holds it, `#0D44C2`, in both themes. Until
 2026-10-07 the pressed and focus tokens were read by no rule, so a pressed button showed its
 hover colour and a focused one its idle colour. Every filled emotion, and `destructive`, draws
-its own four states the same way. Before decision 59 the fill was theme 700: in the dark
+its own four states the same way, stepping along its own ramp away from the page (decision 60):
+hovered and focused one step, pressed two, darker in the light theme and lighter in the dark. The
+dark neutral is the exception and keeps darkening, because white reads 3.72:1 on its lighter
+step. Before decision 59 the fill was theme 700: in the dark
 theme light blue (`#7EA2F6`) under black text, 8.39:1. Black on the new 500 would read only
 3.74:1, which is why the text on it is white in both themes. `outline`, `ghost` and `link`
 stay on the `Secondary Buttons` token, theme 700, which turns over with the theme: text on a
