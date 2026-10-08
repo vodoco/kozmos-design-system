@@ -150,7 +150,7 @@ fun KozmosNumberInput(
                     color = textColor,
                     textAlign = if (showSteppers) TextAlign.Center else TextAlign.Start
                 ),
-                cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
+                cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .weight(1f)

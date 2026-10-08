@@ -102,6 +102,9 @@ final class KozmosNavigationPartsTests: XCTestCase {
         let pixels = try await RenderedPixels.render(unknown, size: size)
         XCTAssertEqual(pixels.count(in: CGRect(origin: .zero, size: size), where: RenderedPixels.isTheme), 0)
     }
+    /// The default manoeuvre card is the theme fill, #135BEC in both themes,
+    /// with its content in the theme foreground, white in both (decision 59).
+    /// It was theme 600 with foreground/1000, black in the dark.
     @MainActor func testDefaultManoeuvreUsesOpaqueThemeFill() async throws {
         for scheme in [ColorScheme.light, .dark] {
             for expanded in [false, true] {
@@ -110,12 +113,12 @@ final class KozmosNavigationPartsTests: XCTestCase {
                 }.padding(16).environment(\.colorScheme, scheme).background(Color.gray)
                 let pixels = try await RenderedPixels.render(view, size: CGSize(width: 360, height: 360))
                 let region = CGRect(x: 16, y: 0, width: 328, height: 360)
-                let fill = scheme == .light ? (16, 81, 232) : (88, 135, 243)
+                let fill = (0x13, 0x5B, 0xEC)
                 let bounds = try XCTUnwrap(pixels.boundingBox(in: region) {
                     abs(Int($0) - fill.0) < 4 && abs(Int($1) - fill.1) < 4 && abs(Int($2) - fill.2) < 4
                 }, "missing exact theme fill in \(scheme)")
                 XCTAssertGreaterThan(bounds.width * bounds.height, 10000)
-                let onFill = scheme == .light ? 255 : 0
+                let onFill = 255
                 XCTAssertGreaterThan(pixels.count(in: bounds.insetBy(dx: 12, dy: 12)) {
                     abs(Int($0) - onFill) < 4 && abs(Int($1) - onFill) < 4 && abs(Int($2) - onFill) < 4
                 }, 100, "missing contrasting content in \(scheme), expanded \(expanded)")

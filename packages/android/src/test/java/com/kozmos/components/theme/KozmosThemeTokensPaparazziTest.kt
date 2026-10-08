@@ -24,10 +24,12 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Five colours as the themed accessor reads them: a page primitive, a
+ * Six colours as the themed accessor reads them: a page primitive, a
  * primitive the hand-written accessor never wrapped (background/300, read 25
  * times as light-only before 2026-09-22), the container edge role, the themed
- * button's fill and a category accent, which is the same in both themes.
+ * button's fill and a category accent, which are the same in both themes (the
+ * fill since decision 59), and the outline button's text, a component colour
+ * that still turns over with the theme.
  */
 @Composable
 internal fun readSample(): List<Color> = listOf(
@@ -36,6 +38,7 @@ internal fun readSample(): List<Color> = listOf(
     KozmosThemeTokens.semanticsBorderSubtle,
     KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
     KozmosThemeTokens.semanticsCategoryAccentBlue,
+    KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle,
 )
 
 internal val lightSample = listOf(
@@ -44,6 +47,7 @@ internal val lightSample = listOf(
     KozmosColors.semanticsBorderSubtle,
     KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle,
     KozmosColors.semanticsCategoryAccentBlue,
+    KozmosColors.componentsSecondaryButtonsThemedButtonForegroundContentIdle,
 )
 
 internal val darkSample = listOf(
@@ -52,6 +56,7 @@ internal val darkSample = listOf(
     KozmosColorsDark.semanticsBorderSubtle,
     KozmosColorsDark.componentsPrimaryButtonsThemedButtonBackgroundIdle,
     KozmosColorsDark.semanticsCategoryAccentBlue,
+    KozmosColorsDark.componentsSecondaryButtonsThemedButtonForegroundContentIdle,
 )
 
 @Composable

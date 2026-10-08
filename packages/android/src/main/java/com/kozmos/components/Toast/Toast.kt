@@ -124,7 +124,8 @@ fun KozmosToast(
                     modifier = Modifier.defaultMinSize(minHeight = 44.dp),
                     onClick = onAction,
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = KozmosThemeTokens.primitivesColorsTheme500
+                        // Theme-coloured text on a surface: theme/600 (decision 59).
+                        contentColor = KozmosThemeTokens.primitivesColorsTheme600
                     )
                 ) {
                     Text(content.actionText)

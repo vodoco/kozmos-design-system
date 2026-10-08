@@ -34,12 +34,14 @@ public struct KozmosPaginationLink: View {
             Text(text)
                 .font(KozmosTypography.subheadline)
                 .frame(minWidth: 36, minHeight: 36)
-                .background(isActive ? KozmosColors.primitivesColorsTheme500.opacity(0.1) : Color.clear)
-                .foregroundColor(isActive ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100)
+                // The active page's words, edge and tint are theme 600, as
+                // React's (decision 59).
+                .background(isActive ? KozmosColors.primitivesColorsTheme600.opacity(0.1) : Color.clear)
+                .foregroundColor(isActive ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground100)
                 .cornerRadius(KozmosDimensions.semanticsRadiusControl)
                 .overlay(
                     RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl)
-                        .stroke(isActive ? KozmosColors.primitivesColorsTheme500 : Color.clear, lineWidth: 1)
+                        .stroke(isActive ? KozmosColors.primitivesColorsTheme600 : Color.clear, lineWidth: 1)
                 )
         }
         .buttonStyle(PlainButtonStyle())

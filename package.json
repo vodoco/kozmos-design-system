@@ -26,6 +26,8 @@
     "test:scoped-utilities": "node scripts/check-scoped-utilities.mjs",
     "test:browser-compatibility": "node scripts/check-browser-compatibility.mjs",
     "test:owned-css": "node scripts/check-owned-css.mjs && node scripts/check-result-presentation.mjs",
+    "test:theme-fill": "node scripts/check-theme-fill.mjs",
+    "test:token-references": "node scripts/check-token-references.mjs",
     "test:direction-css": "node scripts/check-direction-rules.mjs",
     "test:token-alpha": "node scripts/check-token-alpha.mjs",
     "test:temporal-css": "node scripts/check-temporal-css.mjs",

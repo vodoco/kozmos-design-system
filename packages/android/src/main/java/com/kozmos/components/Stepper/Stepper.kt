@@ -49,16 +49,23 @@ fun KozmosStepper(
                     modifier = Modifier
                         .size(KozmosDimensions.primitivesLayoutSizing400)
                         .clip(CircleShape)
-                        // React's primary pair: theme/600 with foreground/1000
-                        // on it, the current number in ink. It was theme/500
-                        // with background/0: black on the blue in the dark.
-                        .background(if (isCompleted) KozmosThemeTokens.primitivesColorsTheme600 else Color.Transparent)
+                        // A completed step is a prominent fill: the theme
+                        // fill with the theme foreground on it, the same in
+                        // both themes (decision 59). It was theme/600 with
+                        // foreground/1000, black on it in the dark. The
+                        // current step's ring stays a border, theme/600, and
+                        // the current number in ink.
+                        .background(if (isCompleted) KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle else Color.Transparent)
                         // 2 for the current and completed steps, 1 for a
                         // pending one, as the plugin paints them and React
                         // draws them. Every step was 2 until 2026-09-22.
                         .border(
                             width = if (isCompleted || isCurrent) KozmosDimensions.primitivesLayoutSpacing25 else 1.dp,
-                            color = if (isCompleted || isCurrent) KozmosThemeTokens.primitivesColorsTheme600 else KozmosThemeTokens.primitivesColorsForeground500,
+                            color = when {
+                                isCompleted -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
+                                isCurrent -> KozmosThemeTokens.primitivesColorsTheme600
+                                else -> KozmosThemeTokens.primitivesColorsForeground500
+                            },
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -67,7 +74,7 @@ fun KozmosStepper(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = KozmosThemeTokens.primitivesColorsForeground1000,
+                            tint = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
                             modifier = Modifier.size(KozmosDimensions.primitivesLayoutSizing200)
                         )
                     } else {
@@ -92,6 +99,7 @@ fun KozmosStepper(
             }
             
             if (index < steps.size - 1) {
+                // The connector is a line, as Progress is: theme/600.
                 Box(
                     modifier = Modifier
                         .weight(1f)

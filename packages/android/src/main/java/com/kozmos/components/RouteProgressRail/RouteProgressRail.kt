@@ -158,13 +158,15 @@ fun KozmosRouteProgressRail(
             Modifier.align(Alignment.CenterStart).offset(x = dot)
                 .width(disc / 2 + (maxWidth - dot * 2 - disc).coerceAtLeast(0.dp) * clamped)
                 .height(KozmosRouteProgressRailGeometry.track)
-                .background(KozmosThemeTokens.primitivesColorsTheme500, CircleShape)
+                // The travelled part is a line, as Progress is: theme/600,
+                // as React and Figma draw it (decision 59).
+                .background(KozmosThemeTokens.primitivesColorsTheme600, CircleShape)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .size(dot)
-                .background(if (progress == null) KozmosThemeTokens.primitivesColorsBackground300 else KozmosThemeTokens.primitivesColorsTheme500, CircleShape)
+                .background(if (progress == null) KozmosThemeTokens.primitivesColorsBackground300 else KozmosThemeTokens.primitivesColorsTheme600, CircleShape)
         )
         Box(
             modifier = Modifier
@@ -184,7 +186,7 @@ fun KozmosRouteProgressRail(
                 .align(Alignment.CenterStart)
                 .offset(x = KozmosRouteProgressRailGeometry.discLeading(clamped, maxWidth))
                 .size(disc)
-                .background(KozmosThemeTokens.primitivesColorsTheme500, CircleShape),
+                .background(KozmosThemeTokens.primitivesColorsTheme600, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(

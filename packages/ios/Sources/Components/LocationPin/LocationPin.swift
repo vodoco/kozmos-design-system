@@ -83,7 +83,9 @@ public struct KozmosLocationPin: View {
         if let tint { return tint.fill.fill }
         switch variant {
         case .default: return KozmosColors.primitivesColorsForeground100
-        case .primary: return KozmosColors.primitivesColorsTheme500
+        // Decision 59: a filled primary pin is a prominent fill, the theme
+        // fill. `accent` is an open parity question and stays.
+        case .primary: return KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
         case .secondary: return KozmosColors.primitivesColorsForeground400
         case .accent: return KozmosColors.primitivesColorsThemeVariant1500
         }
@@ -125,10 +127,19 @@ public struct KozmosLocationPin: View {
     /// The number: in the fill's ink when filled; in the ring's colour when
     /// quiet, except a tint's (six of the eight fills fail 4.5:1 as text on
     /// the surface), which takes the foreground, as it does off the floor.
+    /// On the featured amber, #FAB735, it is the alert's on-fill, black, the
+    /// dark words decision 55 gives Featured, whatever the tint: foreground/1000
+    /// was white in light, 1.77:1. On the primary's theme fill and the
+    /// accent's theme variant 1, #4134F1, it is the theme foreground, white in
+    /// both themes (decision 59): foreground/1000 is black in the dark, 2.99:1
+    /// on the accent, where white reads 7.03:1. As Compose draws them.
     private var numberColor: Color {
         if offFloor || (isQuiet && tint != nil) { return KozmosColors.primitivesColorsForeground0 }
         if isQuiet { return outlineColor }
-        return tint?.fill.ink ?? KozmosColors.primitivesColorsForeground1000
+        if featured { return KozmosColors.semanticsEmotionAlertOnfill }
+        if let tint { return tint.fill.ink }
+        if variant == .primary || variant == .accent { return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle }
+        return KozmosColors.primitivesColorsForeground1000
     }
 
     /// Off the floor the ring is dashed: eight dashes, sized to close evenly

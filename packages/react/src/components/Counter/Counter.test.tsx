@@ -15,7 +15,11 @@ describe("Counter", () => {
       </Counter>,
     );
 
-    expect(screen.getByText("4")).toHaveClass("h-[18px]", "bg-primary");
+    expect(screen.getByText("4")).toHaveClass(
+      "h-[18px]",
+      "bg-theme-fill",
+      "text-theme-fill-foreground",
+    );
   });
 
   it("normalizes legacy parenthesized values", () => {
@@ -34,7 +38,7 @@ describe("Counter", () => {
       render(<Counter tone="brand">7</Counter>);
       const counter = screen.getByText("7");
       expect(counter.style.getPropertyValue("--kz-emotion-surface")).toBe("");
-      expect(counter).toHaveClass("bg-primary");
+      expect(counter).toHaveClass("bg-theme-fill");
     });
 
     it("fills with the emotion's own pair", () => {

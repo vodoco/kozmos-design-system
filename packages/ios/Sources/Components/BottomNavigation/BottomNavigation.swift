@@ -72,7 +72,8 @@ private struct KozmosBottomNavigationTile: View {
             .frame(width: 64)
             .frame(minHeight: 64)
             .background(selected ? KozmosColors.primitivesColorsBackground100 : Color.clear)
-            .foregroundColor(selected ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100)
+            // Selected, theme 600, the theme's text role (decision 59).
+            .foregroundColor(selected ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground100)
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusControl))
         }
         .buttonStyle(.plain)

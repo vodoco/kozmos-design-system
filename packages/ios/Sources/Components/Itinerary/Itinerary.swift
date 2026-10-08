@@ -147,12 +147,12 @@ public struct KozmosItinerary: View {
     private func row(_ step: KozmosItineraryStep, isCurrent: Bool) -> some View {
         HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
             KozmosDirectionGlyph(type: step.type, size: 14)
-                .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground500))
+                .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground500))
                 .frame(width: KozmosDimensions.primitivesLayoutSizing500, height: 20, alignment: .leading)
             VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                 KozmosInstructionText(parts: step.instructionParts)
                     .font(isCurrent ? KozmosTypography.subheadline.weight(.semibold) : KozmosTypography.subheadline)
-                    .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme500 : KozmosColors.primitivesColorsForeground100))
+                    .foregroundColor(guidance ?? (isCurrent ? KozmosColors.primitivesColorsTheme600 : KozmosColors.primitivesColorsForeground100))
                 let metrics = [step.distance, step.duration].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " • ")
                 if !metrics.isEmpty {
                     Text(metrics).font(KozmosTypography.subheadline).kozmosMutedText()

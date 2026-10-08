@@ -323,14 +323,17 @@ public struct KozmosFloorSelector: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .frame(width: controlSize, height: controlSize)
-                .background(isSelected ? KozmosColors.primitivesColorsTheme500 : Color.clear)
+                // Decision 59: the selected level is a prominent fill — the
+                // theme fill, with the theme foreground on it, white in both
+                // themes (background/0 turned black on it in the dark).
+                .background(isSelected ? KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle : Color.clear)
                 .foregroundColor(
                     isSelected
-                        ? KozmosColors.primitivesColorsBackground0
+                        ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
                         : KozmosColors.primitivesColorsForeground100
                 )
                 .cornerRadius(KozmosDimensions.semanticsRadiusPanel)
-                .overlay(alignment: .topTrailing) { resultMarker(for: floor) }
+                .overlay(alignment: .topTrailing) { resultMarker(for: floor, onFill: isSelected) }
                 // An unselected button is transparent, so without an explicit
                 // hit shape only the glyph itself would accept a tap.
                 .contentShape(
@@ -633,25 +636,30 @@ public struct KozmosFloorSelector: View {
         return parts.joined(separator: ", ")
     }
 
-    /// The count, drawn once and said once: a pill in the theme's primary in
-    /// the square's trailing top corner, which mirrors in Arabic. Inside the
+    /// The count, drawn once and said once: a pill in the theme fill, with
+    /// the theme foreground on it (decision 59), in the square's trailing
+    /// top corner, which mirrors in Arabic. Inside the
     /// square, not proud of it, as React's is since c36a970d — here the
     /// control's rounded clip would take the corner off a marker hanging over
     /// the end levels' squares. Flush with the corner rather than React's 2px
     /// in: that inset is on a 44px button, and on a 40pt square it lays the
     /// marker over the top of the level's label. A plain number, as the
-    /// category tile's counter is.
+    /// category tile's counter is. On the selected square, itself the theme
+    /// fill, the marker inverts — the theme foreground with the fill's number
+    /// (Olcay, 2026-10-07) — or it would have no edge.
     @ViewBuilder
-    private func resultMarker(for floor: KozmosFloorPresentation) -> some View {
+    private func resultMarker(for floor: KozmosFloorPresentation, onFill: Bool = false) -> some View {
         if let count = markedResultCount(floor) {
+            let fill = KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
+            let ink = KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
             Text(verbatim: String(count))
                 .font(.system(size: markerTextSize, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .padding(.horizontal, markerPadding)
                 .frame(minWidth: markerSize, minHeight: markerSize)
-                .background(KozmosColors.primitivesColorsTheme600, in: Capsule())
-                .foregroundColor(KozmosColors.primitivesColorsForeground1000)
+                .background(onFill ? ink : fill, in: Capsule())
+                .foregroundColor(onFill ? fill : ink)
                 .accessibilityHidden(true)
         }
     }

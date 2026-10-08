@@ -32,9 +32,13 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
                     "flex h-8 w-8 items-center justify-center rounded-pill border text-sm font-medium transition-colors",
                     // The current and completed steps' ring is 2, a pending
                     // one's 1, as the plugin paints them; the current step's
-                    // was 1 until 2026-09-22.
+                    // was 1 until 2026-09-22. A completed step is a
+                    // prominent fill: the theme fill with the theme
+                    // foreground on it, the same in both themes (decision
+                    // 59). The current step's ring stays a border, theme 600,
+                    // and so does the connector, a line, as Progress is.
                     isCompleted
-                      ? "border-2 border-primary bg-primary text-primary-foreground"
+                      ? "border-2 border-theme-fill bg-theme-fill text-theme-fill-foreground"
                       : isCurrent
                         ? "border-2 border-primary text-foreground"
                         : // A pending step's ring is its glyph: foreground/500,

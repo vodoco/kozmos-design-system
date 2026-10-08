@@ -117,6 +117,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 import androidx.compose.ui.unit.sp
 
 enum class BadgeVariant {
@@ -130,7 +131,7 @@ fun KozmosBadge(
     modifier: Modifier = Modifier
 ) {
     val (containerColor, contentColor) = when (variant) {
-        BadgeVariant.Default -> KozmosColors.primitivesColorsTheme500 to androidx.compose.ui.graphics.Color.White
+        BadgeVariant.Default -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle to KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
         BadgeVariant.Secondary -> KozmosColors.primitivesColorsBackground200 to KozmosColors.primitivesColorsForeground100
         BadgeVariant.Destructive -> KozmosColors.primitivesColorsEmotionalDanger600 to androidx.compose.ui.graphics.Color.White
         BadgeVariant.Outline -> Color.Transparent to KozmosColors.primitivesColorsForeground100

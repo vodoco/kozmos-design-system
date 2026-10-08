@@ -37,7 +37,8 @@ Kozmos has one palette, Pointr's, in a light and a dark theme, on all three plat
 | A high-contrast theme               | none (§7)                                 | none                                        | none                                       |
 
 White-labeling goes as far as the web's `tokens` override today: the native packages draw
-Kozmos's palette only. The customer themes, theme files, build step and onboarding written before
+Kozmos's palette only, so on iOS and Android the theme fill is Pointr's `#135BEC` whatever a
+client's base colour is. The customer themes, theme files, build step and onboarding written before
 the code are kept in [docs/proposals/theming-plan.md](../docs/proposals/theming-plan.md).
 
 ### Key Principles
@@ -65,9 +66,20 @@ collections:
 | `Components` | Values for particular parts: `Primary Buttons`, `Secondary Buttons`, `Tertiary Buttons`, `HTML elements`                                |
 
 A semantic token is usually a reference to a primitive: `Semantics.Border.Subtle` is
-`{Primitives.Colors.background.200}`. The build resolves every reference, so each output holds its
-own value: `--semantics-border-subtle` is `#c7cad1` in the light theme, not a `var()` of the
-primitive. Overriding a primitive therefore changes only what reads that primitive (§4).
+`{Primitives.Colors.background.200}`. On the web the token stylesheets keep it a reference:
+`--semantics-border-subtle` is `var(--primitives-colors-background-200)`, and the themed Button's
+fill is `var(--primitives-colors-theme-500)`, so an override of the primitive reaches every token
+that names it (§4). The JavaScript module, Swift and Kotlin hold the resolved values (`#c7cad1`),
+and Android's resources name the colour they alias. A value a transform changed on the way, an
+alpha added or a unit converted, is written as the value on the web too, and so are the elevation
+roles: they alias the shadow ramp, whose `--shadow-sm` to `-lg` `DesignConfigProvider` sets as
+legacy aliases of its own.
+
+Every themed component colour on the theme ramp is an alias of its step, in each theme: the
+outline, ghost and link Buttons' ink
+(`--components-secondary-buttons-themed-button-foreground-content-idle`) is theme 700 in both,
+`var(--primitives-colors-theme-700)`. What stays a value is not on the ramp: the ink on a filled
+Button, white in both themes, and the disabled greys.
 
 ### Theme File Structure
 
@@ -92,6 +104,7 @@ Each category, with a variable of it as the web reads it:
 | Category           | Example                                                                                |
 | ------------------ | -------------------------------------------------------------------------------------- |
 | Brand              | `--primitives-colors-theme-600`, the `primary` and `ring` role                         |
+| Theme fill         | `--primitives-colors-theme-500`, the `theme-fill` role                                 |
 | Page and text      | `--primitives-colors-background-0`, `--primitives-colors-foreground-0`                 |
 | Surfaces           | `--semantics-surface-0` to `--semantics-surface-300`                                   |
 | Emotions           | `--semantics-emotion-danger-surface`, `--primitives-colors-emotional-success-600`      |
@@ -103,6 +116,19 @@ Each category, with a variable of it as the web reads it:
 | Typography         | `--primitives-typography-font-family-primary`, `--primitives-typography-font-size-100` |
 | Data visualisation | `--semantics-data-blue`                                                                |
 | Components         | `--components-primary-buttons-themed-button-background-idle`                           |
+
+**The theme fill and the theme as text (decision 59).** A prominent fill is theme 500, the
+client's base colour from the Pointr Cloud Dashboard, `#135BEC` in both themes: a filled primary
+Button (through `--components-primary-buttons-themed-button-background-idle`, a reference to it), a
+checked Checkbox or Switch, Radio's dot, a selected Chip, the default Tag and Badge, the brand
+Counter, a filled pin, the UserMessage bubble. What sits on it is the theme foreground,
+`--components-primary-buttons-themed-button-foreground-content-idle`, white in both themes; never
+`primary-foreground` (`--primitives-colors-foreground-1000`), which is black in the dark and reads
+3.74:1 there. The theme as text, an icon, a border or a focus ring on a surface is theme 600
+(`primary`, `ring`), `#1051E8` in the light and `#5887F3` in the dark, which reads 4.5:1 on the page
+and the sheet in both. Slider, Progress and RouteProgressRail stay on 600 too: a 500 bar fails
+against its track. SwiftUI and Compose follow the same rule through the same tokens, but take no
+override at run time: their fill is Pointr's `#135BEC` (§10).
 
 The unitless ones are shared with iOS and Android, so a web rule multiplies them:
 `calc(var(--semantics-radius-container) * 1px)`. [component-inventory.md](./component-inventory.md)
@@ -116,31 +142,69 @@ read.
 ### 4.1 Overriding Tokens on the Web
 
 `ThemeProvider` takes `tokens`, custom properties it sets on its element and on its portal
-container, and that nested providers inherit. Because each variable holds its own resolved value
-(§2), an override names every variable it changes: a new brand colour on the default Button's fill
-is its two button variables, not the theme primitive alone.
+container, and that nested providers inherit. The token variables are declared on that same
+element, so a reference there resolves against your override: **one override of theme 500 reaches
+every prominent fill**: the Button's through its token, a reference to theme 500, and every other
+fill by reading theme 500 itself, through the `theme-fill` role (§3) or the variable.
+`pnpm test:token-references` proves it in a browser, in both themes.
+
+The filled Button's hover and focus are references to theme 600 and its pressed to theme 700 in
+the light theme; in the dark, where the ramp turns over, to 400 and 300. Set those steps and they
+follow; leave them and they stay Pointr's blue. Theme 600 is also the theme as text, icons,
+borders and focus rings on a surface (`primary`, `ring`), so a brand that changes 500 sets 600
+too, at 4.5:1 on the page in each theme. The hover of a selected Chip, a default Tag, a default
+Badge and an on ToggleButton is the Button's hover token, so it follows 600 (400) as well. An inline
+property outranks the stylesheet's dark theme, so a flat set applies in both themes; pass
+`{ light, dark }` instead, and every provider applies the set for its own resolved theme, a nested
+one that forces the other theme included (DynamicIsland's island is always dark).
 
 ```tsx
 import { Button, ThemeProvider } from "@kozmos-ds/react";
 
 const brand = {
-  "--primitives-colors-theme-600": "#0b7a5c",
-  "--components-primary-buttons-themed-button-background-idle": "#0b7a5c",
-  "--components-primary-buttons-themed-button-background-hover": "#096650",
+  light: {
+    // The base colour: every prominent fill. White on it reads 5.31:1.
+    "--primitives-colors-theme-500": "#0b7a5c",
+    // The filled Button's hover and focus, and the theme as text, borders and
+    // rings: 6.94:1 under white, and on the white page.
+    "--primitives-colors-theme-600": "#096650",
+    // The filled Button's pressed token: 9.30:1 under white. And the
+    // outline, ghost and link Buttons' ink: 9.30:1 on the white page.
+    "--primitives-colors-theme-700": "#07513f",
+  },
+  dark: {
+    "--primitives-colors-theme-500": "#0b7a5c",
+    // The ramp turns over in the dark: the hover and focus name 400, the
+    // pressed token 300.
+    "--primitives-colors-theme-400": "#096650",
+    "--primitives-colors-theme-300": "#07513f",
+    // The theme as text on the dark page: 7.52:1 on background 0 (#000000),
+    // 6.31:1 on background 100 (#17191c).
+    "--primitives-colors-theme-600": "#2fae86",
+    // The outline, ghost and link Buttons' ink, 700 in the dark too: 11.06:1
+    // on the dark page, 9.27:1 on background 100.
+    "--primitives-colors-theme-700": "#5cd0aa",
+  },
 } as const;
 
 export function BrandedApp() {
   return (
-    <ThemeProvider tokens={brand}>
+    <ThemeProvider defaultTheme="system" tokens={brand}>
       <Button>Book a visit</Button>
     </ThemeProvider>
   );
 }
 ```
 
-- **Both themes:** an inline property outranks the stylesheet's dark theme, so one set of
-  overrides applies in light and dark. To differ, control `theme` and pass the set that matches.
+- **The steps your parts read:** the example sets the ones the Buttons read: 500 for the fill,
+  600 and 700 for the filled Button's states (400 and 300 in the dark), 700 for the outline, ghost
+  and link Buttons' ink and 600 for it hovered. A part that reads another step, a tint from theme
+  0 to 200 for one, keeps Pointr's until that step is set too, or the whole ramp.
+- **Override on the provider:** a reference resolves on the element that declares it, the
+  provider's. Set on a descendant, `--primitives-colors-theme-500` changes the parts that read the
+  ramp below it but not the tokens that name it.
 - **Contrast is yours:** `pnpm tokens:contrast:check` reads the token files, not your overrides.
+  The ratios above are WCAG 2.1's, worked from the hex values.
 - **`DesignConfigProvider`** takes `tokens` too, beside its glass, motion and accessibility
   configuration, and passes them to the `ThemeProvider` it renders.
 
@@ -151,7 +215,8 @@ None: the token build writes Kozmos's two themes only, and no command generates 
 ### 4.3 On iOS and Android
 
 None: `KozmosColors` (SwiftUI) and `KozmosThemeTokens` (Compose) are generated from the token
-files, and neither platform takes overrides at run time.
+files with every value resolved, and neither platform takes overrides at run time. The theme fill
+there is Pointr's `#135BEC` in both themes, whatever a client's base colour is.
 
 ---
 
@@ -347,4 +412,4 @@ are kept in [docs/proposals/theming-plan.md](../docs/proposals/theming-plan.md).
 ---
 
 **Maintainer:** Kozmos Design System Core Team
-**Last updated:** 2026-09-29
+**Last updated:** 2026-10-07

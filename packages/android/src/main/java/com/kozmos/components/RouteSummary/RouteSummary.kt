@@ -95,7 +95,8 @@ fun KozmosRouteSummary(
                     Surface(
                         modifier = Modifier.size(40.dp),
                         shape = CircleShape,
-                        color = KozmosThemeTokens.primitivesColorsTheme500.copy(alpha = 0.12f)
+                        // A quiet tint, not a fill: theme/600's, as React's bg-primary/10 is (decision 59).
+                        color = KozmosThemeTokens.primitivesColorsTheme600.copy(alpha = 0.12f)
                     ) {
                         androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
                             transportModeIcon()

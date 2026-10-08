@@ -67,9 +67,10 @@ fun KozmosRouteOptionCard(
         // A card of its own: the background colour, and the chosen one the
         // theme's 5% tint on it. The tint lay over nothing, so on a glass
         // sheet the map showed through the chosen option while the others
-        // stood opaque.
+        // stood opaque. The tint, the chosen edge and the icon are theme/600,
+        // as React's are (decision 59); they were theme/500.
         color = if (option.selected) {
-            KozmosThemeTokens.primitivesColorsTheme500.copy(alpha = 0.05f)
+            KozmosThemeTokens.primitivesColorsTheme600.copy(alpha = 0.05f)
                 .compositeOver(KozmosThemeTokens.primitivesColorsBackground0)
         } else {
             KozmosThemeTokens.primitivesColorsBackground0
@@ -77,7 +78,7 @@ fun KozmosRouteOptionCard(
         border = BorderStroke(
             width = if (option.selected) 2.dp else 1.dp,
             color = if (option.selected) {
-                KozmosThemeTokens.primitivesColorsTheme500
+                KozmosThemeTokens.primitivesColorsTheme600
             } else {
                 KozmosThemeTokens.semanticsBorderSubtle
             }
@@ -101,7 +102,7 @@ fun KozmosRouteOptionCard(
                             KozmosRoutePreference.Custom -> Icons.Default.Tune
                         },
                         contentDescription = null,
-                        tint = KozmosThemeTokens.primitivesColorsTheme500
+                        tint = KozmosThemeTokens.primitivesColorsTheme600
                     )
                 }
 

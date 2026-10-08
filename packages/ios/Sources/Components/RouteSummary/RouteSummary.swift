@@ -206,8 +206,10 @@ public struct KozmosRouteSummary<TransportModeIcon: View>: View {
                 if showsTransportModeIcon {
                     transportModeIcon
                         .frame(width: 40, height: 40)
-                        .foregroundColor(KozmosColors.primitivesColorsTheme500)
-                        .background(KozmosColors.primitivesColorsTheme500.opacity(0.12))
+                        // A theme-coloured icon on its quiet tint: theme 600
+                        // for both, as React's (decision 59).
+                        .foregroundColor(KozmosColors.primitivesColorsTheme600)
+                        .background(KozmosColors.primitivesColorsTheme600.opacity(0.12))
                         .clipShape(Circle())
                         // The words beside it carry the meaning.
                         .accessibilityHidden(true)

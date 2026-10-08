@@ -118,7 +118,8 @@ fun KozmosNavigationItem(
         isDisabled -> KozmosThemeTokens.primitivesColorsForeground500
         isRail && isSelected -> KozmosThemeTokens.primitivesColorsTheme600
         isRail -> KozmosThemeTokens.primitivesColorsForeground400
-        isSelected -> KozmosThemeTokens.primitivesColorsTheme500
+        // Theme-coloured text on a surface is theme/600 (decision 59).
+        isSelected -> KozmosThemeTokens.primitivesColorsTheme600
         else -> KozmosThemeTokens.primitivesColorsForeground100
     }
     val horizontalPadding = when {
@@ -152,7 +153,7 @@ fun KozmosNavigationItem(
         )
         .then(
             if (isFocusVisible) {
-                Modifier.border(2.dp, KozmosThemeTokens.primitivesColorsTheme500, shape)
+                Modifier.border(2.dp, KozmosThemeTokens.primitivesColorsTheme600, shape)
             } else {
                 Modifier
             }

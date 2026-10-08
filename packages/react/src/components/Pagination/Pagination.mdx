@@ -95,6 +95,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosDimensions
 
 @Composable
@@ -123,20 +124,20 @@ modifier = modifier
 .padding(horizontal = KozmosDimensions.primitivesLayoutSpacing50)
 .defaultMinSize(minWidth = 36.dp, minHeight = 36.dp)
 .clip(RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
-.background(if (isActive) KozmosColors.primitivesColorsTheme500.copy(alpha = 0.1f) else Color.Transparent)
+.background(if (isActive) KozmosThemeTokens.primitivesColorsTheme600.copy(alpha = 0.1f) else Color.Transparent)
 .clickable {
 trackEvent(com.kozmos.providers.KozmosAnalyticsEvent(component = "Pagination", eventName = "page_changed"))
 onClick()
 }
 .then(
-if (isActive) Modifier.border(1.dp, KozmosColors.primitivesColorsTheme500, RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
+if (isActive) Modifier.border(1.dp, KozmosThemeTokens.primitivesColorsTheme600, RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
 else Modifier
 ),
 contentAlignment = Alignment.Center
 ) {
 Text(
 text = text,
-color = if (isActive) KozmosColors.primitivesColorsTheme500 else KozmosColors.primitivesColorsForeground100,
+color = if (isActive) KozmosThemeTokens.primitivesColorsTheme600 else KozmosColors.primitivesColorsForeground100,
 style = MaterialTheme.typography.bodyMedium
 )
 }

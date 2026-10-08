@@ -16,6 +16,8 @@ public struct KozmosSlider: View {
                 trackEvent(KozmosAnalyticsEvent(eventName: "slider_value_changed", component: "Slider", properties: ["value": value]))
             }
         })
-            .accentColor(KozmosColors.primitivesColorsTheme500)
+            // Theme 600, as React's and Figma's: at 500 the range read under
+            // 3:1 against its track (decision 59).
+            .accentColor(KozmosColors.primitivesColorsTheme600)
     }
 }

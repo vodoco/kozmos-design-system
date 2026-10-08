@@ -101,7 +101,7 @@ fun KozmosSearchBar(
                 onValueChange = onValueChange,
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = KozmosThemeTokens.primitivesColorsForeground100),
-                cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
+                cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
                     onSearch = {

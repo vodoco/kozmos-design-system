@@ -170,8 +170,11 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
             ("number at rest", card(numbered: true),
              KozmosColors.primitivesColorsBackground0, KozmosColors.primitivesColorsForeground400,
              KozmosColors.semanticsBorderSubtle),
+            // Filled as its pin is (decision 55): the theme fill and the
+            // theme foreground, white on #135BEC in both themes (decision 59).
             ("number selected", card(numbered: true, selected: true),
-             KozmosColors.primitivesColorsTheme600, KozmosColors.primitivesColorsForeground1000, nil),
+             KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+             KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle, nil),
             // Quiet: not the alert pair Featured is painted in.
             ("badge", card(numbered: false, badge: "Alternative"),
              KozmosColors.primitivesColorsBackground100, KozmosColors.primitivesColorsForeground400, nil),
@@ -202,17 +205,18 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
 
     /// A featured card's edge takes its tab's amber; a number and a badge keep
     /// the container edge; a selected card, featured or not, has the theme's
-    /// edge, since a native card has no ring to say it with.
+    /// edge, since a native card has no ring to say it with: an edge on a
+    /// surface, theme 600 (decision 59).
     func testOnlyAFeaturedCardsEdgeIsItsAmberAndSelectionKeepsTheThemesEdge() {
         var wrong: [String] = []
         for style in [UIUserInterfaceStyle.light, .dark] {
             let cases: [(String, KozmosPOIResultCard, Color)] = [
                 ("featured", card(numbered: true, featured: true), KozmosColors.semanticsEmotionAlertFill),
                 ("featured and selected", card(numbered: true, featured: true, selected: true),
-                 KozmosColors.primitivesColorsTheme500),
+                 KozmosColors.primitivesColorsTheme600),
                 ("number", card(numbered: true), KozmosColors.semanticsBorderSubtle),
                 ("badge", card(numbered: false, badge: "Alternative"), KozmosColors.semanticsBorderSubtle),
-                ("selected number", card(numbered: true, selected: true), KozmosColors.primitivesColorsTheme500),
+                ("selected number", card(numbered: true, selected: true), KozmosColors.primitivesColorsTheme600),
             ]
             for (name, card, edge) in cases where !same(card.edgeColor, edge, style) {
                 wrong.append("\(name), \(style.rawValue)")
@@ -277,7 +281,7 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
             for direction in [LayoutDirection.leftToRight, .rightToLeft] {
                 for (name, value, fill) in [
                     ("featured", card(numbered: false, featured: true), KozmosColors.semanticsEmotionAlertFill),
-                    ("number-selected", card(numbered: true, selected: true), KozmosColors.primitivesColorsTheme600),
+                    ("number-selected", card(numbered: true, selected: true), KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle),
                     ("badge", card(numbered: false, badge: "Alternative"), KozmosColors.primitivesColorsBackground100)
                 ] {
                     let view = value
@@ -317,7 +321,7 @@ final class KozmosPOIResultCardTabTests: XCTestCase {
         let list = KozmosPOIResultList(
             items: [item], resultCountLabel: "1 result", selectedPoiId: "burger-king", numbered: true, onSelect: { _ in }
         )
-        XCTAssertTrue(same(list.card(for: item).tabPaint?.fill, KozmosColors.primitivesColorsTheme600, .light))
+        XCTAssertTrue(same(list.card(for: item).tabPaint?.fill, KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle, .light))
         XCTAssertTrue(same(list.card(for: item).tabPaint?.edge, nil, .light))
     }
     #endif

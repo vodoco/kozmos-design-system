@@ -3088,7 +3088,8 @@
             "content": {
               "idle": {
                 "$type": "color",
-                "$value": "#000000",
+                "$value": "#FFFFFF",
+                "$description": "Decision 59: the theme foreground, white in both themes, for text and marks on the theme fill: 5.62:1 on #135BEC, where black reads 3.74:1.",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2674",
                   "com.figma.isOverride": true
@@ -3104,7 +3105,7 @@
               },
               "hover": {
                 "$type": "color",
-                "$value": "#000000",
+                "$value": "#FFFFFF",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2675",
                   "com.figma.isOverride": true
@@ -3112,7 +3113,7 @@
               },
               "pressed": {
                 "$type": "color",
-                "$value": "#000000",
+                "$value": "#FFFFFF",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2676",
                   "com.figma.isOverride": true
@@ -3120,7 +3121,7 @@
               },
               "focus": {
                 "$type": "color",
-                "$value": "#000000",
+                "$value": "#FFFFFF",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2677",
                   "com.figma.isOverride": true
@@ -3131,7 +3132,8 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#7EA2F6",
+              "$value": "{Primitives.Colors.theme.500}",
+              "$description": "Decision 59: the theme fill. Theme 500, the client's base colour set in the Pointr Cloud Dashboard, in both themes. Every prominent filled item draws it: a filled primary Button, a checked Checkbox or Switch, a selected Chip, a default Tag or Badge, a filled LocationPin. Text, icons, borders and focus rings stay on theme 600.",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2679",
                 "com.figma.isOverride": true
@@ -3147,7 +3149,7 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#5887F3",
+              "$value": "{Primitives.Colors.theme.400}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2680",
                 "com.figma.isOverride": true
@@ -3155,7 +3157,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#A4BEF9",
+              "$value": "{Primitives.Colors.theme.300}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2681",
                 "com.figma.isOverride": true
@@ -3163,7 +3165,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#5887F3",
+              "$value": "{Primitives.Colors.theme.400}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2682",
                 "com.figma.isOverride": true
@@ -3176,7 +3178,7 @@
             "content": {
               "idle": {
                 "$type": "color",
-                "$value": "#082975",
+                "$value": "{Primitives.Colors.theme.100}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2684",
                   "com.figma.isOverride": true
@@ -3192,7 +3194,7 @@
               },
               "hover": {
                 "$type": "color",
-                "$value": "#082975",
+                "$value": "{Primitives.Colors.theme.100}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2685",
                   "com.figma.isOverride": true
@@ -3200,7 +3202,7 @@
               },
               "pressed": {
                 "$type": "color",
-                "$value": "#082975",
+                "$value": "{Primitives.Colors.theme.100}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2686",
                   "com.figma.isOverride": true
@@ -3208,7 +3210,7 @@
               },
               "focus": {
                 "$type": "color",
-                "$value": "#082975",
+                "$value": "{Primitives.Colors.theme.100}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2687",
                   "com.figma.isOverride": true
@@ -3905,7 +3907,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#7EA2F6",
+              "$value": "{Primitives.Colors.theme.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2764",
                 "com.figma.isOverride": true
@@ -3921,7 +3923,7 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#5887F3",
+              "$value": "{Primitives.Colors.theme.600}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2765",
                 "com.figma.isOverride": true
@@ -3929,7 +3931,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#A4BEF9",
+              "$value": "{Primitives.Colors.theme.800}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2766",
                 "com.figma.isOverride": true
@@ -3937,7 +3939,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#5887F3",
+              "$value": "{Primitives.Colors.theme.600}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2767",
                 "com.figma.isOverride": true
@@ -3948,7 +3950,7 @@
             "content": {
               "idle": {
                 "$type": "color",
-                "$value": "#7EA2F6",
+                "$value": "{Primitives.Colors.theme.700}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2769",
                   "com.figma.isOverride": true
@@ -3964,7 +3966,7 @@
               },
               "hover": {
                 "$type": "color",
-                "$value": "#5887F3",
+                "$value": "{Primitives.Colors.theme.600}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2770",
                   "com.figma.isOverride": true
@@ -3972,7 +3974,7 @@
               },
               "pressed": {
                 "$type": "color",
-                "$value": "#A4BEF9",
+                "$value": "{Primitives.Colors.theme.800}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2771",
                   "com.figma.isOverride": true
@@ -3980,7 +3982,7 @@
               },
               "focus": {
                 "$type": "color",
-                "$value": "#5887F3",
+                "$value": "{Primitives.Colors.theme.600}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2772",
                   "com.figma.isOverride": true
@@ -3994,7 +3996,7 @@
             "content": {
               "idle": {
                 "$type": "color",
-                "$value": "#5887F3",
+                "$value": "{Primitives.Colors.theme.600}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2774",
                   "com.figma.isOverride": true
@@ -4010,7 +4012,7 @@
               },
               "hover": {
                 "$type": "color",
-                "$value": "#135BEC",
+                "$value": "{Primitives.Colors.theme.500}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2775",
                   "com.figma.isOverride": true
@@ -4018,7 +4020,7 @@
               },
               "pressed": {
                 "$type": "color",
-                "$value": "#7EA2F6",
+                "$value": "{Primitives.Colors.theme.700}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2776",
                   "com.figma.isOverride": true
@@ -4026,7 +4028,7 @@
               },
               "focus": {
                 "$type": "color",
-                "$value": "#135BEC",
+                "$value": "{Primitives.Colors.theme.500}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2777",
                   "com.figma.isOverride": true
@@ -4723,7 +4725,7 @@
           "background": {
             "idle": {
               "$type": "color",
-              "$value": "#7EA2F6",
+              "$value": "{Primitives.Colors.theme.700}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2854",
                 "com.figma.isOverride": true
@@ -4739,7 +4741,7 @@
             },
             "hover": {
               "$type": "color",
-              "$value": "#5887F3",
+              "$value": "{Primitives.Colors.theme.600}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2855",
                 "com.figma.isOverride": true
@@ -4747,7 +4749,7 @@
             },
             "pressed": {
               "$type": "color",
-              "$value": "#A4BEF9",
+              "$value": "{Primitives.Colors.theme.800}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2856",
                 "com.figma.isOverride": true
@@ -4755,7 +4757,7 @@
             },
             "focus": {
               "$type": "color",
-              "$value": "#5887F3",
+              "$value": "{Primitives.Colors.theme.600}",
               "$extensions": {
                 "com.figma.variableId": "VariableID:1440:2857",
                 "com.figma.isOverride": true
@@ -4766,7 +4768,7 @@
             "content": {
               "idle": {
                 "$type": "color",
-                "$value": "#7EA2F6",
+                "$value": "{Primitives.Colors.theme.700}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2859",
                   "com.figma.isOverride": true
@@ -4782,7 +4784,7 @@
               },
               "hover": {
                 "$type": "color",
-                "$value": "#5887F3",
+                "$value": "{Primitives.Colors.theme.600}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2860",
                   "com.figma.isOverride": true
@@ -4790,7 +4792,7 @@
               },
               "pressed": {
                 "$type": "color",
-                "$value": "#A4BEF9",
+                "$value": "{Primitives.Colors.theme.800}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2861",
                   "com.figma.isOverride": true
@@ -4798,7 +4800,7 @@
               },
               "focus": {
                 "$type": "color",
-                "$value": "#5887F3",
+                "$value": "{Primitives.Colors.theme.600}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2862",
                   "com.figma.isOverride": true
@@ -4812,7 +4814,7 @@
             "content": {
               "idle": {
                 "$type": "color",
-                "$value": "#5887F3",
+                "$value": "{Primitives.Colors.theme.600}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2864",
                   "com.figma.isOverride": true
@@ -4828,7 +4830,7 @@
               },
               "hover": {
                 "$type": "color",
-                "$value": "#135BEC",
+                "$value": "{Primitives.Colors.theme.500}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2865",
                   "com.figma.isOverride": true
@@ -4836,7 +4838,7 @@
               },
               "pressed": {
                 "$type": "color",
-                "$value": "#7EA2F6",
+                "$value": "{Primitives.Colors.theme.700}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2866",
                   "com.figma.isOverride": true
@@ -4844,7 +4846,7 @@
               },
               "focus": {
                 "$type": "color",
-                "$value": "#135BEC",
+                "$value": "{Primitives.Colors.theme.500}",
                 "$extensions": {
                   "com.figma.variableId": "VariableID:1440:2867",
                   "com.figma.isOverride": true

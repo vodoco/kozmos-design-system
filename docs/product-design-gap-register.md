@@ -347,6 +347,32 @@ camera control, branding/provider policy and product ranking in their host adapt
 - **GAP-104 (owner's approval, 2026-10-07):** approved as merged (#239, Olcay): typed props,
   `onEditOrigin` and `onEditDestination`, rather than the suggested slots; the action named
   "Change", RouteLocationField's verb, rather than "Edit"; and `changeLabel` for its words.
+- **Theme fill (decision 59, 2026-10-07):** prominent filled items use theme 500, the client's
+  base colour set in the Pointr Cloud Dashboard (`#135BEC` in both themes), under the theme
+  foreground, white in both: the filled primary Button, IconButton, FAB, SplitButton and every
+  CTA drawn as one; a checked Checkbox and Switch, Radio's dot, a selected Chip, the default Tag
+  and Badge, the brand Counter, FloorSelector's selected tile and result count, a filled
+  LocationPin, SaveLocationCard's saved disc, CategoryField's count pill, the Stepper's completed
+  step, ToggleButton on, ManoeuvreCard's theme appearance, the UserMessage bubble and
+  POIResultCard's selected number tab. A count on the fill inverts, the theme foreground with a
+  500 number: FloorSelector's on its selected tile and a default Badge's counter. The button's
+  hover and focus are `#1051E8` and pressed `#0D44C2` in both themes, drawn on every platform.
+  Theme text, icons, borders and focus rings on a surface use theme 600 (`#1051E8` light,
+  `#5887F3` dark), and the natives moved theirs from 500 to 600, CategoryField's and
+  CategoryTile's accent included. Slider, Progress and RouteProgressRail stay 600; Menu, Select
+  and Listbox rows and FloorSelector's user-level dot are unchanged; React's Rating thumb is the
+  theme's tint ringed in 600, as the natives and Figma draw it. The date pickers' selected day is
+  the platform picker's own on React, SwiftUI and Compose, the app's accent colour (owner, 7
+  Oct); only Figma draws one, in the theme fill. A client's colour reaches every fill on the web
+  through one override of theme 500 (GAP-23 fixed); SwiftUI and Compose have no runtime
+  override yet, so the fill there is Pointr's `#135BEC`. The owner's rulings on the PR (7 Oct):
+  500 on a raised dark sheet (2.32:1 on background/200) is accepted, since each state is told by
+  its mark at 5.62:1; danger and alert fills keep black ink in the dark (the dark danger fill
+  reads 6.19:1 with black, 3.39:1 with white); Figma's selected NavigationItem label moves from
+  700 to 600 and its Avatar image placeholder is neutral; the filled pin's ring stays
+  foreground/1000; SwiftUI's `onEmphasis` tone becomes the theme foreground and a new `onDanger`
+  keeps the danger fill's ink. Still open: the selected tab indicator's design and LocationPin
+  `accent` parity.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;

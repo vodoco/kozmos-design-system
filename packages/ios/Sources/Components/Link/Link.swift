@@ -10,7 +10,9 @@ public struct KozmosLink: View {
     }
     
     public var body: some View {
+        // Decision 59: theme-coloured text on a surface is theme 600, as
+        // React's; 500 read 3.13:1 on a dark sheet.
         Link(label, destination: destination)
-            .foregroundColor(KozmosColors.primitivesColorsTheme500)
+            .foregroundColor(KozmosColors.primitivesColorsTheme600)
     }
 }

@@ -59,14 +59,17 @@ fun KozmosToggleButton(
         KozmosToggleButtonSize.Large -> 40.dp
     }
 
+    // On, the default variant is the theme fill with the theme foreground on
+    // it, the same in both themes (decision 59): background/0 turned its
+    // label black on it in the dark.
     val backgroundColor = if (checked) {
-        if (variant == KozmosToggleButtonVariant.Outline) KozmosThemeTokens.primitivesColorsBackground200 else KozmosThemeTokens.primitivesColorsTheme500
+        if (variant == KozmosToggleButtonVariant.Outline) KozmosThemeTokens.primitivesColorsBackground200 else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
     } else {
         if (variant == KozmosToggleButtonVariant.Outline) Color.Transparent else KozmosThemeTokens.primitivesColorsBackground100
     }
 
     val contentColor = if (checked) {
-        if (variant == KozmosToggleButtonVariant.Outline) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.primitivesColorsBackground0
+        if (variant == KozmosToggleButtonVariant.Outline) KozmosThemeTokens.primitivesColorsForeground100 else KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
     } else {
         KozmosThemeTokens.primitivesColorsForeground100
     }

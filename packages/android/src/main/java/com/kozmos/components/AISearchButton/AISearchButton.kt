@@ -31,9 +31,10 @@ import com.kozmos.tokens.KozmosThemeTokens
 
 /**
  * The AI search, beside the search field: a 43 disc inside a 48 ring whose
- * sweep gradient runs through the theme's own ramp — 300 to 600 and back, the
- * first gradient the system draws, made of tokens — with a 16 icon. The
- * button shows the icon alone and is named by its label.
+ * sweep gradient is the prototype's rainbow, made of the system's own data
+ * colours and its success green — red, yellow, green, teal, blue, purple and
+ * back to red — with a 16 icon in theme/600, an icon on a surface (decision
+ * 59). The button shows the icon alone and is named by its label.
  */
 @Composable
 fun KozmosAISearchButton(
@@ -91,7 +92,7 @@ fun KozmosAISearchButton(
                 Icon(
                     imageVector = Icons.Default.AutoAwesome,
                     contentDescription = null,
-                    tint = KozmosThemeTokens.primitivesColorsTheme500,
+                    tint = KozmosThemeTokens.primitivesColorsTheme600,
                     modifier = Modifier.size(16.dp)
                 )
             }

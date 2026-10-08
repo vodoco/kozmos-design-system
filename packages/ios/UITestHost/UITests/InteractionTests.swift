@@ -343,6 +343,66 @@ final class InteractionTests: XCTestCase {
         received("expanded true|select gate/12|navigate gate/12|expanded false|expanded true")
     }
 
+    /// What a press draws, read off the screen while the finger is down: a
+    /// filled part draws its own emotion's pressed token (decision 59), not
+    /// SwiftUI's highlight over the idle fill, which lightened a danger
+    /// button's #B01736 to #EFD1D7. The light theme's values.
+    func testAPressDrawsEachFillsOwnPressedToken() {
+        launch("press-feedback")
+        let pressed = [
+            "themed": "#0D44C2", "danger": "#8C132B", "success": "#0F4C2D", "neutral": "#E3E4E8",
+            "informative": "#1C6082", "alert": "#472F02", "icon": "#0D44C2", "icon-danger": "#8C132B",
+            "fab": "#0D44C2", "map-filled-on": "#0D44C2",
+        ]
+        for id in pressed.keys.sorted() {
+            let part = app.buttons["part-\(id)"]
+            XCTAssertTrue(part.waitForExistence(timeout: 3), id)
+            part.press(forDuration: 1)
+        }
+        for (id, want) in pressed.sorted(by: { $0.key < $1.key }) {
+            let sample = Self.sample(app, id)
+            XCTAssertTrue(Self.near(sample.press, want), "\(id): a press drew \(sample.press), not \(want) (at rest \(sample.rest))")
+        }
+    }
+
+    /// A filled map control that is off is drawn on the page's surface, and
+    /// a press dims it as the plain style does, the style every map control
+    /// had until the filled one drew its own press: the same colour on its
+    /// mark as the tinted control's, under the same press.
+    func testAFilledMapControlThatIsOffDimsUnderAPressAsAPlainOneDoes() {
+        launch("press-feedback")
+        for id in ["map-tinted-off", "map-filled-off"] {
+            let part = app.buttons["part-\(id)"]
+            XCTAssertTrue(part.waitForExistence(timeout: 3), id)
+            part.press(forDuration: 1)
+        }
+        let plain = Self.sample(app, "map-tinted-off")
+        let filled = Self.sample(app, "map-filled-off")
+        XCTAssertFalse(Self.near(plain.press, plain.rest), "the plain control did not dim: \(plain)")
+        XCTAssertTrue(Self.near(filled.rest, plain.rest), "the two marks differ at rest: \(filled.rest), \(plain.rest)")
+        XCTAssertTrue(Self.near(filled.press, plain.press), "pressed, the filled control's mark is \(filled.press), the plain one's \(plain.press)")
+    }
+
+    /// The fixture's report for one part: its colour at rest, and the one
+    /// furthest from it seen so far.
+    private static func sample(_ app: XCUIApplication, _ id: String) -> (rest: String, press: String) {
+        let label = app.staticTexts["sample-\(id)"].label
+        func value(_ key: String) -> String {
+            label.components(separatedBy: " ").first { $0.hasPrefix(key + "=") }.map { String($0.dropFirst(key.count + 1)) } ?? "missing"
+        }
+        return (value("rest"), value("press"))
+    }
+
+    /// Two #RRGGBB colours within 3 levels a channel.
+    private static func near(_ a: String, _ b: String) -> Bool {
+        func channels(_ hex: String) -> [Int]? {
+            guard hex.count == 7, let value = Int(hex.dropFirst(), radix: 16) else { return nil }
+            return [(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF]
+        }
+        guard let x = channels(a), let y = channels(b) else { return false }
+        return zip(x, y).allSatisfy { abs($0 - $1) <= 3 }
+    }
+
     private func launch(_ scenario: String) {
         app = XCUIApplication()
         app.launchArguments = [scenario]

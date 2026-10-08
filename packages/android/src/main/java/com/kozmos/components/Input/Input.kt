@@ -90,7 +90,7 @@ fun KozmosInput(
             readOnly = readOnly,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = textColor),
-            cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
+            cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
             modifier = Modifier.fillMaxWidth(),
             decorationBox = { innerTextField ->
                 Box(

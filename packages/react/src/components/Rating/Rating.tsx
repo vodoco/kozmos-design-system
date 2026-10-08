@@ -249,8 +249,11 @@ function Face({
       aria-hidden="true"
       className={cn(
         "flex h-10 w-10 items-center justify-center rounded-pill border-2 transition-colors",
+        // The chosen thumb is the theme's tint, theme/0, ringed and marked in
+        // theme 600, as SwiftUI, Compose and Figma draw it. It was a theme 600
+        // fill with foreground/1000 on it (decision 59).
         filled
-          ? "border-ring bg-accent text-accent-foreground"
+          ? "border-primary bg-[var(--primitives-colors-theme-0)] text-primary"
           : "border-transparent bg-muted text-muted-foreground",
       )}
     >

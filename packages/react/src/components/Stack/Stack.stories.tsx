@@ -15,14 +15,16 @@ const meta: Meta<typeof Stack> = {
 export default meta;
 type Story = StoryObj<typeof Stack>;
 
+// The theme fill under the theme foreground, white in both themes
+// (decision 59); `bg-primary` is theme 600, for text and edges.
 const foregrounds = {
-  "bg-primary": "text-primary-foreground",
+  "bg-theme-fill": "text-theme-fill-foreground",
   "bg-secondary": "text-secondary-foreground",
   "bg-accent": "text-accent-foreground",
 };
 const BoxItem = ({
   children,
-  color = "bg-primary",
+  color = "bg-theme-fill",
 }: {
   children: React.ReactNode;
   color?: keyof typeof foregrounds;

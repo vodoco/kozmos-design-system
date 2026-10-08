@@ -2,6 +2,9 @@ import { useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
+  Chip,
+  Link,
   Stack,
   Surface,
   Switch,
@@ -48,6 +51,26 @@ function Sample({ label }: { label: string }) {
   );
 }
 
+/* Decision 59: what fills in the theme's colour, and what is written in it. */
+function FillSample({ label }: { label: string }) {
+  const [stepFree, setStepFree] = useState(true);
+  return (
+    <Surface className="site-theme-sample">
+      <Text weight="semibold">{label}</Text>
+      <Stack direction="row" wrap="wrap" align="center" gap={2}>
+        <Button>Get directions</Button>
+        <Chip selected>Open now</Chip>
+      </Stack>
+      <Checkbox
+        label="Step-free route"
+        checked={stepFree}
+        onCheckedChange={(next) => setStepFree(next === true)}
+      />
+      <Link href="#the-theme-fill">Opening hours</Link>
+    </Surface>
+  );
+}
+
 export default function Theming() {
   return (
     <DocsPage page={page}>
@@ -61,6 +84,21 @@ export default function Theming() {
           </ThemeProvider>
           <ThemeProvider theme="dark">
             <Sample label="Dark" />
+          </ThemeProvider>
+        </Box>
+      </Section>
+
+      <Section
+        id="the-theme-fill"
+        title="The theme fill, and the theme as text"
+        lead="A prominent fill, such as a primary button, a checked checkbox or switch, a selected chip or a filled pin, is theme 500: the base colour a client sets in the Pointr Cloud Dashboard. It is the same in both themes, and what sits on it is white in both. The theme as text, an icon, a border or a focus ring on a surface is theme 600, which turns over with the theme so that it reads on a light page and a dark one (decision 59)."
+      >
+        <Box className="site-side-by-side">
+          <ThemeProvider theme="light">
+            <FillSample label="Light" />
+          </ThemeProvider>
+          <ThemeProvider theme="dark">
+            <FillSample label="Dark" />
           </ThemeProvider>
         </Box>
       </Section>

@@ -22,7 +22,9 @@ const { browserslist } = JSON.parse(
   fs.readFileSync(path.join(reactDir, "package.json"), "utf8"),
 );
 // lightningcss is Vite 8's, so it is found from the site that builds with it.
-const siteRequire = createRequire(path.join(process.cwd(), "apps/site/package.json"));
+const siteRequire = createRequire(
+  path.join(process.cwd(), "apps/site/package.json"),
+);
 const viteRequire = createRequire(siteRequire.resolve("vite"));
 const lightningcss = viteRequire("lightningcss");
 const targets = lightningcss.browserslistToTargets(
@@ -39,12 +41,42 @@ assert.ok(
 
 // Where the parts sit: each case says which way they should read.
 const cases = [
-  { name: "an html dir=ltr page", html: 'dir="ltr" lang="en"', wrap: "", rtl: false },
-  { name: "an html dir=rtl page in English", html: 'dir="rtl" lang="en"', wrap: "", rtl: true },
-  { name: "a dir=rtl box on an English page", html: 'lang="en"', wrap: 'dir="rtl"', rtl: true },
-  { name: "a dir=ltr box in a right-to-left page", html: 'dir="rtl" lang="ar"', wrap: 'dir="ltr"', rtl: false },
-  { name: "an Arabic page laid out left to right", html: 'dir="ltr" lang="ar"', wrap: "", rtl: false },
-  { name: "an English dir=rtl box on an Arabic page", html: 'lang="ar"', wrap: 'dir="rtl" lang="en"', rtl: true },
+  {
+    name: "an html dir=ltr page",
+    html: 'dir="ltr" lang="en"',
+    wrap: "",
+    rtl: false,
+  },
+  {
+    name: "an html dir=rtl page in English",
+    html: 'dir="rtl" lang="en"',
+    wrap: "",
+    rtl: true,
+  },
+  {
+    name: "a dir=rtl box on an English page",
+    html: 'lang="en"',
+    wrap: 'dir="rtl"',
+    rtl: true,
+  },
+  {
+    name: "a dir=ltr box in a right-to-left page",
+    html: 'dir="rtl" lang="ar"',
+    wrap: 'dir="ltr"',
+    rtl: false,
+  },
+  {
+    name: "an Arabic page laid out left to right",
+    html: 'dir="ltr" lang="ar"',
+    wrap: "",
+    rtl: false,
+  },
+  {
+    name: "an English dir=rtl box on an Arabic page",
+    html: 'lang="ar"',
+    wrap: 'dir="rtl" lang="en"',
+    rtl: true,
+  },
 ];
 
 const parts = `
@@ -119,9 +151,15 @@ try {
         scenario.rtl ? turned(drawn.gallery) : !turned(drawn.gallery),
         `${where}: the gallery arrow ${scenario.rtl ? "is not turned" : "is turned"}`,
       );
-      const run = drawn.gradient.match(/linear-gradient\((to (?:left|right)|-?[\d.]+deg)/)?.[1];
+      const run = drawn.gradient.match(
+        /linear-gradient\((to (?:left|right)|-?[\d.]+deg)/,
+      )?.[1];
       const angle =
-        run === "to right" ? 90 : run === "to left" ? 270 : Number(run?.slice(0, -3));
+        run === "to right"
+          ? 90
+          : run === "to left"
+            ? 270
+            : Number(run?.slice(0, -3));
       assert.ok(Number.isFinite(angle), `${where}: the gradient has no angle`);
       assert.equal(
         ((angle % 360) + 360) % 360,
@@ -138,7 +176,11 @@ try {
       const near = (actual, expected, message) =>
         assert.ok(Math.abs(actual - expected) < 0.5, `${where}: ${message}`);
       if (scenario.rtl) {
-        near(drawn.start.right, 30, "the start corner is not 30 from the right");
+        near(
+          drawn.start.right,
+          30,
+          "the start corner is not 30 from the right",
+        );
         near(drawn.end.left, 10, "the end corner is not 10 from the left");
       } else {
         near(drawn.start.left, 10, "the start corner is not 10 from the left");
@@ -151,7 +193,9 @@ try {
   // rather than a rule: Progress fills from the inline start.
   const fixture = await buildReactFixture("direction-host.tsx");
   const page = await browser.newPage();
-  await page.setContent('<!doctype html><html lang="en"><body><div id="root"></div></body></html>');
+  await page.setContent(
+    '<!doctype html><html lang="en"><body><div id="root"></div></body></html>',
+  );
   await page.addStyleTag({ content: fixture.css });
   await page.addScriptTag({ content: fixture.code });
   await page.getByRole("progressbar", { name: "Progress rtl" }).waitFor();
@@ -180,10 +224,78 @@ try {
     );
     checked += 1;
   }
+  // Switch: the thumb sits at the inline start when off and slides to the
+  // inline end when on, inside the track, in both directions.
+  for (const dir of ["ltr", "rtl"])
+    for (const on of [true, false]) {
+      const name = `Switch ${on ? "on" : "off"} ${dir}`;
+      const thumb = await page
+        .getByRole("switch", { name })
+        .evaluate((track) => {
+          const outer = track.getBoundingClientRect();
+          const box = track.firstElementChild.getBoundingClientRect();
+          return {
+            left: box.left - outer.left,
+            right: outer.right - box.right,
+          };
+        });
+      const where = `${name}: ${JSON.stringify(thumb)}`;
+      assert.ok(
+        thumb.left >= -0.5 && thumb.right >= -0.5,
+        `${where}: the thumb leaves the track`,
+      );
+      const atEnd = (on ? dir === "rtl" : dir === "ltr") ? "left" : "right";
+      assert.ok(
+        thumb[atEnd] < 3,
+        `${where}: the thumb is not at the inline ${on ? "end" : "start"} (${atEnd})`,
+      );
+      checked += 1;
+    }
+  // SplitButton: the halves meet square at the inline end of the main one
+  // and the inline start of the menu one, its divider on the meeting edge.
+  for (const dir of ["ltr", "rtl"]) {
+    const halves = await page
+      .getByTestId(`split-${dir}`)
+      .locator("button")
+      .evaluateAll((buttons) =>
+        buttons.map((button) => {
+          const style = getComputedStyle(button);
+          return {
+            left:
+              parseFloat(style.borderTopLeftRadius) +
+              parseFloat(style.borderBottomLeftRadius),
+            right:
+              parseFloat(style.borderTopRightRadius) +
+              parseFloat(style.borderBottomRightRadius),
+            borderLeft: parseFloat(style.borderLeftWidth),
+            borderRight: parseFloat(style.borderRightWidth),
+          };
+        }),
+      );
+    const [main, menu] = halves;
+    const where = `SplitButton ${dir}: ${JSON.stringify(halves)}`;
+    const [meet, outside] =
+      dir === "rtl" ? ["left", "right"] : ["right", "left"];
+    assert.ok(
+      main[meet] === 0 && main[outside] > 0,
+      `${where}: the main half is not square at its inline end only`,
+    );
+    assert.ok(
+      menu[outside] === 0 && menu[meet] > 0,
+      `${where}: the menu half is not square at its inline start only`,
+    );
+    const divider = meet === "right" ? "borderRight" : "borderLeft";
+    const other = meet === "right" ? "borderLeft" : "borderRight";
+    assert.ok(
+      main[divider] > main[other],
+      `${where}: the divider is not on the main half's inline end`,
+    );
+    checked += 1;
+  }
   await page.close();
 } finally {
   await browser.close();
 }
 console.log(
-  `${checked} direction cases passed on ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: mirror, back arrow, gallery arrow, gradient, flow and overlay corners, as built and lowered; Progress's fill`,
+  `${checked} direction cases passed on ${process.env.ADAPTIVE_BROWSER ?? "chromium"}: mirror, back arrow, gallery arrow, gradient, flow and overlay corners, as built and lowered; Progress's fill; Switch's thumb; SplitButton's corners`,
 );

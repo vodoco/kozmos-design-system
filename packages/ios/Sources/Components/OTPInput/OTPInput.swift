@@ -145,8 +145,10 @@ public struct KozmosOTPInput: View {
     }
 
     private func cellBorderColor(for index: Int) -> Color {
+        // The focused cell's edge is a ring on a surface: theme 600, as
+        // every focus ring is (decision 59).
         if focusedField == index && !disabled && !readOnly {
-            return KozmosColors.primitivesColorsTheme500
+            return KozmosColors.primitivesColorsTheme600
         }
 
         switch effectiveStatus {

@@ -73,11 +73,19 @@ fun KozmosLocationPin(
      *  number — over the variant's; a featured pin keeps the alert colour. */
     tint: KozmosCategoryTint? = null
 ) {
+    // Filled, the primary pin is the theme fill, theme 500 in both themes,
+    // with its number in the theme foreground, white in both (decision 59):
+    // foreground/1000 turned the number black on it in the dark. The accent
+    // pin's fill is theme variant 1's 500, #4134F1 in both themes, and its
+    // number the theme foreground too: foreground/1000 is black in the dark,
+    // 2.99:1 on it, where white reads 7.03:1.
+    val inkedInThemeForeground = !featured && tint == null &&
+        (variant == KozmosLocationPinVariant.Primary || variant == KozmosLocationPinVariant.Accent)
     val markerColor: Color = when {
         featured -> KozmosThemeTokens.primitivesColorsEmotionalAlert500
         tint != null -> tint.fill.fill
         variant == KozmosLocationPinVariant.Default -> KozmosThemeTokens.primitivesColorsForeground100
-        variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.primitivesColorsTheme500
+        variant == KozmosLocationPinVariant.Primary -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle
         variant == KozmosLocationPinVariant.Secondary -> KozmosThemeTokens.primitivesColorsForeground400
         else -> KozmosThemeTokens.primitivesColorsThemeVariant1500
     }
@@ -111,10 +119,15 @@ fun KozmosLocationPin(
 
     // The number: in the fill's ink when filled; in the ring's colour when
     // quiet, except a tint's (six of the eight fills fail 4.5:1 as text on the
-    // surface), which takes the foreground, as it does off the floor.
+    // surface), which takes the foreground, as it does off the floor. On the
+    // featured amber it is the alert's onFill, the dark words decision 55
+    // gives Featured, whatever the tint: foreground/1000 is white in the
+    // light, 1.76:1 on #FAB735.
     val numberColor: Color = when {
         offFloor || (quiet && tint != null) -> KozmosThemeTokens.primitivesColorsForeground0
         quiet -> outlineColor
+        featured -> KozmosThemeTokens.semanticsEmotionAlertOnfill
+        inkedInThemeForeground -> KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle
         else -> tint?.fill?.ink ?: KozmosThemeTokens.primitivesColorsForeground1000
     }
 

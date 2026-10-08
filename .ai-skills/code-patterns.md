@@ -65,6 +65,10 @@ Banner.displayName = "Banner";
   `border-input`), defined in `packages/react/tailwind.config.js` over the tokens, or the token
   variables themselves. A class must compile to something: `pnpm components:classes:check` reads
   the built CSS.
+- **A prominent fill is the theme fill (decision 59):** `bg-theme-fill text-theme-fill-foreground`,
+  theme 500 under white in both themes, for a checked, selected or filled part. `primary` is theme
+  600, the theme as text, an icon, a border or a ring on a surface; `primary-foreground` turns black
+  in the dark, so it is never ink on a fill. `pnpm test:theme-fill` reads both in a real browser.
 - **Everything is exported from the package root:** `pnpm new-component` adds
   `export * from "./components/<Name>/<Name>"` to `packages/react/src/index.ts`.
 

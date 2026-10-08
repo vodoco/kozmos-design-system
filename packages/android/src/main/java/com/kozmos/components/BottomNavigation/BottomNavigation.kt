@@ -4,6 +4,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,6 +24,19 @@ fun KozmosBottomNavigation(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Kozmos's colours, not Material's purple: the selected item's icon and
+    // label are theme-coloured text on a surface, theme/600 (decision 59), and
+    // the others the foreground, foreground/100. The muted fill
+    // (background/100) is Material's indicator, a 64×32 pill behind the icon
+    // alone; iOS and React fill the item's whole 64×64 tile, so the bars
+    // share their colours, not that shape.
+    val colors = NavigationBarItemDefaults.colors(
+        selectedIconColor = KozmosThemeTokens.primitivesColorsTheme600,
+        selectedTextColor = KozmosThemeTokens.primitivesColorsTheme600,
+        indicatorColor = KozmosThemeTokens.primitivesColorsBackground100,
+        unselectedIconColor = KozmosThemeTokens.primitivesColorsForeground100,
+        unselectedTextColor = KozmosThemeTokens.primitivesColorsForeground100
+    )
     NavigationBar(
         modifier = modifier,
         containerColor = KozmosThemeTokens.primitivesColorsBackground0
@@ -34,7 +48,8 @@ fun KozmosBottomNavigation(
                 // theirs (decision 41); NavigationBarItem's own is 12sp.
                 label = { Text(item.title, style = MaterialTheme.typography.labelSmall) },
                 selected = currentRoute == item.route,
-                onClick = { onNavigate(item.route) }
+                onClick = { onNavigate(item.route) },
+                colors = colors
             )
         }
     }

@@ -408,6 +408,14 @@ const files = {
     "packages/android/src/main/java/com/kozmos/components/Icon/Icon.figma.kt",
   androidIconButton:
     "packages/android/src/main/java/com/kozmos/components/IconButton/IconButton.kt",
+  androidFillStates:
+    "packages/android/src/main/java/com/kozmos/components/FillStates.kt",
+  androidFloatingActionButton:
+    "packages/android/src/main/java/com/kozmos/components/FloatingActionButton/FloatingActionButton.kt",
+  androidSplitButton:
+    "packages/android/src/main/java/com/kozmos/components/SplitButton/SplitButton.kt",
+  androidMapControlButton:
+    "packages/android/src/main/java/com/kozmos/components/MapControlButton/MapControlButton.kt",
   androidCounter:
     "packages/android/src/main/java/com/kozmos/components/Counter/Counter.kt",
   androidCategoryTile:
@@ -528,6 +536,7 @@ const files = {
     "packages/android/src/main/java/com/kozmos/tokens/KozmosThemeTokens.kt",
   androidThemeProvider:
     "packages/android/src/main/java/com/kozmos/components/ThemeProvider/ThemeProvider.kt",
+  tokensLight: "packages/tokens/src/tokens-light.json",
   tokensDark: "packages/tokens/src/tokens-dark.json",
   figmaFoundationsPayload: "docs/figma-foundations-payload.json",
   iosColors: "packages/ios/Sources/KozmosColors.swift",
@@ -538,6 +547,7 @@ const files = {
 const source = Object.fromEntries(
   Object.entries(files).map(([key, filePath]) => [key, read(filePath)]),
 );
+const tokensLight = JSON.parse(source.tokensLight);
 const tokensDark = JSON.parse(source.tokensDark);
 const figmaFoundationsPayload = JSON.parse(source.figmaFoundationsPayload);
 
@@ -4256,8 +4266,20 @@ assertContains(
 assertContains(
   files.figma,
   source.figma,
-  'background: "Colors/theme/600"',
-  "Figma filled brand surfaces use accessible brand token",
+  'const THEME_FILL = {\n  name: "Primary Buttons/themed/button/background/idle",\n  fallback: "#135BEC",\n};',
+  "Figma prominent fills use the theme fill (decision 59)",
+);
+assertContains(
+  files.figma,
+  source.figma,
+  'const THEME_FILL_FOREGROUND = {\n  name: "Primary Buttons/themed/button/foreground/content/idle",\n  fallback: "#FFFFFF",\n};',
+  "Figma marks on the theme fill use the theme foreground (decision 59)",
+);
+assertNotContains(
+  files.figma,
+  source.figma,
+  'variableName: "Colors/theme/500"',
+  "a Figma focus ring at theme 500 (decision 59: rings are theme 600)",
 );
 assertContains(
   files.figma,
@@ -9767,8 +9789,8 @@ assertContains(
     assertContains(
       files.iosCategoryTile,
       source.iosCategoryTile,
-      ".foregroundColor(tint?.accent ?? KozmosColors.primitivesColorsTheme500)",
-      "iOS CategoryTile icon in the tint",
+      ".foregroundColor(tint?.accent ?? KozmosColors.primitivesColorsTheme600)",
+      "iOS CategoryTile icon in the tint, theme 600 by default (decision 59)",
     );
     assertContains(
       files.reactCategoryTile,
@@ -9785,8 +9807,8 @@ assertContains(
     assertContains(
       files.androidCategoryTile,
       source.androidCategoryTile,
-      "LocalContentColor provides (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme500)",
-      "Android CategoryTile icon in the tint",
+      "LocalContentColor provides (tint?.accent ?: KozmosThemeTokens.primitivesColorsTheme600)",
+      "Android CategoryTile icon in the tint, theme 600 by default (decision 59)",
     );
     assertContains(
       files.androidCategoryTile,
@@ -10102,8 +10124,8 @@ assertContains(
 assertContains(
   files.iosBadge,
   source.iosBadge,
-  "KozmosCounter(counter, tone: counterTone)",
-  "iOS Badge composes Counter",
+  "KozmosCounter(counter, tone: counterTone, fill: counterFill)",
+  "iOS Badge composes Counter, inverted on the default Badge's theme fill",
 );
 assertContains(
   files.iosBadge,
@@ -10330,11 +10352,83 @@ assertContains(
   "size = KozmosSpinnerSize.Sm",
   "Android Button draws the system's arc while loading",
 );
+// Decision 59: the filled Button and IconButton draw the theme fill through
+// KozmosFillStates, which reads the runtime (light and dark) tokens for every
+// state: idle, pressed, focus and hover, never Material's ripple over it.
 assertContains(
   files.androidButton,
   source.androidButton,
-  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
-  "Android Button themed runtime token",
+  "KozmosFillStates.themed",
+  "Android Button themed runtime token (through KozmosFillStates.themed)",
+);
+for (const state of ["Idle", "Pressed", "Focus", "Hover"]) {
+  assertContains(
+    files.androidFillStates,
+    source.androidFillStates,
+    `KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackground${state}`,
+    `Android theme fill ${state.toLowerCase()} runtime token`,
+  );
+}
+assertNotContains(
+  files.androidFillStates,
+  source.androidFillStates,
+  "KozmosColors.",
+  "light-only KozmosColors in the Android fill states",
+);
+// The fills draw on Kozmos's own clickable surface with no indication, never
+// on Material's Button, FilledIconButton, FloatingActionButton or Surface:
+// those draw their ripple themselves, which LocalRippleTheme quiets only up to
+// Material3 1.2 and LocalRippleConfiguration only from 1.3. A Compose BOM
+// bump would bring the white ripple back over the pressed token.
+assertContains(
+  files.androidFillStates,
+  source.androidFillStates,
+  "indication = null,",
+  "Android fill surface with no ripple",
+);
+for (const [key, call] of [
+  ["androidButton", "KozmosFillButton("],
+  ["androidIconButton", "KozmosFillSurface("],
+  ["androidFloatingActionButton", "KozmosFillSurface("],
+  ["androidSplitButton", "KozmosFillButton("],
+  ["androidMapControlButton", "KozmosClickableSurface("],
+]) {
+  assertContains(
+    files[key],
+    source[key],
+    call,
+    `Android fill drawn on Kozmos's own surface (${call})`,
+  );
+  assertNotContains(
+    files[key],
+    source[key],
+    "LocalRippleTheme",
+    "Android fill quieting Material's ripple through LocalRippleTheme",
+  );
+}
+for (const [key, material] of [
+  [
+    "androidFloatingActionButton",
+    /^import androidx\.compose\.material3\.FloatingActionButton$/m,
+  ],
+  ["androidSplitButton", /^import androidx\.compose\.material3\.Button$/m],
+  [
+    "androidMapControlButton",
+    /^import androidx\.compose\.material3\.Surface$/m,
+  ],
+]) {
+  assertNotContains(
+    files[key],
+    source[key],
+    material,
+    "Android fill drawn on a Material control that draws its own ripple",
+  );
+}
+assertContains(
+  files.androidMapControlButton,
+  source.androidMapControlButton,
+  "indication = if (filled) null else rememberRipple()",
+  "Android MapControlButton fill with no ripple",
 );
 
 assertContains(
@@ -10402,8 +10496,8 @@ assertContains(
 assertContains(
   files.androidIconButton,
   source.androidIconButton,
-  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
-  "Android IconButton themed runtime token",
+  "KozmosFillStates.themed",
+  "Android IconButton themed runtime token (through KozmosFillStates.themed)",
 );
 
 assertAllVariants(
@@ -10590,8 +10684,14 @@ assertContains(
 assertContains(
   files.androidCheckbox,
   source.androidCheckbox,
-  "KozmosThemeTokens.primitivesColorsTheme500",
-  "Android Checkbox themed runtime checked token",
+  "val checkedColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
+  "Android Checkbox checked box is the theme fill (decision 59)",
+);
+assertContains(
+  files.androidCheckbox,
+  source.androidCheckbox,
+  "checkmarkColor = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle",
+  "Android Checkbox check mark is the theme foreground (decision 59)",
 );
 assertContains(
   files.androidCheckbox,
@@ -10620,8 +10720,14 @@ assertContains(
 assertContains(
   files.androidRadio,
   source.androidRadio,
-  "KozmosThemeTokens.primitivesColorsTheme500",
-  "Android Radio themed runtime checked token",
+  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
+  "Android Radio dot is the theme fill (decision 59)",
+);
+assertContains(
+  files.androidRadio,
+  source.androidRadio,
+  "KozmosThemeTokens.primitivesColorsTheme600",
+  "Android Radio ring is a border, theme 600 (decision 59)",
 );
 assertContains(
   files.androidRadio,
@@ -10668,8 +10774,14 @@ assertContains(
 assertContains(
   files.androidSwitch,
   source.androidSwitch,
-  "KozmosThemeTokens.primitivesColorsTheme500",
-  "Android Switch themed runtime checked token",
+  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle",
+  "Android Switch checked track is the theme fill (decision 59)",
+);
+assertContains(
+  files.androidSwitch,
+  source.androidSwitch,
+  "KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle",
+  "Android Switch thumb on the checked track is the theme foreground (decision 59)",
 );
 assertContains(
   files.androidSwitch,
@@ -10862,21 +10974,47 @@ assertNotContains(
   "documented MapView placeholder text",
 );
 
-assertJsonPathEquals(
-  files.tokensDark,
-  tokensDark,
-  [
-    "Components",
-    "Primary Buttons",
-    "themed",
-    "button",
-    "background",
-    "idle",
-    "$value",
-  ],
-  "#7EA2F6",
-  "dark themed primary button background",
-);
+// Decision 59 (Olcay, 2026-10-07): the theme fill is theme 500, the client's
+// base colour, in both themes, and the theme foreground on it white in both.
+// Until then the dark fill was theme 700 (#7EA2F6) under black.
+for (const [file, json, mode] of [
+  [files.tokensLight, tokensLight, "light"],
+  [files.tokensDark, tokensDark, "dark"],
+]) {
+  assertJsonPathEquals(
+    file,
+    json,
+    [
+      "Components",
+      "Primary Buttons",
+      "themed",
+      "button",
+      "background",
+      "idle",
+      "$value",
+    ],
+    "{Primitives.Colors.theme.500}",
+    `${mode} themed primary button background is the theme fill, theme 500`,
+  );
+  for (const state of ["idle", "hover", "pressed", "focus"]) {
+    assertJsonPathEquals(
+      file,
+      json,
+      [
+        "Components",
+        "Primary Buttons",
+        "themed",
+        "button",
+        "foreground",
+        "content",
+        state,
+        "$value",
+      ],
+      "#FFFFFF",
+      `${mode} themed primary button foreground (${state}) is the theme foreground, white`,
+    );
+  }
+}
 assertJsonPathEquals(
   files.tokensDark,
   tokensDark,
@@ -10905,8 +11043,15 @@ assertJsonPathEquals(
     "idle",
     "$value",
   ],
+  "{Primitives.Colors.theme.700}",
+  "dark secondary button themed foreground (an alias of theme 700, GAP-23)",
+);
+assertJsonPathEquals(
+  files.tokensDark,
+  tokensDark,
+  ["Primitives", "Colors", "theme", "700", "$value"],
   "#7EA2F6",
-  "dark secondary button themed foreground",
+  "dark theme 700, the secondary button themed foreground",
 );
 assertJsonPathEquals(
   files.tokensDark,
@@ -10929,24 +11074,47 @@ assertJsonPathEquals(
   "#FBBF24",
   "dark semantic data yellow",
 );
-assertFigmaPayloadDarkValue(
-  files.figmaFoundationsPayload,
-  figmaFoundationsPayload,
-  "Components/Primary Buttons/themed/button/background/idle",
-  "#7EA2F6",
-);
+// Decision 59: Figma's theme fill aliases theme 500 in both modes.
+for (const mode of ["light", "dark"]) {
+  const variable = figmaFoundationsPayload.variables.find(
+    (entry) =>
+      entry.canonicalName ===
+      "Components/Primary Buttons/themed/button/background/idle",
+  );
+  const value = variable?.values?.[mode];
+  if (value?.kind !== "alias" || value.path !== "Primitives/Colors/theme/500") {
+    fail(
+      `${files.figmaFoundationsPayload}: expected the ${mode} themed button background to alias Primitives/Colors/theme/500, received ${JSON.stringify(value)}`,
+    );
+  }
+}
 assertFigmaPayloadDarkValue(
   files.figmaFoundationsPayload,
   figmaFoundationsPayload,
   "Components/Primary Buttons/danger/button/background/idle",
   "#EE7E95",
 );
-assertFigmaPayloadDarkValue(
-  files.figmaFoundationsPayload,
-  figmaFoundationsPayload,
-  "Components/Secondary Buttons/themed/button/foreground/content/idle",
-  "#7EA2F6",
-);
+// GAP-23: the secondary button's themed ink aliases theme 700 in Figma too,
+// #7EA2F6 in the dark.
+{
+  const variable = figmaFoundationsPayload.variables.find(
+    (entry) =>
+      entry.canonicalName ===
+      "Components/Secondary Buttons/themed/button/foreground/content/idle",
+  );
+  const value = variable?.values?.dark;
+  if (value?.kind !== "alias" || value.path !== "Primitives/Colors/theme/700") {
+    fail(
+      `${files.figmaFoundationsPayload}: expected the dark secondary button themed foreground to alias Primitives/Colors/theme/700, received ${JSON.stringify(value)}`,
+    );
+  }
+  assertFigmaPayloadDarkValue(
+    files.figmaFoundationsPayload,
+    figmaFoundationsPayload,
+    "Primitives/Colors/theme/700",
+    "#7EA2F6",
+  );
+}
 assertFigmaPayloadDarkValue(
   files.figmaFoundationsPayload,
   figmaFoundationsPayload,
@@ -10968,8 +11136,14 @@ assertFigmaPayloadDarkValue(
 assertContains(
   files.iosColors,
   source.iosColors,
-  'UIColor(hex: "#7EA2F6") : UIColor(hex: "#0D44C2")',
-  "iOS dark themed primary button background stays blue",
+  /componentsPrimaryButtonsThemedButtonBackgroundIdle: Color \{\n[^}]*UIColor\(hex: "#135BEC"\) : UIColor\(hex: "#135BEC"\)/,
+  "iOS themed primary button background is the theme fill, #135BEC in both themes (decision 59)",
+);
+assertContains(
+  files.iosColors,
+  source.iosColors,
+  /componentsPrimaryButtonsThemedButtonForegroundContentIdle: Color \{\n[^}]*UIColor\(hex: "#FFFFFF"\) : UIColor\(hex: "#FFFFFF"\)/,
+  "iOS themed primary button foreground is the theme foreground, white in both themes (decision 59)",
 );
 assertContains(
   files.iosColors,
@@ -10980,8 +11154,14 @@ assertContains(
 assertContains(
   files.androidColorsDark,
   source.androidColorsDark,
-  "val componentsPrimaryButtonsThemedButtonBackgroundIdle = Color(0xff7ea2f6)",
-  "Android dark themed primary button background stays blue",
+  "val componentsPrimaryButtonsThemedButtonBackgroundIdle = Color(0xff135bec)",
+  "Android dark themed primary button background is the theme fill, #135BEC (decision 59)",
+);
+assertContains(
+  files.androidColorsDark,
+  source.androidColorsDark,
+  "val componentsPrimaryButtonsThemedButtonForegroundContentIdle = Color(0xffffffff)",
+  "Android dark themed primary button foreground is the theme foreground, white (decision 59)",
 );
 assertContains(
   files.androidColorsDark,

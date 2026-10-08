@@ -2,7 +2,7 @@
 
 # AISearchButton
 
-The AI search, beside the search field: a 48 disc inside a 66 ring whose gradient runs through the theme's own ramp — from the 300 step to the 600 and back — with a 16 icon. The first gradient the system draws is made of tokens, so it follows the theme like everything else. The button shows the icon alone and is named by its label to assistive technology.
+The AI search, beside the search field: a 48 circle whose ring, a band two and a half wide around a 43 disc of the surface, is a rainbow of the system's data colours — red, yellow, the success green, teal, blue, purple and back to red — with a 16 icon in the theme's 600. The ring is a conic gradient made of tokens, not the theme's ramp, so it reads the same whatever the brand; it turns once every 3.6 seconds, and stands still when motion is reduced. The button shows the icon alone and is named by its label to assistive technology.
 
 - **Import:** `import { AISearchButton } from "@kozmos-ds/react";`
 - **Group:** SDK
@@ -28,11 +28,11 @@ export function AISearchButtonExample() {
 ## AISearchButton
 
 The AI search, the prototype's: a 48 circle whose gradient ring is a band
-two and a half wide around a 43 white disc; the gradient runs through the
-theme's own ramp — the first gradient made of tokens — with a 16 icon.
-The ring is drawn by `.kozmos-ai-search-ring` in the owned CSS, from
-`--primitives-colors-theme-300` to `-600` and back, with the band cut out by
-a radial mask rather than left over between two stacked circles — which is
+two and a half wide around a 43 white disc, with a 16 icon. The ring is a
+rainbow of the data colours, drawn by `.kozmos-ai-search-ring` in the owned
+CSS: red, yellow, green, teal, blue, purple and back to red (it once ran
+through the theme's ramp, 300 to 600 and back). The band is cut out by a
+radial mask rather than left over between two stacked circles — which is
 how it came to measure 1.83px on one side and 3.14 on the other in Chromium.
 
 It forwards its ref to `HTMLButtonElement`. Its props are `AISearchButtonProps`, which extends `React.ButtonHTMLAttributes<HTMLButtonElement>`.

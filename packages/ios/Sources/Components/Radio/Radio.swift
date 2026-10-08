@@ -70,15 +70,17 @@ public struct KozmosRadioGroupItem: View {
         selection == value
     }
 
+    /// Decision 59: the ring is a border on the surface, theme 600, as
+    /// React's; the dot is a fill, the theme fill, theme 500 in both themes.
     private var controlColor: Color {
         if error { return KozmosColors.primitivesColorsEmotionalDanger600 }
-        if isSelected { return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsTheme500 }
+        if isSelected { return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsTheme600 }
         return KozmosColors.primitivesColorsForeground500
     }
 
     private var dotColor: Color {
         if error { return KozmosColors.primitivesColorsEmotionalDanger600 }
-        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.primitivesColorsTheme500
+        return disabled ? KozmosColors.primitivesColorsForeground500 : KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
     }
 
     private var labelColor: Color {

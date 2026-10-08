@@ -1428,6 +1428,10 @@ object KozmosThemeTokens {
             KozmosColorsDark.semanticsCategoryOnfillPink
         )
 
+    /**
+     * Decision 59: the theme foreground, white in both themes, for text and
+     * marks on the theme fill: 5.62:1 on #135BEC, where black reads 3.74:1.
+     */
     val componentsPrimaryButtonsThemedButtonForegroundContentIdle: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
@@ -1458,6 +1462,13 @@ object KozmosThemeTokens {
             KozmosColorsDark.componentsPrimaryButtonsThemedButtonForegroundContentFocus
         )
 
+    /**
+     * Decision 59: the theme fill. Theme 500, the client's base colour set in
+     * the Pointr Cloud Dashboard, in both themes. Every prominent filled item
+     * draws it: a filled primary Button, a checked Checkbox or Switch, a
+     * selected Chip, a default Tag or Badge, a filled LocationPin. Text,
+     * icons, borders and focus rings stay on theme 600.
+     */
     val componentsPrimaryButtonsThemedButtonBackgroundIdle: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle,

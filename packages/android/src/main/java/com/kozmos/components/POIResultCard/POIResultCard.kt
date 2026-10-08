@@ -323,13 +323,15 @@ fun KozmosPOIResultCard(
                                 KozmosDimensions.primitivesLayoutSpacing50
                             )
                         ) {
-                            // A dot before the floor when it is the one the map shows.
+                            // A dot before the floor when it is the one the map
+                            // shows: a mark on the card, theme/600, as React's
+                            // bg-primary is (decision 59).
                             if (currentFloorId != null && result.floorId == currentFloorId) {
                                 Box(
                                     modifier = Modifier
                                         .size(KozmosDimensions.primitivesLayoutSpacing75)
                                         .clip(CircleShape)
-                                        .background(KozmosThemeTokens.primitivesColorsTheme500)
+                                        .background(KozmosThemeTokens.primitivesColorsTheme600)
                                 )
                             }
                             Text(
@@ -515,13 +517,14 @@ internal data class KozmosPOIResultTabPaint(val fill: Color, val ink: Color, val
 /**
  * The card's edge. Selected, the theme colour, whatever else the card is: the
  * web says selection with a ring beside the edge, and a native card has only
- * its edge to say it with. Otherwise a featured card takes its tab's amber
- * (Olcay, 2026-09-29), and every other card the container edge: a number and a
- * badge never recolour it.
+ * its edge to say it with. An edge is theme/600, as React's border-primary is
+ * (decision 59); it was theme/500. Otherwise a featured card takes its tab's
+ * amber (Olcay, 2026-09-29), and every other card the container edge: a
+ * number and a badge never recolour it.
  */
 @Composable
 internal fun kozmosPOIResultCardEdge(selected: Boolean, featured: Boolean): Color = when {
-    selected -> KozmosThemeTokens.primitivesColorsTheme500
+    selected -> KozmosThemeTokens.primitivesColorsTheme600
     featured -> KozmosThemeTokens.semanticsEmotionAlertFill
     else -> KozmosThemeTokens.semanticsBorderSubtle
 }
@@ -530,8 +533,9 @@ internal fun kozmosPOIResultCardEdge(selected: Boolean, featured: Boolean): Colo
  * GAP-054. Featured is the SDK's bright amber under dark words, the alert fill
  * pair, for its words and its star (Olcay, 2026-09-29). A number is quiet at
  * rest, the card's own fill outlined in the container edge with muted words,
- * and filled with the primary colour when the result is selected, as the
- * selected card's edge is. A badge is quiet: the muted fill and muted words,
+ * and, when the result is selected, the theme fill with the theme foreground
+ * on it, the same in both themes, as the selected pin it pairs with is
+ * (decisions 55 and 59). A badge is quiet: the muted fill and muted words,
  * with no star. Each pair reads at 4.5:1 or more in both themes, as on the web.
  */
 @Composable
@@ -544,8 +548,8 @@ internal fun kozmosPOIResultTabPaint(tab: KozmosPOIResultTab, selected: Boolean)
         )
         is KozmosPOIResultTab.Number -> if (selected) {
             KozmosPOIResultTabPaint(
-                fill = KozmosThemeTokens.primitivesColorsTheme600,
-                ink = KozmosThemeTokens.primitivesColorsForeground1000,
+                fill = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle,
+                ink = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
                 edge = null
             )
         } else {

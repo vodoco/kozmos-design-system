@@ -39,18 +39,31 @@ public enum KozmosTextTone: String, CaseIterable, Sendable {
     case success
     case warning
     case danger
-    /// For text sitting on a filled brand or danger surface.
+    /// For text sitting on a filled brand surface, the theme fill: the theme
+    /// foreground, white in both appearances (decision 59).
     case onEmphasis
+    /// For text sitting on a filled danger surface: background/0, white in
+    /// light and black in the dark, where the danger fill is light. The
+    /// Primary Buttons danger fill, under a destructive Button, IconButton,
+    /// Badge or Counter, is #B01736 in light (white reads 6.95:1) and #EE7E95
+    /// in the dark (black 8.05:1, white 2.61:1); danger 600, under a checked
+    /// Switch in error, is #D41C42 (white 5.19:1) and #E95A77 (black 6.19:1,
+    /// white 3.39:1).
+    case onDanger
 
     var color: Color {
         switch self {
         case .default: return KozmosColors.primitivesColorsForeground100
         case .muted: return KozmosColors.primitivesColorsForeground500
-        case .brand: return KozmosColors.primitivesColorsTheme500
+        // Theme-coloured text on a surface: theme 600 (decision 59).
+        case .brand: return KozmosColors.primitivesColorsTheme600
         case .success: return KozmosColors.primitivesColorsEmotionalSuccess600
         case .warning: return KozmosColors.primitivesColorsEmotionalAlert600
         case .danger: return KozmosColors.primitivesColorsEmotionalDanger600
-        case .onEmphasis: return KozmosColors.primitivesColorsBackground0
+        // Split on 2026-10-07 (Olcay): background/0 turned black on the theme
+        // fill in the dark (3.74:1), and no one colour reads on both fills there.
+        case .onEmphasis: return KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle
+        case .onDanger: return KozmosColors.primitivesColorsBackground0
         }
     }
 }

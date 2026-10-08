@@ -63,8 +63,11 @@ fun KozmosCategoryField(
     countLabel: (Int) -> String = { "$it places" },
     icon: (@Composable () -> Unit)? = null
 ) {
+    // No category: the theme's accent, theme/600, for the border, the icon
+    // and the wash, as they are on a surface (decision 59), and the theme
+    // fill pair for the count pill.
     val categoryTint = tint ?: KozmosCategoryTint(
-        KozmosThemeTokens.primitivesColorsTheme500,
+        KozmosThemeTokens.primitivesColorsTheme600,
         KozmosInkedFill(KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle, KozmosThemeTokens.componentsPrimaryButtonsThemedButtonForegroundContentIdle)
     )
     val shape = RoundedCornerShape(KozmosDimensions.semanticsRadiusControl)

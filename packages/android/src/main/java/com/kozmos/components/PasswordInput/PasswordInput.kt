@@ -121,7 +121,7 @@ fun KozmosPasswordInput(
                 readOnly = readOnly,
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = textColor),
-                cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme500),
+                cursorBrush = SolidColor(KozmosThemeTokens.primitivesColorsTheme600),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = if (isVisible) {
                     VisualTransformation.None

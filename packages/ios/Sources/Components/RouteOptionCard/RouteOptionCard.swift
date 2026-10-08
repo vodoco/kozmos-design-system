@@ -37,8 +37,9 @@ public struct KozmosRouteOptionCard<Icon: View>: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: KozmosDimensions.primitivesLayoutSpacing100) {
                     if let icon {
+                        // Theme 600 on a surface (decision 59).
                         icon
-                            .foregroundColor(KozmosColors.primitivesColorsTheme500)
+                            .foregroundColor(KozmosColors.primitivesColorsTheme600)
                             .accessibilityHidden(true)
                     }
 
@@ -77,14 +78,14 @@ public struct KozmosRouteOptionCard<Icon: View>: View {
             // others stood opaque.
             .background(
                 KozmosColors.primitivesColorsBackground0
-                    .overlay(option.selected ? KozmosColors.primitivesColorsTheme500.opacity(0.05) : Color.clear)
+                    .overlay(option.selected ? KozmosColors.primitivesColorsTheme600.opacity(0.05) : Color.clear)
             )
             .clipShape(RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusPanel, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: KozmosDimensions.semanticsRadiusPanel, style: .continuous)
                     .stroke(
                         option.selected
-                            ? KozmosColors.primitivesColorsTheme500
+                            ? KozmosColors.primitivesColorsTheme600
                             : KozmosColors.semanticsBorderSubtle,
                         lineWidth: option.selected ? 2 : 1
                     )

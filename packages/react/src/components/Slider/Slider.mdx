@@ -56,6 +56,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 
 @Composable
 fun KozmosSlider(
@@ -76,8 +77,8 @@ modifier = modifier,
 valueRange = valueRange,
 enabled = enabled,
 colors = SliderDefaults.colors(
-thumbColor = KozmosColors.primitivesColorsTheme500,
-activeTrackColor = KozmosColors.primitivesColorsTheme500,
+thumbColor = KozmosThemeTokens.primitivesColorsTheme600,
+activeTrackColor = KozmosThemeTokens.primitivesColorsTheme600,
 inactiveTrackColor = KozmosColors.primitivesColorsBackground300,
 )
 )

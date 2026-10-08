@@ -46,7 +46,7 @@ public struct KozmosBadge: View {
                 .underline(variant == .link)
 
             if hasCounter, let counter {
-                KozmosCounter(counter, tone: counterTone)
+                KozmosCounter(counter, tone: counterTone, fill: counterFill)
             }
         }
             .padding(.horizontal, horizontalPadding)
@@ -106,6 +106,19 @@ public struct KozmosBadge: View {
 
     private var hasCounter: Bool {
         size != .icon && showCounter && counter != nil
+    }
+
+    /// On a default Badge, itself the theme fill, the counter inverts — the
+    /// theme foreground with its number in the fill, white in both
+    /// appearances — as FloorSelector's count does on its selected level
+    /// (Olcay, 2026-10-07). The inverse tone was background/0, a black pill
+    /// on the fill in the dark. Every other variant keeps its tone.
+    private var counterFill: KozmosInkedFill? {
+        guard variant == .default else { return nil }
+        return KozmosInkedFill(
+            fill: KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle,
+            ink: KozmosColors.componentsPrimaryButtonsThemedButtonBackgroundIdle
+        )
     }
 
     private var counterTone: KozmosCounterTone {

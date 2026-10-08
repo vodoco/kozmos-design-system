@@ -139,9 +139,29 @@ function collectionFor(pathSegments) {
   return "Kozmos Misc";
 }
 
+// Decision 59 (2026-10-07) binds the theme fill and its foreground beyond the
+// picker their names suggest, and Figma offers a variable only where its
+// scopes say. The fill is also the edge of a control it fills (Checkbox, Chip,
+// Stepper, ToggleButton, MapControlButton). The foreground is every mark on
+// the fill, not only its words: icon strokes, the Switch thumb, ManoeuvreCard's
+// grip. check-figma-painters holds what the painters bind to these scopes.
+const SCOPES_BY_PATH = new Map([
+  [
+    "Components/Primary Buttons/themed/button/background/idle",
+    ["FRAME_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+  ],
+  [
+    "Components/Primary Buttons/themed/button/foreground/content/idle",
+    ["TEXT_FILL", "SHAPE_FILL", "STROKE_COLOR"],
+  ],
+]);
+
 function scopesFor(token) {
   const joined = token.path.join("/").toLowerCase();
   const type = token.type;
+
+  const fixed = SCOPES_BY_PATH.get(token.path.join("/"));
+  if (fixed) return fixed;
 
   if (type === "color") {
     if (

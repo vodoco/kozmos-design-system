@@ -138,6 +138,7 @@ function pages() {
     "bus",
     "heart",
     "shopping-bag-02",
+    "user-01",
   ]) {
     icons.appendChild(mockIconComponent(name));
   }
@@ -171,6 +172,7 @@ const variableByName = mockVariables([
   "Colors/foreground/1000",
   "Colors/theme/100",
   "Colors/theme/500",
+  "Colors/theme/600",
   "Colors/theme/700",
   "Colors/emotional/alert/900",
   "Colors/background/100",
@@ -439,9 +441,11 @@ section("CategoryTile");
     );
     const icon = square && named(square, "Icon");
     const vector = icon && icon.findOne((node) => node.type === "VECTOR");
+    // An icon on the surface is the theme's 600, as React's primary draws
+    // it (decision 59); 500 read 3.13:1 on a dark sheet.
     ok(
-      vector && boundVariableName(vector.strokes[0]) === "Colors/theme/500",
-      "theme: the icon in the theme's colour",
+      vector && boundVariableName(vector.strokes[0]) === "Colors/theme/600",
+      `theme: the icon in the theme's 600 (${vector && boundVariableName(vector.strokes[0])})`,
     );
     const counter = square && named(square, "Counter");
     ok(
@@ -609,14 +613,26 @@ section("LocationPin");
     );
   }
 
+  // A filled pin is a prominent fill (decision 59): the theme fill, theme 500
+  // in both themes, with its number in the theme foreground, white in both.
+  // It was theme/700 under foreground/1000, which turns black in the dark.
   if (typeof plugin.updateLocationPinVariant === "function") {
     const { component } = await paint("Selected", "Md", "Theme");
     const marker = named(component, "Pin Marker");
+    const number = named(component, "Number Text");
     ok(
       marker &&
-        boundVariableName(marker.fills[0]) === "Colors/theme/700" &&
+        boundVariableName(marker.fills[0]) ===
+          "Primary Buttons/themed/button/background/idle" &&
+        hexOf(marker.fills[0]) === "#135BEC" &&
         marker.width === pin.sizes.default.diameter + 8,
-      "theme: the theme's colour, and a selected pin grows by 8",
+      `theme: the theme fill, and a selected pin grows by 8 (${marker && boundVariableName(marker.fills[0])})`,
+    );
+    ok(
+      number &&
+        boundVariableName(number.fills[0]) ===
+          "Primary Buttons/themed/button/foreground/content/idle",
+      `theme: the number in the theme foreground (${number && boundVariableName(number.fills[0])})`,
     );
   }
 }
@@ -826,9 +842,11 @@ section("CategoryField");
           "Primary Buttons/themed/button/foreground/content/idle",
       "theme: the pill is the themed button's fill and ink",
     );
+    // The accent is an edge and an icon on the surface: the theme's 600, as
+    // React's CategoryField draws it (decision 59).
     ok(
-      boundVariableName(component.strokes[0]) === "Colors/theme/500",
-      "theme: the border in the theme's colour",
+      boundVariableName(component.strokes[0]) === "Colors/theme/600",
+      `theme: the border in the theme's 600 (${boundVariableName(component.strokes[0])})`,
     );
   }
 
@@ -1518,7 +1536,10 @@ section("DynamicIsland's own theme");
 
 // The stepper's accent is React's primary, theme/600, as the natives draw it
 // since the same day, and a completed step's ring is its fill's colour; the
-// pending connector is the border role at its own strength.
+// pending connector is the border role at its own strength. A completed step
+// is a prominent fill (decision 59): the theme fill, ring and disc, with its
+// check in the theme foreground. The current step's ring stays a border on the
+// surface, 600, and the connector a line, as Progress is.
 section("Stepper accent");
 {
   const tokens = payloadVariables([...variableByName.keys()]);
@@ -1539,9 +1560,18 @@ section("Stepper accent");
     await step(2),
   ].map(indicator);
   ok(
-    boundVariableName(completed.fills[0]) === "Colors/theme/600" &&
-      boundVariableName(completed.strokes[0]) === "Colors/theme/600",
-    `a completed step is theme/600, ring and fill (${boundVariableName(completed.fills[0])}, ${boundVariableName(completed.strokes[0])})`,
+    boundVariableName(completed.fills[0]) ===
+      "Primary Buttons/themed/button/background/idle" &&
+      boundVariableName(completed.strokes[0]) ===
+        "Primary Buttons/themed/button/background/idle",
+    `a completed step is the theme fill, ring and disc (${boundVariableName(completed.fills[0])}, ${boundVariableName(completed.strokes[0])})`,
+  );
+  const check = completed.findOne((node) => node.name === "Completed Icon");
+  ok(
+    check &&
+      check.getSharedPluginData(plugin.RUN_NAMESPACE, "foreground-token") ===
+        "Primary Buttons/themed/button/foreground/content/idle",
+    `its check is the theme foreground (${check && check.getSharedPluginData(plugin.RUN_NAMESPACE, "foreground-token")})`,
   );
   ok(
     boundVariableName(current.strokes[0]) === "Colors/theme/600" &&
@@ -1566,6 +1596,506 @@ section("Stepper accent");
       boundVariableName(ahead.fills[0]) === "Border/Subtle" &&
       ahead.opacity === 1,
     `the connectors are theme/600 and Border/Subtle at full strength (${boundVariableName(ahead.fills[0])} at ${ahead.opacity})`,
+  );
+}
+
+// --- Decision 59: the theme fill and what sits on it ------------------------------
+
+// Olcay, 2026-10-07: a prominent fill is the theme fill, the themed Primary
+// Button's background, which aliases theme 500 (#135BEC) in both themes, and
+// every word or mark on it is the theme foreground, white in both. Never
+// foreground/1000 or background/0 on it: both turn black in the dark, and
+// black on 500 reads 3.74:1. A word, mark, edge or focus ring on the surface is
+// the theme's 600 (#1051E8, #5887F3 in the dark), as React's primary is. Each
+// paint is read in Light and in Dark through the payload's variables, the way
+// Audit Library resolves it in the file.
+section("Decision 59: the theme fill and what sits on it");
+{
+  const FILL = "Primary Buttons/themed/button/background/idle";
+  const INK = "Primary Buttons/themed/button/foreground/content/idle";
+  const ACCENT = "Colors/theme/600";
+  const tokens = payloadVariables([...variableByName.keys()]);
+  const context = plugin.createVariableContext(
+    tokens.collections,
+    tokens.variables,
+  );
+  const toHex = (color) =>
+    color
+      ? `#${[color.r, color.g, color.b]
+          .map((channel) =>
+            Math.round(channel * 255)
+              .toString(16)
+              .padStart(2, "0")
+              .toUpperCase(),
+          )
+          .join("")}`
+      : null;
+  // "<variable> <light>/<dark>": what a paint binds, and what it draws in
+  // each mode.
+  const reads = (paint) =>
+    paint
+      ? `${boundVariableName(paint)} ${toHex(plugin.solidPaintToRgba(paint, context, "Light"))}/${toHex(plugin.solidPaintToRgba(paint, context, "Dark"))}`
+      : "no paint";
+  const fill = `${FILL} #135BEC/#135BEC`;
+  const ink = `${INK} #FFFFFF/#FFFFFF`;
+  const accent = `${ACCENT} #1051E8/#5887F3`;
+  // Every part painted here, so the scopes can be read against what it binds.
+  const paintedHere = [];
+  const painted = async (painter, args) => {
+    const component = figma.createComponent();
+    const stats = freshStats();
+    await plugin[painter](component, {
+      ...args,
+      variableByName: tokens.variableByName,
+      fonts: FONTS,
+      stats,
+    });
+    paintedHere.push(component);
+    return component;
+  };
+  // A mark is a vector's stroke (an outline icon) or its fill (a solid glyph).
+  const markPaint = (node) => {
+    const shape =
+      node &&
+      (node.type === "VECTOR"
+        ? node
+        : node.findOne((n) => n.type === "VECTOR"));
+    if (!shape) return null;
+    return (
+      (shape.strokes && shape.strokes[0]) || (shape.fills && shape.fills[0])
+    );
+  };
+
+  // The controls.
+  const checkbox = await painted("updateCheckboxVariant", {
+    checked: "Checked",
+    state: "Default",
+  });
+  const box = named(checkbox, "Checkbox Control");
+  ok(
+    box && reads(box.fills[0]) === fill && reads(box.strokes[0]) === fill,
+    `Checkbox, checked: the box and its edge are the theme fill (${box && reads(box.fills[0])}; ${box && reads(box.strokes[0])})`,
+  );
+  const check = box && named(box, "Checkbox Mark");
+  ok(
+    reads(markPaint(check)) === ink,
+    `Checkbox, checked: the mark is the theme foreground (${reads(markPaint(check))})`,
+  );
+  const boxRing = box && named(box, "Focus Ring");
+  ok(
+    boxRing && reads(boxRing.strokes[0]) === accent,
+    `Checkbox: the focus ring is the theme's 600 (${boxRing && reads(boxRing.strokes[0])})`,
+  );
+
+  const toggle = await painted("updateSwitchVariant", {
+    checked: "Checked",
+    state: "Default",
+  });
+  const track = named(toggle, "Switch Track");
+  const thumb = track && named(track, "Switch Thumb");
+  ok(
+    track && reads(track.fills[0]) === fill && reads(track.strokes[0]) === fill,
+    `Switch, checked: the track and its edge are the theme fill (${track && reads(track.fills[0])}; ${track && reads(track.strokes[0])})`,
+  );
+  ok(
+    thumb && reads(thumb.fills[0]) === ink,
+    `Switch, checked: the thumb on it is the theme foreground (${thumb && reads(thumb.fills[0])})`,
+  );
+  const off = await painted("updateSwitchVariant", {
+    checked: "Unchecked",
+    state: "Default",
+  });
+  const offThumb = named(off, "Switch Thumb");
+  ok(
+    offThumb && boundVariableName(offThumb.fills[0]) === "Colors/background/0",
+    `Switch, unchecked: the thumb keeps the background (${offThumb && reads(offThumb.fills[0])})`,
+  );
+
+  const radio = await painted("updateRadioVariant", {
+    checked: "Checked",
+    state: "Default",
+  });
+  const ring = named(radio, "Radio Control");
+  const dot = ring && named(ring, "Radio Dot");
+  ok(
+    ring && reads(ring.strokes[0]) === accent,
+    `Radio, checked: the ring is a border, the theme's 600 (${ring && reads(ring.strokes[0])})`,
+  );
+  ok(
+    dot && reads(dot.fills[0]) === fill,
+    `Radio, checked: the dot is the theme fill (${dot && reads(dot.fills[0])})`,
+  );
+
+  // The configs every filled part reads: the pair, with fallbacks equal to
+  // the tokens' light values, so the stored colour is not a second truth.
+  for (const [label, config] of [
+    ["Button, default", plugin.buttonConfig("Default", "Default")],
+    ["Tag, default", plugin.tagConfig("Default")],
+    ["Badge, default", plugin.badgeConfig("Default")],
+    ["Counter, brand", plugin.counterConfig("Brand")],
+    ["Chip, selected", plugin.chipConfig("Default", "Selected")],
+    ["ToggleButton, on", plugin.toggleButtonConfig("Default", "Pressed")],
+    [
+      "ToggleButton outline, on",
+      plugin.toggleButtonConfig("Outline", "Pressed"),
+    ],
+  ]) {
+    ok(
+      config.background === FILL &&
+        config.backgroundFallback === "#135BEC" &&
+        config.foreground === INK &&
+        config.foregroundFallback === "#FFFFFF" &&
+        (!config.stroke || config.stroke === FILL),
+      `${label}: the theme fill and the theme foreground (${config.background} ${config.backgroundFallback}, ${config.foreground} ${config.foregroundFallback}${config.stroke ? `, edge ${config.stroke}` : ""})`,
+    );
+  }
+
+  // The map and the floors.
+  for (const state of ["Default", "Selected"]) {
+    const pin = await painted("updateLocationPinVariant", {
+      props: { state, size: "Md", tint: "Theme" },
+    });
+    const marker = named(pin, "Pin Marker");
+    const number = named(pin, "Number Text");
+    ok(
+      marker &&
+        number &&
+        reads(marker.fills[0]) === fill &&
+        reads(number.fills[0]) === ink,
+      `LocationPin, ${state}: the theme fill, its number the theme foreground (${marker && reads(marker.fills[0])}; ${number && reads(number.fills[0])})`,
+    );
+  }
+  const floors = await painted("updateFloorSelectorVariant", {
+    value: "VerticalList",
+  });
+  const tile = named(floors, "Floor Item Selected");
+  const tileText = named(floors, "Selected Floor Text");
+  ok(
+    tile &&
+      tileText &&
+      reads(tile.fills[0]) === fill &&
+      reads(tileText.fills[0]) === ink,
+    `FloorSelector: the selected tile is the theme fill, its label the theme foreground (${tile && reads(tile.fills[0])}; ${tileText && reads(tileText.fills[0])})`,
+  );
+
+  // The calendars' selected day: the fill was bound, its white was not.
+  for (const [label, day] of [
+    [
+      "DatePicker",
+      await plugin.createDatePickerCalendarDay({
+        value: "12",
+        outsideMonth: false,
+        selected: true,
+        today: false,
+        disabled: false,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    ],
+    [
+      "DateRangePicker",
+      await plugin.createDateRangePickerCalendarDay({
+        value: "12",
+        outsideMonth: false,
+        rangeStart: true,
+        rangeEnd: false,
+        inRange: false,
+        disabled: false,
+        variableByName: tokens.variableByName,
+        fonts: FONTS,
+        stats: freshStats(),
+      }),
+    ],
+  ]) {
+    paintedHere.push(day);
+    const text = named(day, "Day Text");
+    ok(
+      reads(day.fills[0]) === fill && text && reads(text.fills[0]) === ink,
+      `${label}: the selected day is the theme fill, its number the theme foreground (${reads(day.fills[0])}; ${text && reads(text.fills[0])})`,
+    );
+  }
+
+  // The CTAs React draws as a default Button are drawn as one: the theme
+  // fill, every word and mark on it the theme foreground. They were a tinted
+  // pressed control (theme/100, a 500 edge, a 700 mark) or a plain one.
+  const onFill = (button) =>
+    [
+      ...button.findAll((node) => node.type === "TEXT"),
+      ...button.findAll((node) => node.type === "INSTANCE"),
+    ].map((node) =>
+      node.type === "TEXT" ? reads(node.fills[0]) : reads(markPaint(node)),
+    );
+  for (const [painter, value, name] of [
+    ["updateRoutePreviewPanelVariant", "Ready", "Continue Button"],
+    ["updateRouteSummaryVariant", "Preview", "Start Navigation Button"],
+    ["updateSaveLocationCardVariant", "Default", "Save Toggle Button"],
+    ["updateFeedbackCardVariant", "Default", "Submit Button"],
+    ["updateFeedbackCardVariant", "Submitting", "Submit Button"],
+    ["updatePOIDetailPanelVariant", "Panel", "Navigate Action"],
+  ]) {
+    const component = await painted(painter, { value });
+    const button = named(component, name);
+    const marks = button ? onFill(button) : [];
+    ok(
+      button &&
+        reads(button.fills[0]) === fill &&
+        button.strokes.length === 0 &&
+        marks.length > 0 &&
+        marks.every((mark) => mark === ink),
+      `${painter.replace(/^update|Variant$/g, "")} ${value}: ${name} is a default Button (${button && reads(button.fills[0])}; ${marks.join(", ")})`,
+    );
+  }
+  // Until a route is ready, Continue is a disabled default Button: the
+  // default at 50 %, as the Button set draws a disabled one.
+  for (const value of ["Ready", "Calculating"]) {
+    const preview = await painted("updateRoutePreviewPanelVariant", { value });
+    const proceed = named(preview, "Continue Button");
+    ok(
+      proceed &&
+        reads(proceed.fills[0]) === fill &&
+        proceed.opacity === (value === "Ready" ? 1 : 0.5),
+      `RoutePreviewPanel ${value}: Continue is the theme fill at ${value === "Ready" ? "full strength" : "50 %"} (${proceed && reads(proceed.fills[0])} at ${proceed && proceed.opacity})`,
+    );
+  }
+  // Their siblings stay off the theme fill: an outline control on the
+  // surface, as React draws the first two. A saved location offers Remove as
+  // an outline Button. React draws RouteSummary's End as a destructive icon
+  // Button, a danger-filled pill; the set still draws it on the surface, a
+  // parity gap, but never on the theme fill.
+  for (const [painter, value, name] of [
+    ["updateSaveLocationCardVariant", "Saved", "Save Toggle Button"],
+    ["updatePOIDetailPanelVariant", "Panel", "Save Action"],
+    ["updateRouteSummaryVariant", "Active", "End Route Button"],
+  ]) {
+    const component = await painted(painter, { value });
+    const button = named(component, name);
+    ok(
+      button && boundVariableName(button.fills[0]) === "Surface/0",
+      `${painter.replace(/^update|Variant$/g, "")} ${value}: ${name} stays on the surface (${button && reads(button.fills[0])})`,
+    );
+  }
+  const navbarHost = figma.createComponent();
+  const navbarAction = await plugin.createNavbarPrimaryActionSlot({
+    component: navbarHost,
+    reusableSlot: null,
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    stats: freshStats(),
+  });
+  if (navbarAction) paintedHere.push(navbarAction);
+  const create = navbarAction && named(navbarAction, "Primary Action");
+  const createText = navbarAction && named(navbarAction, "Primary Action Text");
+  ok(
+    create &&
+      createText &&
+      reads(create.fills[0]) === fill &&
+      reads(createText.fills[0]) === ink,
+    `Navbar: the primary action is the theme fill, its label the theme foreground (${create && reads(create.fills[0])}; ${createText && reads(createText.fills[0])})`,
+  );
+
+  // On the surface: 600, whatever the step it was.
+  ok(
+    plugin.focusRingVariableForState("Default") === ACCENT &&
+      plugin.focusRingFallbackForState("Default") === "#1051E8" &&
+      plugin.focusRingVariableForInputStatus("Default") === ACCENT &&
+      plugin.focusRingFallbackForInputStatus("Default") === "#1051E8",
+    `a control's focus ring is the theme's 600 (${plugin.focusRingVariableForState("Default")}, ${plugin.focusRingVariableForInputStatus("Default")})`,
+  );
+  ok(
+    plugin.inputConfig("Focus", "Default").fieldStroke === ACCENT &&
+      plugin.searchBarConfig("Default", "Focus").stroke === ACCENT,
+    `a focused field's edge is the theme's 600 (${plugin.inputConfig("Focus", "Default").fieldStroke}, ${plugin.searchBarConfig("Default", "Focus").stroke})`,
+  );
+  const button = await plugin.createButtonVariant({
+    variant: "Default",
+    size: "Default",
+    state: "Default",
+    variableByName: tokens.variableByName,
+    fonts: FONTS,
+    textStyle: null,
+    stats: freshStats(),
+  });
+  paintedHere.push(button);
+  const buttonRing = named(button, "Focus Ring");
+  ok(
+    reads(button.fills[0]) === fill &&
+      buttonRing &&
+      reads(buttonRing.strokes[0]) === accent,
+    `Button: the theme fill, and its focus ring the theme's 600 (${reads(button.fills[0])}; ${buttonRing && reads(buttonRing.strokes[0])})`,
+  );
+  const source = fs.readFileSync(PLUGIN, "utf8");
+  ok(
+    !/variableName: "Colors\/theme\/500"/.test(source),
+    "no focus ring in the plugin is drawn in the theme's 500",
+  );
+  ok(
+    !/: "Colors\/theme\/500",\s*\n\s*disabled \? "#747B8B" : "#135BEC"/.test(
+      source,
+    ),
+    "no option's check is drawn in the theme's 500",
+  );
+  const tileSelected = await painted("updateCategoryTileVariant", {
+    props: { state: "Selected", tint: "Theme" },
+  });
+  const square = named(tileSelected, "Icon Square");
+  const tileRing = square && named(square, "Selection Ring");
+  ok(
+    square &&
+      tileRing &&
+      reads(square.strokes[0]) === accent &&
+      reads(tileRing.strokes[0]) === accent &&
+      isWash(square, "Selection Wash", ACCENT, 0.05, 64, 64),
+    `CategoryTile, selected: the edge, the ring and the wash are the theme's 600 (${square && reads(square.strokes[0])})`,
+  );
+  const rail = plugin.createTimelineRail({
+    active: true,
+    isLast: false,
+    height: 64,
+    width: 20,
+    variableByName: tokens.variableByName,
+    stats: freshStats(),
+  });
+  const railMarker = named(rail, "Timeline Marker");
+  const railLine = named(rail, "Timeline Connector");
+  ok(
+    railMarker &&
+      railLine &&
+      reads(railMarker.fills[0]) === accent &&
+      reads(railLine.fills[0]) === accent,
+    `Timeline: the active marker and line are the theme's 600 (${railMarker && reads(railMarker.fills[0])}; ${railLine && reads(railLine.fills[0])})`,
+  );
+
+  // MapControlButton's Pressed state is a mode that stays on (following, a
+  // layer shown): the nested default Button, so the theme fill, edge and all,
+  // with the theme foreground on it. Its state config was theme/600 under
+  // foreground/1000, black on it in the dark.
+  const mapPressed =
+    typeof plugin.mapControlButtonStateConfig === "function"
+      ? plugin.mapControlButtonStateConfig("Pressed")
+      : {};
+  const mapNested =
+    typeof plugin.mapControlButtonNestedVariant === "function"
+      ? plugin.mapControlButtonNestedVariant("Icon", "Pressed")
+      : {};
+  ok(
+    mapNested.Variant === "Default" &&
+      mapPressed.fill === FILL &&
+      mapPressed.fillFallback === "#135BEC" &&
+      mapPressed.stroke === FILL &&
+      mapPressed.foreground === INK &&
+      mapPressed.foregroundFallback === "#FFFFFF",
+    `MapControlButton, Pressed: the nested default Button, the theme fill with the theme foreground (Button ${mapNested.Variant}; ${mapPressed.fill}, edge ${mapPressed.stroke}, ${mapPressed.foreground})`,
+  );
+
+  // Avatar's image placeholder is neutral (Olcay, 2026-10-07): React's muted
+  // pair, the one AvatarFallback sits on, background/100 under a person mark
+  // in the muted foreground, foreground/400. It was theme/600 under
+  // foreground/1000, which turns black in the dark.
+  const avatar = await painted("updateAvatarVariant", { value: "Image" });
+  const person = named(avatar, "Icon");
+  ok(
+    reads(avatar.fills[0]) === "Colors/background/100 #E3E4E8/#17191C" &&
+      person &&
+      boundVariableName(markPaint(person)) === "Colors/foreground/400",
+    `Avatar, Image: a neutral placeholder, background/100 under a foreground/400 mark (${reads(avatar.fills[0])}; ${reads(markPaint(person))})`,
+  );
+
+  // No part binds the theme's 500 itself: a prominent fill reaches it through
+  // the theme fill, so a client's base colour moves every one at once, and a
+  // word, mark or edge on the surface is the theme's 600. Only the example
+  // map stage's route illustration paints it. Read from the source, so a part
+  // no check paints is held too; a name built from a template would escape
+  // it, so none may be.
+  const declarations = [
+    ...source.matchAll(
+      /^(?:async function|function|const|let|var|class) ([A-Za-z0-9_$]+)/gm,
+    ),
+  ];
+  const ownerOf = (index) => {
+    let owner = null;
+    for (const declaration of declarations) {
+      if (declaration.index > index) break;
+      owner = declaration[1];
+    }
+    return owner;
+  };
+  const theme500 = [...source.matchAll(/["'`]Colors\/theme\/500["'`]/g)].map(
+    (match) => ownerOf(match.index),
+  );
+  const onStage = theme500.filter((owner) => owner === "createExampleMapStage");
+  const stray = theme500.filter((owner) => owner !== "createExampleMapStage");
+  const built = /`Colors\/theme\/\$\{/.test(source);
+  ok(
+    onStage.length > 0 && stray.length === 0 && !built,
+    `no part binds Colors/theme/500 outside the example map stage (${onStage.length} on the stage; ${stray.length} elsewhere${stray.length > 0 ? `: ${[...new Set(stray)].join(", ")}` : ""}${built ? "; a name built from a template" : ""})`,
+  );
+
+  // Figma offers a variable only where its scopes say, and the payload's
+  // suggested scopes are what Update writes. Decision 59 binds the theme fill
+  // to the edge of a control it fills, and the theme foreground to every mark
+  // on the fill (an icon's stroke, the Switch thumb, ManoeuvreCard's grip), so
+  // each binding painted here must be one its variable's scopes allow.
+  const manoeuvre = await painted("updateManoeuvreCardVariant", {
+    value: "Closed",
+    second: "Theme",
+  });
+  const scopesOf = new Map(
+    JSON.parse(
+      fs.readFileSync(
+        path.join(ROOT, "docs/figma-foundations-payload.json"),
+        "utf8",
+      ),
+    ).variables.map((variable) => [
+      variable.figmaName,
+      variable.suggestedScopes || [],
+    ]),
+  );
+  const SHAPES = new Set([
+    "RECTANGLE",
+    "ELLIPSE",
+    "VECTOR",
+    "POLYGON",
+    "STAR",
+    "LINE",
+    "BOOLEAN_OPERATION",
+  ]);
+  const scopeFor = (node, property) => {
+    if (property === "strokes") return "STROKE_COLOR";
+    if (node.type === "TEXT") return "TEXT_FILL";
+    return SHAPES.has(node.type) ? "SHAPE_FILL" : "FRAME_FILL";
+  };
+  const bound = new Set();
+  const outOfScope = new Set();
+  const visit = (node) => {
+    for (const property of ["fills", "strokes"]) {
+      for (const paint of Array.isArray(node[property]) ? node[property] : []) {
+        const variable = boundVariableName(paint);
+        if (variable !== FILL && variable !== INK) continue;
+        const scope = scopeFor(node, property);
+        const scopes = scopesOf.get(variable) || [];
+        const short =
+          variable === FILL ? "the theme fill" : "the theme foreground";
+        bound.add(`${short} as ${scope}`);
+        if (!scopes.includes(scope) && !scopes.includes("ALL_SCOPES")) {
+          outOfScope.add(
+            `${short} as ${scope} (${node.name}; scoped ${scopes.join(", ")})`,
+          );
+        }
+      }
+    }
+    for (const child of node.children || []) visit(child);
+  };
+  for (const root of paintedHere) visit(root);
+  ok(
+    manoeuvre &&
+      outOfScope.size === 0 &&
+      [
+        "the theme fill as STROKE_COLOR",
+        "the theme foreground as SHAPE_FILL",
+        "the theme foreground as STROKE_COLOR",
+      ].every((use) => bound.has(use)),
+    `the theme fill and the theme foreground are scoped for every property painted here (${[...bound].sort().join(", ")}${outOfScope.size > 0 ? `; out of scope: ${[...outOfScope].join(" | ")}` : ""})`,
   );
 }
 
@@ -1739,10 +2269,26 @@ section("POIResultCard actions");
   );
   ok(
     buttons.length === 2 &&
-      boundVariableName(buttons[0].fills[0]) === "Colors/theme/500" &&
+      boundVariableName(buttons[0].fills[0]) ===
+        "Primary Buttons/themed/button/background/idle" &&
       boundVariableName(buttons[1].fills[0]) === "Surface/0" &&
       buttons[1].strokeWeight === 1,
-    `the primary is filled and the secondary is outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+    `the primary is the theme fill and the secondary is outlined (${buttons.map((b) => boundVariableName(b.fills[0])).join(", ")})`,
+  );
+  // The primary is drawn as a default Button: its label is the theme
+  // foreground, white in both themes. Surface/0 turned black in the dark.
+  const primaryLabel =
+    buttons[0] && buttons[0].findOne((node) => node.type === "TEXT");
+  ok(
+    primaryLabel &&
+      boundVariableName(primaryLabel.fills[0]) ===
+        "Primary Buttons/themed/button/foreground/content/idle",
+    `the primary's label is the theme foreground (${primaryLabel && boundVariableName(primaryLabel.fills[0])})`,
+  );
+  // The selected card's edge is a border on the surface: the theme's 600.
+  ok(
+    boundVariableName(component.strokes[0]) === "Colors/theme/600",
+    `the selected card's edge is the theme's 600 (${boundVariableName(component.strokes[0])})`,
   );
   // The logo and copy must have moved WITH the row, not been left on the card.
   ok(
@@ -1997,9 +2543,9 @@ section("DirectionStep");
       badge &&
         badge.width === 40 &&
         badge.fills.length === 0 &&
-        isWash(badge, "Direction Wash", "Colors/theme/500", 0.1, 40, 40) &&
+        isWash(badge, "Direction Wash", "Colors/theme/600", 0.1, 40, 40) &&
         named(badge, "Direction Wash").type === "ELLIPSE",
-      `${type}: a 40 disc in the theme's colour at 10 %, as a wash layer`,
+      `${type}: a 40 disc in the theme's 600 at 10 %, as a wash layer, as React's bg-primary/10 (decision 59)`,
     );
     // A Pointr outline takes the theme through its stroke, a solid
     // wayfinding glyph through its fill.
@@ -2012,8 +2558,8 @@ section("DirectionStep");
         icon.mainComponent.name === `Icon / ${iconName}` &&
         vector &&
         boundVariableName(solid ? vector.fills[0] : vector.strokes[0]) ===
-          "Colors/theme/500",
-      `${type}: a 24 ${iconName} icon in the theme's colour`,
+          "Colors/theme/600",
+      `${type}: a 24 ${iconName} icon in the theme's 600, as React's text-primary (decision 59)`,
     );
     ok(!named(component, "Direction Glyph"), `${type}: no typed glyph`);
     ok(
@@ -2123,8 +2669,10 @@ section("Itinerary");
 // --- ManoeuvreCard ---------------------------------------------------------------
 
 // The React ManoeuvreCard, as Storybook draws it in its 402 frame: closed, the
-// manoeuvre; open, the itinerary's rows; the grab bar under both. Theme puts
-// every word, mark and the grip in foreground/1000 on the theme's 600;
+// manoeuvre; open, the itinerary's rows; the grab bar under both. Theme is the
+// brand card, a prominent fill (decision 59): every word, mark and the grip in
+// the theme foreground, white in both themes, on the theme fill, theme 500 in
+// both; it was foreground/1000 on the theme's 600, black on blue in the dark.
 // Background is the solid surface. A set the importer had never drawn until 2026-10-05.
 section("ManoeuvreCard");
 {
@@ -2190,11 +2738,12 @@ section("ManoeuvreCard");
       );
       ok(
         theme
-          ? token(component) === "Colors/theme/600" &&
+          ? token(component) ===
+              "Primary Buttons/themed/button/background/idle" &&
               component.strokes.length === 0
           : token(component) === "Surface/0" &&
               boundVariableName(component.strokes[0]) === "Border/Subtle",
-        `${label}: ${theme ? "the theme's 600, no border" : "the solid surface and its subtle border"} (${token(component)})`,
+        `${label}: ${theme ? "the theme fill, no border" : "the solid surface and its subtle border"} (${token(component)})`,
       );
       const first = component.children[0];
       const bar = component.children[1];
@@ -2208,8 +2757,10 @@ section("ManoeuvreCard");
           grip.height === 5 &&
           grip.cornerRadius === 9999 &&
           token(grip) ===
-            (theme ? "Colors/foreground/1000" : "Colors/background/300"),
-        `${label}: the grab bar, 44 high, holds a 36 by 5 pill in ${theme ? "foreground/1000" : "background/300"} (${grip && token(grip)})`,
+            (theme
+              ? "Primary Buttons/themed/button/foreground/content/idle"
+              : "Colors/background/300"),
+        `${label}: the grab bar, 44 high, holds a 36 by 5 pill in ${theme ? "the theme foreground" : "background/300"} (${grip && token(grip)})`,
       );
       if (value === "Closed") {
         const mark = named(first, "Manoeuvre Mark");
@@ -2228,9 +2779,10 @@ section("ManoeuvreCard");
         );
         const expected = theme
           ? {
-              mark: "Colors/foreground/1000",
-              instruction: "Colors/foreground/1000",
-              detail: "Colors/foreground/1000",
+              mark: "Primary Buttons/themed/button/foreground/content/idle",
+              instruction:
+                "Primary Buttons/themed/button/foreground/content/idle",
+              detail: "Primary Buttons/themed/button/foreground/content/idle",
             }
           : {
               mark: "Colors/theme/600",
@@ -2265,12 +2817,19 @@ section("ManoeuvreCard");
         const current = steps.filter(
           (step) =>
             token(named(step, "Instruction Text")) ===
-            (theme ? "Colors/foreground/1000" : "Colors/theme/600"),
+            (theme
+              ? "Primary Buttons/themed/button/foreground/content/idle"
+              : "Colors/theme/600"),
         );
         ok(
           theme
-            ? textTokens.join(",") === "Colors/foreground/1000" &&
-                marks.every((mark) => mark === "Colors/foreground/1000")
+            ? textTokens.join(",") ===
+                "Primary Buttons/themed/button/foreground/content/idle" &&
+                marks.every(
+                  (mark) =>
+                    mark ===
+                    "Primary Buttons/themed/button/foreground/content/idle",
+                )
             : textTokens.join(",") ===
                 "Colors/foreground/0,Colors/foreground/400,Colors/theme/600" &&
                 current.length === 1 &&
@@ -2278,7 +2837,7 @@ section("ManoeuvreCard");
                   1 &&
                 marks.filter((mark) => mark === "Colors/foreground/400")
                   .length === 3,
-          `${label}: ${theme ? "every word and mark in foreground/1000" : "Itinerary's own colours, one current step in the theme's 600"} (${textTokens.join(", ")}; marks ${marks.join(", ")})`,
+          `${label}: ${theme ? "every word and mark in the theme foreground" : "Itinerary's own colours, one current step in the theme's 600"} (${textTokens.join(", ")}; marks ${marks.join(", ")})`,
         );
       }
       ok(
@@ -2908,8 +3467,8 @@ section("AISearchButton");
       icon.width === 16 &&
       icon.mainComponent.name === "Icon / stars-01" &&
       vector &&
-      boundVariableName(vector.strokes[0]) === "Colors/theme/500",
-    "a 16 sparkles icon in the theme's colour",
+      boundVariableName(vector.strokes[0]) === "Colors/theme/600",
+    `a 16 sparkles icon in the theme's 600, as React's text-primary (decision 59) (${vector && boundVariableName(vector.strokes[0])})`,
   );
   ok(
     stats.warnings.length === 0,
@@ -4642,8 +5201,8 @@ section("A navigation row keeps its tint through the icon swap");
       selectedStats,
     );
     ok(
-      boundVariableName(selected.glyph.fills[0]) === "Colors/theme/500",
-      "a Selected row's icon binds the theme tint, not the source's black",
+      boundVariableName(selected.glyph.fills[0]) === "Colors/theme/600",
+      "a Selected row's icon binds the theme's 600, not the source's black (decision 59)",
     );
 
     const plain = makeRow("Item 2 Text Row");
@@ -4664,7 +5223,7 @@ section("A navigation row keeps its tint through the icon swap");
     const source = fs.readFileSync(PLUGIN, "utf8");
     ok(
       source.includes(
-        'state === "Selected" ? "Colors/theme/500" : "Colors/foreground/400"',
+        'state === "Selected" ? "Colors/theme/600" : "Colors/foreground/400"',
       ),
       "the fallback row paints the same two tokens the re-tint does",
     );
@@ -4685,6 +5244,25 @@ section("A navigation row keeps its tint through the icon swap");
       "a row with no icon layer warns instead of failing",
     );
   }
+
+  // The label is the theme as text too (Olcay, 2026-10-07): a Selected
+  // NavigationItem's label is theme 600, as React, SwiftUI and Compose draw
+  // it, in the set and in the frame drawn when the set is missing. It was 700.
+  ok(
+    plugin.navigationItemTextColorToken({ state: "Selected" }) ===
+      "Colors/theme/600" &&
+      plugin.navigationItemTextColorFallback({ state: "Selected" }) ===
+        "#1051E8",
+    "a Selected NavigationItem's label binds the theme's 600, not 700",
+  );
+  ok(
+    fs
+      .readFileSync(PLUGIN, "utf8")
+      .includes(
+        'state === "Selected" ? "Colors/theme/600" : "Colors/foreground/0"',
+      ),
+    "the fallback row's label paints the theme's 600 too",
+  );
 }
 
 // --- Rating's two scales -------------------------------------------------------------

@@ -171,13 +171,15 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
                 Button(action: toggle) {
                     HStack(alignment: .top, spacing: KozmosDimensions.primitivesLayoutSpacing150) {
                         KozmosDirectionGlyph(type: type, size: 22)
-                            .foregroundColor(appearance == .theme ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsTheme500)
+                            // On the theme fill, the theme foreground; on a surface, theme
+                            // 600, the theme's text role (decision 59).
+                            .foregroundColor(appearance == .theme ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle : KozmosColors.primitivesColorsTheme600)
                             .frame(width: KozmosDimensions.primitivesLayoutSizing400, height: KozmosDimensions.primitivesLayoutSizing400)
                         VStack(alignment: .leading, spacing: KozmosDimensions.primitivesLayoutSpacing25) {
                             // Whole unless the product asks for a limit (GAP-094).
                             KozmosInstructionText(parts: instructionParts)
                                 .font(KozmosTypography.title3.weight(.semibold))
-                                .foregroundColor(appearance == .theme ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsForeground100)
+                                .foregroundColor(appearance == .theme ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle : KozmosColors.primitivesColorsForeground100)
                                 .lineLimit(Self.instructionLineLimit(instructionLines))
                                 .fixedSize(horizontal: false, vertical: true)
                             if let detail, !detail.isEmpty {
@@ -200,7 +202,7 @@ public struct KozmosManoeuvreCard<Itinerary: View>: View {
             // The grab bar: the sign that the card opens, and the way to close it.
             Button(action: toggle) {
                 Capsule()
-                    .fill(appearance == .theme ? KozmosColors.primitivesColorsForeground1000 : KozmosColors.primitivesColorsBackground300)
+                    .fill(appearance == .theme ? KozmosColors.componentsPrimaryButtonsThemedButtonForegroundContentIdle : KozmosColors.primitivesColorsBackground300)
                     .frame(width: 36, height: 5)
                     .padding(.vertical, KozmosDimensions.primitivesLayoutSpacing50)
                     .frame(maxWidth: .infinity, minHeight: 44)

@@ -6,7 +6,10 @@ describe("UserMessage", () => {
   it("is filled and right-aligned, so it differs from the assistant by more than colour", () => {
     const { container } = render(<UserMessage>Visitor turn</UserMessage>);
     expect(container.querySelector(".justify-end")).not.toBeNull();
-    expect(screen.getByText("Visitor turn")).toHaveClass("bg-primary");
+    expect(screen.getByText("Visitor turn")).toHaveClass(
+      "bg-theme-fill",
+      "text-theme-fill-foreground",
+    );
   });
 
   it("tells a screen reader who is speaking, in the product's language", () => {

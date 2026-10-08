@@ -73,6 +73,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kozmos.tokens.KozmosColors
+import com.kozmos.tokens.KozmosThemeTokens
 
 @Composable
 fun KozmosOTPInput(
@@ -106,7 +107,7 @@ val isFocused = index == value.length
                             .background(KozmosColors.primitivesColorsBackground100, RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100))
                             .border(
                                 width = if (isFocused) 2.dp else 1.dp,
-                                color = if (isFocused) KozmosColors.primitivesColorsTheme500 else KozmosColors.primitivesColorsBackground300,
+                                color = if (isFocused) KozmosThemeTokens.primitivesColorsTheme600 else KozmosColors.primitivesColorsBackground300,
                                 shape = RoundedCornerShape(KozmosDimensions.primitivesLayoutRadius100)
                             ),
                         contentAlignment = Alignment.Center
