@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -30,6 +29,7 @@ import com.kozmos.components.readSemantics
 import com.kozmos.components.routesummary.KozmosRoutePresentation
 import com.kozmos.components.routesummary.KozmosRouteSummary
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.docsnippets.RoutePreviewSummary
 import com.kozmos.docsnippets.StepByStepSummary
 import org.junit.Assert.assertEquals
@@ -80,7 +80,7 @@ class KozmosRouteSummaryActionsTest {
             LocalDensity provides Density(LocalDensity.current.density, fontScale),
             LocalLayoutDirection provides direction
         ) {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(Modifier.width(width).semantics { contentDescription = "Summary" }) { summary() }
             }
         }
@@ -298,7 +298,7 @@ class KozmosRouteSummaryActionsTest {
 
     @Test fun theDocsSnippetsComposeTheirActionsInEqualColumns() {
         val steps = paparazzi.readSemantics {
-            MaterialTheme { Box(Modifier.width(320.dp)) { StepByStepSummary(listOf("Step 1 of 3", "Step 2 of 3", "Step 3 of 3"), onEnd = {}) } }
+            KozmosMaterialTheme { Box(Modifier.width(320.dp)) { StepByStepSummary(listOf("Step 1 of 3", "Step 2 of 3", "Step 3 of 3"), onEnd = {}) } }
         }
         val previous = steps.button("Previous")
         val next = steps.button("Next")
@@ -306,7 +306,7 @@ class KozmosRouteSummaryActionsTest {
         assertTrue(next.enabled)
         assertEquals(previous.frame.width, next.frame.width, 1f)
         val preview = paparazzi.readSemantics {
-            MaterialTheme { Box(Modifier.width(320.dp)) { RoutePreviewSummary(onGo = {}, onDetails = {}) } }
+            KozmosMaterialTheme { Box(Modifier.width(320.dp)) { RoutePreviewSummary(onGo = {}, onDetails = {}) } }
         }
         assertEquals(listOf("Go", "Details"), preview.merged.filter { it.role == Role.Button }.flatMap { it.texts })
         assertEquals(preview.button("Go").frame.width, preview.button("Details").frame.width, 1f)

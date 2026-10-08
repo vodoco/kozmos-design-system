@@ -3,11 +3,11 @@ package com.kozmos.components.poidetailpanel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIAvailability
 import com.kozmos.contracts.KozmosPOIPresentation
@@ -30,7 +30,7 @@ class KozmosPOIDetailPanelPaparazziTest {
     @Test
     fun aLongNameWrapsBesideTheButtonsAndStopsAtThreeLines() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.padding(24.dp).width(320.dp)) {
                     KozmosPOIDetailPanel(
                         poi = KozmosPOIPresentation(
@@ -63,7 +63,7 @@ class KozmosPOIDetailPanelPaparazziTest {
     @Test
     fun theSheetPresentationSitsOnTheSheetsSurface() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.background(KozmosColors.primitivesColorsBackground100).padding(24.dp).width(320.dp)) {
                     KozmosPOIDetailPanel(
                         poi = KozmosPOIPresentation(
@@ -99,7 +99,7 @@ class KozmosPOIDetailPanelPaparazziTest {
     fun favouriteAndSaveAreTogglesInTheHeaderBeforeClose() {
         paparazzi.unsafeUpdateConfig(deviceConfig = DeviceConfig.PIXEL_5)
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.padding(16.dp).width(360.dp)) {
                     KozmosPOIDetailPanel(
                         poi = KozmosPOIPresentation(

@@ -1,6 +1,5 @@
 package com.kozmos.components.navigation
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
@@ -23,6 +22,7 @@ import com.kozmos.components.routelocationfield.KozmosRouteLocationFilterMode
 import com.kozmos.components.live
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -35,7 +35,7 @@ class KozmosRouteLocationFieldTest {
         for (multiple in listOf(false, true)) {
             val selected = mutableStateOf(listOf("lobby"))
             var changes = 0; var maps = 0
-            paparazzi.live(content = { MaterialTheme {
+            paparazzi.live(content = { KozmosMaterialTheme {
                 com.kozmos.components.listbox.KozmosListbox(
                     options = listOf(lobby, KozmosListboxOption("gallery", "Gallery"),
                         KozmosListboxOption("locked", "Locked", disabled = true)),
@@ -60,7 +60,7 @@ class KozmosRouteLocationFieldTest {
 
     @Test fun mapActionIsInsidePickerAndDoesNotSelectOrRewriteQuery() {
         var maps = 0; var writes = 0; var selections = 0
-        paparazzi.live(content = { MaterialTheme {
+        paparazzi.live(content = { KozmosMaterialTheme {
             KozmosRouteLocationField("From", null, "unmatched", emptyList(), { writes++ }, { selections++ }, {},
                 onChooseMap = { maps++ }, status = KozmosRouteLocationStatus.Error)
         } }) {
@@ -74,7 +74,7 @@ class KozmosRouteLocationFieldTest {
 
     @Test fun forcedOpenReadOnlyPickerCannotSelect() {
         var selections=0
-        val tree=paparazzi.readSemantics { MaterialTheme {
+        val tree=paparazzi.readSemantics { KozmosMaterialTheme {
             com.kozmos.components.combobox.KozmosCombobox("", { _, _ -> selections++ }, "", {}, listOf(lobby),
                 readOnly=true, expanded=true)
         } }
@@ -84,7 +84,7 @@ class KozmosRouteLocationFieldTest {
     }
 
     @Test fun suggestionStatusIsShownOnceWhenCommandsRemainAvailable() {
-        paparazzi.live(content = { MaterialTheme {
+        paparazzi.live(content = { KozmosMaterialTheme {
             KozmosRouteLocationField("From", null, "unmatched", emptyList(), {}, {}, {},
                 currentPosition = lobby, status = KozmosRouteLocationStatus.Error)
         } }) {
@@ -99,7 +99,7 @@ class KozmosRouteLocationFieldTest {
             KozmosRouteLocationFilterMode.Host to KozmosRouteLocationStatus.Loading,
             KozmosRouteLocationFilterMode.Host to KozmosRouteLocationStatus.Ready)) {
             var selected: String? = null
-            paparazzi.live(content = { MaterialTheme {
+            paparazzi.live(content = { KozmosMaterialTheme {
                 KozmosRouteLocationField("From", null, "lift", listOf(KozmosListboxOption("e1", "Elevator", "Ground floor")), {}, { selected = it.value }, {}, filterMode = mode, status = status)
             } }) {
                 read().named("Open options").click!!.invoke()
@@ -117,7 +117,7 @@ class KozmosRouteLocationFieldTest {
     @Test fun currentPositionRequiresUsableHostIdentityAndIgnoresSuggestionStatus() {
         for (position in listOf(null, lobby.copy(value = " "), lobby.copy(disabled = true), lobby)) {
             var selected: KozmosListboxOption? = null
-            paparazzi.live(content = { MaterialTheme {
+            paparazzi.live(content = { KozmosMaterialTheme {
                 KozmosRouteLocationField("From", null, "unmatched", emptyList(), {}, { selected = it }, {},
                     currentPosition = position, status = KozmosRouteLocationStatus.Loading)
             } }) {
@@ -138,7 +138,7 @@ class KozmosRouteLocationFieldTest {
         val expanded = mutableStateOf(true)
         val query = mutableStateOf("unmatched")
         val events = mutableListOf<String>()
-        paparazzi.live(content = { MaterialTheme {
+        paparazzi.live(content = { KozmosMaterialTheme {
             com.kozmos.components.combobox.KozmosCombobox("kept", { _, _ -> events.add("value") }, query.value,
                 { events.add("query") }, emptyList(), controlLabels = com.kozmos.components.combobox.KozmosComboboxLabels(),
                 filterLocally = true, popupActions = listOf(KozmosPickerAction("map", "Map") {
@@ -159,7 +159,7 @@ class KozmosRouteLocationFieldTest {
         val actions = listOf(KozmosPickerAction("dup", "First") {}, KozmosPickerAction("dup", "Second") {},
             KozmosPickerAction(" ", "Blank") {}, KozmosPickerAction("valid", "Unavailable", disabled = true) {})
         assertEquals(listOf("valid"), validPickerActions(actions).map { it.id })
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             com.kozmos.components.listbox.KozmosListbox(options = emptyList(), actions = actions)
         } }
         assertFalse(tree.merged.single { "Unavailable" in it.texts && it.click != null }.enabled)
@@ -169,7 +169,7 @@ class KozmosRouteLocationFieldTest {
     @Test fun resolvedLocationShowsContextAndDelegatesClearWithoutExternalMapAction() {
         var clears = 0
         var maps = 0
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosRouteLocationField("From", lobby, "unrelated draft", listOf(lobby), {}, {}, { clears++ },
                 onChooseMap = { maps++ }, clearLabel = "Clear origin", mapLabel = "Choose on map")
         } }
@@ -190,7 +190,7 @@ class KozmosRouteLocationFieldTest {
 
     @Test fun loadingKeepsInputAvailableAndResolvedIdentityAbsent() {
         var selections = 0
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosRouteLocationField("From", null, "Lobby", listOf(lobby), {}, { selections++ }, {},
                 status = KozmosRouteLocationStatus.Loading, statusText = "Searching places")
         } }
@@ -200,7 +200,7 @@ class KozmosRouteLocationFieldTest {
     }
 
     @Test fun disabledResolvedLocationCannotClear() {
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosRouteLocationField("From", lobby, "", emptyList(), {}, {}, {}, enabled = false)
         } }
         assertFalse(tree.merged.single { "Clear location" in it.texts && it.click != null }.enabled)
@@ -215,7 +215,7 @@ class KozmosRouteLocationFieldTest {
             paparazzi.live(content = {
                 density = LocalDensity.current.density
                 CompositionLocalProvider(LocalDensity provides Density(density, scale), LocalLayoutDirection provides direction) {
-                    MaterialTheme { Box(Modifier.width(320.dp).onGloballyPositioned { host = it.boundsInRoot() }) {
+                    KozmosMaterialTheme { Box(Modifier.width(320.dp).onGloballyPositioned { host = it.boundsInRoot() }) {
                         KozmosRouteLocationField("From", if (editing.value) null else lobby, "", listOf(lobby),
                             {}, { events.add("select") }, { events.add("clear") },
                             onEdit = { events.add("edit"); editing.value = true }, changeLabel = "Ändern",
@@ -241,7 +241,7 @@ class KozmosRouteLocationFieldTest {
 
     @Test fun disabledChangeAndCancelAreNotAvailableActions() {
         for (selected in listOf(true, false)) {
-            val tree = paparazzi.readSemantics { MaterialTheme {
+            val tree = paparazzi.readSemantics { KozmosMaterialTheme {
                 KozmosRouteLocationField("From", if (selected) lobby else null, "", emptyList(), {}, {}, {},
                     enabled = false, onEdit = {}, onCancelEdit = {})
             } }

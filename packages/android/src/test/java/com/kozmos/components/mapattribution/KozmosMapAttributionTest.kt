@@ -1,7 +1,6 @@
 package com.kozmos.components.mapattribution
 
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -17,6 +16,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +26,7 @@ class KozmosMapAttributionTest {
     @Test fun mapTextEndsAtComponentBottomWithoutAnExtraInset() {
         var bounds = Rect.Zero
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosMapAttribution(
                     credits = listOf(KozmosMapAttributionCredit("a", "Indoor")),
                     modifier = Modifier.width(240.dp).onGloballyPositioned { bounds = it.boundsInRoot() }
@@ -39,7 +39,7 @@ class KozmosMapAttributionTest {
     @Test fun bundledBrandCanBeReplacedOrHidden() {
         for (mode in 0..2) {
             val tree = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosMapAttribution(
                         credits = listOf(KozmosMapAttributionCredit("a", "Indoor")),
                         brand = if (mode == 1) { { Text("Custom venue") } } else null,
@@ -57,7 +57,7 @@ class KozmosMapAttributionTest {
         var density = 1f
         val tree = paparazzi.readSemantics {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosMapAttribution(
                     credits = listOf(
                         KozmosMapAttributionCredit("a", "Indoor"),
@@ -90,7 +90,7 @@ class KozmosMapAttributionTest {
                         override fun openUri(uri: String) { opened = uri }
                     }
                 ) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         KozmosMapAttribution(
                             credits = listOf(
                                 KozmosMapAttributionCredit("owner", "© Example indoor data"),

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 import com.kozmos.components.readSemantics
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultBadgePresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
@@ -62,16 +62,16 @@ class KozmosPOIResultCardTabTest {
 
     /** What TalkBack is told the result is called. */
     private fun name(content: @Composable () -> Unit): String =
-        paparazzi.readSemantics { MaterialTheme { content() } }
+        paparazzi.readSemantics { KozmosMaterialTheme { content() } }
             .merged.mapNotNull { it.words }.first { "Burger King" in it }
 
     /** Every word laid out, read or not. */
     private fun texts(content: @Composable () -> Unit): List<String> =
-        paparazzi.readSemantics { MaterialTheme { content() } }.unmerged.flatMap { it.texts }
+        paparazzi.readSemantics { KozmosMaterialTheme { content() } }.unmerged.flatMap { it.texts }
 
     /** The words TalkBack reads as the result: its merged node's, the row's own first. */
     private fun heard(content: @Composable () -> Unit): List<String> =
-        paparazzi.readSemantics { MaterialTheme { content() } }
+        paparazzi.readSemantics { KozmosMaterialTheme { content() } }
             .merged.first { it.words?.contains("Burger King") == true }.texts
 
     // region which tab, and what is heard
@@ -179,7 +179,7 @@ class KozmosPOIResultCardTabTest {
                     density = LocalDensity.current.density
                     CompositionLocalProvider(LocalLayoutDirection provides direction) {
                         Box(Modifier.padding(16.dp).width(240.dp)) {
-                            MaterialTheme {
+                            KozmosMaterialTheme {
                                 KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = value, onSelect = {}, numbered = numbered)
                             }
                         }
@@ -228,7 +228,7 @@ class KozmosPOIResultCardTabTest {
                             canvasHeight = it.size.height
                         }) {
                             Box(Modifier.padding(16.dp).width(240.dp)) {
-                                MaterialTheme {
+                                KozmosMaterialTheme {
                                     KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = value, onSelect = {}, numbered = true)
                                 }
                             }
@@ -272,7 +272,7 @@ class KozmosPOIResultCardTabTest {
             density = LocalDensity.current.density
             CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
                 Box(Modifier.padding(16.dp).width(240.dp)) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         KozmosPOIResultCard(presentationStyle = KozmosPOIResultPresentationStyle.Legacy, poi = poi, result = result(featured = true), onSelect = {})
                     }
                 }
@@ -292,7 +292,7 @@ class KozmosPOIResultCardTabTest {
     private fun scene(dark: Boolean, content: @Composable () -> Unit): DrawnPixels = paparazzi.drawn(frames) {
         CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
             Box(Modifier.fillMaxSize().background(KozmosThemeTokens.primitivesColorsBackground0)) {
-                Box(Modifier.padding(16.dp)) { MaterialTheme { content() } }
+                Box(Modifier.padding(16.dp)) { KozmosMaterialTheme { content() } }
             }
         }
     }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -17,6 +16,7 @@ import com.kozmos.components.categorytile.KozmosCategoryTint
 import com.kozmos.components.counter.KozmosInkedFill
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
@@ -64,7 +64,7 @@ class KozmosLocationPinQuietTest {
                 colors["themeText"] = KozmosThemeTokens.semanticsEmotionThemedText.argb()
                 // The theme fill, theme 500 in both themes (decision 59).
                 colors["themeFill"] = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle.argb()
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.fillMaxSize().background(KozmosThemeTokens.primitivesColorsBackground0).padding(16.dp)) {
                         pin()
                     }

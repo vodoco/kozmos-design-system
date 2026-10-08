@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -16,6 +15,7 @@ import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.routinginputgroup.KozmosRoutePoint
 import com.kozmos.components.routinginputgroup.KozmosRoutingInputGroup
 import com.kozmos.components.stepper.KozmosStepper
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import org.junit.Rule
 import org.junit.Test
@@ -36,7 +36,7 @@ class KozmosEdgeRolesPaparazziTest {
     @Test
     fun theEdgesAreTheBorderRoles() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier

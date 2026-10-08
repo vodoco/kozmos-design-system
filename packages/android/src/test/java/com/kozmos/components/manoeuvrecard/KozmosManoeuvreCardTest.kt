@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -48,6 +47,7 @@ import com.kozmos.components.directionstep.DirectionType
 import com.kozmos.components.itinerary.KozmosItinerary
 import com.kozmos.components.itinerary.KozmosItineraryStep
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
@@ -145,7 +145,7 @@ class KozmosManoeuvreCardTest {
                         layout = results.single()
                     }
             ) {
-                MaterialTheme { card() }
+                KozmosMaterialTheme { card() }
             }
         }
         return checkNotNull(layout) { "the card was never laid out" }
@@ -160,7 +160,7 @@ class KozmosManoeuvreCardTest {
         record("named-card", durationMillis = 1000L) {
             val view = LocalView.current
             Box(Modifier.width(358.dp)) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosManoeuvreCard(type = DirectionType.Right, instruction = german,
                         expanded = true, onToggle = {}, collapseLabel = "Masquer le trajet",
                         manoeuvreLabel = "Navigation en cours") {
@@ -220,7 +220,7 @@ class KozmosManoeuvreCardTest {
         var destinationBelowTheCap = false
         record("reach", durationMillis = 1000L) {
                 val host = LocalView.current
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.width(358.dp)) {
                         KozmosManoeuvreCard(
                             type = DirectionType.Right,
@@ -321,7 +321,7 @@ class KozmosManoeuvreCardTest {
     private fun drive(expanded: MutableState<Boolean>, script: suspend View.() -> Unit) {
         record("drive", durationMillis = 3000L) {
                 val host = LocalView.current
-                MaterialTheme {
+                KozmosMaterialTheme {
                     CompositionLocalProvider(LocalIndication provides UnpaintedIndication) {
                         Column(Modifier.width(358.dp)) {
                             KozmosManoeuvreCard(

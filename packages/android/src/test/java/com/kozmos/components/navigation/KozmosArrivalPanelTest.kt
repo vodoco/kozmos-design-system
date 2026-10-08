@@ -1,7 +1,6 @@
 package com.kozmos.components.navigation
 
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -10,6 +9,7 @@ import com.kozmos.components.routesummary.KozmosRouteSummary
 import com.kozmos.components.routesummary.KozmosRoutePresentation
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -19,7 +19,7 @@ class KozmosArrivalPanelTest {
 
     @Test fun absentActualMetricsStayAbsentAndDoneDelegates() {
         var calls = 0
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosArrivalPanel("Gate 3", { calls++ }, Modifier.width(320.dp).testTag("arrival-host"))
         } }
         val words = tree.unmerged.flatMap { it.texts }
@@ -36,7 +36,7 @@ class KozmosArrivalPanelTest {
     }
 
     @Test fun actualZeroAndLocalizedLabelsSurvivePendingCompletion() {
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosArrivalPanel("Gate 3", {}, actualDurationText = "0 min",
                 durationLabel = "Dauer", doneLabel = "Fertig", pending = true)
         } }
@@ -48,7 +48,7 @@ class KozmosArrivalPanelTest {
     }
 
     @Test fun hostedSummaryAcceptsUnknownEstimatesWithoutFabrication() {
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosRouteSummary(destination = "Gate 3", onEndRoute = {}, presentation = KozmosRoutePresentation.Hosted)
         } }
         val words = tree.unmerged.flatMap { it.texts }.filter { it.isNotEmpty() }

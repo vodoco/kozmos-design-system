@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosCategoryPresentation
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -36,14 +36,14 @@ class KozmosBrowseCategoriesPanelPaparazziTest {
 
     @Test
     fun theGridIsFourAcrossWithRowsTwelveApartUnderARule() {
-        paparazzi.snapshot { MaterialTheme { Panel(eight) } }
+        paparazzi.snapshot { KozmosMaterialTheme { Panel(eight) } }
     }
 
     @Test
     fun theRuleReadsInDarkMode() {
         paparazzi.snapshot {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides true) {
-                MaterialTheme { Panel(eight) }
+                KozmosMaterialTheme { Panel(eight) }
             }
         }
     }
@@ -51,7 +51,7 @@ class KozmosBrowseCategoriesPanelPaparazziTest {
     @Test
     fun theEmptyStateHasADashedEdge() {
         paparazzi.snapshot {
-            MaterialTheme { Panel(emptyList()) }
+            KozmosMaterialTheme { Panel(emptyList()) }
         }
     }
 

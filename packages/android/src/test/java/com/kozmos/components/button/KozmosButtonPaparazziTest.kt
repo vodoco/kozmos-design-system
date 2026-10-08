@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.Color
 import com.kozmos.components.iconbutton.KozmosIconButton
 import com.kozmos.components.iconbutton.KozmosIconButtonVariant
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -20,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
@@ -64,7 +64,7 @@ class KozmosButtonPaparazziTest {
         var labelStart = 0f
         paparazzi.snapshot {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.background(Color.White).padding(24.dp)) {
                     KozmosButton(onClick = {}) {
                         Icon(
@@ -88,7 +88,7 @@ class KozmosButtonPaparazziTest {
     @Test
     fun defaultButtonSnapshot() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.padding(24.dp)) {
                     KozmosButton(
                         onClick = {}
@@ -108,7 +108,7 @@ class KozmosButtonPaparazziTest {
     @Test
     fun glassButtonsAreTheGlassSurface() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.background(Color.Red).padding(24.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         KozmosButton(onClick = {}, variant = KozmosButtonVariant.Glass) { Text("Glass") }

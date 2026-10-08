@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -33,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.sidebar.KozmosSidebar
 import com.kozmos.components.sidebar.KozmosSidebarVariant
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosTypography
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -94,7 +94,7 @@ class KozmosNavigationItemRailTest {
                 LocalDensity provides Density(device.density, fontScale),
                 LocalKozmosUseDarkTokens provides false
             ) {
-                MaterialTheme(typography = KozmosTypography.typography()) {
+                KozmosMaterialTheme(typography = KozmosTypography.typography()) {
                     val expected = mapOf(
                         "muted" to KozmosThemeTokens.primitivesColorsForeground400,
                         "primary" to KozmosThemeTokens.primitivesColorsTheme600
@@ -206,7 +206,7 @@ class KozmosNavigationItemRailTest {
         var item = 0f
         paparazzi.snapshot {
             val px = LocalDensity.current.density
-            MaterialTheme(typography = KozmosTypography.typography()) {
+            KozmosMaterialTheme(typography = KozmosTypography.typography()) {
                 // Paparazzi hands its content the whole screen; a Box lets
                 // the sidebar be the width it chooses.
                 Box(Modifier.fillMaxSize()) {
@@ -236,7 +236,7 @@ class KozmosNavigationItemRailTest {
         var width = 0f
         paparazzi.snapshot {
             val px = LocalDensity.current.density
-            MaterialTheme(typography = KozmosTypography.typography()) {
+            KozmosMaterialTheme(typography = KozmosTypography.typography()) {
                 Box(
                     Modifier
                         .wrapContentSize(Alignment.TopStart)

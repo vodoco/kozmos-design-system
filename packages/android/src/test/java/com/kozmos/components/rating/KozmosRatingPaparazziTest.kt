@@ -4,12 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Rule
@@ -32,14 +32,14 @@ class KozmosRatingPaparazziTest {
 
     @Test
     fun bothScalesInLightMode() {
-        paparazzi.snapshot { MaterialTheme { Scales() } }
+        paparazzi.snapshot { KozmosMaterialTheme { Scales() } }
     }
 
     @Test
     fun bothScalesInDarkMode() {
         paparazzi.snapshot {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides true) {
-                MaterialTheme { Scales() }
+                KozmosMaterialTheme { Scales() }
             }
         }
     }

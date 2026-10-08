@@ -2,7 +2,6 @@ package com.kozmos.components.chip
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,6 +13,7 @@ import com.kozmos.components.ReadSemantics
 import com.kozmos.components.live
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.docsnippets.CategoryFilters
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -41,7 +41,7 @@ class KozmosChipSemanticsTest {
     fun releasedPositionalArgumentsAndTrailingActionsKeepTheirMeaning() {
         val ran = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column {
                     KozmosChip("Trailing", Modifier, ChipVariant.Brand, ChipSize.Default,
                         true, null, true, null, { ran += "remove trailing" }) { ran += "trailing" }
@@ -61,7 +61,7 @@ class KozmosChipSemanticsTest {
     fun theRemoveLabelCanBeLocalizedWithoutChangingTheChipsAction() {
         val ran = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column {
                     KozmosChip(text = "Kaffee", removeLabel = "Kaffee entfernen",
                         onRemove = { ran += "remove" }, onClick = { ran += "select" })
@@ -88,7 +88,7 @@ class KozmosChipSemanticsTest {
     @Test
     fun anInteractiveChipIsAButtonThatSaysWhetherItIsSelected() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     KozmosChip(text = "Vegan", selected = true, onClick = {})
                     KozmosChip(text = "Halal", onClick = {})
@@ -119,7 +119,7 @@ class KozmosChipSemanticsTest {
         var on by mutableStateOf(false)
         var pressed = 0
         paparazzi.live(content = {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosChip(text = "Vegan", selected = on, onClick = {
                     pressed++
                     on = !on
@@ -143,7 +143,7 @@ class KozmosChipSemanticsTest {
     fun removeIsItsOwnButtonAndTheChipsPressIsTheChips() {
         val ran = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     KozmosChip(text = "Coffee", selected = true, onRemove = { ran += "remove Coffee" }, onClick = { ran += "Coffee" })
                     // A filter the visitor can only take away: the tag is
@@ -184,7 +184,7 @@ class KozmosChipSemanticsTest {
         var category by mutableStateOf("all")
         var openNow by mutableStateOf(true)
         paparazzi.live(content = {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 CategoryFilters(category, { category = it }, openNow, { openNow = false })
             }
         }) {
@@ -212,7 +212,7 @@ class KozmosChipSemanticsTest {
     fun aDisabledChipIsReadAsDisabledAndRunsNothing() {
         val ran = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     KozmosChip(text = "Vegan", selected = true, enabled = false, onRemove = { ran += "remove" }, onClick = { ran += "Vegan" })
                     KozmosChip(text = "Halal", enabled = false, onClick = { ran += "Halal" })

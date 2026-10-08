@@ -1,12 +1,12 @@
 package com.kozmos.components.poiresultcard
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import com.kozmos.components.live
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.poiresultgroup.KozmosPOIResultGroup
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.*
 import org.junit.Assert.*
 import org.junit.Rule
@@ -26,7 +26,7 @@ class KozmosPOIResultGroupTest {
         val actions = mutableListOf<String>()
         paparazzi.live(content = {
             var selected by remember { mutableStateOf<String?>(null) }
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultGroup(items = items(), selectedPoiId = selected, numbered = true,
                     onSelect = { selected = it }, onExpandedChange = { changes += it },
                     onAction = { action, id -> actions += "${action.value}:$id" })
@@ -51,13 +51,13 @@ class KozmosPOIResultGroupTest {
 
     @Test fun controlledExpansionOnlyRequestsAChangeAndOneItemHasNoToggle() {
         var requested: Boolean? = null
-        val tree = paparazzi.readSemantics { MaterialTheme {
+        val tree = paparazzi.readSemantics { KozmosMaterialTheme {
             KozmosPOIResultGroup(items = items(), expanded = false, onSelect = {}, onExpandedChange = { requested = it })
         } }
         tree.merged.single { "Show 2 more" in it.texts }.click!!.invoke()
         assertEquals(true, requested)
         assertEquals(1, tree.merged.count { it.words?.contains("Bakery") == true })
-        val single = paparazzi.readSemantics { MaterialTheme { KozmosPOIResultGroup(items = items().take(1), onSelect = {}) } }
+        val single = paparazzi.readSemantics { KozmosMaterialTheme { KozmosPOIResultGroup(items = items().take(1), onSelect = {}) } }
         assertTrue(single.merged.none { it.expand != null || it.collapse != null })
     }
 }

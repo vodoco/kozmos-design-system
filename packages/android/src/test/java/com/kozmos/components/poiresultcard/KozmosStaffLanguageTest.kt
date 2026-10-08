@@ -1,11 +1,11 @@
 package com.kozmos.components.poiresultcard
 
-import androidx.compose.material3.MaterialTheme
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.readSemantics
 import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import org.junit.Assert.assertEquals
@@ -19,7 +19,7 @@ class KozmosStaffLanguageTest {
     @Test fun listForwardsLocalizedDisclosureAcrossSelection() {
         val result = KozmosPOIResultPresentation("p", 1, summary = "A pharmacy", languageNotListed = true)
         val semantics = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultList(
                     listOf(KozmosPOIResultListItem(KozmosPOIPresentation("p", "Pharmacy"), result)),
                     "1 result", onSelect = {}, selectedPoiId = "p",
@@ -36,7 +36,7 @@ class KozmosStaffLanguageTest {
         for (flag in listOf(true, false, null)) {
             val result = KozmosPOIResultPresentation("p", 1, languageNotListed = flag)
             val semantics = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosPOIResultCard(KozmosPOIPresentation("p", "Pharmacy"), result,
                         onSelect = {}, selectionLabel = "Choose")
                 }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -21,6 +20,7 @@ import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanel
 import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanelPresentation
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIPresentation
 import org.junit.Assert.assertEquals
@@ -78,7 +78,7 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
     ): ReadSemantics = paparazzi.readSemantics {
         density = LocalDensity.current.density
         CompositionLocalProvider(LocalLayoutDirection provides direction) {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     map = { Box(modifier = Modifier.fillMaxSize()) },
                     panel = { Card(presentation, toggles) },
@@ -353,7 +353,7 @@ class KozmosAdaptiveMapShellHostedDetailsTest {
         var inset = Dp.Unspecified
         var clearance = Dp.Unspecified
         paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     map = { Box(modifier = Modifier.fillMaxSize()) },
                     panel = {

@@ -5,7 +5,6 @@ import android.text.style.LocaleSpan
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
@@ -19,6 +18,7 @@ import com.kozmos.components.poiresultlist.KozmosPOIResultList
 import com.kozmos.components.poiresultlist.KozmosPOIResultListItem
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultPresentation
 import org.junit.Assert.assertEquals
@@ -61,21 +61,21 @@ class KozmosPOIResultLanguageTest {
         // The web's order: the name, its category, where it is, the summary,
         // then whether it is open.
         val plain = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultCard(poi, result(nameLanguage = null, summaryLanguage = null), onSelect = {})
             }
         }
         plain.saying(sentence)
         // A selection label still replaces the whole name, summary and all.
         val named = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultCard(poi, result(), onSelect = {}, selectionLabel = "Choose the lounge")
             }
         }
         named.saying("Choose the lounge")
         // An empty summary is no summary: no empty phrase, no stray comma.
         val empty = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultCard(poi, result(summary = "", nameLanguage = null, summaryLanguage = null), onSelect = {})
             }
         }
@@ -113,7 +113,7 @@ class KozmosPOIResultLanguageTest {
                         .flatMap { listOfNotNull(it.text?.toString(), it.contentDescription?.toString()) }
                 )
             }) {
-                MaterialTheme { Box(Modifier.width(340.dp)) { content() } }
+                KozmosMaterialTheme { Box(Modifier.width(340.dp)) { content() } }
             }
         }
         return checkNotNull(read) { "nothing said \"$sentence\"" }
@@ -169,12 +169,12 @@ class KozmosPOIResultLanguageTest {
             Triple("at rest", false, null), Triple("selected", true, null), Triple("unavailable", false, false)
         )) {
             val plain = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosPOIResultCard(poi, result(selected, available, nameLanguage = null, summaryLanguage = null), onSelect = {})
                 }
             }.merged.single { sentence in it.texts }
             val tagged = paparazzi.readSemantics {
-                MaterialTheme { KozmosPOIResultCard(poi, result(selected, available), onSelect = {}) }
+                KozmosMaterialTheme { KozmosPOIResultCard(poi, result(selected, available), onSelect = {}) }
             }.merged.single { sentence in it.texts }
             assertEquals(name, listOf(sentence), plain.texts)
             assertNull(name, plain.description)
@@ -198,7 +198,7 @@ class KozmosPOIResultLanguageTest {
         )
         fun height(summary: String?): Float {
             val tree = paparazzi.readSemantics {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.width(320.dp)) {
                         KozmosPOIResultCard(place, KozmosPOIResultPresentation("p", 1, summary = summary), onSelect = {})
                     }

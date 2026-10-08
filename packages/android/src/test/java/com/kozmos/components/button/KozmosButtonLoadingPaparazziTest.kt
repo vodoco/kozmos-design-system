@@ -3,13 +3,13 @@ package com.kozmos.components.button
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
 import com.kozmos.components.CROSS_PLATFORM_MAX_PERCENT_DIFFERENCE
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Rule
 import org.junit.Test
 
@@ -47,7 +47,7 @@ class KozmosButtonLoadingPaparazziTest {
     @Test
     fun aLoadingButtonDrawsTheSystemsArc() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.background(Color.White).padding(24.dp)) {
                     KozmosButton(onClick = {}, isLoading = true) { Text("Loading") }
                 }

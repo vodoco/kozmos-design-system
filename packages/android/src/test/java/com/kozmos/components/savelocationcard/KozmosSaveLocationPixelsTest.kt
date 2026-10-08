@@ -1,7 +1,6 @@
 package com.kozmos.components.savelocationcard
 
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -9,6 +8,7 @@ import androidx.compose.ui.unit.dp
 import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertTrue
@@ -25,7 +25,7 @@ class KozmosSaveLocationPixelsTest {
             val pixels = paparazzi.drawn(frames) {
                 CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
                     success = KozmosThemeTokens.componentsPrimaryButtonsSuccessButtonBackgroundIdle.toArgb()
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         KozmosSaveLocationCard(modifier = Modifier.width(320.dp),
                             isSaved = true, onRouteToLocation = {})
                     }

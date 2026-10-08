@@ -2,7 +2,6 @@ package com.kozmos.components.poidetailpanel
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -19,6 +18,7 @@ import com.kozmos.components.ReadSemantics
 import com.kozmos.components.live
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIAction
 import com.kozmos.contracts.KozmosPOIAvailability
 import com.kozmos.contracts.KozmosPOIDetailAttributeGroup
@@ -125,7 +125,7 @@ class KozmosPOIDetailPanelDetailsTest {
         direction: LayoutDirection = LayoutDirection.Ltr
     ) {
         CompositionLocalProvider(LocalLayoutDirection provides direction) {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(Modifier.width(360.dp)) {
                     KozmosPOIDetailPanel(
                         poi = place,

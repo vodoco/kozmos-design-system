@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import com.kozmos.components.manoeuvrecard.KozmosManoeuvreCard
 import com.kozmos.components.semanticsPaparazzi
 import com.kozmos.components.surface.KozmosSurfaceStyle
 import com.kozmos.components.surface.LocalKozmosSurfaceStyle
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -88,7 +88,7 @@ class ManoeuvreCardReleasedOrderTest {
                     )
                 }
             ) {
-                MaterialTheme { content() }
+                KozmosMaterialTheme { content() }
             }
         }
         return checkNotNull(tree) { "the card was never laid out" }

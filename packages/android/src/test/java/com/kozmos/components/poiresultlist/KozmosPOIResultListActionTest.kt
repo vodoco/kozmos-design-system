@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -17,6 +16,7 @@ import com.kozmos.components.ReadSemantics
 import com.kozmos.components.poiresultcard.KozmosPOIResultCard
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosPOIResultAction
 import com.kozmos.contracts.KozmosPOIResultActionPresentation
@@ -49,7 +49,7 @@ class KozmosPOIResultListActionTest {
                 width = 320 * density
                 CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f),
                     LocalLayoutDirection provides direction) {
-                    MaterialTheme {
+                    KozmosMaterialTheme {
                         Box(Modifier.width(320.dp)) {
                             KozmosPOIResultCard(poi = cafe,
                                 result = KozmosPOIResultPresentation(poiId = cafe.id, resultIndex = 0, selected = true,
@@ -72,7 +72,7 @@ class KozmosPOIResultListActionTest {
         var minimum = 0f
         val tree = paparazzi.readSemantics {
             minimum = with(LocalDensity.current) { 44.dp.toPx() }
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultList(items = items(listOf(go, details,
                     KozmosPOIResultActionPresentation(KozmosPOIResultAction.Order, "Order ahead", disabled = true))),
                     resultCountLabel = "2 results", selectedPoiId = "cafe", onSelect = {}, onAction = { _, _ -> })
@@ -93,7 +93,7 @@ class KozmosPOIResultListActionTest {
             val density = LocalDensity.current.density
             minimum = 44 * density
             CompositionLocalProvider(LocalDensity provides Density(density, fontScale = 2f)) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosPOIResultList(items = items(listOf(go, details,
                         KozmosPOIResultActionPresentation(KozmosPOIResultAction.Order, "Order ahead", disabled = true))), resultCountLabel = "2 results",
                         selectedPoiId = "cafe", onSelect = {}, onAction = { _, _ -> })
@@ -155,7 +155,7 @@ class KozmosPOIResultListActionTest {
     fun anActionPressedInTheListReachesTheApp() {
         val received = Received()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultList(
                     items = items(listOf(go, details)),
                     resultCountLabel = "2 results",
@@ -178,7 +178,7 @@ class KozmosPOIResultListActionTest {
     fun theDocsExampleReachesTheApp() {
         val received = Received()
         val tree = paparazzi.readSemantics {
-            MaterialTheme { ResultsWithActions(items(listOf(go)), "gate/12", received::select, received::action) }
+            KozmosMaterialTheme { ResultsWithActions(items(listOf(go)), "gate/12", received::select, received::action) }
         }
         tree.showing("Go").click!!.invoke()
         assertEquals(listOf("navigate gate/12"), received.actions)
@@ -194,7 +194,7 @@ class KozmosPOIResultListActionTest {
     fun theActionsKeepTheProductsWords() {
         val received = Received()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultList(
                     items = items(
                         listOf(
@@ -231,7 +231,7 @@ class KozmosPOIResultListActionTest {
         val received = Received()
         val share = KozmosPOIResultActionPresentation(KozmosPOIResultAction.Share, "Share", disabled = true)
         val open = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultList(
                     items = items(listOf(go, share)),
                     resultCountLabel = "2 results",
@@ -248,7 +248,7 @@ class KozmosPOIResultListActionTest {
         assertEquals("Go did not run once, or a disabled action ran", listOf("navigate cafe"), received.actions)
 
         val closed = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosPOIResultList(
                     items = items(listOf(go, share), gateAvailable = false),
                     resultCountLabel = "2 results",
@@ -276,7 +276,7 @@ class KozmosPOIResultListActionTest {
     fun withoutAHandlerTheActionsAreDrawnDisabled() {
         val selected = mutableListOf<String>()
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     KozmosPOIResultList(
                         items = items(listOf(go)),

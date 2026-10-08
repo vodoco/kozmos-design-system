@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.routeoptioncard.KozmosRouteOptionCard
 import com.kozmos.components.routepreviewpanel.KozmosRoutePreviewPanel
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosCategoryPresentation
 import com.kozmos.contracts.KozmosRouteOptionPresentation
 import com.kozmos.contracts.KozmosRoutePreference
@@ -104,7 +104,7 @@ class KozmosAdaptiveMapShellHostedFillTest {
         CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
             Box(Modifier.fillMaxSize().onGloballyPositioned { root = it.size }) {
                 density = LocalDensity.current.density
-                MaterialTheme { content() }
+                KozmosMaterialTheme { content() }
             }
         }
     }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,6 +18,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIDetailSummary
 import com.kozmos.contracts.KozmosPOIDetailSummaryKind
 import com.kozmos.contracts.KozmosPOIDetailTone
@@ -60,7 +60,7 @@ class KozmosPOIDetailSummaryToneTest {
         paparazzi.snapshot {
             val view = LocalView.current
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides dark) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     val roles = mapOf(
                         null to KozmosThemeTokens.primitivesColorsForeground100,
                         KozmosPOIDetailTone.Neutral to KozmosThemeTokens.primitivesColorsForeground100,

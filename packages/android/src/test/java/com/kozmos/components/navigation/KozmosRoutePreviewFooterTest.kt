@@ -3,7 +3,6 @@ package com.kozmos.components.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -19,6 +18,7 @@ import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.routepreviewpanel.KozmosRoutePreviewPanel
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosRouteOptionPresentation
 import com.kozmos.contracts.KozmosRoutePreference
 import com.kozmos.contracts.KozmosRouteReadiness
@@ -58,7 +58,7 @@ class KozmosRoutePreviewFooterTest {
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides false) {
                 fill = KozmosThemeTokens.componentsPrimaryButtonsThemedButtonBackgroundIdle.toArgb()
                 page = KozmosThemeTokens.primitivesColorsBackground0.toArgb()
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.fillMaxSize().onGloballyPositioned { root = it.boundsInRoot() }) {
                         Box(Modifier.width(360.dp).onGloballyPositioned { panel = it.boundsInRoot() }) {
                             KozmosRoutePreviewPanel(
@@ -114,7 +114,7 @@ class KozmosRoutePreviewFooterTest {
             density = LocalDensity.current.density
             CompositionLocalProvider(LocalKozmosUseDarkTokens provides false, LocalLayoutDirection provides direction) {
                 ink = KozmosThemeTokens.componentsSecondaryButtonsThemedButtonForegroundContentIdle.toArgb()
-                MaterialTheme {
+                KozmosMaterialTheme {
                     Box(Modifier.fillMaxSize().onGloballyPositioned { root = it.boundsInRoot() }) {
                         Box(Modifier.width(360.dp).onGloballyPositioned { panel = it.boundsInRoot() }) {
                             KozmosRoutePreviewPanel(

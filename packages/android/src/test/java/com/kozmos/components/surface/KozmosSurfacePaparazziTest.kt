@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.Paparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosColors
 import com.kozmos.tokens.KozmosDimensions
 import com.kozmos.tokens.KozmosEffects
@@ -42,7 +42,7 @@ class KozmosSurfacePaparazziTest {
     @Test
     fun solidCoversAndGlassTintsWhatIsBehindThem() {
         paparazzi.snapshot {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Box(modifier = Modifier.width(360.dp).height(280.dp).background(Color.Red), contentAlignment = Alignment.Center) {
                     Column(verticalArrangement = Arrangement.spacedBy(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(modifier = Modifier.size(width = 240.dp, height = 80.dp).kozmosSurface(RoundedCornerShape(KozmosDimensions.semanticsRadiusContainer)))

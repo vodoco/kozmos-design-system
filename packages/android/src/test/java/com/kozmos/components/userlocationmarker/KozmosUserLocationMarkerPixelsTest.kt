@@ -3,7 +3,6 @@ package com.kozmos.components.userlocationmarker
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +16,7 @@ import com.kozmos.components.KeptFrames
 import com.kozmos.components.drawn
 import com.kozmos.components.motion.LocalKozmosAnimatorScale
 import com.kozmos.components.pixelsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -45,7 +45,7 @@ class KozmosUserLocationMarkerPixelsTest {
                 LocalKozmosUseDarkTokens provides false,
                 LocalKozmosAnimatorScale provides if (animationsOn) 1f else 0f
             ) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     val view = LocalView.current
                     Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
                         KozmosUserLocationMarker(

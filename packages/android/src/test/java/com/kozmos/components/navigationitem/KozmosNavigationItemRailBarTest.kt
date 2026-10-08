@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -19,6 +18,7 @@ import com.kozmos.components.drawn
 import com.kozmos.components.pixelsPaparazzi
 import com.kozmos.components.sidebar.KozmosSidebar
 import com.kozmos.components.sidebar.KozmosSidebarVariant
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.tokens.KozmosThemeTokens
 import com.kozmos.tokens.KozmosTypography
 import com.kozmos.tokens.LocalKozmosUseDarkTokens
@@ -64,7 +64,7 @@ class KozmosNavigationItemRailBarTest {
                 colors["tint"] = KozmosThemeTokens.primitivesColorsTheme0.argb()
                 colors["primary"] = KozmosThemeTokens.primitivesColorsTheme600.argb()
                 colors["edge"] = KozmosThemeTokens.semanticsBorderSubtle.argb()
-                MaterialTheme(typography = KozmosTypography.typography()) {
+                KozmosMaterialTheme(typography = KozmosTypography.typography()) {
                     Box(Modifier.fillMaxSize().background(Color.White)) { content() }
                 }
             }

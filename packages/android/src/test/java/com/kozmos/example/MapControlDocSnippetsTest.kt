@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButton
 import com.kozmos.components.mapcontrolbutton.KozmosMapControlButtonLabelPlacement
 import com.kozmos.components.mapcontrolsgroup.KozmosMapControlsGroup
 import com.kozmos.components.readSemantics
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosUserLocationState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -97,7 +97,7 @@ class MapControlDocSnippetsTest {
     @Test
     fun theDocsSnippetsCompose() {
         val tree = paparazzi.readSemantics {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 Column {
                     LayersToggle(showsLayers = false, onShowsLayersChange = {})
                     MapControls(

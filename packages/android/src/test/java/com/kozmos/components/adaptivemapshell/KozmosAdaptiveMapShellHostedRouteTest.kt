@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -22,6 +21,7 @@ import com.kozmos.components.ReadSemantics
 import com.kozmos.components.readSemantics
 import com.kozmos.components.routepreviewpanel.KozmosRoutePreviewPanel
 import com.kozmos.components.semanticsPaparazzi
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosRouteOptionPresentation
 import com.kozmos.contracts.KozmosRoutePreference
 import com.kozmos.contracts.KozmosRouteReadiness
@@ -89,7 +89,7 @@ class KozmosAdaptiveMapShellHostedRouteTest {
     ): ReadSemantics = paparazzi.readSemantics {
         density = LocalDensity.current.density
         CompositionLocalProvider(LocalLayoutDirection provides direction) {
-            MaterialTheme {
+            KozmosMaterialTheme {
                 KozmosAdaptiveMapShell(
                     map = { Box(modifier = Modifier.fillMaxSize()) },
                     panel = panel,
@@ -150,7 +150,7 @@ class KozmosAdaptiveMapShellHostedRouteTest {
     fun underAHandleTheDestinationRowSitsAsFarDownAsInPlusTheHandlesClearance() {
         val tree = paparazzi.readSemantics {
             density = LocalDensity.current.density
-            MaterialTheme {
+            KozmosMaterialTheme {
                 RoutePreviewSheet(
                     destination = destination,
                     options = options,

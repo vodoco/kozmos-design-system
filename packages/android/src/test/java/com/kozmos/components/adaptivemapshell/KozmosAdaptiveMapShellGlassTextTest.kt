@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -25,6 +24,7 @@ import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanel
 import com.kozmos.components.poidetailpanel.KozmosPOIDetailPanelPresentation
 import com.kozmos.components.routepreviewpanel.KozmosRoutePreviewPanel
 import com.kozmos.components.surface.KozmosSurfaceStyle
+import com.kozmos.components.themeprovider.KozmosMaterialTheme
 import com.kozmos.contracts.KozmosPOIMediaPresentation
 import com.kozmos.contracts.KozmosPOIPresentation
 import com.kozmos.contracts.KozmosRouteOptionPresentation
@@ -151,7 +151,7 @@ class KozmosAdaptiveMapShellGlassTextTest {
                     texts = (view as ViewRootForTest).semanticsOwner.unmergedRootSemanticsNode.textNodes()
                 }
             ) {
-                MaterialTheme {
+                KozmosMaterialTheme {
                     KozmosAdaptiveMapShell(
                         map = rooms(amberFirst),
                         panel = panel,
