@@ -273,3 +273,42 @@ describe("NavigationItem", () => {
     expect(screen.getByTestId("trailing")).toBeInTheDocument();
   });
 });
+
+describe("NavigationItem asChild", () => {
+  it("draws the item on its one child, a router's link, with the icon, label and badge inside it", () => {
+    render(
+      <NavigationItem
+        asChild
+        content="badge"
+        icon={<svg data-testid="icon" />}
+        badge={3}
+        selected
+      >
+        <a href="/home">Home</a>
+      </NavigationItem>,
+    );
+    const link = screen.getByRole("link", { name: /Home/ });
+    expect(link.getAttribute("href")).toBe("/home");
+    expect(link.getAttribute("aria-current")).toBe("page");
+    expect(link.getAttribute("data-selected")).toBe("true");
+    expect(link.className).toContain("rounded");
+    expect(link.contains(screen.getByTestId("icon"))).toBe(true);
+    expect(link.textContent).toBe("Home3");
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("keeps the child's own handler and runs the item's", () => {
+    const onChild = vi.fn();
+    const onItem = vi.fn();
+    render(
+      <NavigationItem asChild onClick={onItem}>
+        <a href="#settings" onClick={onChild}>
+          Settings
+        </a>
+      </NavigationItem>,
+    );
+    screen.getByRole("link", { name: "Settings" }).click();
+    expect(onChild).toHaveBeenCalledTimes(1);
+    expect(onItem).toHaveBeenCalledTimes(1);
+  });
+});
