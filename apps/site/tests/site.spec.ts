@@ -2647,6 +2647,26 @@ test.describe("foundations", () => {
     await expect(
       page.getByRole("heading", { level: 3, name: "Theme variant 2" }),
     ).toBeVisible();
+    // Every step of every primitive ramp, from the stylesheet the site loads,
+    // so a new ramp (the accent, decision 68) cannot go unshown.
+    const css = readFileSync(
+      createRequire(import.meta.url).resolve("@kozmos-ds/tokens/css/light.css"),
+      "utf8",
+    );
+    const steps = mergeThemes(css, css)
+      .map(({ name }) => name)
+      .filter((name) => /^--primitives-colors-[\w-]+-\d+$/.test(name));
+    expect(steps.length).toBeGreaterThan(100);
+    const swatches = await page
+      .locator(".site-swatch-colour")
+      .evaluateAll((elements) =>
+        elements.map((element) =>
+          (element as HTMLElement).style.getPropertyValue("--swatch"),
+        ),
+      );
+    expect(steps.filter((step) => !swatches.includes(`var(${step})`))).toEqual(
+      [],
+    );
     const pairs = contrastContract.pairs.length;
     await expect(
       page.getByText(`All ${pairs} pairs pass in both themes`),
