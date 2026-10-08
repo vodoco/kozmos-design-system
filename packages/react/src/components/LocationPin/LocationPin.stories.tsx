@@ -134,16 +134,21 @@ export const NumberedOneSelected: Story = {
 
 /**
  * A featured pin, a pin with a logo in `markerContent` and a pin with no
- * number keep their fill at rest. A featured result's pin shows its logo on
- * the map, so a product numbers only the others. Featured is the SDK's amber
- * with a black number on every platform (decision 62), and its name says
- * "Featured" after the label.
+ * number keep their fill at rest. A featured pin is the accent colour, amber
+ * by default, on every platform (decision 68): it shows its logo, and without
+ * one a star, never its number, and its name says "Featured" after the label.
  */
 export const FeaturedLogoAndPlain: Story = {
   render: (args) => (
     <OnTheMap
       pins={[
         { ...args, label: "Burger King", featured: true },
+        {
+          ...args,
+          label: "Kozmos Cafe",
+          featured: true,
+          markerContent: <Building01 aria-hidden="true" size={12} />,
+        },
         {
           ...args,
           label: "Harbour Coffee Co.",

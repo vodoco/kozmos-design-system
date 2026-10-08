@@ -124,8 +124,9 @@ the number, and it grows, so selection is never told by colour alone. Its card's
 - **Keep their fill:** a featured pin (a featured result's pin shows its logo on the map, so a
   product numbers only the others), a pin showing `markerContent`, and a pin with no number.
 - **Other variants** keep their colours in the ring and number, as ink that reads 4.5:1 on the
-  background in both themes: `secondary`, whose own colour on the web is a surface grey, takes the
-  muted foreground. On every platform `primary` takes the theme's text role (theme/500 reads 3.74:1
+  background in both themes: `secondary` is the muted foreground, foreground/400, filled or as a
+  ring, with a foreground/1000 number when filled, as on iOS and Compose (decision 66). On every
+  platform `primary` takes the theme's text role (theme/500 reads 3.74:1
   on the dark background) and `accent` its theme variant's 700 (its 500 reads 3:1 there).
 - **Contrast:** the primary number reads 6.24:1 on the light background and 6.17:1 on the dark.
   Its ring reads at least 4.68:1 against Pointr's light map (background, rooms, retail and food)
@@ -134,12 +135,17 @@ the number, and it grows, so selection is never told by colour alone. Its card's
 
 ## Featured and accent
 
-A `featured` pin is the SDK's Featured amber, alert 500 (`#FAB735` in both themes), with its number
-in the alert's on-fill colour, black (11.89:1), whatever its variant or tint. Its accessible name
-adds `featuredLabel` ("Featured" unless you pass it translated) to `label`, so the amber is never
-the only way to tell it. The `accent` pin is brand variant 1's 500, `#4135F1` in both themes, with
-a white number (6.99:1). Both are drawn the same way on the web, iOS, Compose and in Figma (decision
-62); the web drew a featured pin in its variant's colour with a star badge until then.
+A `featured` pin is the **accent colour**, the one a client sets in the Pointr Cloud Dashboard
+beside the theme colour: `--semantics-accent-fill`, amber `#FAB735` in both themes by default, with
+`--semantics-accent-on-fill`, black by default (11.89:1), on what it shows, whatever its variant or
+tint (decision 68). It shows the place's logo, passed as `markerContent`, and without one a star
+where the number would be: a featured pin never shows its number. Its accessible name adds
+`featuredLabel` ("Featured" unless you pass it translated) to `label`, so the colour is never the
+only way to tell it. A product that sets its accent sets both tokens on `ThemeProvider`.
+
+The `accent` **variant** is a different thing, despite the name: brand variant 1's 500, `#4135F1`
+in both themes, with a white number (6.99:1). Both are drawn the same way on the web, iOS, Compose
+and in Figma (decisions 62 and 68).
 
 <Canvas>
   <Story of={LocationPinStories.FeaturedLogoAndPlain} />

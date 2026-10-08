@@ -139,6 +139,16 @@ state follows it. The dark neutral is the one exception: it keeps darkening, bec
 3.72:1 on its lighter step. The themed Button keeps decision 59's fixed hover `#1051E8` and pressed
 `#0D44C2`. Read a state from its token; never lighten or darken a fill yourself.
 
+**The accent (decision 68).** Beside the theme colour, a client sets an accent in the Pointr Cloud
+Dashboard. Kozmos carries it as `--primitives-colors-accent-0` to `-1000`, with 500 as the base,
+`#FAB735` (amber) in both themes by default. Parts draw `--semantics-accent-fill` (accent 500)
+under `--semantics-accent-on-fill` (black by default). The Featured tag draws it everywhere:
+POIResultCard's Featured tab and edge, and a featured LocationPin, which shows the place's logo,
+or a star without one. To re-brand Featured, override accent 500 on `ThemeProvider`, plus the
+on-fill ink if the accent is dark. Don't confuse it with LocationPin's `variant="accent"` (brand
+variant 1, violet) or Tailwind's internal `accent` role (theme 600, menu highlights): the names
+predate the accent colour.
+
 The unitless ones are shared with iOS and Android, so a web rule multiplies them:
 `calc(var(--semantics-radius-container) * 1px)`. [component-inventory.md](./component-inventory.md)
 and the Tailwind configuration in `packages/react/tailwind.config.js` show which roles the parts

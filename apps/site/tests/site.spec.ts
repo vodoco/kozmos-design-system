@@ -2514,30 +2514,34 @@ test.describe("design-system gaps, measured", () => {
     expect(height).toBeGreaterThan(90);
   });
 
-  test("GAP-45: the first brand variant's 600 reads 4.20:1 on the dark page", async ({
+  test("GAP-45 is fixed: the first brand variant's 600 reads 4.5:1 on the dark page and sheet", async ({
     page,
   }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");
     await hydrated(page);
-    const [variant, background] = await page.evaluate(() =>
+    const [variant, background, sheet] = await page.evaluate(() =>
       [
         "--primitives-colors-theme-variant-1-600",
         "--primitives-colors-background-0",
+        "--primitives-colors-background-100",
       ].map((name) =>
         getComputedStyle(document.documentElement)
           .getPropertyValue(name)
           .trim(),
       ),
     );
-    const [foreground, ground] = [
+    const [foreground, ground, raised] = [
       parseColour(variant),
       parseColour(background),
+      parseColour(sheet),
     ];
-    expect(foreground && ground).toBeTruthy();
-    if (!foreground || !ground) return;
-    // Text needs 4.5:1. The default ramp's 600 reads 6.17:1 here.
-    expect(formatRatio(contrastRatio(foreground, ground))).toBe("4.20:1");
+    expect(foreground && ground && raised).toBeTruthy();
+    if (!foreground || !ground || !raised) return;
+    // Text needs 4.5:1. It read 4.20:1 on the page and 3.53:1 on the sheet
+    // until decision 69 (#716EFF, 2026-10-08); the default ramp's reads 6.17:1.
+    expect(formatRatio(contrastRatio(foreground, ground))).toBe("5.37:1");
+    expect(contrastRatio(foreground, raised)).toBeGreaterThanOrEqual(4.5);
   });
 
   test("GAP-50 is fixed: the spinner and the skeleton rest under reduced motion", async ({

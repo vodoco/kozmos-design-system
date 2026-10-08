@@ -995,6 +995,7 @@ export function createFigmaMock({ pages, library, collections = [] }) {
     createLine: () => new MockNode("LINE", "Line"),
     createVector: () => new MockNode("VECTOR", "Vector"),
     createPolygon: () => new MockNode("POLYGON", "Polygon"),
+    createStar: () => new MockNode("STAR", "Star"),
     createPage: () => {
       const page = new MockNode("PAGE", "Page");
       root.appendChild(page);

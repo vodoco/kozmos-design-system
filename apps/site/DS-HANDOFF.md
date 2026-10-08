@@ -101,7 +101,7 @@ pnpm --filter @kozmos-ds/site test:e2e                 # Chromium, Firefox, WebK
 | P1       | GAP-57                         | Button                                                   | Its label cannot wrap: the longest icon name scrolls the icons page sideways at 320px.           |
 | P1       | GAP-58                         | Toast                                                    | It draws no fill: over anything but a white page the words read through the toast.               |
 | P1       | GAP-55                         | Listbox                                                  | Its column grows to the widest option: the site search scrolls sideways, and nothing truncates.  |
-| P1       | GAP-45                         | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page as text; fills are its 500 (decision 59).        |
+| P1       | GAP-45 (fixed)                 | Tokens (brand variant 1)                                 | Variant 1's dark 600 is 4.20:1 on the dark page as text; fills are its 500 (decision 59).        |
 | P1       | GAP-82                         | Tokens (category fills)                                  | A category pill's fill is 2.52:1 on its own field: the count's shape is below WCAG 1.4.11's 3:1. |
 | P1       | GAP-31                         | Tokens (alert, success)                                  | Emotion text passes on white only: 4.29:1 on background-25, 3.59:1 on muted.                     |
 | P1       | GAP-09                         | Button (as a link)                                       | `buttonVariants` on an anchor keeps its underline.                                               |
@@ -315,8 +315,10 @@ border-primary-foreground/20`.
   choose is measured. Variant 1's shape pair is done (decision 63,
   2026-10-08): its 500 is `#4135F1`, 3.00:1 on the dark page (`#4134F1` read
   2.99:1), and the contract holds it there and white on it.
-- **Proof:** "GAP-45: the first brand variant's 600 reads 4.20:1 on the dark
-  page" fails; flip it to the new ratio.
+- **Done** (decision 69, 2026-10-08): the dark 600 is `#716EFF` (5.38:1 on the page, 4.51:1 on
+  the sheet), not the 700, so the ramp keeps distinct steps. The contract holds both. The proof
+  flipped: "GAP-45 is fixed: the first brand variant's 600 reads 4.5:1 on the dark page and
+  sheet".
 
 ### GAP-31 · Emotion text passes on white only
 

@@ -190,10 +190,11 @@ A card draws at most one tab inside its top-start corner (the right in a right-t
 It shares the card's outer curve and edge; only its inner corner rounds. The name begins below
 the tab, never underneath it. What it says decides how it looks, and the first that applies wins:
 
-1. **Featured** (`result.featured`): the SDK's bright amber under dark words, with a star, and the
-   card's edge in the same amber, selected or not (the ring says which card is selected). It is the
-   alert fill pair, `--semantics-emotion-alert-fill` and `--semantics-emotion-alert-on-fill`, which
-   stays bright in both themes. Featured is set in the CMS and read beyond the card: a featured
+1. **Featured** (`result.featured`): the accent colour under its ink, with a star, and the card's
+   edge in the same accent, selected or not (the ring says which card is selected). It is
+   `--semantics-accent-fill` and `--semantics-accent-on-fill`, amber `#FAB735` under black by
+   default, the same in both themes; a product that sets its accent in the Pointr Cloud Dashboard
+   sets both (decision 68). It was the alert fill pair. Featured is set in the CMS and read beyond the card: a featured
    result's pin shows its logo on the map.
 2. **A number** (`numbered`, off unless the product turns it on): the result's `resultIndex`, the
    number its pin shows. At rest the tab is quiet, outlined on the card's own fill, and the card
