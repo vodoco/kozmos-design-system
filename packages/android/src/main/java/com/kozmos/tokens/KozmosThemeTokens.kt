@@ -240,6 +240,78 @@ object KozmosThemeTokens {
             KozmosColorsDark.primitivesColorsThemeVariant21000
         )
 
+    val primitivesColorsAccent0: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent0,
+            KozmosColorsDark.primitivesColorsAccent0
+        )
+
+    val primitivesColorsAccent100: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent100,
+            KozmosColorsDark.primitivesColorsAccent100
+        )
+
+    val primitivesColorsAccent200: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent200,
+            KozmosColorsDark.primitivesColorsAccent200
+        )
+
+    val primitivesColorsAccent300: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent300,
+            KozmosColorsDark.primitivesColorsAccent300
+        )
+
+    val primitivesColorsAccent400: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent400,
+            KozmosColorsDark.primitivesColorsAccent400
+        )
+
+    /**
+     * The accent's base colour, the one a client sets in the Pointr Cloud
+     * Dashboard beside the theme, background, foreground and emotional colours
+     * (Olcay, 2026-10-08). Default #FAB735, the SDK's Featured amber, in both
+     * themes. The other steps default to the alert ramp's.
+     */
+    val primitivesColorsAccent500: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent500,
+            KozmosColorsDark.primitivesColorsAccent500
+        )
+
+    val primitivesColorsAccent600: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent600,
+            KozmosColorsDark.primitivesColorsAccent600
+        )
+
+    val primitivesColorsAccent700: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent700,
+            KozmosColorsDark.primitivesColorsAccent700
+        )
+
+    val primitivesColorsAccent800: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent800,
+            KozmosColorsDark.primitivesColorsAccent800
+        )
+
+    val primitivesColorsAccent900: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent900,
+            KozmosColorsDark.primitivesColorsAccent900
+        )
+
+    val primitivesColorsAccent1000: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.primitivesColorsAccent1000,
+            KozmosColorsDark.primitivesColorsAccent1000
+        )
+
     val primitivesColorsEmotionalSuccess0: Color
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.primitivesColorsEmotionalSuccess0,
@@ -1141,6 +1213,28 @@ object KozmosThemeTokens {
         @Composable @ReadOnlyComposable get() = themed(
             KozmosColors.semanticsEmotionInformativeText,
             KozmosColorsDark.semanticsEmotionInformativeText
+        )
+
+    /**
+     * The accent as a fill: the Featured tag, its card's edge and a featured
+     * pin, everywhere in the UI. Accent 500, the client's accent; it stays
+     * bright in both themes and carries onFill, not the page's ink.
+     */
+    val semanticsAccentFill: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsAccentFill,
+            KozmosColorsDark.semanticsAccentFill
+        )
+
+    /**
+     * Ink on the accent fill: black in both files (foreground/0 in light,
+     * foreground/1000 in dark). 11.89:1 on the default #FAB735. A product that
+     * sets a dark accent sets this to white with it.
+     */
+    val semanticsAccentOnfill: Color
+        @Composable @ReadOnlyComposable get() = themed(
+            KozmosColors.semanticsAccentOnfill,
+            KozmosColorsDark.semanticsAccentOnfill
         )
 
     val semanticsDiffNew: Color

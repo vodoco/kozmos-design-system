@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T14:33:58.173Z",
+  "generatedAt": "2026-10-08T17:41:33.771Z",
   "target": {
     "fileKey": null,
     "fileName": "Kozmos DS - Core Library",
@@ -36,8 +36,8 @@
     "Archive / Legacy Reference"
   ],
   "summary": {
-    "totalTokens": 681,
-    "variableTokens": 630,
+    "totalTokens": 694,
+    "variableTokens": 643,
     "styleOnlyTokens": 51,
     "bySourceType": {
       "borderRadius": 8,
@@ -46,7 +46,7 @@
       "opacity": 7,
       "number": 60,
       "spacing": 4,
-      "color": 461,
+      "color": 474,
       "fontSizes": 30,
       "letterSpacing": 5,
       "lineHeights": 14,
@@ -1502,7 +1502,7 @@
         },
         "dark": {
           "kind": "raw",
-          "value": "#6258F3"
+          "value": "#716EFF"
         }
       }
     },
@@ -1863,6 +1863,270 @@
         "dark": {
           "kind": "raw",
           "value": "#F6F1FE"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/0",
+      "figmaName": "Colors/accent/0",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-0",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-0)",
+        "ios": "primitivesColorsAccent0",
+        "android": "primitivesColorsAccent0"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FFFCF8"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#472F02"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/100",
+      "figmaName": "Colors/accent/100",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-100",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-100)",
+        "ios": "primitivesColorsAccent100",
+        "android": "primitivesColorsAccent100"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FEEED0"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#744D03"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/200",
+      "figmaName": "Colors/accent/200",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-200",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-200)",
+        "ios": "primitivesColorsAccent200",
+        "android": "primitivesColorsAccent200"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FDE0A8"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#A06B04"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/300",
+      "figmaName": "Colors/accent/300",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-300",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-300)",
+        "ios": "primitivesColorsAccent300",
+        "android": "primitivesColorsAccent300"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FCD281"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#CD8905"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/400",
+      "figmaName": "Colors/accent/400",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-400",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-400)",
+        "ios": "primitivesColorsAccent400",
+        "android": "primitivesColorsAccent400"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FBC459"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#F9A707"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/500",
+      "figmaName": "Colors/accent/500",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-500",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-500)",
+        "ios": "primitivesColorsAccent500",
+        "android": "primitivesColorsAccent500"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#FAB735"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FAB735"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/600",
+      "figmaName": "Colors/accent/600",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-600",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-600)",
+        "ios": "primitivesColorsAccent600",
+        "android": "primitivesColorsAccent600"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#F9A707"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FBC459"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/700",
+      "figmaName": "Colors/accent/700",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-700",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-700)",
+        "ios": "primitivesColorsAccent700",
+        "android": "primitivesColorsAccent700"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#CD8905"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FCD281"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/800",
+      "figmaName": "Colors/accent/800",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-800",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-800)",
+        "ios": "primitivesColorsAccent800",
+        "android": "primitivesColorsAccent800"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#A06B04"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FDE0A8"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/900",
+      "figmaName": "Colors/accent/900",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-900",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-900)",
+        "ios": "primitivesColorsAccent900",
+        "android": "primitivesColorsAccent900"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#744D03"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FEEED0"
+        }
+      }
+    },
+    {
+      "canonicalName": "Primitives/Colors/accent/1000",
+      "figmaName": "Colors/accent/1000",
+      "collection": "Kozmos Primitives",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--primitives-colors-accent-1000",
+      "syntax": {
+        "web": "var(--primitives-colors-accent-1000)",
+        "ios": "primitivesColorsAccent1000",
+        "android": "primitivesColorsAccent1000"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "raw",
+          "value": "#472F02"
+        },
+        "dark": {
+          "kind": "raw",
+          "value": "#FFFCF8"
         }
       }
     },
@@ -7389,6 +7653,54 @@
         "dark": {
           "kind": "alias",
           "path": "Primitives/Colors/emotional/info/800"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Accent/fill",
+      "figmaName": "Accent/fill",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-accent-fill",
+      "syntax": {
+        "web": "var(--semantics-accent-fill)",
+        "ios": "semanticsAccentFill",
+        "android": "semanticsAccentFill"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/accent/500"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/accent/500"
+        }
+      }
+    },
+    {
+      "canonicalName": "Semantics/Accent/onFill",
+      "figmaName": "Accent/onFill",
+      "collection": "Kozmos Semantics",
+      "sourceType": "color",
+      "figmaType": "COLOR",
+      "cssVariable": "--semantics-accent-on-fill",
+      "syntax": {
+        "web": "var(--semantics-accent-on-fill)",
+        "ios": "semanticsAccentOnfill",
+        "android": "semanticsAccentOnfill"
+      },
+      "suggestedScopes": ["FRAME_FILL", "SHAPE_FILL"],
+      "values": {
+        "light": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/0"
+        },
+        "dark": {
+          "kind": "alias",
+          "path": "Primitives/Colors/foreground/1000"
         }
       }
     },

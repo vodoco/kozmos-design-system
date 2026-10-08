@@ -648,6 +648,53 @@
           }
         }
       },
+      "accent": {
+        "0": {
+          "$type": "color",
+          "$value": "#FFFCF8"
+        },
+        "100": {
+          "$type": "color",
+          "$value": "#FEEED0"
+        },
+        "200": {
+          "$type": "color",
+          "$value": "#FDE0A8"
+        },
+        "300": {
+          "$type": "color",
+          "$value": "#FCD281"
+        },
+        "400": {
+          "$type": "color",
+          "$value": "#FBC459"
+        },
+        "500": {
+          "$type": "color",
+          "$value": "#FAB735",
+          "$description": "The accent's base colour, the one a client sets in the Pointr Cloud Dashboard beside the theme, background, foreground and emotional colours (Olcay, 2026-10-08). Default #FAB735, the SDK's Featured amber, in both themes. The other steps default to the alert ramp's."
+        },
+        "600": {
+          "$type": "color",
+          "$value": "#F9A707"
+        },
+        "700": {
+          "$type": "color",
+          "$value": "#CD8905"
+        },
+        "800": {
+          "$type": "color",
+          "$value": "#A06B04"
+        },
+        "900": {
+          "$type": "color",
+          "$value": "#744D03"
+        },
+        "1000": {
+          "$type": "color",
+          "$value": "#472F02"
+        }
+      },
       "emotional": {
         "success": {
           "0": {
@@ -2619,6 +2666,18 @@
           "$type": "color",
           "$description": "The emotion as text or a glyph on the page itself — white or either grey a panel, card or sheet paints (background/0, /50, /100). The step differs per emotion because the ramps reach 4.5:1 on background/100 at different places: success and alert 900, informative 800, danger 700, themed 600. Measured on white alone they were one step lighter, and four of six failed on a sheet's grey. The product draws success at 600, which is 2.74:1 even on white."
         }
+      }
+    },
+    "Accent": {
+      "fill": {
+        "$value": "{Primitives.Colors.accent.500}",
+        "$type": "color",
+        "$description": "The accent as a fill: the Featured tag, its card's edge and a featured pin, everywhere in the UI. Accent 500, the client's accent; it stays bright in both themes and carries onFill, not the page's ink."
+      },
+      "onFill": {
+        "$value": "{Primitives.Colors.foreground.0}",
+        "$type": "color",
+        "$description": "Ink on the accent fill: black in both files (foreground/0 in light, foreground/1000 in dark). 11.89:1 on the default #FAB735. A product that sets a dark accent sets this to white with it."
       }
     },
     "Elevation": {

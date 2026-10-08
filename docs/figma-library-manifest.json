@@ -24,8 +24,8 @@
   },
   "tokens": {
     "summary": {
-      "light": 681,
-      "dark": 681
+      "light": 694,
+      "dark": 694
     },
     "light": [
       {
@@ -773,6 +773,138 @@
         "name": "Primitives/Colors/theme/variant/2/1000",
         "type": "color",
         "value": "#23054F",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/0",
+        "type": "color",
+        "value": "#FFFCF8",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/100",
+        "type": "color",
+        "value": "#FEEED0",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/200",
+        "type": "color",
+        "value": "#FDE0A8",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/300",
+        "type": "color",
+        "value": "#FCD281",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/400",
+        "type": "color",
+        "value": "#FBC459",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/500",
+        "type": "color",
+        "value": "#FAB735",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/600",
+        "type": "color",
+        "value": "#F9A707",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/700",
+        "type": "color",
+        "value": "#CD8905",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/800",
+        "type": "color",
+        "value": "#A06B04",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/900",
+        "type": "color",
+        "value": "#744D03",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/1000",
+        "type": "color",
+        "value": "#472F02",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -3140,6 +3272,30 @@
         "name": "Semantics/Emotion/informative/text",
         "type": "color",
         "value": "{Primitives.Colors.emotional.info.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Accent/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.accent.500}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Accent/onFill",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.0}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -7666,7 +7822,7 @@
       {
         "name": "Primitives/Colors/theme/variant/1/600",
         "type": "color",
-        "value": "#6258F3",
+        "value": "#716EFF",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -7847,6 +8003,138 @@
         "name": "Primitives/Colors/theme/variant/2/1000",
         "type": "color",
         "value": "#F6F1FE",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/0",
+        "type": "color",
+        "value": "#472F02",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/100",
+        "type": "color",
+        "value": "#744D03",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/200",
+        "type": "color",
+        "value": "#A06B04",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/300",
+        "type": "color",
+        "value": "#CD8905",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/400",
+        "type": "color",
+        "value": "#F9A707",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/500",
+        "type": "color",
+        "value": "#FAB735",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/600",
+        "type": "color",
+        "value": "#FBC459",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/700",
+        "type": "color",
+        "value": "#FCD281",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/800",
+        "type": "color",
+        "value": "#FDE0A8",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/900",
+        "type": "color",
+        "value": "#FEEED0",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Primitives/Colors/accent/1000",
+        "type": "color",
+        "value": "#FFFCF8",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",
@@ -10214,6 +10502,30 @@
         "name": "Semantics/Emotion/informative/text",
         "type": "color",
         "value": "{Primitives.Colors.emotional.info.800}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Accent/fill",
+        "type": "color",
+        "value": "{Primitives.Colors.accent.500}",
+        "scopes": [],
+        "recommendedFigmaScopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "TEXT_FILL",
+          "STROKE_COLOR"
+        ]
+      },
+      {
+        "name": "Semantics/Accent/onFill",
+        "type": "color",
+        "value": "{Primitives.Colors.foreground.1000}",
         "scopes": [],
         "recommendedFigmaScopes": [
           "FRAME_FILL",

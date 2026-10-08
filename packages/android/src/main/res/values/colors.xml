@@ -88,6 +88,17 @@
   <color name="primitives_colors_theme_variant_2_800">#ff450b9c</color>
   <color name="primitives_colors_theme_variant_2_900">#ff340875</color>
   <color name="primitives_colors_theme_variant_2_1000">#ff23054f</color>
+  <color name="primitives_colors_accent_0">#fffffcf8</color>
+  <color name="primitives_colors_accent_100">#fffeeed0</color>
+  <color name="primitives_colors_accent_200">#fffde0a8</color>
+  <color name="primitives_colors_accent_300">#fffcd281</color>
+  <color name="primitives_colors_accent_400">#fffbc459</color>
+  <color name="primitives_colors_accent_500">#fffab735</color>
+  <color name="primitives_colors_accent_600">#fff9a707</color>
+  <color name="primitives_colors_accent_700">#ffcd8905</color>
+  <color name="primitives_colors_accent_800">#ffa06b04</color>
+  <color name="primitives_colors_accent_900">#ff744d03</color>
+  <color name="primitives_colors_accent_1000">#ff472f02</color>
   <color name="primitives_colors_emotional_success_0">#fff6fdf9</color>
   <color name="primitives_colors_emotional_success_100">#ffcbf5e0</color>
   <color name="primitives_colors_emotional_success_200">#ffa0ecc6</color>
@@ -339,6 +350,8 @@
   <color name="semantics_emotion_informative_surface">@color/primitives_colors_emotional_info_100</color>
   <color name="semantics_emotion_informative_on_surface">@color/primitives_colors_emotional_info_900</color>
   <color name="semantics_emotion_informative_text">@color/primitives_colors_emotional_info_800</color>
+  <color name="semantics_accent_fill">@color/primitives_colors_accent_500</color>
+  <color name="semantics_accent_on_fill">@color/primitives_colors_foreground_0</color>
   <string name="semantics_elevation_raised">@string/shadow_sm</string>
   <string name="semantics_elevation_floating">@string/shadow_md</string>
   <string name="semantics_elevation_overlay">@string/shadow_lg</string>
