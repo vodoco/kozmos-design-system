@@ -389,6 +389,14 @@ camera control, branding/provider policy and product ranking in their host adapt
   - Informative's ramp already existed (`emotional.info`). Light success and alert already
     followed the rule.
   - `tokens:contrast:check` holds each state to its ramp step and its direction.
+- **Secondary is the neutral fill (decision 61, 2026-10-08):** the secondary Button draws the
+  neutral Primary Buttons tokens in every state, with their ink, on every platform.
+  - React gains hover, focus and pressed. Its dark fill moves from `#2E3138` to `#464A53`.
+  - SwiftUI's words move from foreground/100 to the token's ink. Compose already matched.
+  - Figma's Secondary binds the neutral tokens, so Secondary/Disabled is now the charcoal disabled
+    token like Default's. That route is still DS ask 16's open question.
+  - On the neutral fill, the focus ring's page-coloured gap reads only 2.19:1 (light) and 1.61:1
+    (dark) against the fill, so the ring itself carries the 3:1.
 - **Brand variant 1's 500 (decision 63, 2026-10-08):** `#4135F1`, lightened from `#4134F1`
   just enough to read 3:1 as a shape on the dark page (3.00:1; it was 2.99:1). The hue is
   kept, and white on it reads 6.99:1. On the dark sheet it reads 2.52:1, which is accepted as

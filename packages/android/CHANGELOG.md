@@ -18,6 +18,7 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
 
 ### Added and changed
 
+- **Secondary button (decision 61):** no change. `KozmosButton` and `KozmosIconButton` `Secondary` already draw `KozmosFillStates.neutral`, fill and ink, in every state, and React and SwiftUI now match them.
 - **Emotion states step away from the page (decision 60):** a filled emotion part's hover and focus are one step, and its pressed two steps, further along the emotion's own ramp: darker in light, lighter in dark. This covers `KozmosButton`, `KozmosIconButton` and every part drawn through `FillStates.kt`.
   - Danger in light is `#B01736`, then `#8C132B`, then `#670E20` (the hover was `#D41C42`, lighter than the fill).
   - In dark, danger, success, alert and informative step lighter, 700 → 800 → 900. Light neutral presses to `#9095A2`, where it went lighter (`#E3E4E8`).

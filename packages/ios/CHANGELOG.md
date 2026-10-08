@@ -15,6 +15,7 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
 
 ### Added and changed
 
+- **The secondary button's ink is the neutral token's (decision 61):** `KozmosButton` and `KozmosIconButton` with `.secondary` draw their words and mark in `componentsPrimaryButtonsNeutralButtonForegroundContent*` in every state: black in light and white in dark, as React and Compose do. They drew `primitivesColorsForeground100`, `#17191C` and `#E8E6E3`. The fill was already the neutral token.
 - **Emotion states step away from the page (decision 60):** a filled emotion part's hover and focus are one step, and its pressed two steps, further along the emotion's own ramp: darker in light, lighter in dark. This covers `KozmosButton`, `KozmosIconButton` and every part drawn through `KozmosFillButtonStyle`.
   - Danger in light is `#B01736`, then `#8C132B`, then `#670E20` (the hover was `#D41C42`, lighter than the fill).
   - In dark, danger, success, alert and informative step lighter, 700 → 800 → 900. Light neutral presses to `#9095A2`, where it went lighter (`#E3E4E8`).
