@@ -394,6 +394,11 @@ camera control, branding/provider policy and product ranking in their host adapt
   kept, and white on it reads 6.99:1. On the dark sheet it reads 2.52:1, which is accepted as
   the theme fill's 2.32:1 is; `#4947FB` would have reached 3:1 there too and was declined. The
   contrast contract now holds variant 1's 500 to 3:1 on the page and white on it to 4.5:1.
+- **iOS SplitButton's menu press (decision 64, 2026-10-08):** the menu half keeps SwiftUI's system
+  press, a deliberate platform difference. It is a `Menu`, which does not run a custom button
+  style's pressed state. The action half draws the themed pressed token (`#0D44C2`) on every
+  platform, and the menu half does so on the web and in Compose. `KozmosThemeFillPressTests` reads
+  the action half for that reason.
 - GAP-014/037/038/039/050/051 have no current Dashboard board/criterion in this source.
   GAP-045 needs an ownership decision; OS chrome should not be recreated as product UI.
 - GAP-089/090 are now external adoption checks (the 0.9.0 bundle was applied on 2026-10-06), not missing repo generators;

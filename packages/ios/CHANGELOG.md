@@ -15,6 +15,7 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
 
 ### Added and changed
 
+- **SplitButton's menu half keeps the system press (decision 64):** a deliberate platform difference, not a gap. `KozmosSplitButton`'s menu half is a `Menu`, which does not run a custom button style's pressed state, so it draws SwiftUI's own press. The action half draws the themed pressed token, `#0D44C2`, as React and Compose draw both halves.
 - **Emotion states step away from the page (decision 60):** a filled emotion part's hover and focus are one step, and its pressed two steps, further along the emotion's own ramp: darker in light, lighter in dark. This covers `KozmosButton`, `KozmosIconButton` and every part drawn through `KozmosFillButtonStyle`.
   - Danger in light is `#B01736`, then `#8C132B`, then `#670E20` (the hover was `#D41C42`, lighter than the fill).
   - In dark, danger, success, alert and informative step lighter, 700 → 800 → 900. Light neutral presses to `#9095A2`, where it went lighter (`#E3E4E8`).
