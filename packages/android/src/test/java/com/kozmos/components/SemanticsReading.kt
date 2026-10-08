@@ -115,7 +115,14 @@ data class ReadNode(
     /** Where TalkBack reads the node among its group: lower first, then by place; 0 unless set. */
     val traversalIndex: Float = 0f,
     /** Set on a list: how many items TalkBack says it holds on the way in. */
-    val collectionRows: Int? = null
+    val collectionRows: Int? = null,
+    /**
+     * Set on a selectable group: its direct children that say whether they
+     * are selected, in order. They are the items Compose gives TalkBack as
+     * the group's collection when the group names none of its own
+     * (`setCollectionInfo`).
+     */
+    val selectableGroup: List<ReadNode>? = null
 ) {
     /**
      * The node's own words as TalkBack takes them: its description, or else
@@ -311,7 +318,7 @@ fun Paparazzi.readSettledSemantics(content: @Composable () -> Unit): ReadSemanti
 private fun SemanticsNode.flatten(): List<SemanticsNode> =
     listOf(this) + children.flatMap { it.flatten() }
 
-private fun copyOf(node: SemanticsNode) = ReadNode(
+private fun copyOf(node: SemanticsNode): ReadNode = ReadNode(
     description = node.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString(),
     texts = node.config.getOrNull(SemanticsProperties.Text)?.map { it.text }.orEmpty(),
     selected = node.config.getOrNull(SemanticsProperties.Selected),
@@ -338,5 +345,10 @@ private fun copyOf(node: SemanticsNode) = ReadNode(
     heading = node.config.contains(SemanticsProperties.Heading),
     traversalGroup = node.config.getOrNull(SemanticsProperties.IsTraversalGroup) == true,
     traversalIndex = node.config.getOrNull(SemanticsProperties.TraversalIndex) ?: 0f,
-    collectionRows = node.config.getOrNull(SemanticsProperties.CollectionInfo)?.rowCount
+    collectionRows = node.config.getOrNull(SemanticsProperties.CollectionInfo)?.rowCount,
+    selectableGroup = if (node.config.contains(SemanticsProperties.SelectableGroup)) {
+        node.children.filter { it.config.contains(SemanticsProperties.Selected) }.map(::copyOf)
+    } else {
+        null
+    }
 )

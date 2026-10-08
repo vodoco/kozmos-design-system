@@ -32,6 +32,10 @@ enum KozmosTabsMetrics {
 /// The tabs' track: background/100 with the control radius, React's
 /// `TabsList` (`bg-muted p-1 rounded-control`). Each trigger draws its own
 /// segment 4pt inside it, so the track pads only its ends here.
+///
+/// VoiceOver reads it as React's `tablist`: a container whose tabs stay
+/// elements of their own and, from iOS 17, a tab bar, so VoiceOver knows
+/// the tabs as one set and each tab's place in it.
 public struct KozmosTabsList<Content: View>: View {
     let content: Content
     
@@ -48,6 +52,21 @@ public struct KozmosTabsList<Content: View>: View {
             RoundedRectangle(cornerRadius: KozmosTabsMetrics.trackRadius)
                 .fill(KozmosColors.primitivesColorsBackground100)
         )
+        .accessibilityElement(children: .contain)
+        .modifier(KozmosTabBarTrait())
+    }
+}
+
+/// Marks the list a tab bar where SwiftUI can name one, iOS 17 and macOS 14.
+/// Before them the list is a plain container, and each tab still says
+/// whether it is selected.
+private struct KozmosTabBarTrait: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, macOS 14.0, tvOS 17.0, watchOS 10.0, *) {
+            content.accessibilityAddTraits(.isTabBar)
+        } else {
+            content
+        }
     }
 }
 
@@ -101,6 +120,9 @@ public struct KozmosTabsTrigger: View {
         // The plain style draws a disabled tab at half, as React's
         // `disabled:opacity-50`; a second opacity here would dim it twice.
         .buttonStyle(.plain)
+        // React's `aria-selected`: VoiceOver says "Selected" on this tab
+        // alone. It stays a button, so a double tap still chooses it.
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
 
