@@ -81,22 +81,22 @@ struct KozmosToast: View {
             VStack(alignment: .leading) {
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(KozmosColors.semanticColorTextDefault)
+                    .foregroundColor(KozmosColors.primitivesColorsForeground100)
                 if let description = description {
                     Text(description)
                         .font(.subheadline)
-                        .foregroundColor(KozmosColors.semanticColorTextMuted)
+                        .foregroundColor(KozmosColors.primitivesColorsForeground500)
                 }
             }
             Spacer()
         }
         .padding()
-        .background(KozmosColors.semanticColorSurfaceDefault)
+        .background(KozmosColors.primitivesColorsBackground0)
         .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(KozmosColors.semanticColorBorderDefault, lineWidth: 1)
+                .stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
         )
     }
 }

@@ -62,10 +62,10 @@ struct KozmosAvatar: View {
         ZStack {
             // Fallback layer
             Circle()
-                .fill(KozmosColors.semanticColorBackgroundMuted)
+                .fill(KozmosColors.primitivesColorsBackground500)
             Text(fallbackText)
                 .font(.system(size: size * 0.4, weight: .medium))
-                .foregroundColor(KozmosColors.semanticColorTextMuted)
+                .foregroundColor(KozmosColors.primitivesColorsBackground0)
             
             // Image layer
             if let url = imageURL {
@@ -81,7 +81,7 @@ struct KozmosAvatar: View {
         }
         .frame(width: size, height: size)
         .overlay(
-             Circle().stroke(KozmosColors.semanticColorBorderDefault, lineWidth: 1)
+             Circle().stroke(KozmosColors.semanticsBorderSubtle, lineWidth: 1)
         )
     }
 }

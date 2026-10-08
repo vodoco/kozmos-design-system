@@ -89,7 +89,7 @@
     "skills:check": "node scripts/build-ai-skills.mjs --check && node --test scripts/skills/ai-facts.test.mjs scripts/skills/ai-snippets.test.mjs && node scripts/check-ai-skills.mjs && node --test scripts/skills/claude-design-docs.test.mjs",
     "docs:snippets:check": "node scripts/check-doc-snippets.mjs",
     "docs:snippets:compile": "node scripts/check-package-install.mjs",
-    "test:doc-snippets": "node --test scripts/lib/doc-snippets.test.mjs",
+    "test:doc-snippets": "node --test scripts/lib/doc-snippets.test.mjs scripts/lib/native-token-members.test.mjs",
     "figma:verify": "node scripts/verify-figma-library.mjs",
     "components:variant:check": "node scripts/skills/check-variant-parity.mjs",
     "components:variant:write": "node scripts/skills/check-variant-parity.mjs --write",
