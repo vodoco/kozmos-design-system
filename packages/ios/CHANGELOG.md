@@ -8,6 +8,7 @@ Native source changes on `main` after the 0.6.0 snapshot below. Nothing here is 
 
 ### Fixed
 
+- **Tabs say which tab is selected:** VoiceOver hears the selected `KozmosTabsTrigger` as selected, and only that one, as React's `aria-selected` tells a screen reader (WCAG 4.1.2). `KozmosTabsList` is a container that keeps each tab its own element and, from iOS 17, a tab bar, as React's `tablist`. Before, every tab was a plain button and the selected one was shown only by its segment. Each tab is still a button that a double tap chooses. The look, the initializers and the 44pt target are unchanged.
 - **Disabled parts are dimmed once:** SwiftUI's plain button style already draws a disabled button at half (measured on iPhone 17 Pro, iOS 26.5, and on a Mac), and these parts set their own opacity on top of it, so they were dimmed twice.
   - Now at 50%, as React and Compose draw them, from 25%: `KozmosNavigationItem`, `KozmosCategoryTile`, `KozmosRouteOptionCard`, `POIDetailPanel`'s actions, a disabled `KozmosChip`'s remove mark, and a `KozmosPOIResultCard`'s disabled outline action.
   - A disabled `KozmosSegmentedControl` draws each part at 50%, as Compose draws the control: its track on the page, and its segments and their words on the track. The segments and words were at 25%.
