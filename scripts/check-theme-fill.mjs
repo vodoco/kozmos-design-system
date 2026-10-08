@@ -17,6 +17,13 @@
  * keyboard focus on or inside a fill draws Button's offset ring, its inner
  * band reading 3:1 against the fill and its outer band 3:1 against the page.
  *
+ * Decision 61 (Olcay, 2026-10-08): the secondary Button, with no emotion,
+ * and IconButton's, are the neutral Primary Buttons fill in every state, with
+ * the neutral ink: #C7CAD1, hover and focus #ABAFBA, pressed #9095A2 under
+ * black in light; #464A53, #2E3138 and #17191C under white in dark. Until
+ * then the secondary was background/200 under foreground/0 with no states:
+ * #2E3138 at rest in dark, and nothing on hover, focus or a press.
+ *
  *   pnpm --filter "@kozmos-ds/react..." build
  *   ADAPTIVE_BROWSER=chromium|firefox|webkit node scripts/check-theme-fill.mjs
  */
@@ -53,6 +60,14 @@ const PAGE = { light: [255, 255, 255], dark: [0, 0, 0] };
 // then the light hover was danger 600, lighter than the fill.
 const DANGER_HOVER = { light: [140, 19, 43], dark: [243, 162, 179] };
 const DANGER_PRESSED = { light: [103, 14, 32], dark: [248, 198, 208] };
+// The neutral emotion's Primary Buttons tokens, which the secondary variant
+// draws (decision 61): idle, hover (and focus) and pressed, and the ink on
+// them in every state. Dark keeps darkening (decision 60): white reads
+// 3.72:1 on the lighter step.
+const NEUTRAL_FILL = { light: [199, 202, 209], dark: [70, 74, 83] };
+const NEUTRAL_HOVER = { light: [171, 175, 186], dark: [46, 49, 56] };
+const NEUTRAL_PRESSED = { light: [144, 149, 162], dark: [23, 25, 28] };
+const NEUTRAL_INK = { light: [0, 0, 0], dark: [255, 255, 255] };
 
 /**
  * What to read: a part, the element inside its test id that draws it (a CSS
@@ -68,6 +83,12 @@ const READS = [
   ["button-themed", "", "color", "ink"],
   ["icon-button", "", "backgroundColor", "fill"],
   ["icon-button", "", "color", "ink"],
+  // The secondary variant is the neutral fill under the neutral ink
+  // (decision 61), its own colours in each theme.
+  ["button-secondary", "", "backgroundColor", "neutral"],
+  ["button-secondary", "", "color", "neutral-ink"],
+  ["icon-button-secondary", "", "backgroundColor", "neutral"],
+  ["icon-button-secondary", "", "color", "neutral-ink"],
   ["fab", "", "backgroundColor", "fill"],
   ["fab", "", "color", "ink"],
   ["map-control", "", "backgroundColor", "fill"],
@@ -220,6 +241,15 @@ const STATE_READS = [
     [part, "", "pressed", "backgroundColor", "danger-pressed"],
     [part, "", "focus", "backgroundColor", "danger-focus"],
   ]),
+  // The secondary variant's states are the neutral tokens (decision 61), and
+  // a keyboard focus still draws the offset ring.
+  ...["button-secondary", "icon-button-secondary"].flatMap((part) => [
+    [part, "", "hover", "backgroundColor", "neutral-hover"],
+    [part, "", "pressed", "backgroundColor", "neutral-pressed"],
+    [part, "", "focus", "backgroundColor", "neutral-focus"],
+    [part, "", "focus", "color", "neutral-ink"],
+    [part, "", "focus", "boxShadow", "ring-neutral"],
+  ]),
   // Hovered fills: the hover token, opaque, in both themes.
   ["chip", '[data-slot="chip"]', "hover", "backgroundColor", "hover"],
   ["tag", "", "hover", "backgroundColor", "hover"],
@@ -243,6 +273,8 @@ const STATE_READS = [
   // An unavailable filled Button keeps its rest colour.
   ["button-unavailable", "", "hover", "backgroundColor", "fill"],
   ["button-unavailable", "", "pressed", "backgroundColor", "fill"],
+  ["button-secondary-unavailable", "", "hover", "backgroundColor", "neutral"],
+  ["button-secondary-unavailable", "", "pressed", "backgroundColor", "neutral"],
 ];
 
 // Radix's menu trigger opens its menu on pointerdown and prevents that
@@ -284,6 +316,11 @@ function expected(kind, theme) {
   if (kind === "danger-hover" || kind === "danger-focus")
     return DANGER_HOVER[theme];
   if (kind === "danger-pressed") return DANGER_PRESSED[theme];
+  if (kind === "neutral") return NEUTRAL_FILL[theme];
+  if (kind === "neutral-ink") return NEUTRAL_INK[theme];
+  if (kind === "neutral-hover" || kind === "neutral-focus")
+    return NEUTRAL_HOVER[theme];
+  if (kind === "neutral-pressed") return NEUTRAL_PRESSED[theme];
   throw new Error(`unknown expectation ${kind}`);
 }
 
@@ -303,6 +340,13 @@ const NAMES = {
   "danger-hover": "danger emotion's hover token, danger 800",
   "danger-pressed": "danger emotion's pressed token, danger 900",
   "danger-focus": "danger emotion's focus token, its hover",
+  neutral: "neutral emotion's idle fill (#C7CAD1 light, #464A53 dark)",
+  "neutral-ink": "neutral emotion's ink (black light, white dark)",
+  "neutral-hover":
+    "neutral emotion's hover token (#ABAFBA light, #2E3138 dark)",
+  "neutral-focus": "neutral emotion's focus token, its hover",
+  "neutral-pressed":
+    "neutral emotion's pressed token (#9095A2 light, #17191C dark)",
 };
 
 /** The WCAG contrast ratio of two opaque sRGB colours, 0–255 channels. */
@@ -482,7 +526,7 @@ try {
   // A press shows at once: the filled Button's colour transition is off
   // while it is held, so a quick tap still darkens it. Read before the
   // transitions are turned off below.
-  for (const part of ["button", "map-control"]) {
+  for (const part of ["button", "button-secondary", "map-control"]) {
     const target = page.getByTestId(`light-${part}`);
     await target.hover();
     await page.mouse.down();
@@ -561,6 +605,29 @@ try {
           );
         continue;
       }
+      // On the neutral fill the ring is the same offset ring, its gap the
+      // page; the gap cannot read 3:1 on a neutral fill, which itself reads
+      // 2.19:1 on the light page focused and 1.61:1 on the dark, so what
+      // must show is the ring: 2px at least, opaque, 3:1 on the page and on
+      // the gap between it and the fill.
+      if (kind === "ring-neutral") {
+        const onPage = actual.outer ? contrast(actual.outer, PAGE[theme]) : 0;
+        const onGap =
+          actual.outer && actual.inner
+            ? contrast(actual.outer, actual.inner)
+            : 0;
+        if (
+          actual.width < 2 ||
+          actual.inner?.[3] !== 255 ||
+          actual.outer?.[3] !== 255 ||
+          onPage < RING_MIN ||
+          onGap < RING_MIN
+        )
+          failures.push(
+            `${where}: ${actual.css}; a focus indicator ${actual.width}px wide, its ring ${onPage.toFixed(2)}:1 on the page and ${onGap.toFixed(2)}:1 on the gap; expected at least 2px, opaque, ${RING_MIN}:1 on both`,
+          );
+        continue;
+      }
       if (kind === "lift" || kind === "lift-danger") {
         const base = kind === "lift" ? THEME_FILL : DANGER_FILL[theme];
         const lift = contrast(actual.over.slice(0, 3), base);
@@ -596,5 +663,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `PASS theme fill (decision 59): ${read} reads, ${READS.length} at rest and ${STATE_READS.length} in a state per theme — every prominent fill is #135BEC under white in light and dark, and the theme on a surface is 600; the filled Button and its kin are the hover, pressed and focus tokens in those states, hovered fills the hover token, the default Badge's counter inverted, and focus on or inside a fill an offset ring reading ${RING_MIN}:1 on the fill and the page`,
+  `PASS theme fill (decision 59): ${read} reads, ${READS.length} at rest and ${STATE_READS.length} in a state per theme — every prominent fill is #135BEC under white in light and dark, and the theme on a surface is 600; the filled Button and its kin are the hover, pressed and focus tokens in those states, the secondary Button the neutral tokens in every state under the neutral ink (decision 61), hovered fills the hover token, the default Badge's counter inverted, and focus on or inside a fill an offset ring reading ${RING_MIN}:1 on the fill and the page`,
 );

@@ -199,6 +199,12 @@ const ADDED_SCOPES_BY_PATH = new Map([
     "Components/Primary Buttons/danger/button/foreground/content/disabled",
     MARK,
   ],
+  // The secondary variant's ink since decision 61 (2026-10-08).
+  ["Components/Primary Buttons/neutral/button/foreground/content/idle", MARK],
+  [
+    "Components/Primary Buttons/neutral/button/foreground/content/disabled",
+    MARK,
+  ],
   ["Components/Secondary Buttons/themed/button/foreground/content/idle", MARK],
   [
     "Components/Secondary Buttons/themed/button/foreground/content/disabled",

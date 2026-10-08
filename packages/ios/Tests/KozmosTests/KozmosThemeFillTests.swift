@@ -76,7 +76,19 @@ final class KozmosThemeFillTests: XCTestCase {
         _ fillColour: Pixel, withMark markColour: Pixel, _ name: String, _ view: V, markInset: CGFloat = 0.2,
         file: StaticString = #filePath, line: UInt = #line
     ) throws {
+        try assertFill([.light: fillColour, .dark: fillColour], withMark: [.light: markColour, .dark: markColour],
+                       name, view, markInset: markInset, file: file, line: line)
+    }
+
+    /// The same, for a fill and a mark that turn over with the theme: each
+    /// scheme's own pair.
+    @MainActor private func assertFill<V: View>(
+        _ fills: [ColorScheme: Pixel], withMark marks: [ColorScheme: Pixel], _ name: String, _ view: V, markInset: CGFloat = 0.2,
+        file: StaticString = #filePath, line: UInt = #line
+    ) throws {
         for scheme in [ColorScheme.light, .dark] {
+            let fillColour = try XCTUnwrap(fills[scheme], file: file, line: line)
+            let markColour = try XCTUnwrap(marks[scheme], file: file, line: line)
             let pixels = try draw(view, in: scheme)
             let isFill = DrawnPixels.matches(fillColour, tolerance: 4)
             guard let fill = pixels.boundingBox(where: isFill) else {
@@ -200,6 +212,27 @@ final class KozmosThemeFillTests: XCTestCase {
             XCTAssertEqual(ring.width, 20, accuracy: 1.5, "\(scheme): the theme 600 drawn is \(ring), not the 20pt ring")
             XCTAssertEqual(ring.midX, dot.midX, accuracy: 1, "\(scheme): the dot is not inside the ring")
             XCTAssertEqual(ring.midY, dot.midY, accuracy: 1, "\(scheme): the dot is not inside the ring")
+        }
+    }
+
+    /// Decision 61 (Olcay, 2026-10-08): the secondary Button and IconButton
+    /// are the neutral Primary Buttons fill with the neutral ink on it, at
+    /// rest and under a press, as React and Compose draw them: black on
+    /// #C7CAD1 (pressed #9095A2) in light, white on #464A53 (pressed
+    /// #17191C) in dark. Their words and mark were foreground/100, #17191C in
+    /// light and #E8E6E3 in dark.
+    @MainActor func testASecondaryButtonDrawsTheNeutralInkAtRestAndPressedInLightAndDark() throws {
+        let fill: [ColorScheme: Pixel] = [.light: (0xC7, 0xCA, 0xD1, 255), .dark: (0x46, 0x4A, 0x53, 255)]
+        let pressedFill: [ColorScheme: Pixel] = [.light: (0x90, 0x95, 0xA2, 255), .dark: (0x17, 0x19, 0x1C, 255)]
+        let ink: [ColorScheme: Pixel] = [.light: (0x00, 0x00, 0x00, 255), .dark: (0xFF, 0xFF, 0xFF, 255)]
+        let parts: [(name: String, view: AnyView, markInset: CGFloat)] = [
+            ("secondary Button", AnyView(KozmosButton("Later", variant: .secondary, action: {})), 0.1),
+            ("secondary IconButton", AnyView(KozmosIconButton(iconName: "plus", variant: .secondary, action: {})), 0.25),
+        ]
+        for part in parts {
+            try assertFill(fill, withMark: ink, part.name, part.view, markInset: part.markInset)
+            try assertFill(pressedFill, withMark: ink, "\(part.name) pressed",
+                           part.view.environment(\.kozmosButtonIsPressed, true), markInset: part.markInset)
         }
     }
 
